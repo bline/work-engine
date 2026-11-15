@@ -1,0 +1,17 @@
+{
+  "manifest_digest_matches": true,
+  "bound_source_files": 26,
+  "case_files": 175,
+  "changed_paths": [],
+  "unique_cases": 175,
+  "scope_records": 374,
+  "unique_scopes": 374,
+  "missing_historical_finding_ids": [],
+  "plan_sha256": "d1e93793052f2c07397654d10cca2188e0fad1f06c920c5d9dcfc139a4563741",
+  "inventory_sha256": "1632e9cd1bd6bd73a322239067710aaa66d5278a7fab25bddc627e6a32ab2e0a",
+  "source_evidence_sha256": "52a2ab2298b331b6e8a3d1661486f1ccb8de8f9f8766d52f79d9f4e8c2398a62",
+  "proposed_budget_holds_total": 40,
+  "status": "PASS",
+  "checked_at": "2026-11-14T10:01:34.293295+00:00",
+  "standing": "Read-only planning integrity and consistency checks; no suites, mutants, financial rederivation, implementation or acceptance."
+}

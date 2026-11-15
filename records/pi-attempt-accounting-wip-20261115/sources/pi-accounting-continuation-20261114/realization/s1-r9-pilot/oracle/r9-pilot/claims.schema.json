@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "author",
+    "derivation_ref",
+    "claims"
+  ],
+  "properties": {
+    "version": {
+      "const": "r9-finite-pilot/1"
+    },
+    "author": {
+      "type": "string"
+    },
+    "derivation_ref": {
+      "type": "string"
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim_id",
+          "relation",
+          "cases"
+        ],
+        "properties": {
+          "claim_id": {
+            "enum": [
+              "P9-RETAINED-CHARGE",
+              "PRIMARY/ANCHOR-APPLICATION",
+              "RESPONSE-MODEL7-ACTUAL",
+              "EQUAL-AMOUNT-DISTINCT-RESERVATIONS"
+            ]
+          },
+          "relation": {
+            "enum": [
+              "retained_charge",
+              "primary_anchor",
+              "malformed_response_model",
+              "reservation_classes"
+            ]
+          },
+          "cases": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "case_id",
+                "origins"
+              ],
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "origins": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "origin_ref",
+                      "source_origin_id",
+                      "original_position",
+                      "raw_bytes_sha256"
+                    ],
+                    "properties": {
+                      "origin_ref": {
+                        "type": "string"
+                      },
+                      "source_origin_id": {
+                        "type": "string"
+                      },
+                      "original_position": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "raw_bytes_sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      }
+                    }
+                  }
+                },
+                "attempt_key": {
+                  "type": "string"
+                },
+                "evaluation": {
+                  "type": "string"
+                },
+                "objective": {
+                  "type": "string"
+                },
+                "admission_id": {
+                  "type": "string"
+                },
+                "control_file": {
+                  "type": "string"
+                },
+                "raw_file": {
+                  "type": "string"
+                },
+                "bundle_file": {
+                  "type": "string"
+                },
+                "raw_input_sha256": {
+                  "type": "string"
+                },
+                "origin_ref": {
+                  "type": "string"
+                },
+                "response_model_state": {
+                  "type": "string"
+                },
+                "maximum_reservation_nano": {
+                  "type": "string"
+                },
+                "conditional_raw_sha256": {
+                  "type": "string"
+                },
+                "response_model_value": {
+                  "type": "integer"
+                },
+                "expected_classes": {
+                  "type": "integer"
+                },
+                "comparison_applicable": {
+                  "type": "boolean"
+                },
+                "reservation_origin_refs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true
+                },
+                "components": {
+                  "type": "array",
+                  "minItems": 4,
+                  "maxItems": 4,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "origin_ref",
+                      "kind",
+                      "nano"
+                    ],
+                    "properties": {
+                      "origin_ref": {
+                        "type": "string"
+                      },
+                      "kind": {
+                        "enum": [
+                          "reservation",
+                          "claimed_reserved",
+                          "charge",
+                          "usage"
+                        ]
+                      },
+                      "nano": {
+                        "type": "string",
+                        "pattern": "^[0-9]+$"
+                      }
+                    }
+                  }
+                },
+                "obligations": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "obligation_id",
+                      "reservation_origin_ref",
+                      "settlement_origin_ref"
+                    ],
+                    "properties": {
+                      "obligation_id": {
+                        "type": "string"
+                      },
+                      "reservation_origin_ref": {
+                        "type": "string"
+                      },
+                      "settlement_origin_ref": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "low_assertions": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "evaluation",
+                      "objective",
+                      "label",
+                      "expected_low",
+                      "owned_unit_refs",
+                      "seed_origin_refs",
+                      "alternative_origin_refs"
+                    ],
+                    "properties": {
+                      "evaluation": {
+                        "type": "string"
+                      },
+                      "objective": {
+                        "type": "string"
+                      },
+                      "label": {
+                        "type": "string"
+                      },
+                      "expected_low": {
+                        "type": "string"
+                      },
+                      "owned_unit_refs": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "uniqueItems": true
+                      },
+                      "seed_origin_refs": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "uniqueItems": true
+                      },
+                      "alternative_origin_refs": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "uniqueItems": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

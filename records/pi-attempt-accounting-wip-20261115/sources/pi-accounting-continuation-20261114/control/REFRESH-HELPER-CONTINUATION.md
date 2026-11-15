@@ -1,0 +1,5 @@
+# Bounded refresh helper
+
+Verified binding and foreground job in REFRESH-HELPER-STATE.json. Root remains sole engineering collector. Own only controller exec35640 and terminal result. Do not rerun uncertain control. Collect terminal via own write_stdin, then read refresh-1 status/outcome and publish REFRESH-HELPER-RESULT.json, notify /root. Failure also requires exact-root runtime notification without model and aspect:pi-accounting wake; record delivery actual outcome. No engineering or children. Packet REFRESH-HELPER-PACKET.md and manual-orchestration worker/call-cost/codex-host/same-session-context govern. Cap1.5proxy; root deadline2026-11-14T06:55:30.192Z. Current context47007 below trigger, own observed Sol6.1/medium/default.
+
+Terminal collected: exec35640 exit0, native compaction collected and attributed wakeup01a1d83b-9691-76e3-be28-b88eed83caad entered. Receipt REFRESH-HELPER-RESULT.json. Controller PID3020025 no longer alive; no remaining owned jobs. Root owns semantic recovery/admission/completion. Await root acknowledgment; no further control operation.

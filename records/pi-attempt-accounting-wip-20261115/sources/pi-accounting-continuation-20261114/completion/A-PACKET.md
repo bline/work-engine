@@ -1,0 +1,7 @@
+# Case partition A
+
+Read COMMON.md here. You own exactly the69 corpus/cases files whose case_id begins P130-, P132- or P133-, and new oracle/r8-completion-A/**. You may add independent expected assertion shard and per-case supplied bundles under that directory. Own completion/A/** for continuation/custody and build/completion-A for any private targets. Do not edit shared validator/spec/schema/R8-LOW-ASSERTIONS, other corpus files or peer directories. completion/PARTITIONS.json binds exact membership and baseline bytes.
+
+Complete all150low scopes in your cases, including142 missing claims, and every active attempt/result and rollup reference. Preserve the8 existing claims unless raw-policy evidence requires attributed correction. Author independently from raw/rates/policy and bind exact raw input digests. Include seed/alternative memberships and derivation refs, not merely copied old amounts. Cases with no supported usage need explicit zero support facts. Keep supplied results distinct from expected assertions and input grants.
+
+Qualify your complete partition using actual shared consumers as soon as the integrator publishes INTERFACE.json; until then test owned assertion/bundle fragments. Request interfaces from /root/s1r8_complete_integration, coordinate with /root/s1r8_complete_b, and surface any conflict to root. Do not alter money to make a structure check pass. Keep a compact coverage count proving every owned case/attempt/scope addressed and meaningful consistent-wrong controls caught.

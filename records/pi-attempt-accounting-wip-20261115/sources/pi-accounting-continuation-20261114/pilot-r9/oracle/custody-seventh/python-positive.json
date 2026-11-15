@@ -1,0 +1,41 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "python-positive",
+  "argv": [
+    "python3",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/validator/validate_corpus.py",
+    "check-pilot",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/target",
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3428918,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 3428920,
+  "pgid": 3428920,
+  "started_at": "2026-11-14T06:14:54.081427Z",
+  "ended_at": "2026-11-14T06:14:54.719360Z",
+  "duration_s": 0.638,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-seventh/python-positive.stdout",
+    "length": 164,
+    "sha256": "6e7e3a918153041c6da8c8b4d86ca46af87396656c00b8da5c7b30c7d0985a95"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-seventh/python-positive.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

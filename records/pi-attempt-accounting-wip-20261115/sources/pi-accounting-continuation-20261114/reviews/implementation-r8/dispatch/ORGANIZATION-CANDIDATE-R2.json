@@ -1,0 +1,83 @@
+{
+  "revision": "r2",
+  "prior_candidate": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/ORGANIZATION-CANDIDATE.json",
+  "prior_sha256": "e965003c92ad7d30685ddc21ba3a19e4bd5cdcedafaa89b4cdd17037a237ff66",
+  "change": "Continue all unlaunched original obligations; add required fresh architectural judgment and retain incomplete A1/C2 obligations without pretending cleared. No implementation.",
+  "roles": {
+    "D7": {
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/PACKET.md",
+      "packet_sha256": "2a9d69e3d3206cd645ae14ecc73c8ada62662d868a26649cc22fe9951394bf20",
+      "cap": 7,
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "service_tier": "default",
+      "fresh": true,
+      "collector": "root01a1d6e2",
+      "state": "not_launched"
+    },
+    "A2b": {
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/A2b-LAUNCH-R2.md",
+      "packet_sha256": "71e31ec50b0eb0ab130f7043cf3e3bfafd6402d2e53d990cd2166f97977f9891",
+      "cap": 8,
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "service_tier": "default",
+      "fresh": true,
+      "collector": "root01a1d6e2",
+      "state": "not_launched"
+    },
+    "B1": {
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/B1-LAUNCH-R2.md",
+      "packet_sha256": "2c4e1d020f1bc5ef255e34d59e07f8dd7ceeca54dfcc925d454d439ddee251ac",
+      "cap": 6,
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "service_tier": "default",
+      "fresh": true,
+      "collector": "root01a1d6e2",
+      "state": "not_launched"
+    },
+    "B2": {
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/B2-LAUNCH-R2.md",
+      "packet_sha256": "f5271023194d0a7b27596399508f19d6ebf1e99739b3dbf2aec43cfe4845fdfd",
+      "cap": 6,
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "service_tier": "default",
+      "fresh": true,
+      "collector": "root01a1d6e2",
+      "state": "not_launched"
+    },
+    "C1": {
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/C1-LAUNCH-R2.md",
+      "packet_sha256": "ddf8ed4645136c30fc3f9b9de5fe6c3599b442c7cd282cb57800ebe001f1ea46",
+      "cap": 6,
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "service_tier": "default",
+      "fresh": true,
+      "collector": "root01a1d6e2",
+      "state": "not_launched"
+    }
+  },
+  "remaining_incomplete": {
+    "A1": "Complete linked premises/negatives/custody, original scope preserved; reserve4",
+    "C2": "External payload closure, sabotage reasons,342 reversals, authorship, libraries/dependencies; reserve6"
+  },
+  "forecast": {
+    "observed": 41.5252384,
+    "unlaunched_caps": 33,
+    "incomplete_reserve": 10,
+    "root_closure_reserve": 8,
+    "late_cost_allowance": 1.5,
+    "total": 94.0252384,
+    "grant": 100,
+    "deadline": "2026-11-14T06:55:30.192Z",
+    "calibration": "speed_adjusted_api_usd proxy, not quota/invoice",
+    "repair_commitment": 0
+  },
+  "at_most_active": 3,
+  "known_active": 0,
+  "context": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/post-refresh3-context.json",
+  "context_decision": "retain root current124271+estimated65000. Begin preservation at185000/finish before220000; listener5 observes. Do not interpret old helper200/235 recommendations as current deadline."
+}

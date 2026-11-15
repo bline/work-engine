@@ -1,0 +1,151 @@
+{
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check",
+  "env": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target",
+    "R9_SPEC_FIXTURE_OUT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures"
+  },
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cargo",
+        "build",
+        "--offline"
+      ],
+      "digest": [
+        "src/accounting.rs",
+        "../../spec/accounting.schema.json"
+      ]
+    },
+    {
+      "name": "tests",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--test",
+        "r9_spec_applicability"
+      ],
+      "digest": [
+        "tests/r9_spec_applicability.rs"
+      ]
+    },
+    {
+      "name": "render",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "render",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/spec/ck.json"
+      ]
+    },
+    {
+      "name": "generated",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+        "--generated"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/spec/ck.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/spec/dependencies.json"
+      ]
+    },
+    {
+      "name": "positive",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/positive.json"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/positive.json"
+      ]
+    },
+    {
+      "name": "witness-swap",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/witness-swap.json"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/witness-swap.json"
+      ]
+    },
+    {
+      "name": "redirected-validity",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/redirected-validity.json"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/redirected-validity.json"
+      ]
+    },
+    {
+      "name": "self-link",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/self-link.json"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/self-link.json"
+      ]
+    },
+    {
+      "name": "uncited-link",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/uncited-link.json"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/uncited-link.json"
+      ]
+    },
+    {
+      "name": "shared-grant-pair",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/shared-grant-pair.json"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/shared-grant-pair.json"
+      ]
+    },
+    {
+      "name": "wrongrequest",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/wrongrequest.json"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/wrongrequest.json"
+      ]
+    }
+  ]
+}

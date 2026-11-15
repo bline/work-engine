@@ -1,0 +1,41 @@
+{
+ "case_id": "VC02-anthropic-usage-settlement",
+ "inputs": {
+  "rates": {
+   "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  },
+  "reference_time": "2026-11-10T07:00:00Z",
+  "sessions": [
+   {
+    "alias": "S1",
+    "launch": {
+     "auth_lane": "api",
+     "model": "anthropic/claude-fable-5-2",
+     "parent": "root"
+    },
+    "lifecycle": [
+     {
+      "at": "2026-11-10T06:00:10Z",
+      "event": "launch",
+      "turn": 1
+     },
+     {
+      "at": "2026-11-10T06:50:00Z",
+      "event": "retire"
+     }
+    ],
+    "logs": {
+     "turn-1": {
+      "final_newline": true,
+      "lines": [
+       "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.3, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
+       "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"provider\": \"anthropic\", \"n\": 1, \"http_status\": 200, \"model\": \"claude-fable-5-2\", \"requested_tier\": null, \"observed_tier\": \"standard\", \"terminal\": \"message_stop\", \"response_id\": \"msg_1\", \"response_model\": \"claude-fable-5-2\", \"response_model_check\": \"verified\", \"usage\": {\"input_tokens\": 1000, \"cache_read_input_tokens\": 0, \"cache_creation_input_tokens\": 0, \"output_tokens\": 500}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.3, \"charged_usd\": 0.028, \"charge_basis\": \"usage\", \"session_spent_usd\": 0.028, \"multiplier_floor\": 0.0}}"
+      ]
+     }
+    },
+    "session_id": "00000000-0000-4000-8000-0000000000c1"
+   }
+  ]
+ }
+}

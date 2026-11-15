@@ -1,0 +1,23 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/REVISION-PLAN.json",
+  "plan_sha256": "64e1f2b9d45ad09f39c7d22f4ae73487333be3af05344b8371c70b82aded8c7b",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "actual-revisions",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/custody/revision-repair-1/actual-revisions.json",
+      "record_sha256": "9ca89a73c45086a7cfc03c8efb4f0eda25e5ad77043a067d593e7d55e6ed752b",
+      "leftovers": 0
+    },
+    {
+      "name": "python-partition",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/custody/revision-repair-1/python-partition.json",
+      "record_sha256": "a0c4e8d9e07b6d6893f8bf92678807d88a5baa837b62c2ce87240655952545e1",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

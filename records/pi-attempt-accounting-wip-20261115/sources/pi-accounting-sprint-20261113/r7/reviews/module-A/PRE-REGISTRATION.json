@@ -1,0 +1,25 @@
+{
+  "at": "2026-11-14T00:16:56.808807+00:00",
+  "root_owner": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "freshness_route": "role_host generates new Pi session UUID; no parent/resume/deliver/mounts; confirm exact fresh ledger row after launch",
+  "model_requested": "openai-codex/gpt-6-astra",
+  "thinking_requested": "xhigh",
+  "auth": "subscription",
+  "proxy_threshold": 4,
+  "max_requests": 1,
+  "no_retry_fallback": true,
+  "prompt": "5b06a47ed7d2ac833819d237da61bf034b903616f0b5de1e9923cb50c4a49e5c",
+  "prompt_bytes": 714706,
+  "subject": "c1c40727648b40f3494b5444065cdef3a7824a42249426dc860dece95423ceda",
+  "release_digests": {
+    "role_host.py": "cbca1bc9656ed6de2c1cd43e1e357d7ed27dbaa08b178a3131cc329ed3433475",
+    "pi_container.py": "780837341790780f84163ee6151b8ce66cff56f5a3f6ddf8c15f939dba50f470",
+    "pi_container_entry.py": "b75c71508ec125873e8cd06709bc519b21c9865ed118e11025de24ef9b3fbdc8"
+  },
+  "empty_cwd": true,
+  "scope_budget_reader": "230441560e750345d7a9d9f10d8ee00b9b4f6d81a2bf0204567b7e9c04ed4235",
+  "known_allpool_proxy": 23.9659086,
+  "api_calls_launched": 0,
+  "capacity_evidence": "newaccountwindow1795219565;99percentremaining00:11:21; user saysquota back",
+  "root_capacity": "listener planning200926epoch2; admit boundedlaunch/collection/disposition <20k growth; continuation preserves currentstate; no S2scope admitted"
+}

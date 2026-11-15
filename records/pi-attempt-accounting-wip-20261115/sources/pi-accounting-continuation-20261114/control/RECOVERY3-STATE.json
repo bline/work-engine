@@ -1,0 +1,27 @@
+{
+  "verified_sid": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "current_window": "01a1d885-a3ea-7e62-baee-1ba12fb14231",
+  "recovered_pointer": "TOKEN-MODE-CONTINUATION-3.md",
+  "human_direction": "tokenmode enabled/continue; owner/future development and100/fourhours retained",
+  "deadline": "2026-11-14T06:55:30.192Z",
+  "current_findings": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/ROOT-FINDING-DISPOSITION.json",
+  "review_ledger": "/home/bline/cbm-work/pi-accounting-continuation-20261114/review-assignments.json",
+  "organization": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/ORGANIZATION-DECISION-R2.json",
+  "listener": {
+    "exec_session": 33374,
+    "log": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/listener5.jsonl",
+    "owner": "root",
+    "route": "foreground yielding exec; root reads all returned board/context/budget events at natural decision boundaries",
+    "initial_enrollment_verified": true,
+    "initial_budget_consumed": "A2a6/8marks reconciled terminal9.137; no retroactive cap increase"
+  },
+  "active": [
+    "D7",
+    "A2b",
+    "B1"
+  ],
+  "collection": "native wait_threads/read_thread exactturns; rootsealsactualfinals",
+  "settings": "postboundary observed Sol6.1/high/default line5562 timestamp05:26:39.340Z; runtimeonly",
+  "context": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/post-refresh3-context.json",
+  "guard": "DESIGN_REVIEW_REQUIRED"
+}

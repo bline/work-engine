@@ -1,0 +1,33 @@
+{
+  "status": "same root own native recovery complete",
+  "session": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "meaning_owner": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/ROOT-CONTINUATION-R10.md",
+  "settings": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/post-r10-settings.json",
+  "new_postboundary_applied_line": 11553,
+  "settings_observed": "gpt-6.1-sol/high/default",
+  "listener": {
+    "tool_session": 85338,
+    "initial": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/listener-r10-initial.json",
+    "consumed": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/listener-r10-consumed.json",
+    "owner": "root",
+    "collector": "root",
+    "delivery": "collected stdout at natural boundaries",
+    "context": {
+      "input_tokens": 56910,
+      "epoch": 24,
+      "trigger": 185000,
+      "band": 220000
+    }
+  },
+  "budget": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/post-r10-budget.json",
+  "reviewer_ready": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/REVIEWER-READY-FINAL.md",
+  "reviewer_ready_entire_final_collected_and_read": true,
+  "reviewer_grant": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/REVIEWER-POSTBOUNDARY-GRANT.json",
+  "reviewer_settings": "NEWpostboundary791 Astraxhigh/default/read-onlyrestrictednever verified; native boundary788",
+  "reviewer_continuation": "same isolated episode; substantive not admitted; worker final freeze owed",
+  "worker": "s1r10_evaluation_premise active, final owed; registeredRust gatedcheck scoped ACK",
+  "remaining": "all3R3+11historicalOPEN/full175/374/exactcurrentABC owed",
+  "root_jobs": [
+    85338
+  ]
+}

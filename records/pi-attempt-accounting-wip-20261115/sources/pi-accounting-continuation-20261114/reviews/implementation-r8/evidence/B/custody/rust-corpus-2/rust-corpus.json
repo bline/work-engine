@@ -1,0 +1,46 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "rust-corpus",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-B/debug/pi-accounting-spec-check",
+    "corpus",
+    ".",
+    "B"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 3080787,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-B/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 76661696,
+      "sha256": "265dd2f478753dafd2c6fcf95a4052974c996009f26766119a8bdd1d1685e76c"
+    }
+  ],
+  "timeout_s": 120.0,
+  "pid": 3080854,
+  "pgid": 3080854,
+  "started_at": "2026-11-14T04:18:15.618125Z",
+  "ended_at": "2026-11-14T04:18:19.809265Z",
+  "duration_s": 4.191,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/custody/rust-corpus-2/rust-corpus.stdout",
+    "length": 98,
+    "sha256": "b58f9df59c2236ba9c9ef9cce1f7c481650787e43b07ca28498da7142b1ed25a"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/custody/rust-corpus-2/rust-corpus.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

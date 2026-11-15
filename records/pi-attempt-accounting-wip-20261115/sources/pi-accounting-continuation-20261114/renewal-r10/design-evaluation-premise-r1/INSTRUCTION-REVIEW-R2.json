@@ -1,0 +1,12 @@
+{
+  "applicability": "applicable: current normative plan/packet scopes and review admission",
+  "subjects": {
+    "plan": "3f79f910a6e87614d7ebff402f2f731f358886ab0ee74495d0a7425fc7950b70",
+    "packet": "b5ccf4929730ea7590b7282b2bd2a544746fd6e797f54d776fb113134440bc7c"
+  },
+  "inspected": "PLAN-R2 authority,premise/output distinctions and qualification; PACKET-R2 complete bounded role contract",
+  "advisory": "retain",
+  "evidence": "Premise admission precedes consequence qualification because changed governing facts invalidate literal expectations; independent authorship prevents circular truth; read-only grant and root adoption separate criticism from implementation. Mechanics left to implementation judgment.",
+  "limitations": "root authored advisory inspection; no independent acceptance or completeness claim",
+  "findings": []
+}

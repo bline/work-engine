@@ -1,0 +1,19 @@
+{
+  "checked_at": "2026-11-14T06:18:29.545206+00:00",
+  "baseline_frozen_raw_and_complete_corpus_case_files_unchanged": 348,
+  "all_unchanged": true,
+  "control_pairs": [
+    {
+      "file": "cases/model7-VC01-openai-usage-settlement.json",
+      "paired_inputs_byte_strings_equal": true
+    },
+    {
+      "file": "cases/model7-A04-undated-settlement-between-dated-neighbours.json",
+      "paired_inputs_byte_strings_equal": true
+    },
+    {
+      "file": "cases/equal-reservations.json",
+      "paired_inputs_byte_strings_equal": true
+    }
+  ]
+}

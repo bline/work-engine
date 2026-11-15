@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "files": 967,
+  "manifest_sha256": "d60017dac28aa3a831cf13db520af94d8224b53f70b12229240bff8dab30ec61",
+  "root_replay_summary_sha256": "3087957f00f22678b9e1920549751c1eb63916ea8cf23915a02a0301d6ee1dfb",
+  "root_replay_plan_sha256": "45ed16eca5af3dacc55dde11d1b564ffb2d09bddb39ee8a79923ee00add42e09",
+  "all9records_streams_and_inputs_verified": true,
+  "zero_leftovers": true,
+  "worker_final_whole_collected": true,
+  "historical_findings": "allOPEN",
+  "acceptance": "pendingindependentreview"
+}

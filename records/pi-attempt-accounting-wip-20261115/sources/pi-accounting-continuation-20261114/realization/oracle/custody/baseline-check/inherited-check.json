@@ -1,0 +1,47 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "inherited-check",
+  "argv": [
+    "python3",
+    "validator/validate_corpus.py",
+    "check",
+    "corpus",
+    "oracle/rates"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 2914906,
+  "inputs": [
+    {
+      "path": "validator/validate_corpus.py",
+      "type": "file",
+      "mode": 436,
+      "length": 90353,
+      "sha256": "12cb4f55d21b0797b2932606fb9d0abb6a4a8e95e5a4c9880f301d4ff7f514e9"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 2914976,
+  "pgid": 2914976,
+  "started_at": "2026-11-14T03:32:09.152309Z",
+  "ended_at": "2026-11-14T03:32:09.345077Z",
+  "duration_s": 0.193,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/baseline-check/inherited-check.stdout",
+    "length": 155,
+    "sha256": "e70f93be61cff57cb905c317c327b29a8fb2b27486cd263918fe29557599d897"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/baseline-check/inherited-check.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

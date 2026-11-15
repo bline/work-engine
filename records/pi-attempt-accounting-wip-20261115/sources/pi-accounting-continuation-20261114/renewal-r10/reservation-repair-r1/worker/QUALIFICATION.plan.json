@@ -1,0 +1,138 @@
+{
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject",
+  "env": {
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject",
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "R10_EVIDENCE_EXECUTABLE": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/pi-accounting-spec-check",
+    "PYTHONWARNINGS": "ignore::ResourceWarning",
+    "R10_FINANCIAL_EXECUTABLE": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648"
+  },
+  "steps": [
+    {
+      "name": "build-evidence",
+      "argv": [
+        "cargo",
+        "build",
+        "--manifest-path",
+        "tooling/spec-check/Cargo.toml",
+        "--bin",
+        "pi-accounting-spec-check"
+      ]
+    },
+    {
+      "name": "build",
+      "argv": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "tooling/spec-check/Cargo.toml",
+        "--test",
+        "independent_raw_axes",
+        "--no-run",
+        "--message-format=json"
+      ],
+      "cargo_json": true
+    },
+    {
+      "name": "python-controls",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "validator",
+        "-p",
+        "test_r10_qualification.py",
+        "-v"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject/validator/test_r10_qualification.py",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject/validator/r10_admitted.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject/validator/r9_pilot.py",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject/validator/validate_corpus.py"
+      ]
+    },
+    {
+      "name": "rust-positive",
+      "argv": [
+        "{exe:build}",
+        "r9_",
+        "--nocapture"
+      ]
+    },
+    {
+      "name": "rust-r10-controls",
+      "argv": [
+        "{exe:build}",
+        "r10_",
+        "--nocapture"
+      ]
+    },
+    {
+      "name": "python-main-pilot",
+      "argv": [
+        "python3",
+        "validator/validate_corpus.py",
+        "check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject/corpus",
+        "--pilot"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject/validator/r9_pilot.py",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject/validator/r10_admitted.json"
+      ]
+    },
+    {
+      "name": "generated",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/pi-accounting-spec-check",
+        "check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject",
+        "--generated"
+      ]
+    },
+    {
+      "name": "impact",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/pi-accounting-spec-check",
+        "impact",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject",
+        "LOGICAL-PRIMARY",
+        "DEFINITE-LINK",
+        "WHOLE-COVERAGE",
+        "F-PROJECTION",
+        "SCHEMA-ACCOUNTING"
+      ]
+    },
+    {
+      "name": "schema_agreement",
+      "argv": [
+        "python3",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject/tooling/spec-check/tests/schema_agreement.py",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/pi-accounting-spec-check"
+      ]
+    },
+    {
+      "name": "wire_corpus",
+      "argv": [
+        "python3",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject/tooling/spec-check/tests/wire_corpus.py",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/pi-accounting-spec-check"
+      ]
+    },
+    {
+      "name": "evidence_controls",
+      "argv": [
+        "python3",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject/tooling/spec-check/tests/evidence_controls.py",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/pi-accounting-spec-check"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "scope-census",
+  "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/inspect_scope.py"
+  ],
+  "cwd": "/home/bline/code/work-engine",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 2709012,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/inspect_scope.py",
+      "type": "file",
+      "mode": 436,
+      "length": 1823,
+      "sha256": "70da5ba37f43be0c8fdd02525066c5ca6b92644fb094fae1e0bdfc19066fce62"
+    }
+  ],
+  "timeout_s": 30.0,
+  "pid": 2709084,
+  "pgid": 2709084,
+  "started_at": "2026-11-14T00:44:20.510291Z",
+  "ended_at": "2026-11-14T00:44:20.574568Z",
+  "duration_s": 0.064,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/scope-census/scope-census.stdout",
+    "length": 3464,
+    "sha256": "c76c7ce1d74a458c7a6d9f011c32547919fb34c10ebead1fa8ed614529312202"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/scope-census/scope-census.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

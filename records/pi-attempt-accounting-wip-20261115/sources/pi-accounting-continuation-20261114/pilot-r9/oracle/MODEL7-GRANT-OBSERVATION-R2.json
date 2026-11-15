@@ -1,0 +1,50 @@
+{
+  "observations": [
+    {
+      "case_file": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json",
+      "bundle_file": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json",
+      "grant_id": "initial-scope:S1/turn-1",
+      "guarantee_kind": "initial_reference_scope",
+      "covered_extent_ref": "sha256:08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98",
+      "actual_control_input_sha256": "8e9cedfbd77254e983fa35939c7cfa5b19ff516a0c9269e11ed9b31843edb3e2",
+      "exact_payload_ref": "oracle/r8-completion-B/VC01-openai-usage-settlement.provenance.json#S1/turn-1",
+      "referenced_payload_file_sha256": "a42fcd1919778469e22425d9f50611a52b5ac243fae8c8958fd377bb1b66bee5",
+      "referenced_payload_raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98",
+      "covered_origin_refs": [
+        "S1/turn-1:1",
+        "S1/turn-1:2"
+      ],
+      "actual_origin_refs": [
+        "S1/turn-1:1",
+        "S1/turn-1:2"
+      ],
+      "raw_extent_binding_equal": false,
+      "scope_inventory_matches": true
+    },
+    {
+      "case_file": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json",
+      "bundle_file": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json",
+      "grant_id": "initial-scope:S1/turn-1",
+      "guarantee_kind": "initial_reference_scope",
+      "covered_extent_ref": "sha256:b51f04a1da0404ecbf4a504f2fe98503f605220f74c343ae137b2aee1e28e1e0",
+      "actual_control_input_sha256": "976a4b2acf473f87ac4850f8c5ad5178d672fd650d231d23d5cc0e691abd342a",
+      "exact_payload_ref": "oracle/r8-completion-B/A04-undated-settlement-between-dated-neighbours.provenance.json#S1/turn-1",
+      "referenced_payload_file_sha256": "16a2fea47b93174c43817846d94abbc38c4f81255f60281cff4d2f25c7c0d0f7",
+      "referenced_payload_raw_input_sha256": "b51f04a1da0404ecbf4a504f2fe98503f605220f74c343ae137b2aee1e28e1e0",
+      "covered_origin_refs": [
+        "S1/turn-1:1",
+        "S1/turn-1:2",
+        "S1/turn-1:3"
+      ],
+      "actual_origin_refs": [
+        "S1/turn-1:1",
+        "S1/turn-1:2",
+        "S1/turn-1:3"
+      ],
+      "raw_extent_binding_equal": false,
+      "scope_inventory_matches": true
+    }
+  ],
+  "status": "exact control-subject grant applicability UNESTABLISHED; structural evidence pass is insufficient",
+  "root_disposition": "retain source unchanged under R6; upcoming fresh review must judge exact raw/payload binding"
+}

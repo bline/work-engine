@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "forked_from_id": null,
+  "own_history_start_ordinal": null,
+  "inherited_records_skipped": 0,
+  "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T14-48-30-01a1d6e2-32ba-7701-9115-740dcb41af11.jsonl",
+  "file_modified_unix_seconds": 1794636082,
+  "file_age_seconds": 0,
+  "freshness": "recent_file_modification",
+  "observed_at": "2026-11-14T06:00:54.905Z",
+  "recorded_model": "gpt-6.1-sol",
+  "recorded_effort": "xhigh",
+  "lineage": [
+    "compaction marker at line 661",
+    "compaction marker at line 1497",
+    "compaction marker at line 2395",
+    "compaction marker at line 3142",
+    "compaction marker at line 4034",
+    "compaction marker at line 4847",
+    "compaction marker at line 5169",
+    "compaction marker at line 5559",
+    "compaction marker at line 5993",
+    "compaction marker at line 6312"
+  ],
+  "latest_request": {
+    "input_tokens": 162671,
+    "cached_input_tokens": 162432,
+    "output_tokens": 383,
+    "timestamp": "2026-11-14T06:00:54.905Z",
+    "line": 6533,
+    "epoch": 10
+  },
+  "latest_request_status": "latest_valid_observation",
+  "context_window_tokens": 475000,
+  "context_window_source": "event_msg.token_count.info.model_context_window",
+  "context_fraction_proxy": 0.3424652631578947,
+  "context_headroom_tokens_proxy": 312329,
+  "recent_requests": [
+    {
+      "input_tokens": 144458,
+      "cached_input_tokens": 137088,
+      "output_tokens": 637,
+      "timestamp": "2026-11-14T05:58:10.944Z",
+      "line": 6476,
+      "epoch": 10
+    },
+    {
+      "input_tokens": 148813,
+      "cached_input_tokens": 144896,
+      "output_tokens": 509,
+      "timestamp": "2026-11-14T05:58:24.048Z",
+      "line": 6485,
+      "epoch": 10
+    },
+    {
+      "input_tokens": 151370,
+      "cached_input_tokens": 149120,
+      "output_tokens": 571,
+      "timestamp": "2026-11-14T05:58:39.422Z",
+      "line": 6494,
+      "epoch": 10
+    },
+    {
+      "input_tokens": 153726,
+      "cached_input_tokens": 151808,
+      "output_tokens": 298,
+      "timestamp": "2026-11-14T05:58:48.815Z",
+      "line": 6503,
+      "epoch": 10
+    },
+    {
+      "input_tokens": 156859,
+      "cached_input_tokens": 153856,
+      "output_tokens": 4610,
+      "timestamp": "2026-11-14T06:00:25.064Z",
+      "line": 6511,
+      "epoch": 10
+    },
+    {
+      "input_tokens": 161869,
+      "cached_input_tokens": 161280,
+      "output_tokens": 465,
+      "timestamp": "2026-11-14T06:00:36.221Z",
+      "line": 6518,
+      "epoch": 10
+    },
+    {
+      "input_tokens": 162360,
+      "cached_input_tokens": 162176,
+      "output_tokens": 284,
+      "timestamp": "2026-11-14T06:00:44.303Z",
+      "line": 6524,
+      "epoch": 10
+    },
+    {
+      "input_tokens": 162671,
+      "cached_input_tokens": 162432,
+      "output_tokens": 383,
+      "timestamp": "2026-11-14T06:00:54.905Z",
+      "line": 6533,
+      "epoch": 10
+    }
+  ],
+  "recent_growth": {
+    "first_input_tokens": 144458,
+    "last_input_tokens": 162671,
+    "delta_tokens": 18213,
+    "sample_count": 8,
+    "provenance": "distinct token_count.last_token_usage snapshots in current observed epoch, at most 8; endpoint difference, not a sum"
+  },
+  "economics": null,
+  "limitations": [],
+  "diagnostic_counts": {},
+  "diagnostics_omitted": 0
+}

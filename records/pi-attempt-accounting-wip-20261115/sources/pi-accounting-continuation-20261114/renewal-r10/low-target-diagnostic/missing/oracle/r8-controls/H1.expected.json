@@ -1,0 +1,60 @@
+{
+  "assertions": [
+    {
+      "claim_id": "H1",
+      "expected_fields_or_relations": {
+        "/aggregate": {
+          "high": {
+            "basis": "proxy_charge",
+            "kind": "at_least",
+            "nano": "500000000"
+          },
+          "low": "0"
+        },
+        "/fallback_holds": [
+          {
+            "high": "500000000",
+            "id": "OriginBase:A",
+            "origins": [
+              "A"
+            ]
+          },
+          {
+            "high": "500000000",
+            "id": "OriginBase:B",
+            "origins": [
+              "B"
+            ]
+          }
+        ],
+        "/physical_bill_count": "unestablished",
+        "/scope_hold": {
+          "high": "500000000",
+          "id": "TicketClaim:S:1",
+          "origins": [
+            "A",
+            "B"
+          ],
+          "tag": "at_least"
+        }
+      },
+      "negative_control_refs": [
+        "H1.wrong.json"
+      ],
+      "raw_derivation_refs": [
+        "PLAN3/root amendment: scoped initial max(500,500)=500; fallback atoms500+500=1000; hold multiplicity never bill independence"
+      ]
+    }
+  ],
+  "authored_by": "oracle01a1d81b; fixed literal assertions separately from supplied records",
+  "exact_subject_refs": [
+    "result:H1"
+  ],
+  "id": "expected:H1",
+  "kind": "accounting_expected_assertion",
+  "policy_refs": [
+    "PLAN43d0e7c8"
+  ],
+  "raw_subject_ref": "sha256:14814efcdffcd7fa32d67729753f85cc7d5878cfd5f59b5470920694aa42f60d",
+  "version": "1.7-s1"
+}

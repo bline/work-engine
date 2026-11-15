@@ -1,0 +1,10 @@
+{
+  "applicability": "applicable: materially normative retained-role instruction packet",
+  "subject": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/REVIEW-PACKET.md",
+  "sha256": "af50485d569819fa582ced7df7e7fe666cb704fbea2cbc262d143cdc5d08e028",
+  "scope": "authority, full bounded consequence, read-only grant, exact source/evidence, recovery/collection and nonacceptance boundaries",
+  "findings": [],
+  "advisory_outcome": "retain",
+  "evidence": "Root ownership and unchanged human100 are exposed; read-only constraint explains isolation consequence, exact sources bind review subject, finite admission and intended reason protect applicability versus nominal truth. Capability choices remain reviewer judgment; configured context thresholds remain active session requirements. FullS1 omissions explicit; no self-certification/semantic acceptance inferred.",
+  "limitations": "Author advisory instruction assessment only, independent implementation review remains owed."
+}

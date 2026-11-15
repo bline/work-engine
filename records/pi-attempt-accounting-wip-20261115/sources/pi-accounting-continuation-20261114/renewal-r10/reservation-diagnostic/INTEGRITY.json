@@ -1,0 +1,7 @@
+{
+  "frozen_integrity_mismatches": [],
+  "probe_changed_files": [
+    "oracle/r9-pilot/cases/equal-reservations.json"
+  ],
+  "only_expected_mutation": true
+}

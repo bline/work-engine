@@ -1,0 +1,56 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "build",
+  "argv": [
+    "cargo",
+    "test",
+    "--manifest-path",
+    "tooling/spec-check/Cargo.toml",
+    "--test",
+    "independent_raw_axes",
+    "--no-run",
+    "--message-format=json"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+  "env_clear": false,
+  "env_set": {
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3547181,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 3547292,
+  "pgid": 3547292,
+  "started_at": "2026-11-14T07:06:57.802442Z",
+  "ended_at": "2026-11-14T07:07:01.091506Z",
+  "duration_s": 3.289,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/controls-custody/build.stdout",
+    "length": 87053,
+    "sha256": "d4c81ea93cb66d32b782003d69eae1e08f9f7049bcd1efec46acd7db37b47f49"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/controls-custody/build.stderr",
+    "length": 216,
+    "sha256": "d61b3f39b43fde33af130773044b16a3010fda82cdc372de2711b52649bc235f"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null,
+  "cargo_executables": [
+    {
+      "name": "independent_raw_axes",
+      "kind": [
+        "test"
+      ],
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+      "sha256": "569110ae9c57b1cba0ea0b5125d3f327e98513949085f0fe2c3e94248c8caef1"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "status": "same root native R11 recovered; ordinary result collection resumed",
+  "root": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "continuation": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/ROOT-CONTINUATION-R11.md",
+  "meaning": "authority, fullS1, all3R3+11historicalOPEN, exactsubject and reviewerepisode recovered; no unresolved human question",
+  "settings": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/post-r11-refresh-settings.json",
+  "postboundary_settings": "NEW11925 Sol6.1highdefault verified after native refresh",
+  "listener": {
+    "tool_session": 76656,
+    "owner": "root",
+    "collector": "root",
+    "initial": "57807epoch25 normal delivered",
+    "cursors": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/listener-r11-consumed.json",
+    "budget": "fresh complete56.5239508 proxy /100; post-r11-budget.json; command28087terminal0FULLCOLLECTED"
+  },
+  "review": {
+    "thread": "01a1d8ee-19cd-7e12-ad6c-73356f2366a4",
+    "turn": "01a1d966-55e8-79b3-88f6-d261ec2f4b1b",
+    "status": "active wholefinalOWED; no replay"
+  },
+  "other_jobs": [],
+  "scope": "unchanged renewed100 no deadline; boundedverdict followed by separatelybound nextscope; no integration/production"
+}

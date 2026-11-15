@@ -1,0 +1,735 @@
+{
+ "added_in": "1.3-s1",
+ "ambiguity": null,
+ "case_id": "P132-FG-VC14-open-no-billing-bound",
+ "class": "future_vertical",
+ "contract": "pi-accounting-contract/1.6-s1",
+ "controls": [
+  "P132-FG-VC14-open-session-billing-bound"
+ ],
+ "evaluations": [
+  {
+   "admission_request": {
+    "new": "100000000",
+    "objective": "o"
+   },
+   "expected": {
+    "admission": {
+     "decision": "not_established",
+     "limit": "1000000000",
+     "new": "100000000",
+     "objective": "o"
+    },
+    "attribution": [
+     {
+      "attempt": "res:S1/turn-1:rid=1",
+      "objective": "o",
+      "ownership": "owned",
+      "placement": "inside"
+     }
+    ],
+    "objectives": [
+     {
+      "commitments": [
+       {
+        "admission_id": "a1",
+        "committed": "485000000",
+        "gate": {
+         "qualified": false,
+         "reasons": [
+          "GateMechanismMissing"
+         ],
+         "verification_payload_sha256": "a5066ada92e0433232f520ff9ebec772606a26a77ce284f32b214cfa1e2d55e2",
+         "verification_source": "test_mock"
+        },
+        "kind": "at_least",
+        "state": "launched_open"
+       }
+      ],
+      "objective": "o",
+      "owned_closed": {
+       "high": {
+        "kind": "exact",
+        "nano": "15000000"
+       },
+       "low": "15000000"
+      },
+      "owned_outstanding": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "predecessor_obligations": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "provisional": true,
+      "reasons": [
+       "UnenforcedCommitment"
+      ],
+      "status": "not_established"
+     }
+    ]
+   },
+   "name": "limit-1.0",
+   "objectives": [
+    {
+     "admission_authority": {
+      "id": "wev-admission-authority-1",
+      "kind": "vertical_admission_authority"
+     },
+     "admissions": [
+      {
+       "admission_id": "a1",
+       "gate_id": "g-S1",
+       "rows": [
+        {
+         "admission_id": "a1",
+         "at": "2026-11-10T06:00:05Z",
+         "event": "pending",
+         "max_usd": 0.5
+        },
+        {
+         "admission_id": "a1",
+         "at": "2026-11-10T06:00:10Z",
+         "event": "launched",
+         "session_id": "00000000-0000-4000-8000-0000000000c1"
+        }
+       ],
+       "session": "00000000-0000-4000-8000-0000000000c1",
+       "source": "journal"
+      }
+     ],
+     "closed_at": null,
+     "limit": "1000000000",
+     "objective": "o",
+     "predecessor": null,
+     "started_at": "2026-11-10T06:00:00Z",
+     "tree_sessions": [
+      "00000000-0000-4000-8000-0000000000c1"
+     ]
+    }
+   ]
+  }
+ ],
+ "expected": {
+  "attempts": [
+   {
+    "billing": "established",
+    "blocking": [],
+    "correlation": {
+     "kind": "exact"
+    },
+    "diagnostics": [],
+    "evidence": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ],
+    "execution": "terminal",
+    "exposure": {
+     "high": {
+      "basis": "usage_valuation",
+      "kind": "exact",
+      "nano": "15000000"
+     },
+     "low": {
+      "basis": "usage_valuation",
+      "nano": "15000000"
+     },
+     "pool": "pi_api"
+    },
+    "forwarding": "forwarded",
+    "key": "res:S1/turn-1:rid=1",
+    "obligation": {
+     "amount_source": "settlement_amount",
+     "by": "S1/turn-1:2",
+     "state": "closed"
+    },
+    "replacement": {
+     "eligible": true,
+     "reason": "UsageBound"
+    },
+    "settlement": {
+     "basis": "usage",
+     "charged": "15000000",
+     "decision": "valid",
+     "reasons": [],
+     "reserved": "500000000"
+    },
+    "valuation": {
+     "complete": true,
+     "derivations": [
+      {
+       "for": "both",
+       "model": "gpt-6-astra",
+       "nano": "15000000",
+       "provider": "openai",
+       "tier_multiplier": "1",
+       "usage": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 1000,
+        "output_tokens": 100
+       }
+      }
+     ],
+     "high": "15000000",
+     "identities": [
+      "openai/gpt-6-astra"
+     ],
+     "low": "15000000",
+     "state": "valued"
+    }
+   }
+  ],
+  "inventory": [],
+  "lifecycle": {
+   "S1": {
+    "clock": "trusted",
+    "reopened": false,
+    "state": "open"
+   }
+  },
+  "non_attempt": [],
+  "unreadable": []
+ },
+ "findings": [
+  "OQ-1"
+ ],
+ "group": "P1.32",
+ "historical": {},
+ "inputs": {
+  "gates": [
+   {
+    "authority": {
+     "id": "wev-admission-authority-1",
+     "kind": "vertical_admission_authority"
+    },
+    "effective_from": "2026-11-10T06:00:05Z",
+    "effective_until": null,
+    "gate_id": "g-S1",
+    "mechanisms": {
+     "billing_bound": {
+      "enforced": false
+     },
+     "new_forwarding": {
+      "enforced": true,
+      "receipt": {
+       "ref": "authority-receipt:S1-new_forwarding",
+       "sha256": "48627919de37a2276f5dcb1de5efce5082508a99f2a0479b1c2923e093152f69"
+      }
+     },
+     "reopening": {
+      "enforced": true,
+      "receipt": {
+       "ref": "authority-receipt:S1-reopening",
+       "sha256": "6a59c035f1ded753aa69c6cee1f5626faf2a2bf2d93366d378a07bf12c4cdb08"
+      }
+     },
+     "retries": {
+      "enforced": true,
+      "receipt": {
+       "ref": "authority-receipt:S1-retries",
+       "sha256": "ad74cf4e263dd56b37d9cef747ce3273809e06de4eefc5f3050c919c71cb2d39"
+      }
+     }
+    },
+    "scope": {
+     "kind": "session"
+    },
+    "session": "00000000-0000-4000-8000-0000000000c1",
+    "writer": "authority"
+   }
+  ],
+  "rates": {
+   "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  },
+  "reference_time": "2026-11-10T07:00:00Z",
+  "sessions": [
+   {
+    "alias": "S1",
+    "launch": {
+     "auth_lane": "api",
+     "model": "openai/gpt-6-astra",
+     "parent": "root"
+    },
+    "lifecycle": [
+     {
+      "at": "2026-11-10T06:00:10Z",
+      "event": "launch",
+      "turn": 1
+     }
+    ],
+    "logs": {
+     "turn-1": {
+      "final_newline": true,
+      "lines": [
+       "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.5, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
+       "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.5, \"charged_usd\": 0.015, \"charge_basis\": \"usage\", \"session_spent_usd\": 0.015, \"multiplier_floor\": 0.0}}"
+      ]
+     }
+    },
+    "session_id": "00000000-0000-4000-8000-0000000000c1"
+   }
+  ]
+ },
+ "invariants": [
+  "INV-A9",
+  "INV-A8"
+ ],
+ "notes": "Open session; the gate enforces forwarding, retries and reopening but no billing bound, so the commitment stays AtLeast (known portion below the limit).",
+ "profile": "future_qualified_gate",
+ "provenance": {
+  "origin": "contract::2.3 ExecutionGate (future vertical twin of VC14-open-session-commitment)"
+ },
+ "rationale": " Revision6: root policy P1-P6; independently frozen source/line arithmetic f097e5a5. Qualified identities preserve family; successful terminal AND integer200 AND required billing counts establishes completion. Closed obligations retain evidence by; none has amount_source none. Future gates use separate conditional test_mock witness; no live qualification.",
+ "reachability": "producer_unreachable",
+ "revisions": [],
+ "revisions_r3": [],
+ "revisions_r4": [],
+ "revisions_r5": [
+  {
+   "field": "attempts[res:S1/turn-1:rid=1].replacement",
+   "from": "__absent__",
+   "rule": "A-01 2.1: replacement eligibility is an explicit fact",
+   "to": {
+    "eligible": true,
+    "reason": "UsageBound"
+   }
+  }
+ ],
+ "revisions_r6": [
+  {
+   "field": "evaluations",
+   "from": [
+    {
+     "admission_request": {
+      "new": "100000000",
+      "objective": "o"
+     },
+     "expected": {
+      "admission": {
+       "decision": "not_established",
+       "limit": "1000000000",
+       "new": "100000000",
+       "objective": "o"
+      },
+      "attribution": [
+       {
+        "attempt": "res:S1/turn-1:rid=1",
+        "objective": "o",
+        "ownership": "owned",
+        "placement": "inside"
+       }
+      ],
+      "objectives": [
+       {
+        "commitments": [
+         {
+          "admission_id": "a1",
+          "committed": "485000000",
+          "gate": {
+           "qualified": false,
+           "reasons": [
+            "GateMechanismMissing"
+           ]
+          },
+          "kind": "at_least",
+          "state": "launched_open"
+         }
+        ],
+        "objective": "o",
+        "owned_closed": {
+         "high": {
+          "kind": "exact",
+          "nano": "15000000"
+         },
+         "low": "15000000"
+        },
+        "owned_outstanding": {
+         "high": {
+          "kind": "exact",
+          "nano": "0"
+         },
+         "low": "0"
+        },
+        "predecessor_obligations": {
+         "high": {
+          "kind": "exact",
+          "nano": "0"
+         },
+         "low": "0"
+        },
+        "provisional": false,
+        "reasons": [
+         "UnenforcedCommitment"
+        ],
+        "status": "not_established"
+       }
+      ]
+     },
+     "name": "limit-1.0",
+     "objectives": [
+      {
+       "admission_authority": {
+        "id": "wev-admission-authority-1",
+        "kind": "vertical_admission_authority"
+       },
+       "admissions": [
+        {
+         "admission_id": "a1",
+         "gate_id": "g-S1",
+         "rows": [
+          {
+           "admission_id": "a1",
+           "at": "2026-11-10T06:00:05Z",
+           "event": "pending",
+           "max_usd": 0.5
+          },
+          {
+           "admission_id": "a1",
+           "at": "2026-11-10T06:00:10Z",
+           "event": "launched",
+           "session_id": "00000000-0000-4000-8000-0000000000c1"
+          }
+         ],
+         "session": "00000000-0000-4000-8000-0000000000c1",
+         "source": "journal"
+        }
+       ],
+       "closed_at": null,
+       "limit": "1000000000",
+       "objective": "o",
+       "predecessor": null,
+       "started_at": "2026-11-10T06:00:00Z",
+       "tree_sessions": [
+        "00000000-0000-4000-8000-0000000000c1"
+       ]
+      }
+     ]
+    }
+   ],
+   "rule": "root P1-P6 approval07303d5c; frozen raw facts f097e5a5; explicit conjunction resolution and family preservation",
+   "to": [
+    {
+     "admission_request": {
+      "new": "100000000",
+      "objective": "o"
+     },
+     "expected": {
+      "admission": {
+       "decision": "not_established",
+       "limit": "1000000000",
+       "new": "100000000",
+       "objective": "o"
+      },
+      "attribution": [
+       {
+        "attempt": "res:S1/turn-1:rid=1",
+        "objective": "o",
+        "ownership": "owned",
+        "placement": "inside"
+       }
+      ],
+      "objectives": [
+       {
+        "commitments": [
+         {
+          "admission_id": "a1",
+          "committed": "485000000",
+          "gate": {
+           "qualified": false,
+           "reasons": [
+            "GateMechanismMissing"
+           ],
+           "verification_payload_sha256": "a5066ada92e0433232f520ff9ebec772606a26a77ce284f32b214cfa1e2d55e2",
+           "verification_source": "test_mock"
+          },
+          "kind": "at_least",
+          "state": "launched_open"
+         }
+        ],
+        "objective": "o",
+        "owned_closed": {
+         "high": {
+          "kind": "exact",
+          "nano": "15000000"
+         },
+         "low": "15000000"
+        },
+        "owned_outstanding": {
+         "high": {
+          "kind": "exact",
+          "nano": "0"
+         },
+         "low": "0"
+        },
+        "predecessor_obligations": {
+         "high": {
+          "kind": "exact",
+          "nano": "0"
+         },
+         "low": "0"
+        },
+        "provisional": false,
+        "reasons": [
+         "UnenforcedCommitment"
+        ],
+        "status": "not_established"
+       }
+      ]
+     },
+     "name": "limit-1.0",
+     "objectives": [
+      {
+       "admission_authority": {
+        "id": "wev-admission-authority-1",
+        "kind": "vertical_admission_authority"
+       },
+       "admissions": [
+        {
+         "admission_id": "a1",
+         "gate_id": "g-S1",
+         "rows": [
+          {
+           "admission_id": "a1",
+           "at": "2026-11-10T06:00:05Z",
+           "event": "pending",
+           "max_usd": 0.5
+          },
+          {
+           "admission_id": "a1",
+           "at": "2026-11-10T06:00:10Z",
+           "event": "launched",
+           "session_id": "00000000-0000-4000-8000-0000000000c1"
+          }
+         ],
+         "session": "00000000-0000-4000-8000-0000000000c1",
+         "source": "journal"
+        }
+       ],
+       "closed_at": null,
+       "limit": "1000000000",
+       "objective": "o",
+       "predecessor": null,
+       "started_at": "2026-11-10T06:00:00Z",
+       "tree_sessions": [
+        "00000000-0000-4000-8000-0000000000c1"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "field": "expected",
+   "from": {
+    "attempts": [
+     {
+      "billing": "established",
+      "blocking": [],
+      "correlation": {
+       "kind": "exact"
+      },
+      "diagnostics": [],
+      "evidence": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "execution": "terminal",
+      "exposure": {
+       "high": {
+        "basis": "usage_valuation",
+        "kind": "exact",
+        "nano": "15000000"
+       },
+       "low": {
+        "basis": "usage_valuation",
+        "nano": "15000000"
+       },
+       "pool": "pi_api"
+      },
+      "forwarding": "forwarded",
+      "key": "res:S1/turn-1:rid=1",
+      "obligation": {
+       "amount_source": "settlement_amount",
+       "state": "closed"
+      },
+      "replacement": {
+       "eligible": true,
+       "reason": "UsageBound"
+      },
+      "settlement": {
+       "basis": "usage",
+       "charged": "15000000",
+       "decision": "valid",
+       "reasons": [],
+       "reserved": "500000000"
+      },
+      "valuation": {
+       "complete": true,
+       "derivations": [
+        {
+         "for": "both",
+         "model": "gpt-6-astra",
+         "nano": "15000000",
+         "provider": "openai",
+         "tier_multiplier": "1",
+         "usage": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0,
+          "input_tokens": 1000,
+          "output_tokens": 100
+         }
+        }
+       ],
+       "high": "15000000",
+       "identities": [
+        "gpt-6-astra"
+       ],
+       "low": "15000000",
+       "state": "valued"
+      }
+     }
+    ],
+    "inventory": [],
+    "lifecycle": {
+     "S1": {
+      "clock": "trusted",
+      "reopened": false,
+      "state": "open"
+     }
+    },
+    "non_attempt": [],
+    "unreadable": []
+   },
+   "rule": "root P1-P6 approval07303d5c; frozen raw facts f097e5a5; explicit conjunction resolution and family preservation",
+   "to": {
+    "attempts": [
+     {
+      "billing": "established",
+      "blocking": [],
+      "correlation": {
+       "kind": "exact"
+      },
+      "diagnostics": [],
+      "evidence": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "execution": "terminal",
+      "exposure": {
+       "high": {
+        "basis": "usage_valuation",
+        "kind": "exact",
+        "nano": "15000000"
+       },
+       "low": {
+        "basis": "usage_valuation",
+        "nano": "15000000"
+       },
+       "pool": "pi_api"
+      },
+      "forwarding": "forwarded",
+      "key": "res:S1/turn-1:rid=1",
+      "obligation": {
+       "amount_source": "settlement_amount",
+       "by": "S1/turn-1:2",
+       "state": "closed"
+      },
+      "replacement": {
+       "eligible": true,
+       "reason": "UsageBound"
+      },
+      "settlement": {
+       "basis": "usage",
+       "charged": "15000000",
+       "decision": "valid",
+       "reasons": [],
+       "reserved": "500000000"
+      },
+      "valuation": {
+       "complete": true,
+       "derivations": [
+        {
+         "for": "both",
+         "model": "gpt-6-astra",
+         "nano": "15000000",
+         "provider": "openai",
+         "tier_multiplier": "1",
+         "usage": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0,
+          "input_tokens": 1000,
+          "output_tokens": 100
+         }
+        }
+       ],
+       "high": "15000000",
+       "identities": [
+        "openai/gpt-6-astra"
+       ],
+       "low": "15000000",
+       "state": "valued"
+      }
+     }
+    ],
+    "inventory": [],
+    "lifecycle": {
+     "S1": {
+      "clock": "trusted",
+      "reopened": false,
+      "state": "open"
+     }
+    },
+    "non_attempt": [],
+    "unreadable": []
+   }
+  },
+  {
+   "field": "trusted_fixture_inputs",
+   "from": "__absent__",
+   "rule": "root P1-P6 approval07303d5c; frozen raw facts f097e5a5; explicit conjunction resolution and family preservation",
+   "to": {
+    "gate_verifications": {
+     "g-S1": {
+      "authority_id": "wev-admission-authority-1",
+      "payload_sha256": "a5066ada92e0433232f520ff9ebec772606a26a77ce284f32b214cfa1e2d55e2",
+      "policy_ref": "root-P5-conditional-only",
+      "session": "00000000-0000-4000-8000-0000000000c1",
+      "source": "test_mock",
+      "verification_evidence": "independent-test-harness:exact-payload-binding"
+     }
+    }
+   }
+  }
+ ],
+ "revisions_r7": [
+  {
+   "field": "limit-1.0/o.provisional",
+   "from": false,
+   "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+   "to": true
+  }
+ ],
+ "role": "finding",
+ "schema": "pi-accounting-corpus/1",
+ "trusted_fixture_inputs": {
+  "gate_verifications": {
+   "g-S1": {
+    "authority_id": "wev-admission-authority-1",
+    "payload_sha256": "a5066ada92e0433232f520ff9ebec772606a26a77ce284f32b214cfa1e2d55e2",
+    "policy_ref": "root-P5-conditional-only",
+    "session": "00000000-0000-4000-8000-0000000000c1",
+    "source": "test_mock",
+    "verification_evidence": "independent-test-harness:exact-payload-binding"
+   }
+  }
+ }
+}

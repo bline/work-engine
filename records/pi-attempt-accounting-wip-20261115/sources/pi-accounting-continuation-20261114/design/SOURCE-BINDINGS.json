@@ -1,0 +1,289 @@
+{
+  "kind": "bounded design source bindings; not whole-corpus or whole-freeze verification",
+  "input_packet": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/design/PACKET.md",
+    "sha256": "2de4c7412db2eb457a43bd35996639618944e9f1b3936b4ddf7e7b0e8bb5d2ab"
+  },
+  "subject_root": "/home/bline/cbm-work/p137-s1r7/s1",
+  "predecessor_manifest_sha256": "c1c40727648b40f3494b5444065cdef3a7824a42249426dc860dece95423ceda",
+  "manifest_standing": "Inherited exact subject identity; selected file hashes compared with predecessor SOURCE-BINDINGS, not independently recomputed whole freeze",
+  "entries": [
+    {
+      "path": "/home/bline/code/work-engine/DESIGN.md",
+      "sha256": "2213ab9a32925e7792353489599201bf71f3268eb8981cc192f87c57e2952095",
+      "bytes": 41500,
+      "evidence_mode": "direct_source_read"
+    },
+    {
+      "path": "/home/bline/code/work-engine/PHILOSOPHY.md",
+      "sha256": "299b0ad8192f3cc442f6491d2908f421f22333024ffb1423cae6856b69c3a307",
+      "bytes": 34973,
+      "evidence_mode": "direct_source_read"
+    },
+    {
+      "path": "/home/bline/code/work-engine/docs/model-selection.md",
+      "sha256": "77bdcc88cfb5417a1aba973ffa76263f9a3f4800bb9e237d7a25de3a0af9c998",
+      "bytes": 35543,
+      "evidence_mode": "direct_source_read"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/OWNER-HANDOFF.md",
+      "sha256": "c7b7b3d1de51bb599c30b2d6405ef58322593b671976ab6d755639f4136b23be",
+      "bytes": 7681,
+      "evidence_mode": "direct_source_read"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/ROOT-POLICY-R5.md",
+      "sha256": "57303fdb466c49ebe8f0d6fa095628c57c3f2018603114e12949af663f65eec5",
+      "bytes": 5236,
+      "evidence_mode": "direct_source_read"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/POLICY-AND-PLAN-APPROVAL.md",
+      "sha256": "07303d5c5c36276f6038bf9368f3a5fe660e39ee9160b8b3d92049de98abb981",
+      "bytes": 7832,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/PLAN-R5.md",
+      "sha256": "f56a090316759b3463c2e3ca69f53f7c31b1d78396a2b1fdb2e91c483cff15b8",
+      "bytes": 24861,
+      "evidence_mode": "direct_source_read"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/RESULT-R5.md",
+      "sha256": "09ae7ede4f9f4bfab4a41710012d352daf199accbe81b32e4170282eb7fbec34",
+      "bytes": 2056,
+      "evidence_mode": "direct_source_read"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/design-r5/review/sealed/reviewer-response.md",
+      "sha256": "96315599eaa424f02f005c3f4b3016bc3b2cbbc6714d7421347a3cc9a55a2fcb",
+      "bytes": 10929,
+      "evidence_mode": "direct_source_read"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/design-r5/ROOT-DISPOSITION.md",
+      "sha256": "020f0f1c35b1478d2a06f884ef5dbe35cad145e8abd24b65ceceff825cd24ba3",
+      "bytes": 3475,
+      "evidence_mode": "direct_source_read"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/module-A/ROOT-DISPOSITION.md",
+      "sha256": "f0492cc4b9c829277ad75d5532e62ab3e1446f73d3ba12d7e7d67fe19f084f67",
+      "bytes": 3220,
+      "evidence_mode": "direct_source_read"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/module-A/review/sealed/reviewer-response.md",
+      "sha256": "b4b1ed688ceac5574eeced36936d5754dfb7e588334c93842d6b9559ce1e67f2",
+      "bytes": 11599,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/SOURCE-BINDINGS.json",
+      "sha256": "5adc27747b376f19ab68135ddd6689f26ca57dc488a0e49957784b39f41cf771",
+      "bytes": 43066,
+      "evidence_mode": "direct_source_read"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/SOURCE-BINDINGS-R4.json",
+      "sha256": "e619cdd6a07bbbe984038f7817db2749cdd4ac926b0e1c3671e6fa2fb5c50e08",
+      "bytes": 972,
+      "evidence_mode": "direct_source_read"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/scope-census/scope-census.json",
+      "sha256": "c5fdee5e0b5359aabef067b818dc87f5694137f94b50cd8995d3c5c08c49582b",
+      "bytes": 1397,
+      "evidence_mode": "direct_source_read"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/scope-census/scope-census.stdout",
+      "sha256": "c76c7ce1d74a458c7a6d9f011c32547919fb34c10ebead1fa8ed614529312202",
+      "bytes": 3464,
+      "evidence_mode": "direct_source_read"
+    },
+    {
+      "path": "/home/bline/cbm-work/p134-module-a/packet/sources/producer/pi_container.py.excerpts",
+      "sha256": "bfd226df9fc1fb8b5395a74490e3c1696273fab08e15d0e4da19b951320bb4b8",
+      "bytes": 55157,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/spec/ck.json",
+      "sha256": "d9a1b21199980a80342f4f27b23707d2afe3e6c87902b35fff2650dd806f854e",
+      "bytes": 181876,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/spec/ck.schema.json",
+      "sha256": "556cb140fe2ea12470828bd9886d1ae20576c6336184c046a6b4269752f06651",
+      "bytes": 12581,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/spec/interface.json",
+      "sha256": "17e9430821e4fe25ddfec3ea3788b0d63e795f6ba47fa38c52655bec626afa5e",
+      "bytes": 4467,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/spec/dependencies.json",
+      "sha256": "0562e6a309fb222b115bd919d5aea0df4151f3a718549d48f5e95a429ec33c50",
+      "bytes": 8458,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/tooling/spec-check/src/lib.rs",
+      "sha256": "99c9e8ac5bb948c72d3149fef306e5abb52257071cb5255333faf168297a15df",
+      "bytes": 37458,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/tooling/spec-check/src/decisions.rs",
+      "sha256": "b31205b03d0e9e381068e81680c84639d76bfaa743b9359d799f0d7fffeb5a6b",
+      "bytes": 22932,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/tooling/spec-check/tests/independent_raw_axes.rs",
+      "sha256": "34b3ac6bd007dcfaa7659eae0f4935fac42d63f2cde21df8d924fd9daeebcd66",
+      "bytes": 40583,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/validator/validate_corpus.py",
+      "sha256": "12cb4f55d21b0797b2932606fb9d0abb6a4a8e95e5a4c9880f301d4ff7f514e9",
+      "bytes": 90353,
+      "evidence_mode": "direct_source_read"
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/SCHEMA.md",
+      "sha256": "c7c6a2be07b0390cbadf59d09dc9f5bd95183fba2b0763fc86fa084e690bf820",
+      "bytes": 72296,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/VC01-openai-usage-settlement.json",
+      "sha256": "4395e4e781e68b420f07da44208e1d2c1ac608b0c5ab131535b1b5d5df24aaf0",
+      "bytes": 13017,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/V01-usage-settlement-other-response-model.json",
+      "sha256": "dec00265d0df5df6b68ca03426a50800c0c6ee5da838c9bd5b2501f4b563c7c7",
+      "bytes": 15454,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N01-identity-refusal-dearer-served.json",
+      "sha256": "e4b7fad7ea2ef6a02d4dc85992c4364e74680a488aa744f558b82d337ab3cfaf",
+      "bytes": 16382,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N01-variant-reservation-above-both.json",
+      "sha256": "0f922859950b4857e936390a3605d54acbc5ce5135a481f15196328a520d708e",
+      "bytes": 16462,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/VC07-read-failure-paired.json",
+      "sha256": "f89c9de4e82f5af2b13ae876f3e0d68085c90364b0c8280f7734768e9028dd90",
+      "bytes": 11797,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/A06-reservation-usage-null-status-no-id.json",
+      "sha256": "a6da000895de34c137c595a6d8e231aa8b37acd354dbf9d1d9031cbc7cc6b701",
+      "bytes": 17741,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-R05-conflicting-keeps-valuation-high.json",
+      "sha256": "95c0b57c716a89dc22e4861920ff9ea8eaff58f9126718b4757f316c3d3eb4f2",
+      "bytes": 16333,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-A09-conflicting-reservations-with-settlement.json",
+      "sha256": "a8a3b21ed32399cb25a0a9190356c2444ffae9ce0f555afcaf8e6721e4ec93ea",
+      "bytes": 11731,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/V01-cheaper-response-model-undercharge.json",
+      "sha256": "edee53493a174952b22e4747b034d531f2b33c90caa645dd90f77f86283243ba",
+      "bytes": 15629,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/C3-identical-reservation-copy.json",
+      "sha256": "8218f2056a4ceef5276381df23241fd332e4e5e92c01d53dd690240d48616bc4",
+      "bytes": 13523,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N03-identity-refusal-in-subscription.json",
+      "sha256": "eddb1c1287c55e6bcdac3df421999545e3637660b7e1430b30eb3f7bb33474e1",
+      "bytes": 9971,
+      "evidence_mode": "direct_source_read",
+      "matches_predecessor_binding": true
+    }
+  ],
+  "graph": {
+    "tier": 2,
+    "project": "home-bline-code-work-engine",
+    "initial_generation": "2026-11-13T22:56:04Z",
+    "coverage_generation": "2026-11-14T03:09:23Z",
+    "store_generation": "ue37b7fae9a425365g2",
+    "external_paths": "outside_project/unavailable; direct exact-source fallback; 37 paths returned, no pagination",
+    "repository_docs": "Second relative-path coverage check: DESIGN.md, PHILOSOPHY.md, docs/model-selection.md no_recorded_issue, metadata_match, content_verified; clean is not completeness proof"
+  },
+  "source_selections": {
+    "DESIGN.md": "all817lines",
+    "PHILOSOPHY.md": "all885lines",
+    "docs/model-selection.md": "architecture/planning defaults and escalation lines30-110",
+    "spec/ck.json": "top-level outline; CORRELATION, VALUATION, USAGE-PRESENCE, SETTLEMENT-WITNESS, X-COMPONENTS; stages/boundaries; X decision prefix",
+    "spec/ck.schema.json": "properties.boundaries and Stage.id enum",
+    "spec/interface.json": "top-level shape; actual values independently read from selected corpus cases",
+    "spec/dependencies.json": "top-level/consumer dependency sections; C/V stage and node_edges source",
+    "tooling/spec-check/src/lib.rs": "signatures;125-132,160-234,524-588",
+    "tooling/spec-check/src/decisions.rs": "329-336,442-468",
+    "tooling/spec-check/tests/independent_raw_axes.rs": "signatures;106-164,320-375,429-448,895-906",
+    "validator/validate_corpus.py": "400-505",
+    "corpus/SCHEMA.md": "headings/actual corpus envelope references",
+    "producer/pi_container.py.excerpts": "original1285-1328,1340-1367,1443-1475,1576-1585 and targeted literal inventory",
+    "corpus/cases": "inputs and expected.attempts for the eleven named case entries; no full-corpus conformance claim",
+    "predecessor_SOURCE-BINDINGS": "selected identity/hash entries; truncated broad read not relied on as exhaustive inventory",
+    "scope-census": "attributed custody record and complete3464byte stdout; not rerun"
+  },
+  "limits": [
+    "No raw reducer, arbitrary evaluator, consumer executable probe or tests were run for this design.",
+    "Prior executable reproductions and census remain attributed predecessor evidence.",
+    "Schema/Python/source findings are exact-source observations; proposed arithmetic/ownership behavior is specification reasoning, not reducer execution.",
+    "Current output qualification, full-corpus effects and live provenance remain unestablished."
+  ]
+}

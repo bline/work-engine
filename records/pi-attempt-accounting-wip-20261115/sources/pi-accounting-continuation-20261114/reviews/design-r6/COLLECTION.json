@@ -1,0 +1,12 @@
+{
+  "session_id": "01a1d811-93de-7ef0-9cc7-76d34f3a90cd",
+  "turn_id": "01a1d811-9716-7a50-be3b-6dff2250a6cd",
+  "status": "completed",
+  "error": null,
+  "startedAt": 1794626393,
+  "completedAt": 1794626818,
+  "assistant_message_id": "msg_0149f3c6631e950b016af7d4dedc7087d097004feebde09f98",
+  "collection": "native wait_threads exact turn; root sole collector",
+  "reviewer_prompt": "design/REVIEW-PACKET.md",
+  "identity_binding_delivery": "postlaunch role_host deliver refused_busy; no delivered-binding claim; reviewer final independently ACKs verified SID; explicit ACK-only continuation pending"
+}

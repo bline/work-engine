@@ -1,0 +1,54 @@
+{
+  "measurement": "API-equivalent speed-adjusted subscription cost proxy; not invoice or calibrated quota",
+  "root_prelude_proxy": 0.3553676,
+  "pi_proxy_overlays": [
+    {
+      "name": "P135",
+      "session_id": "e60d2cb6-f66e-4f60-a2d2-fc8e5c9fdd48",
+      "proxy": 1.73236
+    },
+    {
+      "name": "R6A",
+      "session_id": "5e169aea-4706-44c6-b411-c4f3e219318b",
+      "proxy": 2.15749
+    },
+    {
+      "name": "DESIGN_R2",
+      "session_id": "5b9f03b7-1ee4-47f6-9a90-babec8d480f3",
+      "proxy": 2.55566
+    },
+    {
+      "name": "R7A",
+      "session_id": "783244bb-3cf3-435e-9bd6-a3306e1fb968",
+      "proxy": 2.76662
+    },
+    {
+      "name": "DESIGN_R3",
+      "session_id": "91e307d2-8e9b-483b-a7ad-5ff7a21a3f75",
+      "proxy": 2.74759
+    },
+    {
+      "name": "DESIGN_R4",
+      "session_id": "1a2a7e39-a9b5-42ab-8e28-6c6b0716a782",
+      "proxy": 2.66138
+    }
+  ],
+  "formula": "sum usage-ledger objective quota_usd_high pools + these six Pi proxy values + root prelude; do not count other roots/unattributed objective data",
+  "invoice_and_quota": "unknown",
+  "api_calls_launched": 0,
+  "unused_pi_api_allocation": 54,
+  "root_collector": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "unsettled_review_calls": [
+    {
+      "session_id": "2a40e367-cacd-42ba-8d4a-02d29218af85",
+      "host_accounting_unknown": true,
+      "unresolved_admissions": [
+        1
+      ],
+      "pi_reported_proxy": 2.73592,
+      "host_settled_proxy": null,
+      "never_zero": true,
+      "evidence": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/design-r5/review/root-terminal-status.json"
+    }
+  ]
+}

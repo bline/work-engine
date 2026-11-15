@@ -1,0 +1,30 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/JOIN.plan.json",
+  "plan_sha256": "e207bd1fe59e9961aab3c1111c4bc0dca3efe5d94ab8fe4337a829a5f787c0c6",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/join-custody/build.json",
+      "record_sha256": "0bdd223e00619b4655f7bade5cbfa585279520b193d78fec003ec7f3ac6e1704",
+      "leftovers": 0
+    },
+    {
+      "name": "joined-rust-positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/join-custody/joined-rust-positive.json",
+      "record_sha256": "d35018070e0a9d5e693396ebe0bcccaa228aa8b4e71d95bc769d02316d4fd7fa",
+      "leftovers": 0
+    },
+    {
+      "name": "python-main-pilot",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/join-custody/python-main-pilot.json",
+      "record_sha256": "3f2bd8f300216fb365c83afe5f0dfba44cbaa6770d5d8597d7d85de652e7807b",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

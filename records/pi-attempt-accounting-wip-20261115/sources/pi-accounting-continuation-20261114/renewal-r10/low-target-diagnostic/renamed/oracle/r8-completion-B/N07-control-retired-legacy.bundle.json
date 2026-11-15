@@ -1,0 +1,66 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "oracle/r8-completion-B/DERIVATIONS.json#N07-control-retired-legacy",
+        "predecessor_subject_refs": [
+          "baseline:7afa9986a27172566bde162f8bfe49e78611b4fb1e77a9327e538415f3b84b76"
+        ],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": []
+      },
+      "exact_links": [],
+      "grants": [],
+      "id": "input:N07-control-retired-legacy",
+      "identity_bindings": [],
+      "initial_contracts": [],
+      "kind": "accounting_input_proof",
+      "lineage_id": "N07-control-retired-legacy",
+      "origins": [],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [],
+      "continuity_result": "unestablished",
+      "coverage_decisions": [],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [],
+      "id": "result:N07-control-retired-legacy",
+      "input_proof_ref": "input:N07-control-retired-legacy",
+      "kind": "accounting_result",
+      "lineage_id": "N07-control-retired-legacy",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "N07-control-retired-legacy/default/o/owned_closed",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        },
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "N07-control-retired-legacy/default/o/owned_outstanding",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        }
+      ],
+      "origins": [],
+      "primary_validities": [],
+      "unbudgeted_applicabilities": [],
+      "unbudgeted_completions": [],
+      "units": [],
+      "valuation_records": [],
+      "version": "1.7-s1"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/TOKEN-MODE-CONTINUATION-4.md",
+  "sha256": "87b1f44a70330c18d71c4f4d387b1bd45c1f82affed61da724eca3cf03ba7cbe",
+  "bytes": 16072,
+  "source_window": "01a1d885-a3ea-7e62-baee-1ba12fb14231",
+  "sid": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "state": "prepared_for_ownnew_context",
+  "remaining_owned_collection": [
+    "C1nativefinal",
+    "B1semanticassessment",
+    "D7exactamendment/retainedreviewdisposition"
+  ],
+  "listener": "33374terminal130collected"
+}

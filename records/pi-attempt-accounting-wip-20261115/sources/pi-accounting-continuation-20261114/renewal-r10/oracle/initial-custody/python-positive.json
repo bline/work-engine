@@ -1,0 +1,65 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "python-positive",
+  "argv": [
+    "python3",
+    "validator/validate_corpus.py",
+    "check",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+    "--pilot"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+  "env_clear": false,
+  "env_set": {
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3539648,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/validator/r9_pilot.py",
+      "type": "file",
+      "mode": 420,
+      "length": 19908,
+      "sha256": "1655883af006ffcc216f48c70eb557e1ecae5cc1bef9482627773ce5bbcc4b8b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/validator/r10_admitted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 481969,
+      "sha256": "716f44b11fe96ec3051fac6304340ae0e2dc13e3bca9a8ccf86ac135795b4ec2"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/validator/validate_corpus.py",
+      "type": "file",
+      "mode": 420,
+      "length": 107297,
+      "sha256": "22b7423a856710d39cc8742cb444f2f82bab1beed6a2869754da1012e0d960f9"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 3539650,
+  "pgid": 3539650,
+  "started_at": "2026-11-14T07:03:42.743830Z",
+  "ended_at": "2026-11-14T07:03:42.921582Z",
+  "duration_s": 0.178,
+  "returncode": 1,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/initial-custody/python-positive.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/initial-custody/python-positive.stderr",
+    "length": 1168,
+    "sha256": "f90adb2473bbd1b3ec8efb4c0012f72eb5ce128a23dff2b98a1c8afb68dae012"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

@@ -1,0 +1,37 @@
+{
+  "at": "2026-11-14T10:38:12.411334+00:00",
+  "status": "PROPOSED_FUNDING_ONLY_NOT_AUTHORITY",
+  "current_grant_proxy": 100,
+  "current_spend_proxy": 67.429798,
+  "current_remaining_proxy": 32.570201999999995,
+  "existing_holds": {
+    "materialization": 3,
+    "qualification": 2,
+    "full_review": 20,
+    "closure": 6
+  },
+  "existing_holds_total": 31,
+  "unreserved_before_tail": 1.5702019999999948,
+  "finding": "No credible full continuation fits current unreserved allowance: no whole case/scope independently derived; structural primitives and independent full predicates still absent. Stop new commitments before mutation; preserve required acceptance.",
+  "requested_ceiling_proxy": 150,
+  "requested_increment_proxy": 50,
+  "proposed_future_envelopes": {
+    "independent_full_derivation_and_authority_frontier": 10,
+    "structural_spec_schema_wire_dependencies": 8,
+    "oracle_outputs_and_two_actual_qualifiers": 15,
+    "root_qualification_custody_and_freeze": 4,
+    "complete_exact_current_ABC_review": 25,
+    "remediation_closure_and_recovery": 10
+  },
+  "total_future_envelopes": 72,
+  "proposed_margin_before_tails": 10.570201999999995,
+  "conditions": [
+    "Same original full175/374/all11/currentABC objective, no additions",
+    "No deadline or guaranteed completion inferred",
+    "Current source remains immutable; exact interfaces/truth/admission before dependent corrections",
+    "Review/qualification requirements and serious-recurrence design gate unchanged",
+    "Reconcile tails/account capacity before new paid work",
+    "Do not change current100 assignment until explicit human approval; no integration/commit/push/S2a"
+  ],
+  "pending_human_question": "May I raise this renewed budget ceiling from100 to150 proxy dollars to continue the saved full-S1 scope?"
+}

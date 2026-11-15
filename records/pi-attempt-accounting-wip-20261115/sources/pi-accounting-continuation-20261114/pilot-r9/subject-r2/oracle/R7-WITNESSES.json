@@ -1,0 +1,13 @@
+{
+ "version":"1.6-s1","revision":7,
+ "author":"independent Codex oracle01a1d743-6770-7f62-8b09-00671cb43500",
+ "policy":"root P1-P6 and r7 financial-provisionality packet",
+ "witnesses":[
+  {"axis":"subscription_lane_with_reservation","raw":{"launch":{"auth_lane":"subscription"},"reservation":{"event":"usd_reserved","rid":1,"reserved_usd":0.5}},"reservation_nano":"500000000","required_high_kind":"at_least","invalid_output":{"billing":"established","high":{"kind":"exact","nano":"0"}},"standing":"synthetic_bounded_assertion_not_writer_reachability"},
+  {"axis":"anthropic_tier","negative":"default","positive":["standard",null,"absent"],"standing":"raw_mutation_controls_in_independent_rust_tests"},
+  {"axis":"anthropic_lifetime_split","negative":"5m+1h>aggregate","required":"retain supported range;complete=false","standing":"raw_mutation_controls_in_independent_rust_tests"},
+  {"axis":"writer_floor_U08","source":"pi_container.py:964-966,1007-1020","raw_floor":0,"minimum_required_floor":2,"standing":"synthetic_old_bytes_not_writer_reachable"},
+  {"axis":"writer_floor_P130-R02","source":"pi_container.py:964-966,1007-1020","raw_floor":0,"minimum_required_floor":1,"standing":"synthetic_old_bytes_not_writer_reachable"}
+ ],
+ "limitations":["No full financial reference reducer","Full raw C-K unestablished","Live gate authority unestablished;test_mock only","Separate authorship not attestation of isolation"]
+}

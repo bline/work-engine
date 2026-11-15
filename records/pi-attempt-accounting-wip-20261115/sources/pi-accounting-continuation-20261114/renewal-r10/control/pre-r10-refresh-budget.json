@@ -1,0 +1,474 @@
+{
+  "closed_at": null,
+  "events": [
+    {
+      "authority": "observation_only",
+      "kind": "limit_fraction",
+      "level": 50.0,
+      "node_id": null,
+      "observed": {
+        "api_equivalent_usd_high": 50.7177172,
+        "api_equivalent_usd_low": 50.7177172,
+        "cost_basis": "speed_adjusted_api_usd",
+        "kind": "proxy",
+        "quota_usd_high": 50.7177172,
+        "quota_usd_low": 50.7177172,
+        "unpriced_calls": 0
+      },
+      "pool": "codex",
+      "set_by": "user",
+      "snapshot_at": "2026-11-14T09:21:57.519571+00:00",
+      "summary": "spend limit",
+      "topic": "control:budget:2c386030-0017-4c4d-9461-d9bd47d1cfc3"
+    },
+    {
+      "authority": "observation_only",
+      "kind": "node_mark_crossed",
+      "level": 15.0,
+      "node_id": "01a1d8ee-19cd-7e12-ad6c-73356f2366a4",
+      "observed": {
+        "api_equivalent_usd_high": 16.346162,
+        "api_equivalent_usd_low": 16.346162,
+        "cost_basis": "speed_adjusted_api_usd",
+        "kind": "proxy",
+        "quota_usd_high": 16.346162,
+        "quota_usd_low": 16.346162,
+        "unpriced_calls": 0
+      },
+      "pool": "codex",
+      "set_by": "supervisor",
+      "snapshot_at": "2026-11-14T09:21:57.519571+00:00",
+      "summary": "spend mark",
+      "topic": "control:budget:2c386030-0017-4c4d-9461-d9bd47d1cfc3"
+    },
+    {
+      "authority": "observation_only",
+      "kind": "node_mark_crossed",
+      "level": 4.0,
+      "node_id": "01a1d8fb-cc66-7c02-80a6-d7c206e7396a",
+      "observed": {
+        "api_equivalent_usd_high": 4.350741999999999,
+        "api_equivalent_usd_low": 4.350741999999999,
+        "cost_basis": "speed_adjusted_api_usd",
+        "kind": "proxy",
+        "quota_usd_high": 4.350741999999999,
+        "quota_usd_low": 4.350741999999999,
+        "unpriced_calls": 0
+      },
+      "pool": "codex",
+      "set_by": "supervisor",
+      "snapshot_at": "2026-11-14T09:21:57.519571+00:00",
+      "summary": "spend mark",
+      "topic": "control:budget:2c386030-0017-4c4d-9461-d9bd47d1cfc3"
+    },
+    {
+      "authority": "observation_only",
+      "kind": "node_mark_crossed",
+      "level": 7.0,
+      "node_id": "01a1d919-2544-7fb2-befe-00237c74ced2",
+      "observed": {
+        "api_equivalent_usd_high": 8.458224000000003,
+        "api_equivalent_usd_low": 8.458224000000003,
+        "cost_basis": "speed_adjusted_api_usd",
+        "kind": "proxy",
+        "quota_usd_high": 8.458224000000003,
+        "quota_usd_low": 8.458224000000003,
+        "unpriced_calls": 0
+      },
+      "pool": "codex",
+      "set_by": "supervisor",
+      "snapshot_at": "2026-11-14T09:21:57.519571+00:00",
+      "summary": "spend mark",
+      "topic": "control:budget:2c386030-0017-4c4d-9461-d9bd47d1cfc3"
+    },
+    {
+      "authority": "observation_only",
+      "kind": "node_mark_crossed",
+      "level": 6.0,
+      "node_id": "01a1d948-776f-7bb0-a3b2-66602a6eec79",
+      "observed": {
+        "api_equivalent_usd_high": 7.422573999999999,
+        "api_equivalent_usd_low": 7.422573999999999,
+        "cost_basis": "speed_adjusted_api_usd",
+        "kind": "proxy",
+        "quota_usd_high": 7.422573999999999,
+        "quota_usd_low": 7.422573999999999,
+        "unpriced_calls": 0
+      },
+      "pool": "codex",
+      "set_by": "supervisor",
+      "snapshot_at": "2026-11-14T09:21:57.519571+00:00",
+      "summary": "spend mark",
+      "topic": "control:budget:2c386030-0017-4c4d-9461-d9bd47d1cfc3"
+    },
+    {
+      "authority": "observation_only",
+      "kind": "node_mark_crossed",
+      "level": 7.0,
+      "node_id": "01a1d948-776f-7bb0-a3b2-66602a6eec79",
+      "observed": {
+        "api_equivalent_usd_high": 7.422573999999999,
+        "api_equivalent_usd_low": 7.422573999999999,
+        "cost_basis": "speed_adjusted_api_usd",
+        "kind": "proxy",
+        "quota_usd_high": 7.422573999999999,
+        "quota_usd_low": 7.422573999999999,
+        "unpriced_calls": 0
+      },
+      "pool": "codex",
+      "set_by": "supervisor",
+      "snapshot_at": "2026-11-14T09:21:57.519571+00:00",
+      "summary": "spend mark",
+      "topic": "control:budget:2c386030-0017-4c4d-9461-d9bd47d1cfc3"
+    }
+  ],
+  "next_budget_cursor": "eyJhY2NvdW50X3F1b3RhX3N0YXR1cyI6ICJvYnNlcnZlZCIsICJvYmplY3RpdmVfaWQiOiAiMmMzODYwMzAtMDAxNy00YzRkLTk0NjEtZDliZDQ3ZDFjZmMzIiwgInN0YXRlcyI6IHsiW1wiY292ZXJhZ2VfY2hhbmdlZFwiLG51bGwsbnVsbCxcImNvdmVyYWdlXCJdIjogeyJyYW5nZWQiOiBmYWxzZSwgInN0YXR1cyI6ICJjb21wbGV0ZSIsICJ1bmRhdGVkX2NhbGxzIjogMCwgInVua25vd25fc3BlbmQiOiBmYWxzZSwgInVucHJpY2VkX2NhbGxzIjogMH0sICJbXCJsaW1pdF9mcmFjdGlvblwiLFwiY29kZXhcIixudWxsLDUwLjAsXCJ1c2VyXCJdIjogdHJ1ZSwgIltcImxpbWl0X2ZyYWN0aW9uXCIsXCJjb2RleFwiLG51bGwsODAuMCxcInVzZXJcIl0iOiBmYWxzZSwgIltcImxpbWl0X3JlYWNoZWRcIixcImNvZGV4XCIsbnVsbCwxMDAuMCxcInVzZXJcIl0iOiBmYWxzZSwgIltcIm1hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixudWxsLDYwLjAsXCJ1c2VyXCJdIjogZmFsc2UsICJbXCJtYXJrX2Nyb3NzZWRcIixcImNvZGV4XCIsbnVsbCw4MC4wLFwidXNlclwiXSI6IGZhbHNlLCAiW1wibWFya19jcm9zc2VkXCIsXCJjb2RleFwiLG51bGwsOTAuMCxcInVzZXJcIl0iOiBmYWxzZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ4ZGEtYzViZC03NjEyLWJhYzItYmZkZjFiMTg5ZTg3XCIsMTIuMCxcInN1cGVydmlzb3JcIl0iOiBmYWxzZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ4ZGEtYzViZC03NjEyLWJhYzItYmZkZjFiMTg5ZTg3XCIsMTUuMCxcInN1cGVydmlzb3JcIl0iOiBmYWxzZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ4ZGEtZTQ2Mi03YzcxLWEyNzgtZTIyZTI3NmJjMjZmXCIsMTUuMCxcInN1cGVydmlzb3JcIl0iOiBmYWxzZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ4ZGEtZTQ2Mi03YzcxLWEyNzgtZTIyZTI3NmJjMjZmXCIsMTguMCxcInN1cGVydmlzb3JcIl0iOiBmYWxzZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ4ZWUtMTljZC03ZTEyLWFkNmMtNzMzNTZmMjM2NmE0XCIsMTUuMCxcInN1cGVydmlzb3JcIl0iOiB0cnVlLCAiW1wibm9kZV9tYXJrX2Nyb3NzZWRcIixcImNvZGV4XCIsXCIwMWExZDhlZS0xOWNkLTdlMTItYWQ2Yy03MzM1NmYyMzY2YTRcIiwyMC4wLFwic3VwZXJ2aXNvclwiXSI6IGZhbHNlLCAiW1wibm9kZV9tYXJrX2Nyb3NzZWRcIixcImNvZGV4XCIsXCIwMWExZDhmYi1jYzY2LTdjMDItODBhNi1kN2MyMDZlNzM5NmFcIiw0LjAsXCJzdXBlcnZpc29yXCJdIjogdHJ1ZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ4ZmItY2M2Ni03YzAyLTgwYTYtZDdjMjA2ZTczOTZhXCIsNS4wLFwic3VwZXJ2aXNvclwiXSI6IGZhbHNlLCAiW1wibm9kZV9tYXJrX2Nyb3NzZWRcIixcImNvZGV4XCIsXCIwMWExZDkwOC00Njk3LTcyYzItYmE4My01NzhlMDkyZmI3MmFcIiw2LjAsXCJzdXBlcnZpc29yXCJdIjogZmFsc2UsICJbXCJub2RlX21hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixcIjAxYTFkOTA4LTQ2OTctNzJjMi1iYTgzLTU3OGUwOTJmYjcyYVwiLDguMCxcInN1cGVydmlzb3JcIl0iOiBmYWxzZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ5MTktMjU0NC03ZmIyLWJlZmUtMDAyMzdjNzRjZWQyXCIsNy4wLFwic3VwZXJ2aXNvclwiXSI6IHRydWUsICJbXCJub2RlX21hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixcIjAxYTFkOTE5LTI1NDQtN2ZiMi1iZWZlLTAwMjM3Yzc0Y2VkMlwiLDguNSxcInN1cGVydmlzb3JcIl0iOiBmYWxzZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ5MTktMjU0NC03ZmIyLWJlZmUtMDAyMzdjNzRjZWQyXCIsOS4wLFwic3VwZXJ2aXNvclwiXSI6IGZhbHNlLCAiW1wibm9kZV9tYXJrX2Nyb3NzZWRcIixcImNvZGV4XCIsXCIwMWExZDkyZS1kMTRmLTdkZjMtODFiMS1iZjQxYzFjOGEwNTlcIiw0LjAsXCJzdXBlcnZpc29yXCJdIjogZmFsc2UsICJbXCJub2RlX21hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixcIjAxYTFkOTJlLWQxNGYtN2RmMy04MWIxLWJmNDFjMWM4YTA1OVwiLDUuMCxcInN1cGVydmlzb3JcIl0iOiBmYWxzZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ5NDgtNzc2Zi03YmIwLWEzYjItNjY2MDJhNmVlYzc5XCIsNi4wLFwic3VwZXJ2aXNvclwiXSI6IHRydWUsICJbXCJub2RlX21hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixcIjAxYTFkOTQ4LTc3NmYtN2JiMC1hM2IyLTY2NjAyYTZlZWM3OVwiLDcuMCxcInN1cGVydmlzb3JcIl0iOiB0cnVlLCAiW1wibm9kZV9tYXJrX2Nyb3NzZWRcIixcImNvZGV4XCIsXCIwMWExZDk0OC03NzZmLTdiYjAtYTNiMi02NjYwMmE2ZWVjNzlcIiw4LjAsXCJzdXBlcnZpc29yXCJdIjogZmFsc2UsICJbXCJub2RlX21hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixcIjAxYTFkOTVhLTU4NmMtNzE4MS1iYmI3LTllNzczM2VmMjdhNFwiLDQuMCxcInN1cGVydmlzb3JcIl0iOiBmYWxzZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ5NWEtNTg2Yy03MTgxLWJiYjctOWU3NzMzZWYyN2E0XCIsNS4wLFwic3VwZXJ2aXNvclwiXSI6IGZhbHNlfX0",
+  "schema": "objective-budget-control-v1",
+  "snapshot": {
+    "cost_controls": [
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 100.0,
+        "node_id": null,
+        "observed": {
+          "api_equivalent_usd_high": 50.7177172,
+          "api_equivalent_usd_low": 50.7177172,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 50.7177172,
+          "quota_usd_low": 50.7177172,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 49.2822828,
+        "set_by": "user"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 15.0,
+        "node_id": "01a1d8da-c5bd-7612-bac2-bfdf1b189e87",
+        "observed": {
+          "api_equivalent_usd_high": 0.7659927999999995,
+          "api_equivalent_usd_low": 0.7659927999999995,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 0.7659927999999995,
+          "quota_usd_low": 0.7659927999999995,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 14.2340072,
+        "set_by": "supervisor"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 18.0,
+        "node_id": "01a1d8da-e462-7c71-a278-e22e276bc26f",
+        "observed": {
+          "api_equivalent_usd_high": 0.9880152,
+          "api_equivalent_usd_low": 0.9880152,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 0.9880152,
+          "quota_usd_low": 0.9880152,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 17.0119848,
+        "set_by": "supervisor"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 20.0,
+        "node_id": "01a1d8ee-19cd-7e12-ad6c-73356f2366a4",
+        "observed": {
+          "api_equivalent_usd_high": 16.346162,
+          "api_equivalent_usd_low": 16.346162,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 16.346162,
+          "quota_usd_low": 16.346162,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 3.6538380000000004,
+        "set_by": "supervisor"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 5.0,
+        "node_id": "01a1d8fb-cc66-7c02-80a6-d7c206e7396a",
+        "observed": {
+          "api_equivalent_usd_high": 4.350741999999999,
+          "api_equivalent_usd_low": 4.350741999999999,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 4.350741999999999,
+          "quota_usd_low": 4.350741999999999,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 0.6492580000000006,
+        "set_by": "supervisor"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 8.0,
+        "node_id": "01a1d908-4697-72c2-ba83-578e092fb72a",
+        "observed": {
+          "api_equivalent_usd_high": 0.5742963999999999,
+          "api_equivalent_usd_low": 0.5742963999999999,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 0.5742963999999999,
+          "quota_usd_low": 0.5742963999999999,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 7.4257036,
+        "set_by": "supervisor"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 9.0,
+        "node_id": "01a1d919-2544-7fb2-befe-00237c74ced2",
+        "observed": {
+          "api_equivalent_usd_high": 8.458224000000003,
+          "api_equivalent_usd_low": 8.458224000000003,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 8.458224000000003,
+          "quota_usd_low": 8.458224000000003,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 0.5417759999999969,
+        "set_by": "supervisor"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 5.0,
+        "node_id": "01a1d92e-d14f-7df3-81b1-bf41c1c8a059",
+        "observed": {
+          "api_equivalent_usd_high": 0.9473835999999999,
+          "api_equivalent_usd_low": 0.9473835999999999,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 0.9473835999999999,
+          "quota_usd_low": 0.9473835999999999,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 4.0526164,
+        "set_by": "supervisor"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 8.0,
+        "node_id": "01a1d948-776f-7bb0-a3b2-66602a6eec79",
+        "observed": {
+          "api_equivalent_usd_high": 7.422573999999999,
+          "api_equivalent_usd_low": 7.422573999999999,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 7.422573999999999,
+          "quota_usd_low": 7.422573999999999,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 0.5774260000000009,
+        "set_by": "supervisor"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 5.0,
+        "node_id": "01a1d95a-586c-7181-bbb7-9e7733ef27a4",
+        "observed": {
+          "api_equivalent_usd_high": 0.32591519999999996,
+          "api_equivalent_usd_low": 0.32591519999999996,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 0.32591519999999996,
+          "quota_usd_low": 0.32591519999999996,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 4.6740848,
+        "set_by": "supervisor"
+      }
+    ],
+    "measurements": {
+      "account_quota": {
+        "account_wide": true,
+        "age_seconds": 0.354571,
+        "ceiling_percent": null,
+        "headroom_to_ceiling_percent": null,
+        "last_reported_remaining_percent": 20.0,
+        "limit_id": "codex",
+        "max_age_seconds": 300,
+        "observed_at": "2026-11-14T09:21:57.165Z",
+        "plan_type": "prolite",
+        "pool": "codex",
+        "reason": null,
+        "remaining_percent": 20.0,
+        "resets_at": 1795219565,
+        "source": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T00-20-45-01a1d8ee-19cd-7e12-ad6c-73356f2366a4.jsonl",
+        "status": "observed",
+        "used_percent": 80.0
+      },
+      "cost_bounds": "scenario bounds for priced calls and unknown tier/cache details; not quota confidence intervals",
+      "labels": {
+        "quota_usd": "API-equivalent dollars adjusted for subscription speed",
+        "usd": "API-equivalent dollars"
+      },
+      "legacy_aliases": {
+        "quota_usd": "speed_adjusted_api_usd",
+        "usd": "api_equivalent_usd"
+      },
+      "objective": {
+        "claude_all_models": {
+          "api_equivalent_usd": {
+            "high": 0.0,
+            "low": 0.0
+          },
+          "estimated_quota_points": {
+            "calibration_version": null,
+            "high": null,
+            "low": null,
+            "status": "not_established"
+          },
+          "speed_adjusted_api_usd": {
+            "high": 0.0,
+            "kind": "proxy",
+            "low": 0.0
+          },
+          "unpriced_calls": 0
+        },
+        "claude_fable": {
+          "api_equivalent_usd": {
+            "high": 0.0,
+            "low": 0.0
+          },
+          "estimated_quota_points": {
+            "calibration_version": null,
+            "high": null,
+            "low": null,
+            "status": "not_established"
+          },
+          "speed_adjusted_api_usd": {
+            "high": 0.0,
+            "kind": "proxy",
+            "low": 0.0
+          },
+          "unpriced_calls": 0
+        },
+        "codex": {
+          "api_equivalent_usd": {
+            "high": 50.7177172,
+            "low": 50.7177172
+          },
+          "estimated_quota_points": {
+            "calibration_version": null,
+            "high": null,
+            "low": null,
+            "status": "not_established"
+          },
+          "speed_adjusted_api_usd": {
+            "high": 50.7177172,
+            "kind": "proxy",
+            "low": 50.7177172
+          },
+          "unpriced_calls": 0
+        },
+        "pi_api": {
+          "api_equivalent_usd": {
+            "high": 0.0,
+            "low": 0.0
+          },
+          "estimated_quota_points": {
+            "calibration_version": null,
+            "high": null,
+            "low": null,
+            "status": "not_established"
+          },
+          "speed_adjusted_api_usd": {
+            "high": 0.0,
+            "kind": "proxy",
+            "low": 0.0
+          },
+          "unpriced_calls": 0
+        }
+      },
+      "pricing_scenario": {
+        "actual_bill": false,
+        "id": "usage-ledger-standard-api-v1",
+        "kind": "modelled_api_equivalent",
+        "rates_sha256": "a2391a4097dec603a3aa6a99ffa95b71b30210733bf8599db670b97f371c903e",
+        "rules": {
+          "codex_long_input_multiplier": 2,
+          "codex_long_input_threshold": 272000,
+          "codex_long_output_multiplier": 1.5,
+          "haiku_long_input_threshold": 100000,
+          "haiku_long_multiplier": 5,
+          "unknown_tier_high": 2.5,
+          "unknown_tier_low": 1
+        },
+        "scenario_sha256": "b5aa87b9c879a59a8af86f3e624fd762b8e22a8bfd2fc9f092973bed0712d35a",
+        "speed_multipliers": {
+          "default": 1.0,
+          "priority": 2.5
+        },
+        "subscription_quota": false
+      },
+      "quota_estimates": "not calibrated; unknown is null, never zero",
+      "schema": "usage-ledger-measurements-v1"
+    },
+    "post_close": null,
+    "snapshot_at": "2026-11-14T09:21:57.519571+00:00",
+    "status": "complete",
+    "time": {
+      "basis": "model_call_latency",
+      "calls": 843,
+      "calls_without_latency": 6,
+      "model_busy_hours": 2.3481,
+      "model_call_hours": 3.2274,
+      "status": "partial",
+      "window_hours": 2.4118
+    },
+    "totals": {
+      "claude_all_models": {
+        "calls": 0,
+        "quota_usd_high": 0.0,
+        "quota_usd_low": 0.0,
+        "unpriced_calls": 0,
+        "usd_high": 0.0,
+        "usd_low": 0.0
+      },
+      "claude_fable": {
+        "calls": 0,
+        "quota_usd_high": 0.0,
+        "quota_usd_low": 0.0,
+        "unpriced_calls": 0,
+        "usd_high": 0.0,
+        "usd_low": 0.0
+      },
+      "codex": {
+        "calls": 843,
+        "quota_usd_high": 50.7177172,
+        "quota_usd_low": 50.7177172,
+        "unpriced_calls": 0,
+        "usd_high": 50.7177172,
+        "usd_low": 50.7177172
+      },
+      "pi_api": {
+        "calls": 0,
+        "quota_usd_high": 0.0,
+        "quota_usd_low": 0.0,
+        "unpriced_calls": 0,
+        "usd_high": 0.0,
+        "usd_low": 0.0
+      }
+    }
+  },
+  "topic": "control:budget:2c386030-0017-4c4d-9461-d9bd47d1cfc3"
+}

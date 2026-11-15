@@ -1,0 +1,30 @@
+{
+  "schema": "manual-orchestration-context-check-v1",
+  "checked_at": "2026-11-14T03:55:25.176448+00:00",
+  "session_id": "01a1d81b-323b-7113-93ad-7cfb06e7c28f",
+  "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T20-30-23-01a1d81b-323b-7113-93ad-7cfb06e7c28f.jsonl",
+  "next_task_tokens": null,
+  "next_task_basis": "not estimated",
+  "observed_at": "2026-11-14T03:55:04.442Z",
+  "freshness": "recent_file_modification",
+  "recorded_model": "gpt-6.1-sol",
+  "recorded_effort": "medium",
+  "input_tokens": 174831,
+  "context_window_tokens": 475000,
+  "epoch": 0,
+  "compaction_markers": 0,
+  "lineage": [],
+  "limitations": [],
+  "status": "observed",
+  "levels_basis": "tokens",
+  "trigger_tokens": 200000,
+  "band_floor_tokens": 235000,
+  "headroom_to_trigger": 25169,
+  "headroom_to_band_floor": 60169,
+  "fraction_of_window": 0.3681,
+  "recommendation": "retain_ok",
+  "reasons": [
+    "input 174831 is below the trigger 200000",
+    "next-task size not estimated; headroom to band floor is the margin"
+  ]
+}

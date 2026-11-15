@@ -1,0 +1,47 @@
+{
+  "at": "2026-11-14T10:38:36.294761+00:00",
+  "status": "PENDING_HUMAN_BUDGET_DECISION_NO_NEW_COMMITMENT",
+  "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T14-48-30-01a1d6e2-32ba-7701-9115-740dcb41af11.jsonl",
+  "previous_complete_owner": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/ROOT-CONTINUATION-R14.md",
+  "current_overrides": {
+    "derivation_worker": "COMPLETE whole1407char final1e4fb9df FULLCOLLECTED/FULLREAD; noresultowed",
+    "derivation_disposition": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/full-realization-r1/ROOT-LEDGER-DISPOSITION.json",
+    "root_own_recovery": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/POSTREFRESH14-RECOVERY.json",
+    "new_settings": "applied13020 Sol6.1/high/default verified; preserve nextcontinuation",
+    "source": "5e594cac accepted bounded11 only;967 unchanged; no successor source edits",
+    "full_S1": "175/allapplicable374/all11/currentABC OPEN; no fullfinancialcase/scope derived",
+    "latest_budget": "67.429798/100 COMPLETE unpriced0 at10:37:16;32.570202remaining/tailsunsettled; account16remaining separate/nocap",
+    "funding_proposal": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/full-realization-r1/FUNDING-ASSESSMENT.json",
+    "human_question": "Increase renewed ceiling100 to150 (+50) for saved original fullS1 scope?",
+    "no_new_grant": true,
+    "why_hold": "Current32.57 less31protectedfutureholds leaves1.57 for stillmissingderivation+primitives; cannot credibly admitcompletecontinuation",
+    "processes": "allchildfinals/jobscollected; root48827 nativeSIGINT130 wrapper130 FULLCOLLECTED; no ownedliveprocesses",
+    "listener_cursors": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/listener-r14-consumed.json",
+    "listener_argv": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/listener-r14-argv.json",
+    "next_if_authorized": "Reconcile humananswer/AGENTS/WindWalker; readboard/reclaimresources; NEWsettings/ONEownobservation/freshbudget beforedependentwork. Admitexactlawfulderivation/interfaces/stagedscope underowningcontracts. No replayoldassignments or reviewpassmanufactured."
+  },
+  "objective_closed": false,
+  "abandoned": false,
+  "root_sole_collector_retained": true,
+  "claims": "release own3 advisory resources on board; source remains immutable regardless of advisory release",
+  "skill_reason": "manual-orchestration supervisor-budget: userlimit cannot be raised by supervisor; future acceptance reserves cannot be removed tofit",
+  "no_integration_commit_production_S2a": true,
+  "claims_release_results": [
+    {
+      "revision": "141809eefacaf0a5c35bb3e01adc973331205027",
+      "resource": "campaign/pi-accounting-s1",
+      "released": true
+    },
+    {
+      "revision": "ac582515f609da8398600fe8fd4b2b974562782d",
+      "resource": "source/pi-accounting-s1-r10",
+      "released": true
+    },
+    {
+      "revision": "d45876c4025c3c4eca376deda205f5a04a04f81b",
+      "resource": "derivation/pi-accounting-full-s1-r1",
+      "released": true
+    }
+  ]
+}

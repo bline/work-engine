@@ -1,0 +1,1915 @@
+--- baseline/tooling/spec-check/tests/independent_raw_axes.rs
++++ subject/tooling/spec-check/tests/independent_raw_axes.rs
+@@ -976,6 +976,60 @@
+ fn r10_admitted() -> Value {
+     serde_json::from_str(include_str!("../../../validator/r10_admitted.json")).unwrap()
+ }
++// Dedicated duplicate-rejecting parser: serde_json::Value alone overwrites members.
++struct PremiseJson(Value);
++impl<'de> serde::Deserialize<'de> for PremiseJson {
++ fn deserialize<D:serde::Deserializer<'de>>(d:D)->Result<Self,D::Error>{
++  struct Visitor;
++  impl<'de> serde::de::Visitor<'de> for Visitor {
++   type Value=PremiseJson;
++   fn expecting(&self,f:&mut std::fmt::Formatter)->std::fmt::Result{f.write_str("JSON with unique members")}
++   fn visit_bool<E:serde::de::Error>(self,v:bool)->Result<PremiseJson,E>{Ok(PremiseJson(json!(v)))}
++   fn visit_i64<E:serde::de::Error>(self,v:i64)->Result<PremiseJson,E>{Ok(PremiseJson(json!(v)))}
++   fn visit_u64<E:serde::de::Error>(self,v:u64)->Result<PremiseJson,E>{Ok(PremiseJson(json!(v)))}
++   fn visit_f64<E:serde::de::Error>(self,v:f64)->Result<PremiseJson,E>{serde_json::Number::from_f64(v).map(|n|PremiseJson(Value::Number(n))).ok_or_else(||E::custom("nonfinite"))}
++   fn visit_str<E:serde::de::Error>(self,v:&str)->Result<PremiseJson,E>{Ok(PremiseJson(json!(v)))}
++   fn visit_unit<E:serde::de::Error>(self)->Result<PremiseJson,E>{Ok(PremiseJson(Value::Null))}
++   fn visit_seq<A:serde::de::SeqAccess<'de>>(self,mut a:A)->Result<PremiseJson,A::Error>{let mut v=Vec::new();while let Some(PremiseJson(x))=a.next_element()?{v.push(x);}Ok(PremiseJson(Value::Array(v)))}
++   fn visit_map<A:serde::de::MapAccess<'de>>(self,mut a:A)->Result<PremiseJson,A::Error>{let mut m=serde_json::Map::new();while let Some((k,PremiseJson(v)))=a.next_entry::<String,PremiseJson>()?{if m.insert(k.clone(),v).is_some(){return Err(serde::de::Error::custom(format!("duplicate member {k}")));}}Ok(PremiseJson(Value::Object(m)))}
++  }
++  d.deserialize_any(Visitor)
++ }
++}
++fn premise_read(p:impl AsRef<std::path::Path>)->Result<Value,String>{
++ let bytes=fs::read(p.as_ref()).map_err(|e|format!("{}: {e}",p.as_ref().display()))?;
++ serde_json::from_slice::<PremiseJson>(&bytes).map(|v|v.0).map_err(|e|e.to_string())
++}
++fn finite_premises(r:&std::path::Path,a:&Value)->Result<(),String>{
++ let check=||->Result<(),String>{
++  let exclusions=a["premise_metadata_exclusions"].as_array().ok_or("exclusions")?;
++  for (path,entry) in a["admissions"].as_object().ok_or("admissions")? {
++   let source=entry["case_file"].as_str().or_else(||entry["conditional_raw_file"].as_str()).ok_or("source")?;
++   let c=premise_read(r.join(source))?;
++   let obj=c.as_object().ok_or("record object")?;
++   let inventory:Vec<_>=obj.keys().cloned().collect();
++   if json!(inventory)!=entry["premise_inventory"] {return Err(format!("{source} top-level inventory"));}
++   let mut projected=serde_json::Map::new();
++   for (key,value) in obj {
++    if key=="expected" || exclusions.iter().any(|x|x==key){continue;}
++    let v=if key=="evaluations" {
++     Value::Array(value.as_array().ok_or("evaluation array")?.iter().map(|e|{
++      let mut ev=e.as_object().ok_or("evaluation object")?.clone();ev.remove("expected");Ok(Value::Object(ev))
++     }).collect::<Result<Vec<_>,String>>()?)
++    }else{value.clone()};projected.insert(key.clone(),v);
++   }
++   if Value::Object(projected)!=entry["premise_record"] {return Err(format!("{source} governing values/types/inventory"));}
++   let bundle=premise_read(r.join(path))?;
++   if bundle["documents"].as_array().map(Vec::len)!=Some(2) || bundle["documents"][0]["kind"]!="accounting_input_proof" {return Err(format!("{path} input proof inventory"));}
++   for field in ["origins","initial_contracts","grants","exact_links"] {if bundle["documents"][0][field]!=entry[field] {return Err(format!("R10 exact raw applicability {field}"));}}
++   for payload in entry["payloads"].as_object().ok_or("payloads")?.keys(){premise_read(r.join(payload))?;}
++  }
++  for (path,want) in a["rate_premises"].as_object().ok_or("rates")?{if premise_read(r.join(path))?!=*want{return Err(format!("{path} valuation rate"));}}
++  premise_read(r.join("oracle/r9-pilot/claims.json"))?;
++  Ok(())
++ };
++ check().map_err(|e|format!("R10 finite premise outside independent admission: {e}"))
++}
+ fn r10_applicability(r: &std::path::Path, path: &str, admitted: &Value) -> Result<(),String> {
+     let a=&admitted["admissions"][path];
+     if a.is_null() { return Err("R10 unadmitted selected subject".into()); }
+@@ -1014,6 +1068,8 @@
+     Ok(())
+ }
+ fn r9_case_qualification(r: &std::path::Path) -> Result<Vec<String>, String> {
++    let admitted=r10_admitted();
++    finite_premises(r,&admitted)?;
+     let registry = read(r.join("oracle/r9-pilot/claims.json"));
+     let claims = registry["claims"].as_array().ok_or("missing R9 registry")?;
+     let required = [
+@@ -1216,6 +1272,13 @@
+                     return Err("P9 retained component owner/reference mismatch".into());
+                 }
+             } else if id == "PRIMARY/ANCHOR-APPLICATION" {
++                if cid=="P132-FG-VC11-gated" {
++                    let gate=&c["inputs"]["gates"][0];
++                    let witness=&c["trusted_fixture_inputs"]["gate_verifications"]["g-S1"];
++                    let commitments=&c["evaluations"][0]["expected"]["objectives"][0]["commitments"];
++                    let want=json!([{"admission_id":"a1","committed":"0","kind":"exact","state":"retired","gate":{"qualified":true,"reasons":[],"verification_source":"test_mock","verification_payload_sha256":witness["payload_sha256"]}}]);
++                    if !mock_binding(&c,gate) || *commitments!=want {return Err("R10 finite trusted gate consequence".into());}
++                }
+                 let part = if cid.starts_with("P132") { "A" } else { "B" };
+                 let bundle = read(r.join(format!("oracle/r8-completion-{part}/{cid}.bundle.json")));
+                 let result = &bundle["documents"][1];
+@@ -1754,7 +1817,7 @@
+             "copy"=>{r9_edit(&s,eq,|d|d["documents"][0]["initial_contracts"][0]["duplicate_rule"]=json!("scope_exact_line"));"applicability initial_contracts"},
+             "stale-payload"=>{r9_edit(&s,"oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.provenance.json",|d|d["raw_input_sha256"]=json!("0".repeat(64)));"referenced payload fragment/scope/namespace"},
+             "unlinked-erasure"=>{r9_edit(&s,"oracle/r8-controls/VC07-unlinked.bundle.json",|d|d["documents"][1]["units"][0]["exposure_ref"]=json!("covered:Exact15000000"));"raw conditional anchor/usage active financial inventory"},
+-            "raw-extent"=>{r9_edit(&s,"oracle/r9-pilot/cases/equal-reservations.json",|d|{let line=d["inputs"]["sessions"][0]["logs"]["turn-1"]["lines"][0].as_str().unwrap().to_string()+" ";d["inputs"]["sessions"][0]["logs"]["turn-1"]["lines"][0]=json!(line);});"raw subject outside independent admission"},
++            "raw-extent"=>{r9_edit(&s,"oracle/r9-pilot/cases/equal-reservations.json",|d|{let line=d["inputs"]["sessions"][0]["logs"]["turn-1"]["lines"][0].as_str().unwrap().to_string()+" ";d["inputs"]["sessions"][0]["logs"]["turn-1"]["lines"][0]=json!(line);});"finite premise outside independent admission"},
+             "exact-link"=>{r9_edit(&s,conditional,|d|d["documents"][0]["exact_links"][0]["to_origin_ref"]=json!("a"));"applicability exact_links"},
+             "copy-merge"=>{r9_edit(&s,eq,|d|{d["documents"][1]["primary_memberships"][0]["reservation_classes"]=json!([{"origin_refs":["S1/turn-1:1","S1/turn-1:2"],"representative_origin_ref":"S1/turn-1:1"}]);d["documents"][1]["primary_validities"][0]["distinct_reservation_refs"]=json!(["S1/turn-1:1"]);});"raw reservation-class actual membership/validity"},
+             "omitted-class"=>{r9_edit(&s,eq,|d|{d["documents"][1]["primary_memberships"][0]["reservation_classes"].as_array_mut().unwrap().pop();d["documents"][1]["primary_validities"][0]["distinct_reservation_refs"].as_array_mut().unwrap().pop();});"raw reservation-class actual membership/validity"},
+--- baseline/validator/r10_admitted.json
++++ subject/validator/r10_admitted.json
+@@ -9608,6 +9608,210 @@
+           ]
+         }
+       },
++      "premise_inventory": [
++        "added_in",
++        "ambiguity",
++        "case_id",
++        "class",
++        "contract",
++        "controls",
++        "evaluations",
++        "expected",
++        "findings",
++        "group",
++        "historical",
++        "inputs",
++        "invariants",
++        "notes",
++        "profile",
++        "provenance",
++        "rationale",
++        "reachability",
++        "revisions",
++        "revisions_r3",
++        "revisions_r4",
++        "revisions_r5",
++        "revisions_r6",
++        "revisions_r7",
++        "revisions_r8",
++        "role",
++        "schema",
++        "trusted_fixture_inputs"
++      ],
++      "premise_record": {
++        "added_in": "1.3-s1",
++        "case_id": "P132-FG-VC11-gated",
++        "class": "future_vertical",
++        "contract": "pi-accounting-contract/1.7-s1",
++        "controls": [],
++        "evaluations": [
++          {
++            "admission_request": {
++              "new": "100000000",
++              "objective": "o"
++            },
++            "name": "default",
++            "objectives": [
++              {
++                "admission_authority": {
++                  "id": "wev-admission-authority-1",
++                  "kind": "vertical_admission_authority"
++                },
++                "admissions": [
++                  {
++                    "admission_id": "a1",
++                    "gate_id": "g-S1",
++                    "rows": [
++                      {
++                        "admission_id": "a1",
++                        "at": "2026-11-10T06:00:05Z",
++                        "event": "pending",
++                        "max_usd": 1.0
++                      },
++                      {
++                        "admission_id": "a1",
++                        "at": "2026-11-10T06:00:10Z",
++                        "event": "launched",
++                        "session_id": "00000000-0000-4000-8000-0000000000c1"
++                      }
++                    ],
++                    "session": "00000000-0000-4000-8000-0000000000c1",
++                    "source": "journal"
++                  }
++                ],
++                "closed_at": null,
++                "limit": "1000000000",
++                "objective": "o",
++                "predecessor": null,
++                "started_at": "2026-11-10T06:00:00Z",
++                "tree_sessions": [
++                  "00000000-0000-4000-8000-0000000000c1"
++                ]
++              }
++            ]
++          }
++        ],
++        "historical": {},
++        "inputs": {
++          "gates": [
++            {
++              "authority": {
++                "id": "wev-admission-authority-1",
++                "kind": "vertical_admission_authority"
++              },
++              "effective_from": "2026-11-10T06:00:05Z",
++              "effective_until": null,
++              "gate_id": "g-S1",
++              "mechanisms": {
++                "billing_bound": {
++                  "enforced": true,
++                  "receipt": {
++                    "ref": "authority-receipt:S1-billing_bound",
++                    "sha256": "eb21af7cd5c8a234faedb9ec0f77080cc75bf11904a5ca6a3744849f12fbac0a"
++                  }
++                },
++                "new_forwarding": {
++                  "enforced": true,
++                  "receipt": {
++                    "ref": "authority-receipt:S1-new_forwarding",
++                    "sha256": "48627919de37a2276f5dcb1de5efce5082508a99f2a0479b1c2923e093152f69"
++                  }
++                },
++                "reopening": {
++                  "enforced": true,
++                  "receipt": {
++                    "ref": "authority-receipt:S1-reopening",
++                    "sha256": "6a59c035f1ded753aa69c6cee1f5626faf2a2bf2d93366d378a07bf12c4cdb08"
++                  }
++                },
++                "retries": {
++                  "enforced": true,
++                  "receipt": {
++                    "ref": "authority-receipt:S1-retries",
++                    "sha256": "ad74cf4e263dd56b37d9cef747ce3273809e06de4eefc5f3050c919c71cb2d39"
++                  }
++                }
++              },
++              "scope": {
++                "kind": "session"
++              },
++              "session": "00000000-0000-4000-8000-0000000000c1",
++              "writer": "authority"
++            }
++          ],
++          "rates": {
++            "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
++            "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
++          },
++          "reference_time": "2026-11-10T07:00:00Z",
++          "sessions": [
++            {
++              "alias": "S1",
++              "launch": {
++                "auth_lane": "api",
++                "model": "openai/gpt-6-astra",
++                "parent": "root"
++              },
++              "lifecycle": [
++                {
++                  "at": "2026-11-10T06:00:10Z",
++                  "event": "launch",
++                  "turn": 1
++                },
++                {
++                  "at": "2026-11-10T06:35:00Z",
++                  "event": "deliver",
++                  "turn": 2
++                },
++                {
++                  "at": "2026-11-10T06:50:00Z",
++                  "event": "retire"
++                }
++              ],
++              "logs": {
++                "turn-1": {
++                  "final_newline": true,
++                  "lines": [
++                    "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.5, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
++                    "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.5, \"charged_usd\": 0.015, \"charge_basis\": \"usage\", \"session_spent_usd\": 0.015, \"multiplier_floor\": 0.0}}"
++                  ]
++                },
++                "turn-2": {
++                  "final_newline": true,
++                  "lines": [
++                    "{\"at\": \"2026-11-10T06:40:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.5, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
++                    "{\"at\": \"2026-11-10T06:40:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_2\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.5, \"charged_usd\": 0.015, \"charge_basis\": \"usage\", \"session_spent_usd\": 0.015, \"multiplier_floor\": 0.0}}"
++                  ]
++                }
++              },
++              "session_id": "00000000-0000-4000-8000-0000000000c1"
++            }
++          ]
++        },
++        "invariants": [
++          "INV-A9",
++          "INV-A8"
++        ],
++        "profile": "future_qualified_gate",
++        "provenance": {
++          "origin": "contract::2.3 ExecutionGate (future vertical twin of VC11-multi-turn-session)"
++        },
++        "reachability": "producer_unreachable",
++        "role": "valid_control",
++        "schema": "pi-accounting-corpus/1",
++        "trusted_fixture_inputs": {
++          "gate_verifications": {
++            "g-S1": {
++              "authority_id": "wev-admission-authority-1",
++              "payload_sha256": "b38088ca7e018f98b1775998d4ff4f5b7b1f027bfa1d5836b38479dcc75de868",
++              "policy_ref": "root-P5-conditional-only",
++              "session": "00000000-0000-4000-8000-0000000000c1",
++              "source": "test_mock",
++              "verification_evidence": "independent-test-harness:exact-payload-binding"
++            }
++          }
++        }
++      },
+       "raw_input_sha256": "2100d78c0ea5c92d4ed3a28d7b9b7e9d2f7c0c21a104ca7717bfb54c785a7784"
+     },
+     "oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json": {
+@@ -9688,6 +9892,148 @@
+           ],
+           "raw_input_sha256": "a5548213e8f4d20a526466ad2862928917e353984d175573d48e0a5eeae5720c"
+         }
++      },
++      "premise_inventory": [
++        "ambiguity",
++        "case_id",
++        "class",
++        "contract",
++        "controls",
++        "evaluations",
++        "expected",
++        "findings",
++        "group",
++        "historical",
++        "inputs",
++        "invariants",
++        "notes",
++        "profile",
++        "provenance",
++        "rationale",
++        "reachability",
++        "revisions",
++        "revisions_r3",
++        "revisions_r4",
++        "revisions_r5",
++        "revisions_r6",
++        "revisions_r7",
++        "revisions_r8",
++        "role",
++        "schema"
++      ],
++      "premise_record": {
++        "case_id": "P9-claimed-charge-above-reservation",
++        "class": "malformed",
++        "contract": "pi-accounting-contract/1.7-s1",
++        "controls": [
++          "VC01-openai-usage-settlement"
++        ],
++        "evaluations": [
++          {
++            "admission_request": {
++              "new": "100000000",
++              "objective": "o"
++            },
++            "name": "default",
++            "objectives": [
++              {
++                "admissions": [
++                  {
++                    "admission_id": "a1",
++                    "rows": [
++                      {
++                        "admission_id": "a1",
++                        "at": "2026-11-10T06:00:05Z",
++                        "event": "pending",
++                        "max_usd": 1.0
++                      },
++                      {
++                        "admission_id": "a1",
++                        "at": "2026-11-10T06:00:10Z",
++                        "event": "launched",
++                        "session_id": "00000000-0000-4000-8000-0000000000c1"
++                      }
++                    ],
++                    "session": "00000000-0000-4000-8000-0000000000c1",
++                    "source": "journal"
++                  }
++                ],
++                "closed_at": null,
++                "limit": "1000000000",
++                "objective": "o",
++                "predecessor": null,
++                "started_at": "2026-11-10T06:00:00Z",
++                "tree_sessions": [
++                  "00000000-0000-4000-8000-0000000000c1"
++                ]
++              }
++            ]
++          }
++        ],
++        "historical": {
++          "a134_086bdec1": {
++            "blocking_kinds": [
++              "pi_settlement_invalid"
++            ],
++            "decision": "not_established",
++            "evaluation": "default",
++            "note": "comparison only; A1.3.4 has no ownership (D1) concept: it attributes by session tree and time window",
++            "reader_sha256": "086bdec1d443064f6847821858f34bbf227f8804a9a5fc8a362416f62b29d621",
++            "reasons": [
++              "objective accounting unavailable, unpriced or inconsistent"
++            ],
++            "spent_high_nano": null,
++            "spent_low_nano": null
++          }
++        },
++        "inputs": {
++          "rates": {
++            "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
++            "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
++          },
++          "reference_time": "2026-11-10T07:00:00Z",
++          "sessions": [
++            {
++              "alias": "S1",
++              "launch": {
++                "auth_lane": "api",
++                "model": "openai/gpt-6-astra",
++                "parent": "root"
++              },
++              "lifecycle": [
++                {
++                  "at": "2026-11-10T06:00:10Z",
++                  "event": "launch",
++                  "turn": 1
++                },
++                {
++                  "at": "2026-11-10T06:50:00Z",
++                  "event": "retire"
++                }
++              ],
++              "logs": {
++                "turn-1": {
++                  "final_newline": true,
++                  "lines": [
++                    "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.4, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
++                    "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.5, \"charged_usd\": 0.7, \"charge_basis\": \"usage\", \"session_spent_usd\": 0.7, \"multiplier_floor\": 0.0}}"
++                  ]
++                }
++              },
++              "session_id": "00000000-0000-4000-8000-0000000000c1"
++            }
++          ]
++        },
++        "invariants": [
++          "INV-F3"
++        ],
++        "profile": "current_producer",
++        "provenance": {
++          "origin": "test_usage_ledger_pi_a134.py::test_contradicted_settlement_never_lowers_the_retained_reservation"
++        },
++        "reachability": "producer_unreachable",
++        "role": "finding",
++        "schema": "pi-accounting-corpus/1"
+       },
+       "raw_input_sha256": "a5548213e8f4d20a526466ad2862928917e353984d175573d48e0a5eeae5720c"
+     },
+@@ -9769,6 +10115,125 @@
+           ],
+           "raw_input_sha256": "d730fa470dde241e774a1cacb46e8e3ba299f1bf4e98369049bd7a512aee8e39"
+         }
++      },
++      "premise_inventory": [
++        "ambiguity",
++        "case_id",
++        "class",
++        "contract",
++        "controls",
++        "evaluations",
++        "expected",
++        "findings",
++        "group",
++        "historical",
++        "inputs",
++        "invariants",
++        "notes",
++        "profile",
++        "provenance",
++        "rationale",
++        "reachability",
++        "revisions",
++        "revisions_r3",
++        "revisions_r4",
++        "revisions_r5",
++        "revisions_r6",
++        "revisions_r7",
++        "revisions_r8",
++        "role",
++        "schema"
++      ],
++      "premise_record": {
++        "case_id": "VC07-read-failure-paired",
++        "class": "producer_valid",
++        "contract": "pi-accounting-contract/1.7-s1",
++        "controls": [],
++        "evaluations": [
++          {
++            "admission_request": {
++              "new": "100000000",
++              "objective": "o"
++            },
++            "name": "default",
++            "objectives": [
++              {
++                "admissions": [],
++                "closed_at": null,
++                "limit": "1000000000",
++                "objective": "o",
++                "predecessor": null,
++                "started_at": "2026-11-10T06:00:00Z",
++                "tree_sessions": [
++                  "00000000-0000-4000-8000-0000000000c1"
++                ]
++              }
++            ]
++          }
++        ],
++        "historical": {
++          "a134_086bdec1": {
++            "blocking_kinds": [],
++            "decision": "admitted",
++            "evaluation": "default",
++            "note": "comparison only; A1.3.4 has no ownership (D1) concept: it attributes by session tree and time window",
++            "reader_sha256": "086bdec1d443064f6847821858f34bbf227f8804a9a5fc8a362416f62b29d621",
++            "reasons": [
++              "within the objective pi_api limit"
++            ],
++            "spent_high_nano": "15000000",
++            "spent_low_nano": "15000000"
++          }
++        },
++        "inputs": {
++          "rates": {
++            "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
++            "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
++          },
++          "reference_time": "2026-11-10T07:00:00Z",
++          "sessions": [
++            {
++              "alias": "S1",
++              "launch": {
++                "auth_lane": "api",
++                "model": "openai/gpt-6-astra",
++                "parent": "root"
++              },
++              "lifecycle": [
++                {
++                  "at": "2026-11-10T06:00:10Z",
++                  "event": "launch",
++                  "turn": 1
++                },
++                {
++                  "at": "2026-11-10T06:50:00Z",
++                  "event": "retire"
++                }
++              ],
++              "logs": {
++                "turn-1": {
++                  "final_newline": true,
++                  "lines": [
++                    "{\"at\": \"2026-11-10T06:30:01Z\", \"event\": \"stream_error\", \"n\": 1, \"detail\": \"Connection reset by peer\"}",
++                    "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0}"
++                  ]
++                }
++              },
++              "session_id": "00000000-0000-4000-8000-0000000000c1"
++            }
++          ]
++        },
++        "invariants": [
++          "INV-F6"
++        ],
++        "profile": "current_producer",
++        "provenance": {
++          "origin": "test_usage_ledger_pi_a134.py::test_N04_read_failure_pairs_only_with_its_own_later_request_row",
++          "variant": "control"
++        },
++        "reachability": "producer_reachable",
++        "role": "valid_control",
++        "schema": "pi-accounting-corpus/1"
+       },
+       "raw_input_sha256": "d730fa470dde241e774a1cacb46e8e3ba299f1bf4e98369049bd7a512aee8e39"
+     },
+@@ -9909,6 +10374,157 @@
+           "raw_input_sha256": "f3fdc23830b676be789d0489a879b0fc526205328d4cf1066664a02cf2499965"
+         }
+       },
++      "premise_inventory": [
++        "ambiguity",
++        "case_id",
++        "class",
++        "contract",
++        "controls",
++        "evaluations",
++        "expected",
++        "findings",
++        "group",
++        "historical",
++        "inputs",
++        "invariants",
++        "notes",
++        "profile",
++        "provenance",
++        "rationale",
++        "reachability",
++        "revisions",
++        "revisions_r3",
++        "revisions_r4",
++        "revisions_r5",
++        "revisions_r6",
++        "revisions_r7",
++        "revisions_r8",
++        "role",
++        "schema"
++      ],
++      "premise_record": {
++        "case_id": "VC11-multi-turn-session",
++        "class": "producer_valid",
++        "contract": "pi-accounting-contract/1.7-s1",
++        "controls": [],
++        "evaluations": [
++          {
++            "admission_request": {
++              "new": "100000000",
++              "objective": "o"
++            },
++            "name": "default",
++            "objectives": [
++              {
++                "admissions": [
++                  {
++                    "admission_id": "a1",
++                    "rows": [
++                      {
++                        "admission_id": "a1",
++                        "at": "2026-11-10T06:00:05Z",
++                        "event": "pending",
++                        "max_usd": 1.0
++                      },
++                      {
++                        "admission_id": "a1",
++                        "at": "2026-11-10T06:00:10Z",
++                        "event": "launched",
++                        "session_id": "00000000-0000-4000-8000-0000000000c1"
++                      }
++                    ],
++                    "session": "00000000-0000-4000-8000-0000000000c1",
++                    "source": "journal"
++                  }
++                ],
++                "closed_at": null,
++                "limit": "1000000000",
++                "objective": "o",
++                "predecessor": null,
++                "started_at": "2026-11-10T06:00:00Z",
++                "tree_sessions": [
++                  "00000000-0000-4000-8000-0000000000c1"
++                ]
++              }
++            ]
++          }
++        ],
++        "historical": {
++          "a134_086bdec1": {
++            "blocking_kinds": [],
++            "decision": "admitted",
++            "evaluation": "default",
++            "note": "comparison only; A1.3.4 has no ownership (D1) concept: it attributes by session tree and time window",
++            "reader_sha256": "086bdec1d443064f6847821858f34bbf227f8804a9a5fc8a362416f62b29d621",
++            "reasons": [
++              "within the objective pi_api limit"
++            ],
++            "spent_high_nano": "30000000",
++            "spent_low_nano": "30000000"
++          }
++        },
++        "inputs": {
++          "rates": {
++            "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
++            "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
++          },
++          "reference_time": "2026-11-10T07:00:00Z",
++          "sessions": [
++            {
++              "alias": "S1",
++              "launch": {
++                "auth_lane": "api",
++                "model": "openai/gpt-6-astra",
++                "parent": "root"
++              },
++              "lifecycle": [
++                {
++                  "at": "2026-11-10T06:00:10Z",
++                  "event": "launch",
++                  "turn": 1
++                },
++                {
++                  "at": "2026-11-10T06:35:00Z",
++                  "event": "deliver",
++                  "turn": 2
++                },
++                {
++                  "at": "2026-11-10T06:50:00Z",
++                  "event": "retire"
++                }
++              ],
++              "logs": {
++                "turn-1": {
++                  "final_newline": true,
++                  "lines": [
++                    "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.5, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
++                    "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.5, \"charged_usd\": 0.015, \"charge_basis\": \"usage\", \"session_spent_usd\": 0.015, \"multiplier_floor\": 0.0}}"
++                  ]
++                },
++                "turn-2": {
++                  "final_newline": true,
++                  "lines": [
++                    "{\"at\": \"2026-11-10T06:40:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.5, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
++                    "{\"at\": \"2026-11-10T06:40:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_2\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.5, \"charged_usd\": 0.015, \"charge_basis\": \"usage\", \"session_spent_usd\": 0.015, \"multiplier_floor\": 0.0}}"
++                  ]
++                }
++              },
++              "session_id": "00000000-0000-4000-8000-0000000000c1"
++            }
++          ]
++        },
++        "invariants": [
++          "INV-A1",
++          "INV-T3"
++        ],
++        "profile": "current_producer",
++        "provenance": {
++          "origin": "contract::launch, deliver (no retirement between), retire"
++        },
++        "reachability": "producer_reachable",
++        "role": "valid_control",
++        "schema": "pi-accounting-corpus/1"
++      },
+       "raw_input_sha256": "f3fdc23830b676be789d0489a879b0fc526205328d4cf1066664a02cf2499965"
+     },
+     "oracle/r8-controls/VC07-conditional.bundle.json": {
+@@ -10021,6 +10637,61 @@
+           }
+         }
+       },
++      "premise_inventory": [
++        "conditional_harness_assumptions",
++        "original_inputs"
++      ],
++      "premise_record": {
++        "conditional_harness_assumptions": {
++          "exact_row_coreference": {
++            "authority": "independent conditional fixture harness; no live producer guarantee",
++            "closed_recording_extent": "exact two original origins a,u of this synthetic request",
++            "from": "a",
++            "no_omitted_competing_attempt": true,
++            "no_origin_duplication": true,
++            "source_namespace": "fixture:VC07:occurrenceA",
++            "to": "u"
++          }
++        },
++        "original_inputs": {
++          "rates": {
++            "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
++            "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
++          },
++          "reference_time": "2026-11-10T07:00:00Z",
++          "sessions": [
++            {
++              "alias": "S1",
++              "launch": {
++                "auth_lane": "api",
++                "model": "openai/gpt-6-astra",
++                "parent": "root"
++              },
++              "lifecycle": [
++                {
++                  "at": "2026-11-10T06:00:10Z",
++                  "event": "launch",
++                  "turn": 1
++                },
++                {
++                  "at": "2026-11-10T06:50:00Z",
++                  "event": "retire"
++                }
++              ],
++              "logs": {
++                "turn-1": {
++                  "final_newline": true,
++                  "lines": [
++                    "{\"at\": \"2026-11-10T06:30:01Z\", \"event\": \"stream_error\", \"n\": 1, \"detail\": \"Connection reset by peer\"}",
++                    "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0}"
++                  ]
++                }
++              },
++              "session_id": "00000000-0000-4000-8000-0000000000c1"
++            }
++          ]
++        }
++      },
+       "raw_input_sha256": "d730fa470dde241e774a1cacb46e8e3ba299f1bf4e98369049bd7a512aee8e39"
+     },
+     "oracle/r8-controls/VC07-unlinked.bundle.json": {
+@@ -10103,6 +10774,61 @@
+               }
+             ]
+           }
++        }
++      },
++      "premise_inventory": [
++        "conditional_harness_assumptions",
++        "original_inputs"
++      ],
++      "premise_record": {
++        "conditional_harness_assumptions": {
++          "exact_row_coreference": {
++            "authority": "independent conditional fixture harness; no live producer guarantee",
++            "closed_recording_extent": "exact two original origins a,u of this synthetic request",
++            "from": "a",
++            "no_omitted_competing_attempt": true,
++            "no_origin_duplication": true,
++            "source_namespace": "fixture:VC07:occurrenceA",
++            "to": "u"
++          }
++        },
++        "original_inputs": {
++          "rates": {
++            "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
++            "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
++          },
++          "reference_time": "2026-11-10T07:00:00Z",
++          "sessions": [
++            {
++              "alias": "S1",
++              "launch": {
++                "auth_lane": "api",
++                "model": "openai/gpt-6-astra",
++                "parent": "root"
++              },
++              "lifecycle": [
++                {
++                  "at": "2026-11-10T06:00:10Z",
++                  "event": "launch",
++                  "turn": 1
++                },
++                {
++                  "at": "2026-11-10T06:50:00Z",
++                  "event": "retire"
++                }
++              ],
++              "logs": {
++                "turn-1": {
++                  "final_newline": true,
++                  "lines": [
++                    "{\"at\": \"2026-11-10T06:30:01Z\", \"event\": \"stream_error\", \"n\": 1, \"detail\": \"Connection reset by peer\"}",
++                    "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0}"
++                  ]
++                }
++              },
++              "session_id": "00000000-0000-4000-8000-0000000000c1"
++            }
++          ]
+         }
+       },
+       "raw_input_sha256": "d730fa470dde241e774a1cacb46e8e3ba299f1bf4e98369049bd7a512aee8e39"
+@@ -10213,6 +10939,148 @@
+           "raw_input_sha256": "c067810e2bf1da73c616287925d293a62decf8bb8a9aad8a06a38481db5a43ea"
+         }
+       },
++      "premise_inventory": [
++        "ambiguity",
++        "case_id",
++        "class",
++        "contract",
++        "controls",
++        "evaluations",
++        "expected",
++        "findings",
++        "group",
++        "historical",
++        "inputs",
++        "invariants",
++        "notes",
++        "profile",
++        "provenance",
++        "rationale",
++        "reachability",
++        "revisions",
++        "revisions_r3",
++        "revisions_r4",
++        "revisions_r5",
++        "revisions_r6",
++        "revisions_r7",
++        "revisions_r8",
++        "role",
++        "schema"
++      ],
++      "premise_record": {
++        "case_id": "C3-identical-reservation-copy",
++        "class": "malformed",
++        "contract": "pi-accounting-contract/1.7-s1",
++        "controls": [
++          "S02-control-error-status-after-reservation"
++        ],
++        "evaluations": [
++          {
++            "admission_request": {
++              "new": "100000000",
++              "objective": "o"
++            },
++            "name": "default",
++            "objectives": [
++              {
++                "admissions": [
++                  {
++                    "admission_id": "a1",
++                    "rows": [
++                      {
++                        "admission_id": "a1",
++                        "at": "2026-11-10T06:00:05Z",
++                        "event": "pending",
++                        "max_usd": 1.0
++                      },
++                      {
++                        "admission_id": "a1",
++                        "at": "2026-11-10T06:00:10Z",
++                        "event": "launched",
++                        "session_id": "00000000-0000-4000-8000-0000000000c1"
++                      }
++                    ],
++                    "session": "00000000-0000-4000-8000-0000000000c1",
++                    "source": "journal"
++                  }
++                ],
++                "closed_at": null,
++                "limit": "1000000000",
++                "objective": "o",
++                "predecessor": null,
++                "started_at": "2026-11-10T06:00:00Z",
++                "tree_sessions": [
++                  "00000000-0000-4000-8000-0000000000c1"
++                ]
++              }
++            ]
++          }
++        ],
++        "historical": {
++          "a134_086bdec1": {
++            "blocking_kinds": [],
++            "decision": "admitted",
++            "evaluation": "default",
++            "note": "comparison only; A1.3.4 has no ownership (D1) concept: it attributes by session tree and time window",
++            "reader_sha256": "086bdec1d443064f6847821858f34bbf227f8804a9a5fc8a362416f62b29d621",
++            "reasons": [
++              "within the objective pi_api limit"
++            ],
++            "spent_high_nano": "0",
++            "spent_low_nano": "0"
++          }
++        },
++        "inputs": {
++          "rates": {
++            "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
++            "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
++          },
++          "reference_time": "2026-11-10T07:00:00Z",
++          "sessions": [
++            {
++              "alias": "S1",
++              "launch": {
++                "auth_lane": "api",
++                "model": "openai/gpt-6-astra",
++                "parent": "root"
++              },
++              "lifecycle": [
++                {
++                  "at": "2026-11-10T06:00:10Z",
++                  "event": "launch",
++                  "turn": 1
++                },
++                {
++                  "at": "2026-11-10T06:50:00Z",
++                  "event": "retire"
++                }
++              ],
++              "logs": {
++                "turn-1": {
++                  "final_newline": true,
++                  "lines": [
++                    "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.8, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
++                    "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 429, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": null, \"response_id\": null, \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": null, \"output_tokens\": null, \"cached_tokens\": null, \"cache_write_tokens\": null, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.8, \"charged_usd\": 0.0, \"charge_basis\": \"error_status\", \"session_spent_usd\": 0.0, \"multiplier_floor\": 0.0}}",
++                    "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.8, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}"
++                  ]
++                }
++              },
++              "session_id": "00000000-0000-4000-8000-0000000000c1"
++            }
++          ]
++        },
++        "invariants": [
++          "INV-F2",
++          "INV-F6"
++        ],
++        "profile": "current_producer",
++        "provenance": {
++          "origin": "P1.19 report::C3: exact reservation replay after settlement"
++        },
++        "reachability": "producer_unreachable",
++        "role": "finding",
++        "schema": "pi-accounting-corpus/1"
++      },
+       "raw_input_sha256": "c067810e2bf1da73c616287925d293a62decf8bb8a9aad8a06a38481db5a43ea"
+     },
+     "oracle/r9-pilot/cases/equal-reservations.bundle.json": {
+@@ -10306,6 +11174,147 @@
+           "qualification_derivation_ref": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/DERIVATIONS-R2.md",
+           "raw_input_sha256": "5b6b16d647aaf00f681f234a72398b96d0ba6bc3006c77b335dc91a75ce9eeb3"
+         }
++      },
++      "premise_inventory": [
++        "ambiguity",
++        "case_id",
++        "class",
++        "contract",
++        "controls",
++        "evaluations",
++        "expected",
++        "findings",
++        "group",
++        "historical",
++        "inputs",
++        "invariants",
++        "notes",
++        "profile",
++        "provenance",
++        "rationale",
++        "reachability",
++        "revisions",
++        "revisions_r3",
++        "revisions_r4",
++        "revisions_r5",
++        "revisions_r6",
++        "revisions_r7",
++        "revisions_r8",
++        "role",
++        "schema"
++      ],
++      "premise_record": {
++        "case_id": "VC01-openai-usage-settlement",
++        "class": "producer_valid",
++        "contract": "pi-accounting-contract/1.7-s1",
++        "controls": [],
++        "evaluations": [
++          {
++            "admission_request": {
++              "new": "100000000",
++              "objective": "o"
++            },
++            "name": "default",
++            "objectives": [
++              {
++                "admissions": [
++                  {
++                    "admission_id": "a1",
++                    "rows": [
++                      {
++                        "admission_id": "a1",
++                        "at": "2026-11-10T06:00:05Z",
++                        "event": "pending",
++                        "max_usd": 1.0
++                      },
++                      {
++                        "admission_id": "a1",
++                        "at": "2026-11-10T06:00:10Z",
++                        "event": "launched",
++                        "session_id": "00000000-0000-4000-8000-0000000000c1"
++                      }
++                    ],
++                    "session": "00000000-0000-4000-8000-0000000000c1",
++                    "source": "journal"
++                  }
++                ],
++                "closed_at": null,
++                "limit": "1000000000",
++                "objective": "o",
++                "predecessor": null,
++                "started_at": "2026-11-10T06:00:00Z",
++                "tree_sessions": [
++                  "00000000-0000-4000-8000-0000000000c1"
++                ]
++              }
++            ]
++          }
++        ],
++        "historical": {
++          "a134_086bdec1": {
++            "blocking_kinds": [],
++            "decision": "admitted",
++            "evaluation": "default",
++            "note": "comparison only; A1.3.4 has no ownership (D1) concept: it attributes by session tree and time window",
++            "reader_sha256": "086bdec1d443064f6847821858f34bbf227f8804a9a5fc8a362416f62b29d621",
++            "reasons": [
++              "within the objective pi_api limit"
++            ],
++            "spent_high_nano": "15000000",
++            "spent_low_nano": "15000000"
++          }
++        },
++        "inputs": {
++          "rates": {
++            "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
++            "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
++          },
++          "reference_time": "2026-11-10T07:00:00Z",
++          "sessions": [
++            {
++              "alias": "S1",
++              "launch": {
++                "auth_lane": "api",
++                "model": "openai/gpt-6-astra",
++                "parent": "root"
++              },
++              "lifecycle": [
++                {
++                  "at": "2026-11-10T06:00:10Z",
++                  "event": "launch",
++                  "turn": 1
++                },
++                {
++                  "at": "2026-11-10T06:50:00Z",
++                  "event": "retire"
++                }
++              ],
++              "logs": {
++                "turn-1": {
++                  "final_newline": true,
++                  "lines": [
++                    "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.5, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
++                    "{\"at\": \"2026-11-10T06:30:01Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.5, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
++                    "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.5, \"charged_usd\": 0.015, \"charge_basis\": \"usage\", \"session_spent_usd\": 0.015, \"multiplier_floor\": 0.0}}"
++                  ]
++                }
++              },
++              "session_id": "00000000-0000-4000-8000-0000000000c1"
++            }
++          ]
++        },
++        "invariants": [
++          "INV-A1",
++          "INV-F1",
++          "INV-F2"
++        ],
++        "profile": "current_producer",
++        "provenance": {
++          "origin": "contract::producer pi_container.py:1554-1571 (UsdBudget.settle usage)"
++        },
++        "reachability": "producer_reachable",
++        "role": "valid_control",
++        "schema": "pi-accounting-corpus/1"
+       },
+       "raw_input_sha256": "5b6b16d647aaf00f681f234a72398b96d0ba6bc3006c77b335dc91a75ce9eeb3"
+     },
+@@ -10401,6 +11410,149 @@
+           "raw_input_sha256": "976a4b2acf473f87ac4850f8c5ad5178d672fd650d231d23d5cc0e691abd342a"
+         }
+       },
++      "premise_inventory": [
++        "ambiguity",
++        "case_id",
++        "class",
++        "contract",
++        "controls",
++        "evaluations",
++        "expected",
++        "findings",
++        "group",
++        "historical",
++        "inputs",
++        "invariants",
++        "notes",
++        "profile",
++        "provenance",
++        "rationale",
++        "reachability",
++        "revisions",
++        "revisions_r3",
++        "revisions_r4",
++        "revisions_r5",
++        "revisions_r6",
++        "revisions_r7",
++        "revisions_r8",
++        "role",
++        "schema"
++      ],
++      "premise_record": {
++        "case_id": "A04-undated-settlement-between-dated-neighbours",
++        "class": "historical_legacy",
++        "contract": "pi-accounting-contract/1.7-s1",
++        "controls": [
++          "VC01-openai-usage-settlement"
++        ],
++        "evaluations": [
++          {
++            "admission_request": {
++              "new": "100000000",
++              "objective": "o"
++            },
++            "name": "default",
++            "objectives": [
++              {
++                "admissions": [
++                  {
++                    "admission_id": "a1",
++                    "rows": [
++                      {
++                        "admission_id": "a1",
++                        "at": "2026-11-10T06:00:05Z",
++                        "event": "pending",
++                        "max_usd": 1.0
++                      },
++                      {
++                        "admission_id": "a1",
++                        "at": "2026-11-10T06:00:10Z",
++                        "event": "launched",
++                        "session_id": "00000000-0000-4000-8000-0000000000c1"
++                      }
++                    ],
++                    "session": "00000000-0000-4000-8000-0000000000c1",
++                    "source": "journal"
++                  }
++                ],
++                "closed_at": null,
++                "limit": "1000000000",
++                "objective": "o",
++                "predecessor": null,
++                "started_at": "2026-11-10T06:00:00Z",
++                "tree_sessions": [
++                  "00000000-0000-4000-8000-0000000000c1"
++                ]
++              }
++            ]
++          }
++        ],
++        "historical": {
++          "a134_086bdec1": {
++            "blocking_kinds": [],
++            "decision": "admitted",
++            "evaluation": "default",
++            "note": "comparison only; A1.3.4 has no ownership (D1) concept: it attributes by session tree and time window",
++            "reader_sha256": "086bdec1d443064f6847821858f34bbf227f8804a9a5fc8a362416f62b29d621",
++            "reasons": [
++              "within the objective pi_api limit"
++            ],
++            "spent_high_nano": "315000000",
++            "spent_low_nano": "15000000"
++          }
++        },
++        "inputs": {
++          "rates": {
++            "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
++            "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
++          },
++          "reference_time": "2026-11-10T07:00:00Z",
++          "sessions": [
++            {
++              "alias": "S1",
++              "launch": {
++                "auth_lane": "api",
++                "model": "openai/gpt-6-astra",
++                "parent": "root"
++              },
++              "lifecycle": [
++                {
++                  "at": "2026-11-10T06:00:10Z",
++                  "event": "launch",
++                  "turn": 1
++                },
++                {
++                  "at": "2026-11-10T06:50:00Z",
++                  "event": "retire"
++                }
++              ],
++              "logs": {
++                "turn-1": {
++                  "final_newline": true,
++                  "lines": [
++                    "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.5, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
++                    "{\"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_1\", \"response_model\": 7, \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.5, \"charged_usd\": 0.015, \"charge_basis\": \"usage\", \"session_spent_usd\": 0.015, \"multiplier_floor\": 0.0}}",
++                    "{\"at\": \"2026-11-10T06:30:05Z\", \"event\": \"usd_reserved\", \"n\": 2, \"rid\": 2, \"reserved_usd\": 0.3, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}"
++                  ]
++                }
++              },
++              "session_id": "00000000-0000-4000-8000-0000000000c1"
++            }
++          ]
++        },
++        "invariants": [
++          "INV-F7",
++          "INV-T4"
++        ],
++        "profile": "current_producer",
++        "provenance": {
++          "origin": "repro_unit_a.py::A-04",
++          "variant": "undated reservation settlement"
++        },
++        "reachability": "not_established",
++        "role": "finding",
++        "schema": "pi-accounting-corpus/1"
++      },
+       "raw_input_sha256": "976a4b2acf473f87ac4850f8c5ad5178d672fd650d231d23d5cc0e691abd342a"
+     },
+     "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json": {
+@@ -10485,6 +11637,146 @@
+           "raw_input_sha256": "8e9cedfbd77254e983fa35939c7cfa5b19ff516a0c9269e11ed9b31843edb3e2"
+         }
+       },
++      "premise_inventory": [
++        "ambiguity",
++        "case_id",
++        "class",
++        "contract",
++        "controls",
++        "evaluations",
++        "expected",
++        "findings",
++        "group",
++        "historical",
++        "inputs",
++        "invariants",
++        "notes",
++        "profile",
++        "provenance",
++        "rationale",
++        "reachability",
++        "revisions",
++        "revisions_r3",
++        "revisions_r4",
++        "revisions_r5",
++        "revisions_r6",
++        "revisions_r7",
++        "revisions_r8",
++        "role",
++        "schema"
++      ],
++      "premise_record": {
++        "case_id": "VC01-openai-usage-settlement",
++        "class": "producer_valid",
++        "contract": "pi-accounting-contract/1.7-s1",
++        "controls": [],
++        "evaluations": [
++          {
++            "admission_request": {
++              "new": "100000000",
++              "objective": "o"
++            },
++            "name": "default",
++            "objectives": [
++              {
++                "admissions": [
++                  {
++                    "admission_id": "a1",
++                    "rows": [
++                      {
++                        "admission_id": "a1",
++                        "at": "2026-11-10T06:00:05Z",
++                        "event": "pending",
++                        "max_usd": 1.0
++                      },
++                      {
++                        "admission_id": "a1",
++                        "at": "2026-11-10T06:00:10Z",
++                        "event": "launched",
++                        "session_id": "00000000-0000-4000-8000-0000000000c1"
++                      }
++                    ],
++                    "session": "00000000-0000-4000-8000-0000000000c1",
++                    "source": "journal"
++                  }
++                ],
++                "closed_at": null,
++                "limit": "1000000000",
++                "objective": "o",
++                "predecessor": null,
++                "started_at": "2026-11-10T06:00:00Z",
++                "tree_sessions": [
++                  "00000000-0000-4000-8000-0000000000c1"
++                ]
++              }
++            ]
++          }
++        ],
++        "historical": {
++          "a134_086bdec1": {
++            "blocking_kinds": [],
++            "decision": "admitted",
++            "evaluation": "default",
++            "note": "comparison only; A1.3.4 has no ownership (D1) concept: it attributes by session tree and time window",
++            "reader_sha256": "086bdec1d443064f6847821858f34bbf227f8804a9a5fc8a362416f62b29d621",
++            "reasons": [
++              "within the objective pi_api limit"
++            ],
++            "spent_high_nano": "15000000",
++            "spent_low_nano": "15000000"
++          }
++        },
++        "inputs": {
++          "rates": {
++            "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
++            "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
++          },
++          "reference_time": "2026-11-10T07:00:00Z",
++          "sessions": [
++            {
++              "alias": "S1",
++              "launch": {
++                "auth_lane": "api",
++                "model": "openai/gpt-6-astra",
++                "parent": "root"
++              },
++              "lifecycle": [
++                {
++                  "at": "2026-11-10T06:00:10Z",
++                  "event": "launch",
++                  "turn": 1
++                },
++                {
++                  "at": "2026-11-10T06:50:00Z",
++                  "event": "retire"
++                }
++              ],
++              "logs": {
++                "turn-1": {
++                  "final_newline": true,
++                  "lines": [
++                    "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.5, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
++                    "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_1\", \"response_model\": 7, \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.5, \"charged_usd\": 0.015, \"charge_basis\": \"usage\", \"session_spent_usd\": 0.015, \"multiplier_floor\": 0.0}}"
++                  ]
++                }
++              },
++              "session_id": "00000000-0000-4000-8000-0000000000c1"
++            }
++          ]
++        },
++        "invariants": [
++          "INV-A1",
++          "INV-F1",
++          "INV-F2"
++        ],
++        "profile": "current_producer",
++        "provenance": {
++          "origin": "contract::producer pi_container.py:1554-1571 (UsdBudget.settle usage)"
++        },
++        "reachability": "producer_reachable",
++        "role": "valid_control",
++        "schema": "pi-accounting-corpus/1"
++      },
+       "raw_input_sha256": "8e9cedfbd77254e983fa35939c7cfa5b19ff516a0c9269e11ed9b31843edb3e2"
+     },
+     "oracle/r9-pilot/cases/same-origin.bundle.json": {
+@@ -10566,11 +11858,263 @@
+           "raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98"
+         }
+       },
++      "premise_inventory": [
++        "ambiguity",
++        "case_id",
++        "class",
++        "contract",
++        "controls",
++        "evaluations",
++        "expected",
++        "findings",
++        "group",
++        "historical",
++        "inputs",
++        "invariants",
++        "notes",
++        "profile",
++        "provenance",
++        "rationale",
++        "reachability",
++        "revisions",
++        "revisions_r3",
++        "revisions_r4",
++        "revisions_r5",
++        "revisions_r6",
++        "revisions_r7",
++        "revisions_r8",
++        "role",
++        "schema"
++      ],
++      "premise_record": {
++        "case_id": "VC01-openai-usage-settlement",
++        "class": "producer_valid",
++        "contract": "pi-accounting-contract/1.7-s1",
++        "controls": [],
++        "evaluations": [
++          {
++            "admission_request": {
++              "new": "100000000",
++              "objective": "o"
++            },
++            "name": "default",
++            "objectives": [
++              {
++                "admissions": [
++                  {
++                    "admission_id": "a1",
++                    "rows": [
++                      {
++                        "admission_id": "a1",
++                        "at": "2026-11-10T06:00:05Z",
++                        "event": "pending",
++                        "max_usd": 1.0
++                      },
++                      {
++                        "admission_id": "a1",
++                        "at": "2026-11-10T06:00:10Z",
++                        "event": "launched",
++                        "session_id": "00000000-0000-4000-8000-0000000000c1"
++                      }
++                    ],
++                    "session": "00000000-0000-4000-8000-0000000000c1",
++                    "source": "journal"
++                  }
++                ],
++                "closed_at": null,
++                "limit": "1000000000",
++                "objective": "o",
++                "predecessor": null,
++                "started_at": "2026-11-10T06:00:00Z",
++                "tree_sessions": [
++                  "00000000-0000-4000-8000-0000000000c1"
++                ]
++              }
++            ]
++          }
++        ],
++        "historical": {
++          "a134_086bdec1": {
++            "blocking_kinds": [],
++            "decision": "admitted",
++            "evaluation": "default",
++            "note": "comparison only; A1.3.4 has no ownership (D1) concept: it attributes by session tree and time window",
++            "reader_sha256": "086bdec1d443064f6847821858f34bbf227f8804a9a5fc8a362416f62b29d621",
++            "reasons": [
++              "within the objective pi_api limit"
++            ],
++            "spent_high_nano": "15000000",
++            "spent_low_nano": "15000000"
++          }
++        },
++        "inputs": {
++          "rates": {
++            "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
++            "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
++          },
++          "reference_time": "2026-11-10T07:00:00Z",
++          "sessions": [
++            {
++              "alias": "S1",
++              "launch": {
++                "auth_lane": "api",
++                "model": "openai/gpt-6-astra",
++                "parent": "root"
++              },
++              "lifecycle": [
++                {
++                  "at": "2026-11-10T06:00:10Z",
++                  "event": "launch",
++                  "turn": 1
++                },
++                {
++                  "at": "2026-11-10T06:50:00Z",
++                  "event": "retire"
++                }
++              ],
++              "logs": {
++                "turn-1": {
++                  "final_newline": true,
++                  "lines": [
++                    "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.5, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
++                    "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.5, \"charged_usd\": 0.015, \"charge_basis\": \"usage\", \"session_spent_usd\": 0.015, \"multiplier_floor\": 0.0}}"
++                  ]
++                }
++              },
++              "session_id": "00000000-0000-4000-8000-0000000000c1"
++            }
++          ]
++        },
++        "invariants": [
++          "INV-A1",
++          "INV-F1",
++          "INV-F2"
++        ],
++        "profile": "current_producer",
++        "provenance": {
++          "origin": "contract::producer pi_container.py:1554-1571 (UsdBudget.settle usage)"
++        },
++        "reachability": "producer_reachable",
++        "role": "valid_control",
++        "schema": "pi-accounting-corpus/1"
++      },
+       "raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98"
+     }
+   },
+   "author": "01a1d8da-e462-7c71-a278-e22e276bc26f",
+   "derivation_ref": "renewal-r10/oracle/DERIVATIONS.md",
++  "premise_metadata_exclusions": [
++    "ambiguity",
++    "findings",
++    "group",
++    "notes",
++    "rationale",
++    "revisions",
++    "revisions_r3",
++    "revisions_r4",
++    "revisions_r5",
++    "revisions_r6",
++    "revisions_r7",
++    "revisions_r8"
++  ],
++  "rate_premises": {
++    "oracle/rates/anthropic_api_rates.json": {
++      "models": {
++        "claude-fable-5-1": {
++          "cache_read": 0.25,
++          "cache_write_1h": 20,
++          "cache_write_5m": 12.5,
++          "input": 10,
++          "output": 50
++        },
++        "claude-fable-5-2": {
++          "cache_read": 0.2,
++          "cache_write_1h": 16,
++          "cache_write_5m": 10,
++          "input": 8,
++          "output": 40
++        },
++        "claude-opus-4-8": {
++          "cache_read": 0.5,
++          "cache_write_1h": 10,
++          "cache_write_5m": 6.25,
++          "input": 5,
++          "output": 25
++        },
++        "claude-opus-5": {
++          "cache_read": 0.5,
++          "cache_write_1h": 10,
++          "cache_write_5m": 6.25,
++          "input": 5,
++          "output": 25
++        },
++        "claude-opus-5-5": {
++          "cache_read": 0.2,
++          "cache_write_1h": 8,
++          "cache_write_5m": 5,
++          "input": 4,
++          "output": 20
++        },
++        "claude-sonnet-5": {
++          "cache_read": 0.2,
++          "cache_write_1h": 4,
++          "cache_write_5m": 2.5,
++          "input": 2,
++          "output": 10
++        },
++        "claude-sonnet-5-5": {
++          "cache_read": 0.1,
++          "cache_write_1h": 4,
++          "cache_write_5m": 2.5,
++          "input": 2,
++          "output": 10
++        }
++      },
++      "source": "metrics/scripts/usage_ledger.py NATIVE_RATES (USD per million tokens); claude-haiku-5-5 is left out because the ledger applies a long-input rule to it. A test keeps these equal.",
++      "tier_multiplier": {
++        "default": 1.0
++      }
++    },
++    "oracle/rates/openai_api_rates.json": {
++      "long_input_multiplier": 2,
++      "long_input_threshold": 272000,
++      "long_output_multiplier": 1.5,
++      "models": {
++        "gpt-6-astra": {
++          "cache_write": 12.5,
++          "cached_input": 1,
++          "input": 10,
++          "output": 50
++        },
++        "gpt-6-sol": {
++          "cache_write": 2.5,
++          "cached_input": 0.2,
++          "input": 2,
++          "output": 10
++        },
++        "gpt-6.1-sol": {
++          "cache_write": 2.5,
++          "cached_input": 0.1,
++          "input": 2,
++          "output": 10
++        },
++        "gpt-6.1-terra": {
++          "cache_write": 1.25,
++          "cached_input": 0.05,
++          "input": 1,
++          "output": 5
++        }
++      },
++      "source": "metrics/scripts/usage_ledger.py CODEX_RATES, API_TIER_MULTIPLIER and PRICING_RULES (codex_long_*); tests/test_pi_container.py fails if these differ",
++      "tier_multiplier": {
++        "default": 1.0,
++        "fast": 2.0,
++        "flex": 0.5,
++        "priority": 2.0
++      },
++      "unit": "USD per million tokens"
++    }
++  },
+   "reservation_controls": [
+     {
+       "bundle_file": "oracle/r9-pilot/cases/same-origin.bundle.json",
+--- baseline/validator/r9_pilot.py
++++ subject/validator/r9_pilot.py
+@@ -189,6 +189,40 @@
+ 
+ # R10 finite applicability: independently admitted premise records, not outputs.
+ ADMITTED = json.loads((Path(__file__).parent/'r10_admitted.json').read_text())
++# Parse at the actual consumer boundary, before any consequence/consumed marker.
++def strict_read(path):
++ def members(pairs):
++  d={}
++  for k,v in pairs:
++   if k in d:raise ValueError('duplicate member '+k)
++   d[k]=v
++  return d
++ def invalid(v):raise ValueError('non JSON number '+v)
++ return json.loads(path.read_text(),object_pairs_hook=members,parse_constant=invalid)
++
++def finite_premises(F):
++ try:
++  exclusions=set(ADMITTED['premise_metadata_exclusions'])|{'expected'}
++  for path,a in ADMITTED['admissions'].items():
++   source=a.get('case_file',a.get('conditional_raw_file'))
++   c=strict_read(root()/source)
++   if not isinstance(c,dict) or sorted(c)!=a['premise_inventory']:raise ValueError(source+' top-level inventory')
++   projected={k:([{n:v for n,v in e.items() if n!='expected'} for e in value] if k=='evaluations' else value) for k,value in c.items() if k not in exclusions}
++   # Canonical JSON preserves bool/number, array ordering, absence/null and types.
++   if json.dumps(projected,sort_keys=True,separators=(',',':'))!=json.dumps(a['premise_record'],sort_keys=True,separators=(',',':')):raise ValueError(source+' governing values/types/inventory')
++   bundle=strict_read(root()/path)
++   docs=bundle.get('documents') if isinstance(bundle,dict) else None
++   if not isinstance(docs,list) or len(docs)!=2 or not isinstance(docs[0],dict) or docs[0].get('kind')!='accounting_input_proof':raise ValueError(path+' input proof inventory')
++   for field in ('origins','initial_contracts','grants','exact_links'):
++    if json.dumps(docs[0].get(field),sort_keys=True)!=json.dumps(a[field],sort_keys=True):raise ValueError('R10 exact raw applicability '+field)
++   for payload in a['payloads']:strict_read(root()/payload)
++  for path,want in ADMITTED['rate_premises'].items():
++   if json.dumps(strict_read(root()/path),sort_keys=True)!=json.dumps(want,sort_keys=True):raise ValueError(path+' valuation rate')
++  strict_read(root()/'oracle/r9-pilot/claims.json')
++ except (OSError,ValueError,TypeError,KeyError,AttributeError) as e:
++  F.add('finite admission','R10 finite premise outside independent admission: '+str(e));return False
++ return True
++
+ def selected_binding(claim,b):
+  key=claim['relation']+':'+b['case_id']
+  s=ADMITTED['selected'].get(key)
+--- baseline/validator/test_r10_qualification.py
++++ subject/validator/test_r10_qualification.py
+@@ -61,7 +61,7 @@
+   rc,msg=self.run_subject(lambda r:edit(r,EQ,f));self.assertEqual(rc,1,msg);self.assertIn('raw reservation-class actual membership/validity',msg);self.assertIn('lacks admitted exact-copy',msg)
+  def test_actual_raw_extent_changed(self):
+   def f(d):d['inputs']['sessions'][0]['logs']['turn-1']['lines'][0]+=' '
+-  rc,msg=self.run_subject(lambda r:edit(r,'oracle/r9-pilot/cases/equal-reservations.json',f));self.assertEqual(rc,1,msg);self.assertIn('raw subject outside independent admission',msg)
++  rc,msg=self.run_subject(lambda r:edit(r,'oracle/r9-pilot/cases/equal-reservations.json',f));self.assertEqual(rc,1,msg);self.assertIn('finite premise outside independent admission',msg)
+  def test_unlinked_financial_anchor_erasure(self):
+   def f(d):d['documents'][1]['units'][0]['exposure_ref']='covered:Exact15000000'
+   rc,msg=self.run_subject(lambda r:edit(r,'oracle/r8-controls/VC07-unlinked.bundle.json',f));self.assertEqual(rc,1,msg);self.assertIn('raw conditional anchor/usage active financial inventory',msg)
+@@ -192,7 +192,7 @@
+       self.assertEqual(before_c['inputs'],json.loads((r/case).read_text())['inputs'])
+       self.assertEqual(before_i,json.loads((r/bundle).read_text())['documents'][0])
+       rust=subprocess.run([os.environ['R10_FINANCIAL_EXECUTABLE'],'--exact','r9_registered_actual_subject_qualification','--nocapture'],env=dict(os.environ,R9_QUALIFICATION_SUBJECT=str(r)),capture_output=True,text=True)
+-      reason=('model7 unsupported minimum' if kind in ('old15M','no-release') or (model7 and kind=='coherent-low') else 'selected priceable usage minimum' if not model7 and kind=='coherent-low' else 'selected')
++      reason=('finite premise' if kind in ('missing-evaluation','duplicate-evaluation','missing-objective','duplicate-objective') else 'model7 unsupported minimum' if kind in ('old15M','no-release') or (model7 and kind=='coherent-low') else 'selected priceable usage minimum' if not model7 and kind=='coherent-low' else 'selected')
+       self.assertNotEqual(rust.returncode,0,rust.stdout+rust.stderr);self.assertIn(reason,rust.stdout+rust.stderr)
+       structural=subprocess.run([os.environ['R10_EVIDENCE_EXECUTABLE'],'evidence',str(r),str(r/bundle)],capture_output=True,text=True)
+       if kind=='old15M':self.assertEqual(structural.returncode,0,structural.stdout+structural.stderr)
+@@ -202,8 +202,100 @@
+      # Absent field is rejected structurally before Python's finite list check.
+      if kind=='absent':self.assertIn('selected complete low witness',msg)
+      else:
+-      reason=('model7 unsupported minimum' if kind in ('old15M','no-release') or (model7 and kind=='coherent-low') else 'selected priceable usage minimum' if not model7 and kind=='coherent-low' else 'selected')
++      reason=('finite premise' if kind in ('missing-evaluation','duplicate-evaluation','missing-objective','duplicate-objective') else 'model7 unsupported minimum' if kind in ('old15M','no-release') or (model7 and kind=='coherent-low') else 'selected priceable usage minimum' if not model7 and kind=='coherent-low' else 'selected')
+       self.assertIn(reason,msg)
+      if kind=='old15M':self.assertNotIn('applicability',msg);self.assertNotIn('wire schema',msg);self.assertNotIn('accounting schema',msg)
+      print('R10 selected mutant',name,kind,'other_scope',other_scope,'python_exit',rc,'intended predicate consumed')
++class PremiseBoundary(Pilot):
++ # Only new tests run here; inherited tests remain with Pilot.
++ def test_finite_premise_mutants(self):
++  gated='corpus/cases/P132-FG-VC11-gated.json'
++  eq='oracle/r9-pilot/cases/equal-reservations.json'
++  admissions=v.r9_pilot.ADMITTED['admissions']
++  mutants=[]
++  def add(name,path,change):mutants.append((name,path,change))
++  for path in sorted({a['case_file'] for a in admissions.values() if 'case_file' in a}):
++   add('start0655:'+path,path,lambda c:c['evaluations'][0]['objectives'][0].update(started_at='2026-11-10T06:55:00Z'))
++  for field,value in [('closed_at','2026-11-10T06:20:00Z'),('predecessor','other'),('tree_sessions',[]),('limit','1'),('admissions',[])]:
++   add(field,eq,lambda c,k=field,x=value:c['evaluations'][0]['objectives'][0].update({k:x}))
++  for field,value in [('session','other'),('source','other'),('admission_id','other')]:
++   add('admission-'+field,eq,lambda c,k=field,x=value:c['evaluations'][0]['objectives'][0]['admissions'][0].update({k:x}))
++  for field,value in [('session_id','other'),('event','pending'),('at','2026-11-10T07:00:00Z'),('admission_id','other')]:
++   add('journal-'+field,eq,lambda c,k=field,x=value:c['evaluations'][0]['objectives'][0]['admissions'][0]['rows'][1].update({k:x}))
++  add('row-order',eq,lambda c:c['evaluations'][0]['objectives'][0]['admissions'][0]['rows'].reverse())
++  add('max_usd',eq,lambda c:c['evaluations'][0]['objectives'][0]['admissions'][0]['rows'][0].update(max_usd=2.0))
++  add('number-bool',eq,lambda c:c['evaluations'][0]['objectives'][0]['admissions'][0]['rows'][0].update(max_usd=True))
++  add('request',eq,lambda c:c['evaluations'][0]['admission_request'].update(new='0'))
++  for field in ['profile','schema','case_id','role','class','contract','reachability']:
++   for value in [None,'other',True,{}]:add(field+str(value),gated,lambda c,k=field,x=value:c.update({k:x}))
++  for field in ['inputs','evaluations','profile','trusted_fixture_inputs']:
++   add('delete-'+field,gated,lambda c,k=field:c.pop(k))
++   for value in [None,[],{},'',False]:add('type-'+field+str(value),gated,lambda c,k=field,x=value:c.update({k:x}))
++  witness=v.r9_pilot.ADMITTED['admissions']['oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json']['premise_record']['trusted_fixture_inputs']['gate_verifications']['g-S1']
++  for field in witness:
++   add('fixture-delete-'+field,gated,lambda c,k=field:c['trusted_fixture_inputs']['gate_verifications']['g-S1'].pop(k))
++   add('fixture-change-'+field,gated,lambda c,k=field:c['trusted_fixture_inputs']['gate_verifications']['g-S1'].update({k:'different'}))
++  add('fixture-extra',gated,lambda c:c['trusted_fixture_inputs']['gate_verifications']['g-S1'].update(extra=True))
++  add('fixture-gate-inventory',gated,lambda c:c['trusted_fixture_inputs']['gate_verifications'].update(extra={}))
++  add('fixture-insertion',eq,lambda c:c.update(trusted_fixture_inputs=None))
++  for level in ['evaluation','objective','row']:
++   for kind in ['delete','null','extra','duplicate']:
++    def change(c,level=level,kind=kind):
++     ev=c['evaluations'][0];ob=ev['objectives'][0];rows=ob['admissions'][0]['rows']
++     target=ev if level=='evaluation' else ob if level=='objective' else rows[0]
++     key='name' if level=='evaluation' else 'started_at' if level=='objective' else 'event'
++     if kind=='delete':target.pop(key)
++     elif kind=='null':target[key]=None
++     elif kind=='extra':target['unknown']=True
++     elif level=='evaluation':c['evaluations'].append(json.loads(json.dumps(ev)))
++     elif level=='objective':ev['objectives'].append(json.loads(json.dumps(ob)))
++     else:rows.append(json.loads(json.dumps(rows[0])))
++    add(level+'-'+kind,eq,change)
++  add('top-extra',eq,lambda c:c.update(unknown=True))
++  for value in [None,[],{},'bad']:
++   add('proof-inventory'+str(value),EQ,lambda c,x=value:c.update(documents=x))
++  add('proof-origins-null',EQ,lambda c:c['documents'][0].update(origins=None))
++  raw='oracle/r8-controls/VC07-exact.raw.json'
++  add('conditional-assumption',raw,lambda c:c['conditional_harness_assumptions']['exact_row_coreference'].update(no_origin_duplication=False))
++  add('conditional-original',raw,lambda c:c['original_inputs'].update(reference_time='different'))
++  add('rate','oracle/rates/openai_api_rates.json',lambda c:c['models']['gpt-6-astra'].update(input=11))
++  for name,path,change in mutants:
++   with self.subTest(name=name):
++    def mutate(r):
++     before=json.loads((r/path).read_text());edit(r,path,change);after=json.loads((r/path).read_text())
++     if 'expected' in before:self.assertEqual(before['expected'],after['expected'])
++     for a,b in zip(before.get('evaluations',[]),after.get('evaluations',[]) or []):
++      if isinstance(b,dict) and 'expected' in a:self.assertEqual(a['expected'],b['expected'])
++     proc=subprocess.run([os.environ['R10_FINANCIAL_EXECUTABLE'],'--exact','r9_registered_actual_subject_qualification','--nocapture'],env=dict(os.environ,R9_QUALIFICATION_SUBJECT=str(r)),capture_output=True,text=True)
++     self.assertNotEqual(proc.returncode,0,proc.stdout+proc.stderr);self.assertIn('R10 finite premise outside independent admission',proc.stdout+proc.stderr)
++     self.assertNotIn('R10 evaluated',proc.stdout+proc.stderr)
++    rc,msg=self.run_subject(mutate);self.assertEqual(rc,1,msg);self.assertIn('R10 finite premise outside independent admission',msg);self.assertNotIn('R10 evaluated',msg)
++    print('R10 premise both consumers rejected',name)
++ def test_gate_outputs_under_unchanged_premises(self):
++  for key,value in [('qualified',False),('verification_source','trusted_adapter'),('verification_payload_sha256','0'*64),('reasons',['other'])]:
++   with self.subTest(key=key):
++    def mutate(r):
++     edit(r,'corpus/cases/P132-FG-VC11-gated.json',lambda c:c['evaluations'][0]['expected']['objectives'][0]['commitments'][0]['gate'].update({key:value}))
++     proc=subprocess.run([os.environ['R10_FINANCIAL_EXECUTABLE'],'--exact','r9_registered_actual_subject_qualification','--nocapture'],env=dict(os.environ,R9_QUALIFICATION_SUBJECT=str(r)),capture_output=True,text=True)
++     self.assertNotEqual(proc.returncode,0);self.assertIn('finite trusted gate consequence',proc.stdout+proc.stderr);self.assertNotIn('finite premise outside',proc.stdout+proc.stderr)
++    rc,msg=self.run_subject(mutate);self.assertEqual(rc,1,msg);self.assertNotIn('finite premise outside',msg);self.assertIn('gate',msg)
++ def test_malformed_and_duplicate_consumption(self):
++  paths=['oracle/r9-pilot/cases/equal-reservations.json','oracle/r8-controls/VC07-exact.raw.json','oracle/rates/openai_api_rates.json','oracle/r9-pilot/cases/equal-reservations.bundle.json','oracle/r9-pilot/claims.json']
++  for path in paths:
++   for kind in ['malformed','duplicate-top','duplicate-nested']:
++    with self.subTest(path=path,kind=kind):
++     def mutate(r):
++      p=r/path;text=p.read_text()
++      if kind=='malformed':text='{'
++      elif kind=='duplicate-top':text='{"duplicate":0,"duplicate":1,'+text.lstrip()[1:]
++      else:
++       start=text.index('{',text.index('{')+1);text=text[:start]+text[start:].replace('{','{"duplicate":0,"duplicate":1,',1)
++      p.write_text(text)
++      proc=subprocess.run([os.environ['R10_FINANCIAL_EXECUTABLE'],'--exact','r9_registered_actual_subject_qualification','--nocapture'],env=dict(os.environ,R9_QUALIFICATION_SUBJECT=str(r)),capture_output=True,text=True)
++      self.assertNotEqual(proc.returncode,0);self.assertIn('R10 finite premise outside independent admission',proc.stdout+proc.stderr)
++     rc,msg=self.run_subject(mutate);self.assertEqual(rc,1,msg);self.assertIn('R10 finite premise outside independent admission',msg);self.assertNotIn('Traceback',msg)
++
++# Avoid duplicating the inherited legacy battery under the subclass.
++for _name in list(Pilot.__dict__):
++ if _name.startswith('test_'):setattr(PremiseBoundary,_name,None)
+ if __name__=='__main__':unittest.main()
+--- baseline/validator/validate_corpus.py
++++ subject/validator/validate_corpus.py
+@@ -1405,7 +1405,11 @@
+ 
+ 
+ def pilot_qualification(subject):
+-    F = Failures(); rates = load_rates(os.path.join(subject, 'oracle/rates')); consumed=[]
++    F = Failures(); consumed=[]
++    if not r9_pilot.finite_premises(F):
++        for f in F: print('FAIL',f)
++        return 1
++    rates = load_rates(os.path.join(subject, 'oracle/rates'))
+     for claim in r9_pilot.load_registry():
+         evaluated=[]
+         for b in claim['cases']:
+@@ -1419,8 +1423,9 @@
+                 check_case(c,rates,F);check_accounting_references(c,F)
+             evaluated.append({'relation':claim['relation'],'subject':selected['case_file'],'bundle':selected['bundle_file'],'outcome':'pass' if len(F)==before else 'fail'})
+         if len(evaluated)!=len(claim['cases']) or not evaluated:raise ValueError('R10 unexecuted required registration')
+-        consumed.append({'claim_id':claim['claim_id'],'evaluations':evaluated})
+-        print('R10 evaluated',json.dumps(consumed[-1],sort_keys=True))
++        record={'claim_id':claim['claim_id'],'evaluations':evaluated}
++        if all(e['outcome']=='pass' for e in evaluated):consumed.append(record)
++        print('R10 evaluated',json.dumps(record,sort_keys=True))
+     r9_pilot.conditional_raw_qualification(F)
+     r9_pilot.reservation_composed_controls(F)
+     for f in F: print('FAIL',f)

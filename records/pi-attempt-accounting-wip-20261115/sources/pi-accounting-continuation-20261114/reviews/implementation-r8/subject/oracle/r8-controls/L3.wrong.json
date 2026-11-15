@@ -1,0 +1,67 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "none",
+      "kind": "exact",
+      "nano": "0"
+    },
+    "low": "0"
+  },
+  "credits": [
+    {
+      "alternatives": [
+        "uP",
+        "uX"
+      ],
+      "low": "15000000",
+      "slot": "P"
+    },
+    {
+      "alternatives": [
+        "uQ",
+        "uX"
+      ],
+      "low": "15000000",
+      "slot": "Q"
+    }
+  ],
+  "id": "result:L3",
+  "units": [
+    {
+      "high": {
+        "basis": "none",
+        "kind": "exact",
+        "nano": "0"
+      },
+      "id": "P",
+      "low": "0",
+      "origins": [
+        "uP"
+      ]
+    },
+    {
+      "high": {
+        "basis": "none",
+        "kind": "exact",
+        "nano": "0"
+      },
+      "id": "Q",
+      "low": "0",
+      "origins": [
+        "uQ"
+      ]
+    },
+    {
+      "high": {
+        "basis": "none",
+        "kind": "exact",
+        "nano": "0"
+      },
+      "id": "X",
+      "low": "0",
+      "origins": [
+        "uX"
+      ]
+    }
+  ]
+}

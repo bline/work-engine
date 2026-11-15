@@ -1,0 +1,37 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/legacy-plan.json",
+  "plan_sha256": "96e154136b5f57a4e570f575480b98e7f37052f94bc90da654f588f792cf0f2b",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "check",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/legacy-final/check.json",
+      "record_sha256": "4103f0b8e3e85772d9098c83e5e99fed07439105fba39b4e70fb2a3c2acf51a8",
+      "leftovers": 0
+    },
+    {
+      "name": "selftest",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/legacy-final/selftest.json",
+      "record_sha256": "166ec936ed12bd35f9944de3f257e577de40836c973bc91309eb0e20cdec8d1f",
+      "leftovers": 0
+    },
+    {
+      "name": "revisions",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/legacy-final/revisions.json",
+      "record_sha256": "e2c239d9450a9fdc57e148ae2d77939374203f43ab3db43075ddad7883a3d6ed",
+      "leftovers": 0
+    },
+    {
+      "name": "sabotage",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/legacy-final/sabotage.json",
+      "record_sha256": "e70e3d593684d1598355ecd49c8ceae5c001077ebd8a337ce3c7c7db850d6fc2",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

@@ -1,0 +1,30 @@
+{
+  "admission": "conditional_fixture",
+  "authority_ref": "ROOT-ADOPTION-R6.json",
+  "case_id": "A1-02-undated-row-inverted-neighbours",
+  "grant_payloads": [
+    {
+      "auxiliary_exact_row_coreference": "unestablished",
+      "exact_copy_equivalence": false,
+      "exact_origin_refs": [
+        "S1/turn-1:1",
+        "S1/turn-1:2",
+        "S1/turn-1:3"
+      ],
+      "guarantee": "Usable dollar rid is interpreted only within this immutable conditional fixture source scope; same-origin-only duplicate rule except the inherited C3 exact-byte-copy control.",
+      "immutable_reference_namespace": "A1-02-undated-row-inverted-neighbours/S1/turn-1",
+      "physical_bill_independence": "unestablished",
+      "source_origin_id": "S1/turn-1"
+    }
+  ],
+  "initial_scope_contracts": [
+    {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "A1-02-undated-row-inverted-neighbours/S1/turn-1"
+    }
+  ],
+  "raw_input_sha256": "c879f6ad4db4f9e30c1b37fd823f4da15b3f7dd17cb67b33b816ce006a960966"
+}

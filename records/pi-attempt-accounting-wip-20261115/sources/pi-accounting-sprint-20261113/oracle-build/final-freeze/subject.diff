@@ -1,0 +1,149 @@
+--- baseline/corpus/cases/R6-C01-writer-reservation-floor-control.json
++++ subject/corpus/cases/R6-C01-writer-reservation-floor-control.json
+@@ -225,7 +225,7 @@
+       "final_newline": true,
+       "lines": [
+        "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.01, \"input_bound\": 1000, \"bound_basis\": \"bytes\"}",
+-       "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": \"flex\", \"observed_tier\": \"default\", \"terminal\": \"response.incomplete\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.01, \"charged_usd\": 0.015, \"charge_basis\": \"usage\", \"session_spent_usd\": 0.015, \"multiplier_floor\": 0.0}}"
++       "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": \"flex\", \"observed_tier\": \"default\", \"terminal\": \"response.incomplete\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.01, \"charged_usd\": 0.015, \"charge_basis\": \"usage\", \"session_spent_usd\": 0.015, \"multiplier_floor\": 1.0}}"
+       ]
+      }
+     },
+@@ -237,13 +237,13 @@
+   "INV-F3",
+   "INV-F13"
+  ],
+- "notes": "Writer-consistent reservation arithmetic control: configured flex0.5, input bound1000, output cap150 gives (1000*12.5+150*50)*0.5/1e6=.01. Observed default prices logged usage1000/100 at.015; incomplete terminal retains R and supported usage. Local writer arithmetic/branch witness only; no live producer reachability claim.",
++ "notes": "Writer-consistent reservation arithmetic control: configured flex0.5, input bound1000, output cap150 gives (1000*12.5+150*50)*0.5/1e6=.01. Observed default prices logged usage1000/100 at.015; incomplete terminal retains R and supported usage. Local writer arithmetic/branch witness only; no live producer reachability claim. Observed default differs from configured flex, so settlement raises multiplier_floor from0 to1.0; this new control records the raised floor.",
+  "profile": "current_producer",
+  "provenance": {
+   "origin": "independent raw oracle writer-control construction",
+   "source_case": "P133-A01-incomplete-usage-above-reservation"
+  },
+- "rationale": "RootP2 explicit status/terminal conjunction; historical synthetic bytes retained in source case. Writer-consistent reservation arithmetic control: configured flex0.5, input bound1000, output cap150 gives (1000*12.5+150*50)*0.5/1e6=.01. Observed default prices logged usage1000/100 at.015; incomplete terminal retains R and supported usage. Local writer arithmetic/branch witness only; no live producer reachability claim.",
++ "rationale": "RootP2 explicit status/terminal conjunction; historical synthetic bytes retained in source case. Writer-consistent reservation arithmetic control: configured flex0.5, input bound1000, output cap150 gives (1000*12.5+150*50)*0.5/1e6=.01. Observed default prices logged usage1000/100 at.015; incomplete terminal retains R and supported usage. Local writer arithmetic/branch witness only; no live producer reachability claim. Local floor witness corrected to1.0 from the initially cloned0.0; historical originals unchanged.",
+  "reachability": "not_established",
+  "revisions": [],
+  "revisions_r3": [],
+--- baseline/oracle/README.md
++++ subject/oracle/README.md
+@@ -13,3 +13,5 @@
+ Writer controls preserve the historical synthetic originals. R6-C01 supplies compatible local reservation configuration (input_bound1000, output_cap150, flex0.5): (1000*12.5+150*50)*0.5/1e6=.01. Its observed-default incomplete usage supports.015 and does not release the reservation. R6-C02 supplies input_bound6000/output_cap14500/default: R=.8. The pinned parser can log a non200 response.completed payload and usage; error_status charges0 while supported usage1USD is retained. These are local writer arithmetic/branch consistency witnesses, with reachability not_established. Passing a reservation lower-bound check never proves actual producer reachability.
+ 
+ Producer basis: released92a03789 pi_container.py SHA780837341790780f84163ee6151b8ce66cff56f5a3f6ddf8c15f939dba50f470; exact lifetime keys ephemeral_5m_input_tokens and ephemeral_1h_input_tokens at111–112,653–660,1046–1058; non200 parser path1510–1572. Graph evidence is the independent audit's Tier2 generation2026-11-13T21:53:10Z with unresolved operator-call coverage; material source ranges were read directly. This external subject is outside_project and has no claimed graph completeness.
++
++Exact hypothetical body/config witnesses are in writer-controls.json. Rust assertions independently serialize those bodies, reconstruct byte input bounds with the pinned32token item overhead, and verify logged multiplier floors. During implementation, the first cloned R6-C01 witness incorrectly retained floor0 after requested-flex/observed-default settlement; pinned lines1007–1020 establish the raised floor1. The new control was corrected to1.0 and rechecked. The initial owned snapshot58f9f63d/archive30f71778 retains that transient defect for lineage; it is superseded. Historical173raw cases were never changed.
+--- baseline/tooling/spec-check/tests/independent_raw_axes.rs
++++ subject/tooling/spec-check/tests/independent_raw_axes.rs
+@@ -476,6 +476,33 @@
+ }
+ #[test]
+ fn independent_writer_positive_controls() {
++    let witnesses = read(root().join("oracle/writer-controls.json"));
++    for w in witnesses["witnesses"].as_array().unwrap() {
++        let body = &w["body"];
++        let mut rest = body.clone();
++        rest.as_object_mut().unwrap().remove("input");
++        let rest_bytes = serde_json::to_vec(&rest).unwrap().len();
++        let item_bytes = serde_json::to_vec(&body["input"][0]).unwrap().len();
++        let bound = rest_bytes + item_bytes + 32 * 2;
++        assert_eq!(Some(bound as i128), nat(&w["input_basis"]["input_bound"]));
++        assert_eq!(hash(&serde_json::to_vec(body).unwrap()), w["body_sha256"]);
++        assert_eq!(w["budget_config"]["strict_tier"], false);
++        assert_eq!(w["budget_config"]["multiplier_floor"], 0);
++        assert!(w["input_basis"]["prefix"].is_null());
++        let c = corpus_case(w["case_id"].as_str().unwrap());
++        let req: Value = serde_json::from_str(
++            c["inputs"]["sessions"][0]["logs"]["turn-1"]["lines"][1]
++                .as_str()
++                .unwrap(),
++        )
++        .unwrap();
++        assert_eq!(
++            dollars(&req["usd"]["multiplier_floor"]),
++            nat(&w["expected_logged_floor"]).map(|n| n * 1_000_000_000)
++        );
++        assert_eq!(c["reachability"], "not_established");
++    }
++
+     let r = root();
+     let a = read(r.join("corpus/cases/R6-C01-writer-reservation-floor-control.json"));
+     let l = &a["inputs"]["sessions"][0]["logs"]["turn-1"]["lines"];
+--- baseline/oracle/writer-controls.json
++++ subject/oracle/writer-controls.json
+@@ -0,0 +1,75 @@
++{
++  "producer_sha256": "780837341790780f84163ee6151b8ce66cff56f5a3f6ddf8c15f939dba50f470",
++  "schema": "independent-writer-consistency-witness/1",
++  "witnesses": [
++    {
++      "body": {
++        "input": [
++          "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
++        ],
++        "max_output_tokens": 150,
++        "model": "gpt-6-astra",
++        "service_tier": "flex"
++      },
++      "body_sha256": "d4051e4ee1d3e1569415ec75d6c9a9800242398203cd6b63c300d96cc4d60674",
++      "budget_config": {
++        "max_output_tokens": 150,
++        "max_usd": 10,
++        "multiplier_floor": 0,
++        "spent_before_usd": 0,
++        "strict_tier": false,
++        "tier": "flex"
++      },
++      "case_id": "R6-C01-writer-reservation-floor-control",
++      "expected_logged_floor": 1,
++      "input_basis": {
++        "bound_basis": "bytes",
++        "input_bound": 1000,
++        "item_bytes": [
++          867
++        ],
++        "item_overhead_tokens": 32,
++        "items": 1,
++        "prefix": null,
++        "rest_bytes": 69
++      },
++      "kind": "test_only_hypothetical_local_writer_consistency",
++      "limitation": "hypothetical configuration and local branch arithmetic; no live producer reachability or API fulfillment claim",
++      "reachability": "not_established"
++    },
++    {
++      "body": {
++        "input": [
++          "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
++        ],
++        "max_output_tokens": 14500,
++        "model": "gpt-6-astra"
++      },
++      "body_sha256": "6a8510db6250a369caaada2f656f7d7adeec2d49f08a37fe76a4f7f11bc8fde1",
++      "budget_config": {
++        "max_output_tokens": 14500,
++        "max_usd": 10,
++        "multiplier_floor": 0,
++        "spent_before_usd": 0,
++        "strict_tier": false,
++        "tier": "default"
++      },
++      "case_id": "R6-C02-non200-success-terminal-usage-control",
++      "expected_logged_floor": 0,
++      "input_basis": {
++        "bound_basis": "bytes",
++        "input_bound": 6000,
++        "item_bytes": [
++          5887
++        ],
++        "item_overhead_tokens": 32,
++        "items": 1,
++        "prefix": null,
++        "rest_bytes": 49
++      },
++      "kind": "test_only_hypothetical_local_writer_consistency",
++      "limitation": "hypothetical configuration and local branch arithmetic; no live producer reachability or API fulfillment claim",
++      "reachability": "not_established"
++    }
++  ]
++}

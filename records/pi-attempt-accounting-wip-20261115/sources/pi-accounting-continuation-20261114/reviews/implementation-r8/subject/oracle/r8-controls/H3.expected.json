@@ -1,0 +1,71 @@
+{
+  "assertions": [
+    {
+      "claim_id": "H3",
+      "expected_fields_or_relations": {
+        "/aggregate": {
+          "high": {
+            "basis": "proxy_reservation",
+            "kind": "at_least",
+            "nano": "1000000000"
+          },
+          "low": "0"
+        },
+        "/bases": [
+          {
+            "atomize": true,
+            "break_copies": true,
+            "conflicts": [
+              "copy-contract-contradicted"
+            ],
+            "id": "B"
+          }
+        ],
+        "/coverage": [],
+        "/units": [
+          {
+            "high": {
+              "basis": "proxy_reservation",
+              "kind": "at_least",
+              "nano": "500000000"
+            },
+            "id": "origin:A",
+            "low": "0",
+            "origins": [
+              "A"
+            ]
+          },
+          {
+            "high": {
+              "basis": "proxy_reservation",
+              "kind": "at_least",
+              "nano": "500000000"
+            },
+            "id": "origin:B",
+            "low": "0",
+            "origins": [
+              "B"
+            ]
+          }
+        ]
+      },
+      "negative_control_refs": [
+        "H3.wrong.json"
+      ],
+      "raw_derivation_refs": [
+        "PLAN3: BreakCopies splits by original origins; contradiction retained and blocks F;500+500=1000"
+      ]
+    }
+  ],
+  "authored_by": "oracle01a1d81b; fixed literal assertions separately from supplied records",
+  "exact_subject_refs": [
+    "result:H3"
+  ],
+  "id": "expected:H3",
+  "kind": "accounting_expected_assertion",
+  "policy_refs": [
+    "PLAN43d0e7c8"
+  ],
+  "raw_subject_ref": "sha256:1d25c4be367d39b0508de75a749a4677f918e81272b7856fea6b89ebb54f1420",
+  "version": "1.7-s1"
+}

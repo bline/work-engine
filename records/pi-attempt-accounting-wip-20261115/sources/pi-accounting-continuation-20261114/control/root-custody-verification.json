@@ -1,0 +1,535 @@
+{
+  "records": [
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-build/build.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:43:54.612682Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/impact/impact.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:48:30.125792Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation/render.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:47:10.919279Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation/actual-wire.json",
+      "returncode": 1,
+      "timed_out": false,
+      "ended": "2026-11-14T03:47:15.755037Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation/schema-agreement.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:47:14.499412Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation/check.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:47:11.176751Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation/tests.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:47:10.485987Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/first-lib/lib.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:38:16.039947Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/unbudgeted-structural/structural.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:44:49.851936Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/valuation-build/build.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:49:36.709660Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation-r2/render.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:50:35.616899Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation-r2/actual-wire.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:50:40.175869Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation-r2/schema-agreement.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:50:39.318975Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation-r2/check.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:50:36.041267Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation-r2/independent-evidence.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:50:41.055251Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation-r2/tests.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:50:35.285924Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/structural-r8/structural.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:38:43.466129Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/stable-build/build.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:45:45.260511Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/structural-r8-final/structural.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:42:36.763499Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/render-schema/render.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:40:20.625040Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/render-schema/schema-agreement.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:40:24.833981Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/render-schema/check.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:40:21.004246Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/independent-evidence/evidence.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:47:51.202732Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/build-cli/build.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:39:17.893115Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/baseline-check/inherited-check.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:32:09.345077Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/repaired-revisions/actual-revisions.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:35:55.418394Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/explicit-route-map-controls/actual-finite-cli.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:56:51.483882Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/separate-anchor-sabotage/actual-sabotage.json",
+      "returncode": 1,
+      "timed_out": false,
+      "ended": "2026-11-14T03:52:55.988265Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-rust/independent-r8-rust.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:51:17.185270Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/qualified-reason-selftest/actual-selftest.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:52:34.457702Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/vc07-stronger-negatives/actual-evidence-controls.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:49:09.942054Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/anchor-corrected-check/actual-check.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:38:54.886005Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/repaired-selftest/actual-selftest.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:36:01.674805Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/vc07-final-interface/actual-evidence-controls.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:46:24.013971Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/dependency-invalidation/actual-impact-controls.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:48:21.591738Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-sabotage-corrected/actual-sabotage.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:54:03.164483Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/first-r8-controls/actual-entrypoint-controls.json",
+      "returncode": 1,
+      "timed_out": false,
+      "ended": "2026-11-14T03:34:02.231648Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-controls/all-r8-actual-controls.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:51:13.294958Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/specific-dependency-mutations/actual-impact-controls.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:52:58.957920Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/vc07-interface-first/actual-evidence-cli.json",
+      "returncode": 1,
+      "timed_out": false,
+      "ended": "2026-11-14T03:44:40.930288Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/repaired-sabotage/actual-sabotage.json",
+      "returncode": 1,
+      "timed_out": false,
+      "ended": "2026-11-14T03:37:22.643060Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-revisions/actual-revisions.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:50:53.500139Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/independent-rust/independent-r8-rust.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:46:50.481784Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/finite-actual-cli/independent-literal-controls.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:42:14.287789Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/repaired-check/actual-check.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:35:17.498209Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-selftest/actual-selftest.json",
+      "returncode": 1,
+      "timed_out": false,
+      "ended": "2026-11-14T03:50:56.359008Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/anchor-check/actual-check.json",
+      "returncode": 1,
+      "timed_out": false,
+      "ended": "2026-11-14T03:38:41.218701Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-python/actual-check.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:50:53.023227Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-sabotage/actual-sabotage.json",
+      "returncode": 1,
+      "timed_out": false,
+      "ended": "2026-11-14T03:51:07.623978Z",
+      "leftovers": [],
+      "afterkill": null
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/repaired-entrypoints/actual-entrypoint-controls.json",
+      "returncode": 0,
+      "timed_out": false,
+      "ended": "2026-11-14T03:35:09.057019Z",
+      "leftovers": [],
+      "afterkill": null
+    }
+  ],
+  "bad_log_digests": [],
+  "current_input_mismatches": [
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/build-cli/build.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/spec/ck.json"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/build-cli/build.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/spec/accounting.schema.json"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/baseline-check/inherited-check.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/repaired-revisions/actual-revisions.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/separate-anchor-sabotage/actual-sabotage.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/sabotage_test.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/vc07-stronger-negatives/actual-evidence-controls.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/spec/accounting.schema.json"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/vc07-stronger-negatives/actual-evidence-controls.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/spec/debug/pi-accounting-spec-check"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/anchor-corrected-check/actual-check.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/repaired-selftest/actual-selftest.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/vc07-final-interface/actual-evidence-controls.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/test_r8_evidence.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/vc07-final-interface/actual-evidence-controls.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/spec/accounting.schema.json"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/vc07-final-interface/actual-evidence-controls.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/spec/debug/pi-accounting-spec-check"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/dependency-invalidation/actual-impact-controls.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/test_r8_dependencies.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/dependency-invalidation/actual-impact-controls.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/spec/ck.json"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/dependency-invalidation/actual-impact-controls.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/spec/debug/pi-accounting-spec-check"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/first-r8-controls/actual-entrypoint-controls.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-controls/all-r8-actual-controls.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/vc07-interface-first/actual-evidence-cli.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/spec/accounting.schema.json"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/vc07-interface-first/actual-evidence-cli.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-controls/VC07-conditional.bundle.json"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/repaired-sabotage/actual-sabotage.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/sabotage_test.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-revisions/actual-revisions.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/finite-actual-cli/independent-literal-controls.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/test_r8_assertions.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/finite-actual-cli/independent-literal-controls.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/repaired-check/actual-check.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/repaired-check/actual-check.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/R8-LOW-ASSERTIONS.json"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-selftest/actual-selftest.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/anchor-check/actual-check.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-python/actual-check.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-sabotage/actual-sabotage.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/sabotage_test.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-sabotage/actual-sabotage.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/repaired-entrypoints/actual-entrypoint-controls.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/repaired-entrypoints/actual-entrypoint-controls.json",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/R8-LOW-ASSERTIONS.json"
+    }
+  ]
+}

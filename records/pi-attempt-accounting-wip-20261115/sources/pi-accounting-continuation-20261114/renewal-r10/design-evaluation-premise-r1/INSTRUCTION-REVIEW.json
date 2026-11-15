@@ -1,0 +1,12 @@
+{
+  "applicability": "applicable",
+  "subject": {
+    "PLAN.md": "a85dffca9027bd386962b01ee6bf624dafbcd565f7f620e4a6210296be969b92",
+    "PACKET.md": "580427e7b48273add1bf8a631792d6f921fd8ac3b736a529021a19182a472fdb",
+    "STARTUP.md": "67702fb5a9b77d5983245e1bf86b26dbf904219c692accde94c6520ed2ee05ef"
+  },
+  "inspected": "authority/scope/mutation/admission/preservation/review and loading instructions",
+  "findings": [],
+  "evidence": "Review-only standing and root adoption ownership are explicit. Premise admission precedes pass because otherwise changed governing inputs can certify stale literal outcomes. Independent derivation precedes admission because hashes cannot establish original truth. Exact finite semantics and raw preservation are active owner-approved boundaries; serialization and implementation placement stay model judgment. Startup grant verification protects review independence. Reasons and known failure are exposed to governed reviewer.",
+  "limitations": "Root authored plan and packet; this bounded instruction advice is not independent semantic acceptance or bootstrap certification. Fresh Astra review still required."
+}

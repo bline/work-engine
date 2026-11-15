@@ -1,0 +1,44 @@
+{
+  "accounting_result_ref": "result:VC07",
+  "exposure": {
+    "high": {
+      "basis": "usage_valuation",
+      "kind": "exact",
+      "nano": "15000000"
+    },
+    "low": {
+      "basis": "usage_valuation",
+      "nano": "15000000"
+    },
+    "pool": "pi_api"
+  },
+  "obligation": {
+    "amount_source": "none",
+    "cause": "no_reservation",
+    "state": "none"
+  },
+  "valuation": {
+    "complete": true,
+    "derivations": [
+      {
+        "for": "both",
+        "model": "gpt-6-astra",
+        "nano": "15000000",
+        "provider": "openai",
+        "tier_multiplier": "1",
+        "usage": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0,
+          "input_tokens": 1000,
+          "output_tokens": 100
+        }
+      }
+    ],
+    "high": "15000000",
+    "identities": [
+      "openai/gpt-6-astra"
+    ],
+    "low": "15000000",
+    "state": "valued"
+  }
+}

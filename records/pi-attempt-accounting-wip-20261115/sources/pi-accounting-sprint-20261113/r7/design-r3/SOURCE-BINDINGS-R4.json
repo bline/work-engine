@@ -1,0 +1,21 @@
+{
+  "prior_binding": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/SOURCE-BINDINGS.json",
+  "additional_entries": [
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/validator/validate_corpus.py",
+      "sha256": "12cb4f55d21b0797b2932606fb9d0abb6a4a8e95e5a4c9880f301d4ff7f514e9",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/oracle/rates/anthropic_api_rates.json",
+      "sha256": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/design-r3/review/sealed/reviewer-response.md",
+      "sha256": "e075d0c82fd46258e3a1a64ff747e54c5c743b52272609c37f2ebc9e3a1786af"
+    }
+  ],
+  "graph": "Tier2 2026-11-13T22:56:04Z; both additional external source paths outside_project, direct source read",
+  "limits": "Additional exact-source binding, no new executable reproduction"
+}

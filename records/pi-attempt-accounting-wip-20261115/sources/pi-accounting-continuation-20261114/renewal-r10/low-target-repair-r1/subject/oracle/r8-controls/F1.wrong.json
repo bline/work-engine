@@ -1,0 +1,207 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "none",
+      "kind": "exact",
+      "nano": "0"
+    },
+    "low": "0"
+  },
+  "candidates": [
+    [
+      "s",
+      "s"
+    ]
+  ],
+  "coverage": [
+    {
+      "id": "coverage:r+s",
+      "origins": [
+        "r",
+        "s"
+      ],
+      "source": "complete usage15M plus actual charge15M",
+      "validity": "C-validity:r+s"
+    }
+  ],
+  "credits": {
+    "alternatives": [
+      "s"
+    ],
+    "mode": "single_ambiguous",
+    "selected_low": "15000000",
+    "slots": []
+  },
+  "definite_links": [],
+  "id": "result:F1",
+  "route_snapshots": {
+    "A-first": {
+      "aggregate": {
+        "high": {
+          "basis": "usage_valuation",
+          "kind": "exact",
+          "nano": "15000000"
+        },
+        "low": "15000000"
+      },
+      "candidates": [
+        [
+          "s",
+          "s"
+        ]
+      ],
+      "coverage": [
+        {
+          "id": "coverage:r+s",
+          "origins": [
+            "r",
+            "s"
+          ],
+          "source": "complete usage15M plus actual charge15M",
+          "validity": "C-validity:r+s"
+        }
+      ],
+      "credits": {
+        "alternatives": [
+          "s"
+        ],
+        "mode": "single_ambiguous",
+        "selected_low": "15000000",
+        "slots": []
+      },
+      "definite_links": [],
+      "units": [
+        {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "id": "resolved:r+s",
+          "low": "15000000",
+          "origins": [
+            "r",
+            "s"
+          ]
+        }
+      ]
+    },
+    "B-first": {
+      "aggregate": {
+        "high": {
+          "basis": "usage_valuation",
+          "kind": "exact",
+          "nano": "15000000"
+        },
+        "low": "15000000"
+      },
+      "candidates": [
+        [
+          "s",
+          "s"
+        ]
+      ],
+      "coverage": [
+        {
+          "id": "coverage:r+s",
+          "origins": [
+            "r",
+            "s"
+          ],
+          "source": "complete usage15M plus actual charge15M",
+          "validity": "C-validity:r+s"
+        }
+      ],
+      "credits": {
+        "alternatives": [
+          "s"
+        ],
+        "mode": "single_ambiguous",
+        "selected_low": "15000000",
+        "slots": []
+      },
+      "definite_links": [],
+      "units": [
+        {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "id": "resolved:r+s",
+          "low": "15000000",
+          "origins": [
+            "r",
+            "s"
+          ]
+        }
+      ]
+    },
+    "all-at-once": {
+      "aggregate": {
+        "high": {
+          "basis": "usage_valuation",
+          "kind": "exact",
+          "nano": "15000000"
+        },
+        "low": "15000000"
+      },
+      "candidates": [
+        [
+          "s",
+          "s"
+        ]
+      ],
+      "coverage": [
+        {
+          "id": "coverage:r+s",
+          "origins": [
+            "r",
+            "s"
+          ],
+          "source": "complete usage15M plus actual charge15M",
+          "validity": "C-validity:r+s"
+        }
+      ],
+      "credits": {
+        "alternatives": [
+          "s"
+        ],
+        "mode": "single_ambiguous",
+        "selected_low": "15000000",
+        "slots": []
+      },
+      "definite_links": [],
+      "units": [
+        {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "id": "resolved:r+s",
+          "low": "15000000",
+          "origins": [
+            "r",
+            "s"
+          ]
+        }
+      ]
+    }
+  },
+  "units": [
+    {
+      "high": {
+        "basis": "none",
+        "kind": "exact",
+        "nano": "0"
+      },
+      "id": "resolved:r+s",
+      "low": "0",
+      "origins": [
+        "r",
+        "s"
+      ]
+    }
+  ]
+}

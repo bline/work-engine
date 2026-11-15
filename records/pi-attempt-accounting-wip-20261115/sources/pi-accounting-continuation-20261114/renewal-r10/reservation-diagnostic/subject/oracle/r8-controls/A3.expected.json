@@ -1,0 +1,50 @@
+{
+  "assertions": [
+    {
+      "claim_id": "A3",
+      "expected_fields_or_relations": {
+        "/aggregate": {
+          "high": {
+            "basis": "none",
+            "kind": "at_least",
+            "nano": "0"
+          },
+          "low": "0"
+        },
+        "/applicability": "unresolved",
+        "/units": [
+          {
+            "high": {
+              "basis": "none",
+              "kind": "at_least",
+              "nano": "0"
+            },
+            "id": "OriginBase:refusal",
+            "low": "0",
+            "origins": [
+              "refusal"
+            ],
+            "pool": "pi_api"
+          }
+        ]
+      },
+      "negative_control_refs": [
+        "A3.wrong.json"
+      ],
+      "raw_derivation_refs": [
+        "A03/PLAN3: attempt-evidencing auxiliary without usable reference still contributes AtLeast0; no invented dollar amount or codex reassignment"
+      ]
+    }
+  ],
+  "authored_by": "oracle01a1d81b; fixed literal assertions separately from supplied records",
+  "exact_subject_refs": [
+    "result:A3"
+  ],
+  "id": "expected:A3",
+  "kind": "accounting_expected_assertion",
+  "policy_refs": [
+    "PLAN43d0e7c8"
+  ],
+  "raw_subject_ref": "sha256:b61ac9ceece956eb4fa2b5d48340a8806ebc1bdbf226bdf29e2bc41ccd3f177c",
+  "version": "1.7-s1"
+}

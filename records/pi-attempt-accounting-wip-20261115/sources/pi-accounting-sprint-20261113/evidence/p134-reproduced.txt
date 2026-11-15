@@ -1,0 +1,40 @@
+A-01: REPRODUCED
+    CONTRACT.md:433: - The reserved amount R is kept as a known amount, and the additional billing is unknown: exposure
+    CONTRACT.md:512: | `Valid(ErrorStatus)` | valuation low if `Valued`, else supported low or 0 | `AtLeast(max(R, valuation high or priced_high or 0))` (FB-2, Q2, A-02; d
+    case P133-A02: expected low 1000000000 high at_least(1000000000); section 6.2 gives low 0 high AtLeast(800000000) -> lowers both bounds
+A-02: REPRODUCED
+    pinned identity ('anthropic', 'claude-fable-5-2') vs row identity ('openai', 'claude-fable-5-2') (provider label 'openai'); OpenAI rate for claude-fable-5-2: False
+    MC-3 (CONTRACT.md:283-285): unequal -> section 5 condition 8 ModelMismatch -> Rejected; V-1/V-6: identity without rate -> Unpriceable
+    expected: decision valid, replacement {'eligible': True, 'reason': 'UsageBound'}, exposure Exact(28000000) < R 300000000: reservation released
+    TRANSITIONS.md:105 also says "another provider ... as above, plus LaneContradiction": | API session, subscription labels or measurement, or another provider | PiApi | as above, plus LaneContradiction |
+    in S2a grading subset: True
+A-03: REPRODUCED
+    gate fields read by G-1..G-8 include writer="authority" (a value the writer sets); no verification-result field: none
+    forged receipts (sha256 of arbitrary text) -> validator check on the full corpus: rc 0, "rrent_producer': 4, 'future_qualified_gate': 14}, 0 failures" -> still admitted
+    S1 and its validator cannot distinguish an authority receipt from a self-asserted one (contract defers signatures to stage E)
+A-04: REPRODUCED
+    CONTRACT.md:384-385: **`amount_source` (A-08).** It records where the conservativ… S from the decision and the replacement fact, and nothing else sets it:
+    TRANSITIONS.md:25 S does not read: usage valuation range, lane, lifecycle, attribution, findings
+    VC01 and U08 both Valid(Usage): amount_source settlement_amount vs reservation_bound (differ only by valuation completeness/priceability)
+    CONTRACT.md:376 `Outstanding` has no fields, but A06 expects {'amount_source': 'reservation_bound', 'state': 'outstanding'}
+A-05: REPRODUCED
+    S02-control row usage {'input_tokens': None, 'output_tokens': None, 'cached_tokens': None, 'cache_write_tokens': None, 'reasoning_tokens': 0}; expected valuation not_reported
+    only definition: Valuation = NotReported                                   // no usage on the attempt's rows (a present object with null counts is not mapped)
+A-06: REPRODUCED
+    pi_container.py:1549: response = (terminal or {}).get("response") or {}
+    VC03-reservation-settlement-with-usage [producer_reachable]: terminal null but non-null ['response_model', 'observed_tier', 'response_id', 'usage.input_tokens', 'usage.output_tokens', 'usage.cached_tokens', 'usage.cache_write_tokens']
+    S02-control-error-status-after-reservation [producer_reachable]: terminal null but non-null ['response_model', 'observed_tier']
+    P133-A02-error-status-with-priceable-usage [not_established]: terminal null but non-null ['response_model', 'observed_tier', 'usage.input_tokens', 'usage.output_tokens', 'usage.cached_tokens', 'usage.cache_write_tokens']
+    non-200 bodies are parsed for a terminal event and settle(resp.status, response) receives its usage (pi_container.py:1531-1543, :1569): True -> an error-status row WITH usage is writer-reachable if the upstream streams a terminal event
+A-07: REPRODUCED
+    reserved_usd 0.01 with input_bound 6000; reserve_usd floor (input term only, cheapest multiplier) 0.0375 (pi_container.py:689-694)
+    label: class producer_valid, reachability producer_reachable
+A-08: REPRODUCED
+    expected blocking ['UnresolvedExposure'], settlement valid/reservation
+    CONTRACT.md:574-575: **Additional blocking code:** `MalformedEvidence(field)`: a malformed field on evidence that no settlement rejection
+A-09: REPRODUCED
+    reservations [0.5, 0.3]; settlement.reserved 500000000; expected reasons ['ReservationConflict']
+    CONTRACT.md:333: 4. `charged` and `reserved` are well-formed amounts [`AmountType`], and `reserved` equals the reservation's amount
+    comparing against the 0.3 reservation would also give ReservedMismatch; "every failing reason" (CONTRACT.md:329) is not determined
+
+SUMMARY {'A-01': True, 'A-02': True, 'A-03': True, 'A-04': True, 'A-05': True, 'A-06': True, 'A-07': True, 'A-08': True, 'A-09': True} 9/9 reproduced

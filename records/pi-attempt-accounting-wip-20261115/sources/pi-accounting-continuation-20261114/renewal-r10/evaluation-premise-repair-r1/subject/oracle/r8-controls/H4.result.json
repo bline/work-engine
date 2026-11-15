@@ -1,0 +1,31 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "proxy_reservation",
+      "kind": "at_least",
+      "nano": "500000000"
+    },
+    "low": "0"
+  },
+  "id": "result:H4",
+  "origin_inventory": [
+    "A",
+    "B"
+  ],
+  "same_origin_reobservations_add_units": false,
+  "units": [
+    {
+      "high": {
+        "basis": "proxy_reservation",
+        "kind": "at_least",
+        "nano": "500000000"
+      },
+      "id": "EvidenceAtom:S:D",
+      "low": "0",
+      "origins": [
+        "A",
+        "B"
+      ]
+    }
+  ]
+}

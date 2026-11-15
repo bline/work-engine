@@ -1,0 +1,108 @@
+{
+ "session_id": "783244bb-3cf3-435e-9bd6-a3306e1fb968",
+ "sealed_at": "2026-11-14T00:26:25.634779+00:00",
+ "seal_sha256": "292ebec3b649eab3b2b3d75406d43785bf0ca55a390d5af81515eb1654c2f156",
+ "response_sha256": "b4b1ed688ceac5574eeced36936d5754dfb7e588334c93842d6b9559ce1e67f2",
+ "response_chars": 11525,
+ "assistant_messages": 1,
+ "assistant_meta": [
+  {
+   "responseId": "resp_0c2753179503f1a9016af7a8857e7887d09c2a56af25756730",
+   "rawStopReason": "completed",
+   "durationMs": 557325,
+   "thinkingLevel": "xhigh",
+   "usage": {
+    "input": 199657,
+    "output": 15401,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 12948,
+    "totalTokens": 215058,
+    "cost": {
+     "input": 1.9965700000000002,
+     "output": 0.77005,
+     "cacheRead": 0,
+     "cacheWrite": 0,
+     "total": 2.76662,
+     "totalFromProvider": false
+    }
+   }
+  }
+ ],
+ "models": [
+  "openai-codex/gpt-6-astra"
+ ],
+ "stop_reasons": [
+  "stop"
+ ],
+ "error_messages": [
+  null
+ ],
+ "delivered_prompt_equals_frozen": true,
+ "prompt_sha256": "5b06a47ed7d2ac833819d237da61bf034b903616f0b5de1e9923cb50c4a49e5c",
+ "launch_auth_lane": "subscription",
+ "launch_model": "openai-codex/gpt-6-astra",
+ "launch_parent": null,
+ "proxy_event_counts": {
+  "subscription_proxy_admitted": 1,
+  "request": 1
+ },
+ "upstream_requests": [
+  {
+   "at": "2026-11-14T00:26:25Z",
+   "event": "request",
+   "n": 1,
+   "http_status": 200,
+   "model": "gpt-6-astra",
+   "provider": "openai-codex",
+   "auth_lane": "subscription",
+   "usage": {
+    "input_tokens": 199657,
+    "output_tokens": 15401,
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "reasoning_tokens": 12948
+   },
+   "subscription_proxy": {
+    "rid": 1,
+    "status": "valued",
+    "cost_proxy_usd": 2.76662,
+    "valuation_basis": "reported_cache_usage",
+    "reason": null,
+    "session_cost_proxy_usd": 2.76662,
+    "limit_reached": false,
+    "measurement": "api_equivalent_cost_proxy",
+    "valuation_tier": "default",
+    "model": "gpt-6-astra",
+    "rates_sha256": "4273c0c175f669133886d3a632100e5b90c2e4016e667f4489fea499ffaa46ff",
+    "billing": "unknown",
+    "quota": "unknown",
+    "limitation": "Stopping threshold; one admitted response can overshoot. Subscription billing and quota are unknown."
+   },
+   "terminal": "response.completed",
+   "response_id": "resp_0c2753179503f1a9016af7a8857e7887d09c2a56af25756730",
+   "reason": null
+  }
+ ],
+ "any_usd_or_reservation_rows": false,
+ "exit_status": "0",
+ "token_leak": {
+  "files_scanned": 33,
+  "token_found_in": []
+ },
+ "raw_files": {
+  "launch.json": "8f439b9226f01739f2cd80419d91f9d6994ee115850b02622fa4454d285c9f35",
+  "launch.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "spec.json": "00759585de3cde85e0e7e03276a5d967502be5284762f0445ddfe8acbd176775",
+  "admission.json": "f251a5953b43235b98b0f8b2ad354038f597b390569e37d5a1094281f5360f36",
+  "runner.jsonl": "19da2714a744922896c11282473f37a5b3e46084a58f3e4365dfe469130795a4",
+  "runner.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "proxy.jsonl": "f056deaf05d39c7b9c7002e6628b3c746c79dc4421e9297a17cea6adabe510d2",
+  "events.jsonl": "e14afaa1c054b7c20d4df7bbd30e0d6582168063908e3381767592a263d2d9b2",
+  "stderr": "c8739d0cae3b81ce15847932b50cc5f5b1443943f3b5ba325e8cb08db5fc1b3e",
+  "exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+  "delivered-prompt": "5b06a47ed7d2ac833819d237da61bf034b903616f0b5de1e9923cb50c4a49e5c",
+  "tier.jsonl": "8c413140ad67a64b1c5fe172952e538f119abad31d5f7cc2c115055df66133c3",
+  "pi-session-0.jsonl": "444f954743a5cd652c5bc8594170015c64259b4a64c908eb0e6bfbe4b350affe"
+ }
+}

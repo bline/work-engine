@@ -1,0 +1,31 @@
+{
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/subject",
+  "steps": [
+    {
+      "name": "model7-observation",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--manifest-path",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/subject/tooling/spec-check/Cargo.toml",
+        "--target-dir",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/target",
+        "--test",
+        "independent_raw_axes",
+        "root_probe_response_model_numeric_seven",
+        "--",
+        "--nocapture"
+      ],
+      "timeout": 240,
+      "kill_leftovers": true,
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/subject/tooling/spec-check/tests/independent_raw_axes.rs",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/subject/corpus/cases/VC01-openai-usage-settlement.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/subject/oracle/rates/openai_api_rates.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/subject/oracle/rates/anthropic_api_rates.json"
+      ]
+    }
+  ]
+}

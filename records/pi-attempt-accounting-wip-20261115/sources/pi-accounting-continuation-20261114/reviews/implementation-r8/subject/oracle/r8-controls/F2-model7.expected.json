@@ -1,0 +1,53 @@
+{
+  "assertions": [
+    {
+      "claim_id": "F2-model7",
+      "expected_fields_or_relations": {
+        "/aggregate": {
+          "high": {
+            "basis": "proxy_reservation",
+            "kind": "at_least",
+            "nano": "500000000"
+          },
+          "low": "0"
+        },
+        "/coverage": [],
+        "/malformed_origins": [
+          "s:model=number7"
+        ],
+        "/units": [
+          {
+            "high": {
+              "basis": "proxy_reservation",
+              "kind": "at_least",
+              "nano": "500000000"
+            },
+            "id": "hold:r+s",
+            "low": "0",
+            "origins": [
+              "r",
+              "s"
+            ]
+          }
+        ]
+      },
+      "negative_control_refs": [
+        "F2-model7.wrong.json"
+      ],
+      "raw_derivation_refs": [
+        "PLAN4/6 and A07: malformed numeric model is not canonicalizable; original ineligibility survives favorable addition"
+      ]
+    }
+  ],
+  "authored_by": "oracle01a1d81b; fixed literal assertions separately from supplied records",
+  "exact_subject_refs": [
+    "result:F2-model7"
+  ],
+  "id": "expected:F2-model7",
+  "kind": "accounting_expected_assertion",
+  "policy_refs": [
+    "PLAN43d0e7c8"
+  ],
+  "raw_subject_ref": "sha256:3da8c5b4ad8cd21401cdf38c42c52e08c4e051af0f584fbefdc9c6f878a9d2c0",
+  "version": "1.7-s1"
+}

@@ -1,0 +1,114 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/PILOT-QUALIFICATION-R2.json",
+  "plan_sha256": "e79af82a01df4ccc6753b5e44066ddb482631afb8e0aaa29de1dff0f9754e384",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "python-positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/python-positive.json",
+      "record_sha256": "20475c07bdc6670c3079e61600140b7c5b2a4f677fb81c8175226c5edfe1216d",
+      "leftovers": 0
+    },
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/build.json",
+      "record_sha256": "f7a2cb719d6c2a2337e89df1da8cb9a764ce0967b2fc6780edd8e49e7e099bc4",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/rust-positive.json",
+      "record_sha256": "b9550ebe18aeb36ae3173831d24d8f790528778212ac47caaab8e59515bcb9d9",
+      "leftovers": 0
+    },
+    {
+      "name": "python-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/python-controls.json",
+      "record_sha256": "dead4f18c41ae6b863cbb9f2dc3fb22a449bdf9a047c8f5f73bcf8682595fdf0",
+      "leftovers": 0
+    },
+    {
+      "name": "legacy-independent-r8-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/legacy-independent-r8-controls.json",
+      "record_sha256": "554036c30217736ec9dce1ec6c7b238e19e0976f74caec7ba1f51dc2bea1da8c",
+      "leftovers": 0
+    },
+    {
+      "name": "build-spec",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/build-spec.json",
+      "record_sha256": "6965217c14875c38eca82e78909b3ce8e782429b380d0859a8d7b99458eebe9d",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-positive-0",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-0.json",
+      "record_sha256": "d2373192ff8cca2ae0a23c8c9dfa0801c44d0e78653818fbb25c5f9af3f3d1bc",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-positive-1",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-1.json",
+      "record_sha256": "1484aa0b71ac8a9ae1fcf8e2e295d248a8e7d7f721af4eb283a66406ce034766",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-positive-2",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-2.json",
+      "record_sha256": "c5a46b3066eb294e7a95b6436892d6505bfb65be85c32f014ae15d9b422bfa53",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-positive-3",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-3.json",
+      "record_sha256": "4b5a254e02d36803df25eb5045e0e1d8cc350c697f1c74860ff68916b88803aa",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-positive-4",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-4.json",
+      "record_sha256": "1baff2362f7a075ee36433cdde60b2eb03b62eee41f0752dd2919ab922bf4cb2",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-positive-5",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-5.json",
+      "record_sha256": "0466ae5ae8b861ae4649c8eb5315a6b616e8b4a65d3a0fdc21f593f779b47e35",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-positive-6",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-6.json",
+      "record_sha256": "60bfba395d10b30018e39e5d072beea09ff82d1f71fb8954961a1b35f5edd9a9",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-positive-7",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-7.json",
+      "record_sha256": "9b542ad918a62a14803d0d38b46e1a0bb55238cab7626583c7e48fcea0a77528",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-positive-8",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-8.json",
+      "record_sha256": "21011796cd7c9dc9e2d791cd97580009da8df07fd06c291e3dede6bedc1bee5f",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

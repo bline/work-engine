@@ -1,0 +1,8 @@
+{
+  "admission": "conditional_fixture",
+  "authority_ref": "ROOT-ADOPTION-R6.json",
+  "case_id": "U02-final-line-without-newline",
+  "grant_payloads": [],
+  "initial_scope_contracts": [],
+  "raw_input_sha256": "f4dff5426cfb6f09fe7ad1fac5ae23916f93641ce105b561f1d2832cfcd1f61f"
+}

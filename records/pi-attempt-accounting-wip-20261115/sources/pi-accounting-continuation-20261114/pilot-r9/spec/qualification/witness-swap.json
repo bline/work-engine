@@ -1,0 +1,56 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "witness-swap",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+    "evidence",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/witness-swap.json"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target",
+    "R9_SPEC_FIXTURE_OUT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3410607,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 77302248,
+      "sha256": "c17f95c6842e32f037f83fd08f6f603e8eeb3ce0c98c17d0c66db5f173dc9df6"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/witness-swap.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9677,
+      "sha256": "8050fd4d3a099e8cf90cd42bdb4c7f426b8a22132114ebb2318597691acb2d12"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 3412162,
+  "pgid": 3412162,
+  "started_at": "2026-11-14T06:06:19.913550Z",
+  "ended_at": "2026-11-14T06:06:20.845303Z",
+  "duration_s": 0.932,
+  "returncode": 1,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification/witness-swap.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification/witness-swap.stderr",
+    "length": 48,
+    "sha256": "6566d5ced164f8600eef357e3f1aca9869977bf8140f6dd4242a1585a8577ae7"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

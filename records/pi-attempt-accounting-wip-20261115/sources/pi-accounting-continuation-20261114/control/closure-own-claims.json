@@ -1,0 +1,62 @@
+{
+  "campaign/pi-accounting-s1": {
+    "author": "codex-pi-accounting",
+    "authority": "advisory_coordination_only",
+    "claim_id": "b9d52dd6-b3c9-41bd-8295-319edbbcb8f7",
+    "claimed_at": "2026-11-14T03:02:05.026489Z",
+    "expires_at": "2026-11-14T08:02:05.026489Z",
+    "note": "New user-authorized100/four-hour sprint from02:55:30.192Z to06:55:30.192Z. Resume architecture formation and independent Astraxhigh before implementation; prior history and guard preserved. Root sole collector.",
+    "resource": "campaign/pi-accounting-s1",
+    "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11"
+  },
+  "review/pi-accounting-s1-design-r7": {
+    "author": "codex-pi-accounting",
+    "authority": "advisory_coordination_only",
+    "claim_id": "09dd868b-d32b-4c4e-a0f1-318ed11e91ce",
+    "claimed_at": "2026-11-14T05:31:38.728736Z",
+    "expires_at": "2026-11-14T07:31:38.728736Z",
+    "note": "Required fresh separate Astraxhigh judgment of actual R6 plan/currentR8 qualification recurrence and root proposed correction, exactR2 candidatec70ba977; no ordinaryrepair; rootsolecollector.",
+    "resource": "review/pi-accounting-s1-design-r7",
+    "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11"
+  },
+  "review/pi-accounting-s1-r8": {
+    "author": "codex-pi-accounting",
+    "authority": "advisory_coordination_only",
+    "claim_id": "f03ba7da-ddb5-456f-996c-e60f8b64cc6c",
+    "claimed_at": "2026-11-14T05:14:38.135781Z",
+    "expires_at": "2026-11-14T07:14:38.135781Z",
+    "note": "Seven bounded independent R8 implementation obligations under exact dispatch decision e965003c; no ordinaryrepair; root solecollector; atmost3 active; frozen21df51b6",
+    "resource": "review/pi-accounting-s1-r8",
+    "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11"
+  },
+  "review/pi-accounting-s1-r9-review": {
+    "author": "codex-pi-accounting",
+    "authority": "advisory_coordination_only",
+    "claim_id": "1ac6980b-bb53-434e-ae35-fb1c4cb57cb2",
+    "claimed_at": "2026-11-14T06:33:04.183402Z",
+    "expires_at": "2026-11-14T07:33:04.183402Z",
+    "note": "Exact frozen0cad3d5e fourclaim pilot; fresh separate Astraxhigh source/designreview for recurring grant subject applicability, candidatebd65340c. No repair, all11open, rootsolecollector, same100 hard06:55.",
+    "resource": "review/pi-accounting-s1-r9-review",
+    "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11"
+  },
+  "source/pi-accounting-s1-r8": {
+    "author": "codex-pi-accounting",
+    "authority": "advisory_coordination_only",
+    "claim_id": "6d4c18a2-9bd5-4f3f-9b84-4e4655bfa59e",
+    "claimed_at": "2026-11-14T03:28:35.161912Z",
+    "expires_at": "2026-11-14T07:38:35.161912Z",
+    "note": "Exact adopted architecture43d0e7c8/review74c3445e; new isolated realization under pi-accounting-continuation-20261114/realization/s1, disjoint spec/oracle workers, no oldsubjectmutation",
+    "resource": "source/pi-accounting-s1-r8",
+    "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11"
+  },
+  "source/pi-accounting-s1-r9-pilot": {
+    "author": "codex-pi-accounting",
+    "authority": "advisory_coordination_only",
+    "claim_id": "377b6b74-1dd2-4ddd-ae22-cbcfa2235b92",
+    "claimed_at": "2026-11-14T05:58:47.826050Z",
+    "expires_at": "2026-11-14T07:58:47.826050Z",
+    "note": "D7 amendment2c3b7ec1 permits staged fourclaim realization only; root about to adopt exactc8376f7a and isolate newsubject, independent spec/oracle ownership; failedR8 immutable, allfindingsopen",
+    "resource": "source/pi-accounting-s1-r9-pilot",
+    "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11"
+  }
+}

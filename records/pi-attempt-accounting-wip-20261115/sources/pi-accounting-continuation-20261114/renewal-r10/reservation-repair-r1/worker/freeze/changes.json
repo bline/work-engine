@@ -1,0 +1,17 @@
+{
+  "baseline": {
+    "root": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject"
+  },
+  "changed": [
+    "oracle/r9-pilot/cases/equal-reservations.json",
+    "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json",
+    "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json",
+    "tooling/spec-check/tests/independent_raw_axes.rs",
+    "validator/r9_pilot.py",
+    "validator/test_r10_qualification.py",
+    "validator/validate_corpus.py"
+  ],
+  "added": [],
+  "removed": [],
+  "unchanged_count": 960
+}

@@ -1,0 +1,41 @@
+{
+  "session": "01a1d8a4-d798-7fd1-ae5e-6955ec003480",
+  "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-00-44-01a1d8a4-d798-7fd1-ae5e-6955ec003480.jsonl",
+  "collector": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "identity_acknowledged": true,
+  "state": "R6_execution_complete_source_stopped_semantic_applicability_unmet",
+  "children": [],
+  "processes": [],
+  "source": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+  "source_bindings": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/SOURCE-BINDINGS-R2.json",
+  "binary_binding": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/BINARY-BINDING-R2.json",
+  "result": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/RESULT-R2.md",
+  "qualification_plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/PILOT-QUALIFICATION-R2.json",
+  "custody_summary": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/summary.json",
+  "last_context": {
+    "input_tokens": 172165,
+    "epoch": 0,
+    "at": "2026-11-14T06:27:38Z",
+    "decision": "retain_ok"
+  },
+  "limitations": [
+    "four-claim pilot only",
+    "full175/374 and11findings OPEN",
+    "root owns acceptance and independent replay"
+  ],
+  "history": [
+    {
+      "result": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/RESULT.md",
+      "source_bindings": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/SOURCE-BINDINGS.json",
+      "custody": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-final/summary.json"
+    },
+    {
+      "root_failed_join": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-join/summary.json",
+      "frozen_subject": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/subject"
+    }
+  ],
+  "pending_review_obligations": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/MODEL7-GRANT-OBSERVATION-R2.json",
+    "full175/374 and11findings open"
+  ]
+}

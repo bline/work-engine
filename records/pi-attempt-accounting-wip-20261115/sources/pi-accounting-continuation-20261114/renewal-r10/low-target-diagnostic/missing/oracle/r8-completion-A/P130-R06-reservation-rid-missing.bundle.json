@@ -1,0 +1,138 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "oracle/r8-completion-A/DERIVATIONS.json#P130-R06-reservation-rid-missing",
+        "predecessor_subject_refs": [],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": [
+          "initial:S1/turn-1"
+        ]
+      },
+      "exact_links": [],
+      "grants": [
+        {
+          "admission": "conditional_fixture",
+          "assumption_refs": [
+            "conditional initial ticket namespace in exact source; no auxiliary linkage or independence grant"
+          ],
+          "authority_ref": "ROOT-POLICY-R6.md@3dbe535668a7d625e025e16c9fa75e51a59dec109f5c842d877791b1d7332200",
+          "covered_extent_ref": "sha256:fb38ae93bcde95a9b06a835ac438f9f1a65d6d1205eb8f6c83f337276a45010f",
+          "covered_origin_refs": [
+            "S1/turn-1:1"
+          ],
+          "exact_payload_ref": "oracle/r8-completion-A/DERIVATIONS.json#P130-R06-reservation-rid-missing/initial_reference_scope_payloads/scope:S1/turn-1",
+          "grant_id": "scope:S1/turn-1",
+          "guarantee_kind": "initial_reference_scope",
+          "observer_or_harness_ref": "S1-inherited-conditional-corpus"
+        }
+      ],
+      "id": "input:P130-R06-reservation-rid-missing",
+      "identity_bindings": [],
+      "initial_contracts": [
+        {
+          "contract_id": "initial:S1/turn-1",
+          "duplicate_rule": "same_origin_only",
+          "grant_ref": "scope:S1/turn-1",
+          "reference_namespace": "dollar_ticket",
+          "scope_id": "P130-R06-reservation-rid-missing/S1/turn-1"
+        }
+      ],
+      "kind": "accounting_input_proof",
+      "lineage_id": "P130-R06-reservation-rid-missing",
+      "origins": [
+        {
+          "initial_contract_ref": "initial:S1/turn-1",
+          "origin_id": "S1/turn-1:1",
+          "original_position": 1,
+          "raw_bytes_sha256": "3ae346538876cb153e533e33524e7f525065784a5934aa6a0253a88d78c170a8",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:fb38ae93bcde95a9b06a835ac438f9f1a65d6d1205eb8f6c83f337276a45010f"
+        }
+      ],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:row:S1/turn-1:line=1",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "S1/turn-1:1"
+          ]
+        }
+      ],
+      "continuity_result": "conditional",
+      "coverage_decisions": [],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [],
+      "id": "result:P130-R06-reservation-rid-missing",
+      "input_proof_ref": "input:P130-R06-reservation-rid-missing",
+      "kind": "accounting_result",
+      "lineage_id": "P130-R06-reservation-rid-missing",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "P130-R06-reservation-rid-missing/default/o/owned_closed",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        },
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "P130-R06-reservation-rid-missing/default/o/owned_outstanding",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        }
+      ],
+      "origins": [
+        {
+          "active_high_unit_id": "row:S1/turn-1:line=1",
+          "base_id": "base:row:S1/turn-1:line=1",
+          "evidence_atom_id": "atom:S1/turn-1:1",
+          "origin_ref": "S1/turn-1:1"
+        }
+      ],
+      "primary_validities": [
+        {
+          "applicable_check_refs": [
+            "case:P130-R06-reservation-rid-missing#attempt:row:S1/turn-1:line=1/settlement"
+          ],
+          "distinct_reservation_refs": [
+            "S1/turn-1:1"
+          ],
+          "distinct_settlement_refs": [],
+          "obligation_id": "obligation:row:S1/turn-1:line=1",
+          "validity_result": "absent"
+        }
+      ],
+      "unbudgeted_applicabilities": [],
+      "unbudgeted_completions": [],
+      "units": [
+        {
+          "exposure_ref": "case:P130-R06-reservation-rid-missing#attempt:row:S1/turn-1:line=1",
+          "origin_refs": [
+            "S1/turn-1:1"
+          ],
+          "state": "active",
+          "unit_id": "row:S1/turn-1:line=1"
+        }
+      ],
+      "valuation_records": [],
+      "version": "1.7-s1"
+    }
+  ]
+}

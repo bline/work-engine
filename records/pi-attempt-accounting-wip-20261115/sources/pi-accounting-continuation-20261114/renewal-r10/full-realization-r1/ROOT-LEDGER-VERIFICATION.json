@@ -1,0 +1,25 @@
+{
+  "at": "2026-11-14T10:35:56.864506+00:00",
+  "status": "PASS_BOUNDED_INVENTORY_AND_CUSTODY",
+  "source_files": 967,
+  "artifact_files": 25,
+  "cases": 175,
+  "evaluations": 179,
+  "objective_configs": 187,
+  "scopes": 374,
+  "raw_origin_coordinate_checks": 333,
+  "scope_objective_coordinate_checks": 374,
+  "ledger_sha256": "56d48f661c32bd2dc7517a3541ce5ccdddbd7be572b3e7a64e009a24e5ac44df",
+  "artifact_index_sha256": "6e87c2d2be42001da5b23394126ef4d738ee0a019eb586e78cecda70e181799d",
+  "limitations": [
+    "No full nominal financial derivation or consumer qualification",
+    "No full causal closure verification",
+    "172 fragment locations remain worker-attributed; no authority inferred",
+    "Artifact hashes do not certify semantic truth"
+  ],
+  "diagnostic_history": "Initial verification asserted incidental scope-list sort order; exact sets identical, corrected to compare identity sets. No subject defect or rejection.",
+  "errors": [],
+  "final_artifact_files": 27,
+  "final_artifact_index_sha256": "891ef3251f71975792e648a7b9780cc0d962816d56bc4bc1c982c2ff89460cdd",
+  "final_index_verified_at": "2026-11-14T10:37:16.368304+00:00"
+}

@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "frozen_files_verified": 2901,
+  "worker_steps_verified": 14,
+  "manifest_sha256": "d60017dac28aa3a831cf13db520af94d8224b53f70b12229240bff8dab30ec61",
+  "archive_sha256": "6b53d8d068f3cacbdd1837e20398667e66e516a11984c38a9556de08f21348bc",
+  "binary_sha256": {
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/cargo-target/debug/pi-accounting-spec-check": "e648f8e05adb92e15c8f404edd90db78fa69a848c45acac74afc151315ed2218",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648": "84809b6325b3d701bec4348579f35e6f0c79d83e79bd3c5845c74655eec6aee6"
+  },
+  "worker_final_fully_collected": true,
+  "required_review": "unperformed; allfindingOPEN"
+}

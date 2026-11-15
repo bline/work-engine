@@ -1,0 +1,43 @@
+test_A1_04_halt_ignored_and_charge_dropped_when_the_reader_is_deac8099 (repro_p111.LauncherHalt.test_A1_04_halt_ignored_and_charge_dropped_when_the_reader_is_deac8099) ... /home/bline/cbm-work/p111-a1-rereview/repro/repro_p111.py:177: ResourceWarning: unclosed file <_io.TextIOWrapper name='/home/bline/.local/share/work-engine/skill-releases/releases/30af85325cb6fc66eb9ca1df085717e63561ee84/skills/manual-orchestration/scripts/role_host.py' mode='r' encoding='UTF-8'>
+  src = open(ROLE_HOST).read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/bline/cbm-work/p111-a1-rereview/repro/repro_p111.py:182: ResourceWarning: unclosed file <_io.TextIOWrapper name='/home/bline/.claude/projects/-home-bline-code-work-engine/9cbaebad-2397-4a15-8f8a-cc0d5f74357b.jsonl' mode='r' encoding='UTF-8'>
+  first = next(json.loads(l)['timestamp'] for l in open(tr[0]) if isinstance(json.loads(l).get('timestamp'), str))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/bline/cbm-work/p111-a1-rereview/repro/repro_p111.py:201: ResourceWarning: unclosed file <_io.TextIOWrapper name='/home/bline/cbm-work/p111-a1-rereview/tmp/state-Utz1/tmp7i6stt1x/admissions/ADMISSIONS-HALTED' mode='w' encoding='UTF-8'>
+  open(os.path.join(jdir, 'ADMISSIONS-HALTED'), 'w').write('P1.11 repro\n')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_A1_01a_upstream_error_openai_and_anthropic (repro_p111.Repro.test_A1_01a_upstream_error_openai_and_anthropic) ... ok
+test_A1_01b_unknown_event_with_usd_rid_cancels_a_reservation (repro_p111.Repro.test_A1_01b_unknown_event_with_usd_rid_cancels_a_reservation) ... ok
+test_A1_01c_contradictory_error_status_charge_is_dropped (repro_p111.Repro.test_A1_01c_contradictory_error_status_charge_is_dropped) ... ok
+test_A1_02_inverted_bounds_exclude_an_undated_charge (repro_p111.Repro.test_A1_02_inverted_bounds_exclude_an_undated_charge) ... ok
+test_A1_03_missing_turn_record_hides_its_log (repro_p111.Repro.test_A1_03_missing_turn_record_hides_its_log) ... ok
+test_A1_05_null_http_status_drops_the_usage_low_bound (repro_p111.Repro.test_A1_05_null_http_status_drops_the_usage_low_bound) ... ok
+test_A1_06_session_file_cache_write_lowers_a_legacy_charge (repro_p111.Repro.test_A1_06_session_file_cache_write_lowers_a_legacy_charge) ... ok
+test_shared_root_other_objectives_commitment_is_invisible (repro_p111.Repro.test_shared_root_other_objectives_commitment_is_invisible) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.613s
+
+OK
+
+A1-04 deployed launcher admission, halt file present, retired 0.54105 no-id failure, limit 1, new 0.60: {'deac8099': ('admitted', 0.0), 'A1': ('objective_accounting_unavailable', ['Pi admissions are halted by the operator (/home/bline/cbm-work/p111-a1-rereview/tmp/state-Utz1/tmp7i6stt1x/admissions/ADMISSIONS-HALTED exists)'])}
+
+A1-01a upstream_error 0.8 + 0.3 kept by the proxy: A1 admitted spent=0.0; deac8099 admitted spent=0.0; conservative exposure would be 1.6
+
+A1-01b unknown event carrying usd.rid: A1 admitted spent=0.0
+
+A1-01c 429 row with charge_basis error_status but charged 0.8: A1 admitted spent=0.0
+
+A1-02 bounds [06:40, 06:20] around an undated 0.8 charge, objective from 06:30: A1 admitted spent=0.0
+
+A1-03 turn-2 log with a 0.8 charge, no turn-2 ledger row: A1 admitted spent=0.0 (the unmatched 0.0 reservations of turns 1 and 3 are the only rows)
+
+A1-05 http_status null: charge_basis=proxy_reservation_charge low=0.0 high=0.25 provider_usage={'input_tokens': 10, 'cache_read_input_tokens': 0, 'cache_creation_input_tokens': 0, 'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0, 'output_tokens': 1}
+
+A1-06 session-file cacheWrite=100000: A1 refused spent=0.2500; deac8099 refused spent=0.2500
+
+A1-06 session-file cacheWrite=0: A1 admitted spent=0.2000; deac8099 admitted spent=0.2000
+
+shared root: A admits 1.0 against limit 1.0 -> admitted (committed 0); B's open session S1 (cap 1.0) is in A's tree too, so A's eventual exposure can reach 2.0. B with its own journal -> refused

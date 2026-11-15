@@ -1,0 +1,11 @@
+{
+  "session": "01a1d984-42de-7000-9c59-b3e8b2a7e094",
+  "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T03-04-46-01a1d984-42de-7000-9c59-b3e8b2a7e094.jsonl",
+  "parent_collection_owner": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "collector": "root sole native/process collector",
+  "continuation": "root persists same design episode in this directory",
+  "pinned_binary": "/home/bline/.local/state/work-engine/tools/context-status/a5f9db1fc8af4b0bc5ecad81ad5b8b8ae36d6087447dc5c62e6545262768116c/work-engine-context-status",
+  "sha256": "a5f9db1fc8af4b0bc5ecad81ad5b8b8ae36d6087447dc5c62e6545262768116c",
+  "requested_and_observed": "Astra/xhigh/default read-onlyrestrictednever applied13",
+  "meaning": "Fresh separate startup; no designer/builder context; no substantive admission yet"
+}

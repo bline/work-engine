@@ -1,0 +1,30 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "proxy_reservation",
+      "kind": "at_least",
+      "nano": "500000000"
+    },
+    "low": "0"
+  },
+  "coverage": [],
+  "id": "result:F2-model7",
+  "malformed_origins": [
+    "s:model=number7"
+  ],
+  "units": [
+    {
+      "high": {
+        "basis": "proxy_reservation",
+        "kind": "at_least",
+        "nano": "500000000"
+      },
+      "id": "hold:r+s",
+      "low": "0",
+      "origins": [
+        "r",
+        "s"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "operation_id": "d22b5aea-46b9-4fcf-b2bc-fb3860cc4b11",
+  "phase": "wakeup_entered",
+  "sid": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "source_turn": "01a1d7fb-4041-7283-a35b-ea02bb530e07",
+  "compact_turn": "01a1d839-32d5-71f0-bf3c-53cf6c1cb44f",
+  "wakeup_turn": "01a1d83b-9691-76e3-be28-b88eed83caad",
+  "replacement_boundary": {
+    "event_sha256": "e749d419d0cbb489b31a52c6ed91d91182f6727cea12f4a0161870707f68ee8d",
+    "item_completed_line": 4039,
+    "item_id": "01a1d839-3486-79a3-acdc-073b3e43060a",
+    "line": 4034,
+    "task_complete_line": 4040,
+    "turn_context_line": 4036,
+    "turn_id": "01a1d839-32d5-71f0-bf3c-53cf6c1cb44f"
+  },
+  "controller_pid": 3020025,
+  "job_reference": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/REFRESH-HELPER-STATE.json",
+  "journal": [
+    {
+      "at": 1794628848.4253137,
+      "event": "prepared"
+    },
+    {
+      "at": 1794628908.096767,
+      "event": "controller_started",
+      "pid": 3020025
+    },
+    {
+      "at": 1794628928.5243535,
+      "event": "job_bound",
+      "job_reference": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/REFRESH-HELPER-STATE.json"
+    },
+    {
+      "at": 1794628989.6498911,
+      "command_id": "d22b5aea-46b9-4fcf-b2bc-fb3860cc4b11",
+      "event": "compact_intent"
+    },
+    {
+      "at": 1794628989.6536686,
+      "event": "compact_acknowledged"
+    },
+    {
+      "at": 1794629143.3986166,
+      "event": "compaction_collected",
+      "turn_id": "01a1d839-32d5-71f0-bf3c-53cf6c1cb44f"
+    },
+    {
+      "at": 1794629146.2378335,
+      "event": "wakeup_intent",
+      "message_sha256": "010d0ecce9a7934f4a5f9e3408c7d01cc258aa2ead7d76a582ccf1f1a74dc8c2"
+    },
+    {
+      "at": 1794629146.2930434,
+      "event": "wakeup_acknowledged",
+      "turn_id": "01a1d83b-9691-76e3-be28-b88eed83caad"
+    },
+    {
+      "at": 1794629148.4083042,
+      "event": "wakeup_reconciled",
+      "turn_id": "01a1d83b-9691-76e3-be28-b88eed83caad"
+    }
+  ],
+  "helper_sid": "01a1d837-47ad-7320-8a7f-3b2f8d725b11",
+  "exec_session_id": 35640,
+  "exact_terminal_exit_code": 0,
+  "exact_terminal_output": {
+    "status": "wakeup_entered",
+    "turn_id": "01a1d83b-9691-76e3-be28-b88eed83caad"
+  },
+  "controller_pid_alive": false,
+  "remaining_owned_exec_jobs": [],
+  "semantic_recovery": "root owned; not established by controller terminal",
+  "failure_delivery": {
+    "needed": false,
+    "native_notification": "not sent; no failure"
+  },
+  "collected_at": "2026-11-14T04:06:04.687383+00:00",
+  "usage_cost_proxy": "unavailable"
+}

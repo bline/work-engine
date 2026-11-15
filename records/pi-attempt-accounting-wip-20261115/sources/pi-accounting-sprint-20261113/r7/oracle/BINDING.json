@@ -1,0 +1,26 @@
+{
+  "session_id": "81122b03-138a-4efb-a485-74e3c0b40744",
+  "packet": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/packets/oracle.md",
+  "packet_sha256": "765e76bbdbeb5e0e0238ba78a688eecf2bee1a76a18a36e545f7dea6e4ebdc73",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "transport": "anthropic",
+  "collector": "root",
+  "transcript": "/home/bline/.claude/projects/-home-bline-code-work-engine/81122b03-138a-4efb-a485-74e3c0b40744.jsonl",
+  "process_pty": 41542,
+  "observed_models": [
+    "claude-opus-5-5"
+  ],
+  "observed_session_ids": [
+    "81122b03-138a-4efb-a485-74e3c0b40744"
+  ],
+  "init": {
+    "session_id": "81122b03-138a-4efb-a485-74e3c0b40744",
+    "cwd": "/home/bline/code/work-engine",
+    "model": "claude-opus-5-5",
+    "permissionMode": "acceptEdits",
+    "claude_code_version": "2.1.325"
+  },
+  "state": "running",
+  "continuation": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle/CONTINUATION.md"
+}

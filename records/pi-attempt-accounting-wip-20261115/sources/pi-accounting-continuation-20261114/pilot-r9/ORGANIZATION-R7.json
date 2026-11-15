@@ -1,0 +1,33 @@
+{
+  "revision": "R7",
+  "prior": "ORGANIZATION-R6.json",
+  "scope": "fresh independent bounded implementation and mandatory recurring-applicability design judgment before repair",
+  "subject": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/subject-r2",
+  "manifest": "0cad3d5ed66b9ef3c4796cb4039a16646d0ce0d451153948b08f972d8286df6a",
+  "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/review-r3/PACKET.md",
+  "packet_sha256": "bb891c2bc4143423b43bf2b4c232da8a1ca607973bb0387c9bdf82326b5b3d53",
+  "proposal_sha256": "b177b20841ad1b6fc9d728682bba37a4bff823f16c04bb27e2db124ae4399b4c",
+  "reviewer": {
+    "launch": "fresh separate top-level role_host codex",
+    "model": "gpt-6-astra",
+    "effort": "xhigh",
+    "tier": "default",
+    "no_runtime_parent": true,
+    "collector": "root via native wait_threads",
+    "cap_proxy": 9,
+    "target": "2026-11-14T06:46:00Z"
+  },
+  "budget": {
+    "last_spend": 68.2929724,
+    "reserved_review": 9,
+    "root_closure": 8,
+    "tail": 2,
+    "forecast": 87.2929724,
+    "grant": 100,
+    "account_remaining_percent": 56,
+    "hard_deadline": "2026-11-14T06:55:30.192Z"
+  },
+  "mutation": "none; proposal not adopted for implementation",
+  "guard": "all11findingsOPEN; ordinaryrepairHELD; history preserved",
+  "created_at": "2026-11-14T06:32:38.370438+00:00"
+}

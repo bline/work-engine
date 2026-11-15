@@ -1,0 +1,61 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "build",
+  "argv": [
+    "cargo",
+    "test",
+    "--test",
+    "independent_raw_axes",
+    "--no-run",
+    "--message-format=json"
+  ],
+  "cwd": "/home/bline/cbm-work/p137-s1r7/s1/tooling/spec-check",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/target-oracle",
+    "ORACLE_REPORT": "/home/bline/cbm-work/p137-s1r7/s1/oracle/qualification-r7.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2635062,
+  "inputs": [
+    {
+      "path": "tests/independent_raw_axes.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 40583,
+      "sha256": "34b3ac6bd007dcfaa7659eae0f4935fac42d63f2cde21df8d924fd9daeebcd66"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 2635172,
+  "pgid": 2635172,
+  "started_at": "2026-11-13T23:50:20.899711Z",
+  "ended_at": "2026-11-13T23:52:28.407969Z",
+  "duration_s": 127.508,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/rust-first/build.stdout",
+    "length": 27321,
+    "sha256": "9ef32a6f0029abafc6b950470d57e49cd3a8a146ddca31f0d2154bca83c33fd9"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/rust-first/build.stderr",
+    "length": 782,
+    "sha256": "eed634536b91d875b250b9f7a5e47c689fee823aa8142e136cc93c343b2d7cb1"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null,
+  "cargo_executables": [
+    {
+      "name": "independent_raw_axes",
+      "kind": [
+        "test"
+      ],
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/target-oracle/debug/deps/independent_raw_axes-fd146da9d6dec9b5",
+      "sha256": "0e6467cd462ee70866d2079d89b75d4ed05edb3e78ac0fbbade80587152ff27e"
+    }
+  ]
+}

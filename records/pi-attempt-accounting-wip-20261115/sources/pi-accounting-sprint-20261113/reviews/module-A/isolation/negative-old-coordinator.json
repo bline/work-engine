@@ -1,0 +1,10 @@
+{
+ "phase": "oneshot",
+ "at": "2026-11-13T23:01:23.921859+00:00",
+ "checks": {},
+ "caller": {
+  "host": "claude",
+  "session_id": "7c0cdefa-513d-4f30-9bd4-7575bebdeb52"
+ },
+ "refused": "caller is a task coordinator, not an isolated review launcher"
+}

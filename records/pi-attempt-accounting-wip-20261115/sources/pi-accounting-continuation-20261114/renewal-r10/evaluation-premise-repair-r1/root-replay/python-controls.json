@@ -1,0 +1,129 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "python-controls",
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "validator",
+    "-p",
+    "test_r10_qualification.py",
+    "-v"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject",
+  "env_clear": false,
+  "env_set": {
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject",
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/cargo-target",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "R10_EVIDENCE_EXECUTABLE": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/cargo-target/debug/pi-accounting-spec-check",
+    "PYTHONWARNINGS": "ignore::ResourceWarning",
+    "R10_FINANCIAL_EXECUTABLE": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+    "TMPDIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/root-replay/tmp"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3771896,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/freeze/manifest.json",
+      "type": "file",
+      "mode": 292,
+      "length": 225315,
+      "sha256": "5e594cac6957fb1550d48d10e86ba155590335fc7dfe742892d0ac34cab5fa1c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/cargo-target/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 78003432,
+      "sha256": "5eca0e4be9f6cce1241c08e9e3c2d7b8cba73644735f4c8641eb48efa9c7bcb2"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+      "type": "file",
+      "mode": 509,
+      "length": 16798984,
+      "sha256": "03f7ff58c664a6d08b9144191a56f03e012e4996d9cfa4644715360013a38809"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/oracle/r9-pilot/claims.json",
+      "type": "file",
+      "mode": 420,
+      "length": 12453,
+      "sha256": "a47bcf0a2d7dcdb9d6ac312fb6ddc06fe396e00228c9f9a48069d6d1f94b98fc"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/spec/accounting.schema.json",
+      "type": "file",
+      "mode": 420,
+      "length": 31637,
+      "sha256": "84a229afbe21a8e47c21da0c28a0b9b3a3392960411b5a96e9a9258cdbcab6e7"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/spec/wire.schema.json",
+      "type": "file",
+      "mode": 420,
+      "length": 7537,
+      "sha256": "35a7af6502ad80c554c8544134b991561637161371dfabc9972971ed8efcaf62"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/tooling/spec-check/tests/independent_raw_axes.rs",
+      "type": "file",
+      "mode": 420,
+      "length": 99970,
+      "sha256": "faa1236dd0382443e7e920e87924a178635c76fe76d7b03e72af44b82d116c82"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/validator/r10_admitted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 548296,
+      "sha256": "a85e3374bbaab675b29459c7c88c38334144f14bd4e7cdb400ab5def06f905e8"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/validator/r9_pilot.py",
+      "type": "file",
+      "mode": 420,
+      "length": 33567,
+      "sha256": "2a89cd4db9a3515418b28852a6db90964403b84fc6b7e8927e85640aaa285423"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/validator/test_r10_qualification.py",
+      "type": "file",
+      "mode": 436,
+      "length": 27772,
+      "sha256": "50afc88894fc55a6196a9890f179ac9db97daee8e07f241a5cef7cd8874ae5f2"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/validator/validate_corpus.py",
+      "type": "file",
+      "mode": 420,
+      "length": 107681,
+      "sha256": "f938b227e3cebcf236c52724538c33bc12ccf70061ab231ab92269cce6188ee7"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 3771903,
+  "pgid": 3771903,
+  "started_at": "2026-11-14T09:29:09.817521Z",
+  "ended_at": "2026-11-14T09:29:57.370973Z",
+  "duration_s": 47.553,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/root-replay/python-controls.stdout",
+    "length": 48531,
+    "sha256": "647d8850a53e4bfcec2e91406481bff05804e6aa49adf9873b91d2efe012231d"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/root-replay/python-controls.stderr",
+    "length": 1688,
+    "sha256": "c5ba9880a45022697a2c55e9b32073c346555d6da36cfe8b741f12f074a43202"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

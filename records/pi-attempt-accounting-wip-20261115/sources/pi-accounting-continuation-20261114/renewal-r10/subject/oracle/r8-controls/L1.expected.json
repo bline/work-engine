@@ -1,0 +1,67 @@
+{
+  "assertions": [
+    {
+      "claim_id": "L1",
+      "expected_fields_or_relations": {
+        "/aggregate": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "at_least",
+            "nano": "30000000"
+          },
+          "low": "15000000"
+        },
+        "/credits": {
+          "alternatives": [
+            "u1",
+            "u2"
+          ],
+          "mode": "single_ambiguous"
+        },
+        "/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "at_least",
+              "nano": "15000000"
+            },
+            "id": "origin:u1",
+            "low": "15000000",
+            "origins": [
+              "u1"
+            ]
+          },
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "at_least",
+              "nano": "15000000"
+            },
+            "id": "origin:u2",
+            "low": "15000000",
+            "origins": [
+              "u2"
+            ]
+          }
+        ]
+      },
+      "negative_control_refs": [
+        "L1.wrong.json"
+      ],
+      "raw_derivation_refs": [
+        "PLAN5: uncertain copies min(15,15)=15; high holds15+15=30"
+      ]
+    }
+  ],
+  "authored_by": "oracle01a1d81b; fixed literal assertions separately from supplied records",
+  "exact_subject_refs": [
+    "result:L1"
+  ],
+  "id": "expected:L1",
+  "kind": "accounting_expected_assertion",
+  "policy_refs": [
+    "PLAN43d0e7c8"
+  ],
+  "raw_subject_ref": "sha256:3a565d94e6773bf5e343f295d64ab0daacf20b108e2e0f0f3389ad487223f3fd",
+  "version": "1.7-s1"
+}

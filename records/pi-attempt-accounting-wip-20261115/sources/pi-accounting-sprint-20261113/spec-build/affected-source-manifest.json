@@ -1,0 +1,127 @@
+{
+  "files": [
+    {
+      "bytes": 5107,
+      "path": "contract/CHANGELOG-1.3.md",
+      "sha256": "b1171bacfc514e1f881f4e6fcf03ca2a73e8c63fae02405a9f08a3998d67d5d9"
+    },
+    {
+      "bytes": 4056,
+      "path": "contract/CHANGELOG-1.4.md",
+      "sha256": "4b973359fcd8ac75c588be4c9f4da79f8234626643a4e74650ddcd4572192ada"
+    },
+    {
+      "bytes": 1149,
+      "path": "contract/CHANGELOG-1.5.md",
+      "sha256": "2eb0aa528cdb58b0a3a1bd4b75840591a475c01a9790de87d177ebb5c9f5b142"
+    },
+    {
+      "bytes": 101877,
+      "path": "contract/CK-GENERATED.md",
+      "sha256": "03f47d2467e3706ce9b7491639d301aa2dc68c643ac35d25b0f4edd5bb2dd6ff"
+    },
+    {
+      "bytes": 23026,
+      "path": "contract/CONTRACT.md",
+      "sha256": "46558c13b1c4ceaf76bd5f23d10e76175f24b3ac0d53e144466d8bdd987b8507"
+    },
+    {
+      "bytes": 20219,
+      "path": "contract/DECISION-REGISTER.md",
+      "sha256": "b34dcf414b1008a95518fe3a98c0df19e184395550dc4486cbc667c8bd932ae3"
+    },
+    {
+      "bytes": 11248,
+      "path": "contract/FINDINGS-REGISTER.md",
+      "sha256": "95dd7227b352402392179e55cdbafeb0e019e947b191393596d9ef87e6c8c802"
+    },
+    {
+      "bytes": 9310,
+      "path": "contract/INVARIANTS.md",
+      "sha256": "3f98a47ef2178a5f4957d3b9f63994e8445e8194b641195567a445de6b6e65d0"
+    },
+    {
+      "bytes": 5031,
+      "path": "contract/MONEY.md",
+      "sha256": "6c7315ed832777766662303c5918b9239818750142709ba565ec3d31f91da836"
+    },
+    {
+      "bytes": 5053,
+      "path": "contract/RESERVATION-BOUNDS.md",
+      "sha256": "3b391a6c0d8da2de9163dda95f888b53015c8334c07bfa58039f33fdfeaab7e8"
+    },
+    {
+      "bytes": 481,
+      "path": "contract/S2A-ENTRY-CRITERIA.md",
+      "sha256": "1c60efba570cb90b2875cf52f728bb0c3a39cc98ac8c00d10ab714beed488545"
+    },
+    {
+      "bytes": 20438,
+      "path": "contract/TRANSITIONS.md",
+      "sha256": "c0708a5cfef4842e3eb7a3c4453be36d11262fb6ed4c7acf02ed2b81aaabb4e0"
+    },
+    {
+      "bytes": 24302,
+      "path": "corpus/SCHEMA.md",
+      "sha256": "e745a46297787c47e28e175f89ed34902871d9960dc79e8101af26062106d9c6"
+    },
+    {
+      "bytes": 140217,
+      "path": "spec/ck.json",
+      "sha256": "1ac75ab5b44fa24ce35953d32d2b1ba145a1928fb5a06f884e3a434e0faa3371"
+    },
+    {
+      "bytes": 7174,
+      "path": "spec/ck.schema.json",
+      "sha256": "1854822d6a4584f9aec4e517b1c2e952bb2e66a519d20600e4bba3f87378b93b"
+    },
+    {
+      "bytes": 4792,
+      "path": "spec/dependencies.json",
+      "sha256": "bc076d9cb0dbbb8559af74641c2eced788eee127b74a5e1b2aba95630809ed09"
+    },
+    {
+      "bytes": 4467,
+      "path": "spec/interface.json",
+      "sha256": "8020a947b6d306e85dbe93ddc512f0cd4310b7e8a8d5dbadc608e54755f1af2e"
+    },
+    {
+      "bytes": 370058,
+      "path": "spec/inventory.json",
+      "sha256": "76f95c3229c728c7b379885e3bc9e37d195aed9d123210bf34fa28c95873b14e"
+    },
+    {
+      "bytes": 4901,
+      "path": "tooling/spec-check/Cargo.lock",
+      "sha256": "bab53b79f7ddb0609189d9606c5666b9b19d3a659fb12055ed977d2e3f51d256"
+    },
+    {
+      "bytes": 203,
+      "path": "tooling/spec-check/Cargo.toml",
+      "sha256": "a74409c9b478ce13e0e6baa0785bc797f1d555930ba171b0edb135e45174d437"
+    },
+    {
+      "bytes": 1710,
+      "path": "tooling/spec-check/README.md",
+      "sha256": "27ddc99b5b5af2fb10ee9fc31540fa64db5d365f44e2a30666c73e9beab54633"
+    },
+    {
+      "bytes": 86,
+      "path": "tooling/spec-check/rust-toolchain.toml",
+      "sha256": "1d76a06616a42a984bad672eeb24ca39a0496e95a8b624e21df0d420d1557734"
+    },
+    {
+      "bytes": 36143,
+      "path": "tooling/spec-check/src/lib.rs",
+      "sha256": "5bd06e25f1314d74467e6cffb0ae671567b3c477c5023ad7f71ef149e3b2b800"
+    },
+    {
+      "bytes": 3590,
+      "path": "tooling/spec-check/src/main.rs",
+      "sha256": "f3960be0439b29789d7793ffc4028c807c348b86ad556465977f952be63a0d09"
+    }
+  ],
+  "frozen_copy": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/owned-subject",
+  "root": "/home/bline/cbm-work/p136-s1r6/s1",
+  "schema": "spec-worker-affected-files/1"
+}

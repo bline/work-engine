@@ -1,0 +1,18 @@
+{
+  "verdict": "REVISE_LOCAL_PLAN",
+  "review_sha256": "23f0df08b4e34ab64f962e6f027558fae851d4da4c746395c8a8d2fca985e549",
+  "whole_final_characters": 7310,
+  "whole_final_collected_and_read": true,
+  "finding": "EPR-01",
+  "root_adopted": true,
+  "root_observation": "Actual gated top-level trusted_fixture_inputs contains separately supplied test_mock authority/payload/session/policy/evidence. CONTRACT Revision6 separates this input from untrusted assertions. Python closure_state uses profile. Source-derived confirmation; no root consumer-deletion execution claimed.",
+  "origin": "local design omission around existing authority channel, no introduced financial regression established",
+  "new_implementation_rejection_increment": 0,
+  "next_plan": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-evaluation-premise-r1/PLAN-R2.md",
+    "sha256": "3f79f910a6e87614d7ebff402f2f731f358886ab0ee74495d0a7425fc7950b70"
+  },
+  "ordinary_repair": "HELD pending retained review and root adoption",
+  "all_findings": "all3R3+11historical OPEN/fullS1owed",
+  "root": "01a1d6e2-32ba-7701-9115-740dcb41af11"
+}

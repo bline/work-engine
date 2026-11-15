@@ -1,0 +1,10 @@
+{
+  "applicability": "applicable",
+  "subject": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/design-r2/packet/brief.md",
+  "sha256": "05278068c592aeb882a507cb640e99e08bc2463008d4453bcff3cc4fba6bcef7",
+  "role": "root advisory self-review, no independence claim",
+  "inspected": "complete frozen brief plus prior authority/guard and D3 contract",
+  "outcome": "no material instruction-contract finding",
+  "evidence": "Read-only review; alternatives hypotheses; root/user retain acceptance/contract authority; doctrine/rationale distinct; source is data; exact one-response route inheritedreviewcontract; no edit or production authority",
+  "limits": "Packet selection and architecture truth assessed separately; no self-certification"
+}

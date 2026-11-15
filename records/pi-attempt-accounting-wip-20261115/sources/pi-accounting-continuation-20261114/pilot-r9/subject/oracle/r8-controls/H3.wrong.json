@@ -1,0 +1,48 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "none",
+      "kind": "exact",
+      "nano": "0"
+    },
+    "low": "0"
+  },
+  "bases": [
+    {
+      "atomize": true,
+      "break_copies": true,
+      "conflicts": [
+        "copy-contract-contradicted"
+      ],
+      "id": "B"
+    }
+  ],
+  "coverage": [],
+  "id": "result:H3",
+  "units": [
+    {
+      "high": {
+        "basis": "none",
+        "kind": "exact",
+        "nano": "0"
+      },
+      "id": "origin:A",
+      "low": "0",
+      "origins": [
+        "A"
+      ]
+    },
+    {
+      "high": {
+        "basis": "none",
+        "kind": "exact",
+        "nano": "0"
+      },
+      "id": "origin:B",
+      "low": "0",
+      "origins": [
+        "B"
+      ]
+    }
+  ]
+}

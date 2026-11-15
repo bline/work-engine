@@ -1,0 +1,55 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "build",
+  "argv": [
+    "cargo",
+    "test",
+    "--manifest-path",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check/Cargo.toml",
+    "--test",
+    "independent_raw_axes",
+    "--no-run",
+    "--message-format=json"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/target",
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3419512,
+  "inputs": [],
+  "timeout_s": 200,
+  "pid": 3419548,
+  "pgid": 3419548,
+  "started_at": "2026-11-14T06:09:57.183818Z",
+  "ended_at": "2026-11-14T06:10:00.156480Z",
+  "duration_s": 2.973,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-third/build.stdout",
+    "length": 85478,
+    "sha256": "febf4efbe9ca8285a1f0fc9027cb9b0412d2e72a81208fd04617c3df0b9d86e5"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-third/build.stderr",
+    "length": 220,
+    "sha256": "01fb2569019324b36e425bab26126dc89ff9632c7243d175907b32a5b16c9ad1"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null,
+  "cargo_executables": [
+    {
+      "name": "independent_raw_axes",
+      "kind": [
+        "test"
+      ],
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+      "sha256": "06a6f659b8ed44721f26c2f3fef9df6c42773de099e3561112f983cee8a58c08"
+    }
+  ]
+}

@@ -1,0 +1,177 @@
+{
+ "prompt": {
+  "sha256": "c6bf96abc9225b4372a47e15372741a7e8f601377f1d18da5a83605b8087f786",
+  "bytes": 506425
+ },
+ "source_prompt_sha256": "a60ce90061d165b66680ab9c6ddc06310a30beae116e1a08aa1c780eaf2bbf9d",
+ "files": [
+  {
+   "path": "contract/CONTRACT.md",
+   "sha256": "8c4f89ca102278ef64c009d215abf639682ef83b9f21999bf36af4675e2e3de3",
+   "bytes": 65859,
+   "lines": 759,
+   "encoding": "numbered",
+   "final_newline": true,
+   "role": "NORMATIVE contract 1.4-s1 (scope: stages E-K and the financial interfaces of 2.3, 12.3, 12.4)",
+   "source_sha256": "f087d4a238b007efeff2b4b74d0e047b89197ae2b9169d63bd95fe1f7b281839"
+  },
+  {
+   "path": "contract/TRANSITIONS.md",
+   "sha256": "5986fab710155381df802d39ac7b3f1166aeb0b920568247bb91958aad328e33",
+   "bytes": 14970,
+   "lines": 184,
+   "encoding": "numbered",
+   "final_newline": true,
+   "role": "NORMATIVE factorised transition tables",
+   "source_sha256": "f30a6b23abd64b6a2d0afa0ff9a59fda0fd63cde2aa3ece66792ebec1280932a"
+  },
+  {
+   "path": "contract/INVARIANTS.md",
+   "sha256": "749041340c6621066908a0a837a473de769152364dcbb8c9871e8853a469c6a2",
+   "bytes": 17016,
+   "lines": 70,
+   "encoding": "numbered",
+   "final_newline": true,
+   "role": "NORMATIVE executable invariants",
+   "source_sha256": "640da2dbf08313e685bc1f1d5ad6617f63299a07d77f8888d3f08c08c12ec882"
+  },
+  {
+   "path": "contract/MONEY.md",
+   "sha256": "83a6b5f8159264b73587facdad46eafa69a8f172cef98231256aba56a10fc6c4",
+   "bytes": 4801,
+   "lines": 70,
+   "encoding": "numbered",
+   "final_newline": true,
+   "role": "NORMATIVE money precision and rounding",
+   "source_sha256": "83a6b5f8159264b73587facdad46eafa69a8f172cef98231256aba56a10fc6c4"
+  },
+  {
+   "path": "contract/RESERVATION-BOUNDS.md",
+   "sha256": "f0282f1e09214e74d0cab651757aedaf3330229b8f2b470b06cea7cdf2b1ab5c",
+   "bytes": 4843,
+   "lines": 50,
+   "encoding": "numbered",
+   "final_newline": true,
+   "role": "NORMATIVE analysis: reservations and caps as bounds",
+   "source_sha256": "ecde0cde26f8abda1842313f4a27d50ab06f685b54930c2f59f4cc79c6d51a36"
+  },
+  {
+   "path": "contract/DECISION-REGISTER.md",
+   "sha256": "2ceeec56b07c34a8fc78ae1da8323581d5897890f8348864052595c7665a6355",
+   "bytes": 19654,
+   "lines": 139,
+   "encoding": "numbered",
+   "final_newline": true,
+   "role": "owner decisions (proposals to challenge)",
+   "source_sha256": "6856585cb0f88ec2ec5975094eb3bcdcd13e3089e5a75801569e397268f52e2b"
+  },
+  {
+   "path": "contract/S2A-ENTRY-CRITERIA.md",
+   "sha256": "651dabff59c575bf2f2c0f7d37838950e3c1daca07dd12a43dd0e1b7dfc6e60f",
+   "bytes": 4754,
+   "lines": 68,
+   "encoding": "numbered",
+   "final_newline": true,
+   "role": "proposed S2a scope and gates",
+   "source_sha256": "e4062843e194dc634b0fa6ccca26cb980c1bf16b7891284fd88596d1ee487d75"
+  },
+  {
+   "path": "corpus/SCHEMA.md",
+   "sha256": "909f97a071cb59b69b140f71d7c37cc79d049d7847889ae74e49bf9e51fcf4a3",
+   "bytes": 7969,
+   "lines": 88,
+   "encoding": "numbered",
+   "final_newline": true,
+   "role": "corpus schema",
+   "source_sha256": "4a19726e854b1508a8e9e7e9f7b8c3151cf274c11ff124364fe6cb0ec685dad7"
+  },
+  {
+   "path": "corpus/sample-cases.jsonl",
+   "sha256": "e7b5c4f2c2089a076889ca69218fce78913d538ee322a331e47c2dfd3276db04",
+   "bytes": 255195,
+   "lines": 56,
+   "encoding": "numbered",
+   "final_newline": true,
+   "role": "56 corpus cases (author narrative and labels stripped), one compact JSON object per line",
+   "source_sha256": "f9bfe577a92c776200cded81a32c6bd68a4ba9168c80834678d66f7cf140dc94"
+  },
+  {
+   "path": "producer/pi_container.py.excerpts",
+   "sha256": "bfd226df9fc1fb8b5395a74490e3c1696273fab08e15d0e4da19b951320bb4b8",
+   "bytes": 55157,
+   "lines": 857,
+   "encoding": "verbatim",
+   "final_newline": true,
+   "role": "deployed proxy excerpts (release 92a03789), original line numbers",
+   "source_sha256": "bfd226df9fc1fb8b5395a74490e3c1696273fab08e15d0e4da19b951320bb4b8"
+  },
+  {
+   "path": "producer/role_host.py.excerpts",
+   "sha256": "e71ef49afad8d30068c646e49a81e1c27a8b28e39cb8c507bded3f375d418bbf",
+   "bytes": 25857,
+   "lines": 370,
+   "encoding": "verbatim",
+   "final_newline": true,
+   "role": "deployed launcher excerpts (release 92a03789), original line numbers",
+   "source_sha256": "e71ef49afad8d30068c646e49a81e1c27a8b28e39cb8c507bded3f375d418bbf"
+  },
+  {
+   "path": "producer/scope_budget.py.excerpts",
+   "sha256": "48b3868f4f1274815d6a601f95cce99498faf1af844052afaf885d35d1fb0a6e",
+   "bytes": 968,
+   "lines": 19,
+   "encoding": "verbatim",
+   "final_newline": true,
+   "role": "deployed objective record tool excerpt (release 92a03789)",
+   "source_sha256": "48b3868f4f1274815d6a601f95cce99498faf1af844052afaf885d35d1fb0a6e"
+  },
+  {
+   "path": "producer/openai_api_rates.json",
+   "sha256": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58",
+   "bytes": 736,
+   "lines": 14,
+   "encoding": "numbered",
+   "final_newline": true,
+   "role": "published OpenAI rates",
+   "source_sha256": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  },
+  {
+   "path": "producer/anthropic_api_rates.json",
+   "sha256": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "bytes": 1179,
+   "lines": 57,
+   "encoding": "numbered",
+   "final_newline": true,
+   "role": "published Anthropic rates",
+   "source_sha256": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5"
+  }
+ ],
+ "brief_sha256": "5721695ae769975244429ec18e5d78a77a6859f5833ef0b5d6fe260d1887d3d2",
+ "builder_sha256": "38230cb86571f102bab5f70f919c6ad76ac3ae80e28ac04767f42c9f976e5c93",
+ "derive": [
+  "VC01-openai-usage-settlement",
+  "VC02-anthropic-usage-settlement",
+  "P130-R02-rounded-up-charge-admitted",
+  "VC04-upstream-error-keeps-reservation",
+  "S02-control-error-status-after-reservation",
+  "P133-A02-error-status-with-priceable-usage",
+  "U08-missing-observed-tier",
+  "P130-R01-usage-incomplete-terminal",
+  "P133-A01-incomplete-usage-above-reservation",
+  "P2-usage-settlement-unpriced-identity-keeps-charge",
+  "N01-identity-refusal-dearer-served",
+  "Ha-inconsistent-cache-split-keeps-supported-low",
+  "N06-null-cache-counts",
+  "P133-A04-cache-write-absent-legacy",
+  "P133-A04-cache-counts-both-absent",
+  "P133-A04-cached-malformed",
+  "P133-A04-mixed-observations",
+  "P133-A05-model-case-variant",
+  "S06-string-http-status",
+  "A06-reservation-usage-null-status-no-id",
+  "P133-A06-usage-settlement-status-absent",
+  "P133-A06-error-status-null",
+  "R04-reused-reservation-id",
+  "P133-A09-conflicting-reservations-with-settlement"
+ ]
+}

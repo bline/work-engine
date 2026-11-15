@@ -1,0 +1,9 @@
+{
+  "session_id": "3e8dad39-fc7c-45d7-b994-afc2e05899a7",
+  "packet": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/packets/spec.md",
+  "packet_sha256": "b33549f135adaac44dd5eca8fccdf17d2fd1740a223f79408a2d6f44fe7a6f97",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "transport": "anthropic",
+  "collector": "root01a1d6e2"
+}

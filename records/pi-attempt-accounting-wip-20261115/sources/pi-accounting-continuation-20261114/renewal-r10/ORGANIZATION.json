@@ -1,0 +1,33 @@
+{
+  "revision": 1,
+  "objective": "Exact reviewed R3 local amendment then independent implementation review; retained full S1 obligations",
+  "change_class": "small organization revision within original outcome; renewed budget is human-approved",
+  "roles": {
+    "spec": {
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "tier": "default",
+      "context": "fresh",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/SPEC-PACKET.md",
+      "budget": 15
+    },
+    "oracle": {
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "tier": "default",
+      "context": "fresh independent raw expectation ownership",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/ORACLE-PACKET.md",
+      "budget": 18
+    },
+    "review": {
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "tier": "default",
+      "context": "fresh separate native read-only/never after frozen candidate",
+      "budget": 20
+    }
+  },
+  "collector": "root",
+  "cross_boundary": "Root owns joined freeze/replay and review disposition; spec and oracle own disjoint sources; no intermediate coordinator",
+  "no_new_deliverables": true
+}

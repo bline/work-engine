@@ -1,0 +1,19 @@
+{
+  "status": "mechanical_interface_ready",
+  "path": "/home/bline/cbm-work/p137-s1r7/s1/spec/interface.json",
+  "sha256": "17e9430821e4fe25ddfec3ea3788b0d63e795f6ba47fa38c52655bec626afa5e",
+  "contract": "pi-accounting-contract/1.6-s1",
+  "revision": 7,
+  "changed_fields": [
+    "contract",
+    "revision"
+  ],
+  "serialized_shapes": "existing names/shapes preserved; valuation not_applicable already declared; objective provisional remains existing name, no second flag",
+  "internal_declarations": [
+    "decisions",
+    "projections",
+    "boundaries"
+  ],
+  "source_ready": false,
+  "shared_dependency_changes": false
+}

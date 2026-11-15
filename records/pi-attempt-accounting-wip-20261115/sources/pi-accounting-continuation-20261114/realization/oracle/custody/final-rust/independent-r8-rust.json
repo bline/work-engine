@@ -1,0 +1,59 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "independent-r8-rust",
+  "argv": [
+    "cargo",
+    "test",
+    "--manifest-path",
+    "tooling/spec-check/Cargo.toml",
+    "--test",
+    "independent_r8_controls",
+    "--test",
+    "independent_raw_axes"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/oracle"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2984409,
+  "inputs": [
+    {
+      "path": "tooling/spec-check/tests/independent_r8_controls.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 2336,
+      "sha256": "e0895c485f48d3785e1535c6831701183df75126376d12428d9fcd161d8fd998"
+    },
+    {
+      "path": "tooling/spec-check/tests/independent_raw_axes.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 40583,
+      "sha256": "34b3ac6bd007dcfaa7659eae0f4935fac42d63f2cde21df8d924fd9daeebcd66"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 2985085,
+  "pgid": 2985085,
+  "started_at": "2026-11-14T03:51:13.423036Z",
+  "ended_at": "2026-11-14T03:51:17.185270Z",
+  "duration_s": 3.762,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-rust/independent-r8-rust.stdout",
+    "length": 731,
+    "sha256": "286dfc719a6e3b2cd7bca8edde02f186e15571096204c377fa93b595847b106a"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-rust/independent-r8-rust.stderr",
+    "length": 749,
+    "sha256": "8e6c171b2f065be0027cfc428750cb19e87b5ceb636e423fa2aa78f310d644bd"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

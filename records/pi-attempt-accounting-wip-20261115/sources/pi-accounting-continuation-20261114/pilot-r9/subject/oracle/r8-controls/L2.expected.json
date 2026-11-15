@@ -1,0 +1,56 @@
+{
+  "assertions": [
+    {
+      "claim_id": "L2",
+      "expected_fields_or_relations": {
+        "/aggregate": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "at_least",
+            "nano": "30000000"
+          },
+          "low": "30000000"
+        },
+        "/credits": [
+          {
+            "alternatives": [
+              "u1"
+            ],
+            "low": "15000000",
+            "slot": "P"
+          },
+          {
+            "alternatives": [
+              "u2"
+            ],
+            "low": "15000000",
+            "slot": "Q"
+          }
+        ],
+        "/units/0/origins": [
+          "u1"
+        ],
+        "/units/1/origins": [
+          "u2"
+        ]
+      },
+      "negative_control_refs": [
+        "L2.wrong.json"
+      ],
+      "raw_derivation_refs": [
+        "PLAN5: admitted P/Q distinct, min({15})+min({15})=30; no grant inferred from atom IDs"
+      ]
+    }
+  ],
+  "authored_by": "oracle01a1d81b; fixed literal assertions separately from supplied records",
+  "exact_subject_refs": [
+    "result:L2"
+  ],
+  "id": "expected:L2",
+  "kind": "accounting_expected_assertion",
+  "policy_refs": [
+    "PLAN43d0e7c8"
+  ],
+  "raw_subject_ref": "sha256:477887d3b4d8e9f2d9e514264634c6fca231ee813c9b416688e007b3e99bfe01",
+  "version": "1.7-s1"
+}

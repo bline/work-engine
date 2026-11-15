@@ -1,0 +1,12 @@
+[
+  {
+    "line": 12,
+    "at": "2026-11-14T06:33:08.309Z",
+    "approval_policy": "never",
+    "sandbox_policy": {
+      "type": "read-only"
+    },
+    "model": "gpt-6-astra",
+    "effort": "xhigh"
+  }
+]

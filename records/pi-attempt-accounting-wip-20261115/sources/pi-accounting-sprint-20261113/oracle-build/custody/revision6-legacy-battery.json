@@ -1,0 +1,39 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "revision6-legacy-battery",
+  "argv": [
+    "python3",
+    "validator/validate_corpus.py",
+    "check",
+    "corpus",
+    "oracle/rates"
+  ],
+  "cwd": "/home/bline/cbm-work/p136-s1r6/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 2440771,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 2440841,
+  "pgid": 2440841,
+  "started_at": "2026-11-13T22:30:28.195479Z",
+  "ended_at": "2026-11-13T22:30:28.456273Z",
+  "duration_s": 0.261,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/custody/revision6-legacy-battery.stdout",
+    "length": 155,
+    "sha256": "b2139687779c0936760f86d2fd1897858d704a3a9559015310adceb887015c84"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/custody/revision6-legacy-battery.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

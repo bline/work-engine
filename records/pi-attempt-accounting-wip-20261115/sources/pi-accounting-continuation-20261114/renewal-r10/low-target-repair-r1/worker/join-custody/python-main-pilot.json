@@ -1,0 +1,152 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "python-main-pilot",
+  "argv": [
+    "python3",
+    "validator/validate_corpus.py",
+    "check",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/corpus",
+    "--pilot"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject",
+  "env_clear": false,
+  "env_set": {
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject",
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/cargo-target",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "R10_EVIDENCE_EXECUTABLE": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/cargo-target/debug/pi-accounting-spec-check",
+    "PYTHONWARNINGS": "ignore::ResourceWarning",
+    "R10_FINANCIAL_EXECUTABLE": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3734009,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/freeze/manifest.json",
+      "type": "file",
+      "mode": 292,
+      "length": 225310,
+      "sha256": "d60017dac28aa3a831cf13db520af94d8224b53f70b12229240bff8dab30ec61"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 8761,
+      "sha256": "fda3fb175391a6ac7ba3f6ec04a7eac19559f7865a4dd685a5ad88a4256b6eae"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json",
+      "type": "file",
+      "mode": 420,
+      "length": 24131,
+      "sha256": "d0b4e6a51e6e164a937b4bd6f1054669c72e5e14fe5923715fc5075218a6a457"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 6569,
+      "sha256": "7b73338a7a051dbd9918f672fdbd54915bc1f091117717f2f25b9738f0f7b7b3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json",
+      "type": "file",
+      "mode": 420,
+      "length": 17064,
+      "sha256": "8ebbad2fe74c90cc253cffd940ab1ec7273dba07c2e37bca974109795d909a11"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/oracle/r9-pilot/claims.json",
+      "type": "file",
+      "mode": 420,
+      "length": 12453,
+      "sha256": "a47bcf0a2d7dcdb9d6ac312fb6ddc06fe396e00228c9f9a48069d6d1f94b98fc"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/spec/accounting.schema.json",
+      "type": "file",
+      "mode": 420,
+      "length": 31637,
+      "sha256": "84a229afbe21a8e47c21da0c28a0b9b3a3392960411b5a96e9a9258cdbcab6e7"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/spec/wire.schema.json",
+      "type": "file",
+      "mode": 420,
+      "length": 7537,
+      "sha256": "35a7af6502ad80c554c8544134b991561637161371dfabc9972971ed8efcaf62"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/tooling/spec-check/Cargo.lock",
+      "type": "file",
+      "mode": 420,
+      "length": 20269,
+      "sha256": "7739879b2d74177cab478c2f8e4ab16823156d21a8ae1638f2b3652c168b8eba"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/tooling/spec-check/Cargo.toml",
+      "type": "file",
+      "mode": 420,
+      "length": 266,
+      "sha256": "b2ba713e07688b923f92f48b6f15c1bcfdfd8838133ee0740698dacaff512d85"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/tooling/spec-check/tests/independent_raw_axes.rs",
+      "type": "file",
+      "mode": 420,
+      "length": 95246,
+      "sha256": "09a1e43cd7d191270c7c2e7b1a84fbade017d3b5cd6be902f0d031ca96b2938c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/validator/r10_admitted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 491197,
+      "sha256": "d45e96d074b77b4c147a47879f8e7de9fcd86e6ef7fc2675e34da4611a0f4e71"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/validator/r9_pilot.py",
+      "type": "file",
+      "mode": 420,
+      "length": 31429,
+      "sha256": "47eaafeda4ef18ef95c97c1fc493279c26aa7d034524d14cb574191c85abd3bb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/validator/test_r10_qualification.py",
+      "type": "file",
+      "mode": 436,
+      "length": 19719,
+      "sha256": "d2eecb2411e75c0c5660492db4824decb0d446a19d6ae63f46faa4569a30566a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/validator/validate_corpus.py",
+      "type": "file",
+      "mode": 420,
+      "length": 107521,
+      "sha256": "68aa5b8adae04263f36a32c59084092c679569860f31c053248e900b43ac00e5"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 3734027,
+  "pgid": 3734027,
+  "started_at": "2026-11-14T08:41:17.499782Z",
+  "ended_at": "2026-11-14T08:41:17.719312Z",
+  "duration_s": 0.22,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/join-custody/python-main-pilot.stdout",
+    "length": 2444,
+    "sha256": "b42f91333f38190e869fbb5a051180bb0607fa25f485326568adf5fcbeb030f7"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/join-custody/python-main-pilot.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

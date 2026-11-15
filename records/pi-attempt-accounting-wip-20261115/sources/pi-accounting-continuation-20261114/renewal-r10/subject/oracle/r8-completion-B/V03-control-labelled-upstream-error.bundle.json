@@ -1,0 +1,145 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "oracle/r8-completion-B/DERIVATIONS.json#V03-control-labelled-upstream-error",
+        "predecessor_subject_refs": [
+          "baseline:62dd7131d942248c87db8239bf3989d14544d7b5feeb484df7da3d0b5f125486"
+        ],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": [
+          "conditional-ticket:S1/turn-1"
+        ]
+      },
+      "exact_links": [],
+      "grants": [
+        {
+          "admission": "conditional_fixture",
+          "assumption_refs": [
+            "Inherited immutable ticket namespace only; no exact auxiliary link or physical-bill independence."
+          ],
+          "authority_ref": "ROOT-ADOPTION-R6.json",
+          "covered_extent_ref": "sha256:e182f90590923853c0078c8292b2fa7b84ac84a23aae24b5995396d3fe2719a5",
+          "covered_origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "exact_payload_ref": "oracle/r8-completion-B/V03-control-labelled-upstream-error.provenance.json#S1/turn-1",
+          "grant_id": "initial-scope:S1/turn-1",
+          "guarantee_kind": "initial_reference_scope",
+          "observer_or_harness_ref": "inherited-corpus-conditional-fixture"
+        }
+      ],
+      "id": "input:V03-control-labelled-upstream-error",
+      "identity_bindings": [],
+      "initial_contracts": [
+        {
+          "contract_id": "conditional-ticket:S1/turn-1",
+          "duplicate_rule": "same_origin_only",
+          "grant_ref": "initial-scope:S1/turn-1",
+          "reference_namespace": "dollar_ticket",
+          "scope_id": "V03-control-labelled-upstream-error/S1/turn-1"
+        }
+      ],
+      "kind": "accounting_input_proof",
+      "lineage_id": "V03-control-labelled-upstream-error",
+      "origins": [
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:1",
+          "original_position": 1,
+          "raw_bytes_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:e182f90590923853c0078c8292b2fa7b84ac84a23aae24b5995396d3fe2719a5"
+        },
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:2",
+          "original_position": 2,
+          "raw_bytes_sha256": "ed99fee80c1d85b2488d390a3ec7cb12c5242a1f552dd87fb34fea666cee4205",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:e182f90590923853c0078c8292b2fa7b84ac84a23aae24b5995396d3fe2719a5"
+        }
+      ],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:adm:S1/turn-1:rid=1",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ]
+        }
+      ],
+      "continuity_result": "unestablished",
+      "coverage_decisions": [],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [],
+      "id": "result:V03-control-labelled-upstream-error",
+      "input_proof_ref": "input:V03-control-labelled-upstream-error",
+      "kind": "accounting_result",
+      "lineage_id": "V03-control-labelled-upstream-error",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "V03-control-labelled-upstream-error/default/o/owned_closed",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        },
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "V03-control-labelled-upstream-error/default/o/owned_outstanding",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        }
+      ],
+      "origins": [
+        {
+          "active_high_unit_id": "adm:S1/turn-1:rid=1",
+          "base_id": "base:adm:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:1",
+          "origin_ref": "S1/turn-1:1"
+        },
+        {
+          "active_high_unit_id": "adm:S1/turn-1:rid=1",
+          "base_id": "base:adm:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:2",
+          "origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "primary_validities": [],
+      "unbudgeted_applicabilities": [],
+      "unbudgeted_completions": [],
+      "units": [
+        {
+          "exposure_ref": "case:V03-control-labelled-upstream-error#attempt:adm:S1/turn-1:rid=1",
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "state": "active",
+          "unit_id": "adm:S1/turn-1:rid=1"
+        }
+      ],
+      "valuation_records": [],
+      "version": "1.7-s1"
+    }
+  ]
+}

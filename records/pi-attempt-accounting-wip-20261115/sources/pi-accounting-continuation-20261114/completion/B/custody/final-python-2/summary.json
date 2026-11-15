@@ -1,0 +1,23 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/FINAL-PYTHON-PLAN.json",
+  "plan_sha256": "b23adb3e6b2d2c5726827b08efd04b9154d0e842c4029093defa91e93bd94c56",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "python-partition",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/custody/final-python-2/python-partition.json",
+      "record_sha256": "2a5aaf08e3008bb76dc625bdcd5b6f65dd9000195969aee29dcb09b29898feac",
+      "leftovers": 0
+    },
+    {
+      "name": "negative-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/custody/final-python-2/negative-controls.json",
+      "record_sha256": "fedc93cb4a3c27a1b7d367ceb6b3f25362d3823043a92a8f587b6895e740eaab",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

@@ -1,0 +1,64 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-N07-gated",
+        "predecessor_subject_refs": [],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": []
+      },
+      "exact_links": [],
+      "grants": [],
+      "id": "input:P132-FG-N07-gated",
+      "identity_bindings": [],
+      "initial_contracts": [],
+      "kind": "accounting_input_proof",
+      "lineage_id": "P132-FG-N07-gated",
+      "origins": [],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [],
+      "continuity_result": "conditional",
+      "coverage_decisions": [],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [],
+      "id": "result:P132-FG-N07-gated",
+      "input_proof_ref": "input:P132-FG-N07-gated",
+      "kind": "accounting_result",
+      "lineage_id": "P132-FG-N07-gated",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "P132-FG-N07-gated/default/o/owned_closed",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        },
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "P132-FG-N07-gated/default/o/owned_outstanding",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        }
+      ],
+      "origins": [],
+      "primary_validities": [],
+      "unbudgeted_applicabilities": [],
+      "unbudgeted_completions": [],
+      "units": [],
+      "valuation_records": [],
+      "version": "1.7-s1"
+    }
+  ]
+}

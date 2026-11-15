@@ -1,0 +1,9 @@
+# Revision 7 independent oracle changes
+
+Version 1.6-s1, revision7. The independent Codex oracle owner applies the root-approved financial interpretation of the existing objective `provisional` field. It is true exactly for owned unresolved billing, predecessor high AtLeast, non-invalid AtLeast commitments, or unresolved PiApi uncertain/unadmitted candidates. Finite Exact commitment alone does not force it; closing and retiring do not discharge money. `REVISION-7.json` attributes each changed field. Original inputs, raw log strings, historical blocks and earlier revision ledgers remain exact.
+
+U08 and P130-R02 retain their synthetic arithmetic purpose but are producer_unreachable/adversarial_synthetic. Pinned pi_container.py:964-966/1007-1020 requires floor>=2 when observed tier is absent and floor>=1 for requested null/default with observed flex. Their exact floor0 bytes fail that writer condition. New hypothetical writer controls do not establish old reachability.
+
+Independent tests now reject Anthropic default tiers, preserve standard/null/absent positive controls, and mark inconsistent lifetime splits incomplete while retaining supported ranges. Required-count, successful-terminal, integer HTTP200, schema, zero, absent/null, and malformed controls are explicit. Bounded semantic checks reject internally coherent wrong eligibility, retention and provisionality, and unchanged numeric outputs with invalid raw tier. A synthetic subscription-lane plus R500M witness proves retaining the raw reservation is required despite contradictory lane evidence. This is bounded assertion coverage, not full financial reduction.
+
+The legacy check/selftest/revisions/sabotage tools remain consistency evidence. Current results are outside the subject in r7/oracle-codex; bundled old text reports are historical. Full raw C-K conformance and live gate authority remain unestablished. Test-mock binding demonstrates conditional policy only.

@@ -1,0 +1,52 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "independent-r8-rust",
+  "argv": [
+    "cargo",
+    "test",
+    "--manifest-path",
+    "tooling/spec-check/Cargo.toml",
+    "--test",
+    "independent_r8_controls",
+    "--test",
+    "independent_raw_axes"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/oracle"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2962973,
+  "inputs": [
+    {
+      "path": "tooling/spec-check/tests/independent_r8_controls.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 2336,
+      "sha256": "e0895c485f48d3785e1535c6831701183df75126376d12428d9fcd161d8fd998"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 2963104,
+  "pgid": 2963104,
+  "started_at": "2026-11-14T03:45:58.096240Z",
+  "ended_at": "2026-11-14T03:46:50.481784Z",
+  "duration_s": 52.386,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/independent-rust/independent-r8-rust.stdout",
+    "length": 731,
+    "sha256": "86b6f4fb7d319a0f0a7a13c3c318268a2ea88649f56e1f991b86245050f379a7"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/independent-rust/independent-r8-rust.stderr",
+    "length": 2989,
+    "sha256": "62d825ac38610a6c2ad3269865c8796007da5efacb623f30fcee560efdfa82ec"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

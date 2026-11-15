@@ -1,0 +1,39 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "sabotage",
+  "argv": [
+    "python3",
+    "validator/sabotage_test.py",
+    "corpus",
+    "oracle/rates",
+    "/home/bline/cbm-work/p136-s1r6/s1/corpus"
+  ],
+  "cwd": "/home/bline/cbm-work/p137-s1r7/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 2619951,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 2621177,
+  "pgid": 2621177,
+  "started_at": "2026-11-13T23:41:06.126180Z",
+  "ended_at": "2026-11-13T23:46:31.156513Z",
+  "duration_s": 325.03,
+  "returncode": 1,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/legacy-first/sabotage.stdout",
+    "length": 18873,
+    "sha256": "35ffd7d40160ed29019ed9bb71fd8396f3b9636746995465b9e2a93a6b3b117f"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/legacy-first/sabotage.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

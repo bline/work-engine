@@ -1,0 +1,20 @@
+{
+  "session_id": "01a1d87b-01de-7631-9623-0ab1026eba5d",
+  "turn_id": "01a1d87b-025f-75c3-b6ce-fd6430b38a89",
+  "status": "completed",
+  "native_rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-15-02-01a1d87b-01de-7631-9623-0ab1026eba5d.jsonl",
+  "native_line": 390,
+  "native_line_sha256": "06be40a0374feb9a840e72c7439ae4e3c945f9fbd810dd65e56405c6f46e527a",
+  "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/A2a-REVIEW.md",
+  "report_sha256": "d5b54994a673a4b10f0112f562b08e086b9ac93983a7f673ca8d5a9ecbf191af",
+  "collection": "Native read_thread completed; exact rollout final sealed. Root assessed bounded findings and omissions.",
+  "collected_at": "2026-11-14T05:28:08.792263+00:00",
+  "identity_binding": "Reviewer final acknowledges exact SID and collector. Initial rolehost delivery refused_busy; source of subsequent read is native transcript, not successful delivery claim.",
+  "owned_processes": "Reviewer reports none remaining",
+  "allowance_exception": {
+    "observed_proxy_usd": 9.137092,
+    "supervisor_initial_cap": 8,
+    "overrun_proxy_usd": 1.137092,
+    "disposition": "Already terminal at recovery. Historical cap retained; no retroactive increase or further work admitted."
+  }
+}

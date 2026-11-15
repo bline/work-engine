@@ -1,0 +1,23 @@
+{
+  "observed_at": "2026-11-14T05:04:18.609887+00:00",
+  "root_sid": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "current_turn": "01a1d86e-b081-7333-bc20-a7f3e556c8fa",
+  "operation": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/refresh-2",
+  "provider_control_result": "native compact and attributed wake entered; helper exact exit0 collected",
+  "semantic_admission": "refused recovery turn mismatch; original recovery effect not admitted and not replayed",
+  "operation_control": "cancel; no complete command because never admitted",
+  "reservation_release": {
+    "status": "released",
+    "path": "/home/bline/.local/state/work-engine/auto-continuation/01a1d6e2-32ba-7701-9115-740dcb41af11.json"
+  },
+  "current_direction": "human continue; token mode enabled; same original100/fourhour grant ending06:55:30.192Z",
+  "manual_recovery": "Pinned Wind Walker/frozen snapshot verified and read; sameSID/rollout bound. No pending approval/pause/cancel. All engineering finals collected, helper job terminal, old listener closed; fresh observer needed. Candidate frozen and unaccepted; independent reviews pending. New human continue is continuation of objective, not admission of old operation.",
+  "settings": {
+    "pre": "Sol6.1/xhigh/default",
+    "post_replacement": "same atlines4850,4860,4876",
+    "latest": "Sol6.1/high/default atline4945 timestamp05:02:47.796Z",
+    "latest_event_sha256": "2d74c3769e67d395365b8a9819ecc351de52fc5e65383a4cdcb9ddbf4a96d466",
+    "limitation": "Runtime applied change while human enabled tokenmode; exact actor of effort change not attested. Root made no setting mutation. Current root effort is not acceptance invariant; independent reviewer requests remain Astraxhigh/default."
+  },
+  "telemetry": "latest_valid_observation69234 input/475000window epoch6 afterreplacement; token mode new_context deadline185kprepare220kcomplete now governs."
+}

@@ -1,0 +1,33 @@
+{
+  "status": "bounded planning evidence; no full gate or reducer execution",
+  "subject_root": "/home/bline/cbm-work/p137-s1r7/s1",
+  "subject_manifest_sha256": "c1c40727648b40f3494b5444065cdef3a7824a42249426dc860dece95423ceda",
+  "source_binding": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/SOURCE-BINDINGS.json",
+  "source_binding_sha256": "5adc27747b376f19ab68135ddd6689f26ca57dc488a0e49957784b39f41cf771",
+  "inherited_observations": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/module-A/root-reproduction/REPRODUCED.json",
+    "meaning": "A01/A02 specification/corpus counterexamples, A05 executed checker mutant, A09 standard schema rejection; retained without rerun"
+  },
+  "new_observations": {
+    "A06": {
+      "standing": "executed actual frozen checker impact; contract and R absent",
+      "custody": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/a06-impact/a06-impact.json",
+      "stdout": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/a06-impact/a06-impact.stdout",
+      "binary_sha256": "fd44debd11021f80cbfa50f7ae1b55c8e743745963371b8e990fc02b92b28057"
+    },
+    "source_scope": {
+      "standing": "raw identity census; 175 cases,186 sources,282 usable dollar-rid claims;4 conflict groups;no explicit incarnation fields;supplied observation scope only",
+      "custody": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/scope-census/scope-census.json",
+      "stdout": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/scope-census/scope-census.stdout"
+    },
+    "A03_A04_A07_A08": {
+      "standing": "bounded exact-source confirmation only; no new executable bypass claim",
+      "sources": "SOURCE-BINDINGS.json",
+      "locations": [
+        "spec/ck.json IDs S-zero-zero,V-PRESENCE-INTERFACE,X-BRANCH-005/016/017,PROJECT-Exposure-pi_api,PROJECT-High-exact,PROJECT-Valuation-valued",
+        "tooling/spec-check/src/decisions.rs:329-336,442-467",
+        "tooling/spec-check/tests/independent_raw_axes.rs:106-120,342-359,895-905"
+      ]
+    }
+  }
+}

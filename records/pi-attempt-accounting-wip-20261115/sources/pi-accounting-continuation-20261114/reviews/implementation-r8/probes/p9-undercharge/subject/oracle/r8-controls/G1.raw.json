@@ -1,0 +1,9 @@
+{
+  "live_admission": "unestablished",
+  "raw_gate": {
+    "authority": "self-labelled",
+    "residual": "0",
+    "verified": true
+  },
+  "trusted_fixture_inputs": null
+}

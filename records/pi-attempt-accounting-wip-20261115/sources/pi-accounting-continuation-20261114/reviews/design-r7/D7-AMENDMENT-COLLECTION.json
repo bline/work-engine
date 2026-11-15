@@ -1,0 +1,14 @@
+{
+  "session_id": "01a1d88a-9a44-71e1-9dc5-b558108f35de",
+  "actual_final_turn_id": "01a1d89c-b2b1-72d1-aae5-79c1e1b31b04",
+  "status": "completed",
+  "native_rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-32-05-01a1d88a-9a44-71e1-9dc5-b558108f35de.jsonl",
+  "native_line": 230,
+  "native_line_sha256": "245ccd611aefa7d52b060517e138d1b49f1b095b2182a8e50227cc38a72bb1c4",
+  "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/D7-AMENDMENT-REVIEW.md",
+  "report_sha256": "2c3b7ec129e649e6d0ec3bd1de64a7cc564c997fee334db35d87a2d1a86d3402",
+  "collected_at": "2026-11-14T05:57:17.754540+00:00",
+  "collection": "wait_threads exact turn completed; final selected only in matching native turn_context; initial D7 report unchanged",
+  "assessment": "pending full reading",
+  "continuity": "same retained isolated D7 episode"
+}

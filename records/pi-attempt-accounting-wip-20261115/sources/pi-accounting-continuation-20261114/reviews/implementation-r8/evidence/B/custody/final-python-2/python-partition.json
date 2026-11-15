@@ -1,0 +1,48 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "python-partition",
+  "argv": [
+    "python3",
+    "validator/validate_corpus.py",
+    "partition",
+    "corpus",
+    "oracle/rates",
+    "B"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 3100052,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py",
+      "type": "file",
+      "mode": 436,
+      "length": 104729,
+      "sha256": "40bda0eacf4c9b4357835608d18f876b2c05f3985aefa00f6c66044c62742503"
+    }
+  ],
+  "timeout_s": 120,
+  "pid": 3100118,
+  "pgid": 3100118,
+  "started_at": "2026-11-14T04:22:19.836768Z",
+  "ended_at": "2026-11-14T04:22:22.005524Z",
+  "duration_s": 2.169,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/custody/final-python-2/python-partition.stdout",
+    "length": 335,
+    "sha256": "2ab846c218fdadee21d33193aa489d9135a2ca995080d8d1e5eb241a2e4d7d90"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/custody/final-python-2/python-partition.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

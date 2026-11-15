@@ -1,0 +1,38 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "cli-wrong-scope",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+    "evidence",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-fixtures/wrong-scope.json"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 3546749,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 3546783,
+  "pgid": 3546783,
+  "started_at": "2026-11-14T07:06:37.855997Z",
+  "ended_at": "2026-11-14T07:06:37.934124Z",
+  "duration_s": 0.078,
+  "returncode": 1,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-final/cli-wrong-scope.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-final/cli-wrong-scope.stderr",
+    "length": 65,
+    "sha256": "034dbb535a2a4f9932cc99904a09e05b06bcb73b5e7955e5e45f70a5d1dd2045"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

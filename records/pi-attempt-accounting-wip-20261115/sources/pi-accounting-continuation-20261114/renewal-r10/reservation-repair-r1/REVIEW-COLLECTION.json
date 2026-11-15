@@ -1,0 +1,14 @@
+{
+  "reviewer": "01a1d8ee-19cd-7e12-ad6c-73356f2366a4",
+  "turn": "01a1d910-5595-7e03-84fc-b27724d3b276",
+  "native_final_line": 488,
+  "native_final_at": "2026-11-14T08:03:37.425Z",
+  "characters": 6428,
+  "report_sha256": "f4108bed0fd074c621c965b5c8ea800c72a9af6e57168b15d93a0f2fae6906a1",
+  "collection": "FULL_NATIVE_FINAL_COLLECTED",
+  "verdict": "CHANGES_REQUIRED",
+  "source_manifest": "34a2ddba957d2ae4bdcdfa30454641cbb29d59ee780141c518e9e93d95895d61",
+  "reviewer_no_processes": true,
+  "reviewer_no_children": true,
+  "continuity": "same isolated reviewer episode after own native refresh"
+}

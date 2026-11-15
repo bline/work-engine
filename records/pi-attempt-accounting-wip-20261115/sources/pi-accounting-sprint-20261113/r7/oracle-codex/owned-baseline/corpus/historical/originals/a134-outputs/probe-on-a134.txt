@@ -1,0 +1,14 @@
+# reader 086bdec1d443064f
+
+H-a consistent split (5m 1000 of 1000): admission ('admitted', 0.3, 0.018, []); rows/kinds ([('proxy_retained_charge', 0.018, 0.3)], [])
+
+H-a inconsistent split (5m 1000 + 1h 500 of 1000): admission ('admitted', 0.3, 0.0, []); rows/kinds ([('proxy_reservation_charge', 0.0, 0.3)], ['inconsistent_cache_split'])
+.
+H-b identity-refusal session, objective from 2026-11-10T06:00:00Z: ('not_established', None, None, ['pi_model_identity_conflict']); issue kinds raised ['pi_model_identity_conflict']
+
+H-b identity-refusal session, objective from 2026-11-10T07:00:00Z: ('admitted', 0.0, 0.0, []); issue kinds raised []
+.............................
+----------------------------------------------------------------------
+Ran 30 tests in 0.099s
+
+OK

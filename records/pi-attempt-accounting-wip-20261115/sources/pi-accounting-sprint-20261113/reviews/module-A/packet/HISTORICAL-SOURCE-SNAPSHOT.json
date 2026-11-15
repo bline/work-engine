@@ -1,0 +1,6 @@
+{
+  "original_source": "/home/bline/cbm-work/p134-module-a/ARCHITECTURE-GUARD.md",
+  "source_sha256": "1d2b6fd6e27b3e37414132dcbfd5b2879f4eba7a2840fc7be27b144cac92617d",
+  "snapshot": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/module-A/packet/source-history-guard-at-launch.md",
+  "reason": "Preserve exact launch-time source before append-only architectural-risk history changes; sealed prompt/config/manifest remain unchanged. Later current-source rederivation is expected to detect the changed living history path, not invalidate the delivered sealed bytes."
+}

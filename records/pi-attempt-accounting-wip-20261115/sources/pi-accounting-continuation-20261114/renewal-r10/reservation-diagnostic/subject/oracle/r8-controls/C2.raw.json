@@ -1,0 +1,7 @@
+{
+  "admission": "continuity must fail, preserve last admitted subject",
+  "omitted_trigger_fact": "identity:r->P",
+  "predecessor": "H2 final515M",
+  "rewritten_initial_scope": "S becomes P",
+  "successor_revision": "renamed digest"
+}

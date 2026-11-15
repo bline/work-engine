@@ -1,0 +1,19 @@
+{
+  "scope_budget": {
+    "schema": "manual-orchestration.scope-budget.v2",
+    "objective_id": "47d5a1cb-b785-441d-97e7-973844062b3d-prelude-measurement",
+    "sessions": [
+      {
+        "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+        "provider": "codex",
+        "from": "2026-11-13T21:48:30Z",
+        "bound_by": "init",
+        "evidence": null
+      }
+    ],
+    "bindings": [],
+    "started_at": "2026-11-13T21:48:30Z",
+    "cost_limits": []
+  },
+  "purpose": "Derived measurement only; does not amend original scope authority or bindings. Measures omitted root prebinding interval through21:52:54Z."
+}

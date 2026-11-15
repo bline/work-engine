@@ -1,0 +1,82 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "python-main-pilot",
+  "argv": [
+    "python3",
+    "validator/validate_corpus.py",
+    "check",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject/corpus",
+    "--pilot"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject",
+  "env_clear": false,
+  "env_set": {
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject",
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "R10_EVIDENCE_EXECUTABLE": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/pi-accounting-spec-check",
+    "PYTHONWARNINGS": "ignore::ResourceWarning",
+    "R10_FINANCIAL_EXECUTABLE": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3683120,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject/validator/r9_pilot.py",
+      "type": "file",
+      "mode": 420,
+      "length": 25319,
+      "sha256": "2b3aa5cb468e761b17b0c3c9c244b93f547d34e47fa45fd8d120424d92f2829b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject/validator/r10_admitted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 491197,
+      "sha256": "d45e96d074b77b4c147a47879f8e7de9fcd86e6ef7fc2675e34da4611a0f4e71"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/freeze/manifest.json",
+      "type": "file",
+      "mode": 292,
+      "length": 225312,
+      "sha256": "34a2ddba957d2ae4bdcdfa30454641cbb29d59ee780141c518e9e93d95895d61"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 78003424,
+      "sha256": "68a67f8cc687248e1eab78aad01ff70e030810c2c2d939ce1644296916c6ab26"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+      "type": "file",
+      "mode": 509,
+      "length": 16162864,
+      "sha256": "8be4b340ebc2dfa61f6417a94ab219a0e37077afcee12790dcab1d72853a5ca3"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 3683290,
+  "pgid": 3683290,
+  "started_at": "2026-11-14T07:56:59.723195Z",
+  "ended_at": "2026-11-14T07:56:59.971490Z",
+  "duration_s": 0.248,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/root-join/python-main-pilot.stdout",
+    "length": 2444,
+    "sha256": "b42f91333f38190e869fbb5a051180bb0607fa25f485326568adf5fcbeb030f7"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/root-join/python-main-pilot.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

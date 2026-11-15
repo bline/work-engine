@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/join-plan.json",
+  "plan_sha256": "ac2a7259a42828e7bb037c2004bbd62e120c45dda37acb0b55ece13c1b0f0f9c",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "joined-python",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/join-2/joined-python.json",
+      "record_sha256": "9ced87df8b81a8546a908e7cee49ebf59d308609cf568e751bf48bf16af12943",
+      "leftovers": 0
+    },
+    {
+      "name": "joined-rust",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/join-2/joined-rust.json",
+      "record_sha256": "4d41a1a2d52ea7df2f9847c4bad924619f6962bdbe30499e98fe119804eedccb",
+      "leftovers": 0
+    },
+    {
+      "name": "selftest",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/join-2/selftest.json",
+      "record_sha256": "6c5d55878ee55b93552a54e1d415c6cd6f2a3e05a955f9d03fb3b654086f0163",
+      "leftovers": 0
+    },
+    {
+      "name": "revisions",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/join-2/revisions.json",
+      "record_sha256": "14a91a72e74eceb145528b64f9db896affefa729cae612fe37bdac8a0e9dd35d",
+      "leftovers": 0
+    },
+    {
+      "name": "sabotage",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/join-2/sabotage.json",
+      "record_sha256": "7f73d377123b01a317c5020f9b85b7b9af2c98c2742472e3794643f800a0b400",
+      "leftovers": 0
+    },
+    {
+      "name": "generated",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/join-2/generated.json",
+      "record_sha256": "3293ec419b305f292d5305e58a890be990315b8c4ddee218c41c830a576f93e8",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

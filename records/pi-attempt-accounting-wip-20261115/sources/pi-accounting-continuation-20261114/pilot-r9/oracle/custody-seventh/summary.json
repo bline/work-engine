@@ -1,0 +1,44 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/qualification-plan.json",
+  "plan_sha256": "75e62f2109a5b6964db86e6633e2576dc4320eedf7a84fe8fd15112979e422ba",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "python-positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-seventh/python-positive.json",
+      "record_sha256": "ddf66b93bbb95d70473598a4800f01f0deb7a0d05dcb5cc997b109c1c7397186",
+      "leftovers": 0
+    },
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-seventh/build.json",
+      "record_sha256": "053725a33b8ed371f758c21fc412f260023f81610948b4eb88a1d059c8166d9d",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-seventh/rust-positive.json",
+      "record_sha256": "2c43af1edb02842c44ef2203677210a6e64c7c1a4d1c8b2ae3e90a6124f36dbd",
+      "leftovers": 0
+    },
+    {
+      "name": "python-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-seventh/python-controls.json",
+      "record_sha256": "2ec1a8d5be14676cd700dbe2214ae98e37a5581eb96f7796a513aae7f1e26d94",
+      "leftovers": 0
+    },
+    {
+      "name": "legacy-independent-r8-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-seventh/legacy-independent-r8-controls.json",
+      "record_sha256": "f4bde9cbe9bf21945ea5f463e1e80a8384fbe7072cbdefe689f17fd92b35db62",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

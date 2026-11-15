@@ -1,0 +1,226 @@
+{
+  "assertions": [
+    {
+      "claim_id": "F3-unlinked",
+      "expected_fields_or_relations": {
+        "/aggregate": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "at_least",
+            "nano": "15000000"
+          },
+          "low": "15000000"
+        },
+        "/candidates": [
+          [
+            "request:2",
+            "request:2"
+          ]
+        ],
+        "/coverage": [],
+        "/credits": {
+          "alternatives": [
+            "request:2"
+          ],
+          "mode": "single_ambiguous",
+          "selected_low": "15000000",
+          "slots": []
+        },
+        "/definite_links": [],
+        "/route_snapshots/A-first/aggregate": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "at_least",
+            "nano": "15000000"
+          },
+          "low": "15000000"
+        },
+        "/route_snapshots/A-first/candidates": [
+          [
+            "request:2",
+            "request:2"
+          ]
+        ],
+        "/route_snapshots/A-first/coverage": [],
+        "/route_snapshots/A-first/credits": {
+          "alternatives": [
+            "request:2"
+          ],
+          "mode": "single_ambiguous",
+          "selected_low": "15000000",
+          "slots": []
+        },
+        "/route_snapshots/A-first/definite_links": [],
+        "/route_snapshots/A-first/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "exact",
+              "nano": "15000000"
+            },
+            "id": "request:2",
+            "low": "15000000",
+            "origins": [
+              "request:2"
+            ]
+          },
+          {
+            "high": {
+              "basis": "none",
+              "kind": "at_least",
+              "nano": "0"
+            },
+            "id": "anchor:1",
+            "low": "0",
+            "origins": [
+              "stream-error:1"
+            ]
+          }
+        ],
+        "/route_snapshots/B-first/aggregate": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "at_least",
+            "nano": "15000000"
+          },
+          "low": "15000000"
+        },
+        "/route_snapshots/B-first/candidates": [
+          [
+            "request:2",
+            "request:2"
+          ]
+        ],
+        "/route_snapshots/B-first/coverage": [],
+        "/route_snapshots/B-first/credits": {
+          "alternatives": [
+            "request:2"
+          ],
+          "mode": "single_ambiguous",
+          "selected_low": "15000000",
+          "slots": []
+        },
+        "/route_snapshots/B-first/definite_links": [],
+        "/route_snapshots/B-first/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "exact",
+              "nano": "15000000"
+            },
+            "id": "request:2",
+            "low": "15000000",
+            "origins": [
+              "request:2"
+            ]
+          },
+          {
+            "high": {
+              "basis": "none",
+              "kind": "at_least",
+              "nano": "0"
+            },
+            "id": "anchor:1",
+            "low": "0",
+            "origins": [
+              "stream-error:1"
+            ]
+          }
+        ],
+        "/route_snapshots/all-at-once/aggregate": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "at_least",
+            "nano": "15000000"
+          },
+          "low": "15000000"
+        },
+        "/route_snapshots/all-at-once/candidates": [
+          [
+            "request:2",
+            "request:2"
+          ]
+        ],
+        "/route_snapshots/all-at-once/coverage": [],
+        "/route_snapshots/all-at-once/credits": {
+          "alternatives": [
+            "request:2"
+          ],
+          "mode": "single_ambiguous",
+          "selected_low": "15000000",
+          "slots": []
+        },
+        "/route_snapshots/all-at-once/definite_links": [],
+        "/route_snapshots/all-at-once/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "exact",
+              "nano": "15000000"
+            },
+            "id": "request:2",
+            "low": "15000000",
+            "origins": [
+              "request:2"
+            ]
+          },
+          {
+            "high": {
+              "basis": "none",
+              "kind": "at_least",
+              "nano": "0"
+            },
+            "id": "anchor:1",
+            "low": "0",
+            "origins": [
+              "stream-error:1"
+            ]
+          }
+        ],
+        "/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "exact",
+              "nano": "15000000"
+            },
+            "id": "request:2",
+            "low": "15000000",
+            "origins": [
+              "request:2"
+            ]
+          },
+          {
+            "high": {
+              "basis": "none",
+              "kind": "at_least",
+              "nano": "0"
+            },
+            "id": "anchor:1",
+            "low": "0",
+            "origins": [
+              "stream-error:1"
+            ]
+          }
+        ]
+      },
+      "negative_control_refs": [
+        "F3-unlinked.wrong.json"
+      ],
+      "raw_derivation_refs": [
+        "PLAN4/8: observed n uniqueness supplies no exact-row linkage; AtLeast0 propagates"
+      ]
+    }
+  ],
+  "authored_by": "oracle01a1d81b; fixed literal assertions separately from supplied records",
+  "exact_subject_refs": [
+    "result:F3-unlinked"
+  ],
+  "id": "expected:F3-unlinked",
+  "kind": "accounting_expected_assertion",
+  "policy_refs": [
+    "PLAN43d0e7c8"
+  ],
+  "raw_subject_ref": "sha256:02e7bf083692f17afc95e45fd0759112ebe078cff1ce6417d888c8727f14c179",
+  "version": "1.7-s1"
+}

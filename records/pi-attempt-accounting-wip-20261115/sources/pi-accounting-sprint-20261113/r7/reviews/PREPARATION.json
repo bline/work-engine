@@ -1,0 +1,10 @@
+{
+  "state": "unbound_not_launchable",
+  "assembler_sha256": "bce9169477dad0f8b053eddd6da749eb253092b7a8513d7c2ec998288a0e1288",
+  "root_review_plan": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/REVIEW-PLAN.md",
+  "review_plan_sha256": "296a5a4c30b65c5eb5ae02cc6589c6652f824edfed6978dc4886bba71e010a4f",
+  "subject": "/home/bline/cbm-work/p137-s1r7/s1",
+  "collector": "root",
+  "inference_authorized": false,
+  "blocked_on": "builders/currentjoinedfreeze/budgetcapacity/currentboundpacket"
+}

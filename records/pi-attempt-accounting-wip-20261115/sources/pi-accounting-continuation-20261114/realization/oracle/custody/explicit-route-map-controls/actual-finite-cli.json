@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "actual-finite-cli",
+  "argv": [
+    "python3",
+    "validator/test_r8_assertions.py"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 2997906,
+  "inputs": [
+    {
+      "path": "validator/validate_corpus.py",
+      "type": "file",
+      "mode": 436,
+      "length": 94551,
+      "sha256": "afc114d75ef2e0e312e9a3037049229e7f3d9203e8c534bb82a3842934233330"
+    },
+    {
+      "path": "validator/test_r8_assertions.py",
+      "type": "file",
+      "mode": 436,
+      "length": 2070,
+      "sha256": "16876996fcb0966a8571fcbaf8e60feb08dff96e660be3220cc5020b635fa4d6"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 2997908,
+  "pgid": 2997908,
+  "started_at": "2026-11-14T03:56:48.352537Z",
+  "ended_at": "2026-11-14T03:56:51.483882Z",
+  "duration_s": 3.131,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/explicit-route-map-controls/actual-finite-cli.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/explicit-route-map-controls/actual-finite-cli.stderr",
+    "length": 102,
+    "sha256": "524d248ebc6f11f39120fa033397a07bf20004f44d66857ccb1e80f9ffcbbd47"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

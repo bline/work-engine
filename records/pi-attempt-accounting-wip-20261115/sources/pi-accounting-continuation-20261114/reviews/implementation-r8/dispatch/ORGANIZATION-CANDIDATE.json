@@ -1,0 +1,101 @@
+{
+  "revision": 1,
+  "root": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "subject_manifest_sha256": "21df51b69391110beb6952c0eaebfb3c5bf99ac0ef19ce78a225fd24412afb36",
+  "logical_roles": {
+    "A1": {
+      "effort": "xhigh",
+      "title": "Financial core and69 P130/P132/P133 cases",
+      "scope": "Own financial H/L/F/C semantics and every case in dispatch/A1-cases.json (69). Derive current financial outcomes from exact raw inputs/rates and admitted policy, including local/aggregate lows, high tags/bases, holds, whole-base atomization, copy equivalence, physical independence, exact coverage, candidate/context retention and continuity. Inspect all current expected financial fields and corresponding evaluation money. Challenge inheritedA01/A02/A07/A08, malformedmodel7 and lowmultiplicity. Read relevant spec/ck.json C/V/F/X/R sections, tooling/spec-check/src/accounting.rs and decisions.rs; finite H/L/F/C fixtures and independent_raw_axes.rs. Linked supplied records remain in oracle/r8-completion-A and oracle/r8-cases or R8-LOW-ASSERTIONS; inspect financial premises where they affect your conclusions. C2 owns exhaustive structural/ref closure, not the financial truth of the records. Trace any contradictory unit/coverage/low record to its exact raw case. Controls outside your69 cases that define these core semantics are within this obligation. Do not claim A2's106 cases were reviewed.",
+      "projection": "A1-cases.json",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/A1-PACKET.md",
+      "packet_sha256": "d86f709b6ee9ea0c37158e77d8742fa8557193d95b78682fb2561820825499ef",
+      "max_proxy_usd": 8,
+      "state": "not_launched",
+      "collector": "root01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "fresh_reason": "Independent initial implementation review apart from all builder/designer conversations; no prior reviewer context reused."
+    },
+    "A2a": {
+      "effort": "xhigh",
+      "title": "Financial corpus first53 non-P cases",
+      "scope": "Own all current raw/financial expectations for exactly53 cases in dispatch/A2a-cases.json. Read the full raw inputs/current expected financial fields and money in evaluations, rate snapshots and applicable C/V/F/X/R declarations. Challenge genuine unbudgeted vs dollarNoReservation, orphan/refusal/malformed applicability, full priced multiidentity, byte-sensitive duplicate semantics, low support vs local holds, retained candidate contexts, external actualwire and all high/low tags. Inspect linked financial premises as needed; C2 owns exhaustive structural/ref closure but cannot clear financially wrong records. Relevant finite A/W/O/P/M/G controls are shared evidence; do not silently inherit their claimed pass as raw truth. Preserve cross-case twins/order/evidence-pair relations involving your cases. Report those relations requiring other-module integration. Do not claim other122 financial cases reviewed.",
+      "projection": "A2a-cases.json",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/A2a-PACKET.md",
+      "packet_sha256": "546a1d52e6cba3d02f568a9bb179ffffd57530f7c5bd4620b2475e7db2c5f845",
+      "max_proxy_usd": 8,
+      "state": "not_launched",
+      "collector": "root01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "fresh_reason": "Independent initial implementation review apart from all builder/designer conversations; no prior reviewer context reused."
+    },
+    "A2b": {
+      "effort": "xhigh",
+      "title": "Financial corpus last53 non-P cases",
+      "scope": "Own all current raw/financial expectations for exactly53 cases in dispatch/A2b-cases.json. Read the full raw inputs/current expected financial fields and money in evaluations, rate snapshots and applicable C/V/F/X/R declarations. Challenge genuine unbudgeted vs dollarNoReservation, orphan/refusal/malformed applicability, full priced multiidentity, byte-sensitive duplicate semantics, low support vs local holds, retained candidate contexts, external actualwire and all high/low tags. Inspect linked financial premises as needed; C2 owns exhaustive structural/ref closure but cannot clear financially wrong records. Relevant finite A/W/O/P/M/G controls are shared evidence; do not silently inherit their claimed pass as raw truth. Preserve cross-case twins/order/evidence-pair relations involving your cases. Report those relations requiring other-module integration. Do not claim other122 financial cases reviewed.",
+      "projection": "A2b-cases.json",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/A2b-PACKET.md",
+      "packet_sha256": "fdb7ab985d7d58f0572736390107487df0ccb7609ed18a974a2997f72dfb8d5e",
+      "max_proxy_usd": 8,
+      "state": "not_launched",
+      "collector": "root01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "fresh_reason": "Independent initial implementation review apart from all builder/designer conversations; no prior reviewer context reused."
+    },
+    "B1": {
+      "effort": "high",
+      "title": "Attribution/admission69 P cases",
+      "scope": "Own attribution/admission/evaluation composition for all69 P130/P132/P133 cases in dispatch/B1-cases.json. Independently derive admitted/candidate/owned memberships from exact raw journal/closure/tree/time facts and examine every current evaluation attribution, rollup-scope membership, commitment/provisionality, possible owner and budget decision. T owns memberships; R must recompute supported lows within that scope, candidate observations do not seed credit or owned slots, no parent/successor double charge, no AtLeast0 loss. Relevant specT/R/admission, decisions.rs/accounting.rs, actual Python scope/rollup checks and oracle expected membership records are read set. Challenge exact test_mock conditional gates, forgedverifiedtrue/absentauthority, live unestablished evidence and C-K touching findings. Financial A reviews money; C2 reviews generic refs/census; you own whether memberships/authority actually follow raw facts. Report cross-partition dependencies and do not claim remaining106 reviewed.",
+      "projection": "B1-cases.json",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/B1-PACKET.md",
+      "packet_sha256": "3c3fdbdf5a8822025a3f881c54f784794b3c4e790696dd1066d668fbe8ad6484",
+      "max_proxy_usd": 8,
+      "state": "not_launched",
+      "collector": "root01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "fresh_reason": "Independent initial implementation review apart from all builder/designer conversations; no prior reviewer context reused."
+    },
+    "B2": {
+      "effort": "high",
+      "title": "Attribution/admission106 other cases",
+      "scope": "Own attribution/admission/evaluation composition for all106 non-P cases in dispatch/B2-cases.json. Independently derive admitted/candidate/owned memberships from exact raw journal/closure/tree/time facts and examine every current evaluation attribution, rollup-scope membership, commitment/provisionality, possible owner and budget decision. T owns memberships; R must recompute supported lows within that scope, candidate observations do not seed credit or owned slots, no parent/successor double charge, no AtLeast0 loss. Relevant specT/R/admission, decisions.rs/accounting.rs, actual Python scope/rollup checks and oracle expected membership records are read set. Challenge exact test_mock conditional gates, forgedverifiedtrue/absentauthority, live unestablished evidence and C-K touching findings. Financial A reviews money; C2 reviews generic refs/census; you own whether memberships/authority actually follow raw facts. Report cross-partition dependencies and do not claim remaining69 reviewed.",
+      "projection": "B2-cases.json",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/B2-PACKET.md",
+      "packet_sha256": "31f3e1d40204d25355cd484b346012a8850ddb1b38fc1f8eacca57cd65e3c79e",
+      "max_proxy_usd": 8,
+      "state": "not_launched",
+      "collector": "root01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "fresh_reason": "Independent initial implementation review apart from all builder/designer conversations; no prior reviewer context reused."
+    },
+    "C1": {
+      "effort": "high",
+      "title": "Canonical declarations/schema/wire/ownership/dependencies",
+      "scope": "Own canonical spec/schema/wire, semantic owner boundaries, witness forwarding and actual dependency invalidation. Inspect current spec/ck.json, ck.schema.json, wire.schema.json, accounting.schema.json, interface.json, dependencies.json, relevant generated contract views and tooling/spec-check/src/lib.rs/decisions.rs/accounting.rs/main.rs. Use section outlines for ck rather than unrelated repeated tables. Verify real Draft2020-12 agreement/StageIdvsBoundaryId, exact actual exposurepool/highkind/nano/basis, valuation bounds/splits/derivations, obligationstate/amountsource/by and qualifiedU08 reason names. C sole validity; S cannot construct/edit a duplicated decision. InputProof/Result/ExpectedAssertion distinction and exact refs must be schema-real. Protected dependency mutation must invalidate actual affected consumers and old acknowledgements, null stays unestablished; inspect structural_r8.rs and Python dependency tests/custody. InheritedA03/A04/A05/A06/A09 must receive explicit dispositions with A/C2 boundaries noted. C2 owns actual consumer corpus census/helper provenance; financial A raw truth is not yours. Review current postgate documentation claims for overstatement. Return explicit missing obligations rather than claim generic wholeC clearance.",
+      "projection": null,
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/C1-PACKET.md",
+      "packet_sha256": "0b8fc9b6ef9df4d4dd8cd2f73ba72fc4edaaf20356b2f05ddebb79d27aafbd27",
+      "max_proxy_usd": 8,
+      "state": "not_launched",
+      "collector": "root01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "fresh_reason": "Independent initial implementation review apart from all builder/designer conversations; no prior reviewer context reused."
+    },
+    "C2": {
+      "effort": "xhigh",
+      "title": "Actual consumers, finite qualification and independent authorship",
+      "scope": "Own actual Python and Rust consumer correctness/evidence completeness and independent expected authorship, including all175 cases/374scopes/ref closure as a structural census. Read actual validator/validate_corpus.py, sabotage_test.py, test_completion_references.py and relevant existing tests; tooling/spec-check/src/corpus.rs/accounting.rs and relevant lib/main entrypoints; independent_raw_axes.rs, independent_r8_controls.rs and structural controls. Read oracle/R8-COMPLETION.json, R8-FINITE-COVERAGE.json, R8-LOW-ASSERTIONS.json selectively by structure/census and all independent formula axes. Inspect evidence/A and evidence/B authoring/derivation/helper provenance plus integration helpers and exact joined custody. Expected lane cannot import generated financial decisions; shape-only sharing is allowed. D3 forbids a hidden general reducer disguised as an authoring helper, but do not infer violation merely from a helper's existence. Challenge actual raw Python high/low/dedup checks and registered equivalent replacements; no Rust-only falsegreen. Validate every required activeunit/resultref and rollupscope/lowassertion by census, kinds/digests/dangling/omission/owner, affirmativeC/F/valuation/wholeorigin coverage for Exactbudgeted and genuine unbudgeted separate route. A/B own raw financial/membership truth; your consumer must actually challenge it, not compare two mirrored expected records. Inspect negativecontrols for intended failure cause: catch-any-exception after brokenrefs is not proof of semantic rejection; construct selfconsistent wrong output+rollup+suppliedrecord challenges where necessary. Check revisions175\u2192175 and342B reversal entries, old failures and exact postgate drift. Fullarbitrary raw reduction/liveauthority remain unestablished. Distinguish a serious evidence-design defect from an infrastructure or read-budget failure. All source/helpers read-only; ask root for exact write-requiring probe and return interim findings promptly.",
+      "projection": null,
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/C2-PACKET.md",
+      "packet_sha256": "f13c7832204789f9ad68e122d93f67d8aefc7a7575424310d06252d7f6ac4564",
+      "max_proxy_usd": 10,
+      "state": "not_launched",
+      "collector": "root01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "fresh_reason": "Independent initial implementation review apart from all builder/designer conversations; no prior reviewer context reused."
+    }
+  },
+  "original_gate": "Acomplete/Ccomplete no unresolvedP1; relevantBno unresolvedP1touchingC-K; everyP2 root disposition; serious blockingP2/recurrence holds ordinaryrepair",
+  "composed_coverage": "A1+A2a+A2b all175financial; B1+B2 all175attribution/admission; C1 declarations/schema/wire/dependencies; C2 actualconsumers/census/provenance. Root alone composes; omitted obligations remainunmet.",
+  "max_concurrent_reviewers": 3,
+  "allowance_total_proxy_usd": 58,
+  "root_closure_reserve_proxy_usd": 15,
+  "budget_observed_proxy_usd": 19.5170004,
+  "deadline": "2026-11-14T06:55:30.192Z",
+  "prior_revision": "DRAFT-REVIEW-PLAN.md unlaunchedproposal",
+  "change_classification": "small supervisor-approved sizing decomposition of existing objective, no new deliverable/implementation or authority",
+  "reason": "Split106financialcases and actualCboundary; split all175attribution into69/106 to fit expected readsets. All original gates retained; roughly100-170k scoped reviewer context forecast plus preservation; no literal allbundle read claimed."
+}

@@ -1,0 +1,13 @@
+{
+  "final_collected": true,
+  "all_seven_owned_paths_hash_verified": true,
+  "executable_sha256_verified": "6daa4fdc82c4a0ea130e9d51d3c2aead9f1efa90581e848605fc86a5033ce5e1",
+  "custody_summaries_read": true,
+  "limitation": "CLI summary failed includes intended negative exit1 controls; actual terminal records reviewed at final join",
+  "worker_allprocesses_collected": {
+    "live": [],
+    "children": [],
+    "all_collected": true
+  },
+  "acceptance": false
+}

@@ -1,0 +1,58 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "actual-evidence-controls",
+  "argv": [
+    "python3",
+    "validator/test_r8_evidence.py"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 2977700,
+  "inputs": [
+    {
+      "path": "validator/test_r8_evidence.py",
+      "type": "file",
+      "mode": 436,
+      "length": 2323,
+      "sha256": "c74cd73324170ebfe66d18b09215414c200f656866d95db27f73cd7cb5c7f13b"
+    },
+    {
+      "path": "spec/accounting.schema.json",
+      "type": "file",
+      "mode": 436,
+      "length": 25497,
+      "sha256": "ac0920fb596808f1f23fdd972f81fcd59408624ddcc2b7cd7ebf9eee88642bc6"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/spec/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 75768136,
+      "sha256": "fbb538d25c242b7c19447cf74bc6ef12bdb9bec576ede6304ec259772263f24d"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 2977783,
+  "pgid": 2977783,
+  "started_at": "2026-11-14T03:49:07.449311Z",
+  "ended_at": "2026-11-14T03:49:09.942054Z",
+  "duration_s": 2.493,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/vc07-stronger-negatives/actual-evidence-controls.stdout",
+    "length": 783,
+    "sha256": "b0c29c51790d10447ea9910aa7d5fbad52bd4db3970b3f15850b1c9459a08a4f"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/vc07-stronger-negatives/actual-evidence-controls.stderr",
+    "length": 101,
+    "sha256": "8a833a82c7433eb578d117ac2bd3f9ba6199d1d61fa5f205aa46298bc851ed0e"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

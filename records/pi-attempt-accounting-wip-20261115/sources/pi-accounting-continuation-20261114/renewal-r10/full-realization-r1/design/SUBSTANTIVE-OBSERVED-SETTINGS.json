@@ -1,0 +1,106 @@
+[
+  {
+    "line": 78,
+    "record": {
+      "timestamp": "2026-11-14T10:12:20.637Z",
+      "ordinal": 77,
+      "type": "event_msg",
+      "payload": {
+        "type": "thread_settings_applied",
+        "thread_id": "01a1d984-42de-7000-9c59-b3e8b2a7e094",
+        "thread_settings": {
+          "model": "gpt-6-astra",
+          "model_provider_id": "openai",
+          "service_tier": "default",
+          "approval_policy": "never",
+          "approvals_reviewer": "user",
+          "requested_approvals_reviewer": "user",
+          "permission_profile": {
+            "type": "managed",
+            "file_system": {
+              "type": "restricted",
+              "entries": [
+                {
+                  "path": {
+                    "type": "special",
+                    "value": {
+                      "kind": "root"
+                    }
+                  },
+                  "access": "read"
+                }
+              ]
+            },
+            "network": "restricted"
+          },
+          "cwd": "/home/bline/code/work-engine",
+          "runtime_workspace_roots": [
+            "/home/bline/code/work-engine"
+          ],
+          "reasoning_effort": "xhigh",
+          "personality": "pragmatic",
+          "collaboration_mode": {
+            "mode": "default",
+            "settings": {
+              "model": "gpt-6-astra",
+              "reasoning_effort": "xhigh",
+              "developer_instructions": null
+            }
+          },
+          "disabled_plugin_ids": []
+        }
+      }
+    }
+  },
+  {
+    "line": 80,
+    "record": {
+      "timestamp": "2026-11-14T10:12:22.290Z",
+      "ordinal": 79,
+      "type": "turn_context",
+      "payload": {
+        "turn_id": "01a1d98b-3218-7db0-abcf-b1e99afb7fac",
+        "root_turn_id": "01a1d98b-3218-7db0-abcf-b1e99afb7fac",
+        "disabled_plugin_ids": [],
+        "cwd": "/home/bline/code/work-engine",
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "permission_profile": {
+          "type": "managed",
+          "file_system": {
+            "type": "restricted",
+            "entries": [
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                },
+                "access": "read"
+              }
+            ]
+          },
+          "network": "restricted"
+        },
+        "model": "gpt-6-astra",
+        "comp_hash": "3000",
+        "collaboration_mode": {
+          "mode": "default",
+          "settings": {
+            "model": "gpt-6-astra",
+            "reasoning_effort": "xhigh",
+            "developer_instructions": null
+          }
+        },
+        "multi_agent_version": "v2",
+        "realtime_active": false,
+        "effort": "xhigh",
+        "summary": "none",
+        "sandbox_policy": {
+          "type": "read-only"
+        }
+      }
+    }
+  }
+]

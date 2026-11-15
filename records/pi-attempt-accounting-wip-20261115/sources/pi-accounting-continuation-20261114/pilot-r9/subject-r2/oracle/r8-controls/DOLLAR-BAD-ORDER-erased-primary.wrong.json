@@ -1,0 +1,232 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "VC07-raw-applicability.json",
+        "predecessor_subject_refs": [],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": [
+          "no-admitted-ticket"
+        ]
+      },
+      "exact_links": [
+        {
+          "from_origin_ref": "a",
+          "grant_ref": "fixture-link:a-u",
+          "to_origin_ref": "u"
+        }
+      ],
+      "grants": [
+        {
+          "admission": "conditional_fixture",
+          "assumption_refs": [
+            "VC07-exact.raw.json#/conditional_harness_assumptions/exact_row_coreference"
+          ],
+          "authority_ref": "independent-conditional-fixture-harness",
+          "covered_extent_ref": "fixture:VC07:occurrenceA:two-origins",
+          "covered_origin_refs": [
+            "a",
+            "u"
+          ],
+          "exact_payload_ref": "VC07-exact.raw.json",
+          "grant_id": "fixture-link:a-u",
+          "guarantee_kind": "exact_row_coreference",
+          "observer_or_harness_ref": "oracle01a1d81b"
+        }
+      ],
+      "id": "input:dollar-bad-order",
+      "identity_bindings": [],
+      "initial_contracts": [
+        {
+          "contract_id": "no-admitted-ticket",
+          "duplicate_rule": "same_origin_only",
+          "reference_namespace": "unestablished"
+        }
+      ],
+      "kind": "accounting_input_proof",
+      "lineage_id": "dollar-bad-order",
+      "origins": [
+        {
+          "initial_contract_ref": "no-admitted-ticket",
+          "origin_id": "a",
+          "original_position": 1,
+          "raw_bytes_sha256": "0cfba7416e8e5287906497bceba305c26c2b9b54659afa4618bcb801c15da4a5",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:2321070c2acbfc02f61f83ef1ffa7b2b2f61298f83f8590e252e58d31c4ce4d7"
+        },
+        {
+          "initial_contract_ref": "no-admitted-ticket",
+          "origin_id": "u",
+          "original_position": 2,
+          "raw_bytes_sha256": "0d43dd59adfec545b32bb59a2e73ad8d7d4509f533a93833894e7b1d7aa8fa55",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:2321070c2acbfc02f61f83ef1ffa7b2b2f61298f83f8590e252e58d31c4ce4d7"
+        }
+      ],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:a",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "a"
+          ]
+        },
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:u",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "u"
+          ]
+        }
+      ],
+      "continuity_result": "conditional",
+      "coverage_decisions": [
+        {
+          "anchor_origin_refs": [
+            "a"
+          ],
+          "completion_ref": "completion:u",
+          "coverage_id": "F:a-u",
+          "definite_link_refs": [
+            "fixture-link:a-u"
+          ],
+          "monetary_origin_refs": [
+            "u"
+          ],
+          "reason_refs": [
+            "complete-unbudgeted-usage-and-conditional-exact-link"
+          ],
+          "result_unit_ref": "unit:F:a-u",
+          "retained_component_refs": [
+            "usage:u"
+          ],
+          "route": "unbudgeted_completion",
+          "status": "accepted",
+          "unit_refs": [
+            "unit:a",
+            "unit:u"
+          ],
+          "valuation_ref": "valuation:u"
+        }
+      ],
+      "definite_links": [
+        {
+          "admitted_input_link_ref": "fixture-link:a-u",
+          "from_origin_ref": "a",
+          "to_origin_ref": "u"
+        }
+      ],
+      "failure_refs": [],
+      "financial_candidates": [
+        {
+          "context_origin_ref": "u",
+          "predicate_ref": "same-source-same-n",
+          "usage_origin_ref": "u"
+        }
+      ],
+      "id": "result:dollar-bad-order",
+      "input_proof_ref": "input:dollar-bad-order",
+      "kind": "accounting_result",
+      "lineage_id": "dollar-bad-order",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [
+            "u"
+          ],
+          "basis": "usage_valuation",
+          "credit_mode": "single_ambiguous",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "VC07-global",
+          "seed_origin_refs": [
+            "u"
+          ],
+          "selected_low": "15000000",
+          "single_floor": "15000000"
+        }
+      ],
+      "origins": [
+        {
+          "active_high_unit_id": "unit:F:a-u",
+          "base_id": "base:a",
+          "evidence_atom_id": "atom:a",
+          "origin_ref": "a"
+        },
+        {
+          "active_high_unit_id": "unit:F:a-u",
+          "base_id": "base:u",
+          "evidence_atom_id": "atom:u",
+          "origin_ref": "u"
+        }
+      ],
+      "primary_validities": [],
+      "unbudgeted_applicabilities": [
+        {
+          "applicability_id": "applicability:u",
+          "classification": "genuine_unbudgeted",
+          "dollar_origin_refs": [],
+          "raw_subject_ref": "sha256:2321070c2acbfc02f61f83ef1ffa7b2b2f61298f83f8590e252e58d31c4ce4d7",
+          "usage_origin_ref": "u"
+        }
+      ],
+      "unbudgeted_completions": [
+        {
+          "applicability_ref": "applicability:u",
+          "complete": true,
+          "completion_id": "completion:u",
+          "usage_origin_ref": "u",
+          "valuation_ref": "valuation:u"
+        }
+      ],
+      "units": [
+        {
+          "exposure_ref": "anchor:AtLeast0",
+          "origin_refs": [
+            "a"
+          ],
+          "state": "inactive",
+          "successor_ref": "unit:F:a-u",
+          "unit_id": "unit:a"
+        },
+        {
+          "exposure_ref": "usage:Exact15000000",
+          "origin_refs": [
+            "u"
+          ],
+          "state": "inactive",
+          "successor_ref": "unit:F:a-u",
+          "unit_id": "unit:u"
+        },
+        {
+          "exposure_ref": "covered:Exact15000000",
+          "origin_refs": [
+            "a",
+            "u"
+          ],
+          "state": "active",
+          "unit_id": "unit:F:a-u"
+        }
+      ],
+      "valuation_records": [
+        {
+          "complete": true,
+          "usage_origin_refs": [
+            "u"
+          ],
+          "valuation_id": "valuation:u",
+          "wire_ref": "VC07-request.wire.json"
+        }
+      ],
+      "version": "1.7-s1"
+    }
+  ]
+}

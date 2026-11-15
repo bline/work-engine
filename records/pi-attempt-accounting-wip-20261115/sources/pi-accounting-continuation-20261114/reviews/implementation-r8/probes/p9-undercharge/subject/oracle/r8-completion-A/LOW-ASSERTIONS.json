@@ -1,0 +1,3652 @@
+{
+  "assertions": [
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-A5-unreadable-line-added",
+      "claim_id": "P130-A5-unreadable-line-added/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-A5-unreadable-line-added"
+      ],
+      "raw_input_sha256": "96a8915354b794cd1af8c3b95165f4122aa10ebb83e6365cf7bff173f9c8df4c",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-A5-unreadable-line-added",
+      "claim_id": "P130-A5-unreadable-line-added/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-A5-unreadable-line-added"
+      ],
+      "raw_input_sha256": "96a8915354b794cd1af8c3b95165f4122aa10ebb83e6365cf7bff173f9c8df4c",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-Q11-closure-uncertain",
+      "claim_id": "P130-Q11-closure-uncertain/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-Q11-closure-uncertain"
+      ],
+      "raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-Q11-closure-uncertain",
+      "claim_id": "P130-Q11-closure-uncertain/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-Q11-closure-uncertain"
+      ],
+      "raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R01-usage-incomplete-terminal",
+      "claim_id": "P130-R01-usage-incomplete-terminal/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R01-usage-incomplete-terminal"
+      ],
+      "raw_input_sha256": "a5523b160436a40f2d39f814982698a4aa80d4bab33a5b95dc1e0987cabdf505",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R01-usage-incomplete-terminal",
+      "claim_id": "P130-R01-usage-incomplete-terminal/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R01-usage-incomplete-terminal"
+      ],
+      "raw_input_sha256": "a5523b160436a40f2d39f814982698a4aa80d4bab33a5b95dc1e0987cabdf505",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R02-rounded-up-charge-admitted",
+      "claim_id": "P130-R02-rounded-up-charge-admitted/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "525",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R02-rounded-up-charge-admitted"
+      ],
+      "raw_input_sha256": "6f0eeaa36409cfe79663450c1fa0286a51a87a90698f4030736646189dd6896c",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R02-rounded-up-charge-admitted",
+      "claim_id": "P130-R02-rounded-up-charge-admitted/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R02-rounded-up-charge-admitted"
+      ],
+      "raw_input_sha256": "6f0eeaa36409cfe79663450c1fa0286a51a87a90698f4030736646189dd6896c",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R04-priority-overrun-above-cap",
+      "claim_id": "P130-R04-priority-overrun-above-cap/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "948000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R04-priority-overrun-above-cap"
+      ],
+      "raw_input_sha256": "392ee33eec99591bf4342df966ce7b82f298c87b2f26b0a422d0409dc7f5bfb5",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R04-priority-overrun-above-cap",
+      "claim_id": "P130-R04-priority-overrun-above-cap/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R04-priority-overrun-above-cap"
+      ],
+      "raw_input_sha256": "392ee33eec99591bf4342df966ce7b82f298c87b2f26b0a422d0409dc7f5bfb5",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R04-retired-session-releases-commitment",
+      "claim_id": "P130-R04-retired-session-releases-commitment/limit-1.0/o/owned_closed",
+      "evaluation": "limit-1.0",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R04-retired-session-releases-commitment"
+      ],
+      "raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R04-retired-session-releases-commitment",
+      "claim_id": "P130-R04-retired-session-releases-commitment/limit-1.0/o/owned_outstanding",
+      "evaluation": "limit-1.0",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R04-retired-session-releases-commitment"
+      ],
+      "raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R05-conflicting-keeps-valuation-high",
+      "claim_id": "P130-R05-conflicting-keeps-valuation-high/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "row:S1/turn-1:line=2"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R05-conflicting-keeps-valuation-high"
+      ],
+      "raw_input_sha256": "15840859797471fd136b0d282fcf38cc8e73cce7b4d7d0a64da722ed97d9b723",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:3",
+        "S1/turn-1:4"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R05-conflicting-keeps-valuation-high",
+      "claim_id": "P130-R05-conflicting-keeps-valuation-high/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "20000000",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R05-conflicting-keeps-valuation-high"
+      ],
+      "raw_input_sha256": "15840859797471fd136b0d282fcf38cc8e73cce7b4d7d0a64da722ed97d9b723",
+      "seed_origin_refs": [
+        "S1/turn-1:3",
+        "S1/turn-1:4"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R06-reservation-amount-malformed",
+      "claim_id": "P130-R06-reservation-amount-malformed/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R06-reservation-amount-malformed"
+      ],
+      "raw_input_sha256": "8950d90d144433b3b5319096c6b2f0abfede18bbd8555a8d9718154f3ea1421d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R06-reservation-amount-malformed",
+      "claim_id": "P130-R06-reservation-amount-malformed/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R06-reservation-amount-malformed"
+      ],
+      "raw_input_sha256": "8950d90d144433b3b5319096c6b2f0abfede18bbd8555a8d9718154f3ea1421d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R06-reservation-rid-missing",
+      "claim_id": "P130-R06-reservation-rid-missing/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R06-reservation-rid-missing"
+      ],
+      "raw_input_sha256": "fb38ae93bcde95a9b06a835ac438f9f1a65d6d1205eb8f6c83f337276a45010f",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R06-reservation-rid-missing",
+      "claim_id": "P130-R06-reservation-rid-missing/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [
+        "row:S1/turn-1:line=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R06-reservation-rid-missing"
+      ],
+      "raw_input_sha256": "fb38ae93bcde95a9b06a835ac438f9f1a65d6d1205eb8f6c83f337276a45010f",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R07-closed-unresolved-predecessor-constrains-successor",
+      "claim_id": "P130-R07-closed-unresolved-predecessor-constrains-successor/successor/p/owned_closed",
+      "evaluation": "successor",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "p",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R07-closed-unresolved-predecessor-constrains-successor"
+      ],
+      "raw_input_sha256": "6046c3363fbf3f7eb2ea31638c89005706914a2a3b11d6664595da3d305bee64",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R07-closed-unresolved-predecessor-constrains-successor",
+      "claim_id": "P130-R07-closed-unresolved-predecessor-constrains-successor/successor/p/owned_outstanding",
+      "evaluation": "successor",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "p",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R07-closed-unresolved-predecessor-constrains-successor"
+      ],
+      "raw_input_sha256": "6046c3363fbf3f7eb2ea31638c89005706914a2a3b11d6664595da3d305bee64",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R07-closed-unresolved-predecessor-constrains-successor",
+      "claim_id": "P130-R07-closed-unresolved-predecessor-constrains-successor/successor/s/owned_closed",
+      "evaluation": "successor",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "s",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R07-closed-unresolved-predecessor-constrains-successor"
+      ],
+      "raw_input_sha256": "6046c3363fbf3f7eb2ea31638c89005706914a2a3b11d6664595da3d305bee64",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R07-closed-unresolved-predecessor-constrains-successor",
+      "claim_id": "P130-R07-closed-unresolved-predecessor-constrains-successor/successor/s/owned_outstanding",
+      "evaluation": "successor",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "s",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R07-closed-unresolved-predecessor-constrains-successor"
+      ],
+      "raw_input_sha256": "6046c3363fbf3f7eb2ea31638c89005706914a2a3b11d6664595da3d305bee64",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R08-admissions-without-tree-still-block",
+      "claim_id": "P130-R08-admissions-without-tree-still-block/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R08-admissions-without-tree-still-block"
+      ],
+      "raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R08-admissions-without-tree-still-block",
+      "claim_id": "P130-R08-admissions-without-tree-still-block/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R08-admissions-without-tree-still-block"
+      ],
+      "raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R08-admissions-without-tree-still-block",
+      "claim_id": "P130-R08-admissions-without-tree-still-block/default/p/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "p",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R08-admissions-without-tree-still-block"
+      ],
+      "raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R08-admissions-without-tree-still-block",
+      "claim_id": "P130-R08-admissions-without-tree-still-block/default/p/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "p",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R08-admissions-without-tree-still-block"
+      ],
+      "raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R10-reopened-then-retired",
+      "claim_id": "P130-R10-reopened-then-retired/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R10-reopened-then-retired"
+      ],
+      "raw_input_sha256": "64c880d7c1208ec733e6e89f886ba60320d9bb7d4825e1683a8faa28ec8a379c",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R10-reopened-then-retired",
+      "claim_id": "P130-R10-reopened-then-retired/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R10-reopened-then-retired"
+      ],
+      "raw_input_sha256": "64c880d7c1208ec733e6e89f886ba60320d9bb7d4825e1683a8faa28ec8a379c",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R11-open-session-before-retirement",
+      "claim_id": "P130-R11-open-session-before-retirement/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R11-open-session-before-retirement"
+      ],
+      "raw_input_sha256": "02e2f38c1f164678574c237a28df85f703f137ee6dc02d910e7d11a266dbccee",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R11-open-session-before-retirement",
+      "claim_id": "P130-R11-open-session-before-retirement/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R11-open-session-before-retirement"
+      ],
+      "raw_input_sha256": "02e2f38c1f164678574c237a28df85f703f137ee6dc02d910e7d11a266dbccee",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R12-outstanding-interval-keeps-candidate",
+      "claim_id": "P130-R12-outstanding-interval-keeps-candidate/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R12-outstanding-interval-keeps-candidate"
+      ],
+      "raw_input_sha256": "f58acdd2311f294fc4073f0d4f8dbedf412eaaf5792c6ccc3700f79003279f5d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R12-outstanding-interval-keeps-candidate",
+      "claim_id": "P130-R12-outstanding-interval-keeps-candidate/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R12-outstanding-interval-keeps-candidate"
+      ],
+      "raw_input_sha256": "f58acdd2311f294fc4073f0d4f8dbedf412eaaf5792c6ccc3700f79003279f5d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R12-untrusted-clock-keeps-candidate",
+      "claim_id": "P130-R12-untrusted-clock-keeps-candidate/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R12-untrusted-clock-keeps-candidate"
+      ],
+      "raw_input_sha256": "ce3ba8f5629a4bc0c0fcd26bd1cb4220af1d180f3e6ccd1b816d0de4d2533c18",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R12-untrusted-clock-keeps-candidate",
+      "claim_id": "P130-R12-untrusted-clock-keeps-candidate/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R12-untrusted-clock-keeps-candidate"
+      ],
+      "raw_input_sha256": "ce3ba8f5629a4bc0c0fcd26bd1cb4220af1d180f3e6ccd1b816d0de4d2533c18",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R14-anthropic-null-tier-admitted",
+      "claim_id": "P130-R14-anthropic-null-tier-admitted/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "28000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R14-anthropic-null-tier-admitted"
+      ],
+      "raw_input_sha256": "00efadffab0f8745f02f35a9d02c2da63d2dbc6a25454bb2c9bd392257b5bd44",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-R14-anthropic-null-tier-admitted",
+      "claim_id": "P130-R14-anthropic-null-tier-admitted/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-R14-anthropic-null-tier-admitted"
+      ],
+      "raw_input_sha256": "00efadffab0f8745f02f35a9d02c2da63d2dbc6a25454bb2c9bd392257b5bd44",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-T-owned-before-window-summed",
+      "claim_id": "P130-T-owned-before-window-summed/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-T-owned-before-window-summed"
+      ],
+      "raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P130-T-owned-before-window-summed",
+      "claim_id": "P130-T-owned-before-window-summed/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P130-T-owned-before-window-summed"
+      ],
+      "raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-close-after-reference-time",
+      "claim_id": "P132-CP-close-after-reference-time/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-close-after-reference-time"
+      ],
+      "raw_input_sha256": "b6616ec78c84814655de5b86ab6b4b05225715c9353b3dac62b330a787be7087",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-close-after-reference-time",
+      "claim_id": "P132-CP-close-after-reference-time/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-close-after-reference-time"
+      ],
+      "raw_input_sha256": "b6616ec78c84814655de5b86ab6b4b05225715c9353b3dac62b330a787be7087",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-close-entry-contradicts-closed-at",
+      "claim_id": "P132-CP-close-entry-contradicts-closed-at/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-close-entry-contradicts-closed-at"
+      ],
+      "raw_input_sha256": "b6616ec78c84814655de5b86ab6b4b05225715c9353b3dac62b330a787be7087",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-close-entry-contradicts-closed-at",
+      "claim_id": "P132-CP-close-entry-contradicts-closed-at/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-close-entry-contradicts-closed-at"
+      ],
+      "raw_input_sha256": "b6616ec78c84814655de5b86ab6b4b05225715c9353b3dac62b330a787be7087",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-closed-predecessor-outstanding",
+      "claim_id": "P132-CP-closed-predecessor-outstanding/request-successor/p/owned_closed",
+      "evaluation": "request-successor",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "p",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-closed-predecessor-outstanding"
+      ],
+      "raw_input_sha256": "f58acdd2311f294fc4073f0d4f8dbedf412eaaf5792c6ccc3700f79003279f5d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-closed-predecessor-outstanding",
+      "claim_id": "P132-CP-closed-predecessor-outstanding/request-successor/p/owned_outstanding",
+      "evaluation": "request-successor",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "p",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-closed-predecessor-outstanding"
+      ],
+      "raw_input_sha256": "f58acdd2311f294fc4073f0d4f8dbedf412eaaf5792c6ccc3700f79003279f5d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-closed-predecessor-outstanding",
+      "claim_id": "P132-CP-closed-predecessor-outstanding/request-successor/s/owned_closed",
+      "evaluation": "request-successor",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "s",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-closed-predecessor-outstanding"
+      ],
+      "raw_input_sha256": "f58acdd2311f294fc4073f0d4f8dbedf412eaaf5792c6ccc3700f79003279f5d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-closed-predecessor-outstanding",
+      "claim_id": "P132-CP-closed-predecessor-outstanding/request-successor/s/owned_outstanding",
+      "evaluation": "request-successor",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "s",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-closed-predecessor-outstanding"
+      ],
+      "raw_input_sha256": "f58acdd2311f294fc4073f0d4f8dbedf412eaaf5792c6ccc3700f79003279f5d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-closed-predecessor-outstanding",
+      "claim_id": "P132-CP-closed-predecessor-outstanding/request-predecessor/p/owned_closed",
+      "evaluation": "request-predecessor",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "p",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-closed-predecessor-outstanding"
+      ],
+      "raw_input_sha256": "f58acdd2311f294fc4073f0d4f8dbedf412eaaf5792c6ccc3700f79003279f5d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-closed-predecessor-outstanding",
+      "claim_id": "P132-CP-closed-predecessor-outstanding/request-predecessor/p/owned_outstanding",
+      "evaluation": "request-predecessor",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "p",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-closed-predecessor-outstanding"
+      ],
+      "raw_input_sha256": "f58acdd2311f294fc4073f0d4f8dbedf412eaaf5792c6ccc3700f79003279f5d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-closed-predecessor-outstanding",
+      "claim_id": "P132-CP-closed-predecessor-outstanding/request-predecessor/s/owned_closed",
+      "evaluation": "request-predecessor",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "s",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-closed-predecessor-outstanding"
+      ],
+      "raw_input_sha256": "f58acdd2311f294fc4073f0d4f8dbedf412eaaf5792c6ccc3700f79003279f5d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-closed-predecessor-outstanding",
+      "claim_id": "P132-CP-closed-predecessor-outstanding/request-predecessor/s/owned_outstanding",
+      "evaluation": "request-predecessor",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "s",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-closed-predecessor-outstanding"
+      ],
+      "raw_input_sha256": "f58acdd2311f294fc4073f0d4f8dbedf412eaaf5792c6ccc3700f79003279f5d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-closed-valid-close-entry",
+      "claim_id": "P132-CP-closed-valid-close-entry/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-closed-valid-close-entry"
+      ],
+      "raw_input_sha256": "b6616ec78c84814655de5b86ab6b4b05225715c9353b3dac62b330a787be7087",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-closed-valid-close-entry",
+      "claim_id": "P132-CP-closed-valid-close-entry/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-closed-valid-close-entry"
+      ],
+      "raw_input_sha256": "b6616ec78c84814655de5b86ab6b4b05225715c9353b3dac62b330a787be7087",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-known-over-limit",
+      "claim_id": "P132-CP-known-over-limit/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-known-over-limit"
+      ],
+      "raw_input_sha256": "95347beac8f748d9ce1ef0ce4bc1c727f58287d2cbdeb15b8513241c7a7c5e9b",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-known-over-limit",
+      "claim_id": "P132-CP-known-over-limit/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-known-over-limit"
+      ],
+      "raw_input_sha256": "95347beac8f748d9ce1ef0ce4bc1c727f58287d2cbdeb15b8513241c7a7c5e9b",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2",
+        "S1/turn-2:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-retired-session-resumed-without-admission",
+      "claim_id": "P132-CP-retired-session-resumed-without-admission/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-retired-session-resumed-without-admission"
+      ],
+      "raw_input_sha256": "dcb0e055ffd652c79b152bb6a8faf010cb434a8bdcf0f7f3b49988e3aa30de6d",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-retired-session-resumed-without-admission",
+      "claim_id": "P132-CP-retired-session-resumed-without-admission/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-retired-session-resumed-without-admission"
+      ],
+      "raw_input_sha256": "dcb0e055ffd652c79b152bb6a8faf010cb434a8bdcf0f7f3b49988e3aa30de6d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-unknown-below-limit",
+      "claim_id": "P132-CP-unknown-below-limit/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-unknown-below-limit"
+      ],
+      "raw_input_sha256": "95347beac8f748d9ce1ef0ce4bc1c727f58287d2cbdeb15b8513241c7a7c5e9b",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-CP-unknown-below-limit",
+      "claim_id": "P132-CP-unknown-below-limit/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-CP-unknown-below-limit"
+      ],
+      "raw_input_sha256": "95347beac8f748d9ce1ef0ce4bc1c727f58287d2cbdeb15b8513241c7a7c5e9b",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-N06-gated",
+      "claim_id": "P132-FG-N06-gated/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "6000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-N06-gated"
+      ],
+      "raw_input_sha256": "1e570cdc808146e7a62f02c78ad5f14f37718d9f8a2de0ca802259b6a65bfed7",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-N06-gated",
+      "claim_id": "P132-FG-N06-gated/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-N06-gated"
+      ],
+      "raw_input_sha256": "1e570cdc808146e7a62f02c78ad5f14f37718d9f8a2de0ca802259b6a65bfed7",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-N07-gated",
+      "claim_id": "P132-FG-N07-gated/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-N07-gated"
+      ],
+      "raw_input_sha256": "25b43410b9075c84df38b04a8e1900d7460e63c130d46d5a816a36779b238ef3",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-N07-gated",
+      "claim_id": "P132-FG-N07-gated/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-N07-gated"
+      ],
+      "raw_input_sha256": "25b43410b9075c84df38b04a8e1900d7460e63c130d46d5a816a36779b238ef3",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-P130-R02-gated",
+      "claim_id": "P132-FG-P130-R02-gated/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "525",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-P130-R02-gated"
+      ],
+      "raw_input_sha256": "d622b9596f0781e6a3f38733394f8fb98dd645fabd94a2b05fb607f37e4634ab",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-P130-R02-gated",
+      "claim_id": "P132-FG-P130-R02-gated/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-P130-R02-gated"
+      ],
+      "raw_input_sha256": "d622b9596f0781e6a3f38733394f8fb98dd645fabd94a2b05fb607f37e4634ab",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-P130-R04-gated",
+      "claim_id": "P132-FG-P130-R04-gated/limit-1.0/o/owned_closed",
+      "evaluation": "limit-1.0",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-P130-R04-gated"
+      ],
+      "raw_input_sha256": "e50cc0d9ada1ef7a9473cbe2fa63d291b6ff1bb1fa4267a261f4d7b8193811d6",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-P130-R04-gated",
+      "claim_id": "P132-FG-P130-R04-gated/limit-1.0/o/owned_outstanding",
+      "evaluation": "limit-1.0",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-P130-R04-gated"
+      ],
+      "raw_input_sha256": "e50cc0d9ada1ef7a9473cbe2fa63d291b6ff1bb1fa4267a261f4d7b8193811d6",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-P130-R14-gated",
+      "claim_id": "P132-FG-P130-R14-gated/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "28000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-P130-R14-gated"
+      ],
+      "raw_input_sha256": "4ea7d3389f8f41d756fcc2a3462f600993c347855a9ff61458fe05b3ab9ec911",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-P130-R14-gated",
+      "claim_id": "P132-FG-P130-R14-gated/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-P130-R14-gated"
+      ],
+      "raw_input_sha256": "4ea7d3389f8f41d756fcc2a3462f600993c347855a9ff61458fe05b3ab9ec911",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-U03-gated",
+      "claim_id": "P132-FG-U03-gated/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-U03-gated"
+      ],
+      "raw_input_sha256": "f094c37b84a976993aac1de27e277197fe3806b05230f97068e51fed1d4b0a1d",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-U03-gated",
+      "claim_id": "P132-FG-U03-gated/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-U03-gated"
+      ],
+      "raw_input_sha256": "f094c37b84a976993aac1de27e277197fe3806b05230f97068e51fed1d4b0a1d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-V01-gated",
+      "claim_id": "P132-FG-V01-gated/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "600000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-V01-gated"
+      ],
+      "raw_input_sha256": "8ccea6f661a767375c7418f27c49f1ca947272fc3b837ac66ef090a85895fbea",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-V01-gated",
+      "claim_id": "P132-FG-V01-gated/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-V01-gated"
+      ],
+      "raw_input_sha256": "8ccea6f661a767375c7418f27c49f1ca947272fc3b837ac66ef090a85895fbea",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-V02-gated",
+      "claim_id": "P132-FG-V02-gated/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "10000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-V02-gated"
+      ],
+      "raw_input_sha256": "da99dcecf7e76615e9efc834353a086c94662201a49b4825c9bc6d18ca622345",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-V02-gated",
+      "claim_id": "P132-FG-V02-gated/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-V02-gated"
+      ],
+      "raw_input_sha256": "da99dcecf7e76615e9efc834353a086c94662201a49b4825c9bc6d18ca622345",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC01-before-retirement",
+      "claim_id": "P132-FG-VC01-before-retirement/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC01-before-retirement"
+      ],
+      "raw_input_sha256": "c024884362ea8460dfbcb257479600fe0819c9c844309403eb0f439c6cffae3f",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC01-before-retirement",
+      "claim_id": "P132-FG-VC01-before-retirement/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC01-before-retirement"
+      ],
+      "raw_input_sha256": "c024884362ea8460dfbcb257479600fe0819c9c844309403eb0f439c6cffae3f",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC01-gated",
+      "claim_id": "P132-FG-VC01-gated/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC01-gated"
+      ],
+      "raw_input_sha256": "e50cc0d9ada1ef7a9473cbe2fa63d291b6ff1bb1fa4267a261f4d7b8193811d6",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC01-gated",
+      "claim_id": "P132-FG-VC01-gated/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC01-gated"
+      ],
+      "raw_input_sha256": "e50cc0d9ada1ef7a9473cbe2fa63d291b6ff1bb1fa4267a261f4d7b8193811d6",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC01-no-gate",
+      "claim_id": "P132-FG-VC01-no-gate/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC01-no-gate"
+      ],
+      "raw_input_sha256": "5644efc405b6e51ca26c46bf7cc1fa98e048f00d6242efbde06985efcd324b0d",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC01-no-gate",
+      "claim_id": "P132-FG-VC01-no-gate/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC01-no-gate"
+      ],
+      "raw_input_sha256": "5644efc405b6e51ca26c46bf7cc1fa98e048f00d6242efbde06985efcd324b0d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC02-gated",
+      "claim_id": "P132-FG-VC02-gated/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "28000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC02-gated"
+      ],
+      "raw_input_sha256": "595c2875f58e1737ef868cba4a5792952a786b6815c6b5a25bf13c843c345d95",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC02-gated",
+      "claim_id": "P132-FG-VC02-gated/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC02-gated"
+      ],
+      "raw_input_sha256": "595c2875f58e1737ef868cba4a5792952a786b6815c6b5a25bf13c843c345d95",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2",
+        "S1/turn-2:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC11-gated",
+      "claim_id": "P132-FG-VC11-gated/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1",
+        "res:S1/turn-2:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC11-gated"
+      ],
+      "raw_input_sha256": "2100d78c0ea5c92d4ed3a28d7b9b7e9d2f7c0c21a104ca7717bfb54c785a7784",
+      "seed_origin_refs": [
+        "S1/turn-1:2",
+        "S1/turn-2:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC11-gated",
+      "claim_id": "P132-FG-VC11-gated/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC11-gated"
+      ],
+      "raw_input_sha256": "2100d78c0ea5c92d4ed3a28d7b9b7e9d2f7c0c21a104ca7717bfb54c785a7784",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC13-gated",
+      "claim_id": "P132-FG-VC13-gated/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC13-gated"
+      ],
+      "raw_input_sha256": "697168059232384b66c0ae5a527e182e3a07ed730b814455a9466e42270c54e1",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC13-gated",
+      "claim_id": "P132-FG-VC13-gated/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC13-gated"
+      ],
+      "raw_input_sha256": "697168059232384b66c0ae5a527e182e3a07ed730b814455a9466e42270c54e1",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC14-open-no-billing-bound",
+      "claim_id": "P132-FG-VC14-open-no-billing-bound/limit-1.0/o/owned_closed",
+      "evaluation": "limit-1.0",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC14-open-no-billing-bound"
+      ],
+      "raw_input_sha256": "2b9483b15206115ed96b995097067c2af40946049a12b3c681c88464dd04019f",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC14-open-no-billing-bound",
+      "claim_id": "P132-FG-VC14-open-no-billing-bound/limit-1.0/o/owned_outstanding",
+      "evaluation": "limit-1.0",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC14-open-no-billing-bound"
+      ],
+      "raw_input_sha256": "2b9483b15206115ed96b995097067c2af40946049a12b3c681c88464dd04019f",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC14-open-session-billing-bound",
+      "claim_id": "P132-FG-VC14-open-session-billing-bound/limit-1.0/o/owned_closed",
+      "evaluation": "limit-1.0",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC14-open-session-billing-bound"
+      ],
+      "raw_input_sha256": "c024884362ea8460dfbcb257479600fe0819c9c844309403eb0f439c6cffae3f",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC14-open-session-billing-bound",
+      "claim_id": "P132-FG-VC14-open-session-billing-bound/limit-1.0/o/owned_outstanding",
+      "evaluation": "limit-1.0",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC14-open-session-billing-bound"
+      ],
+      "raw_input_sha256": "c024884362ea8460dfbcb257479600fe0819c9c844309403eb0f439c6cffae3f",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC15-gated",
+      "claim_id": "P132-FG-VC15-gated/successor/p/owned_closed",
+      "evaluation": "successor",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "p",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC15-gated"
+      ],
+      "raw_input_sha256": "d008746b07adf279a38344b758c8a79b9d6d4b4a5fa56646a9ee812dc519200e",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC15-gated",
+      "claim_id": "P132-FG-VC15-gated/successor/p/owned_outstanding",
+      "evaluation": "successor",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "p",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC15-gated"
+      ],
+      "raw_input_sha256": "d008746b07adf279a38344b758c8a79b9d6d4b4a5fa56646a9ee812dc519200e",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC15-gated",
+      "claim_id": "P132-FG-VC15-gated/successor/s/owned_closed",
+      "evaluation": "successor",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "s",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC15-gated"
+      ],
+      "raw_input_sha256": "d008746b07adf279a38344b758c8a79b9d6d4b4a5fa56646a9ee812dc519200e",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-VC15-gated",
+      "claim_id": "P132-FG-VC15-gated/successor/s/owned_outstanding",
+      "evaluation": "successor",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "s",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-VC15-gated"
+      ],
+      "raw_input_sha256": "d008746b07adf279a38344b758c8a79b9d6d4b4a5fa56646a9ee812dc519200e",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-closure-authority",
+      "claim_id": "P132-FG-closure-authority/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-closure-authority"
+      ],
+      "raw_input_sha256": "e50cc0d9ada1ef7a9473cbe2fa63d291b6ff1bb1fa4267a261f4d7b8193811d6",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-closure-authority",
+      "claim_id": "P132-FG-closure-authority/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-closure-authority"
+      ],
+      "raw_input_sha256": "e50cc0d9ada1ef7a9473cbe2fa63d291b6ff1bb1fa4267a261f4d7b8193811d6",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-closure-legacy-entry-only",
+      "claim_id": "P132-FG-closure-legacy-entry-only/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-closure-legacy-entry-only"
+      ],
+      "raw_input_sha256": "e50cc0d9ada1ef7a9473cbe2fa63d291b6ff1bb1fa4267a261f4d7b8193811d6",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-closure-legacy-entry-only",
+      "claim_id": "P132-FG-closure-legacy-entry-only/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-closure-legacy-entry-only"
+      ],
+      "raw_input_sha256": "e50cc0d9ada1ef7a9473cbe2fa63d291b6ff1bb1fa4267a261f4d7b8193811d6",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-contradicted-by-reopening",
+      "claim_id": "P132-FG-gate-contradicted-by-reopening/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-contradicted-by-reopening"
+      ],
+      "raw_input_sha256": "723d4a6ca83cab99b2a3a17e172fdb8689130d5cc06bcf4019d0fa55e846f254",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-contradicted-by-reopening",
+      "claim_id": "P132-FG-gate-contradicted-by-reopening/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-contradicted-by-reopening"
+      ],
+      "raw_input_sha256": "723d4a6ca83cab99b2a3a17e172fdb8689130d5cc06bcf4019d0fa55e846f254",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-expired",
+      "claim_id": "P132-FG-gate-expired/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-expired"
+      ],
+      "raw_input_sha256": "06256dbb05fe849b63d9d12e2fb2b1fa76dcfafee9fe1168292bb7f18f6ad501",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-expired",
+      "claim_id": "P132-FG-gate-expired/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-expired"
+      ],
+      "raw_input_sha256": "06256dbb05fe849b63d9d12e2fb2b1fa76dcfafee9fe1168292bb7f18f6ad501",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-flag-only",
+      "claim_id": "P132-FG-gate-flag-only/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-flag-only"
+      ],
+      "raw_input_sha256": "6540484040ec10e9edde928372f71f9f7d71f56c8ad606204860bdd0f7342951",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-flag-only",
+      "claim_id": "P132-FG-gate-flag-only/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-flag-only"
+      ],
+      "raw_input_sha256": "6540484040ec10e9edde928372f71f9f7d71f56c8ad606204860bdd0f7342951",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-receipt-missing",
+      "claim_id": "P132-FG-gate-receipt-missing/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-receipt-missing"
+      ],
+      "raw_input_sha256": "da361ee0462dd2548a1389decd6c7babddf8b49c896abef821b899ac9efd14f1",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-receipt-missing",
+      "claim_id": "P132-FG-gate-receipt-missing/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-receipt-missing"
+      ],
+      "raw_input_sha256": "da361ee0462dd2548a1389decd6c7babddf8b49c896abef821b899ac9efd14f1",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-reopening-only",
+      "claim_id": "P132-FG-gate-reopening-only/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-reopening-only"
+      ],
+      "raw_input_sha256": "3d11cb205c85cec212f4f5fd64cfd307198678a3cf2de7f73e0b6f52ea9d8e32",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-reopening-only",
+      "claim_id": "P132-FG-gate-reopening-only/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-reopening-only"
+      ],
+      "raw_input_sha256": "3d11cb205c85cec212f4f5fd64cfd307198678a3cf2de7f73e0b6f52ea9d8e32",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-request-scope",
+      "claim_id": "P132-FG-gate-request-scope/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-request-scope"
+      ],
+      "raw_input_sha256": "d4a05a6937d05ab0da5377bb47315fd171f5898b1bef8c0a1e431c80fa2a479d",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-request-scope",
+      "claim_id": "P132-FG-gate-request-scope/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-request-scope"
+      ],
+      "raw_input_sha256": "d4a05a6937d05ab0da5377bb47315fd171f5898b1bef8c0a1e431c80fa2a479d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-self-asserted-file",
+      "claim_id": "P132-FG-gate-self-asserted-file/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-self-asserted-file"
+      ],
+      "raw_input_sha256": "e7a9b59a0386bc18bc2a27be2b5edf3b6bcd0624337e94a95ddee45f7fcd55ca",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-self-asserted-file",
+      "claim_id": "P132-FG-gate-self-asserted-file/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-self-asserted-file"
+      ],
+      "raw_input_sha256": "e7a9b59a0386bc18bc2a27be2b5edf3b6bcd0624337e94a95ddee45f7fcd55ca",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-starts-after-launch",
+      "claim_id": "P132-FG-gate-starts-after-launch/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-starts-after-launch"
+      ],
+      "raw_input_sha256": "bf50ca7a6704d4903b232185f084a30267064788393104acd6c9b3e28bbc2469",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-starts-after-launch",
+      "claim_id": "P132-FG-gate-starts-after-launch/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-starts-after-launch"
+      ],
+      "raw_input_sha256": "bf50ca7a6704d4903b232185f084a30267064788393104acd6c9b3e28bbc2469",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-wrong-authority",
+      "claim_id": "P132-FG-gate-wrong-authority/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-wrong-authority"
+      ],
+      "raw_input_sha256": "92c84455632d6f0b8e3cce8a653049298423486067b857be085dca192c77e2be",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-wrong-authority",
+      "claim_id": "P132-FG-gate-wrong-authority/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-wrong-authority"
+      ],
+      "raw_input_sha256": "92c84455632d6f0b8e3cce8a653049298423486067b857be085dca192c77e2be",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-wrong-session",
+      "claim_id": "P132-FG-gate-wrong-session/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-wrong-session"
+      ],
+      "raw_input_sha256": "7a15a0a612cb9f6bdf5770d64bb22c709c8070125ff403775eaec54ef17d4a15",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P132-FG-gate-wrong-session",
+      "claim_id": "P132-FG-gate-wrong-session/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-wrong-session"
+      ],
+      "raw_input_sha256": "7a15a0a612cb9f6bdf5770d64bb22c709c8070125ff403775eaec54ef17d4a15",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A01-incomplete-usage-above-reservation",
+      "claim_id": "P133-A01-incomplete-usage-above-reservation/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A01-incomplete-usage-above-reservation"
+      ],
+      "raw_input_sha256": "5f8c1dc2a4f82bd81b50eb044e636681b69c569845820566489cc6c57bebb5ba",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A01-incomplete-usage-above-reservation",
+      "claim_id": "P133-A01-incomplete-usage-above-reservation/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A01-incomplete-usage-above-reservation"
+      ],
+      "raw_input_sha256": "5f8c1dc2a4f82bd81b50eb044e636681b69c569845820566489cc6c57bebb5ba",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A02-error-status-with-priceable-usage",
+      "claim_id": "P133-A02-error-status-with-priceable-usage/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "1000000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A02-error-status-with-priceable-usage"
+      ],
+      "raw_input_sha256": "b5132516f7426785e9feafdadb8ef837291be69f3dc76d6907557d8c6df5ec1b",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A02-error-status-with-priceable-usage",
+      "claim_id": "P133-A02-error-status-with-priceable-usage/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A02-error-status-with-priceable-usage"
+      ],
+      "raw_input_sha256": "b5132516f7426785e9feafdadb8ef837291be69f3dc76d6907557d8c6df5ec1b",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A04-cache-counts-both-absent",
+      "claim_id": "P133-A04-cache-counts-both-absent/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A04-cache-counts-both-absent"
+      ],
+      "raw_input_sha256": "e5665202044f8176f3d8ca037ee1ee25c44b5f04209a1acf8e398c377290d18d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A04-cache-counts-both-absent",
+      "claim_id": "P133-A04-cache-counts-both-absent/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A04-cache-counts-both-absent"
+      ],
+      "raw_input_sha256": "e5665202044f8176f3d8ca037ee1ee25c44b5f04209a1acf8e398c377290d18d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A04-cache-write-absent-legacy",
+      "claim_id": "P133-A04-cache-write-absent-legacy/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A04-cache-write-absent-legacy"
+      ],
+      "raw_input_sha256": "91c75f7a3a0832b836adfee93687e20fd423e13a21afbc56970f2c8a52d6c3bb",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A04-cache-write-absent-legacy",
+      "claim_id": "P133-A04-cache-write-absent-legacy/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A04-cache-write-absent-legacy"
+      ],
+      "raw_input_sha256": "91c75f7a3a0832b836adfee93687e20fd423e13a21afbc56970f2c8a52d6c3bb",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A04-cached-malformed",
+      "claim_id": "P133-A04-cached-malformed/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A04-cached-malformed"
+      ],
+      "raw_input_sha256": "686f74e18c36927596eea8c98bd8507f86d829978db01090824d2fcfe123ae80",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A04-cached-malformed",
+      "claim_id": "P133-A04-cached-malformed/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A04-cached-malformed"
+      ],
+      "raw_input_sha256": "686f74e18c36927596eea8c98bd8507f86d829978db01090824d2fcfe123ae80",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A04-cached-nonzero",
+      "claim_id": "P133-A04-cached-nonzero/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "11400000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A04-cached-nonzero"
+      ],
+      "raw_input_sha256": "f9bf0318aeb2eaf62cc39c3e291fd37bf07af4ce6d9527979ec36aa6176993b8",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A04-cached-nonzero",
+      "claim_id": "P133-A04-cached-nonzero/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A04-cached-nonzero"
+      ],
+      "raw_input_sha256": "f9bf0318aeb2eaf62cc39c3e291fd37bf07af4ce6d9527979ec36aa6176993b8",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A04-mixed-observations",
+      "claim_id": "P133-A04-mixed-observations/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A04-mixed-observations"
+      ],
+      "raw_input_sha256": "f84c8fe618abec59bd7478a13c32379e36dae8eda00eb11cbd4baff987974e4f",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2",
+        "S1/turn-1:3"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A04-mixed-observations",
+      "claim_id": "P133-A04-mixed-observations/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A04-mixed-observations"
+      ],
+      "raw_input_sha256": "f84c8fe618abec59bd7478a13c32379e36dae8eda00eb11cbd4baff987974e4f",
+      "seed_origin_refs": [
+        "S1/turn-1:2",
+        "S1/turn-1:3"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A05-model-case-variant",
+      "claim_id": "P133-A05-model-case-variant/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A05-model-case-variant"
+      ],
+      "raw_input_sha256": "de1a2c5c247a23e5476a628f304d31e37c3c5c2893747a60d9172eb5bc375d34",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A05-model-case-variant",
+      "claim_id": "P133-A05-model-case-variant/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A05-model-case-variant"
+      ],
+      "raw_input_sha256": "de1a2c5c247a23e5476a628f304d31e37c3c5c2893747a60d9172eb5bc375d34",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A06-error-status-null",
+      "claim_id": "P133-A06-error-status-null/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A06-error-status-null"
+      ],
+      "raw_input_sha256": "ecde18b73d128bf6e9b0b93248c861ead80bee96af2b95d4b0d05783acb72483",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A06-error-status-null",
+      "claim_id": "P133-A06-error-status-null/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A06-error-status-null"
+      ],
+      "raw_input_sha256": "ecde18b73d128bf6e9b0b93248c861ead80bee96af2b95d4b0d05783acb72483",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A06-usage-settlement-status-absent",
+      "claim_id": "P133-A06-usage-settlement-status-absent/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A06-usage-settlement-status-absent"
+      ],
+      "raw_input_sha256": "bd0e527def11edd2d72e541e3cc7b50b7348b2dc9c93855dfa89976d22294422",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A06-usage-settlement-status-absent",
+      "claim_id": "P133-A06-usage-settlement-status-absent/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A06-usage-settlement-status-absent"
+      ],
+      "raw_input_sha256": "bd0e527def11edd2d72e541e3cc7b50b7348b2dc9c93855dfa89976d22294422",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A09-conflicting-reservations-with-settlement",
+      "claim_id": "P133-A09-conflicting-reservations-with-settlement/default/o/owned_closed",
+      "evaluation": "default",
+      "expected_low": "0",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A09-conflicting-reservations-with-settlement"
+      ],
+      "raw_input_sha256": "d748180602e28a7a93d74fe66a9e809c94f3cc753076312e15fbf4646687696d",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:3"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-A09-conflicting-reservations-with-settlement",
+      "claim_id": "P133-A09-conflicting-reservations-with-settlement/default/o/owned_outstanding",
+      "evaluation": "default",
+      "expected_low": "15000000",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-A09-conflicting-reservations-with-settlement"
+      ],
+      "raw_input_sha256": "d748180602e28a7a93d74fe66a9e809c94f3cc753076312e15fbf4646687696d",
+      "seed_origin_refs": [
+        "S1/turn-1:3"
+      ]
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-FG-VC14-authenticated-bound",
+      "claim_id": "P133-FG-VC14-authenticated-bound/limit-1.0/o/owned_closed",
+      "evaluation": "limit-1.0",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-FG-VC14-authenticated-bound"
+      ],
+      "raw_input_sha256": "d44bd71d431a56c953261f82f24496067c919c14722a59f0178e10d43c61bb70",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-FG-VC14-authenticated-bound",
+      "claim_id": "P133-FG-VC14-authenticated-bound/limit-1.0/o/owned_outstanding",
+      "evaluation": "limit-1.0",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-FG-VC14-authenticated-bound"
+      ],
+      "raw_input_sha256": "d44bd71d431a56c953261f82f24496067c919c14722a59f0178e10d43c61bb70",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-FG-bound-binding-mismatch",
+      "claim_id": "P133-FG-bound-binding-mismatch/limit-1.0/o/owned_closed",
+      "evaluation": "limit-1.0",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-FG-bound-binding-mismatch"
+      ],
+      "raw_input_sha256": "75e4839bdbc3bd5708f2a76e57e5922edc422032fa26eeaffbf4f0b0f96e1a1a",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-FG-bound-binding-mismatch",
+      "claim_id": "P133-FG-bound-binding-mismatch/limit-1.0/o/owned_outstanding",
+      "evaluation": "limit-1.0",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-FG-bound-binding-mismatch"
+      ],
+      "raw_input_sha256": "75e4839bdbc3bd5708f2a76e57e5922edc422032fa26eeaffbf4f0b0f96e1a1a",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-FG-bound-coverage-incomplete",
+      "claim_id": "P133-FG-bound-coverage-incomplete/limit-1.0/o/owned_closed",
+      "evaluation": "limit-1.0",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-FG-bound-coverage-incomplete"
+      ],
+      "raw_input_sha256": "f2ae834d0e04288c8fb598b6c3edea944ad2d95586c61d11417b85e3f8d3fead",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-FG-bound-coverage-incomplete",
+      "claim_id": "P133-FG-bound-coverage-incomplete/limit-1.0/o/owned_outstanding",
+      "evaluation": "limit-1.0",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-FG-bound-coverage-incomplete"
+      ],
+      "raw_input_sha256": "f2ae834d0e04288c8fb598b6c3edea944ad2d95586c61d11417b85e3f8d3fead",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-FG-bound-exceeds-cap",
+      "claim_id": "P133-FG-bound-exceeds-cap/limit-1.0/o/owned_closed",
+      "evaluation": "limit-1.0",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-FG-bound-exceeds-cap"
+      ],
+      "raw_input_sha256": "951a2c678a499bc96379ede0d12f72f8d92b094c7089da890aa5bdbcaa6c1a6e",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-FG-bound-exceeds-cap",
+      "claim_id": "P133-FG-bound-exceeds-cap/limit-1.0/o/owned_outstanding",
+      "evaluation": "limit-1.0",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-FG-bound-exceeds-cap"
+      ],
+      "raw_input_sha256": "951a2c678a499bc96379ede0d12f72f8d92b094c7089da890aa5bdbcaa6c1a6e",
+      "seed_origin_refs": []
+    },
+    {
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-FG-bound-wrong-currency",
+      "claim_id": "P133-FG-bound-wrong-currency/limit-1.0/o/owned_closed",
+      "evaluation": "limit-1.0",
+      "expected_low": "15000000",
+      "label": "owned_closed",
+      "objective": "o",
+      "owned_unit_refs": [
+        "res:S1/turn-1:rid=1"
+      ],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-FG-bound-wrong-currency"
+      ],
+      "raw_input_sha256": "ae51bf0b0b0c61187a0702111debd8d09fbb1bb91c9bbecc62600d8e78974222",
+      "seed_origin_refs": [
+        "S1/turn-1:2"
+      ]
+    },
+    {
+      "alternative_origin_refs": [],
+      "assumptions": [
+        "conditional inherited initial scope; no physical independence frame",
+        "finite raw T admission/closure membership; no live provenance qualification"
+      ],
+      "authored_by": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "case_id": "P133-FG-bound-wrong-currency",
+      "claim_id": "P133-FG-bound-wrong-currency/limit-1.0/o/owned_outstanding",
+      "evaluation": "limit-1.0",
+      "expected_low": "0",
+      "label": "owned_outstanding",
+      "objective": "o",
+      "owned_unit_refs": [],
+      "policy_ref": "PLAN.md@43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61:sections5,7",
+      "qualification": "bounded exact low and scope membership; not full raw-to-wire conformance",
+      "raw_derivation_refs": [
+        "oracle/r8-completion-A/DERIVATIONS.json#P133-FG-bound-wrong-currency"
+      ],
+      "raw_input_sha256": "ae51bf0b0b0c61187a0702111debd8d09fbb1bb91c9bbecc62600d8e78974222",
+      "seed_origin_refs": []
+    }
+  ]
+}

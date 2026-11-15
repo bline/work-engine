@@ -1,0 +1,214 @@
+{
+  "assertions": [
+    {
+      "claim_id": "H2",
+      "expected_fields_or_relations": {
+        "/aggregate": {
+          "high": {
+            "basis": "mixed",
+            "kind": "at_least",
+            "nano": "515000000"
+          },
+          "low": "15000000"
+        },
+        "/candidates": [
+          [
+            "s",
+            "s"
+          ]
+        ],
+        "/coverage": [],
+        "/credits": {
+          "alternatives": [
+            "s"
+          ],
+          "mode": "single_ambiguous"
+        },
+        "/route_snapshots/A-first/aggregate": {
+          "high": {
+            "basis": "mixed",
+            "kind": "at_least",
+            "nano": "515000000"
+          },
+          "low": "15000000"
+        },
+        "/route_snapshots/A-first/candidates": [
+          [
+            "s",
+            "s"
+          ]
+        ],
+        "/route_snapshots/A-first/coverage": [],
+        "/route_snapshots/A-first/credits": {
+          "alternatives": [
+            "s"
+          ],
+          "mode": "single_ambiguous"
+        },
+        "/route_snapshots/A-first/units": [
+          {
+            "high": {
+              "basis": "proxy_reservation",
+              "kind": "at_least",
+              "nano": "500000000"
+            },
+            "id": "S/r/atom:r",
+            "low": "0",
+            "origins": [
+              "r"
+            ]
+          },
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "at_least",
+              "nano": "15000000"
+            },
+            "id": "S/r/atom:s",
+            "low": "15000000",
+            "origins": [
+              "s"
+            ]
+          }
+        ],
+        "/route_snapshots/B-first/aggregate": {
+          "high": {
+            "basis": "mixed",
+            "kind": "at_least",
+            "nano": "515000000"
+          },
+          "low": "15000000"
+        },
+        "/route_snapshots/B-first/candidates": [
+          [
+            "s",
+            "s"
+          ]
+        ],
+        "/route_snapshots/B-first/coverage": [],
+        "/route_snapshots/B-first/credits": {
+          "alternatives": [
+            "s"
+          ],
+          "mode": "single_ambiguous"
+        },
+        "/route_snapshots/B-first/units": [
+          {
+            "high": {
+              "basis": "proxy_reservation",
+              "kind": "at_least",
+              "nano": "500000000"
+            },
+            "id": "S/r/atom:r",
+            "low": "0",
+            "origins": [
+              "r"
+            ]
+          },
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "at_least",
+              "nano": "15000000"
+            },
+            "id": "S/r/atom:s",
+            "low": "15000000",
+            "origins": [
+              "s"
+            ]
+          }
+        ],
+        "/route_snapshots/all-at-once/aggregate": {
+          "high": {
+            "basis": "mixed",
+            "kind": "at_least",
+            "nano": "515000000"
+          },
+          "low": "15000000"
+        },
+        "/route_snapshots/all-at-once/candidates": [
+          [
+            "s",
+            "s"
+          ]
+        ],
+        "/route_snapshots/all-at-once/coverage": [],
+        "/route_snapshots/all-at-once/credits": {
+          "alternatives": [
+            "s"
+          ],
+          "mode": "single_ambiguous"
+        },
+        "/route_snapshots/all-at-once/units": [
+          {
+            "high": {
+              "basis": "proxy_reservation",
+              "kind": "at_least",
+              "nano": "500000000"
+            },
+            "id": "S/r/atom:r",
+            "low": "0",
+            "origins": [
+              "r"
+            ]
+          },
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "at_least",
+              "nano": "15000000"
+            },
+            "id": "S/r/atom:s",
+            "low": "15000000",
+            "origins": [
+              "s"
+            ]
+          }
+        ],
+        "/units": [
+          {
+            "high": {
+              "basis": "proxy_reservation",
+              "kind": "at_least",
+              "nano": "500000000"
+            },
+            "id": "S/r/atom:r",
+            "low": "0",
+            "origins": [
+              "r"
+            ]
+          },
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "at_least",
+              "nano": "15000000"
+            },
+            "id": "S/r/atom:s",
+            "low": "15000000",
+            "origins": [
+              "s"
+            ]
+          }
+        ]
+      },
+      "negative_control_refs": [
+        "H2.wrong.json"
+      ],
+      "raw_derivation_refs": [
+        "PLAN sections3,5:500+15=515; min({15})=15; no F witness"
+      ]
+    }
+  ],
+  "authored_by": "oracle01a1d81b; fixed literal assertions separately from supplied records",
+  "exact_subject_refs": [
+    "result:H2"
+  ],
+  "id": "expected:H2",
+  "kind": "accounting_expected_assertion",
+  "policy_refs": [
+    "PLAN43d0e7c8"
+  ],
+  "raw_subject_ref": "sha256:717d0695d108eb7238dbe7e6f5ecd355bd65d2ab27d8675722b42fdc448af592",
+  "version": "1.7-s1"
+}

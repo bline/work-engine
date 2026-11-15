@@ -1,0 +1,91 @@
+{
+  "worker": "01a1d840-c933-78b1-8b7a-805a0ef28378",
+  "root_binding_sha256": "70ab0b7da7703941db527d01c8b1937efa741ae0d71689af9736eb574bcc963f",
+  "owned_changed_files": [
+    {
+      "path": "contract/CK-GENERATED.md",
+      "sha256": "579209c68a1666fccfdb4cd59a6fa2978fcd06e2ae23e10c821b3cb356ff2716",
+      "baseline_sha256": "1be069a8b60105f6310c4453730b8cf8248ee40222bf4aa95a2337a82e737903"
+    },
+    {
+      "path": "contract/TRANSITIONS.md",
+      "sha256": "d805b6cc9caefc1095f43b8534944d83e31f98590d7c86172adf00720eb21ddc",
+      "baseline_sha256": "ebea24820bd1d242d5e62fa43f81faef43b478d09e8b1bf6cde587e94671b664"
+    },
+    {
+      "path": "corpus/SCHEMA.md",
+      "sha256": "91b89459cf33a0e8c1511da7b15c73012637191cfe31cdbf18998ceba9b8f57e",
+      "baseline_sha256": "0fc7b796c0c5c42cfb09c46c27e9b36d23a48494c6e39096fd602eb6945c742c"
+    },
+    {
+      "path": "oracle/R8-COMPLETION.json",
+      "sha256": "d76a709c5f43633a762ecfe4a9c2f6b7dd41d944469630d686562945ff47ab74",
+      "baseline_sha256": null
+    },
+    {
+      "path": "oracle/R8-FINITE-COVERAGE.json",
+      "baseline_sha256": "26c26b8bad123790a3bf01500960b0f4bfd9f2011912180674b43b6a96bc3746",
+      "sha256": "19b2c1b268d7564b0118494c05d41af7d39b159d47fbba28e7fd8a8c07e0bea6"
+    },
+    {
+      "path": "oracle/R8-LOW-ASSERTIONS.json",
+      "sha256": "f3c76979b0f2587382b533620ec83c0c5f6ae6bb7791bd020dc21126fcb07642",
+      "baseline_sha256": "c43a0dd0f0bcd44f9467c189b969c540c3ac1b8c362efe182edd40ca0814eac4"
+    },
+    {
+      "path": "oracle/README.md",
+      "sha256": "f745e8ef40449e9c434e91d8d8a7c0c6a04c7f2eb56ac9c0c0a63c7690d46fc5",
+      "baseline_sha256": "7331328319b8d70a34bcf276ea850ee124d7f788101e077ab6e572db67e25663"
+    },
+    {
+      "path": "spec/ck.json",
+      "sha256": "0edf6c57a9b9c4470cdb73f37680df27e61b6d075badf4846109876645b3e9d4",
+      "baseline_sha256": "4836825c0a67587339f743749dc6de66334fbe242ed4e6afb9be05525b354891"
+    },
+    {
+      "path": "spec/dependencies.json",
+      "sha256": "992c0b94d7905b626444c5803ee868144ebf599eae6c241616b65d5836a1e314",
+      "baseline_sha256": "c213f680afeddb1cbe21f0ea34393585a41484e70ac3af2c698f4a798a50b043"
+    },
+    {
+      "path": "tooling/spec-check/src/corpus.rs",
+      "sha256": "d1532918ab821a660bcac7305b4a73267b73f54310b5ba8866703578d33bd270",
+      "baseline_sha256": null
+    },
+    {
+      "path": "tooling/spec-check/src/lib.rs",
+      "sha256": "62769fc7f375c89d299a914c2444bc651f7aa5ba01dd55554a625af04cdb9a96",
+      "baseline_sha256": "ec990e7bd3961d18edb05f4b89f3666e1c13aca02328818ddefb271280d68934"
+    },
+    {
+      "path": "tooling/spec-check/src/main.rs",
+      "sha256": "4b1d725bb00e0a9cd996bee2db5486b753abd69b607f9e6b638018353cedf89e",
+      "baseline_sha256": "5c6ac0fb06c8d53012aa67e6c4f9c0db5e06aa3cbb4e6a1ed9a8bf493c9ce903"
+    },
+    {
+      "path": "validator/README.md",
+      "sha256": "cde30056b75fd6bf22fbb274365f1f757257ba315af319957e74b26609cab8e2",
+      "baseline_sha256": "5fbe2eafccbb60ea1aa8f975474d48016e3722793e0140125d6b1a30b156e144"
+    },
+    {
+      "path": "validator/test_completion_references.py",
+      "sha256": "8cf3adaa1b4a61efbaf8538852cf6f84e9857b52517b5b606795a06c24a159f4",
+      "baseline_sha256": null
+    },
+    {
+      "path": "validator/test_r8_dependencies.py",
+      "sha256": "2e091a516682bd5614a70ff4d567df3a8d270681e7e0c907e8cf932f0085394b",
+      "baseline_sha256": "d4695f9e19cbc0de491562e69bb6a05ed2a98ff168325ade6464f274fedeb697"
+    },
+    {
+      "path": "validator/validate_corpus.py",
+      "sha256": "ab5f78d47d6105791a8ca14cf0c0799015aca67dd7935a48d18756735417429a",
+      "baseline_sha256": "afc114d75ef2e0e312e9a3037049229e7f3d9203e8c534bb82a3842934233330"
+    }
+  ],
+  "binary": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-integration/debug/pi-accounting-spec-check",
+    "sha256": "66ec52f8d51bf591a29b529948fd5e9957929234701ba9867216c1c845aeefd2"
+  },
+  "post_validation_metadata_publication": "oracle/R8-COMPLETION.json, oracle/R8-FINITE-COVERAGE.json and oracle/README.md publish completed finite gate evidence after tests; consumers/binary/schema/cases/shards unchanged."
+}

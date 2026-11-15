@@ -1,0 +1,61 @@
+{
+  "phase": "r2_design_supported_root_adopted",
+  "root": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "reviewer": "01a1d948-776f-7bb0-a3b2-66602a6eec79",
+  "startup_turn": "01a1d948-77d9-7661-a372-41f36a5f157e",
+  "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T01-59-27-01a1d948-776f-7bb0-a3b2-66602a6eec79.jsonl",
+  "plan_sha256": "a85dffca9027bd386962b01ee6bf624dafbcd565f7f620e4a6210296be969b92",
+  "packet_sha256": "580427e7b48273add1bf8a631792d6f921fd8ac3b736a529021a19182a472fdb",
+  "requested_and_observed": {
+    "model": "gpt-6-astra",
+    "effort": "xhigh",
+    "tier": "default",
+    "filesystem": "read-only",
+    "network": "restricted",
+    "approval": "never"
+  },
+  "claim": "b9d145c1-ac2f-429a-b2ad-800bcbd33c87",
+  "ordinary_repair": "only exact architecture-led isolated successor subject admitted after worker packet",
+  "collection_owner": "root",
+  "native_final_owed": false,
+  "scope": "design only, same100/no deadline",
+  "startup_final_sha256": "4efe488e68a35554b9348b5ee732e00344e09d1d50e9c197801572e116b25c0b",
+  "context": {
+    "input": 66488,
+    "epoch": 0,
+    "growth_forecast": 100000,
+    "forecast_total": 166488,
+    "decision": "retain startup context for first substantive design review below185000",
+    "observation": "explicit pinned check; continuouswait unavailable due unsupported step-percent; no live listener",
+    "collector": "reviewer; explicit checks before phases"
+  },
+  "delivery": {
+    "delivered": true,
+    "session_id": "01a1d948-776f-7bb0-a3b2-66602a6eec79",
+    "turn_id": "01a1d94b-191e-7a12-90ed-70bf237c6609"
+  },
+  "r1_final_sha256": "23f0df08b4e34ab64f962e6f027558fae851d4da4c746395c8a8d2fca985e549",
+  "r2_plan_sha256": "3f79f910a6e87614d7ebff402f2f731f358886ab0ee74495d0a7425fc7950b70",
+  "context_decision": "own native refresh before substantial R2,170343+40000>185000",
+  "node_cap": 8,
+  "refresh_delivery": {
+    "delivered": true,
+    "session_id": "01a1d948-776f-7bb0-a3b2-66602a6eec79",
+    "turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0"
+  },
+  "r2_packet_sha256": "b5ccf4929730ea7590b7282b2bd2a544746fd6e797f54d776fb113134440bc7c",
+  "r2_retention": {
+    "input": 70424,
+    "epoch": 1,
+    "estimated_growth": 40000,
+    "decision": "retain recovered isolated reviewer below185000",
+    "context_check": "r2-admission-context.json"
+  },
+  "ready_final_sha256": "389df5f78244f3a71c4c9beaab06c723c87aff29606eae4940edb3c0f22b2e04",
+  "r2_delivery": {
+    "delivered": true,
+    "session_id": "01a1d948-776f-7bb0-a3b2-66602a6eec79",
+    "turn_id": "01a1d956-8d4f-7092-a449-0a0d6e2195ff"
+  },
+  "r2_review_sha256": "81d0b291818fccba45dfd69af3961bd813e73b6d0f9b5e5de44d6a1951b21520"
+}

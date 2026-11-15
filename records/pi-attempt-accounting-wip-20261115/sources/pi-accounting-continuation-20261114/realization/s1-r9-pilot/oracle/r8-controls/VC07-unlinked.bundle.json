@@ -1,0 +1,136 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "VC07-raw-applicability.json",
+        "predecessor_subject_refs": [],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": [
+          "no-admitted-ticket"
+        ]
+      },
+      "exact_links": [],
+      "grants": [],
+      "id": "input:VC07",
+      "identity_bindings": [],
+      "initial_contracts": [
+        {
+          "contract_id": "no-admitted-ticket",
+          "duplicate_rule": "same_origin_only",
+          "reference_namespace": "unestablished"
+        }
+      ],
+      "kind": "accounting_input_proof",
+      "lineage_id": "VC07-original",
+      "origins": [
+        {
+          "initial_contract_ref": "no-admitted-ticket",
+          "origin_id": "a",
+          "original_position": 1,
+          "raw_bytes_sha256": "3e786454e65394e5bfb0212d3ca5ea620ed695d6522d266f291af020f82bb037",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:494704ac531f23a49ff754816199ebf960775ac37e162641ce6632b401de562f"
+        },
+        {
+          "initial_contract_ref": "no-admitted-ticket",
+          "origin_id": "u",
+          "original_position": 2,
+          "raw_bytes_sha256": "42e084b9437a79d12de39c372daa6041183adf309a39b5c5f3800950ea4065ba",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:494704ac531f23a49ff754816199ebf960775ac37e162641ce6632b401de562f"
+        }
+      ],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:a",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "a"
+          ]
+        },
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:u",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "u"
+          ]
+        }
+      ],
+      "continuity_result": "conditional",
+      "coverage_decisions": [],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [
+        {
+          "context_origin_ref": "u",
+          "predicate_ref": "same-source-same-n",
+          "usage_origin_ref": "u"
+        }
+      ],
+      "id": "result:VC07",
+      "input_proof_ref": "input:VC07",
+      "kind": "accounting_result",
+      "lineage_id": "VC07-original",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [
+            "u"
+          ],
+          "basis": "usage_valuation",
+          "credit_mode": "single_ambiguous",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "VC07-global",
+          "seed_origin_refs": [
+            "u"
+          ],
+          "selected_low": "15000000",
+          "single_floor": "15000000"
+        }
+      ],
+      "origins": [
+        {
+          "active_high_unit_id": "unit:a",
+          "base_id": "base:a",
+          "evidence_atom_id": "atom:a",
+          "origin_ref": "a"
+        },
+        {
+          "active_high_unit_id": "unit:u",
+          "base_id": "base:u",
+          "evidence_atom_id": "atom:u",
+          "origin_ref": "u"
+        }
+      ],
+      "primary_validities": [],
+      "units": [
+        {
+          "exposure_ref": "anchor:AtLeast0",
+          "origin_refs": [
+            "a"
+          ],
+          "state": "active",
+          "unit_id": "unit:a"
+        },
+        {
+          "exposure_ref": "usage:Exact15000000",
+          "origin_refs": [
+            "u"
+          ],
+          "state": "active",
+          "unit_id": "unit:u"
+        }
+      ],
+      "version": "1.7-s1"
+    }
+  ]
+}

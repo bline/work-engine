@@ -1,0 +1,6 @@
+{
+  "returncode": 2,
+  "error": "custody unsupported path type: subject directory",
+  "entry": "before test launch; no implementation finding; directory digest replaced by exact941 file list",
+  "initial_plan": "plan-r0-directory-digest-refused.json"
+}

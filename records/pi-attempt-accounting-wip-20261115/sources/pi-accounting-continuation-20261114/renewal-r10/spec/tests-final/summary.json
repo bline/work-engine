@@ -1,0 +1,30 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/test-plan.json",
+  "plan_sha256": "7cc5841acab590e2001ddfda1c5e7945bffcd91edb2a2a65b892483069b41493",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/tests-final/build.json",
+      "record_sha256": "5f51e3789b64dbfcfe82ac1ce59bd70a573db9a2b3614bc27dec077f08b52d18",
+      "leftovers": 0
+    },
+    {
+      "name": "payloads",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/tests-final/payloads.json",
+      "record_sha256": "e9cead2b0a840a48c8fa233d2be705843725a1609da976739cc91904e277803f",
+      "leftovers": 0
+    },
+    {
+      "name": "applicability",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/tests-final/applicability.json",
+      "record_sha256": "55dd90b03d3d1efea88266baf16554be493f91a3d4da5fb66fa0998d4086b34e",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

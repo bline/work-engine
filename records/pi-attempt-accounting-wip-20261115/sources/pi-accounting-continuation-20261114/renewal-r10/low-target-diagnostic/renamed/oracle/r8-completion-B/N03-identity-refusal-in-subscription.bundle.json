@@ -1,0 +1,128 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "oracle/r8-completion-B/DERIVATIONS.json#N03-identity-refusal-in-subscription",
+        "predecessor_subject_refs": [
+          "baseline:fc511437ba163d9f865081a3d7c2d2ff9eef6ee774acb93147953b12da9a3b1b"
+        ],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": [
+          "conditional-ticket:S1/turn-1"
+        ]
+      },
+      "exact_links": [],
+      "grants": [
+        {
+          "admission": "conditional_fixture",
+          "assumption_refs": [
+            "Inherited immutable ticket namespace only; no exact auxiliary link or physical-bill independence."
+          ],
+          "authority_ref": "ROOT-ADOPTION-R6.json",
+          "covered_extent_ref": "sha256:86be1b0d607dd8788effa717b5e83f8b6a03b7d81337998764d5844d63a1b98a",
+          "covered_origin_refs": [
+            "S1/turn-1:1"
+          ],
+          "exact_payload_ref": "oracle/r8-completion-B/N03-identity-refusal-in-subscription.provenance.json#S1/turn-1",
+          "grant_id": "initial-scope:S1/turn-1",
+          "guarantee_kind": "initial_reference_scope",
+          "observer_or_harness_ref": "inherited-corpus-conditional-fixture"
+        }
+      ],
+      "id": "input:N03-identity-refusal-in-subscription",
+      "identity_bindings": [],
+      "initial_contracts": [
+        {
+          "contract_id": "conditional-ticket:S1/turn-1",
+          "duplicate_rule": "same_origin_only",
+          "grant_ref": "initial-scope:S1/turn-1",
+          "reference_namespace": "dollar_ticket",
+          "scope_id": "N03-identity-refusal-in-subscription/S1/turn-1"
+        }
+      ],
+      "kind": "accounting_input_proof",
+      "lineage_id": "N03-identity-refusal-in-subscription",
+      "origins": [
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:1",
+          "original_position": 1,
+          "raw_bytes_sha256": "ffd20be7aeca170385063e9e53cfe02862f11b31f90f61487820ea3790db3e1a",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:86be1b0d607dd8788effa717b5e83f8b6a03b7d81337998764d5844d63a1b98a"
+        }
+      ],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:row:S1/turn-1:line=1",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "S1/turn-1:1"
+          ]
+        }
+      ],
+      "continuity_result": "unestablished",
+      "coverage_decisions": [],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [],
+      "id": "result:N03-identity-refusal-in-subscription",
+      "input_proof_ref": "input:N03-identity-refusal-in-subscription",
+      "kind": "accounting_result",
+      "lineage_id": "N03-identity-refusal-in-subscription",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "N03-identity-refusal-in-subscription/default/o/owned_closed",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        },
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "N03-identity-refusal-in-subscription/default/o/owned_outstanding",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        }
+      ],
+      "origins": [
+        {
+          "active_high_unit_id": "row:S1/turn-1:line=1",
+          "base_id": "base:row:S1/turn-1:line=1",
+          "evidence_atom_id": "atom:S1/turn-1:1",
+          "origin_ref": "S1/turn-1:1"
+        }
+      ],
+      "primary_validities": [],
+      "unbudgeted_applicabilities": [],
+      "unbudgeted_completions": [],
+      "units": [
+        {
+          "exposure_ref": "case:N03-identity-refusal-in-subscription#attempt:row:S1/turn-1:line=1",
+          "origin_refs": [
+            "S1/turn-1:1"
+          ],
+          "state": "active",
+          "unit_id": "row:S1/turn-1:line=1"
+        }
+      ],
+      "valuation_records": [],
+      "version": "1.7-s1"
+    }
+  ]
+}

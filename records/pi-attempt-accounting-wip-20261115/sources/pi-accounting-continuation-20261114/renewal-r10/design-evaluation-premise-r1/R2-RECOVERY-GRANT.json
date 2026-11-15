@@ -1,0 +1,864 @@
+{
+  "grant": {
+    "line": 282,
+    "record": {
+      "timestamp": "2026-11-14T09:11:11.082Z",
+      "ordinal": 281,
+      "type": "turn_context",
+      "payload": {
+        "turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0",
+        "root_turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0",
+        "disabled_plugin_ids": [],
+        "cwd": "/home/bline/code/work-engine",
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "permission_profile": {
+          "type": "managed",
+          "file_system": {
+            "type": "restricted",
+            "entries": [
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                },
+                "access": "read"
+              }
+            ]
+          },
+          "network": "restricted"
+        },
+        "model": "gpt-6-astra",
+        "comp_hash": "3000",
+        "collaboration_mode": {
+          "mode": "default",
+          "settings": {
+            "model": "gpt-6-astra",
+            "reasoning_effort": "xhigh",
+            "developer_instructions": null
+          }
+        },
+        "multi_agent_version": "v2",
+        "realtime_active": false,
+        "effort": "xhigh",
+        "summary": "none",
+        "sandbox_policy": {
+          "type": "read-only"
+        }
+      }
+    }
+  },
+  "refresh": {
+    "line": 280,
+    "record": {
+      "timestamp": "2026-11-14T09:11:11.081Z",
+      "ordinal": 279,
+      "type": "compacted",
+      "payload": {
+        "message": "",
+        "replacement_history": [
+          {
+            "type": "additional_tools",
+            "id": "at_01a1d953-33e9-7d00-92bf-64ea85e05fe0",
+            "role": "developer",
+            "tools": [
+              {
+                "type": "namespace",
+                "name": "functions",
+                "description": "",
+                "tools": [
+                  {
+                    "type": "custom",
+                    "name": "exec",
+                    "description": "Run JavaScript code to orchestrate/compose tool calls\n- Evaluates the provided JavaScript code in a fresh V8 isolate as an async module.\n- All nested tools are available on the global `tools` object, for example `await tools.exec_command(...)`. Tool names are exposed as normalized JavaScript identifiers, for example `await tools.mcp__ologs__get_profile(...)`.\n- Nested tool methods take either a string or an object as their input argument.\n- Nested tools return either an object or a string, based on the description.\n- Runs raw JavaScript -- no Node, no file system, no network access, no console.\n- Accepts raw JavaScript source text, not JSON, quoted strings, or markdown code fences.\n- You may optionally start the tool input with a first-line pragma like `// @exec: {\"yield_time_ms\": 10000, \"max_output_tokens\": 1000}`.\n- `yield_time_ms` asks `exec` to yield early if the script is still running. Defaults to 30000 ms.\n- `max_output_tokens` sets the token budget for direct `exec` results. Defaults to 10000 tokens.\n- When the JS code is fully evaluated, the isolate's lifetime ends and unawaited promises are silently discarded.\n\n- Global helpers:\n- `exit()`: Immediately ends the current script successfully (like an early return from the top level).\n- `text(value: string | number | boolean | undefined | null)`: Appends a text item. Non-string values are stringified with `JSON.stringify(...)` when possible.\n- `image(imageUrlOrItem: string | { image_url: string } | ImageContent)`: Appends an image item. `image_url` should be a base64-encoded `data:` URL. To forward an MCP tool image, pass an individual `ImageContent` block from `result.content`, for example `image(result.content[0])`.\n- `audio(audioUrlOrItem: string | { audio_url: string } | AudioContent)`: Appends an audio item. `audio_url` should be a base64-encoded `data:` URL. To forward an MCP tool audio block, pass an individual `AudioContent` block from `result.content`, for example `audio(result.content[0])`.\n- `generatedImage(result: { image_url: string; output_hint?: string })`: Appends an image-generation result and its optional output hint. HTTP(S) URLs are not supported.\n- `store(key: string, value: any)`: stores a serializable value under a string key for later `exec` calls in the same session.\n- `load(key: string)`: returns the stored value for a string key, or `undefined` if it is missing.\n- `notify(value: string | number | boolean | undefined | null)`: immediately injects an extra `custom_tool_call_output` for the current `exec` call. Values are stringified like `text(...)`.\n- `setTimeout(callback: () => void, delayMs?: number)`: schedules a callback to run later and returns a timeout id. Pending timeouts do not keep `exec` alive by themselves; await an explicit promise if you need to wait for one.\n- `clearTimeout(timeoutId?: number)`: cancels a timeout created by `setTimeout`.\n- `ALL_TOOLS`: metadata for the enabled nested tools as `{ name, description }` entries.\n- `yield_control()`: yields the accumulated output to the model immediately while the script keeps running.\n\nSome deferred nested tools may be omitted from this description. They are still available on the global `tools` object and listed in `ALL_TOOLS`.\nTo find one, filter `ALL_TOOLS` by `name` and `description`.\n\nTool availability can change between calls.\n\nShared MCP Types:\n```ts\ntype Role = \"user\" | \"assistant\";\ntype MetaObject = Record<string, unknown>;\ntype Annotations = {\n  audience?: Role[];\n  priority?: number;\n  lastModified?: string;\n};\ntype Icon = {\n  src: string;\n  mimeType?: string;\n  sizes?: string[];\n  theme?: \"light\" | \"dark\";\n};\ntype TextResourceContents = {\n  uri: string;\n  mimeType?: string;\n  _meta?: MetaObject;\n  text: string;\n};\ntype BlobResourceContents = {\n  uri: string;\n  mimeType?: string;\n  _meta?: MetaObject;\n  blob: string;\n};\ntype TextContent = {\n  type: \"text\";\n  text: string;\n  annotations?: Annotations;\n  _meta?: MetaObject;\n};\ntype ImageContent = {\n  type: \"image\";\n  data: string;\n  mimeType: string;\n  annotations?: Annotations;\n  _meta?: MetaObject;\n};\ntype AudioContent = {\n  type: \"audio\";\n  data: string;\n  mimeType: string;\n  annotations?: Annotations;\n  _meta?: MetaObject;\n};\ntype ResourceLink = {\n  icons?: Icon[];\n  name: string;\n  title?: string;\n  uri: string;\n  description?: string;\n  mimeType?: string;\n  annotations?: Annotations;\n  size?: number;\n  _meta?: MetaObject;\n  type: \"resource_link\";\n};\ntype EmbeddedResource = {\n  type: \"resource\";\n  resource: TextResourceContents | BlobResourceContents;\n  annotations?: Annotations;\n  _meta?: MetaObject;\n};\ntype ContentBlock =\n  | TextContent\n  | ImageContent\n  | AudioContent\n  | ResourceLink\n  | EmbeddedResource;\ntype CallToolResult<TStructured = { [key: string]: unknown }> = {\n  _meta?: MetaObject;\n  content: ContentBlock[];\n  isError?: boolean;\n  structuredContent?: TStructured;\n  [key: string]: unknown;\n};\n```\n\n### `apply_patch`\nThe `apply_patch` tool can be used to edit files. This is a FREEFORM tool, so do not wrap the patch in JSON.\n\nexec tool declaration:\n```ts\ndeclare const tools: { apply_patch(input: string): Promise<unknown>; };\n```\n\n### `create_goal`\nCreate a goal only when explicitly requested by the user or system/developer instructions; do not infer goals from ordinary tasks.\nSet token_budget only when an explicit token budget is requested. Fails if an unfinished goal exists; use update_goal only for status.\n\nexec tool declaration:\n```ts\ndeclare const tools: { create_goal(args: {\n  // Required. The concrete objective to start pursuing. This starts a new active goal when no goal exists or replaces the current goal when it is complete.\n  objective: string;\n  // Positive token budget for the new goal. Omit unless explicitly requested.\n  token_budget?: number;\n}): Promise<unknown>; };\n```\n\n### `exec_command`\nRuns a command in a PTY, returning output or a session ID for ongoing interaction.\n\nexec tool declaration:\n```ts\ndeclare const tools: { exec_command(args: {\n  // Shell command to execute.\n  cmd: string;\n  // User-facing approval question for `require_escalated`; omit otherwise.\n  justification?: string;\n  // True runs the shell with -l/-i semantics; false disables them. Defaults to true.\n  login?: boolean;\n  // Output token budget. Defaults to 10000 tokens; larger requests may be capped by policy.\n  max_output_tokens?: number;\n  // Reusable approval prefix for `cmd`, only with `sandbox_permissions: \"require_escalated\"`; for example [\"git\", \"pull\"].\n  prefix_rule?: Array<string>;\n  // Per-command sandbox override. Defaults to `use_default`; use `require_escalated` for unsandboxed execution.\n  sandbox_permissions?: \"use_default\" | \"require_escalated\";\n  // Shell binary to launch. Defaults to the user's default shell.\n  shell?: string;\n  // True allocates a PTY for the command; false or omitted uses plain pipes.\n  tty?: boolean;\n  // Working directory for the command. Defaults to the turn cwd.\n  workdir?: string;\n  // Wait before yielding output. Defaults to 10000 ms; effective range is 250-30000 ms.\n  yield_time_ms?: number;\n}): Promise<{\n  // Chunk identifier included when the response reports one.\n  chunk_id?: string;\n  // Process exit code when the command finished during this call.\n  exit_code?: number;\n  // Approximate token count before output truncation.\n  original_token_count?: number;\n  // Command output text, possibly truncated.\n  output: string;\n  // Session identifier to pass to write_stdin when the process is still running.\n  session_id?: number;\n  // Elapsed wall time spent waiting for output in seconds.\n  wall_time_seconds: number;\n}>; };\n```\n\n### `get_context_remaining`\nGet the remaining tokens in the current context window.\n\nexec tool declaration:\n```ts\ndeclare const tools: { get_context_remaining(args: {}): Promise<{\n  // Remaining tokens in the current context window, or null when unavailable.\n  tokens_left: number | null;\n}>; };\n```\n\n### `get_goal`\nGet the current goal for this thread, including status, budgets, token and elapsed-time usage, and remaining token budget.\n\nexec tool declaration:\n```ts\ndeclare const tools: { get_goal(args: {}): Promise<unknown>; };\n```\n\n### `list_available_plugins_to_install`\n# List plugin/connector install candidates\n\nUse this tool only when both are true:\n- The user explicitly asks to use a specific plugin or connector that is not already available in the current context or active `tools` list.\n- `tool_search` is not available, or it has already been called and did not find or make the requested tool callable.\n\nReturns known plugins and connectors that can be passed to `request_plugin_install`. When both a plugin and a connector match, prefer the plugin; use the connector only when its corresponding plugin is already installed.\n\n\nexec tool declaration:\n```ts\ndeclare const tools: { list_available_plugins_to_install(args: {}): Promise<unknown>; };\n```\n\n### `list_mcp_resource_templates`\nLists resource templates provided by MCP servers. Parameterized resource templates allow servers to share data that takes parameters and provides context to language models, such as files, database schemas, or application-specific information. Prefer resource templates over web search when possible.\n\nexec tool declaration:\n```ts\ndeclare const tools: { list_mcp_resource_templates(args: {\n  // Opaque cursor from a previous list_mcp_resource_templates call; omit for the first page.\n  cursor?: string;\n  // MCP server name. Omit to list resource templates from every configured server.\n  server?: string;\n}): Promise<unknown>; };\n```\n\n### `list_mcp_resources`\nLists resources provided by MCP servers. Resources allow servers to share data that provides context to language models, such as files, database schemas, or application-specific information. Prefer resources over web search when possible.\n\nexec tool declaration:\n```ts\ndeclare const tools: { list_mcp_resources(args: {\n  // Opaque cursor from a previous list_mcp_resources call; omit for the first page.\n  cursor?: string;\n  // MCP server name. Omit to list resources from every configured server.\n  server?: string;\n}): Promise<unknown>; };\n```\n\n### `read_mcp_resource`\nRead a specific resource from an MCP server given the server name and resource URI.\n\nexec tool declaration:\n```ts\ndeclare const tools: { read_mcp_resource(args: {\n  // MCP server name exactly as configured. Must match the 'server' field returned by list_mcp_resources.\n  server: string;\n  // Resource URI to read. Must be one of the URIs returned by list_mcp_resources.\n  uri: string;\n}): Promise<unknown>; };\n```\n\n### `request_plugin_install`\n# Request plugin/connector install\n\nUse this tool only after `list_available_plugins_to_install` returns a plugin or connector that exactly matches the user's explicit request.\n\nDo not use it for adjacent capabilities, broad recommendations, or tools that merely seem useful. Pass the returned `tool_type` through directly, and pass the returned `id` as `tool_id`.\n\nIMPORTANT: DO NOT call this tool in parallel with other tools.\n\nexec tool declaration:\n```ts\ndeclare const tools: { request_plugin_install(args: {\n  // Suggested action for the tool. Use \"install\".\n  action_type: string;\n  // Concise one-line user-facing reason why this plugin or connector can help with the current request.\n  suggest_reason: string;\n  // Connector or plugin id to suggest.\n  tool_id: string;\n  // Type of discoverable tool to suggest. Use \"connector\" or \"plugin\".\n  tool_type: string;\n}): Promise<unknown>; };\n```\n\n### `update_goal`\nUpdate the existing goal.\nSet status to `paused` only at the user's explicit request to pause this goal, never on your own initiative. Ask if unclear; a later resume revokes that request. Report the returned status and stop goal work. Budget limits take precedence over pausing.\nSet status to `complete` only when the objective has actually been achieved and no required work remains.\nSet status to `blocked` only when the same blocking condition has repeated for at least three consecutive goal turns, counting the original/user-triggered turn and any automatic continuations, and the agent cannot make meaningful progress without user input or an external-state change.\nIf the user resumes a goal that was previously marked `blocked`, treat the resumed run as a fresh blocked audit. If the same blocking condition then repeats for at least three consecutive resumed goal turns, set status to `blocked` again.\nOnce the blocked threshold is satisfied, do not keep reporting that you are still blocked while leaving the goal active; set status to `blocked`.\nDo not use `blocked` merely because the work is hard, slow, uncertain, incomplete, or would benefit from clarification.\nDo not mark a goal complete merely because its budget is nearly exhausted or because you are stopping work.\nYou cannot use this tool to resume, budget-limit, or usage-limit a goal; those status changes are controlled by the user or system.\nWhen marking a budgeted goal achieved with status `complete`, report the final token usage from the tool result to the user.\n\nexec tool declaration:\n```ts\ndeclare const tools: { update_goal(args: {\n  // Required. `paused` requires an explicit user request. Set to `complete` only when the objective is achieved and no required work remains. Set to `blocked` only after the same blocking condition has recurred for at least three consecutive goal turns and the agent is at an impasse. After a previously blocked goal is resumed, the resumed run starts a fresh blocked audit.\n  status: \"complete\" | \"blocked\" | \"paused\";\n}): Promise<unknown>; };\n```\n\n### `view_image`\nView a local image file from the filesystem when visual inspection is needed. Use this for images already available on disk.\n\nexec tool declaration:\n```ts\ndeclare const tools: { view_image(args: {\n  // Local filesystem path to an image file.\n  path: string;\n}): Promise<{\n  // Data URL for the loaded image.\n  image_url: string;\n}>; };\n```\n\n### `write_stdin`\nWrites characters to an existing unified exec session and returns recent output.\n\nexec tool declaration:\n```ts\ndeclare const tools: { write_stdin(args: {\n  // Bytes to write to stdin. Defaults to empty, which polls without writing.\n  chars?: string;\n  // Output token budget. Defaults to 10000 tokens; larger requests may be capped by policy.\n  max_output_tokens?: number;\n  // Identifier of the running unified exec session.\n  session_id: number;\n  // Wait before yielding output. Non-empty writes default to 250 ms and cap at 30000 ms; empty polls wait 5000-300000 ms by default.\n  yield_time_ms?: number;\n}): Promise<{\n  // Chunk identifier included when the response reports one.\n  chunk_id?: string;\n  // Process exit code when the command finished during this call.\n  exit_code?: number;\n  // Approximate token count before output truncation.\n  original_token_count?: number;\n  // Command output text, possibly truncated.\n  output: string;\n  // Session identifier to pass to write_stdin when the process is still running.\n  session_id?: number;\n  // Elapsed wall time spent waiting for output in seconds.\n  wall_time_seconds: number;\n}>; };\n```\n\n## clock\nTools for reading and waiting on time.\n\n### `clock__curr_time`\nReturn the current time in UTC.\n\nexec tool declaration:\n```ts\ndeclare const tools: { clock__curr_time(args: {}): Promise<{\n  // Current UTC time formatted as YYYY-MM-DD HH:MM:SS UTC.\n  current_time: string;\n}>; };\n```\n\n## image_gen\nTools in the image_gen namespace.\n\n### `image_gen__imagegen`\nThe `image_gen.imagegen` tool enables image generation from descriptions and editing of existing images based on specific instructions. Use it when:\n\n- The user requests an image based on a scene description, such as a diagram, portrait, comic, meme, or any other visual.\n- The user wants to modify an attached or previously generated image with specific changes, including adding or removing elements, altering colors, improving quality/resolution, or transforming the style (e.g., cartoon, oil painting).\n\nGuidelines:\n- imagegen needs a few minutes to finish. In code-mode, use the first-line @exec directive to give the initial call 120 seconds and the same yield for any waits that follow. Once it finishes, return the image with generatedImage(result).\n- Avoid printing the full result or its base64 image data with `text()` or `notify()`; print only small metadata when needed.\n- Set `transparent_background` to true when the request calls for a transparent background, including background removal or a cutout; set it to false otherwise. For edits, preserve existing transparency unless the user asks to change it.\n- Omit both `referenced_image_paths` and `num_last_images_to_include` when generating a brand new image.\n- For edits, use `referenced_image_paths` when every target image has a local file path.\n- If you have not seen a local image yet, use `view_image` to inspect it before editing.\n- Use `num_last_images_to_include` only when at least one target image has no local file path.\n- Set `num_last_images_to_include` to the smallest number of recent conversation images that includes every target image, up to 5.\n- Never provide both `referenced_image_paths` and `num_last_images_to_include`.\n- If neither mechanism can include every target image, ask the user to attach the missing images again.\n- Directly generate the image without reconfirmation or clarification unless required images must be attached again.\n- Always use this tool for image editing unless the user explicitly requests otherwise. Do not use the `python` tool for image editing unless specifically instructed.\n\n\nexec tool declaration:\n```ts\ndeclare const tools: { image_gen__imagegen(args: {\n  num_last_images_to_include?: number | null;\n  prompt: string;\n  referenced_image_paths?: Array<string> | null;\n  // Whether the output should have a transparent background. Defaults to false.\n  transparent_background?: boolean;\n}): Promise<{ image_url: string; output_hint?: string; }>; };\n```\n\n## web\nTools in the web namespace.\n\n### `web__run`\nTool for accessing the internet.\n\n\n---\n\n## Examples of different commands available in this tool\n\nExamples of different commands available in this tool:\n* `search_query`: {\"search_query\": [{\"q\": \"What is the capital of France?\"}, {\"q\": \"What is the capital of belgium?\"}]}. Searches the internet for a given query (and optionally with a domain or recency filter)\n* `image_query`: {\"image_query\":[{\"q\": \"waterfalls\"}]}.\n* `open`: {\"open\": [{\"ref_id\": \"turn0search0\"}, {\"ref_id\": \"https://www.openai.com\", \"lineno\": 120}]}\n* `click`: {\"click\": [{\"ref_id\": \"turn0fetch3\", \"id\": 17}]}\n* `find`: {\"find\": [{\"ref_id\": \"turn0fetch3\", \"pattern\": \"Annie Case\"}]}\n* `screenshot`: {\"screenshot\": [{\"ref_id\": \"turn1view0\", \"pageno\": 0}, {\"ref_id\": \"turn1view0\", \"pageno\": 3}]}\n* `finance`: {\"finance\":[{\"ticker\":\"AMD\",\"type\":\"equity\",\"market\":\"USA\"}]}, {\"finance\":[{\"ticker\":\"BTC\",\"type\":\"crypto\",\"market\":\"\"}]}\n* `weather`: {\"weather\":[{\"location\":\"San Francisco, CA\"}]}\n* `sports`: {\"sports\":[{\"fn\":\"standings\",\"league\":\"nfl\"}, {\"fn\":\"schedule\",\"league\":\"nba\",\"team\":\"GSW\",\"date_from\":\"2025-02-24\"}]}\n* `time`: {\"time\":[{\"utc_offset\":\"+03:00\"}]}\n\n---\n\n## Usage hints\nTo use this tool efficiently:\n* Use multiple commands and queries in one call to get more results faster; e.g. {\"search_query\": [{\"q\": \"bitcoin news\"}], \"finance\":[{\"ticker\":\"BTC\",\"type\":\"crypto\",\"market\":\"\"}], \"find\": [{\"ref_id\": \"turn0search0\", \"pattern\": \"Annie Case\"}, {\"ref_id\": \"turn0search1\", \"pattern\": \"John Smith\"}]}\n* Use \"response_length\" to control the number of results returned by this tool, omit it if you intend to pass \"short\" in\n* Only write required parameters; do not write empty lists or nulls where they could be omitted.\n* `search_query` must have length at most 4 in each call. If it has length > 3, response_length must be medium or long\n* If you find yourself in a situation where you accidentally call the `web.run` tool, it's best just to send an empty query: {\"search_query\": [{\"q\": \"\"}]}.\n\n---\n\n## Decision boundary\n\nIf the user makes an explicit request to search the internet, find latest information, look up, etc (or to not do so), you must obey their request.\nWhen you make an assumption, always consider whether it is temporally stable; i.e. whether there's even a small (>10%) chance it has changed. If it is unstable, you must verify with browsing the internet for verification.\n\n<situations_where_you_must_browse_the_internet>\nBelow is a list of scenarios where browsing the internet MUST be used. PAY CLOSE ATTENTION: you MUST browse the internet in these cases. If you're unsure or on the fence, you MUST bias towards browsing the internet.\n- The information could have changed recently: for example news; prices; laws; schedules; product specs; sports scores; economic indicators; political/public/company figures (e.g. the question relates to 'the president of country A' or 'the CEO of company B', which might change over time); rules; regulations; standards; software libraries that could be updated; exchange rates; recommendations (i.e., recommendations about various topics or things might be informed by what currently exists / is popular / is safe / is unsafe / is in the zeitgeist / etc.); and many many many more categories -- again, if you're on the fence, you MUST browse the internet!\n  - For news queries, prioritize more recent events, ensuring you compare publish dates and the date that the event happened.\n- The user is seeking recommendations that could lead them to spend substantial time or money -- researching products, restaurants, travel plans, etc.\n- The user wants (or would benefit from) direct quotes, links, or precise source attribution.\n- A specific page, paper, dataset, PDF, or site is referenced and you haven't been given its contents.\n- You're unsure about a fact, the topic is niche or emerging, or you suspect there's at least a 10% chance you will incorrectly recall it\n- High-stakes accuracy matters (medical, legal, financial guidance). For these you generally should search by default because this information is highly temporally unstable\n- The user explicitly says to search, browse, verify, or look it up.\n</situations_where_you_must_browse_the_internet>\n\n---\n\n## Citations\n\nResults from `web.run` include internal reference IDs such as `turn2search5`. Use\nthose reference IDs only in calls to `web.run`; do not expose them in the final\nresponse.\n\nCite sources in the final response using Markdown links:\n\n- Cite a single source as `[descriptive source title](https://example.com/page)`.\n- Cite multiple sources with separate Markdown links, for example\n  `[first source](https://example.com/one), [second source](https://example.com/two)`.\n- Link directly to the page that supports the claim. Do not link to search result\n  pages or use bare URLs.\n\nFormatting of citations:\n\n- Place each citation as near as possible to the claim it supports, normally at\n  the end of the sentence or paragraph and after punctuation.\n- Do not place citations inside code fences.\n- Do not put citations on a line by themselves or collect all citations at the\n  end of the response.\n\nIf you browse the internet, cite statements supported by web sources. Each cited\nsource must directly support the associated claim. Prefer primary and\nauthoritative sources, and use sources from different domains when the response\nbenefits from multiple perspectives.\n\n---\n\n## Special cases\nIf these conflict with any other instructions, these should take precedence.\n\n<special_cases>\n- When the user asks for information about how to use OpenAI products, (ChatGPT, the OpenAI API, etc.), you should check the code in local env and only browse as fallback, when you browse restrict your sources to official OpenAI websites using the domains filter, unless otherwise requested.\n- When using search to answer technical questions, you must only rely on primary sources (research papers, official documentation, etc.)\n- Clearly indicate when you are making an inference from sources.\n</special_cases>\n\n---\n\n## Word limits\nResponses may not excessively quote or draw on a specific source. There are several limits here:\n- **Limit on verbatim quotes:**\n  - You may not quote more than 25 words verbatim from any single non-lyrical source, unless the source is reddit.\n  - For song lyrics, verbatim quotes must be limited to at most 10 words.\n  - Long quotes from reddit are allowed, as long as you indicate that those are direct quotes via a markdown blockquote starting with \">\", copy verbatim, and link the source.\n- **Word limits:**\n  - Each webpage source in the sources has a word limit label formatted like \"[wordlim N]\", in which N is the maximum number of words in the whole response that are attributed to that source. If omitted, the word limit is 200 words.\n  - Non-contiguous words derived from a given source must be counted to the word limit.\n  - The summarization limit N is a maximum for each source.\n  - When using multiple sources, their summarization limits add together. However, each article used must be relevant to the response.\n- **Copyright compliance:**\n  - You must avoid providing full articles, long verbatim passages, or extensive direct quotes due to copyright concerns.\n  - If the user asked for a verbatim quote, the response should provide a short compliant excerpt and then answer with paraphrases and summaries.\n  - Again, this limit does not apply to reddit content, as long as it's appropriately indicated that those are direct quotes and you link to the source.\n\n\nexec tool declaration:\n```ts\ndeclare const tools: { web__run(args: {\n  // Open links from previously opened pages.\n  click?: Array<{\n  // Numbered link id to open.\n  id: number;\n  // Reference id containing the numbered link.\n  ref_id: string;\n}>;\n  // Look up prices for the given stock symbols.\n  finance?: Array<{\n  // ISO 3166-1 alpha-3 country code, \"OTC\", or \"\" for cryptocurrency.\n  market?: string;\n  // Ticker symbol to look up.\n  ticker: string;\n  // Asset type to look up.\n  type: \"equity\" | \"fund\" | \"crypto\" | \"index\";\n}>;\n  // Find text patterns in pages.\n  find?: Array<{\n  // Text pattern to find.\n  pattern: string;\n  // Reference id or URL to search within.\n  ref_id: string;\n}>;\n  // Query the image search engine for a given list of queries.\n  image_query?: Array<{\n  // Whether to filter by a specific list of domains.\n  domains?: Array<string>;\n  // Search query.\n  q: string;\n  // Whether to filter by recency, as a number of recent days.\n  recency?: number;\n}>;\n  // Open pages by reference id or URL.\n  open?: Array<{\n  // Line number to position the page at.\n  lineno?: number;\n  // Reference id or URL to open.\n  ref_id: string;\n}>;\n  // Set the length of the response to be returned.\n  response_length?: \"short\" | \"medium\" | \"long\";\n  // Take screenshots of PDF pages.\n  screenshot?: Array<{\n  // Zero-indexed PDF page number.\n  pageno: number;\n  // Reference id or URL to screenshot.\n  ref_id: string;\n}>;\n  // Query the internet search engine for a given list of queries.\n  search_query?: Array<{\n  // Whether to filter by a specific list of domains.\n  domains?: Array<string>;\n  // Search query.\n  q: string;\n  // Whether to filter by recency, as a number of recent days.\n  recency?: number;\n}>;\n  // Look up sports schedules and standings.\n  sports?: Array<{\n  // Start date in YYYY-MM-DD format.\n  date_from?: string;\n  // End date in YYYY-MM-DD format.\n  date_to?: string;\n  // Sports function to call.\n  fn: \"schedule\" | \"standings\";\n  // League to look up.\n  league: \"nba\" | \"wnba\" | \"nfl\" | \"nhl\" | \"mlb\" | \"epl\" | \"ncaamb\" | \"ncaawb\" | \"ipl\";\n  // Locale for the lookup.\n  locale?: string;\n  // Number of games to return.\n  num_games?: number;\n  // Opponent to use with `team` when narrowing the lookup.\n  opponent?: string;\n  // Team to look up, using the common 3 or 4 letter alias used in broadcasts.\n  team?: string;\n  // Tool name for sports requests.\n  tool?: \"sports\";\n}>;\n  // Get time for the given UTC offsets.\n  time?: Array<{\n  // UTC offset formatted like \"+03:00\".\n  utc_offset: string;\n}>;\n  // Look up weather forecasts.\n  weather?: Array<{\n  // Number of days to return. Defaults to 7.\n  duration?: number;\n  // Location in \"Country, Area, City\" format.\n  location: string;\n  // Start date in YYYY-MM-DD format. Defaults to today.\n  start?: string;\n}>;\n}): Promise<unknown>; };\n```",
+                    "format": {
+                      "type": "grammar",
+                      "syntax": "lark",
+                      "definition": "\nstart: pragma_source | plain_source\npragma_source: PRAGMA_LINE NEWLINE SOURCE\nplain_source: SOURCE\n\nPRAGMA_LINE: /[ \\t]*\\/\\/ @exec:[^\\r\\n]*/\nNEWLINE: /\\r?\\n/\nSOURCE: /[\\s\\S]+/\n"
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "wait",
+                    "description": "Waits on a yielded `exec` cell and returns new output or completion.\n- Use `wait` only after `exec` returns `Script running with cell ID ...`.\n- `cell_id` identifies the running `exec` cell to resume.\n- `yield_time_ms` controls how long to wait for more output before yielding again. Defaults to 10000 ms.\n- `max_tokens` limits how much new output this wait call returns. Defaults to 10000 tokens.\n- `terminate: true` stops the running cell; false or omitted waits for output.\n- `wait` returns only the new output since the last yield, or the final completion or termination result for that cell.\n- If the cell is still running, `wait` may yield again with the same `cell_id`.\n- If the cell has already finished, `wait` returns the completed result and closes the cell.",
+                    "strict": false,
+                    "parameters": {
+                      "type": "object",
+                      "properties": {
+                        "cell_id": {
+                          "type": "string",
+                          "description": "Identifier of the running exec cell."
+                        },
+                        "max_tokens": {
+                          "type": "number",
+                          "description": "Output token budget for this wait call. Defaults to 10000 tokens."
+                        },
+                        "terminate": {
+                          "type": "boolean",
+                          "description": "True stops the running exec cell; false or omitted waits for output."
+                        },
+                        "yield_time_ms": {
+                          "type": "number",
+                          "description": "Wait before yielding more output. Defaults to 10000 ms."
+                        }
+                      },
+                      "required": [
+                        "cell_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "request_user_input",
+                    "description": "Request user input for one to three short questions and wait for the response. This tool is only available in Plan mode.",
+                    "strict": false,
+                    "parameters": {
+                      "type": "object",
+                      "properties": {
+                        "questions": {
+                          "type": "array",
+                          "description": "Questions to show the user. Prefer 1 and do not exceed 3",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "header": {
+                                "type": "string",
+                                "description": "Short header label shown in the UI (12 or fewer chars)."
+                              },
+                              "id": {
+                                "type": "string",
+                                "description": "Stable identifier for mapping answers (snake_case)."
+                              },
+                              "options": {
+                                "type": "array",
+                                "description": "Provide 2-3 mutually exclusive choices. Put the recommended option first and suffix its label with \"(Recommended)\". Do not include an \"Other\" option in this list; the client will add a free-form \"Other\" option automatically.",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "description": {
+                                      "type": "string",
+                                      "description": "One short sentence explaining impact/tradeoff if selected."
+                                    },
+                                    "label": {
+                                      "type": "string",
+                                      "description": "User-facing label (1-5 words)."
+                                    }
+                                  },
+                                  "required": [
+                                    "label",
+                                    "description"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "question": {
+                                "type": "string",
+                                "description": "Single-sentence prompt shown to the user."
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "header",
+                              "question",
+                              "options"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "questions"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "request_user_input_async",
+                    "description": "Ask the user one or more questions during ongoing work. Use this tool only to request missing information, preferences, constraints, clarification, or approval. The tool returns immediately without ending the turn or waiting for a reply; any reply arrives asynchronously as a new user message. Keep questions concise, self-contained, and easy to understand, using a level of detail appropriate to the user and task. The UI always allows a free-text answer, including when suggested options are provided. A preselected option is not submitted automatically.",
+                    "strict": false,
+                    "parameters": {
+                      "type": "object",
+                      "properties": {
+                        "questions": {
+                          "type": "array",
+                          "description": "One or more self-contained questions to present together, in display order.",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "options": {
+                                "type": "array",
+                                "description": "Suggested answers, in display order. Put the recommended answer first; the first option is preselected by default. The user can select one option or enter a free-text answer. Do not include an Other option or a free-text placeholder; the UI provides free-text input automatically. Omit options for a free-text-only question.",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "minItems": 1
+                              },
+                              "title": {
+                                "type": "string",
+                                "description": "The complete question shown to the user, including any context needed to answer it."
+                              }
+                            },
+                            "required": [
+                              "title"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 1
+                        }
+                      },
+                      "required": [
+                        "questions"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "new_context",
+                    "description": "Start a new context window. Does not clear, reset, or otherwise affect environment state.",
+                    "strict": false,
+                    "parameters": {
+                      "type": "object",
+                      "properties": {},
+                      "additionalProperties": false
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "namespace",
+                "name": "clock",
+                "description": "Tools for reading and waiting on time.",
+                "tools": [
+                  {
+                    "type": "function",
+                    "name": "sleep",
+                    "description": "Pause execution for a specified duration. The sleep ends early when new input arrives for the active turn. Returns the elapsed wall-clock time.",
+                    "strict": false,
+                    "parameters": {
+                      "type": "object",
+                      "properties": {
+                        "duration_ms": {
+                          "type": "number",
+                          "description": "How long to sleep in milliseconds. Must be between 1 and 43200000."
+                        }
+                      },
+                      "required": [
+                        "duration_ms"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "namespace",
+                "name": "collaboration",
+                "description": "Tools for spawning and managing sub-agents.",
+                "tools": [
+                  {
+                    "type": "function",
+                    "name": "followup_task",
+                    "description": "Send a follow-up task to an existing non-root target agent and trigger a turn if it is idle. If the target is already running, deliver the task promptly at message boundaries while sampling, or after the pending tool call completes.",
+                    "strict": false,
+                    "parameters": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "description": "Message text to send to the target agent.",
+                          "encrypted": true
+                        },
+                        "target": {
+                          "type": "string",
+                          "description": "Agent id or canonical task name to send a follow-up task to (from spawn_agent)."
+                        }
+                      },
+                      "required": [
+                        "target",
+                        "message"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "interrupt_agent",
+                    "description": "Interrupt an agent's current turn, if any, and return its previous status. The agent remains available for messages and follow-up tasks.",
+                    "strict": false,
+                    "parameters": {
+                      "type": "object",
+                      "properties": {
+                        "target": {
+                          "type": "string",
+                          "description": "Agent id or canonical task name to interrupt (from spawn_agent)."
+                        }
+                      },
+                      "required": [
+                        "target"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "list_agents",
+                    "description": "List live agents in the current root thread tree. Optionally filter by task-path prefix.",
+                    "strict": false,
+                    "parameters": {
+                      "type": "object",
+                      "properties": {
+                        "path_prefix": {
+                          "type": "string",
+                          "description": "Task-path prefix filter without a trailing slash. Omit to list all live agents."
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "send_message",
+                    "description": "Send a message to an existing agent. The message will be delivered promptly. Does not trigger a new turn.",
+                    "strict": false,
+                    "parameters": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "description": "Message text to queue on the target agent.",
+                          "encrypted": true
+                        },
+                        "target": {
+                          "type": "string",
+                          "description": "Relative or canonical task name to message (from spawn_agent)."
+                        }
+                      },
+                      "required": [
+                        "target",
+                        "message"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "spawn_agent",
+                    "description": "\n        Available model overrides (optional; inherited parent model is preferred):\n- `gpt-6.1-sol`: Latest workhorse model for coding and everyday work. Reasoning efforts: low (default), medium, high, xhigh, max, ultra. Service tiers: priority.\n- `gpt-6-astra`: Frontier intelligence for the most demanding work. Reasoning efforts: low, medium (default), high, xhigh, max, ultra. Service tiers: priority.\n- `gpt-6.1-terra`: GPT-6.1 Terra Codex model. Reasoning efforts: low (default), medium, high, xhigh, max, ultra. Service tiers: priority.\n- `gpt-6-sol`: Previous generation workhorse model. Reasoning efforts: low, medium (default), high, xhigh, max, ultra. Service tiers: priority.\n- `gpt-6-luna`: Fast and affordable model for easier tasks. Reasoning efforts: low, medium (default), high, xhigh, max. Service tiers: priority.\n        Spawns an agent to work on the specified task. If your current task is `/root/task1` and you spawn_agent with task_name \"task_3\" the agent will have canonical task name `/root/task1/task_3`.\nYou are then able to refer to this agent as `task_3` or `/root/task1/task_3` interchangeably. However an agent `/root/task2/task_3` would only be able to communicate with this agent via its canonical name `/root/task1/task_3`.\nThe spawned agent will have the same tools as you and the ability to spawn its own subagents.\n\nIt will be able to send you and other running agents messages, and its final answer will be provided to you when it finishes.\nThe new agent's canonical task name will be provided to it along with the message.\n\nNote that passing `fork_turns=\"none\"` will not pass any surrounding context to the spawned subagent, which may cause the agent to lack the context it needs to complete its task, whereas `fork_turns=\"all\"` will provide the subagent with all surrounding context.",
+                    "strict": false,
+                    "parameters": {
+                      "type": "object",
+                      "properties": {
+                        "agent_type": {
+                          "type": "string",
+                          "description": "Agent type override for the new agent. Omit unless explicitly asked. The selected role applies regardless of how much parent history is inherited.\nAvailable roles:\ncodebase-memory: {\nDefault task-directed graph verification with check_index_coverage and source read/grep fallback.\n}\ncodebase-memory-auditor: {\nBounded-scope graph audit with check_index_coverage and source read/grep fallback.\n}\ncodebase-memory-scout: {\nFast positive, provisional graph lookup with check_index_coverage and source read/grep fallback.\n}\ndefault: {\nDefault agent.\n}\nexplorer: {\nUse `explorer` for specific codebase questions.\nExplorers are fast and authoritative.\nThey must be used to ask specific, well-scoped questions on the codebase.\nRules:\n- In order to avoid redundant work, you should avoid exploring the same problem that explorers have already covered. Typically, you should trust the explorer results without additional verification. You are still allowed to inspect the code yourself to gain the needed context!\n- You are encouraged to spawn up multiple explorers in parallel when you have multiple distinct questions to ask about the codebase that can be answered independently. This allows you to get more information faster without waiting for one question to finish before asking the next. While waiting for the explorer results, you can continue working on other local tasks that do not depend on those results. This parallelism is a key advantage of delegation, so use it whenever you have multiple questions to ask.\n- Reuse existing explorers for related questions.\n}\nworker: {\nUse for execution and production work.\nTypical tasks:\n- Implement part of a feature\n- Fix tests or bugs\n- Split large refactors into independent chunks\nRules:\n- Explicitly assign **ownership** of the task (files / responsibility). When the subtask involves code changes, you should clearly specify which files or modules the worker is responsible for. This helps avoid merge conflicts and ensures accountability. For example, you can say \"Worker 1 is responsible for updating the authentication module, while Worker 2 will handle the database layer.\" By defining clear ownership, you can delegate more effectively and reduce coordination overhead.\n- Always tell workers they are **not alone in the codebase**, and they should not revert the edits made by others, and they should adjust their implementation to accommodate the changes made by others. This is important because there may be multiple workers making changes in parallel, and they need to be aware of each other's work to avoid conflicts and ensure a cohesive final product.\n}"
+                        },
+                        "fork_turns": {
+                          "type": "string",
+                          "description": "Parent history to inherit. Defaults to `all`; use `none` to start without parent history. Only `all` and `none` are supported."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Initial plain-text task for the new agent.",
+                          "encrypted": true
+                        },
+                        "model": {
+                          "type": "string",
+                          "description": "Model override for the new agent. Omit unless an explicit override is needed."
+                        },
+                        "reasoning_effort": {
+                          "type": "string",
+                          "description": "Reasoning effort override for the new agent. Omit to inherit the parent effort."
+                        },
+                        "task_name": {
+                          "type": "string",
+                          "description": "Task name for the new agent. Use lowercase letters, digits, and underscores."
+                        }
+                      },
+                      "required": [
+                        "task_name",
+                        "message"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  {
+                    "type": "function",
+                    "name": "wait_agent",
+                    "description": "Wait for a mailbox update from any live agent, including queued messages and final-status notifications. The wait also ends early when new user input is steered into the active turn. Does not return the content; returns either a summary of which agents have updates (if any), an interruption summary for steered input, or a timeout summary if no activity arrives before the deadline.",
+                    "strict": false,
+                    "parameters": {
+                      "type": "object",
+                      "properties": {
+                        "timeout_ms": {
+                          "type": "number",
+                          "description": "Timeout in milliseconds. Defaults to 30000, min 10000, max 3600000."
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "id": "msg_01a1d953-33e9-7d00-92bf-64fe5c62dfb6",
+            "role": "developer",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "You are Codex, an agent based on GPT-6. You and the user share one workspace, and your job is to collaborate with them until their intended goal is completely handled.\n\n# When to ask the user for permission\n\nUse your best judgement given task context for when you really need user permission, like a competent colleague would. Once evidence in a session supports authorization for a next step or action, you should continue work without ending the turn to clarify with the user.\n\nUser authorization and preferences persist across turns. Do not request permission again when the user has already authorized an action in an earlier turn. The user's instruction, whether implied from the task or explicitly stated in the session, must take precedence over any guidelines provided in skills or external files.\n\nYou MUST complete the work that is already authorized and necessary to make the proposed action concrete and reviewable before asking the user for permission as a final step. The user should be approving a concrete, reviewable result. For example, before deploying a change, writing to an external application, merging a PR or publishing a site, do all the work first so that user approval is the final step. You don't need user permission for reversible tasks, read-only actions, reviews or fixes, or anything for which authorization is provided earlier in the session or implied from the task instruction.\n\nDo not use tools to send messages to others (e.g. through slack or email) unless given explicit instructions to do so, or instructed to do so as part of an explicitly-invoked skill or plugin. If authorized by a skill or plugin, name and link the skill or plugin in the final channel.\n\nThe user gets very frustrated when you stop and ask for confirmation or permission, so make sure to explicitly explain why you need the confirmation (for example, a SKILL.md, AGENTS.md, memory, or approval auto-review block) and where it came from. If you receive an auto-review rejection and are not able to complete the task in a more safe way, explicitly tell the user that automatic approval review rejected the action, identify the action, and summarize the stated reason. Put this explanation in a short, separate paragraph at the end of both commentary and final, after any permission question.\n\n# Autonomy and persistence\n\nThe following instructions are critical for you to be an effective collaborator, so follow them carefully. You should infer the user's intent and task scope from the instructions and prior conversation context. Your job is to bias towards action and carry the user's intended task to completion.\n\nWhen the user expresses intent to perform new work or fix an existing issue, persist until the user's intended goal is complete. Progress autonomously towards the user's goal (e.g. creating isolated worktrees / checkouts if needed, resolving merge conflicts, read-only actions, creating draft PRs etc) unless they are clearly destructive or irreversible.\n\nWhen the user's prompt indicates a request for action, such as \"can you...\", \"I want to...\", \"help me...\" and similar expressions, treat these as instructions to do the work and take action. Do not stop at acknowledging capability (e.g. \"Yes\u2026\"), proposing a plan, or offering to continue. Do not settle for a partial or \"helpful enough\" solution that does not fully satisfy the user's task to save time, effort or tokens. If a task requires sustained work, complete all the necessary work until the intended outcome is fulfilled.\n\nIf the user's intent or task scope is unclear, progress towards the user's goal with the information available and then ask the user for clarification while continuing independent work.\n\nDo not treat exceptions to requirements in local markdown and skill files as automatically requiring user approval. Before clarifying with the user, determine if you already have authorization in the existing session and whether the rule applies. You can resolve routine implementation choices using session context and your judgment. \n\n# Personality\n\nAs Codex, you are a curious, thoughtful collaborator and a lucid communicator. You speak warmly and candidly, as to someone you respect, and keep your own judgment. You disagree when you have reason; reconsider when the evidence warrants it. You let your interest and personality emerge naturally, without flattery or forced enthusiasm.\n\n## Writing style\n\nYour writing adapts to the conversation, matching the tone and understanding of the user. Make sure to state the main point clearly and early, then develop it with the explanation and detail the reader needs. Let each sentence build on what came before. Develop the points that matter and provide enough support to be useful. \n\nUse plain, simple language: familiar words, concrete examples, and precise verbs. Prefer active voice and direct statements. Write in connected prose. Avoid section headings, and do not use concluding summary statements such as \"In short:..\", \"The simplest mental model is:...\".\n\nInclude technical details only when they help explain or substantiate the point; avoid scattering implementation details through the prose. Connect an action with its purpose, or a finding with its implication, rather than presenting them as separate fragments.\n\nDefault to using clear, concise paragraphs, each developing one main idea. Use lists only when the information is genuinely parallel, sequential, or easier to compare, and avoid nested lists unless the hierarchy cannot be expressed clearly in prose. \n\nAvoid using AI slop words or phrases like \"Bottom Line:\" in conclusions, \"delve,\" \"foster,\" \"leverage,\" \"it's worth noting,\" \"importantly,\" \"Question? Answer.\" or \"This isn't about X. It's about Y.\", \"genuinely\" or hyphenated compound descriptions and adjectives. \n\nState the intended action directly. Avoid adding what you won't do, what will remain unchanged, or how you'll separate or categorize results. Do not use contrastive framing such as \"X, not Y\" or \"X\u2014not Y\" that introduces an unprompted alternative that the user didn't ask about. Avoid invented compound labels like \"exact-head checks\" and \"editorial-row layouts\", vague qualifiers, and canned transitions; use plain verbs and prepositions to state the actual relationship directly.\n\n## Technical communication\n\nIn addition to the writing style instructions above, follow these guidelines when discussing technical work: Use plain language over jargon, and reference technical details only to the degree that it actually helps with the conversation. Communicate complex concepts in a clear and cohesive manner. Translating complex topics into clear communication comes easy for you, and the user should never have to read your writing twice to understand it.\n\nLead with the outcome and then develop your reasoning for how you got there. When reporting changes, explain what changed, why, how it was tested, and any material risks or limitations. Include the evidence needed to understand the conclusion and its practical limits. \n\nPresent reasoning and evidence in the order that makes the conclusion easiest to assess, rather than recounting your work chronologically. Summarize routine verification instead of listing every check. In progress updates, focus on what you have learned, what remains uncertain, and what the next step will resolve.\n\n### Writing PR descriptions\n\nLead the description with the concrete problem and resulting behavior. Use a concrete trigger and before/after example when helpful. Scale detail to complexity: simple PRs usually need one or two sentences plus relevant validation. Use structure when it helps scanning or the repository template requires it.\n\nDescribe the final change for a reviewer who has not seen the conversation. When scope changes, rewrite the title and description around the final implementation. Omit conversational history and abandoned approaches unless they explain a tradeoff needed for review. Include only technical and validation details that help reviewers assess the change.\n\n# Working with the user\n\nYou have two channels for staying in conversation with the user:\n- You share updates in the `commentary` channel.\n- You yield back to the user and end your turn by sending a final message to the `final` channel.\n\nWhen available, you can use the `functions.request_user_input_async` tool to ask the user for missing information, a preference, constraint, or clarification. You can ask multiple questions in a single tool call. Do NOT ask the user to upload files or send screenshots using this tool because the tool only supports text input. Be mindful of cognitive load on user and prefer multiple-choice questions. If you need multiple freeform questions, bundle the most critical ones into a single freeform question using markdown lists for easier viewing. For multiple-choice questions, make sure each option is succinct and easy to read. Ask clarifying questions early unless the user's answers can potentially be inferred from available context, and continue useful work that does not depend on the answer while waiting. For optional clarification, give the user reasonable opportunity to reply - for example, 60 seconds for a simple multi-choice question and longer for complex and bundled questions \u2014 before proceeding with a stated assumption. If an answer or approval is required, keep the question pending and do not proceed with dependent work until it arrives. Elapsed time is not an answer or approval.\n\nThe user may send a new message while you are still working. By default, treat it as steering the active task rather than replacing it. Incorporate corrections, clarifications, constraints, questions, and status requests into the ongoing work while preserving the original objective. If the user asks a question or requests status during active work, answer briefly in commentary, then resume the active task unless the user clearly asks you to stop. Abandon or replace the active task only when the user clearly cancels it or requests an incompatible new objective.\n\nWhen you run out of context, the conversation is automatically compacted into a summary, but you will still see all prior user requests. Treat the most recent user message as the latest steering for the active task, not automatically as a replacement objective. Earlier requests may be stale but still provide useful context; preserve the original objective, accepted corrections, current constraints, completed work, and outstanding work. Only replace the active task when the user clearly cancels it or requests an incompatible new objective.\n\nCompaction does not end the task. Continue naturally from the summarized state, make reasonable assumptions about anything missing from the summary, and treat work spanning compactions as one logical chain of events. Do not restart from scratch, redo completed work, or repeat commentary updates already delivered.\n\n## Intermediate commentary\n\nAs you work, you use the `commentary` channel to share concise, meaningful updates including relevant assumptions, findings, decisions, or changes in direction. The goal of these messages is to make your work, and plans for the turn, easy for the user to understand and verify.\n\nIf the user's request requires calling tools, start with a message in the `commentary` channel. The user appreciates consistent, frequent communication during your turn, and should not be left without a commentary update for more than 60 seconds during ongoing work.\n\nDo NOT send user facing questions in intermediate commentary messages. Do NOT put a final response in the commentary channel. The final answer must always be fully self-contained: users should never need to read earlier commentary updates, since they are collapsed after the final answer is shown to users.\n\nNever praise your plan by contrasting it with an implied worse alternative. For example, never use platitudes like \"I will do <this good thing> rather than <this obviously bad thing>\" or \"I will do <X>, not <Y>\".\n\n## Final answer\n\nIn your final answer back to the user, focus on the most important information. \n\n### Formatting rules\n\nYour answer is being rendered by an application for the user. Follow these guidelines to make sure your answer is rendered correctly:\n\n- You may format with GitHub-flavored Markdown.\n- When referencing a real local file, prefer a clickable markdown link.\n  * Clickable file links should look like [app.py](/abs/path/app.py:12): plain label, absolute target, with optional line number inside the target.\n  * If a file path has spaces, wrap the target in angle brackets: [My Report.md](</abs/path/My Project/My Report.md:3>).\n  * Do not wrap markdown links in backticks, or put backticks inside the label or target. This confuses the markdown renderer.\n  * Do not use URIs like file://, vscode://, or https:// for file links.\n  * Do not provide ranges of lines.\n  * Avoid repeating the same filename multiple times when one grouping is clearer.\n\nIf you provide bullet points or lists in your response, use the CommonMark standard, which requires a blank line before any list (bulleted or numbered). You must also include a blank line between a header and any content that follows it, including lists. This blank line separation is required for correct rendering.\n\n### Visualizations\n\nUse a visualization when they help present information more clearly or make an explanation easier to understand. Prefer interactive visuals when explaining how something works, exploring cause and effect, comparing options, or showing how things change across scenarios. The user does not need to explicitly request a visualization. \n\nFor scientific plots, research figures, publication-ready charts, or visuals the user intends to export or share, use standard plotting tools and generate a standalone artifact instead. \n\nUse tables for mappings or comparisons. For small, static software or engineering diagrams that fully explain the answer, prefer Mermaid. Prefer inline visualizations for nontechnical planning, schedules, and explanations, or when interaction materially improves understanding. \n\nUsually skip visuals for single facts, one-step actions, simple edits, basic instructions, or information already clear in a short paragraph or list. Compact notation and small examples do not count as visualizations.\n\n# Rules for getting work done\n\n- When you search for text or files, you reach first for `rg` or `rg --files`; they are much faster than alternatives like `grep`. If `rg` is unavailable, you use the next best tool without fuss.\n- Batch independent searches and reads in one functions.exec using await Promise.allSettled([...]); inspect every result. Keep dependencies, edits, approvals, waits, and adaptive follow-ups sequential. Avoid unnecessary output.\n- When calling `functions.exec`, parallelize independent tool calls by awaiting Promises. Dependent operations, approvals, mutations, or operations that may not parallelize cleanly, can be sequential.\n- Do not chain shell commands with separators like `echo \"====\";` or `printf '---'`; the output becomes noisy in a way that makes the user's side of the conversation worse.\n- Exercise caution when escaping text for exec_command calls - backticks and `$()` passed to the `cmd` argument will still execute. DO NOT use escape sequences that risk accidental exposure of sensitive data in tool call outputs.\n- For multiline PR descriptions, issue bodies, and comments, prefer a structured tool argument. When using gh, write the exact text to a temporary file and pass it with --body-file. Preserve actual newlines and intentional literal escapes.\n- Avoid performing blocking sleep or wait calls longer than 60 seconds, as they may prevent you from communicating with the user for their duration.\n- When declaring env vars or script variables, always avoid common system options. Never repurpose `$HOME`, `$home`, or `$CODEX_HOME`. Instead, use a task-specific variable name.\n- Treat shell command text as code. `JSON.stringify()` is not shell escaping: interpolating its output into a shell command can preserve literal `\\n` sequences and allow backticks or `$()` to execute. Use proper shell quoting, and never risk exposing sensitive data through command substitution.\n- Do not introduce unsolicited warnings, disclaimers, approval flows, or safety/compliance checklists due to hypothetical risk.\n- Keep implementation details out of product (e.g. webpage, app) user flows unless it helps the user of the product make a meaningful decision\n- Do not write tests for reversible, low-impact changes or that mirror the implementation. If you do choose to verify your work with tests, make sure that the tests are meaningful and necessary to verify implementation.\n- Run tests appropriate to the change and complete required checks. Once those pass, broaden or repeat testing only when new changes, failures, or unresolved concerns justify it; otherwise, continue toward completing the task.\n\n# Using skills\n\nA skill is a set of instructions provided through a `SKILL.md` source. Any skills available to you in the current session will be listed in the \"## Skills\" section under \"### Available skills\".\n\nEach entry includes a name, description, and location for its `SKILL.md`. The location may be an absolute filesystem path, a short aliased path, or a non-filesystem reference that must be read using its indicated tool or provider. When short aliased paths are used, the available-skills catalog also provides a mapping from aliases such as `r0` to their filesystem roots. Expand the alias before accessing the skill.\n\nThe user's instructions take precedence over guidelines provided in a skill. If explicit user instructions conflict with a skill's instructions, prioritize the user's instructions. \n\nThe first time in a conversation that you decide to apply a skill, inform the user in the commentary channel.\n\nIf a skill causes you to ask for permission or confirmation, pause, or leave requested work unfinished, name and link to the exact SKILL.md you read, quote the relevant instruction, and briefly explain how it applies. Distinguish explicit skill requirements from your interpretation. If a skill does not explicitly require approval, default to proceeding within the user\u2019s authorized scope rather than asking for confirmation based on an inferred requirement.\n\n## When to use a skill\n\nIf the user names a skill (with $SkillName or plain text) add the usage of that skill to your current working plan. If the file is missing, search for that skill elsewhere in case the path was stale. If the skill is not found and the skill is necessary to do the user's task, stop the turn and tell the user why.\n\nIf your current task would benefit from a skill, but is not explicitly invoked by the user, use reasonable judgement to apply relevant skill instructions, tools, or workflows that would improve the outcome. Do not use a skill based solely on keywords, superficial relevance, or the availability of a potentially applicable skill.\n\n## How to use skills\n\nOpen and read the skill according to its location: filesystem skills should be read from the filesystem, environment-owned skills should be access via the corresponding environment, and cloud skills should be discovered by calling `skills.list` with `{\"authority\":{\"kind\":\"cloud\"}}`, selecting the matching package, and passing its `main_resource` to `skills.read`. Avoid re-reading skills when possible.\n\nWhen a `SKILL.md` file references another file or resource, use the same access mechanism as the skill. Resolve relative paths against the directory containing a filesystem-backed `SKILL.md`. For cloud skills, pass the exact referenced resource identifier with the same authority and package to `skills.read`; do not treat `skill://` identifiers as filesystem paths.\n\n# Plugins and Apps\n\nPlugins are bundles of skills, tools, or both. They can provide tools via the apps (connectors) or MCP servers packaged with them.\n\nFilter `ALL_TOOLS` by name or description to find relevant tools. Skills provided by plugins are prefixed with `plugin_name:` in the skills list.\n\nDo not additionally call `list_mcp_resources` or `list_mcp_resource_templates` for apps.\n\n## Decision Boundary\n\nDiscover and use relevant tools proactively when they may help carry out the requested task. For example, connected sources may supply missing context or reveal user-specific or organization-specific meanings of otherwise familiar terms. Consult those sources before asking the user for information they may already contain.\n\nWhen a plugin is available for a service and its tools are sufficient for completing the task, prefer that over accessing the service via browser or computer use, including when viewing links supported by the plugin. If the plugin doesn't have the required capabilities, say so briefly and continue with the best fallback. If the user has an explicit preference, defer to that instead.\n\nA user can also tag a plugin using `[@plugin-name](plugin://{{plugin_id}})` or an app using `[$app-name](app://{{connector_id}})`. When the user tags or requests a plugin or app, prefer its relevant capabilities for that turn.\n"
+              }
+            ],
+            "internal_chat_message_metadata_passthrough": {
+              "turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0",
+              "content_item_kinds": [
+                "model.base_instructions"
+              ],
+              "content_item_metadata": [
+                {
+                  "provenance": {
+                    "type": "harness",
+                    "hook": false
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "message",
+            "id": "msg_01a1d953-33e9-7d00-92bf-6501653ab50f",
+            "role": "developer",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "The 60-second blocking-wait guidance does not apply to collaboration.wait_agent, which returns early on agent activity or user input. When required child results remain outstanding and no independent work remains, prefer the longest supported timeout. Do not shorten it solely to produce periodic status updates. Preserve responsibility for collecting and integrating results.\n"
+              },
+              {
+                "type": "input_text",
+                "text": "<context_window_guidance>\nKeep continuation-critical meaning recoverable through existing durable owners. Begin refresh preparation at 185000 active context tokens or an earlier pressure forecast, and invoke new_context before 220000. Stop ordinary work while preparing; publish a chatboard recovery pointer bound to your verified session. After reset, follow AGENTS.md and Wind Walker, recover current direction and retain review and collection obligations. If required meaning is missing, stop dependent work and report the recovery failure.\n</context_window_guidance>"
+              },
+              {
+                "type": "input_text",
+                "text": "<skills_instructions>\n## Skills\nA skill is a set of local instructions to follow that is stored in a `SKILL.md` file. Below is the list of skills that can be used. Each entry includes a name, description, and a short path that can be expanded into an absolute path using the skill roots table.\n### Skill roots\n- `r0` = `/home/bline/.codex/skills`\n- `r1` = `/home/bline/.codex/skills/.system`\n- `r2` = `/home/bline/.codex/plugins/cache/openai-bundled`\n- `r3` = `/home/bline/.codex/plugins/cache/openai-curated-remote/google-drive/0.1.23/skills`\n- `r4` = `/home/bline/.codex/plugins/cache/openai-curated-remote/pages/0.1.26/skills`\n- `r5` = `/home/bline/.codex/plugins/cache/openai-curated-remote`\n- `r6` = `/home/bline/.codex/plugins/cache/openai-curated-remote/sites/1.1.6/skills`\n- `r7` = `/home/bline/.codex/plugins/cache/openai-curated-remote/vercel/0.54.1/skills`\n- `r8` = `/home/bline/.codex/plugins/cache/openai-curated-remote/work-pets/0.1.6/skills`\n### Available skills\n- imagegen: Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new image, transform an ex (file: r1/imagegen/SKILL.md)\n- openai-docs: API first-timers, Codex/Work Q&A. If the user already has an OpenAI API integration, skip this skill for API questions and use the developer docs. Read this skill before answering how Codex or ChatGPT Work behaves, where to find a feature, or h (file: r1/openai-docs/SKILL.md)\n- skill-creator: Create or update a Codex skill with appropriately scoped instructions and any needed supporting resources. (file: r1/skill-creator/SKILL.md)\n- skill-installer: Install Codex skills into $CODEX_HOME/skills from a curated list or a GitHub repo path. Use when a user asks to list installable skills, install a curated skill, or install a skill from another repo (including private repos). (file: r1/skill-installer/SKILL.md)\n- agent-instruction-review: Review materially normative agent-facing text for structural necessity, exact-route causality, semantic ownership, authority scope, audience, and loading placement. Use for implemented skills, role prompts, workflow instructions, or proposals (file: r0/agent-instruction-review/SKILL.md)\n- browser:control-in-app-browser: Control the in-app Browser for opening, navigating, inspecting visible or interactive page state, clicking, typing, screenshots, and local web testing. It can have existing signed-in sessions. For semantic operations on linked resources, pre (file: r2/browser/26.1013.40934/skills/control-in-app-browser/SKILL.md)\n- claim-evidence: Publish, validate, discover, resolve, and rely on exact evidence-backed repository facts, proposal-research claims, or revision-bound review findings while preserving authority, limitations, and provenance. Do not infer applicability, freshne (file: r0/claim-evidence/SKILL.md)\n- claude-builder: Let Codex delegate a bounded engineering task to a retained native Claude Code builder, collect implementation and validation, and coordinate a separate Astra review. Uses existing manual orchestration, context checks, and handoffs. Use when  (file: r0/claude-builder/SKILL.md)\n- claude-recon-implementation: Use native Claude Code for shallow architectural placement alternatives, fresh targeted repository reconnaissance, failure diagnosis, and fresh-entry adversarial review with retained remediation context while preserving Codex context for judgme (file: r0/claude-recon-implementation/SKILL.md)\n- code-change-profile: Bind immutable Work Engine checkpoint subjects and derive recomputable deterministic physical code-change profiles. (file: r0/code-change-profile/SKILL.md)\n- codebase-memory: Use the codebase knowledge graph for structural code queries. Triggers on: explore the codebase, understand the architecture, what functions exist, show me the structure, who calls this function, what does X call, trace the call chain, find cal (file: r0/codebase-memory/SKILL.md)\n- codex-adversarial-review: Perform a read-only, fresh-entry Codex adversarial review with retained remediation context when a campaign accepts same-provider review. Do not use when model-, provider-, or reasoning-independent review is required. (file: r0/codex-adversarial-review/SKILL.md)\n- durable-state: Publish and read opaque durable values under stable keys with integrity-checked compare-and-swap revisions. (file: r0/durable-state/SKILL.md)\n- google-drive:google-docs: Create and edit native Google Docs through connected tools. (file: r3/google-docs/SKILL.md)\n- google-drive:google-drive: Use this skill to find and manage files in Google Drive, including organizing files, managing sharing, exporting files, and checking revision history. When a request also involves editing a file's contents, use the corresponding Docs, Sheets (file: r3/google-drive/SKILL.md)\n- google-drive:google-drive-comments: Write, reply to, and resolve Google Drive comments on Docs, Sheets, Slides, and Drive files with evidence-backed location context. Use when the user asks to leave comments, review a file with comments, respond to comment threads, or resolve Dr (file: r3/google-drive-comments/SKILL.md)\n- google-drive:google-sheets: Analyze and edit connected Google Sheets with range precision. Use when the user wants to create Google Sheets, find a spreadsheet, inspect tabs or ranges, search rows, plan formulas, create or repair charts, clean or restructure tables, write (file: r3/google-sheets/SKILL.md)\n- google-drive:google-slides: Route Google Slides authoring requests and derive a design system from a native template or reference deck. Use this skill when the user provides an existing native Google Slides deck as a template, reference, or prior-period source, or asks t (file: r3/google-slides/SKILL.md)\n- idea-intake: Assess an exact raw-idea revision into attributed, claim-addressable intake state before proposal formation. Use when raw meaning needs reconciliation or partial disposition; do not use to accept proposals, authorize implementation or cleanup,  (file: r0/idea-intake/SKILL.md)\n- independent-review-state: Preserve one authority-bound retained adversarial-review episode across same-session remediation and truthful reviewer replacement without creating an independence claim. (file: r0/independent-review-state/SKILL.md)\n- manual-orchestration: Coordinate manually decomposed engineering work across Codex sub-agents as the top-level supervisor, a worker or a reviewer - decomposition, packets, dispatch, waiting, the retained-versus-fresh context choice, handoff, review collection and  (file: r0/manual-orchestration/SKILL.md)\n- pages:maintain-space: Reconcile new evidence into existing ChatGPT Pages or a Space when the user requests upkeep. For a direct text correction, use write-page. Do not use for ordinary chat drafts, writing, or advice, or treat a selected Page as a request to sav (file: r4/maintain-space/SKILL.md)\n- pages:manage-schedules: Review a ChatGPT Space page and its schedules, recommend useful recurring work, and create, update, or remove scheduled automations. (file: r4/manage-schedules/SKILL.md)\n- pages:organize-space: Organize existing ChatGPT Pages and Space structure when the user requests changes to that structure. Do not use for ordinary chat drafts or advice; a selected Page alone does not authorize reorganization. A narrow text edit does not need t (file: r4/organize-space/SKILL.md)\n- pages:write-page: Create or edit requested Page/Space content, or use for prose you have already decided to save as a standalone Markdown file, only if the user did not explicitly request a Markdown file. Honor established formats, destinations, and reposito (file: r4/write-page/SKILL.md)\n- plugin-management:plugin-management: Discover and suggest relevant plugins, inspect app permissions and dependencies, and manage plugin connections or removal. Use when the user asks about plugins or when a task would materially benefit from an external app, account, service,  (file: r5/plugin-management/0.1.1-capabilities.1/skills/plugin-management/SKILL.md)\n- proposal-former: Form or revise durable proposal candidates from raw ideas through adaptive model judgment. Use before evaluation or strategic prioritization; do not use to accept proposals, change roadmap priority, or authorize implementation. (file: r0/proposal-former/SKILL.md)\n- proposal-packets: Discover and mechanically validate durable Git-backed proposal packets without deciding their semantic quality, priority, or implementation authority. (file: r0/proposal-packets/SKILL.md)\n- repo-search: Retrieve verifiable repository evidence across source, documentation, configuration, tests, skills, packages, and architecture. Use for repository orientation, implementation discovery, caller or dependency tracing, change-impact analysis,  (file: r0/repo-search/SKILL.md)\n- review-bench: Build and run evidence-calibrated comparisons of code-review providers, models, and harnesses using immutable or confidence-qualified repository cases. Use when evaluating review fallback quality or same-model harness diversity; do not use a  (file: r0/review-bench/SKILL.md)\n- role-scheduler: Reconcile and monitor durable scheduled items for an active, human-supervised agent role. Use at role startup or when users schedule, defer, inspect, approve, or acknowledge work; do not treat scheduling as authority or activate inactive role (file: r0/role-scheduler/SKILL.md)\n- sites:sites: Use Sites when the user wants a website built for them (including a landing page, portfolio, dashboard, portal, tracker, hub, game, event registration, or tool), requests changes to a website already built with Sites, wants to publish a websi (file: r6/sites/SKILL.md)\n- sites:sites-remix: Remix a Site built with the Sites plugin into a new Site. Use when the user has identified the source Site and asks to remix it. (file: r6/sites-remix/SKILL.md)\n- slice-builder: Launch and control one capable Codex engineering worker that owns an entire configured evidence-driven slice from reconnaissance and planning through implementation, validation, fixes, and final metrics. Use as the default engineering build (file: r0/slice-builder/SKILL.md)\n- slice-checkpoint: Create immutable, attributed Git checkpoints without changing the user's branch, index, or working tree. (file: r0/slice-checkpoint/SKILL.md)\n- slice-completion-commit: Safely create an explicitly approved user-visible Git commit from an accepted slice proposal. (file: r0/slice-completion-commit/SKILL.md)\n- slice-supervisor: Run a declaratively configured, evidence-driven work campaign through bounded slices, explicit plan acceptance, configured builder and validation gates, durable receipts, limits, notifications, and truthful stop decisions. Use when Codex must (file: r0/slice-supervisor/SKILL.md)\n- strategic-planner: Reconcile durable product and execution evidence with a roadmap, its assumptions, dependencies, and priorities. Use when campaign outcomes or changed product state may make the current strategic direction stale; do not use for implementatio (file: r0/strategic-planner/SKILL.md)\n- vercel:access-protected-vercel-deployment: Access and test Vercel deployments protected by Vercel Authentication, SSO, or Deployment Protection. Use when curl, agent-browser, Playwright, or another automated request reaches a Vercel login or protection page; when a protected preview or (file: r7/access-protected-vercel-deployment/SKILL.md)\n- vercel:ai-gateway: Vercel AI Gateway guidance for setup, model discovery, authentication, routing, fallbacks, virtual models, evaluation models, BYOK, budgets, spend reporting, observability, compatible APIs, and coding-agent configuration. Use when adding AI Ga (file: r7/ai-gateway/SKILL.md)\n- vercel:ai-sdk: Vercel AI SDK expert guidance. Use when building AI-powered features \u2014 chat interfaces, text generation, structured output, tool calling, agents, MCP integration, streaming, embeddings, reranking, image generation, or working with any LLM pr (file: r7/ai-sdk/SKILL.md)\n- vercel:auth: Authentication integration guidance \u2014 Clerk (native Vercel Marketplace), Better Auth, Descope, and Auth0 setup for Next.js applications, plus Sign in with Vercel, Vercel Passport, and Vercel KMS. Covers server config, route handlers, proxy.t (file: r7/auth/SKILL.md)\n- vercel:bootstrap: Project bootstrapping orchestrator for repos that depend on Vercel-linked resources (databases, auth, and managed integrations). Use when setting up or repairing a repository so linking, environment provisioning, env pulls, and first-run db/ (file: r7/bootstrap/SKILL.md)\n- vercel:build-agents: Default guidance for building AI agents. Use for generic requests to build, create, scaffold, design, architect, or implement an AI agent, agent app, tool-calling agent, durable agent, multi-agent system, or scheduled agent. (file: r7/build-agents/SKILL.md)\n- vercel:cdn-caching: Debug Vercel CDN caching \u2014 cache hit rate, stale content, revalidation behavior, ISR + PPR, per-request cache reasons (cacheReason) and PPR state (ppr_state), and costs. (file: r7/cdn-caching/SKILL.md)\n- vercel:chat-sdk: Vercel Chat SDK expert guidance. Use when building multi-platform chat bots \u2014 Slack, Telegram, Microsoft Teams, Discord, Google Chat, GitHub, Linear \u2014 with a single codebase. Covers the Chat class, adapters, threads, messages, cards, modals, s (file: r7/chat-sdk/SKILL.md)\n- vercel:create-a-backend: Backend architecture guidance. Use when planning, building, or migrating an API or backend; choosing between Functions, Services, containers, Workflow, Queues, and Marketplace databases; or selecting a supported backend framework or runtime. (file: r7/create-a-backend/SKILL.md)\n- vercel:custom-metrics: Emit and query Vercel Custom Metrics. Use when instrumenting application or business measurements in Vercel Functions, using metric() from @vercel/functions, choosing metric names and attributes, or querying emitted values with vc metrics. (file: r7/custom-metrics/SKILL.md)\n- vercel:deployments-cicd: Vercel deployment and CI/CD expert guidance. Use when deploying, promoting, rolling back, inspecting deployments, building with --prebuilt, or configuring CI workflow files for Vercel. (file: r7/deployments-cicd/SKILL.md)\n- vercel:domains: Search, register, connect, transfer, and renew domain names on Vercel using the CLI or Domains Registrar API. Use for domain availability and pricing, custom domains, DNS records, nameservers, ownership verification, and domain orders. (file: r7/domains/SKILL.md)\n- vercel:env-vars: Vercel environment variable expert guidance. Use when working with .env files, vercel env commands, Secret or Config variable types, OIDC tokens, or managing environment-specific configuration. (file: r7/env-vars/SKILL.md)\n- vercel:eve: eve framework guidance for durable AI agents and agent-powered applications. Use when creating, editing, or debugging an eve project, when the user explicitly asks for eve, or when the build-agents skill has selected eve as the default frame (file: r7/eve/SKILL.md)\n- vercel:flags-sdk: Set up and use feature flags and A/B tests with the Flags SDK (`flags` npm package) and Vercel Flags. Use when installing or configuring the SDK, adding a new or existing flag, wiring `vercelAdapter` (OIDC or SDK keys), declaring flags with  (file: r7/flags-sdk/SKILL.md)\n- vercel:is-agentic: Score how ready a website, domain, or public MCP endpoint is for AI agents using Is Agentic, and read or act on the resulting report. Use when asked to check a site's agent readiness, get its Is Agentic score, fetch a scored report as JSON, or (file: r7/is-agentic/SKILL.md)\n- vercel:knowledge-update: Corrects outdated LLM knowledge about the Vercel platform and introduces new products. Injected at session start. (file: r7/knowledge-update/SKILL.md)\n- vercel:marketplace: Vercel Marketplace expert guidance \u2014 discovering, installing, and managing third-party integrations via the `vercel integration` CLI. Use when building any app that needs an external capability without a dedicated skill \u2014 commerce (stores, s (file: r7/marketplace/SKILL.md)\n- vercel:microfrontends: Guide for building, configuring, and deploying microfrontends on Vercel. Use this skill when the user mentions microfrontends, multi-zones, splitting an app across teams, independent deployments, cross-app routing, incremental migration, compo (file: r7/microfrontends/SKILL.md)\n- vercel:queues: Vercel Queues guidance \u2014 durable topics with at-least-once delivery, independent consumer groups, retries, delays, and idempotency keys via @vercel/queue (JS) or vercel-queue (Python). Use when deferring background work, buffering traffic, f (file: r7/queues/SKILL.md)\n- vercel:react-best-practices: React best-practices reviewer for TSX files. Triggers after editing multiple TSX components to run a condensed quality checklist covering component structure, hooks usage, accessibility, performance, and TypeScript patterns. (file: r7/react-best-practices/SKILL.md)\n- vercel:routing-middleware: Vercel Routing Middleware guidance \u2014 request interception before cache, rewrites, redirects, personalization. Works with any framework. Supports Edge, Node.js, and Bun runtimes. Use when intercepting requests at the platform level. (file: r7/routing-middleware/SKILL.md)\n- vercel:runtime-cache: Vercel Runtime Cache API guidance \u2014 ephemeral per-region key-value cache with tag-based invalidation. Shared across Functions, Routing Middleware, and Builds. Use when implementing caching strategies beyond framework-level caching. (file: r7/runtime-cache/SKILL.md)\n- vercel:vercel-agent: Vercel Agent guidance \u2014 dashboard and Slack chat, code review, production investigation, approved actions, and product installation. Use when configuring or working with Vercel's AI assistant. (file: r7/vercel-agent/SKILL.md)\n- vercel:vercel-cli: Vercel CLI expert guidance. Use when deploying, managing environment variables, linking projects, viewing logs, querying metrics, managing domains, managing feature flags with vercel flags, or interacting with the Vercel platform from the comm (file: r7/vercel-cli/SKILL.md)\n- vercel:vercel-connect: Vercel Connect expert guidance for securely obtaining scoped credentials for third-party services on behalf of apps or users. Use when wiring up provider API access, OAuth, API-key services, MCP servers, triggers, framework adapters, or eve ag (file: r7/vercel-connect/SKILL.md)\n- vercel:vercel-firewall: Vercel Firewall expert guidance \u2014 automatic DDoS mitigation, the Vercel WAF (custom rules, IP blocking, managed rulesets, rate limiting), Attack Mode, system bypass, bot management, and the `vercel firewall` CLI. Use when configuring platform- (file: r7/vercel-firewall/SKILL.md)\n- vercel:vercel-functions: Vercel Functions expert guidance \u2014 Node.js/Bun/Python runtimes, Fluid Compute, long-duration (30 min) functions, large functions (5 GB bundles), Docker/OCI container images, plan limits, streaming, WebSockets, and Cron Jobs. Use when configu (file: r7/vercel-functions/SKILL.md)\n- vercel:vercel-sandbox: Vercel Sandbox guidance \u2014 ephemeral Firecracker microVMs for running untrusted code safely. Supports AI agents, code generation, and experimentation. Use when executing user-generated or AI-generated code in isolation. (file: r7/vercel-sandbox/SKILL.md)\n- vercel:vercel-services: Configure and troubleshoot Vercel Services for multiple frontends and backends in one project. Use when composing a polyglot or multi-service application on one Vercel deployment; defining the `services` key, service-targeted rewrites, or se (file: r7/vercel-services/SKILL.md)\n- vercel:vercel-storage: Vercel storage expert guidance \u2014 Blob, Global Config (formerly Edge Config), and Marketplace storage (Neon Postgres, Upstash Redis). Use when choosing, configuring, or using data storage with Vercel applications. (file: r7/vercel-storage/SKILL.md)\n- vercel:verification: Full-story verification \u2014 infers what the user is building, then verifies the complete flow end-to-end: browser \u2192 API \u2192 data \u2192 response. Triggers on dev server start and 'why isn't this working' signals. (file: r7/verification/SKILL.md)\n- vercel:workflow: Vercel Workflow SDK expert guidance. Use when building durable workflows, long-running tasks, API routes or agents that need pause/resume, retries, step-based execution, or crash-safe orchestration with Vercel Workflow. (file: r7/workflow/SKILL.md)\n- visualize:visualize: Create visualizations and interactive tools directly in conversation. Proactively use to show how something works; explore 'what happens when', 'what changes', or 'help me understand'; compare or inspect; create simulations, maps, charts, gra (file: r5/visualize/1.0.89/skills/visualize/SKILL.md)\n- wind-walker: Treat model context as temporary working memory and replace it only when correct continuation is independent of context-only meaning. (file: r0/wind-walker/SKILL.md)\n- work-engine-mcp: Expose bounded Work Engine state and production claim-evidence reads to MCP consumers. Do not use it to publish claims, authorize workflow transitions, or infer claim applicability. (file: r0/work-engine-mcp/SKILL.md)\n- work-pets:create-pet: Create, repair, validate, preview, upload, or activate an animated v2 pet in ChatGPT Work mode from a character idea, brand cue, or reference image. Use for new ChatGPT Pets, custom mascots, non-pixel styles, and unattached sprite sheets re (file: r8/create-pet/SKILL.md)\n- work-pets:pets: List, inspect, select, download, or delete animated pets in ChatGPT Work mode. Use for an explicit pet in ChatGPT or established ChatGPT Pets context. Exclude real-world and other-app pets; clarify before invoking. (file: r8/pets/SKILL.md)\n- work-pets:update-pet: Inspect, validate, preview, repair, or update a custom pet in ChatGPT Work mode, including its name, description, or sprite sheet. Use for a pet in ChatGPT or established ChatGPT Pets context. Exclude real-world and other-app pets; clarify  (file: r8/update-pet/SKILL.md)\n</skills_instructions>"
+              },
+              {
+                "type": "input_text",
+                "text": "<permissions instructions>\nFilesystem sandboxing defines which files can be read or written. `sandbox_mode` is `read-only`: The sandbox only permits reading files. Network access is restricted.\nApproval policy is currently never. Do not provide the `sandbox_permissions` for any reason, commands will be rejected.\n</permissions instructions>"
+              },
+              {
+                "type": "input_text",
+                "text": "<collaboration_mode># Collaboration Mode: Default\n\nYou are now in Default mode. Any previous instructions for other modes (e.g. Plan mode) are no longer active.\n\nYour active mode changes only when new developer instructions with a different `<collaboration_mode>...</collaboration_mode>` change it; user requests or tool descriptions do not change mode by themselves. Known mode names are Default and Plan.\n\n## request_user_input availability\n\nUse the `request_user_input` tool only when it is listed in the available tools for this turn.\n\nIn Default mode, strongly prefer making reasonable assumptions and executing the user's request rather than stopping to ask questions.\n\nUse the `request_user_input` tool only for optional questions where the answer would materially improve the quality of the work.\n\nIf `request_user_input` returns no answers, continue with best judgment instead of asking again or treating the turn as blocked.\n\nNever use the `request_user_input` tool for permission requests or permission-related escalations.\n</collaboration_mode>"
+              },
+              {
+                "type": "input_text",
+                "text": "<tools>\nDeferred tool namespaces:\n- mcp__codebase_memory_mcp: codebase-memory-mcp is a code knowledge graph of the indexed repository: functions, classes, methods, routes, calls, imports, inheritance and cross-service links. It answers structural code questions: where a symbol is defined, who calls a...\n- mcp__codex_apps__chatgpt_space: Read, search, create, and edit pages and spaces in ChatGPT Space, within your current account.\n- mcp__codex_apps__codex_document_control: Use Codex Document Control to find connected document sessions, inspect the tools supported by a selected session, and execute one supported tool against that session. Call `list_document_sessions` first to choose the intended connected se...\n- mcp__codex_apps__events_pi_bridge: MCP server instructions: Watches local Codex and Claude Code session transcripts on the user's computer. Find session ids with list_sessions, preview a regular expression with test_pattern, then subscribe to the session.entry.matched event...\n- mcp__codex_apps__events_server: MCP server instructions: Watches local Codex and Claude Code session transcripts on the user's computer. Find session ids with list_sessions, preview a regular expression with test_pattern, then subscribe to the session.entry.matched event...\n- mcp__codex_apps__events_stytch_test: MCP server instructions: Watches local Codex and Claude Code session transcripts on the user's computer. Find session ids with list_sessions, preview a regular expression with test_pattern, then subscribe to the session.entry.matched event...\n- mcp__codex_apps__finances: Tools and connected data to help the user with their finances, credit score, and stock watchlist.\n- mcp__codex_apps__github: Access repositories, issues, and pull requests. Required for some features such as Codex\n- mcp__codex_apps__gmail: Gmail tools for label counts, searching and reading emails/threads/attachments, reviewing drafts, and explicit mail changes like send, draft, forward, archive, Trash, and label actions.\n- mcp__codex_apps__google_calendar: Google Calendar tools for searching/reading events, checking availability before scheduling, reading colors, and explicit calendar changes: create/update/delete events or respond to invitations.\n- mcp__codex_apps__google_contacts: Google Contacts tools for finding saved contacts or directory people by name, email, company, or domain, then reading details such as email, phone, address, birthday, and organization.\n- mcp__codex_apps__google_drive: Search and work with files from Google Drive, Docs, Sheets, and Slides.\n- mcp__codex_apps__hotline: Look up local suicide or self harm helpline information for the user based on country inferred from the conversation. You must use this tool before providing a suicide or self-harm helpline; do not use web search or guess the suicide or se...\n- mcp__codex_apps__pets: Create and manage the user's animated companion pets inside ChatGPT Work mode. Use only for ChatGPT Pets, not real-world animal advice, generic pet images, or pets in other apps.\n- mcp__codex_apps__plugin_management: Manage plugin settings, permissions, and connections. Use available tools when they cover the task. Discover plugins for explicit plugin requests or capabilities required by the task that existing tools cannot provide. Do not suggest plug...\n- mcp__codex_apps__safety_settings: For ChatGPT Parental Controls (your child or teen's settings, features, Study Mode, quiet hours, family setup) and Trusted Contact (setup, status, privacy). Read account state first. Before updates, read the child's controls; prepare only...\n- mcp__codex_apps__sites: Use Sites to build or modify websites, including landing pages, portfolios, dashboards, portals, trackers, hubs, and internal tools. For repository-based sites, use Sites skills for local implementation, source preparation, and artifact p...\n- mcp__node_repl: Use `js` for `node_repl` execution with persistent, redeclarable top-level bindings, `js_reset` to clear bindings, and `js_add_node_module_dir` to add package directories.\n- mcp__work_engine_claims\n</tools>"
+              }
+            ],
+            "internal_chat_message_metadata_passthrough": {
+              "turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0",
+              "content_item_kinds": [
+                "generic.developer_instructions",
+                "token_budget.context_window_guidance",
+                "host_skills.instructions",
+                "permissions.instructions",
+                "collaboration_mode.instructions",
+                "tools.deferred_namespaces"
+              ],
+              "content_item_metadata": [
+                {
+                  "provenance": {
+                    "type": "developer_instructions",
+                    "from_additional_requirements": false
+                  }
+                },
+                {
+                  "provenance": {
+                    "type": "harness",
+                    "hook": false
+                  }
+                },
+                {
+                  "provenance": {
+                    "type": "skills"
+                  }
+                },
+                {
+                  "provenance": {
+                    "type": "harness",
+                    "hook": false
+                  }
+                },
+                {
+                  "provenance": {
+                    "type": "harness",
+                    "hook": false
+                  }
+                },
+                {
+                  "provenance": {
+                    "type": "tool",
+                    "namespace": "tool_search"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "message",
+            "id": "msg_01a1d953-33e9-7d00-92bf-6514bc90db05",
+            "role": "developer",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "<context_window>"
+              },
+              {
+                "type": "input_text",
+                "text": "\nAgent name: /root\nFirst context window id: 01a1d948-7771-79d2-bd9d-64ea4d70452e\nCurrent context window id: 01a1d953-33e8-7f42-bd31-3e36526ffcc4\nPrevious context window id: 01a1d948-7771-79d2-bd9d-64ea4d70452e\n"
+              },
+              {
+                "type": "input_text",
+                "text": "</context_window>"
+              }
+            ],
+            "internal_chat_message_metadata_passthrough": {
+              "turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0",
+              "content_item_kinds": [
+                "token_budget.context_window",
+                "token_budget.context_window",
+                "token_budget.context_window"
+              ],
+              "content_item_metadata": [
+                {
+                  "provenance": {
+                    "type": "harness",
+                    "hook": false
+                  }
+                },
+                {
+                  "provenance": {
+                    "type": "harness",
+                    "hook": false
+                  }
+                },
+                {
+                  "provenance": {
+                    "type": "harness",
+                    "hook": false
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "message",
+            "id": "msg_01a1d953-33e9-7d00-92bf-652120bf085c",
+            "role": "developer",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "<multi_agent_role>You are `/root`, the primary agent in a team of agents collaborating to fulfill the user's goals.\n\nAt the start of your turn, you are the active agent.\nYou can spawn sub-agents to handle subtasks, and those sub-agents can spawn their own sub-agents.\nAll agents in the team, including the agents that you can assign tasks to, are equally intelligent and capable, and have access to the same set of tools.\n\nYou can use `spawn_agent` to create a new agent, `followup_task` to give an existing agent a new task and trigger a turn, and `send_message` to pass a message to a running agent without triggering a turn.\n`send_message` calls may be read by a human, so ensure they are legible. Always put proper spaces between words and/or numbers.\nChild agents can also spawn their own sub-agents.\nYou can decide how much context you want to propagate to your sub-agents with the `fork_turns` parameter.\n\nYou will receive messages in the analysis channel in the form:\n```\nMessage Type: MESSAGE | FINAL_ANSWER\nTask name: <recipient>\nSender: <author>\nPayload:\n<payload text>\n```\nThey may be addressed as to=/root\n\nNote that collaboration tools cannot be called from inside `functions.exec`. Call `spawn_agent`, `send_message`, `followup_task`, `wait_agent`, `interrupt_agent`, and `list_agents` only as direct tool calls using the recipient shown in their tool definitions, such as `to=functions.collaboration.spawn_agent`, since they are intentionally absent from the `functions.exec` `tools.*` namespace. Available tools in `functions.exec` are explicitly described with a `tools` namespace in the developer message.\n\nAll agents share the same directory. In detail:\n- All agents have access to the same container and filesystem as you.\n- All agents use the same current working directory.\n- As a result, edits made by one agent are immediately visible to all other agents.\n\nWhen calling `wait_agent`, prefer longer waits (minutes) to avoid busy polling.\n\nThere are 4 available concurrency slots, meaning that up to 4 agents can be active at once, including you.\n\nFull-history forks (`fork_turns` omitted or `\"all\"`) inherit the parent model and reasoning effort and do not accept overrides. Only set `model` or `reasoning_effort` when explicitly requested by the user, applicable `AGENTS.md` instructions, or skill instructions; when doing so, set `fork_turns` to `\"none\"`.</multi_agent_role>"
+              }
+            ],
+            "internal_chat_message_metadata_passthrough": {
+              "turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0",
+              "content_item_kinds": [
+                "multi_agent.role_instructions"
+              ],
+              "content_item_metadata": [
+                {
+                  "provenance": {
+                    "type": "tool",
+                    "namespace": "collaboration"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "message",
+            "id": "msg_01a1d953-33e9-7d00-92bf-653f65ca4fb7",
+            "role": "developer",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "<multi_agent_mode>Any earlier instruction enabling proactive multi-agent delegation no longer applies. Do not spawn sub-agents unless the user or applicable AGENTS.md/skill instructions explicitly ask for sub-agents, delegation, or parallel agent work.</multi_agent_mode>"
+              }
+            ],
+            "internal_chat_message_metadata_passthrough": {
+              "turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0",
+              "content_item_kinds": [
+                "multi_agent.mode_instructions"
+              ],
+              "content_item_metadata": [
+                {
+                  "provenance": {
+                    "type": "tool",
+                    "namespace": "collaboration"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "message",
+            "id": "msg_01a1d953-33e9-7d00-92bf-654630f10577",
+            "role": "user",
+            "content": [
+              {
+                "type": "input_text",
+                "text": "# AGENTS.md instructions for /home/bline/code/work-engine\n\n<INSTRUCTIONS>\n<!-- codebase-memory-mcp:start -->\n# Codebase Memory\n\n## Codebase Knowledge Graph (codebase-memory-mcp)\n\nThis project uses codebase-memory-mcp to maintain a knowledge graph of the codebase.\nALWAYS prefer MCP graph tools over grep/glob/file-search for code discovery.\n\n### Priority Order\n1. `search_graph` \u2014 find functions, classes, routes, variables by pattern\n2. `trace_path` \u2014 trace who calls a function or what it calls\n3. `get_code_snippet` \u2014 read specific function/class source code\n4. `check_index_coverage` \u2014 validate candidate paths and missed ranges before claims\n5. `query_graph` \u2014 run Cypher queries for complex patterns\n6. `get_architecture` \u2014 high-level project summary\n\n### Evidence tiers\n- **Scout (Tier 1):** quick positive lookup with few calls and targeted source checks. Mark it provisional; do not make negative or exhaustive claims.\n- **Verify (Tier 2, default):** task-directed graph evidence, relevant trace directions, exact snippets for material claims, and relevant pagination.\n- **Auditor (Tier 3):** bounded-scope full verification with current generation, complete relevant pagination, both call directions and broader relationships when material, and every limitation disclosed.\n- After candidate paths are known in any tier, call `check_index_coverage` once with every evidence path. Add relevant scopes for negative or exhaustive claims. A clean result means no recorded gap, not proof of completeness. For partial, skipped, excluded, stale, pending, or unknown coverage, read/grep the reported ranges or scope before relying on graph results.\n\n### When to fall back to grep/glob\n- Searching for string literals, error messages, config values\n- Searching non-code files (Dockerfiles, shell scripts, configs)\n- When MCP tools return insufficient results\n\n### Examples\n- Find a handler: `search_graph(name_pattern=\".*OrderHandler.*\")`\n- Who calls it: `trace_path(function_name=\"OrderHandler\", direction=\"inbound\")`\n- Read source: `get_code_snippet(qualified_name=\"pkg/orders.OrderHandler\")`\n\n### Session resets and subagents\n- At session start or after compaction, confirm the nearest graph project and generation with `list_projects` or `index_status`, then choose Scout, Verify, or Auditor.\n- Before spawning a subagent, query the graph and coverage in the parent. Pass the tier, project, generation/freshness, bounded scope, queries and pagination state, qualified symbols, paths, call-chain findings, coverage evidence with ranges/reasons, source fallback already performed, and unresolved questions in the delegated task context.\n- Do not assume subagents inherit MCP access or the parent conversation. If a child lacks MCP tools, it must not call or claim MCP access. It should use the supplied evidence and read/grep exact source, especially every reported missed-coverage range.\n<!-- codebase-memory-mcp:end -->\n\n--- project-doc ---\n\n# Repository Instructions\n\nRead and follow [core contracts](docs/contracts/core.md) before repository work.\nThe [design index](DESIGN.md) routes the rest of the binding doctrine by decision;\n[philosophy](PHILOSOPHY.md) is explanatory and non-normative. Scoped documents\nstate their authority, scope, and loading condition. Their contracts remain binding\nwhen applicable; a link is not an instruction to recursively load every document.\n\n## Loading map\n\n| Situation | Read |\n| --- | --- |\n| Every new session or context window | This file and [core contracts](docs/contracts/core.md); perform the board read below |\n| Resuming unfinished work after restart, reset, or compaction; preparing replacement | Invoke `$wind-walker` and follow [context recovery](docs/contracts/context-recovery.md) before continuing |\n| Choosing architecture, semantic ownership, boundaries, or product structure | [System design](docs/contracts/system-design.md) |\n| Authoring or reviewing agent instructions, skills, or loading rules | [Instruction design](docs/contracts/instruction-design.md) |\n| Selecting or relying on evidence, writing receipts, defining route-sensitive acceptance | [Evidence and claims](docs/contracts/evidence-and-claims.md) |\n| Coordinating agents, conducting review, retaining or replacing context | [Context and review lifetimes](docs/contracts/context-and-review.md) and the active role's skill |\n| Coordinating agents or shared resources; an active human-supervised role with a configured durable scheduler | [Repository coordination](docs/agent-coordination.md) |\n| A decision needs the reasoning behind a contract | The relevant topic from [PHILOSOPHY.md](PHILOSOPHY.md) |\n\nLoad applicable task and role references before the decisions they govern. Multiple\nrows may apply. Bounded implementation and validation do not require the full design\nor rationale corpus. Design and instruction review need the scoped doctrine and\nrelevant rationale, rather than every topic. Role and campaign contracts continue\nto own their specific obligations and acceptance conditions.\n\n## Shared-session awareness\n\nConcurrent sessions share files, not conversation context. At startup, after context\nrecovery, before claiming a shared resource, and before paid or externally\nconsequential operations, read the board:\n\n```bash\npython3 skills/durable-state/scripts/codex_chatboard.py --repository . read --limit 20 --active-claims\n```\n\nUse [repository coordination](docs/agent-coordination.md) before claims, launches,\ntransitions, or resource mutation. Claims are advisory coordination, not authority.\n\n## Context pressure: every role\n\nAt startup and after recovery, establish delivery of this session's context\npressure through an owned chatboard `wait` with a verified context binding and\noutput collector. This applies to every active role, including standalone roots,\nworkers and reviewers: a board-topic subscription alone produces no context\ntelemetry, and an uncollected alert cannot inform preservation before rollover.\nUse [session control](skills/manual-orchestration/references/context-control.md)\nwhen establishing or repairing delivery. If the route is unavailable, record\nthe gap and own an explicit check before the next substantial phase; unknown\nheadroom is not spare capacity. Existing authority and collection owners remain.\n\n## Pre-release compatibility policy\nWork Engine is under active development. Internal implementations and\ninterfaces have no backward-compatibility guarantee unless an explicit consumer\nor owner-approved contract requires one.  Prefer the simplest architecture that\nsatisfies current requirements and the intended system design.  Existing code\nis reusable implementation material, not architectural authority. It may be\nmodified, replaced, or removed.  Preserve approved semantics, data integrity,\nprovenance, and qualification evidence\u2014not obsolete implementation behavior.\nAny recommendation to preserve compatibility must identify the specific\nconsumer, the consequence of breaking it, and the cost of maintaining it.\n\n## Model-selection guidance\n[Model selection](docs/model-selection.md) provides current defaults and their\ntradeoffs when choosing an engineering model. It is decision guidance, not an\noverride of explicit user choices or campaign/provider contracts; consult it\nwhen that choice is in scope, rather than inferring a selection from inheritance.\n\n## Rust development direction\n\n[Rust development](docs/rust-development.md) records the user's Rust-first\ndirection for new first-party implementation and proposed shared-code boundaries.\nUse it when choosing implementation language or reusable package placement;\nexisting components and their authority remain until accepted replacement.\n\n## Where files go\n\nReaders judge a file's standing from where it sits. Put a new file where\n[repository layout](docs/repository-layout.md) says, and follow its rules when\nmoving or citing one.\n\n</INSTRUCTIONS>"
+              },
+              {
+                "type": "input_text",
+                "text": "<environment_context>\n  <cwd>/home/bline/code/work-engine</cwd>\n  <shell>bash</shell>\n  <current_date>2026-11-14</current_date>\n  <timezone>America/Denver</timezone>\n  <filesystem><workspace_roots><root>/home/bline/code/work-engine</root></workspace_roots><permission_profile type=\"managed\"><file_system type=\"restricted\"><entry access=\"read\"><special>:root</special></entry></file_system></permission_profile></filesystem>\n</environment_context>"
+              }
+            ],
+            "internal_chat_message_metadata_passthrough": {
+              "turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0",
+              "content_item_kinds": [
+                "agents_md.instructions",
+                "environments.environment_context"
+              ],
+              "content_item_metadata": [
+                {
+                  "provenance": {
+                    "type": "agents_md"
+                  }
+                },
+                {
+                  "provenance": {
+                    "type": "harness",
+                    "hook": false
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "replacement_history_metadata": [
+          {
+            "history_sequence": 105,
+            "sampled_through_sequence": 100,
+            "client_authored": false
+          },
+          {
+            "history_sequence": 106,
+            "sampled_through_sequence": 100,
+            "client_authored": false
+          },
+          {
+            "history_sequence": 107,
+            "sampled_through_sequence": 100,
+            "client_authored": false
+          },
+          {
+            "history_sequence": 108,
+            "sampled_through_sequence": 100,
+            "client_authored": false
+          },
+          {
+            "history_sequence": 109,
+            "sampled_through_sequence": 100,
+            "client_authored": false
+          },
+          {
+            "history_sequence": 110,
+            "sampled_through_sequence": 100,
+            "client_authored": false
+          },
+          {
+            "history_sequence": 111,
+            "sampled_through_sequence": 100,
+            "client_authored": false,
+            "mcp_attribution": {
+              "status": "complete",
+              "sources": [
+                {
+                  "server_name": "codebase-memory-mcp",
+                  "tool_name": "index_status",
+                  "first_turn_id": "01a1d948-77d9-7661-a372-41f36a5f157e"
+                },
+                {
+                  "server_name": "codebase-memory-mcp",
+                  "tool_name": "check_index_coverage",
+                  "first_turn_id": "01a1d948-77d9-7661-a372-41f36a5f157e"
+                }
+              ]
+            }
+          }
+        ],
+        "retained_context": {
+          "verified_answers": [],
+          "incomplete": false,
+          "user_messages": [
+            {
+              "revision": "retained_01a1d948-80ec-7cf2-bf3c-8069edd28baf",
+              "order": 0,
+              "turn_id": "01a1d948-77d9-7661-a372-41f36a5f157e",
+              "message_id": "msg_01a1d948-80ec-7cf2-bf3c-804cc87b49e8",
+              "text": "Invoke $manual-orchestration as separate independent reviewer; load reviewer role plus startup/recovery/settings/control instructions. Read AGENTS.md and required doctrine. This is startup ONLY: no substantive design review until root verifies actual identity/model/tier/read-only grant and supplies exact packet. No writes/settings/network/children/builds/paidAPIs. Root alone persists artifacts and collects whole native final. Authority same root01a1d6e2 human100/no deadline; prospective design allowance6 inside that100, not additional grant. Return READY_ONLY with observed configuration and context-observation limitations; do not claim self-report establishes capability grant. Root will send verified session/rollout and pinned context binding after launch. Scope reference only: /home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-evaluation-premise-r1/PLAN.md; do not start its review yet.",
+              "complete": true
+            },
+            {
+              "revision": "retained_01a1d94b-1a25-7550-84f0-b30221e562d6",
+              "order": 5,
+              "turn_id": "01a1d94b-191e-7a12-90ed-70bf237c6609",
+              "message_id": "msg_01a1d94b-1a25-7550-84f0-b2ed800b302f",
+              "text": "Startup whole final fully collected. Root independently verified your actual grant via session_meta/turn_context and settings, as IDENTITY.md records. Substantive design review of exact PACKET.md580427e7 and PLAN.mda85dffca is now admitted, within same6/100. Read PACKET.md in this directory. Retain current context:66488epoch0 plus100000 forecast166488 below185000. Your explicit pinned-check fallback is acknowledged; failed wait and no live listener remain disclosed. Root pinned reader also lacks step-percent; do not repeat unsupported option. Check before each substantial phase and preserve early if forecast requires. Root owns full native final persistence; no implementation grant.\n",
+              "complete": true
+            },
+            {
+              "revision": "retained_01a1d952-bfd2-7052-a67a-81ab549bf24f",
+              "order": 11,
+              "turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0",
+              "message_id": "msg_01a1d952-bfd2-7052-a67a-818b401ff382",
+              "text": "Root fully collected/read your entire7310char review23f0df08 and adopted EPR-01. Read RETAINED-CONTINUATION.md in /home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-evaluation-premise-r1. Own latest170343+40000forecast crosses configured185k preparation; ignore helper historical200k/235k recommendation. Suspend ordinarywork, invoke WindWalker, validate durableowners then OWNnative new_context before220k; nohelper/transfer. Root published exactrecoverypointer and pre-refreshsettings. Recover fullmeaning/requiredAGENTS and NEWsettings/grant then returnREADY_ONLY. R2 substantive review is not yet admitted. Same isolatedepisode cap8 inside same100, rootsolecollector.\n",
+              "complete": true
+            }
+          ],
+          "user_messages_incomplete": false,
+          "assistant_messages": [
+            {
+              "revision": "retained_01a1d94a-a7ec-7131-8de6-b29a7036496f",
+              "order": 4,
+              "turn_id": "01a1d948-77d9-7661-a372-41f36a5f157e",
+              "message_id": "msg_0a6c8f2b049d51dc016af8237664d487d08dafe68d42382e1e",
+              "text": "READY_ONLY\n\n- Loaded `$manual-orchestration`, reviewer role, startup/recovery/settings/control instructions, AGENTS.md, applicable doctrine, and coordination board.\n- Acknowledged root\u2019s [identity binding](/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-evaluation-premise-r1/IDENTITY.md): reviewer `01a1d948-776f-7bb0-a3b2-66602a6eec79`; root `01a1d6e2-32ba-7701-9115-740dcb41af11` owns persistence and whole native final collection.\n- Bound rollout\u2019s applied-settings record confirms `gpt-6-astra`, `xhigh`, tier `default`, CLI `0.169.0` (line 13). Environment reports read-only filesystem, restricted network, approval `never`. This self-report does **not** establish the capability grant or backend fulfillment.\n- Pinned context binary SHA-256 verified. Context wait failed: `unknown control option --step-percent`. No listener remains active. Explicit pinned check succeeded: **66,488 input tokens**, epoch **0**, observed `2026-11-14T09:01:23.038Z`. I own explicit checks before subsequent substantial phases; continuous pressure delivery remains unavailable.\n- Preserved authority: prospective cumulative **6 within the existing 100**, marks **4/5**, no deadline or additional grant. Preparation threshold **185,000** or earlier forecast; refresh before **220,000**, with root persisting continuation first.\n- PLAN.md remains unread; substantive review awaits the exact admitted packet. No writes, settings changes, network requests, children, builds, or paid API operations performed.",
+              "complete": true,
+              "phase": "final_answer"
+            },
+            {
+              "revision": "retained_01a1d94b-2c03-7f41-9fd2-97862abc8ff8",
+              "order": 6,
+              "turn_id": "01a1d94b-191e-7a12-90ed-70bf237c6609",
+              "message_id": "msg_0a6c8f2b049d51dc016af8239fd40887d0a8ddfeda2f11d2ea",
+              "text": "I\u2019ll read the exact packet and plan, verify their identities, and review within the admitted read-only scope. I\u2019ll use explicit pinned context checks and retain the disclosed listener limitation.\n",
+              "complete": true,
+              "phase": "commentary"
+            },
+            {
+              "revision": "retained_01a1d94b-6cf5-73e1-934b-f672b3f36433",
+              "order": 7,
+              "turn_id": "01a1d94b-191e-7a12-90ed-70bf237c6609",
+              "message_id": "msg_0a6c8f2b049d51dc016af823b084b087d0897342d883241e9d",
+              "text": "The packet and plan hashes match the admitted revisions. I\u2019m also applying `$agent-instruction-review` to their normative text, as requested, alongside the design review.\n",
+              "complete": true,
+              "phase": "commentary"
+            },
+            {
+              "revision": "retained_01a1d94b-fbad-7fc0-ab3a-fbcb766db96d",
+              "order": 8,
+              "turn_id": "01a1d94b-191e-7a12-90ed-70bf237c6609",
+              "message_id": "msg_0a6c8f2b049d51dc016af823d3c2a487d0972f4fd30afb0940",
+              "text": "The proposed finite boundary addresses the demonstrated window gap in principle. I\u2019m checking the rest of the causal frontier now\u2014especially external rates, conditional assumptions, and fields outside the evaluation objects\u2014to see whether the plan leaves any nominal consequence ungrounded.\n",
+              "complete": true,
+              "phase": "commentary"
+            },
+            {
+              "revision": "retained_01a1d94e-348e-7730-be6e-765c452bcf88",
+              "order": 9,
+              "turn_id": "01a1d94b-191e-7a12-90ed-70bf237c6609",
+              "message_id": "msg_0a6c8f2b049d51dc016af82464b11887d0a514e72e6a535074",
+              "text": "I found a governing input outside the plan\u2019s named case projections: the gated VC11 case has top-level `trusted_fixture_inputs.gate_verifications`. It is separate from `inputs` and `evaluations`, and the contract uses it to establish gate qualification. I\u2019m checking the exact consequence so the finding distinguishes a premise-boundary omission from a demonstrated financial false accept.\n",
+              "complete": true,
+              "phase": "commentary"
+            },
+            {
+              "revision": "retained_01a1d950-60fb-70a2-be0a-1b2c8f93f72b",
+              "order": 10,
+              "turn_id": "01a1d94b-191e-7a12-90ed-70bf237c6609",
+              "message_id": "msg_0a6c8f2b049d51dc016af824cade0c87d08c350d0ac7f07845",
+              "text": "**REVISE_LOCAL_PLAN \u2014 one blocking P2.** The finite-admission strategy remains credible. I do not recommend reopening the financial model or introducing a general reducer, but the exact candidate needs one concrete addition before implementation admission.\n\nThis review binds:\n\n- PLAN.md `a85dffca9027bd386962b01ee6bf624dafbcd565f7f620e4a6210296be969b92`\n- PACKET.md `580427e7b48273add1bf8a631792d6f921fd8ac3b736a529021a19182a472fdb`\n- Frozen subject manifest `d60017dac28aa3a831cf13db520af94d8224b53f70b12229240bff8dab30ec61`\n\nThe plan and packet remained unchanged. All **967 subject files** matched the frozen manifest, with no missing or extra files.\n\n**EPR-01 \u2014 blocking P2: the concrete premise projection omits the separate test-verification input channel.**\n\n[PLAN.md:13](/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-evaluation-premise-r1/PLAN.md:13) identifies complete `inputs`, evaluation objects minus `expected`, and the conditional raw/payload records. However, the selected gated VC11 case also has a governing **top-level** field:\n\n```text\n/trusted_fixture_inputs/gate_verifications/g-S1\n```\n\nThat field is outside both `inputs` and `evaluations`. It contains the test-only verification source, authority/session binding, payload digest, policy reference, and verification evidence. See [the actual case:1205](/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/corpus/cases/P132-FG-VC11-gated.json:1205).\n\nThis is a distinct trust boundary, not descriptive metadata. [CONTRACT.md:247](/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject/contract/CONTRACT.md:247) requires separately trusted gate verification or this exact test-harness<truncated omitted_approx_tokens=\"931\" />ed root observations, not merely Rust source deductions. They establish omitted premise admission, not monetary loss under identical complete premises.\n\n**Instruction review: applicable.** The exact plan and packet contain current authority, scope, sequencing, and acceptance instructions. Their causal reasons are exposed at the loading boundary: establish applicability before reporting qualification, preserve independent expectation authorship, and retain root authority. Advisory outcome: **restate** the concrete frontier as above; retain the other inspected instructions. No separate material instruction finding is added.\n\nThe complete architecture-guard history remains applicable. This is a design-candidate revision recommendation, not another implementation-rejection count or a history reset. All **three R3 and eleven historical findings remain OPEN**; full **175-case/374-scope** qualification, remaining A1/C2/A2b and B2 work, schema/wire/generated/dependency obligations, and exact-current complete A/B/C reviews remain owed.\n\nEvidence used exact-source fallback: private-subject graph coverage was outside-project/unavailable. No new implementation, builds, consumer mutation suites, or paid API calls were performed. No files or settings changed. All commands and subprocesses completed and were collected; no child or live listener remains.\n\nLatest explicit context observation: **162,848 tokens, epoch 0**; finalization fits below preparation threshold. Continuous context delivery remains unavailable because of the disclosed reader-option incompatibility. Cost remains root-accounted within the existing **6/100** allowance. Root retains adoption, persistence, and whole-native-final collection; this review grants no implementation or acceptance authority.",
+              "complete": false,
+              "phase": "final_answer"
+            },
+            {
+              "revision": "retained_01a1d952-cefc-79c3-a900-d99643980b04",
+              "order": 12,
+              "turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0",
+              "message_id": "msg_02fd82f4bd3ab255016af82593f3a487d088fff960d16794a8",
+              "text": "I\u2019ll invoke `$wind-walker`, check the retained continuation and recovery bindings, then refresh my own context. After recovery I\u2019ll verify the new settings and grant and return `READY_ONLY`; R2 review remains unadmitted.\n",
+              "complete": true,
+              "phase": "commentary"
+            },
+            {
+              "revision": "retained_01a1d953-333e-7741-ae79-135a6ef490fd",
+              "order": 13,
+              "turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0",
+              "message_id": "msg_02fd82f4bd3ab255016af825acbbf487d0b60f0c705cee06dd",
+              "text": "The retained continuation, full review, root disposition, pre-refresh settings, and session-specific board pointer are verified. They preserve the finding, authority limits, observation gap, and collection ownership. I\u2019m refreshing this same session now; recovery will return through the native final for root to collect.\n",
+              "complete": true,
+              "phase": "commentary"
+            }
+          ],
+          "assistant_messages_incomplete": true,
+          "next_order": 15
+        },
+        "window_number": 1,
+        "first_window_id": "01a1d948-7771-79d2-bd9d-64ea4d70452e",
+        "previous_window_id": "01a1d948-7771-79d2-bd9d-64ea4d70452e",
+        "window_id": "01a1d953-33e8-7f42-bd31-3e36526ffcc4",
+        "compaction_response_id": null,
+        "latest_token_usage_record": {
+          "thread_id": "01a1d948-776f-7bb0-a3b2-66602a6eec79",
+          "turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0",
+          "session_id": "01a1d948-776f-7bb0-a3b2-66602a6eec79",
+          "root_turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0",
+          "response_id": "resp_02fd82f4bd3ab255016af825a867b487d0a2e9655771b01244",
+          "usage": {
+            "input_tokens": 178357,
+            "cached_input_tokens": 174592,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 154,
+            "reasoning_output_tokens": 74,
+            "total_tokens": 178511
+          },
+          "turn_token_usage": {
+            "input_tokens": 525113,
+            "cached_input_tokens": 519168,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 914,
+            "reasoning_output_tokens": 285,
+            "total_tokens": 526027
+          },
+          "thread_token_usage": {
+            "input_tokens": 2946694,
+            "cached_input_tokens": 2779904,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 16961,
+            "reasoning_output_tokens": 5031,
+            "total_tokens": 2963655
+          }
+        },
+        "resume_metadata": {
+          "dynamic_tools": {
+            "thread_id": "01a1d948-776f-7bb0-a3b2-66602a6eec79",
+            "tools": []
+          },
+          "multi_agent_version": "v2",
+          "last_started_turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0",
+          "turn_attribution": {
+            "turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0",
+            "turn_trigger": null,
+            "parent_turn_id": null,
+            "initiating_agent_path": null,
+            "root_turn_id": "01a1d952-b8da-79f3-91d4-afdb002978e0"
+          },
+          "previous_turn_settings": {
+            "model": "gpt-6-astra",
+            "comp_hash": "3000",
+            "realtime_active": false
+          }
+        }
+      }
+    }
+  }
+}

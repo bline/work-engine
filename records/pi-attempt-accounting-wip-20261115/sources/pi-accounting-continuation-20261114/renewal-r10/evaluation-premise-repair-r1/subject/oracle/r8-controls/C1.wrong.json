@@ -1,0 +1,279 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "none",
+      "kind": "exact",
+      "nano": "0"
+    },
+    "low": "0"
+  },
+  "candidates": [
+    [
+      "u",
+      "sonnetContext"
+    ],
+    [
+      "u",
+      "refusal"
+    ]
+  ],
+  "coverage": [],
+  "credits": {
+    "alternatives": [
+      "u"
+    ],
+    "mode": "single_ambiguous",
+    "selected_low": "20000000",
+    "slots": []
+  },
+  "definite_links": [],
+  "id": "result:C1",
+  "route_snapshots": {
+    "A-first": {
+      "aggregate": {
+        "high": {
+          "basis": "mixed",
+          "kind": "at_least",
+          "nano": "81000000"
+        },
+        "low": "20000000"
+      },
+      "candidates": [
+        [
+          "u",
+          "sonnetContext"
+        ],
+        [
+          "u",
+          "refusal"
+        ]
+      ],
+      "coverage": [],
+      "credits": {
+        "alternatives": [
+          "u"
+        ],
+        "mode": "single_ambiguous",
+        "selected_low": "20000000",
+        "slots": []
+      },
+      "definite_links": [],
+      "units": [
+        {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "at_least",
+            "nano": "80000000"
+          },
+          "id": "R1",
+          "low": "20000000",
+          "origins": [
+            "r1",
+            "u"
+          ]
+        },
+        {
+          "high": {
+            "basis": "proxy_reservation",
+            "kind": "at_least",
+            "nano": "1000000"
+          },
+          "id": "R2",
+          "low": "0",
+          "origins": [
+            "r2"
+          ]
+        },
+        {
+          "high": {
+            "basis": "none",
+            "kind": "at_least",
+            "nano": "0"
+          },
+          "id": "anchor",
+          "low": "0",
+          "origins": [
+            "refusal"
+          ]
+        }
+      ]
+    },
+    "B-first": {
+      "aggregate": {
+        "high": {
+          "basis": "mixed",
+          "kind": "at_least",
+          "nano": "81000000"
+        },
+        "low": "20000000"
+      },
+      "candidates": [
+        [
+          "u",
+          "sonnetContext"
+        ],
+        [
+          "u",
+          "refusal"
+        ]
+      ],
+      "coverage": [],
+      "credits": {
+        "alternatives": [
+          "u"
+        ],
+        "mode": "single_ambiguous",
+        "selected_low": "20000000",
+        "slots": []
+      },
+      "definite_links": [],
+      "units": [
+        {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "at_least",
+            "nano": "80000000"
+          },
+          "id": "R1",
+          "low": "20000000",
+          "origins": [
+            "r1",
+            "u"
+          ]
+        },
+        {
+          "high": {
+            "basis": "proxy_reservation",
+            "kind": "at_least",
+            "nano": "1000000"
+          },
+          "id": "R2",
+          "low": "0",
+          "origins": [
+            "r2"
+          ]
+        },
+        {
+          "high": {
+            "basis": "none",
+            "kind": "at_least",
+            "nano": "0"
+          },
+          "id": "anchor",
+          "low": "0",
+          "origins": [
+            "refusal"
+          ]
+        }
+      ]
+    },
+    "all-at-once": {
+      "aggregate": {
+        "high": {
+          "basis": "mixed",
+          "kind": "at_least",
+          "nano": "81000000"
+        },
+        "low": "20000000"
+      },
+      "candidates": [
+        [
+          "u",
+          "sonnetContext"
+        ],
+        [
+          "u",
+          "refusal"
+        ]
+      ],
+      "coverage": [],
+      "credits": {
+        "alternatives": [
+          "u"
+        ],
+        "mode": "single_ambiguous",
+        "selected_low": "20000000",
+        "slots": []
+      },
+      "definite_links": [],
+      "units": [
+        {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "at_least",
+            "nano": "80000000"
+          },
+          "id": "R1",
+          "low": "20000000",
+          "origins": [
+            "r1",
+            "u"
+          ]
+        },
+        {
+          "high": {
+            "basis": "proxy_reservation",
+            "kind": "at_least",
+            "nano": "1000000"
+          },
+          "id": "R2",
+          "low": "0",
+          "origins": [
+            "r2"
+          ]
+        },
+        {
+          "high": {
+            "basis": "none",
+            "kind": "at_least",
+            "nano": "0"
+          },
+          "id": "anchor",
+          "low": "0",
+          "origins": [
+            "refusal"
+          ]
+        }
+      ]
+    }
+  },
+  "units": [
+    {
+      "high": {
+        "basis": "none",
+        "kind": "exact",
+        "nano": "0"
+      },
+      "id": "R1",
+      "low": "0",
+      "origins": [
+        "r1",
+        "u"
+      ]
+    },
+    {
+      "high": {
+        "basis": "none",
+        "kind": "exact",
+        "nano": "0"
+      },
+      "id": "R2",
+      "low": "0",
+      "origins": [
+        "r2"
+      ]
+    },
+    {
+      "high": {
+        "basis": "none",
+        "kind": "exact",
+        "nano": "0"
+      },
+      "id": "anchor",
+      "low": "0",
+      "origins": [
+        "refusal"
+      ]
+    }
+  ]
+}

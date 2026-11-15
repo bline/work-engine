@@ -1,0 +1,15 @@
+{
+  "at": "2026-11-14T05:21:03.371825+00:00",
+  "state": "DESIGN_REVIEW_REQUIRED",
+  "trigger": "confirmed recurrence of protected malformed model identity invariant, inherited A07; no new rejection count assigned before native final",
+  "observation": "In isolated copy, changing only VC01 request response_model to numeric7 retains Some(15000000,15000000,true) and accepts unchanged eligible expected attempt in independent Rust usage-axis predicate. This is bounded predicate behavior, not proof whole generic corpus consumer accepts arbitrary mutation. C2 separately reports actual Python accepts; awaiting native review evidence.",
+  "probe": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/custody/summary.json",
+  "probe_summary_sha256": "4c9bfe7b855dfb0bcc4a68fd8f0ce405d92268a242b202ad30f05e44ac503499",
+  "only_delta": [
+    "tooling/spec-check/tests/independent_raw_axes.rs"
+  ],
+  "source_frozen_unchanged": true,
+  "ordinary_repair_allowed": false,
+  "next": "collect current reviews then fresh separate Astra xhigh design judgment of exact current evidence before ordinary repair; no findings closed",
+  "owner": "01a1d6e2-32ba-7701-9115-740dcb41af11"
+}

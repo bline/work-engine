@@ -1,0 +1,30 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/consistency-plan.json",
+  "plan_sha256": "bf4e11b54f8619d2acdca57fa9d88004519ace59a12d971f7a5d5a8341d11c8c",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "schema_agreement",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/consistency/schema_agreement.json",
+      "record_sha256": "70be9765bad5e6e0a03dcf5f8f9a83b4248a26ac7b257922dbfa74f8b72720b1",
+      "leftovers": 0
+    },
+    {
+      "name": "wire_corpus",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/consistency/wire_corpus.json",
+      "record_sha256": "b8f3d00f54ccd97cd76e8b9872e3a5d64d8060ed5b8cee4484161330d96106a5",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence_controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/consistency/evidence_controls.json",
+      "record_sha256": "48ec93eeebeec31d843dee8ae0a6a8d324c9ac2ac88c479e9eb88bd72b3e3d74",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

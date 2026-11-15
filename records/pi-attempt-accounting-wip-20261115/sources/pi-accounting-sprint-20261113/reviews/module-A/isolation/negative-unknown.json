@@ -1,0 +1,13 @@
+{
+ "phase": "oneshot",
+ "at": "2026-11-13T23:01:00.898599+00:00",
+ "checks": {
+  "role_host_rows_of_caller": [],
+  "children": []
+ },
+ "caller": {
+  "host": "claude",
+  "session_id": "00000000-0000-0000-0000-000000000000"
+ },
+ "refused": "role_host ledger does not show exactly one parentless claude launch row for this session"
+}

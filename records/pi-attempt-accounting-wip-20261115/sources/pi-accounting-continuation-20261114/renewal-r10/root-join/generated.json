@@ -1,0 +1,59 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "generated",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/pi-accounting-spec-check",
+    "check",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+    "--generated"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+  "env_clear": false,
+  "env_set": {
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "R10_EVIDENCE_EXECUTABLE": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/pi-accounting-spec-check",
+    "PYTHONWARNINGS": "ignore::ResourceWarning"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3587638,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/freeze/manifest.json",
+      "type": "file",
+      "mode": 292,
+      "length": 225300,
+      "sha256": "9234cec46402ebddcd6ae221c76867b038001b6022254e1ebcac3fd43d8425d6"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 78003400,
+      "sha256": "6daa4fdc82c4a0ea130e9d51d3c2aead9f1efa90581e848605fc86a5033ce5e1"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 3590145,
+  "pgid": 3590145,
+  "started_at": "2026-11-14T07:16:28.338711Z",
+  "ended_at": "2026-11-14T07:16:29.116113Z",
+  "duration_s": 0.777,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/root-join/generated.stdout",
+    "length": 495,
+    "sha256": "1b3165bcc86bde7d4f988001317578862df3598da75e12c1edfc684e3c760f1e"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/root-join/generated.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

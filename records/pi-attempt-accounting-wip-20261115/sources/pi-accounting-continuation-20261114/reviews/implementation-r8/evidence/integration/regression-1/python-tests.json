@@ -1,0 +1,46 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "python-tests",
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "validator",
+    "-p",
+    "test_*.py",
+    "-v"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-integration",
+    "SPEC_CHECK_BINARY": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-integration/debug/pi-accounting-spec-check"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3090519,
+  "inputs": [],
+  "timeout_s": 600,
+  "pid": 3093738,
+  "pgid": 3093738,
+  "started_at": "2026-11-14T04:20:48.019037Z",
+  "ended_at": "2026-11-14T04:21:04.368283Z",
+  "duration_s": 16.349,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/regression-1/python-tests.stdout",
+    "length": 3975,
+    "sha256": "840fc7b9e5adcd9ffb77933c30c98a718831471a862c7814ea2718e2e6e3ece3"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/regression-1/python-tests.stderr",
+    "length": 5130,
+    "sha256": "8c93264676717a971ebe6f90b96754d1db9324109371750e80743d729f26bd7a"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

@@ -1,0 +1,173 @@
+{
+  "subject_manifest_sha256": "21df51b69391110beb6952c0eaebfb3c5bf99ac0ef19ce78a225fd24412afb36",
+  "verdict": "CHANGES_REQUIRED",
+  "completeness": "Incomplete composed review: A1/C2/A2b remaining obligations and unlaunched B2 retained; no live reviewers",
+  "assessed_at": "2026-11-14T05:50:36.727771+00:00",
+  "findings": [
+    {
+      "id": "R8-FIN-01",
+      "severity": "P1",
+      "reports": [
+        "C2-R8-01"
+      ],
+      "state": "open",
+      "raw_fact": "P9 charged700M raw preserved; self-consistent supplied500M attempt/rollup plus commitment500M accepted",
+      "root_evidence": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/p9-undercharge/ROOT-RESULT.json",
+      "consumer": "actual Python check CLI and bound Rust corpus both exit0 with175cases374scopes",
+      "origin": "introduction_unknown",
+      "invariant": "retained raw charge cannot be erased by matching supplied outputs"
+    },
+    {
+      "id": "R8-IDENTITY-01",
+      "severity": "P2",
+      "reports": [
+        "A1-R8-02",
+        "A2a-R8-01",
+        "C2-R8-02"
+      ],
+      "prior": "A-07",
+      "state": "open_recurring",
+      "root_evidence": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/custody/summary.json",
+      "consumer": "actual Rust predicate helper accepts response_model7 with complete15M; actualPython check_attempt accepted in C2 probe; no whole-corpus identity mutant acceptance claimed",
+      "origin": "inherited",
+      "invariant": "malformed identity evidence cannot disappear and establish complete eligibility"
+    },
+    {
+      "id": "R8-COVERAGE-01",
+      "severity": "P2",
+      "reports": [
+        "A1-R8-01",
+        "C2-R8-03",
+        "C1-R8-02"
+      ],
+      "state": "open",
+      "root_evidence": "Exact native reports plus root direct accounting.rs source review; do not claim independent root execution",
+      "consumer": "Rust supplied-evidence command and Python reference checks accept wrong applicability",
+      "origin": "R8_present_exact_introduction_unknown",
+      "invariant": "C-validity and DefiniteLink apply to exact covered obligation/anchor origins"
+    },
+    {
+      "id": "R8-RESERVATION-01",
+      "severity": "P2",
+      "reports": [
+        "A1-R8-03"
+      ],
+      "prior": "A-08",
+      "state": "open_inherited",
+      "root_evidence": "A1 source-derived counterexample; no new root execution",
+      "origin": "inherited",
+      "invariant": "unique reservation counts admitted distinct evidence, not amount cardinality"
+    },
+    {
+      "id": "R8-DOC-01",
+      "severity": "P3",
+      "reports": [
+        "A2a-R8-02",
+        "C1 README overclaim"
+      ],
+      "state": "open",
+      "origin": "unestablished",
+      "invariant": "Exact qualification counts and supported-axis standing; do not claim malformed response identity/cardinality qualified before corrected actual consumers"
+    },
+    {
+      "id": "R8-NAMESPACE-01",
+      "severity": "P2",
+      "reports": [
+        "A2b-R8-01",
+        "C1-R8-04"
+      ],
+      "state": "open",
+      "raw_fact": "Subscription/admission origin groups consume dollar_ticket initialcontract/payload; C separate namespace guarantee does not apply",
+      "origin": "present_in_R8_completion_B_introduction_unestablished",
+      "consumer": "Supplied provenance scope, no changed money or executed consumer bypass claimed",
+      "integration": "C1/C2 and fresh design reviewer need explicit disposition",
+      "C1_extent": "VC08 only"
+    },
+    {
+      "id": "R8-GATE-IDENTITY-01",
+      "severity": "P2",
+      "reports": [
+        "B1-R8-01"
+      ],
+      "state": "open",
+      "invariant": "Absent/empty authority identity cannot qualify conditional release",
+      "evidence": "Actual Python gate_qualification helper accepts triple absent/empty IDs with rebound payload; no fullcorpus/live bypass claimed",
+      "origin": "unknown"
+    },
+    {
+      "id": "R8-LOW-INVENTORY-01",
+      "severity": "P2",
+      "reports": [
+        "B1-R8-02"
+      ],
+      "state": "open",
+      "invariant": "Candidate usage origins remain in complete U inventory without owned credit",
+      "evidence": "Five current exact scopes omit candidate alternatives; numeric0 remains correct; both consumers accept incomplete matching records",
+      "origin": "R8_present_exact_introduction_unknown"
+    },
+    {
+      "id": "R8-PLACEMENT-01",
+      "severity": "P2",
+      "reports": [
+        "B1-R8-03"
+      ],
+      "state": "open",
+      "invariant": "Raw lifecycle interval fixes placement independently of supplied reasons",
+      "evidence": "Current predecessor openinterval wrongly inside closedwindow; Python actual check_case plus references accepts before-to-inside consistent wrong placement",
+      "origin": "unknown"
+    },
+    {
+      "id": "R8-OWNER-01",
+      "severity": "P2",
+      "reports": [
+        "C1-R8-01"
+      ],
+      "prior": "A-05 broader semantic owner class",
+      "state": "open_recurring",
+      "invariant": "Only C-owned rules construct SettlementDecision; others forward typed witness",
+      "evidence": "Actual canonical accepts V-PRESENCE-1 constructor",
+      "origin": "exact_introduction_unknown"
+    },
+    {
+      "id": "R8-SCHEMA-DOMAIN-01",
+      "severity": "P2",
+      "reports": [
+        "C1-R8-03"
+      ],
+      "prior": "A-09 broader agreement",
+      "state": "open",
+      "invariant": "Draft2020-12 and Rust domains agree; out-of-range input controlled error",
+      "evidence": "revision2^32 standardaccept/Rustreject; origin_position2^64 standardaccept/Rustpanic101",
+      "origin": "unknown"
+    }
+  ],
+  "prior_dispositions": {
+    "A-01": "R6 explicit initial orphan policy amendment; broad confluence remains unestablished; no arbitraryraw closure",
+    "A-02": "Bounded four local values restored as supported by A1/C2; no generalfinancial closure",
+    "A-03": "C1 supports bounded anchor tuple/A3; fullrawapplicability unestablished",
+    "A-04": "C1 supports186current wire records/cited name fixes; no arbitraryconstructor/financial conformance",
+    "A-05": "S-specific forwarding supported; broader soleowner open viaC1-R8-01",
+    "A-06": "C1 ten-node impact reachability supported;19acks unestablished; digest/staleack not freshly replayed",
+    "A-07": "Recurring/open viaR8-IDENTITY-01",
+    "A-08": "Inherited/open viaR8-RESERVATION-01",
+    "A-09": "Specific StageBoundary repaired; integerdomain mismatch open viaC1-R8-03"
+  },
+  "guard": "DESIGN_REVIEW_REQUIRED",
+  "counting": "One frozenR8 implementation subject; substantive findings establish rejection. Infrastructure/context interruption not separate rejections, duplicate partitions/findings not new rounds. No history reset.",
+  "authority": "root delegated owner; no ordinary repair until exact fresh Astraxhigh design judgment and root disposition",
+  "A2b_remaining": "Applicable X branches/shared finite controls/low assertion premises/wrongoutput probes/fullcustodydigest reconciliation; original53 raw/current finances inspected.",
+  "B1_assessment": {
+    "report_sha256": "63f2a435211dab7153e908ee74fdbeefa7e34a70bd5a5ab1c70bab1f3bcf4bd4",
+    "full_report_read": true,
+    "coverage": "69 cases/70evaluations/150scopes; owner/candidate matches raw; 3P2 remain open; no whole-system clearance",
+    "identity_ack": true,
+    "no_owned_processes": true
+  },
+  "C1_assessment": {
+    "full_report_read": true,
+    "report_sha256": "2e99ec6ba7d5e1e7ebf807f9c596560b3a775a732ce29a955713a2b9aa459930",
+    "identity_ack": true,
+    "no_owned_processes": true,
+    "scope": "Complete bounded C1 declaration/interface pass; no wholeC clearance; C2 residual remains"
+  }
+}

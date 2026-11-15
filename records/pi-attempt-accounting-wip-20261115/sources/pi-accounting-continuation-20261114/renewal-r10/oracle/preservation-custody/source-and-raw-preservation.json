@@ -1,0 +1,304 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "source-and-raw-preservation",
+  "argv": [
+    "python3",
+    "-c",
+    "import hashlib,json,pathlib; b=pathlib.Path('/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10'); r=b/'subject'; old=json.loads((b/'BASELINE.json').read_text()); selected=json.loads((r/'validator/r10_admitted.json').read_text())['admissions']; files={a.get('case_file') or a['conditional_raw_file'] for a in selected.values()}; files.update(p for p in old if ('.raw' in p or p.endswith('raw.json'))); changed=[p for p in files if p in old and hashlib.sha256((r/p).read_bytes()).hexdigest()!=old[p]]; assert not changed,changed; print('Raw and source-case byte preservation:',len(files),'files unchanged')"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 3573936,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 78003400,
+      "sha256": "6daa4fdc82c4a0ea130e9d51d3c2aead9f1efa90581e848605fc86a5033ce5e1"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/corpus/cases/C3-identical-reservation-copy.json",
+      "type": "file",
+      "mode": 420,
+      "length": 15208,
+      "sha256": "9f295056222746d91d671f4aaa879ad04f514f70a36e225b677b70bd5d90c8e3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/corpus/cases/P132-FG-VC11-gated.json",
+      "type": "file",
+      "mode": 420,
+      "length": 38932,
+      "sha256": "4054b455a2c9100ae62bdcfbf92c6dd82cf5208edbe6d9af66056511425ab0eb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/corpus/cases/P9-claimed-charge-above-reservation.json",
+      "type": "file",
+      "mode": 420,
+      "length": 24737,
+      "sha256": "5623c428ae3d946f44034b8e0cda5e28a9a185171148d3190b26735d777af04b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/corpus/cases/VC01-openai-usage-settlement.json",
+      "type": "file",
+      "mode": 420,
+      "length": 14687,
+      "sha256": "1f8402b95a11a7b1b95a312535572148db557697131bb49b5a34fa668f94852c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/corpus/cases/VC07-read-failure-paired.json",
+      "type": "file",
+      "mode": 420,
+      "length": 23033,
+      "sha256": "e5326a1d47d8a62e0132c04e174531700ebd86e1443d76671460b43ea5264e6a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/corpus/cases/VC11-multi-turn-session.json",
+      "type": "file",
+      "mode": 420,
+      "length": 26096,
+      "sha256": "d2d3f95ce31a1f222fd5cbddda082f3b480a68cd7472f40ab11e855e1bcad971"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-A/DERIVATIONS.json",
+      "type": "file",
+      "mode": 420,
+      "length": 364078,
+      "sha256": "29750b3cfa65fece263a800a1e027e955686dcef95a084351e36b661e200ada8"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 15346,
+      "sha256": "6abb14701c8c5705a7dbf7cf00d3e55c7ebc43d7d30adfe14e0235de1df00c17"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/C3-identical-reservation-copy.provenance.json",
+      "type": "file",
+      "mode": 420,
+      "length": 1129,
+      "sha256": "7efb63ccc3a9ea5c1fece0d79ad0cabd2fa3a6bc17d6763145b7c2512257d88a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 7568,
+      "sha256": "ad6db6c34cd177c39d9cdf68f3f765b78634b18e6135eaa44381fae8deea0471"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/P9-claimed-charge-above-reservation.provenance.json",
+      "type": "file",
+      "mode": 420,
+      "length": 1125,
+      "sha256": "7ade01e3a7b34475ed94141b32e18d327f2490779b15c85ab8ada6cd9cf5d691"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/VC01-openai-usage-settlement.provenance.json",
+      "type": "file",
+      "mode": 420,
+      "length": 1104,
+      "sha256": "a42fcd1919778469e22425d9f50611a52b5ac243fae8c8958fd377bb1b66bee5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/VC07-read-failure-paired.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 8238,
+      "sha256": "a6d710f82db91e8378b254d0c6e1b0678342ade5648e4ae6ba5c800d9679a504"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/VC07-read-failure-paired.provenance.json",
+      "type": "file",
+      "mode": 420,
+      "length": 1092,
+      "sha256": "83cdfc65ff36f7d79348414b2ebd80b343c4678671476eb2bbc5cf919db5f1a2"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/VC11-multi-turn-session.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 15913,
+      "sha256": "10e28d415c267b02d7d105202bf6e7afa590f1b54c2f1fdb2410d64da37b2456"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/VC11-multi-turn-session.provenance.json",
+      "type": "file",
+      "mode": 420,
+      "length": 1902,
+      "sha256": "f14632ac0622724993c4a24f3ec15c1699c766a9123c272ddc7fa41e7c229e03"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-controls/VC07-conditional.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 6988,
+      "sha256": "d4d881e610941f539e1e8192a6d6c76e545ee4f1a092ceb36f999fc54e7533c6"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-controls/VC07-exact.raw.json",
+      "type": "file",
+      "mode": 420,
+      "length": 1954,
+      "sha256": "994b934d5b0d2d2eee1a02407dda62f39e617c4e03d2d6682069171e2842ae4f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-controls/VC07-unlinked.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 3711,
+      "sha256": "25c74033c7a1cb66fe107ed5ba1051fd7188c07456b1eb3617e1c058a08777ee"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/admitted-copy.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8296,
+      "sha256": "5db8ec4ddc2f353f189f4b411c92fd38cf012fd8b6ff5a0d3c84c51a8a21312b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/equal-reservations.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 7484,
+      "sha256": "06686ce1e3a401abfaaf52067858c6d4a19c46cc3d87356e1577315135e34fb9"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/equal-reservations.json",
+      "type": "file",
+      "mode": 420,
+      "length": 17773,
+      "sha256": "5493580d4b700ba1b771028dac9b35200ac105234486b89ee368c7314c416b1d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/equal-reservations.provenance.json",
+      "type": "file",
+      "mode": 420,
+      "length": 1416,
+      "sha256": "68c472cd945ed72dc60d21995a59827b4e8759d634fa121e6ef8f7dd8d6430b8"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 8798,
+      "sha256": "ab87fb782beab54657bf3ef6a8d607b0f2786f0998303370ccfd85c9ae5216fe"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json",
+      "type": "file",
+      "mode": 420,
+      "length": 24582,
+      "sha256": "a0d5d433ee52b82c4403463d2477ec33a2d8c404c8c2fad1c83b55bbafcc9175"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1435,
+      "sha256": "cb2f7ffe731d72b132ec8a0a4361099fbdda5726185c8b2d97d16a6969664f70"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 6606,
+      "sha256": "19b04106eb47d19c80554a858e09744d47db084de400666e8b372838b702d7f5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json",
+      "type": "file",
+      "mode": 420,
+      "length": 17521,
+      "sha256": "83a9db4b9ed663d4e81369ffac04e57f462e06caa3fd7dd7b6fc60ff11b54e32"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1336,
+      "sha256": "9ecdffd442ac6bc84d1a482bd61860f9db5c4f5ad8ab61c47a7fc3a8a8255278"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/same-origin.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8971,
+      "sha256": "cf4f8e7179af43d7dddfa7e3aa5086b3e151f05ff489be30a53659459da0a6de"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/claims.json",
+      "type": "file",
+      "mode": 420,
+      "length": 12467,
+      "sha256": "b34dcbd04918755ec4cf1c51cc0f4f993175fef21371176c0fb33d0182db8603"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/spec/accounting.schema.json",
+      "type": "file",
+      "mode": 420,
+      "length": 31637,
+      "sha256": "84a229afbe21a8e47c21da0c28a0b9b3a3392960411b5a96e9a9258cdbcab6e7"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/tooling/spec-check/tests/independent_raw_axes.rs",
+      "type": "file",
+      "mode": 420,
+      "length": 84072,
+      "sha256": "7666a3d5f85d639429851765253b76a57deb67af5211a10c2ed8101cf6fc5a2c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/validator/r10_admitted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 491197,
+      "sha256": "d45e96d074b77b4c147a47879f8e7de9fcd86e6ef7fc2675e34da4611a0f4e71"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/validator/r9_pilot.py",
+      "type": "file",
+      "mode": 420,
+      "length": 22842,
+      "sha256": "06abec6fb484263c46e328d8d226e58dd85d8682c9b71838d7315e12d76618c0"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/validator/test_r10_qualification.py",
+      "type": "file",
+      "mode": 436,
+      "length": 6888,
+      "sha256": "c21efd9a96b888ef7bf12f6cbc0a86ce672f5923a0c774740c766e7824ca0182"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/validator/validate_corpus.py",
+      "type": "file",
+      "mode": 420,
+      "length": 107343,
+      "sha256": "e5b37e0bdb0ea50cb0b7e939ad46f593f38fb37cc0e5070f47f7f379dd8887ab"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 3573972,
+  "pgid": 3573972,
+  "started_at": "2026-11-14T07:13:11.959975Z",
+  "ended_at": "2026-11-14T07:13:12.059064Z",
+  "duration_s": 0.099,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/preservation-custody/source-and-raw-preservation.stdout",
+    "length": 58,
+    "sha256": "f8fdd355532d9857d7ef4bc146b80c4c67b7eba9a98ac7ada23fc25a11b555c3"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/preservation-custody/source-and-raw-preservation.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

@@ -1,0 +1,41 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "rust-r10-controls",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+    "r10_",
+    "--nocapture"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+  "env_clear": false,
+  "env_set": {
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3547181,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 3547789,
+  "pgid": 3547789,
+  "started_at": "2026-11-14T07:07:02.042701Z",
+  "ended_at": "2026-11-14T07:07:02.970924Z",
+  "duration_s": 0.928,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/controls-custody/rust-r10-controls.stdout",
+    "length": 11109,
+    "sha256": "f6419acf1606a831a07514251d55751aa1455404b1be60e6c47fb6bd714ea85a"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/controls-custody/rust-r10-controls.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

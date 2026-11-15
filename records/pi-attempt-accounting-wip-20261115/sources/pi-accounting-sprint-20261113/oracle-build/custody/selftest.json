@@ -1,0 +1,39 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "selftest",
+  "argv": [
+    "python3",
+    "validator/validate_corpus.py",
+    "selftest",
+    "corpus",
+    "oracle/rates"
+  ],
+  "cwd": "/home/bline/cbm-work/p136-s1r6/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 2441892,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 2441962,
+  "pgid": 2441962,
+  "started_at": "2026-11-13T22:30:48.426039Z",
+  "ended_at": "2026-11-13T22:30:58.348795Z",
+  "duration_s": 9.923,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/custody/selftest.stdout",
+    "length": 5516,
+    "sha256": "f5ac73ff001685dd3c771a388c33caf84038a8796240c6280a0c7482681660c2"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/custody/selftest.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

@@ -1,0 +1,1 @@
+{"returncode": 2, "stage": "plan admission before any child spawn", "error": "unknown per-step timeout_s key", "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ROOT-JOIN-PLAN-FAILED-1.json", "correction": "remove optional unrecognized key; preserve same14steps/inputs", "implementation_rejection": false}

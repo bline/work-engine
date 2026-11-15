@@ -1,0 +1,12 @@
+{
+  "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T03-21-05-01a1d993-35ca-7293-a431-38daa0b9cdd6.jsonl",
+  "finals": [
+    {
+      "line": 379,
+      "text": "Bounded ledger delivered; financial derivation remains incomplete.\n\n[RESULT.md](/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/full-realization-r1/derivation-stage/RESULT.md) records:\n\n- All 175 cases and 374 required scopes accounted for; universe matches baseline.\n- Six partial authored arguments; zero whole cases or scope lows fully derived.\n- 1,046 financial family entries and 374 scope lows UNEXAMINED; four namespace claims REQUIRED_UNMET.\n- All 172 payload fragments lexically located; independent authority remains unestablished.\n- All 11 findings and full S1/current ABC remain OPEN.\n- All 967 source files unchanged against accepted manifest `5e594cac`; no source edits, builds, consumer runs, children or live owned processes.\n\nMandatory own-session refresh completed. New applied settings at rollout line 314 preserve `gpt-6.1-sol/high/default`; pinned check delivered 42,808 tokens, epoch 1. Failed-listener limitation remains recorded.\n\nFinal SHA-256 bindings:\n\n```text\nLEDGER.json\n56d48f661c32bd2dc7517a3541ce5ccdddbd7be572b3e7a64e009a24e5ac44df\nRESULT.md\nb925840eee5491a69899fb21dd607f44c1c09d4e1a39919940106f085249a07a\nCONTINUATION.md\n8e7b2ae16ba25a2a0ecc73429a00478d42cc54741ecf78ebfaddff8fb7883a8b\nARTIFACT-INDEX.json\n891ef3251f71975792e648a7b9780cc0d962816d56bc4bc1c982c2ff89460cdd\n```\n\nRoot retains sole collection, interface admission and acceptance authority.",
+      "chars": 1407,
+      "sha256": "1e4fb9dfe314ebc0a7579f71e089dcb009c8d84dc7db36bf99f28d78c7df590c"
+    }
+  ],
+  "full_collected_and_read": true
+}

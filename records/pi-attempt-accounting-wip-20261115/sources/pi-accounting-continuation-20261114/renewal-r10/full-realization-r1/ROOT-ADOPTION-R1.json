@@ -1,0 +1,27 @@
+{
+  "status": "ADOPTED_FIRST_STAGE_DERIVATION_ONLY",
+  "root": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "plan_sha256": "d1e93793052f2c07397654d10cca2188e0fad1f06c920c5d9dcfc139a4563741",
+  "review_sha256": "8c3da9d6ab2559ebd289d744b09acb1a7ce57ad07921a65bbb896eacaeb1ac44",
+  "whole_report_collected_read": true,
+  "guard_history": "/home/bline/cbm-work/p134-module-a/ARCHITECTURE-GUARD.md entire history retained; no new executed rejection",
+  "permitted_next_scope": "full175/374 independent derivation and causal-obligation ledger only in derivation-stage; shared typed interfaces proposal only; no source/output correction or primitives admitted yet",
+  "classification": "small narrowing of prospective stage within original objective, no additions",
+  "authority": "original ownership/rootrollout77 and renewed100/rootrollout7843",
+  "budget": {
+    "current_complete_proxy": 64.9468576,
+    "remaining": 35.0531424,
+    "next_worker_cap": 3,
+    "holds": {
+      "future_materialization": 3,
+      "qualification": 2,
+      "full_review": 20,
+      "closure": 6
+    },
+    "total_future": 34,
+    "margin": 1.0531424,
+    "tail_unsettled": true
+  },
+  "meaning": "Support credible stage, not full feasibility or finding closure. Unknown truths stay REQUIRED/UNMET; successor wire review covers all resulting records, not186 ceiling; later sourcework requires settled interfaces/current cost.",
+  "full_S1": "175/all applicable374/all11/currentABC OPEN"
+}

@@ -1,0 +1,222 @@
+{
+  "assertions": [
+    {
+      "claim_id": "F1",
+      "expected_fields_or_relations": {
+        "/aggregate": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "low": "15000000"
+        },
+        "/candidates": [
+          [
+            "s",
+            "s"
+          ]
+        ],
+        "/coverage": [
+          {
+            "id": "coverage:r+s",
+            "origins": [
+              "r",
+              "s"
+            ],
+            "source": "complete usage15M plus actual charge15M",
+            "validity": "C-validity:r+s"
+          }
+        ],
+        "/credits": {
+          "alternatives": [
+            "s"
+          ],
+          "mode": "single_ambiguous",
+          "selected_low": "15000000",
+          "slots": []
+        },
+        "/definite_links": [],
+        "/route_snapshots/A-first/aggregate": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "low": "15000000"
+        },
+        "/route_snapshots/A-first/candidates": [
+          [
+            "s",
+            "s"
+          ]
+        ],
+        "/route_snapshots/A-first/coverage": [
+          {
+            "id": "coverage:r+s",
+            "origins": [
+              "r",
+              "s"
+            ],
+            "source": "complete usage15M plus actual charge15M",
+            "validity": "C-validity:r+s"
+          }
+        ],
+        "/route_snapshots/A-first/credits": {
+          "alternatives": [
+            "s"
+          ],
+          "mode": "single_ambiguous",
+          "selected_low": "15000000",
+          "slots": []
+        },
+        "/route_snapshots/A-first/definite_links": [],
+        "/route_snapshots/A-first/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "exact",
+              "nano": "15000000"
+            },
+            "id": "resolved:r+s",
+            "low": "15000000",
+            "origins": [
+              "r",
+              "s"
+            ]
+          }
+        ],
+        "/route_snapshots/B-first/aggregate": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "low": "15000000"
+        },
+        "/route_snapshots/B-first/candidates": [
+          [
+            "s",
+            "s"
+          ]
+        ],
+        "/route_snapshots/B-first/coverage": [
+          {
+            "id": "coverage:r+s",
+            "origins": [
+              "r",
+              "s"
+            ],
+            "source": "complete usage15M plus actual charge15M",
+            "validity": "C-validity:r+s"
+          }
+        ],
+        "/route_snapshots/B-first/credits": {
+          "alternatives": [
+            "s"
+          ],
+          "mode": "single_ambiguous",
+          "selected_low": "15000000",
+          "slots": []
+        },
+        "/route_snapshots/B-first/definite_links": [],
+        "/route_snapshots/B-first/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "exact",
+              "nano": "15000000"
+            },
+            "id": "resolved:r+s",
+            "low": "15000000",
+            "origins": [
+              "r",
+              "s"
+            ]
+          }
+        ],
+        "/route_snapshots/all-at-once/aggregate": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "low": "15000000"
+        },
+        "/route_snapshots/all-at-once/candidates": [
+          [
+            "s",
+            "s"
+          ]
+        ],
+        "/route_snapshots/all-at-once/coverage": [
+          {
+            "id": "coverage:r+s",
+            "origins": [
+              "r",
+              "s"
+            ],
+            "source": "complete usage15M plus actual charge15M",
+            "validity": "C-validity:r+s"
+          }
+        ],
+        "/route_snapshots/all-at-once/credits": {
+          "alternatives": [
+            "s"
+          ],
+          "mode": "single_ambiguous",
+          "selected_low": "15000000",
+          "slots": []
+        },
+        "/route_snapshots/all-at-once/definite_links": [],
+        "/route_snapshots/all-at-once/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "exact",
+              "nano": "15000000"
+            },
+            "id": "resolved:r+s",
+            "low": "15000000",
+            "origins": [
+              "r",
+              "s"
+            ]
+          }
+        ],
+        "/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "exact",
+              "nano": "15000000"
+            },
+            "id": "resolved:r+s",
+            "low": "15000000",
+            "origins": [
+              "r",
+              "s"
+            ]
+          }
+        ]
+      },
+      "negative_control_refs": [
+        "F1.wrong.json"
+      ],
+      "raw_derivation_refs": [
+        "PLAN6 and root release amendment: complete eligibility may arrive last; source-original order unchanged"
+      ]
+    }
+  ],
+  "authored_by": "oracle01a1d81b; fixed literal assertions separately from supplied records",
+  "exact_subject_refs": [
+    "result:F1"
+  ],
+  "id": "expected:F1",
+  "kind": "accounting_expected_assertion",
+  "policy_refs": [
+    "PLAN43d0e7c8"
+  ],
+  "raw_subject_ref": "sha256:dcb1c3ae97e82ac6e67c185b9e406632f716a50bcbdf8986958e9e0a8250cdb7",
+  "version": "1.7-s1"
+}

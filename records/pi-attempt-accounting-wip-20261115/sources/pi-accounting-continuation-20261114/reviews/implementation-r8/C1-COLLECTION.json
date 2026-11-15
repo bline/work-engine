@@ -1,0 +1,15 @@
+{
+  "session_id": "01a1d890-d020-74a0-a7d5-ed4a2902dd2f",
+  "turn_id": "01a1d895-7340-7a73-b259-eea2b76e3145",
+  "status": "completed",
+  "native_rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-38-51-01a1d890-d020-74a0-a7d5-ed4a2902dd2f.jsonl",
+  "native_line": 212,
+  "native_line_sha256": "4ffa3e42667df2b650e10b82de03a77193e6fee174806ca47a200cdd5044af3b",
+  "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/C1-REVIEW.md",
+  "report_sha256": "2e99ec6ba7d5e1e7ebf807f9c596560b3a775a732ce29a955713a2b9aa459930",
+  "collected_at": "2026-11-14T05:49:51.253246+00:00",
+  "collection": "Native wait_threads latest completed turn observed; exact native final line212 sealed; initial launch turn interrupted by native human continue before final",
+  "assessment": "full_report_read_changes_required",
+  "identity_binding": "Acknowledged in exact final",
+  "launch_turn_id": "01a1d890-d07d-7ad1-a6ac-889002d9ffc4"
+}

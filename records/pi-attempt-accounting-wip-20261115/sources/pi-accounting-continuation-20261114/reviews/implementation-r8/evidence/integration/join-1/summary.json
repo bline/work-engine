@@ -1,0 +1,40 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/join-plan.json",
+  "plan_sha256": "4fa94b0da3b2636e41c7c02d9cca30563a15e86bd6317561077a9e025ce1170f",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "joined-python",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/join-1/joined-python.json",
+      "record_sha256": "a1b3a164206c35227ecab551e599df01582f5bf8a5c992137452061f9b9bcc18",
+      "leftovers": 0
+    },
+    {
+      "name": "joined-rust",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/join-1/joined-rust.json",
+      "record_sha256": "c5991d14caba918de379a6527cfd9e93a951d4ba83caad8ace145d2d94f61a94",
+      "leftovers": 0
+    },
+    {
+      "name": "selftest",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/join-1/selftest.json",
+      "record_sha256": "5c494bb84f53391d61e5cd2d760c604a5d9a8c3a3397d9f33b22e7ecf1149487",
+      "leftovers": 0
+    },
+    {
+      "name": "revisions",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/join-1/revisions.json",
+      "record_sha256": "7dce4fc1f5647f43d4bfe172ab88f25db888461d4ff355280a853ce1372c80df",
+      "leftovers": 0
+    }
+  ],
+  "not_run": [
+    "sabotage",
+    "generated"
+  ]
+}

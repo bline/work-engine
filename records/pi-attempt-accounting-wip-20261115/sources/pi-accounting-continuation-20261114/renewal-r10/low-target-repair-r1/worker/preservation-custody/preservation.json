@@ -1,0 +1,44 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "preservation",
+  "argv": [
+    "python3",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/preservation.py"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 3734316,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/freeze/manifest.json",
+      "type": "file",
+      "mode": 292,
+      "length": 225310,
+      "sha256": "d60017dac28aa3a831cf13db520af94d8224b53f70b12229240bff8dab30ec61"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 3734318,
+  "pgid": 3734318,
+  "started_at": "2026-11-14T08:41:48.842257Z",
+  "ended_at": "2026-11-14T08:41:49.126787Z",
+  "duration_s": 0.285,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/preservation-custody/preservation.stdout",
+    "length": 152,
+    "sha256": "e033dda680597df6eb4482bb44a8f8a4f51f42ddd3a1ae04678f3c06d1da4ce8"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/preservation-custody/preservation.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

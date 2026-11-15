@@ -1,0 +1,30 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/JOIN.plan.json",
+  "plan_sha256": "23b5e624417eb9f30f43b006eedf6dc111cce7ed9780b299937a4cd65583e850",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/join-custody/build.json",
+      "record_sha256": "6454eba66ef4a8c827a3cba8f004dc957c28e42c75e14ee6f8026777296cdbc6",
+      "leftovers": 0
+    },
+    {
+      "name": "joined-rust-positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/join-custody/joined-rust-positive.json",
+      "record_sha256": "31087c91492ed53793d907190db310936d9f76850d596f891e129cf3a3f0ef66",
+      "leftovers": 0
+    },
+    {
+      "name": "python-main-pilot",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/join-custody/python-main-pilot.json",
+      "record_sha256": "11421c3b70dd2437379b579055be712049e5a1828039d6b576602a1bb1f8d798",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

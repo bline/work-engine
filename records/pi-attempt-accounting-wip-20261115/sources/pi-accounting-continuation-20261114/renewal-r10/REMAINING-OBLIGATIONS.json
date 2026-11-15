@@ -1,0 +1,146 @@
+{
+  "status": "prospective obligation map only; no implementation or migration admission",
+  "authority": "Same renewed human100/futuredevelopment, original acceptance remains; planreview recommends staged pilot only and requires nextscope bound separately",
+  "source": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/ROOT-FINDING-DISPOSITION.json",
+  "source_sha256": "68a40698edf22f5881b75c094618f32a3173be3adf02a3637a5b083b41bdd080",
+  "historical_findings": [
+    {
+      "id": "R8-FIN-01",
+      "severity": "P1",
+      "state": "OPEN",
+      "required_consequence": "retained raw charge cannot be erased by matching supplied outputs",
+      "standing": "Exact R10 four-claim review may supply bounded relevant evidence; no automatic closure",
+      "reports": [
+        "C2-R8-01"
+      ]
+    },
+    {
+      "id": "R8-IDENTITY-01",
+      "severity": "P2",
+      "state": "OPEN",
+      "required_consequence": "malformed identity evidence cannot disappear and establish complete eligibility",
+      "standing": "Exact R10 four-claim review may supply bounded relevant evidence; no automatic closure",
+      "reports": [
+        "A1-R8-02",
+        "A2a-R8-01",
+        "C2-R8-02"
+      ]
+    },
+    {
+      "id": "R8-COVERAGE-01",
+      "severity": "P2",
+      "state": "OPEN",
+      "required_consequence": "C-validity and DefiniteLink apply to exact covered obligation/anchor origins",
+      "standing": "Exact R10 four-claim review may supply bounded relevant evidence; no automatic closure",
+      "reports": [
+        "A1-R8-01",
+        "C2-R8-03",
+        "C1-R8-02"
+      ]
+    },
+    {
+      "id": "R8-RESERVATION-01",
+      "severity": "P2",
+      "state": "OPEN",
+      "required_consequence": "unique reservation counts admitted distinct evidence, not amount cardinality",
+      "standing": "Exact R10 four-claim review may supply bounded relevant evidence; no automatic closure",
+      "reports": [
+        "A1-R8-03"
+      ]
+    },
+    {
+      "id": "R8-DOC-01",
+      "severity": "P3",
+      "state": "OPEN",
+      "required_consequence": "Exact qualification counts and supported-axis standing; do not claim malformed response identity/cardinality qualified before corrected actual consumers",
+      "standing": "Outside current four-claim implementation review acceptance; successor work required",
+      "reports": [
+        "A2a-R8-02",
+        "C1 README overclaim"
+      ]
+    },
+    {
+      "id": "R8-NAMESPACE-01",
+      "severity": "P2",
+      "state": "OPEN",
+      "required_consequence": "Subscription/admission origin groups consume dollar_ticket initialcontract/payload; C separate namespace guarantee does not apply",
+      "standing": "Outside current four-claim implementation review acceptance; successor work required",
+      "reports": [
+        "A2b-R8-01",
+        "C1-R8-04"
+      ]
+    },
+    {
+      "id": "R8-GATE-IDENTITY-01",
+      "severity": "P2",
+      "state": "OPEN",
+      "required_consequence": "Absent/empty authority identity cannot qualify conditional release",
+      "standing": "Outside current four-claim implementation review acceptance; successor work required",
+      "reports": [
+        "B1-R8-01"
+      ]
+    },
+    {
+      "id": "R8-LOW-INVENTORY-01",
+      "severity": "P2",
+      "state": "OPEN",
+      "required_consequence": "Candidate usage origins remain in complete U inventory without owned credit",
+      "standing": "Outside current four-claim implementation review acceptance; successor work required",
+      "reports": [
+        "B1-R8-02"
+      ]
+    },
+    {
+      "id": "R8-PLACEMENT-01",
+      "severity": "P2",
+      "state": "OPEN",
+      "required_consequence": "Raw lifecycle interval fixes placement independently of supplied reasons",
+      "standing": "Outside current four-claim implementation review acceptance; successor work required",
+      "reports": [
+        "B1-R8-03"
+      ]
+    },
+    {
+      "id": "R8-OWNER-01",
+      "severity": "P2",
+      "state": "OPEN",
+      "required_consequence": "Only C-owned rules construct SettlementDecision; others forward typed witness",
+      "standing": "Outside current four-claim implementation review acceptance; successor work required",
+      "reports": [
+        "C1-R8-01"
+      ]
+    },
+    {
+      "id": "R8-SCHEMA-DOMAIN-01",
+      "severity": "P2",
+      "state": "OPEN",
+      "required_consequence": "Draft2020-12 and Rust domains agree; out-of-range input controlled error",
+      "standing": "Outside current four-claim implementation review acceptance; successor work required",
+      "reports": [
+        "C1-R8-03"
+      ]
+    }
+  ],
+  "remaining_reviews": {
+    "A1": "full linked financial-premise verification69cases, required negativefixture meaning/execution, full relevantcustody and composedcoverage",
+    "C2": "externalreference/payloadfragment closure, sabotage intendedreasons,342Breversals/otherhistorical reversals, authoringhistory attestation, remaininglibrary/dependency, rootprobeintegration",
+    "A2b": "Applicable X branches/shared finite controls/low assertion premises/wrongoutput probes/fullcustodydigest reconciliation; original53 raw/current finances inspected.",
+    "B2": "unlaunched remaining attribution/admission/composition coverage beyond B1 partition; original packets own exact range"
+  },
+  "full_subject_requirements": [
+    "175cases/all applicable374scopes with independent raw-policy assertions consumed in actual Python and independent Rust",
+    "actual Python check/selftest/revisions/sabotage",
+    "Rust static/corpus/independent_r8_controls/full independent_raw_axes",
+    "generated/schema/wire/evidence standardDraft2020-12 agreement including integerrepresentations/maxima/overflow",
+    "actual dependency invalidation and ackstanding",
+    "exact current complete A/B/C review and root findingdispositions"
+  ],
+  "next_scope_decision": "Await exact R10 review. If accepted bounded, form separately bound full-realization candidate under current plans and obtain appropriate design admission; if serious recurrence, fresh Astraxhigh design before ordinaryrepair. Do not simply extend pilot registration or claim wholeS1.",
+  "bounded_pilot_disposition": {
+    "root_acceptance": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/ROOT-ACCEPTANCE.json",
+    "subject": "5e594cac",
+    "original_r3": "3RESOLVED_BOUNDED; no global historical closure",
+    "eleven_historical": "allOPEN",
+    "next": "separately bind and design-admit full realization within same100; no automatic migration"
+  }
+}

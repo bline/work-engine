@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/validation-plan.json",
+  "plan_sha256": "407990f4cfb8c9fd557dbd006d3f5d837b3caf267a4d266cd7ac05f9e7aa2f60",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "tests",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation-r2/tests.json",
+      "record_sha256": "fd1d8ea80d0a29d874539b4a1c18c6b52c6ee329bbb40be9b6834d974cc928ae",
+      "leftovers": 0
+    },
+    {
+      "name": "render",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation-r2/render.json",
+      "record_sha256": "5d9716ba9b53d8751fbd1d99ab0844f0b6c1ea081cde36e3ff91eb17684a8057",
+      "leftovers": 0
+    },
+    {
+      "name": "check",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation-r2/check.json",
+      "record_sha256": "e6af3aad6d5313714861ec483b23ebd26a91c9476c0e6300207ae3e2d8afe72f",
+      "leftovers": 0
+    },
+    {
+      "name": "schema-agreement",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation-r2/schema-agreement.json",
+      "record_sha256": "4aaa2d19f3ea366b0f58ab29f2d4b3192b084af2631274932a0f9bdad80ab3a6",
+      "leftovers": 0
+    },
+    {
+      "name": "actual-wire",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation-r2/actual-wire.json",
+      "record_sha256": "d807c4fb735d23c823cfbccd6a0d6c2cefea928c11ba444c69d5c7b1405fdf75",
+      "leftovers": 0
+    },
+    {
+      "name": "independent-evidence",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/final-validation-r2/independent-evidence.json",
+      "record_sha256": "afe91ba1c989a775420e999d70bd0f0f314a7943838b4a96834f311f4c9ef830",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

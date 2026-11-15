@@ -1,0 +1,20 @@
+{
+  "applicability": "applicable",
+  "basis": "Present normative reviewer role instructions; not an anticipatory proposal.",
+  "subject": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/BRIEF-TEMPLATE.md",
+  "sha256": "47b7954d9ce008e11ee9dcdd59be9c45c341ae158106c56c8eb9d9961329a3f2",
+  "inspected": "complete brief template, lines1-21; neighboring REVIEW-PLAN.md and root policy authority",
+  "role": "root advisory self-review, no independence claim",
+  "outcome": "no material instruction-contract finding",
+  "decisive_evidence": [
+    "Read-only one-response and packet completeness duties preserve exact bounded review/custody under existing review contract.",
+    "Reviewer may challenge canonical rules, test passes, author claims and design boundaries; findings require concrete consequence.",
+    "Root policy is the current owner decision, not independent semantic evidence; missing evidence and inherited origin remain expressible.",
+    "No implementation mutation, workflow approval or live gate authority granted."
+  ],
+  "limitations": [
+    "Template is not a final frozen packet; module selection, source completeness and final prompt must be assessed after construction.",
+    "No certification of financial correctness, architecture or independent review."
+  ],
+  "skill": "/home/bline/.codex/skills/agent-instruction-review/SKILL.md"
+}

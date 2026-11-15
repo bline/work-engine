@@ -1,0 +1,9 @@
+{
+  "admitted_distinctness": "A and B independently distinct producer incarnations",
+  "bytes": "identical reservation500M",
+  "initial_copy_assumption": "later contradicted by independent incarnation bindings",
+  "origins": [
+    "A",
+    "B"
+  ]
+}

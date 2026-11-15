@@ -1,0 +1,13 @@
+{
+  "at": "2026-11-14T08:17:19.015960+00:00",
+  "verdict": "ADOPT_DESIGN_REJECTION_REVISE_LOCAL_PLAN",
+  "report_sha256": "ebf462affed78e042d6ceca4f4bf3bba8947ad52baac1d1b4771142f1ab76e5e",
+  "prior_plan": "0d55823096785735c39ee3904d13b8675b2eaf818b70661c7e1fe1b3771c9d9d",
+  "source": "34a2ddba957d2ae4bdcdfa30454641cbb29d59ee780141c518e9e93d95895d61",
+  "root_confirmation": "Exact V-1/V-6 and two model7 expected valuations/low assertions inspected; malformed numeric identity gives no supported minimum, known identity pricedhigh15M retained. Source-derived, no corrected reducer execution.",
+  "origin": "inherited, repair regression not established",
+  "gate": "REVISE_LOCAL_PLAN; no source writes or implementation admitted",
+  "revised_plan_sha256": "727ad3974d492cbd523859b68bdfc0be8664dc5448277832565d17652d082904",
+  "history": "all3R3+11historical OPEN; no implementation rejection increment for design review, no history reset",
+  "collection": "whole8031char nativefinal collected; reviewer no commands/processes/children outstanding"
+}

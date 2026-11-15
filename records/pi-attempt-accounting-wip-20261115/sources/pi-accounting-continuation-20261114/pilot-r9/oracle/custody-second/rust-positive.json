@@ -1,0 +1,40 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "rust-positive",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+    "r9_registered_actual_subject_qualification",
+    "--nocapture"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/target",
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3414488,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 3415022,
+  "pgid": 3415022,
+  "started_at": "2026-11-14T06:07:47.352857Z",
+  "ended_at": "2026-11-14T06:07:47.368864Z",
+  "duration_s": 0.016,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-second/rust-positive.stdout",
+    "length": 244,
+    "sha256": "c76682f4d32f5eb084e4b593ba05bc2d519814c8172c5cf76e7ed5a560218f5a"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-second/rust-positive.stderr",
+    "length": 274,
+    "sha256": "2b07f237a1ecc09e01bcd4c4c1db7eee1ebb5b9601537ddbf75d5da2a44d8940"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

@@ -1,0 +1,84 @@
+# Architecture guard: Pi attempt accounting (financial semantics)
+
+**Authority:** owner rule of 2026-11-13, given during P1.34: escalate on architectural blindness. This file is
+append-only. It applies to every later repair or implementation dispatch for this subsystem, whether a contract
+revision, a reader repair or S2a. Product enforcement is not claimed; this is a coordinator dispatch control.
+
+## Rule
+
+| Signal | Required response |
+|---|---|
+| First independent rejection with serious defects (P1 or blocking P2) | Record an architectural-risk warning; allow one bounded ordinary repair |
+| Second rejection after a repair, within the same subsystem | Block ordinary repair; require an Astra xhigh architectural/design review first |
+| Confirmed serious regression caused by a repair, or recurrence of the same invariant violation | Escalate to design review immediately, regardless of count |
+
+Further rules:
+- Infrastructure interruptions (Flex capacity, reviewer budget stops, transport, upstream cutoffs) are recorded but are
+  not rejections. Findings confirmed offline from such a run stay evidence.
+- Inherited defects count toward recurring-boundary evidence. An "inherited" label never removes evidence.
+- Renaming a subsystem, revision or finding does not reset history.
+- A triggered gate permits review, diagnosis and preservation. It forbids ordinary repair dispatch and implementation.
+
+## Subsystem and invariant identity
+
+- **Subsystem:** the financial semantics of Pi attempt accounting, meaning settlement, reservation, valuation and
+  exposure. Two implementations of the same responsibility count together: the Python ledger reader (A1 to A1.3.4) and
+  the S1 contract for the pure Rust reducer (revisions 1 to 5).
+- **Invariant I-1:** uncertain, incomplete, rejected or diagnostic evidence never lowers conservative exposure or a
+  retained reservation. In S1 this is F3 / X-2 and F13.
+
+## Evidence history (from round reports; verdicts as recorded there)
+
+| Round | Subject | Outcome | Counts as | I-1 evidence |
+|---|---|---|---|---|
+| P1.9 | Unit A (reader) | REJECT, 5 P1 | rejection 1 (reader) | — |
+| P1.11 | A1 | REJECT, 5 P1 | rejection after repair | A1-01: `upstream_error` and other non-request settlements erase reservations (inherited); A1-06: cacheWrite lowers a charge |
+| P1.13 | A1.1 | REJECT, 5 P1 | rejection after repair | not established here |
+| P1.15 | A1.2 | REJECT, 6 P1 | rejection after repair | not established here |
+| P1.17 | A1.3 | incomplete (T-1 429 race) | infrastructure, not a rejection | — |
+| P1.19 | A1.3 | incomplete (budget stop); C1/C2 P1 confirmed offline | infrastructure; findings stay evidence | not established here |
+| P1.21 | A1.3.1 | REJECT | rejection after repair | not established here |
+| P1.23 | A1.3.2 | REJECT | rejection after repair | not established here |
+| P1.25 | A1.3.3 | REJECT; N-01 P1 **regression caused by the A1.3.3 repair** | regression trigger | N-01: an identity issue trips a reservation fallback and lowers the high bound (0.05 against 0.08) |
+| P1.27 | architecture | design change to a pure Rust reducer from a normative contract (owner-approved) | design escalation (not an Astra xhigh review) | — |
+| P1.29 | S1 revision 2 | partial REJECT (Astra xhigh, cut at 900 s), 12 P1 | rejection 1 (contract) | not established in this file |
+| P1.32 | S1 revision 4 (after the revision-3 repair) | Module A REJECT, 4 P1 | **rejection 2 after repair** | A-01: `Valid(Usage)` without a usage bound lowers the retained reservation, 500M → 30M |
+| P1.33 | revision 5 | ordinary repair cycle (owner-authorised before this rule existed) | — | — |
+
+## Trigger state at P1.34 launch: TRIGGERED
+
+- **Rule 2:** two rejections of the S1 contract, with a repair (revision 3) between them. On the reader there were
+  repeated rejections after repairs.
+- **Rule 3:** I-1 recurred across both implementations (A1-01, N-01, A-01), and N-01 was a repair regression.
+- The P1.27 design change was a redesign, but not the Astra xhigh architectural review the rule requires. I-1 recurred
+  after it.
+
+## Consequences
+
+- **P1.34 Module A is permitted.** It is a review: one request, high effort, owner-authorised.
+- **No ordinary revision-6 repair cycle** until a fresh Astra xhigh architectural/design review has assessed the
+  contract's structure against this history.
+- **S2a needs a recorded design-review decision bound to this history** before it starts, whatever Module A concludes.
+  Narrow acceptance or passing tests cannot close the risk on their own.
+- **Not authorised here:** the architectural review itself needs owner authorisation.
+
+## Appended 2026-11-13T17:20Z after P1.34 Module A (sealed `d515e5f3…`)
+
+| Round | Subject | Outcome | Counts as | I-1 evidence |
+|---|---|---|---|---|
+| P1.34 | S1 revision 5 (after the P1.33 repair) | Module A REJECT, 3 P1 and 6 P2, all reproduced; reviewer assessment `local_corrections` | **rejection 3 after repair** | A-01: §6.2 lowers error-status exposure with supported usage, a **regression caused by the P1.33 repair** (revision 4 §6.2 and §8 agreed). A-02: N03 releases R = 300M on a contradicted identity (inherited; the P1.33 rule was not propagated) |
+
+**Trigger state: TRIGGERED, reinforced.**
+- Rule 2: a third rejection after repair.
+- Rule 3: a confirmed repair regression (A-01), and I-1 recurring a fourth time (A-01, A-02).
+- The reviewer's `local_corrections` assessment is evidence for the architectural review. It does not close the gate.
+- Coordinator hypothesis for that review: repairs fail to propagate across multiple statements of one rule (prose,
+  tables, corpus, validator, labels).
+- **Ordinary revision-6 repair stays blocked** until an Astra xhigh architectural/design review, which is not yet
+  authorised.
+
+## Appended2026-11-13 after P1.35 Astra xhigh architecture review
+
+Completed review e60d2cb6, sealed response01e3c3cc8, seal816788d4; one request, no infrastructure failure. Verdict **REVISE_SPECIFICATION_ARCHITECTURE**, primary B; retain financial model, revise normative ownership and independent qualification. Root accepts bounded canonical C-K consolidation plus independent raw-evidence oracle and trusted gate interface. Authority: user explicitly delegated ownership and future development to root01a1d6e2. Full decision: `/home/bline/cbm-work/pi-accounting-sprint-20261113/ARCHITECTURE-DECISION.md`.
+
+**State: DESIGN_REMEDIATION_REQUIRED.** Architecture-led work is permitted within the decision; another ordinary manually synchronized repair is not. Revision6 freeze and S2a remain gated by design realization, independent qualification and exact-current modular review. History, inherited defects and recurring I-1 remain evidence. No rejection counter is reset.

@@ -1,0 +1,23 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-diagnostic/plan.json",
+  "plan_sha256": "69494aa94a606399fe6d59759ba045d23e6a4345e2d2b53ef8e430bd79305b26",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "rust-actual-reservation-mutant",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-diagnostic/custody/rust-actual-reservation-mutant.json",
+      "record_sha256": "541adbbd46370903b9aeb66e1661b76795ef3d229e62d75b10c4463939a0f3b8",
+      "leftovers": 0
+    },
+    {
+      "name": "python-actual-reservation-mutant",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-diagnostic/custody/python-actual-reservation-mutant.json",
+      "record_sha256": "e561104c6c141f8bcb1a3c79d1bf5182cb603f4584b3a664faf598a9f6f4faae",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

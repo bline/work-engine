@@ -1,0 +1,28 @@
+{
+  "assertions": [
+    {
+      "claim_id": "F2-original-order-not-unbudgeted",
+      "expected_fields_or_relations": {
+        "/documents/1/coverage_decisions": [],
+        "/documents/1/unbudgeted_applicabilities": []
+      },
+      "negative_control_refs": [
+        "DOLLAR-BAD-ORDER-erased-primary.wrong.json"
+      ],
+      "raw_derivation_refs": [
+        "S02 raw first request usd rid1 precedes original reservation; original dollar primary cannot be reclassified genuine_unbudgeted"
+      ]
+    }
+  ],
+  "authored_by": "independent raw oracle01a1d81b",
+  "exact_subject_refs": [
+    "result:dollar-bad-order"
+  ],
+  "id": "expected:dollar-bad-order",
+  "kind": "accounting_expected_assertion",
+  "policy_refs": [
+    "PLAN43d0e7c8/section6"
+  ],
+  "raw_subject_ref": "sha256:2321070c2acbfc02f61f83ef1ffa7b2b2f61298f83f8590e252e58d31c4ce4d7",
+  "version": "1.7-s1"
+}

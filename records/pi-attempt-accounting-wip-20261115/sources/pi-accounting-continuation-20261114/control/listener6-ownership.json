@@ -1,0 +1,7 @@
+{
+  "exec_session_id": 98549,
+  "owner": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "root_is_collector": true,
+  "no_ended_turn_wakeup_claim": true,
+  "log": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/listener6.jsonl"
+}

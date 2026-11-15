@@ -1,0 +1,59 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "build",
+  "argv": [
+    "cargo",
+    "test",
+    "--manifest-path",
+    "tooling/spec-check/Cargo.toml",
+    "--test",
+    "independent_raw_axes",
+    "--no-run",
+    "--message-format=json"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject",
+  "env_clear": false,
+  "env_set": {
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject",
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/cargo-target",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "R10_EVIDENCE_EXECUTABLE": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/cargo-target/debug/pi-accounting-spec-check",
+    "PYTHONWARNINGS": "ignore::ResourceWarning",
+    "R10_FINANCIAL_EXECUTABLE": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3728272,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 3729879,
+  "pgid": 3729879,
+  "started_at": "2026-11-14T08:37:03.689540Z",
+  "ended_at": "2026-11-14T08:37:04.795669Z",
+  "duration_s": 1.106,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/initial-custody/build.stdout",
+    "length": 90999,
+    "sha256": "62243944df013836e0a85ea862b6029b093b81113eefbab92f369483b3c0f373"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/initial-custody/build.stderr",
+    "length": 237,
+    "sha256": "a38dffd7df3becf0a47ec9c9a3fc9ec1b14bd9927a2a0bfaab3be44e03de4db9"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null,
+  "cargo_executables": [
+    {
+      "name": "independent_raw_axes",
+      "kind": [
+        "test"
+      ],
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+      "sha256": "b93f135132a818d42cdce508f58d8262832513fb773b89bd90daa83fdb098595"
+    }
+  ]
+}

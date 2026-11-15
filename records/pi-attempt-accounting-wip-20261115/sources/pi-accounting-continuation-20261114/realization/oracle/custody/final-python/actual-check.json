@@ -1,0 +1,54 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "actual-check",
+  "argv": [
+    "python3",
+    "validator/validate_corpus.py",
+    "check",
+    "corpus",
+    "oracle/rates"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 2984266,
+  "inputs": [
+    {
+      "path": "validator/validate_corpus.py",
+      "type": "file",
+      "mode": 436,
+      "length": 94525,
+      "sha256": "a21a98e234a258e5dc6249d41768c40b02fa770e6c8d0e13a8d09eaf28f3e66d"
+    },
+    {
+      "path": "oracle/R8-LOW-ASSERTIONS.json",
+      "type": "file",
+      "mode": 436,
+      "length": 21361,
+      "sha256": "c43a0dd0f0bcd44f9467c189b969c540c3ac1b8c362efe182edd40ca0814eac4"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 2984270,
+  "pgid": 2984270,
+  "started_at": "2026-11-14T03:50:52.769308Z",
+  "ended_at": "2026-11-14T03:50:53.023227Z",
+  "duration_s": 0.254,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-python/actual-check.stdout",
+    "length": 313,
+    "sha256": "fb55d82dcbfd5f26b45799f08760e8403cc2fb4c5e4759eb34459aad3aac5e6d"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-python/actual-check.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

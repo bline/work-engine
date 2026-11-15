@@ -1,0 +1,53 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "actual-evidence-cli",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/spec/debug/pi-accounting-spec-check",
+    "evidence",
+    ".",
+    "oracle/r8-controls/VC07-conditional.bundle.json"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 2956556,
+  "inputs": [
+    {
+      "path": "spec/accounting.schema.json",
+      "type": "file",
+      "mode": 436,
+      "length": 25497,
+      "sha256": "ac0920fb596808f1f23fdd972f81fcd59408624ddcc2b7cd7ebf9eee88642bc6"
+    },
+    {
+      "path": "oracle/r8-controls/VC07-conditional.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5970,
+      "sha256": "feb7d493870e3f8f5454f209750e3e52d824dbe53251964efb6ac2b3b2417df9"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 2956709,
+  "pgid": 2956709,
+  "started_at": "2026-11-14T03:44:40.726856Z",
+  "ended_at": "2026-11-14T03:44:40.930288Z",
+  "duration_s": 0.203,
+  "returncode": 1,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/vc07-interface-first/actual-evidence-cli.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/vc07-interface-first/actual-evidence-cli.stderr",
+    "length": 2233,
+    "sha256": "ff76231d9e421317f7063c95925150efc9994f0f40821c5ce226cc5316b73920"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

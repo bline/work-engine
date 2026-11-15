@@ -1,0 +1,835 @@
+{
+  "scope_budget": {
+    "schema": "manual-orchestration.scope-budget.v2",
+    "objective_id": "47d5a1cb-b785-441d-97e7-973844062b3d",
+    "sessions": [
+      {
+        "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+        "provider": "codex",
+        "from": "2026-11-13T21:52:54Z",
+        "bound_by": "init",
+        "evidence": null
+      }
+    ],
+    "bindings": [
+      {
+        "session_id": "c110c95a-0e4b-4b0b-9f6e-b43c3e815972",
+        "provider": "claude",
+        "parent_session_id": null,
+        "bound_at": "2026-11-13T21:56:24Z",
+        "bound_by": "supervisor",
+        "reason": "Collect cost of isolated single-command launcher and its Pi review e60d2cb6 after isolation succeeded; cost binding only, root01a1d6e2 owns collection"
+      },
+      {
+        "session_id": "21941623-fb16-4ccc-bd21-70a36f6acee3",
+        "provider": "claude",
+        "parent_session_id": null,
+        "bound_at": "2026-11-13T23:03:14Z",
+        "bound_by": "supervisor",
+        "reason": "Cost binding after fresh parentless isolation passed for current exact revision6 ModuleA review5e169aea; root01a1d6e2 owns result/process collection, not a runtime parent."
+      },
+      {
+        "session_id": "0d2b895e-1fba-496e-a975-30b8a1575696",
+        "provider": "claude",
+        "parent_session_id": null,
+        "bound_at": "2026-11-13T23:17:19Z",
+        "bound_by": "supervisor",
+        "reason": "Cost binding after parentless isolation passed for immediate recurringI1 Astraxhigh design review5b9f03b7; root sole collection owner, not runtime parent."
+      },
+      {
+        "session_id": "3e8dad39-fc7c-45d7-b994-afc2e05899a7",
+        "provider": "claude",
+        "parent_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+        "bound_at": "2026-11-13T23:32:31Z",
+        "bound_by": "supervisor",
+        "reason": "Fresh native Claude Opus5.5/high r7 spec builder exact session/model observed; root86518 process collector; original100objective"
+      },
+      {
+        "session_id": "81122b03-138a-4efb-a485-74e3c0b40744",
+        "provider": "claude",
+        "parent_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+        "bound_at": "2026-11-13T23:32:31Z",
+        "bound_by": "supervisor",
+        "reason": "Fresh independently authored native Claude Opus5.5/high r7 oracle builder exact session/model observed; root41542 process collector; original100objective"
+      }
+    ],
+    "cost_limits": [
+      {
+        "pool": "codex",
+        "node": null,
+        "max_usd": 100.0,
+        "marks_usd": [
+          70.0
+        ],
+        "set_by": "user",
+        "set_at": "2026-11-13T21:52:54Z",
+        "reason": "User grants $100 four-hour sprint and ownership of review and future development; grant observed 2026-11-13T21:51:14Z; deadline 2026-11-14T01:51:14Z",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "pi_api",
+        "node": null,
+        "max_usd": 54.0,
+        "marks_usd": [],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T00:00:26Z",
+        "reason": "Refine API admission suballocation before any API call: conservative byte-token upper bound/cachewrite/long-context reservation requires up to18session per module, expected realized total6-9. Three sequential1request exactAstra reviews, noautomaticfallback. Original allpool100 grant unchanged; currentknown~25 and builders nearcomplete leave room for54worstcase. ParentlessAPI accounting manualoverlay explicit.",
+        "basis": "speed_adjusted_api_usd"
+      }
+    ],
+    "objective": "Take over Pi accounting S1 development; resolve triggered architectural guard and advance reviewed implementation within sprint",
+    "original_items": [
+      "Run and collect frozen P1.35 Astra xhigh architectural review and reproduce material findings",
+      "Apply architectural-blindness escalation rules with inherited-defect evidence and infrastructure exclusion",
+      "Advance S1 contract/corpus/validation and qualified follow-on development based on architecture findings; preserve all existing acceptance gates"
+    ],
+    "started_at": "2026-11-13T21:52:54Z",
+    "weekly_at_start": {
+      "used_percent": 83.0,
+      "observed_at": "2026-11-13T21:52:30.618Z",
+      "resets_at": 1795041683,
+      "window_minutes": 10080,
+      "limit_id": "codex",
+      "plan_type": "prolite",
+      "source": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T14-48-30-01a1d6e2-32ba-7701-9115-740dcb41af11.jsonl"
+    },
+    "limits": {
+      "reconsider_after_additions": 2
+    },
+    "limits_set_by": "user",
+    "limits_reason": "User grants $100 four-hour sprint and ownership of review and future development; grant observed 2026-11-13T21:51:14Z; deadline 2026-11-14T01:51:14Z",
+    "limit_history": [
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": null,
+          "max_usd": 100.0,
+          "marks_usd": [
+            70.0
+          ],
+          "set_by": "user",
+          "set_at": "2026-11-13T21:52:54Z",
+          "reason": "User grants $100 four-hour sprint and ownership of review and future development; grant observed 2026-11-13T21:51:14Z; deadline 2026-11-14T01:51:14Z",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "pi_api",
+          "node": null,
+          "max_usd": 12.0,
+          "marks_usd": [],
+          "set_by": "supervisor",
+          "set_at": "2026-11-13T23:59:01Z",
+          "reason": "Explicit root selection under user100/four-hour funded sprint: bothsubscriptionpools exhausted, preserve required exactAstra reviews viaOpenAIAPI. Three freshparentless tool-less max4session APIreviews; allpool100 remains original ceiling, noautomaticfallback.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "pi_api",
+          "node": null,
+          "max_usd": 54.0,
+          "marks_usd": [],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T00:00:26Z",
+          "reason": "Refine API admission suballocation before any API call: conservative byte-token upper bound/cachewrite/long-context reservation requires up to18session per module, expected realized total6-9. Three sequential1request exactAstra reviews, noautomaticfallback. Original allpool100 grant unchanged; currentknown~25 and builders nearcomplete leave room for54worstcase. ParentlessAPI accounting manualoverlay explicit.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "pi_api",
+          "node": null,
+          "max_usd": 12.0,
+          "marks_usd": [],
+          "set_by": "supervisor",
+          "set_at": "2026-11-13T23:59:01Z",
+          "reason": "Explicit root selection under user100/four-hour funded sprint: bothsubscriptionpools exhausted, preserve required exactAstra reviews viaOpenAIAPI. Three freshparentless tool-less max4session APIreviews; allpool100 remains original ceiling, noautomaticfallback.",
+          "basis": "speed_adjusted_api_usd"
+        }
+      }
+    ],
+    "additions": []
+  },
+  "takeover": {
+    "predecessor": "7c0cdefa-513d-4f30-9bd4-7575bebdeb52",
+    "handoff": "/home/bline/cbm-work/p135-arch-prep/HANDOFF.md",
+    "sha256": "7b59c5d1b613b07eb5f130608e9eab04f54b759fb6be157404cb9e74a62277ca",
+    "user_authority": "You are the owner, run the review and take over future development",
+    "grant": {
+      "max_total_cost_proxy_usd": 100,
+      "start": "2026-11-13T21:51:14Z",
+      "deadline": "2026-11-14T01:51:14Z"
+    },
+    "collector": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+    "root_verified_by": "session_meta in rollout",
+    "review_route": "Prepared tool-less Pi subscription one-shot under fresh parentless Claude launcher; not an engineering supervisor",
+    "review_block": "Architecture guard triggered; ordinary repair awaits architecture review disposition",
+    "claim_id": "e2e03ba7-1f38-492f-920a-dde55d375087"
+  },
+  "observation": {
+    "context_binary": "/home/bline/.local/state/work-engine/tools/context-status/a5f9db1fc8af4b0bc5ecad81ad5b8b8ae36d6087447dc5c62e6545262768116c/work-engine-context-status",
+    "context_sha256": "a5f9db1fc8af4b0bc5ecad81ad5b8b8ae36d6087447dc5c62e6545262768116c",
+    "budget_reader": "/home/bline/code/work-engine/metrics/scripts/usage_ledger.py",
+    "budget_sha256": "230441560e750345d7a9d9f10d8ee00b9b4f6d81a2bf0204567b7e9c04ed4235",
+    "selectors": [
+      "all",
+      "aspect:pi-accounting",
+      "session:01a1d6e2-32ba-7701-9115-740dcb41af11"
+    ],
+    "since": 5275,
+    "collector": "root via collected PTY output; before every scope/continuation boundary",
+    "context_initial_input": 97842,
+    "state": "context and budget listener98127 verified; initial budget control delivered coverage_changed for in-flight Pi (one unpriced call)",
+    "budget_initial_failure": "scope_budget.py supplied to board interface expecting usage_ledger.py; explicit scope check succeeded with spend 0.1153244 proxy",
+    "pty_session": 98127,
+    "budget_topic": "control:budget:47d5a1cb-b785-441d-97e7-973844062b3d",
+    "last_collected_context_level": "normal",
+    "last_collected_context_epoch": 1,
+    "last_collected_context_line": 688,
+    "last_budget_cursor": "eyJhY2NvdW50X3F1b3RhX3N0YXR1cyI6ICJvYnNlcnZlZCIsICJvYmplY3RpdmVfaWQiOiAiNDdkNWExY2ItYjc4NS00NDFkLTk3ZTctOTczODQ0MDYyYjNkIiwgInN0YXRlcyI6IHsiW1wiY292ZXJhZ2VfY2hhbmdlZFwiLG51bGwsbnVsbCxcImNvdmVyYWdlXCJdIjogeyJyYW5nZWQiOiBmYWxzZSwgInN0YXR1cyI6ICJwYXJ0aWFsIiwgInVuZGF0ZWRfY2FsbHMiOiAwLCAidW5rbm93bl9zcGVuZCI6IHRydWUsICJ1bnByaWNlZF9jYWxscyI6IDF9LCAiW1wibGltaXRfZnJhY3Rpb25cIixcImNvZGV4XCIsbnVsbCw1MC4wLFwidXNlclwiXSI6IGZhbHNlLCAiW1wibGltaXRfZnJhY3Rpb25cIixcImNvZGV4XCIsbnVsbCw4MC4wLFwidXNlclwiXSI6IGZhbHNlLCAiW1wibGltaXRfcmVhY2hlZFwiLFwiY29kZXhcIixudWxsLDEwMC4wLFwidXNlclwiXSI6IGZhbHNlLCAiW1wibWFya19jcm9zc2VkXCIsXCJjb2RleFwiLG51bGwsNzAuMCxcInVzZXJcIl0iOiBmYWxzZX19",
+    "last_context_input": 31448,
+    "last_context_observed": "2026-11-13T22:24:47.651Z",
+    "next_scope_capacity_decision": "Root223973input/epoch1 at23:14:26.989Z, empiricalband235k. Nextscope only bounded launch/bind/watch/continuation under4k growth; no fullsourcebodyreads. Automaticcompaction may occur; durableassignment+continuation own all semantics and collectors. Recover WindWalker and observe settings after boundary.",
+    "budget_coverage": "partial:2unpricedsubscriptioncalls; previouscompletedPi1.73236separatelyvalued, currentModuleAinflight unknown untilterminal",
+    "collection_boundary": "ModuleAseal/nextreviewdecision; rootownslistener98127andwatcher91029"
+  },
+  "architecture_review": {
+    "state": "completed_sealed_collected",
+    "launcher": "c110c95a-0e4b-4b0b-9f6e-b43c3e815972",
+    "reviewer": "e60d2cb6-f66e-4f60-a2d2-fc8e5c9fdd48",
+    "requested": "openai-codex/gpt-6-astra xhigh subscription",
+    "observed_session": "role_host children of c110c95a; running Pi turn1",
+    "packet_sha256": "e56876b55354b7b8796c54d80936f0680aad8df7f756bc5b8f1a1ef1db37d294",
+    "collector": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+    "collection": "inotify runner container_removed, then capture_and_seal.py, board aspect:pi-accounting; root collects PTY and board stream",
+    "continuation": "No second reviewer turn under one-shot contract; host records bind runtime identity. Manual role identity acknowledgement is not applicable to tool-less request.",
+    "parent_graph_evidence": {
+      "project": "home-bline-code-work-engine",
+      "tier": 2,
+      "generation": "2026-11-13T21:53:10Z",
+      "scope": "prepared frozen packet, no repository code discovery required",
+      "queries": "launch_pi/launch_claude symbol patterns insufficient; no negative structural claim",
+      "coverage": "role_host and pi_container content_verified metadata_match with unresolved operator calls; no completeness claim; exact pinned release bytes and invocation scripts checked; packet producer source digests verified"
+    },
+    "seal_sha256": "816788d40237933579738faba30788409a29271c80f6b9b9ef499a67963261b9",
+    "response_sha256": "01e3c3cc8b6913d117f46ce0f5973735524af4bb6b86b0943f633fedafb42b42",
+    "observed": "openai-codex/gpt-6-astra; requested thinking xhigh in spec, Pi metadata5000reasoning; no subscription service tier",
+    "cost_proxy_usd": 1.73236,
+    "decision": "/home/bline/cbm-work/pi-accounting-sprint-20261113/ARCHITECTURE-DECISION.md",
+    "verdict": "REVISE_SPECIFICATION_ARCHITECTURE",
+    "processes": "reviewer and launcher retired; watcher39880 collectedexit0"
+  },
+  "continuation": "/home/bline/cbm-work/pi-accounting-sprint-20261113/CONTINUATION.md",
+  "accounting_notes": [
+    {
+      "kind": "root_window_limitation",
+      "root_binding_from": "2026-11-13T21:52:54Z",
+      "session_started": "2026-11-13T21:48:30.791Z",
+      "reason": "scope_budget add-session refused duplicate differing binding; preserve original attribution instead of silently rewriting it",
+      "consequence": "Closing total and interim commitment decisions must additionally include root pre-binding costs; total100 applies to all pools, not merely codex limit",
+      "owner": "root"
+    },
+    {
+      "kind": "prelude_resolved_measurement",
+      "proxy_usd": 0.35536760000000006,
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/control/prelude-budget.json",
+      "window": "root calls21:48:30Z\u201321:52:54Z; derived measurement only, original scope record unchanged"
+    },
+    {
+      "at": "2026-11-13T23:38:10Z",
+      "source": "/home/bline/cbm-work/pi-accounting-sprint-20261113/control/r7-running-budget.json",
+      "known_all_pool_proxy": 19.9061296,
+      "actual_billing_quota": "unknown for3Pi subscriptioncalls; proxies2.55566+2.15749+1.73236 explicit, prelude0.3553676",
+      "account_remaining_percent": 2,
+      "account_capacity_separate": true
+    }
+  ],
+  "workers": {
+    "s1_spec_design": {
+      "session": "01a1d6f0-831b-7bd1-b290-46b347825c56",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T15-04-08-01a1d6f0-831b-7bd1-b290-46b347825c56.jsonl",
+      "packet": "/home/bline/cbm-work/pi-accounting-sprint-20261113/packets/spec-design.md",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "xhigh",
+      "scope": "plan only; design/",
+      "state": "collected_complete",
+      "retain_reason": "fresh design because architectural premise changed; future implementation requires root approval and context check",
+      "collector": "root",
+      "observed_config": "gpt-6.1-sol/xhigh/default; worker own applied observation line11 event8388779d"
+    },
+    "s1_raw_oracle": {
+      "session": "01a1d6f2-1f0e-7b70-8757-2d848076a2ce",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T15-05-54-01a1d6f2-1f0e-7b70-8757-2d848076a2ce.jsonl",
+      "packet": "/home/bline/cbm-work/pi-accounting-sprint-20261113/packets/raw-oracle-audit.md",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "high",
+      "scope": "independent raw-only audit; oracle/ outputs, no shipped executable",
+      "state": "collected_complete",
+      "collector": "root",
+      "exposure": "173 filtered case_id+inputs files; no expected/labels/history; no filesystem isolation claim"
+    },
+    "s1_spec_build": {
+      "session": "01a1d700-afdf-7f52-94a6-7a59c5e81650",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T15-21-48-01a1d700-afdf-7f52-94a6-7a59c5e81650.jsonl",
+      "packet": "/home/bline/cbm-work/pi-accounting-sprint-20261113/packets/spec-implementation.md",
+      "continuation": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/CONTINUATION.md",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "medium",
+      "observed_config": "gpt-6.1-sol/medium/default; worker reported own applied event",
+      "allowance_proxy_usd": 20,
+      "collector": "root",
+      "state": "collected_complete_verified",
+      "result": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/RESULT.json",
+      "manifest_sha256": "5f4c565563c3328ea6b37afe255593c98600f32763b78a4bce2e463e2830138d",
+      "archive_sha256": "4c95b53a0778664b75ae11a94a9d011f7d05749506bfa8ba0d9ccb146d783ee1",
+      "qualification": "8/8steps,10structuraltests,0leftovers"
+    },
+    "s1_oracle_build": {
+      "session": "01a1d700-c690-7d90-a2b2-620ece8f2a2f",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T15-21-54-01a1d700-c690-7d90-a2b2-620ece8f2a2f.jsonl",
+      "packet": "/home/bline/cbm-work/pi-accounting-sprint-20261113/packets/oracle-implementation.md",
+      "continuation": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/CONTINUATION.md",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "medium",
+      "observed_config": "gpt-6.1-sol/medium/default",
+      "allowance_proxy_usd": 20,
+      "collector": "root",
+      "state": "collected_complete_verified",
+      "result": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/RESULT.md",
+      "evidence": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/EVIDENCE.json",
+      "manifest": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/final-freeze/manifest.json",
+      "manifest_sha256": "2a0b1237b2ea564ae3640d3e7e267205f6901579cc82ff42689732883509e72d",
+      "archive_sha256": "1366893a11bc33f1fe9d1512760cce6cd0ee9a414d46a926614003c76429d668",
+      "qualification": "4independentRusttests;4legacychecks;34resultmutants;98sabotages;0leftovers"
+    },
+    "s1_design_r3": {
+      "session_id": "01a1d77d-43dc-7210-a674-615860bfb6d2",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T17-37-53-01a1d77d-43dc-7210-a674-615860bfb6d2.jsonl",
+      "packet": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/PACKET.md",
+      "packet_sha256": "1fc0508261c33cdfda293a7e8291a1cae3a6fc65f0acf28347073e46a1add435",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "xhigh",
+      "observed_model": "gpt-6.1-sol",
+      "allowance_proxy_usd": 6,
+      "status": "completed_collected_r5",
+      "collector": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "decision": "fresh",
+      "reason": "New architecture after repeated boundary failure; avoid builder remediation bias; no implementation authorized",
+      "observed_effort": "xhigh",
+      "observed_service_tier": "default",
+      "binding_acknowledged": true,
+      "applied_record_line": 11,
+      "observed_context": 39174,
+      "result": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/RESULT.md",
+      "plan_sha256": "24312298479407989f69ef14d50e41f5fb231a9ee8169a33aefc9e11c554ff2e",
+      "processes": "none",
+      "retained": true,
+      "context_decision": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/root-pre-r5-context.json",
+      "packet_r4": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/PACKET-R4.md",
+      "packet_r4_sha256": "97f961a1d34ec331e3b1d747bb18bd77f428d4e965012f7d4320f8c665595fc3",
+      "plan_r4_sha256": "761b474a8f0847cf7bfad7ca7a325868b6e2a6e8d32b3eb1c0fcef7abb514887",
+      "result_r4": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/RESULT-R4.md",
+      "packet_r5": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/PACKET-R5.md",
+      "policy_r5": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/ROOT-POLICY-R5.md",
+      "plan_r5_sha256": "f56a090316759b3463c2e3ca69f53f7c31b1d78396a2b1fdb2e91c483cff15b8",
+      "result_r5": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/RESULT-R5.md"
+    }
+  },
+  "policy_directions": [
+    {
+      "at": "2026-11-13T22:09Z",
+      "owner": "root under user delegated ownership",
+      "provider_schema": "Provider family is part of identity; usage shape cannot establish a provider or a complete identity set. Unestablished/unpriceable provider-schema contradictions cannot replace R. Existing complete established fully priced multi-identity bounds remain supported under FB-1/D6 unless separate evidence disproves them.",
+      "error_status": "Non-200 terminal usage is writer-possible; retain reservation and supported usage; never normal eligible usage replacement. Terminal/usage completeness and source consistency still explicit.",
+      "gate": "Authenticated provider billing ceiling is distinct from conservative provisional exposure; no silent release/lowering of attempt reservation or conversion of AtLeast to Exact.",
+      "writer_floor": "Distinguish exact writer floor from proven lower bounds; missing parameters can make full reconstruction unestablished, yet an R below a proven input-only minimum is a counterexample.",
+      "D3_amendment": "Explicit narrow authorization of isolated Rust spec-rendering/structural-check tooling crate in S1, without reducer/reference financial evaluator, production workspace integration or S2a crate approval. Standalone Cargo tooling is a crate; do not claim literal compliance with old no-crate rule.",
+      "pending": "Canonical plan exact bytes, all-null/malformed usage details, reservation applicability, fixture gate mock realization, malformed-key selection to receive final root disposition before builder."
+    }
+  ],
+  "policy_corrections": [
+    {
+      "wrong_claim": "Root shorthand implied every identity contradiction forbids finite replacement.",
+      "class": "Overbroad policy direction from omitting existing FB-1/D6 distinction.",
+      "consequence": "Would retire approved finite complete established multi-identity bounds, creating unnecessary semantic change and risk feeding classification into money.",
+      "check": "Read FB-1 and TableX multi-identity rows before issuing categorical policy.",
+      "corrected_direction": "Preserve complete established fully priced identity/tier-set finite bounds; distinguish unestablished/unpriceable provider-family/schema contradiction. Raw establishment facts may feed money; downstream finding labels may not.",
+      "delivery": "Sent explicitly to both design and raw-oracle workers before implementation."
+    }
+  ],
+  "plan_acceptance": {
+    "plan_sha256": "52883acb09bcb7d0eb944fe73cc9ba5a3d06932f27a15c430d01bee9f2780a2c",
+    "policy": "/home/bline/cbm-work/pi-accounting-sprint-20261113/POLICY-AND-PLAN-APPROVAL.md",
+    "policy_sha256": "07303d5c5c36276f6038bf9368f3a5fe660e39ee9160b8b3d92049de98abb981",
+    "owner": "root under delegated user authority",
+    "subject": "/home/bline/cbm-work/p136-s1r6/s1",
+    "version": "1.5-s1 revision6",
+    "classification": "small bounded organization revision; original objective, no added scope"
+  },
+  "organization_amendments": [
+    {
+      "at": "2026-11-13T22:26Z",
+      "kind": "scope_clarification",
+      "owner": "root",
+      "decision": "oracle builder additionally owns isolated validator/ existing Python migration; spec builder excludes validator/; sha2 exactly0.10.9 approved for deterministic digests, spec builder sole Cargo manifest owner."
+    }
+  ],
+  "shared_mechanics": {
+    "path": "/home/bline/cbm-work/p136-s1r6/s1/spec/interface.json",
+    "initial_sha256": "01d1874e4b3b2adc22d76ad74c1eb8c93d957e870fc2adccc9cae5700eebd02c",
+    "relayed_to": "s1_oracle_build",
+    "allowed": "serialization only; no canonical reasoning/helpers",
+    "subsequent_clarification": "valuation.identities provider-qualified strings openai/<id>,anthropic/<id>; spec builder to publish exact shape"
+  },
+  "recovery": {
+    "wind_walker_invoked": true,
+    "marker_line": 661,
+    "epoch": 1,
+    "settings": "control/root-settings-recovery-epoch1.json",
+    "observed_after_boundary": true,
+    "model_effort_tier": "gpt-6.1-sol/xhigh/default",
+    "event_line": 664,
+    "event_sha256": "0f01f03f5fcff5629dac38e80473cdd742b84a21074d01c8159579e232b6d7ae"
+  },
+  "review_preparation": {
+    "plan": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/REVIEW-PLAN.md",
+    "state": "scaffolds only, PROMPT_SHA unbound blocks every launch",
+    "builder": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/build_packet_p136.py",
+    "instruction_advice": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/instruction-advice-template.json"
+  },
+  "joined_candidate": {
+    "root": "/home/bline/cbm-work/p136-s1r6/s1",
+    "freeze_manifest": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/freeze/manifest.json",
+    "freeze_sha256": "293b7a97583e591e8e84c0002f703e34e79161185f55ae034333378550b107ae",
+    "archive_sha256": "cadbac8f2f4b09b1c8e5830befd9305a172812caa3a27c6edf808be5050069f5",
+    "entries": 550,
+    "standing": "frozen review candidate, not semantic acceptance",
+    "rust_custody": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/custody/summary.json",
+    "rust_status": "2/2pass;10structural+4independenttests",
+    "legacy_custody": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/legacy-custody/summary.json",
+    "legacy_status": "collected_passed_4of4_all550files_bound",
+    "legacy_sha256": "d4c45a03dd56bc61948d8b46f0193646e2143bbd5f06137eb9f3ca5dba9a4ef4"
+  },
+  "module_A_review": {
+    "state": "collected_complete_changes_required",
+    "launcher": "21941623-fb16-4ccc-bd21-70a36f6acee3",
+    "reviewer": "5e169aea-4706-44c6-b411-c4f3e219318b",
+    "requested": "openai-codex/gpt-6-astra high subscription max1request proxy3.00",
+    "observed_launch": "exact requested model/lane/high, sessionheaderverified, networknone, onlyemptycwd mount",
+    "packet_sha256": "3af2fb8a50240cd7f70134f72337f95a4a27ae1dad31c284a7c995feae4fd950",
+    "pre_registration_sha256": "910ad7c29eea114de70794408e206a21482113ada8f104b9d20b4d185595733c",
+    "claim": "067c492f-45a3-4d27-89cc-e998b671b35f",
+    "collector": "root",
+    "processes": "watcher91029collected0;Pi5e169aea+launcher21941623retired;no live review process",
+    "watcher_pty": 91029,
+    "seal_sha256": "7cbab070864b13eadc04587d5460feb253cbc7d1d205ad6f58ee295400ce763e",
+    "response_sha256": "2685b18c055c34adabbb220e6d8f58e8b686bd2609d3ef757a7de2dca0d38d88",
+    "cost_proxy_usd": 2.15749,
+    "verdict": "CHANGES_REQUIRED",
+    "findings": {
+      "P1": 1,
+      "P2": 5
+    },
+    "disposition": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/module-A/ROOT-DISPOSITION.md",
+    "guard_state": "DESIGN_REVIEW_REQUIRED",
+    "guard_trigger": "Confirmed inherited contradicted-lane monetary erasure is recurringI-1; immediate Astraxhigh before ordinary repair"
+  },
+  "pending_scope": "DESIGN_REVIEW_REQUIRED from R7A; noordinaryrepair/R8mutation/S2a; design diagnosis and freshAstraxhigh judgment needed",
+  "design_r2_review": {
+    "state": "completed_sealed_collected_pending_root_disposition",
+    "packet_sha256": "f7d70c4aac9ce2e2d7b313f4447541853c65e393b7f99e5f0ab5b29a75ef10eb",
+    "packet_bytes": 721177,
+    "preregistration_sha256": "057f88b8a1e96d65d6b85a81b6041ed4db512237d72f82f0cebaa80e4b082f6d",
+    "requested": "openai-codex/gpt-6-astra xhigh subscription,tool-less,max1,proxy4",
+    "collector": "root",
+    "basis": "immediate inherited recurringI1 design escalation; ordinary repair blocked",
+    "budget_decision": "one required review only;5percentsharedheadroom fresh23:14:44Z;14.2706982knownall-poolproxyincludingpriorPi/prelude,unknownbilling/quota; reserveclosure, reconsiderlaterwork",
+    "launcher": "0d2b895e-1fba-496e-a975-30b8a1575696",
+    "reviewer": "5b9f03b7-1ee4-47f6-9a90-babec8d480f3",
+    "observed_launch": "exactopenai-codex/gpt-6-astra/xhigh/subscription;session_header_verified;proofpassed;emptycwdonly/networknone",
+    "claim_id": "ff28d995-c8a7-4d9d-89db-25486c9f0c75",
+    "processes": "watcher82459collected0;reviewer5b9f03b7+launcher0d2b895eretired;no live review processes",
+    "watcher_pty": 82459,
+    "seal_sha256": "163eb9ccb62452e13afdc022b4f40bb23b82fdd834d4eb63df532a45abaa1900",
+    "response_sha256": "2c140d38384d0cde5125205e5296caca6b2bd8d50f5a31a9d2f06d0bd75180dd",
+    "cost_proxy_usd": 2.55566
+  },
+  "r7_plan": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/PLAN-AND-ROOT-ADOPTION.md",
+    "sha256": "05e2c10e72e6ffc8495ff9a61334ef4801041e71ef1eea5b9d8fb7a6005348d4",
+    "decision": "accepted architecture-led implementation, not artifact acceptance",
+    "subject": "/home/bline/cbm-work/p137-s1r7/s1",
+    "source_claim": "4ac506bc-6ac5-4d5a-bf2d-dd33cb3a1159",
+    "organization_change": "small; two fresh native Claude Opus5.5/high builders; old workers complete; preserve Codex quota for Astra review",
+    "account_capacity": {
+      "remaining_percent": 3,
+      "observed_at": "2026-11-13T23:27:29.290Z"
+    },
+    "budget_known_proxy": 17.6979566,
+    "builder_allowances": {
+      "spec": 15,
+      "oracle": 15
+    },
+    "review_reserve_proxy": 12,
+    "root_capacity_scope": "postcompaction2 input36714, bounded two-builder dispatch/collection and modular review coordination",
+    "collector": "root",
+    "state": "bothbuilderscollected; joined frozen current battery running",
+    "adapter_amendment": {
+      "decision": "fresh Codex Sol6.1medium workers, existing semantic plan unchanged",
+      "reason": "Claude weekly quota exhausted; both exact-model turns collected; no source edits; no automatic replay",
+      "owner": "root",
+      "previous_cost": 1.0415764,
+      "review_route": "Astra requirement remains; subscription capacity to recheck before review; funded API route requires explicit root selection if used"
+    }
+  },
+  "r7_workers": {
+    "spec": {
+      "session_id": "3e8dad39-fc7c-45d7-b994-afc2e05899a7",
+      "packet": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/packets/spec.md",
+      "packet_sha256": "b33549f135adaac44dd5eca8fccdf17d2fd1740a223f79408a2d6f44fe7a6f97",
+      "model": "claude-opus-5-5",
+      "effort": "high",
+      "transport": "anthropic",
+      "collector": "root",
+      "transcript": "/home/bline/.claude/projects/-home-bline-code-work-engine/3e8dad39-fc7c-45d7-b994-afc2e05899a7.jsonl",
+      "process_pty": 86518,
+      "observed_models": [
+        "claude-opus-5-5"
+      ],
+      "observed_session_ids": [
+        "3e8dad39-fc7c-45d7-b994-afc2e05899a7"
+      ],
+      "init": {
+        "session_id": "3e8dad39-fc7c-45d7-b994-afc2e05899a7",
+        "cwd": "/home/bline/code/work-engine",
+        "model": "claude-opus-5-5",
+        "permissionMode": "acceptEdits",
+        "claude_code_version": "2.1.325"
+      },
+      "state": "collected_rate_limit_no_subject_edits",
+      "continuation": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec/CONTINUATION.md",
+      "transport_receipt": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec/turn-1.transport.json",
+      "native_result": "weekly limit, no model substitution, no leftovers",
+      "process_exit_code": 1
+    },
+    "oracle": {
+      "session_id": "81122b03-138a-4efb-a485-74e3c0b40744",
+      "packet": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/packets/oracle.md",
+      "packet_sha256": "765e76bbdbeb5e0e0238ba78a688eecf2bee1a76a18a36e545f7dea6e4ebdc73",
+      "model": "claude-opus-5-5",
+      "effort": "high",
+      "transport": "anthropic",
+      "collector": "root",
+      "transcript": "/home/bline/.claude/projects/-home-bline-code-work-engine/81122b03-138a-4efb-a485-74e3c0b40744.jsonl",
+      "process_pty": 41542,
+      "observed_models": [
+        "claude-opus-5-5"
+      ],
+      "observed_session_ids": [
+        "81122b03-138a-4efb-a485-74e3c0b40744"
+      ],
+      "init": {
+        "session_id": "81122b03-138a-4efb-a485-74e3c0b40744",
+        "cwd": "/home/bline/code/work-engine",
+        "model": "claude-opus-5-5",
+        "permissionMode": "acceptEdits",
+        "claude_code_version": "2.1.325"
+      },
+      "state": "collected_rate_limit_no_subject_edits",
+      "continuation": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle/CONTINUATION.md",
+      "transport_receipt": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle/turn-1.transport.json",
+      "native_result": "weekly limit, no model substitution, no leftovers",
+      "process_exit_code": 1
+    },
+    "spec_codex": {
+      "agent": "/root/s1r7_spec",
+      "session_id": "01a1d743-3af3-7300-83ba-5a5eb31c82ca",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T16-34-29-01a1d743-3af3-7300-83ba-5a5eb31c82ca.jsonl",
+      "packet": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/packets/spec-codex.md",
+      "continuation": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/CONTINUATION.md",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "medium",
+      "observed_config": "gpt-6.1-sol/medium/default",
+      "state": "collected_complete_source_verified",
+      "collector": "root",
+      "allowance_proxy": 15,
+      "source_ready": {
+        "status": "source_ready",
+        "source_manifest": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/SOURCE-MANIFEST.json",
+        "source_manifest_sha256": "5f13938ca3aa1951c42d3431a30bffac1e8d03adb10745f6355d947e9a76e825",
+        "custody_summary": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/custody/final3/summary.json",
+        "custody_summary_sha256": "aed6973703d959ff68d699b664100830ac5d8b5af9ee7a8b2fbd94a37fb83773",
+        "binary": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/target-spec/debug/pi-accounting-spec-check",
+        "binary_sha256": "fd44debd11021f80cbfa50f7ae1b55c8e743745963371b8e990fc02b92b28057",
+        "interface_sha256": "17e9430821e4fe25ddfec3ea3788b0d63e795f6ba47fa38c52655bec626afa5e",
+        "contract": "pi-accounting-contract/1.6-s1",
+        "revision": 7,
+        "scope": "worker declaration agreement only; no acceptance/raw financial conformance"
+      },
+      "source_files_verified": 25,
+      "result": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/RESULT.md"
+    },
+    "oracle_codex": {
+      "agent": "/root/s1r7_oracle",
+      "session_id": "01a1d743-6770-7f62-8b09-00671cb43500",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T16-34-41-01a1d743-6770-7f62-8b09-00671cb43500.jsonl",
+      "packet": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/packets/oracle-codex.md",
+      "continuation": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/CONTINUATION.md",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "medium",
+      "observed_config": "gpt-6.1-sol/medium/default",
+      "state": "collected_complete_source_verified",
+      "collector": "root",
+      "allowance_proxy": 15,
+      "source_files_verified": 527,
+      "result": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/RESULT.md",
+      "evidence": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/EVIDENCE.json",
+      "freeze_manifest": {
+        "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/freeze-final/manifest.json",
+        "sha256": "67cfe1432ed3c68b1e111137b7346da68acdc82b8d0b4670609074835be1e988"
+      }
+    }
+  },
+  "r7_review_preparation": {
+    "plan": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/REVIEW-PLAN.md",
+    "state": "B/C blocked bycurrentA serious recurringI1",
+    "adapter": "fresh parentless directPi, no intermediateClaude launcher",
+    "root_decision": "small adapter refinement; preserve all semantic gates and exact observed isolation claim",
+    "route": "subscription restored; A xhigh4/Bhigh3/Chigh3.5",
+    "sizing": "localo200k A199283/B187578/C~219k; historicalprovider overhead372tokens; no exacttokenizerclaim"
+  },
+  "r7_control": {
+    "budget_file": "/home/bline/cbm-work/pi-accounting-sprint-20261113/control/r7-running-budget.json",
+    "known_all_pool_proxy": 19.9061296,
+    "capacity_remaining_percent": 2,
+    "capacity_at": "2026-11-13T23:38:10.096Z",
+    "board_listener": 98127,
+    "lost_readonly_check_handle": {
+      "pid": 2615268,
+      "state": "process observed gone",
+      "exit": "unestablished",
+      "reason": "tool wrapper printed output only and omitted returned exec-session id; no mutation, no leftovers; fresh complete budgettree45014collected0 supersedes measurement"
+    },
+    "root_collection": "requiredbuilderscollaboration;nootherownedPTYexceptboard98127"
+  },
+  "r7_shared_mechanics": {
+    "path": "/home/bline/cbm-work/p137-s1r7/s1/spec/interface.json",
+    "sha256": "17e9430821e4fe25ddfec3ea3788b0d63e795f6ba47fa38c52655bec626afa5e",
+    "ready_record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/INTERFACE-READY.json",
+    "ready_sha256": "8c032642e1139a1ee0c78ef3538927d19675c3688333a46ad4c78abc112615a4",
+    "only_changed": "contract version/revision",
+    "root_verified": true,
+    "source_ready": "final spec worker complete; root joined pending"
+  },
+  "r7_incidents": [
+    {
+      "kind": "cross_owner_formatting",
+      "at": "2026-11-13T23:43:58Z",
+      "source": "tooling/spec-check/tests/independent_raw_axes.rs",
+      "actor": "spec builder cargo fmt --all",
+      "reconciliation": "oracle owner independently rustfmt edition2024 at23:45 and semantically verified owned assertions; accepts final formatting/no revert",
+      "limit": "no preformatbyte snapshot; intermediate delta not independently established",
+      "final_binding": "oracle final source digest pending",
+      "implementation_rejection": false
+    }
+  ],
+  "architecture_event_corrections": [
+    {
+      "at": "2026-11-13T23:46:49.108680+00:00",
+      "event": "P1.29 cut900.9s",
+      "previous": "guard historicalrow calls rejection1contract",
+      "classification": "infrastructure interruption; zero rejection increment; confirmed findings stay evidence",
+      "authority": "explicit user infrastructure exclusion",
+      "state_unchanged": "DESIGN_REMEDIATION_REQUIRED from complete reviews/regressions/recurringI1"
+    }
+  ],
+  "r7_qualification": {
+    "oracle_rust_first": {
+      "status": "passed7assertions intermediate only",
+      "source_drift": true,
+      "final_current_claim": false
+    }
+  },
+  "r7_review_route_decisions": [
+    {
+      "at": "2026-11-13T23:59Z",
+      "decision": "planned API route after weekly100observation",
+      "user_authority": "100funded sprint interpreted for bounded required review",
+      "calls_launched": 0,
+      "pi_api_suballocation_modelled": 54
+    },
+    {
+      "at": "2026-11-14T00:09:26.345796+00:00",
+      "decision": "restore subscription review route before anyAPIlaunch",
+      "reason": "user says codex quota is back; prefer original subscription lane",
+      "api_calls_launched": 0,
+      "api_suballocation_state": "unused; no API admission/session/charge"
+    }
+  ],
+  "r7_joined": {
+    "freeze_manifest": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/joined/freeze/manifest.json",
+    "manifest_sha256": "c1c40727648b40f3494b5444065cdef3a7824a42249426dc860dece95423ceda",
+    "archive_sha256": "f0d8388263a95a315a59f0546becd5273826d36228a5f60492d65aca964f6f4a",
+    "entry_count": 556,
+    "validation_pty": "collected0",
+    "state": "passed6/6 current checks; frozen bytes match",
+    "collector": "root",
+    "summary_sha256": "f857ede64be23e994d58ef15ccc47019be4bf97fdb11ae0a208196afcf713856"
+  },
+  "r7_module_A": {
+    "state": "collected_complete_changes_required_design_escalation",
+    "preregistration": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/module-A/PRE-REGISTRATION.json",
+    "preregistration_sha256": "d0b84ffb75173e017dc40214b638116265993754f8629129fec105c6f859dfc2",
+    "prompt_sha256": "5b06a47ed7d2ac833819d237da61bf034b903616f0b5de1e9923cb50c4a49e5c",
+    "claim": "95d25115-af68-4692-af7c-4abd741c5971",
+    "collector": "root",
+    "launcher": "direct fresh parentlessPi, no intermediateClaude",
+    "budget_accounting": "outside-native-objective directPi measured in explicit root allpool overlay",
+    "session_id": "783244bb-3cf3-435e-9bd6-a3306e1fb968",
+    "launch_pty": "92003collected0",
+    "freshness_proof": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/module-A/review/FRESHNESS.json",
+    "launch_files": {
+      "events": "/home/bline/.local/state/work-engine/role-host/pi/783244bb-3cf3-435e-9bd6-a3306e1fb968/container/turn-1.events.jsonl",
+      "exit": "/home/bline/.local/state/work-engine/role-host/pi/783244bb-3cf3-435e-9bd6-a3306e1fb968/container/turn-1.exit",
+      "prompt": "/home/bline/.local/state/work-engine/role-host/pi/783244bb-3cf3-435e-9bd6-a3306e1fb968/container/turn-1.prompt",
+      "proxy_log": "/home/bline/.local/state/work-engine/role-host/pi/783244bb-3cf3-435e-9bd6-a3306e1fb968/host/turn-1.proxy.jsonl",
+      "runner_log": "/home/bline/.local/state/work-engine/role-host/pi/783244bb-3cf3-435e-9bd6-a3306e1fb968/host/turn-1.runner.log",
+      "runner_record": "/home/bline/.local/state/work-engine/role-host/pi/783244bb-3cf3-435e-9bd6-a3306e1fb968/host/turn-1.runner.jsonl",
+      "spec": "/home/bline/.local/state/work-engine/role-host/pi/783244bb-3cf3-435e-9bd6-a3306e1fb968/host/turn-1.spec.json",
+      "stderr": "/home/bline/.local/state/work-engine/role-host/pi/783244bb-3cf3-435e-9bd6-a3306e1fb968/container/turn-1.stderr",
+      "tier_record": "/home/bline/.local/state/work-engine/role-host/pi/783244bb-3cf3-435e-9bd6-a3306e1fb968/container/turn-1.tier.jsonl"
+    },
+    "watcher_pty": "52642collected0",
+    "process_collection": "root owns watcher52642 + Pi783244bb; no native model launcher; seal before comparison",
+    "verification": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/module-A/review/verification.json",
+    "seal_sha256": "292ebec3b649eab3b2b3d75406d43785bf0ca55a390d5af81515eb1654c2f156",
+    "response_sha256": "b4b1ed688ceac5574eeced36936d5754dfb7e588334c93842d6b9559ce1e67f2",
+    "verdict": {
+      "p1": 2,
+      "p2": 7,
+      "architecture": "design_review_required",
+      "s2a": "NOT_READY"
+    },
+    "reproduction": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/module-A/root-reproduction/REPRODUCED.json",
+    "retired": true,
+    "cost_proxy": 2.76662
+  },
+  "design_r3_plan": {
+    "state": "prepared_readonly_not_dispatched",
+    "packet": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/design-r3/PACKET.md",
+    "packet_sha256": "1fc0508261c33cdfda293a7e8291a1cae3a6fc65f0acf28347073e46a1add435",
+    "model": "gpt-6.1-sol",
+    "effort": "xhigh",
+    "allowance_proxy": 6,
+    "collector": "root",
+    "root_context": "/home/bline/cbm-work/pi-accounting-sprint-20261113/control/pre-design-r3-root-context.json",
+    "parent_capacity_scope": "boundedreadonlydispatch only; allcontinuationmeaningdurable, reassessbeforedeepresultcollection ornextimplementation"
+  },
+  "architectural_risk": {
+    "subsystem": "pi-accounting financial semantics across Python reader and C-K contract",
+    "state": "DESIGN_REVIEW_REQUIRED",
+    "reason": "Refinement conservation, lower-bound independence and affirmative auxiliary coverage unresolved; R5 unaccepted",
+    "evidence": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/module-A/ROOT-DISPOSITION.md",
+    "evidence_sha256": "f0492cc4b9c829277ad75d5532e62ab3e1446f73d3ba12d7e7d67fe19f084f67",
+    "ordinary_repair_allowed": false,
+    "r8_mutation_allowed": false,
+    "s2a_allowed": false,
+    "next_required": "Concrete design candidate, fresh Astra xhigh design judgment, exact root adoption",
+    "inherited_defects_count": true,
+    "infrastructure_rejections_increment": 0,
+    "enforcement_scope": "coordinator dispatch control; no product runtime gate claim"
+  },
+  "reviews": {
+    "design_r3": {
+      "status": "completed_collected_retired",
+      "session_id": "91e307d2-8e9b-483b-a7ad-5ff7a21a3f75",
+      "parent": null,
+      "watch_pty": 79687,
+      "launch_pty": {
+        "id": 18077,
+        "exit": 0,
+        "collected": true
+      },
+      "prompt_sha256": "11458c1f1c20c82cbd9ff312dbdc4c773576ef2b17ebd5f40eba6259a87f2613",
+      "prereg_sha256": "e6ef526933acd8d965addc24bbe3a39de84b8a66f2d4ee7e145b1e4f9fffac44",
+      "model_requested": "openai-codex/gpt-6-astra",
+      "effort_requested": "xhigh",
+      "cost_accounting": "manualoverlay; directparentlessPi outside objectiveledger tree",
+      "proxy_threshold": 4,
+      "root_collector": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "verdict": "REVISE_PLAN",
+      "response_sha256": "e075d0c82fd46258e3a1a64ff747e54c5c743b52272609c37f2ebc9e3a1786af",
+      "seal_sha256": "d0cdecf45deade326ce1eae0e121db41c686968c37365221bacfb4e440e781f4",
+      "cost_proxy_usd": 2.74759,
+      "watch_exit": 0,
+      "implementation_rejection_increment": 0
+    },
+    "design_r4": {
+      "session_id": "1a2a7e39-a9b5-42ab-8e28-6c6b0716a782",
+      "status": "completed_collected_retired",
+      "parent": null,
+      "requested_model": "openai-codex/gpt-6-astra",
+      "requested_effort": "xhigh",
+      "prompt_sha256": "8e6bf5a43a5c960f508daeb4f0e0ff21e74375c8aea7ff41083e1c162924a776",
+      "prereg_sha256": "356941c7f7747eb5c3130f554ceb1672005627c1771a2b0d7f073e81756e140f",
+      "launch_pty": {
+        "id": 38941,
+        "exit": 0,
+        "collected": true
+      },
+      "cost_accounting": "manualoverlay",
+      "root_collector": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "watcher_pty": 29027,
+      "verdict": "REVISE_PLAN",
+      "response_sha256": "10679c678e8baea3a9d47566b26d8b91a92f1a0e9a768547855d678817e9f8f7",
+      "seal_sha256": "9b1e9501774072be9728021498f1dfe583b883c2446993673b5dd3a8bb9944f4",
+      "cost_proxy_usd": 2.66138,
+      "watch_exit": 0,
+      "implementation_rejection_increment": 0
+    },
+    "design_r5": {
+      "session_id": "2a40e367-cacd-42ba-8d4a-02d29218af85",
+      "status": "response_collected_retired_host_accounting_unresolved",
+      "parent": null,
+      "model_requested": "openai-codex/gpt-6-astra",
+      "effort_requested": "xhigh",
+      "prompt_sha256": "f0d8b15d5415e3effb753ae0aa1332470e23da4c06a7f368ca831d8574ff4328",
+      "prereg_sha256": "5c59ecd89543ae5c967e1070f6fb22ad3292fde3db6d4ab92d00da34ab9dbbbb",
+      "launch_pty": {
+        "id": 87510,
+        "exit": 0,
+        "collected": true
+      },
+      "root_collector": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "cost_accounting": "manualoverlay",
+      "watcher_pty": 32661,
+      "verdict": "REVISE_PLAN",
+      "response_sha256": "96315599eaa424f02f005c3f4b3016bc3b2cbbc6714d7421347a3cc9a55a2fcb",
+      "seal_sha256": "741631601bccf47003d9472d616fe59b98e595573ce897570ca193deae1eaffa",
+      "watch_exit": 0,
+      "host_terminal_confirmed": false,
+      "proxy_cost_settled": false,
+      "pi_reported_cost_proxy": 2.73592,
+      "implementation_rejection_increment": 0
+    }
+  },
+  "sprint_status": {
+    "state": "closed_at_bounded_continuation",
+    "no_new_paid_dispatch": true,
+    "objective_achieved": false,
+    "grant_deadline": "2026-11-14T01:51:14Z",
+    "next_owner_record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/OWNER-HANDOFF.md",
+    "closed_at": "2026-11-14T01:47:47.547080+00:00",
+    "claims_released": true,
+    "owned_processes_remaining": [],
+    "board_listener": {
+      "pty": 98127,
+      "exit": 130,
+      "collected": true,
+      "last_cursor": 5342
+    },
+    "budget_observation": "stopped with sprint; explicit fresh measurement required before any further paid work"
+  }
+}

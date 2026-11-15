@@ -1,0 +1,16 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/preservation.plan.json",
+  "plan_sha256": "e6c50c685a55a0efb1cbe261eff98c3cd4baea3d2bdcb75f854b46ee74ed2176",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "source-and-raw-preservation",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/preservation-custody/source-and-raw-preservation.json",
+      "record_sha256": "d35ec01fb2d201d046af40f3a190afa85c52abf0e96d286c16e68b0d8b972f52",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

@@ -1,0 +1,11 @@
+{
+ "case_id": "S08-negative-commitment-cap",
+ "inputs": {
+  "rates": {
+   "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  },
+  "reference_time": "2026-11-10T07:00:00Z",
+  "sessions": []
+ }
+}

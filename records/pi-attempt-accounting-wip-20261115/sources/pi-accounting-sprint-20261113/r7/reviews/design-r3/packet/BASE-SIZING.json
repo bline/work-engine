@@ -1,0 +1,13 @@
+{
+  "without_plan": true,
+  "bytes": 735126,
+  "o200k_base_local_tokens": 198725,
+  "historical_transport_overhead_observed_tokens": [
+    372,
+    373,
+    374
+  ],
+  "exact_provider_tokenizer_not_established": true,
+  "target_max_local_input": 230000,
+  "reason": "Leave response/reasoning room in separately observed Astra window; no token admission guarantee"
+}

@@ -1,0 +1,37 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/controls.plan.json",
+  "plan_sha256": "dc0a4de48ef1a75613c96bbfb851fdcd443a3fae2fd687aa00a23ae861a06446",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "python-controls",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/controls-custody/python-controls.json",
+      "record_sha256": "e6f24345a23abbe1be9c4994529c6800d96da1c5ac3c366360c46f6468a38286",
+      "leftovers": 0
+    },
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/controls-custody/build.json",
+      "record_sha256": "e1681588f38d6777f5ca268bcd29ede9245d2279f112a3c24065d1bbfab360b7",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/controls-custody/rust-positive.json",
+      "record_sha256": "dadcfb5bb574f61c306d1515d214e696028ba7a3be6fa3a205478440c8e13b38",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-r10-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/controls-custody/rust-r10-controls.json",
+      "record_sha256": "78503fc16d0fb032fab83b0023bbd4fcd3545b760ad38e2a57c81b40d5f88f7c",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

@@ -1,0 +1,203 @@
+test_S01_reservation_basis_settlement_below_the_reservation_releases_it (repro_p115.Repro.test_S01_reservation_basis_settlement_below_the_reservation_releases_it) ... FAIL
+test_S02_settlement_appended_before_its_reservation_releases_it (repro_p115.Repro.test_S02_settlement_appended_before_its_reservation_releases_it) ... FAIL
+test_S03_future_dated_settlement_removes_an_in_window_obligation (repro_p115.Repro.test_S03_future_dated_settlement_removes_an_in_window_obligation) ... FAIL
+test_S04_unrelated_next_row_closes_an_unsettled_reservation (repro_p115.Repro.test_S04_unrelated_next_row_closes_an_unsettled_reservation) ... FAIL
+test_S05a_turn_conflict_under_another_sessions_path_is_scoped_away (repro_p115.Repro.test_S05a_turn_conflict_under_another_sessions_path_is_scoped_away) ... FAIL
+test_S05b_orphan_log_of_an_unrelated_session_blocks_this_objective (repro_p115.Repro.test_S05b_orphan_log_of_an_unrelated_session_blocks_this_objective) ... FAIL
+test_S06_string_http_status_releases_a_reservation_without_a_blocking_issue (repro_p115.Repro.test_S06_string_http_status_releases_a_reservation_without_a_blocking_issue) ... FAIL
+test_S08_negative_pending_journal_cap_creates_room (repro_p115.Repro.test_S08_negative_pending_journal_cap_creates_room) ... ok
+
+======================================================================
+FAIL: test_S01_reservation_basis_settlement_below_the_reservation_releases_it (repro_p115.Repro.test_S01_reservation_basis_settlement_below_the_reservation_releases_it)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p124-a133/repro/earlier/repro_p115.py", line 105, in test_S01_reservation_basis_settlement_below_the_reservation_releases_it
+    self.assertEqual(a[0], 'admitted', label); self.assertLess(a[1], 0.8 - 1e-9, label)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'not_established' != 'admitted'
+- not_established
++ admitted
+ : upstream_error charged 0 (basis reservation)
+
+======================================================================
+FAIL: test_S02_settlement_appended_before_its_reservation_releases_it (repro_p115.Repro.test_S02_settlement_appended_before_its_reservation_releases_it)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p124-a133/repro/earlier/repro_p115.py", line 120, in test_S02_settlement_appended_before_its_reservation_releases_it
+    self.assertEqual(a[:2], ('admitted', 0.0))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('not_established', None) != ('admitted', 0.0)
+
+First differing element 0:
+'not_established'
+'admitted'
+
+- ('not_established', None)
++ ('admitted', 0.0)
+
+======================================================================
+FAIL: test_S03_future_dated_settlement_removes_an_in_window_obligation (repro_p115.Repro.test_S03_future_dated_settlement_removes_an_in_window_obligation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p124-a133/repro/earlier/repro_p115.py", line 133, in test_S03_future_dated_settlement_removes_an_in_window_obligation
+    self.assertEqual(a[:3], ('admitted', 0.0, []))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('not_established', None, ['pi_session_cloc[39 chars]le']) != ('admitted', 0.0, [])
+
+First differing element 0:
+'not_established'
+'admitted'
+
++ ('admitted', 0.0, [])
+- ('not_established',
+-  None,
+-  ['pi_session_clock_ahead', 'pi_undated_call_unattributable'])
+
+======================================================================
+FAIL: test_S04_unrelated_next_row_closes_an_unsettled_reservation (repro_p115.Repro.test_S04_unrelated_next_row_closes_an_unsettled_reservation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p124-a133/repro/earlier/repro_p115.py", line 146, in test_S04_unrelated_next_row_closes_an_unsettled_reservation
+    self.assertEqual(a[:3], ('admitted', 0.0, []))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('not_established', None, ['pi_undated_call_unattributable']) != ('admitted', 0.0, [])
+
+First differing element 0:
+'not_established'
+'admitted'
+
+- ('not_established', None, ['pi_undated_call_unattributable'])
++ ('admitted', 0.0, [])
+
+======================================================================
+FAIL: test_S05a_turn_conflict_under_another_sessions_path_is_scoped_away (repro_p115.Repro.test_S05a_turn_conflict_under_another_sessions_path_is_scoped_away)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p124-a133/repro/earlier/repro_p115.py", line 166, in test_S05a_turn_conflict_under_another_sessions_path_is_scoped_away
+    self.assertEqual((a[0], a[1]), ('admitted', 0.1))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('not_established', None) != ('admitted', 0.1)
+
+First differing element 0:
+'not_established'
+'admitted'
+
+- ('not_established', None)
++ ('admitted', 0.1)
+
+======================================================================
+FAIL: test_S05b_orphan_log_of_an_unrelated_session_blocks_this_objective (repro_p115.Repro.test_S05b_orphan_log_of_an_unrelated_session_blocks_this_objective)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p124-a133/repro/earlier/repro_p115.py", line 181, in test_S05b_orphan_log_of_an_unrelated_session_blocks_this_objective
+    self.assertEqual(a[0], 'not_established'); self.assertIn('pi_proxy_log_unreferenced', a[2])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'admitted' != 'not_established'
+- admitted
++ not_established
+
+
+======================================================================
+FAIL: test_S06_string_http_status_releases_a_reservation_without_a_blocking_issue (repro_p115.Repro.test_S06_string_http_status_releases_a_reservation_without_a_blocking_issue)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p124-a133/repro/earlier/repro_p115.py", line 193, in test_S06_string_http_status_releases_a_reservation_without_a_blocking_issue
+    self.assertEqual(a[:3], ('admitted', 0.0, []))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('not_established', None, ['pi_http_status_invalid', 'pi_settlement_invalid']) != ('admitted', 0.0, [])
+
+First differing element 0:
+'not_established'
+'admitted'
+
+- ('not_established', None, ['pi_http_status_invalid', 'pi_settlement_invalid'])
++ ('admitted', 0.0, [])
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.193s
+
+FAILED (failures=7)
+
+S-01 reserve 0.8 then upstream_error charged 0 (basis reservation); limit 1, new 0.5:
+    A1.2     ('not_established', None, ['pi_settlement_invalid'], None)
+    deac8099 ('admitted', 0.0, [], 0)
+
+S-01 reserve 0.8 then upstream_error charged 0, reserved_usd omitted; limit 1, new 0.5:
+    A1.2     ('not_established', None, ['pi_settlement_invalid'], None)
+    deac8099 ('admitted', 0.0, [], 0)
+
+S-01 reserve 0.8 then upstream_error charged 0.25 of 0.8; limit 1, new 0.5:
+    A1.2     ('not_established', None, ['pi_settlement_invalid'], None)
+    deac8099 ('admitted', 0.0, [], 0)
+
+S-01 reserve 0.8 then request basis reservation charged 0; limit 1, new 0.5:
+    A1.2     ('not_established', None, ['pi_settlement_invalid'], None)
+    deac8099 ('admitted', 0.0, [], 0)
+
+S-01 control: upstream_error retains the full 0.8:
+    A1.2     ('refused', 0.8, [], 0)
+    deac8099 ('admitted', 0.0, [], 0)
+
+S-02 429 settlement (n=1) appended before usd_reserved (n=2) for rid 1, same second:
+    A1.2     ('not_established', None, ['pi_settlement_invalid'], None)
+    deac8099 ('admitted', 0.0, [], 0)
+
+S-02 control: the reservation alone:
+    A1.2     ('refused', 0.8, [], 0)
+    deac8099 ('refused', 0.8, [], 0)
+
+S-02 note: reservation n=1 then 429 settlement with n=7 (attempt number differs):
+    A1.2     ('not_established', None, ['pi_settlement_invalid'], None)
+    deac8099 ('admitted', 0.0, [], 0)
+
+S-03 reserve 0.8 at 2026-11-10, reservation settlement 0.8 stamped 2099:
+    A1.2     ('not_established', None, ['pi_session_clock_ahead', 'pi_undated_call_unattributable'], None)
+    deac8099 ('admitted', 0.0, [], 0)
+    A1.2 issues (in scope, outside): (['pi_session_clock_ahead', 'pi_undated_call_unattributable'], {})
+
+S-03 control: same settlement stamped one minute later:
+    A1.2     ('refused', 0.8, [], 0)
+    deac8099 ('admitted', 0.0, [], 0)
+
+S-04 objective from 06:30; reserve 0.8 at 06:29:58 (never settled), refused (other request) at 06:29:59:
+    A1.2     ('not_established', None, ['pi_undated_call_unattributable'], None)
+    deac8099 ('admitted', 0.0, [], 0)
+    A1.2 issues (in scope, outside): (['pi_undated_call_unattributable'], {})
+
+S-04 control: the same unsettled reservation without the unrelated row:
+    A1.2     ('not_established', None, ['pi_undated_call_unattributable'], None)
+    deac8099 ('admitted', 0.0, [], 0)
+
+S-05a member S2's turn 1 also recorded with a 0.8-charged log under S1's path:
+    A1.2     ('not_established', None, ['pi_proxy_log_misplaced', 'pi_turn_conflict'], None)
+    deac8099 ('admitted', 0.1, [], 0)
+    A1.2 issues (in scope, outside): (['pi_proxy_log_misplaced', 'pi_turn_conflict'], {})
+
+S-05a control: the same conflicting log under S2's own path:
+    A1.2     ('not_established', None, ['pi_turn_conflict'], None)
+    deac8099 ('admitted', 0.1, [], 0)
+
+S-05b unrelated S3 (parent unrelated-root) has an unreferenced log beside its own in a UUID-free directory:
+    A1.2     ('admitted', 0.1, [], 0)
+    deac8099 ('admitted', 0.1, [], 0)
+
+S-05b control: without the stray log:
+    A1.2     ('admitted', 0.1, [], 0)
+    deac8099 ('admitted', 0.1, [], 0)
+
+S-06 reserve 0.8, request http_status '200' (string), no response id, usage settlement charged 0:
+    A1.2     ('not_established', None, ['pi_http_status_invalid', 'pi_settlement_invalid'], None)
+    deac8099 ('admitted', 0.0, [], 0)
+    A1.2 issues (in scope, outside): (['pi_http_status_invalid', 'pi_settlement_invalid'], {})
+
+S-06 control: the same row with http_status 200 (integer):
+    A1.2     ('not_established', None, ['pi_settlement_invalid'], None)
+    deac8099 ('admitted', 0.0, [], 0)
+
+S-08 control: empty journal, new 1.5 under limit 1:
+    A1.2     ('refused', 0.0, [], 0)
+    deac8099 ('refused', 0.0, [], 0)
+
+S-08 journal pending row max_usd=-1, new 1.5 under limit 1:
+    A1.2     ('admitted', 0.0, [], -1)
+    deac8099 ('admitted', 0.0, [], -1)

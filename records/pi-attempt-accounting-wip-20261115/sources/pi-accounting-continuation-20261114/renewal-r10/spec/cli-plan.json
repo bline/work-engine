@@ -1,0 +1,140 @@
+{
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+  "steps": [
+    {
+      "name": "generated-check",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+        "check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "--generated"
+      ]
+    },
+    {
+      "name": "canonical-check",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+        "canonical",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/spec/ck.json"
+      ]
+    },
+    {
+      "name": "selected-retained_charge-0",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json"
+      ]
+    },
+    {
+      "name": "selected-primary_anchor-0",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/VC11-multi-turn-session.bundle.json"
+      ]
+    },
+    {
+      "name": "selected-primary_anchor-1",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json"
+      ]
+    },
+    {
+      "name": "selected-primary_anchor-2",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/VC07-read-failure-paired.bundle.json"
+      ]
+    },
+    {
+      "name": "selected-malformed_response_model-0",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json"
+      ]
+    },
+    {
+      "name": "selected-malformed_response_model-1",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json"
+      ]
+    },
+    {
+      "name": "selected-reservation_classes-0",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/equal-reservations.bundle.json"
+      ]
+    },
+    {
+      "name": "VC07-conditional",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-controls/VC07-conditional.bundle.json"
+      ]
+    },
+    {
+      "name": "VC07-unlinked",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-controls/VC07-unlinked.bundle.json"
+      ]
+    },
+    {
+      "name": "cli-positive",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-fixtures/positive.json"
+      ]
+    },
+    {
+      "name": "cli-stale-extent",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-fixtures/stale-extent.json"
+      ]
+    },
+    {
+      "name": "cli-wrong-fragment",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-fixtures/wrong-fragment.json"
+      ]
+    },
+    {
+      "name": "cli-wrong-scope",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+        "evidence",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-fixtures/wrong-scope.json"
+      ]
+    }
+  ]
+}

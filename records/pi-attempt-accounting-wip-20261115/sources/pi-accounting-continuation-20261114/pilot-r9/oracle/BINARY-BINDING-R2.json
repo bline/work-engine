@@ -1,0 +1,14 @@
+{
+  "binaries": {
+    "rust-positive": {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+      "sha256": "850779f25e407ed4119c96a6da64da7810e270ee8a2e3d8fad2f93b236b3959b"
+    },
+    "evidence-positive-0": {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/target/debug/pi-accounting-spec-check",
+      "sha256": "3cee159b91da619f73e97b90f0f0833481616afd5c760346d99ebb16aaf66149"
+    }
+  },
+  "source_bindings_sha256": "338289fe21d531dd66bcaea7470c9298f190848b2fb7f2f555ac0d5dfe61f9cc",
+  "custody_summary_sha256": "3450872c035a8e66b38185beb025b3a23d2870c22cdef3294596e91955539feb"
+}

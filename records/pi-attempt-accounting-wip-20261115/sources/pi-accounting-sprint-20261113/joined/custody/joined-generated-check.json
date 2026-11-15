@@ -1,0 +1,111 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "joined-generated-check",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-sprint-20261113/target-spec/debug/pi-accounting-spec-check",
+    "check",
+    "/home/bline/cbm-work/p136-s1r6/s1",
+    "--generated"
+  ],
+  "cwd": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-sprint-20261113/target-joined"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2523243,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.json",
+      "type": "file",
+      "mode": 436,
+      "length": 140217,
+      "sha256": "1ac75ab5b44fa24ce35953d32d2b1ba145a1928fb5a06f884e3a434e0faa3371"
+    },
+    {
+      "path": "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.schema.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7174,
+      "sha256": "1854822d6a4584f9aec4e517b1c2e952bb2e66a519d20600e4bba3f87378b93b"
+    },
+    {
+      "path": "/home/bline/cbm-work/p136-s1r6/s1/spec/interface.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4467,
+      "sha256": "8020a947b6d306e85dbe93ddc512f0cd4310b7e8a8d5dbadc608e54755f1af2e"
+    },
+    {
+      "path": "/home/bline/cbm-work/p136-s1r6/s1/spec/dependencies.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4792,
+      "sha256": "bc076d9cb0dbbb8559af74641c2eced788eee127b74a5e1b2aba95630809ed09"
+    },
+    {
+      "path": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.toml",
+      "type": "file",
+      "mode": 436,
+      "length": 203,
+      "sha256": "a74409c9b478ce13e0e6baa0785bc797f1d555930ba171b0edb135e45174d437"
+    },
+    {
+      "path": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.lock",
+      "type": "file",
+      "mode": 436,
+      "length": 4901,
+      "sha256": "bab53b79f7ddb0609189d9606c5666b9b19d3a659fb12055ed977d2e3f51d256"
+    },
+    {
+      "path": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/lib.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 36143,
+      "sha256": "5bd06e25f1314d74467e6cffb0ae671567b3c477c5023ad7f71ef149e3b2b800"
+    },
+    {
+      "path": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/main.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 3590,
+      "sha256": "f3960be0439b29789d7793ffc4028c807c348b86ad556465977f952be63a0d09"
+    },
+    {
+      "path": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/tests/independent_raw_axes.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 29998,
+      "sha256": "d3fc0b7ce9a091d14514ef64e681d34d78c1585bf0f116de34f389f0d5e7429d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/freeze/manifest.json",
+      "type": "file",
+      "mode": 292,
+      "length": 127045,
+      "sha256": "293b7a97583e591e8e84c0002f703e34e79161185f55ae034333378550b107ae"
+    }
+  ],
+  "timeout_s": 120,
+  "pid": 2525362,
+  "pgid": 2525362,
+  "started_at": "2026-11-13T22:55:01.434489Z",
+  "ended_at": "2026-11-13T22:55:01.650483Z",
+  "duration_s": 0.216,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/custody/joined-generated-check.stdout",
+    "length": 306,
+    "sha256": "5af1c32ea75b8944eb7c74080e0beaa8310f299c831adc3d1b70791d84127624"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/custody/joined-generated-check.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

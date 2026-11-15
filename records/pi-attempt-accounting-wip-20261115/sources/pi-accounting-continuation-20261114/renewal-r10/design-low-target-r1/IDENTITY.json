@@ -1,0 +1,26 @@
+{
+  "session": "01a1d919-2544-7fb2-befe-00237c74ced2",
+  "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T01-07-46-01a1d919-2544-7fb2-befe-00237c74ced2.jsonl",
+  "meta": {
+    "id": "01a1d919-2544-7fb2-befe-00237c74ced2",
+    "cwd": "/home/bline/code/work-engine",
+    "source": "vscode"
+  },
+  "meta_line": 1,
+  "settings": {
+    "model": "gpt-6-astra",
+    "reasoning_effort": "xhigh",
+    "service_tier": "default"
+  },
+  "settings_line": 13,
+  "turn_context": {
+    "model": "gpt-6-astra",
+    "effort": "xhigh",
+    "approval_policy": "never",
+    "sandbox_policy": {
+      "type": "read-only"
+    }
+  },
+  "turn_context_line": 12,
+  "settings_observation": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-low-target-r1/SETTINGS.json"
+}

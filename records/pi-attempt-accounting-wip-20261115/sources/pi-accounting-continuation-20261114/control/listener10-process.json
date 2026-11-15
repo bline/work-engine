@@ -1,0 +1,10 @@
+{
+  "wrapper_pid": 3482533,
+  "listener_pid": 3482534,
+  "started_at": "2026-11-14T06:38:07.404410+00:00",
+  "collector": "root foreground tool natural boundaries",
+  "state": "stop_requested terminalcollection owed tool21360",
+  "context_binding": "new context epoch freshbaseline, thresholds185000/220000",
+  "stop_requested_at": "2026-11-14T06:50:30.686155+00:00",
+  "stop_signal": "SIGINT exactverifiedboardchild"
+}

@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-14T05:38:51.448291+00:00",
+  "previous": 6,
+  "now": 8,
+  "observed_before_extension": 5.028586,
+  "forecast": 96.79,
+  "decision": "small supervisor allocation adjustment under unchanged user100/deadline; no product/scope change",
+  "notice": "Native busy delivery not guaranteed; root updates identity-binding file and preserves pending delivery"
+}

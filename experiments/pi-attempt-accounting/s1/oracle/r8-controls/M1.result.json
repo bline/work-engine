@@ -1,0 +1,29 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "usage_valuation",
+      "kind": "exact",
+      "nano": "80000000"
+    },
+    "low": "20000000"
+  },
+  "findings": [
+    "IdentityContradiction"
+  ],
+  "id": "result:M1",
+  "units": [
+    {
+      "high": {
+        "basis": "usage_valuation",
+        "kind": "exact",
+        "nano": "80000000"
+      },
+      "id": "primary:r+s",
+      "low": "20000000",
+      "origins": [
+        "r",
+        "s"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,900 @@
+{
+  "results": [
+    {
+      "claim_id": "A04-undated-settlement-between-dated-neighbours/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "A04-undated-settlement-between-dated-neighbours/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "A06-reservation-usage-null-status-no-id/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "A06-reservation-usage-null-status-no-id/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "A1-01-upstream-error-and-unknown-event/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "A1-01-upstream-error-and-unknown-event/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "A1-02-undated-row-inverted-neighbours/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "A1-02-undated-row-inverted-neighbours/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "A1-03-unreferenced-log/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "A1-03-unreferenced-log/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "A1-06-control-no-session-file/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "A1-06-control-no-session-file/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "A1-06-session-file-is-not-evidence/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "A1-06-session-file-is-not-evidence/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "C1-control-before-reference/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "C1-control-before-reference/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "C1-settlement-after-reference-time/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "C1-settlement-after-reference-time/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "C2-unsettled-reservation-after-reference-time/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "C2-unsettled-reservation-after-reference-time/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "C3-identical-reservation-copy/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "C3-identical-reservation-copy/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "C4-missing-charge-basis/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "C4-missing-charge-basis/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "D1-closed-objective-provisional/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "D1-closed-objective-provisional/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "D1-successor-constrained-by-predecessor-obligations/successor/p/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "D1-successor-constrained-by-predecessor-obligations/successor/p/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "D1-successor-constrained-by-predecessor-obligations/successor/s/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "D1-successor-constrained-by-predecessor-obligations/successor/s/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "D4-unbudgeted-error-status/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "D4-unbudgeted-error-status/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "DUP-response-id-across-attempts/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "DUP-response-id-across-attempts/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "Ha-control-consistent-split/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "Ha-control-consistent-split/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "Ha-inconsistent-cache-split-keeps-supported-low/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "Ha-inconsistent-cache-split-keeps-supported-low/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "Hb-window-independence/window-from-06:00/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "Hb-window-independence/window-from-06:00/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "Hb-window-independence/window-from-06:20/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "Hb-window-independence/window-from-06:20/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N01-control-served-pinned/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N01-control-served-pinned/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N01-identity-refusal-dearer-served/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N01-identity-refusal-dearer-served/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N01-orphan-identity-refusal/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N01-orphan-identity-refusal/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N01-variant-no-refusal-row/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N01-variant-no-refusal-row/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N01-variant-reservation-above-both/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N01-variant-reservation-above-both/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N02-malformed-anthropic-tier/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N02-malformed-anthropic-tier/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N03-api-row-other-provider/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N03-api-row-other-provider/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N03-contradicted-admission/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N03-contradicted-admission/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N03-contradicted-refused-row/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N03-contradicted-refused-row/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N03-control-unlabelled-admission/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N03-control-unlabelled-admission/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N03-control-unlabelled-refused-row/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N03-control-unlabelled-refused-row/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N03-identity-refusal-in-subscription/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N03-identity-refusal-in-subscription/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N04-ambiguous-read-failure/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N04-ambiguous-read-failure/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N04-budgeted-header-failure-no-own-reservation/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N04-budgeted-header-failure-no-own-reservation/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N04-budgeted-header-failure-own-reservation/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N04-budgeted-header-failure-own-reservation/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N04-control-request-alone/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N04-control-request-alone/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N04-duplicated-read-failure/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N04-duplicated-read-failure/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N04-header-write-error-reused-n/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N04-header-write-error-reused-n/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N05-control-consistent-retirement/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N05-control-consistent-retirement/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N05-retirement-before-later-delivery/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N05-retirement-before-later-delivery/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N06-null-cache-counts/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N06-null-cache-counts/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N07-control-retired-journal/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N07-control-retired-journal/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N07-control-retired-legacy/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N07-control-retired-legacy/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N07-reopened-session-journal/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N07-reopened-session-journal/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N07-reopened-session-legacy/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N07-reopened-session-legacy/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N08-control-priced-model/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N08-control-priced-model/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N08-model-without-producer-rate/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "N08-model-without-producer-rate/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "ORD-sessions-in-ledger-order/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "ORD-sessions-in-ledger-order/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "ORD-sessions-reversed/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "ORD-sessions-reversed/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "OWN-budgeted-session-without-admission/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "OWN-budgeted-session-without-admission/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "OWN-two-admitting-objectives/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "OWN-two-admitting-objectives/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "OWN-two-admitting-objectives/default/p/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "OWN-two-admitting-objectives/default/p/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "P2-usage-settlement-unpriced-identity-keeps-charge/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "P2-usage-settlement-unpriced-identity-keeps-charge/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "P9-claimed-charge-above-reservation/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "P9-claimed-charge-above-reservation/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "Q5-unrecognised-openai-tier/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "Q5-unrecognised-openai-tier/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "Q8-unadmitted-outside-candidate-window/window-contains/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "Q8-unadmitted-outside-candidate-window/window-contains/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "Q8-unadmitted-outside-candidate-window/window-starts-later/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "Q8-unadmitted-outside-candidate-window/window-starts-later/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "R01-dated-rows-backwards/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "R01-dated-rows-backwards/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "R02-string-charge/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "R02-string-charge/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "R04-reused-reservation-id/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "R04-reused-reservation-id/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "R05-non-object-json-rows/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "R05-non-object-json-rows/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "R06-launch-row-missing/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "R06-launch-row-missing/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "R6-C01-writer-reservation-floor-control/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "R6-C01-writer-reservation-floor-control/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "R6-C02-non200-success-terminal-usage-control/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "R6-C02-non200-success-terminal-usage-control/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S01-reservation-basis-charged-less/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S01-reservation-basis-charged-less/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S01-reserved-usd-omitted/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S01-reserved-usd-omitted/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S01-upstream-error-charged-zero/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S01-upstream-error-charged-zero/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S02-attempt-number-differs/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S02-attempt-number-differs/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S02-control-error-status-after-reservation/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S02-control-error-status-after-reservation/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S02-settlement-before-reservation/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S02-settlement-before-reservation/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S03-settlement-stamped-far-future/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S03-settlement-stamped-far-future/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S04-next-unrelated-row-does-not-close/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S04-next-unrelated-row-does-not-close/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S05-unrelated-orphan-log-does-not-block/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S05-unrelated-orphan-log-does-not-block/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S06-string-http-status/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S06-string-http-status/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S08-control-pending-commitment/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S08-control-pending-commitment/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S08-negative-commitment-cap/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "S08-negative-commitment-cap/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U01-malformed-attempt-number/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U01-malformed-attempt-number/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U02-final-line-without-newline/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U02-final-line-without-newline/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U03-control/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U03-control/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U03-retirement-before-turn-evidence/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U03-retirement-before-turn-evidence/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U04-control-settled-before-closure/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U04-control-settled-before-closure/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U04-settled-after-closure-stays-with-owner/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U04-settled-after-closure-stays-with-owner/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U05-inconsistent-charge-without-response-id/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U05-inconsistent-charge-without-response-id/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U05-usage-settlement-without-response-id/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U05-usage-settlement-without-response-id/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U06-subscription-upstream-error-unlabelled/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U06-subscription-upstream-error-unlabelled/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U07-unrelated-non-object-usage-does-not-block/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U07-unrelated-non-object-usage-does-not-block/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U08-missing-observed-tier/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "U08-missing-observed-tier/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V01-cheaper-response-model-undercharge/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V01-cheaper-response-model-undercharge/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V01-control-producer-price/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V01-control-producer-price/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V01-usage-settlement-other-response-model/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V01-usage-settlement-other-response-model/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V02-control-producer-price/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V02-control-producer-price/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V02-unsplit-writes-undercharged/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V02-unsplit-writes-undercharged/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V03-control-labelled-upstream-error/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V03-control-labelled-upstream-error/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V03-subscription-upstream-error-labelled-api/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V03-subscription-upstream-error-labelled-api/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V06-reservation-attempt-number-missing/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V06-reservation-attempt-number-missing/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V07-unrelated-unreadable-log-does-not-block/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "V07-unrelated-unreadable-log-does-not-block/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC01-openai-usage-settlement/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC01-openai-usage-settlement/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC02-anthropic-usage-settlement/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC02-anthropic-usage-settlement/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC03-reservation-settlement-with-usage/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC03-reservation-settlement-with-usage/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC04-upstream-error-keeps-reservation/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC04-upstream-error-keeps-reservation/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC05-unsettled-reservation/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC05-unsettled-reservation/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC06-unbudgeted-completed-request/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC06-unbudgeted-completed-request/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC07-read-failure-paired/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC07-read-failure-paired/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC08-subscription-measured-request/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC08-subscription-measured-request/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC11-multi-turn-session/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC11-multi-turn-session/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC12-reused-n-without-errors/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC12-reused-n-without-errors/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC13-equal-timestamps/default/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC13-equal-timestamps/default/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC14-open-session-commitment/limit-1.0/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC14-open-session-commitment/limit-1.0/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC14-open-session-commitment/limit-0.55/o/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC14-open-session-commitment/limit-0.55/o/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC15-successor-not-charged-settled-predecessor-spend/successor/p/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC15-successor-not-charged-settled-predecessor-spend/successor/p/owned_outstanding",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC15-successor-not-charged-settled-predecessor-spend/successor/s/owned_closed",
+      "consistent_wrong_rejected": true
+    },
+    {
+      "claim_id": "VC15-successor-not-charged-settled-predecessor-spend/successor/s/owned_outstanding",
+      "consistent_wrong_rejected": true
+    }
+  ]
+}

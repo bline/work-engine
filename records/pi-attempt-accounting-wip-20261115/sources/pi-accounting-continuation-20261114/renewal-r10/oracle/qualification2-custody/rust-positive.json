@@ -1,0 +1,43 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "rust-positive",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+    "r9_",
+    "--nocapture"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+  "env_clear": false,
+  "env_set": {
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "R10_EVIDENCE_EXECUTABLE": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/pi-accounting-spec-check",
+    "PYTHONWARNINGS": "ignore::ResourceWarning"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3553053,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 3556853,
+  "pgid": 3556853,
+  "started_at": "2026-11-14T07:10:05.534169Z",
+  "ended_at": "2026-11-14T07:10:09.531218Z",
+  "duration_s": 3.997,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/qualification2-custody/rust-positive.stdout",
+    "length": 6254,
+    "sha256": "d500d6851f025f30087406d53ed7810b972153fb605aded7b26951181842d998"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/qualification2-custody/rust-positive.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

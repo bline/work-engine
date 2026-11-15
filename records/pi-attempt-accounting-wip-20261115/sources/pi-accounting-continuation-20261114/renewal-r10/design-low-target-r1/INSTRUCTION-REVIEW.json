@@ -1,0 +1,11 @@
+{
+  "skill": "agent-instruction-review",
+  "applicability": "applicable; rolepacket establishes readonly authority/collection/loading and identity boundary",
+  "subject": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-low-target-r1/PACKET.md",
+  "sha256": "00489095e9b4d702381f54a918fdd085b2e46c299cb76f35deeffdfd75edfef5",
+  "inspected": "full packet; plan protectedconsequences and active manualorchestration role contract",
+  "findings": [],
+  "advice": "retain",
+  "evidence": "readonly/custody authority derives active reviewer contract; rootcollects and verifiesidentity before substantivework; explicit holds retain original guard; targeted loading gives concrete stringvsactualtarget failure with executedcounterexample",
+  "limitations": "author advisory selfcheck, not independentcertification or semanticdesign acceptance"
+}

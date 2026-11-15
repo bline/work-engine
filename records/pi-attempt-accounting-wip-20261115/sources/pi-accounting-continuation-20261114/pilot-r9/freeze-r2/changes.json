@@ -1,0 +1,24 @@
+{
+  "baseline": {
+    "manifest": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/freeze/manifest.json",
+    "sha256": "637eeedbe7a52be822e785f8e70ba209a86740d242febdf7c5efa173be21575e"
+  },
+  "changed": [
+    "oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json",
+    "oracle/r8-completion-B/VC07-read-failure-paired.bundle.json",
+    "oracle/r8-completion-B/VC11-multi-turn-session.bundle.json",
+    "oracle/r8-controls/VC07-conditional.bundle.json",
+    "oracle/r9-pilot/cases/equal-reservations.bundle.json",
+    "tooling/spec-check/tests/independent_raw_axes.rs",
+    "validator/r9_pilot.py",
+    "validator/test_r9_pilot.py"
+  ],
+  "added": [
+    "oracle/r9-pilot/cases/equal-reservations.provenance.json",
+    "validator/__pycache__/r9_pilot.cpython-314.pyc",
+    "validator/__pycache__/test_r9_pilot.cpython-314.pyc",
+    "validator/__pycache__/validate_corpus.cpython-314.pyc"
+  ],
+  "removed": [],
+  "unchanged_count": 947
+}

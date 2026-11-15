@@ -1,0 +1,15 @@
+{
+  "discovery_routes": [
+    "R1-first",
+    "R2-first",
+    "all-at-once"
+  ],
+  "identity_context_detachment": "RS display removal does not delete financial candidate",
+  "raw": [
+    "R1=50M",
+    "u=10000AnthropicInputTokens",
+    "sonnetContext=2USDperMillion",
+    "fableRefusalContext=8USDperMillion",
+    "R2=1M same n"
+  ]
+}

@@ -1,0 +1,227 @@
+{
+ "added_in": "1.2-s1",
+ "ambiguity": null,
+ "case_id": "P130-R11-open-session-before-retirement",
+ "class": "producer_valid",
+ "contract": "pi-accounting-contract/1.6-s1",
+ "controls": [],
+ "evaluations": [
+  {
+   "admission_request": {
+    "new": "500000000",
+    "objective": "o"
+   },
+   "expected": {
+    "admission": {
+     "decision": "refused",
+     "limit": "1000000000",
+     "new": "500000000",
+     "objective": "o"
+    },
+    "attribution": [],
+    "objectives": [
+     {
+      "commitments": [
+       {
+        "admission_id": "a1",
+        "committed": "800000000",
+        "gate": {
+         "qualified": false,
+         "reasons": [
+          "NoGateEvidence"
+         ]
+        },
+        "kind": "at_least",
+        "state": "launched_open"
+       }
+      ],
+      "objective": "o",
+      "owned_closed": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "owned_outstanding": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "predecessor_obligations": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "provisional": true,
+      "reasons": [
+       "UnenforcedCommitment"
+      ],
+      "status": "not_established"
+     }
+    ]
+   },
+   "name": "default",
+   "objectives": [
+    {
+     "admissions": [
+      {
+       "admission_id": "a1",
+       "rows": [
+        {
+         "admission_id": "a1",
+         "at": "2026-11-10T06:00:05Z",
+         "event": "pending",
+         "max_usd": 0.8
+        },
+        {
+         "admission_id": "a1",
+         "at": "2026-11-10T06:00:10Z",
+         "event": "launched",
+         "session_id": "00000000-0000-4000-8000-0000000000c1"
+        }
+       ],
+       "session": "00000000-0000-4000-8000-0000000000c1",
+       "source": "journal"
+      }
+     ],
+     "closed_at": null,
+     "limit": "1000000000",
+     "objective": "o",
+     "predecessor": null,
+     "started_at": "2026-11-10T06:00:00Z",
+     "tree_sessions": [
+      "00000000-0000-4000-8000-0000000000c1"
+     ]
+    }
+   ]
+  }
+ ],
+ "evidence_pair": {
+  "other": "N07-control-retired-journal",
+  "permitted_release": false,
+  "relation": "subset"
+ },
+ "expected": {
+  "attempts": [],
+  "inventory": [],
+  "lifecycle": {
+   "S1": {
+    "clock": "trusted",
+    "reopened": false,
+    "state": "open"
+   }
+  },
+  "non_attempt": [],
+  "unreadable": []
+ },
+ "findings": [
+  "P1.29-R-11"
+ ],
+ "group": "P1.29",
+ "historical": {
+  "a134_086bdec1": {
+   "blocking_kinds": [],
+   "decision": "refused",
+   "evaluation": "default",
+   "note": "comparison only; A1.3.4 has no ownership (D1) concept: it attributes by session tree and time window",
+   "reader_sha256": "086bdec1d443064f6847821858f34bbf227f8804a9a5fc8a362416f62b29d621",
+   "reasons": [
+    "exposure 1.300000 would pass the objective pi_api limit 1.0"
+   ],
+   "spent_high_nano": "0",
+   "spent_low_nano": "0"
+  }
+ },
+ "inputs": {
+  "rates": {
+   "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  },
+  "reference_time": "2026-11-10T07:00:00Z",
+  "sessions": [
+   {
+    "alias": "S1",
+    "launch": {
+     "auth_lane": "api",
+     "model": "openai/gpt-6-astra",
+     "parent": "root"
+    },
+    "lifecycle": [
+     {
+      "at": "2026-11-10T06:00:10Z",
+      "event": "launch",
+      "turn": 1
+     }
+    ],
+    "logs": {
+     "turn-1": {
+      "final_newline": true,
+      "lines": []
+     }
+    },
+    "session_id": "00000000-0000-4000-8000-0000000000c1"
+   }
+  ]
+ },
+ "invariants": [
+  "INV-A5",
+  "INV-A8"
+ ],
+ "notes": "N07-control-retired-journal without its retire row; adding that row is a permitted release.",
+ "profile": "current_producer",
+ "provenance": {
+  "origin": "contract::A5 permitted release, 12.3 A-3, A-5 (P1.29 R-11)"
+ },
+ "rationale": "A1.3.4 refuses on headroom; the contract treats the open commitment as unenforced and not established (12.3 A-5, Q10). Revision 4 (contract 1.3-s1): default not_established -> refused (OQ-2 12.4 step 3). Revision6: root policy P1-P6; independently frozen source/line arithmetic f097e5a5. Qualified identities preserve family; successful terminal AND integer200 AND required billing counts establishes completion. Closed obligations retain evidence by; none has amount_source none. Future gates use separate conditional test_mock witness; no live qualification.",
+ "reachability": "producer_reachable",
+ "revisions": [],
+ "revisions_r3": [],
+ "revisions_r4": [
+  {
+   "field": "profile",
+   "from": "__absent__",
+   "rule": "OQ-1 2.3: capability profile (release 92a03789 writes no gate evidence)",
+   "to": "current_producer"
+  },
+  {
+   "field": "default/o.commitments[a1].gate",
+   "from": "__absent__",
+   "rule": "OQ-1 A-5: every commitment records its gate qualification; current producer: no gate evidence",
+   "to": {
+    "qualified": false,
+    "reasons": [
+     "NoGateEvidence"
+    ]
+   }
+  },
+  {
+   "field": "default/admission.decision",
+   "from": "not_established",
+   "rule": "OQ-2 12.4 step 3: known owned amounts, valid commitments and the request exceed the limit",
+   "to": "refused"
+  },
+  {
+   "field": "evidence_pair.permitted_release",
+   "from": true,
+   "rule": "OQ-1 A5: a current-producer retirement is not a permitted release (no qualified gate)",
+   "to": false
+  }
+ ],
+ "revisions_r5": [],
+ "revisions_r6": [],
+ "revisions_r7": [
+  {
+   "field": "default/o.provisional",
+   "from": false,
+   "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+   "to": true
+  }
+ ],
+ "role": "control",
+ "schema": "pi-accounting-corpus/1"
+}

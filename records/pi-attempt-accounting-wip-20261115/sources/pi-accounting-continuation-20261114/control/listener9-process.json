@@ -1,0 +1,9 @@
+{
+  "pid": 3443994,
+  "owner": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "collector": "same root foreground exec, natural decision boundaries",
+  "argv": "listener9-argv.json",
+  "gap": "listener8 close to current verified rearm",
+  "state": "starting",
+  "at": "2026-11-14T06:27:22.720571+00:00"
+}

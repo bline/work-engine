@@ -1,0 +1,9 @@
+{
+  "charged": "15000000",
+  "favorable_added_row": "model string gpt-6-astra does not rewrite original malformed model",
+  "model": 7,
+  "raw_origin": "request-model-is-number7",
+  "reservation": "500000000",
+  "status": 200,
+  "terminal": "response.completed"
+}

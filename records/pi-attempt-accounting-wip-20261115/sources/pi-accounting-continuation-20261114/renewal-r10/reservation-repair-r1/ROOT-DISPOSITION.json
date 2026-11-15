@@ -1,0 +1,16 @@
+{
+  "decision": "CHANGES_REQUIRED; fresh separate design required before ordinary repair",
+  "review_report_sha256": "f4108bed0fd074c621c965b5c8ea800c72a9af6e57168b15d93a0f2fae6906a1",
+  "subject_manifest_sha256": "34a2ddba957d2ae4bdcdfa30454641cbb29d59ee780141c518e9e93d95895d61",
+  "finding": "blockingP2 actual selectedlowreference target unresolved in Rust",
+  "origin": "inherited targetvalidation omission; no introduced financialregression established",
+  "root_executed": "missing and renamed lowtarget Rust0/Python1; custody785e293535eb45e8b970d5bce2cee1c63be7b3761376b29586ca851e7eccda71",
+  "source_preserved": 967,
+  "previous_monetary_P2": "addressed at this exact bounded subject; final acceptance still withheld",
+  "original3R3_11historical": "OPEN pending exact rootdisposition; fullS1 obligations retained",
+  "guard": "DESIGN_REVIEW_REQUIRED_R10_LOW_TARGET",
+  "proposed_plan_sha256": "0d55823096785735c39ee3904d13b8675b2eaf818b70661c7e1fe1b3771c9d9d",
+  "ordinaryrepair": "HELD",
+  "nativefinal": "FULLCOLLECTED",
+  "processes": "reviewer no jobs/children; diagnostic39307 terminal1 collected; root combined44424 live"
+}

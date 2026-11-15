@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "subject": "../realization/s1",
+  "schema": "existing spec/accounting.schema.json documents bundle; 1.7-s1",
+  "raw_input_digest": "sha256(json.dumps(case[\"inputs\"], sort_keys=True, separators=(\",\", \":\")).encode(\"utf-8\")); default ensure_ascii=True, no newline",
+  "partitions": {
+    "A": {
+      "bundle_directory": "oracle/r8-completion-A",
+      "assertion_shard": "oracle/r8-completion-A/LOW-ASSERTIONS.json",
+      "bundle_path": "oracle/r8-completion-A/<case_id>.bundle.json"
+    },
+    "B": {
+      "bundle_directory": "oracle/r8-completion-B",
+      "assertion_shard": "oracle/r8-completion-B/LOW-ASSERTIONS.json",
+      "bundle_path": "oracle/r8-completion-B/<case_id>.bundle.json"
+    }
+  },
+  "bundle": {
+    "shape": {
+      "documents": [
+        "AccountingInputProof",
+        "AccountingResult",
+        "AccountingExpectedAssertion (optional; independent low shard is required)"
+      ]
+    },
+    "input_id": "input:<case_id>",
+    "result_id": "result:<case_id>",
+    "lineage_id": "<case_id>",
+    "source_revision_ref": "sha256:<raw_input_sha256>",
+    "origin_id": "existing evidence ref, e.g. S1/turn-1:2; same for all result references",
+    "source_origin_id": "S1/turn-1",
+    "original_position": "original 1-based line position",
+    "raw_bytes_sha256": "SHA256 exact line string UTF-8 (no invented newline); for structured raw rows use json.dumps(row, sort_keys=True, separators=(\",\", \":\")).encode()",
+    "unit_id": "exact attempt.key",
+    "unit_exposure_ref": "case:<case_id>#attempt:<attempt.key>",
+    "scope_ref": "<case_id>/<evaluation>/<objective>/<owned_closed|owned_outstanding>"
+  },
+  "case_references": {
+    "attempt.accounting_result_ref": "<bundle_relative_path>#result:<case_id> (document ref); units selected by exact attempt.key",
+    "rollup.supported_low_evidence_ref": "<bundle_relative_path>#<case_id>/<evaluation>/<objective>/<label> (scope ref in result.low_rollups)",
+    "requirements": "Every expected.attempts row, including codex, has a result ref and matching active unit; every evaluation/objective owned_closed and owned_outstanding rollup has explicit scope ref, including empty zero scopes. No attempts is valid only with no active units."
+  },
+  "assertions": {
+    "shape": {
+      "assertions": [
+        "existing R8-LOW-ASSERTIONS record shape"
+      ]
+    },
+    "required_fields": [
+      "case_id",
+      "evaluation",
+      "objective",
+      "label",
+      "claim_id",
+      "expected_low",
+      "raw_input_sha256",
+      "policy_ref",
+      "raw_derivation_refs",
+      "assumptions",
+      "qualification",
+      "owned_unit_refs",
+      "seed_origin_refs",
+      "alternative_origin_refs"
+    ],
+    "additional_recommended_fields": [
+      "seed_origin_refs",
+      "alternative_origin_refs",
+      "authored_by"
+    ],
+    "claim_id": "<case_id>/<evaluation>/<objective>/<label>",
+    "note": "Independently authored literal low facts, including zero scope facts; no canonical arithmetic imports. Existing24 assertions preserved in aggregate; shards may repeat an identical existing record."
+  },
+  "entrypoints": {
+    "python_partition": "python3 validator/validate_corpus.py partition <corpus_dir> <rates_dir> A|B (will implement shortly; only assigned cases, no global census minima)",
+    "python_join": "python3 validator/validate_corpus.py check <corpus_dir> <rates_dir>",
+    "rust_evidence": "spec-check evidence <subject_root> <bundle_path>",
+    "rust_join": "spec-check corpus <subject_root> [A|B] (will implement; resolves actual references and validates all supplied bundles)"
+  },
+  "authority": "finite declarations only; external grants remain conditional/unestablished; no reducer/live authority/S1 acceptance",
+  "exact_wire_F": "Every Exact pi_api wire unit requires existing-schema accepted whole-origin coverage with complete valuation and valid budgeted C witness, or genuine UnbudgetedCompletion. No expected claim can supply F authority."
+}

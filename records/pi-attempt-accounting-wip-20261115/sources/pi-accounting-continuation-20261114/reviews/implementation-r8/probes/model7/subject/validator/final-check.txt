@@ -1,0 +1,1 @@
+173 cases {'current_producer': 139, 'future_qualified_gate': 34}, admitted valid controls {'current_producer': 4, 'future_qualified_gate': 14}, 0 failures

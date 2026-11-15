@@ -1,0 +1,36 @@
+{
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/tooling/spec-check",
+  "env": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target",
+    "R10_SPEC_FIXTURE_OUT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-fixtures"
+  },
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cargo",
+        "test",
+        "--locked",
+        "--no-run",
+        "--test",
+        "r9_spec_payloads",
+        "--test",
+        "r9_spec_applicability",
+        "--message-format=json"
+      ],
+      "cargo_json": true
+    },
+    {
+      "name": "payloads",
+      "argv": [
+        "{exe:build:r9_spec_payloads}"
+      ]
+    },
+    {
+      "name": "applicability",
+      "argv": [
+        "{exe:build:r9_spec_applicability}"
+      ]
+    }
+  ]
+}

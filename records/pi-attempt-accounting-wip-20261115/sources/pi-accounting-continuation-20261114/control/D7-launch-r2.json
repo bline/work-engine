@@ -1,0 +1,13 @@
+{
+  "at_epoch": 1794634325.3975039,
+  "cwd": "/home/bline/code/work-engine",
+  "effort": "xhigh",
+  "event": "launch",
+  "host": "codex",
+  "model": "gpt-6-astra",
+  "name": "PI S1 R8 D7 independent review",
+  "parent_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "session_id": "01a1d88a-9a44-71e1-9dc5-b558108f35de",
+  "transport": "app_server",
+  "turn_id": "01a1d88a-9d8a-7391-9c14-cbe0d6e02a8a"
+}

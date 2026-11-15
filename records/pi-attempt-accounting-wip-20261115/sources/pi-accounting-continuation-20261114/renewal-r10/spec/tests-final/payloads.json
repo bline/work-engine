@@ -1,0 +1,38 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "payloads",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/deps/r9_spec_payloads-5c2dcd170a773e14"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/tooling/spec-check",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target",
+    "R10_SPEC_FIXTURE_OUT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-fixtures"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3546201,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 3546367,
+  "pgid": 3546367,
+  "started_at": "2026-11-14T07:06:29.697150Z",
+  "ended_at": "2026-11-14T07:06:30.332903Z",
+  "duration_s": 0.636,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/tests-final/payloads.stdout",
+    "length": 497,
+    "sha256": "5292c31972a7d27a8bfa492c1bd7683011115d63ea6620c7e0701fd9427d0153"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/tests-final/payloads.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

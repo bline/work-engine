@@ -1,0 +1,12 @@
+{
+  "requester": "01a1d87a-fd5d-7553-9001-87a86f61a11f",
+  "request_turn": "01a1d87b-0094-7e12-a61f-c42079c30b65",
+  "request_native_message": "call_215e62b06571402581baf6519712721b",
+  "source_manifest": "21df51b69391110beb6952c0eaebfb3c5bf99ac0ef19ce78a225fd24412afb36",
+  "original_test_sha256": "34b3ac6bd007dcfaa7659eae0f4935fac42d63f2cde21df8d924fd9daeebcd66",
+  "probe_test_sha256": "94f892ebcaf49ad021a6cb57b0ec255569d68d9c703172d1c788a64943469487",
+  "only_probe_source_delta": "append test to independent_raw_axes.rs; no frozen source modification",
+  "probe_meaning": "passing observation test reproduces suspected defect; not policy success",
+  "owner": "root",
+  "at": "2026-11-14T05:19:50.195860+00:00"
+}

@@ -1,0 +1,46 @@
+{
+  "schema": "manual-orchestration.custody.freeze.v1",
+  "label": "independent-raw-api-fact-candidate",
+  "root": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle/candidate-subject",
+  "excludes": [],
+  "frozen_at": "2026-11-13T22:15:57.899806Z",
+  "entry_count": 5,
+  "entries_sha256": "29541973b47a6691906afd22ccebff02a22a47eedb9a4b52e8769c8ca796cacb",
+  "entries": [
+    {
+      "path": "ASSESSMENT.md",
+      "type": "file",
+      "mode": 436,
+      "length": 10376,
+      "sha256": "425030cdfe56bfa34524980d5daac0de7ba0c5580304a5e50bc75001ff10a9a5"
+    },
+    {
+      "path": "AUDIT-IDENTITY.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7914,
+      "sha256": "e00eee81e480cc14d34f1b9274d78437673aaeb3803bc23abacc72f58573e8f9"
+    },
+    {
+      "path": "FACTS.json",
+      "type": "file",
+      "mode": 436,
+      "length": 987018,
+      "sha256": "f097e5a541b279f2081c71f54ca3403151475348b8a30245e6846708590e293e"
+    },
+    {
+      "path": "RAW-MANIFEST.json",
+      "type": "file",
+      "mode": 436,
+      "length": 150239,
+      "sha256": "60b3eae7b42f4d44a0fa00ea3120d1461fa820f0a03a8f65a3f1f278b125f4fc"
+    },
+    {
+      "path": "derive_raw_facts.py",
+      "type": "file",
+      "mode": 436,
+      "length": 17089,
+      "sha256": "500392c47b9263b104f7565f9d81f86940a95f34c5c45c02d4b5c5156357f376"
+    }
+  ]
+}

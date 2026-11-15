@@ -1,0 +1,10 @@
+{
+  "claims": [
+    "P9-RETAINED-CHARGE",
+    "PRIMARY/ANCHOR-APPLICATION",
+    "RESPONSE-MODEL7-ACTUAL",
+    "EQUAL-AMOUNT-DISTINCT-RESERVATIONS"
+  ],
+  "published_before_output_edits": true,
+  "registry_sha256": "782baa8d72301f1d9a32f09afcc6a23191f554a8624e354aaba3e20844189385"
+}

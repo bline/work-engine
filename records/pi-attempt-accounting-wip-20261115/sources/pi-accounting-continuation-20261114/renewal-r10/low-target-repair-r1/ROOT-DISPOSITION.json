@@ -1,0 +1,30 @@
+{
+  "status": "CHANGES_REQUIRED",
+  "subject_manifest_sha256": "d60017dac28aa3a831cf13db520af94d8224b53f70b12229240bff8dab30ec61",
+  "review": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/REVIEW-FINAL.md",
+    "sha256": "d7dc3060445b8392e24cac01d13737bb9712a8a3628da0640de69f46532895b4",
+    "native_final_characters": 8340,
+    "whole_final_collected_and_read": true,
+    "continuity": "same retained isolated reviewer, no fresh independence claim",
+    "all_processes_collected": true
+  },
+  "finding": {
+    "severity": "blockingP2",
+    "id": "R10-EVALUATION-PREMISE-01",
+    "origin": "inherited applicability omission exposed by new attribution qualification",
+    "root_executed_both_consumers": true,
+    "observations": "three selected controls changed only objective.started_at to06:55; both actual consumers returned0 with unchanged inputs/expectedoutputs; no identicalcompletepremises monetarycounterexample or introducedfinancialregression established",
+    "custody": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/root-evaluation-probe/premise-counterexample.json",
+    "custody_sha256": "ec6fb4219012cc514ab45c2f8fd58b2481d4150e40602c0d0cc1e30fbc07554c",
+    "leftovers": [],
+    "source967unchanged": true
+  },
+  "state": "DESIGN_REVIEW_REQUIRED_R10_EVALUATION_PREMISES",
+  "ordinary_repair": "HELD",
+  "historical_findings": "all3R3+11historical OPEN pending exact root disposition; bounded fixes supported but no full closure",
+  "full_S1": "UNMET; full175/374 and remainingreviews/schemawiregenerateddependency owed",
+  "authority": "same renewed100/no deadline; nointegration/production/S2a",
+  "next": "freshseparateAstraxhigh review of exact candidate before any implementation",
+  "root": "01a1d6e2-32ba-7701-9115-740dcb41af11"
+}

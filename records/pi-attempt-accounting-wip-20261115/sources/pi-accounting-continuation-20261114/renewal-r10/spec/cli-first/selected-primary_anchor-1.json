@@ -1,0 +1,38 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "selected-primary_anchor-1",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+    "evidence",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 3543333,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 3543360,
+  "pgid": 3543360,
+  "started_at": "2026-11-14T07:04:38.877847Z",
+  "ended_at": "2026-11-14T07:04:39.146010Z",
+  "duration_s": 0.268,
+  "returncode": 1,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-first/selected-primary_anchor-1.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-first/selected-primary_anchor-1.stderr",
+    "length": 46,
+    "sha256": "9170985c37d1b5ea41ad4888e60dac60c50671d85fc230130fd0c5bb2a67ea90"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

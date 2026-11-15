@@ -1,0 +1,22 @@
+{
+  "owner": "root",
+  "requester": "C2native01a1d87a-fd5d",
+  "result": "Both complete actual corpus CLI commands accept four-field self-consistent 200M raw-retained-charge loss; negative slipped through; not policy success",
+  "summary_sha256": "ce58a355bd337298ad937db33b6c5e9d965c2f17d5bbfbf5135422b403993732",
+  "results": [
+    {
+      "name": "python-p9-mutated",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/p9-undercharge/custody/python-p9-mutated.json",
+      "stdout": "175 structural/legacy cases {'current_producer': 141, 'future_qualified_gate': 34}, admitted legacy controls {'current_producer': 4, 'future_qualified_gate': 14}, 0 failures\nBOUNDED LOW QUALIFICATION: 374 named raw-bound assertions; 0 scopes REQUIRED/UNMET. Finite supplied records only; full raw reducer/live authority NOT ESTABLISHED.\n",
+      "returncode": 0
+    },
+    {
+      "name": "rust-p9-mutated",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/p9-undercharge/custody/rust-p9-mutated.json",
+      "stdout": "finite supplied corpus references: 175 cases/374 scopes; raw reducer/live authority unestablished\n",
+      "returncode": 0
+    }
+  ],
+  "initial_infrastructure_refusal": "directory digest unsupported before test launch, revised to941exactfile digestpaths; no implementation increment",
+  "no_repairs": true
+}

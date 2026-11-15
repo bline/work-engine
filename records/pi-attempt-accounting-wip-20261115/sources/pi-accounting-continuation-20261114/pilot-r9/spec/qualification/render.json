@@ -1,0 +1,55 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "render",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+    "render",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target",
+    "R9_SPEC_FIXTURE_OUT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3410607,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 77302248,
+      "sha256": "c17f95c6842e32f037f83fd08f6f603e8eeb3ce0c98c17d0c66db5f173dc9df6"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/spec/ck.json",
+      "type": "file",
+      "mode": 420,
+      "length": 229853,
+      "sha256": "3238ad741982ccffe51b1d36992e1914e331f0fcb73265d609e804763b23c300"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 3411610,
+  "pgid": 3411610,
+  "started_at": "2026-11-14T06:06:16.489824Z",
+  "ended_at": "2026-11-14T06:06:17.045988Z",
+  "duration_s": 0.556,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification/render.stdout",
+    "length": 36,
+    "sha256": "1698deb2a372f65eebe6c192579da32573ec37a329e44b650b458f03c256f0ab"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification/render.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

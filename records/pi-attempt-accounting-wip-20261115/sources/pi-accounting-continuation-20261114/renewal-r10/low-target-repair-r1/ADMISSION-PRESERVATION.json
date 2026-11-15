@@ -1,0 +1,8 @@
+{
+  "predecessor_manifest": "34a2ddba957d2ae4bdcdfa30454641cbb29d59ee780141c518e9e93d95895d61",
+  "checked_each_root": 967,
+  "source": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject",
+  "candidate": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject",
+  "hash_length_mode": "all match; inventory from fresh copytree",
+  "errors": []
+}

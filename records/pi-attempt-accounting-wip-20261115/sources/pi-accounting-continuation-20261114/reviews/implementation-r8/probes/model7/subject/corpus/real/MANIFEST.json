@@ -1,0 +1,2297 @@
+{
+ "a134_totals": {
+  "calls": 1587,
+  "coverage": {
+   "pi_container_turns": 90,
+   "pi_host_turns_not_read": 0,
+   "pi_proxy_logs_missing": 0
+  },
+  "issue_kinds": [
+   "pi_request_unaccounted",
+   "unpriced_call"
+  ],
+  "reader_sha256": "086bdec1d443064f6847821858f34bbf227f8804a9a5fc8a362416f62b29d621"
+ },
+ "derived_from": {
+  "ledger": "~/.local/state/work-engine/role-host/ledger.jsonl",
+  "ledger_sha256": "72112fefbfa424b4de4a0dc28628910e4ab14830631ab24513a9f799ef4d483d",
+  "pi_rows": 163
+ },
+ "sanitisation": "(field inventory in P1.28 report):\n  - response_id -> 'resp_' + sha256(original)[:24]  (stable, so duplicate identity is preserved)\n  - input_basis -> {'items': <count>}  (prompt-chain digests removed)\n  - detail -> '[redacted]'  (key kept: its presence is the stream_error shape)\n  - role_host rows keep only event, session_id, turn, at, model, auth_lane, parent_session_id, usd_limit, thinking;\n    files.proxy_log becomes the relative sanitised log name; cwd, argv, pid and environment are dropped;\n    objective_record becomes 'objective:' + sha256(path)[:16]",
+ "sessions": {
+  "03c57d13-8892-4258-8ac6-2f45ff33ba7b": {
+   "a134_086bdec1": {
+    "calls": 10,
+    "codex_calls": 10,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "060d4ed2-ff06-4ba0-8473-9f06249db793": {
+   "a134_086bdec1": {
+    "calls": 84,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 10534082600,
+    "pi_api_low_nano": 10534073400,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "07ad4d78-8b53-4867-af7c-0d599acbab75": {
+   "a134_086bdec1": {
+    "calls": 1,
+    "codex_calls": 1,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "09d22735-c016-428c-b4e8-3a891e9b3f02": {
+   "a134_086bdec1": {
+    "calls": 28,
+    "codex_calls": 28,
+    "issue_kinds": [
+     "unpriced_call"
+    ],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "0a7285b4-6992-4ff4-95ab-a98dc234b4ac": {
+   "a134_086bdec1": {
+    "calls": 32,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 2137571750,
+    "pi_api_low_nano": 2137567750,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "0d0539b9-a748-48d6-ae18-00ab7e910a2e": {
+   "a134_086bdec1": {
+    "calls": 38,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 3806987500,
+    "pi_api_low_nano": 3806984250,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "0e79517d-252e-4ca1-8bd9-e30aa2a74134": {
+   "a134_086bdec1": {
+    "calls": 21,
+    "codex_calls": 21,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "1315ade8-9cce-484f-9b71-5ca579ce90dc": {
+   "a134_086bdec1": {
+    "calls": 19,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1554374000,
+    "pi_api_low_nano": 1554371000,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "1b772ba9-9bc6-4b8f-b007-e0443e5104e8": {
+   "a134_086bdec1": {
+    "calls": 17,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1371441000,
+    "pi_api_low_nano": 1371439000,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "1f8ada52-643b-4468-816d-42cbd15e98bf": {
+   "a134_086bdec1": {
+    "calls": 13,
+    "codex_calls": 0,
+    "issue_kinds": [
+     "pi_request_unaccounted"
+    ],
+    "pi_api_high_nano": 645258750,
+    "pi_api_low_nano": 645258750,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "20e939d6-b40b-4cc1-8fd5-0ec64bed4167": {
+   "a134_086bdec1": {
+    "calls": 11,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 798061000,
+    "pi_api_low_nano": 798059250,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "2b24ac31-4ac7-40fb-8968-f2fabcb250b0": {
+   "a134_086bdec1": {
+    "calls": 26,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 3120769500,
+    "pi_api_low_nano": 3120764500,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "36c8eb85-6d2d-4b69-ae3b-980536701863": {
+   "a134_086bdec1": {
+    "calls": 15,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 796697000,
+    "pi_api_low_nano": 796695500,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "3737e24c-238d-4b50-8c49-9b9bbdd46bb0": {
+   "a134_086bdec1": {
+    "calls": 1,
+    "codex_calls": 1,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "37d52ae3-a95b-4371-8a22-fc855ce3e012": {
+   "a134_086bdec1": {
+    "calls": 14,
+    "codex_calls": 14,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "3879b6b8-70a2-4e41-99fa-7ab759ed21ab": {
+   "a134_086bdec1": {
+    "calls": 14,
+    "codex_calls": 14,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "442df8a3-1feb-4248-bd63-1b6802436fb5": {
+   "a134_086bdec1": {
+    "calls": 24,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1024318000,
+    "pi_api_low_nano": 1024318000,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "46205a6d-1ac2-4a43-8797-cc0d984ae52f": {
+   "a134_086bdec1": {
+    "calls": 29,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 3040782750,
+    "pi_api_low_nano": 3040782750,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "486392e5-9d21-4ba1-9527-269a64a44a53": {
+   "a134_086bdec1": {
+    "calls": 33,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1264539500,
+    "pi_api_low_nano": 1264533500,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "4bc916e4-eec4-416c-84fc-43b467bacedb": {
+   "a134_086bdec1": {
+    "calls": 21,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1311173250,
+    "pi_api_low_nano": 1311171000,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "4e4c89ca-1096-41ca-b852-93ca17775a56": {
+   "a134_086bdec1": {
+    "calls": 12,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 936459750,
+    "pi_api_low_nano": 936458500,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "50f365c7-7cfd-4856-ae7b-c99e6eb8947b": {
+   "a134_086bdec1": {
+    "calls": 6,
+    "codex_calls": 6,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "52132d73-f438-46f0-b3c6-418386f71445": {
+   "a134_086bdec1": {
+    "calls": 23,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1261672500,
+    "pi_api_low_nano": 1261669500,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "53c83e8e-1ba8-45a9-ab12-80d4d127e72f": {
+   "a134_086bdec1": {
+    "calls": 26,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1454801250,
+    "pi_api_low_nano": 1454796500,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "5847c0f6-8f46-42f6-b80b-812a1e38ef3d": {
+   "a134_086bdec1": {
+    "calls": 26,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1418658250,
+    "pi_api_low_nano": 1418655250,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "60020bcf-7ae8-4465-b917-63745ad904d3": {
+   "a134_086bdec1": {
+    "calls": 64,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 12574614800,
+    "pi_api_low_nano": 12574604600,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "613a7824-b79c-4e7a-88be-4dd171857be3": {
+   "a134_086bdec1": {
+    "calls": 15,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 974191250,
+    "pi_api_low_nano": 974189750,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "65a0e681-286c-4f67-aff3-64afc57a72fb": {
+   "a134_086bdec1": {
+    "calls": 35,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 2557969750,
+    "pi_api_low_nano": 2557964000,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "6e0e22f8-c019-4ec9-af58-b5638ecec937": {
+   "a134_086bdec1": {
+    "calls": 51,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 3738000000,
+    "pi_api_low_nano": 3737992750,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "77ce50fc-ea70-428b-be22-ce8eca812c24": {
+   "a134_086bdec1": {
+    "calls": 10,
+    "codex_calls": 10,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "78257454-ee1a-46c7-814b-8fcef8c96220": {
+   "a134_086bdec1": {
+    "calls": 13,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1048974000,
+    "pi_api_low_nano": 1048972000,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "7e5c4a52-4bb0-4b9f-98e8-9ee4f3b1a581": {
+   "a134_086bdec1": {
+    "calls": 16,
+    "codex_calls": 16,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "7e973d32-cb56-44b3-a5b6-20e6c4f4b2c4": {
+   "a134_086bdec1": {
+    "calls": 19,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1227653250,
+    "pi_api_low_nano": 1227650500,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "7f6d40ec-513a-4b50-b8ce-b917eecbbf4b": {
+   "a134_086bdec1": {
+    "calls": 20,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 2097612750,
+    "pi_api_low_nano": 2097610750,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "80f335e7-a4f0-4505-a0cd-da8c66b49f15": {
+   "a134_086bdec1": {
+    "calls": 26,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1845868500,
+    "pi_api_low_nano": 1845865000,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "852d235a-718c-4a2e-8069-050b24b463d9": {
+   "a134_086bdec1": {
+    "calls": 3,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 441053000,
+    "pi_api_low_nano": 441052750,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "8642fd00-9241-4dc9-a29d-2c7a9507f31f": {
+   "a134_086bdec1": {
+    "calls": 15,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1011436000,
+    "pi_api_low_nano": 1011434000,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "87b552c4-d221-4152-ba17-58c9ae72d2a3": {
+   "a134_086bdec1": {
+    "calls": 1,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 267384000,
+    "pi_api_low_nano": 267383750,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "87e95b35-7fe9-47b6-ac86-8a7afb7b8c1e": {
+   "a134_086bdec1": {
+    "calls": 52,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 634416700,
+    "pi_api_low_nano": 634409300,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "87f0140e-e11d-4a4d-a41b-ee971e84ac44": {
+   "a134_086bdec1": {
+    "calls": 1,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 356727000,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "8b36c73d-5e4c-47e0-8a74-6c86e0deefb0": {
+   "a134_086bdec1": {
+    "calls": 17,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 828483250,
+    "pi_api_low_nano": 828481750,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "8d28136f-dfd6-4656-a9e6-d9db1bb6681e": {
+   "a134_086bdec1": {
+    "calls": 36,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 2758153250,
+    "pi_api_low_nano": 2758151250,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "8d4c8664-9253-4e76-8631-ea7bf43e605f": {
+   "a134_086bdec1": {
+    "calls": 21,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1290088750,
+    "pi_api_low_nano": 1194567500,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "90d0d446-bde8-47e2-a2c6-4b3df34a4dcf": {
+   "a134_086bdec1": {
+    "calls": 1,
+    "codex_calls": 1,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "90f0c1c0-1cc8-4490-ae46-630bdab85336": {
+   "a134_086bdec1": {
+    "calls": 24,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1867397250,
+    "pi_api_low_nano": 1867395000,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "99d03b6b-7b08-4ccb-8b5d-442f83608c44": {
+   "a134_086bdec1": {
+    "calls": 2,
+    "codex_calls": 2,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "9a238d22-8c7b-4eee-a229-a29dc53dcbea": {
+   "a134_086bdec1": {
+    "calls": 21,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1317189250,
+    "pi_api_low_nano": 1317185250,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "9a847cad-e43e-4ece-8ad1-6dbfd0b53efa": {
+   "a134_086bdec1": {
+    "calls": 1,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 8533750,
+    "pi_api_low_nano": 8533750,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "9b8963b0-99c0-4708-8195-c8fc8b5f1b50": {
+   "a134_086bdec1": {
+    "calls": 10,
+    "codex_calls": 10,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "a1130f6d-d068-4b49-831b-02299727c786": {
+   "a134_086bdec1": {
+    "calls": 10,
+    "codex_calls": 10,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "a3abca20-c0a3-444d-bd07-80fe312f9894": {
+   "a134_086bdec1": {
+    "calls": 14,
+    "codex_calls": 14,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "a83b73be-2be0-4ba0-9029-5bea24b7d9ea": {
+   "a134_086bdec1": {
+    "calls": 24,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 3551397000,
+    "pi_api_low_nano": 3551392500,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "ab0157a6-267f-4ba4-b6ba-fa43aa65428f": {
+   "a134_086bdec1": {
+    "calls": 17,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 893550500,
+    "pi_api_low_nano": 823123000,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "ab85c579-dcda-404b-9a9f-2af3c3a24034": {
+   "a134_086bdec1": {
+    "calls": 11,
+    "codex_calls": 11,
+    "issue_kinds": [
+     "unpriced_call"
+    ],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "b0df0e23-d905-431d-9b8c-8c57ad0f3fdd": {
+   "a134_086bdec1": {
+    "calls": 30,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 3358227000,
+    "pi_api_low_nano": 3358223250,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "b405fcd9-c66c-4185-a41f-709ff44dcad7": {
+   "a134_086bdec1": {
+    "calls": 17,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1220023000,
+    "pi_api_low_nano": 1220021500,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "b9b3dee2-3678-4c62-993c-0678072a2b56": {
+   "a134_086bdec1": {
+    "calls": 13,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 951764500,
+    "pi_api_low_nano": 951763750,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "be01585c-e7d9-4187-a3d1-3585207e82e3": {
+   "a134_086bdec1": {
+    "calls": 11,
+    "codex_calls": 11,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "c3b96365-45a3-45b8-828d-920dfcd0a002": {
+   "a134_086bdec1": {
+    "calls": 12,
+    "codex_calls": 12,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "c4e9e311-2bac-436a-b9da-f4139f98a201": {
+   "a134_086bdec1": {
+    "calls": 27,
+    "codex_calls": 27,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "c80583e9-e526-460b-9072-6f2b56bdebf0": {
+   "a134_086bdec1": {
+    "calls": 8,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 690377950,
+    "pi_api_low_nano": 149326800,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "d11e9434-da53-4d01-a58a-fefffe8b999f": {
+   "a134_086bdec1": {
+    "calls": 28,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1229272750,
+    "pi_api_low_nano": 1229269500,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "d1986ca7-22db-4785-abaf-6e8abc39619e": {
+   "a134_086bdec1": {
+    "calls": 20,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1289300000,
+    "pi_api_low_nano": 1289297000,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "d247bcd8-4d6b-4e09-98be-cdc98832235a": {
+   "a134_086bdec1": {
+    "calls": 35,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1721949250,
+    "pi_api_low_nano": 1721945500,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "d2658b88-b0db-40c9-80af-985799534eb7": {
+   "a134_086bdec1": {
+    "calls": 19,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1830951000,
+    "pi_api_low_nano": 1830949250,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "d2de09a1-b9be-4d75-b580-58895d4b187e": {
+   "a134_086bdec1": {
+    "calls": 17,
+    "codex_calls": 17,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "d5c64a92-8e45-4835-a211-a20b14be31e6": {
+   "a134_086bdec1": {
+    "calls": 33,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 2181833000,
+    "pi_api_low_nano": 2181829500,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "d7531f66-986f-406a-ae05-f53bd7c2dc58": {
+   "a134_086bdec1": {
+    "calls": 1,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 8103000,
+    "pi_api_low_nano": 8102500,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "db60a216-c012-43fd-93ca-58e6196ceb99": {
+   "a134_086bdec1": {
+    "calls": 16,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 885188000,
+    "pi_api_low_nano": 885186250,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "dbc8365a-6df2-4c0d-a4b3-c46e62218ad1": {
+   "a134_086bdec1": {
+    "calls": 1,
+    "codex_calls": 1,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "dcc19682-2972-458f-a6a7-86c9328d7e0d": {
+   "a134_086bdec1": {
+    "calls": 1,
+    "codex_calls": 1,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "e187e7a4-1db5-4b54-bb9e-636585c21bbb": {
+   "a134_086bdec1": {
+    "calls": 1,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 5169000,
+    "pi_api_low_nano": 5169000,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "e5ab1aa9-574e-4ed8-b7bf-47b20b094db3": {
+   "a134_086bdec1": {
+    "calls": 12,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 953646750,
+    "pi_api_low_nano": 953645750,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "e7686924-3794-4937-98ab-d541bf57a17f": {
+   "a134_086bdec1": {
+    "calls": 9,
+    "codex_calls": 0,
+    "issue_kinds": [
+     "unpriced_call"
+    ],
+    "pi_api_high_nano": 362486000,
+    "pi_api_low_nano": 362486000,
+    "unpriced": 1
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "e91f17eb-74dc-469c-ba90-88bfc69301af": {
+   "a134_086bdec1": {
+    "calls": 20,
+    "codex_calls": 20,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "e97300f6-248a-46bf-a665-5d72bbf64c68": {
+   "a134_086bdec1": {
+    "calls": 1,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 10337000,
+    "pi_api_low_nano": 10336750,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "f37cffe9-67c6-41e2-bb70-833415e7a434": {
+   "a134_086bdec1": {
+    "calls": 41,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 2464135000,
+    "pi_api_low_nano": 2464131500,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "f6453ec8-877c-452d-b666-bf3cf501ff69": {
+   "a134_086bdec1": {
+    "calls": 9,
+    "codex_calls": 9,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "f6de4feb-a0c7-4333-b2c8-495b9eb8ff16": {
+   "a134_086bdec1": {
+    "calls": 21,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1771669250,
+    "pi_api_low_nano": 1634683000,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "f97b6d11-c0ce-47e4-8240-16a33638b653": {
+   "a134_086bdec1": {
+    "calls": 39,
+    "codex_calls": 39,
+    "issue_kinds": [],
+    "pi_api_high_nano": 0,
+    "pi_api_low_nano": 0,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "fc4f03dd-be17-4a80-b371-50d42f852837": {
+   "a134_086bdec1": {
+    "calls": 14,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 515920500,
+    "pi_api_low_nano": 515918250,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "fd3cf357-17e8-4579-9af7-7561a3772f20": {
+   "a134_086bdec1": {
+    "calls": 13,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 1106282000,
+    "pi_api_low_nano": 1106280500,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  },
+  "fdc243f1-2bda-4e68-a805-718516a202ba": {
+   "a134_086bdec1": {
+    "calls": 24,
+    "codex_calls": 0,
+    "issue_kinds": [],
+    "pi_api_high_nano": 2732431250,
+    "pi_api_low_nano": 2732428250,
+    "unpriced": 0
+   },
+   "ambiguity": "Normative per-session expectations are established in S3 (differential against A1.3.4 with every difference classified and reviewed); S1 does not invent them.",
+   "normative": null
+  }
+ },
+ "sources": [
+  {
+   "events": {
+    "request": 21
+   },
+   "final_newline": true,
+   "lines": 21,
+   "sanitised": "sessions/8d4c8664-9253-4e76-8631-ea7bf43e605f/turn-1.proxy.jsonl",
+   "sanitised_sha256": "c01275714a28b11699d540e726f607e67f03484c6a82d0df25aeda6d962ec8c7",
+   "source": "~/.local/state/work-engine/role-host/pi/8d4c8664-9253-4e76-8631-ea7bf43e605f/host/turn-1.proxy.jsonl",
+   "source_sha256": "b68e3019d12ef50be35b48b55f084047aa4068ef78a56fb1e4c7ce3d648f84c0",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 17
+   },
+   "final_newline": true,
+   "lines": 17,
+   "sanitised": "sessions/ab0157a6-267f-4ba4-b6ba-fa43aa65428f/turn-1.proxy.jsonl",
+   "sanitised_sha256": "34f505c9ce52edd7408cc5f83b97e54e2a28ff408cb4a188d7a9f434b9c1257b",
+   "source": "~/.local/state/work-engine/role-host/pi/ab0157a6-267f-4ba4-b6ba-fa43aa65428f/host/turn-1.proxy.jsonl",
+   "source_sha256": "2b80af540e836ec49b1934cebad4f67a28d5abc963a80b1fb8050c0876ef0c92",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 24
+   },
+   "final_newline": true,
+   "lines": 24,
+   "sanitised": "sessions/442df8a3-1feb-4248-bd63-1b6802436fb5/turn-1.proxy.jsonl",
+   "sanitised_sha256": "5275c879cdb2dba79529b86e5bcfc22ba2224b533182c0e8217f20b73520e362",
+   "source": "~/.local/state/work-engine/role-host/pi/442df8a3-1feb-4248-bd63-1b6802436fb5/host/turn-1.proxy.jsonl",
+   "source_sha256": "9c0975f63f0ded504e2fa244e41ff55788fe75e3cd48d6d9f576ba581549b686",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 14,
+    "stream_error": 1
+   },
+   "final_newline": true,
+   "lines": 15,
+   "sanitised": "sessions/1f8ada52-643b-4468-816d-42cbd15e98bf/turn-1.proxy.jsonl",
+   "sanitised_sha256": "4cc3d34f54597179e183017f6f9ab4c672044fcc6209f803ce7a7a39317b77f8",
+   "source": "~/.local/state/work-engine/role-host/pi/1f8ada52-643b-4468-816d-42cbd15e98bf/host/turn-1.proxy.jsonl",
+   "source_sha256": "f162b3d59408b12c0f76303eb7f915c6fbbaf2804d3b5b7b66242ce41525d3ee",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 9
+   },
+   "final_newline": true,
+   "lines": 9,
+   "sanitised": "sessions/e7686924-3794-4937-98ab-d541bf57a17f/turn-1.proxy.jsonl",
+   "sanitised_sha256": "4e55b5c1e638f277c5775fa2187d79195ae7ba8993da9f155c6d56948aa10e5c",
+   "source": "~/.local/state/work-engine/role-host/pi/e7686924-3794-4937-98ab-d541bf57a17f/host/turn-1.proxy.jsonl",
+   "source_sha256": "f855fe08b3bce30ec8b8227b173f73fc9d2f5c5a22aeed78e687e5fc8ecf34e7",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 21
+   },
+   "final_newline": true,
+   "lines": 21,
+   "sanitised": "sessions/f6de4feb-a0c7-4333-b2c8-495b9eb8ff16/turn-1.proxy.jsonl",
+   "sanitised_sha256": "ca3ebc5db1d6b527b019f685acab8fff94ecb0efb764456fcfd5831acd55ca98",
+   "source": "~/.local/state/work-engine/role-host/pi/f6de4feb-a0c7-4333-b2c8-495b9eb8ff16/host/turn-1.proxy.jsonl",
+   "source_sha256": "3ed14d2a94d537c2c062c8f291c76e52da1fdd5581ba7147ea5a323d3d2ccfc1",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 1
+   },
+   "final_newline": true,
+   "lines": 1,
+   "sanitised": "sessions/9a847cad-e43e-4ece-8ad1-6dbfd0b53efa/turn-1.proxy.jsonl",
+   "sanitised_sha256": "cd8724bc4e3af6b37c6b3f83a9355c6cdf7c9ead3c782eed9b5dcb7444a3808c",
+   "source": "~/.local/state/work-engine/role-host/pi/9a847cad-e43e-4ece-8ad1-6dbfd0b53efa/host/turn-1.proxy.jsonl",
+   "source_sha256": "17a99dcb1f849731016d1bfc8226ef47a520855f4458bbe09c92b89278ef90fa",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 29
+   },
+   "final_newline": true,
+   "lines": 29,
+   "sanitised": "sessions/46205a6d-1ac2-4a43-8797-cc0d984ae52f/turn-1.proxy.jsonl",
+   "sanitised_sha256": "2f644656bd7dd13183eae9402dfc3a9678f07a3b1403e17b3a7b86dceef120a9",
+   "source": "~/.local/state/work-engine/role-host/pi/46205a6d-1ac2-4a43-8797-cc0d984ae52f/host/turn-1.proxy.jsonl",
+   "source_sha256": "ebf5e5c59944c5f61d26d8810cf9ae51dd0eb4752cf4f0cec831833e41a7497a",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 32,
+    "usd_reserved": 32
+   },
+   "final_newline": true,
+   "lines": 64,
+   "sanitised": "sessions/0a7285b4-6992-4ff4-95ab-a98dc234b4ac/turn-1.proxy.jsonl",
+   "sanitised_sha256": "7830415801b37d9456c79819914516a8bd91b58048925f49bee820fed9085b99",
+   "source": "~/.local/state/work-engine/role-host/pi/0a7285b4-6992-4ff4-95ab-a98dc234b4ac/host/turn-1.proxy.jsonl",
+   "source_sha256": "b63bea58fcfcd4da298af5d4f23f6d4395e51da0a7dc5831a233a2c3e13f2f1e",
+   "sum_charged_usd": "2.137568",
+   "sum_reserved_usd": "25.130117"
+  },
+  {
+   "events": {
+    "request": 26,
+    "usd_reserved": 26
+   },
+   "final_newline": true,
+   "lines": 52,
+   "sanitised": "sessions/53c83e8e-1ba8-45a9-ab12-80d4d127e72f/turn-1.proxy.jsonl",
+   "sanitised_sha256": "2a81a2e5a078ae676e00289781e2788eb82cd5ddb11385ea7ce8bece9e505ef0",
+   "source": "~/.local/state/work-engine/role-host/pi/53c83e8e-1ba8-45a9-ab12-80d4d127e72f/host/turn-1.proxy.jsonl",
+   "source_sha256": "c81ae8f8f4f8539961829145456841c3da57fdc756ad298f8c82d18483832d89",
+   "sum_charged_usd": "1.454797",
+   "sum_reserved_usd": "20.598952"
+  },
+  {
+   "events": {
+    "request": 1,
+    "usd_reserved": 1
+   },
+   "final_newline": true,
+   "lines": 2,
+   "sanitised": "sessions/d7531f66-986f-406a-ae05-f53bd7c2dc58/turn-1.proxy.jsonl",
+   "sanitised_sha256": "2e52ee43d3dd17cd131d6de7ea2078dc325302f9284780702a533a8d7d06d26a",
+   "source": "~/.local/state/work-engine/role-host/pi/d7531f66-986f-406a-ae05-f53bd7c2dc58/host/turn-1.proxy.jsonl",
+   "source_sha256": "74f647aca2f94ada893b4e4c76568082abe40bb9ae0155fbd9f5b49db0383d01",
+   "sum_charged_usd": "0.008103",
+   "sum_reserved_usd": "0.091044"
+  },
+  {
+   "events": {
+    "request": 26,
+    "usd_reserved": 26
+   },
+   "final_newline": true,
+   "lines": 52,
+   "sanitised": "sessions/5847c0f6-8f46-42f6-b80b-812a1e38ef3d/turn-1.proxy.jsonl",
+   "sanitised_sha256": "5c710f7e2b59cb312834ce4eef6834788c85bfdb6c89f24749506296663dd058",
+   "source": "~/.local/state/work-engine/role-host/pi/5847c0f6-8f46-42f6-b80b-812a1e38ef3d/host/turn-1.proxy.jsonl",
+   "source_sha256": "17bcded0258b162b021c411fda3dec19934736a697ec57afcf919b51bcfe23bc",
+   "sum_charged_usd": "1.418656",
+   "sum_reserved_usd": "20.314327"
+  },
+  {
+   "events": {
+    "request": 28,
+    "usd_reserved": 28
+   },
+   "final_newline": true,
+   "lines": 56,
+   "sanitised": "sessions/d11e9434-da53-4d01-a58a-fefffe8b999f/turn-1.proxy.jsonl",
+   "sanitised_sha256": "0ef18adb5af026a3b0ab95ad36cc2a1cd78ec2e465352c67774a63b0bf8f2f7c",
+   "source": "~/.local/state/work-engine/role-host/pi/d11e9434-da53-4d01-a58a-fefffe8b999f/host/turn-1.proxy.jsonl",
+   "source_sha256": "be13e47072332c65927168a886e24001ce01f515f389e1022bdb10aece32838f",
+   "sum_charged_usd": "1.229269",
+   "sum_reserved_usd": "39.668787"
+  },
+  {
+   "events": {
+    "request": 21,
+    "usd_reserved": 21
+   },
+   "final_newline": true,
+   "lines": 42,
+   "sanitised": "sessions/9a238d22-8c7b-4eee-a229-a29dc53dcbea/turn-1.proxy.jsonl",
+   "sanitised_sha256": "fb9ba3b414ea0ece92f586212f09e53909e0b62893d4c490807c73b2d2f9ad31",
+   "source": "~/.local/state/work-engine/role-host/pi/9a238d22-8c7b-4eee-a229-a29dc53dcbea/host/turn-1.proxy.jsonl",
+   "source_sha256": "0e969f37d369b5f647ebb3d3ed38e03a5e34dd161bc50cd9a6463ef68f269738",
+   "sum_charged_usd": "1.317188",
+   "sum_reserved_usd": "17.653578"
+  },
+  {
+   "events": {
+    "request": 35,
+    "usd_reserved": 35
+   },
+   "final_newline": true,
+   "lines": 70,
+   "sanitised": "sessions/65a0e681-286c-4f67-aff3-64afc57a72fb/turn-1.proxy.jsonl",
+   "sanitised_sha256": "2215a23d363f7785f4871682ccaafe93679543634d693744e73ca13fd95bc566",
+   "source": "~/.local/state/work-engine/role-host/pi/65a0e681-286c-4f67-aff3-64afc57a72fb/host/turn-1.proxy.jsonl",
+   "source_sha256": "dc241adb51a0f6cc02dd715a7027857c116e85cbe842e0d61337d160c0604a0b",
+   "sum_charged_usd": "2.557965",
+   "sum_reserved_usd": "60.661361"
+  },
+  {
+   "events": {
+    "request": 21,
+    "usd_reserved": 21
+   },
+   "final_newline": true,
+   "lines": 42,
+   "sanitised": "sessions/4bc916e4-eec4-416c-84fc-43b467bacedb/turn-1.proxy.jsonl",
+   "sanitised_sha256": "db37072371d74fd8916821acd33c0dc5ff486301b92ff4208400de4d4d193020",
+   "source": "~/.local/state/work-engine/role-host/pi/4bc916e4-eec4-416c-84fc-43b467bacedb/host/turn-1.proxy.jsonl",
+   "source_sha256": "c5f5c232485ccee8846463752c2b4307db629247faad9a57800fe54c65a76a66",
+   "sum_charged_usd": "1.311171",
+   "sum_reserved_usd": "16.707049"
+  },
+  {
+   "events": {
+    "refused": 1,
+    "request": 64,
+    "usd_reserved": 64
+   },
+   "final_newline": true,
+   "lines": 129,
+   "sanitised": "sessions/60020bcf-7ae8-4465-b917-63745ad904d3/turn-1.proxy.jsonl",
+   "sanitised_sha256": "35bdb9b26bbed8dce48fe7da95ecb5a2fdd8b48823a615fd7fec7c65b4434e9a",
+   "source": "~/.local/state/work-engine/role-host/pi/60020bcf-7ae8-4465-b917-63745ad904d3/host/turn-1.proxy.jsonl",
+   "source_sha256": "dae0e4ec7863d5705153fa6dcb6a1ecac1dfc72669a2e67d9795165cc7780f79",
+   "sum_charged_usd": "12.574609",
+   "sum_reserved_usd": "449.044496"
+  },
+  {
+   "events": {
+    "refused": 1,
+    "request": 24,
+    "usd_reserved": 24
+   },
+   "final_newline": true,
+   "lines": 49,
+   "sanitised": "sessions/90f0c1c0-1cc8-4490-ae46-630bdab85336/turn-1.proxy.jsonl",
+   "sanitised_sha256": "70683021028e5f505f24334e9a5cbe75c96d5581ee77fd42182489ee57c089cc",
+   "source": "~/.local/state/work-engine/role-host/pi/90f0c1c0-1cc8-4490-ae46-630bdab85336/host/turn-1.proxy.jsonl",
+   "source_sha256": "12b92f8de7d781fba67610c063dde6d9b88801c43f14925e293f30c5b3e407d5",
+   "sum_charged_usd": "1.867393",
+   "sum_reserved_usd": "22.411443"
+  },
+  {
+   "events": {
+    "request": 23,
+    "usd_reserved": 23
+   },
+   "final_newline": true,
+   "lines": 46,
+   "sanitised": "sessions/52132d73-f438-46f0-b3c6-418386f71445/turn-1.proxy.jsonl",
+   "sanitised_sha256": "adbb10b2b1f45a5f646ca91394a7e31ce5cf9ab9237a10a464a3460ee5b8afb1",
+   "source": "~/.local/state/work-engine/role-host/pi/52132d73-f438-46f0-b3c6-418386f71445/host/turn-1.proxy.jsonl",
+   "source_sha256": "88277433b9eab765ceee13a52098b67f0549305f589bf64ca662916fafc3f5f9",
+   "sum_charged_usd": "1.261671",
+   "sum_reserved_usd": "17.574973"
+  },
+  {
+   "events": {
+    "request": 17,
+    "usd_reserved": 17
+   },
+   "final_newline": true,
+   "lines": 34,
+   "sanitised": "sessions/b405fcd9-c66c-4185-a41f-709ff44dcad7/turn-1.proxy.jsonl",
+   "sanitised_sha256": "e46a602d3153c0a294bec29effd9f43f074a989839ef5ee0442ad26b188b3fb2",
+   "source": "~/.local/state/work-engine/role-host/pi/b405fcd9-c66c-4185-a41f-709ff44dcad7/host/turn-1.proxy.jsonl",
+   "source_sha256": "4f34bc62941dd9c7988e3410d8e871a3fcb7cffad18eaadf627b5045700ca8a2",
+   "sum_charged_usd": "1.220020",
+   "sum_reserved_usd": "13.848424"
+  },
+  {
+   "events": {
+    "refused": 1,
+    "request": 12,
+    "usd_reserved": 12
+   },
+   "final_newline": true,
+   "lines": 25,
+   "sanitised": "sessions/e5ab1aa9-574e-4ed8-b7bf-47b20b094db3/turn-1.proxy.jsonl",
+   "sanitised_sha256": "ca840c3a0fb04d793d4674b29edfeebab0856507124dca6cf312fd615890ccb7",
+   "source": "~/.local/state/work-engine/role-host/pi/e5ab1aa9-574e-4ed8-b7bf-47b20b094db3/host/turn-1.proxy.jsonl",
+   "source_sha256": "eb945f0a05fb18300118854a8cbf20024bf93ea33ff7d803301a44117fd214ce",
+   "sum_charged_usd": "0.953645",
+   "sum_reserved_usd": "9.877837"
+  },
+  {
+   "events": {
+    "request": 24,
+    "usd_reserved": 24
+   },
+   "final_newline": true,
+   "lines": 48,
+   "sanitised": "sessions/a83b73be-2be0-4ba0-9029-5bea24b7d9ea/turn-1.proxy.jsonl",
+   "sanitised_sha256": "d2c318f985e2a759e8b46b578d21d57f92507e6634467b295bc2bbd41a224f00",
+   "source": "~/.local/state/work-engine/role-host/pi/a83b73be-2be0-4ba0-9029-5bea24b7d9ea/host/turn-1.proxy.jsonl",
+   "source_sha256": "e474258ffd19f2a9caebccbbb2a8595747d9a7138fea2446a1e9b28ca7b97361",
+   "sum_charged_usd": "3.551396",
+   "sum_reserved_usd": "58.784635"
+  },
+  {
+   "events": {
+    "request": 84,
+    "usd_reserved": 84
+   },
+   "final_newline": true,
+   "lines": 168,
+   "sanitised": "sessions/060d4ed2-ff06-4ba0-8473-9f06249db793/turn-1.proxy.jsonl",
+   "sanitised_sha256": "04dba0414206df79a45e03debbe47ccda1c9fa68c576c34377007a376fba3347",
+   "source": "~/.local/state/work-engine/role-host/pi/060d4ed2-ff06-4ba0-8473-9f06249db793/host/turn-1.proxy.jsonl",
+   "source_sha256": "0395e74099d6fce051226fd0a8f493f3bf95b00337b7cad94221aee44fb0eee1",
+   "sum_charged_usd": "10.534073",
+   "sum_reserved_usd": "270.352816"
+  },
+  {
+   "events": {
+    "request": 38,
+    "usd_reserved": 38
+   },
+   "final_newline": true,
+   "lines": 76,
+   "sanitised": "sessions/0d0539b9-a748-48d6-ae18-00ab7e910a2e/turn-1.proxy.jsonl",
+   "sanitised_sha256": "ed70c49f00ac3eb526ac3b86a4f6b7c2654db29db71401cd67ba9f0af197404b",
+   "source": "~/.local/state/work-engine/role-host/pi/0d0539b9-a748-48d6-ae18-00ab7e910a2e/host/turn-1.proxy.jsonl",
+   "source_sha256": "09960a46c82bcdb6359ac55ab0690fb23f40ba78d08c6eae747a85be29b51f20",
+   "sum_charged_usd": "3.806983",
+   "sum_reserved_usd": "79.867791"
+  },
+  {
+   "events": {
+    "request": 19,
+    "usd_reserved": 19
+   },
+   "final_newline": true,
+   "lines": 38,
+   "sanitised": "sessions/1315ade8-9cce-484f-9b71-5ca579ce90dc/turn-1.proxy.jsonl",
+   "sanitised_sha256": "bfb4936f7394ff3ede6ea29ccc33ae6b27ea6e37e87896dd429ccbe1438cb156",
+   "source": "~/.local/state/work-engine/role-host/pi/1315ade8-9cce-484f-9b71-5ca579ce90dc/host/turn-1.proxy.jsonl",
+   "source_sha256": "b1aa850235f1af52565ad894989a5987e5cf677872111163eede6767e8d423b5",
+   "sum_charged_usd": "1.554371",
+   "sum_reserved_usd": "17.584206"
+  },
+  {
+   "events": {
+    "request": 1,
+    "usd_reserved": 1
+   },
+   "final_newline": true,
+   "lines": 2,
+   "sanitised": "sessions/e97300f6-248a-46bf-a665-5d72bbf64c68/turn-1.proxy.jsonl",
+   "sanitised_sha256": "28c5b20d5f799efc14e0a05a8c465bddc2651186b8a147baed8a66b15e910390",
+   "source": "~/.local/state/work-engine/role-host/pi/e97300f6-248a-46bf-a665-5d72bbf64c68/host/turn-1.proxy.jsonl",
+   "source_sha256": "bc719b3f97eb0749c0a35926b6b1ce88e2c1970034d1233cbb60745cdbe7889a",
+   "sum_charged_usd": "0.010337",
+   "sum_reserved_usd": "0.178698"
+  },
+  {
+   "events": {
+    "request": 1,
+    "usd_reserved": 1
+   },
+   "final_newline": true,
+   "lines": 2,
+   "sanitised": "sessions/e187e7a4-1db5-4b54-bb9e-636585c21bbb/turn-1.proxy.jsonl",
+   "sanitised_sha256": "56b255bfd2f304a0b93b988c2b713d38a7752077578e8ea8f6486f1870ccf2d7",
+   "source": "~/.local/state/work-engine/role-host/pi/e187e7a4-1db5-4b54-bb9e-636585c21bbb/host/turn-1.proxy.jsonl",
+   "source_sha256": "a6ac315a482640d57debb13e35e4ace0cfde613bc159180fa53fd73676315a98",
+   "sum_charged_usd": "0.005169",
+   "sum_reserved_usd": "0.089354"
+  },
+  {
+   "events": {
+    "request": 17,
+    "usd_reserved": 17
+   },
+   "final_newline": true,
+   "lines": 34,
+   "sanitised": "sessions/1b772ba9-9bc6-4b8f-b007-e0443e5104e8/turn-1.proxy.jsonl",
+   "sanitised_sha256": "9a96d9cd2b8b9ddec8867f373eba4f6843628b68332fba99886b50d69dd9d92f",
+   "source": "~/.local/state/work-engine/role-host/pi/1b772ba9-9bc6-4b8f-b007-e0443e5104e8/host/turn-1.proxy.jsonl",
+   "source_sha256": "24173eb9335ba87fdd14f9adc631903adce4b26072bb9483dc091ce0e04b323b",
+   "sum_charged_usd": "1.371438",
+   "sum_reserved_usd": "15.193605"
+  },
+  {
+   "events": {
+    "request": 1,
+    "usd_reserved": 1
+   },
+   "final_newline": true,
+   "lines": 2,
+   "sanitised": "sessions/852d235a-718c-4a2e-8069-050b24b463d9/turn-1.proxy.jsonl",
+   "sanitised_sha256": "11f71231df7671bdd44e7d3da89c84a013a4a7870844325326831858ad138604",
+   "source": "~/.local/state/work-engine/role-host/pi/852d235a-718c-4a2e-8069-050b24b463d9/host/turn-1.proxy.jsonl",
+   "source_sha256": "1656261931cf2534b01cdcdef790ddbf45db8842a6d3e0317d309de78d33a243",
+   "sum_charged_usd": "0.141165",
+   "sum_reserved_usd": "1.469175"
+  },
+  {
+   "events": {
+    "request": 1,
+    "usd_reserved": 1
+   },
+   "final_newline": true,
+   "lines": 2,
+   "sanitised": "sessions/852d235a-718c-4a2e-8069-050b24b463d9/turn-2.proxy.jsonl",
+   "sanitised_sha256": "331c448daaa475f68bb9a8024a5d747c8eb16f2e9c04e530b3849113a4846802",
+   "source": "~/.local/state/work-engine/role-host/pi/852d235a-718c-4a2e-8069-050b24b463d9/host/turn-2.proxy.jsonl",
+   "source_sha256": "cc299f07fbc9ed1d5bfb5ec1808002ff65e6578ff22927b474f7e185a48cc9f3",
+   "sum_charged_usd": "0.170685",
+   "sum_reserved_usd": "1.568863"
+  },
+  {
+   "events": {
+    "request": 1,
+    "usd_reserved": 1
+   },
+   "final_newline": true,
+   "lines": 2,
+   "sanitised": "sessions/852d235a-718c-4a2e-8069-050b24b463d9/turn-3.proxy.jsonl",
+   "sanitised_sha256": "9767e294139b544247a32e48b8377bd160dcef2f3f6f6a739ec32d63a4468f1f",
+   "source": "~/.local/state/work-engine/role-host/pi/852d235a-718c-4a2e-8069-050b24b463d9/host/turn-3.proxy.jsonl",
+   "source_sha256": "fd1284150103e8f870ca4f39eed1c7bbbb014cee7da3152208c99b4153b1eb1e",
+   "sum_charged_usd": "0.129203",
+   "sum_reserved_usd": "1.577762"
+  },
+  {
+   "events": {
+    "request": 6,
+    "usd_reserved": 6
+   },
+   "final_newline": true,
+   "lines": 12,
+   "sanitised": "sessions/c80583e9-e526-460b-9072-6f2b56bdebf0/turn-1.proxy.jsonl",
+   "sanitised_sha256": "05c458e4ed9173b21727883e9b925dca93d8bca52cc474a9b9b19e6c4c243db9",
+   "source": "~/.local/state/work-engine/role-host/pi/c80583e9-e526-460b-9072-6f2b56bdebf0/host/turn-1.proxy.jsonl",
+   "source_sha256": "b6187413b741a28c3a56df5e0e0a5a6296c651b60efccda1cb4e9809e8dfa271",
+   "sum_charged_usd": "0.145321",
+   "sum_reserved_usd": "2.872605"
+  },
+  {
+   "events": {
+    "request": 1,
+    "usd_reserved": 1
+   },
+   "final_newline": true,
+   "lines": 2,
+   "sanitised": "sessions/87b552c4-d221-4152-ba17-58c9ae72d2a3/turn-1.proxy.jsonl",
+   "sanitised_sha256": "2b50eca55da8a726651624095b9aba4b5ce9ad2ed91c398802452ff766d2dca7",
+   "source": "~/.local/state/work-engine/role-host/pi/87b552c4-d221-4152-ba17-58c9ae72d2a3/host/turn-1.proxy.jsonl",
+   "source_sha256": "4bb75aee1a6d2f6c851304278f892da31c361ebed4d45466c2e317dcd86e9c21",
+   "sum_charged_usd": "0.267384",
+   "sum_reserved_usd": "2.553138"
+  },
+  {
+   "events": {
+    "request": 2,
+    "stream_error": 1,
+    "usd_reserved": 2
+   },
+   "final_newline": true,
+   "lines": 5,
+   "sanitised": "sessions/c80583e9-e526-460b-9072-6f2b56bdebf0/turn-2.proxy.jsonl",
+   "sanitised_sha256": "9f9e981d6ada8c6c6cd22600d541bba3a5616863a45c25b110e188d8d3cdc529",
+   "source": "~/.local/state/work-engine/role-host/pi/c80583e9-e526-460b-9072-6f2b56bdebf0/host/turn-2.proxy.jsonl",
+   "source_sha256": "c69a3b133ee599ec810a80b194e0b84293aa4dcc720174240a074ce1f59308b8",
+   "sum_charged_usd": "0.545056",
+   "sum_reserved_usd": "1.022195"
+  },
+  {
+   "events": {
+    "request": 20,
+    "usd_reserved": 20
+   },
+   "final_newline": true,
+   "lines": 40,
+   "sanitised": "sessions/d1986ca7-22db-4785-abaf-6e8abc39619e/turn-1.proxy.jsonl",
+   "sanitised_sha256": "96b1dd88290b8d161706888b77e9c793da5c726302db0b9e14ea4e6a4479fe52",
+   "source": "~/.local/state/work-engine/role-host/pi/d1986ca7-22db-4785-abaf-6e8abc39619e/host/turn-1.proxy.jsonl",
+   "source_sha256": "8521f1992b1cb5d1c5144886088eca76aa3b959c2be3af993f9b92159d055217",
+   "sum_charged_usd": "1.289298",
+   "sum_reserved_usd": "16.463095"
+  },
+  {
+   "events": {
+    "refused": 1,
+    "request": 12,
+    "usd_reserved": 12
+   },
+   "final_newline": true,
+   "lines": 25,
+   "sanitised": "sessions/4e4c89ca-1096-41ca-b852-93ca17775a56/turn-1.proxy.jsonl",
+   "sanitised_sha256": "00b0194fe9f7c6fc4c835cc965111e008f37a52633ffaf93154e27763e46d681",
+   "source": "~/.local/state/work-engine/role-host/pi/4e4c89ca-1096-41ca-b852-93ca17775a56/host/turn-1.proxy.jsonl",
+   "source_sha256": "141d1e9edda0a04787f005941c4f48eaca415d186b95bf4d039320ea2d61b9f8",
+   "sum_charged_usd": "0.936457",
+   "sum_reserved_usd": "10.047000"
+  },
+  {
+   "events": {
+    "request": 41,
+    "usd_reserved": 41
+   },
+   "final_newline": true,
+   "lines": 82,
+   "sanitised": "sessions/f37cffe9-67c6-41e2-bb70-833415e7a434/turn-1.proxy.jsonl",
+   "sanitised_sha256": "42dfb6792fe306aaf45664265f7333319d1b7834cc38394326fdba30cb47050f",
+   "source": "~/.local/state/work-engine/role-host/pi/f37cffe9-67c6-41e2-bb70-833415e7a434/host/turn-1.proxy.jsonl",
+   "source_sha256": "f83afbfdec4dd7400167369ab9b5cf5524df7c338d8ce5e9caf3fad307297332",
+   "sum_charged_usd": "2.464129",
+   "sum_reserved_usd": "66.712952"
+  },
+  {
+   "events": {
+    "request": 15,
+    "usd_reserved": 15
+   },
+   "final_newline": true,
+   "lines": 30,
+   "sanitised": "sessions/36c8eb85-6d2d-4b69-ae3b-980536701863/turn-1.proxy.jsonl",
+   "sanitised_sha256": "0226b583c4a9f39f8855ec683456111ad0f65a2905534f19c3cf6d0db85fbbee",
+   "source": "~/.local/state/work-engine/role-host/pi/36c8eb85-6d2d-4b69-ae3b-980536701863/host/turn-1.proxy.jsonl",
+   "source_sha256": "32a4c0c906100958a739e35142208a085ebbd39155e5d1d8b7c17ff13379d91d",
+   "sum_charged_usd": "0.796696",
+   "sum_reserved_usd": "7.320556"
+  },
+  {
+   "events": {
+    "request": 1,
+    "usd_reserved": 1
+   },
+   "final_newline": true,
+   "lines": 2,
+   "sanitised": "sessions/87f0140e-e11d-4a4d-a41b-ee971e84ac44/turn-1.proxy.jsonl",
+   "sanitised_sha256": "33fd9ac4aae97a6a7df00a4b4a09df8c1fb8f5e622ee1f9ebf0553ff0fb98369",
+   "source": "~/.local/state/work-engine/role-host/pi/87f0140e-e11d-4a4d-a41b-ee971e84ac44/host/turn-1.proxy.jsonl",
+   "source_sha256": "5b3cfe74c0c56c24b86cfcd1bca108eb97fb3e69d83793014b86e18a273b53bc",
+   "sum_charged_usd": "0.356727",
+   "sum_reserved_usd": "0.356727"
+  },
+  {
+   "events": {
+    "refused": 1,
+    "request": 19,
+    "usd_reserved": 19
+   },
+   "final_newline": true,
+   "lines": 39,
+   "sanitised": "sessions/d2658b88-b0db-40c9-80af-985799534eb7/turn-1.proxy.jsonl",
+   "sanitised_sha256": "b45cc924257192206bd010c7f523a58049016c99d43039d8e90a4ac3dbd1bf58",
+   "source": "~/.local/state/work-engine/role-host/pi/d2658b88-b0db-40c9-80af-985799534eb7/host/turn-1.proxy.jsonl",
+   "source_sha256": "315acbe2f15b1fb53f0385003a2d1430cc384f84db490baab791a34fea87e960",
+   "sum_charged_usd": "1.830947",
+   "sum_reserved_usd": "15.312744"
+  },
+  {
+   "events": {
+    "request": 30,
+    "usd_reserved": 30
+   },
+   "final_newline": true,
+   "lines": 60,
+   "sanitised": "sessions/b0df0e23-d905-431d-9b8c-8c57ad0f3fdd/turn-1.proxy.jsonl",
+   "sanitised_sha256": "d9fa4c026c5be3323c27fcf8b8e16e4f9317e7964d726741dc0e051010f417ec",
+   "source": "~/.local/state/work-engine/role-host/pi/b0df0e23-d905-431d-9b8c-8c57ad0f3fdd/host/turn-1.proxy.jsonl",
+   "source_sha256": "a7d056f6c1d19841352f683b7d1c5ed23758beb84c0a9e1e551b30cace3f727d",
+   "sum_charged_usd": "3.358224",
+   "sum_reserved_usd": "63.142713"
+  },
+  {
+   "events": {
+    "refused": 1,
+    "request": 14,
+    "usd_reserved": 14
+   },
+   "final_newline": true,
+   "lines": 29,
+   "sanitised": "sessions/fc4f03dd-be17-4a80-b371-50d42f852837/turn-1.proxy.jsonl",
+   "sanitised_sha256": "92c3b1abb8a898691a0243794d834eb8fee543c06d5c8b94a787cafe04f1b257",
+   "source": "~/.local/state/work-engine/role-host/pi/fc4f03dd-be17-4a80-b371-50d42f852837/host/turn-1.proxy.jsonl",
+   "source_sha256": "e8b38636207023799023c0c28da25150a4f7b66c00a69a66f24cf280a1ec1248",
+   "sum_charged_usd": "0.515918",
+   "sum_reserved_usd": "17.521386"
+  },
+  {
+   "events": {
+    "request": 13,
+    "usd_reserved": 13
+   },
+   "final_newline": true,
+   "lines": 26,
+   "sanitised": "sessions/b9b3dee2-3678-4c62-993c-0678072a2b56/turn-1.proxy.jsonl",
+   "sanitised_sha256": "c71adb02df3057c8688014d955900f25b23295b336edd100c79c228c875e254c",
+   "source": "~/.local/state/work-engine/role-host/pi/b9b3dee2-3678-4c62-993c-0678072a2b56/host/turn-1.proxy.jsonl",
+   "source_sha256": "8e6e09f9f48cbd6923bbe3a1c279793fff30c44b1e40e9d74ab5769778c7dec1",
+   "sum_charged_usd": "0.951762",
+   "sum_reserved_usd": "7.570274"
+  },
+  {
+   "events": {
+    "request": 15,
+    "usd_reserved": 15
+   },
+   "final_newline": true,
+   "lines": 30,
+   "sanitised": "sessions/613a7824-b79c-4e7a-88be-4dd171857be3/turn-1.proxy.jsonl",
+   "sanitised_sha256": "8ca4e9d30ca94a20c1e6c080acefa9d975602c0e574d0335062bddba32609d38",
+   "source": "~/.local/state/work-engine/role-host/pi/613a7824-b79c-4e7a-88be-4dd171857be3/host/turn-1.proxy.jsonl",
+   "source_sha256": "611f75b4e6164ebad333109849fdea556f65deb3bce1f529d9801b359562097e",
+   "sum_charged_usd": "0.974190",
+   "sum_reserved_usd": "8.252013"
+  },
+  {
+   "events": {
+    "request": 24,
+    "usd_reserved": 24
+   },
+   "final_newline": true,
+   "lines": 48,
+   "sanitised": "sessions/fdc243f1-2bda-4e68-a805-718516a202ba/turn-1.proxy.jsonl",
+   "sanitised_sha256": "3d03df2789fcf3ed1013f721173c3b01df39ff488d95f93ce2f48077a7154106",
+   "source": "~/.local/state/work-engine/role-host/pi/fdc243f1-2bda-4e68-a805-718516a202ba/host/turn-1.proxy.jsonl",
+   "source_sha256": "9c75d0fb7ce98291b621815343ebeaa2fdefd382299dede32c12bea018c3b244",
+   "sum_charged_usd": "2.732429",
+   "sum_reserved_usd": "47.153289"
+  },
+  {
+   "events": {
+    "request": 27,
+    "usd_reserved": 27
+   },
+   "final_newline": true,
+   "lines": 54,
+   "sanitised": "sessions/486392e5-9d21-4ba1-9527-269a64a44a53/turn-1.proxy.jsonl",
+   "sanitised_sha256": "c2734d802ccdbb91d01d6641855a6891be63f9fc158c963675d060c8651a2692",
+   "source": "~/.local/state/work-engine/role-host/pi/486392e5-9d21-4ba1-9527-269a64a44a53/host/turn-1.proxy.jsonl",
+   "source_sha256": "4a938fcab30d25fd1352383254c9211090ee82b06d1b347150217e766ce9e4aa",
+   "sum_charged_usd": "0.857757",
+   "sum_reserved_usd": "33.597915"
+  },
+  {
+   "events": {
+    "request": 6,
+    "usd_reserved": 6
+   },
+   "final_newline": true,
+   "lines": 12,
+   "sanitised": "sessions/486392e5-9d21-4ba1-9527-269a64a44a53/turn-2.proxy.jsonl",
+   "sanitised_sha256": "ee6061f3d48b0a8834e1998609342203c233de024f20c7a010ed1c6f76fcaad2",
+   "source": "~/.local/state/work-engine/role-host/pi/486392e5-9d21-4ba1-9527-269a64a44a53/host/turn-2.proxy.jsonl",
+   "source_sha256": "f3348687120c3d8f5b9ca2a849f04545b62decb183b172a44b3793f7b6232195",
+   "sum_charged_usd": "0.406778",
+   "sum_reserved_usd": "9.898388"
+  },
+  {
+   "events": {
+    "request": 26,
+    "usd_reserved": 26
+   },
+   "final_newline": true,
+   "lines": 52,
+   "sanitised": "sessions/2b24ac31-4ac7-40fb-8968-f2fabcb250b0/turn-1.proxy.jsonl",
+   "sanitised_sha256": "d93d71e1f7c87bf75a34804eec3372641861cc547cd96c2f98e203d85c461248",
+   "source": "~/.local/state/work-engine/role-host/pi/2b24ac31-4ac7-40fb-8968-f2fabcb250b0/host/turn-1.proxy.jsonl",
+   "source_sha256": "ec47e7eafa7741a7be3b7ccfc5252634a60d00a6b35747ecc0b85d60cc537fe8",
+   "sum_charged_usd": "3.120767",
+   "sum_reserved_usd": "52.251860"
+  },
+  {
+   "events": {
+    "request": 13,
+    "usd_reserved": 13
+   },
+   "final_newline": true,
+   "lines": 26,
+   "sanitised": "sessions/fd3cf357-17e8-4579-9af7-7561a3772f20/turn-1.proxy.jsonl",
+   "sanitised_sha256": "35789c70d5131048f3219a75e9130927c2790b7b9da7b972494b9b2455ba9054",
+   "source": "~/.local/state/work-engine/role-host/pi/fd3cf357-17e8-4579-9af7-7561a3772f20/host/turn-1.proxy.jsonl",
+   "source_sha256": "b209cc3d4eab612c4f9ed1d1e4651884a8ee85111275ab7f0a80c160e658ff71",
+   "sum_charged_usd": "1.106281",
+   "sum_reserved_usd": "8.347189"
+  },
+  {
+   "events": {
+    "request": 30,
+    "usd_reserved": 30
+   },
+   "final_newline": true,
+   "lines": 60,
+   "sanitised": "sessions/d247bcd8-4d6b-4e09-98be-cdc98832235a/turn-1.proxy.jsonl",
+   "sanitised_sha256": "54846a1740a629455db64345375939477c4f8e54de52718c8d25f296fb55af79",
+   "source": "~/.local/state/work-engine/role-host/pi/d247bcd8-4d6b-4e09-98be-cdc98832235a/host/turn-1.proxy.jsonl",
+   "source_sha256": "a0b547d3d286e8312ab1883eb84206d0a55ce44db79ea7daae90feb6dba4781e",
+   "sum_charged_usd": "1.358212",
+   "sum_reserved_usd": "44.128838"
+  },
+  {
+   "events": {
+    "request": 11,
+    "usd_reserved": 11
+   },
+   "final_newline": true,
+   "lines": 22,
+   "sanitised": "sessions/20e939d6-b40b-4cc1-8fd5-0ec64bed4167/turn-1.proxy.jsonl",
+   "sanitised_sha256": "4e6da857c175e00141cb2d3ffcf8f927bdd828fad64a030632ae90d2124ec2dc",
+   "source": "~/.local/state/work-engine/role-host/pi/20e939d6-b40b-4cc1-8fd5-0ec64bed4167/host/turn-1.proxy.jsonl",
+   "source_sha256": "0adac218aaaaf33b9b462c143871cf74479fc8756c9a1db1e3391e1013666d5d",
+   "sum_charged_usd": "0.798060",
+   "sum_reserved_usd": "5.960901"
+  },
+  {
+   "events": {
+    "refused": 1,
+    "request": 5,
+    "usd_reserved": 5
+   },
+   "final_newline": true,
+   "lines": 11,
+   "sanitised": "sessions/d247bcd8-4d6b-4e09-98be-cdc98832235a/turn-2.proxy.jsonl",
+   "sanitised_sha256": "7d18d562c2e3e6f38badd243dc6fc66d4e6d785721590f08b5a8ab1be862faf9",
+   "source": "~/.local/state/work-engine/role-host/pi/d247bcd8-4d6b-4e09-98be-cdc98832235a/host/turn-2.proxy.jsonl",
+   "source_sha256": "e39a296a87c02d4c52bc566198193ef1b9370f2d93c7af189010b247e0ff45cf",
+   "sum_charged_usd": "0.363733",
+   "sum_reserved_usd": "10.483650"
+  },
+  {
+   "events": {
+    "refused": 1,
+    "request": 33,
+    "usd_reserved": 33
+   },
+   "final_newline": true,
+   "lines": 67,
+   "sanitised": "sessions/d5c64a92-8e45-4835-a211-a20b14be31e6/turn-1.proxy.jsonl",
+   "sanitised_sha256": "4afbaec17b0724f4a618fb1270c177da2e5b51482b359bca98a9423cce176044",
+   "source": "~/.local/state/work-engine/role-host/pi/d5c64a92-8e45-4835-a211-a20b14be31e6/host/turn-1.proxy.jsonl",
+   "source_sha256": "269fd0fffb55bf302243ecaa30d33bf8fba1844c30e8c97103bb4ea25b1a1da9",
+   "sum_charged_usd": "2.181829",
+   "sum_reserved_usd": "53.069814"
+  },
+  {
+   "events": {
+    "request": 51,
+    "usd_reserved": 51
+   },
+   "final_newline": true,
+   "lines": 102,
+   "sanitised": "sessions/6e0e22f8-c019-4ec9-af58-b5638ecec937/turn-1.proxy.jsonl",
+   "sanitised_sha256": "3f97b766720db98d76e97913ec520cb61512f0e95e2fa2ac71b26120c4d85e02",
+   "source": "~/.local/state/work-engine/role-host/pi/6e0e22f8-c019-4ec9-af58-b5638ecec937/host/turn-1.proxy.jsonl",
+   "source_sha256": "6cc70c1421abe810064b6db1b08b940498950f649177b0e4c5ab2eae774c42f7",
+   "sum_charged_usd": "3.737992",
+   "sum_reserved_usd": "88.624612"
+  },
+  {
+   "events": {
+    "request": 16,
+    "usd_reserved": 16
+   },
+   "final_newline": true,
+   "lines": 32,
+   "sanitised": "sessions/db60a216-c012-43fd-93ca-58e6196ceb99/turn-1.proxy.jsonl",
+   "sanitised_sha256": "fb54067f783f4a8a26b3cf720471f632673554bd659ab9a7d399e933d715ae7e",
+   "source": "~/.local/state/work-engine/role-host/pi/db60a216-c012-43fd-93ca-58e6196ceb99/host/turn-1.proxy.jsonl",
+   "source_sha256": "37da2f6e426b9df397219fa788be00914a14ab077f7b7a76597c2b11017c8a80",
+   "sum_charged_usd": "0.885186",
+   "sum_reserved_usd": "21.805598"
+  },
+  {
+   "events": {
+    "request": 36,
+    "usd_reserved": 36
+   },
+   "final_newline": true,
+   "lines": 72,
+   "sanitised": "sessions/8d28136f-dfd6-4656-a9e6-d9db1bb6681e/turn-1.proxy.jsonl",
+   "sanitised_sha256": "d66cfc959f0205693655ad619d90243e1b173ac370261bed8698ef9f61e72382",
+   "source": "~/.local/state/work-engine/role-host/pi/8d28136f-dfd6-4656-a9e6-d9db1bb6681e/host/turn-1.proxy.jsonl",
+   "source_sha256": "e83d966c837fb988a13a0aa266511c039e5809d3e66463f3faed217d05cf0375",
+   "sum_charged_usd": "2.758148",
+   "sum_reserved_usd": "62.150809"
+  },
+  {
+   "events": {
+    "request": 32,
+    "usd_reserved": 32
+   },
+   "final_newline": true,
+   "lines": 64,
+   "sanitised": "sessions/87e95b35-7fe9-47b6-ac86-8a7afb7b8c1e/turn-1.proxy.jsonl",
+   "sanitised_sha256": "65099426ffe7f88b24c32d046034ee7b29d39d0f9740ce64ce90231724c1dda9",
+   "source": "~/.local/state/work-engine/role-host/pi/87e95b35-7fe9-47b6-ac86-8a7afb7b8c1e/host/turn-1.proxy.jsonl",
+   "source_sha256": "b3141be3ee4d0c4da906b948dc14a7bd361288f440dfcb98bc43edc835c71054",
+   "sum_charged_usd": "0.237983",
+   "sum_reserved_usd": "4.865727"
+  },
+  {
+   "events": {
+    "request": 20,
+    "usd_reserved": 20
+   },
+   "final_newline": true,
+   "lines": 40,
+   "sanitised": "sessions/87e95b35-7fe9-47b6-ac86-8a7afb7b8c1e/turn-2.proxy.jsonl",
+   "sanitised_sha256": "0928d38b8a3dcafe2490e1298ba35fd93fcfa8bc1e471f00faf9120cc6e1633c",
+   "source": "~/.local/state/work-engine/role-host/pi/87e95b35-7fe9-47b6-ac86-8a7afb7b8c1e/host/turn-2.proxy.jsonl",
+   "source_sha256": "f2165892558584654c8a35e492a3f1b14fe27b7a85cb65eb68395737e9328979",
+   "sum_charged_usd": "0.396428",
+   "sum_reserved_usd": "6.217417"
+  },
+  {
+   "events": {
+    "request": 17,
+    "usd_reserved": 17
+   },
+   "final_newline": true,
+   "lines": 34,
+   "sanitised": "sessions/8b36c73d-5e4c-47e0-8a74-6c86e0deefb0/turn-1.proxy.jsonl",
+   "sanitised_sha256": "3c7a234500ef546dd2798447bfd84811efe2fa7c460de0af1c1d520cebabd997",
+   "source": "~/.local/state/work-engine/role-host/pi/8b36c73d-5e4c-47e0-8a74-6c86e0deefb0/host/turn-1.proxy.jsonl",
+   "source_sha256": "9ce7485a9bf6fc20b505718c0c08790c4e33db06f6b546a5fa344365305a382a",
+   "sum_charged_usd": "0.828480",
+   "sum_reserved_usd": "22.303923"
+  },
+  {
+   "events": {
+    "request": 26,
+    "usd_reserved": 26
+   },
+   "final_newline": true,
+   "lines": 52,
+   "sanitised": "sessions/80f335e7-a4f0-4505-a0cd-da8c66b49f15/turn-1.proxy.jsonl",
+   "sanitised_sha256": "26fa747ee6222be415de8935cf8c94108fa1ff0a75def80ca26d566233c79fd5",
+   "source": "~/.local/state/work-engine/role-host/pi/80f335e7-a4f0-4505-a0cd-da8c66b49f15/host/turn-1.proxy.jsonl",
+   "source_sha256": "33be34c21f4573e88266a02dcaefed4d209c7a8e0b810eba45f287fa06c8ff4a",
+   "sum_charged_usd": "1.845865",
+   "sum_reserved_usd": "46.801763"
+  },
+  {
+   "events": {
+    "request": 19,
+    "usd_reserved": 19
+   },
+   "final_newline": true,
+   "lines": 38,
+   "sanitised": "sessions/7e973d32-cb56-44b3-a5b6-20e6c4f4b2c4/turn-1.proxy.jsonl",
+   "sanitised_sha256": "0bb26bee0405c971844d4d176225b7224ccb7cbc63bcfad2b3bef71af56f8669",
+   "source": "~/.local/state/work-engine/role-host/pi/7e973d32-cb56-44b3-a5b6-20e6c4f4b2c4/host/turn-1.proxy.jsonl",
+   "source_sha256": "d8bbc866e0d33b4564a197ded385552dda3dfbff964334faa117382cd2a34961",
+   "sum_charged_usd": "1.227651",
+   "sum_reserved_usd": "11.437204"
+  },
+  {
+   "events": {
+    "request": 15,
+    "usd_reserved": 15
+   },
+   "final_newline": true,
+   "lines": 30,
+   "sanitised": "sessions/8642fd00-9241-4dc9-a29d-2c7a9507f31f/turn-1.proxy.jsonl",
+   "sanitised_sha256": "846f34f78b0c24c356bda2a4cb9f3d672f822346f09f6199cd0d2a222a9b7df6",
+   "source": "~/.local/state/work-engine/role-host/pi/8642fd00-9241-4dc9-a29d-2c7a9507f31f/host/turn-1.proxy.jsonl",
+   "source_sha256": "2803af5cad11ea10613693490a68cabae55abaca0ce90fb4e2c2212c69f6bb7f",
+   "sum_charged_usd": "1.011434",
+   "sum_reserved_usd": "8.744033"
+  },
+  {
+   "events": {
+    "request": 13,
+    "usd_reserved": 13
+   },
+   "final_newline": true,
+   "lines": 26,
+   "sanitised": "sessions/78257454-ee1a-46c7-814b-8fcef8c96220/turn-1.proxy.jsonl",
+   "sanitised_sha256": "2d6c658072fa2e2632472fe045d94ef9a8ac60f21684adfd17579d0ef99b99ff",
+   "source": "~/.local/state/work-engine/role-host/pi/78257454-ee1a-46c7-814b-8fcef8c96220/host/turn-1.proxy.jsonl",
+   "source_sha256": "305f4005fe9d0b49de998bdca4ee59ac3ad8fd1d9578ca2c60377744edf1e607",
+   "sum_charged_usd": "1.048972",
+   "sum_reserved_usd": "8.182682"
+  },
+  {
+   "events": {
+    "request": 20,
+    "usd_reserved": 20
+   },
+   "final_newline": true,
+   "lines": 40,
+   "sanitised": "sessions/7f6d40ec-513a-4b50-b8ce-b917eecbbf4b/turn-1.proxy.jsonl",
+   "sanitised_sha256": "770ceb471e8c32c83ed6072d0cb6d263e872e5d51fa544c4550de1e46dac0187",
+   "source": "~/.local/state/work-engine/role-host/pi/7f6d40ec-513a-4b50-b8ce-b917eecbbf4b/host/turn-1.proxy.jsonl",
+   "source_sha256": "5efdf79f3f0d5e8abda2acabfbf5d88be86d38b1b77ed96810177b06027ba081",
+   "sum_charged_usd": "2.097611",
+   "sum_reserved_usd": "40.645051"
+  },
+  {
+   "events": {
+    "request": 1,
+    "subscription_proxy_admitted": 1
+   },
+   "final_newline": true,
+   "lines": 2,
+   "sanitised": "sessions/07ad4d78-8b53-4867-af7c-0d599acbab75/turn-1.proxy.jsonl",
+   "sanitised_sha256": "c8c6ea9454faed694d77891a8d22e9d4a02e51bd9bd33d084cd1b76061b3b537",
+   "source": "~/.local/state/work-engine/role-host/pi/07ad4d78-8b53-4867-af7c-0d599acbab75/host/turn-1.proxy.jsonl",
+   "source_sha256": "eee8715e59e987ba197e91c252682e4294011ecb23d84665fd286da2bdcfafc4",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "refused": 1,
+    "request": 1,
+    "subscription_proxy_admitted": 1
+   },
+   "final_newline": true,
+   "lines": 3,
+   "sanitised": "sessions/90d0d446-bde8-47e2-a2c6-4b3df34a4dcf/turn-1.proxy.jsonl",
+   "sanitised_sha256": "0b075f49c0f2e0ba67d7c0af4bdc0bdd05b0d9d074d269db2b7a242ea938f4a1",
+   "source": "~/.local/state/work-engine/role-host/pi/90d0d446-bde8-47e2-a2c6-4b3df34a4dcf/host/turn-1.proxy.jsonl",
+   "source_sha256": "9ad832a0ec459861188004fcb8c74d5a47068a9c77c7ec7b096b70956a2ce2dd",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "refused": 1,
+    "request": 14,
+    "subscription_proxy_admitted": 14
+   },
+   "final_newline": true,
+   "lines": 29,
+   "sanitised": "sessions/3879b6b8-70a2-4e41-99fa-7ab759ed21ab/turn-1.proxy.jsonl",
+   "sanitised_sha256": "897cd95ed7a55df2f09f22230e97b75ade9cb14175f5de6a29e996807002dd69",
+   "source": "~/.local/state/work-engine/role-host/pi/3879b6b8-70a2-4e41-99fa-7ab759ed21ab/host/turn-1.proxy.jsonl",
+   "source_sha256": "99019f44bf02e5258ca3fe2b317f22673e3dd7fb7f7761678d7e56edb36d0a25",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 2,
+    "subscription_proxy_admitted": 2
+   },
+   "final_newline": true,
+   "lines": 4,
+   "sanitised": "sessions/99d03b6b-7b08-4ccb-8b5d-442f83608c44/turn-1.proxy.jsonl",
+   "sanitised_sha256": "5ea122070ae5b8764542669810fa344d0fd184df1eb834b85b5363eeb4872cf4",
+   "source": "~/.local/state/work-engine/role-host/pi/99d03b6b-7b08-4ccb-8b5d-442f83608c44/host/turn-1.proxy.jsonl",
+   "source_sha256": "af0410558c46cc7a7ff16aa8adb55c7dfd9bf1c3d95a72e9fd0680cc2fb2975c",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "refused": 1,
+    "request": 14,
+    "subscription_proxy_admitted": 14
+   },
+   "final_newline": true,
+   "lines": 29,
+   "sanitised": "sessions/37d52ae3-a95b-4371-8a22-fc855ce3e012/turn-1.proxy.jsonl",
+   "sanitised_sha256": "c84fb47991ef59647de5fe36d012d3c5da7c37f87c08d2eb3ece974da9739905",
+   "source": "~/.local/state/work-engine/role-host/pi/37d52ae3-a95b-4371-8a22-fc855ce3e012/host/turn-1.proxy.jsonl",
+   "source_sha256": "c2b17f0f23d39f796ff9d88ac00fc487320f08a505ef7db69073fea81f4b0f17",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "refused": 1,
+    "request": 10,
+    "subscription_proxy_admitted": 10
+   },
+   "final_newline": true,
+   "lines": 21,
+   "sanitised": "sessions/9b8963b0-99c0-4708-8195-c8fc8b5f1b50/turn-1.proxy.jsonl",
+   "sanitised_sha256": "cefd1e0b1eb7c9c87fd9840915876dd4735ede8ba483d711d40f111b0698a5d2",
+   "source": "~/.local/state/work-engine/role-host/pi/9b8963b0-99c0-4708-8195-c8fc8b5f1b50/host/turn-1.proxy.jsonl",
+   "source_sha256": "a94e9a234d44dd5aef65de2ce4ace7229d35110dce34c3cc75603f5d555d1d3b",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 11,
+    "stream_error": 1,
+    "subscription_proxy_admitted": 11
+   },
+   "final_newline": true,
+   "lines": 23,
+   "sanitised": "sessions/ab85c579-dcda-404b-9a9f-2af3c3a24034/turn-1.proxy.jsonl",
+   "sanitised_sha256": "ff6638a7ec5558526893bf2869c35d7e41c2515a3b9f83373b8f565cc65d6414",
+   "source": "~/.local/state/work-engine/role-host/pi/ab85c579-dcda-404b-9a9f-2af3c3a24034/host/turn-1.proxy.jsonl",
+   "source_sha256": "2e30041e6d1eecae54ef496c8c2ebfeb3cff808870512ddee367a13f5a80642c",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 26,
+    "subscription_proxy_admitted": 26
+   },
+   "final_newline": true,
+   "lines": 52,
+   "sanitised": "sessions/f97b6d11-c0ce-47e4-8240-16a33638b653/turn-1.proxy.jsonl",
+   "sanitised_sha256": "735b198f09fafcc4e2a6c91bd8f3141d3acdf4b2e324b3086896e4c1fa8f1f78",
+   "source": "~/.local/state/work-engine/role-host/pi/f97b6d11-c0ce-47e4-8240-16a33638b653/host/turn-1.proxy.jsonl",
+   "source_sha256": "46a16705d0f01e0ebec0736b5ea9ba0e2f35fd1f817891ee331b6d0e7d96403d",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 13,
+    "subscription_proxy_admitted": 13
+   },
+   "final_newline": true,
+   "lines": 26,
+   "sanitised": "sessions/f97b6d11-c0ce-47e4-8240-16a33638b653/turn-2.proxy.jsonl",
+   "sanitised_sha256": "262cd3b80a8af5c50279f99433373455c0889ee1633a9479b7d07e94f3e6c31f",
+   "source": "~/.local/state/work-engine/role-host/pi/f97b6d11-c0ce-47e4-8240-16a33638b653/host/turn-2.proxy.jsonl",
+   "source_sha256": "375290970a21c6a1c0dda939fedc88ebc1f3cad8c76e31f6c439252f9bfeebaa",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 27,
+    "subscription_proxy_admitted": 27
+   },
+   "final_newline": true,
+   "lines": 54,
+   "sanitised": "sessions/c4e9e311-2bac-436a-b9da-f4139f98a201/turn-1.proxy.jsonl",
+   "sanitised_sha256": "6f8ff3772c67c2d5b577f139c11e9d31f3eeffa96d1579b7ea5feca801191644",
+   "source": "~/.local/state/work-engine/role-host/pi/c4e9e311-2bac-436a-b9da-f4139f98a201/host/turn-1.proxy.jsonl",
+   "source_sha256": "6c13e5fb694a34cacbea5aec1c535875b7d24efb6923ca4b4bb62e8fe55abdc6",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 1,
+    "subscription_proxy_admitted": 1
+   },
+   "final_newline": true,
+   "lines": 2,
+   "sanitised": "sessions/dbc8365a-6df2-4c0d-a4b3-c46e62218ad1/turn-1.proxy.jsonl",
+   "sanitised_sha256": "35e1080df432607a0a0b1f46868dca16e9abe2b74f283424ec68cb01719bef97",
+   "source": "~/.local/state/work-engine/role-host/pi/dbc8365a-6df2-4c0d-a4b3-c46e62218ad1/host/turn-1.proxy.jsonl",
+   "source_sha256": "3ffe1863e0a56f439d657e8ae7224db83b14efba26aa70e948f7f3f9e42f73ad",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 21,
+    "subscription_proxy_admitted": 21
+   },
+   "final_newline": true,
+   "lines": 42,
+   "sanitised": "sessions/0e79517d-252e-4ca1-8bd9-e30aa2a74134/turn-1.proxy.jsonl",
+   "sanitised_sha256": "340cd891f9b3096712577b1a416f4fbdaa9b61531cf144e6e5d854db87a299cf",
+   "source": "~/.local/state/work-engine/role-host/pi/0e79517d-252e-4ca1-8bd9-e30aa2a74134/host/turn-1.proxy.jsonl",
+   "source_sha256": "c827520d133655453e63c0cc69bba3d5f634fb8f70961bab6c0497ec0ae2f2ce",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 28,
+    "stream_error": 1,
+    "subscription_proxy_admitted": 28
+   },
+   "final_newline": true,
+   "lines": 57,
+   "sanitised": "sessions/09d22735-c016-428c-b4e8-3a891e9b3f02/turn-1.proxy.jsonl",
+   "sanitised_sha256": "f11286a55df4fb8d084241da6a31e8486335f9a23c6bb2255924d4cdf4ea2e7c",
+   "source": "~/.local/state/work-engine/role-host/pi/09d22735-c016-428c-b4e8-3a891e9b3f02/host/turn-1.proxy.jsonl",
+   "source_sha256": "0277bd6f84816e2ecfe282c2fafa895eb95657ef500817bb9d65c823e8e89eab",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 1,
+    "subscription_proxy_admitted": 1
+   },
+   "final_newline": true,
+   "lines": 2,
+   "sanitised": "sessions/dcc19682-2972-458f-a6a7-86c9328d7e0d/turn-1.proxy.jsonl",
+   "sanitised_sha256": "3295109a33f063c24593e00134095d315e4b7af499d84c83c65997a749050561",
+   "source": "~/.local/state/work-engine/role-host/pi/dcc19682-2972-458f-a6a7-86c9328d7e0d/host/turn-1.proxy.jsonl",
+   "source_sha256": "d89038b441411e7de5e0bf22cbf2cfaaefc0f65eb91205596b4a9be20f192146",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 10,
+    "subscription_proxy_admitted": 10
+   },
+   "final_newline": true,
+   "lines": 20,
+   "sanitised": "sessions/03c57d13-8892-4258-8ac6-2f45ff33ba7b/turn-1.proxy.jsonl",
+   "sanitised_sha256": "b18df6dc979fea92052ec84bfa26072c0186799d513b353c42edb3eca6f81d0c",
+   "source": "~/.local/state/work-engine/role-host/pi/03c57d13-8892-4258-8ac6-2f45ff33ba7b/host/turn-1.proxy.jsonl",
+   "source_sha256": "58b693b4ddaf2b57abb65306db0ebd39aa8ce0ea9712e0ee376cdeff1c7aeb31",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 10,
+    "subscription_proxy_admitted": 10
+   },
+   "final_newline": true,
+   "lines": 20,
+   "sanitised": "sessions/a1130f6d-d068-4b49-831b-02299727c786/turn-1.proxy.jsonl",
+   "sanitised_sha256": "d767569b7a6e4a74c6d1001e59cea9b67395fb6dd560c415edb585b1cdd2815a",
+   "source": "~/.local/state/work-engine/role-host/pi/a1130f6d-d068-4b49-831b-02299727c786/host/turn-1.proxy.jsonl",
+   "source_sha256": "082c3a33afda7fb14e816193e5e9684408234f7da7a5b19d8d9e212dfb57aec8",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 11,
+    "subscription_proxy_admitted": 11
+   },
+   "final_newline": true,
+   "lines": 22,
+   "sanitised": "sessions/be01585c-e7d9-4187-a3d1-3585207e82e3/turn-1.proxy.jsonl",
+   "sanitised_sha256": "9ef50a2504e6805e41da506decd72d598aea8de66fd183397510dee3110bb6ae",
+   "source": "~/.local/state/work-engine/role-host/pi/be01585c-e7d9-4187-a3d1-3585207e82e3/host/turn-1.proxy.jsonl",
+   "source_sha256": "2d488cd982d7a3cd26be759187d4c4b0abf67e035b2bb17d2cea42cd7111758b",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 1,
+    "subscription_proxy_admitted": 1
+   },
+   "final_newline": true,
+   "lines": 2,
+   "sanitised": "sessions/3737e24c-238d-4b50-8c49-9b9bbdd46bb0/turn-1.proxy.jsonl",
+   "sanitised_sha256": "bf996114b7054c944a963a41064d2446bbdb89d74adc18779f263681c0f9a0b0",
+   "source": "~/.local/state/work-engine/role-host/pi/3737e24c-238d-4b50-8c49-9b9bbdd46bb0/host/turn-1.proxy.jsonl",
+   "source_sha256": "a02d6d8801e4cf8d89df4b15986aaa4ebc82577661bb634fcf0c8ba2715dc3e6",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 14,
+    "subscription_proxy_admitted": 14
+   },
+   "final_newline": true,
+   "lines": 28,
+   "sanitised": "sessions/a3abca20-c0a3-444d-bd07-80fe312f9894/turn-1.proxy.jsonl",
+   "sanitised_sha256": "009522147fb42155602e173f523a5117fd2b680b8c231ae57cad6618158c8b88",
+   "source": "~/.local/state/work-engine/role-host/pi/a3abca20-c0a3-444d-bd07-80fe312f9894/host/turn-1.proxy.jsonl",
+   "source_sha256": "fd70ae65fb70433b1be158a36a7609270404837504679053e4bf20338a87f9cd",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 9,
+    "subscription_proxy_admitted": 9
+   },
+   "final_newline": true,
+   "lines": 18,
+   "sanitised": "sessions/f6453ec8-877c-452d-b666-bf3cf501ff69/turn-1.proxy.jsonl",
+   "sanitised_sha256": "4ce3371a627ae00cc27ab082ff609d10f0fc035e32c70363284a9c490dec1699",
+   "source": "~/.local/state/work-engine/role-host/pi/f6453ec8-877c-452d-b666-bf3cf501ff69/host/turn-1.proxy.jsonl",
+   "source_sha256": "f32472faa65f29e1898f1ddb2be12f1915960cbc71f75ee021e7303f55fcb0b0",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 10,
+    "subscription_proxy_admitted": 10
+   },
+   "final_newline": true,
+   "lines": 20,
+   "sanitised": "sessions/77ce50fc-ea70-428b-be22-ce8eca812c24/turn-1.proxy.jsonl",
+   "sanitised_sha256": "edb54f6bc56539533d722fdace86d64ffe209fae5e7a9d84130496c7e0b1229f",
+   "source": "~/.local/state/work-engine/role-host/pi/77ce50fc-ea70-428b-be22-ce8eca812c24/host/turn-1.proxy.jsonl",
+   "source_sha256": "f4e7871cd10e5c40fa8ece82e1593289b28af6f32967ccf2df07d34325b8ff7f",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 6,
+    "subscription_proxy_admitted": 6
+   },
+   "final_newline": true,
+   "lines": 12,
+   "sanitised": "sessions/50f365c7-7cfd-4856-ae7b-c99e6eb8947b/turn-1.proxy.jsonl",
+   "sanitised_sha256": "505d4e2382324e22b98dac3bc51590a5e89c2a57f6f912c360c702f635a6fd6b",
+   "source": "~/.local/state/work-engine/role-host/pi/50f365c7-7cfd-4856-ae7b-c99e6eb8947b/host/turn-1.proxy.jsonl",
+   "source_sha256": "8e105a2e45a94fa7c3a418a0bd72f7491dce5148f9a666fc9ea968ba836ef9af",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 17,
+    "subscription_proxy_admitted": 17
+   },
+   "final_newline": true,
+   "lines": 34,
+   "sanitised": "sessions/d2de09a1-b9be-4d75-b580-58895d4b187e/turn-1.proxy.jsonl",
+   "sanitised_sha256": "e285941599518321557d135b74f7515604cee317f9f6f4c109187505b409b2b8",
+   "source": "~/.local/state/work-engine/role-host/pi/d2de09a1-b9be-4d75-b580-58895d4b187e/host/turn-1.proxy.jsonl",
+   "source_sha256": "7cd8ce018ce6d8d631988b058583ca7132f760f171d0c64f7d56d3928db9645e",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 12,
+    "subscription_proxy_admitted": 12
+   },
+   "final_newline": true,
+   "lines": 24,
+   "sanitised": "sessions/c3b96365-45a3-45b8-828d-920dfcd0a002/turn-1.proxy.jsonl",
+   "sanitised_sha256": "158f56564c5012be86237605fa869f6c0bc3885bad89c4b8f2f22c379dc09d2f",
+   "source": "~/.local/state/work-engine/role-host/pi/c3b96365-45a3-45b8-828d-920dfcd0a002/host/turn-1.proxy.jsonl",
+   "source_sha256": "0d6948ced3aad8cf078036043d5d7434050420e3d3f1d8e4aafe3bc62d396f71",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 20,
+    "subscription_proxy_admitted": 20
+   },
+   "final_newline": true,
+   "lines": 40,
+   "sanitised": "sessions/e91f17eb-74dc-469c-ba90-88bfc69301af/turn-1.proxy.jsonl",
+   "sanitised_sha256": "741982fc814588816f8bfbeef1660e6f2d3241ce6472f9f3530b9648cf501adf",
+   "source": "~/.local/state/work-engine/role-host/pi/e91f17eb-74dc-469c-ba90-88bfc69301af/host/turn-1.proxy.jsonl",
+   "source_sha256": "6bcdc9d3003413ac52164a5b4c66580c3d7c5d71fc3ef1bb43277fba3969da2e",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  },
+  {
+   "events": {
+    "request": 16,
+    "subscription_proxy_admitted": 16
+   },
+   "final_newline": true,
+   "lines": 32,
+   "sanitised": "sessions/7e5c4a52-4bb0-4b9f-98e8-9ee4f3b1a581/turn-1.proxy.jsonl",
+   "sanitised_sha256": "6737c313ebf51a75001a9684c72cf37e08bcf22dca40a90d123358a098484208",
+   "source": "~/.local/state/work-engine/role-host/pi/7e5c4a52-4bb0-4b9f-98e8-9ee4f3b1a581/host/turn-1.proxy.jsonl",
+   "source_sha256": "8179a81870cc2643861a35ad5a0098739d4d47e507d0002bc84fb11dce80e5ac",
+   "sum_charged_usd": "0",
+   "sum_reserved_usd": "0"
+  }
+ ]
+}

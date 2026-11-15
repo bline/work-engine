@@ -1,0 +1,60 @@
+{
+  "archive": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/freeze/subject.tar",
+    "sha256": "4c95b53a0778664b75ae11a94a9d011f7d05749506bfa8ba0d9ccb146d783ee1"
+  },
+  "binary": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/target-spec/debug/pi-accounting-spec-check",
+    "sha256": "1a13268e027873a3917294629a3db1643749f256d0813c125be0b26de07be908"
+  },
+  "continuation": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/CONTINUATION.md",
+  "cost_proxy_usd": null,
+  "failures": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/FAILURES.md",
+  "frozen_manifest": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/freeze/manifest.json",
+    "sha256": "5f4c565563c3328ea6b37afe255593c98600f32763b78a4bce2e463e2830138d"
+  },
+  "interface": {
+    "path": "/home/bline/cbm-work/p136-s1r6/s1/spec/interface.json",
+    "sha256": "8020a947b6d306e85dbe93ddc512f0cd4310b7e8a8d5dbadc608e54755f1af2e"
+  },
+  "inventory": {
+    "path": "/home/bline/cbm-work/p136-s1r6/s1/spec/inventory.json",
+    "predecessor_nonblank_lines": 1357,
+    "standing": "source coverage, independent semantic sufficiency unestablished"
+  },
+  "limits": [
+    "finite guarded partitions are over declared symbolic facts, not proof of all raw evidence predicates",
+    "fixed type/constructor checks and generated-byte agreement do not establish financial correctness",
+    "dependency invalidation covers registered edges only; independent acknowledgements remain null/unestablished",
+    "generator never executes arithmetic formulas or writes oracle expected values",
+    "specification typed constructor encoding differs from corpus projection; SERIALIZATION and CORPUS-ENVELOPE declare the projection"
+  ],
+  "observed_effort": "medium",
+  "observed_model": "gpt-6.1-sol",
+  "observed_service_tier": "default",
+  "packet": "/home/bline/cbm-work/pi-accounting-sprint-20261113/packets/spec-implementation.md",
+  "processes": "all worker-launched custody steps terminal, zero leftovers; no children",
+  "qualification": {
+    "leftovers": 0,
+    "rust_structural_tests_passed": 10,
+    "sha256": "3fadb075845fbc0960f55322fe2da0014d9d78a361e376b7ae45a95668865514",
+    "steps_passed": 8,
+    "summary": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/custody/final-qualification/summary.json"
+  },
+  "requested_effort": "medium",
+  "requested_model": "gpt-6.1-sol",
+  "schema": "spec-worker-result/1",
+  "source_manifest": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/affected-source-manifest.json",
+  "status": "bounded_implementation_complete_pending_root_collection_and_independent_acceptance",
+  "subject_root": "/home/bline/cbm-work/p136-s1r6/s1",
+  "unestablished": [
+    "independent raw-policy oracle agreement and historical negatives/controls",
+    "producer reachability and reservation floor witness qualification",
+    "legacy validator check/selftest/revisions/sabotage",
+    "current exact Module A/C and relevant B clearance",
+    "external gate verifier/authority/channel/enforcement",
+    "revision6 contract freeze",
+    "S2a production crate/location/budget/entry"
+  ]
+}

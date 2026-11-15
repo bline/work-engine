@@ -1,0 +1,90 @@
+# out=/home/bline/cbm-work/p126-a134/repro/final/repro_p119_any-on-a134.txt tree=/home/bline/cbm-work/p126-a134/repro/earlier args=-m unittest repro_p119_any -v at=2026-11-13T03:58:35Z
+test_C1_spanning_settlement_inside_tolerance_is_dropped (repro_p119_any.Repro.test_C1_spanning_settlement_inside_tolerance_is_dropped) ... FAIL
+test_C2_rows_ahead_inside_tolerance_are_excluded (repro_p119_any.Repro.test_C2_rows_ahead_inside_tolerance_are_excluded) ... FAIL
+test_C3_identical_reservation_copy_after_settlement_is_collapsed (repro_p119_any.Repro.test_C3_identical_reservation_copy_after_settlement_is_collapsed) ... ok
+test_C4_missing_charge_basis_is_inferred_and_releases (repro_p119_any.Repro.test_C4_missing_charge_basis_is_inferred_and_releases) ... FAIL
+test_C5_api_final_line_without_newline_is_read (repro_p119_any.Repro.test_C5_api_final_line_without_newline_is_read) ... ok
+
+======================================================================
+FAIL: test_C1_spanning_settlement_inside_tolerance_is_dropped (repro_p119_any.Repro.test_C1_spanning_settlement_inside_tolerance_is_dropped)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p126-a134/repro/earlier/repro_p119_any.py", line 60, in test_C1_spanning_settlement_inside_tolerance_is_dropped
+    self.assertEqual(got, ('admitted', 0.0, []))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('not_established', None, ['pi_session_cloc[39 chars]le']) != ('admitted', 0.0, [])
+
+First differing element 0:
+'not_established'
+'admitted'
+
++ ('admitted', 0.0, [])
+- ('not_established',
+-  None,
+-  ['pi_session_clock_ahead', 'pi_undated_call_unattributable'])
+
+======================================================================
+FAIL: test_C2_rows_ahead_inside_tolerance_are_excluded (repro_p119_any.Repro.test_C2_rows_ahead_inside_tolerance_are_excluded)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p126-a134/repro/earlier/repro_p119_any.py", line 77, in test_C2_rows_ahead_inside_tolerance_are_excluded
+    self.assertEqual(unsettled, ('admitted', 0.0, []))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('not_established', None, ['pi_session_cloc[39 chars]le']) != ('admitted', 0.0, [])
+
+First differing element 0:
+'not_established'
+'admitted'
+
++ ('admitted', 0.0, [])
+- ('not_established',
+-  None,
+-  ['pi_session_clock_ahead', 'pi_undated_call_unattributable'])
+
+======================================================================
+FAIL: test_C4_missing_charge_basis_is_inferred_and_releases (repro_p119_any.Repro.test_C4_missing_charge_basis_is_inferred_and_releases)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p126-a134/repro/earlier/repro_p119_any.py", line 101, in test_C4_missing_charge_basis_is_inferred_and_releases
+    self.assertEqual(got, ('admitted', 0.0, []))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('not_established', None, ['pi_settlement_invalid']) != ('admitted', 0.0, [])
+
+First differing element 0:
+'not_established'
+'admitted'
+
+- ('not_established', None, ['pi_settlement_invalid'])
++ ('admitted', 0.0, [])
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.025s
+
+FAILED (failures=3)
+# reader under test: 086bdec1d443064f
+
+C1 reserve 0.8 at now-10min (objective from now-5min), settlement at now+2min: ('not_established', None, ['pi_session_clock_ahead', 'pi_undated_call_unattributable'])
+
+C1 control: settlement at now-1min (in window): ('refused', 0.8, [])
+
+C1 control: settlement at now+10min (beyond tolerance): ('not_established', None, ['pi_session_clock_ahead', 'pi_undated_call_unattributable'])
+
+C2 unsettled reservation 0.8 at now+2min: ('not_established', None, ['pi_session_clock_ahead', 'pi_undated_call_unattributable'])
+
+C2 no-limit usage row at now+2min: ('not_established', None, ['pi_session_clock_ahead', 'pi_undated_call_unattributable'])
+
+C2 control: same reservation at now-1min: ('refused', 0.8, [])
+
+C2 control: reservation at now+10min (beyond tolerance): ('not_established', None, ['pi_session_clock_ahead', 'pi_undated_call_unattributable'])
+
+C3 reserve, 429 settlement, identical reserve copy (same second): ('admitted', 0.0, [])
+
+C3 control: same rid reserved again with another n after the settlement: ('not_established', None, ['pi_reservation_conflict'])
+
+C4 429 settlement without charge_basis, charged 0: ('not_established', None, ['pi_settlement_invalid'])
+
+C4 control: the same with charge_basis error_status (deployed shape): ('admitted', 0.0, [])
+
+C5 API log, final reservation 0.8 without newline: ('refused', 0.9, [])
+C5 issues: []
+exit=1

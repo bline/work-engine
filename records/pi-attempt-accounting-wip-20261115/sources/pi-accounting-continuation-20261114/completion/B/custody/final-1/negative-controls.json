@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "negative-controls",
+  "argv": [
+    "python3",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/negative_controls.py"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 3097078,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/negative_controls.py",
+      "type": "file",
+      "mode": 436,
+      "length": 3307,
+      "sha256": "ac44e3c0342b613d395dee19f5ac529d6ecb52b0e96d842df1a467e4aab1f5e3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py",
+      "type": "file",
+      "mode": 436,
+      "length": 104150,
+      "sha256": "67a8c248490d18fe3439755b46af1ecbe4bfdbe3993068986c2e76aedc35ab9c"
+    }
+  ],
+  "timeout_s": 120,
+  "pid": 3097346,
+  "pgid": 3097346,
+  "started_at": "2026-11-14T04:21:33.257373Z",
+  "ended_at": "2026-11-14T04:21:37.880476Z",
+  "duration_s": 4.623,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/custody/final-1/negative-controls.stdout",
+    "length": 146,
+    "sha256": "36c90afdd30d4432432080d4458c765107cd5ebed63781efd0ef14accd2419e9"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/custody/final-1/negative-controls.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

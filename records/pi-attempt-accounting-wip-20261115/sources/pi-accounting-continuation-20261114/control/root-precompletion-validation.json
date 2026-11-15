@@ -1,0 +1,10 @@
+{
+  "current_bindings_verified": 630,
+  "custody_runs": 50,
+  "all_process_records_ended": true,
+  "recorded_leftovers": 0,
+  "bad_log_digests": [],
+  "historical_input_drift": 32,
+  "details": "control/root-custody-verification.json",
+  "standing": "Precompletion result custody/bytes validated; monetary/schema semantic acceptance awaits current joined qualification and independent review. Current source changes after this baseline invalidate affected prior source-qualified evidence."
+}

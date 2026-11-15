@@ -1,0 +1,49 @@
+{
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+  "steps": [
+    {
+      "name": "render",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "render",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/spec/ck.json"
+      ]
+    },
+    {
+      "name": "generated",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+        "--generated"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/spec/ck.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/spec/dependencies.json"
+      ]
+    },
+    {
+      "name": "impact",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "impact",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+        "LOGICAL-PRIMARY",
+        "DEFINITE-LINK",
+        "WHOLE-COVERAGE",
+        "F-PROJECTION",
+        "SCHEMA-ACCOUNTING"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/spec/ck.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/spec/dependencies.json"
+      ]
+    }
+  ]
+}

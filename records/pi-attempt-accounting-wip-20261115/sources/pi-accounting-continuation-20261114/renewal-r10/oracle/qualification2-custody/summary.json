@@ -1,0 +1,44 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/PILOT-QUALIFICATION.plan.json",
+  "plan_sha256": "ba6a7efd6d6c16fd4badd99187762ab1043b5d509657d26d741cc94320cba6d1",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "build-evidence",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/qualification2-custody/build-evidence.json",
+      "record_sha256": "cdb3146fdf9b9c0e5b530cbdf754961c49ab36a6947de8ebc0897273a1da1a34",
+      "leftovers": 0
+    },
+    {
+      "name": "python-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/qualification2-custody/python-controls.json",
+      "record_sha256": "482b976150086cb2cb76d680157de8fef32f6dca5faa411f1bf0aab5ce1f3c87",
+      "leftovers": 0
+    },
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/qualification2-custody/build.json",
+      "record_sha256": "b8fdd5fb52b2c30c6b952fec20ee05207d1fc5fe088c460e6fa5c0f1d47256ad",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/qualification2-custody/rust-positive.json",
+      "record_sha256": "e0eec3e5205ce432a106112a6b0c71e68fcc97c8205cd18db637ba00f6139831",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-r10-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/qualification2-custody/rust-r10-controls.json",
+      "record_sha256": "0373d0ac7ed7853fd2704f83dccb48e52e637d2d0a6792d4c4df7ff4cbe378fa",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

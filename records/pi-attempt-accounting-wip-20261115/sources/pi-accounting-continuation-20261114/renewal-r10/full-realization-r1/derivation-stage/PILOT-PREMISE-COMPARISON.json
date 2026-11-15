@@ -1,0 +1,105 @@
+{
+  "admitted_sha256": "a85e3374bbaab675b29459c7c88c38334144f14bd4e7cdb400ab5def06f905e8",
+  "checks": [
+    {
+      "bundle": "oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json",
+      "source": "corpus/cases/P132-FG-VC11-gated.json",
+      "top_inventory_match": true,
+      "old_selected_frontier_match": true,
+      "input_proof_fields_match": true,
+      "payloads_match": true,
+      "standing": "same checked prior selected premises only; original nominal truth and bounded acceptance attributed; no whole-case/family reuse inferred"
+    },
+    {
+      "bundle": "oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json",
+      "source": "corpus/cases/P9-claimed-charge-above-reservation.json",
+      "top_inventory_match": true,
+      "old_selected_frontier_match": true,
+      "input_proof_fields_match": true,
+      "payloads_match": true,
+      "standing": "same checked prior selected premises only; original nominal truth and bounded acceptance attributed; no whole-case/family reuse inferred"
+    },
+    {
+      "bundle": "oracle/r8-completion-B/VC07-read-failure-paired.bundle.json",
+      "source": "corpus/cases/VC07-read-failure-paired.json",
+      "top_inventory_match": true,
+      "old_selected_frontier_match": true,
+      "input_proof_fields_match": true,
+      "payloads_match": true,
+      "standing": "same checked prior selected premises only; original nominal truth and bounded acceptance attributed; no whole-case/family reuse inferred"
+    },
+    {
+      "bundle": "oracle/r8-completion-B/VC11-multi-turn-session.bundle.json",
+      "source": "corpus/cases/VC11-multi-turn-session.json",
+      "top_inventory_match": true,
+      "old_selected_frontier_match": true,
+      "input_proof_fields_match": true,
+      "payloads_match": true,
+      "standing": "same checked prior selected premises only; original nominal truth and bounded acceptance attributed; no whole-case/family reuse inferred"
+    },
+    {
+      "bundle": "oracle/r8-controls/VC07-conditional.bundle.json",
+      "source": "oracle/r8-controls/VC07-exact.raw.json",
+      "top_inventory_match": true,
+      "old_selected_frontier_match": true,
+      "input_proof_fields_match": true,
+      "payloads_match": true,
+      "standing": "same checked prior selected premises only; original nominal truth and bounded acceptance attributed; no whole-case/family reuse inferred"
+    },
+    {
+      "bundle": "oracle/r8-controls/VC07-unlinked.bundle.json",
+      "source": "oracle/r8-controls/VC07-exact.raw.json",
+      "top_inventory_match": true,
+      "old_selected_frontier_match": true,
+      "input_proof_fields_match": true,
+      "payloads_match": true,
+      "standing": "same checked prior selected premises only; original nominal truth and bounded acceptance attributed; no whole-case/family reuse inferred"
+    },
+    {
+      "bundle": "oracle/r9-pilot/cases/admitted-copy.bundle.json",
+      "source": "corpus/cases/C3-identical-reservation-copy.json",
+      "top_inventory_match": true,
+      "old_selected_frontier_match": true,
+      "input_proof_fields_match": true,
+      "payloads_match": true,
+      "standing": "same checked prior selected premises only; original nominal truth and bounded acceptance attributed; no whole-case/family reuse inferred"
+    },
+    {
+      "bundle": "oracle/r9-pilot/cases/equal-reservations.bundle.json",
+      "source": "oracle/r9-pilot/cases/equal-reservations.json",
+      "top_inventory_match": true,
+      "old_selected_frontier_match": true,
+      "input_proof_fields_match": true,
+      "payloads_match": true,
+      "standing": "same checked prior selected premises only; original nominal truth and bounded acceptance attributed; no whole-case/family reuse inferred"
+    },
+    {
+      "bundle": "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json",
+      "source": "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json",
+      "top_inventory_match": true,
+      "old_selected_frontier_match": true,
+      "input_proof_fields_match": true,
+      "payloads_match": true,
+      "standing": "same checked prior selected premises only; original nominal truth and bounded acceptance attributed; no whole-case/family reuse inferred"
+    },
+    {
+      "bundle": "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json",
+      "source": "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json",
+      "top_inventory_match": true,
+      "old_selected_frontier_match": true,
+      "input_proof_fields_match": true,
+      "payloads_match": true,
+      "standing": "same checked prior selected premises only; original nominal truth and bounded acceptance attributed; no whole-case/family reuse inferred"
+    },
+    {
+      "bundle": "oracle/r9-pilot/cases/same-origin.bundle.json",
+      "source": "corpus/cases/VC01-openai-usage-settlement.json",
+      "top_inventory_match": true,
+      "old_selected_frontier_match": true,
+      "input_proof_fields_match": true,
+      "payloads_match": true,
+      "standing": "same checked prior selected premises only; original nominal truth and bounded acceptance attributed; no whole-case/family reuse inferred"
+    }
+  ],
+  "all_match": true
+}

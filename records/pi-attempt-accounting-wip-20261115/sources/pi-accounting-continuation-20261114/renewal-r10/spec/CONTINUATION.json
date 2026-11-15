@@ -1,0 +1,104 @@
+{
+  "status": "worker_complete_pending_root_join_and_independent_review",
+  "authority": "SPEC-PACKET.md; COMMON.md; adopted PLAN-AMENDMENT-R3.md sha256 90b6308e9608decf026437c89b98de597cd30046f56d792aa7461061f31f4abb; renewed human $100 grant; own cap15 proxy; no deadline",
+  "subject": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+  "baseline_manifest": "0cad3d5ed66b9ef3c4796cb4039a16646d0ce0d451153948b08f972d8286df6a",
+  "identity": {
+    "acknowledged": true,
+    "session_id": "01a1d8da-c5bd-7612-bac2-bfdf1b189e87",
+    "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-59-38-01a1d8da-c5bd-7612-bac2-bfdf1b189e87.jsonl",
+    "requested": "Sol6.1/medium/default",
+    "observed": "gpt-6.1-sol/medium/default",
+    "collector": "root 01a1d6e2-32ba-7701-9115-740dcb41af11 via collaboration"
+  },
+  "changed_paths": {
+    "spec/ck.json": {
+      "before": "b661fcab04418e9a4a4477c5a42d5ffd67c88b172bede0338f776f325bb6d56e",
+      "after": "a3a30398f289c9edcb4c3a3b0009a9dff88021378658062ed532e90226400787"
+    },
+    "contract/TRANSITIONS.md": {
+      "before": "ab14af10ff99f1ccaf49282781dd3acb1b3be1dcdff7bc9742f21a0769a10676",
+      "after": "fece4603899250a9365feaf38f354986615b57150282e2d1a15e7626169923cb"
+    },
+    "contract/CK-GENERATED.md": {
+      "before": "43e10d8b342315b6e5db3632f81b9076b1166602acba84963c1eaeb4cdd3601f",
+      "after": "1c86dedffe691c5d09116d0b99f0559a7decf7072807356a153cd8246bb4ffc3"
+    },
+    "tooling/spec-check/src/main.rs": {
+      "before": "4b1d725bb00e0a9cd996bee2db5486b753abd69b607f9e6b638018353cedf89e",
+      "after": "b9bf7ef8f8aac7fd86ab25b4e5e794f509eb0a7a8e740472188806d764cbc880"
+    },
+    "tooling/spec-check/src/applicability.rs": {
+      "before": null,
+      "after": "81b2c6834565bbb0a2ea723567a95279e14c19d82ac45980ab8d280353dde2eb"
+    },
+    "tooling/spec-check/src/lib.rs": {
+      "before": "62769fc7f375c89d299a914c2444bc651f7aa5ba01dd55554a625af04cdb9a96",
+      "after": "2ee98799071351ca9527d0106ef198436c2bad176944a05cb391598e8d49493a"
+    },
+    "tooling/spec-check/tests/r9_spec_payloads.rs": {
+      "before": null,
+      "after": "47b647591e7322fa689cb1f4ce3aabd7a3f1164c7a1ae33ee5ca870a17afbc21"
+    }
+  },
+  "executable": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+    "sha256": "6daa4fdc82c4a0ea130e9d51d3c2aead9f1efa90581e848605fc86a5033ce5e1"
+  },
+  "owned_subset_freeze": {
+    "manifest": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/owned-freeze/manifest.json",
+    "sha256": "f7cb4616741f41dad73501455a5d2401851a8b347487e26d17b87581d3e9cf17",
+    "qualification": "seven owned changed files only; not complete candidate freeze"
+  },
+  "interface": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/INTERFACE.md",
+  "executed": [
+    "Rust payload suite6/6",
+    "Rust existing applicability suite7/7 including exact-copy/same-origin structural semantics and dependency invalidation",
+    "actual evidence CLI all7 selected +2 conditional accepted",
+    "actual evidence CLI stale extent/wrong fragment/wrong scope rejected for corresponding applicability reason",
+    "generated and canonical checks passed",
+    "schema agreement16 passed",
+    "wire constructors175cases186attempt fragments passed",
+    "existing actual evidence controls passed"
+  ],
+  "custody": [
+    "tests-final/summary.json",
+    "cli-bound/summary.json",
+    "consistency/summary.json",
+    "build-final/build.json",
+    "owned-freeze/manifest.json"
+  ],
+  "preserved_failures": [
+    "initial custody command omitted --name and was rejected before launch",
+    "cli-first gated VC11 rejected missing grant_payloads; fixed with separate existing derivation-record typed branch",
+    "cli-final and cli-bound summary status failed includes three intentional rejection exit1 outcomes"
+  ],
+  "limits": [
+    "All three R3 findings and eleven historical records remain OPEN",
+    "Root owns complete candidate freeze and exact independent review",
+    "No financial expectations or raw admission authored by spec worker",
+    "Full175/374 financial corpus qualification, A1/C2/A2b remainders, B2, full schema/wire/generated/dependency and exact A/B/C review remain unestablished by this bounded result",
+    "Unsupported finite payload forms fail closed; full corpus payload migration deferred",
+    "Old validate_accounting_bundle API remains supplied-document-only; actual evidence CLI always resolves payloads",
+    "Initial provenance payloads lack per-origin bytes, so independent raw qualifier owns initial-origin byte truth; gated derivation and conditional raw payload branches check their supplied byte records",
+    "Missing/unknown resolution executed; ambiguous-candidate rejection is source-derived, not independently mutated in test"
+  ],
+  "context": {
+    "listener_initial_attempt": "collected exit1 unknown control option --step-percent",
+    "listener_repaired": "no-step owned listener pid3534242; no initial control event delivered; explicit pinned checks used rather than infer enrollment",
+    "listener_disposition": "SIGTERM and collected exit143",
+    "last_explicit_input_tokens": 106244,
+    "epoch": 0,
+    "decision": "bounded coherent phase complete; below185000 preparation and220000 refresh thresholds; no context replacement",
+    "owner": "this session",
+    "alert_collector": "this session",
+    "gap": "quiet repaired listener yielded no initial telemetry; explicit checks provided actual observations"
+  },
+  "processes": {
+    "live": [],
+    "children": [],
+    "all_collected": true
+  },
+  "usage_cost": "actual backend cost unavailable; parent owns aggregate proxy accounting",
+  "next_action": "Root collect this exact final, join oracle evidence, freeze complete candidate once stable and run required independent implementation review; do not close findings from this worker result."
+}

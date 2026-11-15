@@ -1,0 +1,26 @@
+{
+  "session_id": "01a1d8a4-b80e-7163-af3b-d257f945693e",
+  "parent_collector": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "identity_binding": "../spec-IDENTITY-BINDING.md",
+  "status": "worker_complete_pending_supervisor_join_review",
+  "interface": "INTERFACE.md",
+  "processes": [],
+  "source_root": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+  "source_manifest": "SOURCE-MANIFEST.json",
+  "result": "RESULT.md",
+  "scope_extension": "../ORGANIZATION-R5.json",
+  "context": {
+    "observed_input_tokens": 105174,
+    "epoch": 0,
+    "at": "2026-11-14T06:10:02.905892Z",
+    "decision": "retain",
+    "reason": "below185000 preparation; bounded completion remains"
+  },
+  "unmet": [
+    "full175 migration",
+    "all19 consumer acknowledgements",
+    "fresh separate Astra implementation review",
+    "all original11 findings remain open",
+    "raw/financial correctness owned by independent oracle"
+  ]
+}

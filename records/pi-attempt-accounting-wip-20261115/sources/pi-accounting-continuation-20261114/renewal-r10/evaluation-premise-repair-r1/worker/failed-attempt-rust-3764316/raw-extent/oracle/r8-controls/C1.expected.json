@@ -1,0 +1,294 @@
+{
+  "assertions": [
+    {
+      "claim_id": "C1",
+      "expected_fields_or_relations": {
+        "/aggregate": {
+          "high": {
+            "basis": "mixed",
+            "kind": "at_least",
+            "nano": "81000000"
+          },
+          "low": "20000000"
+        },
+        "/candidates": [
+          [
+            "u",
+            "sonnetContext"
+          ],
+          [
+            "u",
+            "refusal"
+          ]
+        ],
+        "/coverage": [],
+        "/credits": {
+          "alternatives": [
+            "u"
+          ],
+          "mode": "single_ambiguous",
+          "selected_low": "20000000",
+          "slots": []
+        },
+        "/definite_links": [],
+        "/route_snapshots/A-first/aggregate": {
+          "high": {
+            "basis": "mixed",
+            "kind": "at_least",
+            "nano": "81000000"
+          },
+          "low": "20000000"
+        },
+        "/route_snapshots/A-first/candidates": [
+          [
+            "u",
+            "sonnetContext"
+          ],
+          [
+            "u",
+            "refusal"
+          ]
+        ],
+        "/route_snapshots/A-first/coverage": [],
+        "/route_snapshots/A-first/credits": {
+          "alternatives": [
+            "u"
+          ],
+          "mode": "single_ambiguous",
+          "selected_low": "20000000",
+          "slots": []
+        },
+        "/route_snapshots/A-first/definite_links": [],
+        "/route_snapshots/A-first/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "at_least",
+              "nano": "80000000"
+            },
+            "id": "R1",
+            "low": "20000000",
+            "origins": [
+              "r1",
+              "u"
+            ]
+          },
+          {
+            "high": {
+              "basis": "proxy_reservation",
+              "kind": "at_least",
+              "nano": "1000000"
+            },
+            "id": "R2",
+            "low": "0",
+            "origins": [
+              "r2"
+            ]
+          },
+          {
+            "high": {
+              "basis": "none",
+              "kind": "at_least",
+              "nano": "0"
+            },
+            "id": "anchor",
+            "low": "0",
+            "origins": [
+              "refusal"
+            ]
+          }
+        ],
+        "/route_snapshots/B-first/aggregate": {
+          "high": {
+            "basis": "mixed",
+            "kind": "at_least",
+            "nano": "81000000"
+          },
+          "low": "20000000"
+        },
+        "/route_snapshots/B-first/candidates": [
+          [
+            "u",
+            "sonnetContext"
+          ],
+          [
+            "u",
+            "refusal"
+          ]
+        ],
+        "/route_snapshots/B-first/coverage": [],
+        "/route_snapshots/B-first/credits": {
+          "alternatives": [
+            "u"
+          ],
+          "mode": "single_ambiguous",
+          "selected_low": "20000000",
+          "slots": []
+        },
+        "/route_snapshots/B-first/definite_links": [],
+        "/route_snapshots/B-first/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "at_least",
+              "nano": "80000000"
+            },
+            "id": "R1",
+            "low": "20000000",
+            "origins": [
+              "r1",
+              "u"
+            ]
+          },
+          {
+            "high": {
+              "basis": "proxy_reservation",
+              "kind": "at_least",
+              "nano": "1000000"
+            },
+            "id": "R2",
+            "low": "0",
+            "origins": [
+              "r2"
+            ]
+          },
+          {
+            "high": {
+              "basis": "none",
+              "kind": "at_least",
+              "nano": "0"
+            },
+            "id": "anchor",
+            "low": "0",
+            "origins": [
+              "refusal"
+            ]
+          }
+        ],
+        "/route_snapshots/all-at-once/aggregate": {
+          "high": {
+            "basis": "mixed",
+            "kind": "at_least",
+            "nano": "81000000"
+          },
+          "low": "20000000"
+        },
+        "/route_snapshots/all-at-once/candidates": [
+          [
+            "u",
+            "sonnetContext"
+          ],
+          [
+            "u",
+            "refusal"
+          ]
+        ],
+        "/route_snapshots/all-at-once/coverage": [],
+        "/route_snapshots/all-at-once/credits": {
+          "alternatives": [
+            "u"
+          ],
+          "mode": "single_ambiguous",
+          "selected_low": "20000000",
+          "slots": []
+        },
+        "/route_snapshots/all-at-once/definite_links": [],
+        "/route_snapshots/all-at-once/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "at_least",
+              "nano": "80000000"
+            },
+            "id": "R1",
+            "low": "20000000",
+            "origins": [
+              "r1",
+              "u"
+            ]
+          },
+          {
+            "high": {
+              "basis": "proxy_reservation",
+              "kind": "at_least",
+              "nano": "1000000"
+            },
+            "id": "R2",
+            "low": "0",
+            "origins": [
+              "r2"
+            ]
+          },
+          {
+            "high": {
+              "basis": "none",
+              "kind": "at_least",
+              "nano": "0"
+            },
+            "id": "anchor",
+            "low": "0",
+            "origins": [
+              "refusal"
+            ]
+          }
+        ],
+        "/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "at_least",
+              "nano": "80000000"
+            },
+            "id": "R1",
+            "low": "20000000",
+            "origins": [
+              "r1",
+              "u"
+            ]
+          },
+          {
+            "high": {
+              "basis": "proxy_reservation",
+              "kind": "at_least",
+              "nano": "1000000"
+            },
+            "id": "R2",
+            "low": "0",
+            "origins": [
+              "r2"
+            ]
+          },
+          {
+            "high": {
+              "basis": "none",
+              "kind": "at_least",
+              "nano": "0"
+            },
+            "id": "anchor",
+            "low": "0",
+            "origins": [
+              "refusal"
+            ]
+          }
+        ]
+      },
+      "negative_control_refs": [
+        "C1.wrong.json"
+      ],
+      "raw_derivation_refs": [
+        "PLAN4: max(50,20,80)+1=81; context set conserved after display detachment; no exact F"
+      ]
+    }
+  ],
+  "authored_by": "oracle01a1d81b; fixed literal assertions separately from supplied records",
+  "exact_subject_refs": [
+    "result:C1"
+  ],
+  "id": "expected:C1",
+  "kind": "accounting_expected_assertion",
+  "policy_refs": [
+    "PLAN43d0e7c8"
+  ],
+  "raw_subject_ref": "sha256:5a3e86f7f89737415d2962ffb79090c8fd66d7a84e471b544f1504e0c6eac777",
+  "version": "1.7-s1"
+}

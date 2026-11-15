@@ -1,0 +1,40 @@
+{
+  "baseline": {
+    "root": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/subject"
+  },
+  "changed": [
+    "contract/CK-GENERATED.md",
+    "contract/TRANSITIONS.md",
+    "corpus/SCHEMA.md",
+    "oracle/README.md",
+    "oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json",
+    "oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json",
+    "oracle/r8-completion-B/VC07-read-failure-paired.bundle.json",
+    "oracle/r8-completion-B/VC11-multi-turn-session.bundle.json",
+    "oracle/r8-controls/VC07-conditional.bundle.json",
+    "spec/accounting.schema.json",
+    "spec/ck.json",
+    "spec/dependencies.json",
+    "tooling/spec-check/src/accounting.rs",
+    "tooling/spec-check/tests/independent_raw_axes.rs",
+    "validator/validate_corpus.py"
+  ],
+  "added": [
+    "oracle/r9-pilot/cases/equal-reservations.bundle.json",
+    "oracle/r9-pilot/cases/equal-reservations.json",
+    "oracle/r9-pilot/cases/equal-reservations.raw-case.json",
+    "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json",
+    "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json",
+    "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.raw-case.json",
+    "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json",
+    "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json",
+    "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.raw-case.json",
+    "oracle/r9-pilot/claims.json",
+    "oracle/r9-pilot/claims.schema.json",
+    "tooling/spec-check/tests/r9_spec_applicability.rs",
+    "validator/r9_pilot.py",
+    "validator/test_r9_pilot.py"
+  ],
+  "removed": [],
+  "unchanged_count": 926
+}

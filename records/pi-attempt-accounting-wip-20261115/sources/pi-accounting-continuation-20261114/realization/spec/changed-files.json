@@ -1,0 +1,122 @@
+{
+  "subject": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "predecessor": "/home/bline/cbm-work/p137-s1r7/s1",
+  "scope": "owned changed source only; root owns final freeze",
+  "files": [
+    {
+      "path": "spec/interface.json",
+      "sha256": "310640ef8b2d57f39804c25ee97c046b402a4caa43ef97dc442acd104dcad47a",
+      "predecessor_sha256": "17e9430821e4fe25ddfec3ea3788b0d63e795f6ba47fa38c52655bec626afa5e"
+    },
+    {
+      "path": "spec/wire.schema.json",
+      "sha256": "35a7af6502ad80c554c8544134b991561637161371dfabc9972971ed8efcaf62",
+      "predecessor_sha256": null
+    },
+    {
+      "path": "spec/ck.json",
+      "sha256": "4836825c0a67587339f743749dc6de66334fbe242ed4e6afb9be05525b354891",
+      "predecessor_sha256": "d9a1b21199980a80342f4f27b23707d2afe3e6c87902b35fff2650dd806f854e"
+    },
+    {
+      "path": "spec/dependencies.json",
+      "sha256": "c213f680afeddb1cbe21f0ea34393585a41484e70ac3af2c698f4a798a50b043",
+      "predecessor_sha256": "0562e6a309fb222b115bd919d5aea0df4151f3a718549d48f5e95a429ec33c50"
+    },
+    {
+      "path": "spec/ck.schema.json",
+      "sha256": "9fbced0e80b6595ba1724132e9396427c29c70d8a86f644feb3cbdec6b3f44cc",
+      "predecessor_sha256": "556cb140fe2ea12470828bd9886d1ae20576c6336184c046a6b4269752f06651"
+    },
+    {
+      "path": "spec/accounting.schema.json",
+      "sha256": "717e4e080c288d613cdd0793d3b4d0cdf7620a777efcd648036f2428388ed39c",
+      "predecessor_sha256": null
+    },
+    {
+      "path": "contract/INVARIANTS.md",
+      "sha256": "5222a7a640a4279c4f454143da15a6dc1ab1396c2e43801a757bcbbc970c95f2",
+      "predecessor_sha256": "b5f02ecad8756a8a6a9b0dde5915c9cd088bb870aaa1bd56f7dbe0da492ef05b"
+    },
+    {
+      "path": "contract/MONEY.md",
+      "sha256": "de919efe5fc730ed4ceab8e8cc421495e02498b6a611f50f8062d5b6aba34d7b",
+      "predecessor_sha256": "6c7315ed832777766662303c5918b9239818750142709ba565ec3d31f91da836"
+    },
+    {
+      "path": "contract/TRANSITIONS.md",
+      "sha256": "ebea24820bd1d242d5e62fa43f81faef43b478d09e8b1bf6cde587e94671b664",
+      "predecessor_sha256": "f9aafca9fcf10dae18c585270e1cc0adac5dc8cb9ae4b892f2a9597d20a321be"
+    },
+    {
+      "path": "contract/CK-GENERATED.md",
+      "sha256": "1be069a8b60105f6310c4453730b8cf8248ee40222bf4aa95a2337a82e737903",
+      "predecessor_sha256": "08d92609e7c46df68b7796edaf495ad60bb5e7c0581721794eff5f4f24765641"
+    },
+    {
+      "path": "contract/CONTRACT.md",
+      "sha256": "96122db955a1d8b530e20cdc0a7653ae70c4bb127c7ef83b00d1c3daef7739ae",
+      "predecessor_sha256": "52c505f0df1ae5830d681436aa2cb2a02716aed4ab450b9aecbe0dedb07145fb"
+    },
+    {
+      "path": "tooling/spec-check/Cargo.lock",
+      "sha256": "7739879b2d74177cab478c2f8e4ab16823156d21a8ae1638f2b3652c168b8eba",
+      "predecessor_sha256": "bab53b79f7ddb0609189d9606c5666b9b19d3a659fb12055ed977d2e3f51d256"
+    },
+    {
+      "path": "tooling/spec-check/Cargo.toml",
+      "sha256": "b2ba713e07688b923f92f48b6f15c1bcfdfd8838133ee0740698dacaff512d85",
+      "predecessor_sha256": "a74409c9b478ce13e0e6baa0785bc797f1d555930ba171b0edb135e45174d437"
+    },
+    {
+      "path": "tooling/spec-check/README.md",
+      "sha256": "620f12b051b33b980cb4133202a663aa87c1d3e32d72fd5918f68acf72c8d32c",
+      "predecessor_sha256": "ba5881c2621f46b8a011a7dfe95698da1007919753fd8e94d49a2fbc46c35df3"
+    },
+    {
+      "path": "tooling/spec-check/tests/evidence_controls.py",
+      "sha256": "8c61a98d7007ecfb77fa350f64d59d3cc4ad4b89a92f82b034b62000c310708a",
+      "predecessor_sha256": null
+    },
+    {
+      "path": "tooling/spec-check/tests/wire_corpus.py",
+      "sha256": "e8c6f5340e7cf5801927bb01168b0c973698c24f1b4828d291d0939f5b5183d7",
+      "predecessor_sha256": null
+    },
+    {
+      "path": "tooling/spec-check/tests/schema_agreement.py",
+      "sha256": "a89fd3c27453511d0f2887f9fa4522db15f2d0c5995572445f472be64e465ffb",
+      "predecessor_sha256": null
+    },
+    {
+      "path": "tooling/spec-check/tests/structural_r8.rs",
+      "sha256": "7939cbc2773c4cf6d86df950d15a0c4f90ebc8cd8ba897eac216593a75101ba5",
+      "predecessor_sha256": null
+    },
+    {
+      "path": "tooling/spec-check/src/accounting.rs",
+      "sha256": "b7de7c613eab0ce004b66c9163084c6ad7ea0a81a1a004905de76aec8797c120",
+      "predecessor_sha256": null
+    },
+    {
+      "path": "tooling/spec-check/src/main.rs",
+      "sha256": "5c6ac0fb06c8d53012aa67e6c4f9c0db5e06aa3cbb4e6a1ed9a8bf493c9ce903",
+      "predecessor_sha256": "f3960be0439b29789d7793ffc4028c807c348b86ad556465977f952be63a0d09"
+    },
+    {
+      "path": "tooling/spec-check/src/decisions.rs",
+      "sha256": "06419ad9cbeb82928776a463163e16145dc7c0b735b33eb8dda25f283a2094c0",
+      "predecessor_sha256": "b31205b03d0e9e381068e81680c84639d76bfaa743b9359d799f0d7fffeb5a6b"
+    },
+    {
+      "path": "tooling/spec-check/src/lib.rs",
+      "sha256": "ec990e7bd3961d18edb05f4b89f3666e1c13aca02328818ddefb271280d68934",
+      "predecessor_sha256": "99c9e8ac5bb948c72d3149fef306e5abb52257071cb5255333faf168297a15df"
+    },
+    {
+      "path": "corpus/SCHEMA.md",
+      "sha256": "0fc7b796c0c5c42cfb09c46c27e9b36d23a48494c6e39096fd602eb6945c742c",
+      "predecessor_sha256": "c7c6a2be07b0390cbadf59d09dc9f5bd95183fba2b0763fc86fa084e690bf820"
+    }
+  ]
+}

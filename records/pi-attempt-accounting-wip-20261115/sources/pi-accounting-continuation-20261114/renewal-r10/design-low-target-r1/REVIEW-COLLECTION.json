@@ -1,0 +1,11 @@
+{
+  "session": "01a1d919-2544-7fb2-befe-00237c74ced2",
+  "turn": "01a1d91a-1e5d-78b2-8a2a-628d2034890e",
+  "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T01-07-46-01a1d919-2544-7fb2-befe-00237c74ced2.jsonl",
+  "source_line": 204,
+  "timestamp": "2026-11-14T08:15:43.892Z",
+  "whole_native_final_chars": 8031,
+  "report_sha256": "ebf462affed78e042d6ceca4f4bf3bba8947ad52baac1d1b4771142f1ab76e5e",
+  "collector": "root",
+  "native_wait": "turnCompleted observed; truncated tool preview replaced with whole exact native final"
+}

@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/final2-plan.json",
+  "plan_sha256": "a9dbc40b477d5c21be77d8834386c0e1ecf92e0f8fa6418b99ed20a86282e59b",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "lib-tests",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/custody/final3/lib-tests.json",
+      "record_sha256": "788bfddea839ce0ff5636732c6453eba7e6979bdb9139012d1eca74b6a0a5f0d",
+      "leftovers": 0
+    },
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/custody/final3/build.json",
+      "record_sha256": "a36f69a07345dcfba4ac37d80b11de94a02a3acc123ce94e4d3bcf78d381c6f1",
+      "leftovers": 0
+    },
+    {
+      "name": "render1",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/custody/final3/render1.json",
+      "record_sha256": "66cc717a542486e09c71e5742ae6e330a33208b85583717b90f4bc6faa25eb84",
+      "leftovers": 0
+    },
+    {
+      "name": "render2",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/custody/final3/render2.json",
+      "record_sha256": "f2f67447ff9e7854211c480be02285cfdc3ad5a2e90482e45dde83c94232201e",
+      "leftovers": 0
+    },
+    {
+      "name": "check",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/custody/final3/check.json",
+      "record_sha256": "4487a565353d8cd09cc6324ca60383a30b860248c48b7bff107961a0c70661d4",
+      "leftovers": 0
+    },
+    {
+      "name": "impact-provider",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/custody/final3/impact-provider.json",
+      "record_sha256": "c2c8bd4bc0279dcfa41f18d64a3a294b382cab6e072327b00722699980067d62",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

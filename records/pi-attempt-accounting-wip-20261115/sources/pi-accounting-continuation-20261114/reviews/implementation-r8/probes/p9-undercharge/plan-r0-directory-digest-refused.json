@@ -1,0 +1,34 @@
+{
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/p9-undercharge/subject",
+  "steps": [
+    {
+      "name": "python-p9-mutated",
+      "argv": [
+        "python3",
+        "validator/validate_corpus.py",
+        "check",
+        "corpus",
+        "oracle/rates"
+      ],
+      "timeout": 120,
+      "kill_leftovers": true,
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/p9-undercharge/subject"
+      ]
+    },
+    {
+      "name": "rust-p9-mutated",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-integration/debug/pi-accounting-spec-check",
+        "corpus",
+        "."
+      ],
+      "timeout": 120,
+      "kill_leftovers": true,
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-integration/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/p9-undercharge/subject"
+      ]
+    }
+  ]
+}

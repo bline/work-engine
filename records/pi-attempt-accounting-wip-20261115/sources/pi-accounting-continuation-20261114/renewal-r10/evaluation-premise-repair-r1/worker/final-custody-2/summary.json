@@ -1,0 +1,93 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/QUALIFICATION.plan.json",
+  "plan_sha256": "0583e5fb643f16609b5418fde47fdfff17d81131e2463dd39314bf66d7b11417",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "build-evidence",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/final-custody-2/build-evidence.json",
+      "record_sha256": "fdffc8afcf8f76af4f67123480d9d36f4f191672a38100a736ce244713fae60d",
+      "leftovers": 0
+    },
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/final-custody-2/build.json",
+      "record_sha256": "c08a7d5dae5fc4599915a1fe956a5959abbcadf82060e49eb24fbe968912ca66",
+      "leftovers": 0
+    },
+    {
+      "name": "python-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/final-custody-2/python-controls.json",
+      "record_sha256": "2395df9af1cbba5d1078d930cc0763605b95e1d48ecf8549f4c6d0ac82c56b58",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/final-custody-2/rust-positive.json",
+      "record_sha256": "3a7214c8f1be669d64ecc9e62d781a7035400a6ea2eb326c0213e50221b6ac76",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-r10-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/final-custody-2/rust-r10-controls.json",
+      "record_sha256": "cb77f1462df3ba8912c453dbb6989f175e750d8da58e90c6d09fb3fbea7a4751",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-all-independent",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/final-custody-2/rust-all-independent.json",
+      "record_sha256": "74fac0d8d0ff8bc3d49cd1308beda76aa4757c84b9ede5970132e90dccdeca35",
+      "leftovers": 0
+    },
+    {
+      "name": "python-main-pilot",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/final-custody-2/python-main-pilot.json",
+      "record_sha256": "3c532331b078c81ce629159af2a7d0a262b1babcdb709e7f65a3101bef4c448d",
+      "leftovers": 0
+    },
+    {
+      "name": "generated",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/final-custody-2/generated.json",
+      "record_sha256": "1730c07c5661d42ede0ae262910a0eaa19e5889bb615a53cfb62d55ecea40984",
+      "leftovers": 0
+    },
+    {
+      "name": "impact",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/final-custody-2/impact.json",
+      "record_sha256": "967b556b43e3ad414cb5107ab48c494fb67c32f0134ed257ca9919f35d5ac15b",
+      "leftovers": 0
+    },
+    {
+      "name": "schema_agreement",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/final-custody-2/schema_agreement.json",
+      "record_sha256": "2a90a748bbde7cf1effe0b261e9f99346d863eb92c72609c1c9f7ba49775f045",
+      "leftovers": 0
+    },
+    {
+      "name": "wire_corpus",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/final-custody-2/wire_corpus.json",
+      "record_sha256": "d8d8b3fe3a0a1f52f57d665ed5cd4f3b097402782b3c1462a12cbaf586209373",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence_controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/final-custody-2/evidence_controls.json",
+      "record_sha256": "4a552e19ec97137fb28bafdd806bbf077f59c181569b8cdf0f4c6fa8bac3d46c",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

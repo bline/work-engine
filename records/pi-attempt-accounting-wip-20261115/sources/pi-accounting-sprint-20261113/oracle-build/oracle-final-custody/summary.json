@@ -1,0 +1,23 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/oracle-final-plan.json",
+  "plan_sha256": "f89ea2dd2e9953006cb3aad6020ab599adce1ea731c057f76a3775a290857239",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/oracle-final-custody/build.json",
+      "record_sha256": "7c60690a8cd638aa0e262e860fffe83c5677c4f271c3e34c5ba884f52e65dc6c",
+      "leftovers": 0
+    },
+    {
+      "name": "assertions",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/oracle-final-custody/assertions.json",
+      "record_sha256": "28b36177491ea0a396f9fe96d5fa2181348b7a80864984524aeeb99a242ec795",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

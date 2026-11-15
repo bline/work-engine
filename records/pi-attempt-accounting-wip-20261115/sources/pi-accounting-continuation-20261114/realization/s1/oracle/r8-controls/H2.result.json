@@ -1,0 +1,199 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "mixed",
+      "kind": "at_least",
+      "nano": "515000000"
+    },
+    "low": "15000000"
+  },
+  "candidates": [
+    [
+      "s",
+      "s"
+    ]
+  ],
+  "coverage": [],
+  "credits": {
+    "alternatives": [
+      "s"
+    ],
+    "mode": "single_ambiguous"
+  },
+  "id": "result:H2",
+  "route_snapshots": {
+    "A-first": {
+      "aggregate": {
+        "high": {
+          "basis": "mixed",
+          "kind": "at_least",
+          "nano": "515000000"
+        },
+        "low": "15000000"
+      },
+      "candidates": [
+        [
+          "s",
+          "s"
+        ]
+      ],
+      "coverage": [],
+      "credits": {
+        "alternatives": [
+          "s"
+        ],
+        "mode": "single_ambiguous"
+      },
+      "units": [
+        {
+          "high": {
+            "basis": "proxy_reservation",
+            "kind": "at_least",
+            "nano": "500000000"
+          },
+          "id": "S/r/atom:r",
+          "low": "0",
+          "origins": [
+            "r"
+          ]
+        },
+        {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "at_least",
+            "nano": "15000000"
+          },
+          "id": "S/r/atom:s",
+          "low": "15000000",
+          "origins": [
+            "s"
+          ]
+        }
+      ]
+    },
+    "B-first": {
+      "aggregate": {
+        "high": {
+          "basis": "mixed",
+          "kind": "at_least",
+          "nano": "515000000"
+        },
+        "low": "15000000"
+      },
+      "candidates": [
+        [
+          "s",
+          "s"
+        ]
+      ],
+      "coverage": [],
+      "credits": {
+        "alternatives": [
+          "s"
+        ],
+        "mode": "single_ambiguous"
+      },
+      "units": [
+        {
+          "high": {
+            "basis": "proxy_reservation",
+            "kind": "at_least",
+            "nano": "500000000"
+          },
+          "id": "S/r/atom:r",
+          "low": "0",
+          "origins": [
+            "r"
+          ]
+        },
+        {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "at_least",
+            "nano": "15000000"
+          },
+          "id": "S/r/atom:s",
+          "low": "15000000",
+          "origins": [
+            "s"
+          ]
+        }
+      ]
+    },
+    "all-at-once": {
+      "aggregate": {
+        "high": {
+          "basis": "mixed",
+          "kind": "at_least",
+          "nano": "515000000"
+        },
+        "low": "15000000"
+      },
+      "candidates": [
+        [
+          "s",
+          "s"
+        ]
+      ],
+      "coverage": [],
+      "credits": {
+        "alternatives": [
+          "s"
+        ],
+        "mode": "single_ambiguous"
+      },
+      "units": [
+        {
+          "high": {
+            "basis": "proxy_reservation",
+            "kind": "at_least",
+            "nano": "500000000"
+          },
+          "id": "S/r/atom:r",
+          "low": "0",
+          "origins": [
+            "r"
+          ]
+        },
+        {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "at_least",
+            "nano": "15000000"
+          },
+          "id": "S/r/atom:s",
+          "low": "15000000",
+          "origins": [
+            "s"
+          ]
+        }
+      ]
+    }
+  },
+  "units": [
+    {
+      "high": {
+        "basis": "proxy_reservation",
+        "kind": "at_least",
+        "nano": "500000000"
+      },
+      "id": "S/r/atom:r",
+      "low": "0",
+      "origins": [
+        "r"
+      ]
+    },
+    {
+      "high": {
+        "basis": "usage_valuation",
+        "kind": "at_least",
+        "nano": "15000000"
+      },
+      "id": "S/r/atom:s",
+      "low": "15000000",
+      "origins": [
+        "s"
+      ]
+    }
+  ]
+}

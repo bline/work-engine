@@ -1,0 +1,453 @@
+{
+ "added_in": "1.3-s1",
+ "ambiguity": null,
+ "case_id": "P132-FG-N07-gated",
+ "class": "future_vertical",
+ "contract": "pi-accounting-contract/1.6-s1",
+ "controls": [],
+ "evaluations": [
+  {
+   "admission_request": {
+    "new": "500000000",
+    "objective": "o"
+   },
+   "expected": {
+    "admission": {
+     "decision": "admitted",
+     "limit": "1000000000",
+     "new": "500000000",
+     "objective": "o"
+    },
+    "attribution": [],
+    "objectives": [
+     {
+      "commitments": [
+       {
+        "admission_id": "a1",
+        "committed": "0",
+        "gate": {
+         "qualified": true,
+         "reasons": [],
+         "verification_payload_sha256": "b38088ca7e018f98b1775998d4ff4f5b7b1f027bfa1d5836b38479dcc75de868",
+         "verification_source": "test_mock"
+        },
+        "kind": "exact",
+        "state": "retired"
+       }
+      ],
+      "objective": "o",
+      "owned_closed": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "owned_outstanding": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "predecessor_obligations": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "provisional": false,
+      "reasons": [],
+      "status": "established"
+     }
+    ]
+   },
+   "name": "default",
+   "objectives": [
+    {
+     "admission_authority": {
+      "id": "wev-admission-authority-1",
+      "kind": "vertical_admission_authority"
+     },
+     "admissions": [
+      {
+       "admission_id": "a1",
+       "gate_id": "g-S1",
+       "rows": [
+        {
+         "admission_id": "a1",
+         "at": "2026-11-10T06:00:05Z",
+         "event": "pending",
+         "max_usd": 0.8
+        },
+        {
+         "admission_id": "a1",
+         "at": "2026-11-10T06:00:10Z",
+         "event": "launched",
+         "session_id": "00000000-0000-4000-8000-0000000000c1"
+        }
+       ],
+       "session": "00000000-0000-4000-8000-0000000000c1",
+       "source": "journal"
+      }
+     ],
+     "closed_at": null,
+     "limit": "1000000000",
+     "objective": "o",
+     "predecessor": null,
+     "started_at": "2026-11-10T06:00:00Z",
+     "tree_sessions": [
+      "00000000-0000-4000-8000-0000000000c1"
+     ]
+    }
+   ]
+  }
+ ],
+ "expected": {
+  "attempts": [],
+  "inventory": [],
+  "lifecycle": {
+   "S1": {
+    "clock": "trusted",
+    "reopened": false,
+    "state": "retired"
+   }
+  },
+  "non_attempt": [],
+  "unreadable": []
+ },
+ "findings": [],
+ "group": "P1.32",
+ "historical": {},
+ "inputs": {
+  "gates": [
+   {
+    "authority": {
+     "id": "wev-admission-authority-1",
+     "kind": "vertical_admission_authority"
+    },
+    "effective_from": "2026-11-10T06:00:05Z",
+    "effective_until": null,
+    "gate_id": "g-S1",
+    "mechanisms": {
+     "billing_bound": {
+      "enforced": true,
+      "receipt": {
+       "ref": "authority-receipt:S1-billing_bound",
+       "sha256": "eb21af7cd5c8a234faedb9ec0f77080cc75bf11904a5ca6a3744849f12fbac0a"
+      }
+     },
+     "new_forwarding": {
+      "enforced": true,
+      "receipt": {
+       "ref": "authority-receipt:S1-new_forwarding",
+       "sha256": "48627919de37a2276f5dcb1de5efce5082508a99f2a0479b1c2923e093152f69"
+      }
+     },
+     "reopening": {
+      "enforced": true,
+      "receipt": {
+       "ref": "authority-receipt:S1-reopening",
+       "sha256": "6a59c035f1ded753aa69c6cee1f5626faf2a2bf2d93366d378a07bf12c4cdb08"
+      }
+     },
+     "retries": {
+      "enforced": true,
+      "receipt": {
+       "ref": "authority-receipt:S1-retries",
+       "sha256": "ad74cf4e263dd56b37d9cef747ce3273809e06de4eefc5f3050c919c71cb2d39"
+      }
+     }
+    },
+    "scope": {
+     "kind": "session"
+    },
+    "session": "00000000-0000-4000-8000-0000000000c1",
+    "writer": "authority"
+   }
+  ],
+  "rates": {
+   "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  },
+  "reference_time": "2026-11-10T07:00:00Z",
+  "sessions": [
+   {
+    "alias": "S1",
+    "launch": {
+     "auth_lane": "api",
+     "model": "openai/gpt-6-astra",
+     "parent": "root"
+    },
+    "lifecycle": [
+     {
+      "at": "2026-11-10T06:00:10Z",
+      "event": "launch",
+      "turn": 1
+     },
+     {
+      "at": "2026-11-10T06:20:00Z",
+      "event": "retire"
+     }
+    ],
+    "logs": {
+     "turn-1": {
+      "final_newline": true,
+      "lines": []
+     }
+    },
+    "session_id": "00000000-0000-4000-8000-0000000000c1"
+   }
+  ]
+ },
+ "invariants": [
+  "INV-A9",
+  "INV-A8"
+ ],
+ "notes": "Synthetic future-vertical twin of N07-control-retired-journal with qualified gate evidence.",
+ "profile": "future_qualified_gate",
+ "provenance": {
+  "origin": "contract::2.3 ExecutionGate (future vertical twin of N07-control-retired-journal)"
+ },
+ "rationale": " Revision6: root policy P1-P6; independently frozen source/line arithmetic f097e5a5. Qualified identities preserve family; successful terminal AND integer200 AND required billing counts establishes completion. Closed obligations retain evidence by; none has amount_source none. Future gates use separate conditional test_mock witness; no live qualification.",
+ "reachability": "producer_unreachable",
+ "revisions": [],
+ "revisions_r3": [],
+ "revisions_r4": [],
+ "revisions_r5": [],
+ "revisions_r6": [
+  {
+   "field": "evaluations",
+   "from": [
+    {
+     "admission_request": {
+      "new": "500000000",
+      "objective": "o"
+     },
+     "expected": {
+      "admission": {
+       "decision": "admitted",
+       "limit": "1000000000",
+       "new": "500000000",
+       "objective": "o"
+      },
+      "attribution": [],
+      "objectives": [
+       {
+        "commitments": [
+         {
+          "admission_id": "a1",
+          "committed": "0",
+          "gate": {
+           "qualified": true,
+           "reasons": []
+          },
+          "kind": "exact",
+          "state": "retired"
+         }
+        ],
+        "objective": "o",
+        "owned_closed": {
+         "high": {
+          "kind": "exact",
+          "nano": "0"
+         },
+         "low": "0"
+        },
+        "owned_outstanding": {
+         "high": {
+          "kind": "exact",
+          "nano": "0"
+         },
+         "low": "0"
+        },
+        "predecessor_obligations": {
+         "high": {
+          "kind": "exact",
+          "nano": "0"
+         },
+         "low": "0"
+        },
+        "provisional": false,
+        "reasons": [],
+        "status": "established"
+       }
+      ]
+     },
+     "name": "default",
+     "objectives": [
+      {
+       "admission_authority": {
+        "id": "wev-admission-authority-1",
+        "kind": "vertical_admission_authority"
+       },
+       "admissions": [
+        {
+         "admission_id": "a1",
+         "gate_id": "g-S1",
+         "rows": [
+          {
+           "admission_id": "a1",
+           "at": "2026-11-10T06:00:05Z",
+           "event": "pending",
+           "max_usd": 0.8
+          },
+          {
+           "admission_id": "a1",
+           "at": "2026-11-10T06:00:10Z",
+           "event": "launched",
+           "session_id": "00000000-0000-4000-8000-0000000000c1"
+          }
+         ],
+         "session": "00000000-0000-4000-8000-0000000000c1",
+         "source": "journal"
+        }
+       ],
+       "closed_at": null,
+       "limit": "1000000000",
+       "objective": "o",
+       "predecessor": null,
+       "started_at": "2026-11-10T06:00:00Z",
+       "tree_sessions": [
+        "00000000-0000-4000-8000-0000000000c1"
+       ]
+      }
+     ]
+    }
+   ],
+   "rule": "root P1-P6 approval07303d5c; frozen raw facts f097e5a5; explicit conjunction resolution and family preservation",
+   "to": [
+    {
+     "admission_request": {
+      "new": "500000000",
+      "objective": "o"
+     },
+     "expected": {
+      "admission": {
+       "decision": "admitted",
+       "limit": "1000000000",
+       "new": "500000000",
+       "objective": "o"
+      },
+      "attribution": [],
+      "objectives": [
+       {
+        "commitments": [
+         {
+          "admission_id": "a1",
+          "committed": "0",
+          "gate": {
+           "qualified": true,
+           "reasons": [],
+           "verification_payload_sha256": "b38088ca7e018f98b1775998d4ff4f5b7b1f027bfa1d5836b38479dcc75de868",
+           "verification_source": "test_mock"
+          },
+          "kind": "exact",
+          "state": "retired"
+         }
+        ],
+        "objective": "o",
+        "owned_closed": {
+         "high": {
+          "kind": "exact",
+          "nano": "0"
+         },
+         "low": "0"
+        },
+        "owned_outstanding": {
+         "high": {
+          "kind": "exact",
+          "nano": "0"
+         },
+         "low": "0"
+        },
+        "predecessor_obligations": {
+         "high": {
+          "kind": "exact",
+          "nano": "0"
+         },
+         "low": "0"
+        },
+        "provisional": false,
+        "reasons": [],
+        "status": "established"
+       }
+      ]
+     },
+     "name": "default",
+     "objectives": [
+      {
+       "admission_authority": {
+        "id": "wev-admission-authority-1",
+        "kind": "vertical_admission_authority"
+       },
+       "admissions": [
+        {
+         "admission_id": "a1",
+         "gate_id": "g-S1",
+         "rows": [
+          {
+           "admission_id": "a1",
+           "at": "2026-11-10T06:00:05Z",
+           "event": "pending",
+           "max_usd": 0.8
+          },
+          {
+           "admission_id": "a1",
+           "at": "2026-11-10T06:00:10Z",
+           "event": "launched",
+           "session_id": "00000000-0000-4000-8000-0000000000c1"
+          }
+         ],
+         "session": "00000000-0000-4000-8000-0000000000c1",
+         "source": "journal"
+        }
+       ],
+       "closed_at": null,
+       "limit": "1000000000",
+       "objective": "o",
+       "predecessor": null,
+       "started_at": "2026-11-10T06:00:00Z",
+       "tree_sessions": [
+        "00000000-0000-4000-8000-0000000000c1"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "field": "trusted_fixture_inputs",
+   "from": "__absent__",
+   "rule": "root P1-P6 approval07303d5c; frozen raw facts f097e5a5; explicit conjunction resolution and family preservation",
+   "to": {
+    "gate_verifications": {
+     "g-S1": {
+      "authority_id": "wev-admission-authority-1",
+      "payload_sha256": "b38088ca7e018f98b1775998d4ff4f5b7b1f027bfa1d5836b38479dcc75de868",
+      "policy_ref": "root-P5-conditional-only",
+      "session": "00000000-0000-4000-8000-0000000000c1",
+      "source": "test_mock",
+      "verification_evidence": "independent-test-harness:exact-payload-binding"
+     }
+    }
+   }
+  }
+ ],
+ "revisions_r7": [],
+ "role": "valid_control",
+ "schema": "pi-accounting-corpus/1",
+ "trusted_fixture_inputs": {
+  "gate_verifications": {
+   "g-S1": {
+    "authority_id": "wev-admission-authority-1",
+    "payload_sha256": "b38088ca7e018f98b1775998d4ff4f5b7b1f027bfa1d5836b38479dcc75de868",
+    "policy_ref": "root-P5-conditional-only",
+    "session": "00000000-0000-4000-8000-0000000000c1",
+    "source": "test_mock",
+    "verification_evidence": "independent-test-harness:exact-payload-binding"
+   }
+  }
+ }
+}

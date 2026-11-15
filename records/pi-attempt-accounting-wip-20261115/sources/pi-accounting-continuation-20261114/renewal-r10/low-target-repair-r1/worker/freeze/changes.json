@@ -1,0 +1,20 @@
+{
+  "baseline": {
+    "manifest": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/freeze/manifest.json",
+    "sha256": "34a2ddba957d2ae4bdcdfa30454641cbb29d59ee780141c518e9e93d95895d61"
+  },
+  "changed": [
+    "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json",
+    "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json",
+    "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json",
+    "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json",
+    "oracle/r9-pilot/claims.json",
+    "tooling/spec-check/tests/independent_raw_axes.rs",
+    "validator/r9_pilot.py",
+    "validator/test_r10_qualification.py",
+    "validator/validate_corpus.py"
+  ],
+  "added": [],
+  "removed": [],
+  "unchanged_count": 958
+}

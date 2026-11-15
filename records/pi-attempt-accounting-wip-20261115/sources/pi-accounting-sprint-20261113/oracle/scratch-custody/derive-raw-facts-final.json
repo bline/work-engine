@@ -1,0 +1,44 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "derive-raw-facts-final",
+  "argv": [
+    "python3",
+    "derive_raw_facts.py"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 2374699,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle/derive_raw_facts.py",
+      "type": "file",
+      "mode": 436,
+      "length": 16371,
+      "sha256": "b8155de3cb2d790a03151f3d5be854b9f078f025787943605e7c61f0437df18b"
+    }
+  ],
+  "timeout_s": 60.0,
+  "pid": 2374778,
+  "pgid": 2374778,
+  "started_at": "2026-11-13T22:13:20.836524Z",
+  "ended_at": "2026-11-13T22:13:21.559008Z",
+  "duration_s": 0.723,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle/scratch-custody/derive-raw-facts-final.stdout",
+    "length": 588,
+    "sha256": "2d3ac193f89e6f395ebe7433352c3570ddff122327df715d9db1a455dea308d8"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle/scratch-custody/derive-raw-facts-final.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

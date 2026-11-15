@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/PILOT-QUALIFICATION.plan.json",
+  "plan_sha256": "ec6fd9a6296f527557b86a8a1392e8c0c38ef5bdcccebfde18aabac1b74fc471",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "build-evidence",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/final-custody/build-evidence.json",
+      "record_sha256": "bcb5e4a7b327baf41a868e9bdab2c0ce25497890f364c0a59d0f0b48e64e6389",
+      "leftovers": 0
+    },
+    {
+      "name": "python-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/final-custody/python-controls.json",
+      "record_sha256": "05f993f58df1f73ffc07df41d885eeb3d43abe977de3f882552f1d5c85498d94",
+      "leftovers": 0
+    },
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/final-custody/build.json",
+      "record_sha256": "fc58fd6695aef453738ccd08a5a528cf2cb18e54e7ed8f36ec4a666fbddffdfd",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/final-custody/rust-positive.json",
+      "record_sha256": "95daba827843f09030c1ffbfa90263d500e6910c541d7450bddf1464a921df01",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-r10-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/final-custody/rust-r10-controls.json",
+      "record_sha256": "6665d2ed281d3218d9170fcbd449134632d88058eadef2c7ff6a5276af583efc",
+      "leftovers": 0
+    },
+    {
+      "name": "python-main-pilot",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/final-custody/python-main-pilot.json",
+      "record_sha256": "438ffd189df412fc5fa279f2c37ce92c26b9c20ed2179fac85ed52a545ff4917",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

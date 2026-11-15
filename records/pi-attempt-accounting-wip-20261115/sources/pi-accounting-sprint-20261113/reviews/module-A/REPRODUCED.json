@@ -1,0 +1,77 @@
+{
+  "schema": "root-current-review-reproduction/1",
+  "subject_manifest_sha256": "293b7a97583e591e8e84c0002f703e34e79161185f55ae034333378550b107ae",
+  "review_response_sha256": "2685b18c055c34adabbb220e6d8f58e8b686bd2609d3ef757a7de2dca0d38d88",
+  "mode": "declaration/type/primitive arithmetic counterexamples; no full financial reducer executed",
+  "A01": {
+    "standing": "confirmed serious specification conflict",
+    "witness_reservation_nano": 500000000,
+    "table_high_nano": 0,
+    "retention_required_min_nano": 500000000,
+    "origin": "inherited identical revision5line522",
+    "invariant": "I-1"
+  },
+  "A02": {
+    "standing": "missing explicit ineligibleUsage fact/mapping confirmed, particular fallback not asserted",
+    "declared_facts": [
+      "absent",
+      "eligible_usage",
+      "error_status",
+      "lane_contradicted",
+      "orphan",
+      "rejected_or_conflicting",
+      "reservation",
+      "subscription",
+      "unbudgeted_complete",
+      "unbudgeted_incomplete",
+      "upstream_error"
+    ]
+  },
+  "A03": {
+    "standing": "declared signature mismatch confirmed",
+    "C_reads": [
+      "E"
+    ],
+    "K_reads": [
+      "C",
+      "S",
+      "V",
+      "F",
+      "X"
+    ]
+  },
+  "A04": {
+    "standing": "type/interface domain mismatch confirmed",
+    "type_variants": [
+      "not_reported",
+      "valued",
+      "unpriceable"
+    ],
+    "external_states": [
+      "valued",
+      "unpriceable",
+      "not_reported",
+      "not_applicable"
+    ]
+  },
+  "A05": {
+    "standing": "current reachable labels contradict mandatory writer floor update",
+    "counterexamples": {
+      "U08-missing-observed-tier": {
+        "logged": 0.0,
+        "required_min": 2.0
+      },
+      "P130-R02-rounded-up-charge-admitted": {
+        "logged": 0.0,
+        "required_min": 1.0
+      }
+    },
+    "producer_constructor": "tier or default; lines960-966",
+    "producer_settle": "lines1007-1020"
+  },
+  "A06": {
+    "standing": "temporal versus financial provisionality ambiguity confirmed; no runtime observation",
+    "source": "P4 versus12.4",
+    "case": "P130-R01 closed/retired with unresolved monetary high"
+  }
+}

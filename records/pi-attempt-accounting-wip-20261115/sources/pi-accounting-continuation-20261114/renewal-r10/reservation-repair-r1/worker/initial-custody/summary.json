@@ -1,0 +1,45 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/QUALIFICATION.plan.json",
+  "plan_sha256": "c4465ff5a859cb984570cf9e70011da02819cf8e5685d0633a2d9dfd71271e0b",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "build-evidence",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/initial-custody/build-evidence.json",
+      "record_sha256": "4a21622c29e6a782652f89392abe622f9b4d34ddde7aeb9422bb970194ed898d",
+      "leftovers": 0
+    },
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/initial-custody/build.json",
+      "record_sha256": "54ae7f7c7dea0e74616e254bdaf19bffa09c8f71269a23a2a688fdd9a683dbab",
+      "leftovers": 0
+    },
+    {
+      "name": "python-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/initial-custody/python-controls.json",
+      "record_sha256": "7576092ac05f397585ab30324c1c8ffa43c9ba36b5dfda7646a1df14799eab87",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-positive",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/initial-custody/rust-positive.json",
+      "record_sha256": "4e7f8c87e1921daa1688eb02b1b38100179042554696dbe79b89a78c7067eeda",
+      "leftovers": 0
+    }
+  ],
+  "not_run": [
+    "rust-r10-controls",
+    "python-main-pilot",
+    "generated",
+    "impact",
+    "schema_agreement",
+    "wire_corpus",
+    "evidence_controls"
+  ]
+}

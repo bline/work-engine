@@ -1,0 +1,56 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "redirected-validity",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+    "evidence",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/redirected-validity.json"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target",
+    "R9_SPEC_FIXTURE_OUT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3418926,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 77341160,
+      "sha256": "3cee159b91da619f73e97b90f0f0833481616afd5c760346d99ebb16aaf66149"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/redirected-validity.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9672,
+      "sha256": "f1593fbf62422a8132337a2862d18edc1249a56a1a0e81be28f77bf89220da93"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 3419341,
+  "pgid": 3419341,
+  "started_at": "2026-11-14T06:09:52.056113Z",
+  "ended_at": "2026-11-14T06:09:52.163269Z",
+  "duration_s": 0.107,
+  "returncode": 1,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/final/redirected-validity.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/final/redirected-validity.stderr",
+    "length": 66,
+    "sha256": "64fa41ebb850f57f84579af92f0190109117c8d598ea2ecf44d496ac32b92ad1"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

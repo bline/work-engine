@@ -1,0 +1,35 @@
+{
+  "schema": "manual-orchestration-context-check-v1",
+  "checked_at": "2026-11-14T03:27:32.008509+00:00",
+  "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T14-48-30-01a1d6e2-32ba-7701-9115-740dcb41af11.jsonl",
+  "next_task_tokens": 60000,
+  "next_task_basis": "parent estimate",
+  "observed_at": "2026-11-14T03:26:58.698Z",
+  "freshness": "recent_file_modification",
+  "recorded_model": "gpt-6.1-sol",
+  "recorded_effort": "xhigh",
+  "input_tokens": 173189,
+  "context_window_tokens": 475000,
+  "epoch": 4,
+  "compaction_markers": 4,
+  "lineage": [
+    "compaction marker at line 661",
+    "compaction marker at line 1497",
+    "compaction marker at line 2395",
+    "compaction marker at line 3142"
+  ],
+  "limitations": [],
+  "status": "observed",
+  "levels_basis": "tokens",
+  "trigger_tokens": 200000,
+  "band_floor_tokens": 235000,
+  "headroom_to_trigger": 26811,
+  "headroom_to_band_floor": 61811,
+  "fraction_of_window": 0.3646,
+  "recommendation": "retain_ok",
+  "reasons": [
+    "input 173189 is below the trigger 200000",
+    "session has compacted 4 time(s): the low reading is real, but earlier pressure is not erased and retained context holds only what its continuation kept"
+  ]
+}

@@ -1,0 +1,345 @@
+{
+  "closed": false,
+  "closed_at": null,
+  "listener": {
+    "state": "none",
+    "pid": null
+  },
+  "elapsed_hours": 1.29,
+  "additions": 0,
+  "original_items": 3,
+  "weekly_percent": 24.0,
+  "account_weekly_points": 12.0,
+  "account_wide": true,
+  "advisory": [],
+  "limits": {
+    "reconsider_after_additions": 3
+  },
+  "limits_set_by": "user",
+  "reached": [],
+  "unknown": [],
+  "reconsider": false,
+  "stop": false,
+  "ignored_limits": [],
+  "account_quota": {
+    "status": "observed",
+    "pool": "codex",
+    "account_wide": true,
+    "used_percent": 24.0,
+    "remaining_percent": 76.0,
+    "headroom_to_ceiling_percent": null,
+    "ceiling_percent": null,
+    "observed_at": "2026-11-14T04:19:19.534Z",
+    "resets_at": 1795219565,
+    "age_seconds": 18.052339,
+    "max_age_seconds": 300,
+    "reason": null,
+    "window_minutes": 10080,
+    "limit_id": "codex",
+    "plan_type": "prolite",
+    "source": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T14-48-30-01a1d6e2-32ba-7701-9115-740dcb41af11.jsonl",
+    "last_reported_remaining_percent": 76.0
+  },
+  "spend": {
+    "status": "complete",
+    "snapshot_at": "2026-11-14T04:19:37.746932+00:00",
+    "reader": {
+      "path": "/home/bline/code/work-engine/metrics/scripts/usage_ledger.py",
+      "sha256": "230441560e750345d7a9d9f10d8ee00b9b4f6d81a2bf0204567b7e9c04ed4235"
+    },
+    "cost_controls": [
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 100.0,
+        "node_id": null,
+        "observed": {
+          "api_equivalent_usd_high": 15.525179199999988,
+          "api_equivalent_usd_low": 15.525179199999988,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 15.525179199999988,
+          "quota_usd_low": 15.525179199999988,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 84.47482080000002,
+        "set_by": "user"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 6.0,
+        "node_id": "01a1d802-f8d9-7880-9614-df28f2c43491",
+        "observed": {
+          "api_equivalent_usd_high": 0.9401632000000002,
+          "api_equivalent_usd_low": 0.9401632000000002,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 0.9401632000000002,
+          "quota_usd_low": 0.9401632000000002,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 5.059836799999999,
+        "set_by": "supervisor"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 8.0,
+        "node_id": "01a1d811-93de-7ef0-9cc7-76d34f3a90cd",
+        "observed": {
+          "api_equivalent_usd_high": 3.09288,
+          "api_equivalent_usd_low": 3.09288,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 3.09288,
+          "quota_usd_low": 3.09288,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 4.90712,
+        "set_by": "supervisor"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 18.0,
+        "node_id": "01a1d81b-18c4-7f11-af00-c6a75867e8cc",
+        "observed": {
+          "api_equivalent_usd_high": 1.8584656000000002,
+          "api_equivalent_usd_low": 1.8584656000000002,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 1.8584656000000002,
+          "quota_usd_low": 1.8584656000000002,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 16.1415344,
+        "set_by": "supervisor"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 18.0,
+        "node_id": "01a1d81b-323b-7113-93ad-7cfb06e7c28f",
+        "observed": {
+          "api_equivalent_usd_high": 2.3066780000000002,
+          "api_equivalent_usd_low": 2.3066780000000002,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 2.3066780000000002,
+          "quota_usd_low": 2.3066780000000002,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 15.693322,
+        "set_by": "supervisor"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 1.5,
+        "node_id": "01a1d837-47ad-7320-8a7f-3b2f8d725b11",
+        "observed": {
+          "api_equivalent_usd_high": 0.3393216,
+          "api_equivalent_usd_low": 0.3393216,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 0.3393216,
+          "quota_usd_low": 0.3393216,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 1.1606784,
+        "set_by": "supervisor"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 15.0,
+        "node_id": "01a1d840-c933-78b1-8b7a-805a0ef28378",
+        "observed": {
+          "api_equivalent_usd_high": 0.7612188,
+          "api_equivalent_usd_low": 0.7612188,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 0.7612188,
+          "quota_usd_low": 0.7612188,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 14.2387812,
+        "set_by": "supervisor"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 15.0,
+        "node_id": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+        "observed": {
+          "api_equivalent_usd_high": 0.9534244000000003,
+          "api_equivalent_usd_low": 0.9534244000000003,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 0.9534244000000003,
+          "quota_usd_low": 0.9534244000000003,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 14.0465756,
+        "set_by": "supervisor"
+      },
+      {
+        "basis": "speed_adjusted_api_usd",
+        "max_usd": 15.0,
+        "node_id": "01a1d840-f94e-7631-aef9-15c312b1ae20",
+        "observed": {
+          "api_equivalent_usd_high": 0.9038484000000002,
+          "api_equivalent_usd_low": 0.9038484000000002,
+          "cost_basis": "speed_adjusted_api_usd",
+          "kind": "proxy",
+          "quota_usd_high": 0.9038484000000002,
+          "quota_usd_low": 0.9038484000000002,
+          "unpriced_calls": 0
+        },
+        "pool": "codex",
+        "remaining_usd": 14.096151599999999,
+        "set_by": "supervisor"
+      }
+    ],
+    "crossed": [],
+    "time": {
+      "basis": "model_call_latency",
+      "calls": 586,
+      "calls_without_latency": 26,
+      "model_busy_hours": 1.3681,
+      "model_call_hours": 2.2314,
+      "status": "partial",
+      "window_hours": 1.4022
+    }
+  },
+  "time": {
+    "basis": "model_call_latency",
+    "calls": 586,
+    "calls_without_latency": 26,
+    "model_busy_hours": 1.3681,
+    "model_call_hours": 2.2314,
+    "status": "partial",
+    "window_hours": 1.4022
+  },
+  "cost_basis": "speed_adjusted_api_usd",
+  "cost_limits": [
+    {
+      "pool": "codex",
+      "node": null,
+      "max_usd": 100.0,
+      "marks_usd": [
+        60.0,
+        80.0,
+        90.0
+      ],
+      "set_by": "user",
+      "set_at": "2026-11-14T03:02:05Z",
+      "reason": "User renewed100/four-hour sprint; previous sprint closed and nonadditive; deadline06:55:30.192Z",
+      "basis": "speed_adjusted_api_usd"
+    },
+    {
+      "pool": "codex",
+      "node": "01a1d802-f8d9-7880-9614-df28f2c43491",
+      "max_usd": 6.0,
+      "marks_usd": [
+        5.0
+      ],
+      "set_by": "supervisor",
+      "set_at": "2026-11-14T03:04:46Z",
+      "reason": "Fresh Solxhigh design formation, no implementation, preserve budget for independent review and realization",
+      "basis": "speed_adjusted_api_usd"
+    },
+    {
+      "pool": "codex",
+      "node": "01a1d811-93de-7ef0-9cc7-76d34f3a90cd",
+      "max_usd": 8.0,
+      "marks_usd": [
+        6.0
+      ],
+      "set_by": "supervisor",
+      "set_at": "2026-11-14T03:20:48Z",
+      "reason": "Fresh native Astraxhigh architectural judgment of fixed exact R6 design; no implementation",
+      "basis": "speed_adjusted_api_usd"
+    },
+    {
+      "pool": "codex",
+      "node": "01a1d81b-18c4-7f11-af00-c6a75867e8cc",
+      "max_usd": 18.0,
+      "marks_usd": [
+        14.0
+      ],
+      "set_by": "supervisor",
+      "set_at": "2026-11-14T03:32:09Z",
+      "reason": "Fresh bounded spec/structural realization under exact adopted architecture43d0e7c8; preserve independent oracle ownership",
+      "basis": "speed_adjusted_api_usd"
+    },
+    {
+      "pool": "codex",
+      "node": "01a1d81b-323b-7113-93ad-7cfb06e7c28f",
+      "max_usd": 18.0,
+      "marks_usd": [
+        14.0
+      ],
+      "set_by": "supervisor",
+      "set_at": "2026-11-14T03:32:10Z",
+      "reason": "Fresh independent raw assertions/corpus/actual Python qualification under exact adopted architecture43d0e7c8",
+      "basis": "speed_adjusted_api_usd"
+    },
+    {
+      "pool": "codex",
+      "node": "01a1d837-47ad-7320-8a7f-3b2f8d725b11",
+      "max_usd": 1.5,
+      "marks_usd": [
+        1.0
+      ],
+      "set_by": "supervisor",
+      "set_at": "2026-11-14T04:01:47Z",
+      "reason": "One bounded quiescent sameSID context refresh controller helper; no engineering/authority change",
+      "basis": "speed_adjusted_api_usd"
+    },
+    {
+      "pool": "codex",
+      "node": "01a1d840-c933-78b1-8b7a-805a0ef28378",
+      "max_usd": 15.0,
+      "marks_usd": [
+        12.0
+      ],
+      "set_by": "supervisor",
+      "set_at": "2026-11-14T04:12:59Z",
+      "reason": "Complete already-required finite S1 corpus declaration/assertion/reference qualification; no raw reducer; preserve review reserve",
+      "basis": "speed_adjusted_api_usd"
+    },
+    {
+      "pool": "codex",
+      "node": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "max_usd": 15.0,
+      "marks_usd": [
+        12.0
+      ],
+      "set_by": "supervisor",
+      "set_at": "2026-11-14T04:12:59Z",
+      "reason": "Complete already-required finite S1 corpus declaration/assertion/reference qualification; no raw reducer; preserve review reserve",
+      "basis": "speed_adjusted_api_usd"
+    },
+    {
+      "pool": "codex",
+      "node": "01a1d840-f94e-7631-aef9-15c312b1ae20",
+      "max_usd": 15.0,
+      "marks_usd": [
+        12.0
+      ],
+      "set_by": "supervisor",
+      "set_at": "2026-11-14T04:12:59Z",
+      "reason": "Complete already-required finite S1 corpus declaration/assertion/reference qualification; no raw reducer; preserve review reserve",
+      "basis": "speed_adjusted_api_usd"
+    }
+  ],
+  "cost_label": "API-equivalent dollars adjusted for subscription speed (proxy)",
+  "estimated_objective_quota_points": {
+    "status": "not_established",
+    "low": null,
+    "high": null,
+    "calibration_version": null
+  }
+}

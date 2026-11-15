@@ -1,0 +1,204 @@
+{
+  "arithmetic_scratch_sha256": "500392c47b9263b104f7565f9d81f86940a95f34c5c45c02d4b5c5156357f376",
+  "coverage": {
+    "lexical_reservation_groups": 147,
+    "rows": 287,
+    "sources": 142,
+    "usage_absent": 4,
+    "usage_object": 121
+  },
+  "facts_sha256": "f097e5a541b279f2081c71f54ca3403151475348b8a30245e6846708590e293e",
+  "grouped_axes": {
+    "comparison_block": [
+      "P133-A09-conflicting-reservations-with-settlement"
+    ],
+    "final_line_unreadable": [
+      "U02-final-line-without-newline"
+    ],
+    "malformed_counts": [
+      "P133-A04-cached-malformed",
+      "P133-A04-mixed-observations"
+    ],
+    "malformed_reservation_amount": [
+      "P130-R06-reservation-amount-malformed"
+    ],
+    "partial_pricing": [
+      "N02-malformed-anthropic-tier",
+      "P133-A05-model-case-variant",
+      "P2-usage-settlement-unpriced-identity-keeps-charge",
+      "Q5-unrecognised-openai-tier",
+      "U08-missing-observed-tier"
+    ],
+    "provider_schema_contradiction_no_reinterpretation": [
+      "N03-api-row-other-provider"
+    ],
+    "required_counts_unavailable": [
+      "C3-identical-reservation-copy",
+      "C4-missing-charge-basis",
+      "P133-A06-error-status-null",
+      "R02-string-charge",
+      "S01-reservation-basis-charged-less",
+      "S02-attempt-number-differs",
+      "S02-control-error-status-after-reservation",
+      "S02-settlement-before-reservation",
+      "U01-malformed-attempt-number"
+    ],
+    "reservation_conflict": [
+      "P133-A09-conflicting-reservations-with-settlement",
+      "R04-reused-reservation-id"
+    ],
+    "status_success_without_terminal_success_legacy_V5_ambiguity": [
+      "Ha-control-consistent-split",
+      "Ha-inconsistent-cache-split-keeps-supported-low",
+      "N01-control-served-pinned",
+      "N01-identity-refusal-dearer-served",
+      "N01-variant-no-refusal-row",
+      "N01-variant-reservation-above-both",
+      "P130-R01-usage-incomplete-terminal",
+      "P130-R05-conflicting-keeps-valuation-high",
+      "P133-A01-incomplete-usage-above-reservation",
+      "VC03-reservation-settlement-with-usage"
+    ],
+    "tier_set_unestablished": [
+      "N02-malformed-anthropic-tier",
+      "Q5-unrecognised-openai-tier",
+      "U08-missing-observed-tier"
+    ],
+    "unestablished_schema_or_provider": [
+      "N03-api-row-other-provider"
+    ],
+    "valued": [
+      "A04-undated-settlement-between-dated-neighbours",
+      "A06-reservation-usage-null-status-no-id",
+      "A1-02-undated-row-inverted-neighbours",
+      "A1-03-unreferenced-log",
+      "C1-control-before-reference",
+      "C1-settlement-after-reference-time",
+      "DUP-response-id-across-attempts",
+      "Ha-control-consistent-split",
+      "Ha-inconsistent-cache-split-keeps-supported-low",
+      "Hb-window-independence",
+      "N01-control-served-pinned",
+      "N01-identity-refusal-dearer-served",
+      "N01-variant-no-refusal-row",
+      "N01-variant-reservation-above-both",
+      "N04-budgeted-header-failure-no-own-reservation",
+      "N04-budgeted-header-failure-own-reservation",
+      "N06-null-cache-counts",
+      "ORD-sessions-in-ledger-order",
+      "ORD-sessions-reversed",
+      "OWN-budgeted-session-without-admission",
+      "OWN-two-admitting-objectives",
+      "P130-A5-unreadable-line-added",
+      "P130-Q11-closure-uncertain",
+      "P130-R01-usage-incomplete-terminal",
+      "P130-R02-rounded-up-charge-admitted",
+      "P130-R04-priority-overrun-above-cap",
+      "P130-R04-retired-session-releases-commitment",
+      "P130-R05-conflicting-keeps-valuation-high",
+      "P130-R08-admissions-without-tree-still-block",
+      "P130-R14-anthropic-null-tier-admitted",
+      "P130-T-owned-before-window-summed",
+      "P132-CP-close-after-reference-time",
+      "P132-CP-close-entry-contradicts-closed-at",
+      "P132-CP-closed-valid-close-entry",
+      "P132-CP-retired-session-resumed-without-admission",
+      "P132-FG-N06-gated",
+      "P132-FG-P130-R02-gated",
+      "P132-FG-P130-R04-gated",
+      "P132-FG-P130-R14-gated",
+      "P132-FG-U03-gated",
+      "P132-FG-V01-gated",
+      "P132-FG-V02-gated",
+      "P132-FG-VC01-before-retirement",
+      "P132-FG-VC01-gated",
+      "P132-FG-VC01-no-gate",
+      "P132-FG-VC02-gated",
+      "P132-FG-VC11-gated",
+      "P132-FG-VC13-gated",
+      "P132-FG-VC14-open-no-billing-bound",
+      "P132-FG-VC14-open-session-billing-bound",
+      "P132-FG-VC15-gated",
+      "P132-FG-closure-authority",
+      "P132-FG-closure-legacy-entry-only",
+      "P132-FG-gate-expired",
+      "P132-FG-gate-flag-only",
+      "P132-FG-gate-receipt-missing",
+      "P132-FG-gate-reopening-only",
+      "P132-FG-gate-request-scope",
+      "P132-FG-gate-self-asserted-file",
+      "P132-FG-gate-starts-after-launch",
+      "P132-FG-gate-wrong-authority",
+      "P132-FG-gate-wrong-session",
+      "P133-A01-incomplete-usage-above-reservation",
+      "P133-A02-error-status-with-priceable-usage",
+      "P133-A04-cached-nonzero",
+      "P133-A04-mixed-observations",
+      "P133-A06-usage-settlement-status-absent",
+      "P133-A09-conflicting-reservations-with-settlement",
+      "P133-FG-VC14-authenticated-bound",
+      "P133-FG-bound-binding-mismatch",
+      "P133-FG-bound-coverage-incomplete",
+      "P133-FG-bound-exceeds-cap",
+      "P133-FG-bound-wrong-currency",
+      "P9-claimed-charge-above-reservation",
+      "R01-dated-rows-backwards",
+      "R05-non-object-json-rows",
+      "S03-settlement-stamped-far-future",
+      "S05-unrelated-orphan-log-does-not-block",
+      "S06-string-http-status",
+      "U03-control",
+      "U03-retirement-before-turn-evidence",
+      "U04-control-settled-before-closure",
+      "U04-settled-after-closure-stays-with-owner",
+      "U05-inconsistent-charge-without-response-id",
+      "U05-usage-settlement-without-response-id",
+      "U07-unrelated-non-object-usage-does-not-block",
+      "V01-cheaper-response-model-undercharge",
+      "V01-control-producer-price",
+      "V01-usage-settlement-other-response-model",
+      "V02-control-producer-price",
+      "V02-unsplit-writes-undercharged",
+      "V07-unrelated-unreadable-log-does-not-block",
+      "VC01-openai-usage-settlement",
+      "VC02-anthropic-usage-settlement",
+      "VC03-reservation-settlement-with-usage",
+      "VC11-multi-turn-session",
+      "VC13-equal-timestamps",
+      "VC14-open-session-commitment",
+      "VC15-successor-not-charged-settled-predecessor-spend"
+    ]
+  },
+  "pi_container.py_main_bytes_match_pinned": true,
+  "role_host.py_main_bytes_match_pinned": true,
+  "sources": [
+    {
+      "path": "/home/bline/cbm-work/p133-s1r5/s1/contract/CONTRACT.md",
+      "sha256": "f087d4a238b007efeff2b4b74d0e047b89197ae2b9169d63bd95fe1f7b281839"
+    },
+    {
+      "path": "/home/bline/cbm-work/p133-s1r5/s1/contract/INVARIANTS.md",
+      "sha256": "640da2dbf08313e685bc1f1d5ad6617f63299a07d77f8888d3f08c08c12ec882"
+    },
+    {
+      "path": "/home/bline/cbm-work/p133-s1r5/s1/contract/RESERVATION-BOUNDS.md",
+      "sha256": "ecde0cde26f8abda1842313f4a27d50ab06f685b54930c2f59f4cc79c6d51a36"
+    },
+    {
+      "path": "/home/bline/cbm-work/p133-s1r5/s1/contract/S2A-ENTRY-CRITERIA.md",
+      "sha256": "e4062843e194dc634b0fa6ccca26cb980c1bf16b7891284fd88596d1ee487d75"
+    },
+    {
+      "path": "/home/bline/cbm-work/p133-s1r5/s1/corpus/SCHEMA.md",
+      "sha256": "4a19726e854b1508a8e9e7e9f7b8c3151cf274c11ff124364fe6cb0ec685dad7"
+    },
+    {
+      "path": "/home/bline/.local/share/work-engine/skill-releases/releases/92a03789327777b3cd9b5822c6df75a18fa63660/skills/manual-orchestration/scripts/pi_container.py",
+      "sha256": "780837341790780f84163ee6151b8ce66cff56f5a3f6ddf8c15f939dba50f470"
+    },
+    {
+      "path": "/home/bline/.local/share/work-engine/skill-releases/releases/92a03789327777b3cd9b5822c6df75a18fa63660/skills/manual-orchestration/scripts/role_host.py",
+      "sha256": "cbca1bc9656ed6de2c1cd43e1e357d7ed27dbaa08b178a3131cc329ed3433475"
+    }
+  ]
+}

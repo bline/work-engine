@@ -1,0 +1,57 @@
+{
+  "assertions": [
+    {
+      "claim_id": "F4",
+      "expected_fields_or_relations": {
+        "/aggregate": {
+          "high": {
+            "basis": "proxy_reservation",
+            "kind": "at_least",
+            "nano": "500000000"
+          },
+          "low": "15000000"
+        },
+        "/coverage": [
+          {
+            "id": "subset",
+            "reason": "not whole-unit complete",
+            "status": "rejected"
+          }
+        ],
+        "/units": [
+          {
+            "high": {
+              "basis": "proxy_reservation",
+              "kind": "at_least",
+              "nano": "500000000"
+            },
+            "id": "hold:r+s+C",
+            "low": "15000000",
+            "origins": [
+              "chargeC",
+              "r",
+              "s"
+            ]
+          }
+        ]
+      },
+      "negative_control_refs": [
+        "F4.wrong.json"
+      ],
+      "raw_derivation_refs": [
+        "PLAN6: exact all-origin coverage required; omitting known charge cannot release parent or erase ownership"
+      ]
+    }
+  ],
+  "authored_by": "oracle01a1d81b; fixed literal assertions separately from supplied records",
+  "exact_subject_refs": [
+    "result:F4"
+  ],
+  "id": "expected:F4",
+  "kind": "accounting_expected_assertion",
+  "policy_refs": [
+    "PLAN43d0e7c8"
+  ],
+  "raw_subject_ref": "sha256:aa576b458c84c3fd306c160b70130733f58c5a495ac59f6049e863bae8c78f2e",
+  "version": "1.7-s1"
+}

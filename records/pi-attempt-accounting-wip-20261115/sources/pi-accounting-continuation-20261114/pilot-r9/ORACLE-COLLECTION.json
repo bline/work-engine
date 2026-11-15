@@ -1,0 +1,180 @@
+{
+  "at": "2026-11-14T06:20:16.404060+00:00",
+  "worker": "01a1d8a4-d798-7fd1-ae5e-6955ec003480",
+  "native_final": {
+    "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-00-44-01a1d8a4-d798-7fd1-ae5e-6955ec003480.jsonl",
+    "line": 453,
+    "sha256": "c33d870f8bce1e33c7950517a4c1325acd2dbe373baa1708c00ff55d219e339c",
+    "timestamp": "2026-11-14T06:19:31.019Z"
+  },
+  "status": "final collected and fully read; pending join/review",
+  "manifest_checks": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/README.md",
+      "sha256": "55328e97cbca4e4d11727bd939de9d374b2184648d985ae2ad8683fa17ea5cf1",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json",
+      "sha256": "6b71470ef42017a268c5e7bb69a21d3d3a61d884310e81397682c84933a649b5",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json",
+      "sha256": "ad6db6c34cd177c39d9cdf68f3f765b78634b18e6135eaa44381fae8deea0471",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-completion-B/VC07-read-failure-paired.bundle.json",
+      "sha256": "756467dfbd77b51c042d1d2e78d90d87860524401adc77c4e20e6b3644362b72",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-completion-B/VC11-multi-turn-session.bundle.json",
+      "sha256": "aacb8430f2fe591372ff54b5c65ae5a01dda65aeb8d6d42a0c6441b1857b9c82",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-controls/VC07-conditional.bundle.json",
+      "sha256": "6913b2de9959156d199ba510ebcbc471af3083e272c5e136230a188b6ad4208a",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-controls/VC07-unlinked.bundle.json",
+      "sha256": "e6298a9a54fabb3820e5eec0508954b98b7da41c0e4e5cfb310ab3e1d5d67527",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/equal-reservations.bundle.json",
+      "sha256": "83f25cd942cb4a592927b270e003fe5ea4013e96f3952f381ea19bfea7697a62",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/equal-reservations.json",
+      "sha256": "5493580d4b700ba1b771028dac9b35200ac105234486b89ee368c7314c416b1d",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/equal-reservations.raw-case.json",
+      "sha256": "58dcf2c393f053f470473e21f1a0b79b327946aaae4145d3d9e892a4865b0fb0",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json",
+      "sha256": "59316f312b00fb28d29b88de0d449c30e807c0cc65acdbf9b224c3be22abbf33",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json",
+      "sha256": "a0d5d433ee52b82c4403463d2477ec33a2d8c404c8c2fad1c83b55bbafcc9175",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.raw-case.json",
+      "sha256": "cce654e75243b7ae98a4f111b55ab1adc03e24133e3c7624c5ff273246aaa21b",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json",
+      "sha256": "7ddb2b04a10545d0cc1ada662d888f46c857c85ffc217f2fe2f40f9631a0c621",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json",
+      "sha256": "83a9db4b9ed663d4e81369ffac04e57f462e06caa3fd7dd7b6fc60ff11b54e32",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.raw-case.json",
+      "sha256": "e140598e87ad4ecc35f1969738023bcaf31d2cde309f3377860839cf39b7c683",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/claims.json",
+      "sha256": "b34dcbd04918755ec4cf1c51cc0f4f993175fef21371176c0fb33d0182db8603",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/claims.schema.json",
+      "sha256": "bae1deefb3703f4b1289092bc1e1dd213eb1aa700efde6994b699461b9a44e17",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check/tests/independent_raw_axes.rs",
+      "sha256": "1d38224aaa23ee82ba33c8d2012fbe0273085f03a4995377b931c96d3a79ea26",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/validator/r9_pilot.py",
+      "sha256": "e46cf139c1f0f9513c583b24662f769bc232c3a781be52777e15d97f27bb15c0",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/validator/test_r9_pilot.py",
+      "sha256": "76fc326d3dfcf6920a740bdcd7357ca5bb1897e13cec340d99fe777a4cc3dc1e",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/validator/validate_corpus.py",
+      "sha256": "8e0fcd9eda869761ee839dad41fdbeebaa35c09f825309c6201656679565690e",
+      "matches": true
+    }
+  ],
+  "binary_matches": true,
+  "custody": [
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-final/build.json",
+      "returncode": 0,
+      "leftover_processes": [],
+      "pass": true
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-final/legacy-independent-r8-controls.json",
+      "returncode": 0,
+      "leftover_processes": [],
+      "pass": true
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-final/python-controls.json",
+      "returncode": 0,
+      "leftover_processes": [],
+      "pass": true
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-final/python-positive.json",
+      "returncode": 0,
+      "leftover_processes": [],
+      "pass": true
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-final/rust-positive.json",
+      "returncode": 0,
+      "leftover_processes": [],
+      "pass": true
+    }
+  ],
+  "baseline941": {
+    "count": 941,
+    "changed": [
+      "contract/CK-GENERATED.md",
+      "contract/TRANSITIONS.md",
+      "corpus/SCHEMA.md",
+      "oracle/README.md",
+      "oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json",
+      "oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json",
+      "oracle/r8-completion-B/VC07-read-failure-paired.bundle.json",
+      "oracle/r8-completion-B/VC11-multi-turn-session.bundle.json",
+      "oracle/r8-controls/VC07-conditional.bundle.json",
+      "spec/accounting.schema.json",
+      "spec/ck.json",
+      "spec/dependencies.json",
+      "tooling/spec-check/src/accounting.rs",
+      "tooling/spec-check/tests/independent_raw_axes.rs",
+      "validator/validate_corpus.py"
+    ],
+    "missing": [],
+    "raw_files_checked": 348,
+    "raw_changed": []
+  },
+  "pass": true
+}

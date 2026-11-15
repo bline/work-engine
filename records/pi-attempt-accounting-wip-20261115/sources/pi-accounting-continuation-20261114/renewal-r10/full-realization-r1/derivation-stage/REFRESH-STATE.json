@@ -1,0 +1,12 @@
+{
+  "status": "OWN_NATIVE_REFRESH_RECOVERED_STAGE_FINAL_READY",
+  "session": "01a1d993-35ca-7293-a431-38daa0b9cdd6",
+  "collector": "root01a1d6e2 sole native/process collector",
+  "reason": "mandatory host instruction; same worker own new_context, no transfer",
+  "settings": "NEW applied line314 at2026-11-14T10:34:51.629Z; Sol6.1/high/default preserved",
+  "pressure": "explicit pinned check42808 epoch1 observed2026-11-14T10:35:10.980Z; listener route remains unavailable; no active listener",
+  "recovery": "required meaning recovered from exact packet/continuation/artifacts and board; no dependent sourcework resumed",
+  "next": "whole native final to root; root acceptance unresolved",
+  "processes": "none owned live; no children; prior failures/terminal collections preserved",
+  "scope": "ledger only; all11/full175/374/currentABC OPEN"
+}

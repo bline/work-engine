@@ -1,0 +1,15 @@
+{
+  "session": "01a1d8c2-754e-7c13-84ec-570c1b872e56",
+  "turn": "01a1d8ce-1295-75a2-98f4-385454f235b6",
+  "native_status": "completed_idle",
+  "source_rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-33-05-01a1d8c2-754e-7c13-84ec-570c1b872e56.jsonl",
+  "source_line": 365,
+  "source_record_sha256": "1dd1c377cc54547d889d048aa83bab564a25a1a1cb65a1f8574b7616ad8659fe",
+  "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/review-r3/AMENDMENT-REVIEW.md",
+  "report_sha256": "86d86bf3e271c2f86a1f2a31ec65b789be1105bb7a686c82c33251e68ad04ad0",
+  "full_read": true,
+  "continuity": "same retained isolated episode with native sameSIDcontextreplacement and ownreportrecovery; no newfreshnessclaim",
+  "processes": "all commands/listenercollected noownedprocesses per exactfinal",
+  "collection": "native wait_threads exactcompletedturn then verifiedfullrolloutfinal",
+  "collector": "root"
+}

@@ -1,0 +1,53 @@
+{
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+  "steps": [
+    {
+      "name": "source-and-raw-preservation",
+      "argv": [
+        "python3",
+        "-c",
+        "import hashlib,json,pathlib; b=pathlib.Path('/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10'); r=b/'subject'; old=json.loads((b/'BASELINE.json').read_text()); selected=json.loads((r/'validator/r10_admitted.json').read_text())['admissions']; files={a.get('case_file') or a['conditional_raw_file'] for a in selected.values()}; files.update(p for p in old if ('.raw' in p or p.endswith('raw.json'))); changed=[p for p in files if p in old and hashlib.sha256((r/p).read_bytes()).hexdigest()!=old[p]]; assert not changed,changed; print('Raw and source-case byte preservation:',len(files),'files unchanged')"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/corpus/cases/C3-identical-reservation-copy.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/corpus/cases/P132-FG-VC11-gated.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/corpus/cases/P9-claimed-charge-above-reservation.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/corpus/cases/VC01-openai-usage-settlement.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/corpus/cases/VC07-read-failure-paired.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/corpus/cases/VC11-multi-turn-session.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-A/DERIVATIONS.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/C3-identical-reservation-copy.provenance.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/P9-claimed-charge-above-reservation.provenance.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/VC01-openai-usage-settlement.provenance.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/VC07-read-failure-paired.bundle.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/VC07-read-failure-paired.provenance.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/VC11-multi-turn-session.bundle.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-completion-B/VC11-multi-turn-session.provenance.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-controls/VC07-conditional.bundle.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-controls/VC07-exact.raw.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r8-controls/VC07-unlinked.bundle.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/admitted-copy.bundle.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/equal-reservations.bundle.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/equal-reservations.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/equal-reservations.provenance.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.provenance.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.provenance.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/cases/same-origin.bundle.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/oracle/r9-pilot/claims.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/spec/accounting.schema.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/tooling/spec-check/tests/independent_raw_axes.rs",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/validator/r10_admitted.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/validator/r9_pilot.py",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/validator/test_r10_qualification.py",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/validator/validate_corpus.py"
+      ]
+    }
+  ]
+}

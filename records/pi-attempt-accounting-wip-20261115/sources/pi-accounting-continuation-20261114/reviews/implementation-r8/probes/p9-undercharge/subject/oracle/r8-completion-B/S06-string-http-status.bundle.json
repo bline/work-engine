@@ -1,0 +1,178 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "oracle/r8-completion-B/DERIVATIONS.json#S06-string-http-status",
+        "predecessor_subject_refs": [
+          "baseline:123bbc083b15ed8462e277f74430778cf2e635f51e9fc40ebae61c509ad8ef85"
+        ],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": [
+          "conditional-ticket:S1/turn-1"
+        ]
+      },
+      "exact_links": [],
+      "grants": [
+        {
+          "admission": "conditional_fixture",
+          "assumption_refs": [
+            "Inherited immutable ticket namespace only; no exact auxiliary link or physical-bill independence."
+          ],
+          "authority_ref": "ROOT-ADOPTION-R6.json",
+          "covered_extent_ref": "sha256:dd3df75894221f21e480765a7460adca929a18b408c6c470b54c174b065147fc",
+          "covered_origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "exact_payload_ref": "oracle/r8-completion-B/S06-string-http-status.provenance.json#S1/turn-1",
+          "grant_id": "initial-scope:S1/turn-1",
+          "guarantee_kind": "initial_reference_scope",
+          "observer_or_harness_ref": "inherited-corpus-conditional-fixture"
+        }
+      ],
+      "id": "input:S06-string-http-status",
+      "identity_bindings": [],
+      "initial_contracts": [
+        {
+          "contract_id": "conditional-ticket:S1/turn-1",
+          "duplicate_rule": "same_origin_only",
+          "grant_ref": "initial-scope:S1/turn-1",
+          "reference_namespace": "dollar_ticket",
+          "scope_id": "S06-string-http-status/S1/turn-1"
+        }
+      ],
+      "kind": "accounting_input_proof",
+      "lineage_id": "S06-string-http-status",
+      "origins": [
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:1",
+          "original_position": 1,
+          "raw_bytes_sha256": "0d43dd59adfec545b32bb59a2e73ad8d7d4509f533a93833894e7b1d7aa8fa55",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:dd3df75894221f21e480765a7460adca929a18b408c6c470b54c174b065147fc"
+        },
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:2",
+          "original_position": 2,
+          "raw_bytes_sha256": "26ece6307727d60b1d3a81bc592c133e899486c18fcb8af9718f51dfc2a7ee9a",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:dd3df75894221f21e480765a7460adca929a18b408c6c470b54c174b065147fc"
+        }
+      ],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ]
+        }
+      ],
+      "continuity_result": "unestablished",
+      "coverage_decisions": [],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [
+        {
+          "context_origin_ref": "S1/turn-1:2",
+          "predicate_ref": "same-original-usage-origin",
+          "usage_origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "id": "result:S06-string-http-status",
+      "input_proof_ref": "input:S06-string-http-status",
+      "kind": "accounting_result",
+      "lineage_id": "S06-string-http-status",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "S06-string-http-status/default/o/owned_closed",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        },
+        {
+          "alternative_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "basis": "usage_valuation",
+          "credit_mode": "single_ambiguous",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "S06-string-http-status/default/o/owned_outstanding",
+          "seed_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "selected_low": "15000000",
+          "single_floor": "15000000"
+        }
+      ],
+      "origins": [
+        {
+          "active_high_unit_id": "res:S1/turn-1:rid=1",
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:1",
+          "origin_ref": "S1/turn-1:1"
+        },
+        {
+          "active_high_unit_id": "res:S1/turn-1:rid=1",
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:2",
+          "origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "primary_validities": [
+        {
+          "applicable_check_refs": [
+            "case:S06-string-http-status#attempt:res:S1/turn-1:rid=1/settlement"
+          ],
+          "distinct_reservation_refs": [
+            "S1/turn-1:1"
+          ],
+          "distinct_settlement_refs": [
+            "S1/turn-1:2"
+          ],
+          "obligation_id": "validity:res:S1/turn-1:rid=1",
+          "validity_result": "rejected"
+        }
+      ],
+      "unbudgeted_applicabilities": [],
+      "unbudgeted_completions": [],
+      "units": [
+        {
+          "exposure_ref": "case:S06-string-http-status#attempt:res:S1/turn-1:rid=1",
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "state": "active",
+          "unit_id": "res:S1/turn-1:rid=1"
+        }
+      ],
+      "valuation_records": [
+        {
+          "complete": false,
+          "usage_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "valuation_id": "valuation:res:S1/turn-1:rid=1",
+          "wire_ref": "case:S06-string-http-status#attempt:res:S1/turn-1:rid=1/valuation"
+        }
+      ],
+      "version": "1.7-s1"
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+# reader under test: f15263e0447596fe
+test_U01_malformed_attempt_number_releases (repro_p121.Repro.test_U01_malformed_attempt_number_releases) ... 
+U-01 n=true on the settlement, reservation n=1: ('not_established', None, ['pi_settlement_invalid'])
+
+U-01 n missing on both records: ('not_established', None, ['pi_settlement_invalid'])
+
+U-01 control: n=2 on the settlement: ('not_established', None, ['pi_settlement_invalid'])
+
+U-01 control: valid n=1 (deployed shape): ('admitted', 0.0, [])
+FAIL
+test_U02_unterminated_api_settlement_releases (repro_p121.Repro.test_U02_unterminated_api_settlement_releases) ... 
+U-02 error_status settlement without final newline: ('admitted', 0.0, [])
+
+U-02 control: same settlement with its newline: ('admitted', 0.0, [])
+
+U-02 control: settlement cut inside the JSON: ('not_established', None, ['malformed_pi_proxy_row'])
+ok
+test_U03_retirement_before_later_proxy_row_drops_obligation (repro_p121.Repro.test_U03_retirement_before_later_proxy_row_drops_obligation) ... 
+U-03 reserve 06:00, refused row 06:30, retire stamped 06:10; objective from 06:20: ('not_established', None, ['pi_session_retirement_contradicted', 'pi_undated_call_unattributable'])
+
+U-03 control: retire 06:40: ('not_established', None, ['pi_undated_call_unattributable'])
+
+U-03 control: no later proxy row, retire 06:10 (consistent: before the objective): ('admitted', 0.0, [])
+FAIL
+test_U04_closed_window_drops_interval_crossing_closure (repro_p121.Repro.test_U04_closed_window_drops_interval_crossing_closure) ... 
+U-04 objective 06:00-07:00; reserve 06:50, valid usage settlement 07:10: {'status': 'partial', 'window_usd_high': 0.5, 'window_calls': 1, 'issues': ['pi_settlement_invalid'], 'post_close_pi_api_high': 0.0}
+
+U-04 control: settlement 06:55 (inside): {'status': 'partial', 'window_usd_high': 0.5, 'window_calls': 1, 'issues': ['pi_settlement_invalid'], 'post_close_pi_api_high': 0.0}
+
+U-04 control: reserve 07:05, settle 07:10 (wholly after closure): {'status': 'partial', 'window_usd_high': 0.0, 'window_calls': 0, 'issues': ['pi_settlement_invalid'], 'post_close_pi_api_high': 0.5}
+FAIL
+test_U05_usage_settlement_without_response_id_loses_usage_exposure (repro_p121.Repro.test_U05_usage_settlement_without_response_id_loses_usage_exposure) ... 
+U-05 no response id, usage prices to 0.6, charged 0.01: ('not_established', None, ['pi_settlement_invalid'])
+
+U-05 control: same with a response id: ('not_established', None, ['pi_settlement_invalid'])
+
+U-05 control: no response id, consistent charge 0.6: ('refused', 0.6, [])
+U-05 consistent: spent_low=0.6
+FAIL
+test_U06_launch_lane_hides_api_upstream_error (repro_p121.Repro.test_U06_launch_lane_hides_api_upstream_error) ... 
+U-06 control: API launch, unlabelled upstream_error without usd: ('not_established', None, ['pi_request_unaccounted'])
+
+U-06 same row, launch auth_lane=subscription: ('not_established', None, ['pi_lane_conflict', 'pi_request_unaccounted'])
+
+U-06 control: subscription launch, producer-labelled upstream_error: ('admitted', 0.0, [])
+FAIL
+test_U07_unrelated_malformed_usage_aborts (repro_p121.Repro.test_U07_unrelated_malformed_usage_aborts) ... 
+U-07 unrelated session with usage=[1]: ('raised', 'AttributeError', "'list' object has no attribute 'get'")
+
+U-07 control: unrelated session with malformed dict usage: ('not_established', None, ['pi_settlement_invalid'])
+ok
+test_U08_missing_tier_usage_settlement_rejected (repro_p121.Repro.test_U08_missing_tier_usage_settlement_rejected) ... 
+U-08 usage settlement, observed_tier null (producer prices at the maximum multiplier): ('not_established', None, ['pi_settlement_invalid'])
+
+U-08 control: observed_tier default: ('not_established', None, ['pi_settlement_invalid'])
+ok
+
+======================================================================
+FAIL: test_U01_malformed_attempt_number_releases (repro_p121.Repro.test_U01_malformed_attempt_number_releases)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p124-a133/repro/earlier/repro_p121.py", line 61, in test_U01_malformed_attempt_number_releases
+    self.assertEqual(got, ('admitted', 0.0, []))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('not_established', None, ['pi_settlement_invalid']) != ('admitted', 0.0, [])
+
+First differing element 0:
+'not_established'
+'admitted'
+
+- ('not_established', None, ['pi_settlement_invalid'])
++ ('admitted', 0.0, [])
+
+======================================================================
+FAIL: test_U03_retirement_before_later_proxy_row_drops_obligation (repro_p121.Repro.test_U03_retirement_before_later_proxy_row_drops_obligation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p124-a133/repro/earlier/repro_p121.py", line 87, in test_U03_retirement_before_later_proxy_row_drops_obligation
+    self.assertEqual(got, ('admitted', 0.0, []))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('not_established', None, ['pi_session_reti[51 chars]le']) != ('admitted', 0.0, [])
+
+First differing element 0:
+'not_established'
+'admitted'
+
++ ('admitted', 0.0, [])
+- ('not_established',
+-  None,
+-  ['pi_session_retirement_contradicted', 'pi_undated_call_unattributable'])
+
+======================================================================
+FAIL: test_U04_closed_window_drops_interval_crossing_closure (repro_p121.Repro.test_U04_closed_window_drops_interval_crossing_closure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p124-a133/repro/earlier/repro_p121.py", line 105, in test_U04_closed_window_drops_interval_crossing_closure
+    self.assertEqual(got['window_usd_high'], 0.0)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0.5 != 0.0
+
+======================================================================
+FAIL: test_U05_usage_settlement_without_response_id_loses_usage_exposure (repro_p121.Repro.test_U05_usage_settlement_without_response_id_loses_usage_exposure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p124-a133/repro/earlier/repro_p121.py", line 124, in test_U05_usage_settlement_without_response_id_loses_usage_exposure
+    self.assertEqual(got, ('admitted', 0.01, []))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('not_established', None, ['pi_settlement_invalid']) != ('admitted', 0.01, [])
+
+First differing element 0:
+'not_established'
+'admitted'
+
+- ('not_established', None, ['pi_settlement_invalid'])
++ ('admitted', 0.01, [])
+
+======================================================================
+FAIL: test_U06_launch_lane_hides_api_upstream_error (repro_p121.Repro.test_U06_launch_lane_hides_api_upstream_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p124-a133/repro/earlier/repro_p121.py", line 139, in test_U06_launch_lane_hides_api_upstream_error
+    self.assertEqual(sub[0], 'admitted')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'not_established' != 'admitted'
+- not_established
++ admitted
+
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.186s
+
+FAILED (failures=5)

@@ -1,0 +1,47 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "actual-revisions",
+  "argv": [
+    "python3",
+    "validator/validate_corpus.py",
+    "revisions",
+    "corpus",
+    "/home/bline/cbm-work/p137-s1r7/s1/corpus"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 2984271,
+  "inputs": [
+    {
+      "path": "validator/validate_corpus.py",
+      "type": "file",
+      "mode": 436,
+      "length": 94525,
+      "sha256": "a21a98e234a258e5dc6249d41768c40b02fa770e6c8d0e13a8d09eaf28f3e66d"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 2984272,
+  "pgid": 2984272,
+  "started_at": "2026-11-14T03:50:53.122943Z",
+  "ended_at": "2026-11-14T03:50:53.500139Z",
+  "duration_s": 0.377,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-revisions/actual-revisions.stdout",
+    "length": 86,
+    "sha256": "bfdf4cc4a6231b3b7d11bdc5bf0de1daa4528c564f1b733c265b11d45469145f"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-revisions/actual-revisions.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

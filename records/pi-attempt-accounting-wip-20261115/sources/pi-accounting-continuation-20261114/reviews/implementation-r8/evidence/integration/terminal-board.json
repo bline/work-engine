@@ -1,0 +1,15 @@
+{
+  "revision": "87583f92971f3e6a446ffdad37b231c6cf1d7d3f",
+  "message": {
+    "message_id": "88a62a44-e130-4b06-adc5-9e0032df8249",
+    "sequence": 5411,
+    "observed_at": "2026-11-14T04:33:45.164755Z",
+    "author": "accounting-integration-worker",
+    "session_id": "01a1d840-c933-78b1-8b7a-805a0ef28378",
+    "topic": "campaign/pi-accounting-s1",
+    "body": "Final source-stopped receipt supersedes preliminary result42ea400a after qualification-inventory publication only. RESULT2fc4a55d, SOURCE-STOPPEDa9bd3882, SOURCE-BINDINGS2471ec7d at completion/integration. Joined-2d3b62db1 passed6/6,175cases/374scopes,102sabotages ALL CAUGHT, zero process leftovers. Executable consumers/schema/cases/shards unchanged; root01a1d6e2 owns freeze/review/acceptance and wider unestablished claims.",
+    "references": [
+      "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/SOURCE-STOPPED.json"
+    ]
+  }
+}

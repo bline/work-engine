@@ -1,0 +1,34 @@
+{
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "steps": [
+    {
+      "name": "actual-revisions",
+      "argv": [
+        "python3",
+        "validator/validate_corpus.py",
+        "revisions",
+        "corpus",
+        "/home/bline/cbm-work/p137-s1r7/s1/corpus"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "python-partition",
+      "argv": [
+        "python3",
+        "validator/validate_corpus.py",
+        "partition",
+        "corpus",
+        "oracle/rates",
+        "B"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+      ],
+      "timeout": 120
+    }
+  ]
+}

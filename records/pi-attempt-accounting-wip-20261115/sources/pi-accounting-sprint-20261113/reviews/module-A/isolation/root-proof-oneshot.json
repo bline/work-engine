@@ -1,0 +1,111 @@
+{
+ "phase": "oneshot",
+ "at": "2026-11-13T23:01:34.926689+00:00",
+ "checks": {
+  "role_host_rows_of_caller": [
+   {
+    "at": "2026-11-13T23:01:25Z",
+    "cwd": "/home/bline/code/work-engine",
+    "event": "launch",
+    "host": "claude",
+    "name": "p136-module-a-root",
+    "parent_session_id": null,
+    "session_id": "21941623-fb16-4ccc-bd21-70a36f6acee3"
+   }
+  ],
+  "children": [],
+  "open_records_scanned": [
+   "/home/bline/cbm-work/a12-p114/closure/p111-record-before.json",
+   "/home/bline/cbm-work/a12-p114/closure/p19-record-before.json",
+   "/home/bline/cbm-work/a13-p116/housekeeping/p113-a11-review-record-before.json",
+   "/home/bline/cbm-work/a13-p116/housekeeping/p115-a12-review-record-before.json",
+   "/home/bline/cbm-work/evidence-claims-integration-20261108/assignment.json",
+   "/home/bline/cbm-work/flex-recovery-p19/review-a/objective-record.json",
+   "/home/bline/cbm-work/independent-review-outcome-p4-final-20261111/reviewer-assignment.json",
+   "/home/bline/cbm-work/org-envelope-review-r3-20261111/assignment.json",
+   "/home/bline/cbm-work/org-envelope-review-r4-20261111/assignment.json",
+   "/home/bline/cbm-work/org-ig1a-r1r2-20261112/r1-final-record.json",
+   "/home/bline/cbm-work/org-ig1a-r1r2-20261112/r1-repair-record.json",
+   "/home/bline/cbm-work/org-ig1a-r1r2-20261112/record.json",
+   "/home/bline/cbm-work/org-ig1a-r1r2-verify-20261112/assignment.json",
+   "/home/bline/cbm-work/org-ig1a-r1r2-verify2-20261112/assignment.json",
+   "/home/bline/cbm-work/org-ig1a-r1r2-verify3-20261112/assignment.json",
+   "/home/bline/cbm-work/org-l1-qual-20261112/record.json",
+   "/home/bline/cbm-work/org-pas-feasibility-20261112/record.json",
+   "/home/bline/cbm-work/org-pas-review-20261112/assignment.json",
+   "/home/bline/cbm-work/org-pi-review-realization-20261113/assignment.json",
+   "/home/bline/cbm-work/org-rev6-20261112/record.json",
+   "/home/bline/cbm-work/org-rev6-review-20261112/assignment.json",
+   "/home/bline/cbm-work/org-slice1a-ig1a-20261111/assignment.json",
+   "/home/bline/cbm-work/org-slice1a-ig1a-r2-20261111/assignment.json",
+   "/home/bline/cbm-work/org-slice1b-review-20261111/assignment.json",
+   "/home/bline/cbm-work/p111-a1-rereview/objective-record.json",
+   "/home/bline/cbm-work/p113-a11-review/objective-record.json",
+   "/home/bline/cbm-work/p115-a12-review/objective-record.json",
+   "/home/bline/cbm-work/pi-accounting-sprint-20261113/assignment.json",
+   "/home/bline/cbm-work/pi-accounting-sprint-20261113/control/prelude-measurement-record.json",
+   "/home/bline/cbm-work/pi-accounting-successor-20261111/demo/rep.json",
+   "/home/bline/cbm-work/plan-ir-p1-runs/step-b-record.json",
+   "/home/bline/cbm-work/plan-ir-p1-runs/step-c-record.json",
+   "/home/bline/cbm-work/plan-ir-p1-runs/step-d-record.json",
+   "/home/bline/cbm-work/plan-ir-pilot-p1-20261111/incident-stepC-admission/step-c-record.before-close.json",
+   "/home/bline/cbm-work/plan-ir-pilot-p1-20261111/stepB/step-b-record.copy.json",
+   "/home/bline/cbm-work/plan-ir-pilot-p1-20261111/stepC/step-c-record.copy.json",
+   "/home/bline/cbm-work/plan-ir-pilot-p1-20261111/stepD/step-d-record.copy.json",
+   "/home/bline/cbm-work/r1b2-scratch/attrib/a.json",
+   "/home/bline/cbm-work/r2-f01-recheck-20261111/record.json",
+   "/home/bline/cbm-work/r2-independent-review-20261111/record.json",
+   "/home/bline/cbm-work/register-a3-s3-impl-20261109/assignment.json",
+   "/home/bline/cbm-work/register-a3-s3-proposal-20261109/assignment.json",
+   "/home/bline/cbm-work/register-o3-completion-20261111/record.json",
+   "/home/bline/cbm-work/register-r1b-s2-20261110/assignment.json",
+   "/home/bline/cbm-work/register-r1b-s2-20261110/bc/assignment.json",
+   "/home/bline/cbm-work/register-r1b-s2-20261110/c/assignment.json",
+   "/home/bline/cbm-work/register-r1b5-phase-b-20261111/record.json",
+   "/home/bline/cbm-work/register-s4-min-impl-20261109/assignment.json",
+   "/home/bline/cbm-work/research-lifecycle-m2-1-private-qualification-20261111/budget.json",
+   "/home/bline/cbm-work/research-lifecycle-m4b-implementation-20261112/budget-initial-before-time-correction.json",
+   "/home/bline/cbm-work/research-lifecycle-native-ingestion-20261113/budget.json",
+   "/home/bline/cbm-work/unified-interface-plan-review-20261113/pre-init-measurement-input.json",
+   "/home/bline/cbm-work/unified-interface-u2-sprint-20261113/assignment.json"
+  ],
+  "records_binding_caller": [],
+  "forbidden_env_present": [],
+  "release_files": {
+   "role_host.py": "cbca1bc9656ed6de",
+   "pi_container.py": "780837341790780f",
+   "pi_container_entry.py": "b75c71508ec12587"
+  },
+  "host_python": {
+   "zstandard": "/usr/lib/python3/dist-packages/zstandard/__init__.py",
+   "import_roots": [
+    "/usr/lib/python3.14",
+    "/usr/lib/python3.14/lib-dynload",
+    "/usr/local/lib/python3.14/dist-packages",
+    "/usr/lib/python3/dist-packages",
+    "/usr/lib/python3.14/dist-packages"
+   ],
+   "writable_or_nonroot_roots": []
+  },
+  "zstandard_shadows": [],
+  "credential_metadata": {
+   "auth_mode": "chatgpt",
+   "iss_ok": true,
+   "account_claim_present": true,
+   "expires": "2026-11-22T02:50:39+00:00",
+   "hours_left": 195.8
+  },
+  "packet": {
+   "prompt_sha256": "3af2fb8a50240cd7f70134f72337f95a4a27ae1dad31c284a7c995feae4fd950",
+   "verify_rc": 0,
+   "verify_tail": [
+    "{\"module\": \"A\", \"prompt_sha256\": \"3af2fb8a50240cd7f70134f72337f95a4a27ae1dad31c284a7c995feae4fd950\", \"bytes\": 602138, \"subject_manifest_sha256\": \"293b7a97583e591e8e84c0002f703e34e79161185f55ae034333378550b107ae\"}"
+   ]
+  }
+ },
+ "caller": {
+  "host": "claude",
+  "session_id": "21941623-fb16-4ccc-bd21-70a36f6acee3",
+  "source": "CLAUDE_CODE_SESSION_ID"
+ }
+}

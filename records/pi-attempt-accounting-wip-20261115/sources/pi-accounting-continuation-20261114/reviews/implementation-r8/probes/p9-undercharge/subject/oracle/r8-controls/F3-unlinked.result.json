@@ -1,0 +1,211 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "usage_valuation",
+      "kind": "at_least",
+      "nano": "15000000"
+    },
+    "low": "15000000"
+  },
+  "candidates": [
+    [
+      "request:2",
+      "request:2"
+    ]
+  ],
+  "coverage": [],
+  "credits": {
+    "alternatives": [
+      "request:2"
+    ],
+    "mode": "single_ambiguous",
+    "selected_low": "15000000",
+    "slots": []
+  },
+  "definite_links": [],
+  "id": "result:F3-unlinked",
+  "route_snapshots": {
+    "A-first": {
+      "aggregate": {
+        "high": {
+          "basis": "usage_valuation",
+          "kind": "at_least",
+          "nano": "15000000"
+        },
+        "low": "15000000"
+      },
+      "candidates": [
+        [
+          "request:2",
+          "request:2"
+        ]
+      ],
+      "coverage": [],
+      "credits": {
+        "alternatives": [
+          "request:2"
+        ],
+        "mode": "single_ambiguous",
+        "selected_low": "15000000",
+        "slots": []
+      },
+      "definite_links": [],
+      "units": [
+        {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "id": "request:2",
+          "low": "15000000",
+          "origins": [
+            "request:2"
+          ]
+        },
+        {
+          "high": {
+            "basis": "none",
+            "kind": "at_least",
+            "nano": "0"
+          },
+          "id": "anchor:1",
+          "low": "0",
+          "origins": [
+            "stream-error:1"
+          ]
+        }
+      ]
+    },
+    "B-first": {
+      "aggregate": {
+        "high": {
+          "basis": "usage_valuation",
+          "kind": "at_least",
+          "nano": "15000000"
+        },
+        "low": "15000000"
+      },
+      "candidates": [
+        [
+          "request:2",
+          "request:2"
+        ]
+      ],
+      "coverage": [],
+      "credits": {
+        "alternatives": [
+          "request:2"
+        ],
+        "mode": "single_ambiguous",
+        "selected_low": "15000000",
+        "slots": []
+      },
+      "definite_links": [],
+      "units": [
+        {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "id": "request:2",
+          "low": "15000000",
+          "origins": [
+            "request:2"
+          ]
+        },
+        {
+          "high": {
+            "basis": "none",
+            "kind": "at_least",
+            "nano": "0"
+          },
+          "id": "anchor:1",
+          "low": "0",
+          "origins": [
+            "stream-error:1"
+          ]
+        }
+      ]
+    },
+    "all-at-once": {
+      "aggregate": {
+        "high": {
+          "basis": "usage_valuation",
+          "kind": "at_least",
+          "nano": "15000000"
+        },
+        "low": "15000000"
+      },
+      "candidates": [
+        [
+          "request:2",
+          "request:2"
+        ]
+      ],
+      "coverage": [],
+      "credits": {
+        "alternatives": [
+          "request:2"
+        ],
+        "mode": "single_ambiguous",
+        "selected_low": "15000000",
+        "slots": []
+      },
+      "definite_links": [],
+      "units": [
+        {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "id": "request:2",
+          "low": "15000000",
+          "origins": [
+            "request:2"
+          ]
+        },
+        {
+          "high": {
+            "basis": "none",
+            "kind": "at_least",
+            "nano": "0"
+          },
+          "id": "anchor:1",
+          "low": "0",
+          "origins": [
+            "stream-error:1"
+          ]
+        }
+      ]
+    }
+  },
+  "units": [
+    {
+      "high": {
+        "basis": "usage_valuation",
+        "kind": "exact",
+        "nano": "15000000"
+      },
+      "id": "request:2",
+      "low": "15000000",
+      "origins": [
+        "request:2"
+      ]
+    },
+    {
+      "high": {
+        "basis": "none",
+        "kind": "at_least",
+        "nano": "0"
+      },
+      "id": "anchor:1",
+      "low": "0",
+      "origins": [
+        "stream-error:1"
+      ]
+    }
+  ]
+}

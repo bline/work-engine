@@ -1,0 +1,3393 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "sabotage",
+  "argv": [
+    "python3",
+    "validator/sabotage_test.py",
+    "corpus",
+    "oracle/rates",
+    "/home/bline/cbm-work/p137-s1r7/s1/corpus"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 3118365,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/completion-current-binding.json",
+      "type": "file",
+      "mode": 436,
+      "length": 80717,
+      "sha256": "70ab0b7da7703941db527d01c8b1937efa741ae0d71689af9736eb574bcc963f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/SOURCE-BINDINGS.json",
+      "type": "file",
+      "mode": 436,
+      "length": 3707,
+      "sha256": "88ede4004f0522530955aae5f5be7eb870420c7cc786369e10a32202bbdfc442"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-integration/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 76820040,
+      "sha256": "66ec52f8d51bf591a29b529948fd5e9957929234701ba9867216c1c845aeefd2"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/contract/CK-GENERATED.md",
+      "type": "file",
+      "mode": 436,
+      "length": 169558,
+      "sha256": "579209c68a1666fccfdb4cd59a6fa2978fcd06e2ae23e10c821b3cb356ff2716"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/contract/TRANSITIONS.md",
+      "type": "file",
+      "mode": 436,
+      "length": 81566,
+      "sha256": "d805b6cc9caefc1095f43b8534944d83e31f98590d7c86172adf00720eb21ddc"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/SCHEMA.md",
+      "type": "file",
+      "mode": 436,
+      "length": 87542,
+      "sha256": "91b89459cf33a0e8c1511da7b15c73012637191cfe31cdbf18998ceba9b8f57e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/R8-COMPLETION.json",
+      "type": "file",
+      "mode": 436,
+      "length": 929,
+      "sha256": "3aaf3bb2418451c7ccdc814bbf6f1f46d706a67e89689f10e1fb7223a0fe9527"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/R8-LOW-ASSERTIONS.json",
+      "type": "file",
+      "mode": 436,
+      "length": 415361,
+      "sha256": "f3c76979b0f2587382b533620ec83c0c5f6ae6bb7791bd020dc21126fcb07642"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/README.md",
+      "type": "file",
+      "mode": 436,
+      "length": 6438,
+      "sha256": "087deed807969cdfa39f4bd88c8752cf4c0607770231405f9736cff2c27f7b48"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/spec/ck.json",
+      "type": "file",
+      "mode": 436,
+      "length": 226008,
+      "sha256": "0edf6c57a9b9c4470cdb73f37680df27e61b6d075badf4846109876645b3e9d4"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/spec/dependencies.json",
+      "type": "file",
+      "mode": 436,
+      "length": 54493,
+      "sha256": "992c0b94d7905b626444c5803ee868144ebf599eae6c241616b65d5836a1e314"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/tooling/spec-check/src/corpus.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 12400,
+      "sha256": "d1532918ab821a660bcac7305b4a73267b73f54310b5ba8866703578d33bd270"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/tooling/spec-check/src/lib.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 40319,
+      "sha256": "62769fc7f375c89d299a914c2444bc651f7aa5ba01dd55554a625af04cdb9a96"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/tooling/spec-check/src/main.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 5407,
+      "sha256": "4b1d725bb00e0a9cd996bee2db5486b753abd69b607f9e6b638018353cedf89e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/README.md",
+      "type": "file",
+      "mode": 436,
+      "length": 3177,
+      "sha256": "cde30056b75fd6bf22fbb274365f1f757257ba315af319957e74b26609cab8e2"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/test_completion_references.py",
+      "type": "file",
+      "mode": 436,
+      "length": 4275,
+      "sha256": "8cf3adaa1b4a61efbaf8538852cf6f84e9857b52517b5b606795a06c24a159f4"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/test_r8_dependencies.py",
+      "type": "file",
+      "mode": 436,
+      "length": 2582,
+      "sha256": "2e091a516682bd5614a70ff4d567df3a8d270681e7e0c907e8cf932f0085394b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py",
+      "type": "file",
+      "mode": 436,
+      "length": 104971,
+      "sha256": "ab5f78d47d6105791a8ca14cf0c0799015aca67dd7935a48d18756735417429a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/A04-undated-settlement-between-dated-neighbours.json",
+      "type": "file",
+      "mode": 436,
+      "length": 20709,
+      "sha256": "7fb4a42887ddd7a17eaa6407454a1941a49e302404782501cd31166b71b014d5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/A06-reservation-usage-null-status-no-id.json",
+      "type": "file",
+      "mode": 436,
+      "length": 28373,
+      "sha256": "98e3ff4fda648b37b7fe034a63410112d3c1ef96aa1287a6790a9bd291ab1cab"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/A1-01-upstream-error-and-unknown-event.json",
+      "type": "file",
+      "mode": 436,
+      "length": 25101,
+      "sha256": "1d1899c91bd23c30e00efd608ce91d95a7c3f8994981f97d6235377238b3404f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/A1-02-undated-row-inverted-neighbours.json",
+      "type": "file",
+      "mode": 436,
+      "length": 20208,
+      "sha256": "e7fc881dc95c80f326c7fc3a8e0444084109f7f1adc36f578a2f1fbd38754ac6"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/A1-03-unreferenced-log.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15476,
+      "sha256": "987fc49d6d10ee755ad5b5b302c2bed582f58428250c611c33e2fe8c084ea255"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/A1-06-control-no-session-file.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13446,
+      "sha256": "226bc82d4898027e42a65be7f91bd164fdae47527e77b6b6a7b48edefae36a7e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/A1-06-session-file-is-not-evidence.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13703,
+      "sha256": "8c0577f37fa1f2cf01106cbb19f3ac7b894e6c740da97d04706f03a5f860d7e5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/C1-control-before-reference.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13930,
+      "sha256": "51a92db3665f60327a4e4cebb9cb9089654fe2363f95f16a00e3a0fc01c48c17"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/C1-settlement-after-reference-time.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14060,
+      "sha256": "bebbd8e540291d6d1b4c52bb592349511372b0764019a6b55bd2a908a96717f4"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/C2-unsettled-reservation-after-reference-time.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10665,
+      "sha256": "1e0e60f29cf3549dea2dd241f02e57b0db85bbce0b941297c9d011331c71af8c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/C3-identical-reservation-copy.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15208,
+      "sha256": "9f295056222746d91d671f4aaa879ad04f514f70a36e225b677b70bd5d90c8e3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/C4-missing-charge-basis.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11576,
+      "sha256": "3bec5ba42c3cb0422e9d93e35891e686ac74b88dc06603c31a02f082addb0bd9"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/D1-closed-objective-provisional.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11037,
+      "sha256": "7110660f04a8af8e7576857ee13a23f46bde5075e5f2db9913ff9954c0a3094e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/D1-successor-constrained-by-predecessor-obligations.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14615,
+      "sha256": "03c1c3ed6dc7151673486c086bc514af646fc009ccb19dc0c3bf09280dda51fb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/D4-unbudgeted-error-status.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11243,
+      "sha256": "066343daf97d03b9eb0d466520a7c4425aecba1a6d941d03905e5cf7dd4a75d3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/DUP-response-id-across-attempts.json",
+      "type": "file",
+      "mode": 436,
+      "length": 26652,
+      "sha256": "cff0c790629520a79f61e2db2de469396d65c6056c6a890cde501f6c6449485d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/Ha-control-consistent-split.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16943,
+      "sha256": "a4e39f5f7ea1b442b7444b42a8a2cc30c2552980fa38b798059dfe0b538574b9"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/Ha-inconsistent-cache-split-keeps-supported-low.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18899,
+      "sha256": "0f9255b92621b4ebf3db183d2abedd55514814c2bbeb8b898a02bd3dd5a25382"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/Hb-window-independence.json",
+      "type": "file",
+      "mode": 436,
+      "length": 19974,
+      "sha256": "01a1ea3689ffc052621a0509c04c6b53da817b774539b6cca09241b3aabfbef7"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N01-control-served-pinned.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16619,
+      "sha256": "edd51ea956eb2ebad28077ab8fa4230c980424ecc6570e0400517e715a96f6c2"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N01-identity-refusal-dearer-served.json",
+      "type": "file",
+      "mode": 436,
+      "length": 30871,
+      "sha256": "61bec75419276507eaecca7508d893928f904c55c09b128e4993a6fce913ed4a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N01-orphan-identity-refusal.json",
+      "type": "file",
+      "mode": 436,
+      "length": 21331,
+      "sha256": "15851bc1b0af150a8424e84ff3b4381474036292bbdb9c18b22381b9a0b8b165"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N01-variant-no-refusal-row.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16894,
+      "sha256": "39f129b5cfa0a09dd147ac7027fb7c975e65bdb166c2da6a78b0fb96bf176032"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N01-variant-reservation-above-both.json",
+      "type": "file",
+      "mode": 436,
+      "length": 30963,
+      "sha256": "fd432eb84e61e7a15705481beb2b707429ce1568b2ce18380be1df476ea8a9af"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N02-malformed-anthropic-tier.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12020,
+      "sha256": "2eba1d7b297d6830148f6c2cd71ea46243cd9d03314f66848c51eb2a989983b5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N03-api-row-other-provider.json",
+      "type": "file",
+      "mode": 436,
+      "length": 19829,
+      "sha256": "b3140cde74b20ced08fbb1c5f13938962fdf7e23cf00d734c7f1de013ca56c93"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N03-contradicted-admission.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11299,
+      "sha256": "3d903413a344249af8a7ccfb8f47b1d51a0c022700b64883404d408e9877458c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N03-contradicted-refused-row.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5587,
+      "sha256": "036b26647fb7622657ac390ac8cd37c20366607c92ddc83eccc975ba7b954e07"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N03-control-unlabelled-admission.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9922,
+      "sha256": "18906e43cbaaca4dc29e7978bc8c871f0e33de30ee19b2b909c3a972ce37e02a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N03-control-unlabelled-refused-row.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5417,
+      "sha256": "3c9048e03e790c714582e1c2c1892cfa3fad6df8f529692cec62ff2bc4461046"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N03-identity-refusal-in-subscription.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11762,
+      "sha256": "8727c852f6b70d7dcd2973312348544f5233f365cc57d0b70258403d4faa2ac6"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N04-ambiguous-read-failure.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24109,
+      "sha256": "1f67a4159000b3b04fba496d30903e948868519f8f9b65f6a5618865062f20f6"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N04-budgeted-header-failure-no-own-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 19525,
+      "sha256": "e2486269a08b6bb920e4ca3b5a8363b8fa4c64bf6fae96d5af5f03b818239eeb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N04-budgeted-header-failure-own-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 35124,
+      "sha256": "edb7d5a8860d27268491c408326d1ef5e08d653f3454bb6ebd26ac6ab37b4e66"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N04-control-request-alone.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12889,
+      "sha256": "8080e3d315fd720322c186864d7c0d2a05baa134511a986093473301ff4ab382"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N04-duplicated-read-failure.json",
+      "type": "file",
+      "mode": 436,
+      "length": 30634,
+      "sha256": "d0b19af17c3d7c77290df6f0a5cdc36283098890772b25f75803408ebd9f39d2"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N04-header-write-error-reused-n.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18109,
+      "sha256": "d0267f11880966e8c2869ced75b1b5954f99f0cdd93f861f816f6e68416080ba"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N05-control-consistent-retirement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11383,
+      "sha256": "4771ad5196e1aebc92446a722194dc24536e79d709e551f150a61993393fdd2e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N05-retirement-before-later-delivery.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11250,
+      "sha256": "9137182f16bb42a0729221f9b37c9398a302d5eb0285bd6088f69c97c5aefbb1"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N06-null-cache-counts.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16542,
+      "sha256": "0529b9de341ac576762ab6928ec5e4939fc783b1d4e4830fbe6077cf5f98c0a0"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N07-control-retired-journal.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7699,
+      "sha256": "adc5ac3bdc86d41d23fcb14ec9ba00552f8175d28039d58060607f75449c3c4d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N07-control-retired-legacy.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7869,
+      "sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N07-reopened-session-journal.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7623,
+      "sha256": "54e24af4444a1d79fb35e3c47be506a7392aedd00d5989cbaa2bc8215aa296db"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N07-reopened-session-legacy.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7669,
+      "sha256": "73cdd0a91a31d29df6fa47cce842589897ea97276fcea398b2a728ec191a9a2c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N08-control-priced-model.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12739,
+      "sha256": "ce5663a5f3047b1b804a83d8529a5694a29f8d746d617885729417a8c4097b00"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/N08-model-without-producer-rate.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11983,
+      "sha256": "0cefcea419e732cd0bb5c098b807638db25ac18951a5c38ef4186fdad338b5ff"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/ORD-sessions-in-ledger-order.json",
+      "type": "file",
+      "mode": 436,
+      "length": 22915,
+      "sha256": "43bfb0a2b8fae8748bb77f7110b36ee304319b5fa29e36ad04cfaa0db09ea59a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/ORD-sessions-reversed.json",
+      "type": "file",
+      "mode": 436,
+      "length": 22812,
+      "sha256": "026ab955a281fdda861a48abf96c540d63c6723a9b9812096448d8e35f6ea597"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/OWN-budgeted-session-without-admission.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13147,
+      "sha256": "2b5d1be2d61da3b977b71434a97d42159890eca6bf1343d3f7372aa8f86a0ba5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/OWN-two-admitting-objectives.json",
+      "type": "file",
+      "mode": 436,
+      "length": 19198,
+      "sha256": "f58e8d57a92dd89486de277f73b603a39a708335dd12849ee09b53033ebe7eef"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-A5-unreadable-line-added.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17368,
+      "sha256": "36829c20f647c155b23fbb122ec36fbbc063efc31b55b1df808c1206b0aa7423"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-Q11-closure-uncertain.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16403,
+      "sha256": "f92de64951392d0c937ac019a220b89a5b94aa7d611d5d56ad29dff3e40603d3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-R01-usage-incomplete-terminal.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18937,
+      "sha256": "c885e09111eb3d663dec0d86479441680d22a1c886a695f25e099c0b41fa7a24"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-R02-rounded-up-charge-admitted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18069,
+      "sha256": "2923751f185114fd436e5d9dd86e803a861eac318450b9290c6ded960d0d0dff"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-R04-priority-overrun-above-cap.json",
+      "type": "file",
+      "mode": 436,
+      "length": 23168,
+      "sha256": "afc17b43d67989711e332d5d23bc296aa3f2d4d25831c17cb09335aede99072c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-R04-retired-session-releases-commitment.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17391,
+      "sha256": "0c33912033a3cb2b3a212486e19c0bc87bf5c520d92ead3ce4b7d951203f797d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-R05-conflicting-keeps-valuation-high.json",
+      "type": "file",
+      "mode": 436,
+      "length": 38233,
+      "sha256": "3459bd5cb44ab815a6020f7a0d0fbd0bf012be3fa4916f3f8c9a7dfdd27371d1"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-R06-reservation-amount-malformed.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10998,
+      "sha256": "21d5131880b826bddeea075997de5f36720de14e22ae61438ff19bd019ed0ae3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-R06-reservation-rid-missing.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11093,
+      "sha256": "fd6b204cad915825716a758ce649e9e19ab15ace31c281ab559c4464f3628024"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-R07-closed-unresolved-predecessor-constrains-successor.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18679,
+      "sha256": "727b585f9e510cca7a7bdda17a03d8e880159a58d740738de40663326243b817"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+      "type": "file",
+      "mode": 436,
+      "length": 22066,
+      "sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-R10-reopened-then-retired.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8949,
+      "sha256": "df0080ab76daa9ec20692f9797244f224405021cea48abea412e29a0028c8e9b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-R11-open-session-before-retirement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8060,
+      "sha256": "e373a9a276d977b3925ace1b88b85e3c9fcaea743d5234c278633afcc435aeb9"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-R12-outstanding-interval-keeps-candidate.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8550,
+      "sha256": "f5455c5e36599ea643da2505ef30232da36c3fea2d88184adcfc7580872540e4"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-R12-untrusted-clock-keeps-candidate.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13805,
+      "sha256": "7f7073441f166457449f1536cd6ea7df0000891f5332e3648c49cb7010ae5e22"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-R14-anthropic-null-tier-admitted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17293,
+      "sha256": "8ac77e59c9e6c579d5f4bbef36e7f74f911db0a4e30a923f32b6b205f049e38c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P130-T-owned-before-window-summed.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16952,
+      "sha256": "15c099500d5b1efbff372642ecdc9a1e882e001808defa8e29cafb4dc40cd0cb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-CP-close-after-reference-time.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15506,
+      "sha256": "a0284ab9dac48665c6839a35b149a06bc1254a523e96888f2002a3b600c2ed0c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-CP-close-entry-contradicts-closed-at.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15558,
+      "sha256": "601ef78db50a645b67fbba61583846920872ec145ed37e3ad712d9fa32b2037c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-CP-closed-predecessor-outstanding.json",
+      "type": "file",
+      "mode": 436,
+      "length": 19013,
+      "sha256": "7c057e10f8b0da01d52a27468c4265a47045c16b071afae62840ad0e559521f3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-CP-closed-valid-close-entry.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15276,
+      "sha256": "29b325abe2ffcd1939b425459be61a928b8666370ffa4badf743e13e7c747067"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-CP-known-over-limit.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9269,
+      "sha256": "8a964e6ecef736746e0e636e1807dcf5a653fb4ee64af4a7418a80014c2236c9"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-CP-retired-session-resumed-without-admission.json",
+      "type": "file",
+      "mode": 436,
+      "length": 23475,
+      "sha256": "5f41e4b93d451d0e5be56902d907c7ec9e69581bd3c9960b9b0e1be100759f70"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-CP-unknown-below-limit.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9226,
+      "sha256": "fc36eee2fd441ac6fa9df432d44ae6a8da71d9fa7013266e543f91db271132a3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-N06-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 26239,
+      "sha256": "8ce3d05601e291986d61a4489124b4b0eb54a4c6160471c3f45f978a76959430"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-N07-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15055,
+      "sha256": "1ba3f3bdd3eacb1d2c55e11736d758c01b33fbf424feab40286520d1642c18cf"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-P130-R02-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 23637,
+      "sha256": "7c2778dc39f99837c0c3c6c1eaf1ee5a65bfd0d4ae3c0e27b252e84992535f25"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-P130-R04-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 23784,
+      "sha256": "13f5422b4deb2262539947ca815515f764eb3aba3fef171e2bba54dcaedfc8e8"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-P130-R14-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24159,
+      "sha256": "eb25ee5154ed2c0ace5ca647f4729cb5e9d1945952f41cf64cd7f35f745863e0"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-U03-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 23620,
+      "sha256": "00d33cb0890ea01aa3d2d030dca92d2a8408a3288f7a2d672da89277c54bb033"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-V01-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 23666,
+      "sha256": "49fdda36ecf9f73ee61c7847a2291da1d635cd7e2df83fee5097d00282e622f0"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-V02-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 25662,
+      "sha256": "ce06c1b1cf5ea9fbc27231996f45565818e4c0a5498e323de8ce3acc286ce901"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-VC01-before-retirement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 25505,
+      "sha256": "fc18cb0501c0ecab5a196091aa6495a577f2c2345f97d705a49f7f2c2765ed4b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-VC01-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 23670,
+      "sha256": "e794db2b9334c6e1e9ac46a8d879c017f29c919b603462552ad732f008bdc71e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-VC01-no-gate.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14914,
+      "sha256": "2ff7d9708cdec5b483f2327203edb5a093488ed700d462d48ecdec68767e3a5e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-VC02-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24091,
+      "sha256": "6ef2abbe6e168a8213c6333dd6a1f05424cb66e2861cb0d28952507d34041acc"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-VC11-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 38932,
+      "sha256": "4054b455a2c9100ae62bdcfbf92c6dd82cf5208edbe6d9af66056511425ab0eb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-VC13-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 23656,
+      "sha256": "6779dddbcbfab60d3f21c790385552ba087b312bd930367eaa1cf972797ad553"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-VC14-open-no-billing-bound.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24498,
+      "sha256": "0ff3f9de3c7e6fe8ab9acbef3da2c9484b869a0b86733df0ade99730893c2860"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-VC14-open-session-billing-bound.json",
+      "type": "file",
+      "mode": 436,
+      "length": 26444,
+      "sha256": "97a51aeba12397646b306fa59a7fea2322d7eef99f8e48511bd5a7626c7d6e3f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-VC15-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 28710,
+      "sha256": "c252ee80d0f4353a4897af1a1fbea33fd595f345a866fc7f8d8bd2c3a55c89db"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-closure-authority.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24805,
+      "sha256": "35641e928e4c57d83f67113b421b233f6e6d2659f385bb3f136167eeec91e18a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-closure-legacy-entry-only.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24784,
+      "sha256": "e6c1d11b32e8bccf43a965cf29cbac0776c8386403429c4b6a80c5ee7c99849c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-gate-contradicted-by-reopening.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16426,
+      "sha256": "fe177b705f6e09a3a34e3d51ae86b5e8236bbb9f7291860a754085137028a83d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-gate-expired.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24427,
+      "sha256": "e498399ee7d7a1af86be3bfe67a0753446b693f7fe2571efbcf814d8e905bf58"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-gate-flag-only.json",
+      "type": "file",
+      "mode": 436,
+      "length": 23021,
+      "sha256": "fe9c180975505d198703ea9418f75abc8600c405156862fab99ec11d69a587ba"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-gate-receipt-missing.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24345,
+      "sha256": "12ce48c05094eafa613270f2f55edf03a65e301a92c2525f4694bc7dfa366eeb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-gate-reopening-only.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24004,
+      "sha256": "04fda95f35a4ce0b7bd42e131a1bd3ad6ceca44de5903e460a1e90e70625770f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-gate-request-scope.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24538,
+      "sha256": "81f0322afdf6b177d6c89b774d68f5d302773b427ac89da120604a16ea020c24"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-gate-self-asserted-file.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24604,
+      "sha256": "c289d84e65f608474fc1fbb75ab57251f66f5e52e5ddd4d31d8f372f8300f974"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-gate-starts-after-launch.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24609,
+      "sha256": "2a93b70675288bdbbdd2239f7a3b536f8b36ac12ce97ac2a2b865fbdc25dc8b4"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-gate-wrong-authority.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24499,
+      "sha256": "c2bdf3155fdbe645db1fb42e990ff2c4e6dbb813ed0c94362b1d4473f421f6ad"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P132-FG-gate-wrong-session.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24484,
+      "sha256": "64988f17cda46cfd511ea6fa10f8d27c3fe5526aef99f0afe1ab81ef7fec299f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P133-A01-incomplete-usage-above-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15936,
+      "sha256": "b0543001e74b15ea65397b909d8e462da50e972fa6d1e63221ffa9ffa21f67cf"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P133-A02-error-status-with-priceable-usage.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15801,
+      "sha256": "db4b2f140d059e650bc3cca2530158c92393a80f83525b6b8412be96223959d4"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P133-A04-cache-counts-both-absent.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14402,
+      "sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P133-A04-cache-write-absent-legacy.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14461,
+      "sha256": "a216f54e7ad4e42a8f455207a41cb6dad8d9aea9cbfcb4392d5f9f9806014f51"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P133-A04-cached-malformed.json",
+      "type": "file",
+      "mode": 436,
+      "length": 20381,
+      "sha256": "291c75d734a4b097250836d8b784e984e5495cdc2aaf4742028b0bf6ae65d780"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P133-A04-cached-nonzero.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14863,
+      "sha256": "814b2df896c09b96a3ec37bfbbc369e1a8e6ffd19050864e53d032f25b19afcd"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P133-A04-mixed-observations.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14583,
+      "sha256": "1a2fb5841ae5171e46b32ae460ae307caf3bf5e0881189aa1c66d2fad02cb8a1"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P133-A05-model-case-variant.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10192,
+      "sha256": "56f10666dd20632ed08a745519823d54b0b006634576ac1a8c023a08f3be3691"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P133-A06-error-status-null.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9952,
+      "sha256": "aa96afedbcafeccab0d969a9d6d6010a2cca43cd720a39d0cbded6b47e076dd6"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P133-A06-usage-settlement-status-absent.json",
+      "type": "file",
+      "mode": 436,
+      "length": 26969,
+      "sha256": "eca4c416c7075c8e924ebefc899dec2cd31f310af37d101b1eb1fc20112392b2"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P133-A09-conflicting-reservations-with-settlement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 28034,
+      "sha256": "6ff35c6fe3a68f5ab48202d899b93c7a5aea655de4b8b34c35e0fb3ef4599eb2"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P133-FG-VC14-authenticated-bound.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24090,
+      "sha256": "b0684449b847e3566815951ee1346e3e4d9f3747d87a1b5db1946ba1ddd13e59"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P133-FG-bound-binding-mismatch.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24700,
+      "sha256": "1b96ac3cf3700f665cd028036cb69a0181685f5bc9dbb561b70b8c3c65dc0621"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P133-FG-bound-coverage-incomplete.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24696,
+      "sha256": "9e4636a899430cf3f994844c66f3b6f86f771bb90ea2a0e2aaf450cfca7b0537"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P133-FG-bound-exceeds-cap.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24626,
+      "sha256": "ea579634ab19dac2806e6d1137965d03e5055dcce86a58f401f7beb3f18ca19d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P133-FG-bound-wrong-currency.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24637,
+      "sha256": "12e98217a989a681a132734ff2c8bdd8f9496776b8b1fc0b365a1797ffe83f4e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P2-usage-settlement-unpriced-identity-keeps-charge.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16949,
+      "sha256": "5894c45b3d275ebebab83edaddda1876925063566152a1c97049ae1fcb5030ab"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/P9-claimed-charge-above-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24737,
+      "sha256": "5623c428ae3d946f44034b8e0cda5e28a9a185171148d3190b26735d777af04b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/Q5-unrecognised-openai-tier.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18977,
+      "sha256": "bd13b8d102f5ca48ddfce7b57b3330b4adad3869db358b600942815b8b5c8b84"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/Q8-unadmitted-outside-candidate-window.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15008,
+      "sha256": "2b7831a6cacb8ee5a4212d41eb515bf5ac3bbbd9af8b0248ebd21ae0c038e448"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/R01-dated-rows-backwards.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15027,
+      "sha256": "b731c53090008d7b51c9b97f18c5bccfd06aba22afd4d9e41063e1239efd7056"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/R02-string-charge.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11519,
+      "sha256": "2bd53f3d8cb9acb731f190aa4c271f8ec2d87a66d919af3ec84943e740007f10"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/R04-reused-reservation-id.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11985,
+      "sha256": "f3c3bee6955c07e847d309889f76a1b931687a20a06f5a8a991ab5f0305a5374"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/R05-non-object-json-rows.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15443,
+      "sha256": "3207f4549f56d1eecb4adadad160ae5cd25b5641b08b95d01b5c9b603c1336da"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/R06-launch-row-missing.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16370,
+      "sha256": "d302991cf7630db2eb5620143502fa1c174ca9f60887ad8f5f011ddd99165d24"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/R6-C01-writer-reservation-floor-control.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9128,
+      "sha256": "9de8f1feaf82b40641a090a2bd8ec17f92ad5f2b03576fb0116f0afe9b23d613"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/R6-C02-non200-success-terminal-usage-control.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9176,
+      "sha256": "298829c624dcaed960559322d5e1273d383a1ddbca72022bf04e507121bc7830"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/S01-reservation-basis-charged-less.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11813,
+      "sha256": "842edfa2ed6476607f12a5e86189a5f7d9e6f1713a25b539aadb1be435c11794"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/S01-reserved-usd-omitted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11301,
+      "sha256": "7ee326177fc0e9a6708d5e680a76b95b42ce1a18b1399227f973c56f82d1088a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/S01-upstream-error-charged-zero.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11440,
+      "sha256": "b8af14f1fe42e489a3153c30d4fee1ce41f872dd76e27aed770f39ad9557912c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/S02-attempt-number-differs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11677,
+      "sha256": "1e456e08a2b2ca1a98aa7673ff05a1b5e4f3f7024a72d5a688920d94bbd4800f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/S02-control-error-status-after-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15634,
+      "sha256": "e9255d2d4088b9c3998373f8665fb3b88458713c15765a2dcca2454421d118f4"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/S02-settlement-before-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11744,
+      "sha256": "7e847c0b9d66ae19a1426592acfd03ccb44e53ebbeb579393399c2a9ffef973f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/S03-settlement-stamped-far-future.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14064,
+      "sha256": "d5d3288f6170696cecb11fe245e6f75973bae294470f6f81ef4ffb77ca67521c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/S04-next-unrelated-row-does-not-close.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11812,
+      "sha256": "f9c91ec78b4ec29ec6030d5e155892933e55f1086a1f4226ec34454deb7b1641"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/S05-unrelated-orphan-log-does-not-block.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16591,
+      "sha256": "fe5c3a38516c4189cce2d7ab9792a996d4043bb811f4e1ca851aee0b0f869648"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/S06-string-http-status.json",
+      "type": "file",
+      "mode": 436,
+      "length": 25279,
+      "sha256": "b704a1dc6c4dbe85afe5d6c010b005e089df5a19b6b7d88dce9edd445b14b6fb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/S08-control-pending-commitment.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6362,
+      "sha256": "b8d3c7f909f2176f428d21fdffe2e0fa499bdb9f4ac2a9670638a33e86fd0e4e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/S08-negative-commitment-cap.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5656,
+      "sha256": "becbd87494ae221146862407faeb975fdf1fd522692b08a634465947c6c85e60"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/U01-malformed-attempt-number.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11732,
+      "sha256": "7ddeb05c4a1e4bffd55b5ece9ba4fb4574782a3bcc276dabf21bf3c9ce7ebf9b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/U02-final-line-without-newline.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8340,
+      "sha256": "08261a5f0e3760ada086b685e5cedce1bdf6d2ce4cd2b4d4e9a70584d8c8e3e9"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/U03-control.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14376,
+      "sha256": "033d60dd8f7a5545a129fd0daf29844867230aadfc5fa79237a6d4368f8c6e5e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/U03-retirement-before-turn-evidence.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15220,
+      "sha256": "f6d2063e4c9b8f34b6b1cb61f703150ddf8e157ba5dcbb4d41ce7962a91094b0"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/U04-control-settled-before-closure.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14816,
+      "sha256": "6e01eb589fcbe5e59ff5c59a9ff2c1b3aafe120419fd16772bf348833e2394f8"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/U04-settled-after-closure-stays-with-owner.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15156,
+      "sha256": "9a66311f226fbb30ab229e51bf9d15c7aec7bcd0a9d99e07c7ffe090e412da10"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/U05-inconsistent-charge-without-response-id.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24998,
+      "sha256": "3393a435b409dd3ddb8c6b2241035ad727778f255ee63f25f2e8ba42b3d5b67a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/U05-usage-settlement-without-response-id.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14969,
+      "sha256": "182096305a593f91319701d2dc3cd628f6a247b332025d10b79054fe634f749a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/U06-subscription-upstream-error-unlabelled.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11959,
+      "sha256": "391212c94264c8ce06416f52c2c91a8b3f2d240fa618c75c83ad51dfe983d93d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/U07-unrelated-non-object-usage-does-not-block.json",
+      "type": "file",
+      "mode": 436,
+      "length": 26722,
+      "sha256": "7a5c1340cb1b8eb649084064f60a4c7084173fa6088f758b3f19f8d074231887"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/U08-missing-observed-tier.json",
+      "type": "file",
+      "mode": 436,
+      "length": 22461,
+      "sha256": "f0b35445aed77858ff92211b9684cffbef54454be37eb2fbafad37ae37bff421"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/V01-cheaper-response-model-undercharge.json",
+      "type": "file",
+      "mode": 436,
+      "length": 26994,
+      "sha256": "5725a4fbf447c8f8ec95d30e955487ed2f234678b732948ff0e2d99dd3f2a3d3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/V01-control-producer-price.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14658,
+      "sha256": "836b9c2cf62ecebe1c6d6702009687f74dbc76aa2ddc125186b8f7ea9edfcf1b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/V01-usage-settlement-other-response-model.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17319,
+      "sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/V02-control-producer-price.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16211,
+      "sha256": "c1838947f74b82ef34c0ca66c91dd2b422a2969700a8c79e5f1ea500fe968f71"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/V02-unsplit-writes-undercharged.json",
+      "type": "file",
+      "mode": 436,
+      "length": 27266,
+      "sha256": "50f7a797303a1eccb88d5f7549eeab99149bdc5804a843d9a46f1444eb75e1ba"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/V03-control-labelled-upstream-error.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10476,
+      "sha256": "8d7925f48f94eac78d22bbd7c5cfa4e755996018bdc3661107283d3f5e840a1e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/V03-subscription-upstream-error-labelled-api.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11943,
+      "sha256": "9785e6387d7e3e6809ca6c8af0f46e2a7e00c8d9ad2c0719647ff4108e877eb2"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/V06-reservation-attempt-number-missing.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11210,
+      "sha256": "3e081d938ae5971c6536aca57119e82c4efa90e515203cb3a96d609dd2376ce1"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/V07-unrelated-unreadable-log-does-not-block.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16255,
+      "sha256": "454397b260c2db62fd5a46dde6f57f7ad9a0500a87c3d8470acc09561791001d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/VC01-openai-usage-settlement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14687,
+      "sha256": "1f8402b95a11a7b1b95a312535572148db557697131bb49b5a34fa668f94852c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/VC02-anthropic-usage-settlement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15097,
+      "sha256": "2f22348564a329ce09d5f8b6a23f05cf78482476bd0b2abfe1ac83de35a0806a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/VC03-reservation-settlement-with-usage.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16924,
+      "sha256": "41b5a3a4bbd373cae0210892271c42ff2bd10696024c661cbb45adc8e7e20fb5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/VC04-upstream-error-keeps-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14497,
+      "sha256": "0615e95b194c350a48da4a2fbdf57a3cc0d14398ca986e576330617fa036b87b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/VC05-unsettled-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11244,
+      "sha256": "9731ffb6c84fec1deac2a99d2c3bc53fdcca27dbd4188ff2127d4c5f99b8168f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/VC06-unbudgeted-completed-request.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12724,
+      "sha256": "e42a96d8e403de57a92ec71d7293e462db9fdceb47cfb026777c24b60d4fb034"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/VC07-read-failure-paired.json",
+      "type": "file",
+      "mode": 436,
+      "length": 23033,
+      "sha256": "e5326a1d47d8a62e0132c04e174531700ebd86e1443d76671460b43ea5264e6a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/VC08-subscription-measured-request.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10791,
+      "sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/VC11-multi-turn-session.json",
+      "type": "file",
+      "mode": 436,
+      "length": 26096,
+      "sha256": "d2d3f95ce31a1f222fd5cbddda082f3b480a68cd7472f40ab11e855e1bcad971"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/VC12-reused-n-without-errors.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18922,
+      "sha256": "9f585cb9c9b34a2c4a555994f92ba0a0f9f490fa52b0bbff72afb4ea77e1a6b1"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/VC13-equal-timestamps.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14564,
+      "sha256": "894c393e7e6ce76478b0a5e1e2cd96e041ffc10bd60c5e7bb968349c05f67966"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/VC14-open-session-commitment.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18730,
+      "sha256": "dd3a704903d04a61a40ab9661332cff050eac7f6f5e1b587ea619c9fb961d530"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/corpus/cases/VC15-successor-not-charged-settled-predecessor-spend.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18202,
+      "sha256": "bce7a0150302fee7a9698722d63dc8e0d4e36fb118fe3f6ae5d2674639ca2473"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/DERIVATIONS.json",
+      "type": "file",
+      "mode": 436,
+      "length": 364078,
+      "sha256": "29750b3cfa65fece263a800a1e027e955686dcef95a084351e36b661e200ada8"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/LOW-ASSERTIONS.json",
+      "type": "file",
+      "mode": 436,
+      "length": 161584,
+      "sha256": "3c098cf4cfa1fbd1e36a0f24177171f15d691fcd63a10ff750f09f0e1ae42ef7"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-A5-unreadable-line-added.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7126,
+      "sha256": "a04dbca4c5804bd6a085a949e2977a67da08b8dc8a3868eb73b3845a1d6bb170"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-Q11-closure-uncertain.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7081,
+      "sha256": "9555c766c97f05618c7120001bcb251e7ac9bd310171242a784599bc5eacbca7"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-R01-usage-incomplete-terminal.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6009,
+      "sha256": "eeaeeb6c1c714d46d2addea9d62787bd3e4993489036e6b64fbc36aff0c1c596"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-R02-rounded-up-charge-admitted.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7206,
+      "sha256": "784f520489066672b822a8eadd87bd13b9b6cbc8dd0604e0ac253ed46bf02157"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-R04-priority-overrun-above-cap.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7218,
+      "sha256": "50bd6da5e475b50455f7aa84cb0e1e4f91a69d220b8b041e1631a256ddaf7bde"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-R04-retired-session-releases-commitment.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7355,
+      "sha256": "b500e1d001c6d316f1176ec2afecf7473b69ee479449fcd1794db3491de56db4"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-R05-conflicting-keeps-valuation-high.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9541,
+      "sha256": "c49255364536826e1f8275d5e8ec0a1a4b20c48eacaa6122b4b3ce4e9f250213"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-R06-reservation-amount-malformed.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4741,
+      "sha256": "9909fea38c58329858c6aaa4d6ccea5e30345ea16b2f076d9fd29de388d6c1c5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-R06-reservation-rid-missing.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4688,
+      "sha256": "7f0754d5e98da8459c52737f3ea9eaa5e8e04a53973212540fdc20a6c17750c3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-R07-closed-unresolved-predecessor-constrains-successor.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6519,
+      "sha256": "ba2fb75e135fb73b7621d27e2b75cc3715d11fc7bb2d127646647f6072bedd45"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-R08-admissions-without-tree-still-block.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7989,
+      "sha256": "8c42739c15004ab39cd756b3130b7b3e83595b4ef182c2fe7b46a85cac342c7c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-R10-reopened-then-retired.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1953,
+      "sha256": "35616fc9b7c88d92aa9e1559d55fc679e727f38e50d6e68e6a9a6f1576e49243"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-R11-open-session-before-retirement.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2025,
+      "sha256": "4215ba84215144ae9341cca3d99e1e0b554010b3e9392da379ce1c2d5732bde1"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-R12-outstanding-interval-keeps-candidate.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4837,
+      "sha256": "dcd3c23dd3fafa2091ea8659cd201861027d7c37f0ae3c4399e9ef2c34b52fc7"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-R12-untrusted-clock-keeps-candidate.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5997,
+      "sha256": "3e89f6eddf45ef2d291de13df68aa9d93fac4b1bfb1c4f8fe0dd97aacb756453"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-R14-anthropic-null-tier-admitted.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7246,
+      "sha256": "1bdb56f405bd0e85e345424eab71e388156599a069e1190cb7bf5ed489a27740"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P130-T-owned-before-window-summed.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7186,
+      "sha256": "648120fde24100d3484421d558f16a1236b12aa7b8514100773d742fa910c3a0"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-CP-close-after-reference-time.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7201,
+      "sha256": "7eb0396dbf010d86a30c07f307d78d4774a5240294b6d756b1431e2ba22a283e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-CP-close-entry-contradicts-closed-at.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7306,
+      "sha256": "83664d7084f610010d1af4bb611423eac6698961a3664523eae867877afc55f8"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-CP-closed-predecessor-outstanding.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7052,
+      "sha256": "cf275ca48aab6fd54774a8468370febbfaa69756a993952af0f7b7fc0e8d4bda"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-CP-closed-valid-close-entry.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7171,
+      "sha256": "1a710980b2469c2aab4639e15c2002aea97567746f53186ae1a9716eac79553f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-CP-known-over-limit.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4585,
+      "sha256": "700449fec3702313cc1e87824f39a1bf4cf86928528d8e4ed01ffdc06d4916f5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-CP-retired-session-resumed-without-admission.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12595,
+      "sha256": "13ffe2975f870afcd41e30fab324366e28bee8ac77255833dbd776605ec5a0f1"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-CP-unknown-below-limit.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4621,
+      "sha256": "fcba449c68cb6ad5851ca34524f2809afec5411c528cb675112a9e784880a5f6"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-N06-gated.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6944,
+      "sha256": "e0aa1b5c8d8f0dc818bb3815dc1989a83d5b062a6fc36003cf9d8b8145e4bf80"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-N07-gated.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1849,
+      "sha256": "5b7e984b2b43a1a8a3963266b29498a56bc46b3cde19e78ce0654ab4db73a6be"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-P130-R02-gated.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7011,
+      "sha256": "71fb41dbb10a251cda88b3ed867a465d96b3f014750ed65efca4fa84cacb2e9c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-P130-R04-gated.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7025,
+      "sha256": "fec557f018d16a0e0ea4cc475ea94b0b8e3365931b3b2cb1125cb7f5f3eb3ad8"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-P130-R14-gated.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7021,
+      "sha256": "a4f854b5c5dde905e68b0bd3a7ad647ceae999f1d4023e6059796435a8f29d4d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-U03-gated.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6946,
+      "sha256": "a184442e57a0877712769a724ddba6370da1553df31c5d9f5be04f37224f191f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-V01-gated.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6948,
+      "sha256": "9dd51d1c6cacfd91d9b80ee7a310adcb18fd5d633d785476db77fd4caf3601fa"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-V02-gated.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6946,
+      "sha256": "371358469d1f324019301c58658a7e8327824d746d74122c0b16092e5dd16439"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-VC01-before-retirement.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7141,
+      "sha256": "4f830e6939a3e252e49a715396c9f8ca23590c7a23d2f249cf9eb03d50532f22"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-VC01-gated.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6961,
+      "sha256": "a12bf3b9bc8e9f694a96e9c6dc2ebc7b078b28812c5c3f7339acc58e9c57f162"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-VC01-no-gate.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6991,
+      "sha256": "5d1b4d4d9c4bb34b8eb4f0b6f2193da425614077786300c570f50bc28ebbe8bc"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-VC02-gated.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6961,
+      "sha256": "83745c6fb7edfdb0c0e851eaf2e8ca07192137690d09190e4e762db46fbc8424"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11940,
+      "sha256": "f7bd0b80b5af80e0baf5052c5ff5211835de39045ef4a52f90b73e781bd3e9af"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-VC13-gated.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6961,
+      "sha256": "56d676b9c00666a0af1cd098fa2c5bad2ff0f1a4f772dd2e5811bb6afb319251"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-VC14-open-no-billing-bound.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7205,
+      "sha256": "55610a9756b6ff9784c57e87df2849c79fc028858dd13815c3289a2b2f737b8b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-VC14-open-session-billing-bound.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7280,
+      "sha256": "effde1dd2f4b2daf567da9cc2ba98e230e5c1ef4d18ebecf1dbd0b0f17fa2d4a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-VC15-gated.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7666,
+      "sha256": "cee2b1ba0b845f97c0b95b999129ee1cc5042f73545423071cf71fd7f70b5e21"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-closure-authority.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7066,
+      "sha256": "42d05ef9ad10db5f683b197b84b1be2b13c723f48e9ede3f795ed36464a3ea8f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-closure-legacy-entry-only.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7186,
+      "sha256": "7c76be909a67d30521ee2fca0af5bd6d73d06047bcd53e679b3c4c1442f9c1a3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-gate-contradicted-by-reopening.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2017,
+      "sha256": "1642a7d3b955be8dad8d918a61eb7848a88a602ba17fab728e1ff7238c82d355"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-gate-expired.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6991,
+      "sha256": "054adbe42c4c893e65f15a8c01dcef9f94cbb7145c88d10353a32eeaa56e335a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-gate-flag-only.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7021,
+      "sha256": "424aff478df458088e2ebcec808df73046db041eef0eba2673af36cbe1ed3d07"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-gate-receipt-missing.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7111,
+      "sha256": "4d8dbdf4ed2e63428bc6c2eb764a08a988c252323d4a316872fd1fc06862095e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-gate-reopening-only.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7096,
+      "sha256": "ab40cf3496584162781f1b31ed2e389b0b10c2d473587e95629770e4ce70e357"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-gate-request-scope.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7081,
+      "sha256": "2a730a36b6eef460f4cee22feb7d795c54b1c20e856331deeee0eb7362826ae1"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-gate-self-asserted-file.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7156,
+      "sha256": "df9af263e5a5a547ce4e5adb85ff4bf290f8a63621527ade193fdd3f316386a3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-gate-starts-after-launch.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7171,
+      "sha256": "d45381c759e6d96e42b6fa4b3bcf0855859312cdc636b5615daf8720045ace1c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-gate-wrong-authority.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7111,
+      "sha256": "b6053ad2025fbc8112aab2057fd8ae13bf4396fc72cfbd6a4efc651310e4717f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P132-FG-gate-wrong-session.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7081,
+      "sha256": "0af5e557c4edbd004b3261aa61777a5d5ef48d31d6d3ce6eb32f9827b8617c5e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P133-A01-incomplete-usage-above-reservation.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6126,
+      "sha256": "6b55a5e12b1e7e18086f9d54b678ad34b09b1c3fcb8ce8bb3c0f728552bd0d34"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P133-A02-error-status-with-priceable-usage.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6117,
+      "sha256": "eac320e7ead08b00cf50088227ab8f3b82c81e92b14d5d23c02f1e4d1a99522e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P133-A04-cache-counts-both-absent.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5906,
+      "sha256": "2104d56656fdb7fd3251ba0ed6c112c0c05a3230b1bc5d9763e10536d14bfdcf"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P133-A04-cache-write-absent-legacy.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5919,
+      "sha256": "60598a03dfd11bc6807061c988552ed55b626324826bcfeffaaf172bd371a5a5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P133-A04-cached-malformed.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5855,
+      "sha256": "6bad617dee25a83d117a72606ac6a9e8c3cecb622042dfa4ad55717db9b5b564"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P133-A04-cached-nonzero.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7036,
+      "sha256": "5d3b22bab92097887b5f3ac0bb6318ca04cc8d269ccab32ad508f907670ddc41"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P133-A04-mixed-observations.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7243,
+      "sha256": "f4642e47f675e302f96030c3c71b41745953edb7cd2fb9a33bb0cd29d0e6f85a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P133-A05-model-case-variant.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5884,
+      "sha256": "7b4fefa764bad95cc35d40a3f02d3a2ca43dc33ed6856ac65203900b9956cb9a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P133-A06-error-status-null.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5871,
+      "sha256": "7e67af792859b1c754cdefbee1186e2ef8c3d0e3b08f3773602c894b4cefaf30"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P133-A06-usage-settlement-status-absent.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6077,
+      "sha256": "e6eb0bde578bc7b9367da3731768070f4190109b9fcfcb2b1a03dc17e4cb0693"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P133-A09-conflicting-reservations-with-settlement.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6924,
+      "sha256": "22fb74992dc278f29d9dd1d8b4a0dcd2ef8f973516a6bb735f19e023666f46e8"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P133-FG-VC14-authenticated-bound.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7175,
+      "sha256": "8426f4cf9bd41a867a89aa3acdc8f63fb6629f9789cbaa54698eee526cbf55ee"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P133-FG-bound-binding-mismatch.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7145,
+      "sha256": "b77d3522d3cd655f9cc9eaab425df4595250a701ff587da6767670318c613cdb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P133-FG-bound-coverage-incomplete.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7190,
+      "sha256": "9db5a0aa63360f080db1f699d776d14eca1c4f456a84086da33c3e033e38d23e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P133-FG-bound-exceeds-cap.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7070,
+      "sha256": "9a95d6621a78b6e7c0c5c35d4d179e8f28770e82dbb1b888379685902c7eb068"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-A/P133-FG-bound-wrong-currency.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7115,
+      "sha256": "07022763957eca75c693ab695d4165b9f10b9ad7474fb5ad4f3c288ea7659b22"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/A04-undated-settlement-between-dated-neighbours.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9137,
+      "sha256": "236620a3a2fd3374e11442f319aed7a3a57cde5755e66242e7d3d65b354ae9bc"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/A04-undated-settlement-between-dated-neighbours.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1184,
+      "sha256": "16a2fea47b93174c43817846d94abbc38c4f81255f60281cff4d2f25c7c0d0f7"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/A06-reservation-usage-null-status-no-id.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6135,
+      "sha256": "a30652be7c80a284647d239f314b04c555ecd232d7c1472ea96959f296d9fff9"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/A06-reservation-usage-null-status-no-id.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1137,
+      "sha256": "e19e146977f436c7b48018b539f1f9922815cda0b15fbad3512e218a105f395c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/A1-01-upstream-error-and-unknown-event.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7106,
+      "sha256": "826885d38ce373f78154ecc911bf3a09d02675a8355152e6e6b931c006a0df0a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/A1-01-upstream-error-and-unknown-event.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1157,
+      "sha256": "53de08855e9cba082bddff806b8d6b9b6b8ee3319740530c20bd117982231046"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/A1-02-undated-row-inverted-neighbours.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8957,
+      "sha256": "a6bf7cbc6ca22d050bbbf319d2490ce48af3ead9245c10d40770065edf8a0294"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/A1-02-undated-row-inverted-neighbours.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1154,
+      "sha256": "5f0241aa841e5273de639c2ef2af32f347870b4db1a5db7156371651f6caf78e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/A1-03-unreferenced-log.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7153,
+      "sha256": "aa0ed373855f40646e7b3ac8242a6badfa47cad0fafa455b86887a484fe132f2"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/A1-03-unreferenced-log.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1086,
+      "sha256": "28138dd3fa93222e160dc04077d801ecc6202b41c3548804655ff2f3888704ca"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/A1-06-control-no-session-file.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6610,
+      "sha256": "78c0debcd741518fefe3f5bcf9ff4e85e9e681088821bb6aa087cc6b811bc50e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/A1-06-control-no-session-file.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1084,
+      "sha256": "6aebda6902a960f1d9af7b78bb3c7f861bcc8278419db748f0e8e8a8cfd661f5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/A1-06-session-file-is-not-evidence.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6685,
+      "sha256": "477a402bfa6d395578248c0dcf890a0383d4ea013aaf17a32ec02cc92ec92c76"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/A1-06-session-file-is-not-evidence.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1099,
+      "sha256": "ba2b780f883be37d6e9465a1617c44c6d5e03afc03a73d214763edf34cd976fc"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/C1-control-before-reference.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7233,
+      "sha256": "e7521b8814f5e0eca48167c12ea67187e4587a0ae23cfa621c6976192a9003c2"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/C1-control-before-reference.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1101,
+      "sha256": "b902072a40bc28b7bbea2e9130b8cb7556b1ca6b90309298039ccaf728211f50"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/C1-settlement-after-reference-time.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7345,
+      "sha256": "12a63999b8c1952af0f8aa9371a56bbb8f029a7cf710aca010ee8dc36255b02d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/C1-settlement-after-reference-time.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1122,
+      "sha256": "3322037ddda400c0459c1252b3d975875e04904c0cf6b93a75e1875535212ddb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/C2-unsettled-reservation-after-reference-time.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4886,
+      "sha256": "bd16ee196d048f0fb3df418d680ecd14ecd8cd51329f360b27ec357ac6875977"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/C2-unsettled-reservation-after-reference-time.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1132,
+      "sha256": "db91d0504f1fd4baffb00a6e11c8767f57318f183ae3504866d7e9099ad51443"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/C3-identical-reservation-copy.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7654,
+      "sha256": "73696694a66dccbc5bc846af0352796d9477b5a68c0e264a1f2d241276b5b0d4"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/C3-identical-reservation-copy.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1129,
+      "sha256": "7efb63ccc3a9ea5c1fece0d79ad0cabd2fa3a6bc17d6763145b7c2512257d88a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/C4-missing-charge-basis.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5890,
+      "sha256": "8f5a3f3cb4bf458ab936950457b3a4638cd885ed79caa8f6e7b4525e70af0f1a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/C4-missing-charge-basis.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1089,
+      "sha256": "ac41a1736c5d5400cfa19cdf2d3a6df45e8d5cf62d8c6e8b30ab3f9c67f6ddf1"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/D1-closed-objective-provisional.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4718,
+      "sha256": "aa2c76fa41f9c40b73431b526ed64323b6d5f50c371e47830c052e481036db38"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/D1-closed-objective-provisional.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1090,
+      "sha256": "b0220f36965cf6e5288c46aca7a3baa830e795cf012ff0d62c1a7c257fb467ed"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/D1-successor-constrained-by-predecessor-obligations.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5729,
+      "sha256": "fc5fba870303736e06ac14a9edaafdb50e388567b24252fc6825fba3ce17e932"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/D1-successor-constrained-by-predecessor-obligations.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1150,
+      "sha256": "423b00fe2b99f8de2df776da12d8061da20e312a205053b44d6dbe65c6ad29f4"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/D4-unbudgeted-error-status.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4777,
+      "sha256": "0d62c1acd3ecd24eaf9eb498366387a2ca12e3778b2bf4ddf721b883309ec7b4"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/D4-unbudgeted-error-status.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1075,
+      "sha256": "d964af13d2e46e12f62dbc2bba2fc5420abb92467dc532a8f85bc1e45ddbfd22"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/DERIVATIONS.json",
+      "type": "file",
+      "mode": 436,
+      "length": 265021,
+      "sha256": "1ee8a47ae5969d11b82cb6346d3396fd0e304e91f477bf48f7da03b1026a9329"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/DERIVATIONS.md",
+      "type": "file",
+      "mode": 436,
+      "length": 5154,
+      "sha256": "d6e5f85d7a5ef172b4d6b2e4df5db9f40b5a3c2f751cb8436235505d1968695e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/DUP-response-id-across-attempts.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11353,
+      "sha256": "009a3a1e7007e6dcd3f315fb969f6051138d0625bb1b77a90eaffa54aeead251"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/DUP-response-id-across-attempts.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1159,
+      "sha256": "d6fecc0cc7de09dab1f3a3eff851532112243d254a95aea427449964f9e39ecd"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/Ha-control-consistent-split.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5976,
+      "sha256": "6f09f5cc95aa43f28757eae99ca6eb6e4d42c0a5ead06845f845e3cd275de555"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/Ha-control-consistent-split.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1101,
+      "sha256": "96145a596a00037c002c9428540c4e02a3b6e0d588b1f1b3474c2e32cac87a74"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/Ha-inconsistent-cache-split-keeps-supported-low.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6236,
+      "sha256": "8470fbbf98f5aa125d31bf921704bc5f2ac2468ce18deba5ef596b73045c23e9"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/Ha-inconsistent-cache-split-keeps-supported-low.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1161,
+      "sha256": "525de7e158e15a97524bc871d7a49019af63774ba8c4d919e60d78253484a0a4"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/Hb-window-independence.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8009,
+      "sha256": "c64f3d7dd8652ec56f7998091929bdbd8bbaf40498c214c0225d5f05d273e65d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/Hb-window-independence.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1086,
+      "sha256": "4650b9c6f3e5536ab69e869f56e44f558b2edbbf427b7a5b22baf5da0a72e03c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/LOW-ASSERTIONS.json",
+      "type": "file",
+      "mode": 436,
+      "length": 262415,
+      "sha256": "587de76fd9fd99c54bcc5ca343785f6624194dd33c5692b9154fc5fd9435d206"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N01-control-served-pinned.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5950,
+      "sha256": "f30275f430b8bcd675b971692924c60658be96930227e62c11a5f02db26e0e69"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N01-control-served-pinned.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1095,
+      "sha256": "125c16fade740ca44697cbdec200fb1ab40024a08b3b6ecdb89316304cc2e2a1"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N01-identity-refusal-dearer-served.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7412,
+      "sha256": "6deff35f8f6fb26a6b04683a312b2003348c584aa2ce05e35349b8e7badb484a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N01-identity-refusal-dearer-served.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1145,
+      "sha256": "7b9138bf2c192aa7dc2cbd2f49d2961872b4ae1ad9669a8dfe07e68f99ad74a6"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N01-orphan-identity-refusal.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5843,
+      "sha256": "7d7ac6881ed5b69c7940f42ac407619dcd5275145825439c527a584e09698cfa"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N01-orphan-identity-refusal.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1101,
+      "sha256": "001369db571b12229405649ca4497b4379a1df7a1d336e43f3dd550f52428b1a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N01-variant-no-refusal-row.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5963,
+      "sha256": "de8422ec496647391a489e107ab945ca055da3f2ed69a7fa8533c0c53afe5fca"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N01-variant-no-refusal-row.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1098,
+      "sha256": "84685047a632a3052c00d691a36889b25dd3f3e8cb78858287c8d96074ff7627"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N01-variant-reservation-above-both.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7412,
+      "sha256": "15b44fc1d4924120fb54d6370f5675ebf6c54e7b761d1f848fef791e94a34e3d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N01-variant-reservation-above-both.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1145,
+      "sha256": "2fce698f081c1103e7c03a0cb662d4769926ce69c41d32f5280bbdde4256cb1f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N02-malformed-anthropic-tier.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5955,
+      "sha256": "53180d5e27e8ef43854a890b078db633a4cbe14d8ae47065196448a566022e98"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N02-malformed-anthropic-tier.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1104,
+      "sha256": "c49074cec320b55c2c519d7586312e532fc2e7b7ca2d544b480f6a467e191f29"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N03-api-row-other-provider.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5929,
+      "sha256": "6526c627dce3b6cc3c7f5de3ea18c2fd6a3356dfe2f7623d84a6a375612eee9d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N03-api-row-other-provider.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1098,
+      "sha256": "a6df7c7de82bd4e110bef1e99f2b159c0c11cdec077326b43d2fb4ec1a18a508"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N03-contradicted-admission.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4277,
+      "sha256": "e5c0c38054ac30ad62444266e81a5eb0795426fe3e7991902b2dff32864d9464"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N03-contradicted-admission.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1075,
+      "sha256": "de6dfce2168762caaa1b2e1fa80649108463edcaa41bf1342197fddae83be62c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N03-contradicted-refused-row.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2034,
+      "sha256": "ecdbd0cac6292ebcedaa0f1a67f2dfabe8452f1353223956fe64c644fde60ee1"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N03-contradicted-refused-row.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 277,
+      "sha256": "ea34a4ff15ac45cc93b92ece5acd79b844c8cfd8a2dcf2dab751291672d192c7"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N03-control-unlabelled-admission.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4343,
+      "sha256": "91ffb653b20eece30b4c0e0b60c82959f1e81b8b0aa4b988e276f588a5ff8d17"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N03-control-unlabelled-admission.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1093,
+      "sha256": "cfc42d7e104a0d41da485ad0fefc787ca335f5163f18261e3a80a64000234846"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N03-control-unlabelled-refused-row.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2082,
+      "sha256": "63fa40a3c3de50a282935258531f8bb99dc83a4de58168d16e3da2e768b4c5ad"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N03-control-unlabelled-refused-row.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 283,
+      "sha256": "09f9dbdc38bde943ffc8118e42cc748f69327154887c0deee9120177e67c4a6c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N03-identity-refusal-in-subscription.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4392,
+      "sha256": "ea9e76bc2a46cdb0583fd047b77bf6270d8df8e211d63a27b28a041be7cbb2d6"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N03-identity-refusal-in-subscription.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1105,
+      "sha256": "d915ed864aeb0574dcafa534544279f398e030ec7438e092305bd0b719e40c2a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N04-ambiguous-read-failure.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11482,
+      "sha256": "ceb6442a1ac5997291e1a767a70e63d15ac3d4226b3f9671f7fb718b090fc6c5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N04-ambiguous-read-failure.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1121,
+      "sha256": "86bdaf99bcba938e37ff4596a53d96b6283642ace93f07dc6ed624983877c4c8"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N04-budgeted-header-failure-no-own-reservation.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8729,
+      "sha256": "271cfbd50ed85d7aceeee1b17b8bdaa56c94bcc944bcd0a12d7902bf9cf59d2c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N04-budgeted-header-failure-no-own-reservation.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1181,
+      "sha256": "23f8312193bb5dc95638c9c697298fe5504c4238275818922a137b4d3587f526"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N04-budgeted-header-failure-own-reservation.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10254,
+      "sha256": "010958e1a1ba7a1abb930aa7349bb2e86237a33d1717e049c196729d78cf61a6"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N04-budgeted-header-failure-own-reservation.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1195,
+      "sha256": "278c5c35245c5ab7ca67ccbeb566cd5ffcd4c8eb1fcba8da1bf2f09950c7439e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N04-control-request-alone.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6550,
+      "sha256": "9035d41e499b2da1ad5ee2cc9bdbce05f08b48273b7eae18c663fa62f05d91bb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N04-control-request-alone.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1072,
+      "sha256": "be6b5101f7f35eb5d31306df6bddf78b59fedde1ef544ca61a4971c01ebf1e5b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N04-duplicated-read-failure.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8926,
+      "sha256": "bbd2a63ea6567b30ec390e485b275ee5117ddb14019748c7f248bccce9f05ffa"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N04-duplicated-read-failure.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1124,
+      "sha256": "5eb8669dd062fcd93f720243ed727a79d48a56a87afc8b77e384396959ca230a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N04-header-write-error-reused-n.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7817,
+      "sha256": "6907989d5c56e93acb6b2b9536f40c1cdecbab40aa5301c86e62f5d7f1a4e521"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N04-header-write-error-reused-n.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1113,
+      "sha256": "a1db0cc59264b523bf8d513f647a6e4e29a44c5c615ab5bf381e2ee4a95ee806"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N05-control-consistent-retirement.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4742,
+      "sha256": "e04c29bb70854096cc24c5c34c052ede3ee37a54b9811aa083dd5db3e380e511"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N05-control-consistent-retirement.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1096,
+      "sha256": "c841dddb7e09f6e680c85922520195859acd6b2e4df3cab01d1201ea9244d088"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N05-retirement-before-later-delivery.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4778,
+      "sha256": "a0376bec4560771b137f8c481eec4abb38f3da550979e05dda853dd7f7c92eb7"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N05-retirement-before-later-delivery.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1105,
+      "sha256": "3186142e532849cf476f267d72806d2f19bc24f61eeed8b9de2acb2e2bf1aa46"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N06-null-cache-counts.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7135,
+      "sha256": "b304261b4183a282fc75dd4e71a2c9b1159a8662f9908a542e6b01db42eb29ce"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N06-null-cache-counts.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1083,
+      "sha256": "e28c913756dc3e349de32fabd9769dfef2617a66dff6b60c8b24bcb869fc1150"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N07-control-retired-journal.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2026,
+      "sha256": "7f630cba1a4f2b6875eb49240acc151f4a02504920dfc6cf8e743302dece6b6e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N07-control-retired-journal.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 276,
+      "sha256": "e3cf86d08d1ebbfcdc2e9ffec0be8bb81a686083ca89497b9ee1df0c8a913a1d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N07-control-retired-legacy.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2018,
+      "sha256": "3e35cc06d6a200bb5af84145e20204f97cfd42ca3a5ed4000f22fb73709828a9"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N07-control-retired-legacy.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 275,
+      "sha256": "d80f32bf3dda1248f82c5573cd6c32d51eb937f1223b385bab89f1b827dc3ffb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N07-reopened-session-journal.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2034,
+      "sha256": "402e12e98919ece55df3bbccd25203c66ce735685b4e4ace3a89127e3000e278"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N07-reopened-session-journal.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 277,
+      "sha256": "b0c04bfa6f62bbb0124d1cd9b68f48daecebde3a32b8415fff67f782c17085a0"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N07-reopened-session-legacy.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2026,
+      "sha256": "5c6611afc80319a5098cbcb904e99fd8a05b21b3ecb1fc63b166a521d63c7c4f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N07-reopened-session-legacy.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 276,
+      "sha256": "ddd88eeaa0907ba0e60c459263dc0448c1a39b1c28059cdd36d9bff65b3ca67b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N08-control-priced-model.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6535,
+      "sha256": "72bcba05b9811d0b243f15a0ead78c4595eea1d25f994b4ac92459475c1188a0"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N08-control-priced-model.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1069,
+      "sha256": "218bcb76215b00fd4a6ce5e202accb1c3579b396431312d0090e0b2b7c126e07"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N08-model-without-producer-rate.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4837,
+      "sha256": "3ca8683b7f727f53262abd0d8e0f500538df68c63d0251b2e9c3ad4afaf42a2d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/N08-model-without-producer-rate.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1090,
+      "sha256": "31c3a8ed9f8cd0066c0f3648fc204e205d9b649ef57b5eba16f7d4f9584923dc"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/ORD-sessions-in-ledger-order.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9847,
+      "sha256": "0b8922409856dbbee984ee45fb8a82bd7a401dc24b74ffaceadf85cc4abde048"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/ORD-sessions-in-ledger-order.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1904,
+      "sha256": "eb34a03be2308774918f1eb59d7e129fdf8ead7641afbbe833c0b38716bb06b2"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/ORD-sessions-reversed.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9707,
+      "sha256": "219081a4d162f979f35359de7c7be7f926b508361c844c72cf3377e002818629"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/ORD-sessions-reversed.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1869,
+      "sha256": "593aaa45700ab2240fcb0b01425d874ca5169d8f1978657deeb00fd7743e1ae5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/OWN-budgeted-session-without-admission.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7335,
+      "sha256": "5e687adf4e292a1dac7f2af8ef45a5f639a266b35c25bbf0d03d26d4f011d3cf"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/OWN-budgeted-session-without-admission.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1134,
+      "sha256": "dd32d5d15dc30ae99aa18180af60360905b9b12675c4685836b863bfd0354c73"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/OWN-two-admitting-objectives.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7929,
+      "sha256": "c89946d8608dce338bc02e8cacc13a92abbe57130f9a3a0969c04ad1ae34a42e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/OWN-two-admitting-objectives.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1104,
+      "sha256": "651ab7c515a782b70a8251c1f7fdf12f71ebc51885c37a0d8fcd274c8ab25106"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/P2-usage-settlement-unpriced-identity-keeps-charge.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6238,
+      "sha256": "ba227b6c41088371abaedcb2b5eb7f9a8ffa13bf7c66c772e3c1d2831a9f0f8d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/P2-usage-settlement-unpriced-identity-keeps-charge.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1170,
+      "sha256": "caea16ec2afd4e204fd14567c5fddaeac1be7d0be8af2d9a0794c45ed7aebc18"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6082,
+      "sha256": "5cf8a8778854310ddb989d4c76cebb031affed31da04ff06b510f7bcc3d0b867"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/P9-claimed-charge-above-reservation.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1125,
+      "sha256": "7ade01e3a7b34475ed94141b32e18d327f2490779b15c85ab8ada6cd9cf5d691"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/Q5-unrecognised-openai-tier.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5939,
+      "sha256": "e63463853738c0e350c27162ddc637039f3bf419685e2d2656dcc1cbc6d73e92"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/Q5-unrecognised-openai-tier.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1101,
+      "sha256": "a753647344357e30b5e7c89c3e4828cb45dc3d1b3316f05ef7e506c65158299b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/Q8-unadmitted-outside-candidate-window.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7522,
+      "sha256": "2f54f0276e5f92103cf1f123db482941dc65d22d686e89f6a9e84dbe46df0ed8"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/Q8-unadmitted-outside-candidate-window.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1111,
+      "sha256": "9ef12de024d70de1af07708b9e3295a41eaa9f94617198307eb9bbee53a913a9"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/R01-dated-rows-backwards.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7185,
+      "sha256": "42660e7eb52f36ec5b8051e5483bc445d8a09ec1425781961279fb16f224c92b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/R01-dated-rows-backwards.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1092,
+      "sha256": "37a6acb35f7bcedb3bfc372fe4eb3e13a38099454f2abbc197da353041fb435f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/R02-string-charge.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5812,
+      "sha256": "e34887981d8db517fa9bda5444931bdf6d09d5f3786f794ff7f170613ef15bc9"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/R02-string-charge.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1071,
+      "sha256": "9e04fba91054c8aea86b444fc699aaec35cf94032718f0102f3ab54699f8588c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/R04-reused-reservation-id.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5375,
+      "sha256": "9d61499e5e858d3ef0b45ffaa74eda634c4e6a86a4fa4970159b2f51e472c993"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/R04-reused-reservation-id.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1095,
+      "sha256": "c025246b1d05b75335cf7291e4f641c8e55c03086388fbb9b417e7de79a69b48"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/R05-non-object-json-rows.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7185,
+      "sha256": "1d66288ddd59d3af122a823cda903577fc0108055b447f738c85eeb27c1bc221"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/R05-non-object-json-rows.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1092,
+      "sha256": "d68e2ddbce8f0112994b1a6ff2f3f0373f3301556614db278c7d84561f459ad2"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/R06-launch-row-missing.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5877,
+      "sha256": "f4e274e26d740de7789150a6f04292191e5b5d1390993580966d4e9364a6b2a9"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/R06-launch-row-missing.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1086,
+      "sha256": "f0e9d708cb6a81e2a4a4c51879005186663ab4a2227fbb5a387892f9e6571fa0"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/R6-C01-writer-reservation-floor-control.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6132,
+      "sha256": "ca6ba3a9e40557d5c197533beaa207df798f9ead9095aa13a219637971574fc4"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/R6-C01-writer-reservation-floor-control.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1137,
+      "sha256": "b89283aa9ae106811c8846c87cced8e5b18cfa3eabeb9a092021459af50133bb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/R6-C02-non200-success-terminal-usage-control.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6201,
+      "sha256": "6e4f9174df587be4b5b85fb99204f6765440a8ef120d276ac9986295cf66e5d0"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/R6-C02-non200-success-terminal-usage-control.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1152,
+      "sha256": "136bbf3d944b025d1d17beab74dc74b9dd42536993a4072f211d8c6399522881"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S01-reservation-basis-charged-less.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6033,
+      "sha256": "b1cf80f618dd5d38c03e8003e9f35c46877a9962410e5d0f0cb9cad772d47b50"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S01-reservation-basis-charged-less.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1122,
+      "sha256": "b02376dc80e189b169c0f0486a7a3811c1ad31c594939edcf3e03648bd018b99"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S01-reserved-usd-omitted.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5375,
+      "sha256": "2a2296cc0db6f2afa34399e6a4cca108926dc940b3b9544286b1e3e53e038a64"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S01-reserved-usd-omitted.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1092,
+      "sha256": "9dd6e0a8dcd6292891f4b4d71e28e54f4bd8a82f4225c63a33db3f4ad2edf8c3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S01-upstream-error-charged-zero.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5459,
+      "sha256": "9e3a377cd7ec994a5c4ffeed1b95bd5433a3af071f2716e4daff6b1a862f58a0"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S01-upstream-error-charged-zero.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1113,
+      "sha256": "8532af4893bcaa3a2351aadbd10269f43e536919938f7acbcd9cdf7d4ff41aae"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S02-attempt-number-differs.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5929,
+      "sha256": "fd9c867df66a0b1ff7d5f954e807a3dd073607ab74513b3c2fcb965743a568c3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S02-attempt-number-differs.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1098,
+      "sha256": "48b46cdd875ca7a53e2d14a9d7302ae0188cfdc8642ab3e0bcb764410227e09b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S02-control-error-status-after-reservation.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6134,
+      "sha256": "02621cb01386faeaf093aac2d2bc2daf3acf564de1801be09a3f221994a925a8"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S02-control-error-status-after-reservation.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1146,
+      "sha256": "c5442435b1780fcf056216719cd183bca93f1b389224b622d4e32db8d0a7efee"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S02-settlement-before-reservation.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6020,
+      "sha256": "f0597a1e334e0f27147d3b7269637d7c6afcfd9032964e168d12866b0d68531d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S02-settlement-before-reservation.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1119,
+      "sha256": "5aa293343e526dfbfc8b28cc16b16426d485f766875753872b4fb309b7eed27b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S03-settlement-stamped-far-future.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7329,
+      "sha256": "91923e930282428936b1327af0d4e658dccc5a1c2430d9159c21ab7b203e5a14"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S03-settlement-stamped-far-future.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1119,
+      "sha256": "ea168f686555e72fd7ff45457ccee0c8d3c59b1e4eabcddbcc9a47dc8561f424"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S04-next-unrelated-row-does-not-close.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4790,
+      "sha256": "9c86cf7e16b96a4fa04ef779b6bddbfd760d73e8cfbd8eaba650cddfb197cbbd"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S04-next-unrelated-row-does-not-close.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1108,
+      "sha256": "12009afc56ec003dc8f71e58d25c4ed1fdc94a2df8e87fe8bf696ea2b6803ca3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S05-unrelated-orphan-log-does-not-block.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7425,
+      "sha256": "baecf58ed7ecc7935ee026928866996fd9c69c167a30d45a5195f2715e9d2250"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S05-unrelated-orphan-log-does-not-block.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1137,
+      "sha256": "4955bf8ff09aa6d96332231881295cd42cbaccc68421ad1cff6cf0cfaa643c8f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S06-string-http-status.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5914,
+      "sha256": "37ea4b65790beeeac0d00de29ad942e076737c0be0ff7fe2b0bfbd8c28fc0766"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S06-string-http-status.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1086,
+      "sha256": "62b943689edd18bb3718fdebf635c1ff424fcde34821f7063fa756877e1df128"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S08-control-pending-commitment.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2050,
+      "sha256": "2b783d9042091c81ddcac60a5dab9b059622a7d0576516adfa63cdd8147f85b5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S08-control-pending-commitment.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 279,
+      "sha256": "0c59caead993cfb8a8044f5541c983f5d1ecab61967f9fdf9f909aed46f2f9ec"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S08-negative-commitment-cap.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2026,
+      "sha256": "dc285303a0c3fbcc0d49b04fd0fbd872aa8d3c345c98db9830c91b7130cb5f60"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/S08-negative-commitment-cap.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 276,
+      "sha256": "e57be6235950a1fb42cec9ec3b56e0116e42926ed5e000aff190e26bb9785035"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U01-malformed-attempt-number.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5955,
+      "sha256": "558ccb0841d7ad830401cfa312b54c4e5eb7566be9f641f69779f1ec91126bba"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U01-malformed-attempt-number.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1104,
+      "sha256": "b9d71a1b9f99e682b7c16e4748830e392546fe211693e2a6b840d2edb6987c46"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U02-final-line-without-newline.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2050,
+      "sha256": "dfd05cd596e4d5f7b8f8beefc8240206e7831158ef3baa632b4ce96a2b98a1f0"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U02-final-line-without-newline.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 279,
+      "sha256": "446ef58b37c3964876d8d54f0189520fa6dded3ed1e0182dcc6a9128ce2490cf"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U03-control.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6977,
+      "sha256": "541ecc97b52aa3bc97a71ee68061fe104da46a2449c877cdf4bedf8f3087b578"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U03-control.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1053,
+      "sha256": "b773b8a4a280d6dc29d23957aa69292e0e12d555439e52afd2c4913f4a247099"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U03-retirement-before-turn-evidence.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7361,
+      "sha256": "ac0ca1b6fd3743dc0a83901fe40f79d40d0742d9cc9c04effd73dd4d226c27ed"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U03-retirement-before-turn-evidence.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1125,
+      "sha256": "83caac1048d7982daed355746838c4183adbe7c63235e11ff2fcc6684cc7ad0f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U04-control-settled-before-closure.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7345,
+      "sha256": "2030cf52a20ea653c7cd9c8c7e3185d440dbc0da77ef55c38547de1761706370"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U04-control-settled-before-closure.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1122,
+      "sha256": "a375fb47c8b56e492f7aab8baa87a5489c903f7c4a01a6bd1127a603c1d77398"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U04-settled-after-closure-stays-with-owner.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7473,
+      "sha256": "a8a6ecd38e5b0e885e15caa3434bf492bcb423c0a78ad7252d3683cbfce74e1b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U04-settled-after-closure-stays-with-owner.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1146,
+      "sha256": "1ce686dc2e874902a04aa029a6fec1c8ecf96bdc2ce50460feec7227651da3c0"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U05-inconsistent-charge-without-response-id.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6186,
+      "sha256": "880096855e2dd91b4a131321ae1e772411cc28679b8e25a40f07050b080d2681"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U05-inconsistent-charge-without-response-id.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1149,
+      "sha256": "0eb8c552845027b057efc0452c0b9a426b248adbc4fae85179c53831be8fe977"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U05-usage-settlement-without-response-id.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7441,
+      "sha256": "ab0aa43207b6d5b0438eacf28278d66875e61dc59d2287e7b796ec47a006b3df"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U05-usage-settlement-without-response-id.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1140,
+      "sha256": "667b07f5583a28457ad363251da8f638e7e896924a280490bd1a52c9f59399fd"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U06-subscription-upstream-error-unlabelled.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5155,
+      "sha256": "dbf1c0fa86b37b31c5899c27a9097b68578a820cdcf32a5bf8b5c618909f2c25"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U06-subscription-upstream-error-unlabelled.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1146,
+      "sha256": "0ba87dcbc8e5ca6bd41e32753a590788d08326e57cc83a0f48a86aa559828146"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U07-unrelated-non-object-usage-does-not-block.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10263,
+      "sha256": "cead7f0b763d96c77ebb430181e7d57fa510d3f8d66f540eb782553c27f4931c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U07-unrelated-non-object-usage-does-not-block.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1989,
+      "sha256": "83707757717753996a274cec9311e37bd2e395c6f8e80d8b8466a410991dc600"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U08-missing-observed-tier.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5913,
+      "sha256": "4a531b065ed17cd3974b9291beb43ce86d7bebad40861c40da50d5179bcdb22d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/U08-missing-observed-tier.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1095,
+      "sha256": "867350873368ac8a85101dd03b082862c09df63d3752f60291574c7a60fe429f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V01-cheaper-response-model-undercharge.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6121,
+      "sha256": "cb9a4e054270f78147e79186ca9923e2098eb739881658688ac1f497d0e242f3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V01-cheaper-response-model-undercharge.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1134,
+      "sha256": "7e9a119a5b8d2c354aa9f8e7fe0a687ee8d6fb1e84c470ff016b6c2a873a7c45"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V01-control-producer-price.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7219,
+      "sha256": "92fe7a3ff1aa827aab921be2c32a79d2c54f796f0d24dd353d7298d0d8bd4daf"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V01-control-producer-price.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1098,
+      "sha256": "b0f1ad8d7610721e67a0903068e09cb7bfeea4164285545702ecf2b586c6843c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V01-usage-settlement-other-response-model.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7457,
+      "sha256": "4c5156c5f76ac64ce49357fced1495b95c3049177f72b6f3730cae51e4f185e8"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V01-usage-settlement-other-response-model.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1143,
+      "sha256": "a54c7a9a2ed2cbfec382162394353505b99f4097660022d44d82df88b65d65bf"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V02-control-producer-price.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7217,
+      "sha256": "4707d9ffdc37cc8dddf4f9ca669005f2beb979d0e85d624a1e3894cf54b6a757"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V02-control-producer-price.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1098,
+      "sha256": "e562c196c41d3617ec3e117c7b6e3b44b74b160c3425852d11bf2af798843e61"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V02-unsplit-writes-undercharged.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6030,
+      "sha256": "e63bdfb5b37c4a670079e51dba38ca9c34b07880951bc480d1bc59d68c978632"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V02-unsplit-writes-undercharged.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1113,
+      "sha256": "aa53f043f5f0d634a167e5b4a9387827b83b0b0cca9a3f67f4143eb18bffc261"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V03-control-labelled-upstream-error.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5078,
+      "sha256": "e7291c8f7e6430bd8567bc0a4f6497564cf477d85288bdcc5239020c64b41513"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V03-control-labelled-upstream-error.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1125,
+      "sha256": "34c555a0b91a93ba242aadba2fc70c9640e1d7abee9e2a6a48f5dea291562737"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V03-subscription-upstream-error-labelled-api.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5177,
+      "sha256": "07dd0a48a32b606113770c2bfc175fe2cf1d1121834c3cf94bce832282c9440a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V03-subscription-upstream-error-labelled-api.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1152,
+      "sha256": "ca35ea4f5348be0ccfc865d7ec315c814e0c87353e2113952d007c8653111451"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V06-reservation-attempt-number-missing.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4802,
+      "sha256": "721480dfa5657e1ab94653ed7c90f9ed5b31246ef07e65a86d655fb0f8dec198"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V06-reservation-attempt-number-missing.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1111,
+      "sha256": "d8312c214ad2701e03e2e3ba54dec615c26a85cbf497048531dc04ed6452a2f9"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V07-unrelated-unreadable-log-does-not-block.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7489,
+      "sha256": "468aacb12a8a853ba3aa406d197b1d98fd2fa94ab8d1bfea677495572debc635"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/V07-unrelated-unreadable-log-does-not-block.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1149,
+      "sha256": "208fd458e9f38dbdd89a643cfcb92e232e5034c8a7db0fcc73a12692f0412eac"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC01-openai-usage-settlement.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7249,
+      "sha256": "5c92dc0972c0faa950200b793c0b4e24488b267cfcb9acfc74d1d6776ec6e062"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC01-openai-usage-settlement.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1104,
+      "sha256": "a42fcd1919778469e22425d9f50611a52b5ac243fae8c8958fd377bb1b66bee5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC02-anthropic-usage-settlement.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7297,
+      "sha256": "4f7e5a55bfaac08093718cb2a5e9a685b581fc77620e69cf6fd888845cb42c88"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC02-anthropic-usage-settlement.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1113,
+      "sha256": "9a76e43322c76004faf6ef29218d700c62d31a67bdfd03e485c2147f77c31389"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC03-reservation-settlement-with-usage.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6119,
+      "sha256": "8496bf5d398d3a93c16da55aa65a3887e72c81f810d48bf7aad5249cb919ba08"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC03-reservation-settlement-with-usage.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1134,
+      "sha256": "3087b568caaef103e6813bed1561a63ce57e66f4da14ceec199332aefe441eb4"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC04-upstream-error-keeps-reservation.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5528,
+      "sha256": "05ef5c2c05000ac00e113a845125aff16732b9729895d9c08a7c59d59381ec70"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC04-upstream-error-keeps-reservation.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1131,
+      "sha256": "ed4f2625e89aab422a0ff46a2765ffc0f91167e788e1097cefe0f84615fc4c40"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC05-unsettled-reservation.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4658,
+      "sha256": "bb18c7cf63aff93a87e04e985966bac23dd5b18157f34c3bcdb1e04b2eac9294"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC05-unsettled-reservation.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1075,
+      "sha256": "d5be3753dcd7269c40a08042e0c69060394058772fd00398f0f9183859b0582a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC06-unbudgeted-completed-request.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6670,
+      "sha256": "b7462d8f9dfdbeab42934c958d76175f70d74c22d79eee51c1b4fcf34c57e0cf"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC06-unbudgeted-completed-request.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1096,
+      "sha256": "eeba0f05e9a933f187c20e79c31d2a1a2f16f5f92b24c0908ca3f7652709b75e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC07-read-failure-paired.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7705,
+      "sha256": "477c81a7d8b3bc672f6e99b03dd050d60b82426eaba2b75592a36aa0670597db"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC07-read-failure-paired.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1092,
+      "sha256": "83cdfc65ff36f7d79348414b2ebd80b343c4678671476eb2bbc5cf919db5f1a2"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC08-subscription-measured-request.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5531,
+      "sha256": "855f7a1bc7f87831e859c7c31cd86a07aba481724e0055617ea7246d6f38dc65"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC08-subscription-measured-request.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1122,
+      "sha256": "ec77771e0ef04dd7b1439564bf8f0326c6b11d25a6ebba977717689cb2f7d6a0"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC11-multi-turn-session.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12219,
+      "sha256": "8974a50ea79e1b993a6c5445d40f9381dbbd5fa917ef2413eddf0fb59d9470f3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC11-multi-turn-session.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1902,
+      "sha256": "f14632ac0622724993c4a24f3ec15c1699c766a9123c272ddc7fa41e7c229e03"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC12-reused-n-without-errors.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10350,
+      "sha256": "cbd790211258f03fbaf89e70d93e0bb11c94569f16041efb3de690d63fc388b5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC12-reused-n-without-errors.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1104,
+      "sha256": "ec1755426f28a0306ef8ee5f78f0c030a2c25135c0a42974ec1e0b9232cc8e15"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC13-equal-timestamps.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7137,
+      "sha256": "7ba9ca1094060cf062c4f10d441208e01ec756e3a37a68842475691202dd714d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC13-equal-timestamps.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1083,
+      "sha256": "ae40c06dca87b0be6a6c9d25984f40ab5f4d3c3e4eb88db4696cd227cf43adfc"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC14-open-session-commitment.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8087,
+      "sha256": "4a46ccd9eed71f45bec9cc3825e8e91c829090df005c366747fecee8b6f73423"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC14-open-session-commitment.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1104,
+      "sha256": "1a597dafcca88172fcc8aa5ba64a3561b2c1d1a810e7f92b2b874c15cb1d42b3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC15-successor-not-charged-settled-predecessor-spend.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8406,
+      "sha256": "0842a7e33c8d271812ce7885f0037d44b01cfcc57a3d4cc0dce3fc41af912730"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/r8-completion-B/VC15-successor-not-charged-settled-predecessor-spend.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1176,
+      "sha256": "bef1cc4668d58aec5391522e0cbda716777d7dec2894619ddec08ae67b7e7215"
+    }
+  ],
+  "timeout_s": 1200,
+  "pid": 3118878,
+  "pgid": 3118878,
+  "started_at": "2026-11-14T04:27:03.404058Z",
+  "ended_at": "2026-11-14T04:32:05.507601Z",
+  "duration_s": 302.104,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/join-2/sabotage.stdout",
+    "length": 19024,
+    "sha256": "eb2a7423ab03d29a9e8a465a9fa6bcea76a6230e1ac8a951607301758fbf05cc"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/join-2/sabotage.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

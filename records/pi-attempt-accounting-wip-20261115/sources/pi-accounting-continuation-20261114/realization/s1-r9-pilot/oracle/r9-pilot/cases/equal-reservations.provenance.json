@@ -1,0 +1,33 @@
+{
+  "admission": "conditional_fixture",
+  "authority_ref": "ROOT-ADOPTION-R6.json",
+  "case_id": "VC01-openai-usage-settlement",
+  "derived_control_of": "oracle/r8-completion-B/VC01-openai-usage-settlement.provenance.json",
+  "grant_payloads": [
+    {
+      "auxiliary_exact_row_coreference": "unestablished",
+      "exact_copy_equivalence": false,
+      "exact_origin_refs": [
+        "S1/turn-1:1",
+        "S1/turn-1:2",
+        "S1/turn-1:3"
+      ],
+      "guarantee": "Usable dollar rid is interpreted only within this immutable conditional fixture source scope; same-origin-only duplicate rule except the inherited C3 exact-byte-copy control.",
+      "immutable_reference_namespace": "VC01-openai-usage-settlement/S1/turn-1",
+      "physical_bill_independence": "unestablished",
+      "source_origin_id": "S1/turn-1"
+    }
+  ],
+  "initial_scope_contracts": [
+    {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "VC01-openai-usage-settlement/S1/turn-1"
+    }
+  ],
+  "qualification_author": "01a1d8a4-d798-7fd1-ae5e-6955ec003480",
+  "qualification_derivation_ref": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/DERIVATIONS-R2.md",
+  "raw_input_sha256": "5b6b16d647aaf00f681f234a72398b96d0ba6bc3006c77b335dc91a75ce9eeb3"
+}

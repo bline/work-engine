@@ -1,0 +1,37 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/legacy-final-plan.json",
+  "plan_sha256": "d9a881b72747f48809e76d1871db8340b8793665ee48a189d62f5ae85c5311ef",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "final-check",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/stable-custody/final-check.json",
+      "record_sha256": "57e2d0c0f096558ca69455f8be38f6c9dd0095ccb844992605eb591121b058a6",
+      "leftovers": 0
+    },
+    {
+      "name": "final-selftest",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/stable-custody/final-selftest.json",
+      "record_sha256": "62af644a312941a9f09904e6e53681a26fda8d122e69d7eb7b91c75b30ebacd1",
+      "leftovers": 0
+    },
+    {
+      "name": "final-revisions",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/stable-custody/final-revisions.json",
+      "record_sha256": "9bdb24877b4e85383b62d62ab7e0322ae1178d15367626a5ece403c87b95de69",
+      "leftovers": 0
+    },
+    {
+      "name": "final-sabotage",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/stable-custody/final-sabotage.json",
+      "record_sha256": "22677168116fe7c8d223909064ae4883df0c687aa6111b2a7cf5248878c597f8",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

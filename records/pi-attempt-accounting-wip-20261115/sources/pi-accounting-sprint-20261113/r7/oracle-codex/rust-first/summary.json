@@ -1,0 +1,23 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/rust-plan.json",
+  "plan_sha256": "0d5a949ed9652e7e172a0736a74085f6619278c9323d434ba80e35ee34887a20",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/rust-first/build.json",
+      "record_sha256": "b567591e5129f446987d5a85a9cbb0e1a207cf415276f21f901feb79ec6f1089",
+      "leftovers": 0
+    },
+    {
+      "name": "assertions",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/rust-first/assertions.json",
+      "record_sha256": "322873799fc24de906c4597273e6796f8283a40465922983999f3855b3ad0724",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

@@ -1,0 +1,453 @@
+{
+  "added_in": "1.4-s1",
+  "ambiguity": null,
+  "case_id": "P133-A04-cache-counts-both-absent",
+  "class": "adversarial_synthetic",
+  "contract": "pi-accounting-contract/1.7-s1",
+  "controls": [
+    "VC06-unbudgeted-completed-request"
+  ],
+  "evaluations": [
+    {
+      "admission_request": {
+        "new": "100000000",
+        "objective": "o"
+      },
+      "expected": {
+        "admission": {
+          "decision": "not_established",
+          "limit": "1000000000",
+          "new": "100000000",
+          "objective": "o"
+        },
+        "attribution": [
+          {
+            "attempt": "row:S1/turn-1:line=1",
+            "candidates": [
+              "o"
+            ],
+            "objective": null,
+            "ownership": "unadmitted",
+            "placement": "uncertain"
+          }
+        ],
+        "objectives": [
+          {
+            "commitments": [],
+            "objective": "o",
+            "owned_closed": {
+              "high": {
+                "kind": "exact",
+                "nano": "0"
+              },
+              "low": "0",
+              "supported_low_evidence_ref": "oracle/r8-completion-A/P133-A04-cache-counts-both-absent.bundle.json#P133-A04-cache-counts-both-absent/default/o/owned_closed"
+            },
+            "owned_outstanding": {
+              "high": {
+                "kind": "exact",
+                "nano": "0"
+              },
+              "low": "0",
+              "supported_low_evidence_ref": "oracle/r8-completion-A/P133-A04-cache-counts-both-absent.bundle.json#P133-A04-cache-counts-both-absent/default/o/owned_outstanding"
+            },
+            "predecessor_obligations": {
+              "high": {
+                "kind": "exact",
+                "nano": "0"
+              },
+              "low": "0"
+            },
+            "provisional": false,
+            "reasons": [
+              "HistoricalUnadmitted"
+            ],
+            "status": "not_established"
+          }
+        ]
+      },
+      "name": "default",
+      "objectives": [
+        {
+          "admissions": [],
+          "closed_at": null,
+          "limit": "1000000000",
+          "objective": "o",
+          "predecessor": null,
+          "started_at": "2026-11-10T06:00:00Z",
+          "tree_sessions": [
+            "00000000-0000-4000-8000-0000000000c1"
+          ]
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "attempts": [
+      {
+        "accounting_result_ref": "oracle/r8-completion-A/P133-A04-cache-counts-both-absent.bundle.json#result:P133-A04-cache-counts-both-absent",
+        "billing": "established",
+        "blocking": [],
+        "correlation": {
+          "kind": "exact"
+        },
+        "diagnostics": [],
+        "evidence": [
+          "S1/turn-1:1"
+        ],
+        "execution": "terminal",
+        "exposure": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "17500000"
+          },
+          "low": {
+            "basis": "usage_valuation",
+            "nano": "6000000"
+          },
+          "pool": "pi_api"
+        },
+        "forwarding": "forwarded",
+        "key": "row:S1/turn-1:line=1",
+        "obligation": {
+          "amount_source": "none",
+          "cause": "no_reservation",
+          "state": "none"
+        },
+        "replacement": {
+          "eligible": false,
+          "reason": "NoReservation"
+        },
+        "settlement": {
+          "decision": "not_applicable",
+          "reasons": []
+        },
+        "valuation": {
+          "complete": true,
+          "derivations": [
+            {
+              "for": "low",
+              "model": "gpt-6-astra",
+              "nano": "6000000",
+              "provider": "openai",
+              "tier_multiplier": "1",
+              "usage": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 1000,
+                "input_tokens": 1000,
+                "output_tokens": 100
+              }
+            },
+            {
+              "for": "high",
+              "model": "gpt-6-astra",
+              "nano": "17500000",
+              "provider": "openai",
+              "tier_multiplier": "1",
+              "usage": {
+                "cache_write_tokens": 1000,
+                "cached_tokens": 0,
+                "input_tokens": 1000,
+                "output_tokens": 100
+              }
+            }
+          ],
+          "high": "17500000",
+          "identities": [
+            "openai/gpt-6-astra"
+          ],
+          "low": "6000000",
+          "state": "valued"
+        }
+      }
+    ],
+    "inventory": [],
+    "lifecycle": {
+      "S1": {
+        "clock": "trusted",
+        "reopened": false,
+        "state": "retired"
+      }
+    },
+    "non_attempt": [],
+    "unreadable": []
+  },
+  "findings": [
+    "P1.32-A-04"
+  ],
+  "group": "P1.33",
+  "historical": {
+    "a134_086bdec1": {
+      "blocking_kinds": [],
+      "decision": "admitted",
+      "evaluation": "default",
+      "note": "comparison only; A1.3.4 has no ownership (D1) concept: it attributes by session tree and time window",
+      "reader_sha256": "086bdec1d443064f6847821858f34bbf227f8804a9a5fc8a362416f62b29d621",
+      "reasons": [
+        "within the objective pi_api limit"
+      ],
+      "spent_high_nano": "17500000",
+      "spent_low_nano": "6000000"
+    }
+  },
+  "inputs": {
+    "rates": {
+      "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+      "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+    },
+    "reference_time": "2026-11-10T07:00:00Z",
+    "sessions": [
+      {
+        "alias": "S1",
+        "launch": {
+          "auth_lane": "api",
+          "model": "openai/gpt-6-astra",
+          "parent": "root"
+        },
+        "lifecycle": [
+          {
+            "at": "2026-11-10T06:00:10Z",
+            "event": "launch",
+            "turn": 1
+          },
+          {
+            "at": "2026-11-10T06:50:00Z",
+            "event": "retire"
+          }
+        ],
+        "logs": {
+          "turn-1": {
+            "final_newline": true,
+            "lines": [
+              "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"reasoning_tokens\": 0}, \"seconds\": 1.0}"
+            ]
+          }
+        },
+        "session_id": "00000000-0000-4000-8000-0000000000c1"
+      }
+    ]
+  },
+  "invariants": [
+    "INV-F5"
+  ],
+  "notes": "Both cache-count keys absent (no OpenAI row in the real corpus has this shape): every vertex of cached + write <= input is enumerated.",
+  "profile": "current_producer",
+  "provenance": {
+    "origin": "contract::P1.33 Module A repair (from VC06-unbudgeted-completed-request)"
+  },
+  "rationale": "A1.3.4 admits by attributing to the tree; the contract records the unbudgeted session as Unadmitted (O-6) and values the unknown cache counts over their vertices (A-04). Revision6: root policy P1-P6; independently frozen source/line arithmetic f097e5a5. Qualified identities preserve family; successful terminal AND integer200 AND required billing counts establishes completion. Closed obligations retain evidence by; none has amount_source none. Future gates use separate conditional test_mock witness; no live qualification.",
+  "reachability": "not_established",
+  "revisions": [],
+  "revisions_r3": [],
+  "revisions_r4": [],
+  "revisions_r5": [],
+  "revisions_r6": [
+    {
+      "field": "expected",
+      "from": {
+        "attempts": [
+          {
+            "billing": "established",
+            "blocking": [],
+            "correlation": {
+              "kind": "exact"
+            },
+            "diagnostics": [],
+            "evidence": [
+              "S1/turn-1:1"
+            ],
+            "execution": "terminal",
+            "exposure": {
+              "high": {
+                "basis": "usage_valuation",
+                "kind": "exact",
+                "nano": "17500000"
+              },
+              "low": {
+                "basis": "usage_valuation",
+                "nano": "6000000"
+              },
+              "pool": "pi_api"
+            },
+            "forwarding": "forwarded",
+            "key": "row:S1/turn-1:line=1",
+            "obligation": {
+              "amount_source": "valuation_or_unresolved",
+              "state": "none"
+            },
+            "replacement": {
+              "eligible": false,
+              "reason": "NoReservation"
+            },
+            "settlement": {
+              "decision": "not_applicable",
+              "reasons": []
+            },
+            "valuation": {
+              "complete": true,
+              "derivations": [
+                {
+                  "for": "low",
+                  "model": "gpt-6-astra",
+                  "nano": "6000000",
+                  "provider": "openai",
+                  "tier_multiplier": "1",
+                  "usage": {
+                    "cache_write_tokens": 0,
+                    "cached_tokens": 1000,
+                    "input_tokens": 1000,
+                    "output_tokens": 100
+                  }
+                },
+                {
+                  "for": "high",
+                  "model": "gpt-6-astra",
+                  "nano": "17500000",
+                  "provider": "openai",
+                  "tier_multiplier": "1",
+                  "usage": {
+                    "cache_write_tokens": 1000,
+                    "cached_tokens": 0,
+                    "input_tokens": 1000,
+                    "output_tokens": 100
+                  }
+                }
+              ],
+              "high": "17500000",
+              "identities": [
+                "gpt-6-astra"
+              ],
+              "low": "6000000",
+              "state": "valued"
+            }
+          }
+        ],
+        "inventory": [],
+        "lifecycle": {
+          "S1": {
+            "clock": "trusted",
+            "reopened": false,
+            "state": "retired"
+          }
+        },
+        "non_attempt": [],
+        "unreadable": []
+      },
+      "rule": "root P1-P6 approval07303d5c; frozen raw facts f097e5a5; explicit conjunction resolution and family preservation",
+      "to": {
+        "attempts": [
+          {
+            "billing": "established",
+            "blocking": [],
+            "correlation": {
+              "kind": "exact"
+            },
+            "diagnostics": [],
+            "evidence": [
+              "S1/turn-1:1"
+            ],
+            "execution": "terminal",
+            "exposure": {
+              "high": {
+                "basis": "usage_valuation",
+                "kind": "exact",
+                "nano": "17500000"
+              },
+              "low": {
+                "basis": "usage_valuation",
+                "nano": "6000000"
+              },
+              "pool": "pi_api"
+            },
+            "forwarding": "forwarded",
+            "key": "row:S1/turn-1:line=1",
+            "obligation": {
+              "amount_source": "none",
+              "cause": "no_reservation",
+              "state": "none"
+            },
+            "replacement": {
+              "eligible": false,
+              "reason": "NoReservation"
+            },
+            "settlement": {
+              "decision": "not_applicable",
+              "reasons": []
+            },
+            "valuation": {
+              "complete": true,
+              "derivations": [
+                {
+                  "for": "low",
+                  "model": "gpt-6-astra",
+                  "nano": "6000000",
+                  "provider": "openai",
+                  "tier_multiplier": "1",
+                  "usage": {
+                    "cache_write_tokens": 0,
+                    "cached_tokens": 1000,
+                    "input_tokens": 1000,
+                    "output_tokens": 100
+                  }
+                },
+                {
+                  "for": "high",
+                  "model": "gpt-6-astra",
+                  "nano": "17500000",
+                  "provider": "openai",
+                  "tier_multiplier": "1",
+                  "usage": {
+                    "cache_write_tokens": 1000,
+                    "cached_tokens": 0,
+                    "input_tokens": 1000,
+                    "output_tokens": 100
+                  }
+                }
+              ],
+              "high": "17500000",
+              "identities": [
+                "openai/gpt-6-astra"
+              ],
+              "low": "6000000",
+              "state": "valued"
+            }
+          }
+        ],
+        "inventory": [],
+        "lifecycle": {
+          "S1": {
+            "clock": "trusted",
+            "reopened": false,
+            "state": "retired"
+          }
+        },
+        "non_attempt": [],
+        "unreadable": []
+      }
+    }
+  ],
+  "revisions_r7": [],
+  "revisions_r8": [
+    {
+      "field": "attempts[row:S1/turn-1:line=1].accounting_result_ref",
+      "from": "__absent__",
+      "rule": "R8 finite completion A exact refs; authored01a1d840-e1a4-7b11-9b77-151fba94962a; derivation oracle/r8-completion-A/DERIVATIONS.json#P133-A04-cache-counts-both-absent",
+      "to": "oracle/r8-completion-A/P133-A04-cache-counts-both-absent.bundle.json#result:P133-A04-cache-counts-both-absent"
+    },
+    {
+      "field": "default/o.owned_closed.supported_low_evidence_ref",
+      "from": "__absent__",
+      "rule": "R8 finite completion A exact refs; authored01a1d840-e1a4-7b11-9b77-151fba94962a; derivation oracle/r8-completion-A/DERIVATIONS.json#P133-A04-cache-counts-both-absent",
+      "to": "oracle/r8-completion-A/P133-A04-cache-counts-both-absent.bundle.json#P133-A04-cache-counts-both-absent/default/o/owned_closed"
+    },
+    {
+      "field": "default/o.owned_outstanding.supported_low_evidence_ref",
+      "from": "__absent__",
+      "rule": "R8 finite completion A exact refs; authored01a1d840-e1a4-7b11-9b77-151fba94962a; derivation oracle/r8-completion-A/DERIVATIONS.json#P133-A04-cache-counts-both-absent",
+      "to": "oracle/r8-completion-A/P133-A04-cache-counts-both-absent.bundle.json#P133-A04-cache-counts-both-absent/default/o/owned_outstanding"
+    }
+  ],
+  "role": "finding",
+  "schema": "pi-accounting-corpus/1"
+}

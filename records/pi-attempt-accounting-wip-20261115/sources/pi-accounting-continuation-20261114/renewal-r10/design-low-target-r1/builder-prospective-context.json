@@ -1,0 +1,15 @@
+{
+  "schema": "manual-orchestration-context-check-v1",
+  "checked_at": "2026-11-14T08:21:53.632147+00:00",
+  "session_id": null,
+  "rollout": null,
+  "next_task_tokens": 110000,
+  "next_task_basis": "parent estimate",
+  "status": "usage_unavailable",
+  "unavailable_class": "launch_or_tool_failure",
+  "detail": "context-status: cannot stat rollout: No such file or directory (os error 2)",
+  "recommendation": "usage_unavailable",
+  "reasons": [
+    "context-status failed; do not substitute parent counters or assume zero"
+  ]
+}

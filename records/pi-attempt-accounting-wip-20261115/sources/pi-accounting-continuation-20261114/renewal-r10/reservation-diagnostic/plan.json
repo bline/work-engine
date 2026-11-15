@@ -1,0 +1,42 @@
+{
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-diagnostic/subject",
+  "env": {
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-diagnostic/subject",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "R10_EVIDENCE_EXECUTABLE": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/pi-accounting-spec-check"
+  },
+  "steps": [
+    {
+      "name": "rust-actual-reservation-mutant",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+        "r9_registered_actual_subject_qualification",
+        "--nocapture"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/freeze/manifest.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-diagnostic/subject/oracle/r9-pilot/cases/equal-reservations.json"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "python-actual-reservation-mutant",
+      "argv": [
+        "python3",
+        "validator/validate_corpus.py",
+        "check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-diagnostic/subject/corpus",
+        "--pilot"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/freeze/manifest.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-diagnostic/subject/oracle/r9-pilot/cases/equal-reservations.json"
+      ],
+      "timeout": 120
+    }
+  ]
+}
