@@ -140,6 +140,45 @@ model, harness, or capability set for controlled comparison. The repository has
 working pieces of this foundation; arbitrary workflow replay and a fully
 integrated organizational control plane remain design and integration work.
 
+## Why Pi and Docker
+
+Pi supports both API keys and subscription quota through the same agent
+harness. Both can provide the same tools, instructions, and containerized
+workspace. Choosing how to pay for inference does not require choosing a
+different execution environment.
+
+Work Engine pairs that common harness with disposable Docker workloads and
+durable state on the host. The selected architecture starts with one native
+Pi session per container: models plan and execute within their assigned
+boundaries, while the Rust host manages admission, execution limits, lifecycle,
+and evidence under explicit operator authority.
+
+That separation supports several practical advantages:
+
+- **Enforceable role boundaries.** Builders and reviewers can receive different
+  filesystem, tool, network, and credential access. Their permissions can be
+  enforced by the execution environment as well as described in instructions.
+- **Recovery beyond a conversation.** A container or model context can be
+  replaced while durable owners retain task state, evidence, and unresolved
+  obligations.
+- **Independent review.** Reviewers can run in separate environments with
+  explicit evidence access and recorded isolation conditions.
+- **Controlled experiments.** Pinned images, workspace inputs, and configuration
+  make it easier to compare models, instructions, and organizational designs
+  while holding the surrounding environment consistent.
+- **Less inference spent on machinery.** Deterministic host code handles routine
+  lifecycle and bookkeeping operations, leaving models to exercise judgment.
+
+This also connects organizational compilation to execution: a compiled role
+can become a bounded runtime with concrete capabilities, limits, and identity.
+
+These are architectural advantages, with qualification specific to each
+execution profile. Docker alone does not establish security or reviewer
+independence, and complete engineering integration remains in progress.
+See the [Pi/Docker design](planning/s10-pi-docker-convergence-amendment-20261103.md)
+and [bounded coding profiles](rust/crates/work-engine-manual-host/docs/pi-coding.md)
+for implementation details and established limits.
+
 ## Current standing
 
 Status as of November 14, 2026. Each result applies to its named scope and
