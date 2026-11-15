@@ -1,0 +1,33 @@
+[package]
+name = "work-engine-review-preparation"
+description = "Pure, inert review preparation: projects one canonical OrganizationCandidate into a review context with explicit blockers. A fixture-only (non-default feature) consumer exercises the existing episode transition under synthetic assumptions. Mints no authority, grants nothing, performs no effect."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "work_engine_review_preparation"
+path = "src/lib.rs"
+
+[features]
+default = []
+# Fixture-only boundary: the consumer composition that can reach a successful episode
+# transition exists only with this non-default feature. Its inputs are synthetic test
+# assumptions, never establishment evidence.
+fixture = []
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+work-engine-organization = { path = "../work-engine-organization" }
+review-episode-core = { path = "../review-episode-core" }
+
+[dev-dependencies]
+sha2.workspace = true
+
+[[test]]
+name = "fixture_consumer"
+path = "tests/fixture_consumer.rs"
+required-features = ["fixture"]

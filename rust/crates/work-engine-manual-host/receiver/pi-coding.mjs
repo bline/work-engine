@@ -5,7 +5,7 @@ import {markRuntimeStreamFunction} from '/pi/node_modules/@earendil-works/pi-cod
 import {createHash} from 'node:crypto';
 import {Type} from '/pi/node_modules/typebox/build/index.mjs';
 import {createInterface} from 'node:readline';
-import {openSync,writeFileSync,fsyncSync,closeSync,existsSync,readFileSync} from 'node:fs';
+import {openSync,writeFileSync,fsyncSync,closeSync,existsSync,readFileSync,readdirSync,lstatSync} from 'node:fs';
 const bridge=process.argv.includes('--lifecycle-bridge');
 const fixtureSigned=existsSync('/auth/signed-fixture.json');
 const live=existsSync('/profile/job.json');
@@ -47,6 +47,38 @@ const emit=value=>{
  const bytes=JSON.stringify({schema,sessionId:session?.sessionId??manager?.getSessionId(),...(fixtureSigned?{classification:'fixture provider/signing/identity; actual SDK runtime'}:{}),...value})+'\n';
  if(Buffer.byteLength(bytes)>65536)throw Error('output frame bound');
  process.stdout.write(bytes);
+};
+// Signed fixture only: /export is a size-limited tmpfs the Host cannot read, so its regular files are
+// sent in-band, with explicit bounds and a final manifest, before completion is reported.
+const exportBundle=()=>{
+ const MAX_TOTAL=1048576,MAX_FILES=16,MAX_PART=24576,MAX_PATH=128;
+ const files=[];
+ const walk=(dir,rel,depth)=>{
+  if(depth>6)throw Error('export depth');
+  for(const name of readdirSync(dir).sort()){
+   const path=rel?`${rel}/${name}`:name;const full=`${dir}/${name}`;const st=lstatSync(full);
+   if(st.isDirectory())walk(full,path,depth+1);
+   else if(st.isFile())files.push({path,full,size:st.size});
+   else throw Error('export special file');
+  }
+ };
+ walk('/export','',1);
+ const total=files.reduce((n,f)=>n+f.size,0);
+ if(files.length===0||files.length>MAX_FILES||total>MAX_TOTAL)throw Error('export bounds');
+ files.sort((a,b)=>a.path<b.path?-1:a.path>b.path?1:0);
+ let seq=0;const lines=[];
+ for(const f of files){
+  if(f.path.length>MAX_PATH||!/^[A-Za-z0-9._\/-]+$/.test(f.path))throw Error('export path');
+  const bytes=readFileSync(f.full);if(bytes.length!==f.size)throw Error('export size changed');
+  const sha=createHash('sha256').update(bytes).digest('hex');lines.push(`${f.path}\t${f.size}\t${sha}\n`);
+  let offset=0;
+  do{
+   const chunk=bytes.subarray(offset,offset+MAX_PART);
+   emit({type:'export_part',seq:seq++,path:f.path,offset,total:bytes.length,sha256:sha,data:chunk.toString('base64')});
+   offset+=chunk.length;
+  }while(offset<bytes.length);
+ }
+ emit({type:'export_final',files:files.length,bytes:total,manifest_sha256:createHash('sha256').update(lines.join('')).digest('hex')});
 };
 let startResolve;
 const start=new Promise(resolve=>{startResolve=resolve;});
@@ -337,6 +369,7 @@ try {
  const history={schema,...(fixtureSigned?{classification:'fake provider messages/usage; actual SDK manager and catalog configuration',nativeCatalog:{provider:model.provider,model:model.id}}:{}),provider:fixtureSigned?'fake_fixture':live?'openai-codex':'disabled_fixture',model:fixtureSigned?'fake-pi-model':live?model.id:null,sessionId:session.sessionId,messages:session.messages,entries:session.sessionManager.getEntries(),header:session.sessionManager.getHeader()};
  const fd=openSync('/export/coding-native-history.json','wx',0o600);
  try{writeFileSync(fd,JSON.stringify(history)+'\n');fsyncSync(fd);}finally{closeSync(fd);}
+ if(fixtureSigned)exportBundle();
  emit({type:'complete',provider:history.provider});
  }
 }catch{emit({type:'error',message:'Pi coding profile failed'});process.exitCode=2;}

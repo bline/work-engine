@@ -1,0 +1,65 @@
+{
+  "schema": "org-pi-design-decision/v1",
+  "at": "2026-11-14T09:42:56.543257+00:00",
+  "decision_owner": "01a1d364-788d-7490-8fed-758679336e2e",
+  "authority": "/home/bline/cbm-work/org-pi-review-continuation-20261114/grant-evidence.json",
+  "decision": "adopt_exact_R10_local_structural_correction_with_realization_prerequisites",
+  "candidate": {
+    "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/PLAN-R10.md",
+    "sha256": "8b168cf1276bf0be761d311b414d15e929b7398eac333176ec4d70b729e9b9e9"
+  },
+  "review": {
+    "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/architecture-r6/REVIEW-MESSAGE-73.md",
+    "sha256": "9ec7e396ba3db019021d9838558dac17303ba51cf7f0687c5345074b139a9b80",
+    "chars": 11492,
+    "session_id": "01a1d962-3fe8-7452-b00e-e45f5bbfcdba",
+    "turn_id": "01a1d965-15ba-73c2-aeda-9904155c0ec2",
+    "standing": "Complete bounded design judgment; separate fresh episode at entry; all wholeimplementation obligations incomplete."
+  },
+  "budget_correction": {
+    "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/architecture-r6/REVIEW-MESSAGE-76.md",
+    "sha256": "08eddd9c67fd40c39abd4c4c58c81b8c6f64a50993fe03dc9b738e075a5f4d7c",
+    "chars": 2509
+  },
+  "reviewed_history": {
+    "revision": 36,
+    "sha256": "4e3a692fb90c41de9c553621deb62959aa87cde8e41d4928dfab3968fa4bb5ae"
+  },
+  "prior_revision": "R9",
+  "classification": "Small same original review/remediation scope/additions0; no domain owner or capability/authority expansion.",
+  "basis": "Qualification must own applicability+completion; delivery owns reusable request/diagnostic meaning; prospective selected-package source superset addresses deleted-probe source discovery. Retain finite actor-attributed custody/source-bound declarations.",
+  "prerequisites": [
+    {
+      "id": "AR10-004",
+      "status": "OPEN",
+      "meaning": "Establish authorized realization that avoids protected configuration reads, or owning authority disposition/admissible evidence; unchanged bootstrap is inadmissible. Do not narrow complete input claim."
+    },
+    {
+      "id": "D-native-node-correspondence",
+      "status": "OPEN",
+      "meaning": "Represent parent lookup context separately from actual child invocation cwd/environment and establish source-bound correspondence."
+    },
+    {
+      "id": "prospective-budget-acceptance",
+      "status": "OPEN",
+      "meaning": "Exact repair/input/map subject and credible qualification/fullsemanticreview/closure funding must fit original100 before implementation admission."
+    }
+  ],
+  "bounded_next_scope": "Planning/diagnosis of permissible build/input realization and prospective map only; no ordinary source repair or qualification execution admitted.",
+  "ordinary_repair_authorized": false,
+  "implementation_acceptance": false,
+  "findings_closed": [],
+  "all_twenty_one_findings": "OPEN",
+  "full_review_twenty_obligations": "UNMET; A/C/D incomplete,B unlaunched,rootwhole/shared-interface owed",
+  "B_deferred": "Known candidate rejection makes another full review of old candidate unable to support acceptance; B coverage remains explicitly required on any proposed accepted subject, not replaced by design review.",
+  "cost_snapshot": "/home/bline/cbm-work/org-pi-review-continuation-20261114/cost-after-design-r6.json",
+  "cost_proxy_observed": 94.499872,
+  "remaining_before_tail": 5.500128,
+  "local_design_overrun": {
+    "observed": 5.021048,
+    "cap": 4,
+    "delta": 1.021048,
+    "settlement": "latest observation, not settled finaltail; no retrocapraise"
+  },
+  "holds": "All original holds survive including protectedconfiguration; no integration/production/commit/index/branch authority."
+}

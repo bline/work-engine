@@ -1,0 +1,36 @@
+[package]
+name = "work-engine-authority-store"
+description = "Private SQLite authority store for the P1-F fixture-only provisional computation vertical (fixture-scoped authority; mints no ordinary authority)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "work_engine_authority_store"
+path = "src/lib.rs"
+
+[features]
+default = []
+# Fixture-only boundary: every constructor of fixture admissions, grants, schedules and
+# fixture publication exists only with this non-default feature.
+fixture = []
+
+[[bin]]
+name = "p1f-helper"
+path = "src/bin/p1f-helper.rs"
+required-features = ["fixture"]
+
+[dependencies]
+rusqlite = { version = "=0.37.0", features = ["bundled"] }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+libc = "=0.2.190"
+work-engine-organization = { path = "../work-engine-organization" }
+work-engine-manual-host = { path = "../work-engine-manual-host" }
+
+[dev-dependencies]
+tempfile = "=3.27.0"
+session-task-admission = { path = "../session-task-admission" }

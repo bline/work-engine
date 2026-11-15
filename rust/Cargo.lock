@@ -4270,6 +4270,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
 
 [[package]]
+name = "work-engine-authority-store"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "session-task-admission",
+ "sha2",
+ "tempfile",
+ "thiserror",
+ "work-engine-manual-host",
+ "work-engine-organization",
+]
+
+[[package]]
 name = "work-engine-claims-host"
 version = "0.1.0"
 dependencies = [
@@ -4363,6 +4379,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "work-engine-organization"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+]
+
+[[package]]
 name = "work-engine-query"
 version = "0.1.0"
 dependencies = [
@@ -4370,6 +4396,20 @@ dependencies = [
  "serde_json",
  "session-query",
  "work-engine-server",
+]
+
+[[package]]
+name = "work-engine-review-delivery"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "review-episode-core",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+ "work-engine-organization",
+ "work-engine-review-preparation",
 ]
 
 [[package]]
@@ -4388,6 +4428,18 @@ dependencies = [
  "slice-campaign",
  "tempfile",
  "tokio",
+]
+
+[[package]]
+name = "work-engine-review-preparation"
+version = "0.1.0"
+dependencies = [
+ "review-episode-core",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+ "work-engine-organization",
 ]
 
 [[package]]

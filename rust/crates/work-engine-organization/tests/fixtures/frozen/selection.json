@@ -1,0 +1,91 @@
+{
+  "owner": "slice-supervisor",
+  "schemaVersion": 2,
+  "selectionId": "proposed-timestamp-review-selection",
+  "specialists": [
+    {
+      "obligationId": "rp3-initial-implementation-review",
+      "requiredClaims": [
+        {
+          "acceptance": {
+            "owner": "operator-production-qualification-20261107",
+            "source": "/home/bline/.local/state/work-engine/rust-production-qualification-20261107T0312/package/inputs/acceptance-boundary.proposed.json",
+            "unestablishedRoute": "hold-consumption-for-owner-disposition"
+          },
+          "claimId": "production-path-claim-v1@3c0d63252afdd66ad13f5864eadf4e11516728628cd7f816dc1ed4bcd02d1fb1",
+          "consumer": "slice-builder:production-qualification-20261107:1:review-005:timestamp-projection-v1",
+          "consumptionBoundary": "builder_projection",
+          "coveredState": "review-result",
+          "profile": {
+            "admissibleObservers": [
+              "review-execution-evidence"
+            ],
+            "allowedMechanisms": [
+              "claude-cli-json-v1"
+            ],
+            "continuity": "fresh_initial",
+            "id": "production-path-v1",
+            "integrityRequired": true,
+            "requiredCapabilities": [],
+            "requiredRealization": "rp0-guarded-claude-v1",
+            "revision": "production-path-profile-v1"
+          },
+          "proposition": "The initial RP3 implementation review result for the pinned candidate was produced by a fresh guarded Claude reviewer under a read-only capability envelope and verified execution-evidence custody, before the builder consumes it.",
+          "revision": "production-path-claim-revision-v1@f1c92d844ba4f0450863e7d41c6405109e579b02961f5acfccd99389bb106a1d",
+          "schemaVersion": 1,
+          "subject": {
+            "candidate": {
+              "commit": "96808de3d565a6c4b0211e8dc263cb7343514d74",
+              "patchIdentity": "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51",
+              "tree": "9c5d94ba059ea5b4ff497a0540f6b8a7476e4474"
+            },
+            "reviewEpisodeId": "ad20341a4937167c8442fbaa9e81288d"
+          }
+        },
+        {
+          "acceptance": {
+            "owner": "operator-production-qualification-20261107",
+            "source": "/home/bline/.local/state/work-engine/rust-production-qualification-20261107T0312/package/inputs/acceptance-boundary.proposed.json",
+            "unestablishedRoute": "hold-consumption-for-owner-disposition"
+          },
+          "claimId": "production-path-claim-v1@53ebf061ba74faaafb8c259df17a9b642dde4e82a1e8dc2ec53a9661abe2a313",
+          "consumer": "slice-campaign:production-qualification-20261107:1:review-005:timestamp-projection-v1",
+          "consumptionBoundary": "campaign_terminalization",
+          "coveredState": "review-result",
+          "profile": {
+            "admissibleObservers": [
+              "review-execution-evidence"
+            ],
+            "allowedMechanisms": [
+              "claude-cli-json-v1"
+            ],
+            "continuity": "fresh_initial",
+            "id": "production-path-v1",
+            "integrityRequired": true,
+            "requiredCapabilities": [],
+            "requiredRealization": "rp0-guarded-claude-v1",
+            "revision": "production-path-profile-v1"
+          },
+          "proposition": "The initial RP3 implementation review result for the pinned candidate was produced by a fresh guarded Claude reviewer under a read-only capability envelope and verified execution-evidence custody, before the campaign terminalizes it.",
+          "revision": "production-path-claim-revision-v1@47e4e1ad9b65daa08b6214979ee0897ab99004dd9d9ddd9a7a32b48eed94ffbc",
+          "schemaVersion": 1,
+          "subject": {
+            "candidate": {
+              "commit": "96808de3d565a6c4b0211e8dc263cb7343514d74",
+              "patchIdentity": "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51",
+              "tree": "9c5d94ba059ea5b4ff497a0540f6b8a7476e4474"
+            },
+            "reviewEpisodeId": "ad20341a4937167c8442fbaa9e81288d"
+          }
+        }
+      ],
+      "selection": "selected",
+      "skill": "implementation-review"
+    }
+  ],
+  "subject": {
+    "commit": "96808de3d565a6c4b0211e8dc263cb7343514d74",
+    "patchIdentity": "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51",
+    "tree": "9c5d94ba059ea5b4ff497a0540f6b8a7476e4474"
+  }
+}

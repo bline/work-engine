@@ -1,0 +1,17 @@
+[package]
+name = "work-engine-organization"
+description = "Pure organizational compilation: requirements schema, derivation, candidate, canonical identities. No I/O, no authority."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "work_engine_organization"
+path = "src/lib.rs"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true

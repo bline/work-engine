@@ -1,0 +1,1 @@
+I found a source-closure gap: `thiserror`’s build script compiles `build/probe.rs`, but that file is absent from the cold-build inputs and the common map. Its probe dep-info is deleted, so the reported “uncovered: []” misses it. I’m checking the remaining build helpers for the same issue. The five recorded emission/direct-run/retention joins match.

@@ -1,0 +1,1 @@
+The context limit requires preservation now, so I’m stopping substantive review. Two issues are supported so far: missing build-probe inputs, and a native-node declaration whose command spelling and working directory differ from the launch source. I’ll preserve the evidence, completed checks, and remaining obligations for Root before refreshing.
