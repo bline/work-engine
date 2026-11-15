@@ -1,0 +1,8 @@
+READY_ONLY
+
+- Loaded `$manual-orchestration`, reviewer role, startup/recovery/settings/control instructions, AGENTS.md, applicable doctrine, and coordination board.
+- Acknowledged root’s [identity binding](/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-evaluation-premise-r1/IDENTITY.md): reviewer `01a1d948-776f-7bb0-a3b2-66602a6eec79`; root `01a1d6e2-32ba-7701-9115-740dcb41af11` owns persistence and whole native final collection.
+- Bound rollout’s applied-settings record confirms `gpt-6-astra`, `xhigh`, tier `default`, CLI `0.169.0` (line 13). Environment reports read-only filesystem, restricted network, approval `never`. This self-report does **not** establish the capability grant or backend fulfillment.
+- Pinned context binary SHA-256 verified. Context wait failed: `unknown control option --step-percent`. No listener remains active. Explicit pinned check succeeded: **66,488 input tokens**, epoch **0**, observed `2026-11-14T09:01:23.038Z`. I own explicit checks before subsequent substantial phases; continuous pressure delivery remains unavailable.
+- Preserved authority: prospective cumulative **6 within the existing 100**, marks **4/5**, no deadline or additional grant. Preparation threshold **185,000** or earlier forecast; refresh before **220,000**, with root persisting continuation first.
+- PLAN.md remains unread; substantive review awaits the exact admitted packet. No writes, settings changes, network requests, children, builds, or paid API operations performed.

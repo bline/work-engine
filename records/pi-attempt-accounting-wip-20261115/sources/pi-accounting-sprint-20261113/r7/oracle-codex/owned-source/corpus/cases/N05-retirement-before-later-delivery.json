@@ -1,0 +1,394 @@
+{
+ "ambiguity": null,
+ "case_id": "N05-retirement-before-later-delivery",
+ "class": "adversarial_synthetic",
+ "contract": "pi-accounting-contract/1.6-s1",
+ "controls": [
+  "N05-control-consistent-retirement"
+ ],
+ "evaluations": [
+  {
+   "admission_request": {
+    "new": "100000000",
+    "objective": "o"
+   },
+   "expected": {
+    "admission": {
+     "decision": "refused",
+     "limit": "1000000000",
+     "new": "100000000",
+     "objective": "o"
+    },
+    "attribution": [
+     {
+      "attempt": "res:S1/turn-1:rid=1",
+      "cause": "ClockUntrusted",
+      "objective": "o",
+      "ownership": "owned",
+      "placement": "unplaceable"
+     }
+    ],
+    "objectives": [
+     {
+      "commitments": [
+       {
+        "admission_id": "a1",
+        "committed": "200000000",
+        "gate": {
+         "qualified": false,
+         "reasons": [
+          "NoGateEvidence"
+         ]
+        },
+        "kind": "at_least",
+        "state": "reopened"
+       }
+      ],
+      "objective": "o",
+      "owned_closed": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "owned_outstanding": {
+       "high": {
+        "kind": "at_least",
+        "nano": "800000000"
+       },
+       "low": "0"
+      },
+      "predecessor_obligations": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "provisional": true,
+      "reasons": [
+       "PlacementUnplaceable",
+       "ReopenedWithoutAdmission",
+       "UnenforcedCommitment",
+       "UnresolvedExposure"
+      ],
+      "status": "not_established"
+     }
+    ]
+   },
+   "name": "default",
+   "objectives": [
+    {
+     "admissions": [
+      {
+       "admission_id": "a1",
+       "rows": [
+        {
+         "admission_id": "a1",
+         "at": "2026-11-10T05:59:00Z",
+         "event": "pending",
+         "max_usd": 1.0
+        },
+        {
+         "admission_id": "a1",
+         "at": "2026-11-10T06:00:10Z",
+         "event": "launched",
+         "session_id": "00000000-0000-4000-8000-0000000000c1"
+        }
+       ],
+       "session": "00000000-0000-4000-8000-0000000000c1",
+       "source": "journal"
+      }
+     ],
+     "closed_at": null,
+     "limit": "1000000000",
+     "objective": "o",
+     "predecessor": null,
+     "started_at": "2026-11-10T05:50:00Z",
+     "tree_sessions": [
+      "00000000-0000-4000-8000-0000000000c1"
+     ]
+    }
+   ]
+  }
+ ],
+ "expected": {
+  "attempts": [
+   {
+    "billing": "unresolved",
+    "blocking": [
+     "UnresolvedExposure"
+    ],
+    "correlation": {
+     "kind": "exact"
+    },
+    "diagnostics": [],
+    "evidence": [
+     "S1/turn-1:1"
+    ],
+    "execution": "not_terminal",
+    "exposure": {
+     "high": {
+      "basis": "proxy_reservation",
+      "kind": "at_least",
+      "nano": "800000000"
+     },
+     "low": {
+      "basis": "none",
+      "nano": "0"
+     },
+     "pool": "pi_api"
+    },
+    "forwarding": "unknown",
+    "key": "res:S1/turn-1:rid=1",
+    "obligation": {
+     "amount_source": "reservation_bound",
+     "state": "outstanding"
+    },
+    "replacement": {
+     "eligible": false,
+     "reason": "NotUsageSettlement"
+    },
+    "settlement": {
+     "decision": "absent",
+     "reasons": [],
+     "reserved": "800000000"
+    },
+    "valuation": {
+     "state": "not_reported"
+    }
+   }
+  ],
+  "inventory": [],
+  "lifecycle": {
+   "S1": {
+    "clock": "untrusted",
+    "reason": "LifecycleBackwards",
+    "reopened": true,
+    "state": "contradicted"
+   }
+  },
+  "non_attempt": [],
+  "unreadable": []
+ },
+ "findings": [
+  "N-05"
+ ],
+ "group": "N-05",
+ "historical": {
+  "a134_086bdec1": {
+   "blocking_kinds": [
+    "pi_session_lifecycle_contradicted",
+    "pi_undated_call_unattributable"
+   ],
+   "decision": "not_established",
+   "evaluation": "default",
+   "note": "comparison only; A1.3.4 has no ownership (D1) concept: it attributes by session tree and time window",
+   "reader_sha256": "086bdec1d443064f6847821858f34bbf227f8804a9a5fc8a362416f62b29d621",
+   "reasons": [
+    "objective accounting unavailable, unpriced or inconsistent"
+   ],
+   "spent_high_nano": null,
+   "spent_low_nano": null
+  }
+ },
+ "inputs": {
+  "rates": {
+   "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  },
+  "reference_time": "2026-11-10T07:00:00Z",
+  "sessions": [
+   {
+    "alias": "S1",
+    "launch": {
+     "auth_lane": "api",
+     "model": "openai/gpt-6-astra",
+     "parent": "root"
+    },
+    "lifecycle": [
+     {
+      "at": "2026-11-10T05:59:10Z",
+      "event": "launch",
+      "turn": 1
+     },
+     {
+      "at": "2026-11-10T06:40:00Z",
+      "event": "retire"
+     },
+     {
+      "at": "2026-11-10T06:05:00Z",
+      "event": "deliver",
+      "turn": 2
+     },
+     {
+      "at": "2026-11-10T06:10:00Z",
+      "event": "retire"
+     }
+    ],
+    "logs": {
+     "turn-1": {
+      "final_newline": true,
+      "lines": [
+       "{\"at\": \"2026-11-10T06:00:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.8, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}"
+      ]
+     },
+     "turn-2": {
+      "final_newline": true,
+      "lines": []
+     }
+    },
+    "session_id": "00000000-0000-4000-8000-0000000000c1"
+   }
+  ]
+ },
+ "invariants": [
+  "INV-A5",
+  "INV-F7",
+  "INV-T4"
+ ],
+ "notes": "Under D1 the attempt is owned through the admission, so it can no longer fall outside the window; the rollback still makes the session clock untrusted.",
+ "profile": "current_producer",
+ "provenance": {
+  "origin": "repro_p125.py::test_N05_earlier_retirement",
+  "variant": "claimed (re-expressed with D1 ownership)"
+ },
+ "rationale": "Revision 4 (contract 1.3-s1): default not_established -> refused (OQ-2 12.4 step 3). Revision6: root policy P1-P6; independently frozen source/line arithmetic f097e5a5. Qualified identities preserve family; successful terminal AND integer200 AND required billing counts establishes completion. Closed obligations retain evidence by; none has amount_source none. Future gates use separate conditional test_mock witness; no live qualification.",
+ "reachability": "producer_unreachable",
+ "revisions": [
+  {
+   "field": "attempts[res:S1/turn-1:rid=1].exposure.high.kind",
+   "from": "exact",
+   "rule": "FB-2 (Q2): reservation or proxy-charge support is never a finite bound",
+   "to": "at_least"
+  },
+  {
+   "field": "attempts[res:S1/turn-1:rid=1].blocking",
+   "from": [],
+   "rule": "K: AtLeast => UnresolvedExposure",
+   "to": [
+    "UnresolvedExposure"
+   ]
+  },
+  {
+   "field": "default/o.owned_outstanding",
+   "from": {
+    "high": {
+     "kind": "exact",
+     "nano": "800000000"
+    },
+    "low": "0"
+   },
+   "rule": "12.1 rollup of revised attempts",
+   "to": {
+    "high": {
+     "kind": "at_least",
+     "nano": "800000000"
+    },
+    "low": "0"
+   }
+  },
+  {
+   "field": "default/o.reasons",
+   "from": [
+    "PlacementUnplaceable",
+    "ReopenedWithoutAdmission"
+   ],
+   "rule": "12.1 reasons implied by revised facts",
+   "to": [
+    "PlacementUnplaceable",
+    "ReopenedWithoutAdmission",
+    "UnresolvedExposure"
+   ]
+  }
+ ],
+ "revisions_r3": [
+  {
+   "field": "attempts[res:S1/turn-1:rid=1].execution",
+   "from": "__absent__",
+   "rule": "R-07 6.2 Execution",
+   "to": "not_terminal"
+  },
+  {
+   "field": "attempts[res:S1/turn-1:rid=1].billing",
+   "from": "__absent__",
+   "rule": "R-07 6.2 Billing",
+   "to": "unresolved"
+  },
+  {
+   "field": "lifecycle[S1].reopened",
+   "from": "__absent__",
+   "rule": "R-10 10: reopened is a separate fact from the terminal state",
+   "to": true
+  },
+  {
+   "field": "default/o.commitments[a1].kind",
+   "from": "__absent__",
+   "rule": "R-04 12.3 A-5 (Q10, P1.30): open and pending commitments rest on an unenforced declared cap",
+   "to": "at_least"
+  },
+  {
+   "field": "default/o.reasons",
+   "from": [
+    "PlacementUnplaceable",
+    "ReopenedWithoutAdmission",
+    "UnresolvedExposure"
+   ],
+   "rule": "12.1 reasons implied by revised facts",
+   "to": [
+    "PlacementUnplaceable",
+    "ReopenedWithoutAdmission",
+    "UnenforcedCommitment",
+    "UnresolvedExposure"
+   ]
+  }
+ ],
+ "revisions_r4": [
+  {
+   "field": "profile",
+   "from": "__absent__",
+   "rule": "OQ-1 2.3: capability profile (release 92a03789 writes no gate evidence)",
+   "to": "current_producer"
+  },
+  {
+   "field": "default/o.commitments[a1].gate",
+   "from": "__absent__",
+   "rule": "OQ-1 A-5: every commitment records its gate qualification; current producer: no gate evidence",
+   "to": {
+    "qualified": false,
+    "reasons": [
+     "NoGateEvidence"
+    ]
+   }
+  },
+  {
+   "field": "default/admission.decision",
+   "from": "not_established",
+   "rule": "OQ-2 12.4 step 3: known owned amounts, valid commitments and the request exceed the limit",
+   "to": "refused"
+  }
+ ],
+ "revisions_r5": [
+  {
+   "field": "attempts[res:S1/turn-1:rid=1].replacement",
+   "from": "__absent__",
+   "rule": "A-01 2.1: replacement eligibility is an explicit fact",
+   "to": {
+    "eligible": false,
+    "reason": "NotUsageSettlement"
+   }
+  }
+ ],
+ "revisions_r6": [],
+ "revisions_r7": [
+  {
+   "field": "default/o.provisional",
+   "from": false,
+   "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+   "to": true
+  }
+ ],
+ "role": "finding",
+ "schema": "pi-accounting-corpus/1"
+}

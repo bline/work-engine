@@ -1,0 +1,72 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/ROOT-JOIN-PLAN.json",
+  "plan_sha256": "be5d7b146870ea496d2cd8875f25655f48cc2c46f6612e43622c2e1bac23b4f8",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "python-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/root-join/python-controls.json",
+      "record_sha256": "a88c662a04b02a4da4767c0086b58e16f1561d98435e62f3d73a803629c8fe7d",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/root-join/rust-positive.json",
+      "record_sha256": "e5ae3227cd3c7f642134bd8bff0f59b315308944bd6684b0670ed0d3d410fde4",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-r10-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/root-join/rust-r10-controls.json",
+      "record_sha256": "4e8db3725d462729788fe169c2ca28d1222eb66d39baa8c467613ad89d547050",
+      "leftovers": 0
+    },
+    {
+      "name": "python-main-pilot",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/root-join/python-main-pilot.json",
+      "record_sha256": "e0aaaacb95f668e41e025990d3eefff0dbe882eaf4681931f2c381503fd24d52",
+      "leftovers": 0
+    },
+    {
+      "name": "generated",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/root-join/generated.json",
+      "record_sha256": "d4ee82da4841c0a164510ede19faa22505dc396b7f4a7b4225df270043348b8b",
+      "leftovers": 0
+    },
+    {
+      "name": "impact",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/root-join/impact.json",
+      "record_sha256": "e0ec5df229e18570a39af5933997b0fe0e27777c6cef6f033b71a277264c94a8",
+      "leftovers": 0
+    },
+    {
+      "name": "schema_agreement",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/root-join/schema_agreement.json",
+      "record_sha256": "7e0243a1c5c513d904f69c7d8efa74d743d30477cf27d36d662e124c91e03cbc",
+      "leftovers": 0
+    },
+    {
+      "name": "wire_corpus",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/root-join/wire_corpus.json",
+      "record_sha256": "9a54edb0944cb9a42f47aa2bf55fdb69faeb47037e76f9897190d5247c79582d",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence_controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/root-join/evidence_controls.json",
+      "record_sha256": "8a7fcf776232b81415c7b4eefabcc9f5682d0e6fd8db0f7c3fbecadc1dfebbe9",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

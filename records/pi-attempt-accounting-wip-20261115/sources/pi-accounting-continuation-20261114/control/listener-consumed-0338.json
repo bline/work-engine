@@ -1,0 +1,41 @@
+{
+  "job": 26461,
+  "owner": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "next_since": 5368,
+  "next_control_cursor": "{\"version\":1,\"binding\":{\"host\":\"codex\",\"session\":\"01a1d6e2-32ba-7701-9115-740dcb41af11\",\"agent\":null,\"rollout\":\"/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T14-48-30-01a1d6e2-32ba-7701-9115-740dcb41af11.jsonl\",\"trigger\":200000,\"band_floor\":235000,\"lead_calls\":3},\"level\":\"planning\",\"epoch\":4,\"model\":\"gpt-6.1-sol\",\"window\":475000,\"observation_status\":\"latest_valid_observation\",\"line\":3721}",
+  "next_budget_cursor": "eyJhY2NvdW50X3F1b3RhX3N0YXR1cyI6ICJvYnNlcnZlZCIsICJvYmplY3RpdmVfaWQiOiAiZGU4NjY3YjYtYjA5Ni00NDgzLThjNmUtYjk0YzM5YTlhYTE2IiwgInN0YXRlcyI6IHsiW1wiY292ZXJhZ2VfY2hhbmdlZFwiLG51bGwsbnVsbCxcImNvdmVyYWdlXCJdIjogeyJyYW5nZWQiOiBmYWxzZSwgInN0YXR1cyI6ICJjb21wbGV0ZSIsICJ1bmRhdGVkX2NhbGxzIjogMCwgInVua25vd25fc3BlbmQiOiBmYWxzZSwgInVucHJpY2VkX2NhbGxzIjogMH0sICJbXCJsaW1pdF9mcmFjdGlvblwiLFwiY29kZXhcIixudWxsLDUwLjAsXCJ1c2VyXCJdIjogZmFsc2UsICJbXCJsaW1pdF9mcmFjdGlvblwiLFwiY29kZXhcIixudWxsLDgwLjAsXCJ1c2VyXCJdIjogZmFsc2UsICJbXCJsaW1pdF9yZWFjaGVkXCIsXCJjb2RleFwiLG51bGwsMTAwLjAsXCJ1c2VyXCJdIjogZmFsc2UsICJbXCJtYXJrX2Nyb3NzZWRcIixcImNvZGV4XCIsbnVsbCw2MC4wLFwidXNlclwiXSI6IGZhbHNlLCAiW1wibWFya19jcm9zc2VkXCIsXCJjb2RleFwiLG51bGwsODAuMCxcInVzZXJcIl0iOiBmYWxzZSwgIltcIm1hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixudWxsLDkwLjAsXCJ1c2VyXCJdIjogZmFsc2UsICJbXCJub2RlX21hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixcIjAxYTFkODAyLWY4ZDktNzg4MC05NjE0LWRmMjhmMmM0MzQ5MVwiLDUuMCxcInN1cGVydmlzb3JcIl0iOiBmYWxzZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ4MDItZjhkOS03ODgwLTk2MTQtZGYyOGYyYzQzNDkxXCIsNi4wLFwic3VwZXJ2aXNvclwiXSI6IGZhbHNlLCAiW1wibm9kZV9tYXJrX2Nyb3NzZWRcIixcImNvZGV4XCIsXCIwMWExZDgxMS05M2RlLTdlZjAtOWNjNy03NmQzNGYzYTkwY2RcIiw2LjAsXCJzdXBlcnZpc29yXCJdIjogZmFsc2UsICJbXCJub2RlX21hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixcIjAxYTFkODExLTkzZGUtN2VmMC05Y2M3LTc2ZDM0ZjNhOTBjZFwiLDguMCxcInN1cGVydmlzb3JcIl0iOiBmYWxzZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ4MWItMThjNC03ZjExLWFmMDAtYzZhNzU4NjdlOGNjXCIsMTQuMCxcInN1cGVydmlzb3JcIl0iOiBmYWxzZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ4MWItMThjNC03ZjExLWFmMDAtYzZhNzU4NjdlOGNjXCIsMTguMCxcInN1cGVydmlzb3JcIl0iOiBmYWxzZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ4MWItMzIzYi03MTEzLTkzYWQtN2NmYjA2ZTdjMjhmXCIsMTQuMCxcInN1cGVydmlzb3JcIl0iOiBmYWxzZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ4MWItMzIzYi03MTEzLTkzYWQtN2NmYjA2ZTdjMjhmXCIsMTguMCxcInN1cGVydmlzb3JcIl0iOiBmYWxzZX19",
+  "topics": [
+    "aspect:pi-accounting",
+    "control:session:01a1d6e2-32ba-7701-9115-740dcb41af11"
+  ],
+  "exclude_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "control_events": [
+    {
+      "agent_id": null,
+      "authority": "observation_only",
+      "band_floor_tokens": 235000,
+      "context_window_tokens": 475000,
+      "epoch": 4,
+      "estimated_calls_to_band": 30.634716017868538,
+      "forecast_basis": "recent same-epoch endpoint growth; empirical band, not a reset deadline",
+      "freshness": "recent_file_modification",
+      "growth_sample_count": 8,
+      "headroom_to_band_tokens": 34289,
+      "host": "codex",
+      "input_tokens": 200711,
+      "kind": "context_pressure",
+      "last_record_gap_line": null,
+      "level": "planning",
+      "limitations": [],
+      "observation_status": "latest_valid_observation",
+      "observed_at": "2026-11-14T03:33:25.206Z",
+      "recorded_model": "gpt-6.1-sol",
+      "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "source_line": 3721,
+      "topic": "control:session:01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "trigger_tokens": 200000,
+      "unavailable_detail": null
+    }
+  ],
+  "budget_events": []
+}

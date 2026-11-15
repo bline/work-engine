@@ -1,0 +1,178 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "oracle/r8-completion-B/DERIVATIONS.json#U05-inconsistent-charge-without-response-id",
+        "predecessor_subject_refs": [
+          "baseline:16a23b6fdbdda8453a33189a72fb0ded24c8463a2e2d9531c0758e8c598808a5"
+        ],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": [
+          "conditional-ticket:S1/turn-1"
+        ]
+      },
+      "exact_links": [],
+      "grants": [
+        {
+          "admission": "conditional_fixture",
+          "assumption_refs": [
+            "Inherited immutable ticket namespace only; no exact auxiliary link or physical-bill independence."
+          ],
+          "authority_ref": "ROOT-ADOPTION-R6.json",
+          "covered_extent_ref": "sha256:c344ae82315fb922da92e0299c4f2514c6bda03b661327fa1a5ea04b473ced03",
+          "covered_origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "exact_payload_ref": "oracle/r8-completion-B/U05-inconsistent-charge-without-response-id.provenance.json#S1/turn-1",
+          "grant_id": "initial-scope:S1/turn-1",
+          "guarantee_kind": "initial_reference_scope",
+          "observer_or_harness_ref": "inherited-corpus-conditional-fixture"
+        }
+      ],
+      "id": "input:U05-inconsistent-charge-without-response-id",
+      "identity_bindings": [],
+      "initial_contracts": [
+        {
+          "contract_id": "conditional-ticket:S1/turn-1",
+          "duplicate_rule": "same_origin_only",
+          "grant_ref": "initial-scope:S1/turn-1",
+          "reference_namespace": "dollar_ticket",
+          "scope_id": "U05-inconsistent-charge-without-response-id/S1/turn-1"
+        }
+      ],
+      "kind": "accounting_input_proof",
+      "lineage_id": "U05-inconsistent-charge-without-response-id",
+      "origins": [
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:1",
+          "original_position": 1,
+          "raw_bytes_sha256": "70f7e415dc1a71b54acc58117be26d6107a68ec0a7ed057982c6a8653d59549a",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:c344ae82315fb922da92e0299c4f2514c6bda03b661327fa1a5ea04b473ced03"
+        },
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:2",
+          "original_position": 2,
+          "raw_bytes_sha256": "483079cfc19e081a00d507e20b6b48fd8b19d75e16631a08f9c9dcb65cc8cd48",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:c344ae82315fb922da92e0299c4f2514c6bda03b661327fa1a5ea04b473ced03"
+        }
+      ],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ]
+        }
+      ],
+      "continuity_result": "unestablished",
+      "coverage_decisions": [],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [
+        {
+          "context_origin_ref": "S1/turn-1:2",
+          "predicate_ref": "same-original-usage-origin",
+          "usage_origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "id": "result:U05-inconsistent-charge-without-response-id",
+      "input_proof_ref": "input:U05-inconsistent-charge-without-response-id",
+      "kind": "accounting_result",
+      "lineage_id": "U05-inconsistent-charge-without-response-id",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "U05-inconsistent-charge-without-response-id/default/o/owned_closed",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        },
+        {
+          "alternative_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "basis": "usage_valuation",
+          "credit_mode": "single_ambiguous",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "U05-inconsistent-charge-without-response-id/default/o/owned_outstanding",
+          "seed_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "selected_low": "15000000",
+          "single_floor": "15000000"
+        }
+      ],
+      "origins": [
+        {
+          "active_high_unit_id": "res:S1/turn-1:rid=1",
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:1",
+          "origin_ref": "S1/turn-1:1"
+        },
+        {
+          "active_high_unit_id": "res:S1/turn-1:rid=1",
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:2",
+          "origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "primary_validities": [
+        {
+          "applicable_check_refs": [
+            "case:U05-inconsistent-charge-without-response-id#attempt:res:S1/turn-1:rid=1/settlement"
+          ],
+          "distinct_reservation_refs": [
+            "S1/turn-1:1"
+          ],
+          "distinct_settlement_refs": [
+            "S1/turn-1:2"
+          ],
+          "obligation_id": "validity:res:S1/turn-1:rid=1",
+          "validity_result": "rejected"
+        }
+      ],
+      "unbudgeted_applicabilities": [],
+      "unbudgeted_completions": [],
+      "units": [
+        {
+          "exposure_ref": "case:U05-inconsistent-charge-without-response-id#attempt:res:S1/turn-1:rid=1",
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "state": "active",
+          "unit_id": "res:S1/turn-1:rid=1"
+        }
+      ],
+      "valuation_records": [
+        {
+          "complete": true,
+          "usage_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "valuation_id": "valuation:res:S1/turn-1:rid=1",
+          "wire_ref": "case:U05-inconsistent-charge-without-response-id#attempt:res:S1/turn-1:rid=1/valuation"
+        }
+      ],
+      "version": "1.7-s1"
+    }
+  ]
+}

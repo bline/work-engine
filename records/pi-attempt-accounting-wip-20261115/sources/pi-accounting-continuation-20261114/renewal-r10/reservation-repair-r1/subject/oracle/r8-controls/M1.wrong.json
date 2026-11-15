@@ -1,0 +1,29 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "none",
+      "kind": "exact",
+      "nano": "0"
+    },
+    "low": "0"
+  },
+  "findings": [
+    "IdentityContradiction"
+  ],
+  "id": "result:M1",
+  "units": [
+    {
+      "high": {
+        "basis": "none",
+        "kind": "exact",
+        "nano": "0"
+      },
+      "id": "primary:r+s",
+      "low": "0",
+      "origins": [
+        "r",
+        "s"
+      ]
+    }
+  ]
+}

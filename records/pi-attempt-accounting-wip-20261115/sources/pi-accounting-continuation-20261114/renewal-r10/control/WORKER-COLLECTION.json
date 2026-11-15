@@ -1,0 +1,229 @@
+{
+  "both_exact_finals_collected": true,
+  "all_owned_hashes_verified": true,
+  "current_files": 967,
+  "changed_paths": [
+    "contract/CK-GENERATED.md",
+    "contract/TRANSITIONS.md",
+    "corpus/SCHEMA.md",
+    "oracle/r8-controls/VC07-conditional.bundle.json",
+    "oracle/r8-controls/VC07-unlinked.bundle.json",
+    "oracle/r9-pilot/cases/admitted-copy.bundle.json",
+    "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json",
+    "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.provenance.json",
+    "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json",
+    "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.provenance.json",
+    "oracle/r9-pilot/cases/same-origin.bundle.json",
+    "spec/ck.json",
+    "tooling/spec-check/src/applicability.rs",
+    "tooling/spec-check/src/lib.rs",
+    "tooling/spec-check/src/main.rs",
+    "tooling/spec-check/tests/independent_raw_axes.rs",
+    "tooling/spec-check/tests/r9_spec_payloads.rs",
+    "validator/r10_admitted.json",
+    "validator/r9_pilot.py",
+    "validator/test_r10_qualification.py",
+    "validator/validate_corpus.py"
+  ],
+  "custody": [
+    {
+      "role": "oracle",
+      "name": "build-evidence",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/final-custody/build-evidence.json",
+      "leftovers": 0
+    },
+    {
+      "role": "oracle",
+      "name": "python-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/final-custody/python-controls.json",
+      "leftovers": 0
+    },
+    {
+      "role": "oracle",
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/final-custody/build.json",
+      "leftovers": 0
+    },
+    {
+      "role": "oracle",
+      "name": "rust-positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/final-custody/rust-positive.json",
+      "leftovers": 0
+    },
+    {
+      "role": "oracle",
+      "name": "rust-r10-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/final-custody/rust-r10-controls.json",
+      "leftovers": 0
+    },
+    {
+      "role": "oracle",
+      "name": "python-main-pilot",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/final-custody/python-main-pilot.json",
+      "leftovers": 0
+    },
+    {
+      "role": "oracle",
+      "name": "source-and-raw-preservation",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/preservation-custody/source-and-raw-preservation.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/tests-final/build.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "payloads",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/tests-final/payloads.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "applicability",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/tests-final/applicability.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "generated-check",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/generated-check.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "canonical-check",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/canonical-check.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "selected-retained_charge-0",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/selected-retained_charge-0.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "selected-primary_anchor-0",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/selected-primary_anchor-0.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "selected-primary_anchor-1",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/selected-primary_anchor-1.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "selected-primary_anchor-2",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/selected-primary_anchor-2.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "selected-malformed_response_model-0",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/selected-malformed_response_model-0.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "selected-malformed_response_model-1",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/selected-malformed_response_model-1.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "selected-reservation_classes-0",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/selected-reservation_classes-0.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "VC07-conditional",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/VC07-conditional.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "VC07-unlinked",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/VC07-unlinked.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "cli-positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/cli-positive.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "cli-stale-extent",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/cli-stale-extent.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "cli-wrong-fragment",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/cli-wrong-fragment.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "cli-wrong-scope",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/cli-wrong-scope.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "schema_agreement",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/consistency/schema_agreement.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "wire_corpus",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/consistency/wire_corpus.json",
+      "leftovers": 0
+    },
+    {
+      "role": "spec",
+      "name": "evidence_controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/consistency/evidence_controls.json",
+      "leftovers": 0
+    }
+  ],
+  "generated_schema_projection": "corpus/SCHEMA.md differs only generated source digest; actor unknown, root adopting deterministic derived projection subject to generated gate",
+  "findings": "all open",
+  "no_owned_worker_jobs": "reported terminal collected and custody zero leftovers"
+}

@@ -1,0 +1,37 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/plan.json",
+  "plan_sha256": "7f8d3a8e44a0e210611dbe1b45ab2c3b5ecfe2c68ccccb1ca2b04a154e741b5e",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "missing-rust",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/custody/missing-rust.json",
+      "record_sha256": "f0c0b92db6ce644fada4ab6de7e4087bb8e3c17d9050ea16d5b1000d04b5845c",
+      "leftovers": 0
+    },
+    {
+      "name": "missing-python",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/custody/missing-python.json",
+      "record_sha256": "2646fbd4797db36f26fded9bbe56eb04e32528bed954e873a96f784e912a5b41",
+      "leftovers": 0
+    },
+    {
+      "name": "renamed-rust",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/custody/renamed-rust.json",
+      "record_sha256": "5089feef136bad1e8590b00ab4e48749a82539baefbe68daed9846f37e3ffa3c",
+      "leftovers": 0
+    },
+    {
+      "name": "renamed-python",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/custody/renamed-python.json",
+      "record_sha256": "a6d204d962feabd3b97fd9938036da88abe3ae14535e74cf7b20750b59095775",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

@@ -1,0 +1,52 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "independent-first",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--test",
+    "independent_raw_axes",
+    "--",
+    "--nocapture"
+  ],
+  "cwd": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/target-oracle",
+    "ORACLE_REPORT": "/home/bline/cbm-work/p136-s1r6/s1/oracle/qualification.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2446780,
+  "inputs": [
+    {
+      "path": "tests/independent_raw_axes.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 11724,
+      "sha256": "70afad29a4185a3cd45cb5f7970bd7f361e190aa3fb7159da165125578bd4cb5"
+    }
+  ],
+  "timeout_s": 180.0,
+  "pid": 2447128,
+  "pgid": 2447128,
+  "started_at": "2026-11-13T22:31:55.969734Z",
+  "ended_at": "2026-11-13T22:33:07.565551Z",
+  "duration_s": 71.596,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/custody/independent-first.stdout",
+    "length": 205,
+    "sha256": "1f94108ae26fdea7719b58749b69894ec4afe0bea25a86f0e3af832426901162"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/custody/independent-first.stderr",
+    "length": 1021,
+    "sha256": "ad6224f430362fb8447cc1def65e97049461b4fb7e9111639d74135e4934972d"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

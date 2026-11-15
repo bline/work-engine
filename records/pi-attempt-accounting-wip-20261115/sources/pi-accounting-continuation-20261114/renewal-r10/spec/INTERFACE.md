@@ -1,0 +1,11 @@
+# R10 structural interface
+
+Bundle/schema shape is unchanged. `validate_accounting_bundle(&Value)` remains an explicitly supplied-document-only structural validator. New `validate_accounting_bundle_with_payloads(&Value, &BTreeMap<String, Value>)` additionally resolves every grant by its **full exact_payload_ref** key, failing unknown/missing kinds and fragments closed. This is structural coherence, never independent admission or financial qualification.
+
+Actual CLI `evidence ROOT BUNDLE` invokes the resolved validator. File references resolve relative to ROOT or the bundle directory; distinct simultaneous matches fail as ambiguous. Initial-scope payload records retain their current `grant_payloads`, `raw_input_sha256`, `initial_scope_contracts`, `case_id` shape; source fragment identifies exactly one source_origin_id. Check exact covered inventory, extent/source revision, exact initial contracts, scope/namespace/duplicate policy and payload admission/authority. Independent oracle must check raw positions/bytes against independently admitted raw inputs: provenance records alone do not contain those bytes.
+
+Conditional exact-row payload uses existing `conditional_harness_assumptions.exact_row_coreference` and `original_inputs`; deterministic line-byte hashes bind actual from/to records and namespace/extent, without monetary interpretation. Copy equivalence must be separately admitted and class bytes/scope remain subject to existing structural checks plus independent finite raw checks. No generated financial expectations or general grant interpreter.
+
+Own pressure listener failed collected exit1 (`unknown control option --step-percent`); explicit pinned context checks own fallback at phase boundaries. Identity acknowledged from IDENTITY.md; root sole collector.
+
+Gated VC11 retains the separate typed `DERIVATIONS.json#CASE/initial_reference_scope_payloads/GRANT` representation; finite resolution checks its case, grant, original inventory hashes/positions and scope/namespace. Conditional VC07 binds canonical original_inputs SHA256 to source_revision_ref and uses the closed two-origin from-at-position-1/to-at-position-2 premise. All nine selected actual CLI positives pass after oracle projection.

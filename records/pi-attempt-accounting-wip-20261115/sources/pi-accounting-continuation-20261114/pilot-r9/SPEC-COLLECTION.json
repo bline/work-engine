@@ -1,0 +1,159 @@
+{
+  "actor": "root01a1d6e2",
+  "at": "2026-11-14T06:11:49.730506+00:00",
+  "worker": "01a1d8a4-b80e-7163-af3b-d257f945693e",
+  "status": "final_collected_fully_read_pending_join_review",
+  "manifest_checks": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/spec/accounting.schema.json",
+      "sha256": "84a229afbe21a8e47c21da0c28a0b9b3a3392960411b5a96e9a9258cdbcab6e7",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/spec/ck.json",
+      "sha256": "b661fcab04418e9a4a4477c5a42d5ffd67c88b172bede0338f776f325bb6d56e",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/spec/dependencies.json",
+      "sha256": "41ebe125ea2d76762a2991717b1e059cb1da8c5e6107e3548880fc37dc4dc2ba",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/contract/CK-GENERATED.md",
+      "sha256": "43e10d8b342315b6e5db3632f81b9076b1166602acba84963c1eaeb4cdd3601f",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/contract/TRANSITIONS.md",
+      "sha256": "ab14af10ff99f1ccaf49282781dd3acb1b3be1dcdff7bc9742f21a0769a10676",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/corpus/SCHEMA.md",
+      "sha256": "41874d2c9e52a769d00d06b0656fa39d00810657642615efbff9900056a2d0b4",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check/src/accounting.rs",
+      "sha256": "bd17b4c2af56835a17d1732ba9f580b333335140c01fbe758fbf661276a1a482",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check/tests/r9_spec_applicability.rs",
+      "sha256": "50845e8f1d4a9948648d88d8b107dc72669c00a49bd6413d10ef33334406d06f",
+      "matches": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+      "sha256": "3cee159b91da619f73e97b90f0f0833481616afd5c760346d99ebb16aaf66149",
+      "matches": true
+    }
+  ],
+  "custody": [
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/final/build.json",
+      "sha256": "a8978b12fd23bc2cb23a5026836e105be66804de031b50c42596d5d8503716f8",
+      "expected_returncode": 0,
+      "returncode": 0,
+      "leftover_processes": [],
+      "outcome_matches": true
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/final/generated.json",
+      "sha256": "8b3f56f74da268d505edd993ccc44232a3c0eef966318bbd0aaa95881e85f005",
+      "expected_returncode": 0,
+      "returncode": 0,
+      "leftover_processes": [],
+      "outcome_matches": true
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/final/impact.json",
+      "sha256": "65027391bf72ec251e75a8d3495de664a75db84f3006d15ba6ccd46a2104a8d9",
+      "expected_returncode": 0,
+      "returncode": 0,
+      "leftover_processes": [],
+      "outcome_matches": true
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/final/positive.json",
+      "sha256": "6050f66cd2fb3d0ed5b792103ece936df7b4ab1da6c568dcaf285904c84c726d",
+      "expected_returncode": 0,
+      "returncode": 0,
+      "leftover_processes": [],
+      "outcome_matches": true
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/final/redirected-validity.json",
+      "sha256": "e19864566f22f4e70e0c9e776ee16bb63099997d433eda00338211a783ac7844",
+      "expected_returncode": 1,
+      "returncode": 1,
+      "leftover_processes": [],
+      "outcome_matches": true
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/final/render.json",
+      "sha256": "325a85915223ee368ded27baa5505764cfb9a146ea047693648e9e262c1a507f",
+      "expected_returncode": 0,
+      "returncode": 0,
+      "leftover_processes": [],
+      "outcome_matches": true
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/final/self-link.json",
+      "sha256": "1904fb5faf14591e854c8ec150494f188725275260e3e033e9447690ccccbb26",
+      "expected_returncode": 1,
+      "returncode": 1,
+      "leftover_processes": [],
+      "outcome_matches": true
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/final/shared-grant-pair.json",
+      "sha256": "fe376912f44a370797afad3bfd536559cf4b729ddb10a048bd67105e5a2d812f",
+      "expected_returncode": 1,
+      "returncode": 1,
+      "leftover_processes": [],
+      "outcome_matches": true
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/final/tests.json",
+      "sha256": "8885151a127cffd7512aef93dbaf3f7354e00d596ea93a3b5f3a79509d5b68f2",
+      "expected_returncode": 0,
+      "returncode": 0,
+      "leftover_processes": [],
+      "outcome_matches": true
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/final/uncited-link.json",
+      "sha256": "64e67ea7992c8d7705c2c98ff0b6c09f26c6dac51a86c686a8ece55c61effad0",
+      "expected_returncode": 1,
+      "returncode": 1,
+      "leftover_processes": [],
+      "outcome_matches": true
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/final/witness-swap.json",
+      "sha256": "357891f6da2478644f8f22ad9fa22369501b12ec0b70f881aa03cb784bd3ee53",
+      "expected_returncode": 1,
+      "returncode": 1,
+      "leftover_processes": [],
+      "outcome_matches": true
+    },
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/final/wrongrequest.json",
+      "sha256": "78017ffcde0ae0aa494806b2f26395f23177c0a90a464216783b5fc657172abb",
+      "expected_returncode": 1,
+      "returncode": 1,
+      "leftover_processes": [],
+      "outcome_matches": true
+    }
+  ],
+  "all_checks_pass": true,
+  "native_final": {
+    "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-00-36-01a1d8a4-b80e-7163-af3b-d257f945693e.jsonl",
+    "line": 377,
+    "sha256": "1b81bc1e72976821f5ec56cc9c8137b0293cbf013638d8f196cdea7969beaf23",
+    "timestamp": "2026-11-14T06:11:03.314Z"
+  },
+  "scope": "supplied-record declarations only; all11 findings open; no acceptance"
+}

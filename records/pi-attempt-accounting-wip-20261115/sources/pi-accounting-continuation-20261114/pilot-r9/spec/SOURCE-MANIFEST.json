@@ -1,0 +1,11 @@
+{
+  "spec/accounting.schema.json": "84a229afbe21a8e47c21da0c28a0b9b3a3392960411b5a96e9a9258cdbcab6e7",
+  "spec/ck.json": "b661fcab04418e9a4a4477c5a42d5ffd67c88b172bede0338f776f325bb6d56e",
+  "spec/dependencies.json": "41ebe125ea2d76762a2991717b1e059cb1da8c5e6107e3548880fc37dc4dc2ba",
+  "contract/CK-GENERATED.md": "43e10d8b342315b6e5db3632f81b9076b1166602acba84963c1eaeb4cdd3601f",
+  "contract/TRANSITIONS.md": "ab14af10ff99f1ccaf49282781dd3acb1b3be1dcdff7bc9742f21a0769a10676",
+  "corpus/SCHEMA.md": "41874d2c9e52a769d00d06b0656fa39d00810657642615efbff9900056a2d0b4",
+  "tooling/spec-check/src/accounting.rs": "bd17b4c2af56835a17d1732ba9f580b333335140c01fbe758fbf661276a1a482",
+  "tooling/spec-check/tests/r9_spec_applicability.rs": "50845e8f1d4a9948648d88d8b107dc72669c00a49bd6413d10ef33334406d06f",
+  "BINARY:/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check": "3cee159b91da619f73e97b90f0f0833481616afd5c760346d99ebb16aaf66149"
+}

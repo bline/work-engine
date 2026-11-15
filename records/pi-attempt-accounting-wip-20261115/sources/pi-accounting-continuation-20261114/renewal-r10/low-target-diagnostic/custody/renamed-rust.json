@@ -1,0 +1,70 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "renamed-rust",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+    "r9_registered_actual_subject_qualification",
+    "--exact",
+    "--nocapture"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/renamed",
+  "env_clear": false,
+  "env_set": {
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/renamed",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3697749,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+      "type": "file",
+      "mode": 509,
+      "length": 16162864,
+      "sha256": "8be4b340ebc2dfa61f6417a94ab219a0e37077afcee12790dcab1d72853a5ca3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/freeze/manifest.json",
+      "type": "file",
+      "mode": 292,
+      "length": 225312,
+      "sha256": "34a2ddba957d2ae4bdcdfa30454641cbb29d59ee780141c518e9e93d95895d61"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/renamed/oracle/r9-pilot/cases/equal-reservations.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 7443,
+      "sha256": "29e21e0acd363c4128f3b3cad4344f40695e271ddaadcc524e681e4ec0b87153"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/renamed/oracle/r9-pilot/cases/equal-reservations.json",
+      "type": "file",
+      "mode": 420,
+      "length": 17740,
+      "sha256": "82489a06f4ab1c9503b76642d65de4a81832bf65046377ceb1da1ac2630bb07b"
+    }
+  ],
+  "timeout_s": 180,
+  "pid": 3697760,
+  "pgid": 3697760,
+  "started_at": "2026-11-14T08:05:12.478610Z",
+  "ended_at": "2026-11-14T08:05:12.543064Z",
+  "duration_s": 0.064,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/custody/renamed-rust.stdout",
+    "length": 2048,
+    "sha256": "7fe6d77a1ca5b16b886399ac3224db6e4792f3c7a95fcb7287abccb3e81d1f8a"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/custody/renamed-rust.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

@@ -1,0 +1,32 @@
+{
+  "baseline": {
+    "root": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/baseline-owned"
+  },
+  "changed": [
+    "contract/CONTRACT.md",
+    "contract/DECISION-REGISTER.md",
+    "contract/INVARIANTS.md",
+    "contract/MONEY.md",
+    "contract/RESERVATION-BOUNDS.md",
+    "contract/S2A-ENTRY-CRITERIA.md",
+    "contract/TRANSITIONS.md",
+    "corpus/SCHEMA.md"
+  ],
+  "added": [
+    "contract/CHANGELOG-1.5.md",
+    "contract/CK-GENERATED.md",
+    "spec/ck.json",
+    "spec/ck.schema.json",
+    "spec/dependencies.json",
+    "spec/interface.json",
+    "spec/inventory.json",
+    "tooling/spec-check/Cargo.lock",
+    "tooling/spec-check/Cargo.toml",
+    "tooling/spec-check/README.md",
+    "tooling/spec-check/rust-toolchain.toml",
+    "tooling/spec-check/src/lib.rs",
+    "tooling/spec-check/src/main.rs"
+  ],
+  "removed": [],
+  "unchanged_count": 3
+}

@@ -1,0 +1,95 @@
+{
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic",
+  "steps": [
+    {
+      "name": "missing-rust",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+        "r9_registered_actual_subject_qualification",
+        "--exact",
+        "--nocapture"
+      ],
+      "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/missing",
+      "env": {
+        "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/missing",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/freeze/manifest.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/missing/oracle/r9-pilot/cases/equal-reservations.bundle.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/missing/oracle/r9-pilot/cases/equal-reservations.json"
+      ],
+      "timeout": 180,
+      "kill_leftovers": true
+    },
+    {
+      "name": "missing-python",
+      "argv": [
+        "python3",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/missing/validator/validate_corpus.py",
+        "check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/missing/corpus",
+        "--pilot"
+      ],
+      "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/missing",
+      "env": {
+        "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/missing",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/freeze/manifest.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/missing/oracle/r9-pilot/cases/equal-reservations.bundle.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/missing/oracle/r9-pilot/cases/equal-reservations.json"
+      ],
+      "timeout": 180,
+      "kill_leftovers": true
+    },
+    {
+      "name": "renamed-rust",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+        "r9_registered_actual_subject_qualification",
+        "--exact",
+        "--nocapture"
+      ],
+      "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/renamed",
+      "env": {
+        "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/renamed",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/freeze/manifest.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/renamed/oracle/r9-pilot/cases/equal-reservations.bundle.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/renamed/oracle/r9-pilot/cases/equal-reservations.json"
+      ],
+      "timeout": 180,
+      "kill_leftovers": true
+    },
+    {
+      "name": "renamed-python",
+      "argv": [
+        "python3",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/renamed/validator/validate_corpus.py",
+        "check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/renamed/corpus",
+        "--pilot"
+      ],
+      "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/renamed",
+      "env": {
+        "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/renamed",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/freeze/manifest.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/renamed/oracle/r9-pilot/cases/equal-reservations.bundle.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/renamed/oracle/r9-pilot/cases/equal-reservations.json"
+      ],
+      "timeout": 180,
+      "kill_leftovers": true
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+# out=/home/bline/cbm-work/p124-a133/repro/p123-repro-on-a133-f1helpers.txt tree=/home/bline/cbm-work/p124-a133/repro args=-m unittest repro_p123 -v at=2026-11-12T21:29:32Z
+# reader under test: f15263e0447596fe
+test_V01_response_model_floor (repro_p123.Repro.test_V01_response_model_floor) ... 
+V-01 claimed: model astra, response_model terra, 12k output, charged 0.06: ('not_established', None, None, ['pi_settlement_invalid'])
+
+V-01 control: response_model astra, charged 0.06: ('not_established', None, None, ['pi_settlement_invalid'])
+
+V-01 control: response_model astra, charged 0.6 (producer price): ('refused', 0.6, 0.6, [])
+
+V-01 claimed variant: response_model terra, charged 0.6 (producer price): ('refused', 0.6, 0.06, [])
+ok
+test_V02_anthropic_unsplit_cache_write_floor (repro_p123.Repro.test_V02_anthropic_unsplit_cache_write_floor) ... 
+V-02 claimed: cache_creation 1000 unsplit, charged 0.01: ('not_established', None, None, ['pi_settlement_invalid'])
+
+V-02 control: charged 0.016 (producer max-rate): ('admitted', 0.016, 0.01, [])
+
+V-02 control: split 1000 as 1h, charged 0.01: ('not_established', None, None, ['pi_settlement_invalid'])
+
+V-02 control: charged 0.009 (below both rates): ('not_established', None, None, ['pi_settlement_invalid'])
+ok
+test_V03_conflicting_measured_stream_error (repro_p123.Repro.test_V03_conflicting_measured_stream_error) ... 
+V-03 claimed: subscription launch, stream_error labelled openai/api, measured: ('not_established', None, None, ['pi_lane_conflict', 'pi_request_unaccounted'])
+
+V-03 claimed pools: [(['codex'], None, None)]
+
+V-03 control: unlabelled measured stream_error (producer shape): ('admitted', 0.0, 0.0, [])
+
+V-03 control: same conflicting row, API launch: ('not_established', None, None, ['pi_lane_conflict', 'pi_request_unaccounted'])
+
+V-03 control: conflicting measured REQUEST, subscription launch: ('not_established', None, None, ['pi_lane_conflict', 'pi_request_unaccounted'])
+
+V-03 variant: measurement with only an integer rid (no admission row): ('not_established', None, None, ['pi_lane_conflict', 'pi_request_unaccounted'])
+ok
+test_V04_lone_stream_error (repro_p123.Repro.test_V04_lone_stream_error) ... 
+V-04 claimed: API launch without usd_limit, lone stream_error: ('not_established', None, None, ['pi_request_unaccounted'])
+
+V-04 claimed pi rows: []
+
+V-04 control: API launch without usd_limit, lone upstream_error: ('not_established', None, None, ['pi_request_unaccounted'])
+
+V-04 variant: subscription launch, lone unmeasured unlabelled stream_error: ('admitted', 0.0, 0.0, [])
+
+V-04 variant pi rows: [(['codex'], None, None)]
+
+V-04 control: dollar-limited API session, reservation then lone stream_error: ('admitted', 0.3, 0.0, [])
+ok
+test_V05_reservation_basis_without_id (repro_p123.Repro.test_V05_reservation_basis_without_id) ... 
+V-05 claimed: reservation basis, response_id null, usage i10/o1, charged 0.3: ('admitted', 0.3, 0.00012, [])
+
+V-05 claimed rows: [(['pi_api'], 0.00012, 0.3)]
+
+V-05 control: same with response_id msg_1: ('admitted', 0.3, 0.00012, [])
+
+V-05 control rows: [(['pi_api'], 0.00012, 0.3)]
+ok
+test_V06_unsettled_reservation_attempt (repro_p123.Repro.test_V06_unsettled_reservation_attempt) ... 
+V-06 unsettled reservation n=True, new 0.1: ('admitted', 0.8, 0.0, [])
+
+V-06 unsettled reservation n=None, new 0.1: ('admitted', 0.8, 0.0, [])
+
+V-06 unsettled reservation n=Ellipsis, new 0.1: ('admitted', 0.8, 0.0, [])
+
+V-06 unsettled reservation n=1, new 0.1: ('admitted', 0.8, 0.0, [])
+ok
+test_V07_unrelated_unreadable_log (repro_p123.Repro.test_V07_unrelated_unreadable_log) ... 
+V-07 control: unrelated log readable: ('admitted', 0.00012, 0.00012, [])
+
+V-07 claimed: unrelated log mode 000 (readable by this uid: False): ('not_established', None, None, ['pi_read_failed', 'transcript_missing'])
+ok
+test_V08_expectations_from_the_reader (repro_p123.Static.test_V08_expectations_from_the_reader) ... /home/bline/cbm-work/p124-a133/repro/repro_p123.py:144: ResourceWarning: unclosed file <_io.TextIOWrapper name='/home/bline/cbm-work/p124-a133/trees/a132-f1/metrics/scripts/tests/test_usage_ledger_pi_a1.py' mode='r' encoding='UTF-8'>
+  a1 = open(os.path.join(H, 'metrics/scripts/tests/test_usage_ledger_pi_a1.py')).read().split('\n')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/bline/cbm-work/p124-a133/repro/repro_p123.py:145: ResourceWarning: unclosed file <_io.TextIOWrapper name='/home/bline/cbm-work/p124-a133/trees/a132-f1/metrics/scripts/tests/test_usage_ledger_pi_a132_mutation.py' mode='r' encoding='UTF-8'>
+  m = open(os.path.join(H, 'metrics/scripts/tests/test_usage_ledger_pi_a132_mutation.py')).read().split('\n')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+
+V-08 test_usage_ledger_pi_a1.py:292-296:
+292:         self.session(S1, 'root', [[reserve(1, 0.3), o]])
+293:         [r] = self.pi_rows()
+294:         price = L.codex_usd(dict(input_tokens=11000, cached_input_tokens=10000, cache_write_input_tokens=900, output_tokens=500), 'gpt-6.1-sol')
+295:         self.assertAlmostEqual(r['usd_low'], price)
+296:         self.assertAlmostEqual(r['usd_high'] * r['quota_multiplier'], 0.3)
+V-08 test_usage_ledger_pi_a132_mutation.py:85-89:
+85:     for k in range(1, rng.randint(1, 4) + 1):
+86:         t += rng.choice((0, 1, 5))
+87:         kind = rng.choice(('request', 'request', 'upstream_error'))
+88:         label = rng.choice(LABELS)
+89:         row = dict(event=kind, at=M.iso(t), n=k, model='gpt-6-astra')
+ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.089s
+
+OK
+exit=0

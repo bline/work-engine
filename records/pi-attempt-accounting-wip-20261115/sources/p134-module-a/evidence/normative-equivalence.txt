@@ -1,0 +1,9 @@
+changed lines 42 ; lines differing beyond the label rename: 7
+   contract/CONTRACT.md 3
+   contract/CONTRACT.md 4
+   contract/INVARIANTS.md 19
+   contract/INVARIANTS.md 28
+   contract/DECISION-REGISTER.md 126
+   contract/DECISION-REGISTER.md 135
+   contract/DECISION-REGISTER.md 136
+corpus cases 56 56 differing beyond declared drops/rewrites: 0 ; inputs/expected/evaluations/historical identical: True

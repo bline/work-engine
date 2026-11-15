@@ -1,0 +1,68 @@
+{
+  "status": "ACCEPTED_BOUNDED_PRIVATE",
+  "at": "2026-11-14T09:38:57.254104+00:00",
+  "owner": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "authority": "user delegated review/future development; renewed100 at 06:57:15Z; no integration authority exercised",
+  "subject": {
+    "root": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject",
+    "manifest": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/freeze/manifest.json",
+    "sha256": "5e594cac6957fb1550d48d10e86ba155590335fc7dfe742892d0ac34cab5fa1c",
+    "files": 967
+  },
+  "scope": "four discriminating claims, seven selected bindings plus two conditional bundles and two reservation controls; eleven complete typed governing-premise records at actual Python and independent Rust consumers",
+  "review": {
+    "thread": "01a1d8ee-19cd-7e12-ad6c-73356f2366a4",
+    "turn": "01a1d966-55e8-79b3-88f6-d261ec2f4b1b",
+    "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/REVIEW-FINAL.md",
+    "sha256": "fa82f751b25cf533291ac8e137fe43f6eeb967342e3a41aefe553ba1bb54462e",
+    "chars": 5392,
+    "collection": "whole native final collected and fully read; exact native event line1013 saved; tool turn truncated flag did not supply missing tools, native final separately recovered in full",
+    "verdict": "ACCEPT_BOUNDED",
+    "continuity": "same isolated retained Astra/xhigh/default read-only episode after own native recovery; no fresh independence claim"
+  },
+  "decisive_evidence": {
+    "root_verify": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/ROOT-VERIFY.json",
+    "root_replay": {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/root-replay/summary.json",
+      "sha256": "27123a9265b31c6bee70057ee3ea43cc7e341e82918764d9edd8dce94686b2d6",
+      "gates": "9/9PASS; postintegrityPASS"
+    },
+    "worker": "12/12PASS plus3/3joins; exact custody verified by root/reviewer",
+    "reviewer": "fresh nominal Python/Rust and readonly Python old06:55/premise/gate/reservation probes; Rust mutants supported by root/worker executed custody and exact source; not reviewer freshly executed"
+  },
+  "original_r3_dispositions": [
+    {
+      "id": "1",
+      "state": "RESOLVED_BOUNDED",
+      "limit": "selected exact grant/endpoint applicability"
+    },
+    {
+      "id": "2",
+      "state": "RESOLVED_BOUNDED",
+      "limit": "selected complete membership/validity inventory and lawful equivalence positives"
+    },
+    {
+      "id": "3",
+      "state": "RESOLVED_BOUNDED",
+      "limit": "selected registration and successful-predicate-only consumption"
+    }
+  ],
+  "local_followups": {
+    "Rust reservation monetarymaximum/result joins": "RESOLVED_BOUNDED",
+    "lowtarget uniqueness and consequence": "RESOLVED_BOUNDED",
+    "model7 unsupportedminimum": "RESOLVED_BOUNDED",
+    "complete evaluation premise and EPR01 realization": "RESOLVED_BOUNDED"
+  },
+  "historical_findings": "all eleven remain OPEN; selected evidence is relevant but full175/374 acceptance absent",
+  "remaining": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/REMAINING-OBLIGATIONS.json",
+  "limits": [
+    "full175/all applicable374 qualification and complete exact-currentABC not accepted",
+    "A1/C2/A2b/B2 and broader schema/wire/generated/dependency remain owed",
+    "generated SCHEMA.md historical authorship unestablished",
+    "test_mock only; no live authority",
+    "no fullS1/S2a/integration/commit/push/production"
+  ],
+  "architecture": "no new serious recurrence found; history/escalation unchanged; next full-realization scope requires separately bound design admission",
+  "processes": "all worker/reviewer command/process/final results fully collected; no child remains active; root listener76656 remains owned live",
+  "cost": "latest complete56.5239508ofsame100 proxy; outstandingtail not claimed settled"
+}

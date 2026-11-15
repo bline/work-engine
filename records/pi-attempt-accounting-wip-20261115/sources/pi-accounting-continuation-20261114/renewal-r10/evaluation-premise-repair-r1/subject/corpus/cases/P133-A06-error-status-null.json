@@ -1,0 +1,284 @@
+{
+  "added_in": "1.4-s1",
+  "ambiguity": null,
+  "case_id": "P133-A06-error-status-null",
+  "class": "adversarial_synthetic",
+  "contract": "pi-accounting-contract/1.7-s1",
+  "controls": [
+    "S02-control-error-status-after-reservation"
+  ],
+  "evaluations": [
+    {
+      "admission_request": {
+        "new": "100000000",
+        "objective": "o"
+      },
+      "expected": {
+        "admission": {
+          "decision": "refused",
+          "limit": "1000000000",
+          "new": "100000000",
+          "objective": "o"
+        },
+        "attribution": [
+          {
+            "attempt": "res:S1/turn-1:rid=1",
+            "objective": "o",
+            "ownership": "owned",
+            "placement": "inside"
+          }
+        ],
+        "objectives": [
+          {
+            "commitments": [
+              {
+                "admission_id": "a1",
+                "committed": "200000000",
+                "gate": {
+                  "qualified": false,
+                  "reasons": [
+                    "NoGateEvidence"
+                  ]
+                },
+                "kind": "at_least",
+                "state": "retired_resumable"
+              }
+            ],
+            "objective": "o",
+            "owned_closed": {
+              "high": {
+                "kind": "exact",
+                "nano": "0"
+              },
+              "low": "0",
+              "supported_low_evidence_ref": "oracle/r8-completion-A/P133-A06-error-status-null.bundle.json#P133-A06-error-status-null/default/o/owned_closed"
+            },
+            "owned_outstanding": {
+              "high": {
+                "kind": "at_least",
+                "nano": "800000000"
+              },
+              "low": "0",
+              "supported_low_evidence_ref": "oracle/r8-completion-A/P133-A06-error-status-null.bundle.json#P133-A06-error-status-null/default/o/owned_outstanding"
+            },
+            "predecessor_obligations": {
+              "high": {
+                "kind": "exact",
+                "nano": "0"
+              },
+              "low": "0"
+            },
+            "provisional": true,
+            "reasons": [
+              "SettlementRejected",
+              "UnenforcedCommitment",
+              "UnresolvedExposure"
+            ],
+            "status": "not_established"
+          }
+        ]
+      },
+      "name": "default",
+      "objectives": [
+        {
+          "admissions": [
+            {
+              "admission_id": "a1",
+              "rows": [
+                {
+                  "admission_id": "a1",
+                  "at": "2026-11-10T06:00:05Z",
+                  "event": "pending",
+                  "max_usd": 1.0
+                },
+                {
+                  "admission_id": "a1",
+                  "at": "2026-11-10T06:00:10Z",
+                  "event": "launched",
+                  "session_id": "00000000-0000-4000-8000-0000000000c1"
+                }
+              ],
+              "session": "00000000-0000-4000-8000-0000000000c1",
+              "source": "journal"
+            }
+          ],
+          "closed_at": null,
+          "limit": "1000000000",
+          "objective": "o",
+          "predecessor": null,
+          "started_at": "2026-11-10T06:00:00Z",
+          "tree_sessions": [
+            "00000000-0000-4000-8000-0000000000c1"
+          ]
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "attempts": [
+      {
+        "accounting_result_ref": "oracle/r8-completion-A/P133-A06-error-status-null.bundle.json#result:P133-A06-error-status-null",
+        "billing": "unresolved",
+        "blocking": [
+          "SettlementRejected",
+          "UnresolvedExposure"
+        ],
+        "correlation": {
+          "kind": "exact"
+        },
+        "diagnostics": [],
+        "evidence": [
+          "S1/turn-1:1",
+          "S1/turn-1:2"
+        ],
+        "execution": "terminal",
+        "exposure": {
+          "high": {
+            "basis": "proxy_reservation",
+            "kind": "at_least",
+            "nano": "800000000"
+          },
+          "low": {
+            "basis": "none",
+            "nano": "0"
+          },
+          "pool": "pi_api"
+        },
+        "forwarding": "forwarded",
+        "key": "res:S1/turn-1:rid=1",
+        "obligation": {
+          "amount_source": "reservation_bound",
+          "state": "outstanding"
+        },
+        "replacement": {
+          "eligible": false,
+          "reason": "NotUsageSettlement"
+        },
+        "settlement": {
+          "charged": "0",
+          "decision": "rejected",
+          "reasons": [
+            "StatusType"
+          ],
+          "reserved": "800000000"
+        },
+        "valuation": {
+          "state": "not_reported"
+        }
+      }
+    ],
+    "inventory": [],
+    "lifecycle": {
+      "S1": {
+        "clock": "trusted",
+        "reopened": false,
+        "state": "retired"
+      }
+    },
+    "non_attempt": [],
+    "unreadable": []
+  },
+  "findings": [
+    "P1.32-A-06"
+  ],
+  "group": "P1.33",
+  "historical": {
+    "a134_086bdec1": {
+      "blocking_kinds": [
+        "pi_settlement_invalid"
+      ],
+      "decision": "not_established",
+      "evaluation": "default",
+      "note": "comparison only; A1.3.4 has no ownership (D1) concept: it attributes by session tree and time window",
+      "reader_sha256": "086bdec1d443064f6847821858f34bbf227f8804a9a5fc8a362416f62b29d621",
+      "reasons": [
+        "objective accounting unavailable, unpriced or inconsistent"
+      ],
+      "spent_high_nano": null,
+      "spent_low_nano": null
+    }
+  },
+  "inputs": {
+    "rates": {
+      "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+      "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+    },
+    "reference_time": "2026-11-10T07:00:00Z",
+    "sessions": [
+      {
+        "alias": "S1",
+        "launch": {
+          "auth_lane": "api",
+          "model": "openai/gpt-6-astra",
+          "parent": "root"
+        },
+        "lifecycle": [
+          {
+            "at": "2026-11-10T06:00:10Z",
+            "event": "launch",
+            "turn": 1
+          },
+          {
+            "at": "2026-11-10T06:50:00Z",
+            "event": "retire"
+          }
+        ],
+        "logs": {
+          "turn-1": {
+            "final_newline": true,
+            "lines": [
+              "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.8, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
+              "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": null, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": null, \"response_id\": null, \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": null, \"output_tokens\": null, \"cached_tokens\": null, \"cache_write_tokens\": null, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.8, \"charged_usd\": 0.0, \"charge_basis\": \"error_status\", \"session_spent_usd\": 0.0, \"multiplier_floor\": 0.0}}"
+            ]
+          }
+        },
+        "session_id": "00000000-0000-4000-8000-0000000000c1"
+      }
+    ]
+  },
+  "invariants": [
+    "INV-F1"
+  ],
+  "notes": "Single condition changed from S02-control: http_status is null on an error-status settlement, which needs an integer non-200 status.",
+  "profile": "current_producer",
+  "provenance": {
+    "origin": "contract::P1.33 Module A repair (from S02-control-error-status-after-reservation)"
+  },
+  "rationale": "A1.3.4 reports not established; the contract also blocks on a null status on an error-status settlement (A-06), but the known total (retained reservation plus the resumable commitment and the request) already exceeds the limit, so the decision is refused (OQ-2). Revision6: root policy P1-P6; independently frozen source/line arithmetic f097e5a5. Qualified identities preserve family; successful terminal AND integer200 AND required billing counts establishes completion. Closed obligations retain evidence by; none has amount_source none. Future gates use separate conditional test_mock witness; no live qualification.",
+  "reachability": "producer_unreachable",
+  "revisions": [],
+  "revisions_r3": [],
+  "revisions_r4": [],
+  "revisions_r5": [],
+  "revisions_r6": [],
+  "revisions_r7": [
+    {
+      "field": "default/o.provisional",
+      "from": false,
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "to": true
+    }
+  ],
+  "revisions_r8": [
+    {
+      "field": "attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+      "from": "__absent__",
+      "rule": "R8 finite completion A exact refs; authored01a1d840-e1a4-7b11-9b77-151fba94962a; derivation oracle/r8-completion-A/DERIVATIONS.json#P133-A06-error-status-null",
+      "to": "oracle/r8-completion-A/P133-A06-error-status-null.bundle.json#result:P133-A06-error-status-null"
+    },
+    {
+      "field": "default/o.owned_closed.supported_low_evidence_ref",
+      "from": "__absent__",
+      "rule": "R8 finite completion A exact refs; authored01a1d840-e1a4-7b11-9b77-151fba94962a; derivation oracle/r8-completion-A/DERIVATIONS.json#P133-A06-error-status-null",
+      "to": "oracle/r8-completion-A/P133-A06-error-status-null.bundle.json#P133-A06-error-status-null/default/o/owned_closed"
+    },
+    {
+      "field": "default/o.owned_outstanding.supported_low_evidence_ref",
+      "from": "__absent__",
+      "rule": "R8 finite completion A exact refs; authored01a1d840-e1a4-7b11-9b77-151fba94962a; derivation oracle/r8-completion-A/DERIVATIONS.json#P133-A06-error-status-null",
+      "to": "oracle/r8-completion-A/P133-A06-error-status-null.bundle.json#P133-A06-error-status-null/default/o/owned_outstanding"
+    }
+  ],
+  "role": "finding",
+  "schema": "pi-accounting-corpus/1"
+}

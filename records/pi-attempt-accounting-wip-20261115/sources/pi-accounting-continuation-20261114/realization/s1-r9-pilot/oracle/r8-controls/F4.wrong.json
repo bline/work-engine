@@ -1,0 +1,34 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "none",
+      "kind": "exact",
+      "nano": "0"
+    },
+    "low": "0"
+  },
+  "coverage": [
+    {
+      "id": "subset",
+      "reason": "not whole-unit complete",
+      "status": "rejected"
+    }
+  ],
+  "id": "result:F4",
+  "units": [
+    {
+      "high": {
+        "basis": "none",
+        "kind": "exact",
+        "nano": "0"
+      },
+      "id": "hold:r+s+C",
+      "low": "0",
+      "origins": [
+        "chargeC",
+        "r",
+        "s"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "A-01": {
+    "standing": "confirmed specification-derived counterexample, no reducer executed",
+    "before": {
+      "keys": [
+        "Row:first",
+        "Row:second"
+      ],
+      "each_known_charge_nano": 500000000,
+      "aggregate_at_least_nano": 1000000000
+    },
+    "after_add_reservation": {
+      "key": "Reservation:rid1",
+      "known_reservation_nano": 500000000,
+      "conflicting_charges_nano": [
+        500000000,
+        500000000
+      ],
+      "aggregate_at_least_nano": 500000000
+    },
+    "evidence": {
+      "CORRELATION": {
+        "path": "/invariants/3",
+        "value": {
+          "depends": [],
+          "id": "CORRELATION",
+          "refs": [
+            "POLICY-R6"
+          ],
+          "revision": 1,
+          "text": "## 4. Primary correlation and auxiliary attachment (stage C)\n\n```text\nAttemptKey  = ProducerAttempt{incarnation, seq}      // proposed producer field (D7); none exist today\n            | Reservation{source, rid}               // budgeted\n            | Admission{source, rid}                 // subscription cost-proxy\n            | Row{source, line}                      // unbudgeted request, or an orphan\nCorrelation = { key_join: Exact | Ambiguous{candidates: [AttemptKey]} | Unattributed,\n                auxiliary: [{ evidence: EvidenceRef, rule: ShapeRule }] }      // RS-1..RS-3 joins (C-5 to C-7)\nAttemptGroup = { key, correlation, reservations: [EvidenceItem], settlements: [EvidenceItem],\n                 requests, errors, refusals, admissions, measurements, launch: LaunchFacts }\n```\n\n**Key join versus auxiliary rows (R-06).** `key_join` is the confidence of the attempt's own key: the\nreservation\u2013settlement join by `rid`, or the row itself for `Row` and `Admission` keys. Error and refusal rows joined\nby a shape rule are listed in `auxiliary` with their rule. They add evidence (identities, diagnostics, forwarding) but\nnever close an obligation and never change `key_join`. F1 reads `key_join`.\n\n| Rule | Statement |\n|---|---|\n| C-1 | A `Reservation` with a usable `rid` keys `Reservation{source, rid}`. Byte-identical repeats are one item (diagnostic `RepeatedIdenticalRow`). **Different rows with one `rid` are conflicting reservation evidence (A-09):** all stay visible in the group, blocking `ReservationConflict` is raised, and the decision follows Table S1 (no settlement: `Absent`; one settlement: `Rejected[ReservationConflict\u2026]`; two or more: `Conflicting`). Their independence is not established, so `R` is the largest of them (X-0), never their sum and never the smaller. **A reservation whose `rid` is absent or malformed** keys `Row{source, line}` with `key_join = Unattributed`. Its decision is `Absent` (no settlement can join it) and its obligation `Outstanding`, with blocking `MalformedEvidence(rid)` and `UnaccountedAttempt`. A malformed `reserved` contributes 0 to R and adds `MalformedEvidence(reserved)` (R-06) |\n| C-2 | A `Settlement` joins `Reservation{source, usd.rid}` (`Exact`). An unusable `rid` keys `Row{source, line}` with the settlement only. A settlement with no reservation of that `rid` in its source keys `Row{source, line}` (`Exact`): decision `Rejected[NoReservation\u2026]`, obligation `None{NoReservation}` (R-06) |\n| C-3 | An unbudgeted `Request` (API lane, no `usd`) keys `Row{source, line}`, `Exact` (one row, one attempt) |\n| C-4 | A subscription `Admission` keys `Admission{source, rid}`. A measured row joins the admission whose `rid` its measurement names, if that admission is earlier in the source (`Exact`). Otherwise it keys `Row` with `Unattributed` |\n| C-5 | **Read failure (shape rule RS-1).** A `StreamError` with shape `ReadFailure`, unmeasured, joins the first later `Request` or `UpstreamError` in its source with the same `n` that no other error has claimed, **only if** `n` names exactly one forwarded attempt in the source: at most one `Request` or `UpstreamError` row and at most one distinct reservation `rid` with that `n` |\n| C-6 | **Header-write failure (RS-2).** A `StreamError` not joined by C-5 joins a reservation with its `n` that no valid settlement closes and no other error has claimed, under the same uniqueness condition |\n| C-7 | **Refusal pairing (RS-3).** An `IdentityRefusal` joins the first later `Request` with the same `n` and the same served model, one to one. Otherwise it joins a unique unsettled reservation with its `n` (RS-2's condition). Otherwise `Row`, `Unattributed` |\n| C-8 | **Ambiguity.** An error whose `n` fails the uniqueness condition is its own `Row` attempt with `Ambiguous{candidates}`. An error with a missing or malformed `n` is a `Row` attempt, `Unattributed`. Ambiguity is never resolved by order, closeness or amounts |\n| C-9 | `Refused` rows are `NonAttemptEvidence`; they never key, close or value an attempt and carry lane evidence only. A refused row with a **preflight** reason (every reason except `upstream unreachable` and an identity-refusal reason) records a request the proxy did not forward. A refused row with `upstream unreachable` or an identity-refusal reason is the proxy's client-side report **after** an attempt (`pi_container.py:1218`, `:1326`, `:1502`) and proves nothing about forwarding (R-13) |\n| C-10 | **Measurement subtypes.** A measurement row is a `Request`, `UpstreamError` or `StreamError` with an attached `Measurement`; the attachment does not change the row's kind |\n| C-11 | **Correlation never crosses sources.** A source is one turn's log; `n` and `rid` restart per proxy incarnation |\nC-primary groups only primary reservation/settlement keys. SETTLEMENT-WITNESS reads those immutable primary facts. C-auxiliary attaches RS1\u20133 using that witness; auxiliary cannot mutate primary groups or validity. S consumes validity; it does not re-decide it."
+        }
+      },
+      "INV-F3": {
+        "path": "/invariants/12",
+        "value": {
+          "depends": [],
+          "id": "INV-F3",
+          "refs": [
+            "POLICY-R6"
+          ],
+          "revision": 1,
+          "text": "| **F3 Monotone high** | Adding evidence never lowers `high` (order of \u00a72) in an attempt or any total, **except** a valid usage settlement with `Replacement::Eligible` (a usage bound), which may replace `AtLeast(R)` with the validated `Exact` amount. A valid but ineligible usage settlement, an error-status settlement, and conflicting or rejected settlements keep `R` and only add terms to the maximum (A-01, A-02, R-05) | evidence added to an existing set | S04 (refused row added: high stays `AtLeast(R)`); U08 (incomplete usage: high stays `AtLeast(500M)`) | a refused row closing the interval (deac8099 S-04); incomplete usage lowering a 500M reservation to 30M (P1.32 A-01) | `high(E \u222a e) \u2265 high(E)` unless the added row is an eligible usage settlement | 24+ cases incl. N01, VC03, S01, U08, Q5, P2, P130-R01, P133-A01, P133-A02 | random base plus random row other than an eligible usage settlement: high non-decreasing | let incomplete usage replace the reservation |"
+        }
+      },
+      "X-COMPONENTS": {
+        "path": "/invariants/28",
+        "value": {
+          "depends": [],
+          "id": "X-COMPONENTS",
+          "refs": [
+            "RESERVATION-MAX",
+            "Valuation"
+          ],
+          "revision": 1,
+          "text": "Typed available components: reservation R=max distinct well-formed amounts; charge=max applicable well-formed claimed settlement charges; usage_low/high from valued; supported_low/priced_high from unpriceable (absent optional amount contributes zero); zero=0. high=max declared components with declared exact/at_least tag; low is selected component. No K input. Arithmetic and independent examples require semantic review. Error-status example: AtLeast(max(R, valued.high or priced_high or 0))."
+        }
+      }
+    },
+    "guard": "recurringI1 at correlation/aggregation boundary; introduction origin unestablished"
+  },
+  "A-02": {
+    "standing": "confirmed currentcanonicalX-BRANCH-025/corpus contradiction",
+    "cases": [
+      {
+        "case": "A06-reservation-usage-null-status-no-id.json",
+        "valuation_low": "15000000",
+        "exposure_low": "0",
+        "decision": "rejected"
+      },
+      {
+        "case": "P133-A09-conflicting-reservations-with-settlement.json",
+        "valuation_low": "15000000",
+        "exposure_low": "0",
+        "decision": "rejected"
+      },
+      {
+        "case": "P130-R05-conflicting-keeps-valuation-high.json",
+        "valuation_low": "20000000",
+        "exposure_low": "0",
+        "decision": "conflicting"
+      },
+      {
+        "case": "V01-cheaper-response-model-undercharge.json",
+        "valuation_low": "60000000",
+        "exposure_low": "0",
+        "decision": "rejected"
+      }
+    ],
+    "independent_A06_arithmetic_nano": 15000000
+  },
+  "A-05": {
+    "standing": "confirmed",
+    "exit": 0,
+    "command": [
+      "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/target-spec/debug/pi-accounting-spec-check",
+      "check",
+      "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/module-A/root-reproduction/witness-mutant"
+    ],
+    "meaning": "failingguard now constructsValid while structuralcheck accepts"
+  },
+  "A-09": {
+    "standing": "confirmed",
+    "errors": [
+      {
+        "path": [
+          "boundaries",
+          0,
+          "id"
+        ],
+        "message": "'C-primary' is not one of ['E', 'C', 'S', 'V', 'F', 'X', 'K']"
+      },
+      {
+        "path": [
+          "boundaries",
+          1,
+          "id"
+        ],
+        "message": "'C-validity' is not one of ['E', 'C', 'S', 'V', 'F', 'X', 'K']"
+      },
+      {
+        "path": [
+          "boundaries",
+          2,
+          "id"
+        ],
+        "message": "'C-auxiliary' is not one of ['E', 'C', 'S', 'V', 'F', 'X', 'K']"
+      },
+      {
+        "path": [
+          "boundaries",
+          3,
+          "id"
+        ],
+        "message": "'S-consume' is not one of ['E', 'C', 'S', 'V', 'F', 'X', 'K']"
+      }
+    ],
+    "error_count": 4
+  }
+}

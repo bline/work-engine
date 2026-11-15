@@ -1,0 +1,9 @@
+{
+  "line": 227,
+  "timestamp": "2026-11-14T07:43:04.324Z",
+  "sha256": "b51105c6f3e004517eb0659eecc8e51a6bab79d661ba140115b9cc0cff5c3c68",
+  "chars": 6464,
+  "turn": "01a1d8fc-dd46-7d80-9416-0ad0cb61b521",
+  "collected": "exact native wait_threads final fully delivered; exact saved rolloutfinal",
+  "root_full_read": true
+}

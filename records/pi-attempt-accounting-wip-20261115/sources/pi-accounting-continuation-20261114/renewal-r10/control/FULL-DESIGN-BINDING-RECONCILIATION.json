@@ -1,0 +1,17 @@
+{
+  "at": "2026-11-14T10:08:24.711964+00:00",
+  "cause": "Redundant explicit same-parent binding plus verified role_host.launch parent makes ledger issue multiple_parents; not missing charges",
+  "removed_only": {
+    "session_id": "01a1d984-42de-7000-9c59-b3e8b2a7e094",
+    "provider": "codex",
+    "parent_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+    "bound_at": "2026-11-14T10:05:04Z",
+    "bound_by": "supervisor",
+    "reason": "Fresh separate fullS1 exactplan d1e93793 design criticism; target2cap4 inside unchangedhuman100; root solecollector"
+  },
+  "retained": "verifiedrole_hostparent01a1d6e2 fromlaunchandchildren; allcostlimits/sessioncosts/window retained",
+  "before_sha256": "d7f958f509fd6213e81a184cfae1ec0a91537f7c2289634c6adbb6e047bce516",
+  "before": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/pre-full-design-binding-reconciliation.json",
+  "source": "control/full-design-admission-tree.json issue",
+  "decision": "Remove redundant attribution edge; no funding or scope change; fullhistory retained"
+}

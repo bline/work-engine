@@ -1,0 +1,226 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "oracle/r8-completion-B/DERIVATIONS.json#VC07-read-failure-paired",
+        "predecessor_subject_refs": [
+          "baseline:149760fc94710a012eb288c6a9d7b49d7e143e040e4ba3e200e7f16c1e6cb973"
+        ],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": [
+          "conditional-ticket:S1/turn-1"
+        ]
+      },
+      "exact_links": [],
+      "grants": [
+        {
+          "admission": "conditional_fixture",
+          "assumption_refs": [
+            "Inherited immutable ticket namespace only; no exact auxiliary link or physical-bill independence."
+          ],
+          "authority_ref": "ROOT-ADOPTION-R6.json",
+          "covered_extent_ref": "sha256:d730fa470dde241e774a1cacb46e8e3ba299f1bf4e98369049bd7a512aee8e39",
+          "covered_origin_refs": [
+            "S1/turn-1:2",
+            "S1/turn-1:1"
+          ],
+          "exact_payload_ref": "oracle/r8-completion-B/VC07-read-failure-paired.provenance.json#S1/turn-1",
+          "grant_id": "initial-scope:S1/turn-1",
+          "guarantee_kind": "initial_reference_scope",
+          "observer_or_harness_ref": "inherited-corpus-conditional-fixture"
+        }
+      ],
+      "id": "input:VC07-read-failure-paired",
+      "identity_bindings": [],
+      "initial_contracts": [
+        {
+          "contract_id": "conditional-ticket:S1/turn-1",
+          "duplicate_rule": "same_origin_only",
+          "grant_ref": "initial-scope:S1/turn-1",
+          "reference_namespace": "dollar_ticket",
+          "scope_id": "VC07-read-failure-paired/S1/turn-1"
+        }
+      ],
+      "kind": "accounting_input_proof",
+      "lineage_id": "VC07-read-failure-paired",
+      "origins": [
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:2",
+          "original_position": 2,
+          "raw_bytes_sha256": "42e084b9437a79d12de39c372daa6041183adf309a39b5c5f3800950ea4065ba",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:d730fa470dde241e774a1cacb46e8e3ba299f1bf4e98369049bd7a512aee8e39"
+        },
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:1",
+          "original_position": 1,
+          "raw_bytes_sha256": "3e786454e65394e5bfb0212d3ca5ea620ed695d6522d266f291af020f82bb037",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:d730fa470dde241e774a1cacb46e8e3ba299f1bf4e98369049bd7a512aee8e39"
+        }
+      ],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:row:S1/turn-1:line=2",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "S1/turn-1:2"
+          ]
+        },
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:row:S1/turn-1:line=1",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "S1/turn-1:1"
+          ]
+        }
+      ],
+      "continuity_result": "unestablished",
+      "coverage_decisions": [
+        {
+          "anchor_origin_refs": [],
+          "completion_ref": "completion:row:S1/turn-1:line=2",
+          "coverage_id": "coverage:row:S1/turn-1:line=2",
+          "definite_link_refs": [],
+          "monetary_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "reason_refs": [
+            "case:VC07-read-failure-paired#attempt:row:S1/turn-1:line=2/replacement"
+          ],
+          "result_unit_ref": "row:S1/turn-1:line=2",
+          "retained_component_refs": [
+            "case:VC07-read-failure-paired#attempt:row:S1/turn-1:line=2/retained-charge-and-context"
+          ],
+          "route": "unbudgeted_completion",
+          "status": "accepted",
+          "unit_refs": [
+            "held:row:S1/turn-1:line=2"
+          ],
+          "valuation_ref": "valuation:row:S1/turn-1:line=2"
+        }
+      ],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [
+        {
+          "context_origin_ref": "S1/turn-1:2",
+          "predicate_ref": "same-original-usage-origin",
+          "usage_origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "id": "result:VC07-read-failure-paired",
+      "input_proof_ref": "input:VC07-read-failure-paired",
+      "kind": "accounting_result",
+      "lineage_id": "VC07-read-failure-paired",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "VC07-read-failure-paired/default/o/owned_closed",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        },
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "VC07-read-failure-paired/default/o/owned_outstanding",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        }
+      ],
+      "origins": [
+        {
+          "active_high_unit_id": "row:S1/turn-1:line=2",
+          "base_id": "base:row:S1/turn-1:line=2",
+          "evidence_atom_id": "atom:S1/turn-1:2",
+          "origin_ref": "S1/turn-1:2"
+        },
+        {
+          "active_high_unit_id": "row:S1/turn-1:line=1",
+          "base_id": "base:row:S1/turn-1:line=1",
+          "evidence_atom_id": "atom:S1/turn-1:1",
+          "origin_ref": "S1/turn-1:1"
+        }
+      ],
+      "primary_validities": [],
+      "unbudgeted_applicabilities": [
+        {
+          "applicability_id": "applicability:row:S1/turn-1:line=2",
+          "classification": "genuine_unbudgeted",
+          "dollar_origin_refs": [],
+          "raw_subject_ref": "sha256:d730fa470dde241e774a1cacb46e8e3ba299f1bf4e98369049bd7a512aee8e39",
+          "usage_origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "unbudgeted_completions": [
+        {
+          "applicability_ref": "applicability:row:S1/turn-1:line=2",
+          "complete": true,
+          "completion_id": "completion:row:S1/turn-1:line=2",
+          "usage_origin_ref": "S1/turn-1:2",
+          "valuation_ref": "valuation:row:S1/turn-1:line=2"
+        }
+      ],
+      "units": [
+        {
+          "exposure_ref": "case:VC07-read-failure-paired#attempt:row:S1/turn-1:line=2",
+          "origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "state": "active",
+          "unit_id": "row:S1/turn-1:line=2"
+        },
+        {
+          "exposure_ref": "case:VC07-read-failure-paired#attempt:row:S1/turn-1:line=1",
+          "origin_refs": [
+            "S1/turn-1:1"
+          ],
+          "state": "active",
+          "unit_id": "row:S1/turn-1:line=1"
+        },
+        {
+          "exposure_ref": "case:VC07-read-failure-paired#attempt:row:S1/turn-1:line=2/pre-release-hold",
+          "origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "state": "inactive",
+          "successor_ref": "row:S1/turn-1:line=2",
+          "unit_id": "held:row:S1/turn-1:line=2"
+        }
+      ],
+      "valuation_records": [
+        {
+          "complete": true,
+          "usage_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "valuation_id": "valuation:row:S1/turn-1:line=2",
+          "wire_ref": "case:VC07-read-failure-paired#attempt:row:S1/turn-1:line=2/valuation"
+        }
+      ],
+      "version": "1.7-s1"
+    }
+  ]
+}

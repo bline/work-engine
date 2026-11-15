@@ -1,0 +1,264 @@
+{
+  "session_id": "91e307d2-8e9b-483b-a7ad-5ff7a21a3f75",
+  "fresh": true,
+  "role_host_rows": [
+    {
+      "at": "2026-11-14T00:54:02Z",
+      "at_epoch": 1794617642.5936382,
+      "auth_lane": "subscription",
+      "container": {
+        "fingerprint_sha256": "3228977614e9b1305aa8c385cc608c613ed155e258f56e8a1b507b11f47509a2",
+        "name": "we-pi-91e307d2-8e9b-483b-a7ad-5ff7a21a3f75-1"
+      },
+      "container_environment": {
+        "agent_dir": "/home/bline/.local/state/work-engine/role-host/pi/91e307d2-8e9b-483b-a7ad-5ff7a21a3f75/container/agent",
+        "container_dir": "/home/bline/.local/state/work-engine/role-host/pi/91e307d2-8e9b-483b-a7ad-5ff7a21a3f75/container",
+        "fingerprint": {
+          "container_env": {
+            "HOME": "/home/bline",
+            "LANG": "C.UTF-8",
+            "LOGNAME": "bline",
+            "OPENAI_CODEX_API_KEY": "e30.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOiB7ImNoYXRncHRfYWNjb3VudF9pZCI6ICJjb250YWluZXItcGxhY2Vob2xkZXIifX0=.placeholder",
+            "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "PI_CODING_AGENT_DIR": "/home/bline/.local/state/work-engine/role-host/pi/91e307d2-8e9b-483b-a7ad-5ff7a21a3f75/container/agent",
+            "PI_OFFLINE": "1",
+            "PI_TELEMETRY": "0",
+            "USER": "bline",
+            "WORK_ENGINE_PI_SERVICE_TIER": "",
+            "WORK_ENGINE_PI_SERVICE_TIER_MODEL": "openai-codex/gpt-6-astra",
+            "WORK_ENGINE_PI_SERVICE_TIER_RECORD": "<per turn>"
+          },
+          "entry_sha256": "b75c71508ec125873e8cd06709bc519b21c9865ed118e11025de24ef9b3fbdc8",
+          "extension_sha256": "9c49eca9b79faad8da6931945a5601e7f1313aeea3553363098c43b3fbde95f8",
+          "host_isolation": "protected-code-search-paths-and-isolated-runner-v1",
+          "host_os": {
+            "ID": "ubuntu",
+            "VERSION_ID": "26.04"
+          },
+          "image": "node@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da",
+          "kernel": "6.17.0-35-generic",
+          "limits": {
+            "cpus": "2",
+            "memory": "4g",
+            "pids": 512
+          },
+          "max_output_tokens": null,
+          "max_requests": 1,
+          "mode": "container",
+          "mount_identities": {
+            "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/design-r3/run/review-work": [
+              64513,
+              75022200
+            ]
+          },
+          "mounts": [
+            [
+              "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/design-r3/run/review-work",
+              "rw"
+            ]
+          ],
+          "network": "none (egress proxy only)",
+          "pi_container_sha256": "780837341790780f84163ee6151b8ce66cff56f5a3f6ddf8c15f939dba50f470",
+          "pi_version": "1.5.2",
+          "runtime": "/snap/pi-coding-agent/91",
+          "runtime_identity": {
+            "kind": "squashfs mount (immutable)",
+            "path": "/snap/pi-coding-agent/91"
+          },
+          "selection": {
+            "lane": "subscription",
+            "model": "openai-codex/gpt-6-astra",
+            "pi_argv": [
+              "--model",
+              "openai-codex/gpt-6-astra",
+              "--thinking",
+              "xhigh",
+              "--exclude-tools",
+              "*",
+              "--no-context-files",
+              "--no-mcp",
+              "--no-skills"
+            ],
+            "thinking": "xhigh",
+            "tier": null
+          },
+          "sha256": "3228977614e9b1305aa8c385cc608c613ed155e258f56e8a1b507b11f47509a2",
+          "uid_gid": [
+            1000,
+            1000
+          ],
+          "usd_limit": {
+            "billing": "unknown",
+            "limitation": "Stopping threshold; one admitted response can overshoot. Subscription billing and quota are unknown.",
+            "max_usd": 4.0,
+            "measurement": "api_equivalent_cost_proxy",
+            "quota": "unknown",
+            "rates": {
+              "cache_write": 12.5,
+              "cached_input": 1,
+              "input": 10,
+              "long_input_multiplier": 2,
+              "long_input_threshold": 272000,
+              "long_output_multiplier": 1.5,
+              "model": "gpt-6-astra",
+              "output": 50,
+              "tier_multiplier": {
+                "default": 1.0,
+                "fast": 2.0,
+                "flex": 0.5,
+                "priority": 2.0
+              }
+            },
+            "valuation_tier": "default"
+          },
+          "userland": [
+            "/usr",
+            "/etc"
+          ],
+          "userland_identity": {
+            "dpkg_status_sha256": "62fb069399cddf3429b06d7a0aac7a4941ab07fdf678e62c7a456daffd6751c7",
+            "usr_local_metadata_sha256": "2713d36a94f720b628fca9a7929c18052029fe35382596ffd6d6867d934dea25"
+          }
+        },
+        "gid": 1000,
+        "home": "/home/bline",
+        "host_dir": "/home/bline/.local/state/work-engine/role-host/pi/91e307d2-8e9b-483b-a7ad-5ff7a21a3f75/host",
+        "host_executables": [
+          "docker",
+          "pi"
+        ],
+        "lang": "C.UTF-8",
+        "limits": {
+          "cpus": "2",
+          "memory": "4g",
+          "pids": 512
+        },
+        "max_output_tokens": null,
+        "max_requests": 1,
+        "mounts": [
+          [
+            "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/design-r3/run/review-work",
+            "rw"
+          ]
+        ],
+        "runtime": {
+          "cli": "/snap/pi-coding-agent/current/lib/pi/packages/coding-agent/dist/cli.js",
+          "node": "/snap/pi-coding-agent/current/node/bin/node",
+          "pi_version": "1.5.2",
+          "resolved": "/snap/pi-coding-agent/91",
+          "root": "/snap/pi-coding-agent/current"
+        },
+        "selection": {
+          "lane": "subscription",
+          "model": "openai-codex/gpt-6-astra",
+          "pi_argv": [
+            "--model",
+            "openai-codex/gpt-6-astra",
+            "--thinking",
+            "xhigh",
+            "--exclude-tools",
+            "*",
+            "--no-context-files",
+            "--no-mcp",
+            "--no-skills"
+          ],
+          "thinking": "xhigh",
+          "tier": null
+        },
+        "session_dir": "/home/bline/.local/state/work-engine/role-host/pi/91e307d2-8e9b-483b-a7ad-5ff7a21a3f75/container/sessions",
+        "uid": 1000,
+        "usd_limit": {
+          "billing": "unknown",
+          "limitation": "Stopping threshold; one admitted response can overshoot. Subscription billing and quota are unknown.",
+          "max_usd": 4.0,
+          "measurement": "api_equivalent_cost_proxy",
+          "quota": "unknown",
+          "rates": {
+            "cache_write": 12.5,
+            "cached_input": 1,
+            "input": 10,
+            "long_input_multiplier": 2,
+            "long_input_threshold": 272000,
+            "long_output_multiplier": 1.5,
+            "model": "gpt-6-astra",
+            "output": 50,
+            "tier_multiplier": {
+              "default": 1.0,
+              "fast": 2.0,
+              "flex": 0.5,
+              "priority": 2.0
+            }
+          },
+          "valuation_tier": "default"
+        },
+        "user": "bline"
+      },
+      "cwd": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/design-r3/run/review-work",
+      "event": "launch",
+      "files": {
+        "events": "/home/bline/.local/state/work-engine/role-host/pi/91e307d2-8e9b-483b-a7ad-5ff7a21a3f75/container/turn-1.events.jsonl",
+        "exit": "/home/bline/.local/state/work-engine/role-host/pi/91e307d2-8e9b-483b-a7ad-5ff7a21a3f75/container/turn-1.exit",
+        "prompt": "/home/bline/.local/state/work-engine/role-host/pi/91e307d2-8e9b-483b-a7ad-5ff7a21a3f75/container/turn-1.prompt",
+        "proxy_log": "/home/bline/.local/state/work-engine/role-host/pi/91e307d2-8e9b-483b-a7ad-5ff7a21a3f75/host/turn-1.proxy.jsonl",
+        "runner_log": "/home/bline/.local/state/work-engine/role-host/pi/91e307d2-8e9b-483b-a7ad-5ff7a21a3f75/host/turn-1.runner.log",
+        "runner_record": "/home/bline/.local/state/work-engine/role-host/pi/91e307d2-8e9b-483b-a7ad-5ff7a21a3f75/host/turn-1.runner.jsonl",
+        "spec": "/home/bline/.local/state/work-engine/role-host/pi/91e307d2-8e9b-483b-a7ad-5ff7a21a3f75/host/turn-1.spec.json",
+        "stderr": "/home/bline/.local/state/work-engine/role-host/pi/91e307d2-8e9b-483b-a7ad-5ff7a21a3f75/container/turn-1.stderr",
+        "tier_record": "/home/bline/.local/state/work-engine/role-host/pi/91e307d2-8e9b-483b-a7ad-5ff7a21a3f75/container/turn-1.tier.jsonl"
+      },
+      "host": "pi",
+      "host_argv": [
+        "--model",
+        "openai-codex/gpt-6-astra",
+        "--thinking",
+        "xhigh",
+        "--exclude-tools",
+        "*",
+        "--no-context-files",
+        "--no-mcp",
+        "--no-skills"
+      ],
+      "model": "openai-codex/gpt-6-astra",
+      "name": "pi-accounting-design-r3",
+      "parent_session_id": null,
+      "pid": 2724730,
+      "pid_start": 29324059,
+      "service_tier": null,
+      "session_id": "91e307d2-8e9b-483b-a7ad-5ff7a21a3f75",
+      "thinking": "xhigh",
+      "turn": 1,
+      "usd_limit": {
+        "billing": "unknown",
+        "limitation": "Stopping threshold; one admitted response can overshoot. Subscription billing and quota are unknown.",
+        "max_output_tokens": null,
+        "max_usd": 4.0,
+        "measurement": "api_equivalent_cost_proxy",
+        "quota": "unknown",
+        "rates": {
+          "cache_write": 12.5,
+          "cached_input": 1,
+          "input": 10,
+          "long_input_multiplier": 2,
+          "long_input_threshold": 272000,
+          "long_output_multiplier": 1.5,
+          "model": "gpt-6-astra",
+          "output": 50,
+          "tier_multiplier": {
+            "default": 1.0,
+            "fast": 2.0,
+            "flex": 0.5,
+            "priority": 2.0
+          }
+        },
+        "spent_before_usd": 0.0,
+        "valuation_tier": "default"
+      }
+    }
+  ],
+  "no_parent": true,
+  "no_prior_transcript_resume": "newgeneratedUUID/launchonly/one freshledgerrow",
+  "launcher_receipt_sha256": "6044d3f0b5a4ebb9aacf47b4a4b210e22000436c67daeb283fa65dbd1f026fbc",
+  "actual_delivered_request": "must verifyafterseal",
+  "objective_ledger_binding": false,
+  "cost_accounting": "manualallpooloverlay without inventingnativeproviderbinding"
+}

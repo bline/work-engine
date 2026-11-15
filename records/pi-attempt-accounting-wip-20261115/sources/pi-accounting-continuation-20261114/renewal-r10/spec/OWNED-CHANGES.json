@@ -1,0 +1,30 @@
+{
+  "spec/ck.json": {
+    "before": "b661fcab04418e9a4a4477c5a42d5ffd67c88b172bede0338f776f325bb6d56e",
+    "after": "a3a30398f289c9edcb4c3a3b0009a9dff88021378658062ed532e90226400787"
+  },
+  "contract/TRANSITIONS.md": {
+    "before": "ab14af10ff99f1ccaf49282781dd3acb1b3be1dcdff7bc9742f21a0769a10676",
+    "after": "fece4603899250a9365feaf38f354986615b57150282e2d1a15e7626169923cb"
+  },
+  "contract/CK-GENERATED.md": {
+    "before": "43e10d8b342315b6e5db3632f81b9076b1166602acba84963c1eaeb4cdd3601f",
+    "after": "1c86dedffe691c5d09116d0b99f0559a7decf7072807356a153cd8246bb4ffc3"
+  },
+  "tooling/spec-check/src/main.rs": {
+    "before": "4b1d725bb00e0a9cd996bee2db5486b753abd69b607f9e6b638018353cedf89e",
+    "after": "b9bf7ef8f8aac7fd86ab25b4e5e794f509eb0a7a8e740472188806d764cbc880"
+  },
+  "tooling/spec-check/src/applicability.rs": {
+    "before": null,
+    "after": "81b2c6834565bbb0a2ea723567a95279e14c19d82ac45980ab8d280353dde2eb"
+  },
+  "tooling/spec-check/src/lib.rs": {
+    "before": "62769fc7f375c89d299a914c2444bc651f7aa5ba01dd55554a625af04cdb9a96",
+    "after": "2ee98799071351ca9527d0106ef198436c2bad176944a05cb391598e8d49493a"
+  },
+  "tooling/spec-check/tests/r9_spec_payloads.rs": {
+    "before": null,
+    "after": "47b647591e7322fa689cb1f4ce3aabd7a3f1164c7a1ae33ee5ca870a17afbc21"
+  }
+}

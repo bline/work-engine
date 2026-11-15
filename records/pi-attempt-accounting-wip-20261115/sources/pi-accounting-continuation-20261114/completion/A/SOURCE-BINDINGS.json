@@ -1,0 +1,704 @@
+{
+  "authored_artifacts": [
+    {
+      "path": "oracle/r8-completion-A/DERIVATIONS.json",
+      "sha256": "29750b3cfa65fece263a800a1e027e955686dcef95a084351e36b661e200ada8"
+    },
+    {
+      "path": "oracle/r8-completion-A/LOW-ASSERTIONS.json",
+      "sha256": "3c098cf4cfa1fbd1e36a0f24177171f15d691fcd63a10ff750f09f0e1ae42ef7"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-A5-unreadable-line-added.bundle.json",
+      "sha256": "a04dbca4c5804bd6a085a949e2977a67da08b8dc8a3868eb73b3845a1d6bb170"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-Q11-closure-uncertain.bundle.json",
+      "sha256": "9555c766c97f05618c7120001bcb251e7ac9bd310171242a784599bc5eacbca7"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-R01-usage-incomplete-terminal.bundle.json",
+      "sha256": "eeaeeb6c1c714d46d2addea9d62787bd3e4993489036e6b64fbc36aff0c1c596"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-R02-rounded-up-charge-admitted.bundle.json",
+      "sha256": "784f520489066672b822a8eadd87bd13b9b6cbc8dd0604e0ac253ed46bf02157"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-R04-priority-overrun-above-cap.bundle.json",
+      "sha256": "50bd6da5e475b50455f7aa84cb0e1e4f91a69d220b8b041e1631a256ddaf7bde"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-R04-retired-session-releases-commitment.bundle.json",
+      "sha256": "b500e1d001c6d316f1176ec2afecf7473b69ee479449fcd1794db3491de56db4"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-R05-conflicting-keeps-valuation-high.bundle.json",
+      "sha256": "c49255364536826e1f8275d5e8ec0a1a4b20c48eacaa6122b4b3ce4e9f250213"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-R06-reservation-amount-malformed.bundle.json",
+      "sha256": "9909fea38c58329858c6aaa4d6ccea5e30345ea16b2f076d9fd29de388d6c1c5"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-R06-reservation-rid-missing.bundle.json",
+      "sha256": "7f0754d5e98da8459c52737f3ea9eaa5e8e04a53973212540fdc20a6c17750c3"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-R07-closed-unresolved-predecessor-constrains-successor.bundle.json",
+      "sha256": "ba2fb75e135fb73b7621d27e2b75cc3715d11fc7bb2d127646647f6072bedd45"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-R08-admissions-without-tree-still-block.bundle.json",
+      "sha256": "8c42739c15004ab39cd756b3130b7b3e83595b4ef182c2fe7b46a85cac342c7c"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-R10-reopened-then-retired.bundle.json",
+      "sha256": "35616fc9b7c88d92aa9e1559d55fc679e727f38e50d6e68e6a9a6f1576e49243"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-R11-open-session-before-retirement.bundle.json",
+      "sha256": "4215ba84215144ae9341cca3d99e1e0b554010b3e9392da379ce1c2d5732bde1"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-R12-outstanding-interval-keeps-candidate.bundle.json",
+      "sha256": "dcd3c23dd3fafa2091ea8659cd201861027d7c37f0ae3c4399e9ef2c34b52fc7"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-R12-untrusted-clock-keeps-candidate.bundle.json",
+      "sha256": "3e89f6eddf45ef2d291de13df68aa9d93fac4b1bfb1c4f8fe0dd97aacb756453"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-R14-anthropic-null-tier-admitted.bundle.json",
+      "sha256": "1bdb56f405bd0e85e345424eab71e388156599a069e1190cb7bf5ed489a27740"
+    },
+    {
+      "path": "oracle/r8-completion-A/P130-T-owned-before-window-summed.bundle.json",
+      "sha256": "648120fde24100d3484421d558f16a1236b12aa7b8514100773d742fa910c3a0"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-CP-close-after-reference-time.bundle.json",
+      "sha256": "7eb0396dbf010d86a30c07f307d78d4774a5240294b6d756b1431e2ba22a283e"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-CP-close-entry-contradicts-closed-at.bundle.json",
+      "sha256": "83664d7084f610010d1af4bb611423eac6698961a3664523eae867877afc55f8"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-CP-closed-predecessor-outstanding.bundle.json",
+      "sha256": "cf275ca48aab6fd54774a8468370febbfaa69756a993952af0f7b7fc0e8d4bda"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-CP-closed-valid-close-entry.bundle.json",
+      "sha256": "1a710980b2469c2aab4639e15c2002aea97567746f53186ae1a9716eac79553f"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-CP-known-over-limit.bundle.json",
+      "sha256": "700449fec3702313cc1e87824f39a1bf4cf86928528d8e4ed01ffdc06d4916f5"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-CP-retired-session-resumed-without-admission.bundle.json",
+      "sha256": "13ffe2975f870afcd41e30fab324366e28bee8ac77255833dbd776605ec5a0f1"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-CP-unknown-below-limit.bundle.json",
+      "sha256": "fcba449c68cb6ad5851ca34524f2809afec5411c528cb675112a9e784880a5f6"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-N06-gated.bundle.json",
+      "sha256": "e0aa1b5c8d8f0dc818bb3815dc1989a83d5b062a6fc36003cf9d8b8145e4bf80"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-N07-gated.bundle.json",
+      "sha256": "5b7e984b2b43a1a8a3963266b29498a56bc46b3cde19e78ce0654ab4db73a6be"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-P130-R02-gated.bundle.json",
+      "sha256": "71fb41dbb10a251cda88b3ed867a465d96b3f014750ed65efca4fa84cacb2e9c"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-P130-R04-gated.bundle.json",
+      "sha256": "fec557f018d16a0e0ea4cc475ea94b0b8e3365931b3b2cb1125cb7f5f3eb3ad8"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-P130-R14-gated.bundle.json",
+      "sha256": "a4f854b5c5dde905e68b0bd3a7ad647ceae999f1d4023e6059796435a8f29d4d"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-U03-gated.bundle.json",
+      "sha256": "a184442e57a0877712769a724ddba6370da1553df31c5d9f5be04f37224f191f"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-V01-gated.bundle.json",
+      "sha256": "9dd51d1c6cacfd91d9b80ee7a310adcb18fd5d633d785476db77fd4caf3601fa"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-V02-gated.bundle.json",
+      "sha256": "371358469d1f324019301c58658a7e8327824d746d74122c0b16092e5dd16439"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-VC01-before-retirement.bundle.json",
+      "sha256": "4f830e6939a3e252e49a715396c9f8ca23590c7a23d2f249cf9eb03d50532f22"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-VC01-gated.bundle.json",
+      "sha256": "a12bf3b9bc8e9f694a96e9c6dc2ebc7b078b28812c5c3f7339acc58e9c57f162"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-VC01-no-gate.bundle.json",
+      "sha256": "5d1b4d4d9c4bb34b8eb4f0b6f2193da425614077786300c570f50bc28ebbe8bc"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-VC02-gated.bundle.json",
+      "sha256": "83745c6fb7edfdb0c0e851eaf2e8ca07192137690d09190e4e762db46fbc8424"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json",
+      "sha256": "f7bd0b80b5af80e0baf5052c5ff5211835de39045ef4a52f90b73e781bd3e9af"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-VC13-gated.bundle.json",
+      "sha256": "56d676b9c00666a0af1cd098fa2c5bad2ff0f1a4f772dd2e5811bb6afb319251"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-VC14-open-no-billing-bound.bundle.json",
+      "sha256": "55610a9756b6ff9784c57e87df2849c79fc028858dd13815c3289a2b2f737b8b"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-VC14-open-session-billing-bound.bundle.json",
+      "sha256": "effde1dd2f4b2daf567da9cc2ba98e230e5c1ef4d18ebecf1dbd0b0f17fa2d4a"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-VC15-gated.bundle.json",
+      "sha256": "cee2b1ba0b845f97c0b95b999129ee1cc5042f73545423071cf71fd7f70b5e21"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-closure-authority.bundle.json",
+      "sha256": "42d05ef9ad10db5f683b197b84b1be2b13c723f48e9ede3f795ed36464a3ea8f"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-closure-legacy-entry-only.bundle.json",
+      "sha256": "7c76be909a67d30521ee2fca0af5bd6d73d06047bcd53e679b3c4c1442f9c1a3"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-gate-contradicted-by-reopening.bundle.json",
+      "sha256": "1642a7d3b955be8dad8d918a61eb7848a88a602ba17fab728e1ff7238c82d355"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-gate-expired.bundle.json",
+      "sha256": "054adbe42c4c893e65f15a8c01dcef9f94cbb7145c88d10353a32eeaa56e335a"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-gate-flag-only.bundle.json",
+      "sha256": "424aff478df458088e2ebcec808df73046db041eef0eba2673af36cbe1ed3d07"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-gate-receipt-missing.bundle.json",
+      "sha256": "4d8dbdf4ed2e63428bc6c2eb764a08a988c252323d4a316872fd1fc06862095e"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-gate-reopening-only.bundle.json",
+      "sha256": "ab40cf3496584162781f1b31ed2e389b0b10c2d473587e95629770e4ce70e357"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-gate-request-scope.bundle.json",
+      "sha256": "2a730a36b6eef460f4cee22feb7d795c54b1c20e856331deeee0eb7362826ae1"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-gate-self-asserted-file.bundle.json",
+      "sha256": "df9af263e5a5a547ce4e5adb85ff4bf290f8a63621527ade193fdd3f316386a3"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-gate-starts-after-launch.bundle.json",
+      "sha256": "d45381c759e6d96e42b6fa4b3bcf0855859312cdc636b5615daf8720045ace1c"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-gate-wrong-authority.bundle.json",
+      "sha256": "b6053ad2025fbc8112aab2057fd8ae13bf4396fc72cfbd6a4efc651310e4717f"
+    },
+    {
+      "path": "oracle/r8-completion-A/P132-FG-gate-wrong-session.bundle.json",
+      "sha256": "0af5e557c4edbd004b3261aa61777a5d5ef48d31d6d3ce6eb32f9827b8617c5e"
+    },
+    {
+      "path": "oracle/r8-completion-A/P133-A01-incomplete-usage-above-reservation.bundle.json",
+      "sha256": "6b55a5e12b1e7e18086f9d54b678ad34b09b1c3fcb8ce8bb3c0f728552bd0d34"
+    },
+    {
+      "path": "oracle/r8-completion-A/P133-A02-error-status-with-priceable-usage.bundle.json",
+      "sha256": "eac320e7ead08b00cf50088227ab8f3b82c81e92b14d5d23c02f1e4d1a99522e"
+    },
+    {
+      "path": "oracle/r8-completion-A/P133-A04-cache-counts-both-absent.bundle.json",
+      "sha256": "2104d56656fdb7fd3251ba0ed6c112c0c05a3230b1bc5d9763e10536d14bfdcf"
+    },
+    {
+      "path": "oracle/r8-completion-A/P133-A04-cache-write-absent-legacy.bundle.json",
+      "sha256": "60598a03dfd11bc6807061c988552ed55b626324826bcfeffaaf172bd371a5a5"
+    },
+    {
+      "path": "oracle/r8-completion-A/P133-A04-cached-malformed.bundle.json",
+      "sha256": "6bad617dee25a83d117a72606ac6a9e8c3cecb622042dfa4ad55717db9b5b564"
+    },
+    {
+      "path": "oracle/r8-completion-A/P133-A04-cached-nonzero.bundle.json",
+      "sha256": "5d3b22bab92097887b5f3ac0bb6318ca04cc8d269ccab32ad508f907670ddc41"
+    },
+    {
+      "path": "oracle/r8-completion-A/P133-A04-mixed-observations.bundle.json",
+      "sha256": "f4642e47f675e302f96030c3c71b41745953edb7cd2fb9a33bb0cd29d0e6f85a"
+    },
+    {
+      "path": "oracle/r8-completion-A/P133-A05-model-case-variant.bundle.json",
+      "sha256": "7b4fefa764bad95cc35d40a3f02d3a2ca43dc33ed6856ac65203900b9956cb9a"
+    },
+    {
+      "path": "oracle/r8-completion-A/P133-A06-error-status-null.bundle.json",
+      "sha256": "7e67af792859b1c754cdefbee1186e2ef8c3d0e3b08f3773602c894b4cefaf30"
+    },
+    {
+      "path": "oracle/r8-completion-A/P133-A06-usage-settlement-status-absent.bundle.json",
+      "sha256": "e6eb0bde578bc7b9367da3731768070f4190109b9fcfcb2b1a03dc17e4cb0693"
+    },
+    {
+      "path": "oracle/r8-completion-A/P133-A09-conflicting-reservations-with-settlement.bundle.json",
+      "sha256": "22fb74992dc278f29d9dd1d8b4a0dcd2ef8f973516a6bb735f19e023666f46e8"
+    },
+    {
+      "path": "oracle/r8-completion-A/P133-FG-VC14-authenticated-bound.bundle.json",
+      "sha256": "8426f4cf9bd41a867a89aa3acdc8f63fb6629f9789cbaa54698eee526cbf55ee"
+    },
+    {
+      "path": "oracle/r8-completion-A/P133-FG-bound-binding-mismatch.bundle.json",
+      "sha256": "b77d3522d3cd655f9cc9eaab425df4595250a701ff587da6767670318c613cdb"
+    },
+    {
+      "path": "oracle/r8-completion-A/P133-FG-bound-coverage-incomplete.bundle.json",
+      "sha256": "9db5a0aa63360f080db1f699d776d14eca1c4f456a84086da33c3e033e38d23e"
+    },
+    {
+      "path": "oracle/r8-completion-A/P133-FG-bound-exceeds-cap.bundle.json",
+      "sha256": "9a95d6621a78b6e7c0c5c35d4d179e8f28770e82dbb1b888379685902c7eb068"
+    },
+    {
+      "path": "oracle/r8-completion-A/P133-FG-bound-wrong-currency.bundle.json",
+      "sha256": "07022763957eca75c693ab695d4165b9f10b9ad7474fb5ad4f3c288ea7659b22"
+    }
+  ],
+  "cases": [
+    {
+      "baseline_sha256": "ed655fe62ae21ace6df9e50e773f98803ad18f23471e9d98a19ea86a4fcd0d7c",
+      "final_sha256": "36829c20f647c155b23fbb122ec36fbbc063efc31b55b1df808c1206b0aa7423",
+      "path": "corpus/cases/P130-A5-unreadable-line-added.json",
+      "raw_input_sha256": "96a8915354b794cd1af8c3b95165f4122aa10ebb83e6365cf7bff173f9c8df4c"
+    },
+    {
+      "baseline_sha256": "c329906d4145b395bc3ce8eb99339ccba56e240f7ee5b00f4f04971e06bf3304",
+      "final_sha256": "f92de64951392d0c937ac019a220b89a5b94aa7d611d5d56ad29dff3e40603d3",
+      "path": "corpus/cases/P130-Q11-closure-uncertain.json",
+      "raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98"
+    },
+    {
+      "baseline_sha256": "cd0d273b494f0341db824f71f38323dea6872d16e3c0a595f18c7e53173ce835",
+      "final_sha256": "c885e09111eb3d663dec0d86479441680d22a1c886a695f25e099c0b41fa7a24",
+      "path": "corpus/cases/P130-R01-usage-incomplete-terminal.json",
+      "raw_input_sha256": "a5523b160436a40f2d39f814982698a4aa80d4bab33a5b95dc1e0987cabdf505"
+    },
+    {
+      "baseline_sha256": "50400b7365012fad4c94b844b5c501d63ffa24f553cef3d339d5843a3ed7746b",
+      "final_sha256": "2923751f185114fd436e5d9dd86e803a861eac318450b9290c6ded960d0d0dff",
+      "path": "corpus/cases/P130-R02-rounded-up-charge-admitted.json",
+      "raw_input_sha256": "6f0eeaa36409cfe79663450c1fa0286a51a87a90698f4030736646189dd6896c"
+    },
+    {
+      "baseline_sha256": "bc91e185a5e5e36d3a64be0c0599a41a224281bcecb80917f17a0c080d51c4a8",
+      "final_sha256": "afc17b43d67989711e332d5d23bc296aa3f2d4d25831c17cb09335aede99072c",
+      "path": "corpus/cases/P130-R04-priority-overrun-above-cap.json",
+      "raw_input_sha256": "392ee33eec99591bf4342df966ce7b82f298c87b2f26b0a422d0409dc7f5bfb5"
+    },
+    {
+      "baseline_sha256": "02a59d54de32362a204299344ffc680180b78678dcb5386cf9fb9728223645e6",
+      "final_sha256": "0c33912033a3cb2b3a212486e19c0bc87bf5c520d92ead3ce4b7d951203f797d",
+      "path": "corpus/cases/P130-R04-retired-session-releases-commitment.json",
+      "raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98"
+    },
+    {
+      "baseline_sha256": "8858ffc5768c842f14e1364aec6278b3df567d6706a3b04924be32a47179fee3",
+      "final_sha256": "3459bd5cb44ab815a6020f7a0d0fbd0bf012be3fa4916f3f8c9a7dfdd27371d1",
+      "path": "corpus/cases/P130-R05-conflicting-keeps-valuation-high.json",
+      "raw_input_sha256": "15840859797471fd136b0d282fcf38cc8e73cce7b4d7d0a64da722ed97d9b723"
+    },
+    {
+      "baseline_sha256": "812de1ff4f7dbd5b18530e5b99a27597160fa143bb2fa3cf2d58c6a1e5643c9a",
+      "final_sha256": "21d5131880b826bddeea075997de5f36720de14e22ae61438ff19bd019ed0ae3",
+      "path": "corpus/cases/P130-R06-reservation-amount-malformed.json",
+      "raw_input_sha256": "8950d90d144433b3b5319096c6b2f0abfede18bbd8555a8d9718154f3ea1421d"
+    },
+    {
+      "baseline_sha256": "7ffea6cf83cdefa926092312168f607a378441b0ebc36d81a028e02fa34d6dd0",
+      "final_sha256": "fd6b204cad915825716a758ce649e9e19ab15ace31c281ab559c4464f3628024",
+      "path": "corpus/cases/P130-R06-reservation-rid-missing.json",
+      "raw_input_sha256": "fb38ae93bcde95a9b06a835ac438f9f1a65d6d1205eb8f6c83f337276a45010f"
+    },
+    {
+      "baseline_sha256": "4ccbbb8672a0625180ffd1df9325f5a91b8a71caa133ca7e681c8dedfd047cf5",
+      "final_sha256": "727b585f9e510cca7a7bdda17a03d8e880159a58d740738de40663326243b817",
+      "path": "corpus/cases/P130-R07-closed-unresolved-predecessor-constrains-successor.json",
+      "raw_input_sha256": "6046c3363fbf3f7eb2ea31638c89005706914a2a3b11d6664595da3d305bee64"
+    },
+    {
+      "baseline_sha256": "113b0a15680330f208a1d97cad7f094ed59fd6db9e2a4a61484d58780ec78fd0",
+      "final_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+      "path": "corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+      "raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98"
+    },
+    {
+      "baseline_sha256": "3f201aa1d1595712f03bf60eaa8aa31476fd6e54e4e34d92e49ccb71d4e4ceaa",
+      "final_sha256": "df0080ab76daa9ec20692f9797244f224405021cea48abea412e29a0028c8e9b",
+      "path": "corpus/cases/P130-R10-reopened-then-retired.json",
+      "raw_input_sha256": "64c880d7c1208ec733e6e89f886ba60320d9bb7d4825e1683a8faa28ec8a379c"
+    },
+    {
+      "baseline_sha256": "bb1b58797e52522edff3b9270a80f2c109f6ca4b38d184f4af8cacb230e3030d",
+      "final_sha256": "e373a9a276d977b3925ace1b88b85e3c9fcaea743d5234c278633afcc435aeb9",
+      "path": "corpus/cases/P130-R11-open-session-before-retirement.json",
+      "raw_input_sha256": "02e2f38c1f164678574c237a28df85f703f137ee6dc02d910e7d11a266dbccee"
+    },
+    {
+      "baseline_sha256": "17c26bee5d4bfe194b523cfb28336ac9e4c8878428b026231924a478414f0faa",
+      "final_sha256": "f5455c5e36599ea643da2505ef30232da36c3fea2d88184adcfc7580872540e4",
+      "path": "corpus/cases/P130-R12-outstanding-interval-keeps-candidate.json",
+      "raw_input_sha256": "f58acdd2311f294fc4073f0d4f8dbedf412eaaf5792c6ccc3700f79003279f5d"
+    },
+    {
+      "baseline_sha256": "422c011c92de4c2835616bbc76e12649a62648e5f2613e2daabf9589eb1f9b02",
+      "final_sha256": "7f7073441f166457449f1536cd6ea7df0000891f5332e3648c49cb7010ae5e22",
+      "path": "corpus/cases/P130-R12-untrusted-clock-keeps-candidate.json",
+      "raw_input_sha256": "ce3ba8f5629a4bc0c0fcd26bd1cb4220af1d180f3e6ccd1b816d0de4d2533c18"
+    },
+    {
+      "baseline_sha256": "62744fb230c8b5e08220514e3c61ace1479dd4e0b5bc336f3f305f8c08b3d946",
+      "final_sha256": "8ac77e59c9e6c579d5f4bbef36e7f74f911db0a4e30a923f32b6b205f049e38c",
+      "path": "corpus/cases/P130-R14-anthropic-null-tier-admitted.json",
+      "raw_input_sha256": "00efadffab0f8745f02f35a9d02c2da63d2dbc6a25454bb2c9bd392257b5bd44"
+    },
+    {
+      "baseline_sha256": "b263756e0c2de2304d22428ce927dbee03f83209e1f5106dffc968daf4b7ed21",
+      "final_sha256": "15c099500d5b1efbff372642ecdc9a1e882e001808defa8e29cafb4dc40cd0cb",
+      "path": "corpus/cases/P130-T-owned-before-window-summed.json",
+      "raw_input_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98"
+    },
+    {
+      "baseline_sha256": "ed5bc626813be8c5879c483be8391ac1279e6aeeeb0b0cf2281bcc46a1b8e294",
+      "final_sha256": "a0284ab9dac48665c6839a35b149a06bc1254a523e96888f2002a3b600c2ed0c",
+      "path": "corpus/cases/P132-CP-close-after-reference-time.json",
+      "raw_input_sha256": "b6616ec78c84814655de5b86ab6b4b05225715c9353b3dac62b330a787be7087"
+    },
+    {
+      "baseline_sha256": "2ee380d7a7599557b7c4b9cef60dbff35a3253933cde2f099f11d1c6228141e5",
+      "final_sha256": "601ef78db50a645b67fbba61583846920872ec145ed37e3ad712d9fa32b2037c",
+      "path": "corpus/cases/P132-CP-close-entry-contradicts-closed-at.json",
+      "raw_input_sha256": "b6616ec78c84814655de5b86ab6b4b05225715c9353b3dac62b330a787be7087"
+    },
+    {
+      "baseline_sha256": "732d241aac55bc9c769467847388a09f2af88c5dfe163df8e2192fe06194f792",
+      "final_sha256": "7c057e10f8b0da01d52a27468c4265a47045c16b071afae62840ad0e559521f3",
+      "path": "corpus/cases/P132-CP-closed-predecessor-outstanding.json",
+      "raw_input_sha256": "f58acdd2311f294fc4073f0d4f8dbedf412eaaf5792c6ccc3700f79003279f5d"
+    },
+    {
+      "baseline_sha256": "6387949fd780498fedda3a2c914a6d93d2916d91f723ac0e4ce3c9b6d617d5cb",
+      "final_sha256": "29b325abe2ffcd1939b425459be61a928b8666370ffa4badf743e13e7c747067",
+      "path": "corpus/cases/P132-CP-closed-valid-close-entry.json",
+      "raw_input_sha256": "b6616ec78c84814655de5b86ab6b4b05225715c9353b3dac62b330a787be7087"
+    },
+    {
+      "baseline_sha256": "0459f084141df01772b07f568eea5d7078747de1292355fbf67bf17ce8bc2684",
+      "final_sha256": "8a964e6ecef736746e0e636e1807dcf5a653fb4ee64af4a7418a80014c2236c9",
+      "path": "corpus/cases/P132-CP-known-over-limit.json",
+      "raw_input_sha256": "95347beac8f748d9ce1ef0ce4bc1c727f58287d2cbdeb15b8513241c7a7c5e9b"
+    },
+    {
+      "baseline_sha256": "a1d8ca07699223da7b6814d73898e97b1939b617aefd1797a1d9a2deb6598572",
+      "final_sha256": "5f41e4b93d451d0e5be56902d907c7ec9e69581bd3c9960b9b0e1be100759f70",
+      "path": "corpus/cases/P132-CP-retired-session-resumed-without-admission.json",
+      "raw_input_sha256": "dcb0e055ffd652c79b152bb6a8faf010cb434a8bdcf0f7f3b49988e3aa30de6d"
+    },
+    {
+      "baseline_sha256": "ceaf2d37c2cc7617a1ea598c73f81e2a60b507a3a45df09bbb00f0a388bd3d29",
+      "final_sha256": "fc36eee2fd441ac6fa9df432d44ae6a8da71d9fa7013266e543f91db271132a3",
+      "path": "corpus/cases/P132-CP-unknown-below-limit.json",
+      "raw_input_sha256": "95347beac8f748d9ce1ef0ce4bc1c727f58287d2cbdeb15b8513241c7a7c5e9b"
+    },
+    {
+      "baseline_sha256": "4334757f037b531065b28b4bf424c885647feef2124a25a91877ee430f593e5d",
+      "final_sha256": "8ce3d05601e291986d61a4489124b4b0eb54a4c6160471c3f45f978a76959430",
+      "path": "corpus/cases/P132-FG-N06-gated.json",
+      "raw_input_sha256": "1e570cdc808146e7a62f02c78ad5f14f37718d9f8a2de0ca802259b6a65bfed7"
+    },
+    {
+      "baseline_sha256": "f73b7e89da16167ecdf18ed6f43cd1d427f0fe5eb9a8e68d8a7e72ef397fa9dc",
+      "final_sha256": "1ba3f3bdd3eacb1d2c55e11736d758c01b33fbf424feab40286520d1642c18cf",
+      "path": "corpus/cases/P132-FG-N07-gated.json",
+      "raw_input_sha256": "25b43410b9075c84df38b04a8e1900d7460e63c130d46d5a816a36779b238ef3"
+    },
+    {
+      "baseline_sha256": "8d12745cbe23e59f69f0901d1765979416701d425bd5f05ba1a189d85714d1db",
+      "final_sha256": "7c2778dc39f99837c0c3c6c1eaf1ee5a65bfd0d4ae3c0e27b252e84992535f25",
+      "path": "corpus/cases/P132-FG-P130-R02-gated.json",
+      "raw_input_sha256": "d622b9596f0781e6a3f38733394f8fb98dd645fabd94a2b05fb607f37e4634ab"
+    },
+    {
+      "baseline_sha256": "d78467636789db3b6b6e67b321abc9abe46dfefdf3ead0f5251ba02f5a9dd853",
+      "final_sha256": "13f5422b4deb2262539947ca815515f764eb3aba3fef171e2bba54dcaedfc8e8",
+      "path": "corpus/cases/P132-FG-P130-R04-gated.json",
+      "raw_input_sha256": "e50cc0d9ada1ef7a9473cbe2fa63d291b6ff1bb1fa4267a261f4d7b8193811d6"
+    },
+    {
+      "baseline_sha256": "0ab64f182ecf66ec64be8bab26b7869d5eb5ab2938bc6dbe4706254d8357e6be",
+      "final_sha256": "eb25ee5154ed2c0ace5ca647f4729cb5e9d1945952f41cf64cd7f35f745863e0",
+      "path": "corpus/cases/P132-FG-P130-R14-gated.json",
+      "raw_input_sha256": "4ea7d3389f8f41d756fcc2a3462f600993c347855a9ff61458fe05b3ab9ec911"
+    },
+    {
+      "baseline_sha256": "065de6106a2a4a0c85b867bf88191f9207546ac29e956a15d1a3125b95acdde1",
+      "final_sha256": "00d33cb0890ea01aa3d2d030dca92d2a8408a3288f7a2d672da89277c54bb033",
+      "path": "corpus/cases/P132-FG-U03-gated.json",
+      "raw_input_sha256": "f094c37b84a976993aac1de27e277197fe3806b05230f97068e51fed1d4b0a1d"
+    },
+    {
+      "baseline_sha256": "af3762e0b33911666d862118f21a307698926049c666683305b91b637393a3fb",
+      "final_sha256": "49fdda36ecf9f73ee61c7847a2291da1d635cd7e2df83fee5097d00282e622f0",
+      "path": "corpus/cases/P132-FG-V01-gated.json",
+      "raw_input_sha256": "8ccea6f661a767375c7418f27c49f1ca947272fc3b837ac66ef090a85895fbea"
+    },
+    {
+      "baseline_sha256": "22bdd564e514ab9dcdc901b1d14252859655451bd1a064ca114df01633103b5c",
+      "final_sha256": "ce06c1b1cf5ea9fbc27231996f45565818e4c0a5498e323de8ce3acc286ce901",
+      "path": "corpus/cases/P132-FG-V02-gated.json",
+      "raw_input_sha256": "da99dcecf7e76615e9efc834353a086c94662201a49b4825c9bc6d18ca622345"
+    },
+    {
+      "baseline_sha256": "6fd73d6265721260f54e412c4b617ad33a9b39e9f9c71feab627cceacd81dbcf",
+      "final_sha256": "fc18cb0501c0ecab5a196091aa6495a577f2c2345f97d705a49f7f2c2765ed4b",
+      "path": "corpus/cases/P132-FG-VC01-before-retirement.json",
+      "raw_input_sha256": "c024884362ea8460dfbcb257479600fe0819c9c844309403eb0f439c6cffae3f"
+    },
+    {
+      "baseline_sha256": "211dc63b85b81122a42bc91262000d4e1ee986b579e6ffb4e12cc95b2d6aa761",
+      "final_sha256": "e794db2b9334c6e1e9ac46a8d879c017f29c919b603462552ad732f008bdc71e",
+      "path": "corpus/cases/P132-FG-VC01-gated.json",
+      "raw_input_sha256": "e50cc0d9ada1ef7a9473cbe2fa63d291b6ff1bb1fa4267a261f4d7b8193811d6"
+    },
+    {
+      "baseline_sha256": "bb71925579f6eea1c50cad6a9fb3053940e7986a9c90fdc32c0d05d419b2df19",
+      "final_sha256": "2ff7d9708cdec5b483f2327203edb5a093488ed700d462d48ecdec68767e3a5e",
+      "path": "corpus/cases/P132-FG-VC01-no-gate.json",
+      "raw_input_sha256": "5644efc405b6e51ca26c46bf7cc1fa98e048f00d6242efbde06985efcd324b0d"
+    },
+    {
+      "baseline_sha256": "faccffa88f30c5000cb53ebb4373677a265fa008ad15ebe61262cfc226cf9533",
+      "final_sha256": "6ef2abbe6e168a8213c6333dd6a1f05424cb66e2861cb0d28952507d34041acc",
+      "path": "corpus/cases/P132-FG-VC02-gated.json",
+      "raw_input_sha256": "595c2875f58e1737ef868cba4a5792952a786b6815c6b5a25bf13c843c345d95"
+    },
+    {
+      "baseline_sha256": "f94c42e0e2866172105e73889a3cf3a9204796e7182a33e84e8db6c893419656",
+      "final_sha256": "4054b455a2c9100ae62bdcfbf92c6dd82cf5208edbe6d9af66056511425ab0eb",
+      "path": "corpus/cases/P132-FG-VC11-gated.json",
+      "raw_input_sha256": "2100d78c0ea5c92d4ed3a28d7b9b7e9d2f7c0c21a104ca7717bfb54c785a7784"
+    },
+    {
+      "baseline_sha256": "1c6904b10b222d72c8845216da31d2ec901d364ee01a6d270b9e2f5353382bbe",
+      "final_sha256": "6779dddbcbfab60d3f21c790385552ba087b312bd930367eaa1cf972797ad553",
+      "path": "corpus/cases/P132-FG-VC13-gated.json",
+      "raw_input_sha256": "697168059232384b66c0ae5a527e182e3a07ed730b814455a9466e42270c54e1"
+    },
+    {
+      "baseline_sha256": "c47cadd96b8171af7138591e72b6947fd08dd374f6e400a1857633c11a0b48b5",
+      "final_sha256": "0ff3f9de3c7e6fe8ab9acbef3da2c9484b869a0b86733df0ade99730893c2860",
+      "path": "corpus/cases/P132-FG-VC14-open-no-billing-bound.json",
+      "raw_input_sha256": "2b9483b15206115ed96b995097067c2af40946049a12b3c681c88464dd04019f"
+    },
+    {
+      "baseline_sha256": "c7b263fbe03b92e2dbc97b4edde6c2d4cfd11a8f50a02296e14ec25774057667",
+      "final_sha256": "97a51aeba12397646b306fa59a7fea2322d7eef99f8e48511bd5a7626c7d6e3f",
+      "path": "corpus/cases/P132-FG-VC14-open-session-billing-bound.json",
+      "raw_input_sha256": "c024884362ea8460dfbcb257479600fe0819c9c844309403eb0f439c6cffae3f"
+    },
+    {
+      "baseline_sha256": "75ade16196b08d2024c372074f266ef27ddc5c74232ae43060e030a2d2bb1e53",
+      "final_sha256": "c252ee80d0f4353a4897af1a1fbea33fd595f345a866fc7f8d8bd2c3a55c89db",
+      "path": "corpus/cases/P132-FG-VC15-gated.json",
+      "raw_input_sha256": "d008746b07adf279a38344b758c8a79b9d6d4b4a5fa56646a9ee812dc519200e"
+    },
+    {
+      "baseline_sha256": "034a8f0c1fe93ddf656e9e1a6711ed63d83e1d51abe2463da1f47dece088b9e9",
+      "final_sha256": "35641e928e4c57d83f67113b421b233f6e6d2659f385bb3f136167eeec91e18a",
+      "path": "corpus/cases/P132-FG-closure-authority.json",
+      "raw_input_sha256": "e50cc0d9ada1ef7a9473cbe2fa63d291b6ff1bb1fa4267a261f4d7b8193811d6"
+    },
+    {
+      "baseline_sha256": "8af2d07e4570fc8d3d75b729e27a18a40558563798c29d10025e4d301aa63ac4",
+      "final_sha256": "e6c1d11b32e8bccf43a965cf29cbac0776c8386403429c4b6a80c5ee7c99849c",
+      "path": "corpus/cases/P132-FG-closure-legacy-entry-only.json",
+      "raw_input_sha256": "e50cc0d9ada1ef7a9473cbe2fa63d291b6ff1bb1fa4267a261f4d7b8193811d6"
+    },
+    {
+      "baseline_sha256": "e11eed4680ce9667999bc9a8984ed524a797f6c55d719144afd6287ff162d4f0",
+      "final_sha256": "fe177b705f6e09a3a34e3d51ae86b5e8236bbb9f7291860a754085137028a83d",
+      "path": "corpus/cases/P132-FG-gate-contradicted-by-reopening.json",
+      "raw_input_sha256": "723d4a6ca83cab99b2a3a17e172fdb8689130d5cc06bcf4019d0fa55e846f254"
+    },
+    {
+      "baseline_sha256": "6d48d1fb0497f4c2f23c7410e647c3827ed16947c024b54e123f27b7f07158c5",
+      "final_sha256": "e498399ee7d7a1af86be3bfe67a0753446b693f7fe2571efbcf814d8e905bf58",
+      "path": "corpus/cases/P132-FG-gate-expired.json",
+      "raw_input_sha256": "06256dbb05fe849b63d9d12e2fb2b1fa76dcfafee9fe1168292bb7f18f6ad501"
+    },
+    {
+      "baseline_sha256": "21ec0a61b58b0110f85b8ed7aa177f575b1123dcf34956ad07aa735e45a024e2",
+      "final_sha256": "fe9c180975505d198703ea9418f75abc8600c405156862fab99ec11d69a587ba",
+      "path": "corpus/cases/P132-FG-gate-flag-only.json",
+      "raw_input_sha256": "6540484040ec10e9edde928372f71f9f7d71f56c8ad606204860bdd0f7342951"
+    },
+    {
+      "baseline_sha256": "eab51fab1a950bdfce1ca2e00050902a196d2f1b53bfed4ced4fc6b5abca835e",
+      "final_sha256": "12ce48c05094eafa613270f2f55edf03a65e301a92c2525f4694bc7dfa366eeb",
+      "path": "corpus/cases/P132-FG-gate-receipt-missing.json",
+      "raw_input_sha256": "da361ee0462dd2548a1389decd6c7babddf8b49c896abef821b899ac9efd14f1"
+    },
+    {
+      "baseline_sha256": "34af0d699e7261badbb143c8a07a963f10ddc3785018c2ac26292137039b9ab5",
+      "final_sha256": "04fda95f35a4ce0b7bd42e131a1bd3ad6ceca44de5903e460a1e90e70625770f",
+      "path": "corpus/cases/P132-FG-gate-reopening-only.json",
+      "raw_input_sha256": "3d11cb205c85cec212f4f5fd64cfd307198678a3cf2de7f73e0b6f52ea9d8e32"
+    },
+    {
+      "baseline_sha256": "a0d3c4dd2673add192c77a7fd3459f2d11e65aea0118e627f47027aec8ba52bd",
+      "final_sha256": "81f0322afdf6b177d6c89b774d68f5d302773b427ac89da120604a16ea020c24",
+      "path": "corpus/cases/P132-FG-gate-request-scope.json",
+      "raw_input_sha256": "d4a05a6937d05ab0da5377bb47315fd171f5898b1bef8c0a1e431c80fa2a479d"
+    },
+    {
+      "baseline_sha256": "6766456064cb9e3f23b3c51f5ab80f5413e6fa8dd6c5c1a1922722b93bffeeb6",
+      "final_sha256": "c289d84e65f608474fc1fbb75ab57251f66f5e52e5ddd4d31d8f372f8300f974",
+      "path": "corpus/cases/P132-FG-gate-self-asserted-file.json",
+      "raw_input_sha256": "e7a9b59a0386bc18bc2a27be2b5edf3b6bcd0624337e94a95ddee45f7fcd55ca"
+    },
+    {
+      "baseline_sha256": "445b5bdfc2f9044e316b17e2f44c3cddf6863564dd666992d42ec5be3ed5140a",
+      "final_sha256": "2a93b70675288bdbbdd2239f7a3b536f8b36ac12ce97ac2a2b865fbdc25dc8b4",
+      "path": "corpus/cases/P132-FG-gate-starts-after-launch.json",
+      "raw_input_sha256": "bf50ca7a6704d4903b232185f084a30267064788393104acd6c9b3e28bbc2469"
+    },
+    {
+      "baseline_sha256": "daf9538406b5d5d3a658e71a22b938b386dcdd810e07df28748357331620373f",
+      "final_sha256": "c2bdf3155fdbe645db1fb42e990ff2c4e6dbb813ed0c94362b1d4473f421f6ad",
+      "path": "corpus/cases/P132-FG-gate-wrong-authority.json",
+      "raw_input_sha256": "92c84455632d6f0b8e3cce8a653049298423486067b857be085dca192c77e2be"
+    },
+    {
+      "baseline_sha256": "f80bd91f36feed287c2f4aca1036a907a008330b0515ba2b2a86dae5159c9c2f",
+      "final_sha256": "64988f17cda46cfd511ea6fa10f8d27c3fe5526aef99f0afe1ab81ef7fec299f",
+      "path": "corpus/cases/P132-FG-gate-wrong-session.json",
+      "raw_input_sha256": "7a15a0a612cb9f6bdf5770d64bb22c709c8070125ff403775eaec54ef17d4a15"
+    },
+    {
+      "baseline_sha256": "00efc89f5286dbe6cca718e4ce477ce769cc787adb08fccc758bf2567ddbf63f",
+      "final_sha256": "b0543001e74b15ea65397b909d8e462da50e972fa6d1e63221ffa9ffa21f67cf",
+      "path": "corpus/cases/P133-A01-incomplete-usage-above-reservation.json",
+      "raw_input_sha256": "5f8c1dc2a4f82bd81b50eb044e636681b69c569845820566489cc6c57bebb5ba"
+    },
+    {
+      "baseline_sha256": "def5e77e82c81a18279b4d9b7e32c359267ba967e0041ac43f968756c1784ed4",
+      "final_sha256": "db4b2f140d059e650bc3cca2530158c92393a80f83525b6b8412be96223959d4",
+      "path": "corpus/cases/P133-A02-error-status-with-priceable-usage.json",
+      "raw_input_sha256": "b5132516f7426785e9feafdadb8ef837291be69f3dc76d6907557d8c6df5ec1b"
+    },
+    {
+      "baseline_sha256": "bd4b0e8593a0d17658f34a590f2b48fc02ae59eede7c620779f17352bec79c35",
+      "final_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+      "path": "corpus/cases/P133-A04-cache-counts-both-absent.json",
+      "raw_input_sha256": "e5665202044f8176f3d8ca037ee1ee25c44b5f04209a1acf8e398c377290d18d"
+    },
+    {
+      "baseline_sha256": "97cd10c8cd6dabad3af998f812d5481875d740e79900a799f2a1e497ae2bc3d5",
+      "final_sha256": "a216f54e7ad4e42a8f455207a41cb6dad8d9aea9cbfcb4392d5f9f9806014f51",
+      "path": "corpus/cases/P133-A04-cache-write-absent-legacy.json",
+      "raw_input_sha256": "91c75f7a3a0832b836adfee93687e20fd423e13a21afbc56970f2c8a52d6c3bb"
+    },
+    {
+      "baseline_sha256": "e023eaa562cf34ce0108e8739f626a6364f9bc724411434fc0b9498da33f6f8c",
+      "final_sha256": "291c75d734a4b097250836d8b784e984e5495cdc2aaf4742028b0bf6ae65d780",
+      "path": "corpus/cases/P133-A04-cached-malformed.json",
+      "raw_input_sha256": "686f74e18c36927596eea8c98bd8507f86d829978db01090824d2fcfe123ae80"
+    },
+    {
+      "baseline_sha256": "4363bcab714b769da197f6ac99bbae6384150de230863fe374f262a7063aa95d",
+      "final_sha256": "814b2df896c09b96a3ec37bfbbc369e1a8e6ffd19050864e53d032f25b19afcd",
+      "path": "corpus/cases/P133-A04-cached-nonzero.json",
+      "raw_input_sha256": "f9bf0318aeb2eaf62cc39c3e291fd37bf07af4ce6d9527979ec36aa6176993b8"
+    },
+    {
+      "baseline_sha256": "0d446f54215ae24191506afd83095fe218d6f9ec122a5df3e08c1b391efd753b",
+      "final_sha256": "1a2fb5841ae5171e46b32ae460ae307caf3bf5e0881189aa1c66d2fad02cb8a1",
+      "path": "corpus/cases/P133-A04-mixed-observations.json",
+      "raw_input_sha256": "f84c8fe618abec59bd7478a13c32379e36dae8eda00eb11cbd4baff987974e4f"
+    },
+    {
+      "baseline_sha256": "68aa17a817a4a51f81cf2f20a321504aec5cbd8aac985f7a48679bccefe60a8a",
+      "final_sha256": "56f10666dd20632ed08a745519823d54b0b006634576ac1a8c023a08f3be3691",
+      "path": "corpus/cases/P133-A05-model-case-variant.json",
+      "raw_input_sha256": "de1a2c5c247a23e5476a628f304d31e37c3c5c2893747a60d9172eb5bc375d34"
+    },
+    {
+      "baseline_sha256": "1edfcc7ac7b291b5213f01b9e095dd69cc53d594decb5142d44ae18a733c09b1",
+      "final_sha256": "aa96afedbcafeccab0d969a9d6d6010a2cca43cd720a39d0cbded6b47e076dd6",
+      "path": "corpus/cases/P133-A06-error-status-null.json",
+      "raw_input_sha256": "ecde18b73d128bf6e9b0b93248c861ead80bee96af2b95d4b0d05783acb72483"
+    },
+    {
+      "baseline_sha256": "973b0048dcd3f592f0069df0ab7cfc19e60d0c7068703945aaeb8d0743232cb5",
+      "final_sha256": "eca4c416c7075c8e924ebefc899dec2cd31f310af37d101b1eb1fc20112392b2",
+      "path": "corpus/cases/P133-A06-usage-settlement-status-absent.json",
+      "raw_input_sha256": "bd0e527def11edd2d72e541e3cc7b50b7348b2dc9c93855dfa89976d22294422"
+    },
+    {
+      "baseline_sha256": "a233322366cfa729569e0ebad947ead61e6c196e7931ff60efbbcf24cb228838",
+      "final_sha256": "6ff35c6fe3a68f5ab48202d899b93c7a5aea655de4b8b34c35e0fb3ef4599eb2",
+      "path": "corpus/cases/P133-A09-conflicting-reservations-with-settlement.json",
+      "raw_input_sha256": "d748180602e28a7a93d74fe66a9e809c94f3cc753076312e15fbf4646687696d"
+    },
+    {
+      "baseline_sha256": "71aa8f678cd57e3862b3eaec87159a2f70f5fb1f51692d1c1980171cf2da4bca",
+      "final_sha256": "b0684449b847e3566815951ee1346e3e4d9f3747d87a1b5db1946ba1ddd13e59",
+      "path": "corpus/cases/P133-FG-VC14-authenticated-bound.json",
+      "raw_input_sha256": "d44bd71d431a56c953261f82f24496067c919c14722a59f0178e10d43c61bb70"
+    },
+    {
+      "baseline_sha256": "0036f713e14992575bcef62ddc89d8ff80729e35c4e7060eb5f5bb78a67413a8",
+      "final_sha256": "1b96ac3cf3700f665cd028036cb69a0181685f5bc9dbb561b70b8c3c65dc0621",
+      "path": "corpus/cases/P133-FG-bound-binding-mismatch.json",
+      "raw_input_sha256": "75e4839bdbc3bd5708f2a76e57e5922edc422032fa26eeaffbf4f0b0f96e1a1a"
+    },
+    {
+      "baseline_sha256": "96af1bb0bd911974a52f3e0d4ad84c01db190803070025914a9a06c3a1e260e4",
+      "final_sha256": "9e4636a899430cf3f994844c66f3b6f86f771bb90ea2a0e2aaf450cfca7b0537",
+      "path": "corpus/cases/P133-FG-bound-coverage-incomplete.json",
+      "raw_input_sha256": "f2ae834d0e04288c8fb598b6c3edea944ad2d95586c61d11417b85e3f8d3fead"
+    },
+    {
+      "baseline_sha256": "f5d83bd51bf2148b28b67cc1425fa5f39d99aa3d0f1c0acd4b60c800d94c2ba1",
+      "final_sha256": "ea579634ab19dac2806e6d1137965d03e5055dcce86a58f401f7beb3f18ca19d",
+      "path": "corpus/cases/P133-FG-bound-exceeds-cap.json",
+      "raw_input_sha256": "951a2c678a499bc96379ede0d12f72f8d92b094c7089da890aa5bdbcaa6c1a6e"
+    },
+    {
+      "baseline_sha256": "770bc1ebcfd8fdd6fc1abd711c01f9567b71f53ea25729166444ce5af2661331",
+      "final_sha256": "12e98217a989a681a132734ff2c8bdd8f9496776b8b1fc0b365a1797ffe83f4e",
+      "path": "corpus/cases/P133-FG-bound-wrong-currency.json",
+      "raw_input_sha256": "ae51bf0b0b0c61187a0702111debd8d09fbb1bb91c9bbecc62600d8e78974222"
+    }
+  ]
+}

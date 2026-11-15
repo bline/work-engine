@@ -1,0 +1,40 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "lib",
+  "argv": [
+    "cargo",
+    "test",
+    "--lib",
+    "--offline"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/tooling/spec-check",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/spec"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2928787,
+  "inputs": [],
+  "timeout_s": 240.0,
+  "pid": 2929080,
+  "pgid": 2929080,
+  "started_at": "2026-11-14T03:36:36.489936Z",
+  "ended_at": "2026-11-14T03:38:16.039947Z",
+  "duration_s": 99.55,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/first-lib/lib.stdout",
+    "length": 1121,
+    "sha256": "70a6d37b173a1b1dfedb535700bd4417effa9d4e7fe4995632e57ae7140f18fc"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/first-lib/lib.stderr",
+    "length": 4772,
+    "sha256": "c96d3591438a2484519bbd54c086f9bb19a4c806b799a0e0061f6f067a74eac6"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

@@ -1,0 +1,235 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "usage_valuation",
+      "kind": "exact",
+      "nano": "15000000"
+    },
+    "low": "15000000"
+  },
+  "candidates": [
+    [
+      "request:2",
+      "request:2"
+    ]
+  ],
+  "coverage": [
+    {
+      "id": "F:exact12",
+      "links": [
+        "fixture:VC07-exact-link"
+      ],
+      "origins": [
+        "request:2",
+        "stream-error:1"
+      ]
+    }
+  ],
+  "credits": {
+    "alternatives": [
+      "request:2"
+    ],
+    "mode": "single_ambiguous",
+    "selected_low": "15000000",
+    "slots": []
+  },
+  "definite_links": [
+    [
+      "stream-error:1",
+      "request:2",
+      "fixture:VC07-exact-link"
+    ]
+  ],
+  "id": "result:F3-conditional-exact-link",
+  "route_snapshots": {
+    "A-first": {
+      "aggregate": {
+        "high": {
+          "basis": "usage_valuation",
+          "kind": "exact",
+          "nano": "15000000"
+        },
+        "low": "15000000"
+      },
+      "candidates": [
+        [
+          "request:2",
+          "request:2"
+        ]
+      ],
+      "coverage": [
+        {
+          "id": "F:exact12",
+          "links": [
+            "fixture:VC07-exact-link"
+          ],
+          "origins": [
+            "request:2",
+            "stream-error:1"
+          ]
+        }
+      ],
+      "credits": {
+        "alternatives": [
+          "request:2"
+        ],
+        "mode": "single_ambiguous",
+        "selected_low": "15000000",
+        "slots": []
+      },
+      "definite_links": [
+        [
+          "stream-error:1",
+          "request:2",
+          "fixture:VC07-exact-link"
+        ]
+      ],
+      "units": [
+        {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "id": "covered:1+2",
+          "low": "15000000",
+          "origins": [
+            "request:2",
+            "stream-error:1"
+          ]
+        }
+      ]
+    },
+    "B-first": {
+      "aggregate": {
+        "high": {
+          "basis": "usage_valuation",
+          "kind": "exact",
+          "nano": "15000000"
+        },
+        "low": "15000000"
+      },
+      "candidates": [
+        [
+          "request:2",
+          "request:2"
+        ]
+      ],
+      "coverage": [
+        {
+          "id": "F:exact12",
+          "links": [
+            "fixture:VC07-exact-link"
+          ],
+          "origins": [
+            "request:2",
+            "stream-error:1"
+          ]
+        }
+      ],
+      "credits": {
+        "alternatives": [
+          "request:2"
+        ],
+        "mode": "single_ambiguous",
+        "selected_low": "15000000",
+        "slots": []
+      },
+      "definite_links": [
+        [
+          "stream-error:1",
+          "request:2",
+          "fixture:VC07-exact-link"
+        ]
+      ],
+      "units": [
+        {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "id": "covered:1+2",
+          "low": "15000000",
+          "origins": [
+            "request:2",
+            "stream-error:1"
+          ]
+        }
+      ]
+    },
+    "all-at-once": {
+      "aggregate": {
+        "high": {
+          "basis": "usage_valuation",
+          "kind": "exact",
+          "nano": "15000000"
+        },
+        "low": "15000000"
+      },
+      "candidates": [
+        [
+          "request:2",
+          "request:2"
+        ]
+      ],
+      "coverage": [
+        {
+          "id": "F:exact12",
+          "links": [
+            "fixture:VC07-exact-link"
+          ],
+          "origins": [
+            "request:2",
+            "stream-error:1"
+          ]
+        }
+      ],
+      "credits": {
+        "alternatives": [
+          "request:2"
+        ],
+        "mode": "single_ambiguous",
+        "selected_low": "15000000",
+        "slots": []
+      },
+      "definite_links": [
+        [
+          "stream-error:1",
+          "request:2",
+          "fixture:VC07-exact-link"
+        ]
+      ],
+      "units": [
+        {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "id": "covered:1+2",
+          "low": "15000000",
+          "origins": [
+            "request:2",
+            "stream-error:1"
+          ]
+        }
+      ]
+    }
+  },
+  "units": [
+    {
+      "high": {
+        "basis": "usage_valuation",
+        "kind": "exact",
+        "nano": "15000000"
+      },
+      "id": "covered:1+2",
+      "low": "15000000",
+      "origins": [
+        "request:2",
+        "stream-error:1"
+      ]
+    }
+  ]
+}

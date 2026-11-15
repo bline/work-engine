@@ -1,0 +1,10 @@
+{
+ "phase": "oneshot",
+ "at": "2026-11-13T21:54:20.684995+00:00",
+ "checks": {},
+ "caller": {
+  "host": "claude",
+  "session_id": "7c0cdefa-513d-4f30-9bd4-7575bebdeb52"
+ },
+ "refused": "caller is the coordinator session bound to Plan IR Step D"
+}

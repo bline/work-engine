@@ -1,0 +1,63 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "generated",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+    "check",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+    "--generated"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target",
+    "R9_SPEC_FIXTURE_OUT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3418926,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 77341160,
+      "sha256": "3cee159b91da619f73e97b90f0f0833481616afd5c760346d99ebb16aaf66149"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/spec/ck.json",
+      "type": "file",
+      "mode": 420,
+      "length": 231338,
+      "sha256": "b661fcab04418e9a4a4477c5a42d5ffd67c88b172bede0338f776f325bb6d56e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/spec/dependencies.json",
+      "type": "file",
+      "mode": 420,
+      "length": 54613,
+      "sha256": "41ebe125ea2d76762a2991717b1e059cb1da8c5e6107e3548880fc37dc4dc2ba"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 3419312,
+  "pgid": 3419312,
+  "started_at": "2026-11-14T06:09:50.954804Z",
+  "ended_at": "2026-11-14T06:09:51.362606Z",
+  "duration_s": 0.408,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/final/generated.stdout",
+    "length": 495,
+    "sha256": "1b3165bcc86bde7d4f988001317578862df3598da75e12c1edfc684e3c760f1e"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/final/generated.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

@@ -1,0 +1,24 @@
+{
+  "freezes": [
+    {
+      "root": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject",
+      "entries": 967,
+      "manifest_sha256": "34a2ddba957d2ae4bdcdfa30454641cbb29d59ee780141c518e9e93d95895d61",
+      "all_match": true
+    },
+    {
+      "root": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+      "entries": 967,
+      "manifest_sha256": "9234cec46402ebddcd6ae221c76867b038001b6022254e1ebcac3fd43d8425d6",
+      "all_match": true
+    }
+  ],
+  "records_and_streams": 11,
+  "current_digest_inputs_match": true,
+  "binaries": {
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/pi-accounting-spec-check": "68a67f8cc687248e1eab78aad01ff70e030810c2c2d939ce1644296916c6ab26",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648": "8be4b340ebc2dfa61f6417a94ab219a0e37077afcee12790dcab1d72853a5ca3"
+  },
+  "all_processes_terminal": true,
+  "worker_final_collected": true
+}

@@ -1,0 +1,45 @@
+{
+  "status": "same root own native recovery complete",
+  "session": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "meaning_owner": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/ROOT-CONTINUATION-R9.md",
+  "settings": "postboundary11180 Sol6.1 high default verified",
+  "listener": {
+    "tool_session": 9741,
+    "initial": [
+      {
+        "agent_id": null,
+        "authority": "observation_only",
+        "band_floor_tokens": 220000,
+        "context_window_tokens": 475000,
+        "epoch": 23,
+        "estimated_calls_to_band": 17.073784586524933,
+        "forecast_basis": "recent same-epoch endpoint growth; empirical band, not a reset deadline",
+        "freshness": "recent_file_modification",
+        "growth_sample_count": 8,
+        "headroom_to_band_tokens": 156030,
+        "host": "codex",
+        "input_tokens": 63970,
+        "kind": "context_pressure",
+        "last_record_gap_line": null,
+        "level": "normal",
+        "limitations": [],
+        "observation_status": "latest_valid_observation",
+        "observed_at": "2026-11-14T09:13:07.425Z",
+        "recorded_model": "gpt-6.1-sol",
+        "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+        "source_line": 11241,
+        "topic": "control:session:01a1d6e2-32ba-7701-9115-740dcb41af11",
+        "trigger_tokens": 185000,
+        "unavailable_detail": null
+      }
+    ],
+    "owner": "root",
+    "collector": "root",
+    "delivery": "collected stdout natural boundaries",
+    "all3cursors": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/listener-r9-consumed.json"
+  },
+  "budget": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/post-r9-budget.json",
+  "scheduler": "not configured",
+  "retained_reviewer_ready_fullcollected": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-evaluation-premise-r1/R2-READY-FINAL.md",
+  "unresolved": "all3R3+11historicalOPEN/fullS1owed/ordinaryrepairHELD"
+}

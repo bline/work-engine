@@ -1,0 +1,5 @@
+rates checked: 163 (openai 128, anthropic 35)
+non-integer nano-USD per token: 0; largest denominator: 1
+raw rate literals: ['0.05', '0.1', '0.2', '0.25', '0.5', '1', '1.25', '10', '12.5', '16', '2', '2.5', '20', '25', '4', '40', '5', '50', '6.25', '8']
+multipliers: tiers {'default': '1.0', 'flex': '0.5', 'priority': '2.0', 'fast': '2.0'} long input 2 long output 1.5
+anthropic keys {'source': 'metrics/scripts/usage_ledger.py NATIVE_RATES (USD per million tokens); claude-haiku-5-5 is left out because the ledger applies a long-input rule to it. A test keeps these equal.', 'tier_multiplier': ['default']}

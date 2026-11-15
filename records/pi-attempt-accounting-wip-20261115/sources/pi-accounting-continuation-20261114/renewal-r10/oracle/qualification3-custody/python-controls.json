@@ -1,0 +1,85 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "python-controls",
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "validator",
+    "-p",
+    "test_r10_qualification.py",
+    "-v"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+  "env_clear": false,
+  "env_set": {
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "R10_EVIDENCE_EXECUTABLE": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/pi-accounting-spec-check",
+    "PYTHONWARNINGS": "ignore::ResourceWarning"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3560808,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 78003400,
+      "sha256": "6daa4fdc82c4a0ea130e9d51d3c2aead9f1efa90581e848605fc86a5033ce5e1"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/validator/test_r10_qualification.py",
+      "type": "file",
+      "mode": 436,
+      "length": 6888,
+      "sha256": "c21efd9a96b888ef7bf12f6cbc0a86ce672f5923a0c774740c766e7824ca0182"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/validator/r10_admitted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 491197,
+      "sha256": "d45e96d074b77b4c147a47879f8e7de9fcd86e6ef7fc2675e34da4611a0f4e71"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/validator/r9_pilot.py",
+      "type": "file",
+      "mode": 420,
+      "length": 22357,
+      "sha256": "e39d1a26a1295ea4c12872b85a07b9ea256f5c6d51e0ee898a144d6c14b717d5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/validator/validate_corpus.py",
+      "type": "file",
+      "mode": 420,
+      "length": 107343,
+      "sha256": "e5b37e0bdb0ea50cb0b7e939ad46f593f38fb37cc0e5070f47f7f379dd8887ab"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 3561026,
+  "pgid": 3561026,
+  "started_at": "2026-11-14T07:10:58.328708Z",
+  "ended_at": "2026-11-14T07:11:34.654818Z",
+  "duration_s": 36.326,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/qualification3-custody/python-controls.stdout",
+    "length": 1152,
+    "sha256": "a50f836c7e270e2dacd18e2db8c8a505fa96449883aad5b8b57305a53ccbb8bf"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/qualification3-custody/python-controls.stderr",
+    "length": 1078,
+    "sha256": "c3232bb299192739683875190c588b8917fe3a526f9d28ea645a29222fe7fc32"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

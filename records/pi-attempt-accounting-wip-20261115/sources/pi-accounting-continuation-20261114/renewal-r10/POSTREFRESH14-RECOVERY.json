@@ -1,0 +1,43 @@
+{
+  "session": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "recovery_owner": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/ROOT-CONTINUATION-R14.md",
+  "meaning": "recovered",
+  "new_applied": {
+    "event_sha256": "77978c90e2042ef36e937832c45512db7191e74fda35ace79d678f645f6aa0a7",
+    "line": 13020,
+    "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T14-48-30-01a1d6e2-32ba-7701-9115-740dcb41af11.jsonl",
+    "timestamp": "2026-11-14T10:24:18.445Z"
+  },
+  "settings_match": true,
+  "listener": 48827,
+  "initial": [
+    {
+      "agent_id": null,
+      "authority": "observation_only",
+      "band_floor_tokens": 220000,
+      "context_window_tokens": 475000,
+      "epoch": 28,
+      "estimated_calls_to_band": 19.652069653302256,
+      "forecast_basis": "recent same-epoch endpoint growth; empirical band, not a reset deadline",
+      "freshness": "recent_file_modification",
+      "growth_sample_count": 6,
+      "headroom_to_band_tokens": 175379,
+      "host": "codex",
+      "input_tokens": 44621,
+      "kind": "context_pressure",
+      "last_record_gap_line": null,
+      "level": "normal",
+      "limitations": [],
+      "observation_status": "latest_valid_observation",
+      "observed_at": "2026-11-14T10:24:49.852Z",
+      "recorded_model": "gpt-6.1-sol",
+      "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "source_line": 13064,
+      "topic": "control:session:01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "trigger_tokens": 185000,
+      "unavailable_detail": null
+    }
+  ],
+  "worker": "01a1d993-35ca-7293-a431-38daa0b9cdd6 active; whole final owed",
+  "no_new_admission": true
+}

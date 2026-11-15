@@ -1,0 +1,41 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "build",
+  "argv": [
+    "cargo",
+    "build",
+    "--locked",
+    "--message-format=json"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/tooling/spec-check",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3536926,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 3536927,
+  "pgid": 3536927,
+  "started_at": "2026-11-14T07:02:50.507534Z",
+  "ended_at": "2026-11-14T07:03:16.650101Z",
+  "duration_s": 26.143,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/build-first/build.stdout",
+    "length": 84682,
+    "sha256": "3e28a8c546469992d710118b0efabf5c2be19c7313046d9aa6814db0bcf09755"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/build-first/build.stderr",
+    "length": 2456,
+    "sha256": "60c1264180c3e155992d228af61804d61e42efc1f914e2c1b49a6f7307540c92"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null,
+  "cargo_executables": []
+}

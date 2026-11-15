@@ -1,0 +1,13 @@
+{
+  "status": "source_ready",
+  "source_manifest": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/SOURCE-MANIFEST.json",
+  "source_manifest_sha256": "5f13938ca3aa1951c42d3431a30bffac1e8d03adb10745f6355d947e9a76e825",
+  "custody_summary": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/custody/final3/summary.json",
+  "custody_summary_sha256": "aed6973703d959ff68d699b664100830ac5d8b5af9ee7a8b2fbd94a37fb83773",
+  "binary": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/target-spec/debug/pi-accounting-spec-check",
+  "binary_sha256": "fd44debd11021f80cbfa50f7ae1b55c8e743745963371b8e990fc02b92b28057",
+  "interface_sha256": "17e9430821e4fe25ddfec3ea3788b0d63e795f6ba47fa38c52655bec626afa5e",
+  "contract": "pi-accounting-contract/1.6-s1",
+  "revision": 7,
+  "scope": "worker declaration agreement only; no acceptance/raw financial conformance"
+}

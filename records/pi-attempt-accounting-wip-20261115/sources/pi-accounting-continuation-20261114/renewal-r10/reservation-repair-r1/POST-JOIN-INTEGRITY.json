@@ -1,0 +1,9 @@
+{
+  "manifest": "34a2ddba957d2ae4bdcdfa30454641cbb29d59ee780141c518e9e93d95895d61",
+  "entries": 967,
+  "allmatch": true,
+  "root9steps": "passed",
+  "root_summary_sha256": "b8ab29d49a60c7ccba767c90ae4bcdb4a5397903bdf4ea5e0772d8b2ec611716",
+  "root_tool_session": 29107,
+  "rootterminal": "0fullycollected"
+}

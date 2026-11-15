@@ -1,0 +1,22 @@
+{
+  "revision": "R8-plan-only",
+  "prior": "pilot-r9/ORGANIZATION-R7.json",
+  "scope_classification": "small within original threeitems, zero additions; newplan review only, no implementation",
+  "plan": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/PLAN-AMENDMENT-R3.md",
+    "sha256": "90b6308e9608decf026437c89b98de597cd30046f56d792aa7461061f31f4abb"
+  },
+  "initial_review": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/review-r3/REVIEW.md",
+    "sha256": "9b2bb1c26574127c337b19a44a34da367ca9158d2b10430e4c01034aeda755f0",
+    "verdict": "REVISE_PLAN/CHANGES_REQUIRED"
+  },
+  "role": "same retained isolated Astraxhigh/default/native readonly reviewer",
+  "context_choice": "sameSID ownnativecontextrefresh:181926+10k crosses185k; reconstruct ownreport not newfreshness",
+  "cap": "same cumulative9,5.565608 observed,3.434392remaining",
+  "target": "2026-11-14T06:49:00Z",
+  "handoff": "2026-11-14T06:51:00Z",
+  "root_capacity": "157390+bounded20k collection/plandisposition/closure<185000; collect listener at eachboundary; no implementationscope admitted",
+  "collection_owner": "root same native wait_threads",
+  "authority": "humanownership77,100fourhour3204,continue4884; no mainintegration/production"
+}

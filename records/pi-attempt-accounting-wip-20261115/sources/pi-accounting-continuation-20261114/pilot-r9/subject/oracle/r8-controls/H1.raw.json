@@ -1,0 +1,13 @@
+{
+  "conditional_initial_scope": "S",
+  "distinct_evidence_atoms": [
+    "A",
+    "B"
+  ],
+  "fallback_world": "separate unestablished origin bases",
+  "rows": [
+    "orphanSettlement500A",
+    "orphanSettlement500B"
+  ],
+  "same_usable_rid": 1
+}

@@ -1,0 +1,33 @@
+{
+  "admission": "conditional_fixture",
+  "authority_ref": "ROOT-ADOPTION-R6.json",
+  "case_id": "A04-undated-settlement-between-dated-neighbours",
+  "derived_control_of": "oracle/r8-completion-B/A04-undated-settlement-between-dated-neighbours.provenance.json",
+  "grant_payloads": [
+    {
+      "auxiliary_exact_row_coreference": "unestablished",
+      "exact_copy_equivalence": false,
+      "exact_origin_refs": [
+        "S1/turn-1:1",
+        "S1/turn-1:2",
+        "S1/turn-1:3"
+      ],
+      "guarantee": "Usable dollar rid is interpreted only within this immutable conditional fixture source scope; same-origin-only duplicate rule except the inherited C3 exact-byte-copy control.",
+      "immutable_reference_namespace": "A04-undated-settlement-between-dated-neighbours/S1/turn-1",
+      "physical_bill_independence": "unestablished",
+      "source_origin_id": "S1/turn-1"
+    }
+  ],
+  "initial_scope_contracts": [
+    {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "A04-undated-settlement-between-dated-neighbours/S1/turn-1"
+    }
+  ],
+  "qualification_author": "01a1d8da-e462-7c71-a278-e22e276bc26f",
+  "qualification_derivation_ref": "renewal-r10/oracle/DERIVATIONS.md",
+  "raw_input_sha256": "976a4b2acf473f87ac4850f8c5ad5178d672fd650d231d23d5cc0e691abd342a"
+}

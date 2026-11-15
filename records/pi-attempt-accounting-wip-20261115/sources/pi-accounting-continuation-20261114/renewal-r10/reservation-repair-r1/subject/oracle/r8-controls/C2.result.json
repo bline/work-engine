@@ -1,0 +1,17 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "mixed",
+      "kind": "at_least",
+      "nano": "515000000"
+    },
+    "low": "15000000"
+  },
+  "continuity_result": "unestablished",
+  "failure_refs": [
+    "trigger-omission",
+    "initial-contract-rewrite"
+  ],
+  "id": "result:C2",
+  "retained_subject": "result:H2"
+}

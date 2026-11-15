@@ -1,0 +1,211 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-receipt-missing",
+        "predecessor_subject_refs": [],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": [
+          "initial:S1/turn-1"
+        ]
+      },
+      "exact_links": [],
+      "grants": [
+        {
+          "admission": "conditional_fixture",
+          "assumption_refs": [
+            "conditional initial ticket namespace in exact source; no auxiliary linkage or independence grant"
+          ],
+          "authority_ref": "ROOT-POLICY-R6.md@3dbe535668a7d625e025e16c9fa75e51a59dec109f5c842d877791b1d7332200",
+          "covered_extent_ref": "sha256:da361ee0462dd2548a1389decd6c7babddf8b49c896abef821b899ac9efd14f1",
+          "covered_origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "exact_payload_ref": "oracle/r8-completion-A/DERIVATIONS.json#P132-FG-gate-receipt-missing/initial_reference_scope_payloads/scope:S1/turn-1",
+          "grant_id": "scope:S1/turn-1",
+          "guarantee_kind": "initial_reference_scope",
+          "observer_or_harness_ref": "S1-inherited-conditional-corpus"
+        }
+      ],
+      "id": "input:P132-FG-gate-receipt-missing",
+      "identity_bindings": [],
+      "initial_contracts": [
+        {
+          "contract_id": "initial:S1/turn-1",
+          "duplicate_rule": "same_origin_only",
+          "grant_ref": "scope:S1/turn-1",
+          "reference_namespace": "dollar_ticket",
+          "scope_id": "P132-FG-gate-receipt-missing/S1/turn-1"
+        }
+      ],
+      "kind": "accounting_input_proof",
+      "lineage_id": "P132-FG-gate-receipt-missing",
+      "origins": [
+        {
+          "initial_contract_ref": "initial:S1/turn-1",
+          "origin_id": "S1/turn-1:1",
+          "original_position": 1,
+          "raw_bytes_sha256": "70f7e415dc1a71b54acc58117be26d6107a68ec0a7ed057982c6a8653d59549a",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:da361ee0462dd2548a1389decd6c7babddf8b49c896abef821b899ac9efd14f1"
+        },
+        {
+          "initial_contract_ref": "initial:S1/turn-1",
+          "origin_id": "S1/turn-1:2",
+          "original_position": 2,
+          "raw_bytes_sha256": "5cc14fe7d2a745fa3fd69bd9a10804ffdae6ff3cb8c3c56892344a839dbbce22",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:da361ee0462dd2548a1389decd6c7babddf8b49c896abef821b899ac9efd14f1"
+        }
+      ],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ]
+        }
+      ],
+      "continuity_result": "conditional",
+      "coverage_decisions": [
+        {
+          "anchor_origin_refs": [],
+          "coverage_id": "coverage:res:S1/turn-1:rid=1",
+          "definite_link_refs": [],
+          "monetary_origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "obligation_id": "obligation:res:S1/turn-1:rid=1",
+          "reason_refs": [
+            "case:P132-FG-gate-receipt-missing#attempt:res:S1/turn-1:rid=1/replacement"
+          ],
+          "result_unit_ref": "res:S1/turn-1:rid=1",
+          "retained_component_refs": [
+            "S1/turn-1:2"
+          ],
+          "route": "budgeted",
+          "status": "accepted",
+          "unit_refs": [
+            "held:res:S1/turn-1:rid=1"
+          ],
+          "validity_ref": "obligation:res:S1/turn-1:rid=1",
+          "valuation_ref": "valuation:res:S1/turn-1:rid=1"
+        }
+      ],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [
+        {
+          "context_origin_ref": "S1/turn-1:2",
+          "predicate_ref": "same-origin-identity-context",
+          "usage_origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "id": "result:P132-FG-gate-receipt-missing",
+      "input_proof_ref": "input:P132-FG-gate-receipt-missing",
+      "kind": "accounting_result",
+      "lineage_id": "P132-FG-gate-receipt-missing",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "basis": "usage_valuation",
+          "credit_mode": "single_ambiguous",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "P132-FG-gate-receipt-missing/default/o/owned_closed",
+          "seed_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "selected_low": "15000000",
+          "single_floor": "15000000"
+        },
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "P132-FG-gate-receipt-missing/default/o/owned_outstanding",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        }
+      ],
+      "origins": [
+        {
+          "active_high_unit_id": "res:S1/turn-1:rid=1",
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:1",
+          "origin_ref": "S1/turn-1:1"
+        },
+        {
+          "active_high_unit_id": "res:S1/turn-1:rid=1",
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:2",
+          "origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "primary_validities": [
+        {
+          "applicable_check_refs": [
+            "case:P132-FG-gate-receipt-missing#attempt:res:S1/turn-1:rid=1/settlement"
+          ],
+          "distinct_reservation_refs": [
+            "S1/turn-1:1"
+          ],
+          "distinct_settlement_refs": [
+            "S1/turn-1:2"
+          ],
+          "obligation_id": "obligation:res:S1/turn-1:rid=1",
+          "validity_result": "valid"
+        }
+      ],
+      "unbudgeted_applicabilities": [],
+      "unbudgeted_completions": [],
+      "units": [
+        {
+          "exposure_ref": "case:P132-FG-gate-receipt-missing#attempt:res:S1/turn-1:rid=1",
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "state": "active",
+          "unit_id": "res:S1/turn-1:rid=1"
+        },
+        {
+          "exposure_ref": "case:P132-FG-gate-receipt-missing#attempt:res:S1/turn-1:rid=1/prior-held",
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "state": "inactive",
+          "successor_ref": "res:S1/turn-1:rid=1",
+          "unit_id": "held:res:S1/turn-1:rid=1"
+        }
+      ],
+      "valuation_records": [
+        {
+          "complete": true,
+          "usage_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "valuation_id": "valuation:res:S1/turn-1:rid=1",
+          "wire_ref": "case:P132-FG-gate-receipt-missing#attempt:res:S1/turn-1:rid=1/valuation"
+        }
+      ],
+      "version": "1.7-s1"
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+  "env": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/target",
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot"
+  },
+  "steps": [
+    {
+      "name": "python-positive",
+      "argv": [
+        "python3",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/validator/validate_corpus.py",
+        "check-pilot",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot"
+      ]
+    },
+    {
+      "name": "build",
+      "argv": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check/Cargo.toml",
+        "--test",
+        "independent_raw_axes",
+        "--no-run",
+        "--message-format=json"
+      ],
+      "cargo_json": true,
+      "timeout": 200
+    },
+    {
+      "name": "rust-positive",
+      "argv": [
+        "{exe:build}",
+        "--nocapture"
+      ]
+    },
+    {
+      "name": "python-controls",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "-v",
+        "test_r9_pilot"
+      ],
+      "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/validator"
+    },
+    {
+      "name": "legacy-independent-r8-controls",
+      "argv": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check/Cargo.toml",
+        "--test",
+        "independent_r8_controls"
+      ],
+      "timeout": 120
+    }
+  ]
+}

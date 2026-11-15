@@ -1,0 +1,11 @@
+{
+  "source_rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-33-05-01a1d8c2-754e-7c13-84ec-570c1b872e56.jsonl",
+  "source_line": 230,
+  "source_record_sha256": "0d72728784791dd20ded003756fea95b6e5f571737312bde957877e73bec85d0",
+  "native_turn": "01a1d8c2-7678-7603-b75f-f998798c6c00",
+  "phase": "final_answer",
+  "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/review-r3/REVIEW.md",
+  "sha256": "9b2bb1c26574127c337b19a44a34da367ca9158d2b10430e4c01034aeda755f0",
+  "bytes": 11641,
+  "collection": "native wait_threads exactcompletedturn observed; truncated native snapshot completed with full verified rolloutfinal"
+}

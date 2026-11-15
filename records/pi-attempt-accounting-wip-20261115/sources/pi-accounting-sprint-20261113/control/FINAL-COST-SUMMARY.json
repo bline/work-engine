@@ -1,0 +1,25 @@
+{
+  "snapshot_at": "2026-11-14T01:46:24.143847+00:00",
+  "recorded_objective_plus_sealed_overlays_proxy": 37.3413678,
+  "unsettled_review_call_count": 1,
+  "pi_reported_unsettled_proxy": 2.73592,
+  "illustrative_with_pi_report": 40.0772878,
+  "not_invoice_or_calibrated_quota": true,
+  "closeout_tail_unsettled": true,
+  "capacity": {
+    "account_wide": true,
+    "age_seconds": 72.930847,
+    "last_reported_remaining_percent": 90.0,
+    "limit_id": "codex",
+    "max_age_seconds": 300,
+    "observed_at": "2026-11-14T01:45:11.213Z",
+    "plan_type": "prolite",
+    "pool": "codex",
+    "reason": null,
+    "remaining_percent": 90.0,
+    "resets_at": 1795219565,
+    "source": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T14-48-30-01a1d6e2-32ba-7701-9115-740dcb41af11.jsonl",
+    "status": "observed",
+    "used_percent": 10.0
+  }
+}

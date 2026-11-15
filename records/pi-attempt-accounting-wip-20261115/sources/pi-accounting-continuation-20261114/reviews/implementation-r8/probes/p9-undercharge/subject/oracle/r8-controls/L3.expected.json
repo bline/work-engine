@@ -1,0 +1,55 @@
+{
+  "assertions": [
+    {
+      "claim_id": "L3",
+      "expected_fields_or_relations": {
+        "/aggregate": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "at_least",
+            "nano": "50000000"
+          },
+          "low": "30000000"
+        },
+        "/credits": [
+          {
+            "alternatives": [
+              "uP",
+              "uX"
+            ],
+            "low": "15000000",
+            "slot": "P"
+          },
+          {
+            "alternatives": [
+              "uQ",
+              "uX"
+            ],
+            "low": "15000000",
+            "slot": "Q"
+          }
+        ],
+        "/units/2/origins": [
+          "uX"
+        ]
+      },
+      "negative_control_refs": [
+        "L3.wrong.json"
+      ],
+      "raw_derivation_refs": [
+        "PLAN5: min(15,15)+min(20,15)=30; unbound X supplies no third slot"
+      ]
+    }
+  ],
+  "authored_by": "oracle01a1d81b; fixed literal assertions separately from supplied records",
+  "exact_subject_refs": [
+    "result:L3"
+  ],
+  "id": "expected:L3",
+  "kind": "accounting_expected_assertion",
+  "policy_refs": [
+    "PLAN43d0e7c8"
+  ],
+  "raw_subject_ref": "sha256:a1fea5106c2f2e7622f79d4daced859bc26f5bdede762d3d4b990cf191a52e8f",
+  "version": "1.7-s1"
+}

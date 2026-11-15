@@ -1,0 +1,132 @@
+{
+  "schema": "spec-owner-source-manifest/1",
+  "subject": "/home/bline/cbm-work/p137-s1r7/s1",
+  "files": [
+    {
+      "path": "spec/ck.json",
+      "sha256": "d9a1b21199980a80342f4f27b23707d2afe3e6c87902b35fff2650dd806f854e",
+      "bytes": 181876
+    },
+    {
+      "path": "spec/ck.schema.json",
+      "sha256": "556cb140fe2ea12470828bd9886d1ae20576c6336184c046a6b4269752f06651",
+      "bytes": 12581
+    },
+    {
+      "path": "spec/dependencies.json",
+      "sha256": "0562e6a309fb222b115bd919d5aea0df4151f3a718549d48f5e95a429ec33c50",
+      "bytes": 8458
+    },
+    {
+      "path": "spec/interface.json",
+      "sha256": "17e9430821e4fe25ddfec3ea3788b0d63e795f6ba47fa38c52655bec626afa5e",
+      "bytes": 4467
+    },
+    {
+      "path": "spec/inventory.json",
+      "sha256": "76f95c3229c728c7b379885e3bc9e37d195aed9d123210bf34fa28c95873b14e",
+      "bytes": 370058
+    },
+    {
+      "path": "contract/CHANGELOG-1.3.md",
+      "sha256": "b1171bacfc514e1f881f4e6fcf03ca2a73e8c63fae02405a9f08a3998d67d5d9",
+      "bytes": 5107
+    },
+    {
+      "path": "contract/CHANGELOG-1.4.md",
+      "sha256": "4b973359fcd8ac75c588be4c9f4da79f8234626643a4e74650ddcd4572192ada",
+      "bytes": 4056
+    },
+    {
+      "path": "contract/CHANGELOG-1.5.md",
+      "sha256": "2eb0aa528cdb58b0a3a1bd4b75840591a475c01a9790de87d177ebb5c9f5b142",
+      "bytes": 1149
+    },
+    {
+      "path": "contract/CK-GENERATED.md",
+      "sha256": "08d92609e7c46df68b7796edaf495ad60bb5e7c0581721794eff5f4f24765641",
+      "bytes": 133217
+    },
+    {
+      "path": "contract/CONTRACT.md",
+      "sha256": "52c505f0df1ae5830d681436aa2cb2a02716aed4ab450b9aecbe0dedb07145fb",
+      "bytes": 24191
+    },
+    {
+      "path": "contract/DECISION-REGISTER.md",
+      "sha256": "b34dcf414b1008a95518fe3a98c0df19e184395550dc4486cbc667c8bd932ae3",
+      "bytes": 20219
+    },
+    {
+      "path": "contract/FINDINGS-REGISTER.md",
+      "sha256": "95dd7227b352402392179e55cdbafeb0e019e947b191393596d9ef87e6c8c802",
+      "bytes": 11248
+    },
+    {
+      "path": "contract/INVARIANTS.md",
+      "sha256": "b5f02ecad8756a8a6a9b0dde5915c9cd088bb870aaa1bd56f7dbe0da492ef05b",
+      "bytes": 9346
+    },
+    {
+      "path": "contract/MONEY.md",
+      "sha256": "6c7315ed832777766662303c5918b9239818750142709ba565ec3d31f91da836",
+      "bytes": 5031
+    },
+    {
+      "path": "contract/RESERVATION-BOUNDS.md",
+      "sha256": "3b391a6c0d8da2de9163dda95f888b53015c8334c07bfa58039f33fdfeaab7e8",
+      "bytes": 5053
+    },
+    {
+      "path": "contract/S2A-ENTRY-CRITERIA.md",
+      "sha256": "1c60efba570cb90b2875cf52f728bb0c3a39cc98ac8c00d10ab714beed488545",
+      "bytes": 481
+    },
+    {
+      "path": "contract/TRANSITIONS.md",
+      "sha256": "f9aafca9fcf10dae18c585270e1cc0adac5dc8cb9ae4b892f2a9597d20a321be",
+      "bytes": 65761
+    },
+    {
+      "path": "tooling/spec-check/src/decisions.rs",
+      "sha256": "b31205b03d0e9e381068e81680c84639d76bfaa743b9359d799f0d7fffeb5a6b",
+      "bytes": 22932
+    },
+    {
+      "path": "tooling/spec-check/src/lib.rs",
+      "sha256": "99c9e8ac5bb948c72d3149fef306e5abb52257071cb5255333faf168297a15df",
+      "bytes": 37458
+    },
+    {
+      "path": "tooling/spec-check/src/main.rs",
+      "sha256": "f3960be0439b29789d7793ffc4028c807c348b86ad556465977f952be63a0d09",
+      "bytes": 3590
+    },
+    {
+      "path": "corpus/SCHEMA.md",
+      "sha256": "c7c6a2be07b0390cbadf59d09dc9f5bd95183fba2b0763fc86fa084e690bf820",
+      "bytes": 72296
+    },
+    {
+      "path": "tooling/spec-check/Cargo.toml",
+      "sha256": "a74409c9b478ce13e0e6baa0785bc797f1d555930ba171b0edb135e45174d437",
+      "bytes": 203
+    },
+    {
+      "path": "tooling/spec-check/Cargo.lock",
+      "sha256": "bab53b79f7ddb0609189d9606c5666b9b19d3a659fb12055ed977d2e3f51d256",
+      "bytes": 4901
+    },
+    {
+      "path": "tooling/spec-check/README.md",
+      "sha256": "ba5881c2621f46b8a011a7dfe95698da1007919753fd8e94d49a2fbc46c35df3",
+      "bytes": 2216
+    },
+    {
+      "path": "tooling/spec-check/rust-toolchain.toml",
+      "sha256": "1d76a06616a42a984bad672eeb24ca39a0496e95a8b624e21df0d420d1557734",
+      "bytes": 86
+    }
+  ],
+  "excluded": "oracle-owned corpus,oracle and independent tests; root joins whole subject"
+}

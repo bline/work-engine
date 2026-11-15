@@ -1,0 +1,438 @@
+{
+ "module": "DESIGN_R2",
+ "subject_root": "/home/bline/cbm-work/p136-s1r6/s1",
+ "freeze_manifest": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/freeze/manifest.json",
+ "freeze_sha256": "293b7a97583e591e8e84c0002f703e34e79161185f55ae034333378550b107ae",
+ "brief": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/design-r2/packet/brief.md",
+ "brief_sha256": "05278068c592aeb882a507cb640e99e08bc2463008d4453bcff3cc4fba6bcef7",
+ "files": [
+  {
+   "path": "doctrine/DESIGN.md",
+   "source": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/design-r2/packet/inputs/doctrine/DESIGN.md",
+   "origin": "/home/bline/code/work-engine/DESIGN.md",
+   "source_sha256": "2213ab9a32925e7792353489599201bf71f3268eb8981cc192f87c57e2952095",
+   "kind": "full",
+   "role": "Repository design doctrine binding; philosophy explicitly nonnormative"
+  },
+  {
+   "path": "doctrine/PHILOSOPHY.md",
+   "source": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/design-r2/packet/inputs/doctrine/PHILOSOPHY.md",
+   "origin": "/home/bline/code/work-engine/PHILOSOPHY.md",
+   "source_sha256": "299b0ad8192f3cc442f6491d2908f421f22333024ffb1423cae6856b69c3a307",
+   "kind": "full",
+   "role": "Repository design doctrine binding; philosophy explicitly nonnormative"
+  },
+  {
+   "path": "contract/CONTRACT.md",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/contract/CONTRACT.md",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/contract/CONTRACT.md",
+   "source_sha256": "46558c13b1c4ceaf76bd5f23d10e76175f24b3ac0d53e144466d8bdd987b8507",
+   "kind": "full",
+   "role": "Current complete residual contract/generated projection"
+  },
+  {
+   "path": "contract/TRANSITIONS.md",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/contract/TRANSITIONS.md",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/contract/TRANSITIONS.md",
+   "source_sha256": "c0708a5cfef4842e3eb7a3c4453be36d11262fb6ed4c7acf02ed2b81aaabb4e0",
+   "kind": "full",
+   "role": "Current complete residual contract/generated projection"
+  },
+  {
+   "path": "contract/INVARIANTS.md",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/contract/INVARIANTS.md",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/contract/INVARIANTS.md",
+   "source_sha256": "3f98a47ef2178a5f4957d3b9f63994e8445e8194b641195567a445de6b6e65d0",
+   "kind": "full",
+   "role": "Current complete residual contract/generated projection"
+  },
+  {
+   "path": "contract/S2A-ENTRY-CRITERIA.md",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/contract/S2A-ENTRY-CRITERIA.md",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/contract/S2A-ENTRY-CRITERIA.md",
+   "source_sha256": "1c60efba570cb90b2875cf52f728bb0c3a39cc98ac8c00d10ab714beed488545",
+   "kind": "full",
+   "role": "Current complete residual contract/generated projection"
+  },
+  {
+   "path": "spec/ck.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.json",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.json",
+   "source_sha256": "1ac75ab5b44fa24ce35953d32d2b1ba145a1928fb5a06f884e3a434e0faa3371",
+   "kind": "compact_json",
+   "role": "Complete current canonical declarations and interfaces"
+  },
+  {
+   "path": "spec/ck.schema.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.schema.json",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.schema.json",
+   "source_sha256": "1854822d6a4584f9aec4e517b1c2e952bb2e66a519d20600e4bba3f87378b93b",
+   "kind": "compact_json",
+   "role": "Complete current canonical declarations and interfaces"
+  },
+  {
+   "path": "spec/interface.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/spec/interface.json",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/spec/interface.json",
+   "source_sha256": "8020a947b6d306e85dbe93ddc512f0cd4310b7e8a8d5dbadc608e54755f1af2e",
+   "kind": "compact_json",
+   "role": "Complete current canonical declarations and interfaces"
+  },
+  {
+   "path": "spec/dependencies.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/spec/dependencies.json",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/spec/dependencies.json",
+   "source_sha256": "bc076d9cb0dbbb8559af74641c2eced788eee127b74a5e1b2aba95630809ed09",
+   "kind": "compact_json",
+   "role": "Complete current canonical declarations and interfaces"
+  },
+  {
+   "path": "spec/inventory-summary.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/spec/inventory.json",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/spec/inventory.json",
+   "source_sha256": "76f95c3229c728c7b379885e3bc9e37d195aed9d123210bf34fa28c95873b14e",
+   "kind": "json_projection",
+   "role": "Complete inventory header/source list;1357individual entries omitted, no semantic completeness claim",
+   "keys": [
+    "schema",
+    "sources",
+    "standing",
+    "unresolved"
+   ]
+  },
+  {
+   "path": "tooling/src/lib.rs",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/lib.rs",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/lib.rs",
+   "source_sha256": "5bd06e25f1314d74467e6cffb0ae671567b3c477c5023ad7f71ef149e3b2b800",
+   "kind": "full",
+   "role": "Full actual structural renderer/checker or separately authored raw-axis assertions, not financial reducer"
+  },
+  {
+   "path": "tooling/src/main.rs",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/main.rs",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/main.rs",
+   "source_sha256": "f3960be0439b29789d7793ffc4028c807c348b86ad556465977f952be63a0d09",
+   "kind": "full",
+   "role": "Full actual structural renderer/checker or separately authored raw-axis assertions, not financial reducer"
+  },
+  {
+   "path": "tooling/Cargo.toml",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.toml",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.toml",
+   "source_sha256": "a74409c9b478ce13e0e6baa0785bc797f1d555930ba171b0edb135e45174d437",
+   "kind": "full",
+   "role": "Full actual structural renderer/checker or separately authored raw-axis assertions, not financial reducer"
+  },
+  {
+   "path": "tooling/README.md",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/README.md",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/README.md",
+   "source_sha256": "27ddc99b5b5af2fb10ee9fc31540fa64db5d365f44e2a30666c73e9beab54633",
+   "kind": "full",
+   "role": "Full actual structural renderer/checker or separately authored raw-axis assertions, not financial reducer"
+  },
+  {
+   "path": "tooling/tests/independent_raw_axes.rs",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/tests/independent_raw_axes.rs",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/tests/independent_raw_axes.rs",
+   "source_sha256": "d3fc0b7ce9a091d14514ef64e681d34d78c1585bf0f116de34f389f0d5e7429d",
+   "kind": "full",
+   "role": "Full actual structural renderer/checker or separately authored raw-axis assertions, not financial reducer"
+  },
+  {
+   "path": "validator/validate_corpus.py",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/validator/validate_corpus.py",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/validator/validate_corpus.py",
+   "source_sha256": "f9f66e9f0044843f2142e0a4d372f1865e958d416e6fd3c65014367cc3578c8f",
+   "kind": "full",
+   "role": "Complete existing validator after migration; consistency is not independent truth"
+  },
+  {
+   "path": "oracle/README.md",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/oracle/README.md",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/oracle/README.md",
+   "source_sha256": "3e488fa580e0243024c301506dd9cfb452a1f7faf8d63af94bf7eefb5d472dbe",
+   "kind": "full",
+   "role": "Independent axis limits and writer witness"
+  },
+  {
+   "path": "oracle/writer-controls.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/oracle/writer-controls.json",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/oracle/writer-controls.json",
+   "source_sha256": "374cbd62ace241db1cba48a81f307e21b14ff7828e839031f6622cd282377189",
+   "kind": "compact_json",
+   "role": "Independent axis limits and writer witness"
+  },
+  {
+   "path": "owner-and-evidence/POLICY-AND-PLAN-APPROVAL.md",
+   "source": "/home/bline/cbm-work/pi-accounting-sprint-20261113/POLICY-AND-PLAN-APPROVAL.md",
+   "origin": "/home/bline/cbm-work/pi-accounting-sprint-20261113/POLICY-AND-PLAN-APPROVAL.md",
+   "source_sha256": "07303d5c5c36276f6038bf9368f3a5fe660e39ee9160b8b3d92049de98abb981",
+   "kind": "full",
+   "role": "Accepted plan/policy or pre-canonical independent raw audit; claims with limits"
+  },
+  {
+   "path": "owner-and-evidence/design/PLAN.md",
+   "source": "/home/bline/cbm-work/pi-accounting-sprint-20261113/design/PLAN.md",
+   "origin": "/home/bline/cbm-work/pi-accounting-sprint-20261113/design/PLAN.md",
+   "source_sha256": "52883acb09bcb7d0eb944fe73cc9ba5a3d06932f27a15c430d01bee9f2780a2c",
+   "kind": "full",
+   "role": "Accepted plan/policy or pre-canonical independent raw audit; claims with limits"
+  },
+  {
+   "path": "owner-and-evidence/oracle/ASSESSMENT.md",
+   "source": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle/ASSESSMENT.md",
+   "origin": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle/ASSESSMENT.md",
+   "source_sha256": "425030cdfe56bfa34524980d5daac0de7ba0c5580304a5e50bc75001ff10a9a5",
+   "kind": "full",
+   "role": "Accepted plan/policy or pre-canonical independent raw audit; claims with limits"
+  },
+  {
+   "path": "current-review/ROOT-DISPOSITION.md",
+   "source": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/module-A/ROOT-DISPOSITION.md",
+   "origin": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/module-A/ROOT-DISPOSITION.md",
+   "source_sha256": "0677616275f0cf5a35b784085b9884f4d4f0f4ebfebf58b61748fce2f1b08c89",
+   "kind": "full",
+   "role": "Root independently checked counterexamples/disposition; verify source rather than trust author"
+  },
+  {
+   "path": "current-review/REPRODUCED.json",
+   "source": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/module-A/REPRODUCED.json",
+   "origin": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/module-A/REPRODUCED.json",
+   "source_sha256": "a83b1f817a11f0e7660f8c433bb6702b9547e7a7d6a19602de4ba154d96a77aa",
+   "kind": "compact_json",
+   "role": "Root independently checked counterexamples/disposition; verify source rather than trust author"
+  },
+  {
+   "path": "current-review/astra-financial-response.md",
+   "source": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/module-A/review/sealed/reviewer-response.md",
+   "origin": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/module-A/review/sealed/reviewer-response.md",
+   "source_sha256": "2685b18c055c34adabbb220e6d8f58e8b686bd2609d3ef757a7de2dca0d38d88",
+   "kind": "full",
+   "role": "Sealed complete independent financial review1P1/5P2"
+  },
+  {
+   "path": "history/astra-first-architecture.md",
+   "source": "/home/bline/cbm-work/p135-arch-prep/review-kit/review/sealed/reviewer-response.md",
+   "origin": "/home/bline/cbm-work/p135-arch-prep/review-kit/review/sealed/reviewer-response.md",
+   "source_sha256": "01e3c3cc8b6913d117f46ce0f5973735524af4bb6b86b0943f633fedafb42b42",
+   "kind": "full",
+   "role": "Sealed prior xhigh judgment; selected bounded canonical plan, current result challenges sufficiency"
+  },
+  {
+   "path": "history/ARCHITECTURE-GUARD.md",
+   "source": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/design-r2/packet/inputs/history/ARCHITECTURE-GUARD.md",
+   "origin": "/home/bline/cbm-work/p134-module-a/ARCHITECTURE-GUARD.md",
+   "source_sha256": "544575b9d8676eb89ed1dff1551b941bbbac6d871bf2d2b2ecfad2993528e987",
+   "kind": "full",
+   "role": "Append-only history including inherited recurringI1 and new immediate design escalation"
+  },
+  {
+   "path": "producer/pi_container.py.excerpts",
+   "source": "/home/bline/cbm-work/p134-module-a/packet/sources/producer/pi_container.py.excerpts",
+   "origin": "/home/bline/cbm-work/p134-module-a/packet/sources/producer/pi_container.py.excerpts",
+   "source_sha256": "bfd226df9fc1fb8b5395a74490e3c1696273fab08e15d0e4da19b951320bb4b8",
+   "kind": "full",
+   "role": "Pinned92a03789 financial writer/rates, omissions marked"
+  },
+  {
+   "path": "producer/openai_api_rates.json",
+   "source": "/home/bline/cbm-work/p134-module-a/packet/sources/producer/openai_api_rates.json",
+   "origin": "/home/bline/cbm-work/p134-module-a/packet/sources/producer/openai_api_rates.json",
+   "source_sha256": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58",
+   "kind": "full",
+   "role": "Pinned92a03789 financial writer/rates, omissions marked"
+  },
+  {
+   "path": "producer/anthropic_api_rates.json",
+   "source": "/home/bline/cbm-work/p134-module-a/packet/sources/producer/anthropic_api_rates.json",
+   "origin": "/home/bline/cbm-work/p134-module-a/packet/sources/producer/anthropic_api_rates.json",
+   "source_sha256": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "kind": "full",
+   "role": "Pinned92a03789 financial writer/rates, omissions marked"
+  },
+  {
+   "path": "producer/supplement.md",
+   "source": "/home/bline/.local/share/work-engine/skill-releases/releases/92a03789327777b3cd9b5822c6df75a18fa63660/skills/manual-orchestration/scripts/pi_container.py",
+   "origin": "/home/bline/.local/share/work-engine/skill-releases/releases/92a03789327777b3cd9b5822c6df75a18fa63660/skills/manual-orchestration/scripts/pi_container.py",
+   "source_sha256": "780837341790780f84163ee6151b8ce66cff56f5a3f6ddf8c15f939dba50f470",
+   "kind": "excerpt",
+   "role": "Exact family/valuation constructor/floor-update supplementary ranges",
+   "ranges": [
+    [
+     90,
+     120
+    ],
+    [
+     546,
+     679
+    ],
+    [
+     960,
+     1020
+    ]
+   ]
+  },
+  {
+   "path": "cases/R6-C01-writer-reservation-floor-control.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/R6-C01-writer-reservation-floor-control.json",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/R6-C01-writer-reservation-floor-control.json",
+   "source_sha256": "08058cfbbb4b8d233eca62e2337df05a7a01ae7cbe218ff84e8b75dfefc25b9d",
+   "kind": "json_projection",
+   "role": "Selected complete raw/expected/evaluation values; old narrative/revision logs omitted",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected",
+    "evaluations"
+   ]
+  },
+  {
+   "path": "cases/U08-missing-observed-tier.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/U08-missing-observed-tier.json",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/U08-missing-observed-tier.json",
+   "source_sha256": "11271ad345ad2466b9b5191d91783d37eb44b77ec8b682002e9348ac3a8a3ac7",
+   "kind": "json_projection",
+   "role": "Selected complete raw/expected/evaluation values; old narrative/revision logs omitted",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected",
+    "evaluations"
+   ]
+  },
+  {
+   "path": "cases/P130-R02-rounded-up-charge-admitted.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P130-R02-rounded-up-charge-admitted.json",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P130-R02-rounded-up-charge-admitted.json",
+   "source_sha256": "693a07dd1c48264b827973ccd8b722f8919132846eb8c6169021a2b6aa1d7b85",
+   "kind": "json_projection",
+   "role": "Selected complete raw/expected/evaluation values; old narrative/revision logs omitted",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected",
+    "evaluations"
+   ]
+  },
+  {
+   "path": "cases/P130-R01-usage-incomplete-terminal.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P130-R01-usage-incomplete-terminal.json",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P130-R01-usage-incomplete-terminal.json",
+   "source_sha256": "4aa5a56ff74cbe6aa7169a592528d311fa51d5708e13f47c0a9350db6d147ee0",
+   "kind": "json_projection",
+   "role": "Selected complete raw/expected/evaluation values; old narrative/revision logs omitted",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected",
+    "evaluations"
+   ]
+  },
+  {
+   "path": "cases/N03-identity-refusal-in-subscription.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/N03-identity-refusal-in-subscription.json",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/N03-identity-refusal-in-subscription.json",
+   "source_sha256": "2c338b6269e6f645b48893a075bdd6f0679f15184021155cc203c80d156ed416",
+   "kind": "json_projection",
+   "role": "Selected complete raw/expected/evaluation values; old narrative/revision logs omitted",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected",
+    "evaluations"
+   ]
+  },
+  {
+   "path": "cases/P133-A09-conflicting-reservations-with-settlement.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P133-A09-conflicting-reservations-with-settlement.json",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P133-A09-conflicting-reservations-with-settlement.json",
+   "source_sha256": "62c20511746291c0b776927430d7a1a86692f5a81822c4d38c17d9d7597a5ab9",
+   "kind": "json_projection",
+   "role": "Selected complete raw/expected/evaluation values; old narrative/revision logs omitted",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected",
+    "evaluations"
+   ]
+  },
+  {
+   "path": "cases/V01-usage-settlement-other-response-model.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/V01-usage-settlement-other-response-model.json",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/V01-usage-settlement-other-response-model.json",
+   "source_sha256": "49afdabbfbaf76d6f60dbd4dcfafa3bd49408e2d31a5862389d60a946207b49e",
+   "kind": "json_projection",
+   "role": "Selected complete raw/expected/evaluation values; old narrative/revision logs omitted",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected",
+    "evaluations"
+   ]
+  },
+  {
+   "path": "cases/P133-FG-VC14-authenticated-bound.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P133-FG-VC14-authenticated-bound.json",
+   "origin": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P133-FG-VC14-authenticated-bound.json",
+   "source_sha256": "228e29261cbbf8158611735700504931a32be69de8f15f9b28dd8a524f3b5235",
+   "kind": "json_projection",
+   "role": "Selected complete raw/expected/evaluation values; old narrative/revision logs omitted",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected",
+    "evaluations"
+   ]
+  },
+  {
+   "path": "evidence/joined/custody/joined-rust-tests.stdout",
+   "source": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/custody/joined-rust-tests.stdout",
+   "origin": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/custody/joined-rust-tests.stdout",
+   "source_sha256": "193045c6d601ea5bf29ae486cbd348e0f8542b1fa1348e0631a7c3693cf5797e",
+   "kind": "full",
+   "role": "Actual current root joined test output; narrow coverage only"
+  },
+  {
+   "path": "evidence/joined/legacy-custody/joined-check.stdout",
+   "source": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/legacy-custody/joined-check.stdout",
+   "origin": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/legacy-custody/joined-check.stdout",
+   "source_sha256": "e70f93be61cff57cb905c317c327b29a8fb2b27486cd263918fe29557599d897",
+   "kind": "full",
+   "role": "Actual current root joined test output; narrow coverage only"
+  }
+ ]
+}

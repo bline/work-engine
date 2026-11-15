@@ -1,0 +1,72 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/ROOT-REPLAY-PLAN.json",
+  "plan_sha256": "45ed16eca5af3dacc55dde11d1b564ffb2d09bddb39ee8a79923ee00add42e09",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "python-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/root-replay/python-controls.json",
+      "record_sha256": "519d162db13d2ec254f8055069b5bb201d2eae1fb13420bd8053010c6b4033ca",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/root-replay/rust-positive.json",
+      "record_sha256": "edac0683742c07ece7191412859ec833ee270490ea8e91840665a00d76d16776",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-r10-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/root-replay/rust-r10-controls.json",
+      "record_sha256": "dfd7b762bec0bdb6612f0651d5d47d059fcb70ee0177f23b29c23b934c36bf5e",
+      "leftovers": 0
+    },
+    {
+      "name": "python-main-pilot",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/root-replay/python-main-pilot.json",
+      "record_sha256": "9161283ecaefaca2b393a8f0ef4a981b97999bb4b11b4a1db66884162e89e07f",
+      "leftovers": 0
+    },
+    {
+      "name": "generated",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/root-replay/generated.json",
+      "record_sha256": "f1b2f85995720401d50d2d1f18d8c4b74eb05f09a639ab1e89ad803ed8093d44",
+      "leftovers": 0
+    },
+    {
+      "name": "impact",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/root-replay/impact.json",
+      "record_sha256": "2faaeb93dc66a9594b3b75ed599e484c5c5c1ee04ab45668dd6e870e3804042f",
+      "leftovers": 0
+    },
+    {
+      "name": "schema_agreement",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/root-replay/schema_agreement.json",
+      "record_sha256": "6ef86fde9786896c2c8fb3579b315344f5c90a24b0dd6b4eb6c8cf6596da2303",
+      "leftovers": 0
+    },
+    {
+      "name": "wire_corpus",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/root-replay/wire_corpus.json",
+      "record_sha256": "74fc38c6aff54238855b5a225ce852056562514c7af66c37b6ac51e6bc9b1181",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence_controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/root-replay/evidence_controls.json",
+      "record_sha256": "7ee1323ab62faff5146637d124536831e83a45d4664f1bbd9d21009d83298fe1",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

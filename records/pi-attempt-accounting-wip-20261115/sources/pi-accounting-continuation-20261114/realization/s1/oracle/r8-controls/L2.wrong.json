@@ -1,0 +1,53 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "none",
+      "kind": "exact",
+      "nano": "0"
+    },
+    "low": "0"
+  },
+  "credits": [
+    {
+      "alternatives": [
+        "u1"
+      ],
+      "low": "15000000",
+      "slot": "P"
+    },
+    {
+      "alternatives": [
+        "u2"
+      ],
+      "low": "15000000",
+      "slot": "Q"
+    }
+  ],
+  "id": "result:L2",
+  "units": [
+    {
+      "high": {
+        "basis": "none",
+        "kind": "exact",
+        "nano": "0"
+      },
+      "id": "atom:u1",
+      "low": "0",
+      "origins": [
+        "u1"
+      ]
+    },
+    {
+      "high": {
+        "basis": "none",
+        "kind": "exact",
+        "nano": "0"
+      },
+      "id": "atom:u2",
+      "low": "0",
+      "origins": [
+        "u2"
+      ]
+    }
+  ]
+}

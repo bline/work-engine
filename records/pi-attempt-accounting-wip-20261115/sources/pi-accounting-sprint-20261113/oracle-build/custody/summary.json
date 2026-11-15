@@ -1,0 +1,37 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/legacy-plan.json",
+  "plan_sha256": "237be94d56fba222d071208fc73f3a3598eefd2db9a48eda9ac4cc9f4b6181a8",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "check",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/custody/check.json",
+      "record_sha256": "eacda43425d8b6396bcfb0aee784e70e8c550848cd1e2aa7b63aaef9fa62d982",
+      "leftovers": 0
+    },
+    {
+      "name": "selftest",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/custody/selftest.json",
+      "record_sha256": "b88b381fee8830fdf02e677125685c5eddbb08b5cb3973383ddf69e5cf6ad4d5",
+      "leftovers": 0
+    },
+    {
+      "name": "revisions",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/custody/revisions.json",
+      "record_sha256": "46b0b337d4eab2461e454b22c260a99d363dfc369d13034daf1fcc0b008b524c",
+      "leftovers": 0
+    },
+    {
+      "name": "sabotage",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/custody/sabotage.json",
+      "record_sha256": "9afb51452842d128a69a5a13fa59feea8484eee9f978c1860192633f4e3c14c7",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

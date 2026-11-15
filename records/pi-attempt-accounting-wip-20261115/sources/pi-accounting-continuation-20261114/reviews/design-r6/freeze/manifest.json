@@ -1,0 +1,53 @@
+{
+  "schema": "manual-orchestration.custody.freeze.v1",
+  "label": "Design candidate R6 exact standalone declaration scope",
+  "root": "/home/bline/cbm-work/pi-accounting-continuation-20261114/design",
+  "excludes": [],
+  "frozen_at": "2026-11-14T03:19:41.710566Z",
+  "entry_count": 6,
+  "entries_sha256": "f969f3de13173f3669a645224cd32ee20562393c0f565a9b6aeedaea4ceb0c8b",
+  "entries": [
+    {
+      "path": "CONTINUATION.md",
+      "type": "file",
+      "mode": 436,
+      "length": 3960,
+      "sha256": "1c97a6ba409e35e48097719d9ca99dc5aa823c485424d2e41f839849470ef244"
+    },
+    {
+      "path": "PACKET.md",
+      "type": "file",
+      "mode": 436,
+      "length": 5888,
+      "sha256": "2de4c7412db2eb457a43bd35996639618944e9f1b3936b4ddf7e7b0e8bb5d2ab"
+    },
+    {
+      "path": "PLAN.md",
+      "type": "file",
+      "mode": 436,
+      "length": 41127,
+      "sha256": "43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61"
+    },
+    {
+      "path": "RESULT.md",
+      "type": "file",
+      "mode": 436,
+      "length": 4693,
+      "sha256": "cb77c213b6310bf461637df0f0b2b41fa176653b72e1e72aeedc0396ea3e7ae2"
+    },
+    {
+      "path": "REVIEW-PACKET.md",
+      "type": "file",
+      "mode": 436,
+      "length": 7378,
+      "sha256": "74a666e9ae4550f90dc1c3f515f0cc7cb64e4cbcd3cf2d3ff3ea1993a593559d"
+    },
+    {
+      "path": "SOURCE-BINDINGS.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13544,
+      "sha256": "64ad366edc751a374a0029095c91ba405855a31be82908455daccd0e3e0c2fa6"
+    }
+  ]
+}

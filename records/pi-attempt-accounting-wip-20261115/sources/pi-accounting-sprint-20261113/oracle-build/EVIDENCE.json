@@ -1,0 +1,95 @@
+{
+  "audit_facts_sha256": "f097e5a541b279f2081c71f54ca3403151475348b8a30245e6846708590e293e",
+  "authority": "bounded_implementation_only_root_collects_and_accepts",
+  "coverage": {
+    "cases_now": 175,
+    "historical_cases": 173,
+    "lexical_reservation_groups": 147,
+    "p6_current_subset": 108,
+    "priced_observations": 104,
+    "raw_rows": 287,
+    "raw_selected_historical_cases": 137,
+    "raw_sources": 142,
+    "result_mutants": 34,
+    "rust_tests": 4,
+    "sabotage_cases": 98,
+    "selected_current_historical": 105,
+    "selected_future_historical": 32
+  },
+  "custody": {
+    "independent": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/oracle-bound-custody/summary.json",
+    "independent_summary_sha256": "057385c6774219c44be2d0e5d1dd1292370b73acc4e5bcc61d0795317f25d931",
+    "legacy_final": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/legacy-bound-custody/summary.json",
+    "legacy_final_summary_sha256": "f82c2806f9519bcfaf78595b0ed1dd1844895c7e55409c473000988ea8db9fe9",
+    "status": "passed"
+  },
+  "failure_lineage": [
+    {
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/custody/sabotage.json",
+      "result": "one intended-reason check failed while migration and validator edits were in progress; retained; stable reruns all98caught",
+      "standing": "superseded"
+    },
+    {
+      "defect": "initial new R6-C01 cloned multiplier_floor0 despite observed-default/requested-flex; corrected to1.0, exact body/config witnesses and fresh binary assertions added; historical173rawunchanged",
+      "manifest_sha256": "58f9f63d85e45c86a4abb0407222a4c977afc8136c0bfa0618c600a684169433",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/freeze/manifest.json",
+      "standing": "superseded"
+    },
+    {
+      "detail": "initial custody rejected directory digest; corrected to file digests; source staging scratch typo failed before execution and was corrected; neither is a semantic rejection",
+      "kind": "infrastructure"
+    }
+  ],
+  "freeze_archive_sha256": "1366893a11bc33f1fe9d1512760cce6cd0ee9a414d46a926614003c76429d668",
+  "freeze_entries": 523,
+  "freeze_manifest_sha256": "2a0b1237b2ea564ae3640d3e7e267205f6901579cc82ff42689732883509e72d",
+  "limits": [
+    "actor_recorded_independence_not_filesystem_isolation",
+    "raw_axes_and_consistency_only",
+    "full_C_K_acceptance_unestablished",
+    "no_reference_financial_reducer",
+    "production_gate_verifier_authority_enforcement_unestablished",
+    "test_mock_gate_positives_are_conditional",
+    "local_writer_consistency_not_actual_reachability",
+    "no_commits_pushes_production_activation"
+  ],
+  "owned_snapshot": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/final-owned-subject",
+  "process_disposition": {
+    "all_owned_tool_sessions_collected": true,
+    "children": 0,
+    "custody_leftovers": 0,
+    "owned_processes_remaining": 0
+  },
+  "qualification_sha256": "016f93b94f19f6971bc5e11c953ba2fff8ef0c81e736bad25a51ce7007821eb5",
+  "root_policy_sha256": "07303d5c5c36276f6038bf9368f3a5fe660e39ee9160b8b3d92049de98abb981",
+  "runtime": {
+    "applied_event_sha256": "21952ace786a788e0aee26fc3bab69d8aa8219eb907f1814bdb86d83de69be3e",
+    "cli_version": "0.169.0",
+    "collector": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+    "cost": "unknown",
+    "effort": "medium",
+    "model": "gpt-6.1-sol",
+    "session_id": "01a1d700-c690-7d90-a2b2-620ece8f2a2f",
+    "tier": "default"
+  },
+  "sabotage_sha256": "647930560ee9531036829ca94cccecad2980547e41a7c90702774262708f0cd2",
+  "schema": "independent-oracle-worker-evidence/1",
+  "shared_serialization_interface_sha256": "8020a947b6d306e85dbe93ddc512f0cd4310b7e8a8d5dbadc608e54755f1af2e",
+  "snapshot_live_comparison": {
+    "files": 523,
+    "meaning": "byte comparison of owned paths only; canonical files and SCHEMA excluded",
+    "mismatches": []
+  },
+  "source_test_sha256": "d3fc0b7ce9a091d14514ef64e681d34d78c1585bf0f116de34f389f0d5e7429d",
+  "subject": "/home/bline/cbm-work/p136-s1r6/s1",
+  "test_executable": {
+    "kind": [
+      "test"
+    ],
+    "name": "independent_raw_axes",
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/target-oracle/debug/deps/independent_raw_axes-fd146da9d6dec9b5",
+    "sha256": "c9d1889da543e6e72fc80d34df6423f38621928ca326b52e1a980d691873ebe6"
+  },
+  "validator_sha256": "f9f66e9f0044843f2142e0a4d372f1865e958d416e6fd3c65014367cc3578c8f",
+  "writer_witness_sha256": "374cbd62ace241db1cba48a81f307e21b14ff7828e839031f6622cd282377189"
+}

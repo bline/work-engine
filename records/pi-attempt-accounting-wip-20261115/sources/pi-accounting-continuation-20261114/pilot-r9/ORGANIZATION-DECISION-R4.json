@@ -1,0 +1,10 @@
+{
+  "candidate": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ORGANIZATION-R4.json",
+  "sha256": "a79eb43b101e1ce51196066e7d2c76fa5cc86f05595c675e9a5d69ecf8e4247d",
+  "prior_revision": "R3",
+  "classification": "small route/decomposition revision within original S1 realization and qualification; no new deliverable/claim, explicit stage only",
+  "authority": "root delegated owner; human original100/fourhour3204; D7 staged recommendation",
+  "decision": "approve exact two bounded pilot assignments within caps, reserve review/closure; later scope needs separate binding",
+  "carry_forward": "same objective, authority, budget, original gates/history; no fullmigration or consumer narrowing",
+  "full_acceptance": "unmet"
+}

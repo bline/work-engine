@@ -1,0 +1,7 @@
+{
+  "path": "oracle/r9-pilot/cases/equal-reservations.json",
+  "pointer": "/expected/attempts/0/exposure/high/nano",
+  "before": "500000000",
+  "after": "400000000",
+  "source_manifest": "9234cec46402ebddcd6ae221c76867b038001b6022254e1ebcac3fd43d8425d6"
+}

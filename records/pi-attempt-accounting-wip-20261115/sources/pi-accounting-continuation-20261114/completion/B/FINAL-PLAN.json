@@ -1,0 +1,45 @@
+{
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "steps": [
+    {
+      "name": "python-partition",
+      "argv": [
+        "python3",
+        "validator/validate_corpus.py",
+        "partition",
+        "corpus",
+        "oracle/rates",
+        "B"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "rust-corpus",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-integration/debug/pi-accounting-spec-check",
+        "corpus",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+        "B"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-integration/debug/pi-accounting-spec-check"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "negative-controls",
+      "argv": [
+        "python3",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/negative_controls.py"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/negative_controls.py",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+      ],
+      "timeout": 120
+    }
+  ]
+}

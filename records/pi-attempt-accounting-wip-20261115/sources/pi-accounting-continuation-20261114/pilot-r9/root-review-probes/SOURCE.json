@@ -1,0 +1,9 @@
+{
+  "source_rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-33-05-01a1d8c2-754e-7c13-84ec-570c1b872e56.jsonl",
+  "source_line": 181,
+  "source_record_sha256": "ff52df78b3cdf5ab5ea99d4e5c3f20c87521b4b579b36d18c7c623eb65709da0",
+  "script": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-review-probes/reproduce_p9_route.py",
+  "script_sha256": "2c64b761ce12f6d68ad60883380e10901cbeb120deea49d8eedca553d828b389",
+  "changes": "adds explicit outcome assertions only, otherwise exact reviewer in-memory probes; frozenraw/source untouched",
+  "subject_manifest": "0cad3d5ed66b9ef3c4796cb4039a16646d0ce0d451153948b08f972d8286df6a"
+}

@@ -1,0 +1,55 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "python-partition",
+  "argv": [
+    "python3",
+    "validator/validate_corpus.py",
+    "partition",
+    "corpus",
+    "oracle/rates",
+    "A"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 3087721,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/A/SOURCE-BINDINGS.json",
+      "type": "file",
+      "mode": 436,
+      "length": 37267,
+      "sha256": "c82929314fd580d4cbae3fb83972222cd3109954dae00d4e4afbe64834fb61ab"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py",
+      "type": "file",
+      "mode": 436,
+      "length": 103741,
+      "sha256": "b41099fc2ed8dee994070d10c530d027534bb5027fee44d8273c3ac93c084f70"
+    }
+  ],
+  "timeout_s": 120,
+  "pid": 3087787,
+  "pgid": 3087787,
+  "started_at": "2026-11-14T04:19:39.951427Z",
+  "ended_at": "2026-11-14T04:19:41.268255Z",
+  "duration_s": 1.317,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/A/custody/final/python-partition.stdout",
+    "length": 335,
+    "sha256": "f3494018b1994d946f6d43a23d4782dbe95c36cd69215f8583674a522239e782"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/A/custody/final/python-partition.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

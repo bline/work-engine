@@ -1,0 +1,202 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "oracle/r8-completion-B/DERIVATIONS.json#VC01-openai-usage-settlement",
+        "predecessor_subject_refs": [
+          "baseline:d0fdaa06b1e963d8a3eb3002f4a610f25330e8e0eabb34aa211157348e170b6f"
+        ],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": [
+          "conditional-ticket:S1/turn-1"
+        ]
+      },
+      "exact_links": [],
+      "grants": [
+        {
+          "admission": "conditional_fixture",
+          "assumption_refs": [
+            "Inherited immutable ticket namespace only; no exact auxiliary link or physical-bill independence."
+          ],
+          "authority_ref": "ROOT-ADOPTION-R6.json",
+          "covered_extent_ref": "sha256:8e9cedfbd77254e983fa35939c7cfa5b19ff516a0c9269e11ed9b31843edb3e2",
+          "covered_origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "exact_payload_ref": "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.provenance.json#S1/turn-1",
+          "grant_id": "initial-scope:S1/turn-1",
+          "guarantee_kind": "initial_reference_scope",
+          "observer_or_harness_ref": "inherited-corpus-conditional-fixture"
+        }
+      ],
+      "id": "input:VC01-openai-usage-settlement",
+      "identity_bindings": [],
+      "initial_contracts": [
+        {
+          "contract_id": "conditional-ticket:S1/turn-1",
+          "duplicate_rule": "same_origin_only",
+          "grant_ref": "initial-scope:S1/turn-1",
+          "reference_namespace": "dollar_ticket",
+          "scope_id": "VC01-openai-usage-settlement/S1/turn-1"
+        }
+      ],
+      "kind": "accounting_input_proof",
+      "lineage_id": "VC01-openai-usage-settlement",
+      "origins": [
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:1",
+          "original_position": 1,
+          "raw_bytes_sha256": "70f7e415dc1a71b54acc58117be26d6107a68ec0a7ed057982c6a8653d59549a",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:8e9cedfbd77254e983fa35939c7cfa5b19ff516a0c9269e11ed9b31843edb3e2"
+        },
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:2",
+          "original_position": 2,
+          "raw_bytes_sha256": "6b3e308e170578afa395956bf309305762a3b1b2227e874caa3998987c43dfc3",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:8e9cedfbd77254e983fa35939c7cfa5b19ff516a0c9269e11ed9b31843edb3e2"
+        }
+      ],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ]
+        }
+      ],
+      "continuity_result": "unestablished",
+      "coverage_decisions": [],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [
+        {
+          "context_origin_ref": "S1/turn-1:2",
+          "predicate_ref": "same-original-usage-origin",
+          "usage_origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "id": "result:VC01-openai-usage-settlement",
+      "input_proof_ref": "input:VC01-openai-usage-settlement",
+      "kind": "accounting_result",
+      "lineage_id": "VC01-openai-usage-settlement",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "VC01-openai-usage-settlement/default/o/owned_closed",
+          "seed_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "selected_low": "0",
+          "single_floor": "0"
+        },
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "VC01-openai-usage-settlement/default/o/owned_outstanding",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        }
+      ],
+      "origins": [
+        {
+          "active_high_unit_id": "res:S1/turn-1:rid=1",
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:1",
+          "origin_ref": "S1/turn-1:1"
+        },
+        {
+          "active_high_unit_id": "res:S1/turn-1:rid=1",
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:2",
+          "origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "primary_memberships": [
+        {
+          "obligation_id": "validity:res:S1/turn-1:rid=1",
+          "reservation_classes": [
+            {
+              "origin_refs": [
+                "S1/turn-1:1"
+              ],
+              "representative_origin_ref": "S1/turn-1:1"
+            }
+          ],
+          "settlement_classes": [
+            {
+              "origin_refs": [
+                "S1/turn-1:2"
+              ],
+              "representative_origin_ref": "S1/turn-1:2"
+            }
+          ],
+          "usage_origin_refs": [
+            "S1/turn-1:2"
+          ]
+        }
+      ],
+      "primary_validities": [
+        {
+          "applicable_check_refs": [
+            "case:VC01-openai-usage-settlement#attempt:res:S1/turn-1:rid=1/settlement"
+          ],
+          "distinct_reservation_refs": [
+            "S1/turn-1:1"
+          ],
+          "distinct_settlement_refs": [
+            "S1/turn-1:2"
+          ],
+          "obligation_id": "validity:res:S1/turn-1:rid=1",
+          "validity_result": "valid"
+        }
+      ],
+      "unbudgeted_applicabilities": [],
+      "unbudgeted_completions": [],
+      "units": [
+        {
+          "exposure_ref": "case:VC01-openai-usage-settlement#attempt:res:S1/turn-1:rid=1",
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "state": "active",
+          "unit_id": "res:S1/turn-1:rid=1"
+        }
+      ],
+      "valuation_records": [
+        {
+          "complete": false,
+          "usage_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "valuation_id": "valuation:res:S1/turn-1:rid=1",
+          "wire_ref": "case:VC01-openai-usage-settlement#attempt:res:S1/turn-1:rid=1/valuation"
+        }
+      ],
+      "version": "1.7-s1"
+    }
+  ]
+}

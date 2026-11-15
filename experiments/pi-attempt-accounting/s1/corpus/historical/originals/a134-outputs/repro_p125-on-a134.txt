@@ -1,0 +1,128 @@
+# out=/home/bline/cbm-work/p126-a134/repro/final/repro_p125-on-a134.txt tree=/home/bline/cbm-work/p126-a134/repro/earlier args=-m unittest repro_p125 -v -k test_N at=2026-11-13T03:58:34Z
+# reader under test: 086bdec1d443064f
+test_N01_identity_refusal_reservation (repro_p125.Repro.test_N01_identity_refusal_reservation) ... 
+N-01 claimed: producer refusal pair, response fable, id msg_x [limit 0.10, new 0.04]: ('not_established', None, None, ['pi_model_identity_conflict'])
+
+   rows: [(['pi_api'], 0.02, 0.08, None, 'reservation')]
+
+   all issue kinds: ['pi_model_identity_conflict']
+
+N-01 claimed: request row only (no response_model_refused row) [limit 0.10, new 0.04]: ('not_established', None, None, ['pi_model_identity_conflict'])
+
+   rows: [(['pi_api'], 0.02, 0.08, None, 'reservation')]
+
+   all issue kinds: ['pi_model_identity_conflict']
+
+N-01 claimed variant: response fable, no response id [limit 0.10, new 0.04]: ('not_established', None, None, ['pi_model_identity_conflict'])
+
+   rows: [(['pi_api'], 0.02, 0.08, 'absent', 'reservation')]
+
+   all issue kinds: ['pi_model_identity_conflict']
+
+N-01 control: response model = pinned sonnet (no conflict) [limit 0.10, new 0.04]: ('admitted', 0.05, 0.02, [])
+
+   rows: [(['pi_api'], 0.02, 0.05, None, 'reservation')]
+
+   all issue kinds: []
+
+N-01 control: response fable, reservation 0.10 (above both usage prices) [limit 0.10, new 0.04]: ('not_established', None, None, ['pi_model_identity_conflict'])
+
+   rows: [(['pi_api'], 0.02, 0.1, None, 'reservation')]
+
+   all issue kinds: ['pi_model_identity_conflict']
+ok
+test_N02_malformed_anthropic_tier (repro_p125.Repro.test_N02_malformed_anthropic_tier) ... 
+N-02 usage basis 0.028, observed_tier=7: ('admitted', 0.028, 0.028, [])
+
+N-02 usage basis 0.028, observed_tier=None: ('admitted', 0.028, 0.028, [])
+
+N-02 usage basis 0.028, observed_tier='standard': ('admitted', 0.028, 0.028, [])
+
+N-02 usage basis 0.028, observed_tier='priority': ('not_established', None, None, ['pi_settlement_invalid'])
+
+N-02 usage basis 0.028, observed_tier=['standard']: ('admitted', 0.028, 0.028, [])
+
+N-02 usage basis 0.028, observed_tier=True: ('admitted', 0.028, 0.028, [])
+
+N-02 producer shape for tier 7: reservation basis 0.3: ('admitted', 0.3, 0.028, [])
+ok
+test_N03_contradicted_admission (repro_p125.Repro.test_N03_contradicted_admission) ... 
+N-03 control: producer admission (unlabelled), no measurement: ('admitted', 0.0, 0.0, [])
+
+   rows: [(['codex'], None, None, None, None)]
+
+N-03 claimed: admission labelled openai/api, no measurement: ('not_established', None, None, ['pi_lane_conflict', 'pi_request_unaccounted'])
+
+   rows: []
+
+   all issue kinds: ['pi_lane_conflict', 'pi_request_unaccounted']
+
+N-03 claimed: admission labelled anthropic provider: ('not_established', None, None, ['pi_lane_conflict', 'pi_request_unaccounted'])
+
+N-03 control: refused row unlabelled: ('admitted', 0.0, 0.0, [])
+
+N-03 claimed: refused row labelled openai/api: ('not_established', None, None, ['pi_lane_conflict'])
+
+   all issue kinds: ['pi_lane_conflict']
+
+N-03 claimed: response_model_refused labelled openai/api: ('not_established', None, None, ['pi_lane_conflict'])
+
+N-03 reference: measured stream_error labelled openai/api after a valid admission: ('not_established', None, None, ['pi_lane_conflict', 'pi_request_unaccounted'])
+ok
+test_N04_reused_n (repro_p125.Repro.test_N04_reused_n) ... 
+N-04 claimed: refused(A), request n=2 (B), stream_error n=2 (C header failure): ('not_established', None, None, ['pi_request_unaccounted'])
+
+   rows: [(['pi_api'], 0.015, 0.015, None, None)]
+
+N-04 claimed: stream_error n=2 before the request n=2: ('not_established', None, None, ['pi_request_unaccounted'])
+
+N-04 control: request n=2, stream_error n=3 (distinct number): ('not_established', None, None, ['pi_request_unaccounted'])
+
+N-04 control: request n=2 alone: ('admitted', 0.015, 0.015, [])
+ok
+test_N05_earlier_retirement (repro_p125.Repro.test_N05_earlier_retirement) ... /home/bline/cbm-work/p126-a134/repro/earlier/repro_p125.py:146: ResourceWarning: unclosed file <_io.TextIOWrapper name='/home/bline/cbm-work/p126-a134/tests/tmp/td-C4S1/tmprfxla6x4/state/pi/00000000-0000-4000-8000-0000000000c1/host/turn-1.proxy.jsonl' mode='w' encoding='UTF-8'>
+  open(path, 'w').write(''.join(json.dumps(r) + '\n' for r in rows)); logs.append(path)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/bline/cbm-work/p126-a134/repro/earlier/repro_p125.py:146: ResourceWarning: unclosed file <_io.TextIOWrapper name='/home/bline/cbm-work/p126-a134/tests/tmp/td-C4S1/tmprfxla6x4/state/pi/00000000-0000-4000-8000-0000000000c1/host/turn-2.proxy.jsonl' mode='w' encoding='UTF-8'>
+  open(path, 'w').write(''.join(json.dumps(r) + '\n' for r in rows)); logs.append(path)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+
+N-05 claimed: launch 05:59, res 06:00, retire 06:40, deliver 06:05 (empty), retire 06:10; objective 06:20: ('not_established', None, None, ['pi_session_lifecycle_contradicted', 'pi_undated_call_unattributable'])
+
+   all issue kinds: ['pi_session_lifecycle_contradicted']
+
+N-05 control: launch 05:59, res 06:00, retire 06:40 only: ('not_established', None, None, ['pi_undated_call_unattributable'])
+
+N-05 control: launch 05:59, res 06:00, retire 06:10 only (consistent; genuinely before the objective): ('admitted', 0.0, 0.0, [])
+
+N-05 control: monotone clock: retire 06:40, deliver 06:45, retire 06:50: ('not_established', None, None, ['pi_undated_call_unattributable'])
+ok
+test_N06_absent_cache_counts (repro_p125.Repro.test_N06_absent_cache_counts) ... 
+N-06 claimed: cached null, cache_write null, charged 0.015: ('admitted', 0.0175, 0.006, [])
+
+N-06 variant: cached null, cache_write 0: ('admitted', 0.015, 0.006, [])
+
+N-06 control: cached 0, cache_write null: ('admitted', 0.0175, 0.015, [])
+
+N-06 control: cached 0, cache_write 0: ('admitted', 0.015, 0.015, [])
+ok
+test_N07_legacy_commitment_reopened (repro_p125.Repro.test_N07_legacy_commitment_reopened) ... 
+N-07 claimed: legacy allocation 0.8, retire, then deliver (empty turn); new 0.5: ('admitted', 0.0, 0.0, [])
+
+N-07 control: retire, no deliver: ('admitted', 0.0, 0.0, [])
+
+N-07 control: no retire: ('refused', 0.0, 0.0, [])
+ok
+test_N08_haiku_long_context (repro_p125.Repro.test_N08_haiku_long_context) ... 
+N-08 producer rate for claude-haiku-5-5: absent (anthropic_api_rates.json lists no haiku model)
+
+N-08 native_usd(haiku, 100001 input): (0.0500005, 0.0500005, 0)
+
+N-08 native_usd(haiku, 100000 input): (0.01, 0.01, 0)
+ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.061s
+
+OK
+exit=0

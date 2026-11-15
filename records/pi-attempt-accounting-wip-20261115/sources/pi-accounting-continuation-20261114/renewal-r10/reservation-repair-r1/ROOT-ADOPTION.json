@@ -1,0 +1,25 @@
+{
+  "decision": "adopt bounded realization including actual selected result/unit/reference joins",
+  "owner_session": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "at": "2026-11-14T07:49:09.125014+00:00",
+  "authority": "renewed human100 at06:57:15.215Z and delegated S1 owner; no deadline",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-reservation-r1/PLAN.md",
+  "plan_sha256": "bc723a6c2411852dc5f4f7aaaccbb95c2d2bd699f0438f032d94f728c732b71c",
+  "review": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-reservation-r1/REVIEW.md",
+  "review_sha256": "b51105c6f3e004517eb0659eecc8e51a6bab79d661ba140115b9cc0cff5c3c68",
+  "history": "/home/bline/cbm-work/p134-module-a/ARCHITECTURE-GUARD.md",
+  "history_before_sha256": "c5d8a1ee807a95102fb01a4f840578978bb42e392321eaed621e83886597ce03",
+  "classification": "small remediation inside original objective; no scope addition",
+  "bounds": "New isolated candidate only; complete selected finite raw reservation monetary and actual reference joins; no financial semantics change, general reducer, full migration, S1 acceptance, S2a or integration",
+  "finding_state": "all original3R3 and11historical remainOPEN; no history reset",
+  "next_owner": "fresh Sol6.1 medium/default coherent oracle builder",
+  "forecast": {
+    "last_observed_cost": 14.717974,
+    "limit": 100,
+    "builder": 8,
+    "review_remaining_reserve": 15,
+    "root_reserve": 10,
+    "future_development_reserve": 40
+  },
+  "collection": "root sole collector; no outstanding child final"
+}

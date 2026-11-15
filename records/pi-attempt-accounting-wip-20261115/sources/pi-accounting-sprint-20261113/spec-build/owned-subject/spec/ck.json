@@ -1,0 +1,3341 @@
+{
+  "contract_version": "pi-accounting-contract/1.5-s1",
+  "formulas": [
+    {
+      "depends": [],
+      "id": "PRICE-OPENAI",
+      "inputs": [
+        "input",
+        "cached",
+        "write",
+        "output",
+        "r_in",
+        "r_cached",
+        "r_write",
+        "r_out",
+        "tier"
+      ],
+      "refs": [
+        "POLICY-R6",
+        "SOURCE-IDENTITIES"
+      ],
+      "revision": 1,
+      "text": "((input-cached-write)*r_in + cached*r_cached + write*r_write + output*r_out)*tier; input>272000: input-side rates*2 and output rate*1.5; checked integer nano arithmetic."
+    },
+    {
+      "depends": [],
+      "id": "PRICE-ANTHROPIC",
+      "inputs": [
+        "input",
+        "cache_read",
+        "w5m",
+        "w1h",
+        "cache_write",
+        "output",
+        "r_in",
+        "r_read",
+        "r_5m",
+        "r_1h",
+        "r_out"
+      ],
+      "refs": [
+        "POLICY-R6",
+        "SOURCE-IDENTITIES"
+      ],
+      "revision": 1,
+      "text": "input*r_in + cache_read*r_read + w5m*r_5m + w1h*r_1h + (cache_write-w5m-w1h)*residual(r_5m,r_1h) + output*r_out; residual=min for low, max for high and producer consistency."
+    },
+    {
+      "depends": [],
+      "id": "RESERVATION-MAX",
+      "inputs": [
+        "C.reservations"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "R = max({distinct well-formed reservation amounts} union {0}); never sum/min; malformed amounts contribute 0 and blocking MalformedEvidence(reserved)."
+    },
+    {
+      "depends": [],
+      "id": "ERROR-EXPOSURE",
+      "inputs": [
+        "C.reservations",
+        "S.decision",
+        "V.valuation"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "low = valued.low or supported_low or 0; high = AtLeast(max(R, valued.high or priced_high or 0)); valid ErrorStatus closes time and retains ReservationBound."
+    },
+    {
+      "depends": [],
+      "id": "ELIGIBLE-EXPOSURE",
+      "inputs": [
+        "S.decision",
+        "V.valuation",
+        "F.replacement"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "low = valuation.low; high = Exact(max(charged,valuation.high)); finite only with complete usage over established fully priced identity and tier sets."
+    },
+    {
+      "depends": [],
+      "id": "INELIGIBLE-EXPOSURE",
+      "inputs": [
+        "C.reservations",
+        "S.decision",
+        "V.valuation",
+        "F.replacement"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "low and known components follow X-TABLE; high = AtLeast(max(R, applicable well-formed claimed charges, usage high or priced_high or 0)); no financial decision reads K."
+    },
+    {
+      "depends": [],
+      "id": "TOLERANCE",
+      "inputs": [
+        "producer_price",
+        "charged"
+      ],
+      "refs": [
+        "POLICY-R6",
+        "SOURCE-IDENTITIES"
+      ],
+      "revision": 1,
+      "text": "T_round=501 nano; producer_price<10^15 and charged>=producer_price-501; otherwise ToleranceRange or Undercharge."
+    },
+    {
+      "depends": [],
+      "id": "BASIS-TIE",
+      "inputs": [
+        "components"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "max takes basis of largest; ties prefer UsageValuation, then ProxyReservation, then ProxyCharge. Nonzero supported low has usage basis."
+    },
+    {
+      "depends": [],
+      "id": "COMMITMENT-RESIDUAL",
+      "inputs": [
+        "B",
+        "owned_high"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "max(0,B-known session owned high) is separate allocation arithmetic conditional on qualified trusted whole-session USD bound; never changes C-K amounts; AtLeast owned aggregate remains unresolved even with finite residual; P>B alone is not contradictory bill evidence."
+    }
+  ],
+  "invariants": [
+    {
+      "depends": [],
+      "id": "ENCODING",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "## 13. Canonical output and determinism\n\n- Outputs are canonical JSON: sorted keys, amounts as decimal strings of nano-USD integers, lists ordered by\n  (source, line) or by `AttemptKey` order.\n- Equal inputs give byte-identical output.\n- Session and source presentation order MUST NOT change any output beyond declared append-order rules within a source."
+    },
+    {
+      "depends": [],
+      "id": "MONEY",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "## 2. Money (D10)\n\n- **Canonical amount:** `Nano = i128` nano-USD, with checked arithmetic. Overflow is `Err(Overflow)`, which callers\n  MUST treat as blocking `ArithmeticFailure`. Values never wrap or saturate.\n- **Rates:** parsed from the rate files' decimal literals, never via binary floats, into nano-USD per token, an exact\n  integer for every current rate and multiplier (`MONEY.md`: 163 of 163). A rate or multiplier that is not an exact\n  integer in nano-USD per token is `Err(UnsupportedPrecision)`: rejected at load, with the rate table marked\n  unusable, so every valuation is `Unpriceable{RateTableUnusable}`.\n- **Producer amounts** (`charged_usd`, `reserved_usd`) are decimal literals with at most 6 fractional digits, converted\n  exactly. More digits, exponent forms whose value is not an exact nano amount, negative values, booleans, strings,\n  NaN or infinities are `Malformed`.\n- **Rounding (R-02).** The core never rounds a current amount: valuations are exact integers, and producer amounts\n  are taken exactly as logged. The producer's own rounding (`round(x, 6)` USD, `pi_container.py:1018-1019`) moves a\n  logged amount up or down from the producer's float value. It can never lower conservative exposure:\n  - a logged **charge** enters a high only as a term of `max(charged, usage bound)` (FB-1, \u00a78), so rounding down\n    leaves the high at the usage bound or above, and rounding up only raises it;\n  - a logged **reservation** is a known amount, never a bound (FB-2), so its rounding creates no finite bound;\n  - the supported **low** is a usage valuation, never a producer amount (F11).\n\n  If a future rate table needs rounding, every rational amount MUST be rounded once per bound, low by floor and high\n  by ceiling (`MONEY.md`).\n- **Producer-consistency tolerance.** `T_round = 501` nano. The producer's logged charge differs from its float value\n  by at most 500 nano (6-place rounding), and the float value differs from the exact price `p` by under 1.2 nano for\n  `p < 10^15` nano (10^6 USD). Both the logged charge and `p` are integers in nano, so their difference is at most 501\n  (`MONEY.md`). For `p \u2265 10^15` nano the bound is not proven, and the settlement is `Rejected[ToleranceRange]`.\n\nTyped constructors are owned by types High, Bound, Exposure and Replacement.\n\n\n**Order on `High`:**\n- `Exact(a) \u2264 Exact(b)` iff a \u2264 b;\n- `Exact(a) \u2264 AtLeast(b)` iff a \u2264 b;\n- `AtLeast(a) \u2264 AtLeast(b)` iff a \u2264 b;\n- `AtLeast(a) \u2264 Exact(b)` is never true.\n\n**Sum:**\n- `Exact + Exact = Exact`;\n- any `AtLeast` term makes the sum `AtLeast` of the known sum.\n\n**Bases are never merged:** a sum carries a basis histogram, not one basis.\n\n**Evidentiary standard, stated rather than verified:** usage valuations price provider-reported usage at the published\nrates. Verified provider billing is unavailable, so every `Exact` high is conditional on that standard.\n\n### 2.1 Finite-bound rule (owner disposition Q2)\n\nFour amounts are kept apart and never stand in for one another:\n\n| Amount | Basis | Meaning |\n|---|---|---|\n| reserved | `ProxyReservation` | what the proxy set aside before forwarding |\n| conservatively charged | `ProxyCharge` | what the proxy kept against its own session limit |\n| provider bill | `ProviderBilling` | established only by bill evidence; **no source exists today, never produced** |\n| unknown additional billing | `High::AtLeast` | what remains unresolved |\n\n**Rule FB-1 (usage bound; revised for R-01, R-02, R-03).** A high may be `Exact` only when the attempt has a **usage\nbound**: the high of a `UsageValuation` of **complete** provider-reported usage (V-5 `complete = true`), over an\nestablished identity set (one identity, or several identities each priced, \u00a78) and an established tier set (V-3).\nThe stated high is `Exact(max(usage bound, the known amounts \u00a78 adds))`. A proxy charge above the usage bound raises\nthe stated high and gives it its basis (X-0, for example `ProxyCharge` after upward rounding), but the high is finite\nbecause the usage bound exists, not because of the charge. **Without a usage bound, no known amount makes a high\nfinite.**\n\n**Rule FB-2.** Proxy reservations, proxy charges and declared session caps are known amounts, never upper bounds on\nprovider billing. A high with no usage bound is `AtLeast(largest known amount)`.\n\n**Monetary measures (A-01, A-02, owner disposition P1.33).** Six facts are kept apart for every attempt. None stands in\nfor another:\n\n| Fact | Where it is recorded | Measure |\n|---|---|---|\n| terminal execution | `Execution` (\u00a76.2) | none (a time fact) |\n| structurally valid settlement | `SettlementDecision::Valid` (\u00a75) | none (a validity fact) |\n| complete and priceable usage | `Valuation` with `complete` and established sets (\u00a77, FB-1) | **usage valuation**: what the reported usage costs at published rates |\n| eligibility to replace the reservation | `Replacement` (below) | none (a decision fact) |\n| proxy charge and proxy reservation | `settlement.charged`, `R` | **proxy amounts**: what the proxy kept and set aside |\n| independently established provider billing | `AmountBasis::ProviderBilling` | never produced in S1 |\n\n**Reservation-backed exposure is one measure: conservative provisional exposure**, the amount the admission accounting must hold for the reservation-backed attempt. Unbudgeted/orphan cases are owned by X-TABLE. Its `low` is supported usage valuation, never a proxy amount. Its `high` is either:\n- `Exact(\u2026)`, when the reservation is **replaced** by an eligible usage settlement (FB-1); or\n- `AtLeast(known)`, where `known` is the largest of the known components the conservative policy must hold: the\n  retained reservation `R`, the proxy charge, and the usage valuation's high or `priced_high`. Each component is a\n  lower bound of what the policy holds, with its own basis (X-0). The maximum is taken within this one measure, not\n  across measures: provider billing is never claimed, and the usage valuation keeps its own record in `Valuation`.\n\nTyped constructors are owned by types High, Bound, Exposure and Replacement.\n\n\n**A structurally valid settlement is not proof of complete billing.** Only `Eligible` replaces reservation-based\nexposure. An ineligible valid settlement closes the attempt in time and keeps the reservation in the conservative\nmeasure (`amount_source = ReservationBound`, \u00a76), and its supported partial usage stays as the low.\n\n**Why the reservation is not a bound.** It is the producer's worst case, but its conditions are not all\nproducer-enforced (`RESERVATION-BOUNDS.md`):\n- the output cap is enforced;\n- the input bound is a byte estimate, and the producer marks it \"assumed, not verified\" for inline images;\n- the served tier is not enforced: the proxy itself charges a response at whatever tier was served;\n- no long-context rule is applied to Anthropic;\n- the provider's billing of errored or aborted requests is unknown.\n\n**Consequence (Q10, P1.30; OQ-1, P1.32):** under D5, an objective is `NotEstablished` while it owns or may own (as a\ncandidate) any attempt without a usage bound, or holds any commitment of kind `AtLeast` (\u00a712.3). That covers in-flight,\nunsettled, error-status, upstream-error, reservation-basis and rejected attempts, and **every admitted session of the\ncurrent producer, retired or not**, because a retired Pi session can be resumed without new objective admission\n(\u00a72.3). Only a qualified `ExecutionGate` (\u00a72.3) releases or bounds a session's commitment. No current producer evidence\nqualifies."
+    },
+    {
+      "depends": [],
+      "id": "EVIDENCE",
+      "refs": [
+        "POLICY-R6",
+        "SOURCE-IDENTITIES"
+      ],
+      "revision": 1,
+      "text": "## 3. Evidence (stage E output, the core's input)\n\n```text\nEvidenceRef  = { source: SourceId, line: u32, sha256: Digest }          // SourceId = logical path + file sha256\nField<T>     = Present(T) | Null | Absent | Malformed(JsonType)\nEvidenceItem = { ref, epoch: ProducerFeatures, kind: EvidenceKind }\nEvidenceKind =\n    Reservation  { n: Field<u64>, rid: Field<Rid>, reserved: Field<Nano>, at: Field<Stamp> }\n  | Settlement   { event: Request|UpstreamError, rid: Field<Rid>, n: Field<u64>, basis: Field<Basis>,\n                   charged: Field<Nano>, reserved: Field<Nano>, status: Field<u16>, usage: Field<Usage>,\n                   model: Field<String>, response_model: Field<String>, response_id: Field<String>,\n                   observed_tier: Field<String>, terminal: Field<String>, model_mismatch: Field<bool>,\n                   labels: Labels, at: Field<Stamp> }\n  | Request      { same fields as Settlement, no `usd` }                 // unbudgeted API, or subscription\n  | UpstreamError{ n, labels, at, detail }                               // no `usd`\n  | Admission    { rid: Field<u64>, n: Field<u64>, model: Field<String>, labels, at }\n  | Measurement  { attached to its row: rid: Field<u64>, status, cost_proxy }\n  | StreamError  { n: Field<u64>, shape: ReadFailure|HeaderWrite, labels, measurement: Option<Measurement>, at }\n  | IdentityRefusal { n, reason, authorized: Field<String>, served: Field<String>, response_id, labels, at }\n  | Refused      { status, reason, labels, at }\n  | Unreadable   { reason: NotJson | NotObject | PartialFinalLine | UnknownEvent(String) }\nLabels = { provider: Field<String>, auth_lane: Field<String> }\nBasis  = Usage | Reservation | ErrorStatus | Unknown(String)\nUsage  = OpenAi{ input, output, cached: Field<u64>, cache_write: Field<u64>, reasoning }\n       | Anthropic{ input, cache_read, cache_write, output, w5m: Field<u64>, w1h: Field<u64> }\n```\n\n**Adapter obligations (stage E, specified here because the core relies on them):**\n- **E-1 Totality.** Every non-blank line of every proxy log named by a turn record is exactly one `EvidenceItem`. A\n  line that is not JSON, not an object, or the final line without a newline is `Unreadable`. Nothing is skipped.\n- **E-2 Fidelity.** Fields are recorded as written (`Absent`, `Null`, `Malformed`). No defaults are applied in E.\n- **E-3 Shape.** `StreamError.shape = ReadFailure` iff the row has a `detail` key, else `HeaderWrite`\n  (`pi_container.py:1295`, `:1513`, `:1546`).\n- **E-4 Producer features.** `ProducerFeatures` are feature flags detected per session, not dates:\n  `usd_accounting`, `cache_write_field`, `anthropic_route`, `subscription_lane`, `cost_proxy`, `attempt_id`.\n- **E-5 Inventory facts.** E also emits inventory evidence:\n  - turn numbers recorded;\n  - logs found on disk but not referenced, copied (byte-identical) or misplaced;\n  - missing logs;\n  - logs shared by two turns.\n\n  These become `InventoryEvidence` with the session scopes that could own them (\u00a79; R-03, A1-03, S-05, V-07).\n\n`LaunchFacts` per session: `pinned_model` (`provider/model` on the launch row), `auth_lane`, `parent`, `turns`.\n\n**Model canonicalisation (A-05; rule version `mc-1`).** Pricing identity is never established by fuzzy matching.\n- **MC-1 Launch model.** A launch model is `<provider>/<model_id>`, with `<provider>` one of `openai`, `openai-codex` or\n  `anthropic`, split at the **first** `/`. That is exactly how the producer derives the proxy's `model_id`\n  (`role_host.py:1280`: `opts[\"model\"].split(\"/\", 1)[1]`). The canonical pinned identity is `(provider family,\n  model_id)`, where `openai` and `openai-codex` are the OpenAI family. A launch model with no `/`, or with another\n  provider, has **no canonical identity**: `ModelUnresolved`.\n- **MC-2 Row models.** A proxy row's `model`, `response_model` or refusal `served` value is a bare model id in the\n  row's provider family (the `provider` label, or OpenAI when absent). It is used exactly as written. No case folding,\n  no prefix stripping, no version or date normalisation.\n- **MC-3 Equality and rates.** Two identities are equal iff their family and model id are byte-identical. Rates are\n  looked up by exact model id in the family's rate file. A missing rate is `IdentityWithoutRate` (V-6). A\n  `ModelUnresolved` pinned identity fails \u00a75 condition 8 (`ModelMismatch`) and is an unpriceable identity (V-1)."
+    },
+    {
+      "depends": [],
+      "id": "CORRELATION",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "## 4. Correlation (stage C)\n\n```text\nAttemptKey  = ProducerAttempt{incarnation, seq}      // proposed producer field (D7); none exist today\n            | Reservation{source, rid}               // budgeted\n            | Admission{source, rid}                 // subscription cost-proxy\n            | Row{source, line}                      // unbudgeted request, or an orphan\nCorrelation = { key_join: Exact | Ambiguous{candidates: [AttemptKey]} | Unattributed,\n                auxiliary: [{ evidence: EvidenceRef, rule: ShapeRule }] }      // RS-1..RS-3 joins (C-5 to C-7)\nAttemptGroup = { key, correlation, reservations: [EvidenceItem], settlements: [EvidenceItem],\n                 requests, errors, refusals, admissions, measurements, launch: LaunchFacts }\n```\n\n**Key join versus auxiliary rows (R-06).** `key_join` is the confidence of the attempt's own key: the\nreservation\u2013settlement join by `rid`, or the row itself for `Row` and `Admission` keys. Error and refusal rows joined\nby a shape rule are listed in `auxiliary` with their rule. They add evidence (identities, diagnostics, forwarding) but\nnever close an obligation and never change `key_join`. F1 reads `key_join`.\n\n| Rule | Statement |\n|---|---|\n| C-1 | A `Reservation` with a usable `rid` keys `Reservation{source, rid}`. Byte-identical repeats are one item (diagnostic `RepeatedIdenticalRow`). **Different rows with one `rid` are conflicting reservation evidence (A-09):** all stay visible in the group, blocking `ReservationConflict` is raised, and the decision follows Table S1 (no settlement: `Absent`; one settlement: `Rejected[ReservationConflict\u2026]`; two or more: `Conflicting`). Their independence is not established, so `R` is the largest of them (X-0), never their sum and never the smaller. **A reservation whose `rid` is absent or malformed** keys `Row{source, line}` with `key_join = Unattributed`. Its decision is `Absent` (no settlement can join it) and its obligation `Outstanding`, with blocking `MalformedEvidence(rid)` and `UnaccountedAttempt`. A malformed `reserved` contributes 0 to R and adds `MalformedEvidence(reserved)` (R-06) |\n| C-2 | A `Settlement` joins `Reservation{source, usd.rid}` (`Exact`). An unusable `rid` keys `Row{source, line}` with the settlement only. A settlement with no reservation of that `rid` in its source keys `Row{source, line}` (`Exact`): decision `Rejected[NoReservation\u2026]`, obligation `None{NoReservation}` (R-06) |\n| C-3 | An unbudgeted `Request` (API lane, no `usd`) keys `Row{source, line}`, `Exact` (one row, one attempt) |\n| C-4 | A subscription `Admission` keys `Admission{source, rid}`. A measured row joins the admission whose `rid` its measurement names, if that admission is earlier in the source (`Exact`). Otherwise it keys `Row` with `Unattributed` |\n| C-5 | **Read failure (shape rule RS-1).** A `StreamError` with shape `ReadFailure`, unmeasured, joins the first later `Request` or `UpstreamError` in its source with the same `n` that no other error has claimed, **only if** `n` names exactly one forwarded attempt in the source: at most one `Request` or `UpstreamError` row and at most one distinct reservation `rid` with that `n` |\n| C-6 | **Header-write failure (RS-2).** A `StreamError` not joined by C-5 joins a reservation with its `n` that no valid settlement closes and no other error has claimed, under the same uniqueness condition |\n| C-7 | **Refusal pairing (RS-3).** An `IdentityRefusal` joins the first later `Request` with the same `n` and the same served model, one to one. Otherwise it joins a unique unsettled reservation with its `n` (RS-2's condition). Otherwise `Row`, `Unattributed` |\n| C-8 | **Ambiguity.** An error whose `n` fails the uniqueness condition is its own `Row` attempt with `Ambiguous{candidates}`. An error with a missing or malformed `n` is a `Row` attempt, `Unattributed`. Ambiguity is never resolved by order, closeness or amounts |\n| C-9 | `Refused` rows are `NonAttemptEvidence`; they never key, close or value an attempt and carry lane evidence only. A refused row with a **preflight** reason (every reason except `upstream unreachable` and an identity-refusal reason) records a request the proxy did not forward. A refused row with `upstream unreachable` or an identity-refusal reason is the proxy's client-side report **after** an attempt (`pi_container.py:1218`, `:1326`, `:1502`) and proves nothing about forwarding (R-13) |\n| C-10 | **Measurement subtypes.** A measurement row is a `Request`, `UpstreamError` or `StreamError` with an attached `Measurement`; the attachment does not change the row's kind |\n| C-11 | **Correlation never crosses sources.** A source is one turn's log; `n` and `rid` restart per proxy incarnation |"
+    },
+    {
+      "depends": [],
+      "id": "SETTLEMENT",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "## 5. Settlement decision (stage S)\n\nTyped constructor: SettlementDecision in types.\n\n\n**`Valid` iff every condition holds, otherwise `Rejected` with every failing reason** (codes in brackets):\n1. Exactly one reservation and exactly one distinct settlement in the group [`ReservationConflict`, `NoReservation`].\n2. With UniqueReservation, the settlement is appended after the reservation [`Order`].\n3. `n` is a positive integer on both (never boolean, string, float or zero) and, with UniqueReservation, equal [`AttemptNumber`].\n4. `charged` and `reserved` are well-formed amounts [`AmountType`], and, with UniqueReservation, `reserved` equals its amount exactly [`ReservedMismatch`].\n5. `basis` is present and known [`BasisMissing`, `BasisUnknown`]. An `UpstreamError` requires `Reservation`.\n6. `Reservation` or `UpstreamError`: with UniqueReservation, charged equals the reservation exactly [`KeepAll`].\n7. **Status, by settlement path (A-06, owner disposition P1.33).** A missing status is neither an automatic failure nor\n   a universal exemption. It is accepted only where the producer writes no status:\n\n   | Path | Settlement row | Status required | Absent or null | Producer evidence |\n   |---|---|---|---|---|\n   | `Usage` | `request` | integer 200 | `StatusType` | every request row carries `http_status: resp.status` (`pi_container.py:1549`, unchanged since `385f3174`; 1,588 of 1,588 real request rows are integers) |\n   | `ErrorStatus` | `request` | integer, not 200 | `StatusType` | as above |\n   | `Reservation` | `request` | integer | `StatusType` | as above |\n   | `Reservation` (`UpstreamError`) | `upstream_error` | none | **accepted** | the producer writes no status on `upstream_error` rows (`:1497-1502`, `:1215-1217`) |\n\n   A status that is present but not an integer (string, float, boolean, object) is `StatusType` on every path. An\n   integer that contradicts the basis (non-200 with `Usage`, 200 with `ErrorStatus`) is `ErrorCharge`. `ErrorStatus`\n   also needs charged = 0 [`ErrorCharge`].\n8. `Usage`:\n   - the usage is priceable under the producer's own rule (\u00a77.1) [`UsageUnpriceable`];\n   - the full canonical family-qualified request identity equals the pinned identity (MC-1 to MC-3) [`ModelMismatch`];\n   - `producer_price < 10^15` nano [`ToleranceRange`], and `charged \u2265 producer_price \u2212 T_round` [`Undercharge`].\n\n`Conflicting` replaces `Valid` or `Rejected` when two distinct settlements name one reservation.\n\n**Permissible transitions as evidence is added (the decision is a function of the evidence set; this lists how it may\nchange):**\n\n| From | Adding | To |\n|---|---|---|\n| Absent | a well-formed valid settlement | Valid |\n| Absent | an invalid settlement | Rejected |\n| Valid or Rejected | a second, distinct settlement | Conflicting |\n| Valid | a second, different reservation with the same `rid` | Rejected(`ReservationConflict`) |\n| any | a byte-identical repeat | unchanged |\n| Conflicting | anything | Conflicting |\n\n**No other transition exists.** In particular there is no `Conflicting \u2192 Valid`, no `Rejected \u2192 Valid` without\nremoving evidence, and nothing makes a decision `Valid` because a numeric amount is present (`Valid` requires all eight\nconditions).\n\n\nUniqueReservation is an exactly-one distinct reservation witness. Zero/conflicting reservations make reservation-relative Order, equality and KeepAll comparisons inapplicable, without suppressing applicable local amount, n, status, basis and producer checks. Rejected carries all applicable failures; multiple distinct settlements take Conflicting precedence."
+    },
+    {
+      "depends": [],
+      "id": "TEMPORAL-AND-FINALIZATION",
+      "refs": [
+        "POLICY-R6",
+        "ERROR-EXPOSURE"
+      ],
+      "revision": 1,
+      "text": "## 6. Obligation: releasing versus replacing (stage S)\n\nTemporalTemporalObligation = Outstanding | Closed{by} | None{cause}, owned by S. External TemporalObligation = Outstanding{amount_source} | Closed{by,amount_source} | None{cause,amount_source:none}, projected by F. Every variant is representable and carries amount_source.\n\n\n`Obligation` is an **execution-time** fact: whether a reservation is still open in time. It is not a financial\ndisposition (\u00a76.2).\n\n**`amount_source` (A-08).** It records where the conservative measure's amount comes from. It is constructed by stage F from the decision, temporal obligation and valuation-derived replacement fact:\n\n| Variant | Constructed when | Meaning |\n|---|---|---|\n| `SettlementAmount` | `Valid(Usage)` with `Replacement::Eligible` | the reservation is replaced by the settlement and usage valuation |\n| `ReservationConfirmed` | `Valid(Reservation)` or `Valid(UpstreamError)` (KeepAll: charged = R) | the proxy kept the whole reservation as its charge; the reservation stays as a known amount, `AtLeast` |\n| `ReservationBound` | `Valid(ErrorStatus)`; `Valid(Usage)` with `Replacement::Ineligible`; `Absent`, `Rejected`, `Conflicting` with a reservation | the reservation is retained as provisional exposure without being the proxy's charge |\n\n`amount_source` is `none` for `Obligation::None` (no reservation exists). Its JSON spellings are\n`settlement_amount`, `reservation_confirmed` and `reservation_bound`.\n\nThe five distinctions the owner asked for:\n\n| # | Concept | Contract term |\n|---|---|---|\n| 1 | Releasing a reservation | `Obligation::Closed`: the attempt has ended in time (its interval ends at the settlement). Only `Valid` closes. Closing never establishes billing (\u00a76.2, R-07) |\n| 2 | Replacing provisional exposure with a validated settlement | only `Valid(Usage)` with `Replacement::Eligible` (a usage bound, FB-1) replaces the reservation (`SettlementAmount`). An ineligible usage settlement, `Valid(ErrorStatus)` and the invalid decisions keep it (`ReservationBound`, A-01, D4). `Valid(Reservation)` and `Valid(UpstreamError)` confirm it (`ReservationConfirmed`) |\n| 3 | Retaining independent usage evidence | `Valuation` (\u00a77) is computed from usage evidence whatever the settlement decision, and supplies the supported low bound wherever \u00a78 says so |\n| 4 | Classifying unknown additional exposure | `High::AtLeast` (\u00a78), with a blocking `UnresolvedExposure` |\n| 5 | Deciding whether admission is established | stage R (\u00a712), outside S to X |\n\nWith a reservation, `Absent`, `Rejected` and `Conflicting` leave the obligation `Outstanding`; without one the temporal result is `None` with its explicit cause.\n\n### 6.2 Execution versus billing (R-07, owner disposition P1.30)\n\n```text\nExecution = Terminal | NotTerminal      // Terminal: a settlement, request, upstream_error, stream_error or response_model_refused row is in the attempt's evidence\nReplacement = Eligible | Ineligible{reason}   // \u00a72.1 (A-01): decides whether the reservation may be replaced\nBilling   = Established | Unresolved | NotApplicable   // Established iff the high is Exact (FB-1); NotApplicable for the Codex pool\n```\n\nFive facts are kept apart and never stand in for one another:\n\n| Fact | Contract term |\n|---|---|\n| execution completion | `Execution::Terminal` |\n| valid proxy settlement | `SettlementDecision::Valid` (and `Obligation::Closed`) |\n| usage valuation | `Valuation` (\u00a77); a usage bound when complete over established sets (FB-1) |\n| verified provider billing | `AmountBasis::ProviderBilling`: no source exists; never produced in S1 |\n| unresolved additional exposure | `High::AtLeast`, so `Billing::Unresolved` |\n\n`Billing::Established` means established under the usage-valuation evidentiary standard (\u00a72), not verified billing.\nAn attempt that is `Terminal` and `Closed` can still be `Unresolved` (an upstream error, an error status, a\nreservation-basis settlement, incomplete usage). Rollup, predecessor and commitment rules read `Billing`, never\n`Execution` or `Obligation`, to decide whether money is resolved.\n\n**Error-status attempts (Q2).**\n- The settlement's charge of 0 is the proxy's own accounting (`ProxyCharge` 0), never the provider's bill.\n- The reserved amount R is kept as a known amount, and the additional billing is unknown: exposure\n  the formula ERROR-EXPOSURE, diagnostic `NonBillingUnverified`.\n- `Exact(0)` is permitted only for an error class with authoritative evidence of non-billing (D4). That class is empty.\n\n### 6.1 Forwarding fact (Q6)\n\n```text\nForwarding = Forwarded{evidence}        // a provider response exists: a request row with an upstream HTTP status, a response id or model,\n                                        // or usage; a response_model_refused row; any stream_error row (every producer stream_error\n                                        // writer runs after the upstream response arrived: pi_container.py:1295, :1513, :1546) (R-13)\n           | Unknown                     // a reservation or admission with no response row; an upstream_error row (the request may or\n                                        // may not have reached the provider)\nNotForwarded                             // only for requests that are not attempts: a refused row with a preflight reason (C-9)\n```\n\nForwarding is derived only from the attempt's own rows (its key rows and `auxiliary` rows), never from a `refused`\nrow.\n\nForwarding is recorded on every attempt. It is a fact, not a finding, and it decides nothing about money or identity:\n- an identity refusal is `Forwarded` (the provider answered with another model);\n- an unresolved identity contradiction still blocks, whatever the forwarding fact.\n\nA request proven never to have reached the provider (a `refused` row with a preflight reason) has no exposure and no\nidentity finding; it is not an attempt."
+    },
+    {
+      "depends": [],
+      "id": "VALUATION",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "## 7. Valuation (stage V)\n\n### 7.1 Pricing primitives (leaf functions)\n\nPricing formulas: PRICE-OPENAI and PRICE-ANTHROPIC; canonical definitions are not restated here.\n- **`producer_price(settlement, pinned)`.** The proxy's own rule:\n  - OpenAI: tier = the `observed_tier` multiplier if recognised, else the **highest** multiplier in the table; a null\n    cache count counts as 0 (`pi_container.py:1001`).\n  - Anthropic: defined only for a `standard`, null or absent tier (`service_tier in (None, \"standard\")`,\n    `pi_container.py:1052-1054`), an integer status, integer counts, and `w5m + w1h \u2264 cache_write`.\n  - Otherwise undefined, which gives `UsageUnpriceable`.\n- **Unknown model.** A model absent from the rate files has no rate. `claude-haiku-5-5` is absent: producer-unpriceable\n  (N-08).\n\n### 7.2 Valuation result\n\nTyped constructors: Valuation in types.\n\n\n| Rule | Statement |\n|---|---|\n| V-1 Identities | the distinct canonical identities (MC-1 to MC-3) among the launch pinned model, request `model`, `response_model` and any joined `IdentityRefusal.served`. A malformed name or a `ModelUnresolved` pinned model is an unpriceable identity |\n| V-2 Range | `low` = minimum and `high` = maximum of the price over every identity \u00d7 every allowed split \u00d7 residual rate \u00d7 the tier set. The range is a usage bound only when the tier set and the identity set are established and the usage is complete (FB-1) |\n| V-3 Tier set (OpenAI) | **recognised** `observed_tier` (a key of the rate table's `tier_multiplier`): that one multiplier; the tier set is established by the response. **Missing** (`null` or absent) **or unrecognised**: the tier set is **not established**. The rate table is not evidence that every servable tier is known (owner disposition R-03/Q5, P1.30), and the producer charging such a tier at the table's highest multiplier fixes its charge, not the set of tiers. Valuation `Unpriceable{TierUnestablished(Missing \\| Unrecognised), supported: None, priced_high}`: the known valuation at the dearest table multiplier is kept as `priced_high`, no minimum is supported (an unknown tier could be cheaper), and \u00a78 gives `AtLeast` |\n| V-3 Tier set (Anthropic) | `standard`, `null` or absent gives standard, as the producer accepts (R-14). Any other string gives `Unpriceable{NonStandardTier}`. Any other non-string gives `Unpriceable{MalformedTier}` (repairs N-02) |\n| V-4 Splits (OpenAI) (A-04) | each of `cached_tokens` and `cache_write_tokens` is in one state. **Present integer \u2265 0** (including 0): that value. **Null**: unknown (the provider omitted it; the current producer writes `null`, `pi_container.py:1563-1564`, and prices it as 0 for its own charge only). **Absent key**: unknown (written by producers before `ab2a0f84`, which did not log `cache_write_tokens`; 59 real unbudgeted rows). It is **never assumed zero**. **Malformed** (present, not an integer \u2265 0): `Unpriceable{MalformedCount}`. Unknown counts are enumerated over the feasible set `{cached, write \u2265 0, cached + write \u2264 input}`, with any known count fixed. The range is the minimum and maximum price over its vertices; all vertices are priceable, so the range is a usage bound when the usage is complete (FB-1). Known counts that violate `cached + write \u2264 input` are `Unpriceable{MalformedCount}` |\n| V-4 Splits (Anthropic) | `w5m + w1h \u2264 cache_write`: the reported split, with the residual writes `cache_write \u2212 w5m \u2212 w1h` at min(r_5m, r_1h) for the low and max for the high (R-15). Otherwise all writes at min for the low and max for the high, with diagnostic `InconsistentCacheSplit` (repairs probe H-a); the counts contradict each other, so the usage is not complete (V-5) |\n| V-5 Completeness | `complete = true` only for usage from a terminal success (OpenAI `response.completed` or `response.done`, Anthropic `message_stop`, integer status 200) whose counts are consistent (for Anthropic, `w5m + w1h \u2264 cache_write`). Otherwise the usage may understate the bill and is not a usage bound (FB-1). Completeness is computed from the usage evidence, never from a diagnostic |\n| V-6 Partial pricing | if some identity has no rate: `Unpriceable{IdentityWithoutRate, supported: None, priced_high: high over priced identities}`. No minimum is supported, because the unpriced identity could be cheaper, so \u00a78's low is 0 |\n| V-7 Excluded sources | usage not on a proxy row (e.g. a Pi session file's `cacheWrite`) is not evidence (A1-06) |\n| V-8 Several observations (R-05, A-04) | an attempt with more than one usage observation (conflicting settlements; a settlement plus a joined refusal) has `Valued{low = min of lows, high = max of highs, complete = all complete, identities = union}`. If any observation is `Unpriceable`, the result is `Unpriceable{reasons = union}` with **`supported = None`** (the unpriceable observation could be the cheapest) and **`priced_high` = max of every valued high and every priced high** (absent when none exists). Adding an observation never lowers `high` |"
+    },
+    {
+      "depends": [],
+      "id": "X-TABLE",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "## 8. Exposure (stage X)\n\nPool: `PiApi` for API lanes and for any dollar evidence. `Codex` for subscription attempts on an established\nsubscription lane; these carry no dollars and billing is `Unknown`. A contradicted lane is treated as `PiApi`.\n\n| Decision \\ evidence | `low` | `high` |\n|---|---|---|\n| `Valid(Usage)`, `Valued`, `complete`, one identity | valuation low | `Exact(max(charged [ProxyCharge], valuation high [UsageValuation]))` (FB-1) |\n| `Valid(Usage)`, `Valued`, `complete`, several identities | valuation low (cheapest identity) | `Exact(max(charged, dearest))`, plus blocking `IdentityContradiction` (D6) |\n| `Valid(Usage)`, `Valued`, not `complete` (`Ineligible{UsageIncomplete}`) | valuation low | `AtLeast(max(R [ProxyReservation], charged [ProxyCharge], valuation high [UsageValuation]))`, blocking. The reservation is retained (A-01) |\n| `Valid(Usage)`, `Unpriceable` (`Ineligible{UsageUnpriceable}`: identity without a rate, tier set not established, malformed counts, \u2026) | supported low or 0 | `AtLeast(max(R, charged, priced_high or 0))`, blocking. The reservation is retained (A-01) |\n| `Valid(Reservation)`, any valuation | valuation low if `Valued`, else supported low or 0 | `AtLeast(max(R [ProxyReservation], valuation high or priced_high or 0))` (FB-2). The producer keeps the reservation only when its own usage rule fails (invalid counts, a contradictory Anthropic split, a non-standard Anthropic tier, an incomplete exchange), so there is no usage bound whatever V-5 says (R-01) |\n| `Valid(UpstreamError)` | 0 | `AtLeast(R)` (FB-2) |\n| `Valid(ErrorStatus)` | valuation low if `Valued`, else supported low or 0 | `AtLeast(max(R, valuation high or priced_high or 0))` (FB-2, Q2, A-02; diagnostic `NonBillingUnverified`). The proxy's charge of 0 is a proxy amount, not billing; reported usage keeps its provenance as a usage valuation |\n| `Absent` (reservation, no settlement) | 0 | `AtLeast(R)` (FB-2) |\n| `Rejected` or `Conflicting`, with a reservation | 0 | `AtLeast(max(R, every well-formed claimed charge, every usage observation's valuation high or priced_high))`, blocking (FB-2, R-05). A claimed amount that is not well-formed is ignored for the maximum; the rejection itself blocks |\n| `NoReservation` (settlement only) | 0 | `AtLeast(max(well-formed charged, valuation high or priced_high))`, else `AtLeast(0)`; blocking |\n| `NotApplicable`, unbudgeted, `Valued`, `complete`, one identity | valuation low | `Exact(valuation high)` |\n| `NotApplicable`, unbudgeted, `Valued`, `complete`, several identities | valuation low (cheapest) | `Exact(dearest)`, blocking `IdentityContradiction` |\n| `NotApplicable`, unbudgeted, not `complete`, or `Unpriceable` | supported low | `AtLeast(valuation or priced high)`, blocking |\n| `NotApplicable`, unbudgeted non-200 status, no usage | 0 | `AtLeast(0)`, blocking `UnresolvedExposure{UnverifiedNonBilling}` (D4) |\n| Orphan or ambiguous error attempt (no reservation of its own) | 0 | `AtLeast(0)`, blocking |\n| Subscription attempt, lane established | \u2014 | pool `Codex`, billing `Unknown`; no dollar exposure; may carry a cost-proxy measurement |\n| Subscription attempt, lane contradicted | 0 | `PiApi`, `AtLeast(0)`, blocking `LaneContradiction` |\n\n**Rules:**\n- **X-0. Notation.**\n  - `R` is the **largest of the group's distinct well-formed reservation amounts** (A-09). Normally there is one. When\n    one `rid` names different reservations, their independence is not established, so they are neither summed nor\n    reduced to the smaller: all stay visible, `R` is the largest, and `ReservationConflict` blocks. A malformed amount\n    contributes 0 and adds `MalformedEvidence(reserved)` (R-06).\n  - `max(a [basis_a], b [basis_b])` takes the basis of the larger. **On a tie the basis is `UsageValuation`, falling\n    back to `ProxyReservation`, then `ProxyCharge`** (revision 5 corrects the order to match the KeepAll case, where the\n    charge is the reservation). An `Exact` high may carry basis `ProxyCharge` only when a usage bound exists below it\n    (FB-1, R-02).\n- **X-1.** `low.amount \u2264 high.amount` always. If a valuation low would exceed the chosen high (impossible under \u00a77,\n  stated for completeness), that is blocking `ArithmeticFailure`.\n- **X-2. Unknown never becomes finite.** No sum, projection or rollup turns `AtLeast` into `Exact`, and a known partial\n  amount never caps an unresolved one. The only `AtLeast` \u2192 `Exact` transition is replacement by an eligible usage\n  settlement (FB-1, F3 exception, A-01), when evidence is added to an attempt.\n- **X-3. Findings never feed money.** Exposure is a function of (decision, obligation, valuation, lane, `R`) only. No\n  finding is an input."
+    },
+    {
+      "depends": [],
+      "id": "CLASSIFICATION",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "## 9. Classification (stage K)\n\n`classify(facts) \u2192 (Vec<Uncertainty>, Vec<Diagnostic>)`.\n\n**Blocking `Uncertainty`** (each carries evidence refs and the session scopes that could own them):\n\n| Code | Raised when |\n|---|---|\n| `SettlementRejected(reason)` | decision `Rejected` |\n| `SettlementConflict` | decision `Conflicting` |\n| `ReservationConflict` | reservations with one `rid` differ |\n| `SettlementWithoutReservation` | `NoReservation` |\n| `IdentityContradiction` | \u2265 2 identities, or an unpaired refusal naming another model (D6) |\n| `LaneContradiction` | a present label contradicts the session lane or provider; any `IdentityRefusal` in a subscription session; dollar evidence in a subscription session; subscription labels in an API session |\n| `UnadmittedMeasurement` | a measurement with no earlier admission |\n| `UnaccountedAttempt{cause}` | orphan or ambiguous error; unbudgeted request with no response and no charge |\n| `UnresolvedExposure{cause}` | any `AtLeast` high (D5) |\n| `UnreadableEvidence` | any `Unreadable` item in an owned source |\n| `InventoryIncomplete{kind}` | turn gap, unrecorded turn file, unreferenced, misplaced or shared log, missing log |\n| `DuplicateResponseIdentity` | one provider response id in two attempts |\n| `AttributionContradiction` | an owned attempt is placed wholly outside its owner's window (an admission/time contradiction) |\n| `ReopenedWithoutAdmission` | a session whose lifecycle has `reopened` (a deliver after a retire, D2), for the objectives that admitted it; persists after a later retirement (R-10) |\n| `UnadmittedExecution` | a vertical-produced attempt that no admission covers (O-8); no current case, because no producer writes `attempt_id` yet |\n| `CommitmentInvalid` | \u00a712.3 A-1 or A-2 |\n| `UnenforcedCommitment` | a commitment of kind `AtLeast` (\u00a712.3): pending, launched-open, retired-resumable or reopened, without a qualified `ExecutionGate` (R-04, OQ-1) |\n| `GateContradicted` | gate evidence claims `reopening` enforced but the session was reopened after `effective_from` (\u00a72.3 G-7) |\n| `ArithmeticFailure` | \u2014 |\n| `RateTableUnusable` | \u2014 |\n\n`Unreadable` and inventory findings are scoped to every session that could own the source: the path's session id,\nthe ledger's naming session, or both (repairs S-05; V-07 is scoped this way instead of globally).\n\n**Additional blocking code:** `MalformedEvidence(field)`: a malformed field on evidence that no settlement rejection\nalready covers (e.g. a reservation's `n`, an unbudgeted row's non-object `usage`).\n\n**Non-blocking `Diagnostic`:** `RepeatedIdenticalRow`, `InconsistentCacheSplit`, `NonBillingUnverified`,\n`IdentityAbsent`, `ProducerLogCopy`, `ErrorStatusSettlement`, `ReadFailurePaired`, `PartialUsage`,\n`UnfinishedAdmission` (an admitted subscription request with no observation: an unknown Codex call),\n`UncertainCodexCall` (a measured, producer-labelled subscription error).\n\n**Rule K-1.** Deleting any diagnostic from an output changes no other field. Classification is downstream only."
+    },
+    {
+      "depends": [],
+      "id": "USAGE-PRESENCE",
+      "refs": [
+        "POLICY-R6",
+        "SOURCE-IDENTITIES"
+      ],
+      "revision": 1,
+      "text": "Pinned producer 92a03789 pi_container.py writes normalized usage fields. OpenAI billing-bearing: input_tokens, output_tokens, cached_tokens, cache_write_tokens; required when reported: input_tokens/output_tokens. reasoning_tokens is auxiliary. Anthropic billing-bearing: input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens, ephemeral_5m_input_tokens, ephemeral_1h_input_tokens; required: input_tokens/output_tokens/cache_read_input_tokens/cache_creation_input_tokens. Writer mapping verified against 92a03789 pi_container.py ANTHROPIC_USAGE_KEYS and request writer lines1318-1320, budget consumer1048-1054; OpenAI writer1562-1566. Service tier is metadata, not a count; server_tool_use is auxiliary metadata. Schema comes from explicit evidenced family, never fixture shape. Absent provider follows MC-2 OpenAI default, not shape inference. Non-null fields exclusive to the other declared family imply UsageSchemaMismatch. Shared fields and absent/null fields do not.\n\nCheck schema conflict, nonobject usage (UsageShape), unknown schema (UnknownUsageSchema), and malformed billing-bearing counts (MalformedCount(field)) before all-null classification. Absent/null usage and all-absent/null billing counts give NotReported; auxiliary alone does not establish reporting. Numeric zero is present. Reported usage missing required counts gives MissingCount(field), never zero. OpenAI optional cache absent/null means unknown feasible splits, Anthropic optional lifetime absent/null means zero. Malformed auxiliary adds MalformedEvidence(field) blocking but preserves independently computable primary usage and cannot select money. Raw states survive.\n\nCompleteness requires all required well-formed billing counts, established priced identity/tier sets, integer HTTP200 and provider-recognized successful terminal (OpenAI response.completed/response.done, Anthropic message_stop), with consistent counts. Partial/missing/incomplete terminal or non200 can preserve supported valuation but cannot replace reservation. V-8 partial pricing remains independent. Full family/model inequality fails ModelMismatch. Independently unpriceable/unestablished identity/schema/tier sets cannot replace; established complete fully priced multiple identities retain finite bounds while downstream IdentityContradiction blocks."
+    },
+    {
+      "depends": [],
+      "id": "INV-F1",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "| **F1 Release** | `Obligation::Closed` \u21d2 `SettlementDecision::Valid` with an `Exact` **key join** to the attempt's reservation (auxiliary RS-rule rows do not count, R-06). A numeric amount alone never releases | a reservation exists | VC01 (usage settlement closes); N01 (closed with `key_join` Exact and an RS-3 auxiliary row) | S01 (charge 0 against 0.8 under `reservation`) | rejected: `Outstanding`, high `AtLeast(R)`, blocking | 20 cases incl. S01\u00d73, S02\u00d72, U01, R02, C4, S06, V01, V02, U05, N02, R06 | for random settlements failing any \u00a75 condition, `obligation = Outstanding` | drop one \u00a75 condition (e.g. skip the `KeepAll` check) |"
+    },
+    {
+      "depends": [],
+      "id": "INV-F2",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "| **F2 No double count** | Per attempt, exposure counts the reservation or the settlement-derived amount, never both. Totals are sums over distinct `AttemptKey`s; byte-identical rows are one item | \u2014 | VC01 (high 0.015, not 0.515) | summing the reservation and the settlement charge | \u03a3 exposure = \u03a3 per-attempt | VC01, VC06, VC12, R04, C3, DUP | \u03a3 over attempts = rollup; adding an identical copy changes nothing | add the settlement charge on top of the reservation |"
+    },
+    {
+      "depends": [],
+      "id": "INV-F3",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "| **F3 Monotone high** | Adding evidence never lowers `high` (order of \u00a72) in an attempt or any total, **except** a valid usage settlement with `Replacement::Eligible` (a usage bound), which may replace `AtLeast(R)` with the validated `Exact` amount. A valid but ineligible usage settlement, an error-status settlement, and conflicting or rejected settlements keep `R` and only add terms to the maximum (A-01, A-02, R-05) | evidence added to an existing set | S04 (refused row added: high stays `AtLeast(R)`); U08 (incomplete usage: high stays `AtLeast(500M)`) | a refused row closing the interval (deac8099 S-04); incomplete usage lowering a 500M reservation to 30M (P1.32 A-01) | `high(E \u222a e) \u2265 high(E)` unless the added row is an eligible usage settlement | 24+ cases incl. N01, VC03, S01, U08, Q5, P2, P130-R01, P133-A01, P133-A02 | random base plus random row other than an eligible usage settlement: high non-decreasing | let incomplete usage replace the reservation |"
+    },
+    {
+      "depends": [],
+      "id": "INV-F4",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "| **F4 Finding inertness** | No monetary field depends on the presence, absence or order of any finding. Removing all findings from an output leaves every amount unchanged, and deleting an input row whose only effect is a diagnostic changes no amount | \u2014 | Ha (inconsistent split: low 0.018 kept, diagnostic only) | A1.3.3 N-01 (diagnostic deletes the low bound and lowers high); A1.3.4 H-a (low \u2192 0) | amounts equal with and without the diagnostic | N01\u00d73, Ha, V01-other-model, DUP | compute money, strip findings, recompute: equal (structural in Rust: classification is downstream) | choose the representation by `findings.is_empty()` (the A1.3.2 guard) |"
+    },
+    {
+      "depends": [],
+      "id": "INV-F5",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "| **F5 Unknown stays unknown** | `AtLeast` survives every sum and projection; the only `AtLeast` \u2192 `Exact` transition is replacement by an eligible usage settlement (X-2). Reservations, proxy charges and declared caps are never a finite maximum (FB-2); unknown cache counts, tiers and identities are enumerated or left unpriceable, never assumed (V-3, V-4) | `AtLeast` present | N01-variant-reservation-above-both; U08; P133-A04 absent cache counts (bounded over vertices) | collapsing to `Exact(max(R, dearest))`; pricing a missing tier or an absent cache count as zero | `high.kind = at_least`, plus `UnresolvedExposure` | N01\u00d74, N08, D4, U08, Q5, P130-R01 | sum or project any set containing `AtLeast`: result `AtLeast` | replace `AtLeast(x)` by `Exact(x)` when x \u2265 R |"
+    },
+    {
+      "depends": [],
+      "id": "INV-F6",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "| **F6 Totality** | Every evidence line lands in exactly one attempt, non-attempt or unreadable record; nothing is silently dropped or double-assigned | E-1 adapter | R05 (null and [] rows unreadable and blocking) | skipping non-object rows (A1.1 R-05) | validator totality check over all lines | 15 cases incl. R05, U02, N04\u00d74, A1-01, C3 | line count in = \u03a3 records out | `continue` on unparseable lines |"
+    },
+    {
+      "depends": [],
+      "id": "INV-F7",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "| **F7 Window independence** | Stages C to X and L take no objective window; their outputs are identical for every objective evaluation | \u2014 | Hb (attempt facts identical for windows from 06:00 and 06:20) | A1.3.4 probe H-b (identity finding raised only when counted) | grader: per-evaluation facts equal | Hb, C1, S03, R01, N05, U03, A04 | evaluate under random windows: stage outputs byte-equal | early-return on window placement before validation (A1.3.x `if not keep: return`) |"
+    },
+    {
+      "depends": [],
+      "id": "INV-F8",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "| **F8 Order independence** | Presenting sessions or logs in a different order changes nothing; append order matters only within a source | \u2014 | ORD twins | dedupe by first-seen across sessions | twin cases equal | ORD\u00d72 | permute sessions: equal | a global `seen` set across sessions |"
+    },
+    {
+      "depends": [],
+      "id": "INV-F9",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "| **F9 Pool integrity** | Dollar evidence never leaves `PiApi`; a contradicted lane is never a Codex call; Codex attempts carry no money | \u2014 | VC08 (Codex, no money) | N03 (contradicted admission as an unfinished Codex call) | pool and blocking | 10 cases (N03\u00d76, V03, U06, VC08) | any lane-contradicting label gives `PiApi` plus `LaneContradiction` | trust the launch lane over row labels |"
+    },
+    {
+      "depends": [],
+      "id": "INV-F10",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "| **F10 Determinism** | Equal inputs and rate table give byte-identical canonical output | \u2014 | ORD twins run twice | hash-map iteration order leaking into output | two runs compared byte for byte (harness requirement) | ORD\u00d72 | run twice, compare bytes | an unordered collection serialised directly |"
+    },
+    {
+      "depends": [],
+      "id": "INV-F12",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "| **F12 Execution is not billing** | `Execution::Terminal` and `Obligation::Closed` never imply `Billing::Established`; billing is established iff the high is `Exact` (\u00a76.2, R-07) | \u2014 | VC01 (terminal, closed, established) | VC04 (terminal, closed by upstream error, unresolved) treated as settled spend | `billing` field equals `high.kind == exact` | every `pi_api` attempt | closed attempts with `AtLeast` high stay unresolved | derive billing from the obligation state |"
+    },
+    {
+      "depends": [],
+      "id": "INV-F13",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "| **F13 Replacement eligibility** | `amount_source = SettlementAmount` iff `Valid(Usage)` with a usage bound; an ineligible usage settlement is `ReservationBound` and keeps `R` in the conservative measure; `ReservationConfirmed` only for `Valid(Reservation)` and `Valid(UpstreamError)` (A-01, A-08) | \u2014 | VC01 (eligible) | U08 replacing its reservation (P1.32 A-01) | `replacement` and `amount_source` follow the decision and valuation | every budgeted case | \u2014 | mark every valid usage settlement eligible |"
+    },
+    {
+      "depends": [],
+      "id": "INV-F11",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "| **F11 Supported low** | `low \u2264 high`; a non-zero `low` is backed by a usage valuation (basis `usage_valuation`) of reported usage over plausible identities | \u2014 | VC03 (low 0.015 from usage under a reservation settlement) | low from a charge or a reservation | basis check | 6 cases incl. Ha\u00d72, N06, A06, U05, VC03 | `low.basis = usage_valuation` whenever `low > 0` | set `low = charged` |"
+    },
+    {
+      "depends": [],
+      "id": "BOUNDARY-CONSUMERS",
+      "refs": [
+        "POLICY-R6",
+        "COMMITMENT-RESIDUAL"
+      ],
+      "revision": 1,
+      "text": "L owns lifecycle. T owns ownership and placement, copies X money unchanged and reads K only to carry findings. R owns rollup/predecessor/commitment/admission facts; cannot change C-K money. GateVerification must be separately supplied by trusted adapter or explicit test_mock fixture harness bound to exact payload. Raw writer/authority/verified:true/hash are not verification. Real trust channel/anchor/enforcement remains unestablished. Q1/Q4 remain open outside S2a; Q3 nonbillable class empty; Q7 framing remains E-owned; Q9 missing launch stays unresolved and cannot invent identity or release R."
+    },
+    {
+      "depends": [],
+      "id": "S2A-SCOPE",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "Select by raw API-launched source dollar reservation/settlement evidence including malformed rid/amount, orphan/no-reservation/conflicting groups and applicable RS1-3 rows. Dollar evidence with missing launch is selected negative unresolved lane/identity control. Never select from expected keys. Exclude genuinely unbudgeted/subscription-only sources. Profiles project separately after raw facts freeze. E1 unreadable remains explicit and never silently drops its case. S2a pure C/S/V/F/X/K only; E/L/T/R/gates/I/O excluded. Entry requires reviewed frozen contract, exact complete A/C verdicts no unresolved P1 and relevant B clearance, independent corpus qualification, production crate/location decision and authorized budget. None is claimed here."
+    },
+    {
+      "depends": [],
+      "id": "SERIALIZATION",
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "text": "{\n  \"classification\": {\n    \"additional_blocking\": [\n      \"MalformedEvidence(field)\"\n    ],\n    \"existing_codes\": \"preserved from contract revision5\"\n  },\n  \"contract\": \"pi-accounting-contract/1.5-s1\",\n  \"encoding\": {\n    \"evidence\": \"<alias>/turn-<n>:<line>\",\n    \"keys\": \"sorted\",\n    \"money\": \"nonnegative decimal nano-USD integer string, checked i128\",\n    \"reason_case\": \"existing PascalCase strings; parameterized reason as Code(field)\"\n  },\n  \"field\": {\n    \"tag\": \"state\",\n    \"variants\": {\n      \"absent\": [],\n      \"malformed\": [\n        \"json_type\",\n        \"raw\"\n      ],\n      \"null\": [],\n      \"present\": [\n        \"value\"\n      ]\n    }\n  },\n  \"gate_output_additions\": {\n    \"verification_payload_sha256\": \"exact verified payload digest when present\",\n    \"verification_source\": \"test_mock when supplied by separate harness; otherwise unverified\"\n  },\n  \"gate_reasons\": [\n    \"GateVerificationMissing\",\n    \"GateVerificationRejected\",\n    \"GateVerificationBinding\",\n    \"GateWriterNotAuthority\",\n    \"GateAuthorityMismatch\",\n    \"GateSessionMismatch\",\n    \"GateScopeInsufficient\",\n    \"GatePeriodInsufficient\",\n    \"GateMechanismMissing\",\n    \"GateReceiptMissing\",\n    \"GateBoundMissing\",\n    \"GateBoundExceedsCap\",\n    \"GateBoundCurrency\",\n    \"GateBoundCoverage\",\n    \"GateBoundBinding\"\n  ],\n  \"gate_verification\": {\n    \"rejected\": {\n      \"reasons\": \"string[]\"\n    },\n    \"tag\": \"state\",\n    \"unverified\": {},\n    \"verified\": {\n      \"authority_id\": \"string\",\n      \"payload_digest\": \"sha256\",\n      \"provenance\": \"test_mock|trusted_adapter\",\n      \"trust_policy_ref\": \"string\",\n      \"verification_evidence\": \"string\",\n      \"verifier_identity\": \"string\",\n      \"verifier_version\": \"string\"\n    }\n  },\n  \"limits\": \"Serialization agreement only. No financial derivation, fixture approval, production verifier or S2a readiness.\",\n  \"obligation\": {\n    \"closed\": {\n      \"amount_source\": [\n        \"settlement_amount\",\n        \"reservation_confirmed\",\n        \"reservation_bound\"\n      ],\n      \"by\": \"EvidenceRef\",\n      \"state\": \"closed\"\n    },\n    \"none\": {\n      \"amount_source\": \"none\",\n      \"cause\": [\n        \"unbudgeted\",\n        \"no_reservation\",\n        \"orphan\",\n        \"subscription\"\n      ],\n      \"state\": \"none\"\n    },\n    \"outstanding\": {\n      \"amount_source\": \"reservation_bound\",\n      \"state\": \"outstanding\"\n    }\n  },\n  \"replacement\": {\n    \"eligible\": \"bool\",\n    \"reason\": [\n      \"UsageBound\",\n      \"NotUsageSettlement\",\n      \"UsageIncomplete\",\n      \"UsageUnpriceable\",\n      \"NoReservation\"\n    ]\n  },\n  \"revision\": 6,\n  \"schema\": \"pi-accounting-interface/1\",\n  \"settlement\": {\n    \"basis\": [\n      \"usage\",\n      \"reservation\",\n      \"upstream_error\",\n      \"error_status\"\n    ],\n    \"decision\": [\n      \"absent\",\n      \"valid\",\n      \"rejected\",\n      \"conflicting\",\n      \"not_applicable\"\n    ],\n    \"reasons\": [\n      \"ReservationConflict\",\n      \"NoReservation\",\n      \"Order\",\n      \"AttemptNumber\",\n      \"AmountType\",\n      \"ReservedMismatch\",\n      \"BasisMissing\",\n      \"BasisUnknown\",\n      \"KeepAll\",\n      \"StatusType\",\n      \"ErrorCharge\",\n      \"UsageUnpriceable\",\n      \"ModelMismatch\",\n      \"ToleranceRange\",\n      \"Undercharge\"\n    ]\n  },\n  \"trusted_fixture_inputs\": {\n    \"placement\": \"top-level sibling of inputs; never inside producer log rows\",\n    \"schema\": {\n      \"gate_verifications\": {\n        \"<gate_id>\": {\n          \"authority_id\": \"string\",\n          \"payload_sha256\": \"64 lowercase hex\",\n          \"policy_ref\": \"string\",\n          \"session\": \"string\",\n          \"source\": \"test_mock\",\n          \"verification_evidence\": \"string\"\n        }\n      }\n    }\n  },\n  \"valuation\": {\n    \"existing_fields\": [\n      \"identities\",\n      \"low\",\n      \"high\",\n      \"complete\",\n      \"derivations\",\n      \"reasons\",\n      \"supported_low\",\n      \"priced_high\"\n    ],\n    \"identities\": \"List<String>; exact provider-qualified openai/<model_id> or anthropic/<model_id>; sorted and distinct; derivations retain provider/model\",\n    \"reasons\": [\n      \"IdentityWithoutRate\",\n      \"ModelUnresolved\",\n      \"TierUnestablished(Missing)\",\n      \"TierUnestablished(Unrecognised)\",\n      \"NonStandardTier\",\n      \"MalformedTier\",\n      \"MalformedCount(field)\",\n      \"MissingCount(field)\",\n      \"UsageSchemaMismatch\",\n      \"UsageShape\",\n      \"UnknownUsageSchema\",\n      \"RateTableUnusable\"\n    ],\n    \"state\": [\n      \"valued\",\n      \"unpriceable\",\n      \"not_reported\",\n      \"not_applicable\"\n    ]\n  }\n}"
+    },
+    {
+      "depends": [],
+      "id": "CORPUS-ENVELOPE",
+      "refs": [
+        "SERIALIZATION"
+      ],
+      "revision": 1,
+      "text": "# Corpus schema `pi-accounting-corpus/1`\n\nOne JSON file per case: `cases/<case_id>.json`, with canonical key order. Case-envelope ownership remains the independent corpus/validator lane. C-K field shapes are canonical SERIALIZATION; where this historical explanatory sketch omits a new field/reason, the canonical interface applies. Validator qualification is a separate gate.\n\n**Money:** nano-USD integer strings. **Times:** RFC 3339 UTC. **Evidence references:** `<alias>/turn-<n>:<line>`.\n**Attempt keys:** `res:<alias>/turn-<n>:rid=<r>`, `adm:<alias>/turn-<n>:rid=<r>`, `row:<alias>/turn-<n>:line=<l>`.\n\n```text\n{\n  schema: \"pi-accounting-corpus/1\", contract: \"pi-accounting-contract/1.5-s1\",      // revision 5 (P1.33); 1.3-s1 P1.32, 1.2-s1 P1.30, 1.1-s1 P1.29, 1.0-s1 P1.28\n  profile: current_producer | future_qualified_gate,      // OQ-1 capability profile (CONTRACT 2.3)\n  case_id, group, role: finding | control | valid_control,\n  class: producer_valid | historical_legacy | malformed | adversarial_synthetic | attribution_uncertain | future_vertical,\n  reachability: producer_reachable | producer_unreachable | legacy | not_established,\n  findings: [finding ids], provenance: { origin: \"<script>::<test>\", variant?, also? }, invariants: [\"INV-\u2026\"],\n  controls: [case ids],                                   // mandatory for role=finding\n  twin_of?: case id,                                      // order-independence twins (INV-F8)\n  revisions: [{rule, field, from, to}],                   // revision 2: every normative field changed from revision 1, with its contract rule\n  revisions_r3: [{rule, field, from, to}],                // revision 3: every field changed from revision 2 (\"__absent__\" = the field did not exist)\n  revisions_r4: [{rule, field, from, to}],                // revision 4: every field changed from revision 3 (top-level paths allowed: profile, evidence_pair.*)\n  revisions_r6?: [{rule, field, from, to}],               // revision6 changed-policy and representation ledger\n  revisions_r5: [{rule, field, from, to}],                // revision 5: every field changed from revision 4 (top-level paths: class, reachability, role, findings, controls)\n  added_in?: \"1.1-s1\" | \"1.2-s1\" | \"1.3-s1\" | \"1.4-s1\",   // a case with no counterpart in the previous revision\n  evidence_pair?: {other, relation: subset|superset, permitted_release: bool},   // INV-A5 pairs (R-11)\n  inputs: { reference_time, rates: {file: sha256},\n            gates?: [{gate_id, authority: {id, kind}, session, scope: {kind: session|request, request_id?}, effective_from, effective_until|null,\n                      writer: authority|same_uid_file|declaration, mechanisms: {new_forwarding|retries|reopening|billing_bound: {enforced, receipt?: {ref, sha256},\n                      bound?: {amount_nano, currency, scope, covers: [failures|forwarding|partial_streams|retries|settlement], binding_sha256}}}}],   // bound: billing_bound only (G-8)\n                                                          // future_qualified_gate only (CONTRACT 2.3)\n            sessions: [{ session_id, alias, launch: {model, auth_lane, parent} | null,\n                         lifecycle: [{event: launch|deliver|retire, at|null, turn?}],\n                         logs: {\"turn-N\": {lines: [raw line strings, exact bytes], final_newline}},\n                         extra_files?: {name: {lines, final_newline}},       // on disk, not named by a turn record\n                         ignored_sources?: {...} }] },                         // present but not evidence (V-7)\n  evaluations: [{ name,\n                  objectives: [{objective, started_at, closed_at|null, limit, tree_sessions, predecessor|null,\n                                close?: {at, disposition, reason, set_by},                 // scope_budget close entry (current_producer, legacy cooperative trust)\n                                admission_authority?: {id, kind}, closure_record?: {authority_id, at, receipt}, // future_qualified_gate only\n                                admissions: [{admission_id, session, source: journal|role_host_objective_admission, rows, gate_id?}]}],\n                  admission_request: {objective, new},\n                  expected: { attribution: [{attempt, objective|null, ownership: owned|uncertain|unadmitted|unowned, placement, cause?,   // uncertain: candidates include every admitting objective (O-3a)\n                                              candidates?, provisional_retained?}],            // unadmitted: objective null, candidates per O-7\n                              objectives: [{objective, status, reasons, provisional, owned_closed, owned_outstanding,\n                                            predecessor_obligations, commitments: [{admission_id, state, committed, kind: exact|at_least, gate: {qualified, reasons}}]}],   // state adds retired_resumable\n                              admission: {objective, new, limit, decision} } }],\n  expected: {                                             // shared by every evaluation: window-independent facts\n    attempts: [{ key, correlation: {kind: exact|ambiguous|unattributed, candidates?, auxiliary?: [{evidence, rule: RS-1|RS-2|RS-3}]},\n                 forwarding: forwarded|unknown, execution: terminal|not_terminal, billing: established|unresolved|not_applicable,\n                 replacement: {eligible, reason: UsageBound|NotUsageSettlement|UsageIncomplete|UsageUnpriceable|NoReservation},   // 2.1 (A-01)\n                 evidence: [refs], settlement: {decision, basis?, reasons, reserved?, charged?},\n                 obligation: {state, amount_source: settlement_amount|reservation_confirmed|reservation_bound|none, by?: EvidenceRef, cause?},   // 6 (A-08)\n                 valuation: {state: valued|unpriceable|not_reported|not_applicable, identities?, low?, high?, complete?, derivations?, reasons?, supported_low?, priced_high?},\n                 exposure: {pool: pi_api, low: {nano, basis}, high: {kind: exact|at_least, nano, basis}} | {pool: codex, billing: unknown},\n                 blocking: [codes], diagnostics: [codes] }],\n    non_attempt: [{evidence, kind, blocking}], unreadable: [{evidence, reason, blocking}],\n    inventory: [{session, kind, file?, blocking}], lifecycle: {alias: {state: open|retired|contradicted, reopened: bool, clock, reason?}} },\n  ambiguity: null | {fields, note},                        // where one answer cannot be established\n  notes, rationale: null | text,                           // rationale is required when historical differs\n  historical: { a134_086bdec1: {decision, spent_high_nano, spent_low_nano, blocking_kinds, ...} }   // comparison only\n}\n```\n\n**Derivation records** (`valuation.derivations[]`) are what the validator re-prices from the rate files:\n\n```text\n{ provider: openai|anthropic, model, usage, tier_multiplier, nano, for: low|high|both|none,\n  remainder_rate?: min|max, split?: reported|ignored }\n```\n\n**Revision 3 log** (`revisions_r3`). Same field paths as revision 2, plus `lifecycle[<alias>].<field>` and\n`<evaluation>/<objective>.commitments[<admission_id>].<field>`. `validate_corpus.py revisions <corpus> <revision-2 corpus>`\nundoes it and requires the revision-2 case back exactly, apart from `contract`, `revisions_r3` and an appended rationale.\nThe revision-2 `revisions` list is carried unchanged.\n\n**Revision log.** A `revisions` entry's `field` is `attempts[<key>].<path>` or `<evaluation>/attribution[<key>].<field>`,\n`<evaluation>/admission.<field>` or `<evaluation>/<objective>.<path>`. `validate_corpus.py revisions <corpus> <previous>`\nundoes every entry, newest first, and requires the result to equal the revision-1 case, apart from `contract`,\n`revisions`, the attempts' `forwarding` and a rationale that must begin with the revision-1 rationale. It also requires\nhistorical blocks to be unchanged and every revision-1 case and finding tag to be present.\n\n**Result sets** (an implementation's output, graded by `validate_corpus.py results`):\n\n```text\n{ case_id: { evaluations: { name: { attempts, non_attempt, unreadable, inventory, lifecycle, attribution, objectives, admission } } } }\n```\n\nThese are compared field by field after canonical sorting. Attempt facts must be identical across a case's\nevaluations (INV-F7).\n"
+    },
+    {
+      "depends": [],
+      "id": "V-PRESENCE-INTERFACE",
+      "refs": [
+        "VALUATION",
+        "USAGE-PRESENCE"
+      ],
+      "revision": 1,
+      "text": "V-PRESENCE partitions usage presence/shape only; reported is not a valuation constructor. Reported usage proceeds through VALUATION V1-V8 identity/tier/split/completeness rules. UsagePresence not_reported maps Valuation.not_reported; unpriceable retains explicit reason; reported may yield valued or unpriceable. Guard predicates are declared semantic facts, not a raw evidence interpreter. Their correctness and applicability require independent oracle review."
+    }
+  ],
+  "owner_policies": [
+    {
+      "depends": [],
+      "id": "POLICY-R6",
+      "refs": [],
+      "revision": 1,
+      "text": "# Root approval: S1 bounded specification realization\n\nRoot01a1d6e2 accepts PLAN.md SHA25652883acb09bcb7d0eb944fe73cc9ba5a3d06932f27a15c430d01bee9f2780a2c with the dispositions below. Authority is the user's delegated ownership of review and future development and $100/four-hour grant to2026-11-14T01:51:14Z. This is approval of architecture-led S1 tooling/contract/corpus work, not freeze, semantic acceptance, production integration or reducer entry. Plan inputs74d72102 and independent raw audit freeze fd3f2e1a/49faf158 remain evidence with stated limits.\n\nNew isolated revision:/home/bline/cbm-work/p136-s1r6/s1, contract version1.5-s1, revision6. Predecessor immutable1.4-s1/c2017453. Root owns policy approval, spec builder owns canonical definitions/views; separate oracle builder owns raw-derived acceptance assertions/corpus qualification; Astra owns independent review findings. Neither generator nor builder may overwrite the independent expected lane to pass.\n\nP1: preserve provider family and exact canonical model ID, explicit provider/schema evidence and MC2 absent-provider default. No shape-based cross-provider inference. Full request/launch identity inequality fails ModelMismatch. An independently unpriceable or unestablished identity/schema/tier set cannot provide eligible replacement. Preserve approved complete established fully priced multi-identity finite bounds, with downstream IdentityContradiction blocking, unless independently disproved. Provider-exclusive incompatible non-null billing fields must be reported as UsageSchemaMismatch/Unpriceable; don't treat shared field names or absent/null metadata alone as contrary-family proof. Exact per-family field mapping must be explicit and tied to pinned producer, not inferred by fixture shape.\n\nP2: separately declare each family's billing-bearing and auxiliary fields. Absent/null usage and all-absent/null billing-bearing counts mean NotReported; auxiliary reasoning count alone does not establish a priceable report. Present numeric0 differs. Non-object usage, unknown schema, or malformed billing-bearing counts mean Unpriceable with explicit reason. Missing required reported counts mean MissingCount, never zero. Optional OpenAI cache/write absent/null are unknown feasible splits; Anthropic optional lifetime splits absent/null are zero under existing rule; required aggregate counts remain required. Malformed auxiliary metadata adds MalformedEvidence(field) blocking but does not erase independently computable primary usage or itself select money. Preserve raw malformed states.\n\nCompleteness: complete usage bound needs all required well-formed billing counts, established priced identity/tier sets, integer HTTP200, and a recognized successful terminal for the declared provider. OpenAI response.completed/response.done; Anthropic message_stop. A priced partial/incomplete/missing terminal yields supported valuation but not complete replacement. Non200 never ordinary eligible Usage replacement, even with terminal/usage. Newly changed expectations must carry independent raw-policy derivations; don't disguise this explicit V5 ambiguity resolution as representation-only.\n\nP3: require a UniqueReservation witness for reservation-relative equality/order/KeepAll comparisons. With zero/conflicting reservations those checks are inapplicable; record NoReservation/ReservationConflict and all other applicable local field/status/basis failures. Distinct multiple settlements retain Conflicting precedence. R=max distinct well-formed reservation amounts, never sum/min. Preserve evidence identity and malformed-key rows.\n\nP4: approve E\u2192C\u2192{S,V}\u2192F\u2192X\u2192K, with shared pricing primitives and raw input references declared. S owns temporal obligation/execution/forwarding; F owns replacement and amount source after V; external obligation projection includes state and amount_source for every variant (none uses amount_source:none). Closed also preserves its settlement/by reference. Exact serialized names use existing snake_case conventions and are schema-declared. ErrorStatus keeps R and supported usage low/high: AtLeast(max(R,usage high or priced_high)); it closes time without resolving money. K findings never feed financial decisions.\n\nP5: accept the plan's explicitly separate commitment allocation max(0,B\u2212known session owned high) only conditional on a verified whole-session numeric USD billing ceiling with exact scope/period/coverage/authority and trusted adapter provenance. It never changes C-K amounts or makes unresolved attempts Exact. P>B is not alone a contradictory bill claim. If owned high is AtLeast, aggregate remains unresolved regardless of finite mock residual; no false positive admission. Raw authority fields, writer labels, hashes and verified:true do not establish verification. Future fixture positives may use a separate top-level trusted_fixture_inputs mapping supplied by a test-only harness, bound to exact payload; no producer row can mint it. Record test_mock provenance in output. It proves conditional policy only, never live gate qualification. Real verifier/authority/channel/enforcement are outside S1 and remain unestablished.\n\nP6: select API-launched raw sources with usd_reserved or a dollar settlement/usd field, including malformed rid/amount, orphan/no-reservation and conflicting groups plus applicable RS1\u20133 rows. Do not read expected keys. Additionally include dollar-evidence/missing-launch negative controls as unresolved-lane/identity cases; exclude genuine unbudgeted/subscription-only sources. Keep profile projections separate after independent raw facts are frozen. Raw input invalid under E1 remains explicitly unreadable/excluded evidence, but its case is not silently dropped. Preserve original synthetic raw cases; add writer-consistent positives with independent witnesses instead of relabeling inconsistent bytes as reachable.\n\nD3 explicit scoped amendment: one standalone isolated Rust specification renderer/structural-check crate at tooling/spec-check is permitted in S1, including separately authored independent acceptance assertion tests. It contains no reference financial reducer, expression interpreter, solver, production adapter or workspace integration. Generator has no output destination in oracle/. Shared JSON/serialization shapes are permissible mechanics; oracle arithmetic/semantic assertions cannot import generator/rule-evaluation logic. New executable tooling Rust; existing copied Python corpus tools may be edited, no new shipped Python framework. Production crate/name and S2a budget/entry are separate.\n\nNo missing old question is auto-resolved: Q1/Q4 outside S2a remain open; Q3 nonbillable class empty; Q7 E1 framing remains E-owned; Q9 dollar evidence with missing launch is explicitly unresolved, cannot invent priced identity or release R.\n\nRoot accepts a small organization revision: two coherent non-overlapping builders under the original S1 objective; no objective addition. Spec builder owns spec/,tooling/spec-check source and manifest,contract/,corpus/SCHEMA.md; oracle builder owns corpus/ excludingSCHEMA.md,oracle/,and tooling/spec-check/tests/independent_*.rs only. Spec builder must not overwrite oracle test files. Root owns shared handoff, joined qualification and review launch.\n\nFreeze remains blocked until reproducible generation, total declared guards/types/read-sets, meaningful historical negatives/controls, independent selected-case coverage, legacy required validatorcheck/selftest/revisions/sabotage, and current exact ModuleA/C plus relevantB clearance. Structural consistency is not financial correctness. If scope becomes a reference reducer, unresolved policy or repeated serious boundary regression, stop that dependent work for root design assessment. Infrastructure failures never count as rejection.\n"
+    },
+    {
+      "depends": [],
+      "id": "SOURCE-IDENTITIES",
+      "refs": [],
+      "revision": 1,
+      "text": "[\n  {\n    \"git_revision\": \"92a03789\",\n    \"path\": \"skills/manual-orchestration/scripts/pi_container.py\",\n    \"sha256\": \"780837341790780f84163ee6151b8ce66cff56f5a3f6ddf8c15f939dba50f470\"\n  },\n  {\n    \"git_revision\": \"92a03789\",\n    \"path\": \"skills/manual-orchestration/scripts/role_host.py\",\n    \"sha256\": \"cbca1bc9656ed6de2c1cd43e1e357d7ed27dbaa08b178a3131cc329ed3433475\"\n  },\n  {\n    \"git_revision\": \"92a03789\",\n    \"path\": \"skills/manual-orchestration/scripts/openai_api_rates.json\",\n    \"sha256\": \"c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58\"\n  },\n  {\n    \"git_revision\": \"92a03789\",\n    \"path\": \"skills/manual-orchestration/scripts/anthropic_api_rates.json\",\n    \"sha256\": \"8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5\"\n  }\n]"
+    }
+  ],
+  "rules": [
+    {
+      "depends": [],
+      "dimensions": {
+        "key_fact": [
+          "usable_reservation",
+          "unusable_reservation",
+          "settlement_no_reservation",
+          "unbudgeted",
+          "subscription",
+          "auxiliary",
+          "ambiguous"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "key_fact": [
+          "usable_reservation"
+        ]
+      },
+      "id": "C-KEY-1",
+      "outputs": [],
+      "partition": "C-KEY",
+      "reads": [
+        "E"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "C",
+      "text": "See CORRELATION; usable_reservation"
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "key_fact": [
+          "usable_reservation",
+          "unusable_reservation",
+          "settlement_no_reservation",
+          "unbudgeted",
+          "subscription",
+          "auxiliary",
+          "ambiguous"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "key_fact": [
+          "unusable_reservation"
+        ]
+      },
+      "id": "C-KEY-2",
+      "outputs": [],
+      "partition": "C-KEY",
+      "reads": [
+        "E"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "C",
+      "text": "See CORRELATION; unusable_reservation"
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "key_fact": [
+          "usable_reservation",
+          "unusable_reservation",
+          "settlement_no_reservation",
+          "unbudgeted",
+          "subscription",
+          "auxiliary",
+          "ambiguous"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "key_fact": [
+          "settlement_no_reservation"
+        ]
+      },
+      "id": "C-KEY-3",
+      "outputs": [],
+      "partition": "C-KEY",
+      "reads": [
+        "E"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "C",
+      "text": "See CORRELATION; settlement_no_reservation"
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "key_fact": [
+          "usable_reservation",
+          "unusable_reservation",
+          "settlement_no_reservation",
+          "unbudgeted",
+          "subscription",
+          "auxiliary",
+          "ambiguous"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "key_fact": [
+          "unbudgeted"
+        ]
+      },
+      "id": "C-KEY-4",
+      "outputs": [],
+      "partition": "C-KEY",
+      "reads": [
+        "E"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "C",
+      "text": "See CORRELATION; unbudgeted"
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "key_fact": [
+          "usable_reservation",
+          "unusable_reservation",
+          "settlement_no_reservation",
+          "unbudgeted",
+          "subscription",
+          "auxiliary",
+          "ambiguous"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "key_fact": [
+          "subscription"
+        ]
+      },
+      "id": "C-KEY-5",
+      "outputs": [],
+      "partition": "C-KEY",
+      "reads": [
+        "E"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "C",
+      "text": "See CORRELATION; subscription"
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "key_fact": [
+          "usable_reservation",
+          "unusable_reservation",
+          "settlement_no_reservation",
+          "unbudgeted",
+          "subscription",
+          "auxiliary",
+          "ambiguous"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "key_fact": [
+          "auxiliary"
+        ]
+      },
+      "id": "C-KEY-6",
+      "outputs": [],
+      "partition": "C-KEY",
+      "reads": [
+        "E"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "C",
+      "text": "See CORRELATION; auxiliary"
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "key_fact": [
+          "usable_reservation",
+          "unusable_reservation",
+          "settlement_no_reservation",
+          "unbudgeted",
+          "subscription",
+          "auxiliary",
+          "ambiguous"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "key_fact": [
+          "ambiguous"
+        ]
+      },
+      "id": "C-KEY-7",
+      "outputs": [],
+      "partition": "C-KEY",
+      "reads": [
+        "E"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "C",
+      "text": "See CORRELATION; ambiguous"
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "zero",
+          "unique",
+          "conflicting"
+        ],
+        "settlements": [
+          "zero",
+          "one",
+          "many"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "zero"
+        ],
+        "settlements": [
+          "zero"
+        ]
+      },
+      "id": "S-zero-zero",
+      "outputs": [
+        {
+          "fields": [],
+          "type_id": "SettlementDecision",
+          "variant": "not_applicable"
+        }
+      ],
+      "partition": "S-DECISION",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "S",
+      "text": "SETTLEMENT applicability and conflict precedence."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "zero",
+          "unique",
+          "conflicting"
+        ],
+        "settlements": [
+          "zero",
+          "one",
+          "many"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "checks": [
+          "pass"
+        ],
+        "reservations": [
+          "zero"
+        ],
+        "settlements": [
+          "one"
+        ]
+      },
+      "id": "S-zero-one-pass",
+      "outputs": [
+        {
+          "fields": [
+            "reasons",
+            "claimed"
+          ],
+          "type_id": "SettlementDecision",
+          "variant": "rejected"
+        }
+      ],
+      "partition": "S-DECISION",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "S",
+      "text": "Valid iff unique witness and all applicable checks pass; preserve all applicable failures."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "zero",
+          "unique",
+          "conflicting"
+        ],
+        "settlements": [
+          "zero",
+          "one",
+          "many"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "checks": [
+          "fail"
+        ],
+        "reservations": [
+          "zero"
+        ],
+        "settlements": [
+          "one"
+        ]
+      },
+      "id": "S-zero-one-fail",
+      "outputs": [
+        {
+          "fields": [
+            "reasons",
+            "claimed"
+          ],
+          "type_id": "SettlementDecision",
+          "variant": "rejected"
+        }
+      ],
+      "partition": "S-DECISION",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "S",
+      "text": "Valid iff unique witness and all applicable checks pass; preserve all applicable failures."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "zero",
+          "unique",
+          "conflicting"
+        ],
+        "settlements": [
+          "zero",
+          "one",
+          "many"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "zero"
+        ],
+        "settlements": [
+          "many"
+        ]
+      },
+      "id": "S-zero-many",
+      "outputs": [
+        {
+          "fields": [
+            "settlements",
+            "claimed"
+          ],
+          "type_id": "SettlementDecision",
+          "variant": "conflicting"
+        }
+      ],
+      "partition": "S-DECISION",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "S",
+      "text": "SETTLEMENT applicability and conflict precedence."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "zero",
+          "unique",
+          "conflicting"
+        ],
+        "settlements": [
+          "zero",
+          "one",
+          "many"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "unique"
+        ],
+        "settlements": [
+          "zero"
+        ]
+      },
+      "id": "S-unique-zero",
+      "outputs": [
+        {
+          "fields": [],
+          "type_id": "SettlementDecision",
+          "variant": "absent"
+        }
+      ],
+      "partition": "S-DECISION",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "S",
+      "text": "SETTLEMENT applicability and conflict precedence."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "zero",
+          "unique",
+          "conflicting"
+        ],
+        "settlements": [
+          "zero",
+          "one",
+          "many"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "checks": [
+          "pass"
+        ],
+        "reservations": [
+          "unique"
+        ],
+        "settlements": [
+          "one"
+        ]
+      },
+      "id": "S-unique-one-pass",
+      "outputs": [
+        {
+          "fields": [
+            "basis",
+            "charged",
+            "settlement"
+          ],
+          "type_id": "SettlementDecision",
+          "variant": "valid"
+        }
+      ],
+      "partition": "S-DECISION",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "S",
+      "text": "Valid iff unique witness and all applicable checks pass; preserve all applicable failures."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "zero",
+          "unique",
+          "conflicting"
+        ],
+        "settlements": [
+          "zero",
+          "one",
+          "many"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "checks": [
+          "fail"
+        ],
+        "reservations": [
+          "unique"
+        ],
+        "settlements": [
+          "one"
+        ]
+      },
+      "id": "S-unique-one-fail",
+      "outputs": [
+        {
+          "fields": [
+            "reasons",
+            "claimed"
+          ],
+          "type_id": "SettlementDecision",
+          "variant": "rejected"
+        }
+      ],
+      "partition": "S-DECISION",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "S",
+      "text": "Valid iff unique witness and all applicable checks pass; preserve all applicable failures."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "zero",
+          "unique",
+          "conflicting"
+        ],
+        "settlements": [
+          "zero",
+          "one",
+          "many"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "unique"
+        ],
+        "settlements": [
+          "many"
+        ]
+      },
+      "id": "S-unique-many",
+      "outputs": [
+        {
+          "fields": [
+            "settlements",
+            "claimed"
+          ],
+          "type_id": "SettlementDecision",
+          "variant": "conflicting"
+        }
+      ],
+      "partition": "S-DECISION",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "S",
+      "text": "SETTLEMENT applicability and conflict precedence."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "zero",
+          "unique",
+          "conflicting"
+        ],
+        "settlements": [
+          "zero",
+          "one",
+          "many"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "conflicting"
+        ],
+        "settlements": [
+          "zero"
+        ]
+      },
+      "id": "S-conflicting-zero",
+      "outputs": [
+        {
+          "fields": [],
+          "type_id": "SettlementDecision",
+          "variant": "absent"
+        }
+      ],
+      "partition": "S-DECISION",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "S",
+      "text": "SETTLEMENT applicability and conflict precedence."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "zero",
+          "unique",
+          "conflicting"
+        ],
+        "settlements": [
+          "zero",
+          "one",
+          "many"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "checks": [
+          "pass"
+        ],
+        "reservations": [
+          "conflicting"
+        ],
+        "settlements": [
+          "one"
+        ]
+      },
+      "id": "S-conflicting-one-pass",
+      "outputs": [
+        {
+          "fields": [
+            "reasons",
+            "claimed"
+          ],
+          "type_id": "SettlementDecision",
+          "variant": "rejected"
+        }
+      ],
+      "partition": "S-DECISION",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "S",
+      "text": "Valid iff unique witness and all applicable checks pass; preserve all applicable failures."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "zero",
+          "unique",
+          "conflicting"
+        ],
+        "settlements": [
+          "zero",
+          "one",
+          "many"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "checks": [
+          "fail"
+        ],
+        "reservations": [
+          "conflicting"
+        ],
+        "settlements": [
+          "one"
+        ]
+      },
+      "id": "S-conflicting-one-fail",
+      "outputs": [
+        {
+          "fields": [
+            "reasons",
+            "claimed"
+          ],
+          "type_id": "SettlementDecision",
+          "variant": "rejected"
+        }
+      ],
+      "partition": "S-DECISION",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "S",
+      "text": "Valid iff unique witness and all applicable checks pass; preserve all applicable failures."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "zero",
+          "unique",
+          "conflicting"
+        ],
+        "settlements": [
+          "zero",
+          "one",
+          "many"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "checks": [
+          "pass",
+          "fail"
+        ],
+        "reservations": [
+          "conflicting"
+        ],
+        "settlements": [
+          "many"
+        ]
+      },
+      "id": "S-conflicting-many",
+      "outputs": [
+        {
+          "fields": [
+            "settlements",
+            "claimed"
+          ],
+          "type_id": "SettlementDecision",
+          "variant": "conflicting"
+        }
+      ],
+      "partition": "S-DECISION",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "S",
+      "text": "SETTLEMENT applicability and conflict precedence."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "temporal_fact": [
+          "no_reservation",
+          "valid_exact_join",
+          "other_reserved"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "temporal_fact": [
+          "no_reservation"
+        ]
+      },
+      "id": "S-TIME-1",
+      "outputs": [
+        {
+          "fields": [
+            "cause"
+          ],
+          "type_id": "TemporalObligation",
+          "variant": "none"
+        }
+      ],
+      "partition": "S-TIME",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "S",
+      "text": "No reservation; preserve cause."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "temporal_fact": [
+          "no_reservation",
+          "valid_exact_join",
+          "other_reserved"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "temporal_fact": [
+          "valid_exact_join"
+        ]
+      },
+      "id": "S-TIME-2",
+      "outputs": [
+        {
+          "fields": [
+            "by"
+          ],
+          "type_id": "TemporalObligation",
+          "variant": "closed"
+        }
+      ],
+      "partition": "S-TIME",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "S",
+      "text": "Only valid exact key join closes; auxiliary never closes."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "temporal_fact": [
+          "no_reservation",
+          "valid_exact_join",
+          "other_reserved"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "temporal_fact": [
+          "other_reserved"
+        ]
+      },
+      "id": "S-TIME-3",
+      "outputs": [
+        {
+          "fields": [],
+          "type_id": "TemporalObligation",
+          "variant": "outstanding"
+        }
+      ],
+      "partition": "S-TIME",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "S",
+      "text": "Reservation remains Outstanding."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "usage_fact": [
+          "absent_or_null",
+          "all_billing_absent_null",
+          "auxiliary_only",
+          "schema_conflict",
+          "nonobject",
+          "unknown_schema",
+          "malformed_billing",
+          "missing_required",
+          "reported"
+        ]
+      },
+      "formulas": [
+        "PRICE-OPENAI",
+        "PRICE-ANTHROPIC"
+      ],
+      "guard": {
+        "usage_fact": [
+          "absent_or_null"
+        ]
+      },
+      "id": "V-PRESENCE-1",
+      "outputs": [
+        {
+          "fields": [],
+          "type_id": "UsagePresence",
+          "variant": "not_reported"
+        }
+      ],
+      "partition": "V-PRESENCE",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "V",
+      "text": "USAGE-PRESENCE ordered predicates; preserve raw field states."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "usage_fact": [
+          "absent_or_null",
+          "all_billing_absent_null",
+          "auxiliary_only",
+          "schema_conflict",
+          "nonobject",
+          "unknown_schema",
+          "malformed_billing",
+          "missing_required",
+          "reported"
+        ]
+      },
+      "formulas": [
+        "PRICE-OPENAI",
+        "PRICE-ANTHROPIC"
+      ],
+      "guard": {
+        "usage_fact": [
+          "all_billing_absent_null"
+        ]
+      },
+      "id": "V-PRESENCE-2",
+      "outputs": [
+        {
+          "fields": [],
+          "type_id": "UsagePresence",
+          "variant": "not_reported"
+        }
+      ],
+      "partition": "V-PRESENCE",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "V",
+      "text": "USAGE-PRESENCE ordered predicates; preserve raw field states."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "usage_fact": [
+          "absent_or_null",
+          "all_billing_absent_null",
+          "auxiliary_only",
+          "schema_conflict",
+          "nonobject",
+          "unknown_schema",
+          "malformed_billing",
+          "missing_required",
+          "reported"
+        ]
+      },
+      "formulas": [
+        "PRICE-OPENAI",
+        "PRICE-ANTHROPIC"
+      ],
+      "guard": {
+        "usage_fact": [
+          "auxiliary_only"
+        ]
+      },
+      "id": "V-PRESENCE-3",
+      "outputs": [
+        {
+          "fields": [],
+          "type_id": "UsagePresence",
+          "variant": "not_reported"
+        }
+      ],
+      "partition": "V-PRESENCE",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "V",
+      "text": "USAGE-PRESENCE ordered predicates; preserve raw field states."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "usage_fact": [
+          "absent_or_null",
+          "all_billing_absent_null",
+          "auxiliary_only",
+          "schema_conflict",
+          "nonobject",
+          "unknown_schema",
+          "malformed_billing",
+          "missing_required",
+          "reported"
+        ]
+      },
+      "formulas": [
+        "PRICE-OPENAI",
+        "PRICE-ANTHROPIC"
+      ],
+      "guard": {
+        "usage_fact": [
+          "schema_conflict"
+        ]
+      },
+      "id": "V-PRESENCE-4",
+      "outputs": [
+        {
+          "fields": [],
+          "type_id": "UsagePresence",
+          "variant": "unpriceable"
+        }
+      ],
+      "partition": "V-PRESENCE",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "V",
+      "text": "USAGE-PRESENCE ordered predicates; preserve raw field states."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "usage_fact": [
+          "absent_or_null",
+          "all_billing_absent_null",
+          "auxiliary_only",
+          "schema_conflict",
+          "nonobject",
+          "unknown_schema",
+          "malformed_billing",
+          "missing_required",
+          "reported"
+        ]
+      },
+      "formulas": [
+        "PRICE-OPENAI",
+        "PRICE-ANTHROPIC"
+      ],
+      "guard": {
+        "usage_fact": [
+          "nonobject"
+        ]
+      },
+      "id": "V-PRESENCE-5",
+      "outputs": [
+        {
+          "fields": [],
+          "type_id": "UsagePresence",
+          "variant": "unpriceable"
+        }
+      ],
+      "partition": "V-PRESENCE",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "V",
+      "text": "USAGE-PRESENCE ordered predicates; preserve raw field states."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "usage_fact": [
+          "absent_or_null",
+          "all_billing_absent_null",
+          "auxiliary_only",
+          "schema_conflict",
+          "nonobject",
+          "unknown_schema",
+          "malformed_billing",
+          "missing_required",
+          "reported"
+        ]
+      },
+      "formulas": [
+        "PRICE-OPENAI",
+        "PRICE-ANTHROPIC"
+      ],
+      "guard": {
+        "usage_fact": [
+          "unknown_schema"
+        ]
+      },
+      "id": "V-PRESENCE-6",
+      "outputs": [
+        {
+          "fields": [],
+          "type_id": "UsagePresence",
+          "variant": "unpriceable"
+        }
+      ],
+      "partition": "V-PRESENCE",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "V",
+      "text": "USAGE-PRESENCE ordered predicates; preserve raw field states."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "usage_fact": [
+          "absent_or_null",
+          "all_billing_absent_null",
+          "auxiliary_only",
+          "schema_conflict",
+          "nonobject",
+          "unknown_schema",
+          "malformed_billing",
+          "missing_required",
+          "reported"
+        ]
+      },
+      "formulas": [
+        "PRICE-OPENAI",
+        "PRICE-ANTHROPIC"
+      ],
+      "guard": {
+        "usage_fact": [
+          "malformed_billing"
+        ]
+      },
+      "id": "V-PRESENCE-7",
+      "outputs": [
+        {
+          "fields": [],
+          "type_id": "UsagePresence",
+          "variant": "unpriceable"
+        }
+      ],
+      "partition": "V-PRESENCE",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "V",
+      "text": "USAGE-PRESENCE ordered predicates; preserve raw field states."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "usage_fact": [
+          "absent_or_null",
+          "all_billing_absent_null",
+          "auxiliary_only",
+          "schema_conflict",
+          "nonobject",
+          "unknown_schema",
+          "malformed_billing",
+          "missing_required",
+          "reported"
+        ]
+      },
+      "formulas": [
+        "PRICE-OPENAI",
+        "PRICE-ANTHROPIC"
+      ],
+      "guard": {
+        "usage_fact": [
+          "missing_required"
+        ]
+      },
+      "id": "V-PRESENCE-8",
+      "outputs": [
+        {
+          "fields": [],
+          "type_id": "UsagePresence",
+          "variant": "unpriceable"
+        }
+      ],
+      "partition": "V-PRESENCE",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "V",
+      "text": "USAGE-PRESENCE ordered predicates; preserve raw field states."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "usage_fact": [
+          "absent_or_null",
+          "all_billing_absent_null",
+          "auxiliary_only",
+          "schema_conflict",
+          "nonobject",
+          "unknown_schema",
+          "malformed_billing",
+          "missing_required",
+          "reported"
+        ]
+      },
+      "formulas": [
+        "PRICE-OPENAI",
+        "PRICE-ANTHROPIC"
+      ],
+      "guard": {
+        "usage_fact": [
+          "reported"
+        ]
+      },
+      "id": "V-PRESENCE-9",
+      "outputs": [
+        {
+          "fields": [],
+          "type_id": "UsagePresence",
+          "variant": "reported"
+        }
+      ],
+      "partition": "V-PRESENCE",
+      "reads": [
+        "C"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "V",
+      "text": "USAGE-PRESENCE ordered predicates; preserve raw field states."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "replacement_fact": [
+          "no_reservation",
+          "not_valid_usage",
+          "usage_unpriceable",
+          "usage_incomplete",
+          "usage_bound"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "replacement_fact": [
+          "no_reservation"
+        ]
+      },
+      "id": "F-REPLACEMENT-1",
+      "outputs": [
+        {
+          "fields": [
+            "reason"
+          ],
+          "type_id": "Replacement",
+          "variant": "ineligible"
+        }
+      ],
+      "partition": "F-REPLACEMENT",
+      "reads": [
+        "C",
+        "S",
+        "V"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "F",
+      "text": "Replacement reason NoReservation"
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "replacement_fact": [
+          "no_reservation",
+          "not_valid_usage",
+          "usage_unpriceable",
+          "usage_incomplete",
+          "usage_bound"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "replacement_fact": [
+          "not_valid_usage"
+        ]
+      },
+      "id": "F-REPLACEMENT-2",
+      "outputs": [
+        {
+          "fields": [
+            "reason"
+          ],
+          "type_id": "Replacement",
+          "variant": "ineligible"
+        }
+      ],
+      "partition": "F-REPLACEMENT",
+      "reads": [
+        "C",
+        "S",
+        "V"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "F",
+      "text": "Replacement reason NotUsageSettlement"
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "replacement_fact": [
+          "no_reservation",
+          "not_valid_usage",
+          "usage_unpriceable",
+          "usage_incomplete",
+          "usage_bound"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "replacement_fact": [
+          "usage_unpriceable"
+        ]
+      },
+      "id": "F-REPLACEMENT-3",
+      "outputs": [
+        {
+          "fields": [
+            "reason"
+          ],
+          "type_id": "Replacement",
+          "variant": "ineligible"
+        }
+      ],
+      "partition": "F-REPLACEMENT",
+      "reads": [
+        "C",
+        "S",
+        "V"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "F",
+      "text": "Replacement reason UsageUnpriceable"
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "replacement_fact": [
+          "no_reservation",
+          "not_valid_usage",
+          "usage_unpriceable",
+          "usage_incomplete",
+          "usage_bound"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "replacement_fact": [
+          "usage_incomplete"
+        ]
+      },
+      "id": "F-REPLACEMENT-4",
+      "outputs": [
+        {
+          "fields": [
+            "reason"
+          ],
+          "type_id": "Replacement",
+          "variant": "ineligible"
+        }
+      ],
+      "partition": "F-REPLACEMENT",
+      "reads": [
+        "C",
+        "S",
+        "V"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "F",
+      "text": "Replacement reason UsageIncomplete"
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "replacement_fact": [
+          "no_reservation",
+          "not_valid_usage",
+          "usage_unpriceable",
+          "usage_incomplete",
+          "usage_bound"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "replacement_fact": [
+          "usage_bound"
+        ]
+      },
+      "id": "F-REPLACEMENT-5",
+      "outputs": [
+        {
+          "fields": [
+            "reason"
+          ],
+          "type_id": "Replacement",
+          "variant": "eligible"
+        }
+      ],
+      "partition": "F-REPLACEMENT",
+      "reads": [
+        "C",
+        "S",
+        "V"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "F",
+      "text": "Replacement reason UsageBound"
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "temporal": [
+          "none",
+          "outstanding",
+          "closed"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "temporal": [
+          "none"
+        ]
+      },
+      "id": "F-OBLIGATION-1",
+      "outputs": [
+        {
+          "fields": [
+            "cause",
+            "amount_source"
+          ],
+          "type_id": "Obligation",
+          "variant": "none"
+        }
+      ],
+      "partition": "F-OBLIGATION",
+      "reads": [
+        "C",
+        "S",
+        "V"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "F",
+      "text": "External projection preserves temporal state/cause/by; all variants carry amount_source. none:none; outstanding:reservation_bound; closed eligible Usage:settlement_amount, valid KeepAll:reservation_confirmed, other:reservation_bound."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "temporal": [
+          "none",
+          "outstanding",
+          "closed"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "temporal": [
+          "outstanding"
+        ]
+      },
+      "id": "F-OBLIGATION-2",
+      "outputs": [
+        {
+          "fields": [
+            "amount_source"
+          ],
+          "type_id": "Obligation",
+          "variant": "outstanding"
+        }
+      ],
+      "partition": "F-OBLIGATION",
+      "reads": [
+        "C",
+        "S",
+        "V"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "F",
+      "text": "External projection preserves temporal state/cause/by; all variants carry amount_source. none:none; outstanding:reservation_bound; closed eligible Usage:settlement_amount, valid KeepAll:reservation_confirmed, other:reservation_bound."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "temporal": [
+          "none",
+          "outstanding",
+          "closed"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "temporal": [
+          "closed"
+        ]
+      },
+      "id": "F-OBLIGATION-3",
+      "outputs": [
+        {
+          "fields": [
+            "by",
+            "amount_source"
+          ],
+          "type_id": "Obligation",
+          "variant": "closed"
+        }
+      ],
+      "partition": "F-OBLIGATION",
+      "reads": [
+        "C",
+        "S",
+        "V"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "F",
+      "text": "External projection preserves temporal state/cause/by; all variants carry amount_source. none:none; outstanding:reservation_bound; closed eligible Usage:settlement_amount, valid KeepAll:reservation_confirmed, other:reservation_bound."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "exposure_fact": [
+          "eligible_usage",
+          "error_status",
+          "reservation",
+          "upstream_error",
+          "absent",
+          "rejected_or_conflicting",
+          "unbudgeted_complete",
+          "unbudgeted_incomplete",
+          "orphan",
+          "subscription",
+          "lane_contradicted"
+        ]
+      },
+      "formulas": [
+        "ELIGIBLE-EXPOSURE"
+      ],
+      "guard": {
+        "exposure_fact": [
+          "eligible_usage"
+        ]
+      },
+      "id": "X-EXPOSURE-1",
+      "outputs": [
+        {
+          "fields": [
+            "low",
+            "high"
+          ],
+          "type_id": "Exposure",
+          "variant": "pi_api"
+        }
+      ],
+      "partition": "X-EXPOSURE",
+      "reads": [
+        "C",
+        "S",
+        "V",
+        "F"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "X",
+      "text": "Apply exact X-TABLE row and FB invariants; K never feeds money."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "exposure_fact": [
+          "eligible_usage",
+          "error_status",
+          "reservation",
+          "upstream_error",
+          "absent",
+          "rejected_or_conflicting",
+          "unbudgeted_complete",
+          "unbudgeted_incomplete",
+          "orphan",
+          "subscription",
+          "lane_contradicted"
+        ]
+      },
+      "formulas": [
+        "ERROR-EXPOSURE"
+      ],
+      "guard": {
+        "exposure_fact": [
+          "error_status"
+        ]
+      },
+      "id": "X-EXPOSURE-2",
+      "outputs": [
+        {
+          "fields": [
+            "low",
+            "high"
+          ],
+          "type_id": "Exposure",
+          "variant": "pi_api"
+        }
+      ],
+      "partition": "X-EXPOSURE",
+      "reads": [
+        "C",
+        "S",
+        "V",
+        "F"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "X",
+      "text": "Apply exact X-TABLE row and FB invariants; K never feeds money."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "exposure_fact": [
+          "eligible_usage",
+          "error_status",
+          "reservation",
+          "upstream_error",
+          "absent",
+          "rejected_or_conflicting",
+          "unbudgeted_complete",
+          "unbudgeted_incomplete",
+          "orphan",
+          "subscription",
+          "lane_contradicted"
+        ]
+      },
+      "formulas": [
+        "INELIGIBLE-EXPOSURE"
+      ],
+      "guard": {
+        "exposure_fact": [
+          "reservation"
+        ]
+      },
+      "id": "X-EXPOSURE-3",
+      "outputs": [
+        {
+          "fields": [
+            "low",
+            "high"
+          ],
+          "type_id": "Exposure",
+          "variant": "pi_api"
+        }
+      ],
+      "partition": "X-EXPOSURE",
+      "reads": [
+        "C",
+        "S",
+        "V",
+        "F"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "X",
+      "text": "Apply exact X-TABLE row and FB invariants; K never feeds money."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "exposure_fact": [
+          "eligible_usage",
+          "error_status",
+          "reservation",
+          "upstream_error",
+          "absent",
+          "rejected_or_conflicting",
+          "unbudgeted_complete",
+          "unbudgeted_incomplete",
+          "orphan",
+          "subscription",
+          "lane_contradicted"
+        ]
+      },
+      "formulas": [
+        "INELIGIBLE-EXPOSURE"
+      ],
+      "guard": {
+        "exposure_fact": [
+          "upstream_error"
+        ]
+      },
+      "id": "X-EXPOSURE-4",
+      "outputs": [
+        {
+          "fields": [
+            "low",
+            "high"
+          ],
+          "type_id": "Exposure",
+          "variant": "pi_api"
+        }
+      ],
+      "partition": "X-EXPOSURE",
+      "reads": [
+        "C",
+        "S",
+        "V",
+        "F"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "X",
+      "text": "Apply exact X-TABLE row and FB invariants; K never feeds money."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "exposure_fact": [
+          "eligible_usage",
+          "error_status",
+          "reservation",
+          "upstream_error",
+          "absent",
+          "rejected_or_conflicting",
+          "unbudgeted_complete",
+          "unbudgeted_incomplete",
+          "orphan",
+          "subscription",
+          "lane_contradicted"
+        ]
+      },
+      "formulas": [
+        "INELIGIBLE-EXPOSURE"
+      ],
+      "guard": {
+        "exposure_fact": [
+          "absent"
+        ]
+      },
+      "id": "X-EXPOSURE-5",
+      "outputs": [
+        {
+          "fields": [
+            "low",
+            "high"
+          ],
+          "type_id": "Exposure",
+          "variant": "pi_api"
+        }
+      ],
+      "partition": "X-EXPOSURE",
+      "reads": [
+        "C",
+        "S",
+        "V",
+        "F"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "X",
+      "text": "Apply exact X-TABLE row and FB invariants; K never feeds money."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "exposure_fact": [
+          "eligible_usage",
+          "error_status",
+          "reservation",
+          "upstream_error",
+          "absent",
+          "rejected_or_conflicting",
+          "unbudgeted_complete",
+          "unbudgeted_incomplete",
+          "orphan",
+          "subscription",
+          "lane_contradicted"
+        ]
+      },
+      "formulas": [
+        "INELIGIBLE-EXPOSURE"
+      ],
+      "guard": {
+        "exposure_fact": [
+          "rejected_or_conflicting"
+        ]
+      },
+      "id": "X-EXPOSURE-6",
+      "outputs": [
+        {
+          "fields": [
+            "low",
+            "high"
+          ],
+          "type_id": "Exposure",
+          "variant": "pi_api"
+        }
+      ],
+      "partition": "X-EXPOSURE",
+      "reads": [
+        "C",
+        "S",
+        "V",
+        "F"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "X",
+      "text": "Apply exact X-TABLE row and FB invariants; K never feeds money."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "exposure_fact": [
+          "eligible_usage",
+          "error_status",
+          "reservation",
+          "upstream_error",
+          "absent",
+          "rejected_or_conflicting",
+          "unbudgeted_complete",
+          "unbudgeted_incomplete",
+          "orphan",
+          "subscription",
+          "lane_contradicted"
+        ]
+      },
+      "formulas": [
+        "ELIGIBLE-EXPOSURE"
+      ],
+      "guard": {
+        "exposure_fact": [
+          "unbudgeted_complete"
+        ]
+      },
+      "id": "X-EXPOSURE-7",
+      "outputs": [
+        {
+          "fields": [
+            "low",
+            "high"
+          ],
+          "type_id": "Exposure",
+          "variant": "pi_api"
+        }
+      ],
+      "partition": "X-EXPOSURE",
+      "reads": [
+        "C",
+        "S",
+        "V",
+        "F"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "X",
+      "text": "Apply exact X-TABLE row and FB invariants; K never feeds money."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "exposure_fact": [
+          "eligible_usage",
+          "error_status",
+          "reservation",
+          "upstream_error",
+          "absent",
+          "rejected_or_conflicting",
+          "unbudgeted_complete",
+          "unbudgeted_incomplete",
+          "orphan",
+          "subscription",
+          "lane_contradicted"
+        ]
+      },
+      "formulas": [
+        "INELIGIBLE-EXPOSURE"
+      ],
+      "guard": {
+        "exposure_fact": [
+          "unbudgeted_incomplete"
+        ]
+      },
+      "id": "X-EXPOSURE-8",
+      "outputs": [
+        {
+          "fields": [
+            "low",
+            "high"
+          ],
+          "type_id": "Exposure",
+          "variant": "pi_api"
+        }
+      ],
+      "partition": "X-EXPOSURE",
+      "reads": [
+        "C",
+        "S",
+        "V",
+        "F"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "X",
+      "text": "Apply exact X-TABLE row and FB invariants; K never feeds money."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "exposure_fact": [
+          "eligible_usage",
+          "error_status",
+          "reservation",
+          "upstream_error",
+          "absent",
+          "rejected_or_conflicting",
+          "unbudgeted_complete",
+          "unbudgeted_incomplete",
+          "orphan",
+          "subscription",
+          "lane_contradicted"
+        ]
+      },
+      "formulas": [
+        "INELIGIBLE-EXPOSURE"
+      ],
+      "guard": {
+        "exposure_fact": [
+          "orphan"
+        ]
+      },
+      "id": "X-EXPOSURE-9",
+      "outputs": [
+        {
+          "fields": [
+            "low",
+            "high"
+          ],
+          "type_id": "Exposure",
+          "variant": "pi_api"
+        }
+      ],
+      "partition": "X-EXPOSURE",
+      "reads": [
+        "C",
+        "S",
+        "V",
+        "F"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "X",
+      "text": "Apply exact X-TABLE row and FB invariants; K never feeds money."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "exposure_fact": [
+          "eligible_usage",
+          "error_status",
+          "reservation",
+          "upstream_error",
+          "absent",
+          "rejected_or_conflicting",
+          "unbudgeted_complete",
+          "unbudgeted_incomplete",
+          "orphan",
+          "subscription",
+          "lane_contradicted"
+        ]
+      },
+      "formulas": [
+        "INELIGIBLE-EXPOSURE"
+      ],
+      "guard": {
+        "exposure_fact": [
+          "subscription"
+        ]
+      },
+      "id": "X-EXPOSURE-10",
+      "outputs": [
+        {
+          "fields": [
+            "billing"
+          ],
+          "type_id": "Exposure",
+          "variant": "codex"
+        }
+      ],
+      "partition": "X-EXPOSURE",
+      "reads": [
+        "C",
+        "S",
+        "V",
+        "F"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "X",
+      "text": "Apply exact X-TABLE row and FB invariants; K never feeds money."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "exposure_fact": [
+          "eligible_usage",
+          "error_status",
+          "reservation",
+          "upstream_error",
+          "absent",
+          "rejected_or_conflicting",
+          "unbudgeted_complete",
+          "unbudgeted_incomplete",
+          "orphan",
+          "subscription",
+          "lane_contradicted"
+        ]
+      },
+      "formulas": [
+        "INELIGIBLE-EXPOSURE"
+      ],
+      "guard": {
+        "exposure_fact": [
+          "lane_contradicted"
+        ]
+      },
+      "id": "X-EXPOSURE-11",
+      "outputs": [
+        {
+          "fields": [
+            "low",
+            "high"
+          ],
+          "type_id": "Exposure",
+          "variant": "pi_api"
+        }
+      ],
+      "partition": "X-EXPOSURE",
+      "reads": [
+        "C",
+        "S",
+        "V",
+        "F"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "X",
+      "text": "Apply exact X-TABLE row and FB invariants; K never feeds money."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "predicate": [
+          "true",
+          "false"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "predicate": [
+          "true"
+        ]
+      },
+      "id": "K-FINDINGS-1",
+      "outputs": [],
+      "partition": "K-FINDINGS",
+      "reads": [
+        "C",
+        "S",
+        "V",
+        "F",
+        "X"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "K",
+      "text": "Emit each applicable CLASSIFICATION finding with evidence and scope; no financial feedback."
+    },
+    {
+      "depends": [],
+      "dimensions": {
+        "predicate": [
+          "true",
+          "false"
+        ]
+      },
+      "formulas": [],
+      "guard": {
+        "predicate": [
+          "false"
+        ]
+      },
+      "id": "K-FINDINGS-2",
+      "outputs": [],
+      "partition": "K-FINDINGS",
+      "reads": [
+        "C",
+        "S",
+        "V",
+        "F",
+        "X"
+      ],
+      "refs": [
+        "POLICY-R6"
+      ],
+      "revision": 1,
+      "stage": "K",
+      "text": "Do not emit inapplicable finding."
+    }
+  ],
+  "schema_version": "pi-accounting-spec/1",
+  "stages": [
+    {
+      "id": "E",
+      "outputs": [
+        "typed_evidence"
+      ],
+      "reads": [],
+      "revision": 1
+    },
+    {
+      "id": "C",
+      "outputs": [
+        "groups",
+        "raw_identity",
+        "lane",
+        "reservations"
+      ],
+      "reads": [
+        "E"
+      ],
+      "revision": 1
+    },
+    {
+      "id": "S",
+      "outputs": [
+        "decision",
+        "temporal_obligation",
+        "execution",
+        "forwarding"
+      ],
+      "reads": [
+        "C"
+      ],
+      "revision": 1
+    },
+    {
+      "id": "V",
+      "outputs": [
+        "valuation"
+      ],
+      "reads": [
+        "C"
+      ],
+      "revision": 1
+    },
+    {
+      "id": "F",
+      "outputs": [
+        "replacement",
+        "obligation"
+      ],
+      "reads": [
+        "C",
+        "S",
+        "V"
+      ],
+      "revision": 1
+    },
+    {
+      "id": "X",
+      "outputs": [
+        "exposure",
+        "billing"
+      ],
+      "reads": [
+        "C",
+        "S",
+        "V",
+        "F"
+      ],
+      "revision": 1
+    },
+    {
+      "id": "K",
+      "outputs": [
+        "blocking",
+        "diagnostics"
+      ],
+      "reads": [
+        "C",
+        "S",
+        "V",
+        "F",
+        "X"
+      ],
+      "revision": 1
+    }
+  ],
+  "types": [
+    {
+      "id": "Field",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {
+            "value": "Json"
+          },
+          "name": "present"
+        },
+        {
+          "fields": {},
+          "name": "null"
+        },
+        {
+          "fields": {},
+          "name": "absent"
+        },
+        {
+          "fields": {
+            "json_type": "String",
+            "raw": "Json"
+          },
+          "name": "malformed"
+        }
+      ]
+    },
+    {
+      "id": "Model",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {
+            "family": "ProviderFamily",
+            "model_id": "String"
+          },
+          "name": "model"
+        }
+      ]
+    },
+    {
+      "id": "Bound",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {
+            "basis": "String",
+            "evidence": "List<String>",
+            "nano": "Nano"
+          },
+          "name": "bound"
+        }
+      ]
+    },
+    {
+      "id": "High",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {
+            "bound": "Bound"
+          },
+          "name": "exact"
+        },
+        {
+          "fields": {
+            "bound": "Bound"
+          },
+          "name": "at_least"
+        }
+      ]
+    },
+    {
+      "id": "Replacement",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {
+            "reason": "String"
+          },
+          "name": "eligible"
+        },
+        {
+          "fields": {
+            "reason": "String"
+          },
+          "name": "ineligible"
+        }
+      ]
+    },
+    {
+      "id": "SettlementDecision",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {},
+          "name": "absent"
+        },
+        {
+          "fields": {
+            "basis": "String",
+            "charged": "Nano",
+            "settlement": "String"
+          },
+          "name": "valid"
+        },
+        {
+          "fields": {
+            "claimed": "List<Nano>",
+            "reasons": "List<RejectReason>"
+          },
+          "name": "rejected"
+        },
+        {
+          "fields": {
+            "claimed": "List<Nano>",
+            "settlements": "List<String>"
+          },
+          "name": "conflicting"
+        },
+        {
+          "fields": {},
+          "name": "not_applicable"
+        }
+      ]
+    },
+    {
+      "id": "TemporalObligation",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {},
+          "name": "outstanding"
+        },
+        {
+          "fields": {
+            "by": "String"
+          },
+          "name": "closed"
+        },
+        {
+          "fields": {
+            "cause": "String"
+          },
+          "name": "none"
+        }
+      ]
+    },
+    {
+      "id": "Obligation",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {
+            "amount_source": "AmountSource"
+          },
+          "name": "outstanding"
+        },
+        {
+          "fields": {
+            "amount_source": "AmountSource",
+            "by": "String"
+          },
+          "name": "closed"
+        },
+        {
+          "fields": {
+            "amount_source": "AmountSource",
+            "cause": "NoneCause"
+          },
+          "name": "none"
+        }
+      ]
+    },
+    {
+      "id": "Valuation",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {},
+          "name": "not_reported"
+        },
+        {
+          "fields": {
+            "complete": "Bool",
+            "high": "Bound",
+            "identities": "List<String>",
+            "low": "Bound",
+            "splits": "List<Json>"
+          },
+          "name": "valued"
+        },
+        {
+          "fields": {
+            "priced_high": "Option<Bound>",
+            "reasons": "List<UnpriceableReason>",
+            "supported_low": "Option<Bound>"
+          },
+          "name": "unpriceable"
+        }
+      ]
+    },
+    {
+      "id": "Exposure",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {
+            "high": "High",
+            "low": "Bound"
+          },
+          "name": "pi_api"
+        },
+        {
+          "fields": {
+            "billing": "String"
+          },
+          "name": "codex"
+        }
+      ]
+    },
+    {
+      "id": "Correlation",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {
+            "auxiliary": "List<Json>"
+          },
+          "name": "exact"
+        },
+        {
+          "fields": {
+            "auxiliary": "List<Json>",
+            "candidates": "List<String>"
+          },
+          "name": "ambiguous"
+        },
+        {
+          "fields": {
+            "auxiliary": "List<Json>"
+          },
+          "name": "unattributed"
+        }
+      ]
+    },
+    {
+      "id": "GateVerification",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {},
+          "name": "unverified"
+        },
+        {
+          "fields": {
+            "reasons": "List<String>"
+          },
+          "name": "rejected"
+        },
+        {
+          "fields": {
+            "authority_id": "String",
+            "payload_digest": "String",
+            "provenance": "String",
+            "trust_policy_ref": "String",
+            "verification_evidence": "String",
+            "verifier_identity": "String",
+            "verifier_version": "String"
+          },
+          "name": "verified"
+        }
+      ]
+    },
+    {
+      "id": "ProviderFamily",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {},
+          "name": "openai"
+        },
+        {
+          "fields": {},
+          "name": "anthropic"
+        }
+      ]
+    },
+    {
+      "id": "AmountSource",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {},
+          "name": "settlement_amount"
+        },
+        {
+          "fields": {},
+          "name": "reservation_confirmed"
+        },
+        {
+          "fields": {},
+          "name": "reservation_bound"
+        },
+        {
+          "fields": {},
+          "name": "none"
+        }
+      ]
+    },
+    {
+      "id": "NoneCause",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {},
+          "name": "unbudgeted"
+        },
+        {
+          "fields": {},
+          "name": "no_reservation"
+        },
+        {
+          "fields": {},
+          "name": "orphan"
+        },
+        {
+          "fields": {},
+          "name": "subscription"
+        }
+      ]
+    },
+    {
+      "id": "Basis",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {},
+          "name": "usage"
+        },
+        {
+          "fields": {},
+          "name": "reservation"
+        },
+        {
+          "fields": {},
+          "name": "upstream_error"
+        },
+        {
+          "fields": {},
+          "name": "error_status"
+        }
+      ]
+    },
+    {
+      "id": "RejectReason",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {},
+          "name": "ReservationConflict"
+        },
+        {
+          "fields": {},
+          "name": "NoReservation"
+        },
+        {
+          "fields": {},
+          "name": "Order"
+        },
+        {
+          "fields": {},
+          "name": "AttemptNumber"
+        },
+        {
+          "fields": {},
+          "name": "AmountType"
+        },
+        {
+          "fields": {},
+          "name": "ReservedMismatch"
+        },
+        {
+          "fields": {},
+          "name": "BasisMissing"
+        },
+        {
+          "fields": {},
+          "name": "BasisUnknown"
+        },
+        {
+          "fields": {},
+          "name": "KeepAll"
+        },
+        {
+          "fields": {},
+          "name": "StatusType"
+        },
+        {
+          "fields": {},
+          "name": "ErrorCharge"
+        },
+        {
+          "fields": {},
+          "name": "UsageUnpriceable"
+        },
+        {
+          "fields": {},
+          "name": "ModelMismatch"
+        },
+        {
+          "fields": {},
+          "name": "ToleranceRange"
+        },
+        {
+          "fields": {},
+          "name": "Undercharge"
+        }
+      ]
+    },
+    {
+      "id": "UnpriceableReason",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {},
+          "name": "IdentityWithoutRate"
+        },
+        {
+          "fields": {},
+          "name": "ModelUnresolved"
+        },
+        {
+          "fields": {},
+          "name": "TierUnestablished(Missing)"
+        },
+        {
+          "fields": {},
+          "name": "TierUnestablished(Unrecognised)"
+        },
+        {
+          "fields": {},
+          "name": "NonStandardTier"
+        },
+        {
+          "fields": {},
+          "name": "MalformedTier"
+        },
+        {
+          "fields": {
+            "field": "String"
+          },
+          "name": "MalformedCount"
+        },
+        {
+          "fields": {
+            "field": "String"
+          },
+          "name": "MissingCount"
+        },
+        {
+          "fields": {},
+          "name": "UsageSchemaMismatch"
+        },
+        {
+          "fields": {},
+          "name": "UsageShape"
+        },
+        {
+          "fields": {},
+          "name": "UnknownUsageSchema"
+        },
+        {
+          "fields": {},
+          "name": "RateTableUnusable"
+        }
+      ]
+    },
+    {
+      "id": "UsagePresence",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {},
+          "name": "not_reported"
+        },
+        {
+          "fields": {},
+          "name": "reported"
+        },
+        {
+          "fields": {},
+          "name": "unpriceable"
+        }
+      ]
+    },
+    {
+      "id": "FieldCount",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {
+            "value": "U64"
+          },
+          "name": "present"
+        },
+        {
+          "fields": {},
+          "name": "null"
+        },
+        {
+          "fields": {},
+          "name": "absent"
+        },
+        {
+          "fields": {
+            "json_type": "String",
+            "raw": "Json"
+          },
+          "name": "malformed"
+        }
+      ]
+    },
+    {
+      "id": "Usage",
+      "revision": 1,
+      "variants": [
+        {
+          "fields": {
+            "cache_write_tokens": "FieldCount",
+            "cached_tokens": "FieldCount",
+            "input_tokens": "FieldCount",
+            "output_tokens": "FieldCount",
+            "reasoning_tokens": "FieldCount"
+          },
+          "name": "openai"
+        },
+        {
+          "fields": {
+            "cache_creation_input_tokens": "FieldCount",
+            "cache_read_input_tokens": "FieldCount",
+            "ephemeral_1h_input_tokens": "FieldCount",
+            "ephemeral_5m_input_tokens": "FieldCount",
+            "input_tokens": "FieldCount",
+            "output_tokens": "FieldCount"
+          },
+          "name": "anthropic"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "nodes": "contract",
+      "path": "contract/CK-GENERATED.md"
+    },
+    {
+      "nodes": "transitions",
+      "path": "contract/TRANSITIONS.md"
+    },
+    {
+      "nodes": "schema",
+      "path": "corpus/SCHEMA.md"
+    }
+  ]
+}

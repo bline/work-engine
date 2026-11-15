@@ -1,0 +1,108 @@
+{
+  "events": [
+    {
+      "authority": "observation_only",
+      "kind": "limit_fraction",
+      "level": 50.0,
+      "node_id": null,
+      "observed": {
+        "api_equivalent_usd_high": 59.85001039999996,
+        "api_equivalent_usd_low": 59.85001039999996,
+        "cost_basis": "speed_adjusted_api_usd",
+        "kind": "proxy",
+        "quota_usd_high": 59.85001039999996,
+        "quota_usd_low": 59.85001039999996,
+        "unpriced_calls": 0
+      },
+      "pool": "codex",
+      "set_by": "user",
+      "snapshot_at": "2026-11-14T05:45:09.988117+00:00",
+      "summary": "spend limit",
+      "topic": "control:budget:de8667b6-b096-4483-8c6e-b94c39a9aa16"
+    },
+    {
+      "authority": "observation_only",
+      "kind": "node_mark_crossed",
+      "level": 6.0,
+      "node_id": "01a1d87b-01de-7631-9623-0ab1026eba5d",
+      "observed": {
+        "api_equivalent_usd_high": 9.137092,
+        "api_equivalent_usd_low": 9.137092,
+        "cost_basis": "speed_adjusted_api_usd",
+        "kind": "proxy",
+        "quota_usd_high": 9.137092,
+        "quota_usd_low": 9.137092,
+        "unpriced_calls": 0
+      },
+      "pool": "codex",
+      "set_by": "supervisor",
+      "snapshot_at": "2026-11-14T05:45:09.988117+00:00",
+      "summary": "spend mark",
+      "topic": "control:budget:de8667b6-b096-4483-8c6e-b94c39a9aa16"
+    },
+    {
+      "authority": "observation_only",
+      "kind": "node_mark_crossed",
+      "level": 8.0,
+      "node_id": "01a1d87b-01de-7631-9623-0ab1026eba5d",
+      "observed": {
+        "api_equivalent_usd_high": 9.137092,
+        "api_equivalent_usd_low": 9.137092,
+        "cost_basis": "speed_adjusted_api_usd",
+        "kind": "proxy",
+        "quota_usd_high": 9.137092,
+        "quota_usd_low": 9.137092,
+        "unpriced_calls": 0
+      },
+      "pool": "codex",
+      "set_by": "supervisor",
+      "snapshot_at": "2026-11-14T05:45:09.988117+00:00",
+      "summary": "spend mark",
+      "topic": "control:budget:de8667b6-b096-4483-8c6e-b94c39a9aa16"
+    },
+    {
+      "authority": "observation_only",
+      "kind": "node_mark_crossed",
+      "level": 4.0,
+      "node_id": "01a1d890-d020-74a0-a7d5-ed4a2902dd2f",
+      "observed": {
+        "api_equivalent_usd_high": 4.10511,
+        "api_equivalent_usd_low": 4.10511,
+        "cost_basis": "speed_adjusted_api_usd",
+        "kind": "proxy",
+        "quota_usd_high": 4.10511,
+        "quota_usd_low": 4.10511,
+        "unpriced_calls": 0
+      },
+      "pool": "codex",
+      "set_by": "supervisor",
+      "snapshot_at": "2026-11-14T05:45:09.988117+00:00",
+      "summary": "spend mark",
+      "topic": "control:budget:de8667b6-b096-4483-8c6e-b94c39a9aa16"
+    },
+    {
+      "authority": "observation_only",
+      "kind": "mark_crossed",
+      "level": 60.0,
+      "node_id": null,
+      "observed": {
+        "api_equivalent_usd_high": 60.16776079999996,
+        "api_equivalent_usd_low": 60.16776079999996,
+        "cost_basis": "speed_adjusted_api_usd",
+        "kind": "proxy",
+        "quota_usd_high": 60.16776079999996,
+        "quota_usd_low": 60.16776079999996,
+        "unpriced_calls": 0
+      },
+      "pool": "codex",
+      "set_by": "user",
+      "snapshot_at": "2026-11-14T05:46:10.134687+00:00",
+      "summary": "spend mark",
+      "topic": "control:budget:de8667b6-b096-4483-8c6e-b94c39a9aa16"
+    }
+  ],
+  "batches": 2,
+  "binding": "epoch9; 185000/220000; session source unchanged",
+  "collector": "root exec98549",
+  "disposition": "Historical A2a marks retained, user60mark informative, C1 node4mark prompts current-cap reconciliation; context warning requires immediate preparation"
+}

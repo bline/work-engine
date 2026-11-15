@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/joined/validation-plan.json",
+  "plan_sha256": "fcc5f838aa0e0b1c0231b55c309df0782242b2717ab9e3f351f8e576e3a3bfe6",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "joined-rust-tests",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/joined/custody/joined-rust-tests.json",
+      "record_sha256": "3855cc37d210d5ee4b3aa8c0fbe27f258d318ec87536ae9da1308fb60ba0c4b0",
+      "leftovers": 0
+    },
+    {
+      "name": "joined-generated-check",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/joined/custody/joined-generated-check.json",
+      "record_sha256": "208d3b683a4346554550a094b112b42a1ff59d5749ebf50d2a9e1c89925a5c09",
+      "leftovers": 0
+    },
+    {
+      "name": "joined-check",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/joined/custody/joined-check.json",
+      "record_sha256": "c0687424d25844534734453013b5795ddec9081ddc87fabb2fb3e6de9aae5463",
+      "leftovers": 0
+    },
+    {
+      "name": "joined-selftest",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/joined/custody/joined-selftest.json",
+      "record_sha256": "518dbbe23d7636454a986c5563462e212c3bb8bf125cea7fb6af6cf717f7359b",
+      "leftovers": 0
+    },
+    {
+      "name": "joined-revisions",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/joined/custody/joined-revisions.json",
+      "record_sha256": "933deb204fe49c70502ed0374798e8b5b965dc2a670e59361a11bd34de0bd7f6",
+      "leftovers": 0
+    },
+    {
+      "name": "joined-sabotage",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/joined/custody/joined-sabotage.json",
+      "record_sha256": "5c1dcb81ea53bd490163ee7bca7796566368f63a0fcdc8ad759a9480a7199685",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

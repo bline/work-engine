@@ -1,0 +1,42 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "build",
+  "argv": [
+    "cargo",
+    "build",
+    "--offline",
+    "--manifest-path",
+    "tooling/spec-check/Cargo.toml"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-integration",
+    "SPEC_CHECK_BINARY": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-integration/debug/pi-accounting-spec-check"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3090519,
+  "inputs": [],
+  "timeout_s": 600,
+  "pid": 3090634,
+  "pgid": 3090634,
+  "started_at": "2026-11-14T04:20:15.218125Z",
+  "ended_at": "2026-11-14T04:20:17.938243Z",
+  "duration_s": 2.72,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/regression-1/build.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/regression-1/build.stderr",
+    "length": 210,
+    "sha256": "be31741a7315c7a99f7137a2977bf4faaa746ae8b8b0ba1b1da517c37e6da489"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

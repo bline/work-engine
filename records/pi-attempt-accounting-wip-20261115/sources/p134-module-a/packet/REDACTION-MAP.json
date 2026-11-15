@@ -1,0 +1,187 @@
+[
+ {
+  "path": "contract/CONTRACT.md",
+  "source_sha256": "f087d4a238b007efeff2b4b74d0e047b89197ae2b9169d63bd95fe1f7b281839",
+  "derived_sha256": "8c4f89ca102278ef64c009d215abf639682ef83b9f21999bf36af4675e2e3de3",
+  "identical": false,
+  "operations": [
+   {
+    "op": "replace",
+    "old": "(revision 5, P1.33: repairs of the P1.32 Module A findings A-01 to A-09",
+    "new": "(revision 5, P1.33: revision items A-01 to A-09,",
+    "count": 1
+   },
+   {
+    "op": "replace",
+    "old": "and owner dispositions A-01, A-02, A-03, A-06; exact change log in `CHANGELOG-1.4.md`).",
+    "new": "of which A-01, A-02, A-03 and A-06 are owner dispositions; see `DECISION-REGISTER.md`).",
+    "count": 1
+   },
+   {
+    "op": "relabel A-0N -> R5-0N",
+    "count": 25
+   }
+  ]
+ },
+ {
+  "path": "contract/TRANSITIONS.md",
+  "source_sha256": "f30a6b23abd64b6a2d0afa0ff9a59fda0fd63cde2aa3ece66792ebec1280932a",
+  "derived_sha256": "5986fab710155381df802d39ac7b3f1166aeb0b920568247bb91958aad328e33",
+  "identical": false,
+  "operations": [
+   {
+    "op": "relabel A-0N -> R5-0N",
+    "count": 5
+   }
+  ]
+ },
+ {
+  "path": "contract/INVARIANTS.md",
+  "source_sha256": "640da2dbf08313e685bc1f1d5ad6617f63299a07d77f8888d3f08c08c12ec882",
+  "derived_sha256": "749041340c6621066908a0a837a473de769152364dcbb8c9871e8853a469c6a2",
+  "identical": false,
+  "operations": [
+   {
+    "op": "replace",
+    "old": " (P1.32 A-01)",
+    "new": "",
+    "count": 2
+   },
+   {
+    "op": "relabel A-0N -> R5-0N",
+    "count": 5
+   }
+  ]
+ },
+ {
+  "path": "contract/MONEY.md",
+  "source_sha256": "83a6b5f8159264b73587facdad46eafa69a8f172cef98231256aba56a10fc6c4",
+  "derived_sha256": "83a6b5f8159264b73587facdad46eafa69a8f172cef98231256aba56a10fc6c4",
+  "identical": true,
+  "operations": [
+   {
+    "op": "relabel A-0N -> R5-0N",
+    "count": 0
+   }
+  ]
+ },
+ {
+  "path": "contract/RESERVATION-BOUNDS.md",
+  "source_sha256": "ecde0cde26f8abda1842313f4a27d50ab06f685b54930c2f59f4cc79c6d51a36",
+  "derived_sha256": "f0282f1e09214e74d0cab651757aedaf3330229b8f2b470b06cea7cdf2b1ab5c",
+  "identical": false,
+  "operations": [
+   {
+    "op": "relabel A-0N -> R5-0N",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "path": "contract/DECISION-REGISTER.md",
+  "source_sha256": "6856585cb0f88ec2ec5975094eb3bcdcd13e3089e5a75801569e397268f52e2b",
+  "derived_sha256": "2ceeec56b07c34a8fc78ae1da8323581d5897890f8348864052595c7665a6355",
+  "identical": false,
+  "operations": [
+   {
+    "op": "replace",
+    "old": "## P1.33 owner dispositions (revision 5; P1.32 Module A findings)",
+    "new": "## P1.33 owner dispositions (revision 5)",
+    "count": 1
+   },
+   {
+    "op": "replace",
+    "old": "The other Module A findings (A-04, A-05, A-07, A-08, A-09) are repaired as P2 corrections without owner decisions. See",
+    "new": "Revision items A-04, A-05, A-07, A-08 and A-09 are contract changes made without owner decisions. The author's",
+    "count": 1
+   },
+   {
+    "op": "replace",
+    "old": "`CHANGELOG-1.4.md`.",
+    "new": "change log is not part of this review set.",
+    "count": 1
+   },
+   {
+    "op": "relabel A-0N -> R5-0N",
+    "count": 10
+   }
+  ]
+ },
+ {
+  "path": "contract/S2A-ENTRY-CRITERIA.md",
+  "source_sha256": "e4062843e194dc634b0fa6ccca26cb980c1bf16b7891284fd88596d1ee487d75",
+  "derived_sha256": "651dabff59c575bf2f2c0f7d37838950e3c1daca07dd12a43dd0e1b7dfc6e60f",
+  "identical": false,
+  "operations": [
+   {
+    "op": "relabel A-0N -> R5-0N",
+    "count": 8
+   }
+  ]
+ },
+ {
+  "path": "corpus/SCHEMA.md",
+  "source_sha256": "4a19726e854b1508a8e9e7e9f7b8c3151cf274c11ff124364fe6cb0ec685dad7",
+  "derived_sha256": "909f97a071cb59b69b140f71d7c37cc79d049d7847889ae74e49bf9e51fcf4a3",
+  "identical": false,
+  "operations": [
+   {
+    "op": "relabel A-0N -> R5-0N",
+    "count": 2
+   }
+  ]
+ },
+ {
+  "path": "corpus/sample-cases.jsonl",
+  "source_sha256": "f9bfe577a92c776200cded81a32c6bd68a4ba9168c80834678d66f7cf140dc94",
+  "derived_sha256": "e7b5c4f2c2089a076889ca69218fce78913d538ee322a331e47c2dfd3276db04",
+  "identical": false,
+  "operations": [
+   {
+    "op": "drop fields findings+group",
+    "count": 112
+   },
+   {
+    "op": "rewrite origin prefix",
+    "old": "contract::P1.33 Module A repair (from ",
+    "new": "contract::targeted case (from ",
+    "count": 14
+   }
+  ]
+ },
+ {
+  "path": "producer/pi_container.py.excerpts",
+  "source_sha256": "bfd226df9fc1fb8b5395a74490e3c1696273fab08e15d0e4da19b951320bb4b8",
+  "derived_sha256": "bfd226df9fc1fb8b5395a74490e3c1696273fab08e15d0e4da19b951320bb4b8",
+  "identical": true,
+  "operations": []
+ },
+ {
+  "path": "producer/role_host.py.excerpts",
+  "source_sha256": "e71ef49afad8d30068c646e49a81e1c27a8b28e39cb8c507bded3f375d418bbf",
+  "derived_sha256": "e71ef49afad8d30068c646e49a81e1c27a8b28e39cb8c507bded3f375d418bbf",
+  "identical": true,
+  "operations": []
+ },
+ {
+  "path": "producer/scope_budget.py.excerpts",
+  "source_sha256": "48b3868f4f1274815d6a601f95cce99498faf1af844052afaf885d35d1fb0a6e",
+  "derived_sha256": "48b3868f4f1274815d6a601f95cce99498faf1af844052afaf885d35d1fb0a6e",
+  "identical": true,
+  "operations": []
+ },
+ {
+  "path": "producer/openai_api_rates.json",
+  "source_sha256": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58",
+  "derived_sha256": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58",
+  "identical": true,
+  "operations": []
+ },
+ {
+  "path": "producer/anthropic_api_rates.json",
+  "source_sha256": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+  "derived_sha256": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+  "identical": true,
+  "operations": []
+ }
+]

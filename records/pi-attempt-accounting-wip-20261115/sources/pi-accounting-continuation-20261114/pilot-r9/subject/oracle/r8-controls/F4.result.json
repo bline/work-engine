@@ -1,0 +1,34 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "proxy_reservation",
+      "kind": "at_least",
+      "nano": "500000000"
+    },
+    "low": "15000000"
+  },
+  "coverage": [
+    {
+      "id": "subset",
+      "reason": "not whole-unit complete",
+      "status": "rejected"
+    }
+  ],
+  "id": "result:F4",
+  "units": [
+    {
+      "high": {
+        "basis": "proxy_reservation",
+        "kind": "at_least",
+        "nano": "500000000"
+      },
+      "id": "hold:r+s+C",
+      "low": "15000000",
+      "origins": [
+        "chargeC",
+        "r",
+        "s"
+      ]
+    }
+  ]
+}

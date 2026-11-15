@@ -1,0 +1,10 @@
+{
+  "line": 611,
+  "timestamp": "2026-11-14T08:46:38.929Z",
+  "model": "gpt-6-astra",
+  "effort": "xhigh",
+  "approval_policy": "never",
+  "sandbox_policy": {
+    "type": "read-only"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "schema": "pi-accounting-finite-completion/1",
+  "case_count_required": 175,
+  "scope_count_required": 374,
+  "authored_claims": 374,
+  "prior24_claims": "preserved byte-equivalent JSON records; expected values unchanged",
+  "partitions": {
+    "A": {
+      "cases": 69,
+      "scopes": 150
+    },
+    "B": {
+      "cases": 106,
+      "scopes": 224
+    }
+  },
+  "joined_gate": {
+    "status": "PASS",
+    "custody": "completion/integration/join-2/summary.json",
+    "sha256": "d3b62db1aae591ee22f552eba79891b0f0c9fd48daa1011f5ca673f1f26ff1a4",
+    "cases": 175,
+    "scopes": 374,
+    "required_unmet": 0,
+    "root_current_binding_sha256": "70ab0b7da7703941db527d01c8b1937efa741ae0d71689af9736eb574bcc963f",
+    "qualification": "finite supplied references and independent low/membership assertions only; Python raw-high checks plus existing independent arithmetic axes and22named finite controls; full arbitrary raw conformance/executable confluence/live grant truth unestablished; S1 acceptance pending root review"
+  },
+  "raw_inputs": "historical case.inputs and raw bytes retained; scope assertions bind canonical input digests",
+  "shards": [
+    "oracle/r8-completion-A/LOW-ASSERTIONS.json",
+    "oracle/r8-completion-B/LOW-ASSERTIONS.json"
+  ],
+  "interface": "completion/INTERFACE.json external to subject",
+  "limits": "supplied finite declarations and independently authored literal assertions; no arbitrary reducer, executable discovery confluence, external/live grant truth or S1 acceptance"
+}

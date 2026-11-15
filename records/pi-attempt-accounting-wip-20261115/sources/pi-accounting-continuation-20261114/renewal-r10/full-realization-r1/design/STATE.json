@@ -1,0 +1,43 @@
+{
+  "phase": "WHOLEFINAL_FULLCOLLECTED_FULLREAD_SUPPORT_BOUNDED_DESIGN",
+  "root": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "plan_sha256": "d1e93793052f2c07397654d10cca2188e0fad1f06c920c5d9dcfc139a4563741",
+  "requested": {
+    "model": "gpt-6-astra",
+    "effort": "xhigh",
+    "tier": "default",
+    "filesystem": "read-only",
+    "approval": "never"
+  },
+  "design_cap": 4,
+  "same_human_cap": 100,
+  "full_S1": "OPEN",
+  "native_final_owed": false,
+  "collector": "root sole native/process collector",
+  "budget": "control/postrefresh13-budget.json COMPLETE61.8133136/100remaining38.1866864/account17",
+  "reviewer": "01a1d984-42de-7000-9c59-b3e8b2a7e094",
+  "startup_turn": "01a1d984-4342-7d40-a549-1857a64ed887",
+  "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T03-04-46-01a1d984-42de-7000-9c59-b3e8b2a7e094.jsonl",
+  "packet_sha256": "22e228c777cbe66970d1abb8986366d0929f0db5ebef8b0f1a58e18f8795e6b5",
+  "actual": "verifiedapplied78 Astraxhighdefaultreadonlyrestrictednever",
+  "claim": "c164e847-a724-49ca-b6f4-ac5533d5a73b",
+  "startup_final_sha256": "e1bb9b5d7becf608b88413c48409dab1237f581babc6ab5ca627cb5f497c1948",
+  "context": {
+    "input": 68875,
+    "epoch": 0,
+    "growth": 90000,
+    "forecast": 158875,
+    "decision": "retain startupcontext pending budget resolution; fits185000prepare and220000refresh",
+    "source": "PRE-ADMISSION-CONTEXT.json",
+    "observation": "root-owned27185 lackedmeasuredinitial; exactchild3788460SIGINT130wrapper130FULLCOLLECTED; no active childlistener; own explicitphasechecks fallback required"
+  },
+  "state": "COMPLETE",
+  "turn": "01a1d98b-3218-7db0-abcf-b1e99afb7fac",
+  "identity_ack": "ACK in whole8506char final",
+  "explicit_context": "POSTRECOVERY-ADMISSION-CONTEXT.json",
+  "observedsettings": "SUBSTANTIVE-OBSERVED-SETTINGS.json",
+  "review_final": "REVIEW-FINAL-1.md",
+  "review_sha256": "8c3da9d6ab2559ebd289d744b09acb1a7ce57ad07921a65bbb896eacaeb1ac44",
+  "ack_final": "REVIEW-FINAL-2.md",
+  "no_live_processes": true
+}

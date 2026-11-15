@@ -1,0 +1,10 @@
+{
+  "session": "01a1d919-2544-7fb2-befe-00237c74ced2",
+  "turn": "01a1d925-d0bd-71b3-9bc3-89b73ae61068",
+  "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T01-07-46-01a1d919-2544-7fb2-befe-00237c74ced2.jsonl",
+  "source_line": 448,
+  "timestamp": "2026-11-14T08:25:34.971Z",
+  "whole_native_final_chars": 5921,
+  "report_sha256": "e0fa663de7e207c8fd016697b07508a46ccefce12f9ee2a20045d3a65c0f5094",
+  "collector": "root"
+}

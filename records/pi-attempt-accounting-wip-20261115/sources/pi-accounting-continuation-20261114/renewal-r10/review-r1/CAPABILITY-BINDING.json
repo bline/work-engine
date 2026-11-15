@@ -1,0 +1,43 @@
+{
+  "turn_id": "01a1d8ee-1b10-7261-86ae-1fbcf49428b3",
+  "root_turn_id": "01a1d8ee-1b10-7261-86ae-1fbcf49428b3",
+  "disabled_plugin_ids": [],
+  "cwd": "/home/bline/code/work-engine",
+  "approval_policy": "never",
+  "approvals_reviewer": "user",
+  "permission_profile": {
+    "type": "managed",
+    "file_system": {
+      "type": "restricted",
+      "entries": [
+        {
+          "path": {
+            "type": "special",
+            "value": {
+              "kind": "root"
+            }
+          },
+          "access": "read"
+        }
+      ]
+    },
+    "network": "restricted"
+  },
+  "model": "gpt-6-astra",
+  "comp_hash": "3000",
+  "collaboration_mode": {
+    "mode": "default",
+    "settings": {
+      "model": "gpt-6-astra",
+      "reasoning_effort": "xhigh",
+      "developer_instructions": null
+    }
+  },
+  "multi_agent_version": "v2",
+  "realtime_active": false,
+  "effort": "xhigh",
+  "summary": "none",
+  "sandbox_policy": {
+    "type": "read-only"
+  }
+}

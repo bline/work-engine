@@ -1,0 +1,35 @@
+{
+  "schema": "manual-orchestration-context-check-v1",
+  "checked_at": "2026-11-14T09:20:01.301869+00:00",
+  "session_id": "01a1d8ee-19cd-7e12-ad6c-73356f2366a4",
+  "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T00-20-45-01a1d8ee-19cd-7e12-ad6c-73356f2366a4.jsonl",
+  "next_task_tokens": 65000,
+  "next_task_basis": "parent estimate",
+  "observed_at": "2026-11-14T08:52:50.336Z",
+  "freshness": "stale_file_modification",
+  "recorded_model": "gpt-6-astra",
+  "recorded_effort": "xhigh",
+  "input_tokens": 169446,
+  "context_window_tokens": 258400,
+  "epoch": 2,
+  "compaction_markers": 2,
+  "lineage": [
+    "compaction marker at line 300",
+    "compaction marker at line 531"
+  ],
+  "limitations": [
+    "file recency does not establish active-session identity or current in-memory context"
+  ],
+  "status": "observed",
+  "levels_basis": "tokens",
+  "trigger_tokens": 185000,
+  "band_floor_tokens": 220000,
+  "headroom_to_trigger": 15554,
+  "headroom_to_band_floor": 50554,
+  "fraction_of_window": 0.6558,
+  "recommendation": "fresh",
+  "reasons": [
+    "input plus estimated next task (169446 + 65000) reaches the band floor 220000",
+    "session has compacted 2 time(s): the low reading is real, but earlier pressure is not erased and retained context holds only what its continuation kept"
+  ]
+}

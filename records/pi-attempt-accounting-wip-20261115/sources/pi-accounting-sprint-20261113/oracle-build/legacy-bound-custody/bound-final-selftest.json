@@ -1,0 +1,68 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "bound-final-selftest",
+  "argv": [
+    "python3",
+    "validator/validate_corpus.py",
+    "selftest",
+    "corpus",
+    "oracle/rates"
+  ],
+  "cwd": "/home/bline/cbm-work/p136-s1r6/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 2502574,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/p136-s1r6/s1/validator/validate_corpus.py",
+      "type": "file",
+      "mode": 436,
+      "length": 88495,
+      "sha256": "f9f66e9f0044843f2142e0a4d372f1865e958d416e6fd3c65014367cc3578c8f"
+    },
+    {
+      "path": "/home/bline/cbm-work/p136-s1r6/s1/validator/sabotage_test.py",
+      "type": "file",
+      "mode": 436,
+      "length": 31293,
+      "sha256": "647930560ee9531036829ca94cccecad2980547e41a7c90702774262708f0cd2"
+    },
+    {
+      "path": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/R6-C01-writer-reservation-floor-control.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7014,
+      "sha256": "08058cfbbb4b8d233eca62e2337df05a7a01ae7cbe218ff84e8b75dfefc25b9d"
+    },
+    {
+      "path": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/R6-C02-non200-success-terminal-usage-control.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6987,
+      "sha256": "ff21cad7455ad3e8c7e38755c0f59cd118ba436b79e41b83982895a6008df848"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 2502798,
+  "pgid": 2502798,
+  "started_at": "2026-11-13T22:48:53.239835Z",
+  "ended_at": "2026-11-13T22:49:01.087996Z",
+  "duration_s": 7.848,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/legacy-bound-custody/bound-final-selftest.stdout",
+    "length": 5516,
+    "sha256": "6ada786144247c63d863e8fc51a41d8ddccde37e58355ce76c10b9f8c9fb671d"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/legacy-bound-custody/bound-final-selftest.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

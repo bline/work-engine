@@ -1,0 +1,62 @@
+[
+  {
+    "resource": "campaign/pi-accounting-s1",
+    "claim_id": "b9d52dd6-b3c9-41bd-8295-319edbbcb8f7",
+    "exit": 0,
+    "result": {
+      "revision": "01290f76a291917fec02fcf2739c8b701d6f4e2a",
+      "resource": "campaign/pi-accounting-s1",
+      "released": true
+    }
+  },
+  {
+    "resource": "review/pi-accounting-s1-design-r7",
+    "claim_id": "09dd868b-d32b-4c4e-a0f1-318ed11e91ce",
+    "exit": 0,
+    "result": {
+      "revision": "721242dda70f92b0ca397da85c50ccbe9a2c2898",
+      "resource": "review/pi-accounting-s1-design-r7",
+      "released": true
+    }
+  },
+  {
+    "resource": "review/pi-accounting-s1-r8",
+    "claim_id": "f03ba7da-ddb5-456f-996c-e60f8b64cc6c",
+    "exit": 0,
+    "result": {
+      "revision": "8ee28271a5d184e155ce213b6f3a81955a055f44",
+      "resource": "review/pi-accounting-s1-r8",
+      "released": true
+    }
+  },
+  {
+    "resource": "review/pi-accounting-s1-r9-review",
+    "claim_id": "1ac6980b-bb53-434e-ae35-fb1c4cb57cb2",
+    "exit": 0,
+    "result": {
+      "revision": "8684b50eaa7633efb5973d60d8f96a63bd1b5b9b",
+      "resource": "review/pi-accounting-s1-r9-review",
+      "released": true
+    }
+  },
+  {
+    "resource": "source/pi-accounting-s1-r8",
+    "claim_id": "6d4c18a2-9bd5-4f3f-9b84-4e4655bfa59e",
+    "exit": 0,
+    "result": {
+      "revision": "a37196744bd4f5daf7e29de6be04885b48a5b05e",
+      "resource": "source/pi-accounting-s1-r8",
+      "released": true
+    }
+  },
+  {
+    "resource": "source/pi-accounting-s1-r9-pilot",
+    "claim_id": "377b6b74-1dd2-4ddd-ae22-cbcfa2235b92",
+    "exit": 0,
+    "result": {
+      "revision": "074a645ec34385119bf557201177bf89740cb998",
+      "resource": "source/pi-accounting-s1-r9-pilot",
+      "released": true
+    }
+  }
+]

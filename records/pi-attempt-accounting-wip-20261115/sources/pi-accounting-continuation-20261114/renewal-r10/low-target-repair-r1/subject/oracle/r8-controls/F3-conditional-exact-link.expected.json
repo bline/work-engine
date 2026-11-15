@@ -1,0 +1,250 @@
+{
+  "assertions": [
+    {
+      "claim_id": "F3-conditional-exact-link",
+      "expected_fields_or_relations": {
+        "/aggregate": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "low": "15000000"
+        },
+        "/candidates": [
+          [
+            "request:2",
+            "request:2"
+          ]
+        ],
+        "/coverage": [
+          {
+            "id": "F:exact12",
+            "links": [
+              "fixture:VC07-exact-link"
+            ],
+            "origins": [
+              "request:2",
+              "stream-error:1"
+            ]
+          }
+        ],
+        "/credits": {
+          "alternatives": [
+            "request:2"
+          ],
+          "mode": "single_ambiguous",
+          "selected_low": "15000000",
+          "slots": []
+        },
+        "/definite_links": [
+          [
+            "stream-error:1",
+            "request:2",
+            "fixture:VC07-exact-link"
+          ]
+        ],
+        "/route_snapshots/A-first/aggregate": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "low": "15000000"
+        },
+        "/route_snapshots/A-first/candidates": [
+          [
+            "request:2",
+            "request:2"
+          ]
+        ],
+        "/route_snapshots/A-first/coverage": [
+          {
+            "id": "F:exact12",
+            "links": [
+              "fixture:VC07-exact-link"
+            ],
+            "origins": [
+              "request:2",
+              "stream-error:1"
+            ]
+          }
+        ],
+        "/route_snapshots/A-first/credits": {
+          "alternatives": [
+            "request:2"
+          ],
+          "mode": "single_ambiguous",
+          "selected_low": "15000000",
+          "slots": []
+        },
+        "/route_snapshots/A-first/definite_links": [
+          [
+            "stream-error:1",
+            "request:2",
+            "fixture:VC07-exact-link"
+          ]
+        ],
+        "/route_snapshots/A-first/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "exact",
+              "nano": "15000000"
+            },
+            "id": "covered:1+2",
+            "low": "15000000",
+            "origins": [
+              "request:2",
+              "stream-error:1"
+            ]
+          }
+        ],
+        "/route_snapshots/B-first/aggregate": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "low": "15000000"
+        },
+        "/route_snapshots/B-first/candidates": [
+          [
+            "request:2",
+            "request:2"
+          ]
+        ],
+        "/route_snapshots/B-first/coverage": [
+          {
+            "id": "F:exact12",
+            "links": [
+              "fixture:VC07-exact-link"
+            ],
+            "origins": [
+              "request:2",
+              "stream-error:1"
+            ]
+          }
+        ],
+        "/route_snapshots/B-first/credits": {
+          "alternatives": [
+            "request:2"
+          ],
+          "mode": "single_ambiguous",
+          "selected_low": "15000000",
+          "slots": []
+        },
+        "/route_snapshots/B-first/definite_links": [
+          [
+            "stream-error:1",
+            "request:2",
+            "fixture:VC07-exact-link"
+          ]
+        ],
+        "/route_snapshots/B-first/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "exact",
+              "nano": "15000000"
+            },
+            "id": "covered:1+2",
+            "low": "15000000",
+            "origins": [
+              "request:2",
+              "stream-error:1"
+            ]
+          }
+        ],
+        "/route_snapshots/all-at-once/aggregate": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "15000000"
+          },
+          "low": "15000000"
+        },
+        "/route_snapshots/all-at-once/candidates": [
+          [
+            "request:2",
+            "request:2"
+          ]
+        ],
+        "/route_snapshots/all-at-once/coverage": [
+          {
+            "id": "F:exact12",
+            "links": [
+              "fixture:VC07-exact-link"
+            ],
+            "origins": [
+              "request:2",
+              "stream-error:1"
+            ]
+          }
+        ],
+        "/route_snapshots/all-at-once/credits": {
+          "alternatives": [
+            "request:2"
+          ],
+          "mode": "single_ambiguous",
+          "selected_low": "15000000",
+          "slots": []
+        },
+        "/route_snapshots/all-at-once/definite_links": [
+          [
+            "stream-error:1",
+            "request:2",
+            "fixture:VC07-exact-link"
+          ]
+        ],
+        "/route_snapshots/all-at-once/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "exact",
+              "nano": "15000000"
+            },
+            "id": "covered:1+2",
+            "low": "15000000",
+            "origins": [
+              "request:2",
+              "stream-error:1"
+            ]
+          }
+        ],
+        "/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "exact",
+              "nano": "15000000"
+            },
+            "id": "covered:1+2",
+            "low": "15000000",
+            "origins": [
+              "request:2",
+              "stream-error:1"
+            ]
+          }
+        ]
+      },
+      "negative_control_refs": [
+        "F3-conditional-exact-link.wrong.json"
+      ],
+      "raw_derivation_refs": [
+        "PLAN4/6/8: separate conditional exact row payload covers both origins; no live admission"
+      ]
+    }
+  ],
+  "authored_by": "oracle01a1d81b; fixed literal assertions separately from supplied records",
+  "exact_subject_refs": [
+    "result:F3-conditional-exact-link"
+  ],
+  "id": "expected:F3-conditional-exact-link",
+  "kind": "accounting_expected_assertion",
+  "policy_refs": [
+    "PLAN43d0e7c8"
+  ],
+  "raw_subject_ref": "sha256:7b0143ed4d1b39d51293caa0fddf7e8cb46e0fac30f30a5f8fd34316b2e089d1",
+  "version": "1.7-s1"
+}

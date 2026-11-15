@@ -1,0 +1,23 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/validation-plan.json",
+  "plan_sha256": "6bfe5d97e04c9a0affcf79de5cdbebf314f76898c6efdf09f469b07179d4a6fe",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "joined-rust-tests",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/custody/joined-rust-tests.json",
+      "record_sha256": "439bc929595df60bb7440cd041906695976f4e00ad5c0533175e8298b218aa9c",
+      "leftovers": 0
+    },
+    {
+      "name": "joined-generated-check",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/custody/joined-generated-check.json",
+      "record_sha256": "b43f7b8d0291817859f007a087c4244d20d40176db44e4a9e7aea7ef9c0506d6",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

@@ -1,0 +1,19 @@
+{
+  "conditional_harness_assumptions": {
+    "exact_row_coreference": {
+      "authority": "independent synthetic fixture harness; not producer authority",
+      "from": "stream-error:1",
+      "no_omitted_competing_attempt": "assumed explicitly for this synthetic test",
+      "payload_ref": "this exact raw declaration",
+      "recording_extent": "all origins of synthetic request occurrenceA",
+      "source_namespace": "fixture:VC07-exact-link",
+      "to": "request:2"
+    }
+  },
+  "live_standing": "unestablished",
+  "origins": [
+    "stream-error:1",
+    "request:2"
+  ],
+  "raw_case": "VC07-read-failure-paired unchanged"
+}

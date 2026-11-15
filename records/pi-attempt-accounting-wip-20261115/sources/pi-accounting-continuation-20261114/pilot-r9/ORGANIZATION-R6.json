@@ -1,0 +1,28 @@
+{
+  "revision": "R6",
+  "prior": "ORGANIZATION-DECISION-R5.json",
+  "scope": "complete failed joined positive gate within same fourclaim pilot",
+  "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ORACLE-JOIN-PACKET.md",
+  "packet_sha256": "397051d0774972b2debf9638a8d29721713ed4432bb5284ea5cfc50ff54e64cd",
+  "retention": {
+    "worker": "01a1d8a4-d798-7fd1-ae5e-6955ec003480",
+    "observation": "ORACLE-JOIN-CAPACITY.json",
+    "input": 152628,
+    "growth_estimate": 18000,
+    "decision": "retain",
+    "reason": "same exact finite subjects and field/reference completion; estimated170628 below185000 preparation"
+  },
+  "frozen_failed_subject": "freeze/manifest.json:637eeedbe7a52be822e785f8e70ba209a86740d242febdf7c5efa173be21575e",
+  "guard": "No independent implementation review submitted this pilot as complete. These are fail-closed positive integration errors after new declaration, not a claimed financial acceptance or established new serious semantic regression. Preserve history and all11 open findings; no ordinary R8 repair release. Any new policy ambiguity or serious recurring invariant returns to architectural review.",
+  "budget": {
+    "grant": 100,
+    "spent": 67.1816712,
+    "worker_remaining": 4.5733692,
+    "review_reserve": 9,
+    "root_closure": 8,
+    "tail": 2,
+    "forecast": 90.7550404,
+    "deadline": "2026-11-14T06:55:30.192Z"
+  },
+  "created_at": "2026-11-14T06:23:49.170515+00:00"
+}

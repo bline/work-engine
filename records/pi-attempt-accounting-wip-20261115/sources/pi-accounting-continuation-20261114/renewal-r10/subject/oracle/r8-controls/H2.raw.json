@@ -1,0 +1,24 @@
+{
+  "discovery_routes": [
+    [
+      "r->P",
+      "s->P"
+    ],
+    [
+      "s->P",
+      "r->P"
+    ],
+    [
+      "r->P+s->P"
+    ]
+  ],
+  "final_facts": [
+    "r->P",
+    "s->P"
+  ],
+  "policy": "conditional immutable scope S and exact-copy relation; identity refinement never base replacement",
+  "rows": {
+    "r": "reservation500M",
+    "s": "settlement15M incomplete usage"
+  }
+}

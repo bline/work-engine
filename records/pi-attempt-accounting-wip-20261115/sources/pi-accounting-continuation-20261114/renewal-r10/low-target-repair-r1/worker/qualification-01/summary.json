@@ -1,0 +1,39 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/QUALIFICATION.plan.json",
+  "plan_sha256": "37bd9d288a9d565307ddd0bf4f2a3e9f203f3c02883949c3ce13c952019d083f",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "build-evidence",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/qualification-01/build-evidence.json",
+      "record_sha256": "f65bf77d42b11af2499c47542eda4c5195c2cba10c1c71f9a4207299f63063b1",
+      "leftovers": 0
+    },
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/qualification-01/build.json",
+      "record_sha256": "8570a3594371579ddb9cf2a68c504fbb1435f364aff5efc2a400e8fcdbbab02b",
+      "leftovers": 0
+    },
+    {
+      "name": "python-controls",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/qualification-01/python-controls.json",
+      "record_sha256": "8c8a739bc41d8870a3a2ce2a161d359dfe7ca849c7211076acb51f8033834348",
+      "leftovers": 0
+    }
+  ],
+  "not_run": [
+    "rust-positive",
+    "rust-r10-controls",
+    "python-main-pilot",
+    "generated",
+    "impact",
+    "schema_agreement",
+    "wire_corpus",
+    "evidence_controls"
+  ]
+}

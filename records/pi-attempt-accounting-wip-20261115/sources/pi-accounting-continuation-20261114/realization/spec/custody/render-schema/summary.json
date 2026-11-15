@@ -1,0 +1,30 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/validation-plan.json",
+  "plan_sha256": "fa29eb74c9ed4d0903952bad4365ca9ae240ed1f5eb1f11fbe04543fdc1dd006",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "render",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/render-schema/render.json",
+      "record_sha256": "fcbc7542c1ae177961e49c69808eb2595455da152d9566901190a20a4154bd42",
+      "leftovers": 0
+    },
+    {
+      "name": "check",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/render-schema/check.json",
+      "record_sha256": "6e278237d94f77a8e8290e716b874a2a7e879d4dbb6cdd5ddaa54c661f098569",
+      "leftovers": 0
+    },
+    {
+      "name": "schema-agreement",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/spec/custody/render-schema/schema-agreement.json",
+      "record_sha256": "bc2dcea853014a035c91830ee45625c628f15de5ef4f8970f12d21f26cd681af",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

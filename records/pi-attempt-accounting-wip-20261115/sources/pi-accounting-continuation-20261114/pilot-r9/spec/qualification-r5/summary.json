@@ -1,0 +1,93 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification-r5-plan.json",
+  "plan_sha256": "a59855a9d85bc523484791209f936f93ea055b5210e42204cbf97f0b56e24bcf",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification-r5/build.json",
+      "record_sha256": "91a014627c4183fc51aa47883ec8501471c02ee3ff2ec38aa4f5a399c68e3f8f",
+      "leftovers": 0
+    },
+    {
+      "name": "tests",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification-r5/tests.json",
+      "record_sha256": "94eda418a65ab1e202d6f692d5314f551d5a3b30f5175e53ca520d742257ed86",
+      "leftovers": 0
+    },
+    {
+      "name": "render",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification-r5/render.json",
+      "record_sha256": "f7915e07afaef7f914c1c66830b8d542538f1413770ef140780ceab0adba9036",
+      "leftovers": 0
+    },
+    {
+      "name": "generated",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification-r5/generated.json",
+      "record_sha256": "c65ef8893f83e31d63f9b80ac479a678c8586e932a86fe8211378e030cf2e618",
+      "leftovers": 0
+    },
+    {
+      "name": "positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification-r5/positive.json",
+      "record_sha256": "01a99f6c5e064d38c67ee16252264dc17cdbc9dba304849b5401a84b7abce238",
+      "leftovers": 0
+    },
+    {
+      "name": "witness-swap",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification-r5/witness-swap.json",
+      "record_sha256": "f491cc9aca3e2b38b39e89d0619f33f084df0c030a031a6d6eef94b09dbad943",
+      "leftovers": 0
+    },
+    {
+      "name": "redirected-validity",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification-r5/redirected-validity.json",
+      "record_sha256": "885603eacaebef291fb2722785513fb42da36423b0e4d832ebf149385e00dc03",
+      "leftovers": 0
+    },
+    {
+      "name": "self-link",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification-r5/self-link.json",
+      "record_sha256": "ff3241902017c3786fe1bae2fafd4deca5fdf1e6956d7c178433a03c365d40f5",
+      "leftovers": 0
+    },
+    {
+      "name": "uncited-link",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification-r5/uncited-link.json",
+      "record_sha256": "f8f693f1ae98d184768c6468e91500551ac3f0b0b23e5f36ef7c5d11a27d7b8e",
+      "leftovers": 0
+    },
+    {
+      "name": "shared-grant-pair",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification-r5/shared-grant-pair.json",
+      "record_sha256": "50228def1190bdd1c8fcfec0c9ac86363eec3689b4eacedfeb5393c6a8af118c",
+      "leftovers": 0
+    },
+    {
+      "name": "wrongrequest",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification-r5/wrongrequest.json",
+      "record_sha256": "9329639b750b84fe28e005655f5183584787521def3c026de4d0d896a212c210",
+      "leftovers": 0
+    },
+    {
+      "name": "impact",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification-r5/impact.json",
+      "record_sha256": "c4a6941079701f22e3bcfda9cc401641f0250ea1dd6975fd432c5837ab894709",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

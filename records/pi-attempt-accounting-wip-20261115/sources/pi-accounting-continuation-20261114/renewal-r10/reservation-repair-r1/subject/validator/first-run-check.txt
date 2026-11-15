@@ -1,0 +1,5 @@
+FAIL C1-control-before-reference: default: admission admitted != consistent decision refused
+FAIL VC01-openai-usage-settlement: same inputs as N06-control-reported-cache-counts (duplicate)
+FAIL coverage: invariant INV-F8 covered by no case
+FAIL coverage: invariant INV-F10 covered by no case
+100 cases, 4 failures

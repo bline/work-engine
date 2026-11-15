@@ -1,0 +1,23 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/p9-undercharge/plan.json",
+  "plan_sha256": "f8a0f6ff4b41f2faa47760626f6fb325b93cf31f895ca6fd54ae559adc0cd0e0",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "python-p9-mutated",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/p9-undercharge/custody/python-p9-mutated.json",
+      "record_sha256": "bc133a1a87b3895f1a30092edec035775a370f32f8dbe41f32069b5cc8060f57",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-p9-mutated",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/p9-undercharge/custody/rust-p9-mutated.json",
+      "record_sha256": "34c0f56dacc34d722954d1145627eb3cae896d62381e8945121847129b2aaddf",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

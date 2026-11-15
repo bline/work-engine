@@ -1,0 +1,173 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "oracle/r8-completion-B/DERIVATIONS.json#N01-orphan-identity-refusal",
+        "predecessor_subject_refs": [
+          "baseline:09add0edae1b1ba7fcb9d6c62319f954efdbdba1747ab1866fa14af6db61a3a4"
+        ],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": [
+          "conditional-ticket:S1/turn-1"
+        ]
+      },
+      "exact_links": [],
+      "grants": [
+        {
+          "admission": "conditional_fixture",
+          "assumption_refs": [
+            "Inherited immutable ticket namespace only; no exact auxiliary link or physical-bill independence."
+          ],
+          "authority_ref": "ROOT-ADOPTION-R6.json",
+          "covered_extent_ref": "sha256:7c87d0c656f7f5f4be16839bd2bb0c3f020dc18bf3b5051aec2048eaa804aa97",
+          "covered_origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "exact_payload_ref": "oracle/r8-completion-B/N01-orphan-identity-refusal.provenance.json#S1/turn-1",
+          "grant_id": "initial-scope:S1/turn-1",
+          "guarantee_kind": "initial_reference_scope",
+          "observer_or_harness_ref": "inherited-corpus-conditional-fixture"
+        }
+      ],
+      "id": "input:N01-orphan-identity-refusal",
+      "identity_bindings": [],
+      "initial_contracts": [
+        {
+          "contract_id": "conditional-ticket:S1/turn-1",
+          "duplicate_rule": "same_origin_only",
+          "grant_ref": "initial-scope:S1/turn-1",
+          "reference_namespace": "dollar_ticket",
+          "scope_id": "N01-orphan-identity-refusal/S1/turn-1"
+        }
+      ],
+      "kind": "accounting_input_proof",
+      "lineage_id": "N01-orphan-identity-refusal",
+      "origins": [
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:1",
+          "original_position": 1,
+          "raw_bytes_sha256": "0bf1fef3fe2c83d838203dc96f1411817b76b3356abcbdc6f34a24a38ff4b7dd",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:7c87d0c656f7f5f4be16839bd2bb0c3f020dc18bf3b5051aec2048eaa804aa97"
+        },
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:2",
+          "original_position": 2,
+          "raw_bytes_sha256": "2429fdc743d77c0e3213845ff36ea085aa861afb5dde97dfbf2d41cf49b14f8d",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:7c87d0c656f7f5f4be16839bd2bb0c3f020dc18bf3b5051aec2048eaa804aa97"
+        }
+      ],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "S1/turn-1:1"
+          ]
+        },
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:row:S1/turn-1:line=2",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "S1/turn-1:2"
+          ]
+        }
+      ],
+      "continuity_result": "unestablished",
+      "coverage_decisions": [],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [],
+      "id": "result:N01-orphan-identity-refusal",
+      "input_proof_ref": "input:N01-orphan-identity-refusal",
+      "kind": "accounting_result",
+      "lineage_id": "N01-orphan-identity-refusal",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "N01-orphan-identity-refusal/default/o/owned_closed",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        },
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "N01-orphan-identity-refusal/default/o/owned_outstanding",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        }
+      ],
+      "origins": [
+        {
+          "active_high_unit_id": "res:S1/turn-1:rid=1",
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:1",
+          "origin_ref": "S1/turn-1:1"
+        },
+        {
+          "active_high_unit_id": "row:S1/turn-1:line=2",
+          "base_id": "base:row:S1/turn-1:line=2",
+          "evidence_atom_id": "atom:S1/turn-1:2",
+          "origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "primary_validities": [
+        {
+          "applicable_check_refs": [
+            "case:N01-orphan-identity-refusal#attempt:res:S1/turn-1:rid=1/settlement"
+          ],
+          "distinct_reservation_refs": [
+            "S1/turn-1:1"
+          ],
+          "distinct_settlement_refs": [],
+          "obligation_id": "validity:res:S1/turn-1:rid=1",
+          "validity_result": "absent"
+        }
+      ],
+      "unbudgeted_applicabilities": [],
+      "unbudgeted_completions": [],
+      "units": [
+        {
+          "exposure_ref": "case:N01-orphan-identity-refusal#attempt:res:S1/turn-1:rid=1",
+          "origin_refs": [
+            "S1/turn-1:1"
+          ],
+          "state": "active",
+          "unit_id": "res:S1/turn-1:rid=1"
+        },
+        {
+          "exposure_ref": "case:N01-orphan-identity-refusal#attempt:row:S1/turn-1:line=2",
+          "origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "state": "active",
+          "unit_id": "row:S1/turn-1:line=2"
+        }
+      ],
+      "valuation_records": [],
+      "version": "1.7-s1"
+    }
+  ]
+}

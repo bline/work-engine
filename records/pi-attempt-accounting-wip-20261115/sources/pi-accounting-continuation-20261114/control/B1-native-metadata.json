@@ -1,0 +1,70 @@
+{
+  "session_meta": {
+    "account_scoped": true,
+    "creator_user_id": "user-Qka3MY1H6kxlYIHil0fDic5o",
+    "creator_account_id": "68c2bdd1-64bc-4237-b605-87e62e540db9",
+    "session_id": "01a1d88a-9f59-7aa1-82b0-67e78d64bf55",
+    "id": "01a1d88a-9f59-7aa1-82b0-67e78d64bf55",
+    "timestamp": "2026-11-14T05:32:05.856Z",
+    "cwd": "/home/bline/code/work-engine",
+    "runtime_workspace_roots": [
+      "/home/bline/code/work-engine"
+    ],
+    "originator": "codex-tui",
+    "cli_version": "0.169.0",
+    "source": "vscode",
+    "model_provider": "openai",
+    "history_mode": "paginated",
+    "context_window": {
+      "window_id": "01a1d88a-9f5b-7b71-8ed4-83e605327a07"
+    },
+    "git": {
+      "commit_hash": "b4d24834e55655bbd7f271db0a9bbb292f4c5c58",
+      "branch": "rescue-detached-20260911",
+      "repository_url": "git@github.com:bline/work-engine.git"
+    }
+  },
+  "turn_context": {
+    "turn_id": "01a1d88a-9fef-7510-9951-16b159981062",
+    "root_turn_id": "01a1d88a-9fef-7510-9951-16b159981062",
+    "disabled_plugin_ids": [],
+    "cwd": "/home/bline/code/work-engine",
+    "approval_policy": "never",
+    "approvals_reviewer": "user",
+    "permission_profile": {
+      "type": "managed",
+      "file_system": {
+        "type": "restricted",
+        "entries": [
+          {
+            "path": {
+              "type": "special",
+              "value": {
+                "kind": "root"
+              }
+            },
+            "access": "read"
+          }
+        ]
+      },
+      "network": "restricted"
+    },
+    "model": "gpt-6-astra",
+    "comp_hash": "3000",
+    "collaboration_mode": {
+      "mode": "default",
+      "settings": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high",
+        "developer_instructions": null
+      }
+    },
+    "multi_agent_version": "v2",
+    "realtime_active": false,
+    "effort": "high",
+    "summary": "none",
+    "sandbox_policy": {
+      "type": "read-only"
+    }
+  }
+}

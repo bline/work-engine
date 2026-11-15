@@ -1,0 +1,28 @@
+{
+  "campaign/pi-accounting-s1": {
+    "revision": "74e643a27426425867ceed3cf52820d97c2b75e0",
+    "claim": {
+      "resource": "campaign/pi-accounting-s1",
+      "claim_id": "5d3d4334-c956-46e6-96a5-2fa09998153e",
+      "author": "codex-pi-accounting",
+      "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "claimed_at": "2026-11-14T06:59:29.326206Z",
+      "expires_at": "2026-11-14T12:59:29.326206Z",
+      "note": "Renewed human $100 at06:57:15Z, no new time limit. Exact reviewed R3 local amendment, new isolated renewal-r10 subject; all findings open. Root sole collector.",
+      "authority": "advisory_coordination_only"
+    }
+  },
+  "source/pi-accounting-s1-r10": {
+    "revision": "2eda50a9ce1b78aa7cc5a658f91f4782f3818b1e",
+    "claim": {
+      "resource": "source/pi-accounting-s1-r10",
+      "claim_id": "89cd18d0-844d-4e9c-a91e-eed173575e61",
+      "author": "codex-pi-accounting",
+      "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "claimed_at": "2026-11-14T06:59:29.886663Z",
+      "expires_at": "2026-11-14T12:59:29.886663Z",
+      "note": "Renewed human $100 at06:57:15Z, no new time limit. Exact reviewed R3 local amendment, new isolated renewal-r10 subject; all findings open. Root sole collector.",
+      "authority": "advisory_coordination_only"
+    }
+  }
+}

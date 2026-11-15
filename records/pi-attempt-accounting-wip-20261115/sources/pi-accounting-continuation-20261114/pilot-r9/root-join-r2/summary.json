@@ -1,0 +1,107 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ROOT-JOIN-PLAN-R2.json",
+  "plan_sha256": "065f45bced75cb021fb195274781ff5f2428b395267c6011a0c1fc1a9c204824",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "python-pilot-positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-join-r2/python-pilot-positive.json",
+      "record_sha256": "dd5a5edd218c27c1cca5e7b6d5534d82ffc2313c9295e55c3c95063ff58a3213",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-independent-axes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-join-r2/rust-independent-axes.json",
+      "record_sha256": "674a90192471e978eb0fc1d16e36a780cf6be8d22876ef8fdfaee7c44cba7b50",
+      "leftovers": 0
+    },
+    {
+      "name": "python-composed-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-join-r2/python-composed-controls.json",
+      "record_sha256": "2670ae115888f75f91e8671d0d0cb99aa8ea2f18d9b4f6cb457913bad890ad46",
+      "leftovers": 0
+    },
+    {
+      "name": "spec-generated",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-join-r2/spec-generated.json",
+      "record_sha256": "2b596f1334bb077989334b57cd6446d426e3a4bf87e789eb599e15a6e4db6265",
+      "leftovers": 0
+    },
+    {
+      "name": "spec-impact",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-join-r2/spec-impact.json",
+      "record_sha256": "9c80b4c432ff578b637122fd802a0b1b55b9f8ac3f7e0a54285a7f1abdde5051",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-bundle-0",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-join-r2/evidence-bundle-0.json",
+      "record_sha256": "1134d7afe0141ec2460006e6e467408437ed0a680778488d9497bd88496a3b6a",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-bundle-1",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-join-r2/evidence-bundle-1.json",
+      "record_sha256": "705355acd08bef07059f4b136a16eb8327081c0dd021e345b330441e61fc0507",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-bundle-2",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-join-r2/evidence-bundle-2.json",
+      "record_sha256": "deedac162d57eaf4ab14a7623a7079f02ca113ebb56a8f81bf9d9da4542f7423",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-bundle-3",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-join-r2/evidence-bundle-3.json",
+      "record_sha256": "876ecbd9030b50a5ae456c8807ff97bf713da7967c7b659f657cd2e13e71ddfa",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-bundle-4",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-join-r2/evidence-bundle-4.json",
+      "record_sha256": "d79076ebcd23eb7501febdd2b89bc6fce371214a7b358e85cdc8811b7ff9fc4c",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-bundle-5",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-join-r2/evidence-bundle-5.json",
+      "record_sha256": "0aa9b6f866834156188c29b659bf0e657bf148e65dc065f8a19dc534d81bbbf0",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-bundle-6",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-join-r2/evidence-bundle-6.json",
+      "record_sha256": "2ffd1fb0c047c90dfbd13ab584013f9a08e245dfc564fe2eac79d895a3dde724",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-bundle-7",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-join-r2/evidence-bundle-7.json",
+      "record_sha256": "d52770805af2c1e44c82dfbddc5e458d94cfcb7569f34b114d18ca9ac77f43c1",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence-bundle-8",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-join-r2/evidence-bundle-8.json",
+      "record_sha256": "35c1026701fbcaa1124de639d2cda3fa3fa8a856f8d3c2b64a843c30596dfa48",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

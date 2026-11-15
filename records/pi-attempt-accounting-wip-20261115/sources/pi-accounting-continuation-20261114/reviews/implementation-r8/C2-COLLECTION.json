@@ -1,0 +1,14 @@
+{
+  "session_id": "01a1d87a-fd5d-7553-9001-87a86f61a11f",
+  "turn_id": "01a1d87b-0094-7e12-a61f-c42079c30b65",
+  "status": "completed",
+  "native_assistant_message_id": "msg_0164b0d5099560f5016af7f017572487d094c00d45555db8f5",
+  "native_rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-15-02-01a1d87a-fd5d-7553-9001-87a86f61a11f.jsonl",
+  "native_line": 223,
+  "native_line_sha256": "c8c55b0095a3f741b1caa256523183f10b86e554e1b1d4cf9d2eddda975835b2",
+  "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/C2-REVIEW.md",
+  "report_sha256": "92daaa74c0ce9e233acf42aef75cc791558c6f5bd147c586f7992f4dfde91e03",
+  "collection": "native wait_threads turnCompleted followed by exact native message seal; report incomplete, findings retained",
+  "collected_at": "2026-11-14T05:23:51.578409+00:00",
+  "identity_binding": "pending explicit ACK; actual root independently observed metadata/settings/grant"
+}

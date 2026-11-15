@@ -1,0 +1,8 @@
+rates models mention: ['gpt-6-astra']
+rate entry gpt-6-astra {"input": 10, "cached_input": 1, "cache_write": 12.5, "output": 50}
+prompt 506425 bytes; corpus block 255790 bytes; calibrated 3.367 B/tok -> 150,428 input tokens; pessimistic (corpus at 2.5 B/tok) 176,765
+  output   9000: est cost proxy 1.95  output   9000: pess cost proxy 2.22 | duration at P1.32 rate 322 s, at 19 tok/s 474 s, at 47 tok/s 191 s
+  output  12000: est cost proxy 2.10  output  12000: pess cost proxy 2.37 | duration at P1.32 rate 429 s, at 19 tok/s 632 s, at 47 tok/s 255 s
+  output  16000: est cost proxy 2.30  output  16000: pess cost proxy 2.57 | duration at P1.32 rate 572 s, at 19 tok/s 842 s, at 47 tok/s 340 s
+  output  20000: est cost proxy 2.50  output  20000: pess cost proxy 2.77 | duration at P1.32 rate 715 s, at 19 tok/s 1053 s, at 47 tok/s 426 s
+900 s upstream cutoff reached at: P1.32 rate 25166 output tokens; at 19 tok/s 17100

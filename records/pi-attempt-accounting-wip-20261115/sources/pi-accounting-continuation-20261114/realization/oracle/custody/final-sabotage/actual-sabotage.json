@@ -1,0 +1,54 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "actual-sabotage",
+  "argv": [
+    "python3",
+    "validator/sabotage_test.py",
+    "corpus",
+    "oracle/rates",
+    "/home/bline/cbm-work/p137-s1r7/s1/corpus"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 2984200,
+  "inputs": [
+    {
+      "path": "validator/sabotage_test.py",
+      "type": "file",
+      "mode": 436,
+      "length": 32949,
+      "sha256": "c274096693b6024b7c3585644834d064d5951d8fc59ca1d7cd6193e6bba863c9"
+    },
+    {
+      "path": "validator/validate_corpus.py",
+      "type": "file",
+      "mode": 436,
+      "length": 94525,
+      "sha256": "a21a98e234a258e5dc6249d41768c40b02fa770e6c8d0e13a8d09eaf28f3e66d"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 2984287,
+  "pgid": 2984287,
+  "started_at": "2026-11-14T03:50:56.501704Z",
+  "ended_at": "2026-11-14T03:51:07.623978Z",
+  "duration_s": 11.122,
+  "returncode": 1,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-sabotage/actual-sabotage.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/final-sabotage/actual-sabotage.stderr",
+    "length": 1146,
+    "sha256": "55d75d57c674d8ce40b2f544da920b72076dc0e9baf5e51b7e28d61a5adf21df"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

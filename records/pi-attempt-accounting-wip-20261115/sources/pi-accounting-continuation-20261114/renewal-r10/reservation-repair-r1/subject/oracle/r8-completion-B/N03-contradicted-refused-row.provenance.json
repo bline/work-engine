@@ -1,0 +1,8 @@
+{
+  "admission": "conditional_fixture",
+  "authority_ref": "ROOT-ADOPTION-R6.json",
+  "case_id": "N03-contradicted-refused-row",
+  "grant_payloads": [],
+  "initial_scope_contracts": [],
+  "raw_input_sha256": "0a8804da42753cfa7abed2c0f96554e158043dfdeb85c962dd11627fa32ade0d"
+}

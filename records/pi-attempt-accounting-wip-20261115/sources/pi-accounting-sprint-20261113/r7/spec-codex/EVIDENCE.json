@@ -1,0 +1,78 @@
+{
+  "status": "worker_complete",
+  "packet_sha256": "b035e19b9c5f9c8c50098743ef0b001d80cbf8fe75d4ec7ba8a8d9a7dc98ea1b",
+  "subject": "/home/bline/cbm-work/p137-s1r7/s1",
+  "model_requested": "gpt-6.1-sol/medium",
+  "session": "01a1d743-3af3-7300-83ba-5a5eb31c82ca",
+  "graph": {
+    "tier": 2,
+    "generation": "2026-11-13T22:56:04Z",
+    "external_paths": "outside_project; exact source read fallback"
+  },
+  "failures_retained": [
+    "custody initial invocation missing --name",
+    "custody digest directory unsupported",
+    "build2 timeout120s compilation",
+    "build3 compile placement E0425",
+    "build4/5 revision mutation control assigned2 to revision2;14/15 passed"
+  ],
+  "ownership_incident": "cargo fmt --all touched independent_raw_axes.rs; root notified; oracle owner retains disposition; subsequent formatting own src only",
+  "custody": "r7/spec-codex/custody",
+  "full_raw_conformance": "unestablished; no raw evaluator",
+  "acceptance": "root only; current independent modular review pending",
+  "processes": "all owned custody invocations terminal, leftovers0; no subagents",
+  "source_ready": {
+    "status": "source_ready",
+    "source_manifest": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/SOURCE-MANIFEST.json",
+    "source_manifest_sha256": "5f13938ca3aa1951c42d3431a30bffac1e8d03adb10745f6355d947e9a76e825",
+    "custody_summary": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/custody/final3/summary.json",
+    "custody_summary_sha256": "aed6973703d959ff68d699b664100830ac5d8b5af9ee7a8b2fbd94a37fb83773",
+    "binary": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/target-spec/debug/pi-accounting-spec-check",
+    "binary_sha256": "fd44debd11021f80cbfa50f7ae1b55c8e743745963371b8e990fc02b92b28057",
+    "interface_sha256": "17e9430821e4fe25ddfec3ea3788b0d63e795f6ba47fa38c52655bec626afa5e",
+    "contract": "pi-accounting-contract/1.6-s1",
+    "revision": 7,
+    "scope": "worker declaration agreement only; no acceptance/raw financial conformance"
+  },
+  "tests": {
+    "final3": "15 lib tests passed; build/render twice/check/impact all6steps passed",
+    "summary_sha256": "aed6973703d959ff68d699b664100830ac5d8b5af9ee7a8b2fbd94a37fb83773"
+  },
+  "current_context": {
+    "schema": "manual-orchestration-context-check-v1",
+    "checked_at": "2026-11-13T23:59:05.381870+00:00",
+    "session_id": "01a1d743-3af3-7300-83ba-5a5eb31c82ca",
+    "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T16-34-29-01a1d743-3af3-7300-83ba-5a5eb31c82ca.jsonl",
+    "next_task_tokens": null,
+    "next_task_basis": "not estimated",
+    "observed_at": "2026-11-13T23:58:22.996Z",
+    "freshness": "recent_file_modification",
+    "recorded_model": "gpt-6.1-sol",
+    "recorded_effort": "medium",
+    "input_tokens": 143556,
+    "context_window_tokens": 475000,
+    "epoch": 0,
+    "compaction_markers": 0,
+    "lineage": [],
+    "limitations": [],
+    "status": "observed",
+    "levels_basis": "tokens",
+    "trigger_tokens": 200000,
+    "band_floor_tokens": 235000,
+    "headroom_to_trigger": 56444,
+    "headroom_to_band_floor": 91444,
+    "fraction_of_window": 0.3022,
+    "recommendation": "retain_ok",
+    "reasons": [
+      "input 143556 is below the trigger 200000",
+      "next-task size not estimated; headroom to band floor is the margin"
+    ]
+  },
+  "limits": [
+    "declaration agreement only; no raw financial reducer",
+    "raw witness classification and arithmetic require independent oracle tests/current semantic review",
+    "all consumer acknowledgements remain unestablished unless separately disposed",
+    "whole-subject freeze and joined legacy corpus checks owned by root"
+  ],
+  "failures": "FAILURES.md"
+}

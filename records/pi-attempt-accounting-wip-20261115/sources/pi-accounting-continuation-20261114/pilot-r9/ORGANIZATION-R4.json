@@ -1,0 +1,64 @@
+{
+  "revision": "R4",
+  "prior": "reviews/implementation-r8/dispatch/ORGANIZATION-DECISION-R3.json",
+  "objective": "original3items unchanged",
+  "stage": "r9 staged discriminating realization only",
+  "successor": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+  "baseline": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/BASELINE.json",
+    "sha256": "8b13b94ebb95e5d2fea63809330490ec30bc0126001f7bd39af2b33b7001006f",
+    "files": 941,
+    "predecessor": "frozenR8 manifest21df51b6"
+  },
+  "roles": {
+    "spec": {
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/SPEC-PACKET.md",
+      "packet_sha256": "f8dad78aa39806d9f0a27a65d859308f1839f5e13c611889bb4b3af91dc8153d",
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "tier": "inherit rootdefault; verify actual",
+      "launch": "spawn_agent fresh fork_turnsnone",
+      "cap": 6,
+      "reports_to": "root",
+      "leaf": "coherent C schema/reference applicability"
+    },
+    "oracle": {
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ORACLE-PACKET.md",
+      "packet_sha256": "1606fa00788dd85c99ecfb8c2740ad4c719d7490d938bea7d8ebcc13e898cae1",
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "tier": "inherit rootdefault; verify actual",
+      "launch": "spawn_agent fresh fork_turnsnone",
+      "cap": 6,
+      "reports_to": "root",
+      "leaf": "independent finite raw derivation and Python/Rust qualification"
+    }
+  },
+  "review": {
+    "launch": "later separate fresh Astrahigh/default/read-only",
+    "scope": "exact joined bounded pilot; fullA/B/C remainders remain later dependencies",
+    "reserve": 9
+  },
+  "budget": {
+    "spent": 63.53121759999997,
+    "unpriced": 0,
+    "pilot_caps": 12,
+    "review_reserve": 9,
+    "root_join_closure": 8,
+    "tail": 2,
+    "forecast": 94.53121759999996,
+    "max": 100,
+    "account_remaining_percent": 62.0,
+    "deadline": "2026-11-14T06:55:30.192Z",
+    "fullS1_guarantee": false
+  },
+  "context": {
+    "root_input": 144458,
+    "epoch": 10,
+    "nextscope": "two dispatches/bindings and preserved continuation, estimated25000 before ownrefresh",
+    "decision": "retain root bounded setup, then refresh before pending collection requires large reads",
+    "fresh_workers": "prior completed workers largecontexts/newphase; independentoracle freshness useful; estimated read+implement growth100k from fresh launchfloor60k; worker must reassess"
+  },
+  "residual_review": "carry A1/C2/A2b omissions and B2 to exact successor with no oldreview clearance; changedoutputs rereview required; all original gates remain",
+  "uncertainty": "finite qualified grant payload shapes and raw inventory; root owns material ambiguity; no hidden reducer"
+}

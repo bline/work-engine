@@ -1,0 +1,37 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/legacy-validation-plan.json",
+  "plan_sha256": "b52588236afe9a7795fd751b17bb8941f4ccf913c4e2ab1f5eb3717d3dd89685",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "joined-check",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/legacy-custody/joined-check.json",
+      "record_sha256": "b5db3036f8f6cda47958f51a73785ba5994fbddf4c5d3980f6ba2e7234c1edff",
+      "leftovers": 0
+    },
+    {
+      "name": "joined-selftest",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/legacy-custody/joined-selftest.json",
+      "record_sha256": "93731f02b13624c23f3ffe286f5e9340815f2f4189656da2ed8fa787b6f8574a",
+      "leftovers": 0
+    },
+    {
+      "name": "joined-revisions",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/legacy-custody/joined-revisions.json",
+      "record_sha256": "be7bb559da851d97273f23123a320207591b160d6dde3cb93d64c2d9d6acdd5b",
+      "leftovers": 0
+    },
+    {
+      "name": "joined-sabotage",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/legacy-custody/joined-sabotage.json",
+      "record_sha256": "4e61642a21528c41c7ae4f1fd8d06a7cd3d2744eed04f6b3d7582504e85d3c45",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

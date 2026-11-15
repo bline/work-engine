@@ -1,0 +1,109 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "generated-check",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+    "check",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+    "--generated"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 3552195,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/spec/ck.json",
+      "type": "file",
+      "mode": 420,
+      "length": 231864,
+      "sha256": "a3a30398f289c9edcb4c3a3b0009a9dff88021378658062ed532e90226400787"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/contract/TRANSITIONS.md",
+      "type": "file",
+      "mode": 420,
+      "length": 81566,
+      "sha256": "fece4603899250a9365feaf38f354986615b57150282e2d1a15e7626169923cb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/contract/CK-GENERATED.md",
+      "type": "file",
+      "mode": 420,
+      "length": 174926,
+      "sha256": "1c86dedffe691c5d09116d0b99f0559a7decf7072807356a153cd8246bb4ffc3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/tooling/spec-check/src/main.rs",
+      "type": "file",
+      "mode": 420,
+      "length": 5545,
+      "sha256": "b9bf7ef8f8aac7fd86ab25b4e5e794f509eb0a7a8e740472188806d764cbc880"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/tooling/spec-check/src/applicability.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 15968,
+      "sha256": "81b2c6834565bbb0a2ea723567a95279e14c19d82ac45980ab8d280353dde2eb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/tooling/spec-check/src/lib.rs",
+      "type": "file",
+      "mode": 420,
+      "length": 40364,
+      "sha256": "2ee98799071351ca9527d0106ef198436c2bad176944a05cb391598e8d49493a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/tooling/spec-check/tests/r9_spec_payloads.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 7814,
+      "sha256": "47b647591e7322fa689cb1f4ce3aabd7a3f1164c7a1ae33ee5ca870a17afbc21"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/spec/accounting.schema.json",
+      "type": "file",
+      "mode": 420,
+      "length": 31637,
+      "sha256": "84a229afbe21a8e47c21da0c28a0b9b3a3392960411b5a96e9a9258cdbcab6e7"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/spec/dependencies.json",
+      "type": "file",
+      "mode": 420,
+      "length": 54613,
+      "sha256": "41ebe125ea2d76762a2991717b1e059cb1da8c5e6107e3548880fc37dc4dc2ba"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 78003400,
+      "sha256": "6daa4fdc82c4a0ea130e9d51d3c2aead9f1efa90581e848605fc86a5033ce5e1"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 3552217,
+  "pgid": 3552217,
+  "started_at": "2026-11-14T07:08:55.209597Z",
+  "ended_at": "2026-11-14T07:08:55.833731Z",
+  "duration_s": 0.624,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/generated-check.stdout",
+    "length": 495,
+    "sha256": "1b3165bcc86bde7d4f988001317578862df3598da75e12c1edfc684e3c760f1e"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-bound/generated-check.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

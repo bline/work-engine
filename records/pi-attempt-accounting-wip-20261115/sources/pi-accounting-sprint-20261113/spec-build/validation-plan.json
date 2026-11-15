@@ -1,0 +1,173 @@
+{
+  "cwd": "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check",
+  "env": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-sprint-20261113/target-spec"
+  },
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cargo",
+        "build",
+        "--offline"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.schema.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/dependencies.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/interface.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.toml",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.lock",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/rust-toolchain.toml",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/lib.rs",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/main.rs"
+      ],
+      "timeout": 180
+    },
+    {
+      "name": "structural-tests",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--lib"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.schema.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/dependencies.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/interface.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.toml",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.lock",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/rust-toolchain.toml",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/lib.rs",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/main.rs"
+      ],
+      "timeout": 180
+    },
+    {
+      "name": "render-reviewed-tree",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-sprint-20261113/target-spec/debug/pi-accounting-spec-check",
+        "render",
+        "/home/bline/cbm-work/p136-s1r6/s1"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.schema.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/dependencies.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/interface.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.toml",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.lock",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/rust-toolchain.toml",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/lib.rs",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/main.rs"
+      ],
+      "timeout": 180
+    },
+    {
+      "name": "compare-current",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-sprint-20261113/target-spec/debug/pi-accounting-spec-check",
+        "check",
+        "/home/bline/cbm-work/p136-s1r6/s1",
+        "--generated"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.schema.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/dependencies.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/interface.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.toml",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.lock",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/rust-toolchain.toml",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/lib.rs",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/main.rs"
+      ],
+      "timeout": 180
+    },
+    {
+      "name": "render-a",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-sprint-20261113/target-spec/debug/pi-accounting-spec-check",
+        "render",
+        "/home/bline/cbm-work/p136-s1r6/s1",
+        "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/render-a"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.schema.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/dependencies.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/interface.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.toml",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.lock",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/rust-toolchain.toml",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/lib.rs",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/main.rs"
+      ],
+      "timeout": 180
+    },
+    {
+      "name": "render-b",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-sprint-20261113/target-spec/debug/pi-accounting-spec-check",
+        "render",
+        "/home/bline/cbm-work/p136-s1r6/s1",
+        "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/render-b"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.schema.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/dependencies.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/interface.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.toml",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.lock",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/rust-toolchain.toml",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/lib.rs",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/main.rs"
+      ],
+      "timeout": 180
+    },
+    {
+      "name": "compare-clean-renders",
+      "argv": [
+        "diff",
+        "-r",
+        "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/render-a",
+        "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/render-b"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.schema.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/dependencies.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/interface.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.toml",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.lock",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/rust-toolchain.toml",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/lib.rs",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/main.rs"
+      ],
+      "timeout": 180
+    },
+    {
+      "name": "impact",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-sprint-20261113/target-spec/debug/pi-accounting-spec-check",
+        "impact",
+        "/home/bline/cbm-work/p136-s1r6/s1"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.schema.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/dependencies.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/spec/interface.json",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.toml",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/Cargo.lock",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/rust-toolchain.toml",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/lib.rs",
+        "/home/bline/cbm-work/p136-s1r6/s1/tooling/spec-check/src/main.rs"
+      ],
+      "timeout": 180
+    }
+  ]
+}

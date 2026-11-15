@@ -1,0 +1,1182 @@
+{
+  "scope_budget": {
+    "schema": "manual-orchestration.scope-budget.v2",
+    "objective_id": "de8667b6-b096-4483-8c6e-b94c39a9aa16",
+    "sessions": [
+      {
+        "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+        "provider": "codex",
+        "from": "2026-11-14T02:55:30Z",
+        "bound_by": "init",
+        "evidence": null
+      }
+    ],
+    "bindings": [],
+    "cost_limits": [
+      {
+        "pool": "codex",
+        "node": null,
+        "max_usd": 100.0,
+        "marks_usd": [
+          60.0,
+          80.0,
+          90.0
+        ],
+        "set_by": "user",
+        "set_at": "2026-11-14T03:02:05Z",
+        "reason": "User renewed100/four-hour sprint; previous sprint closed and nonadditive; deadline06:55:30.192Z",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d802-f8d9-7880-9614-df28f2c43491",
+        "max_usd": 6.0,
+        "marks_usd": [
+          5.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T03:04:46Z",
+        "reason": "Fresh Solxhigh design formation, no implementation, preserve budget for independent review and realization",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d811-93de-7ef0-9cc7-76d34f3a90cd",
+        "max_usd": 8.0,
+        "marks_usd": [
+          6.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T03:20:48Z",
+        "reason": "Fresh native Astraxhigh architectural judgment of fixed exact R6 design; no implementation",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d81b-18c4-7f11-af00-c6a75867e8cc",
+        "max_usd": 18.0,
+        "marks_usd": [
+          14.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T03:32:09Z",
+        "reason": "Fresh bounded spec/structural realization under exact adopted architecture43d0e7c8; preserve independent oracle ownership",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d81b-323b-7113-93ad-7cfb06e7c28f",
+        "max_usd": 18.0,
+        "marks_usd": [
+          14.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T03:32:10Z",
+        "reason": "Fresh independent raw assertions/corpus/actual Python qualification under exact adopted architecture43d0e7c8",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d837-47ad-7320-8a7f-3b2f8d725b11",
+        "max_usd": 1.5,
+        "marks_usd": [
+          1.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T04:01:47Z",
+        "reason": "One bounded quiescent sameSID context refresh controller helper; no engineering/authority change",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d840-c933-78b1-8b7a-805a0ef28378",
+        "max_usd": 15.0,
+        "marks_usd": [
+          12.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T04:12:59Z",
+        "reason": "Complete already-required finite S1 corpus declaration/assertion/reference qualification; no raw reducer; preserve review reserve",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+        "max_usd": 15.0,
+        "marks_usd": [
+          12.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T04:12:59Z",
+        "reason": "Complete already-required finite S1 corpus declaration/assertion/reference qualification; no raw reducer; preserve review reserve",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d840-f94e-7631-aef9-15c312b1ae20",
+        "max_usd": 15.0,
+        "marks_usd": [
+          12.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T04:12:59Z",
+        "reason": "Complete already-required finite S1 corpus declaration/assertion/reference qualification; no raw reducer; preserve review reserve",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d87a-fd5d-7553-9001-87a86f61a11f",
+        "max_usd": 10.0,
+        "marks_usd": [
+          8.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T05:15:56Z",
+        "reason": "Exact bounded R8 C2 independent review; nochildren/repair; root solecollector",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d87b-0106-76c1-a881-fd7637db17dd",
+        "max_usd": 8.0,
+        "marks_usd": [
+          6.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T05:15:56Z",
+        "reason": "Exact bounded R8 A1 independent review; nochildren/repair; root solecollector",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d87b-01de-7631-9623-0ab1026eba5d",
+        "max_usd": 8.0,
+        "marks_usd": [
+          6.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T05:15:56Z",
+        "reason": "Exact bounded R8 A2a independent review; nochildren/repair; root solecollector",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d88a-9a44-71e1-9dc5-b558108f35de",
+        "max_usd": 7.0,
+        "marks_usd": [
+          5.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T05:32:05Z",
+        "reason": "ExactR2 D7 bounded independent review; no repair/delegation; original100/deadline retained",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d88a-9e2a-7801-aed3-64705ff5585d",
+        "max_usd": 8.0,
+        "marks_usd": [
+          6.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T05:32:05Z",
+        "reason": "ExactR2 A2b bounded independent review; no repair/delegation; original100/deadline retained",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d88a-9f59-7aa1-82b0-67e78d64bf55",
+        "max_usd": 8.0,
+        "marks_usd": [
+          7.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T05:38:51Z",
+        "reason": "Prospective bounded2proxy extension to finish original B1 review, observed5.0286 of6. Reforecast includes A2b4 additional gapreserve, D7 remaining3.57, B1remaining2.97, B2/C112, A1/C2gaps10, closure8, tail1.5:96.79 of100; no repaircommitment. Prior6 allowance and crossing retained.",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d890-d020-74a0-a7d5-ed4a2902dd2f",
+        "max_usd": 6.0,
+        "marks_usd": [
+          4.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T05:38:51Z",
+        "reason": "ExactR2 C1 bounded independent review; no repair/delegation; original100/deadline retained",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d8a4-b80e-7163-af3b-d257f945693e",
+        "max_usd": 6.0,
+        "marks_usd": [
+          4.0,
+          5.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T06:01:22Z",
+        "reason": "ExactR4 bounded fourclaim pilot; target06:22Z, original100/deadline preserved, no fullmigration",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d8a4-d798-7fd1-ae5e-6955ec003480",
+        "max_usd": 6.0,
+        "marks_usd": [
+          4.0,
+          5.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T06:01:22Z",
+        "reason": "ExactR4 bounded fourclaim pilot; target06:22Z, original100/deadline preserved, no fullmigration",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d8c2-754e-7c13-84ec-570c1b872e56",
+        "max_usd": 9.0,
+        "marks_usd": [
+          7.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T06:33:53Z",
+        "reason": "Fresh separate Astraxhigh exact0cad3d5e fourclaim source and recurringapplicability designreview; no repair; preserve original100 hard06:55 rootsolecollector",
+        "basis": "speed_adjusted_api_usd"
+      }
+    ],
+    "objective": "Resume pi-accounting ownership: accepted architecture, bounded S1 realization and independent qualification",
+    "original_items": [
+      "Resolve conservation, identity-refinement, supported-low multiplicity and release evidence design, with fresh Astra xhigh review",
+      "Implement accepted S1 design in isolated Rust specification/oracle subject and qualify all inherited findings and actual consumers",
+      "Collect exact independent reviews, preserve guard/history, and record acceptance or truthful continuation"
+    ],
+    "started_at": "2026-11-14T03:02:05Z",
+    "weekly_at_start": {
+      "used_percent": 12.0,
+      "observed_at": "2026-11-14T03:01:49.362Z",
+      "resets_at": 1795219565,
+      "window_minutes": 10080,
+      "limit_id": "codex",
+      "plan_type": "prolite",
+      "source": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T14-48-30-01a1d6e2-32ba-7701-9115-740dcb41af11.jsonl"
+    },
+    "limits": {
+      "reconsider_after_additions": 3
+    },
+    "limits_set_by": "user",
+    "limits_reason": "User renewed100/four-hour sprint; previous sprint closed and nonadditive; deadline06:55:30.192Z",
+    "limit_history": [
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": null,
+          "max_usd": 100.0,
+          "marks_usd": [
+            60.0,
+            80.0,
+            90.0
+          ],
+          "set_by": "user",
+          "set_at": "2026-11-14T03:02:05Z",
+          "reason": "User renewed100/four-hour sprint; previous sprint closed and nonadditive; deadline06:55:30.192Z",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d802-f8d9-7880-9614-df28f2c43491",
+          "max_usd": 6.0,
+          "marks_usd": [
+            5.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T03:04:46Z",
+          "reason": "Fresh Solxhigh design formation, no implementation, preserve budget for independent review and realization",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d811-93de-7ef0-9cc7-76d34f3a90cd",
+          "max_usd": 8.0,
+          "marks_usd": [
+            6.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T03:20:48Z",
+          "reason": "Fresh native Astraxhigh architectural judgment of fixed exact R6 design; no implementation",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d81b-18c4-7f11-af00-c6a75867e8cc",
+          "max_usd": 18.0,
+          "marks_usd": [
+            14.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T03:32:09Z",
+          "reason": "Fresh bounded spec/structural realization under exact adopted architecture43d0e7c8; preserve independent oracle ownership",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d81b-323b-7113-93ad-7cfb06e7c28f",
+          "max_usd": 18.0,
+          "marks_usd": [
+            14.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T03:32:10Z",
+          "reason": "Fresh independent raw assertions/corpus/actual Python qualification under exact adopted architecture43d0e7c8",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d837-47ad-7320-8a7f-3b2f8d725b11",
+          "max_usd": 1.5,
+          "marks_usd": [
+            1.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T04:01:47Z",
+          "reason": "One bounded quiescent sameSID context refresh controller helper; no engineering/authority change",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d840-c933-78b1-8b7a-805a0ef28378",
+          "max_usd": 15.0,
+          "marks_usd": [
+            12.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T04:12:59Z",
+          "reason": "Complete already-required finite S1 corpus declaration/assertion/reference qualification; no raw reducer; preserve review reserve",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+          "max_usd": 15.0,
+          "marks_usd": [
+            12.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T04:12:59Z",
+          "reason": "Complete already-required finite S1 corpus declaration/assertion/reference qualification; no raw reducer; preserve review reserve",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d840-f94e-7631-aef9-15c312b1ae20",
+          "max_usd": 15.0,
+          "marks_usd": [
+            12.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T04:12:59Z",
+          "reason": "Complete already-required finite S1 corpus declaration/assertion/reference qualification; no raw reducer; preserve review reserve",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d87a-fd5d-7553-9001-87a86f61a11f",
+          "max_usd": 10.0,
+          "marks_usd": [
+            8.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T05:15:56Z",
+          "reason": "Exact bounded R8 C2 independent review; nochildren/repair; root solecollector",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d87b-0106-76c1-a881-fd7637db17dd",
+          "max_usd": 8.0,
+          "marks_usd": [
+            6.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T05:15:56Z",
+          "reason": "Exact bounded R8 A1 independent review; nochildren/repair; root solecollector",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d87b-01de-7631-9623-0ab1026eba5d",
+          "max_usd": 8.0,
+          "marks_usd": [
+            6.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T05:15:56Z",
+          "reason": "Exact bounded R8 A2a independent review; nochildren/repair; root solecollector",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d88a-9a44-71e1-9dc5-b558108f35de",
+          "max_usd": 7.0,
+          "marks_usd": [
+            5.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T05:32:05Z",
+          "reason": "ExactR2 D7 bounded independent review; no repair/delegation; original100/deadline retained",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d88a-9e2a-7801-aed3-64705ff5585d",
+          "max_usd": 8.0,
+          "marks_usd": [
+            6.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T05:32:05Z",
+          "reason": "ExactR2 A2b bounded independent review; no repair/delegation; original100/deadline retained",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d88a-9f59-7aa1-82b0-67e78d64bf55",
+          "max_usd": 6.0,
+          "marks_usd": [
+            4.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T05:32:06Z",
+          "reason": "ExactR2 B1 bounded independent review; no repair/delegation; original100/deadline retained",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d88a-9f59-7aa1-82b0-67e78d64bf55",
+          "max_usd": 8.0,
+          "marks_usd": [
+            7.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T05:38:51Z",
+          "reason": "Prospective bounded2proxy extension to finish original B1 review, observed5.0286 of6. Reforecast includes A2b4 additional gapreserve, D7 remaining3.57, B1remaining2.97, B2/C112, A1/C2gaps10, closure8, tail1.5:96.79 of100; no repaircommitment. Prior6 allowance and crossing retained.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "codex",
+          "node": "01a1d88a-9f59-7aa1-82b0-67e78d64bf55",
+          "max_usd": 6.0,
+          "marks_usd": [
+            4.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T05:32:06Z",
+          "reason": "ExactR2 B1 bounded independent review; no repair/delegation; original100/deadline retained",
+          "basis": "speed_adjusted_api_usd"
+        }
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d890-d020-74a0-a7d5-ed4a2902dd2f",
+          "max_usd": 6.0,
+          "marks_usd": [
+            4.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T05:38:51Z",
+          "reason": "ExactR2 C1 bounded independent review; no repair/delegation; original100/deadline retained",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d8a4-b80e-7163-af3b-d257f945693e",
+          "max_usd": 6.0,
+          "marks_usd": [
+            4.0,
+            5.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T06:01:22Z",
+          "reason": "ExactR4 bounded fourclaim pilot; target06:22Z, original100/deadline preserved, no fullmigration",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d8a4-d798-7fd1-ae5e-6955ec003480",
+          "max_usd": 6.0,
+          "marks_usd": [
+            4.0,
+            5.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T06:01:22Z",
+          "reason": "ExactR4 bounded fourclaim pilot; target06:22Z, original100/deadline preserved, no fullmigration",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d8c2-754e-7c13-84ec-570c1b872e56",
+          "max_usd": 9.0,
+          "marks_usd": [
+            7.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T06:33:53Z",
+          "reason": "Fresh separate Astraxhigh exact0cad3d5e fourclaim source and recurringapplicability designreview; no repair; preserve original100 hard06:55 rootsolecollector",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      }
+    ],
+    "additions": [],
+    "closed_at": "2026-11-14T06:54:53Z",
+    "close": {
+      "at": "2026-11-14T06:54:53Z",
+      "disposition": "abandoned",
+      "reason": "Sprint window stopped at reviewed boundary; underlying objective unfinished, exact implementation unaccepted, revised plan adopted only. All children/processes collected; no further dispatch under this sprint.",
+      "set_by": "supervisor"
+    }
+  },
+  "grant": {
+    "source": "fresh human approval at2026-11-14T02:55:30.192Z",
+    "max_proxy_usd": 100,
+    "hours": 4,
+    "deadline": "2026-11-14T06:55:30.192Z",
+    "prior_window_nonadditive": true
+  },
+  "root": {
+    "session": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+    "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T14-48-30-01a1d6e2-32ba-7701-9115-740dcb41af11.jsonl",
+    "collector": "root",
+    "context_check": "control/root-pre-review-organization-context.json",
+    "capacity_decision": "Native refresh9 recovery complete; explicit final-closing-context.json + collected bounded combined listener11; closure only, no engineering admission",
+    "observed_model": "gpt-6.1-sol",
+    "observed_effort": "high",
+    "observed_tier": "default",
+    "settings_event": "4ee7a0dbd7083fb78d289caa170dec05ec4fb4a58604c3574cae16c90add17d0",
+    "settings_source_line": 7720
+  },
+  "guard": {
+    "state": "DESIGN_REMEDIATION_REQUIRED_R9_R3_PLAN_ADOPTED",
+    "ordinary_repair_allowed": false,
+    "history": "/home/bline/cbm-work/p134-module-a/ARCHITECTURE-GUARD.md",
+    "inherited_defects_count": true,
+    "infrastructure_implementation_increment": 0,
+    "new_realization_allowed": "exact R4 four-claim pilot plus admitted R5 concrete component declaration; no full migration",
+    "exact_plan": "43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61",
+    "adoption": "pilot-r9/ROOT-ADOPTION-R3-PLAN.json",
+    "history_preserved": true,
+    "implementation_findings_closed": false,
+    "current_trigger": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/R8-RECURRENCE-HOLD.json"
+  },
+  "roles": {
+    "design_r6": {
+      "task": "/root/s1_arch_design_r6",
+      "session": "01a1d802-f8d9-7880-9614-df28f2c43491",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T20-03-55-01a1d802-f8d9-7880-9614-df28f2c43491.jsonl",
+      "state": "complete_final_collected",
+      "packet": "design/PACKET.md",
+      "context_choice": "fresh; predecessor199804 beforefinal, new broadscope could notfit",
+      "model_requested": "gpt-6.1-sol",
+      "effort_requested": "xhigh",
+      "tier_requested": "inherit_root_default",
+      "allowance_proxy": 6,
+      "target": "2026-11-14T03:40:00Z",
+      "collector": "root",
+      "result": "design/RESULT.md",
+      "plan_sha256": "43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61",
+      "observed_model": "gpt-6.1-sol",
+      "observed_effort": "xhigh",
+      "observed_tier": "default",
+      "settings_event": "9af6e753b9c3f37c2a1b75faca79aae0c6e019d4d43ba6ea95f44f0955d92d98",
+      "processes": "none",
+      "latest_context": 155008
+    },
+    "design_r6_review": {
+      "session": "01a1d811-93de-7ef0-9cc7-76d34f3a90cd",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T20-19-53-01a1d811-93de-7ef0-9cc7-76d34f3a90cd.jsonl",
+      "runtime_parent": null,
+      "collection_parent": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "launch_turn": "01a1d811-9716-7a50-be3b-6dff2250a6cd",
+      "state": "complete_review_and_ACK_collected_idle_retained",
+      "pending_binding": null,
+      "model_requested": "gpt-6-astra",
+      "effort_requested": "xhigh",
+      "tier_requested": "default",
+      "model_observed": "gpt-6-astra",
+      "effort_observed": "xhigh",
+      "tier_observed": "default",
+      "grant_observed": {
+        "approval_policy": "never",
+        "sandbox_policy": "read-only",
+        "network": "restricted"
+      },
+      "collector": "root",
+      "collection_route": "native wait_threads or verified appserver exactturn fallback",
+      "allowance_proxy": 8,
+      "target": "2026-11-14T04:00:00Z",
+      "plan_sha256": "43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61",
+      "freeze_manifest": "df1950f6139fd044cbacb1a3545129bad8bf6328e859170a998a2f0e4ffcac4e",
+      "review": "reviews/design-r6/REVIEW.md",
+      "review_sha256": "74c3445edc99722c43aff21803ce22148e5da1299adc59ed7a5bb804ff4c93f9",
+      "verdict": "ACCEPT_FOR_BOUNDED_IMPLEMENTATION",
+      "p1": 0,
+      "p2": 0,
+      "p3": 0,
+      "binding_delivery": "ACK-only turn01a1d819-3328-7fb2-9ba1-c55cb40ff4ff collected completed; earlier artifact-read ACK distinguished",
+      "latest_context": 140565,
+      "future_substantial_scope": "reassess; whole implementation review probably fresh"
+    },
+    "s1r8_oracle": {
+      "task": "/root/s1r8_oracle",
+      "session": "01a1d81b-323b-7113-93ad-7cfb06e7c28f",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T20-30-23-01a1d81b-323b-7113-93ad-7cfb06e7c28f.jsonl",
+      "state": "handoff_ready_native_final_collected_idle",
+      "model_requested": "gpt-6.1-sol",
+      "effort_requested": "medium",
+      "tier_requested": "inherit_root_default",
+      "model_observed": "gpt-6.1-sol",
+      "effort_observed": "medium",
+      "tier_observed": "default",
+      "settings": "control/s1r8_oracle-settings.json",
+      "packet": "realization/ORACLE-PACKET.md",
+      "allowance_proxy": 18,
+      "target": "2026-11-14T04:35:00Z",
+      "bounded_handoff": "2026-11-14T04:45:00Z",
+      "collector": "root",
+      "collection_route": "collaboration.wait_agent",
+      "context_choice": "fresh clear-contract implementation; old builders retained unrelated/rejected revision contexts; medium selected under guide",
+      "result": "realization/oracle/RESULT.md",
+      "continuation_sha256": "4d42c58699b873e69f9c4b9fb07aba18e48c58135e910c54a10f8509f5db62cd",
+      "latest_context": 174831,
+      "processes": "all exited/zero leftovers per worker; root validation pending",
+      "required_unmet": [
+        "350scope lows",
+        "full175 accounting result/rollup refs",
+        "full executable raw/confluence qualification"
+      ]
+    },
+    "s1r8_spec": {
+      "task": "/root/s1r8_spec",
+      "session": "01a1d81b-18c4-7f11-af00-c6a75867e8cc",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T20-30-16-01a1d81b-18c4-7f11-af00-c6a75867e8cc.jsonl",
+      "state": "complete_native_final_collected_idle",
+      "model_requested": "gpt-6.1-sol",
+      "effort_requested": "medium",
+      "tier_requested": "inherit_root_default",
+      "model_observed": "gpt-6.1-sol",
+      "effort_observed": "medium",
+      "tier_observed": "default",
+      "settings": "control/s1r8_spec-settings.json",
+      "packet": "realization/SPEC-PACKET.md",
+      "allowance_proxy": 18,
+      "target": "2026-11-14T04:35:00Z",
+      "bounded_handoff": "2026-11-14T04:45:00Z",
+      "collector": "root",
+      "collection_route": "collaboration.wait_agent",
+      "context_choice": "fresh clear-contract implementation; old builders retained unrelated/rejected revision contexts; medium selected under guide",
+      "result": "realization/spec/RESULT.md",
+      "result_sha256": "e0d57d77f4d29f38360ecbabb9835307ed2f1117c2dfe769743174098ddeb76a",
+      "latest_context": 153756,
+      "processes": "all exited/zero leftovers per worker; root validation pending"
+    },
+    "context_refresh_helper": {
+      "task": "/root/context_refresh_helper",
+      "session": "01a1d837-47ad-7320-8a7f-3b2f8d725b11",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T21-01-03-01a1d837-47ad-7320-8a7f-3b2f8d725b11.jsonl",
+      "state": "refresh2_foreground_controller_running_root_verified_job",
+      "collector": "helper owns foreground job; root collects helper receipt via collaboration",
+      "model_requested": "gpt-6.1-sol",
+      "effort_requested": "medium",
+      "tier_requested": "inherit_root_default",
+      "model_observed": "gpt-6.1-sol",
+      "effort_observed": "medium",
+      "tier_observed": "default",
+      "allowance_proxy": 1.5,
+      "packet": "control/REFRESH-HELPER-PACKET.md",
+      "result": "control/REFRESH-HELPER-RESULT.json",
+      "state_file": "control/REFRESH-HELPER-STATE.json",
+      "refresh2_state": "control/REFRESH2-HELPER-STATE.json"
+    },
+    "s1r8_complete_integration": {
+      "task": "/root/s1r8_complete_integration",
+      "session": "01a1d840-c933-78b1-8b7a-805a0ef28378",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T21-11-26-01a1d840-c933-78b1-8b7a-805a0ef28378.jsonl",
+      "state": "complete_native_final_collected_source_stopped",
+      "collector": "root via collaboration.wait_agent",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "medium",
+      "requested_tier": "inherited root default",
+      "observed_model": "gpt-6.1-sol",
+      "observed_effort": "medium",
+      "observed_tier": "default",
+      "settings_event": "cf948997c754413a17c9f7a9e5f946906bb87df0f08b3d7a61628aa9feb08d7b",
+      "allowance_proxy": 15,
+      "target": "2026-11-14T05:10:00Z",
+      "bounded_handoff": "2026-11-14T05:20:00Z",
+      "context_choice": "fresh; substantial full corpus authoring/integration would not fit retained174k oracle or153k spec with material new reads",
+      "result": "completion/integration/RESULT.md",
+      "result_sha256": "2fc4a55decbe04a14484f1f5461442209d9361aa3c2ba0e57ea2ae25903bad67",
+      "source_bindings": "2471ec7d9564afb8185f3d6dd05d5fe6c262f27afcc62846a50766ff3375b56e",
+      "processes": "all terminal zero leftovers root custody verified",
+      "latest_context": 138647
+    },
+    "s1r8_complete_a": {
+      "task": "/root/s1r8_complete_a",
+      "session": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T21-11-33-01a1d840-e1a4-7b11-9b77-151fba94962a.jsonl",
+      "state": "complete_native_final_collected_source_stopped",
+      "collector": "root via collaboration.wait_agent",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "medium",
+      "requested_tier": "inherited root default",
+      "observed_model": "gpt-6.1-sol",
+      "observed_effort": "medium",
+      "observed_tier": "default",
+      "settings_event": "4d8c35f0503956de4595b2e81b08d8ba0a09fb759664430043e61b6e4aa94c9a",
+      "allowance_proxy": 15,
+      "target": "2026-11-14T05:10:00Z",
+      "bounded_handoff": "2026-11-14T05:20:00Z",
+      "context_choice": "fresh; substantial full corpus authoring/integration would not fit retained174k oracle or153k spec with material new reads",
+      "result": "completion/A/RESULT.md",
+      "reported_cases": 69,
+      "reported_units": 68,
+      "reported_scopes": 150,
+      "processes": "all terminal zero leftovers per worker; root byte/custody verification pending"
+    },
+    "s1r8_complete_b": {
+      "task": "/root/s1r8_complete_b",
+      "session": "01a1d840-f94e-7631-aef9-15c312b1ae20",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T21-11-39-01a1d840-f94e-7631-aef9-15c312b1ae20.jsonl",
+      "state": "revision_metadata_complete_native_final_collected_source_stopped",
+      "collector": "root via collaboration.wait_agent",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "medium",
+      "requested_tier": "inherited root default",
+      "observed_model": "gpt-6.1-sol",
+      "observed_effort": "medium",
+      "observed_tier": "default",
+      "settings_event": "050251769644550b10d1d7cdbbf461e64c63bc39221be89d6a5d9c89b3638d8d",
+      "allowance_proxy": 15,
+      "target": "2026-11-14T05:10:00Z",
+      "bounded_handoff": "2026-11-14T05:20:00Z",
+      "context_choice": "fresh; substantial full corpus authoring/integration would not fit retained174k oracle or153k spec with material new reads",
+      "result": "completion/B/RESULT.md",
+      "reported_cases": 106,
+      "reported_units": 118,
+      "reported_scopes": 224,
+      "source_stopped": "completion/B/SOURCE-STOPPED.json",
+      "result_sha256": "e1417f915704b1fc2e2b2c0be5deb467e6f3686dee3e8c99cfdb41b411d61725",
+      "processes": "all own jobs terminal zero leftovers per final; root custody verification pending",
+      "context_check": "control/B-revision-repair-context.json"
+    }
+  },
+  "processes": {
+    "board_context_budget": {
+      "session_id": 26461,
+      "state": "cancelled_collected",
+      "collector": "root at natural tool/dispatch/integration boundaries; explicit checks before admissions",
+      "scope": "aspect:pi-accounting plus root control; exclude ordinary self posts",
+      "cursor": 5355,
+      "timeout_seconds": 13700,
+      "initial_context": "control/root-start-context.json",
+      "initial_budget": "explicit scope_budget check03:02:28;0.219244proxy/account88percent",
+      "delivery_limit": "PTY does not wake wait_agent; explicit checks retained, no immediate async wake claim",
+      "last_consumed": "control/listener-consumed-0338.json",
+      "next_since": 5368,
+      "exit": 130,
+      "rearm_required": true
+    },
+    "recovery_listener": {
+      "job": 99287,
+      "owner": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "state": "cancelled_collected_exit130",
+      "collection": "root write_stdin at natural decision boundaries; no asynchronous collaboration wake guaranteed",
+      "board_since": 5392,
+      "fresh_context_baseline": true,
+      "budget_cursor": "fresh",
+      "old_listener": 26461,
+      "old_disposition": "cancelled_collected_exit130",
+      "terminal": "control/listener2-close.json",
+      "cursors": "control/listener2-consumed.json"
+    },
+    "latest_combined_listener": {
+      "session": 31300,
+      "state": "terminal130_collected",
+      "pid": 3385768,
+      "cursors": "control/listener7-consumed.json",
+      "rearm": "exactlyONE fresh combinedobserver after ownnew_context",
+      "delivery_gap": "explicit no monitoring until verifiedrearm"
+    }
+  },
+  "claims": {
+    "campaign/pi-accounting-s1": "b9d52dd6-b3c9-41bd-8295-319edbbcb8f7",
+    "review/pi-accounting-design-r6": "b93bed4a-d03d-4ff3-99ac-d4a5832d0e7f",
+    "source/pi-accounting-s1-r8": "6d4c18a2-9bd5-4f3f-9b84-4e4655bfa59e",
+    "source/pi-accounting-s1-r9-pilot": "377b6b74-1dd2-4ddd-ae22-cbcfa2235b92"
+  },
+  "guidance_refresh": {
+    "commit": "38b20ce2ba03f221b882bf87d807601a5057ba57",
+    "read": "architectural-escalation full; supervisor/context-control/same-session-context exact changed instructions; no scope/authority change"
+  },
+  "optional_model_pilot": {
+    "state": "paused",
+    "admission_reason": "pause_marker_present",
+    "screened_or_enrolled": false
+  },
+  "active_subject": {
+    "path": "realization/s1",
+    "version": "pi-accounting-contract/1.7-s1/r8",
+    "state": "frozen_unaccepted",
+    "manifest": "21df51b69391110beb6952c0eaebfb3c5bf99ac0ef19ce78a225fd24412afb36",
+    "archive": "48a028a78a9a090ddfd806fa7576f4c8a1112bee397fe6b5325380246aac624f",
+    "review_copy": "reviews/implementation-r8/subject",
+    "capsule_bindings": "c17085526ae20f60d9c96e8bb286ced2470cc1aa631f9d37e0e13eb9be8cc3fc"
+  },
+  "implementation_notes": {
+    "oracle": "baseline175 falsegreen preserved; actual Python corrected named low assertions and seven raw-hash-preserved RS/zero-anchor projections; full175 lows/wire/accounting refs remain REQUIRED/UNMET, no acceptance waiver",
+    "spec": "explicit UnbudgetedCompletion discriminator/applicability/completion result witnesses added to realize acceptedPLAN6; no fakeR/S, expected assertions never supply authority",
+    "conditional_VC07": "actual CLI and Draft202012/Rust supplied-record positives/forged relabel negatives reported passing with custody; root has not yet validated finalrecords",
+    "test_failures": "unsupported custody directory flag prelaunch; old15low sabotage mutant became selected positive; two detached auxiliary forwarding projections corrected; missing unbudgeted route interface failure. Preserve histories; these are intermediate builder observations, not independent implementation rejections",
+    "current_scope": "both workers still active; bounded finite supplied result/assertion checks, not executed discovery/raw reducer conformance; independent review still required"
+  },
+  "last_budget_observation": {
+    "artifact": "control/final-sprint-budget.json",
+    "proxy_usd": 77.90408079999989,
+    "at": "2026-11-14T06:54:09.886405+00:00",
+    "tail_unmeasured": true
+  },
+  "refresh": {
+    "state": "completed",
+    "snapshot": "REFRESH-CONTINUATION-FROZEN.md",
+    "operation": "control/refresh-1",
+    "source_turn": "01a1d7fb-4041-7283-a35b-ea02bb530e07",
+    "quiescent": true,
+    "engineering_results_remaining": 0,
+    "active_engineering_roles": [],
+    "helper": "01a1d837-47ad-7320-8a7f-3b2f8d725b11",
+    "root_ownership_unchanged": true,
+    "operation_id": "d22b5aea-46b9-4fcf-b2bc-fb3860cc4b11",
+    "frozen_continuation_sha256": "950435b2aa809ac0555f29eb2e1eace425682b7b5a866d1b31e30c8eab6a4e13",
+    "helper_settings": "control/refresh-helper-settings.json",
+    "prepare_first_failure": "symlink WindWalker path not normalized; no operation/nativeentry created; corrected normalized physical release38b20ce2 path",
+    "helper_exec_session": 35640,
+    "helper_collector": "/root/context_refresh_helper",
+    "job_binding": "control/REFRESH-HELPER-STATE.json",
+    "controller_pid": 3020025,
+    "recovery_route": "auto_continue native sameSID compaction + attributed recovery; helper owns terminal receipt and explicit failure notification",
+    "no_deep_result_admission_in_source_context": true
+  },
+  "completion": {
+    "kind": "small decomposition revision within original finite S1 qualification objective",
+    "addition": false,
+    "basis": "350 missing scopes are finite authoring, not D3-impossible; two disjoint case partitions plus one shared consumer owner preserve independence/ownership; same source/plan/history and budget",
+    "baseline_manifest": "60cd1c48bb398e5540da9ca23d83112ad36ebf4e5110ffe38256ba29181ae306",
+    "partitions": "completion/PARTITIONS.json",
+    "accepted_by": "root under existing user owner authority",
+    "required_scopes": 374,
+    "prior_qualified": 24,
+    "unfinished_finite": 350,
+    "no_fullraw_claim": true,
+    "packet_bindings": {
+      "B-PACKET.md": "6c36b81a0e061ae58017d1c97081024ececcc205fc764cbd9a92bb2b82a8113a",
+      "INTEGRATION-PACKET.md": "1656c5daa02d0d4581e489ea3801c1740005b5dcfec6edda20d4d38ee2b2ce44",
+      "A-PACKET.md": "ddff78a7c6dd4d408bb8c72a42070e13a8e65eb67096100b1d6f866cf7dc2430",
+      "COMMON.md": "8290d161296d47e5c61b5609fc3faaaa371edbbea26df4e1a633989a56641fb0"
+    },
+    "partitions_sha256": "c09ef2e7fe753fe57b8a494395de6d619233a8450c3b3167f720da3afecaea8b",
+    "interface_sha256": "9681061d0bf8ee02bb13bbb1751174cfcc1baa2c3d5316afe841cad02fe0ed30",
+    "bindings_acknowledged": true,
+    "exact_witness_disposition": "PLAN7 requires supplied C-validity/complete valuation/accepted whole coverage for Exact budgeted release, separate genuine unbudgeted route; naked refs/literal assertions cannot authorize F. Existing conditional initial scope only, no invented auxiliary/independence grants. Lawful unrepresentable cases to root before schema/scope change.",
+    "interface": {
+      "path": "completion/INTERFACE.json",
+      "status": "published; core source shapes existing; root requires full F witness not opaque refs",
+      "root_disposition_delivered_to": [
+        "integration",
+        "a",
+        "b"
+      ]
+    },
+    "current_binding": {
+      "path": "control/completion-current-binding-70ab0b7da7703941db527d01c8b1937efa741ae0d71689af9736eb574bcc963f.json",
+      "sha256": "70ab0b7da7703941db527d01c8b1937efa741ae0d71689af9736eb574bcc963f",
+      "files": 461,
+      "preservation_pass": true,
+      "scope_count": 374,
+      "old_claims_preserved": 24,
+      "previous_sha256": "3d1d6a14994f7e1085f0003b68e3761a80f8ea995651d5e0142653888ae343c7"
+    },
+    "first_join_failure": "joined-1 actual revisions lacked B standard reversible ref entries; failed record preserved, B342entries repaired with no raw/money/ref change, recheck70ab0b7d",
+    "non_rejection_disposition": "initial builder/join validation failure; no independent implementation rejection increment, no financial regression found; source/receipt history retained"
+  },
+  "review_preparation": {
+    "plan": "reviews/implementation-r8/DRAFT-REVIEW-PLAN.md",
+    "state": "frozen_subject_ready_read_set_sizing_required_before_launch",
+    "classification": "small review decomposition within existing original A/B/C gate, no acceptance weakening; corpus split to fit reviewer windows",
+    "authority": "root owner under funded objective",
+    "required_modules": [
+      "A1",
+      "A2",
+      "B",
+      "C"
+    ],
+    "future_reserve_proxy": 36,
+    "capacity_note": "Four-way draft is not literal all-files packet approval; split A2/C further if needed, preserving original gates; six named obligations likely fit. No review launched."
+  },
+  "refresh2": {
+    "state": "controller_job_bound_root_verified_source_ending",
+    "snapshot": "REFRESH2-CONTINUATION-FROZEN.md",
+    "sha256": "f5707dadd360ffd1980a3ac48b3c5f531e3f5ef15dadc0f1ce844be5fcc553d9",
+    "operation": "control/refresh-2",
+    "helper": "/root/context_refresh_helper",
+    "engineering_quiescent": true,
+    "native_review_launched": false,
+    "source_turn": "01a1d83b-9691-76e3-be28-b88eed83caad",
+    "operation_id": "8981fe43-5326-4236-9749-18657249ef6a",
+    "helper_state": "control/REFRESH2-HELPER-STATE.json",
+    "helper_job": 40681,
+    "controller_pid": 3162695,
+    "failure_delivery": "helper collaboration plus exact existing-root TUI runtime failure notice; no automatic retry"
+  },
+  "current_recovery": {
+    "at": "2026-11-14T06:38:58.215523+00:00",
+    "continuation": "TOKEN-MODE-CONTINUATION-8.md",
+    "root_verified": true,
+    "source": "same native root ownnewcontext, no transfer/replay",
+    "settings": "control/post-token-refresh8-settings.json",
+    "listener": {
+      "number": 10,
+      "tool_session": 21360,
+      "wrapper_pid": 3482533,
+      "listener_pid": 3482534,
+      "started_at": "2026-11-14T06:38:07.404410+00:00",
+      "collector": "root foreground tool natural boundaries",
+      "state": "terminal130_collected; noobserverlive; all3cursors listener10-consumed",
+      "context_binding": "new context epoch freshbaseline, thresholds185000/220000",
+      "argv": "control/listener10-argv.json",
+      "output": "control/listener10-output.jsonl",
+      "cursors": "control/listener10-latest-cursors.json",
+      "initial_context": "control/post-token-refresh8-context.json",
+      "initial_budget": "control/post-token-refresh8-budget.json"
+    },
+    "capacity": "latest99728 plus boundedreviewcollection30k and guardeddecision20k below185k; no implementationadmission",
+    "instruction_refresh": "b255aa63 plus current allrolepressure installedskill and scopedentry"
+  },
+  "pilot_r9": {
+    "state": "plan_adopted_implementation_rejected_source_stopped_continuation_required",
+    "organization": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ORGANIZATION-R4.json",
+    "decision": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ORGANIZATION-DECISION-R4.json",
+    "roles": {
+      "spec": {
+        "state": "complete_nativefinal_collected_source_stopped",
+        "task": "/root/s1r9_spec_pilot",
+        "session_id": "01a1d8a4-b80e-7163-af3b-d257f945693e",
+        "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-00-36-01a1d8a4-b80e-7163-af3b-d257f945693e.jsonl",
+        "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/SPEC-PACKET.md",
+        "settings": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec-observed-settings.json",
+        "identity_binding": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec-IDENTITY-BINDING.md",
+        "cap_proxy": 6,
+        "collector": "root",
+        "continuation": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/CONTINUATION.json"
+      },
+      "oracle": {
+        "state": "complete_nativefinal_collected_source_stopped",
+        "task": "/root/s1r9_oracle_pilot",
+        "session_id": "01a1d8a4-d798-7fd1-ae5e-6955ec003480",
+        "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-00-44-01a1d8a4-d798-7fd1-ae5e-6955ec003480.jsonl",
+        "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ORACLE-PACKET.md",
+        "settings": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle-observed-settings.json",
+        "identity_binding": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle-IDENTITY-BINDING.md",
+        "cap_proxy": 6,
+        "collector": "root",
+        "continuation": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/CONTINUATION.json"
+      }
+    },
+    "collector": "root",
+    "subject": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+    "interface": {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/INTERFACE.md",
+      "sha256": "679c9eab6920232671cfbb6a68ec211885b7b519c1e1dfb7262bd582a51ab4f7",
+      "root_read": true,
+      "disposition": "accept bounded suppliedrecordshape; exact admitted_payload raw-binding remains independentoracle obligation"
+    },
+    "control_provenance": "numeric response_model7 is exactrootprobe derivedcontrol; originalbaseline raw strings unchanged; eachcontrol correct/wrongresults samecontrolraw/premises",
+    "current_organization": {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ORGANIZATION-R7.json",
+      "sha256": "bd65340c4872e0c8587272539eb489009868d8245a869ff71e8a6b89701a041a",
+      "decision": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ORGANIZATION-DECISION-R7.json"
+    },
+    "spec_collection": {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/SPEC-COLLECTION.json",
+      "state": "exact final fully read,9manifest12custodychecks pass, no leftovers; no acceptance"
+    },
+    "oracle_collection": {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ORACLE-COLLECTION.json",
+      "status": "first exact final collected/fully read;5custody passes; now historical frozen partial"
+    },
+    "join": {
+      "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ROOT-JOIN-PLAN.json",
+      "summary": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-join/summary.json",
+      "outcome": "failed9of14; five real positive bundle errors; collected terminal1,0leftovers",
+      "subject": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/subject",
+      "freeze": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/freeze/manifest.json"
+    },
+    "oracle_followup": {
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ORACLE-JOIN-PACKET.md",
+      "sha256": "397051d0774972b2debf9638a8d29721713ed4432bb5284ea5cfc50ff54e64cd",
+      "session": "01a1d8a4-d798-7fd1-ae5e-6955ec003480",
+      "status": "complete exact final collected,15passingcustody0leftovers; source stopped; model7 semanticapplicability unmet",
+      "collector": "same root"
+    },
+    "current_frozen": {
+      "manifest": "pilot-r9/freeze-r2/manifest.json",
+      "sha256": "0cad3d5ed66b9ef3c4796cb4039a16646d0ce0d451153948b08f972d8286df6a",
+      "subject": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/subject-r2",
+      "state": "unaccepted partial"
+    },
+    "review_r3": {
+      "state": "both exactfinals fullycollected idle",
+      "session": "01a1d8c2-754e-7c13-84ec-570c1b872e56",
+      "turn": "01a1d8c2-7678-7603-b75f-f998798c6c00",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-33-05-01a1d8c2-754e-7c13-84ec-570c1b872e56.jsonl",
+      "collector": "same root via native wait_threads",
+      "launch": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/review-r3/LAUNCH.json",
+      "identity": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/review-r3/IDENTITY.md",
+      "ack": "verified initial final",
+      "source": "pilot-r9/subject-r2",
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "tier": "default",
+      "allowance_proxy": 9,
+      "target": "2026-11-14T06:49:00Z",
+      "boundedhandoff": "2026-11-14T06:51:00Z",
+      "readiness": "no repair until exact freshdesign judgment root disposition",
+      "child_context_route": "initial wait rejectedstepflag, explicitfallback truthful; sameSID refresh and supportedwait required for next bounded task",
+      "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/review-r3/REVIEW.md",
+      "report_sha256": "9b2bb1c26574127c337b19a44a34da367ca9158d2b10430e4c01034aeda755f0",
+      "verdict": "REVISE_PLAN/CHANGES_REQUIRED",
+      "processes": "all commands andcontextlistener terminalcollected noleftovers",
+      "amendment_turn": "01a1d8ce-1295-75a2-98f4-385454f235b6",
+      "amendment_packet": "pilot-r9/review-r3/AMENDMENT-PACKET.md",
+      "amendment_context": "ownnativefreshcontext requested forecast181926+10k; sameepisode recovering ownreport",
+      "amendment_report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/review-r3/AMENDMENT-REVIEW.md",
+      "amendment_report_sha256": "86d86bf3e271c2f86a1f2a31ec65b789be1105bb7a686c82c33251e68ad04ad0",
+      "amendment_verdict": "RECOMMEND_BOUNDED_IMPLEMENTATION",
+      "context_recovery": "verifiedsameepisode nativeowncontext; settingsline267 Astraxhigh/default; owncontextlistener expectedtimeoutcollected"
+    },
+    "plan_amendment_r3": {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/PLAN-AMENDMENT-R3.md",
+      "sha256": "90b6308e9608decf026437c89b98de597cd30046f56d792aa7461061f31f4abb",
+      "state": "rootadopted designonly noimplementationdispatch",
+      "candidate": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ORGANIZATION-R8-PLAN.json",
+      "adoption": "pilot-r9/ROOT-ADOPTION-R3-PLAN.json"
+    },
+    "root_r3_disposition": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ROOT-R3-FINDING-DISPOSITION.json",
+    "root_probes": {
+      "custody": "pilot-r9/root-review-probes/custody/p9-routing-and-model7.json",
+      "tool_session": 48287,
+      "state": "terminal0_collected",
+      "leftovers": 0
+    }
+  },
+  "context_refresh8": {
+    "state": "recovered same root authority settings collection verified",
+    "continuation": "/home/bline/cbm-work/pi-accounting-continuation-20261114/TOKEN-MODE-CONTINUATION-8.md",
+    "sha256": "c722107f1cb7192876c8c166ca52818fceeee306edfbfc9eeeff2083b0c62caf",
+    "forecast": "166679+30000 crosses185k; stopordinarywork",
+    "no_transfer": true,
+    "solecollector": "root"
+  },
+  "closing_state": {
+    "state": "CLOSED_UNACCEPTED",
+    "at": "2026-11-14T06:52:40.579245+00:00",
+    "all_review_final_collection": "complete; all exact finals fully read",
+    "all_engineering_processes": "terminal collected; no active jobs; listener10 exit130, listener11 timeout exit2 tool30472 terminal collected",
+    "open_steps": [],
+    "implementation_dispatch": "HELD nofurtherwork in remainingwindow, evenifnotyetdeadline",
+    "grants": "same100 hard06:55:30.192Z; noextension",
+    "report": "SPRINT-RESULT-R3.md",
+    "continuation": "CURRENT-CONTINUATION.md",
+    "remaining_obligations": "Underlying engineering objective unfinished; next paid sprint requires renewed unexpired human grant. No uncollected current child/process.",
+    "closed_at": "2026-11-14T06:54:58.981342+00:00",
+    "scope_budget_disposition": "abandoned means sprint stopped unaccepted; underlying objective remains unfinished",
+    "claims": "six own active pi-accounting claims released; control/closure-claim-releases.json",
+    "final_budget_observation": {
+      "path": "control/final-sprint-budget.json",
+      "snapshot_at": "2026-11-14T06:54:09.886405+00:00",
+      "proxy_usd": 77.90408079999989,
+      "limit_usd": 100,
+      "unpriced_calls": 0,
+      "later_inference_tail": "not yet measured; no zero tail or actual billing claim"
+    },
+    "postboundary_settings": "control/post-token-refresh9-settings.json line7720 Sol6.1/high/default",
+    "context_observation": "control/final-closing-context.json explicit; listener11 collected timeout, allthreecursors saved; availability ending, no ongoing enrollment claimed",
+    "terminal_board_result": "control/terminal-board-result.json",
+    "no_remaining_own_claims_verified": "control/closure-board-after-release.json"
+  },
+  "context_refresh9": {
+    "state": "prepared ownnewcontextnow on directdeveloperinstruction",
+    "continuation": "TOKEN-MODE-CONTINUATION-9.md",
+    "collector": "same root",
+    "no_transfer": true,
+    "recovered": true,
+    "postboundary_settings": "control/post-token-refresh9-settings.json",
+    "closure_complete": true
+  }
+}

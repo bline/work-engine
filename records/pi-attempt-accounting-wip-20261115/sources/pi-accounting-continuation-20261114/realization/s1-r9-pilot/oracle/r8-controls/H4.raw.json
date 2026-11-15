@@ -1,0 +1,13 @@
+{
+  "distinct_origin_copy": "B under consistent conditional exact-line guarantee",
+  "observations": [
+    "originA",
+    "originA"
+  ],
+  "same_origin_identity": [
+    "lineageL",
+    "sourceS",
+    1,
+    "rawDigestD"
+  ]
+}

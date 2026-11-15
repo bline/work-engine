@@ -1,0 +1,15 @@
+# Owner decision: bounded S1 specification redesign
+
+Authority: user's explicit delegation, “You are the owner, run the review and take over future development”, within the $100/four-hour sprint. Root 01a1d6e2 owns this decision.
+
+Evidence: P1.35 Astra xhigh completed, one subscription request, response01e3c3cc8b6913d117f46ce0f5973735524af4bb6b86b0943f633fedafb42b42, seal816788d40237933579738faba30788409a29271c80f6b9b9ef499a67963261b9. Exact prompt delivered;120056input/10636output/5021reasoning;1.73236API-equivalent proxy. Billing and subscription quota unknown. Pi e60d2cb6 and single-command Claude launcher c110c95a retired, no retry/fallback.
+
+Reviewer decision REVISE_SPECIFICATION_ARCHITECTURE, primary B: repeated cross-representation semantic disagreement. Retain pure reducer and separations. Direct manually synchronized patch inappropriate. Root accepts this architectural finding. Root independently confirms conflicting error-status formulas in revision5§6.2 and§8 and reruns P1.34 reproducer (all9 exit0); no new numerical counterexample beyond historical ones was supplied. Review limits remain: excerpted validator/builder; incomplete P1.29; not full lifecycle or all corpus.
+
+Authorized corrective architecture: compact canonical C-K types/guarded rules/dependencies, generated repeated normative views and structural checks, explicit post-V financial finalization; separately derived raw-evidence oracle and producer-writability witnesses; gate trust specified as an externally established adapter input, with unmistakable mocks, no production cryptography or authority implementation. No general DSL, reference reducer, full state-model replacement or producer changes. Preserve revision5 and all history unchanged.
+
+Ownership: root approves canonical policy and all disputed choices; one design/spec worker owns the canonical specification and generated representations; a separate fresh oracle worker owns raw-evidence calculations and reports disagreements without importing canonical evaluator/generator logic or regenerating expected outcomes to pass. Independent Astra reviews retain acceptance challenge. Root owns acceptance/integration.
+
+This is architecture adoption and authorization to design its bounded realization, not acceptance of revision6 or S2a entry. Normative policies on provider/schema conflict, absent/null usage, unique-reservation applicability and gate trust/billing ceiling must be explicit before implementation. Design worker proposes choices with concrete examples; root records dispositions.
+
+Guard disposition: TRIGGERED -> DESIGN_REMEDIATION_REQUIRED. Ordinary local-patch route remains disallowed. Architecture-led consolidation is now authorized; freeze and reducer entry require its evidence, independent oracles and modular review gates. Historical rejection/invariant evidence remains attached; completion of this review does not reset counts or establish correctness. Further serious architecture defects or regression trigger renewed design assessment, infrastructure events never count as semantic rejections.

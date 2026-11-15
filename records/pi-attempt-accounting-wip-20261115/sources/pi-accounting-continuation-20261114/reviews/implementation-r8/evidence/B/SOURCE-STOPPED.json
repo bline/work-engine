@@ -1,0 +1,33 @@
+{
+  "source_stopped": true,
+  "worker_completion": "complete bounded partition B",
+  "acceptance_owner": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "cases": 106,
+  "active_attempts": 118,
+  "low_scopes": 224,
+  "preserved_prior_claims": 16,
+  "new_low_claims": 208,
+  "positive_low_scopes": 49,
+  "zero_low_scopes": 175,
+  "source_bindings_sha256": "c2dcfbc97c96178413609061752122aaabf9e0cfa6a3909f72c2c973fb36dcc4",
+  "amendments_sha256": "c5b31b0e22b1d46cd803ad8fb04894b4ea6f235af1c646bd0887b1ef4a94e06b",
+  "assertion_shard_sha256": "587de76fd9fd99c54bcc5ca343785f6624194dd33c5692b9154fc5fd9435d206",
+  "consumers": {
+    "rust_binary": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-integration/debug/pi-accounting-spec-check",
+    "rust_sha256": "66ec52f8d51bf591a29b529948fd5e9957929234701ba9867216c1c845aeefd2",
+    "python_sha256": "ab5f78d47d6105791a8ca14cf0c0799015aca67dd7935a48d18756735417429a",
+    "accounting_schema_sha256": "717e4e080c288d613cdd0793d3b4d0cdf7620a777efcd648036f2428388ed39c"
+  },
+  "custody_final1_summary_sha256": "382f35cb1a43e2661ad5defcf5a3af3353c50a5ab6dcf84dc2be12faf1b65350",
+  "custody_final_python2_summary_sha256": "8c267b0c17a570d0a61fd300d70d0e894a083f71747fe03cfcf3e3c596f5a999",
+  "tests": "Python partition, Rust corpus, all448negative controls PASS; zero leftovers; actual whole-corpus revisions175->175 PASS after342reversible metadata entries",
+  "process_disposition": "All owned tool sessions83148,64628,19747,16856 collected; no owned live process; final-python-3 session1540 collected zero leftovers; revision-repair session44246 collected zero leftovers",
+  "continuity": "unestablished; predecessor baseline case hashes retained; no predecessor accounting documents supplied",
+  "limitations": [
+    "No arbitrary raw financial reducer, executable discovery confluence, live scope/link/independence grants, production behavior or S1 acceptance.",
+    "Supplied inactive hold and retained-component external locators are declarations, not an arbitrary raw proof engine."
+  ],
+  "custody_final_python3_summary_sha256": "0556522f596636d1f1164bee0753c1514e6dbfea498e4d5a032dc168206e791a",
+  "revision_repair_sha256": "c2a3868ac9346156823cf0e1c19ba6e2c3e884278540a044c57ab31d1ebab114",
+  "revision_repair_custody_sha256": "f7c6e372521904586ddcab24807edf31bb1de660279b21b32f69a36ec921eeef"
+}

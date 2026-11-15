@@ -1,0 +1,86 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/QUALIFICATION.plan.json",
+  "plan_sha256": "694f9ad9cee787dfd609c82f7b614b6f62a5e49a89c8823b06775271655f90e7",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "build-evidence",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/qualification-1/build-evidence.json",
+      "record_sha256": "6ffdb91ead692fd4d77850bf7d0cab34678aa0b7b596b8fdd5e7d92273c26cf0",
+      "leftovers": 0
+    },
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/qualification-1/build.json",
+      "record_sha256": "3c7ac26845fccbe54e1b014ac4afd8d158234a077cb5266695f74a5261f3920c",
+      "leftovers": 0
+    },
+    {
+      "name": "python-controls",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/qualification-1/python-controls.json",
+      "record_sha256": "cf9423fb40a66362183e923b295aacd3436eb6a2d112c3a544a214a469dafa55",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-positive",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/qualification-1/rust-positive.json",
+      "record_sha256": "29f21c220aa01f316dacebe04bb76631171e909b4966778a2f290294977d7808",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-r10-controls",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/qualification-1/rust-r10-controls.json",
+      "record_sha256": "ce06fa401ec7a5bbc3d992dd22e1da170ba28cb6018c18b6e71e14c07920cd60",
+      "leftovers": 0
+    },
+    {
+      "name": "python-main-pilot",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/qualification-1/python-main-pilot.json",
+      "record_sha256": "bc443d2d7b28eac881a5cccc332cd9647714ba0530da7916ec8be9fc6563e87f",
+      "leftovers": 0
+    },
+    {
+      "name": "generated",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/qualification-1/generated.json",
+      "record_sha256": "42a571a9525b8cd2b7b84f2648b7538e292f1612271f0e4fa38530c300bb2bae",
+      "leftovers": 0
+    },
+    {
+      "name": "impact",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/qualification-1/impact.json",
+      "record_sha256": "63d256dc2070f804d367f5fb87397e1f9375bc6320ea40e941833e062ee8bed8",
+      "leftovers": 0
+    },
+    {
+      "name": "schema_agreement",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/qualification-1/schema_agreement.json",
+      "record_sha256": "cd35593af21167af64680b0b4b6c8874949cf6d318688c8f80b242903fc45140",
+      "leftovers": 0
+    },
+    {
+      "name": "wire_corpus",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/qualification-1/wire_corpus.json",
+      "record_sha256": "0d7af3762cfd871ed4e531d80ca63be0d62179c7f2e72e61f3eaaf05af26984f",
+      "leftovers": 0
+    },
+    {
+      "name": "evidence_controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/qualification-1/evidence_controls.json",
+      "record_sha256": "d25569177456d4cad9d85e0cbc05d63031579a3e4d821d8e1b95f063b8adb72e",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

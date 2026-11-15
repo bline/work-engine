@@ -1,0 +1,520 @@
+{
+ "ambiguity": null,
+ "case_id": "VC13-equal-timestamps",
+ "class": "producer_valid",
+ "contract": "pi-accounting-contract/1.5-s1",
+ "controls": [],
+ "evaluations": [
+  {
+   "admission_request": {
+    "new": "100000000",
+    "objective": "o"
+   },
+   "expected": {
+    "admission": {
+     "decision": "refused",
+     "limit": "1000000000",
+     "new": "100000000",
+     "objective": "o"
+    },
+    "attribution": [
+     {
+      "attempt": "res:S1/turn-1:rid=1",
+      "objective": "o",
+      "ownership": "owned",
+      "placement": "inside"
+     }
+    ],
+    "objectives": [
+     {
+      "commitments": [
+       {
+        "admission_id": "a1",
+        "committed": "985000000",
+        "gate": {
+         "qualified": false,
+         "reasons": [
+          "NoGateEvidence"
+         ]
+        },
+        "kind": "at_least",
+        "state": "retired_resumable"
+       }
+      ],
+      "objective": "o",
+      "owned_closed": {
+       "high": {
+        "kind": "exact",
+        "nano": "15000000"
+       },
+       "low": "15000000"
+      },
+      "owned_outstanding": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "predecessor_obligations": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "provisional": false,
+      "reasons": [
+       "UnenforcedCommitment"
+      ],
+      "status": "not_established"
+     }
+    ]
+   },
+   "name": "default",
+   "objectives": [
+    {
+     "admissions": [
+      {
+       "admission_id": "a1",
+       "rows": [
+        {
+         "admission_id": "a1",
+         "at": "2026-11-10T06:00:05Z",
+         "event": "pending",
+         "max_usd": 1.0
+        },
+        {
+         "admission_id": "a1",
+         "at": "2026-11-10T06:00:10Z",
+         "event": "launched",
+         "session_id": "00000000-0000-4000-8000-0000000000c1"
+        }
+       ],
+       "session": "00000000-0000-4000-8000-0000000000c1",
+       "source": "journal"
+      }
+     ],
+     "closed_at": null,
+     "limit": "1000000000",
+     "objective": "o",
+     "predecessor": null,
+     "started_at": "2026-11-10T06:00:00Z",
+     "tree_sessions": [
+      "00000000-0000-4000-8000-0000000000c1"
+     ]
+    }
+   ]
+  }
+ ],
+ "expected": {
+  "attempts": [
+   {
+    "billing": "established",
+    "blocking": [],
+    "correlation": {
+     "kind": "exact"
+    },
+    "diagnostics": [],
+    "evidence": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ],
+    "execution": "terminal",
+    "exposure": {
+     "high": {
+      "basis": "usage_valuation",
+      "kind": "exact",
+      "nano": "15000000"
+     },
+     "low": {
+      "basis": "usage_valuation",
+      "nano": "15000000"
+     },
+     "pool": "pi_api"
+    },
+    "forwarding": "forwarded",
+    "key": "res:S1/turn-1:rid=1",
+    "obligation": {
+     "amount_source": "settlement_amount",
+     "by": "S1/turn-1:2",
+     "state": "closed"
+    },
+    "replacement": {
+     "eligible": true,
+     "reason": "UsageBound"
+    },
+    "settlement": {
+     "basis": "usage",
+     "charged": "15000000",
+     "decision": "valid",
+     "reasons": [],
+     "reserved": "500000000"
+    },
+    "valuation": {
+     "complete": true,
+     "derivations": [
+      {
+       "for": "both",
+       "model": "gpt-6-astra",
+       "nano": "15000000",
+       "provider": "openai",
+       "tier_multiplier": "1",
+       "usage": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 1000,
+        "output_tokens": 100
+       }
+      }
+     ],
+     "high": "15000000",
+     "identities": [
+      "openai/gpt-6-astra"
+     ],
+     "low": "15000000",
+     "state": "valued"
+    }
+   }
+  ],
+  "inventory": [],
+  "lifecycle": {
+   "S1": {
+    "clock": "trusted",
+    "reopened": false,
+    "state": "retired"
+   }
+  },
+  "non_attempt": [],
+  "unreadable": []
+ },
+ "findings": [],
+ "group": "N-05",
+ "historical": {
+  "a134_086bdec1": {
+   "blocking_kinds": [],
+   "decision": "admitted",
+   "evaluation": "default",
+   "note": "comparison only; A1.3.4 has no ownership (D1) concept: it attributes by session tree and time window",
+   "reader_sha256": "086bdec1d443064f6847821858f34bbf227f8804a9a5fc8a362416f62b29d621",
+   "reasons": [
+    "within the objective pi_api limit"
+   ],
+   "spent_high_nano": "15000000",
+   "spent_low_nano": "15000000"
+  }
+ },
+ "inputs": {
+  "rates": {
+   "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  },
+  "reference_time": "2026-11-10T07:00:00Z",
+  "sessions": [
+   {
+    "alias": "S1",
+    "launch": {
+     "auth_lane": "api",
+     "model": "openai/gpt-6-astra",
+     "parent": "root"
+    },
+    "lifecycle": [
+     {
+      "at": "2026-11-10T06:00:10Z",
+      "event": "launch",
+      "turn": 1
+     },
+     {
+      "at": "2026-11-10T06:00:12Z",
+      "event": "retire"
+     }
+    ],
+    "logs": {
+     "turn-1": {
+      "final_newline": true,
+      "lines": [
+       "{\"at\": \"2026-11-10T06:00:10Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.5, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
+       "{\"at\": \"2026-11-10T06:00:12Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.5, \"charged_usd\": 0.015, \"charge_basis\": \"usage\", \"session_spent_usd\": 0.015, \"multiplier_floor\": 0.0}}"
+      ]
+     }
+    },
+    "session_id": "00000000-0000-4000-8000-0000000000c1"
+   }
+  ]
+ },
+ "invariants": [
+  "INV-T4"
+ ],
+ "notes": "",
+ "profile": "current_producer",
+ "provenance": {
+  "origin": "test_usage_ledger_pi_a134.py::test_N05_controls",
+  "variant": "equal timestamps"
+ },
+ "rationale": "Revision 4 (contract 1.3-s1): default admitted -> refused (OQ-2 12.4 step 3). Revision6: root policy P1-P6; independently frozen source/line arithmetic f097e5a5. Qualified identities preserve family; successful terminal AND integer200 AND required billing counts establishes completion. Closed obligations retain evidence by; none has amount_source none. Future gates use separate conditional test_mock witness; no live qualification.",
+ "reachability": "producer_reachable",
+ "revisions": [],
+ "revisions_r3": [
+  {
+   "field": "attempts[res:S1/turn-1:rid=1].execution",
+   "from": "__absent__",
+   "rule": "R-07 6.2 Execution",
+   "to": "terminal"
+  },
+  {
+   "field": "attempts[res:S1/turn-1:rid=1].billing",
+   "from": "__absent__",
+   "rule": "R-07 6.2 Billing",
+   "to": "established"
+  },
+  {
+   "field": "lifecycle[S1].reopened",
+   "from": "__absent__",
+   "rule": "R-10 10: reopened is a separate fact from the terminal state",
+   "to": false
+  },
+  {
+   "field": "default/o.commitments[a1].kind",
+   "from": "__absent__",
+   "rule": "R-04 12.3 A-5 (Q10, P1.30): open and pending commitments rest on an unenforced declared cap",
+   "to": "exact"
+  }
+ ],
+ "revisions_r4": [
+  {
+   "field": "profile",
+   "from": "__absent__",
+   "rule": "OQ-1 2.3: capability profile (release 92a03789 writes no gate evidence)",
+   "to": "current_producer"
+  },
+  {
+   "field": "default/o.commitments[a1].gate",
+   "from": "__absent__",
+   "rule": "OQ-1 A-5: every commitment records its gate qualification; current producer: no gate evidence",
+   "to": {
+    "qualified": false,
+    "reasons": [
+     "NoGateEvidence"
+    ]
+   }
+  },
+  {
+   "field": "default/o.commitments[a1].state",
+   "from": "retired",
+   "rule": "OQ-1 A-3/L-7: retirement without a qualified gate keeps the commitment (retired_resumable)",
+   "to": "retired_resumable"
+  },
+  {
+   "field": "default/o.commitments[a1].committed",
+   "from": "0",
+   "rule": "OQ-1 A-3: committed = max(0, cap - owned high) while the session can resume",
+   "to": "985000000"
+  },
+  {
+   "field": "default/o.commitments[a1].kind",
+   "from": "exact",
+   "rule": "OQ-1 A-5: a resumable session commitment is AtLeast without a qualified gate",
+   "to": "at_least"
+  },
+  {
+   "field": "default/o.reasons",
+   "from": [],
+   "rule": "OQ-1/OQ-4 12.1 reasons implied by revised facts",
+   "to": [
+    "UnenforcedCommitment"
+   ]
+  },
+  {
+   "field": "default/o.status",
+   "from": "established",
+   "rule": "12.1 status",
+   "to": "not_established"
+  },
+  {
+   "field": "default/admission.decision",
+   "from": "admitted",
+   "rule": "OQ-2 12.4 step 3: known owned amounts, valid commitments and the request exceed the limit",
+   "to": "refused"
+  }
+ ],
+ "revisions_r5": [
+  {
+   "field": "attempts[res:S1/turn-1:rid=1].replacement",
+   "from": "__absent__",
+   "rule": "A-01 2.1: replacement eligibility is an explicit fact",
+   "to": {
+    "eligible": true,
+    "reason": "UsageBound"
+   }
+  }
+ ],
+ "revisions_r6": [
+  {
+   "field": "expected",
+   "from": {
+    "attempts": [
+     {
+      "billing": "established",
+      "blocking": [],
+      "correlation": {
+       "kind": "exact"
+      },
+      "diagnostics": [],
+      "evidence": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "execution": "terminal",
+      "exposure": {
+       "high": {
+        "basis": "usage_valuation",
+        "kind": "exact",
+        "nano": "15000000"
+       },
+       "low": {
+        "basis": "usage_valuation",
+        "nano": "15000000"
+       },
+       "pool": "pi_api"
+      },
+      "forwarding": "forwarded",
+      "key": "res:S1/turn-1:rid=1",
+      "obligation": {
+       "amount_source": "settlement_amount",
+       "state": "closed"
+      },
+      "replacement": {
+       "eligible": true,
+       "reason": "UsageBound"
+      },
+      "settlement": {
+       "basis": "usage",
+       "charged": "15000000",
+       "decision": "valid",
+       "reasons": [],
+       "reserved": "500000000"
+      },
+      "valuation": {
+       "complete": true,
+       "derivations": [
+        {
+         "for": "both",
+         "model": "gpt-6-astra",
+         "nano": "15000000",
+         "provider": "openai",
+         "tier_multiplier": "1",
+         "usage": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0,
+          "input_tokens": 1000,
+          "output_tokens": 100
+         }
+        }
+       ],
+       "high": "15000000",
+       "identities": [
+        "gpt-6-astra"
+       ],
+       "low": "15000000",
+       "state": "valued"
+      }
+     }
+    ],
+    "inventory": [],
+    "lifecycle": {
+     "S1": {
+      "clock": "trusted",
+      "reopened": false,
+      "state": "retired"
+     }
+    },
+    "non_attempt": [],
+    "unreadable": []
+   },
+   "rule": "root P1-P6 approval07303d5c; frozen raw facts f097e5a5; explicit conjunction resolution and family preservation",
+   "to": {
+    "attempts": [
+     {
+      "billing": "established",
+      "blocking": [],
+      "correlation": {
+       "kind": "exact"
+      },
+      "diagnostics": [],
+      "evidence": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "execution": "terminal",
+      "exposure": {
+       "high": {
+        "basis": "usage_valuation",
+        "kind": "exact",
+        "nano": "15000000"
+       },
+       "low": {
+        "basis": "usage_valuation",
+        "nano": "15000000"
+       },
+       "pool": "pi_api"
+      },
+      "forwarding": "forwarded",
+      "key": "res:S1/turn-1:rid=1",
+      "obligation": {
+       "amount_source": "settlement_amount",
+       "by": "S1/turn-1:2",
+       "state": "closed"
+      },
+      "replacement": {
+       "eligible": true,
+       "reason": "UsageBound"
+      },
+      "settlement": {
+       "basis": "usage",
+       "charged": "15000000",
+       "decision": "valid",
+       "reasons": [],
+       "reserved": "500000000"
+      },
+      "valuation": {
+       "complete": true,
+       "derivations": [
+        {
+         "for": "both",
+         "model": "gpt-6-astra",
+         "nano": "15000000",
+         "provider": "openai",
+         "tier_multiplier": "1",
+         "usage": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0,
+          "input_tokens": 1000,
+          "output_tokens": 100
+         }
+        }
+       ],
+       "high": "15000000",
+       "identities": [
+        "openai/gpt-6-astra"
+       ],
+       "low": "15000000",
+       "state": "valued"
+      }
+     }
+    ],
+    "inventory": [],
+    "lifecycle": {
+     "S1": {
+      "clock": "trusted",
+      "reopened": false,
+      "state": "retired"
+     }
+    },
+    "non_attempt": [],
+    "unreadable": []
+   }
+  }
+ ],
+ "role": "valid_control",
+ "schema": "pi-accounting-corpus/1"
+}

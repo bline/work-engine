@@ -1,0 +1,10 @@
+# Preserved implementation failures and boundary evidence
+
+No event here is an independent reviewer rejection or acceptance.
+
+1. Initial custody invocation omitted required --name; no command launched. A second invocation passed directories as --digest, rejected unsupported path type; no test launched.
+2. build2: Rust compilation exceeded120s; custody timeout collected process, leftovers0. build3: E0425 from wire-interface check inserted into digest_node rather than generated; corrected placement. build4 and build5:14/15 tests passed; revision-mutation test assigned2 to nodes already revision2, so no mutation. Corrected to increment observed revision and suppress giant byte dumps. Full intermediate final battery then15/15passed.
+3. Initial revision7 internal branch proposal excluded every subscription+reservation tuple under a statement that dollar evidence should be reclassified PiApi. That exclusion failed to directly represent the accepted lawful subscription-labelled dollar-evidence condition. It risked hiding the exact retention obligation instead of proving a reachable result. Before final delivery, replaced with explicit legal subscription-labelled applicable settlement branches returning PiApi and retaining reservation/charge/valuation components. Only clean subscription NotApplicable combinations exclude dollar components; valid settlement witness implications remain explicit. Added a source-bound positive structural control for subscription+retained R+Absent -> PiApi with reservation retained. This establishes declared applicability, not correctness of raw C witness classification; current ModuleA semantic review must assess that boundary.
+4. cargo fmt --all unintentionally formatted independent_raw_axes.rs beyond ownership. Root notified immediately; no overwrite/revert attempted. Oracle owner owns disposition. Subsequent rustfmt commands name own src files only.
+
+Final battery and current source-bound review remain necessary. Earlier source-ready signal was revoked; final ready only follows final stable-source checks.

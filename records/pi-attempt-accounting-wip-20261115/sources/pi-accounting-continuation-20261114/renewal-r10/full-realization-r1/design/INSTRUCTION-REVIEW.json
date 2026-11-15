@@ -1,0 +1,12 @@
+{
+  "applicability": "applicable:presentassignmentcapability/authority/loadingcontract",
+  "subjects": {
+    "STARTUP.md": "ea9ecb88c6f7618abde9296b6c729cccb7ed19c094ceaee1aa33d49afe4eeddc",
+    "PACKET.md": "22e228c777cbe66970d1abb8986366d0929f0db5ebef8b0f1a58e18f8795e6b5"
+  },
+  "review": "boundedrootauthorcheck",
+  "findings": [],
+  "inspected": "startup-onlyadmission;model/capabilitygrant;scopefinancialtruth;rootcollection/acceptance;source-read/no-write;nativecontext;budget;output;fallback boundaries",
+  "decisive": "Reasons/failures explicitly explain independentfinancialtruth versus applicability, source/pilot narrowing and history guard. Exact command test entrypoints are consumer requirements owned by base/stagedplans; discoverymechanics remain reviewer judgment. No new authority or workflowapproval invented.",
+  "limitations": "Not independentdesignreview, fullinstructionaudit or implementationacceptance"
+}

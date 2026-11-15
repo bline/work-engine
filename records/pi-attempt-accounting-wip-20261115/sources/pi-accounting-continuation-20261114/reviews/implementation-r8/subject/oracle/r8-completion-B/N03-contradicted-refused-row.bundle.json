@@ -1,0 +1,66 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "oracle/r8-completion-B/DERIVATIONS.json#N03-contradicted-refused-row",
+        "predecessor_subject_refs": [
+          "baseline:b8de45e42881760f27f89066e0f092f5373b3483645f324c62da38867f44568f"
+        ],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": []
+      },
+      "exact_links": [],
+      "grants": [],
+      "id": "input:N03-contradicted-refused-row",
+      "identity_bindings": [],
+      "initial_contracts": [],
+      "kind": "accounting_input_proof",
+      "lineage_id": "N03-contradicted-refused-row",
+      "origins": [],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [],
+      "continuity_result": "unestablished",
+      "coverage_decisions": [],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [],
+      "id": "result:N03-contradicted-refused-row",
+      "input_proof_ref": "input:N03-contradicted-refused-row",
+      "kind": "accounting_result",
+      "lineage_id": "N03-contradicted-refused-row",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "N03-contradicted-refused-row/default/o/owned_closed",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        },
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "N03-contradicted-refused-row/default/o/owned_outstanding",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        }
+      ],
+      "origins": [],
+      "primary_validities": [],
+      "unbudgeted_applicabilities": [],
+      "unbudgeted_completions": [],
+      "units": [],
+      "valuation_records": [],
+      "version": "1.7-s1"
+    }
+  ]
+}

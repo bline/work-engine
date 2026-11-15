@@ -1,0 +1,13 @@
+{
+  "session": "01a1d96e-9d28-7c62-a661-7b3621f2160e",
+  "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T02-41-07-01a1d96e-9d28-7c62-a661-7b3621f2160e.jsonl",
+  "parent": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "collection": "root sole collector",
+  "pinned_binary": "/home/bline/.local/state/work-engine/tools/context-status/a5f9db1fc8af4b0bc5ecad81ad5b8b8ae36d6087447dc5c62e6545262768116c/work-engine-context-status",
+  "sha256": "a5f9db1fc8af4b0bc5ecad81ad5b8b8ae36d6087447dc5c62e6545262768116c",
+  "model": "observedapplied12 Sol6.1/xhigh/default",
+  "source_mutation": "none; planning directory only",
+  "continuation": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/full-realization-r1/planning/CONTINUATION.md",
+  "telemetry": "root listener42351 produced no measured initial telemetry, stopped childSIGINT130wrapper130FULLCOLLECTED; fallback explicitPRE-ADMISSION-CONTEXT48462epoch0; child own phasechecks required after admission; no live childlistener",
+  "allowance": "cap3target1.5 within same100"
+}

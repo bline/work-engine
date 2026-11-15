@@ -1,0 +1,2563 @@
+{
+  "authored_by": "01a1d840-f94e-7631-aef9-15c312b1ae20",
+  "cases": [
+    {
+      "path": "corpus/cases/A04-undated-settlement-between-dated-neighbours.json",
+      "baseline_sha256": "f8fb91bbff627dedc9a02759d42de51fa67a950111774445a9ae6a7d0dbe787a",
+      "current_sha256": "295f57d81f71321dc86fcc7288444b931eb66fc57edb970411aea148136f1724",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A04-undated-settlement-between-dated-neighbours.bundle.json#result:A04-undated-settlement-between-dated-neighbours"
+        },
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=2].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A04-undated-settlement-between-dated-neighbours.bundle.json#result:A04-undated-settlement-between-dated-neighbours"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A04-undated-settlement-between-dated-neighbours.bundle.json#A04-undated-settlement-between-dated-neighbours/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A04-undated-settlement-between-dated-neighbours.bundle.json#A04-undated-settlement-between-dated-neighbours/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/A06-reservation-usage-null-status-no-id.json",
+      "baseline_sha256": "243e4c0966045891bfefc258ba233c3ee3f6602702310fbe45c7a594427856a5",
+      "current_sha256": "6347939bbdfb1dd2d44b2114ed00bf30528b2cfcf1d89162237c399345d840ab",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A06-reservation-usage-null-status-no-id.bundle.json#result:A06-reservation-usage-null-status-no-id"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A06-reservation-usage-null-status-no-id.bundle.json#A06-reservation-usage-null-status-no-id/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A06-reservation-usage-null-status-no-id.bundle.json#A06-reservation-usage-null-status-no-id/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/A1-01-upstream-error-and-unknown-event.json",
+      "baseline_sha256": "a5192f72ff3016c1d96cf3f30c4904a18c4d79f3f7ee032c855fa901b6a56f35",
+      "current_sha256": "36d05e3d06455f8e64b0bf7a3ab013874d8da02091d7ce7b2cdb0bc3a50aa9e9",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-01-upstream-error-and-unknown-event.bundle.json#result:A1-01-upstream-error-and-unknown-event"
+        },
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=2].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-01-upstream-error-and-unknown-event.bundle.json#result:A1-01-upstream-error-and-unknown-event"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-01-upstream-error-and-unknown-event.bundle.json#A1-01-upstream-error-and-unknown-event/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-01-upstream-error-and-unknown-event.bundle.json#A1-01-upstream-error-and-unknown-event/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/A1-02-undated-row-inverted-neighbours.json",
+      "baseline_sha256": "3ec8db7c8d5173350edff42bcd16c5522bcfd063de8ec38336d3b509021bd579",
+      "current_sha256": "ea3f4b773a07350d14e446afaa7672c36699430ad118edf808b207afe6d8f9c1",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-02-undated-row-inverted-neighbours.bundle.json#result:A1-02-undated-row-inverted-neighbours"
+        },
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=2].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-02-undated-row-inverted-neighbours.bundle.json#result:A1-02-undated-row-inverted-neighbours"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-02-undated-row-inverted-neighbours.bundle.json#A1-02-undated-row-inverted-neighbours/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-02-undated-row-inverted-neighbours.bundle.json#A1-02-undated-row-inverted-neighbours/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/A1-03-unreferenced-log.json",
+      "baseline_sha256": "22d16cfb3038e711df3a6602024c42e5270c62dfbe0328c7dadbe381349fc358",
+      "current_sha256": "679bbc48b452a739caf1e6a4d62c812d55f36ec404ae966d42bd2eb52cca7723",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-03-unreferenced-log.bundle.json#result:A1-03-unreferenced-log"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-03-unreferenced-log.bundle.json#A1-03-unreferenced-log/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-03-unreferenced-log.bundle.json#A1-03-unreferenced-log/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/A1-06-control-no-session-file.json",
+      "baseline_sha256": "0a4e3594edf5a4d8c25bb9849b48d4d795f2aebcf7be24a74f887b3d5cfa77d4",
+      "current_sha256": "bcca1d4e812ef9452014731a6e965e98ef2cf29d0ee290790cf40028df1938b1",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-06-control-no-session-file.bundle.json#result:A1-06-control-no-session-file"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-06-control-no-session-file.bundle.json#A1-06-control-no-session-file/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-06-control-no-session-file.bundle.json#A1-06-control-no-session-file/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/A1-06-session-file-is-not-evidence.json",
+      "baseline_sha256": "83103a2cc0f5fa1052a8947b04293f081b12cd83191e7966c700f60bff3808b2",
+      "current_sha256": "97a75e049e9c0d488df9b7118cf97b3a145209f3aa9ddc9fd2a5b5b32dadaee8",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-06-session-file-is-not-evidence.bundle.json#result:A1-06-session-file-is-not-evidence"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-06-session-file-is-not-evidence.bundle.json#A1-06-session-file-is-not-evidence/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/A1-06-session-file-is-not-evidence.bundle.json#A1-06-session-file-is-not-evidence/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/C1-control-before-reference.json",
+      "baseline_sha256": "92e9e594c349099ac61eef9310aa6321d14ae8c59f98723c191bb35c82482a16",
+      "current_sha256": "5a39b34ce5d16743152d44e8cc655d47e5f52bb6c55a96c8c54c898b6ecef6f5",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/C1-control-before-reference.bundle.json#result:C1-control-before-reference"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/C1-control-before-reference.bundle.json#C1-control-before-reference/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/C1-control-before-reference.bundle.json#C1-control-before-reference/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/C1-settlement-after-reference-time.json",
+      "baseline_sha256": "5f4c25437ba5da0238911e59821243e2a5e14f7fb1692a3ac8c0db800de7d098",
+      "current_sha256": "c368b2cbd2c1629293d83a5798f5e402cf30dad68ce8d164a6bea20dc82dde39",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/C1-settlement-after-reference-time.bundle.json#result:C1-settlement-after-reference-time"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/C1-settlement-after-reference-time.bundle.json#C1-settlement-after-reference-time/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/C1-settlement-after-reference-time.bundle.json#C1-settlement-after-reference-time/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/C2-unsettled-reservation-after-reference-time.json",
+      "baseline_sha256": "891befa7829eac9c117688ceb6912f06a2b2f4a6b18897122b73048ca800ce68",
+      "current_sha256": "92ed3ab7339de6cea6e82271ba2fbcb6807937f49c22e810bae678aaf534d687",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/C2-unsettled-reservation-after-reference-time.bundle.json#result:C2-unsettled-reservation-after-reference-time"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/C2-unsettled-reservation-after-reference-time.bundle.json#C2-unsettled-reservation-after-reference-time/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/C2-unsettled-reservation-after-reference-time.bundle.json#C2-unsettled-reservation-after-reference-time/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/C3-identical-reservation-copy.json",
+      "baseline_sha256": "37d044a8b278bf37a8c3aaa052c3085257b348b4766b7ffa1e6ee87ab78fd138",
+      "current_sha256": "3bcdf133fa3872c84821585e8f0dd211fa37a4761dc62e9562747432e27d7fa1",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/C3-identical-reservation-copy.bundle.json#result:C3-identical-reservation-copy"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/C3-identical-reservation-copy.bundle.json#C3-identical-reservation-copy/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/C3-identical-reservation-copy.bundle.json#C3-identical-reservation-copy/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/C4-missing-charge-basis.json",
+      "baseline_sha256": "8f3f83f947f9e1f1099f824f737a53ce7d0c55cb7d2abcd3298931021ca9aaa5",
+      "current_sha256": "67830a1c529f05272b7ed836ac621d6db50a785d0fef0156d68d908d3269333f",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/C4-missing-charge-basis.bundle.json#result:C4-missing-charge-basis"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/C4-missing-charge-basis.bundle.json#C4-missing-charge-basis/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/C4-missing-charge-basis.bundle.json#C4-missing-charge-basis/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/D1-closed-objective-provisional.json",
+      "baseline_sha256": "8077984bcc9061c610b4a0e2e56815c63a5a380a95c4eea5de875847c9f100ce",
+      "current_sha256": "2b8364c1bfff885f0c9b9d3a24b26daed939cfd2ccba805b5ad41c2f51859bc1",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/D1-closed-objective-provisional.bundle.json#result:D1-closed-objective-provisional"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/D1-closed-objective-provisional.bundle.json#D1-closed-objective-provisional/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/D1-closed-objective-provisional.bundle.json#D1-closed-objective-provisional/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/D1-successor-constrained-by-predecessor-obligations.json",
+      "baseline_sha256": "4e9988f85cdc93d3d9b6f34e3ce6cf0a752fc701f7fdebfe5dd832e33c580878",
+      "current_sha256": "762b32bf2ff495dacc9b8684dd5689fad66e438102065db3e2783ea3ddc404b7",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/D1-successor-constrained-by-predecessor-obligations.bundle.json#result:D1-successor-constrained-by-predecessor-obligations"
+        },
+        {
+          "field": "successor/p/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/D1-successor-constrained-by-predecessor-obligations.bundle.json#D1-successor-constrained-by-predecessor-obligations/successor/p/owned_closed"
+        },
+        {
+          "field": "successor/p/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/D1-successor-constrained-by-predecessor-obligations.bundle.json#D1-successor-constrained-by-predecessor-obligations/successor/p/owned_outstanding"
+        },
+        {
+          "field": "successor/s/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/D1-successor-constrained-by-predecessor-obligations.bundle.json#D1-successor-constrained-by-predecessor-obligations/successor/s/owned_closed"
+        },
+        {
+          "field": "successor/s/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/D1-successor-constrained-by-predecessor-obligations.bundle.json#D1-successor-constrained-by-predecessor-obligations/successor/s/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/D4-unbudgeted-error-status.json",
+      "baseline_sha256": "aa40966874072c516b633517d1de0eb33dc26c4f167e7b9f226fde7787df38b2",
+      "current_sha256": "db0546f1d51c9e3e33bda24f7aa2dac07ad49f9aedcd029b3065bfd3b4f8e11a",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/D4-unbudgeted-error-status.bundle.json#result:D4-unbudgeted-error-status"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/D4-unbudgeted-error-status.bundle.json#D4-unbudgeted-error-status/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/D4-unbudgeted-error-status.bundle.json#D4-unbudgeted-error-status/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/DUP-response-id-across-attempts.json",
+      "baseline_sha256": "3fbd8b13abbdee9e815d9950619bcbe0eb3cf7bef40b6a09ad28425038a2cb35",
+      "current_sha256": "2dcbfadf50fe12626a36ed92c8b01271bf800e3840f7f0f616f60b9998e0035e",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/DUP-response-id-across-attempts.bundle.json#result:DUP-response-id-across-attempts"
+        },
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=2].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/DUP-response-id-across-attempts.bundle.json#result:DUP-response-id-across-attempts"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/DUP-response-id-across-attempts.bundle.json#DUP-response-id-across-attempts/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/DUP-response-id-across-attempts.bundle.json#DUP-response-id-across-attempts/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/Ha-control-consistent-split.json",
+      "baseline_sha256": "561d72714bba8a032f0f08210063095a3199074a503179e8dedced0b27a21fbc",
+      "current_sha256": "543ce98a2954e5865da6dd8096dfcf31a8d5a8b22e71b3b540c30dd5b9322110",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Ha-control-consistent-split.bundle.json#result:Ha-control-consistent-split"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Ha-control-consistent-split.bundle.json#Ha-control-consistent-split/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Ha-control-consistent-split.bundle.json#Ha-control-consistent-split/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/Ha-inconsistent-cache-split-keeps-supported-low.json",
+      "baseline_sha256": "66adb3d024248c1452ffd23fc07763e1e6950f94dfd6f5d0cc31a134bca9c9ff",
+      "current_sha256": "675c9795d23cfb8134919de7172d0944073426402b404eae289a1a90142b5164",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Ha-inconsistent-cache-split-keeps-supported-low.bundle.json#result:Ha-inconsistent-cache-split-keeps-supported-low"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Ha-inconsistent-cache-split-keeps-supported-low.bundle.json#Ha-inconsistent-cache-split-keeps-supported-low/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Ha-inconsistent-cache-split-keeps-supported-low.bundle.json#Ha-inconsistent-cache-split-keeps-supported-low/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/Hb-window-independence.json",
+      "baseline_sha256": "f350590d5959898f35fd601c92c3ad9f426ec915c75aac9f8410a8396e51ed67",
+      "current_sha256": "1370c7870dd87aa7ec1b955bde65c283168ddbaa879caac6fc57341ef2f969be",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Hb-window-independence.bundle.json#result:Hb-window-independence"
+        },
+        {
+          "field": "window-from-06:00/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Hb-window-independence.bundle.json#Hb-window-independence/window-from-06:00/o/owned_closed"
+        },
+        {
+          "field": "window-from-06:00/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Hb-window-independence.bundle.json#Hb-window-independence/window-from-06:00/o/owned_outstanding"
+        },
+        {
+          "field": "window-from-06:20/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Hb-window-independence.bundle.json#Hb-window-independence/window-from-06:20/o/owned_closed"
+        },
+        {
+          "field": "window-from-06:20/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Hb-window-independence.bundle.json#Hb-window-independence/window-from-06:20/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N01-control-served-pinned.json",
+      "baseline_sha256": "00a91ccdff8f11dda85304e27369a6808c577741d573a38a450d40da9e7feafb",
+      "current_sha256": "222eb5d9a75eaa7176167f81d66687431653bb4c99ea9af27c6c87cfc4ceadff",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-control-served-pinned.bundle.json#result:N01-control-served-pinned"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-control-served-pinned.bundle.json#N01-control-served-pinned/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-control-served-pinned.bundle.json#N01-control-served-pinned/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N01-identity-refusal-dearer-served.json",
+      "baseline_sha256": "f1e269b2d9b0461bddb9dd3a14359b41fedcb3bec5ed5950ef7cb1914280f402",
+      "current_sha256": "3a12645589cb8c2f36a415942d1e7ad3771cd33c232287d5393d145cd2f08dbd",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-identity-refusal-dearer-served.bundle.json#result:N01-identity-refusal-dearer-served"
+        },
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=2].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-identity-refusal-dearer-served.bundle.json#result:N01-identity-refusal-dearer-served"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-identity-refusal-dearer-served.bundle.json#N01-identity-refusal-dearer-served/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-identity-refusal-dearer-served.bundle.json#N01-identity-refusal-dearer-served/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N01-orphan-identity-refusal.json",
+      "baseline_sha256": "09add0edae1b1ba7fcb9d6c62319f954efdbdba1747ab1866fa14af6db61a3a4",
+      "current_sha256": "cff2b8f7c782bd5e2b445958f909f7e69b62e15cad37a7c71f36b1da3df400fa",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-orphan-identity-refusal.bundle.json#result:N01-orphan-identity-refusal"
+        },
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=2].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-orphan-identity-refusal.bundle.json#result:N01-orphan-identity-refusal"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-orphan-identity-refusal.bundle.json#N01-orphan-identity-refusal/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-orphan-identity-refusal.bundle.json#N01-orphan-identity-refusal/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N01-variant-no-refusal-row.json",
+      "baseline_sha256": "3bc9dc3107d41fd4042e334e0c2761e49a47b3be9e1e90e94f9e543e85a7163d",
+      "current_sha256": "1a82f506632e2a65a1113ab4930af87347641fd96e1cb74b24b18936538b105c",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-variant-no-refusal-row.bundle.json#result:N01-variant-no-refusal-row"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-variant-no-refusal-row.bundle.json#N01-variant-no-refusal-row/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-variant-no-refusal-row.bundle.json#N01-variant-no-refusal-row/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N01-variant-reservation-above-both.json",
+      "baseline_sha256": "f2783ba7ea47fed1be1d389763fc76fa29332a7293fac5edf25687d335493895",
+      "current_sha256": "5c36ece7601023ed8ddd91846ec973467eb4e227baa59bd41b709b2c691c01ea",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-variant-reservation-above-both.bundle.json#result:N01-variant-reservation-above-both"
+        },
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=2].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-variant-reservation-above-both.bundle.json#result:N01-variant-reservation-above-both"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-variant-reservation-above-both.bundle.json#N01-variant-reservation-above-both/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N01-variant-reservation-above-both.bundle.json#N01-variant-reservation-above-both/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N02-malformed-anthropic-tier.json",
+      "baseline_sha256": "f13c8dacd31a78a2f9d065e06de58ac99968412bb3fa57a184568482a536111e",
+      "current_sha256": "528a39402a85a3faeb72882d92ced1821a378072225e1a5b8ba6edd6a466f1b5",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N02-malformed-anthropic-tier.bundle.json#result:N02-malformed-anthropic-tier"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N02-malformed-anthropic-tier.bundle.json#N02-malformed-anthropic-tier/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N02-malformed-anthropic-tier.bundle.json#N02-malformed-anthropic-tier/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N03-api-row-other-provider.json",
+      "baseline_sha256": "ee18ca93447abec2ad4ad513383ee8fcd096396230079419842a1c5fd65300e3",
+      "current_sha256": "ba26b16f33f80e628367d6801eb1387123cf4ca6ca3093e23b18f09306ef457e",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N03-api-row-other-provider.bundle.json#result:N03-api-row-other-provider"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N03-api-row-other-provider.bundle.json#N03-api-row-other-provider/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N03-api-row-other-provider.bundle.json#N03-api-row-other-provider/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N03-contradicted-admission.json",
+      "baseline_sha256": "a73c7c026819fd87dc7be55d0341cb2e402f43628c9383132d73d568b4128e72",
+      "current_sha256": "527ab1a71b28d2d8b532abccd025a8d672e20e3029b128218935ef78207211bf",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[adm:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N03-contradicted-admission.bundle.json#result:N03-contradicted-admission"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N03-contradicted-admission.bundle.json#N03-contradicted-admission/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N03-contradicted-admission.bundle.json#N03-contradicted-admission/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N03-contradicted-refused-row.json",
+      "baseline_sha256": "b8de45e42881760f27f89066e0f092f5373b3483645f324c62da38867f44568f",
+      "current_sha256": "76dbfad99f9f9ae6c7ffe819c820cdc6627b6ebde209edd718e92d2f42b30c13",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N03-contradicted-refused-row.bundle.json#N03-contradicted-refused-row/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N03-contradicted-refused-row.bundle.json#N03-contradicted-refused-row/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N03-control-unlabelled-admission.json",
+      "baseline_sha256": "f6cce491c0f3de6402d50f38c48b611c923af775046caa95da58246c00f35131",
+      "current_sha256": "c3c8ec74a30002e1df77f753a23dfddbe027dd0ca06cea9b92a091b30981c0b4",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[adm:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N03-control-unlabelled-admission.bundle.json#result:N03-control-unlabelled-admission"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N03-control-unlabelled-admission.bundle.json#N03-control-unlabelled-admission/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N03-control-unlabelled-admission.bundle.json#N03-control-unlabelled-admission/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N03-control-unlabelled-refused-row.json",
+      "baseline_sha256": "40ceb2cb80e41992fe946597a8046d0ea8477527ae5ca58e1ea8046c0762a605",
+      "current_sha256": "04d2f979e3b0ebec4e90f813d86ef2bc9aec322eb2cf12fbef137cad593a89f7",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N03-control-unlabelled-refused-row.bundle.json#N03-control-unlabelled-refused-row/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N03-control-unlabelled-refused-row.bundle.json#N03-control-unlabelled-refused-row/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N03-identity-refusal-in-subscription.json",
+      "baseline_sha256": "fc511437ba163d9f865081a3d7c2d2ff9eef6ee774acb93147953b12da9a3b1b",
+      "current_sha256": "03361d36d3411392a6d6bd3df979e5b6905fd1c5d5d9d4c44dc550882d555698",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N03-identity-refusal-in-subscription.bundle.json#result:N03-identity-refusal-in-subscription"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N03-identity-refusal-in-subscription.bundle.json#N03-identity-refusal-in-subscription/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N03-identity-refusal-in-subscription.bundle.json#N03-identity-refusal-in-subscription/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N04-ambiguous-read-failure.json",
+      "baseline_sha256": "7ed7a4c4f787a3333a006af46d6e885c8b642974a6f9e9f24f15aea5381e1bfa",
+      "current_sha256": "78b7b4e11c71a9f281172ace91c7b942270c81b13a5125f4624c7cc8c7419b8d",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-ambiguous-read-failure.bundle.json#result:N04-ambiguous-read-failure"
+        },
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=2].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-ambiguous-read-failure.bundle.json#result:N04-ambiguous-read-failure"
+        },
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=3].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-ambiguous-read-failure.bundle.json#result:N04-ambiguous-read-failure"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-ambiguous-read-failure.bundle.json#N04-ambiguous-read-failure/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-ambiguous-read-failure.bundle.json#N04-ambiguous-read-failure/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N04-budgeted-header-failure-no-own-reservation.json",
+      "baseline_sha256": "9f6bcd42996b6ad356ceb19e7412091509d6a152010e87520a7423350ab2a3c4",
+      "current_sha256": "3a9ebea083d780267a31c8fd804eb1e9b643dfce4bf42634fa9e429a56d5897d",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-budgeted-header-failure-no-own-reservation.bundle.json#result:N04-budgeted-header-failure-no-own-reservation"
+        },
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=3].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-budgeted-header-failure-no-own-reservation.bundle.json#result:N04-budgeted-header-failure-no-own-reservation"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-budgeted-header-failure-no-own-reservation.bundle.json#N04-budgeted-header-failure-no-own-reservation/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-budgeted-header-failure-no-own-reservation.bundle.json#N04-budgeted-header-failure-no-own-reservation/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N04-budgeted-header-failure-own-reservation.json",
+      "baseline_sha256": "4c375751a9bd71a286f923c8db54563b174893b4e11980e44ad1fc204b696030",
+      "current_sha256": "89245f5eca77d53bbb0dc2ec6907cfec9af472d530b9ea78841e7cc8642ce136",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-budgeted-header-failure-own-reservation.bundle.json#result:N04-budgeted-header-failure-own-reservation"
+        },
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=2].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-budgeted-header-failure-own-reservation.bundle.json#result:N04-budgeted-header-failure-own-reservation"
+        },
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=4].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-budgeted-header-failure-own-reservation.bundle.json#result:N04-budgeted-header-failure-own-reservation"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-budgeted-header-failure-own-reservation.bundle.json#N04-budgeted-header-failure-own-reservation/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-budgeted-header-failure-own-reservation.bundle.json#N04-budgeted-header-failure-own-reservation/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N04-control-request-alone.json",
+      "baseline_sha256": "0fac6a984eccc016fd9f6824c1e6fa0c59e10fc99a00ea6e3e183763df3ac58e",
+      "current_sha256": "d1b2cc09a40d7d12fcd7775880f022f914e077c5e0140e4615c3d567e5671376",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=2].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-control-request-alone.bundle.json#result:N04-control-request-alone"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-control-request-alone.bundle.json#N04-control-request-alone/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-control-request-alone.bundle.json#N04-control-request-alone/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N04-duplicated-read-failure.json",
+      "baseline_sha256": "288b41ecc016d6044fcfb330a3008fc236f2b1b2ef559b9f958376a7222190ee",
+      "current_sha256": "59c92564fa3f848dfbc26bf40f68f1dfeac3643eed7c0053950e71d4206f0c70",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=2].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-duplicated-read-failure.bundle.json#result:N04-duplicated-read-failure"
+        },
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=3].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-duplicated-read-failure.bundle.json#result:N04-duplicated-read-failure"
+        },
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-duplicated-read-failure.bundle.json#result:N04-duplicated-read-failure"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-duplicated-read-failure.bundle.json#N04-duplicated-read-failure/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-duplicated-read-failure.bundle.json#N04-duplicated-read-failure/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N04-header-write-error-reused-n.json",
+      "baseline_sha256": "9354320e16b072386d48e5ed4f7da2f3264af6183ac5862959741ff799252fa7",
+      "current_sha256": "c2b3c3c1edcdb2c222511b6c63d3a9e1acedb66976625ac8c570a2e1e309d4fc",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=2].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-header-write-error-reused-n.bundle.json#result:N04-header-write-error-reused-n"
+        },
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=3].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-header-write-error-reused-n.bundle.json#result:N04-header-write-error-reused-n"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-header-write-error-reused-n.bundle.json#N04-header-write-error-reused-n/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N04-header-write-error-reused-n.bundle.json#N04-header-write-error-reused-n/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N05-control-consistent-retirement.json",
+      "baseline_sha256": "931b2b91f71518226fe13a92b706ffcd13fab6b3f6fe1a7c7d68c4c861464901",
+      "current_sha256": "9d1493310f067b5d01d014f6537b6c324cfc8cc24a5a18a26a44344038edd03b",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N05-control-consistent-retirement.bundle.json#result:N05-control-consistent-retirement"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N05-control-consistent-retirement.bundle.json#N05-control-consistent-retirement/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N05-control-consistent-retirement.bundle.json#N05-control-consistent-retirement/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N05-retirement-before-later-delivery.json",
+      "baseline_sha256": "5296ec99bcbe262e869003d66fe41aecc040d3753af333138232681e4a4b3e2c",
+      "current_sha256": "ffaadbc28fffb7b6411a004838a2e97bcfb87c70224a4d4eb2c0b2ee0031ee35",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N05-retirement-before-later-delivery.bundle.json#result:N05-retirement-before-later-delivery"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N05-retirement-before-later-delivery.bundle.json#N05-retirement-before-later-delivery/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N05-retirement-before-later-delivery.bundle.json#N05-retirement-before-later-delivery/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N06-null-cache-counts.json",
+      "baseline_sha256": "746cc24339a53e244213cceb9dd124a2eaa54c34047584a72c0fdff5a521b6c3",
+      "current_sha256": "9a35cc51e87eb95ab2573db5e13483baf416b4468ad3ba652f74cb66e185ec80",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N06-null-cache-counts.bundle.json#result:N06-null-cache-counts"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N06-null-cache-counts.bundle.json#N06-null-cache-counts/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N06-null-cache-counts.bundle.json#N06-null-cache-counts/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N07-control-retired-journal.json",
+      "baseline_sha256": "0fed6710e10e46acf90d7ef19589cd798e33a705d94d772ba8aa9242f4cbbd0d",
+      "current_sha256": "ed23cf24c34c5c9f6348ca172932a8d75c26f83b0df9eda4f33b4df4444c01c0",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N07-control-retired-journal.bundle.json#N07-control-retired-journal/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N07-control-retired-journal.bundle.json#N07-control-retired-journal/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N07-control-retired-legacy.json",
+      "baseline_sha256": "7afa9986a27172566bde162f8bfe49e78611b4fb1e77a9327e538415f3b84b76",
+      "current_sha256": "74fab39ce8fc491e8e96fcac9bd703152e99b30895e269cd3eb84996e7ad3b19",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N07-control-retired-legacy.bundle.json#N07-control-retired-legacy/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N07-control-retired-legacy.bundle.json#N07-control-retired-legacy/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N07-reopened-session-journal.json",
+      "baseline_sha256": "b7cc44e5229166661825a1994fdc4293d05c4278b14f2a61779f0f0e092fd2cd",
+      "current_sha256": "41b0d1ff87de07487ad0da3c783f009e69a235e14bda63cde371224685f8f940",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N07-reopened-session-journal.bundle.json#N07-reopened-session-journal/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N07-reopened-session-journal.bundle.json#N07-reopened-session-journal/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N07-reopened-session-legacy.json",
+      "baseline_sha256": "59bd1a614f0e27219e5176d6fc366ae24f49a9f2d41e7aad06afbf3164ed86a7",
+      "current_sha256": "0bb1ea8435678a23ff662c0c0e04d8d725dfb4faac3acc30b771764273c7c7ab",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N07-reopened-session-legacy.bundle.json#N07-reopened-session-legacy/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N07-reopened-session-legacy.bundle.json#N07-reopened-session-legacy/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N08-control-priced-model.json",
+      "baseline_sha256": "a0a1a7710ded8f824e7286a181041434f29fa12769b917970539b1a7fec08107",
+      "current_sha256": "96bb655c43831da738d6e8cbac265fcd1a5ad8e79b544bea7259b962394ad624",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N08-control-priced-model.bundle.json#result:N08-control-priced-model"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N08-control-priced-model.bundle.json#N08-control-priced-model/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N08-control-priced-model.bundle.json#N08-control-priced-model/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/N08-model-without-producer-rate.json",
+      "baseline_sha256": "4242028f71b7692e57b3f5eeb41b37545f090b1afb8694579417a4e2299005a6",
+      "current_sha256": "c7d5428b9eb81589f423adf2e2ae41b9784301bc71cd8efc06185fa2dc427bb3",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N08-model-without-producer-rate.bundle.json#result:N08-model-without-producer-rate"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N08-model-without-producer-rate.bundle.json#N08-model-without-producer-rate/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/N08-model-without-producer-rate.bundle.json#N08-model-without-producer-rate/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/ORD-sessions-in-ledger-order.json",
+      "baseline_sha256": "99d2aa6131377f22c618c14557ab75cdaa628557c603d0a831e5d3d22796b7b1",
+      "current_sha256": "05ec24554b4b760227e5d1aa1cbbecb7fc44cb516dc8d70226fdb22c4a52b1cc",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/ORD-sessions-in-ledger-order.bundle.json#result:ORD-sessions-in-ledger-order"
+        },
+        {
+          "field": "expected.attempts[res:S2/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/ORD-sessions-in-ledger-order.bundle.json#result:ORD-sessions-in-ledger-order"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/ORD-sessions-in-ledger-order.bundle.json#ORD-sessions-in-ledger-order/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/ORD-sessions-in-ledger-order.bundle.json#ORD-sessions-in-ledger-order/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/ORD-sessions-reversed.json",
+      "baseline_sha256": "abedb6fcd1a53eacee7c756ed2eced787ab24ab3fd807cd95a4ed23859757dd3",
+      "current_sha256": "67950c099476ce35c210ab76b5e517eb1481f07f57592b43986474067a5a9b70",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/ORD-sessions-reversed.bundle.json#result:ORD-sessions-reversed"
+        },
+        {
+          "field": "expected.attempts[res:S2/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/ORD-sessions-reversed.bundle.json#result:ORD-sessions-reversed"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/ORD-sessions-reversed.bundle.json#ORD-sessions-reversed/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/ORD-sessions-reversed.bundle.json#ORD-sessions-reversed/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/OWN-budgeted-session-without-admission.json",
+      "baseline_sha256": "c1c7386cc32c4413f723e77c2c8edc6875a0095684d4103e1a38aa0408199fa9",
+      "current_sha256": "9865a977a971a5aa624a203d3df27b33466f1e738d10866599a24f7cb5bd5f48",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/OWN-budgeted-session-without-admission.bundle.json#result:OWN-budgeted-session-without-admission"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/OWN-budgeted-session-without-admission.bundle.json#OWN-budgeted-session-without-admission/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/OWN-budgeted-session-without-admission.bundle.json#OWN-budgeted-session-without-admission/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/OWN-two-admitting-objectives.json",
+      "baseline_sha256": "fe5abb91c836ddb7236b71288fc0f45ea9843c336cd17675a59cca3a37cd2c57",
+      "current_sha256": "93114eee08e79f274d140b786db5e3811ddbbf7b96b260fb390d74fee546481c",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/OWN-two-admitting-objectives.bundle.json#result:OWN-two-admitting-objectives"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/OWN-two-admitting-objectives.bundle.json#OWN-two-admitting-objectives/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/OWN-two-admitting-objectives.bundle.json#OWN-two-admitting-objectives/default/o/owned_outstanding"
+        },
+        {
+          "field": "default/p/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/OWN-two-admitting-objectives.bundle.json#OWN-two-admitting-objectives/default/p/owned_closed"
+        },
+        {
+          "field": "default/p/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/OWN-two-admitting-objectives.bundle.json#OWN-two-admitting-objectives/default/p/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/P2-usage-settlement-unpriced-identity-keeps-charge.json",
+      "baseline_sha256": "9a742a478238e360909d6e4311c15282a76d380d9d77dddc2754da4ed2af346b",
+      "current_sha256": "57b35db4cf8227fe68a73b7ab2e39e913ab814ac4a3955dd620298744a27a094",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/P2-usage-settlement-unpriced-identity-keeps-charge.bundle.json#result:P2-usage-settlement-unpriced-identity-keeps-charge"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/P2-usage-settlement-unpriced-identity-keeps-charge.bundle.json#P2-usage-settlement-unpriced-identity-keeps-charge/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/P2-usage-settlement-unpriced-identity-keeps-charge.bundle.json#P2-usage-settlement-unpriced-identity-keeps-charge/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/P9-claimed-charge-above-reservation.json",
+      "baseline_sha256": "2499d3c37e512ff4227048df455debce3bacd3b738cb36dcc6b3cf4ed683aeb0",
+      "current_sha256": "07a6f81e2dbc753e50dbb3a3aaa5826f78df29996cc6fedb1463f8a4fbde7841",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json#result:P9-claimed-charge-above-reservation"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json#P9-claimed-charge-above-reservation/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json#P9-claimed-charge-above-reservation/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/Q5-unrecognised-openai-tier.json",
+      "baseline_sha256": "7007198518e45df237ca0f2f53258bf6058bc0e35e34c270ac7184caf1f6844c",
+      "current_sha256": "355f7e828d24f607fa43771a0cc5c75ba2bb50df3396918c2299503512cf0e28",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Q5-unrecognised-openai-tier.bundle.json#result:Q5-unrecognised-openai-tier"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Q5-unrecognised-openai-tier.bundle.json#Q5-unrecognised-openai-tier/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Q5-unrecognised-openai-tier.bundle.json#Q5-unrecognised-openai-tier/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/Q8-unadmitted-outside-candidate-window.json",
+      "baseline_sha256": "03500ad4ad3cf54744bff0b9a81dc917bb6f9e3d4656a698025acce93180b96c",
+      "current_sha256": "a22fe1d75fa61ff0d03d7ff2069a946f17b1dd03a89359f6142f506b109c94b0",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Q8-unadmitted-outside-candidate-window.bundle.json#result:Q8-unadmitted-outside-candidate-window"
+        },
+        {
+          "field": "window-contains/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Q8-unadmitted-outside-candidate-window.bundle.json#Q8-unadmitted-outside-candidate-window/window-contains/o/owned_closed"
+        },
+        {
+          "field": "window-contains/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Q8-unadmitted-outside-candidate-window.bundle.json#Q8-unadmitted-outside-candidate-window/window-contains/o/owned_outstanding"
+        },
+        {
+          "field": "window-starts-later/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Q8-unadmitted-outside-candidate-window.bundle.json#Q8-unadmitted-outside-candidate-window/window-starts-later/o/owned_closed"
+        },
+        {
+          "field": "window-starts-later/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/Q8-unadmitted-outside-candidate-window.bundle.json#Q8-unadmitted-outside-candidate-window/window-starts-later/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/R01-dated-rows-backwards.json",
+      "baseline_sha256": "7f09e9175f343260f5206e78e7ccbc5ad0865d49cfa3e51410a4ea207fa52e49",
+      "current_sha256": "95de64441eb3359ffbfea33c00f0b0f26864b52dc521bfa181ab525103f4a02f",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R01-dated-rows-backwards.bundle.json#result:R01-dated-rows-backwards"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R01-dated-rows-backwards.bundle.json#R01-dated-rows-backwards/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R01-dated-rows-backwards.bundle.json#R01-dated-rows-backwards/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/R02-string-charge.json",
+      "baseline_sha256": "514ba0aadd00ad0fc303d1163e600111780ec25357bad171ad0b85b82e6b967c",
+      "current_sha256": "deca5d95bc9daf61710e29fdc7ae58a06c7e02be1c37db38b760c4b5f280109b",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R02-string-charge.bundle.json#result:R02-string-charge"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R02-string-charge.bundle.json#R02-string-charge/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R02-string-charge.bundle.json#R02-string-charge/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/R04-reused-reservation-id.json",
+      "baseline_sha256": "c14230b0a7da9a0ece7f8c3216f7a9a97e3adb2889c802fc30b59e0d9013f321",
+      "current_sha256": "14649d9a0ee89fceec97ab8b6fd8a2d2c4059efc473e8636f7c8f832e5616a60",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R04-reused-reservation-id.bundle.json#result:R04-reused-reservation-id"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R04-reused-reservation-id.bundle.json#R04-reused-reservation-id/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R04-reused-reservation-id.bundle.json#R04-reused-reservation-id/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/R05-non-object-json-rows.json",
+      "baseline_sha256": "d7225be39726da3bef2c5a9ac562ca27302ed1f432da8c351bce3e37c86473bc",
+      "current_sha256": "c47bd2dc57ffee0316b2ba863f18dfec8411e398e7e8a5a04f6ea86d572723b3",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R05-non-object-json-rows.bundle.json#result:R05-non-object-json-rows"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R05-non-object-json-rows.bundle.json#R05-non-object-json-rows/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R05-non-object-json-rows.bundle.json#R05-non-object-json-rows/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/R06-launch-row-missing.json",
+      "baseline_sha256": "e711356a01e92d61c52c914b49c34b89ae0a878e63b69022aeff1335a1e1cb80",
+      "current_sha256": "9a4dca1ef3b4485a6bbb1eeaed4bae0c26b874643f1dbfd56aa4fc72fcfdf8a4",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R06-launch-row-missing.bundle.json#result:R06-launch-row-missing"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R06-launch-row-missing.bundle.json#R06-launch-row-missing/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R06-launch-row-missing.bundle.json#R06-launch-row-missing/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/R6-C01-writer-reservation-floor-control.json",
+      "baseline_sha256": "8ab3dcd8c1078e077f2a13a5ed091a1d6a5742a6be4d584577a1af99a3911dbb",
+      "current_sha256": "6d1eacb89169614e98fd7950068c423c3b1120064c0726e9ee63697f1e42edab",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R6-C01-writer-reservation-floor-control.bundle.json#result:R6-C01-writer-reservation-floor-control"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R6-C01-writer-reservation-floor-control.bundle.json#R6-C01-writer-reservation-floor-control/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R6-C01-writer-reservation-floor-control.bundle.json#R6-C01-writer-reservation-floor-control/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/R6-C02-non200-success-terminal-usage-control.json",
+      "baseline_sha256": "3e7ae4f5cc528b248804c73b41c28c69e6dcda6d517c2ca341d372b7e536309f",
+      "current_sha256": "41302a10f818fbb68133d3dcc1c43f7b75ad4945188f1f24dbb8d271350d2222",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R6-C02-non200-success-terminal-usage-control.bundle.json#result:R6-C02-non200-success-terminal-usage-control"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R6-C02-non200-success-terminal-usage-control.bundle.json#R6-C02-non200-success-terminal-usage-control/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/R6-C02-non200-success-terminal-usage-control.bundle.json#R6-C02-non200-success-terminal-usage-control/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/S01-reservation-basis-charged-less.json",
+      "baseline_sha256": "9abba3163730804c3139821d5b11fe9d7bfcb7936f08b96f79ba7fd6831477ed",
+      "current_sha256": "e55ba7dafa3f92834344d777b78714c7d46ebbcc92aef7fcb1ef1363c8c11bbb",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S01-reservation-basis-charged-less.bundle.json#result:S01-reservation-basis-charged-less"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S01-reservation-basis-charged-less.bundle.json#S01-reservation-basis-charged-less/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S01-reservation-basis-charged-less.bundle.json#S01-reservation-basis-charged-less/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/S01-reserved-usd-omitted.json",
+      "baseline_sha256": "1c5f3614281ccce31bb3672a4653d2ef17f0ba1cdb921deb92805b24169d559d",
+      "current_sha256": "5012dbb4c91b093803e35f90e93b2b20f12aa1e77c34b6b641197ee43915fa1f",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S01-reserved-usd-omitted.bundle.json#result:S01-reserved-usd-omitted"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S01-reserved-usd-omitted.bundle.json#S01-reserved-usd-omitted/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S01-reserved-usd-omitted.bundle.json#S01-reserved-usd-omitted/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/S01-upstream-error-charged-zero.json",
+      "baseline_sha256": "eee466a5ef4afef496fa1688dbec4888019d309471280ebe4c1bcb0d1826b0fe",
+      "current_sha256": "4f4f4ad658e894ab01bc3dc713edfbb258ffe35dc87cf1f4422313a6660c5997",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S01-upstream-error-charged-zero.bundle.json#result:S01-upstream-error-charged-zero"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S01-upstream-error-charged-zero.bundle.json#S01-upstream-error-charged-zero/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S01-upstream-error-charged-zero.bundle.json#S01-upstream-error-charged-zero/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/S02-attempt-number-differs.json",
+      "baseline_sha256": "d8bf15e75c5cf371ffe97b28ac127e49ce373e1efaacbd9045239fb36196f586",
+      "current_sha256": "8c10700bb9190e34bbf32827fc458d4e9ca49b712e0d7758ee120be12901ce43",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S02-attempt-number-differs.bundle.json#result:S02-attempt-number-differs"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S02-attempt-number-differs.bundle.json#S02-attempt-number-differs/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S02-attempt-number-differs.bundle.json#S02-attempt-number-differs/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/S02-control-error-status-after-reservation.json",
+      "baseline_sha256": "75fdf00375073d7d688d038ff644bd2bb82dc7da2454433cc4cc67e366634cd4",
+      "current_sha256": "fe4696cd6023bd034bee9ca7d4a5ea9a2bf522b04734053bdedbb1c580488a45",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S02-control-error-status-after-reservation.bundle.json#result:S02-control-error-status-after-reservation"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S02-control-error-status-after-reservation.bundle.json#S02-control-error-status-after-reservation/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S02-control-error-status-after-reservation.bundle.json#S02-control-error-status-after-reservation/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/S02-settlement-before-reservation.json",
+      "baseline_sha256": "904a0bcbb00fd9ec08de1b712a599f1883c81d2ae4b55dab73a016be30f7468e",
+      "current_sha256": "017842bb0e1197adae07a837b9094aec1163263f7f08f0b9b5d4b6991c295da4",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S02-settlement-before-reservation.bundle.json#result:S02-settlement-before-reservation"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S02-settlement-before-reservation.bundle.json#S02-settlement-before-reservation/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S02-settlement-before-reservation.bundle.json#S02-settlement-before-reservation/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/S03-settlement-stamped-far-future.json",
+      "baseline_sha256": "16d55cdc034ed26edf21b3baf2460bf9eacb236e775c4c70a5bdd0dcaf3ebe0e",
+      "current_sha256": "0a6725a398d3f3b975e8ca1d4065143bc0f42cc417d0046b7199d1d89088c99a",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S03-settlement-stamped-far-future.bundle.json#result:S03-settlement-stamped-far-future"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S03-settlement-stamped-far-future.bundle.json#S03-settlement-stamped-far-future/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S03-settlement-stamped-far-future.bundle.json#S03-settlement-stamped-far-future/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/S04-next-unrelated-row-does-not-close.json",
+      "baseline_sha256": "17a5c9157217b6d8d2cd5a990fe55cafe798c5e4107e6e24bd45e464c4219bd5",
+      "current_sha256": "c5fd37ad1832935dab8934a4eec9118cfcc2859c5337f7353290c34c7907549e",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S04-next-unrelated-row-does-not-close.bundle.json#result:S04-next-unrelated-row-does-not-close"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S04-next-unrelated-row-does-not-close.bundle.json#S04-next-unrelated-row-does-not-close/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S04-next-unrelated-row-does-not-close.bundle.json#S04-next-unrelated-row-does-not-close/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/S05-unrelated-orphan-log-does-not-block.json",
+      "baseline_sha256": "ae4b4f87bcd03d51c77a741270a5d70cc4d686b34cb981c59a4940eb6974d8cb",
+      "current_sha256": "823af346ef05958a2e7bfca9aad6b99a29a07b4af280ec0d6b5a24a3411fec4e",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S05-unrelated-orphan-log-does-not-block.bundle.json#result:S05-unrelated-orphan-log-does-not-block"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S05-unrelated-orphan-log-does-not-block.bundle.json#S05-unrelated-orphan-log-does-not-block/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S05-unrelated-orphan-log-does-not-block.bundle.json#S05-unrelated-orphan-log-does-not-block/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/S06-string-http-status.json",
+      "baseline_sha256": "123bbc083b15ed8462e277f74430778cf2e635f51e9fc40ebae61c509ad8ef85",
+      "current_sha256": "b1f28ae0317013bcb36e6676474c6dd6375e9d46ae43db69a5ef570d5221d441",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S06-string-http-status.bundle.json#result:S06-string-http-status"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S06-string-http-status.bundle.json#S06-string-http-status/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S06-string-http-status.bundle.json#S06-string-http-status/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/S08-control-pending-commitment.json",
+      "baseline_sha256": "87658cbf79f7dc1b77b66ce33d9e3f1b3a577e4aa746539123c11bd57df92f2e",
+      "current_sha256": "1ce174c47bb3b36217bac1d6ffc76e33195328ff7ae58e4e2bdf068e2fc6803c",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S08-control-pending-commitment.bundle.json#S08-control-pending-commitment/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S08-control-pending-commitment.bundle.json#S08-control-pending-commitment/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/S08-negative-commitment-cap.json",
+      "baseline_sha256": "692ce5041396167f37a5afe5b86732e373b95b3d8b7b6952bdec971d155c5381",
+      "current_sha256": "5083c5a318cabb688dd5fd67500183ea5fbb91107eab13a684be205d88bfb3f2",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S08-negative-commitment-cap.bundle.json#S08-negative-commitment-cap/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/S08-negative-commitment-cap.bundle.json#S08-negative-commitment-cap/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/U01-malformed-attempt-number.json",
+      "baseline_sha256": "3627171641dc2433659dc7be938adfd44bea23a1a674ada08d12511c7bcf5696",
+      "current_sha256": "ba9a892e805fed2aee94e66cdc7772271bd6a97e94c22988e9a7fdda7275ab49",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U01-malformed-attempt-number.bundle.json#result:U01-malformed-attempt-number"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U01-malformed-attempt-number.bundle.json#U01-malformed-attempt-number/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U01-malformed-attempt-number.bundle.json#U01-malformed-attempt-number/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/U02-final-line-without-newline.json",
+      "baseline_sha256": "9155e3ff68fdf207fb351f2ddbf2eb428942721bf7d3852f8036066dfc7ef075",
+      "current_sha256": "fd97617baf233f6834ca0105edb2240d183aa18325c743845e279eb2c4e3251b",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U02-final-line-without-newline.bundle.json#U02-final-line-without-newline/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U02-final-line-without-newline.bundle.json#U02-final-line-without-newline/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/U03-control.json",
+      "baseline_sha256": "c451402a4c63eddd7b0756dfb41c5e4d814cee3cb2584b61ec357765955e2cf5",
+      "current_sha256": "4212d807e7f8cb6afb048a1bc0e955a3af1ba5ac352acfcdd5763023ad933d89",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U03-control.bundle.json#result:U03-control"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U03-control.bundle.json#U03-control/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U03-control.bundle.json#U03-control/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/U03-retirement-before-turn-evidence.json",
+      "baseline_sha256": "736a12d15d8aba968a59849a97f1f05d9e9c4f94b84644faa958e60d954d5494",
+      "current_sha256": "0d0652345958cf0c7a290a2d10d045ce30cbc1c5f5e8d4f028646e61833f59b9",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U03-retirement-before-turn-evidence.bundle.json#result:U03-retirement-before-turn-evidence"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U03-retirement-before-turn-evidence.bundle.json#U03-retirement-before-turn-evidence/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U03-retirement-before-turn-evidence.bundle.json#U03-retirement-before-turn-evidence/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/U04-control-settled-before-closure.json",
+      "baseline_sha256": "fc89b5c1da68f441ca9ae5bd9f008fdefe3fa16218cfdb56136e21dec1cf03cf",
+      "current_sha256": "1bb1a2230e3bf7f65077cd309f6de2a4e4db4fea5c30679749b19c0969ee71a0",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U04-control-settled-before-closure.bundle.json#result:U04-control-settled-before-closure"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U04-control-settled-before-closure.bundle.json#U04-control-settled-before-closure/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U04-control-settled-before-closure.bundle.json#U04-control-settled-before-closure/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/U04-settled-after-closure-stays-with-owner.json",
+      "baseline_sha256": "1b8f423c75d2d8c74da1712e0364caf556a5cccf1d0c5b413cc9ea6f4f694684",
+      "current_sha256": "0535960663537b38bb7edf94296dc62b6eb93346f83a59c1ddaa217eab44c26e",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U04-settled-after-closure-stays-with-owner.bundle.json#result:U04-settled-after-closure-stays-with-owner"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U04-settled-after-closure-stays-with-owner.bundle.json#U04-settled-after-closure-stays-with-owner/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U04-settled-after-closure-stays-with-owner.bundle.json#U04-settled-after-closure-stays-with-owner/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/U05-inconsistent-charge-without-response-id.json",
+      "baseline_sha256": "16a23b6fdbdda8453a33189a72fb0ded24c8463a2e2d9531c0758e8c598808a5",
+      "current_sha256": "1c50ab81014ac0883c3dcf7246d6a1dc71855bd538305fe650a9a986b5b4ed33",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U05-inconsistent-charge-without-response-id.bundle.json#result:U05-inconsistent-charge-without-response-id"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U05-inconsistent-charge-without-response-id.bundle.json#U05-inconsistent-charge-without-response-id/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U05-inconsistent-charge-without-response-id.bundle.json#U05-inconsistent-charge-without-response-id/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/U05-usage-settlement-without-response-id.json",
+      "baseline_sha256": "c5cef67586ac07c12d2af1506e9ea7285d08fd1260db61436144999fe8e80925",
+      "current_sha256": "d14c995ecb4c17107922c2f78105594bcaad0369b0f89c43f218f0b8637d6d60",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U05-usage-settlement-without-response-id.bundle.json#result:U05-usage-settlement-without-response-id"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U05-usage-settlement-without-response-id.bundle.json#U05-usage-settlement-without-response-id/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U05-usage-settlement-without-response-id.bundle.json#U05-usage-settlement-without-response-id/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/U06-subscription-upstream-error-unlabelled.json",
+      "baseline_sha256": "5677b355089ac393dbb6f209632349d1d1e964bd067fb3362c2ec46fde13fb10",
+      "current_sha256": "f86524d6b223f69bbb3364a3a703ff3c3e332d66d5f0eba07712fad6f9601f7c",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[adm:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U06-subscription-upstream-error-unlabelled.bundle.json#result:U06-subscription-upstream-error-unlabelled"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U06-subscription-upstream-error-unlabelled.bundle.json#U06-subscription-upstream-error-unlabelled/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U06-subscription-upstream-error-unlabelled.bundle.json#U06-subscription-upstream-error-unlabelled/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/U07-unrelated-non-object-usage-does-not-block.json",
+      "baseline_sha256": "afb12c268b4bfc15cfa57deb57624d2c37e9af66543f225c3d0f44e10755defe",
+      "current_sha256": "3ee95989b504464090e9ed15f38ccf77141c3d0199b9ef0fda916c5b95a4f5f9",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U07-unrelated-non-object-usage-does-not-block.bundle.json#result:U07-unrelated-non-object-usage-does-not-block"
+        },
+        {
+          "field": "expected.attempts[row:S2/turn-1:line=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U07-unrelated-non-object-usage-does-not-block.bundle.json#result:U07-unrelated-non-object-usage-does-not-block"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U07-unrelated-non-object-usage-does-not-block.bundle.json#U07-unrelated-non-object-usage-does-not-block/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U07-unrelated-non-object-usage-does-not-block.bundle.json#U07-unrelated-non-object-usage-does-not-block/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/U08-missing-observed-tier.json",
+      "baseline_sha256": "38f00aa2513e227244d8f6f9232541da567ffed877fd158189a4a9c957977043",
+      "current_sha256": "4f780ca36ebc6e0c019638f53a4e4e52bffba73aa7f04d0c4cabd16914b40c2a",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U08-missing-observed-tier.bundle.json#result:U08-missing-observed-tier"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U08-missing-observed-tier.bundle.json#U08-missing-observed-tier/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/U08-missing-observed-tier.bundle.json#U08-missing-observed-tier/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/V01-cheaper-response-model-undercharge.json",
+      "baseline_sha256": "15702ceb61beb8c29350c323a51e8bfaf6d7e2348598390e5a5efc338775eb7a",
+      "current_sha256": "6adf55a8e39fa926600a5f252751080e6598a8510c91c87652f8da7cca328297",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V01-cheaper-response-model-undercharge.bundle.json#result:V01-cheaper-response-model-undercharge"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V01-cheaper-response-model-undercharge.bundle.json#V01-cheaper-response-model-undercharge/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V01-cheaper-response-model-undercharge.bundle.json#V01-cheaper-response-model-undercharge/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/V01-control-producer-price.json",
+      "baseline_sha256": "3bfe0334c5756c82288c39035152f8ba4b7744a2c8fdf96334958e46df8f1280",
+      "current_sha256": "f244260a347c2b8beb9bf4e46befce1a6de85ace2fd09974f1fd05e8fe0bcee4",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V01-control-producer-price.bundle.json#result:V01-control-producer-price"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V01-control-producer-price.bundle.json#V01-control-producer-price/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V01-control-producer-price.bundle.json#V01-control-producer-price/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/V01-usage-settlement-other-response-model.json",
+      "baseline_sha256": "63137448e7b8c3586236e317b95b36283451a8a0d6dfeb9d781397ec08739e9b",
+      "current_sha256": "8b6b1a2897e7442d32d4e7a9b8e144ea89100736d010c5b4d601805a0291ef29",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V01-usage-settlement-other-response-model.bundle.json#result:V01-usage-settlement-other-response-model"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V01-usage-settlement-other-response-model.bundle.json#V01-usage-settlement-other-response-model/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V01-usage-settlement-other-response-model.bundle.json#V01-usage-settlement-other-response-model/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/V02-control-producer-price.json",
+      "baseline_sha256": "cea85af328b893e0ea33efd410d7a3618336443d73aefa3c127b8b5246e9a614",
+      "current_sha256": "c5a01b807072889619a4abd3f5815c2656821be7b3e2ecff935ecb83a441366d",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V02-control-producer-price.bundle.json#result:V02-control-producer-price"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V02-control-producer-price.bundle.json#V02-control-producer-price/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V02-control-producer-price.bundle.json#V02-control-producer-price/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/V02-unsplit-writes-undercharged.json",
+      "baseline_sha256": "848d9f82fe9a3c2f8542205cde230c31fc1abc396e0570a1aa47db8672761317",
+      "current_sha256": "e5e6cebf208ecd78d3963bc942ea15c2478abb7b4bc4fff9ce710c4f5c21409e",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V02-unsplit-writes-undercharged.bundle.json#result:V02-unsplit-writes-undercharged"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V02-unsplit-writes-undercharged.bundle.json#V02-unsplit-writes-undercharged/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V02-unsplit-writes-undercharged.bundle.json#V02-unsplit-writes-undercharged/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/V03-control-labelled-upstream-error.json",
+      "baseline_sha256": "62dd7131d942248c87db8239bf3989d14544d7b5feeb484df7da3d0b5f125486",
+      "current_sha256": "38cce16fd03acb4562e796d2d19fb2a1e24a62e693182bd67fb5e073c971028a",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[adm:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V03-control-labelled-upstream-error.bundle.json#result:V03-control-labelled-upstream-error"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V03-control-labelled-upstream-error.bundle.json#V03-control-labelled-upstream-error/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V03-control-labelled-upstream-error.bundle.json#V03-control-labelled-upstream-error/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/V03-subscription-upstream-error-labelled-api.json",
+      "baseline_sha256": "82786282b08d08369cd45bc3f418c043b9d1def2cbff1f723b516c2bc239f3aa",
+      "current_sha256": "f5d2de85d3c6e48490a8b16ee92f7093b5b73bf3a90c805256c691ee086d5f03",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[adm:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V03-subscription-upstream-error-labelled-api.bundle.json#result:V03-subscription-upstream-error-labelled-api"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V03-subscription-upstream-error-labelled-api.bundle.json#V03-subscription-upstream-error-labelled-api/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V03-subscription-upstream-error-labelled-api.bundle.json#V03-subscription-upstream-error-labelled-api/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/V06-reservation-attempt-number-missing.json",
+      "baseline_sha256": "db59ad0cb053843d0f5a474fbafc7d709ad32ad3b30dca7dd1bc6335cee41863",
+      "current_sha256": "d77a56691f17d37ba29268a571f2530506192c27ff162faa46e01eb7fa7b40d2",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V06-reservation-attempt-number-missing.bundle.json#result:V06-reservation-attempt-number-missing"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V06-reservation-attempt-number-missing.bundle.json#V06-reservation-attempt-number-missing/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V06-reservation-attempt-number-missing.bundle.json#V06-reservation-attempt-number-missing/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/V07-unrelated-unreadable-log-does-not-block.json",
+      "baseline_sha256": "3a7a47a2489db51125f4db5f60e288bb1e153b7ae11290b3ae5533a00771295c",
+      "current_sha256": "f6245d83644c8e4db284d1ce5a0c0b2229524ae8ea893dc008f4a6050036829a",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V07-unrelated-unreadable-log-does-not-block.bundle.json#result:V07-unrelated-unreadable-log-does-not-block"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V07-unrelated-unreadable-log-does-not-block.bundle.json#V07-unrelated-unreadable-log-does-not-block/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/V07-unrelated-unreadable-log-does-not-block.bundle.json#V07-unrelated-unreadable-log-does-not-block/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/VC01-openai-usage-settlement.json",
+      "baseline_sha256": "d0fdaa06b1e963d8a3eb3002f4a610f25330e8e0eabb34aa211157348e170b6f",
+      "current_sha256": "5e32d5ab340d03e5465bed3884b716daed997c68e683371bd3105900ff9dcbc2",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC01-openai-usage-settlement.bundle.json#result:VC01-openai-usage-settlement"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC01-openai-usage-settlement.bundle.json#VC01-openai-usage-settlement/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC01-openai-usage-settlement.bundle.json#VC01-openai-usage-settlement/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/VC02-anthropic-usage-settlement.json",
+      "baseline_sha256": "1f7f412ce1e75db7449ab69ec7c3b0e51097477e68273da4ed552fab840b60ed",
+      "current_sha256": "dc36f7770590062a582357464e1ad73f266b6ff352605e5d2a4f240742b48f62",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC02-anthropic-usage-settlement.bundle.json#result:VC02-anthropic-usage-settlement"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC02-anthropic-usage-settlement.bundle.json#VC02-anthropic-usage-settlement/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC02-anthropic-usage-settlement.bundle.json#VC02-anthropic-usage-settlement/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/VC03-reservation-settlement-with-usage.json",
+      "baseline_sha256": "2d8bd175ecc0b46a12e167bc1501c154c2691c92990206bdd664e610158ee7ef",
+      "current_sha256": "c0134d897036f7679b2e7ce4daf76b894d90c4598ea3795aa34ec31b7fd9c04e",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC03-reservation-settlement-with-usage.bundle.json#result:VC03-reservation-settlement-with-usage"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC03-reservation-settlement-with-usage.bundle.json#VC03-reservation-settlement-with-usage/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC03-reservation-settlement-with-usage.bundle.json#VC03-reservation-settlement-with-usage/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/VC04-upstream-error-keeps-reservation.json",
+      "baseline_sha256": "5c97eb6f6f56a3c71500eae099924e70ee5f6a422c8254c2c0027f00c937c694",
+      "current_sha256": "4a54fafeef8754c6299303f56e957acda5dab4a41efe100f2a37a1505900d8a3",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC04-upstream-error-keeps-reservation.bundle.json#result:VC04-upstream-error-keeps-reservation"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC04-upstream-error-keeps-reservation.bundle.json#VC04-upstream-error-keeps-reservation/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC04-upstream-error-keeps-reservation.bundle.json#VC04-upstream-error-keeps-reservation/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/VC05-unsettled-reservation.json",
+      "baseline_sha256": "9775ee3721f4c3cbe3bf89ecc4bb758fb95bfce86d2b8fcc887c4e89c9d4a58f",
+      "current_sha256": "1c1cd576f4b09c246bb93b823a44322b12aeb702bb118d54690912f704ba891a",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC05-unsettled-reservation.bundle.json#result:VC05-unsettled-reservation"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC05-unsettled-reservation.bundle.json#VC05-unsettled-reservation/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC05-unsettled-reservation.bundle.json#VC05-unsettled-reservation/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/VC06-unbudgeted-completed-request.json",
+      "baseline_sha256": "d03868ac55b425eddfbee0ef05ebc509e7235456ff4320c9c341ac1671fbf1ca",
+      "current_sha256": "9f2417c64e53bfba457d7708fb3851f16c88082be0cfa153797d08bd0a014e33",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC06-unbudgeted-completed-request.bundle.json#result:VC06-unbudgeted-completed-request"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC06-unbudgeted-completed-request.bundle.json#VC06-unbudgeted-completed-request/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC06-unbudgeted-completed-request.bundle.json#VC06-unbudgeted-completed-request/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/VC07-read-failure-paired.json",
+      "baseline_sha256": "149760fc94710a012eb288c6a9d7b49d7e143e040e4ba3e200e7f16c1e6cb973",
+      "current_sha256": "280cadae394567b4b33f39794b3fa8abb75f3f6890ac4033a44eb86cb7421a93",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=2].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC07-read-failure-paired.bundle.json#result:VC07-read-failure-paired"
+        },
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC07-read-failure-paired.bundle.json#result:VC07-read-failure-paired"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC07-read-failure-paired.bundle.json#VC07-read-failure-paired/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC07-read-failure-paired.bundle.json#VC07-read-failure-paired/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/VC08-subscription-measured-request.json",
+      "baseline_sha256": "82cb9a145834e06e3f64d218c33d144c65fa7a401744fa916d08c62f3eaea04b",
+      "current_sha256": "4f7cd91ca2907e250d45245e6e1f6c4c36ef53efa9fdb2fed921123ae9c8c216",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[adm:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC08-subscription-measured-request.bundle.json#result:VC08-subscription-measured-request"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC08-subscription-measured-request.bundle.json#VC08-subscription-measured-request/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC08-subscription-measured-request.bundle.json#VC08-subscription-measured-request/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/VC11-multi-turn-session.json",
+      "baseline_sha256": "fc5c086d52b1c9187a3cf8ffbde9bef157e58e705ea3debb3538f5b62341a9ce",
+      "current_sha256": "388f6c6c8f0b5a1e294e3405f99276fe6384cde3ab93a8172839da28e169cc46",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC11-multi-turn-session.bundle.json#result:VC11-multi-turn-session"
+        },
+        {
+          "field": "expected.attempts[res:S1/turn-2:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC11-multi-turn-session.bundle.json#result:VC11-multi-turn-session"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC11-multi-turn-session.bundle.json#VC11-multi-turn-session/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC11-multi-turn-session.bundle.json#VC11-multi-turn-session/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/VC12-reused-n-without-errors.json",
+      "baseline_sha256": "977fad5cf2303d3a29390ee7ffb115051f14b08ddf481933b4f1159b127127fc",
+      "current_sha256": "17cc50544e1cfb0d83959a3c4ee96d8d7eaf61d105bdf26a39edaf8f040d0bdf",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC12-reused-n-without-errors.bundle.json#result:VC12-reused-n-without-errors"
+        },
+        {
+          "field": "expected.attempts[row:S1/turn-1:line=2].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC12-reused-n-without-errors.bundle.json#result:VC12-reused-n-without-errors"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC12-reused-n-without-errors.bundle.json#VC12-reused-n-without-errors/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC12-reused-n-without-errors.bundle.json#VC12-reused-n-without-errors/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/VC13-equal-timestamps.json",
+      "baseline_sha256": "3f9a2275b238d92a252ce0f6edc11128f4c58a483213b6ad47682ce6d9321d5f",
+      "current_sha256": "199cf824e0054f372bc59dbd9f19c4cf842647db1ce9eeae78adfaa668935e66",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC13-equal-timestamps.bundle.json#result:VC13-equal-timestamps"
+        },
+        {
+          "field": "default/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC13-equal-timestamps.bundle.json#VC13-equal-timestamps/default/o/owned_closed"
+        },
+        {
+          "field": "default/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC13-equal-timestamps.bundle.json#VC13-equal-timestamps/default/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/VC14-open-session-commitment.json",
+      "baseline_sha256": "7bb0b4c6761636a51b5b5202a5a3afa38562216632d915562bb8a09f788936b6",
+      "current_sha256": "564d600b5cfcd5cfe6329465968a7231d4ca2cb52a9b87075ff1c2c23bbb1b7a",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC14-open-session-commitment.bundle.json#result:VC14-open-session-commitment"
+        },
+        {
+          "field": "limit-1.0/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC14-open-session-commitment.bundle.json#VC14-open-session-commitment/limit-1.0/o/owned_closed"
+        },
+        {
+          "field": "limit-1.0/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC14-open-session-commitment.bundle.json#VC14-open-session-commitment/limit-1.0/o/owned_outstanding"
+        },
+        {
+          "field": "limit-0.55/o/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC14-open-session-commitment.bundle.json#VC14-open-session-commitment/limit-0.55/o/owned_closed"
+        },
+        {
+          "field": "limit-0.55/o/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC14-open-session-commitment.bundle.json#VC14-open-session-commitment/limit-0.55/o/owned_outstanding"
+        }
+      ]
+    },
+    {
+      "path": "corpus/cases/VC15-successor-not-charged-settled-predecessor-spend.json",
+      "baseline_sha256": "7a4d364b5de05075b4c02ebb75b301fa142aa5ee9294153f8e2b66693f977437",
+      "current_sha256": "fbf8233627f1ad6703641e9d7a084ea18f90831cf3e464553ca28f4e1fccabf3",
+      "raw_inputs_history_financial_fields_unchanged": true,
+      "amendments": [
+        {
+          "field": "expected.attempts[res:S1/turn-1:rid=1].accounting_result_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC15-successor-not-charged-settled-predecessor-spend.bundle.json#result:VC15-successor-not-charged-settled-predecessor-spend"
+        },
+        {
+          "field": "successor/p/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC15-successor-not-charged-settled-predecessor-spend.bundle.json#VC15-successor-not-charged-settled-predecessor-spend/successor/p/owned_closed"
+        },
+        {
+          "field": "successor/p/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC15-successor-not-charged-settled-predecessor-spend.bundle.json#VC15-successor-not-charged-settled-predecessor-spend/successor/p/owned_outstanding"
+        },
+        {
+          "field": "successor/s/owned_closed.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC15-successor-not-charged-settled-predecessor-spend.bundle.json#VC15-successor-not-charged-settled-predecessor-spend/successor/s/owned_closed"
+        },
+        {
+          "field": "successor/s/owned_outstanding.supported_low_evidence_ref",
+          "from": "__absent__",
+          "to": "oracle/r8-completion-B/VC15-successor-not-charged-settled-predecessor-spend.bundle.json#VC15-successor-not-charged-settled-predecessor-spend/successor/s/owned_outstanding"
+        }
+      ]
+    }
+  ]
+}

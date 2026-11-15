@@ -1,0 +1,960 @@
+{
+  "kind": "read-only evidence binding; not whole-freeze verification",
+  "subject_root": "/home/bline/cbm-work/p137-s1r7/s1",
+  "manifest_sha256": "c1c40727648b40f3494b5444065cdef3a7824a42249426dc860dece95423ceda",
+  "entries": [
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/spec/ck.json",
+      "sha256": "d9a1b21199980a80342f4f27b23707d2afe3e6c87902b35fff2650dd806f854e",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/spec/ck.schema.json",
+      "sha256": "556cb140fe2ea12470828bd9886d1ae20576c6336184c046a6b4269752f06651",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/spec/interface.json",
+      "sha256": "17e9430821e4fe25ddfec3ea3788b0d63e795f6ba47fa38c52655bec626afa5e",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/spec/dependencies.json",
+      "sha256": "0562e6a309fb222b115bd919d5aea0df4151f3a718549d48f5e95a429ec33c50",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/tooling/spec-check/src/lib.rs",
+      "sha256": "99c9e8ac5bb948c72d3149fef306e5abb52257071cb5255333faf168297a15df",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/tooling/spec-check/src/decisions.rs",
+      "sha256": "b31205b03d0e9e381068e81680c84639d76bfaa743b9359d799f0d7fffeb5a6b",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/tooling/spec-check/src/main.rs",
+      "sha256": "f3960be0439b29789d7793ffc4028c807c348b86ad556465977f952be63a0d09",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/tooling/spec-check/tests/independent_raw_axes.rs",
+      "sha256": "34b3ac6bd007dcfaa7659eae0f4935fac42d63f2cde21df8d924fd9daeebcd66",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/contract/CONTRACT.md",
+      "sha256": "52c505f0df1ae5830d681436aa2cb2a02716aed4ab450b9aecbe0dedb07145fb",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/SCHEMA.md",
+      "sha256": "c7c6a2be07b0390cbadf59d09dc9f5bd95183fba2b0763fc86fa084e690bf820",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/A04-undated-settlement-between-dated-neighbours.json",
+      "sha256": "38ed8ef2d617a59a5cd210cc19a284ca088072a028c4f919530fcd1193c7e161",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/A06-reservation-usage-null-status-no-id.json",
+      "sha256": "a6da000895de34c137c595a6d8e231aa8b37acd354dbf9d1d9031cbc7cc6b701",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/A1-01-upstream-error-and-unknown-event.json",
+      "sha256": "b8c7bc85b2e79ff503effbcdbecb2b40bd8c27c4a610bdea18764b792b0cd610",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/A1-02-undated-row-inverted-neighbours.json",
+      "sha256": "b21e6a3d27e3b6d17d4bc041f682be81e481f344b529485b981c772508cd4c26",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/A1-03-unreferenced-log.json",
+      "sha256": "aebd03e84417477e01ffb29c23bcce7e225f11b4c0f98b585441faa2aa618415",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/A1-06-control-no-session-file.json",
+      "sha256": "363cc0977fb0c1d99055c738914c87b7e48cd2aaee3f2b3275d4f57c2a65245c",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/A1-06-session-file-is-not-evidence.json",
+      "sha256": "d72352e13d0649d3842ca93d59cbec99772b835e6e148ca1341f9c45a91005b2",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/C1-control-before-reference.json",
+      "sha256": "1bd4f391741495e180952aafbe1d783af178e28de597e3ac43ca6c1c79e48e4c",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/C1-settlement-after-reference-time.json",
+      "sha256": "b4f9ac0fc554f50a03c9a42c1dd4b968c8f23994d1af037396bd013093e35cd8",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/C2-unsettled-reservation-after-reference-time.json",
+      "sha256": "1180c82b366d29f682c091e68a18a5a76c7b8d0a04b7e4e22175f41a0fb45028",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/C3-identical-reservation-copy.json",
+      "sha256": "8218f2056a4ceef5276381df23241fd332e4e5e92c01d53dd690240d48616bc4",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/C4-missing-charge-basis.json",
+      "sha256": "02e076ae2711607f84b2a6181575c8b520af1cba43de4683063c10e9e74ff0d4",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/D1-closed-objective-provisional.json",
+      "sha256": "b825da8566d94fc3a5b5e8969d09daab11d4d8570c23c0ba5a6436e0d936d192",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/D1-successor-constrained-by-predecessor-obligations.json",
+      "sha256": "59df625e92251325a3112a2c185ab672cb954563d04acf0dd8e5b0e818ae9a6c",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/D4-unbudgeted-error-status.json",
+      "sha256": "3272eba46511cfcc920b2d0f5a124824adc9160f5cb1a1d65635d0e960f92da8",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/DUP-response-id-across-attempts.json",
+      "sha256": "73da36bd7f35a1e10bf81deae79ca2429fc711cdf1d02688e4672a4f2229a4b8",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/Ha-control-consistent-split.json",
+      "sha256": "8d7fb4f1b12a6c54316b4f6d3ce6d375c370694598bd4ac4660deb689a2470e4",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/Ha-inconsistent-cache-split-keeps-supported-low.json",
+      "sha256": "f2abd52888a127db01405387d6026d5ff11f7a3d0395092a83ef815c517c7a14",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/Hb-window-independence.json",
+      "sha256": "7c4fe0f8c59f9f656d69b0461a64e19f7312c8223da5963e5a6c7a7f2906aa23",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N01-control-served-pinned.json",
+      "sha256": "eb25b3f8f178f42f3dd789113736414e43f4763902df69215271072590b03101",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N01-identity-refusal-dearer-served.json",
+      "sha256": "e4b7fad7ea2ef6a02d4dc85992c4364e74680a488aa744f558b82d337ab3cfaf",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N01-orphan-identity-refusal.json",
+      "sha256": "d90ba2f3724b1242f71677a2218bd884e7d6d735433655f920c68f3c4cbb5720",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N01-variant-no-refusal-row.json",
+      "sha256": "dadb7c81f1c193a63e12f30f0d2eb9b0f0354ba0ff05e1eeefa21ba0373f0930",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N01-variant-reservation-above-both.json",
+      "sha256": "0f922859950b4857e936390a3605d54acbc5ce5135a481f15196328a520d708e",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N02-malformed-anthropic-tier.json",
+      "sha256": "c4ce636f367a79f55f4ac8d6560d00bb1c8255958bfa235df17df026f2cc428b",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N03-api-row-other-provider.json",
+      "sha256": "bdb20fb6056c92d2088b3c8c03dceaaf559b6bfc52514a94616e2d05688bdf60",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N03-contradicted-admission.json",
+      "sha256": "f1534391a5162b24b9915d9cdcc2c49854d8e83929c99f80c7eb96ba9397ab84",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N03-contradicted-refused-row.json",
+      "sha256": "f67db8cc16169d770484e8e62096e9f0b8ec545518bfb0b9eded41ae06d9b224",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N03-control-unlabelled-admission.json",
+      "sha256": "88f1685179c7bcd015c7a90c02ed39414448a5418cc9a2a9f4aa971e2f24f2a5",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N03-control-unlabelled-refused-row.json",
+      "sha256": "2e00f17d4f911dad984dfc7d7d588232c1a135d5c776afa1a391aa9e921488ed",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N03-identity-refusal-in-subscription.json",
+      "sha256": "eddb1c1287c55e6bcdac3df421999545e3637660b7e1430b30eb3f7bb33474e1",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N04-ambiguous-read-failure.json",
+      "sha256": "33aaba30c3aea5b0dc19be5ad387531c817df346c9d2f1346cba7eca0a0aa22d",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N04-budgeted-header-failure-no-own-reservation.json",
+      "sha256": "fc62e53be5bbe0f82047f18c8f93335bc15eb9bd21e182eac23a90eb47839974",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N04-budgeted-header-failure-own-reservation.json",
+      "sha256": "76f02e5db56154651a5d0da341910a01550a4823941c5f1036c72463723808c0",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N04-control-request-alone.json",
+      "sha256": "f3d24132ab9e074b572f255a7277002dd263aab71798e784390645fa7e7c9253",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N04-duplicated-read-failure.json",
+      "sha256": "d394db79512b09a123bad63265d37e154ee4bfe90e5b504ffab24b10ba4c5b65",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N04-header-write-error-reused-n.json",
+      "sha256": "bb9352f71ee71e6646a3c52576eafbefdbe455f68343a077e8e6cf30a1252657",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N05-control-consistent-retirement.json",
+      "sha256": "77828c5c983d095b75b858a360532496b4b46bdc164a0fcb466a354ebffbcd7a",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N05-retirement-before-later-delivery.json",
+      "sha256": "7fb494178ba7a006a295265cbd1de9a8a3884d258357dbcc3679714cf5e56934",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N06-null-cache-counts.json",
+      "sha256": "457da64126a37d6245b7b991026bac15e515b2e8b7595f4eff5bbdfed5541810",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N07-control-retired-journal.json",
+      "sha256": "ac188518fc125865ce6c70d0a41e70f89b887c8743acd0249bed7f687e5cf005",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N07-control-retired-legacy.json",
+      "sha256": "6d74c804bd5197500037a83478df76d4c86f5ab9c094358d1b27c349359a8f14",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N07-reopened-session-journal.json",
+      "sha256": "5976904197a8c802f627e3a5c4237c33681dabeb51ddd7e5383642b7d9f48d22",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N07-reopened-session-legacy.json",
+      "sha256": "59b7e37b774d6df943e495fa0fcc3fdb408adca77fd19981681fe019da9d524d",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N08-control-priced-model.json",
+      "sha256": "e01d818d4b12887f46bf620ba061593b311d47cbbe0affa93ce9cc73c7de3a25",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/N08-model-without-producer-rate.json",
+      "sha256": "a1d694ddf610bb94ad1ba56e4d7d49d1e676a520a51a3708b6e560cae54628a4",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/ORD-sessions-in-ledger-order.json",
+      "sha256": "5b80fddbf12b191642c0484cd2c0b60d6de89e8677321f5f4b68d162da779b3c",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/ORD-sessions-reversed.json",
+      "sha256": "22855dd1b351cb5a7cd490182ac23e8b8dc1095a02dd9c9dfc89fbce2910fc14",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/OWN-budgeted-session-without-admission.json",
+      "sha256": "a5ec4b43691bea36fc20a41144c5f7fba89f9175b46da711356296536de32b12",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/OWN-two-admitting-objectives.json",
+      "sha256": "e598f3adff4e437b2e1dd83e392757563c33f351126e554edf8ffa37dc21e5c5",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-A5-unreadable-line-added.json",
+      "sha256": "544a64d80ff4fb0360783020c4e60474597d0cece0fa279e1dbf5cca886ae425",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-Q11-closure-uncertain.json",
+      "sha256": "af0ae11e7723e07874aa2952f47834c5b0e626f25aff2d6567bc8709d1bb33d3",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-R01-usage-incomplete-terminal.json",
+      "sha256": "3072dbd8a108ca900aa63b6a786f68aadf3eb6b5e0a9175b8e85e16eb4473d62",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-R02-rounded-up-charge-admitted.json",
+      "sha256": "55d71e60101c8e7c339f9fd02b8dfc6394bd3dd6c796e4a33d04779f4cb3a2f5",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-R04-priority-overrun-above-cap.json",
+      "sha256": "39620034bd1ba182c0683dac28dff248de0cfa7d789f4b4d4a904c1bf0086c89",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-R04-retired-session-releases-commitment.json",
+      "sha256": "393a76849e680f1f2f3006a347b8d70d8120a303217fbc0a2fbc632812668d4c",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-R05-conflicting-keeps-valuation-high.json",
+      "sha256": "95c0b57c716a89dc22e4861920ff9ea8eaff58f9126718b4757f316c3d3eb4f2",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-R06-reservation-amount-malformed.json",
+      "sha256": "e9455875bef49b95ce24c6ccfe5746f49bb1bb25933fac20ef97d3fceeb833d7",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-R06-reservation-rid-missing.json",
+      "sha256": "655aa199308c3362b530b64c7a63cd7ff5233bb807d1f8a0d94e5e9a31da84ea",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-R07-closed-unresolved-predecessor-constrains-successor.json",
+      "sha256": "62aeb7dbfec98bbf393823021bdc28c41356f3690c6e037705c04d00d700f75a",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+      "sha256": "81bdc9e5993c86df53622d2d2b49d3eae62edeef0779c2aba17ffb905125917c",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-R10-reopened-then-retired.json",
+      "sha256": "ea6649877fb265e1e023be759894e6a066357dfacb3b75c24ed3c7c2e5933476",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-R11-open-session-before-retirement.json",
+      "sha256": "6269680ee182da5ecad781b442c66ebd746760d06c7f44f70b4927002948f674",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-R12-outstanding-interval-keeps-candidate.json",
+      "sha256": "bfc16562663d0bcfa9872fc8021ea64e94bc843ef952df7aada592631956b63f",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-R12-untrusted-clock-keeps-candidate.json",
+      "sha256": "559fed288da0ab71e411958d95d446de635d06c0a69b654955049cb01ef7e3dc",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-R14-anthropic-null-tier-admitted.json",
+      "sha256": "475654a4bfcd1141a136745c5329fa77c7f7a443222b8a31771becbd87caa1f4",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P130-T-owned-before-window-summed.json",
+      "sha256": "7bb13f2825539e76b01c651bd59113daf35b2897c464e02ee405031b6d54e52e",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-CP-close-after-reference-time.json",
+      "sha256": "4007fc26eacb14582bd2ad493f73c3538fa7da11b54d6d9ca675e20698923575",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-CP-close-entry-contradicts-closed-at.json",
+      "sha256": "889f6fd5781441e00db77809b407f978408b04067d329abed4ca8fcc81de1258",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-CP-closed-predecessor-outstanding.json",
+      "sha256": "bf9bf810361d7b627f99744ca6d400eb0cf496bf67646f7a0f698da235e9d825",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-CP-closed-valid-close-entry.json",
+      "sha256": "b3a2a538cfc83aa31175701078c8b35b4066c4b8c452e16cad22a1f6ba5d2066",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-CP-known-over-limit.json",
+      "sha256": "6aa09bdf7cb0ffe4bea6764392afa9b6ab9bd69f02fbd05c2f45c5ff84c3b930",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-CP-retired-session-resumed-without-admission.json",
+      "sha256": "4d0be28a4d8ff8a4065190cbd3f4090c3263dd8835069779f0ead24942a94cd7",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-CP-unknown-below-limit.json",
+      "sha256": "3deca1b13a5ee81e17eea6ec43509769c95f354f15b319c6b1bab59c0dbf7d85",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-N06-gated.json",
+      "sha256": "9854efe5a86974058ac1c6957b71dbfbcc0923ea39e1806a995b870f640a88b1",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-N07-gated.json",
+      "sha256": "5f9efb80490474c2576ccca16a267993f4e6158127846b715eeafdddd2a7cd9b",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-P130-R02-gated.json",
+      "sha256": "f53654e796947d17db66200ef88160481aef78e871730629b93afb1804184d99",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-P130-R04-gated.json",
+      "sha256": "269fe37ae556091bdb7648010b7e30797ee6a9697d2c21ada196bc10dd4d77f3",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-P130-R14-gated.json",
+      "sha256": "f5314800d84fa3b4ab293dd64ce1a6cd3d03d2404369497a0ea0b299346edb56",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-U03-gated.json",
+      "sha256": "7aa40ef87dd6ddf45d10bd797bbe5f986ea7aac580dc97c1d033943713edf847",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-V01-gated.json",
+      "sha256": "acb59e75bfd8d4de1678c0e06b49c7ad3803cffa8d183ca15b20a56c3e19a417",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-V02-gated.json",
+      "sha256": "cfd1e0310ef112ae5034a2c17c688086a0fc4654a17d0a047ebf6732fb9eae1d",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-VC01-before-retirement.json",
+      "sha256": "89260d089273d7f1b50289443b45b7e34bacbb846b41957ca68895f7cb085cdf",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-VC01-gated.json",
+      "sha256": "13f49fed43d5e87c2fa9424adfd7b10683d39ee112a1410c764a90ecddb95e14",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-VC01-no-gate.json",
+      "sha256": "a92f88f7b0aef9c10c1ce9c35c16a5e1b05690d1dffdad8dd3e991d105999a11",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-VC02-gated.json",
+      "sha256": "5b52a3feb906f8df6de32c79c04dc9efc9dfa85783ea8be3c63d39a89d1a5f53",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-VC11-gated.json",
+      "sha256": "785ecf2b0c421dfcf65e5f827468d888dc1c6261907959f92ba3bb13c538d872",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-VC13-gated.json",
+      "sha256": "5996e2c841e04f53cbd8c020fc071a22d522d98334028c78f4166d917ed8399a",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-VC14-open-no-billing-bound.json",
+      "sha256": "db176ccb7fe682bf8cd6c3ff5de37b931f90f25b81ff0f52cd6c7b5d72d0669c",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-VC14-open-session-billing-bound.json",
+      "sha256": "1f4b97e58c5c68541fd3b69e4289c2c8aa58980bafea3942b2106ef377f204d5",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-VC15-gated.json",
+      "sha256": "35dc4fa6c09917418dd3d1562a639dd212be377425aa3017a99f34242dd7fd3d",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-closure-authority.json",
+      "sha256": "c95846ce78ade5ec40b3c0f3cf0b15e207153ed274edf41ea07564e6a99c1b02",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-closure-legacy-entry-only.json",
+      "sha256": "25f77ada54bcb6ae0ed7e0bf343c146b69e1b26ede430f797674cf16f815e0d2",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-gate-contradicted-by-reopening.json",
+      "sha256": "d40d191aa1dd4d25c0abf3880aa06b35116b0aa37497682a7dc2b49c7befb9d6",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-gate-expired.json",
+      "sha256": "7c7229ddd3a1bd411d01fe23c3ac3a065390109bd9c2902eb0a7656d7814fd22",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-gate-flag-only.json",
+      "sha256": "0d240cc32734920771919acfcede5a2b0e3f66a0a083ea432cfa57de4212144a",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-gate-receipt-missing.json",
+      "sha256": "9e4a2a3e32797a419b5fbabb47f3728c10f58cce4643d965b3b9709d4d54dd97",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-gate-reopening-only.json",
+      "sha256": "01ce53b1dc0be27695fe42d5f896cdd357a5b101c6ae7c41ddbb603a6a70e5bc",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-gate-request-scope.json",
+      "sha256": "d8e86221c3cfa0bed9cc81df18e4efb1d57404a49f35842fa8ae262e9f5e8a10",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-gate-self-asserted-file.json",
+      "sha256": "f7e0aaaca9735b353943981f2b48d7a9359b773cc32234920163c9461b64d6fd",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-gate-starts-after-launch.json",
+      "sha256": "c3aa780d61720831652b603e384c56fd0c202bc0a4c294cd532beeb8b80baa46",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-gate-wrong-authority.json",
+      "sha256": "f7ffbce401434f0d645771bf26b0223ba4de498956fbf46df3660653ef99f87e",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P132-FG-gate-wrong-session.json",
+      "sha256": "5357439467dafbd28d48541f2122f35e89301f3d37ce2e6302d4abecb9fc7003",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-A01-incomplete-usage-above-reservation.json",
+      "sha256": "98b36a76e73046222678ad80960ab8b66b61df45dc4eeeb92319856889616e6a",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-A02-error-status-with-priceable-usage.json",
+      "sha256": "42e17e5562313d6ebe8fdaf102ec671743b6af085669c470806877ec119dfb90",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-A04-cache-counts-both-absent.json",
+      "sha256": "4c98f185b290a80f2342e029f387b117d53d18dd4abe1fd7898dec8346b434e1",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-A04-cache-write-absent-legacy.json",
+      "sha256": "30f33bbd030dcc0f0824289f2cb8381f6a8494e5b6ca5897a312db979532439b",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-A04-cached-malformed.json",
+      "sha256": "09374dd143c8f242145acec2167162049a05dd4dd124ed45e7586c9b2e04c6da",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-A04-cached-nonzero.json",
+      "sha256": "1c073fbd1e7270a42637301b85d8076613b5bf5dcc989b804044659ab18d73b2",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-A04-mixed-observations.json",
+      "sha256": "5abe225a3ad4303d47c05db2f6040577a6fa63534f7276d809dadc40867b9360",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-A05-model-case-variant.json",
+      "sha256": "b6f9e48ac587dfe6d1296f77a6f0755fe8f34aecd64e49ae1de2a1398529b324",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-A06-error-status-null.json",
+      "sha256": "3762f2e998c380fd91ccf54ae0eaa85623a1088a95ec1d99c81d3042fd4f61ab",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-A06-usage-settlement-status-absent.json",
+      "sha256": "ad33871c5719f7066cd00be42681cfcbd472dd4d73f5414f3b7d61c8148ec43d",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-A09-conflicting-reservations-with-settlement.json",
+      "sha256": "a8a3b21ed32399cb25a0a9190356c2444ffae9ce0f555afcaf8e6721e4ec93ea",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-FG-VC14-authenticated-bound.json",
+      "sha256": "58d62485f4a4fe7ded1a47b67b46004427b682efa8d2434f2ae9d3fd05d599ea",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-FG-bound-binding-mismatch.json",
+      "sha256": "9ae7ff0e8ee8b4fd35f5cf1dacd8fd565a8951f41c6f75df5c005f70642dc8a0",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-FG-bound-coverage-incomplete.json",
+      "sha256": "f1d88bb53270543b508092a1f73591e2637c4e5d0046859936fff9906989daa9",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-FG-bound-exceeds-cap.json",
+      "sha256": "785330c6818d0c8609dbd7a4d96dd808bebb44737fb2b69d933285731a844f25",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P133-FG-bound-wrong-currency.json",
+      "sha256": "e9a8449eb56b896ffa96d9e7119083404cf67320ede8609f1d5582a597c393ed",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P2-usage-settlement-unpriced-identity-keeps-charge.json",
+      "sha256": "f53c63c445e5433a2ae6490ba0ae044ff135c45c6f62d9d50434c267241db32d",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/P9-claimed-charge-above-reservation.json",
+      "sha256": "f106f21eac7e5b68256584f3179403fec04f761179110c24a4d28664f7a53f91",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/Q5-unrecognised-openai-tier.json",
+      "sha256": "dc5d435bb9fb2dff6ca6dce03393a9085266da79e6846a065bfbcbc13077da2e",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/Q8-unadmitted-outside-candidate-window.json",
+      "sha256": "20bcefc131ee13a16a6506d12a56547ab6ef266a3d206b0226fca19002d015c9",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/R01-dated-rows-backwards.json",
+      "sha256": "a40e51827d2073eef76bb537769b508542a52c6738bdfb2607cd6308365df581",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/R02-string-charge.json",
+      "sha256": "0988e69c57634b314caedfcad8c47a27a03835d9056ef79ad6b6463a3902a2aa",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/R04-reused-reservation-id.json",
+      "sha256": "0e703c0096b0a838603c555351e5f3a62d2f5c834b19909e7d167b5a6e6940b6",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/R05-non-object-json-rows.json",
+      "sha256": "d400ad8c41d97ac82bc952cf6d092595f6370f057fb142043d5e0e71e36a3854",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/R06-launch-row-missing.json",
+      "sha256": "632952431ea7f74be493cdee61d933b4675cc035f9dbe4d68a25d85dca34713f",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/R6-C01-writer-reservation-floor-control.json",
+      "sha256": "aab4aeb262843844f2a9ddfcb9226226a3148c4067e9e2183ec55a6035272e44",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/R6-C02-non200-success-terminal-usage-control.json",
+      "sha256": "1f721d7c437f4227bc6e0005facad0475d31ae354709eabfbcef225a4d454302",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/S01-reservation-basis-charged-less.json",
+      "sha256": "37fece41e64b1ea5ed05fb19433d484d8675eae1c8b7d5e3dd6b90e5d072a3fb",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/S01-reserved-usd-omitted.json",
+      "sha256": "594f544021c02282fd7415758b0d68e9a2530c6ec371d7e86af2e31ddd8fe672",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/S01-upstream-error-charged-zero.json",
+      "sha256": "97cca8b295628054b0a873646a7d203ae9b8324ffaaf752f36b16d69436f0769",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/S02-attempt-number-differs.json",
+      "sha256": "260df7439e2f5c0389ab78c57a109502d74268bf3ff48862501bdd3f65d3d78f",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/S02-control-error-status-after-reservation.json",
+      "sha256": "6ae768a95642e8c3be9c4adba8a91992d600932a4e069aee3a8cbd6b4001b040",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/S02-settlement-before-reservation.json",
+      "sha256": "078b401006032180db7130f962ac9ac37260d4bedcc844dc05468f0dcd1f5be4",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/S03-settlement-stamped-far-future.json",
+      "sha256": "2c34592d0581f7d684a09a898e7b04f7d6d5ca0d46fad7348456292c0e0b04dc",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/S04-next-unrelated-row-does-not-close.json",
+      "sha256": "d7dc3fbee9b47364fec3038d79263f382b1270a038d0c2e1989d4e799df1de1a",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/S05-unrelated-orphan-log-does-not-block.json",
+      "sha256": "103812ee10bfa48039c269db682ebf7192e276b29743fde02c6e07b9ce18e319",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/S06-string-http-status.json",
+      "sha256": "219ee9aa754d57b3f1479399efce3af93bc55a73a0b05c5de695b48cd07232fa",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/S08-control-pending-commitment.json",
+      "sha256": "45910dbcae96dab524d6b2066d0d848183be8da0507ff0fd819e384423af244a",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/S08-negative-commitment-cap.json",
+      "sha256": "42c00bf968ef822d28bc0d32950134b72ccaf5635f742326f0f2eb94cc4bd99f",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/U01-malformed-attempt-number.json",
+      "sha256": "a7110e1772043a8eebcde50dc843cf64dd40db726ca6ef9e5d53bceedf135fce",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/U02-final-line-without-newline.json",
+      "sha256": "5f25a3add23b00883d373e5b69c37999d86da488875b23b872bc20c97336b4d8",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/U03-control.json",
+      "sha256": "b77d880c6faacca1fa0e3626dbce7a0ffda1e9f02d5cdad2888ee552d294b5da",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/U03-retirement-before-turn-evidence.json",
+      "sha256": "e3ea6d3c2d625773d60ed923f43b46a739d900bf40cd7b4cfe7b564a4dd0a2ca",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/U04-control-settled-before-closure.json",
+      "sha256": "7253fd681a58d7cab8a7c4a289a2836d74f3a957a1fc70cc4c284477c176d349",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/U04-settled-after-closure-stays-with-owner.json",
+      "sha256": "8a5c9b5a93b432ac4565ce87c5397c4b36f3767c5b75d7fe9756935d3f165c05",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/U05-inconsistent-charge-without-response-id.json",
+      "sha256": "da20b7a62ea58834f22d77b1d6d53d7c7b3ce72c65103a6a9d6b4e4516103948",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/U05-usage-settlement-without-response-id.json",
+      "sha256": "48600acebdc209431e69d1ffac140f96728a1b46deba3b3f59d18a0726759cbf",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/U06-subscription-upstream-error-unlabelled.json",
+      "sha256": "3c4b893771deb8123cefc96497a16278787fbe72a7fcc616921534aafff1d4c4",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/U07-unrelated-non-object-usage-does-not-block.json",
+      "sha256": "b98aaa7d97a7d926d176871aeb2a2b7b9e472534b896423cf396f2d90d29592e",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/U08-missing-observed-tier.json",
+      "sha256": "4b2981fec4bebac28cb4475378e15555be7d45cb7e01548a13d65390257d022a",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/V01-cheaper-response-model-undercharge.json",
+      "sha256": "edee53493a174952b22e4747b034d531f2b33c90caa645dd90f77f86283243ba",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/V01-control-producer-price.json",
+      "sha256": "7bdac21b73ce500185fcfa2027e65fc81816a315e659d244c70172a896aafdf4",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/V01-usage-settlement-other-response-model.json",
+      "sha256": "dec00265d0df5df6b68ca03426a50800c0c6ee5da838c9bd5b2501f4b563c7c7",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/V02-control-producer-price.json",
+      "sha256": "1fe4eb88b9482a94777955981c5740078cb703a45714ab13c74e8efa9697d77f",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/V02-unsplit-writes-undercharged.json",
+      "sha256": "6eda7417a2345382c359611f285b964f12169010183da9025228e48748df01ef",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/V03-control-labelled-upstream-error.json",
+      "sha256": "2a591fd2e11f67ac6d74803b7904a3d00201437e13655510625180f08b39532f",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/V03-subscription-upstream-error-labelled-api.json",
+      "sha256": "bf54c7030bd01ed3e1099521cfa8afb88a9c2d63c307514602d9724afa190bb2",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/V06-reservation-attempt-number-missing.json",
+      "sha256": "54c6247935d912df9f9ac4bec15c0f348535596c2ac6e3eac9f3d94aded2f5bc",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/V07-unrelated-unreadable-log-does-not-block.json",
+      "sha256": "5aa32f875567ff6a46092ac06862e27f4dc54d4639e9c375da4f18b13710fd18",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/VC01-openai-usage-settlement.json",
+      "sha256": "4395e4e781e68b420f07da44208e1d2c1ac608b0c5ab131535b1b5d5df24aaf0",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/VC02-anthropic-usage-settlement.json",
+      "sha256": "d8754704591f89725b5ec7eba0776badd3a951655f187c0bed8e8d6c5c8b2ae8",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/VC03-reservation-settlement-with-usage.json",
+      "sha256": "73258f83215411e690d732842173bd95a4e709329bae2ae5ec25cae61a4f4e6f",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/VC04-upstream-error-keeps-reservation.json",
+      "sha256": "26e30101cab2ace56a41f4dd5fe094e09aba39e36c8c694829c6116ed1303cc5",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/VC05-unsettled-reservation.json",
+      "sha256": "dad9fe85b6d654bb9b3eb4d2ec96e9f30bc9a6990b95fdba50c6e5f11bbf35a5",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/VC06-unbudgeted-completed-request.json",
+      "sha256": "22c2ae02343784036f2eee02177d8d95ba6d9b0baaeb70c4be6cd1be85146f81",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/VC07-read-failure-paired.json",
+      "sha256": "f89c9de4e82f5af2b13ae876f3e0d68085c90364b0c8280f7734768e9028dd90",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/VC08-subscription-measured-request.json",
+      "sha256": "493d173f82f6d4173e38dd5ce3188bfedca6df8462e94cffd393062ad4be4a50",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/VC11-multi-turn-session.json",
+      "sha256": "f421d6991f22055246c137a9093fc714f15d805cbe84010b4271040184065c28",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/VC12-reused-n-without-errors.json",
+      "sha256": "ce8f75968d7d7f1012ae2d9b098cb2987c47ac05d721f0f325793f5f7602ffce",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/VC13-equal-timestamps.json",
+      "sha256": "7503900390ebb98a60292a6aaffc3d2271d019a5d66dee08e71efb457bd32265",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/VC14-open-session-commitment.json",
+      "sha256": "6850c2082ef238fed373d6a7f7d3ae350033fb188c25ef6f5699f25775aa1898",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/corpus/cases/VC15-successor-not-charged-settled-predecessor-spend.json",
+      "sha256": "445a3f4e0748f286ac52c68c9461c0627486b3b8797723f237971df788c73cfa",
+      "freeze_match": true
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/joined/freeze/manifest.json",
+      "sha256": "c1c40727648b40f3494b5444065cdef3a7824a42249426dc860dece95423ceda"
+    },
+    {
+      "path": "/home/bline/cbm-work/p134-module-a/packet/sources/producer/pi_container.py.excerpts",
+      "sha256": "bfd226df9fc1fb8b5395a74490e3c1696273fab08e15d0e4da19b951320bb4b8"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/POLICY-AND-PLAN-APPROVAL.md",
+      "sha256": "07303d5c5c36276f6038bf9368f3a5fe660e39ee9160b8b3d92049de98abb981"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/PLAN-AND-ROOT-ADOPTION.md",
+      "sha256": "05e2c10e72e6ffc8495ff9a61334ef4801041e71ef1eea5b9d8fb7a6005348d4"
+    },
+    {
+      "path": "/home/bline/cbm-work/p134-module-a/ARCHITECTURE-GUARD.md",
+      "sha256": "6ec79614107eb226a05252ac25b26a0abe7c8a1efa08f5863b883bae1316a3be"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/module-A/root-reproduction/REPRODUCED.json",
+      "sha256": "01f676d3ce2e400fb8d884a82b7bfe17a9fb4f343a623f1e7910791f42a4eb33"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/reviews/module-A/review/sealed/reviewer-response.md",
+      "sha256": "b4b1ed688ceac5574eeced36936d5754dfb7e588334c93842d6b9559ce1e67f2"
+    }
+  ]
+}

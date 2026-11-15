@@ -1,0 +1,263 @@
+{
+ "added_in": "1.5-s1",
+ "ambiguity": null,
+ "case_id": "R6-C01-writer-reservation-floor-control",
+ "class": "adversarial_synthetic",
+ "contract": "pi-accounting-contract/1.6-s1",
+ "controls": [],
+ "evaluations": [
+  {
+   "admission_request": {
+    "new": "100000000",
+    "objective": "o"
+   },
+   "expected": {
+    "admission": {
+     "decision": "refused",
+     "limit": "1000000000",
+     "new": "100000000",
+     "objective": "o"
+    },
+    "attribution": [
+     {
+      "attempt": "res:S1/turn-1:rid=1",
+      "objective": "o",
+      "ownership": "owned",
+      "placement": "inside"
+     }
+    ],
+    "objectives": [
+     {
+      "commitments": [
+       {
+        "admission_id": "a1",
+        "committed": "985000000",
+        "gate": {
+         "qualified": false,
+         "reasons": [
+          "NoGateEvidence"
+         ]
+        },
+        "kind": "at_least",
+        "state": "retired_resumable"
+       }
+      ],
+      "objective": "o",
+      "owned_closed": {
+       "high": {
+        "kind": "at_least",
+        "nano": "15000000"
+       },
+       "low": "15000000"
+      },
+      "owned_outstanding": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "predecessor_obligations": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "provisional": true,
+      "reasons": [
+       "UnenforcedCommitment",
+       "UnresolvedExposure"
+      ],
+      "status": "not_established"
+     }
+    ]
+   },
+   "name": "default",
+   "objectives": [
+    {
+     "admissions": [
+      {
+       "admission_id": "a1",
+       "rows": [
+        {
+         "admission_id": "a1",
+         "at": "2026-11-10T06:00:05Z",
+         "event": "pending",
+         "max_usd": 1.0
+        },
+        {
+         "admission_id": "a1",
+         "at": "2026-11-10T06:00:10Z",
+         "event": "launched",
+         "session_id": "00000000-0000-4000-8000-0000000000c1"
+        }
+       ],
+       "session": "00000000-0000-4000-8000-0000000000c1",
+       "source": "journal"
+      }
+     ],
+     "closed_at": null,
+     "limit": "1000000000",
+     "objective": "o",
+     "predecessor": null,
+     "started_at": "2026-11-10T06:00:00Z",
+     "tree_sessions": [
+      "00000000-0000-4000-8000-0000000000c1"
+     ]
+    }
+   ]
+  }
+ ],
+ "expected": {
+  "attempts": [
+   {
+    "billing": "unresolved",
+    "blocking": [
+     "UnresolvedExposure"
+    ],
+    "correlation": {
+     "kind": "exact"
+    },
+    "diagnostics": [],
+    "evidence": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ],
+    "execution": "terminal",
+    "exposure": {
+     "high": {
+      "basis": "usage_valuation",
+      "kind": "at_least",
+      "nano": "15000000"
+     },
+     "low": {
+      "basis": "usage_valuation",
+      "nano": "15000000"
+     },
+     "pool": "pi_api"
+    },
+    "forwarding": "forwarded",
+    "key": "res:S1/turn-1:rid=1",
+    "obligation": {
+     "amount_source": "reservation_bound",
+     "by": "S1/turn-1:2",
+     "state": "closed"
+    },
+    "replacement": {
+     "eligible": false,
+     "reason": "UsageIncomplete"
+    },
+    "settlement": {
+     "basis": "usage",
+     "charged": "15000000",
+     "decision": "valid",
+     "reasons": [],
+     "reserved": "10000000"
+    },
+    "valuation": {
+     "complete": false,
+     "derivations": [
+      {
+       "for": "both",
+       "model": "gpt-6-astra",
+       "nano": "15000000",
+       "provider": "openai",
+       "tier_multiplier": "1",
+       "usage": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 1000,
+        "output_tokens": 100
+       }
+      }
+     ],
+     "high": "15000000",
+     "identities": [
+      "openai/gpt-6-astra"
+     ],
+     "low": "15000000",
+     "state": "valued"
+    }
+   }
+  ],
+  "inventory": [],
+  "lifecycle": {
+   "S1": {
+    "clock": "trusted",
+    "reopened": false,
+    "state": "retired"
+   }
+  },
+  "non_attempt": [],
+  "unreadable": []
+ },
+ "findings": [],
+ "group": "R6 independent controls",
+ "historical": {},
+ "inputs": {
+  "rates": {
+   "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  },
+  "reference_time": "2026-11-10T07:00:00Z",
+  "sessions": [
+   {
+    "alias": "S1",
+    "launch": {
+     "auth_lane": "api",
+     "model": "openai/gpt-6-astra",
+     "parent": "root"
+    },
+    "lifecycle": [
+     {
+      "at": "2026-11-10T06:00:10Z",
+      "event": "launch",
+      "turn": 1
+     },
+     {
+      "at": "2026-11-10T06:50:00Z",
+      "event": "retire"
+     }
+    ],
+    "logs": {
+     "turn-1": {
+      "final_newline": true,
+      "lines": [
+       "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.01, \"input_bound\": 1000, \"bound_basis\": \"bytes\"}",
+       "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": \"flex\", \"observed_tier\": \"default\", \"terminal\": \"response.incomplete\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.01, \"charged_usd\": 0.015, \"charge_basis\": \"usage\", \"session_spent_usd\": 0.015, \"multiplier_floor\": 1.0}}"
+      ]
+     }
+    },
+    "session_id": "00000000-0000-4000-8000-0000000000c1"
+   }
+  ]
+ },
+ "invariants": [
+  "INV-F3",
+  "INV-F13"
+ ],
+ "notes": "Writer-consistent reservation arithmetic control: configured flex0.5, input bound1000, output cap150 gives (1000*12.5+150*50)*0.5/1e6=.01. Observed default prices logged usage1000/100 at.015; incomplete terminal retains R and supported usage. Local writer arithmetic/branch witness only; no live producer reachability claim. Observed default differs from configured flex, so settlement raises multiplier_floor from0 to1.0; this new control records the raised floor.",
+ "profile": "current_producer",
+ "provenance": {
+  "origin": "independent raw oracle writer-control construction",
+  "source_case": "P133-A01-incomplete-usage-above-reservation"
+ },
+ "rationale": "RootP2 explicit status/terminal conjunction; historical synthetic bytes retained in source case. Writer-consistent reservation arithmetic control: configured flex0.5, input bound1000, output cap150 gives (1000*12.5+150*50)*0.5/1e6=.01. Observed default prices logged usage1000/100 at.015; incomplete terminal retains R and supported usage. Local writer arithmetic/branch witness only; no live producer reachability claim. Local floor witness corrected to1.0 from the initially cloned0.0; historical originals unchanged.",
+ "reachability": "not_established",
+ "revisions": [],
+ "revisions_r3": [],
+ "revisions_r4": [],
+ "revisions_r5": [],
+ "revisions_r6": [],
+ "revisions_r7": [
+  {
+   "field": "default/o.provisional",
+   "from": false,
+   "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+   "to": true
+  }
+ ],
+ "role": "control",
+ "schema": "pi-accounting-corpus/1"
+}

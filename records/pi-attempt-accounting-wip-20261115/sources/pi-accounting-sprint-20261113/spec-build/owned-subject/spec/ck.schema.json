@@ -1,0 +1,375 @@
+{
+  "$defs": {
+    "Constructor": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "type_id": {
+          "type": "string"
+        },
+        "variant": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type_id",
+        "variant",
+        "fields"
+      ],
+      "type": "object"
+    },
+    "Formula": {
+      "additionalProperties": false,
+      "properties": {
+        "depends": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "inputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "refs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "revision": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "text",
+        "refs",
+        "depends",
+        "inputs"
+      ],
+      "type": "object"
+    },
+    "Node": {
+      "additionalProperties": false,
+      "properties": {
+        "depends": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "refs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "revision": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "text",
+        "refs",
+        "depends"
+      ],
+      "type": "object"
+    },
+    "Rule": {
+      "additionalProperties": false,
+      "properties": {
+        "depends": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "dimensions": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": "object"
+        },
+        "formulas": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "guard": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": "object"
+        },
+        "id": {
+          "type": "string"
+        },
+        "outputs": {
+          "items": {
+            "$ref": "#/$defs/Constructor"
+          },
+          "type": "array"
+        },
+        "partition": {
+          "enum": [
+            "C-KEY",
+            "S-DECISION",
+            "S-TIME",
+            "V-PRESENCE",
+            "F-REPLACEMENT",
+            "F-OBLIGATION",
+            "X-EXPOSURE",
+            "K-FINDINGS"
+          ]
+        },
+        "reads": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "refs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "revision": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "stage": {
+          "enum": [
+            "C",
+            "S",
+            "V",
+            "F",
+            "X",
+            "K"
+          ]
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "stage",
+        "partition",
+        "dimensions",
+        "guard",
+        "text",
+        "reads",
+        "outputs",
+        "formulas",
+        "refs",
+        "depends"
+      ],
+      "type": "object"
+    },
+    "Stage": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "enum": [
+            "E",
+            "C",
+            "S",
+            "V",
+            "F",
+            "X",
+            "K"
+          ]
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "reads": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "revision": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "reads",
+        "outputs"
+      ],
+      "type": "object"
+    },
+    "TypeDef": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "variants": {
+          "items": {
+            "$ref": "#/$defs/Variant"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "variants"
+      ],
+      "type": "object"
+    },
+    "Variant": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "fields"
+      ],
+      "type": "object"
+    },
+    "View": {
+      "additionalProperties": false,
+      "properties": {
+        "nodes": {
+          "enum": [
+            "contract",
+            "transitions",
+            "schema"
+          ]
+        },
+        "path": {
+          "enum": [
+            "contract/CK-GENERATED.md",
+            "contract/TRANSITIONS.md",
+            "corpus/SCHEMA.md"
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "nodes"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "pi-accounting-spec/1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "contract_version": {
+      "const": "pi-accounting-contract/1.5-s1"
+    },
+    "formulas": {
+      "items": {
+        "$ref": "#/$defs/Formula"
+      },
+      "type": "array"
+    },
+    "invariants": {
+      "items": {
+        "$ref": "#/$defs/Node"
+      },
+      "type": "array"
+    },
+    "owner_policies": {
+      "items": {
+        "$ref": "#/$defs/Node"
+      },
+      "type": "array"
+    },
+    "rules": {
+      "items": {
+        "$ref": "#/$defs/Rule"
+      },
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "pi-accounting-spec/1"
+    },
+    "stages": {
+      "items": {
+        "$ref": "#/$defs/Stage"
+      },
+      "type": "array"
+    },
+    "types": {
+      "items": {
+        "$ref": "#/$defs/TypeDef"
+      },
+      "type": "array"
+    },
+    "views": {
+      "items": {
+        "$ref": "#/$defs/View"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "contract_version",
+    "types",
+    "stages",
+    "rules",
+    "formulas",
+    "invariants",
+    "views",
+    "owner_policies"
+  ],
+  "type": "object"
+}

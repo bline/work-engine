@@ -1,0 +1,47 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "p9-routing-and-model7",
+  "argv": [
+    "python3",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-review-probes/reproduce_p9_route.py"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/subject-r2",
+  "env_clear": false,
+  "env_set": {
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/subject-r2"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3509841,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-review-probes/reproduce_p9_route.py",
+      "type": "file",
+      "mode": 436,
+      "length": 2533,
+      "sha256": "2c64b761ce12f6d68ad60883380e10901cbeb120deea49d8eedca553d828b389"
+    }
+  ],
+  "timeout_s": 90.0,
+  "pid": 3509851,
+  "pgid": 3509851,
+  "started_at": "2026-11-14T06:46:40.147816Z",
+  "ended_at": "2026-11-14T06:46:42.572449Z",
+  "duration_s": 2.425,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-review-probes/custody/p9-routing-and-model7.stdout",
+    "length": 3389,
+    "sha256": "c32eb6de31973e6b3c4e56ecd8d44b378b4f3043fe6535fb417e1d1eb6fecc0b"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/root-review-probes/custody/p9-routing-and-model7.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

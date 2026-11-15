@@ -1,0 +1,50 @@
+{
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "steps": [
+    {
+      "name": "python-partition",
+      "argv": [
+        "python3",
+        "validator/validate_corpus.py",
+        "partition",
+        "corpus",
+        "oracle/rates",
+        "A"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/A/SOURCE-BINDINGS.json",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+      ],
+      "timeout": 120,
+      "kill_leftovers": true
+    },
+    {
+      "name": "rust-partition",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-integration/debug/pi-accounting-spec-check",
+        "corpus",
+        ".",
+        "A"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-integration/debug/pi-accounting-spec-check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/A/SOURCE-BINDINGS.json"
+      ],
+      "timeout": 120,
+      "kill_leftovers": true
+    },
+    {
+      "name": "controls-rollback",
+      "argv": [
+        "python3",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/A/qualify.py"
+      ],
+      "digest": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/A/qualify.py",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/validator/validate_corpus.py"
+      ],
+      "timeout": 120,
+      "kill_leftovers": true
+    }
+  ]
+}

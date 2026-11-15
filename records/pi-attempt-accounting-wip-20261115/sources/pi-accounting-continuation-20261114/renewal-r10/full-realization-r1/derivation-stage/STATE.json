@@ -1,0 +1,15 @@
+{
+  "state": "WORKER_STAGE_COMPLETE_WHOLEFINAL_READY_ROOT_COLLECTION_OWED",
+  "agent": "/root/s1_full_derivation_stage",
+  "native": "01a1d993-35ca-7293-a431-38daa0b9cdd6",
+  "packet_sha256": "164b4f0e346587b436638266e0ddb040e3338f5862b7fa136e9c4dd5de531aa7",
+  "binding": "IDENTITY exact lineage/native rollout; NEW applied314 Sol6.1/high/default",
+  "identity_ack": "whole collaboration message received/read",
+  "collector": "root01a1d6e2 sole native/process collector",
+  "worker_owns": "derivation-stage only; one own observation or explicit phasechecks; no source edits/builds/children",
+  "pressure_readiness": "owned listener failed; explicit pinned42808epoch1 check delivered after OWN refresh",
+  "root_listener": "root-owned; current route not observed by worker after recovery; no collection transfer",
+  "root_context": "root-owned; historical worker-entry snapshot is not current evidence",
+  "last_budget": "control/derivation-admission-budget.json COMPLETE65.484470/100; worker0.2039944/3; account16remaining",
+  "next": "return whole native final to root; no source admission"
+}

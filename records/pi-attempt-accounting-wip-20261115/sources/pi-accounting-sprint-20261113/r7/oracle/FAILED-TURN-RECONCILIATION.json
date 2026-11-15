@@ -1,0 +1,11 @@
+{
+  "state": "collected",
+  "process_exit": 1,
+  "reason": "Claude weekly quota exhausted",
+  "subject_changes": [],
+  "no_owned_processes_remaining": true,
+  "rejection": false,
+  "permission_limit": null,
+  "cost_proxy": 0.5197656,
+  "successor_owner": "root selects fresh native Codex below"
+}

@@ -1,0 +1,8 @@
+{
+  "admission": "conditional_fixture",
+  "authority_ref": "ROOT-ADOPTION-R6.json",
+  "case_id": "S08-negative-commitment-cap",
+  "grant_payloads": [],
+  "initial_scope_contracts": [],
+  "raw_input_sha256": "773d9d943e46d13f308d80d0930fdcda3e6d7d94ff0b77488f7489637a45c0ae"
+}

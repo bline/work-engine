@@ -1,0 +1,44 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "none",
+      "kind": "exact",
+      "nano": "0"
+    },
+    "low": "0"
+  },
+  "credits": {
+    "alternatives": [
+      "u1",
+      "u2"
+    ],
+    "mode": "single_ambiguous"
+  },
+  "id": "result:L1",
+  "units": [
+    {
+      "high": {
+        "basis": "none",
+        "kind": "exact",
+        "nano": "0"
+      },
+      "id": "origin:u1",
+      "low": "0",
+      "origins": [
+        "u1"
+      ]
+    },
+    {
+      "high": {
+        "basis": "none",
+        "kind": "exact",
+        "nano": "0"
+      },
+      "id": "origin:u2",
+      "low": "0",
+      "origins": [
+        "u2"
+      ]
+    }
+  ]
+}

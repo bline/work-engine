@@ -1,0 +1,7 @@
+# Full-realization planning startup only
+
+Invoke manual-orchestration as a worker. Root native01a1d6e2-32ba-7701-9115-740dcb41af11 is sole supervisor, collector, design-admission and acceptance owner. You are not alone in the workspace; preserve others' edits and operate only on your assigned output directory. Read AGENTS/DESIGN and applicable doctrine. Do not coordinate children or transfer control. No implementation, source mutation, builds, test-copy suites, paid APIs or settings changes. Planning output will be owned solely under this directory.
+
+Return READY_ONLY after startup. Substantive planning awaits root's verified actual session/rollout binding, observed Sol6.1/xhigh/default and explicit packet admission. No old task/session ID or inherited environment proves your identity. The packet will name the accepted finite predecessor and unchanged full S1 objective. Root will enroll your own pressure delivery after identity is verified; root's monitor covers root only. Native token preparation185000/completion220000 apply; invoke your own WindWalker/new_context when needed after durable preservation. No helper reset. Same renewed human100/no deadline; planning cap3 proxy dollars, target1.5, all inside that100; root owns accounting. Runtime and backend/billing identity differ.
+
+Your continuation in CONTINUATION.md must retain authority, source identity, unresolved obligations and actual ownership. Initial startup carries no full-realization admission.

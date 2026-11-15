@@ -1,0 +1,140 @@
+{
+  "schema": "manual-orchestration-context-tree-v1",
+  "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "completeness": "complete_within_scanned_directory",
+  "skipped_metadata": 0,
+  "children": [
+    {
+      "schema": "manual-orchestration-context-check-v1",
+      "checked_at": "2026-11-13T23:27:48.391726+00:00",
+      "session_id": "01a1d700-c690-7d90-a2b2-620ece8f2a2f",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T15-21-54-01a1d700-c690-7d90-a2b2-620ece8f2a2f.jsonl",
+      "next_task_tokens": null,
+      "next_task_basis": "not estimated",
+      "observed_at": "2026-11-13T22:52:38.201Z",
+      "freshness": "stale_file_modification",
+      "recorded_model": "gpt-6.1-sol",
+      "recorded_effort": "medium",
+      "input_tokens": 171662,
+      "context_window_tokens": 475000,
+      "epoch": 0,
+      "compaction_markers": 0,
+      "lineage": [],
+      "limitations": [
+        "file recency does not establish active-session identity or current in-memory context"
+      ],
+      "status": "observed",
+      "levels_basis": "tokens",
+      "trigger_tokens": 200000,
+      "band_floor_tokens": 235000,
+      "headroom_to_trigger": 28338,
+      "headroom_to_band_floor": 63338,
+      "fraction_of_window": 0.3614,
+      "recommendation": "retain_ok",
+      "reasons": [
+        "input 171662 is below the trigger 200000",
+        "next-task size not estimated; headroom to band floor is the margin"
+      ],
+      "agent_path": "/root/s1_oracle_build"
+    },
+    {
+      "schema": "manual-orchestration-context-check-v1",
+      "checked_at": "2026-11-13T23:27:48.410976+00:00",
+      "session_id": "01a1d6f2-1f0e-7b70-8757-2d848076a2ce",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T15-05-54-01a1d6f2-1f0e-7b70-8757-2d848076a2ce.jsonl",
+      "next_task_tokens": null,
+      "next_task_basis": "not estimated",
+      "observed_at": "2026-11-13T22:16:34.609Z",
+      "freshness": "stale_file_modification",
+      "recorded_model": "gpt-6.1-sol",
+      "recorded_effort": "high",
+      "input_tokens": 144799,
+      "context_window_tokens": 475000,
+      "epoch": 0,
+      "compaction_markers": 0,
+      "lineage": [],
+      "limitations": [
+        "file recency does not establish active-session identity or current in-memory context"
+      ],
+      "status": "observed",
+      "levels_basis": "tokens",
+      "trigger_tokens": 200000,
+      "band_floor_tokens": 235000,
+      "headroom_to_trigger": 55201,
+      "headroom_to_band_floor": 90201,
+      "fraction_of_window": 0.3048,
+      "recommendation": "retain_ok",
+      "reasons": [
+        "input 144799 is below the trigger 200000",
+        "next-task size not estimated; headroom to band floor is the margin"
+      ],
+      "agent_path": "/root/s1_raw_oracle"
+    },
+    {
+      "schema": "manual-orchestration-context-check-v1",
+      "checked_at": "2026-11-13T23:27:48.431767+00:00",
+      "session_id": "01a1d700-afdf-7f52-94a6-7a59c5e81650",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T15-21-48-01a1d700-afdf-7f52-94a6-7a59c5e81650.jsonl",
+      "next_task_tokens": null,
+      "next_task_basis": "not estimated",
+      "observed_at": "2026-11-13T22:44:34.057Z",
+      "freshness": "stale_file_modification",
+      "recorded_model": "gpt-6.1-sol",
+      "recorded_effort": "medium",
+      "input_tokens": 143083,
+      "context_window_tokens": 475000,
+      "epoch": 0,
+      "compaction_markers": 0,
+      "lineage": [],
+      "limitations": [
+        "file recency does not establish active-session identity or current in-memory context"
+      ],
+      "status": "observed",
+      "levels_basis": "tokens",
+      "trigger_tokens": 200000,
+      "band_floor_tokens": 235000,
+      "headroom_to_trigger": 56917,
+      "headroom_to_band_floor": 91917,
+      "fraction_of_window": 0.3012,
+      "recommendation": "retain_ok",
+      "reasons": [
+        "input 143083 is below the trigger 200000",
+        "next-task size not estimated; headroom to band floor is the margin"
+      ],
+      "agent_path": "/root/s1_spec_build"
+    },
+    {
+      "schema": "manual-orchestration-context-check-v1",
+      "checked_at": "2026-11-13T23:27:48.449707+00:00",
+      "session_id": "01a1d6f0-831b-7bd1-b290-46b347825c56",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T15-04-08-01a1d6f0-831b-7bd1-b290-46b347825c56.jsonl",
+      "next_task_tokens": null,
+      "next_task_basis": "not estimated",
+      "observed_at": "2026-11-13T22:16:13.867Z",
+      "freshness": "stale_file_modification",
+      "recorded_model": "gpt-6.1-sol",
+      "recorded_effort": "xhigh",
+      "input_tokens": 141060,
+      "context_window_tokens": 475000,
+      "epoch": 0,
+      "compaction_markers": 0,
+      "lineage": [],
+      "limitations": [
+        "file recency does not establish active-session identity or current in-memory context"
+      ],
+      "status": "observed",
+      "levels_basis": "tokens",
+      "trigger_tokens": 200000,
+      "band_floor_tokens": 235000,
+      "headroom_to_trigger": 58940,
+      "headroom_to_band_floor": 93940,
+      "fraction_of_window": 0.297,
+      "recommendation": "retain_ok",
+      "reasons": [
+        "input 141060 is below the trigger 200000",
+        "next-task size not estimated; headroom to band floor is the margin"
+      ],
+      "agent_path": "/root/s1_spec_design"
+    }
+  ]
+}

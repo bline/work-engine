@@ -1,0 +1,33 @@
+{
+  "authority": "synthetic harness conditional only; no live grant",
+  "conditional_assumptions": {
+    "origin_slot_binding": [
+      [
+        "u1",
+        "P"
+      ],
+      [
+        "u2",
+        "Q"
+      ]
+    ],
+    "origin_slot_distinctness": [
+      [
+        "u1",
+        "Q"
+      ],
+      [
+        "u2",
+        "P"
+      ]
+    ],
+    "physical_bill_independence": [
+      "P",
+      "Q"
+    ]
+  },
+  "origins": {
+    "u1": "usage15M",
+    "u2": "usage15M"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "none",
+      "kind": "exact",
+      "nano": "0"
+    },
+    "low": "0"
+  },
+  "coverage": [],
+  "id": "result:F2-model7",
+  "malformed_origins": [
+    "s:model=number7"
+  ],
+  "units": [
+    {
+      "high": {
+        "basis": "none",
+        "kind": "exact",
+        "nano": "0"
+      },
+      "id": "hold:r+s",
+      "low": "0",
+      "origins": [
+        "r",
+        "s"
+      ]
+    }
+  ]
+}

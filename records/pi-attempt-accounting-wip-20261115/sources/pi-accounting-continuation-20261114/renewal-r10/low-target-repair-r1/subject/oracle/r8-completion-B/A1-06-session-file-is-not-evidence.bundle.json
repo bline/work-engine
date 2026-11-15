@@ -1,0 +1,193 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "oracle/r8-completion-B/DERIVATIONS.json#A1-06-session-file-is-not-evidence",
+        "predecessor_subject_refs": [
+          "baseline:83103a2cc0f5fa1052a8947b04293f081b12cd83191e7966c700f60bff3808b2"
+        ],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": [
+          "conditional-ticket:S1/turn-1"
+        ]
+      },
+      "exact_links": [],
+      "grants": [
+        {
+          "admission": "conditional_fixture",
+          "assumption_refs": [
+            "Inherited immutable ticket namespace only; no exact auxiliary link or physical-bill independence."
+          ],
+          "authority_ref": "ROOT-ADOPTION-R6.json",
+          "covered_extent_ref": "sha256:0bbc79b312c0eb8eadc7f68894513d1055dd7da5010c84bf23932451b5e19c26",
+          "covered_origin_refs": [
+            "S1/turn-1:1"
+          ],
+          "exact_payload_ref": "oracle/r8-completion-B/A1-06-session-file-is-not-evidence.provenance.json#S1/turn-1",
+          "grant_id": "initial-scope:S1/turn-1",
+          "guarantee_kind": "initial_reference_scope",
+          "observer_or_harness_ref": "inherited-corpus-conditional-fixture"
+        }
+      ],
+      "id": "input:A1-06-session-file-is-not-evidence",
+      "identity_bindings": [],
+      "initial_contracts": [
+        {
+          "contract_id": "conditional-ticket:S1/turn-1",
+          "duplicate_rule": "same_origin_only",
+          "grant_ref": "initial-scope:S1/turn-1",
+          "reference_namespace": "dollar_ticket",
+          "scope_id": "A1-06-session-file-is-not-evidence/S1/turn-1"
+        }
+      ],
+      "kind": "accounting_input_proof",
+      "lineage_id": "A1-06-session-file-is-not-evidence",
+      "origins": [
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:1",
+          "original_position": 1,
+          "raw_bytes_sha256": "d33d0a547a10961635d351e4dd76fb6c7b97d3097428989e4e4bed62cbfbdce5",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:0bbc79b312c0eb8eadc7f68894513d1055dd7da5010c84bf23932451b5e19c26"
+        }
+      ],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:row:S1/turn-1:line=1",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "S1/turn-1:1"
+          ]
+        }
+      ],
+      "continuity_result": "unestablished",
+      "coverage_decisions": [
+        {
+          "anchor_origin_refs": [],
+          "completion_ref": "completion:row:S1/turn-1:line=1",
+          "coverage_id": "coverage:row:S1/turn-1:line=1",
+          "definite_link_refs": [],
+          "monetary_origin_refs": [
+            "S1/turn-1:1"
+          ],
+          "reason_refs": [
+            "case:A1-06-session-file-is-not-evidence#attempt:row:S1/turn-1:line=1/replacement"
+          ],
+          "result_unit_ref": "row:S1/turn-1:line=1",
+          "retained_component_refs": [
+            "case:A1-06-session-file-is-not-evidence#attempt:row:S1/turn-1:line=1/retained-charge-and-context"
+          ],
+          "route": "unbudgeted_completion",
+          "status": "accepted",
+          "unit_refs": [
+            "held:row:S1/turn-1:line=1"
+          ],
+          "valuation_ref": "valuation:row:S1/turn-1:line=1"
+        }
+      ],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [
+        {
+          "context_origin_ref": "S1/turn-1:1",
+          "predicate_ref": "same-original-usage-origin",
+          "usage_origin_ref": "S1/turn-1:1"
+        }
+      ],
+      "id": "result:A1-06-session-file-is-not-evidence",
+      "input_proof_ref": "input:A1-06-session-file-is-not-evidence",
+      "kind": "accounting_result",
+      "lineage_id": "A1-06-session-file-is-not-evidence",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [
+            "S1/turn-1:1"
+          ],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "A1-06-session-file-is-not-evidence/default/o/owned_closed",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        },
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "A1-06-session-file-is-not-evidence/default/o/owned_outstanding",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        }
+      ],
+      "origins": [
+        {
+          "active_high_unit_id": "row:S1/turn-1:line=1",
+          "base_id": "base:row:S1/turn-1:line=1",
+          "evidence_atom_id": "atom:S1/turn-1:1",
+          "origin_ref": "S1/turn-1:1"
+        }
+      ],
+      "primary_validities": [],
+      "unbudgeted_applicabilities": [
+        {
+          "applicability_id": "applicability:row:S1/turn-1:line=1",
+          "classification": "genuine_unbudgeted",
+          "dollar_origin_refs": [],
+          "raw_subject_ref": "sha256:0bbc79b312c0eb8eadc7f68894513d1055dd7da5010c84bf23932451b5e19c26",
+          "usage_origin_ref": "S1/turn-1:1"
+        }
+      ],
+      "unbudgeted_completions": [
+        {
+          "applicability_ref": "applicability:row:S1/turn-1:line=1",
+          "complete": true,
+          "completion_id": "completion:row:S1/turn-1:line=1",
+          "usage_origin_ref": "S1/turn-1:1",
+          "valuation_ref": "valuation:row:S1/turn-1:line=1"
+        }
+      ],
+      "units": [
+        {
+          "exposure_ref": "case:A1-06-session-file-is-not-evidence#attempt:row:S1/turn-1:line=1",
+          "origin_refs": [
+            "S1/turn-1:1"
+          ],
+          "state": "active",
+          "unit_id": "row:S1/turn-1:line=1"
+        },
+        {
+          "exposure_ref": "case:A1-06-session-file-is-not-evidence#attempt:row:S1/turn-1:line=1/pre-release-hold",
+          "origin_refs": [
+            "S1/turn-1:1"
+          ],
+          "state": "inactive",
+          "successor_ref": "row:S1/turn-1:line=1",
+          "unit_id": "held:row:S1/turn-1:line=1"
+        }
+      ],
+      "valuation_records": [
+        {
+          "complete": true,
+          "usage_origin_refs": [
+            "S1/turn-1:1"
+          ],
+          "valuation_id": "valuation:row:S1/turn-1:line=1",
+          "wire_ref": "case:A1-06-session-file-is-not-evidence#attempt:row:S1/turn-1:line=1/valuation"
+        }
+      ],
+      "version": "1.7-s1"
+    }
+  ]
+}

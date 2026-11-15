@@ -1,0 +1,29 @@
+{
+  "schema": "manual-orchestration-context-check-v1",
+  "checked_at": "2026-11-14T04:24:55.975581+00:00",
+  "session_id": "01a1d840-f94e-7631-aef9-15c312b1ae20",
+  "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T21-11-39-01a1d840-f94e-7631-aef9-15c312b1ae20.jsonl",
+  "next_task_tokens": 10000,
+  "next_task_basis": "parent estimate",
+  "observed_at": "2026-11-14T04:24:15.816Z",
+  "freshness": "recent_file_modification",
+  "recorded_model": "gpt-6.1-sol",
+  "recorded_effort": "medium",
+  "input_tokens": 165453,
+  "context_window_tokens": 475000,
+  "epoch": 0,
+  "compaction_markers": 0,
+  "lineage": [],
+  "limitations": [],
+  "status": "observed",
+  "levels_basis": "tokens",
+  "trigger_tokens": 200000,
+  "band_floor_tokens": 235000,
+  "headroom_to_trigger": 34547,
+  "headroom_to_band_floor": 69547,
+  "fraction_of_window": 0.3483,
+  "recommendation": "retain_ok",
+  "reasons": [
+    "input 165453 is below the trigger 200000"
+  ]
+}

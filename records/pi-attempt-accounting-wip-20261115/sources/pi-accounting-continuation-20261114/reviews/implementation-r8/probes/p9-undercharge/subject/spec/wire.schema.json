@@ -1,0 +1,307 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "accounting_result_ref": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "exposure": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "high": {
+              "additionalProperties": false,
+              "properties": {
+                "basis": {
+                  "enum": [
+                    "usage_valuation",
+                    "proxy_reservation",
+                    "proxy_charge",
+                    "none"
+                  ]
+                },
+                "kind": {
+                  "enum": [
+                    "exact",
+                    "at_least"
+                  ]
+                },
+                "nano": {
+                  "pattern": "^(0|[1-9][0-9]*)$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "nano",
+                "basis"
+              ],
+              "type": "object"
+            },
+            "low": {
+              "additionalProperties": false,
+              "properties": {
+                "basis": {
+                  "enum": [
+                    "usage_valuation",
+                    "proxy_reservation",
+                    "proxy_charge",
+                    "none"
+                  ]
+                },
+                "nano": {
+                  "pattern": "^(0|[1-9][0-9]*)$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "nano",
+                "basis"
+              ],
+              "type": "object"
+            },
+            "pool": {
+              "const": "pi_api"
+            }
+          },
+          "required": [
+            "pool",
+            "low",
+            "high"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "billing": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "pool": {
+              "const": "codex"
+            }
+          },
+          "required": [
+            "pool"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "obligation": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "amount_source": {
+              "const": "none"
+            },
+            "cause": {
+              "enum": [
+                "unbudgeted",
+                "no_reservation",
+                "orphan",
+                "subscription"
+              ]
+            },
+            "state": {
+              "const": "none"
+            }
+          },
+          "required": [
+            "state",
+            "amount_source",
+            "cause"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "amount_source": {
+              "const": "reservation_bound"
+            },
+            "state": {
+              "const": "outstanding"
+            }
+          },
+          "required": [
+            "state",
+            "amount_source"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "amount_source": {
+              "enum": [
+                "settlement_amount",
+                "reservation_confirmed",
+                "reservation_bound"
+              ]
+            },
+            "by": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "state": {
+              "const": "closed"
+            }
+          },
+          "required": [
+            "state",
+            "amount_source",
+            "by"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "valuation": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "enum": [
+                "not_reported",
+                "not_applicable"
+              ]
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "complete": {
+              "type": "boolean"
+            },
+            "derivations": {
+              "type": "array"
+            },
+            "high": {
+              "pattern": "^(0|[1-9][0-9]*)$",
+              "type": "string"
+            },
+            "identities": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "low": {
+              "pattern": "^(0|[1-9][0-9]*)$",
+              "type": "string"
+            },
+            "reasons": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "state": {
+              "const": "valued"
+            }
+          },
+          "required": [
+            "state",
+            "low",
+            "high",
+            "identities",
+            "complete",
+            "derivations"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "derivations": {
+              "type": "array"
+            },
+            "identities": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "priced_high": {
+              "oneOf": [
+                {
+                  "pattern": "^(0|[1-9][0-9]*)$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "reasons": {
+              "items": {
+                "oneOf": [
+                  {
+                    "enum": [
+                      "IdentityWithoutRate",
+                      "ModelUnresolved",
+                      "TierUnestablished(Missing)",
+                      "TierUnestablished(Unrecognised)",
+                      "NonStandardTier",
+                      "MalformedTier",
+                      "UsageSchemaMismatch",
+                      "UsageShape",
+                      "UnknownUsageSchema",
+                      "RateTableUnusable"
+                    ]
+                  },
+                  {
+                    "pattern": "^(MalformedCount|MissingCount)\\([A-Za-z_][A-Za-z0-9_]*\\)$",
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "state": {
+              "const": "unpriceable"
+            },
+            "supported_low": {
+              "oneOf": [
+                {
+                  "pattern": "^(0|[1-9][0-9]*)$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "reasons"
+          ],
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "required": [
+    "exposure"
+  ],
+  "type": "object"
+}

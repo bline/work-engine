@@ -1,0 +1,249 @@
+{
+ "ambiguity": null,
+ "case_id": "N07-reopened-session-legacy",
+ "class": "producer_valid",
+ "contract": "pi-accounting-contract/1.5-s1",
+ "controls": [
+  "N07-control-retired-legacy"
+ ],
+ "evaluations": [
+  {
+   "admission_request": {
+    "new": "500000000",
+    "objective": "o"
+   },
+   "expected": {
+    "admission": {
+     "decision": "refused",
+     "limit": "1000000000",
+     "new": "500000000",
+     "objective": "o"
+    },
+    "attribution": [],
+    "objectives": [
+     {
+      "commitments": [
+       {
+        "admission_id": "legacy:00000000-0000-4000-8000-0000000000c1",
+        "committed": "800000000",
+        "gate": {
+         "qualified": false,
+         "reasons": [
+          "NoGateEvidence"
+         ]
+        },
+        "kind": "at_least",
+        "state": "reopened"
+       }
+      ],
+      "objective": "o",
+      "owned_closed": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "owned_outstanding": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "predecessor_obligations": {
+       "high": {
+        "kind": "exact",
+        "nano": "0"
+       },
+       "low": "0"
+      },
+      "provisional": false,
+      "reasons": [
+       "ReopenedWithoutAdmission",
+       "UnenforcedCommitment"
+      ],
+      "status": "not_established"
+     }
+    ]
+   },
+   "name": "default",
+   "objectives": [
+    {
+     "admissions": [
+      {
+       "admission_id": "legacy:00000000-0000-4000-8000-0000000000c1",
+       "rows": [
+        {
+         "at": "2026-11-10T06:00:05Z",
+         "event": "objective_admission",
+         "max_usd": 0.8,
+         "session_id": "00000000-0000-4000-8000-0000000000c1"
+        }
+       ],
+       "session": "00000000-0000-4000-8000-0000000000c1",
+       "source": "role_host_objective_admission"
+      }
+     ],
+     "closed_at": null,
+     "limit": "1000000000",
+     "objective": "o",
+     "predecessor": null,
+     "started_at": "2026-11-10T06:00:00Z",
+     "tree_sessions": [
+      "00000000-0000-4000-8000-0000000000c1"
+     ]
+    }
+   ]
+  }
+ ],
+ "expected": {
+  "attempts": [],
+  "inventory": [],
+  "lifecycle": {
+   "S1": {
+    "clock": "trusted",
+    "reopened": true,
+    "state": "open"
+   }
+  },
+  "non_attempt": [],
+  "unreadable": []
+ },
+ "findings": [
+  "N-07",
+  "D2"
+ ],
+ "group": "N-07",
+ "historical": {
+  "a134_086bdec1": {
+   "blocking_kinds": [],
+   "decision": "admitted",
+   "evaluation": "default",
+   "note": "comparison only; A1.3.4 has no ownership (D1) concept: it attributes by session tree and time window",
+   "reader_sha256": "086bdec1d443064f6847821858f34bbf227f8804a9a5fc8a362416f62b29d621",
+   "reasons": [
+    "within the objective pi_api limit"
+   ],
+   "spent_high_nano": "0",
+   "spent_low_nano": "0"
+  }
+ },
+ "inputs": {
+  "rates": {
+   "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  },
+  "reference_time": "2026-11-10T07:00:00Z",
+  "sessions": [
+   {
+    "alias": "S1",
+    "launch": {
+     "auth_lane": "api",
+     "model": "openai/gpt-6-astra",
+     "parent": "root"
+    },
+    "lifecycle": [
+     {
+      "at": "2026-11-10T06:00:10Z",
+      "event": "launch",
+      "turn": 1
+     },
+     {
+      "at": "2026-11-10T06:20:00Z",
+      "event": "retire"
+     },
+     {
+      "at": "2026-11-10T06:25:00Z",
+      "event": "deliver",
+      "turn": 2
+     }
+    ],
+    "logs": {
+     "turn-1": {
+      "final_newline": true,
+      "lines": []
+     },
+     "turn-2": {
+      "final_newline": true,
+      "lines": []
+     }
+    },
+    "session_id": "00000000-0000-4000-8000-0000000000c1"
+   }
+  ]
+ },
+ "invariants": [
+  "INV-A3",
+  "INV-A5"
+ ],
+ "notes": "",
+ "profile": "current_producer",
+ "provenance": {
+  "origin": "repro_p125.py::test_N07_legacy_commitment_reopened",
+  "variant": "claimed"
+ },
+ "rationale": "A1.3.4 releases a commitment on any retirement ever recorded (known N-07); D2 refuses reopening until atomic re-admission exists, so the objective is not established. Revision 4 (contract 1.3-s1): default not_established -> refused (OQ-2 12.4 step 3). Revision6: root policy P1-P6; independently frozen source/line arithmetic f097e5a5. Qualified identities preserve family; successful terminal AND integer200 AND required billing counts establishes completion. Closed obligations retain evidence by; none has amount_source none. Future gates use separate conditional test_mock witness; no live qualification.",
+ "reachability": "producer_reachable",
+ "revisions": [],
+ "revisions_r3": [
+  {
+   "field": "lifecycle[S1].reopened",
+   "from": "__absent__",
+   "rule": "R-10 10: reopened is a separate fact from the terminal state",
+   "to": true
+  },
+  {
+   "field": "lifecycle[S1].state",
+   "from": "reopened",
+   "rule": "R-10 L-4: the state is the terminal state from the last row",
+   "to": "open"
+  },
+  {
+   "field": "default/o.commitments[legacy:00000000-0000-4000-8000-0000000000c1].kind",
+   "from": "__absent__",
+   "rule": "R-04 12.3 A-5 (Q10, P1.30): open and pending commitments rest on an unenforced declared cap",
+   "to": "at_least"
+  },
+  {
+   "field": "default/o.reasons",
+   "from": [
+    "ReopenedWithoutAdmission"
+   ],
+   "rule": "12.1 reasons implied by revised facts",
+   "to": [
+    "ReopenedWithoutAdmission",
+    "UnenforcedCommitment"
+   ]
+  }
+ ],
+ "revisions_r4": [
+  {
+   "field": "profile",
+   "from": "__absent__",
+   "rule": "OQ-1 2.3: capability profile (release 92a03789 writes no gate evidence)",
+   "to": "current_producer"
+  },
+  {
+   "field": "default/o.commitments[legacy:00000000-0000-4000-8000-0000000000c1].gate",
+   "from": "__absent__",
+   "rule": "OQ-1 A-5: every commitment records its gate qualification; current producer: no gate evidence",
+   "to": {
+    "qualified": false,
+    "reasons": [
+     "NoGateEvidence"
+    ]
+   }
+  },
+  {
+   "field": "default/admission.decision",
+   "from": "not_established",
+   "rule": "OQ-2 12.4 step 3: known owned amounts, valid commitments and the request exceed the limit",
+   "to": "refused"
+  }
+ ],
+ "revisions_r5": [],
+ "revisions_r6": [],
+ "role": "finding",
+ "schema": "pi-accounting-corpus/1"
+}

@@ -1,0 +1,4789 @@
+{
+  "authority": "bounded_axes_only_no_acceptance",
+  "case_count": 173,
+  "cases": [
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=2",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "A04-undated-settlement-between-dated-neighbours"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 250000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": false,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "A06-reservation-usage-null-status-no-id"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "A1-01-upstream-error-and-unknown-event"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=2",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "A1-02-undated-row-inverted-neighbours"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "A1-03-unreferenced-log"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "A1-06-control-no-session-file"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "A1-06-session-file-is-not-evidence"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "C1-control-before-reference"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "C1-settlement-after-reference-time"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "C2-unsettled-reservation-after-reference-time"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "required_counts_unavailable",
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "C3-identical-reservation-copy"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "required_counts_unavailable",
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "C4-missing-charge-basis"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "D1-closed-objective-provisional"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "D1-successor-constrained-by-predecessor-obligations"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "D4-unbudgeted-error-status"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "R": 400000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=2",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:4",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "DUP-response-id-across-attempts"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": false,
+          "high": "18000000",
+          "low": "18000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "Ha-control-consistent-split"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": false,
+          "high": "24000000",
+          "low": "18000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "Ha-inconsistent-cache-split-keeps-supported-low"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "Hb-window-independence"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 50000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": false,
+          "high": "20000000",
+          "low": "20000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N01-control-served-pinned"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 50000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": null,
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": false,
+          "high": "80000000",
+          "low": "20000000",
+          "ref": "S1/turn-1:3",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N01-identity-refusal-dearer-served"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 50000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": null,
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N01-orphan-identity-refusal"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 50000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": false,
+          "high": "80000000",
+          "low": "20000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N01-variant-no-refusal-row"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 100000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": null,
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": false,
+          "high": "80000000",
+          "low": "20000000",
+          "ref": "S1/turn-1:3",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N01-variant-reservation-above-both"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "partial_pricing",
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N02-malformed-anthropic-tier"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "unestablished_schema_or_provider",
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N03-api-row-other-provider"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N03-contradicted-admission"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N03-contradicted-refused-row"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N03-control-unlabelled-admission"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N03-control-unlabelled-refused-row"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N03-identity-refusal-in-subscription"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N04-ambiguous-read-failure"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N04-budgeted-header-failure-no-own-reservation"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "R": 400000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=2",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N04-budgeted-header-failure-own-reservation"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N04-control-request-alone"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N04-duplicated-read-failure"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N04-header-write-error-reused-n"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N05-control-consistent-retirement"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N05-retirement-before-later-delivery"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "17500000",
+          "low": "6000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N06-null-cache-counts"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N07-control-retired-journal"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N07-control-retired-legacy"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N07-reopened-session-journal"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N07-reopened-session-legacy"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N08-control-priced-model"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "N08-model-without-producer-rate"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "ORD-sessions-in-ledger-order"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "ORD-sessions-reversed"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "OWN-budgeted-session-without-admission"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "OWN-two-admitting-objectives"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-A5-unreadable-line-added"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-Q11-closure-uncertain"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": false,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-R01-usage-incomplete-terminal"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "525",
+          "low": "525",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-R02-rounded-up-charge-admitted"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 480000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "948000000",
+          "low": "948000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-R04-priority-overrun-above-cap"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-R04-retired-session-releases-commitment"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 50000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": null,
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": false,
+          "high": "80000000",
+          "low": "20000000",
+          "ref": "S1/turn-1:3",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": false,
+          "high": "80000000",
+          "low": "20000000",
+          "ref": "S1/turn-1:4",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-R05-conflicting-keeps-valuation-high"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 0,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": false,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-R06-reservation-amount-malformed"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "unusable-rid@S1/turn-1:1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-R06-reservation-rid-missing"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-R07-closed-unresolved-predecessor-constrains-successor"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-R08-admissions-without-tree-still-block"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-R10-reopened-then-retired"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-R11-open-session-before-retirement"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-R12-outstanding-interval-keeps-candidate"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-R12-untrusted-clock-keeps-candidate"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "28000000",
+          "low": "28000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-R14-anthropic-null-tier-admitted"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P130-T-owned-before-window-summed"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-CP-close-after-reference-time"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-CP-close-entry-contradicts-closed-at"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-CP-closed-predecessor-outstanding"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-CP-closed-valid-close-entry"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-CP-known-over-limit"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-2:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-CP-retired-session-resumed-without-admission"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-CP-unknown-below-limit"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "17500000",
+          "low": "6000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-N06-gated"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-N07-gated"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "525",
+          "low": "525",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-P130-R02-gated"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-P130-R04-gated"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "28000000",
+          "low": "28000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-P130-R14-gated"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-U03-gated"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "600000000",
+          "low": "600000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-V01-gated"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "16000000",
+          "low": "10000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-V02-gated"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-VC01-before-retirement"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-VC01-gated"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-VC01-no-gate"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "28000000",
+          "low": "28000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-VC02-gated"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-2:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-VC11-gated"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-VC13-gated"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-VC14-open-no-billing-bound"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-VC14-open-session-billing-bound"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-VC15-gated"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-closure-authority"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-closure-legacy-entry-only"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-gate-contradicted-by-reopening"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-gate-expired"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-gate-flag-only"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-gate-receipt-missing"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-gate-reopening-only"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-gate-request-scope"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-gate-self-asserted-file"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-gate-starts-after-launch"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-gate-wrong-authority"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P132-FG-gate-wrong-session"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 10000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": false,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P133-A01-incomplete-usage-above-reservation"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": false,
+          "high": "1000000000",
+          "low": "1000000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P133-A02-error-status-with-priceable-usage"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P133-A04-cache-counts-both-absent"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P133-A04-cache-write-absent-legacy"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "malformed_counts",
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P133-A04-cached-malformed"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "11400000",
+          "low": "11400000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P133-A04-cached-nonzero"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "malformed_counts",
+          "ref": "S1/turn-1:3",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P133-A04-mixed-observations"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "partial_pricing",
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P133-A05-model-case-variant"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "required_counts_unavailable",
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P133-A06-error-status-null"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": false,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P133-A06-usage-settlement-status-absent"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": false,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:3",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P133-A09-conflicting-reservations-with-settlement"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P133-FG-VC14-authenticated-bound"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P133-FG-bound-binding-mismatch"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P133-FG-bound-coverage-incomplete"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P133-FG-bound-exceeds-cap"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "future_qualified_gate",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P133-FG-bound-wrong-currency"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "partial_pricing",
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P2-usage-settlement-unpriced-identity-keeps-charge"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 400000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "P9-claimed-charge-above-reservation"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "partial_pricing",
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "Q5-unrecognised-openai-tier"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "Q8-unadmitted-outside-candidate-window"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "R01-dated-rows-backwards"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "required_counts_unavailable",
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "R02-string-charge"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": false,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "R04-reused-reservation-id"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:4",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "R05-non-object-json-rows"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "R06-launch-row-missing"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "required_counts_unavailable",
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "S01-reservation-basis-charged-less"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "S01-reserved-usd-omitted"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "S01-upstream-error-charged-zero"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "required_counts_unavailable",
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "S02-attempt-number-differs"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "required_counts_unavailable",
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "S02-control-error-status-after-reservation"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "required_counts_unavailable",
+          "ref": "S1/turn-1:1",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "S02-settlement-before-reservation"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "S03-settlement-stamped-far-future"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "S04-next-unrelated-row-does-not-close"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "S05-unrelated-orphan-log-does-not-block"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": false,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "S06-string-http-status"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "S08-control-pending-commitment"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "S08-negative-commitment-cap"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "required_counts_unavailable",
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "U01-malformed-attempt-number"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "U02-final-line-without-newline"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "U03-control"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "U03-retirement-before-turn-evidence"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "U04-control-settled-before-closure"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "U04-settled-after-closure-stays-with-owner"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "U05-inconsistent-charge-without-response-id"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "U05-usage-settlement-without-response-id"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "U06-subscription-upstream-error-unlabelled"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "U07-unrelated-non-object-usage-does-not-block"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_priceability",
+          "facts": "partial_pricing",
+          "ref": "S1/turn-1:2",
+          "scope": "raw axis only; not reducer acceptance",
+          "standing": "unestablished"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "U08-missing-observed-tier"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "600000000",
+          "low": "60000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "V01-cheaper-response-model-undercharge"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "600000000",
+          "low": "600000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "V01-control-producer-price"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "80000000",
+          "low": "20000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "V01-usage-settlement-other-response-model"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "16000000",
+          "low": "10000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "V02-control-producer-price"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "16000000",
+          "low": "10000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "V02-unsplit-writes-undercharged"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "V03-control-labelled-upstream-error"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "V03-subscription-upstream-error-labelled-api"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 800000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "V06-reservation-attempt-number-missing"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "V07-unrelated-unreadable-log-does-not-block"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "VC01-openai-usage-settlement"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "28000000",
+          "low": "28000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "VC02-anthropic-usage-settlement"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": false,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "VC03-reservation-settlement-with-usage"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "VC04-upstream-error-keeps-reservation"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 300000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "VC05-unsettled-reservation"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "VC06-unbudgeted-completed-request"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "VC07-read-failure-paired"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "VC08-subscription-measured-request"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-2:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "VC11-multi-turn-session"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": false,
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "VC12-reused-n-without-errors"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "VC13-equal-timestamps"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "VC14-open-session-commitment"
+    },
+    {
+      "axes": [
+        {
+          "axis": "raw_selection",
+          "projection": "current_producer",
+          "selected": true,
+          "standing": "established"
+        },
+        {
+          "R": 500000000,
+          "axis": "reservation_maximum_and_uniqueness",
+          "comparison_applicable": true,
+          "group": "rid=1",
+          "standing": "established"
+        },
+        {
+          "axis": "usage_raw_arithmetic_and_completion",
+          "complete": true,
+          "high": "15000000",
+          "low": "15000000",
+          "ref": "S1/turn-1:2",
+          "standing": "established"
+        },
+        {
+          "axis": "full_C_K_acceptance",
+          "reason": "not implemented by bounded raw-axis assertions",
+          "standing": "unestablished"
+        }
+      ],
+      "case_id": "VC15-successor-not-charged-settled-predecessor-spend"
+    }
+  ],
+  "groups": 147,
+  "policy": "root P1-P6 approval07303d5c",
+  "priced_observations": 104,
+  "rows": 287,
+  "schema": "independent-axis-qualification/1",
+  "selected_cases": 137,
+  "sources": 142
+}

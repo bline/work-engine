@@ -1,0 +1,14 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "none",
+      "kind": "exact",
+      "nano": "0"
+    },
+    "low": "0"
+  },
+  "authority": "unestablished",
+  "gate_qualified": false,
+  "id": "result:G1",
+  "live_standing": "unestablished"
+}

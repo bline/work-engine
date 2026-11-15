@@ -1,0 +1,44 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/validation-plan.json",
+  "plan_sha256": "6cbedcaaf9086fb3618afbf563ee9f9f2baa1875688d7539a6c81d8640e56489",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "rustfmt",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/regression-1/rustfmt.json",
+      "record_sha256": "e3c158fb7272042d245edd1b1c899b7e1041a787f5eb6d84c74013cbf686a394",
+      "leftovers": 0
+    },
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/regression-1/build.json",
+      "record_sha256": "738ec4590d2776f12d31e0bdc413c8094c865e04decb23731f2b049b1f940976",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-tests",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/regression-1/rust-tests.json",
+      "record_sha256": "e7b3f308addb0f462051b735b15df4fc196c0bc61c9eaffe2974ca58bf8225d8",
+      "leftovers": 0
+    },
+    {
+      "name": "python-tests",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/regression-1/python-tests.json",
+      "record_sha256": "897f2351735dd408b5e51e3b4e515d2615bb6216949a70a52475cea79b91aa48",
+      "leftovers": 0
+    },
+    {
+      "name": "generated",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/regression-1/generated.json",
+      "record_sha256": "09b78a7e8db2ff82bf887f38cfea1d00b35255a50159c3b62992a31a7677beb3",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

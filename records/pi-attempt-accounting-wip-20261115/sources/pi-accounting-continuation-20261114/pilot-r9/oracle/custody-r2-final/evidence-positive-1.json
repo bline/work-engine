@@ -1,0 +1,287 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "evidence-positive-1",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/target/debug/pi-accounting-spec-check",
+    "evidence",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/target",
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3443949,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/validator/validate_corpus.py",
+      "type": "file",
+      "mode": 420,
+      "length": 106701,
+      "sha256": "8e0fcd9eda869761ee839dad41fdbeebaa35c09f825309c6201656679565690e"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/validator/r9_pilot.py",
+      "type": "file",
+      "mode": 436,
+      "length": 16667,
+      "sha256": "3e1766cf37077ad393721daeb22ce8439be135f0853908bbe02cbc933b1723ea"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/validator/test_r9_pilot.py",
+      "type": "file",
+      "mode": 436,
+      "length": 7598,
+      "sha256": "cd8b673289107fbf13758b2bdd022b00fc5740892c73716bd7cdea8b4c4f081d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check/tests/independent_raw_axes.rs",
+      "type": "file",
+      "mode": 420,
+      "length": 72512,
+      "sha256": "417bdae2fca21de6d61e774dbf5a1835de699bfd8239fb952d1ee668ecb3c150"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check/tests/independent_r8_controls.rs",
+      "type": "file",
+      "mode": 420,
+      "length": 2336,
+      "sha256": "e0895c485f48d3785e1535c6831701183df75126376d12428d9fcd161d8fd998"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check/src/accounting.rs",
+      "type": "file",
+      "mode": 420,
+      "length": 30260,
+      "sha256": "bd17b4c2af56835a17d1732ba9f580b333335140c01fbe758fbf661276a1a482"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check/Cargo.toml",
+      "type": "file",
+      "mode": 420,
+      "length": 266,
+      "sha256": "b2ba713e07688b923f92f48b6f15c1bcfdfd8838133ee0740698dacaff512d85"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/spec/accounting.schema.json",
+      "type": "file",
+      "mode": 420,
+      "length": 31637,
+      "sha256": "84a229afbe21a8e47c21da0c28a0b9b3a3392960411b5a96e9a9258cdbcab6e7"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/spec/wire.schema.json",
+      "type": "file",
+      "mode": 420,
+      "length": 7537,
+      "sha256": "35a7af6502ad80c554c8544134b991561637161371dfabc9972971ed8efcaf62"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/rates/openai_api_rates.json",
+      "type": "file",
+      "mode": 420,
+      "length": 736,
+      "sha256": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/rates/anthropic_api_rates.json",
+      "type": "file",
+      "mode": 420,
+      "length": 1179,
+      "sha256": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-controls/VC07-conditional.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 6988,
+      "sha256": "00cfa94e9716374f5669b0a091313c3ea4e314ab14214c329bfae6d6caef52a7"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-controls/VC07-unlinked.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 3711,
+      "sha256": "e6298a9a54fabb3820e5eec0508954b98b7da41c0e4e5cfb310ab3e1d5d67527"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-controls/VC07-exact.raw.json",
+      "type": "file",
+      "mode": 420,
+      "length": 1954,
+      "sha256": "994b934d5b0d2d2eee1a02407dda62f39e617c4e03d2d6682069171e2842ae4f"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/claims.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12467,
+      "sha256": "b34dcbd04918755ec4cf1c51cc0f4f993175fef21371176c0fb33d0182db8603"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/claims.schema.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7997,
+      "sha256": "bae1deefb3703f4b1289092bc1e1dd213eb1aa700efde6994b699461b9a44e17"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/equal-reservations.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7484,
+      "sha256": "06686ce1e3a401abfaaf52067858c6d4a19c46cc3d87356e1577315135e34fb9"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17521,
+      "sha256": "83a9db4b9ed663d4e81369ffac04e57f462e06caa3fd7dd7b6fc60ff11b54e32"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.raw-case.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24428,
+      "sha256": "cce654e75243b7ae98a4f111b55ab1adc03e24133e3c7624c5ff273246aaa21b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6600,
+      "sha256": "7ddb2b04a10545d0cc1ada662d888f46c857c85ffc217f2fe2f40f9631a0c621"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/equal-reservations.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17773,
+      "sha256": "5493580d4b700ba1b771028dac9b35200ac105234486b89ee368c7314c416b1d"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.raw-case.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17331,
+      "sha256": "e140598e87ad4ecc35f1969738023bcaf31d2cde309f3377860839cf39b7c683"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8792,
+      "sha256": "59316f312b00fb28d29b88de0d449c30e807c0cc65acdbf9b224c3be22abbf33"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/equal-reservations.raw-case.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17547,
+      "sha256": "58dcf2c393f053f470473e21f1a0b79b327946aaae4145d3d9e892a4865b0fb0"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json",
+      "type": "file",
+      "mode": 436,
+      "length": 24582,
+      "sha256": "a0d5d433ee52b82c4403463d2477ec33a2d8c404c8c2fad1c83b55bbafcc9175"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 7568,
+      "sha256": "ad6db6c34cd177c39d9cdf68f3f765b78634b18e6135eaa44381fae8deea0471"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-completion-B/VC11-multi-turn-session.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 15913,
+      "sha256": "10e28d415c267b02d7d105202bf6e7afa590f1b54c2f1fdb2410d64da37b2456"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 15346,
+      "sha256": "6abb14701c8c5705a7dbf7cf00d3e55c7ebc43d7d30adfe14e0235de1df00c17"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-completion-B/VC07-read-failure-paired.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 8238,
+      "sha256": "a6d710f82db91e8378b254d0c6e1b0678342ade5648e4ae6ba5c800d9679a504"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/corpus/cases/P9-claimed-charge-above-reservation.json",
+      "type": "file",
+      "mode": 420,
+      "length": 24737,
+      "sha256": "5623c428ae3d946f44034b8e0cda5e28a9a185171148d3190b26735d777af04b"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/corpus/cases/VC11-multi-turn-session.json",
+      "type": "file",
+      "mode": 420,
+      "length": 26096,
+      "sha256": "d2d3f95ce31a1f222fd5cbddda082f3b480a68cd7472f40ab11e855e1bcad971"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/corpus/cases/P132-FG-VC11-gated.json",
+      "type": "file",
+      "mode": 420,
+      "length": 38932,
+      "sha256": "4054b455a2c9100ae62bdcfbf92c6dd82cf5208edbe6d9af66056511425ab0eb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/corpus/cases/VC07-read-failure-paired.json",
+      "type": "file",
+      "mode": 420,
+      "length": 23033,
+      "sha256": "e5326a1d47d8a62e0132c04e174531700ebd86e1443d76671460b43ea5264e6a"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/equal-reservations.provenance.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1416,
+      "sha256": "68c472cd945ed72dc60d21995a59827b4e8759d634fa121e6ef8f7dd8d6430b8"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/target/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 77341160,
+      "sha256": "3cee159b91da619f73e97b90f0f0833481616afd5c760346d99ebb16aaf66149"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 3444378,
+  "pgid": 3444378,
+  "started_at": "2026-11-14T06:27:32.381052Z",
+  "ended_at": "2026-11-14T06:27:32.491091Z",
+  "duration_s": 0.11,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-1.stdout",
+    "length": 82,
+    "sha256": "7dc0b96cb9229a7461969388406f25d8f26cc4b93ae3c4aac724a4f0e1de0b9c"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-1.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

@@ -1,0 +1,844 @@
+{
+  "organization": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/ORGANIZATION-CANDIDATE.json",
+  "organization_sha256": "e965003c92ad7d30685ddc21ba3a19e4bd5cdcedafaa89b4cdd17037a237ff66",
+  "roles": {
+    "A1": {
+      "effort": "xhigh",
+      "title": "Financial core and69 P130/P132/P133 cases",
+      "scope": "Own financial H/L/F/C semantics and every case in dispatch/A1-cases.json (69). Derive current financial outcomes from exact raw inputs/rates and admitted policy, including local/aggregate lows, high tags/bases, holds, whole-base atomization, copy equivalence, physical independence, exact coverage, candidate/context retention and continuity. Inspect all current expected financial fields and corresponding evaluation money. Challenge inheritedA01/A02/A07/A08, malformedmodel7 and lowmultiplicity. Read relevant spec/ck.json C/V/F/X/R sections, tooling/spec-check/src/accounting.rs and decisions.rs; finite H/L/F/C fixtures and independent_raw_axes.rs. Linked supplied records remain in oracle/r8-completion-A and oracle/r8-cases or R8-LOW-ASSERTIONS; inspect financial premises where they affect your conclusions. C2 owns exhaustive structural/ref closure, not the financial truth of the records. Trace any contradictory unit/coverage/low record to its exact raw case. Controls outside your69 cases that define these core semantics are within this obligation. Do not claim A2's106 cases were reviewed.",
+      "projection": "A1-cases.json",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/A1-PACKET.md",
+      "packet_sha256": "d86f709b6ee9ea0c37158e77d8742fa8557193d95b78682fb2561820825499ef",
+      "max_proxy_usd": 8,
+      "state": "final_collected_assessed_incomplete",
+      "collector": "root01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "fresh_reason": "Independent initial implementation review apart from all builder/designer conversations; no prior reviewer context reused.",
+      "launch_requested_at": "2026-11-14T05:15:02.189852+00:00",
+      "launch": {
+        "at_epoch": 1794633302.3888373,
+        "cwd": "/home/bline/code/work-engine",
+        "effort": "xhigh",
+        "event": "launch",
+        "host": "codex",
+        "model": "gpt-6-astra",
+        "name": "PI S1 R8 A1 independent review",
+        "parent_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+        "session_id": "01a1d87b-0106-76c1-a881-fd7637db17dd",
+        "transport": "app_server",
+        "turn_id": "01a1d87b-0165-7813-b94e-c6be0c86aea9"
+      },
+      "launch_receipt": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/A1-launch.json",
+      "identity": {
+        "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-15-02-01a1d87b-0106-76c1-a881-fd7637db17dd.jsonl",
+        "session_id": "01a1d87b-0106-76c1-a881-fd7637db17dd",
+        "source": "thread/read plus exact rollout session_meta"
+      },
+      "native_turn_context": {
+        "turn_id": "01a1d87b-0165-7813-b94e-c6be0c86aea9",
+        "model": "gpt-6-astra",
+        "approval_policy": "never",
+        "sandbox_policy": {
+          "type": "read-only"
+        },
+        "permission_profile": {
+          "type": "managed",
+          "file_system": {
+            "type": "restricted",
+            "entries": [
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                },
+                "access": "read"
+              }
+            ]
+          },
+          "network": "restricted"
+        }
+      },
+      "observed_settings": {
+        "limitations": [
+          "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+          "Successor settings must be observed after launch and adoption; arguments are a request.",
+          "Runtime configuration does not establish backend fulfillment or billing."
+        ],
+        "model": "gpt-6-astra",
+        "preservation": "launch_arguments_available",
+        "reasoning_effort": "xhigh",
+        "recorded_cli_version": "0.169.0",
+        "service_tier": "default",
+        "session_id": "01a1d87b-0106-76c1-a881-fd7637db17dd",
+        "source": {
+          "event_sha256": "39b8a99f99adc502dad9191809c752b91d7fc136cef73fbf54dd35f88e574f60",
+          "line": 13,
+          "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-15-02-01a1d87b-0106-76c1-a881-fd7637db17dd.jsonl",
+          "timestamp": "2026-11-14T05:15:04.506Z"
+        },
+        "successor_host_args": [
+          "-m",
+          "gpt-6-astra",
+          "-c",
+          "model_reasoning_effort=\"xhigh\"",
+          "-c",
+          "service_tier=\"default\""
+        ],
+        "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+        "turn_attribution": "latest_session_observation",
+        "turn_id": null
+      },
+      "runtime_parent": null,
+      "collection_parent": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "session_id": "01a1d87b-0106-76c1-a881-fd7637db17dd",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-15-02-01a1d87b-0106-76c1-a881-fd7637db17dd.jsonl",
+      "pending_binding": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/A1-IDENTITY-BINDING.md",
+      "binding_delivery_exit": 40,
+      "binding_delivery_attempt": "{\"status\": \"refused_busy\", \"detail\": \"01a1d87b-0106-76c1-a881-fd7637db17dd has a turn in progress (app_server)\"}\n",
+      "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/A1-REVIEW.md",
+      "report_sha256": "5b9f5b33e6593e1e31e621e6a78c3443f3a48196760e215fd1388ba4f0707167"
+    },
+    "A2a": {
+      "effort": "xhigh",
+      "title": "Financial corpus first53 non-P cases",
+      "scope": "Own all current raw/financial expectations for exactly53 cases in dispatch/A2a-cases.json. Read the full raw inputs/current expected financial fields and money in evaluations, rate snapshots and applicable C/V/F/X/R declarations. Challenge genuine unbudgeted vs dollarNoReservation, orphan/refusal/malformed applicability, full priced multiidentity, byte-sensitive duplicate semantics, low support vs local holds, retained candidate contexts, external actualwire and all high/low tags. Inspect linked financial premises as needed; C2 owns exhaustive structural/ref closure but cannot clear financially wrong records. Relevant finite A/W/O/P/M/G controls are shared evidence; do not silently inherit their claimed pass as raw truth. Preserve cross-case twins/order/evidence-pair relations involving your cases. Report those relations requiring other-module integration. Do not claim other122 financial cases reviewed.",
+      "projection": "A2a-cases.json",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/A2a-PACKET.md",
+      "packet_sha256": "546a1d52e6cba3d02f568a9bb179ffffd57530f7c5bd4620b2475e7db2c5f845",
+      "max_proxy_usd": 8,
+      "state": "final_collected_assessed",
+      "collector": "root01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "fresh_reason": "Independent initial implementation review apart from all builder/designer conversations; no prior reviewer context reused.",
+      "launch_requested_at": "2026-11-14T05:15:02.405120+00:00",
+      "launch": {
+        "at_epoch": 1794633302.6330035,
+        "cwd": "/home/bline/code/work-engine",
+        "effort": "xhigh",
+        "event": "launch",
+        "host": "codex",
+        "model": "gpt-6-astra",
+        "name": "PI S1 R8 A2a independent review",
+        "parent_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+        "session_id": "01a1d87b-01de-7631-9623-0ab1026eba5d",
+        "transport": "app_server",
+        "turn_id": "01a1d87b-025f-75c3-b6ce-fd6430b38a89"
+      },
+      "launch_receipt": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/A2a-launch.json",
+      "identity": {
+        "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-15-02-01a1d87b-01de-7631-9623-0ab1026eba5d.jsonl",
+        "session_id": "01a1d87b-01de-7631-9623-0ab1026eba5d",
+        "source": "thread/read plus exact rollout session_meta"
+      },
+      "native_turn_context": {
+        "turn_id": "01a1d87b-025f-75c3-b6ce-fd6430b38a89",
+        "model": "gpt-6-astra",
+        "approval_policy": "never",
+        "sandbox_policy": {
+          "type": "read-only"
+        },
+        "permission_profile": {
+          "type": "managed",
+          "file_system": {
+            "type": "restricted",
+            "entries": [
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                },
+                "access": "read"
+              }
+            ]
+          },
+          "network": "restricted"
+        }
+      },
+      "observed_settings": {
+        "limitations": [
+          "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+          "Successor settings must be observed after launch and adoption; arguments are a request.",
+          "Runtime configuration does not establish backend fulfillment or billing."
+        ],
+        "model": "gpt-6-astra",
+        "preservation": "launch_arguments_available",
+        "reasoning_effort": "xhigh",
+        "recorded_cli_version": "0.169.0",
+        "service_tier": "default",
+        "session_id": "01a1d87b-01de-7631-9623-0ab1026eba5d",
+        "source": {
+          "event_sha256": "d8a78f4132c5421b4805c99911be50cebda66109834c6ffdbb9379f6ff3d368d",
+          "line": 13,
+          "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-15-02-01a1d87b-01de-7631-9623-0ab1026eba5d.jsonl",
+          "timestamp": "2026-11-14T05:15:04.520Z"
+        },
+        "successor_host_args": [
+          "-m",
+          "gpt-6-astra",
+          "-c",
+          "model_reasoning_effort=\"xhigh\"",
+          "-c",
+          "service_tier=\"default\""
+        ],
+        "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+        "turn_attribution": "latest_session_observation",
+        "turn_id": null
+      },
+      "runtime_parent": null,
+      "collection_parent": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "session_id": "01a1d87b-01de-7631-9623-0ab1026eba5d",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-15-02-01a1d87b-01de-7631-9623-0ab1026eba5d.jsonl",
+      "pending_binding": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/A2a-IDENTITY-BINDING.md",
+      "binding_delivery_exit": 40,
+      "binding_delivery_attempt": "{\"status\": \"refused_busy\", \"detail\": \"01a1d87b-01de-7631-9623-0ab1026eba5d has a turn in progress (app_server)\"}\n",
+      "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/A2a-REVIEW.md",
+      "report_sha256": "d5b54994a673a4b10f0112f562b08e086b9ac93983a7f673ca8d5a9ecbf191af",
+      "collection": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/A2a-COLLECTION.json"
+    },
+    "A2b": {
+      "effort": "xhigh",
+      "title": "Financial corpus last53 non-P cases",
+      "scope": "Own all current raw/financial expectations for exactly53 cases in dispatch/A2b-cases.json. Read the full raw inputs/current expected financial fields and money in evaluations, rate snapshots and applicable C/V/F/X/R declarations. Challenge genuine unbudgeted vs dollarNoReservation, orphan/refusal/malformed applicability, full priced multiidentity, byte-sensitive duplicate semantics, low support vs local holds, retained candidate contexts, external actualwire and all high/low tags. Inspect linked financial premises as needed; C2 owns exhaustive structural/ref closure but cannot clear financially wrong records. Relevant finite A/W/O/P/M/G controls are shared evidence; do not silently inherit their claimed pass as raw truth. Preserve cross-case twins/order/evidence-pair relations involving your cases. Report those relations requiring other-module integration. Do not claim other122 financial cases reviewed.",
+      "projection": "A2b-cases.json",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/A2b-LAUNCH-R2.md",
+      "packet_sha256": "71e31ec50b0eb0ab130f7043cf3e3bfafd6402d2e53d990cd2166f97977f9891",
+      "max_proxy_usd": 8,
+      "state": "final_collected_assessed_incomplete",
+      "collector": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "fresh_reason": "New separate top-level context, no builder/designer fork; exactR2 organization; requested native read-only/never.",
+      "launch": {
+        "at_epoch": 1794634325.691076,
+        "cwd": "/home/bline/code/work-engine",
+        "effort": "xhigh",
+        "event": "launch",
+        "host": "codex",
+        "model": "gpt-6-astra",
+        "name": "PI S1 R8 A2b independent review",
+        "parent_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+        "session_id": "01a1d88a-9e2a-7801-aed3-64705ff5585d",
+        "transport": "app_server",
+        "turn_id": "01a1d88a-9e9b-7b22-b6be-b3fb2bedc49f"
+      },
+      "session_id": "01a1d88a-9e2a-7801-aed3-64705ff5585d",
+      "launch_requested_at": "2026-11-14T05:32:05.479350+00:00",
+      "model_requested": "gpt-6-astra",
+      "service_tier_requested": "default",
+      "collection_parent": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-32-05-01a1d88a-9e2a-7801-aed3-64705ff5585d.jsonl",
+      "identity": {
+        "session_id": "01a1d88a-9e2a-7801-aed3-64705ff5585d",
+        "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-32-05-01a1d88a-9e2a-7801-aed3-64705ff5585d.jsonl",
+        "source": "Exact native session_meta and turn_context; role_host launch ledger"
+      },
+      "runtime_parent": null,
+      "observed_settings": {
+        "limitations": [
+          "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+          "Successor settings must be observed after launch and adoption; arguments are a request.",
+          "Runtime configuration does not establish backend fulfillment or billing."
+        ],
+        "model": "gpt-6-astra",
+        "preservation": "launch_arguments_available",
+        "reasoning_effort": "xhigh",
+        "recorded_cli_version": "0.169.0",
+        "service_tier": "default",
+        "session_id": "01a1d88a-9e2a-7801-aed3-64705ff5585d",
+        "source": {
+          "event_sha256": "23dabbf9e69620746d2835f344fc5891bb8f18ef92515285132ac668ed71a190",
+          "line": 13,
+          "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-32-05-01a1d88a-9e2a-7801-aed3-64705ff5585d.jsonl",
+          "timestamp": "2026-11-14T05:32:07.582Z"
+        },
+        "successor_host_args": [
+          "-m",
+          "gpt-6-astra",
+          "-c",
+          "model_reasoning_effort=\"xhigh\"",
+          "-c",
+          "service_tier=\"default\""
+        ],
+        "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+        "turn_attribution": "latest_session_observation",
+        "turn_id": null
+      },
+      "pending_binding": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/A2b-IDENTITY-BINDING.md",
+      "native_turn_context": {
+        "turn_id": "01a1d88a-9e9b-7b22-b6be-b3fb2bedc49f",
+        "root_turn_id": "01a1d88a-9e9b-7b22-b6be-b3fb2bedc49f",
+        "disabled_plugin_ids": [],
+        "cwd": "/home/bline/code/work-engine",
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "permission_profile": {
+          "type": "managed",
+          "file_system": {
+            "type": "restricted",
+            "entries": [
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                },
+                "access": "read"
+              }
+            ]
+          },
+          "network": "restricted"
+        },
+        "model": "gpt-6-astra",
+        "comp_hash": "3000",
+        "collaboration_mode": {
+          "mode": "default",
+          "settings": {
+            "model": "gpt-6-astra",
+            "reasoning_effort": "xhigh",
+            "developer_instructions": null
+          }
+        },
+        "multi_agent_version": "v2",
+        "realtime_active": false,
+        "effort": "xhigh",
+        "summary": "none",
+        "sandbox_policy": {
+          "type": "read-only"
+        }
+      },
+      "binding_delivery_exit": 40,
+      "binding_delivery_attempt": "{\"status\": \"refused_busy\", \"detail\": \"01a1d88a-9e2a-7801-aed3-64705ff5585d has a turn in progress (app_server)\"}\n",
+      "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/A2b-REVIEW.md",
+      "report_sha256": "cbea61ecca1f09bc53be4294f96cea95dae26b99443949c9efe9400748ce0c6d",
+      "collection": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/A2b-COLLECTION.json"
+    },
+    "B1": {
+      "effort": "high",
+      "title": "Attribution/admission69 P cases",
+      "scope": "Own attribution/admission/evaluation composition for all69 P130/P132/P133 cases in dispatch/B1-cases.json. Independently derive admitted/candidate/owned memberships from exact raw journal/closure/tree/time facts and examine every current evaluation attribution, rollup-scope membership, commitment/provisionality, possible owner and budget decision. T owns memberships; R must recompute supported lows within that scope, candidate observations do not seed credit or owned slots, no parent/successor double charge, no AtLeast0 loss. Relevant specT/R/admission, decisions.rs/accounting.rs, actual Python scope/rollup checks and oracle expected membership records are read set. Challenge exact test_mock conditional gates, forgedverifiedtrue/absentauthority, live unestablished evidence and C-K touching findings. Financial A reviews money; C2 reviews generic refs/census; you own whether memberships/authority actually follow raw facts. Report cross-partition dependencies and do not claim remaining106 reviewed.",
+      "projection": "B1-cases.json",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/B1-LAUNCH-R2.md",
+      "packet_sha256": "2c4e1d020f1bc5ef255e34d59e07f8dd7ceeca54dfcc925d454d439ddee251ac",
+      "max_proxy_usd": 8,
+      "state": "final_collected_assessed_changes_required",
+      "collector": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "fresh_reason": "New separate top-level context, no builder/designer fork; exactR2 organization; requested native read-only/never.",
+      "launch": {
+        "at_epoch": 1794634326.0188692,
+        "cwd": "/home/bline/code/work-engine",
+        "effort": "high",
+        "event": "launch",
+        "host": "codex",
+        "model": "gpt-6-astra",
+        "name": "PI S1 R8 B1 independent review",
+        "parent_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+        "session_id": "01a1d88a-9f59-7aa1-82b0-67e78d64bf55",
+        "transport": "app_server",
+        "turn_id": "01a1d88a-9fef-7510-9951-16b159981062"
+      },
+      "session_id": "01a1d88a-9f59-7aa1-82b0-67e78d64bf55",
+      "launch_requested_at": "2026-11-14T05:32:05.781825+00:00",
+      "model_requested": "gpt-6-astra",
+      "service_tier_requested": "default",
+      "collection_parent": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-32-05-01a1d88a-9f59-7aa1-82b0-67e78d64bf55.jsonl",
+      "identity": {
+        "session_id": "01a1d88a-9f59-7aa1-82b0-67e78d64bf55",
+        "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-32-05-01a1d88a-9f59-7aa1-82b0-67e78d64bf55.jsonl",
+        "source": "Exact native session_meta and turn_context; role_host launch ledger"
+      },
+      "runtime_parent": null,
+      "observed_settings": {
+        "limitations": [
+          "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+          "Successor settings must be observed after launch and adoption; arguments are a request.",
+          "Runtime configuration does not establish backend fulfillment or billing."
+        ],
+        "model": "gpt-6-astra",
+        "preservation": "launch_arguments_available",
+        "reasoning_effort": "high",
+        "recorded_cli_version": "0.169.0",
+        "service_tier": "default",
+        "session_id": "01a1d88a-9f59-7aa1-82b0-67e78d64bf55",
+        "source": {
+          "event_sha256": "f5f4254308937a10d27bddab82c91952f268e79771aca5e7bd82196851c0f946",
+          "line": 13,
+          "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-32-05-01a1d88a-9f59-7aa1-82b0-67e78d64bf55.jsonl",
+          "timestamp": "2026-11-14T05:32:07.665Z"
+        },
+        "successor_host_args": [
+          "-m",
+          "gpt-6-astra",
+          "-c",
+          "model_reasoning_effort=\"high\"",
+          "-c",
+          "service_tier=\"default\""
+        ],
+        "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+        "turn_attribution": "latest_session_observation",
+        "turn_id": null
+      },
+      "pending_binding": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/B1-IDENTITY-BINDING.md",
+      "native_turn_context": {
+        "turn_id": "01a1d88a-9fef-7510-9951-16b159981062",
+        "root_turn_id": "01a1d88a-9fef-7510-9951-16b159981062",
+        "disabled_plugin_ids": [],
+        "cwd": "/home/bline/code/work-engine",
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "permission_profile": {
+          "type": "managed",
+          "file_system": {
+            "type": "restricted",
+            "entries": [
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                },
+                "access": "read"
+              }
+            ]
+          },
+          "network": "restricted"
+        },
+        "model": "gpt-6-astra",
+        "comp_hash": "3000",
+        "collaboration_mode": {
+          "mode": "default",
+          "settings": {
+            "model": "gpt-6-astra",
+            "reasoning_effort": "high",
+            "developer_instructions": null
+          }
+        },
+        "multi_agent_version": "v2",
+        "realtime_active": false,
+        "effort": "high",
+        "summary": "none",
+        "sandbox_policy": {
+          "type": "read-only"
+        }
+      },
+      "binding_delivery_exit": 40,
+      "binding_delivery_attempt": "{\"status\": \"refused_busy\", \"detail\": \"01a1d88a-9f59-7aa1-82b0-67e78d64bf55 has a turn in progress (app_server)\"}\n",
+      "allowance_revision": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/B1-ALLOWANCE-REVISION.json",
+      "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/B1-REVIEW.md",
+      "report_sha256": "63f2a435211dab7153e908ee74fdbeefa7e34a70bd5a5ab1c70bab1f3bcf4bd4",
+      "collection": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/B1-COLLECTION.json",
+      "root_assessment": {
+        "report_sha256": "63f2a435211dab7153e908ee74fdbeefa7e34a70bd5a5ab1c70bab1f3bcf4bd4",
+        "full_report_read": true,
+        "coverage": "69 cases/70evaluations/150scopes; owner/candidate matches raw; 3P2 remain open; no whole-system clearance",
+        "identity_ack": true,
+        "no_owned_processes": true
+      }
+    },
+    "B2": {
+      "effort": "high",
+      "title": "Attribution/admission106 other cases",
+      "scope": "Own attribution/admission/evaluation composition for all106 non-P cases in dispatch/B2-cases.json. Independently derive admitted/candidate/owned memberships from exact raw journal/closure/tree/time facts and examine every current evaluation attribution, rollup-scope membership, commitment/provisionality, possible owner and budget decision. T owns memberships; R must recompute supported lows within that scope, candidate observations do not seed credit or owned slots, no parent/successor double charge, no AtLeast0 loss. Relevant specT/R/admission, decisions.rs/accounting.rs, actual Python scope/rollup checks and oracle expected membership records are read set. Challenge exact test_mock conditional gates, forgedverifiedtrue/absentauthority, live unestablished evidence and C-K touching findings. Financial A reviews money; C2 reviews generic refs/census; you own whether memberships/authority actually follow raw facts. Report cross-partition dependencies and do not claim remaining69 reviewed.",
+      "projection": "B2-cases.json",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/B2-PACKET.md",
+      "packet_sha256": "31f3e1d40204d25355cd484b346012a8850ddb1b38fc1f8eacca57cd65e3c79e",
+      "max_proxy_usd": 8,
+      "state": "not_launched",
+      "collector": "root01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "fresh_reason": "Independent initial implementation review apart from all builder/designer conversations; no prior reviewer context reused."
+    },
+    "C1": {
+      "effort": "high",
+      "title": "Canonical declarations/schema/wire/ownership/dependencies",
+      "scope": "Own canonical spec/schema/wire, semantic owner boundaries, witness forwarding and actual dependency invalidation. Inspect current spec/ck.json, ck.schema.json, wire.schema.json, accounting.schema.json, interface.json, dependencies.json, relevant generated contract views and tooling/spec-check/src/lib.rs/decisions.rs/accounting.rs/main.rs. Use section outlines for ck rather than unrelated repeated tables. Verify real Draft2020-12 agreement/StageIdvsBoundaryId, exact actual exposurepool/highkind/nano/basis, valuation bounds/splits/derivations, obligationstate/amountsource/by and qualifiedU08 reason names. C sole validity; S cannot construct/edit a duplicated decision. InputProof/Result/ExpectedAssertion distinction and exact refs must be schema-real. Protected dependency mutation must invalidate actual affected consumers and old acknowledgements, null stays unestablished; inspect structural_r8.rs and Python dependency tests/custody. InheritedA03/A04/A05/A06/A09 must receive explicit dispositions with A/C2 boundaries noted. C2 owns actual consumer corpus census/helper provenance; financial A raw truth is not yours. Review current postgate documentation claims for overstatement. Return explicit missing obligations rather than claim generic wholeC clearance.",
+      "projection": null,
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/C1-LAUNCH-R2.md",
+      "packet_sha256": "ddf8ed4645136c30fc3f9b9de5fe6c3599b442c7cd282cb57800ebe001f1ea46",
+      "max_proxy_usd": 6,
+      "state": "final_collected_assessed_changes_required",
+      "collector": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "fresh_reason": "New separate top-level context, no builder/designer fork; exactR2 organization; requested native read-only/never.",
+      "launch": {
+        "at_epoch": 1794634731.6593997,
+        "cwd": "/home/bline/code/work-engine",
+        "effort": "high",
+        "event": "launch",
+        "host": "codex",
+        "model": "gpt-6-astra",
+        "name": "PI S1 R8 C1 independent review",
+        "parent_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+        "session_id": "01a1d890-d020-74a0-a7d5-ed4a2902dd2f",
+        "transport": "app_server",
+        "turn_id": "01a1d890-d07d-7ad1-a6ac-889002d9ffc4"
+      },
+      "session_id": "01a1d890-d020-74a0-a7d5-ed4a2902dd2f",
+      "launch_requested_at": "2026-11-14T05:38:51.493798+00:00",
+      "model_requested": "gpt-6-astra",
+      "service_tier_requested": "default",
+      "collection_parent": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-38-51-01a1d890-d020-74a0-a7d5-ed4a2902dd2f.jsonl",
+      "identity": {
+        "session_id": "01a1d890-d020-74a0-a7d5-ed4a2902dd2f",
+        "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-38-51-01a1d890-d020-74a0-a7d5-ed4a2902dd2f.jsonl",
+        "source": "Exact native session_meta and turn_context; role_host launch ledger"
+      },
+      "runtime_parent": null,
+      "observed_settings": {
+        "limitations": [
+          "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+          "Successor settings must be observed after launch and adoption; arguments are a request.",
+          "Runtime configuration does not establish backend fulfillment or billing."
+        ],
+        "model": "gpt-6-astra",
+        "preservation": "launch_arguments_available",
+        "reasoning_effort": "high",
+        "recorded_cli_version": "0.169.0",
+        "service_tier": "default",
+        "session_id": "01a1d890-d020-74a0-a7d5-ed4a2902dd2f",
+        "source": {
+          "event_sha256": "7e24f6d480f810a15e3968f3318d5a339dafdda09d9733374c6c0fb982b1e8d1",
+          "line": 13,
+          "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-38-51-01a1d890-d020-74a0-a7d5-ed4a2902dd2f.jsonl",
+          "timestamp": "2026-11-14T05:38:53.387Z"
+        },
+        "successor_host_args": [
+          "-m",
+          "gpt-6-astra",
+          "-c",
+          "model_reasoning_effort=\"high\"",
+          "-c",
+          "service_tier=\"default\""
+        ],
+        "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+        "turn_attribution": "latest_session_observation",
+        "turn_id": null
+      },
+      "pending_binding": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/C1-IDENTITY-BINDING.md",
+      "native_turn_context": {
+        "turn_id": "01a1d890-d07d-7ad1-a6ac-889002d9ffc4",
+        "root_turn_id": "01a1d890-d07d-7ad1-a6ac-889002d9ffc4",
+        "disabled_plugin_ids": [],
+        "cwd": "/home/bline/code/work-engine",
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "permission_profile": {
+          "type": "managed",
+          "file_system": {
+            "type": "restricted",
+            "entries": [
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                },
+                "access": "read"
+              }
+            ]
+          },
+          "network": "restricted"
+        },
+        "model": "gpt-6-astra",
+        "comp_hash": "3000",
+        "collaboration_mode": {
+          "mode": "default",
+          "settings": {
+            "model": "gpt-6-astra",
+            "reasoning_effort": "high",
+            "developer_instructions": null
+          }
+        },
+        "multi_agent_version": "v2",
+        "realtime_active": false,
+        "effort": "high",
+        "summary": "none",
+        "sandbox_policy": {
+          "type": "read-only"
+        }
+      },
+      "binding_delivery_exit": 40,
+      "binding_delivery_attempt": "{\"status\": \"refused_busy\", \"detail\": \"01a1d890-d020-74a0-a7d5-ed4a2902dd2f has a turn in progress (app_server)\"}\n",
+      "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/C1-REVIEW.md",
+      "report_sha256": "2e99ec6ba7d5e1e7ebf807f9c596560b3a775a732ce29a955713a2b9aa459930",
+      "collection": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/C1-COLLECTION.json",
+      "actual_final_turn_id": "01a1d895-7340-7a73-b259-eea2b76e3145",
+      "root_assessment": {
+        "full_report_read": true,
+        "report_sha256": "2e99ec6ba7d5e1e7ebf807f9c596560b3a775a732ce29a955713a2b9aa459930",
+        "identity_ack": true,
+        "no_owned_processes": true,
+        "scope": "Complete bounded C1 declaration/interface pass; no wholeC clearance; C2 residual remains"
+      }
+    },
+    "C2": {
+      "effort": "xhigh",
+      "title": "Actual consumers, finite qualification and independent authorship",
+      "scope": "Own actual Python and Rust consumer correctness/evidence completeness and independent expected authorship, including all175 cases/374scopes/ref closure as a structural census. Read actual validator/validate_corpus.py, sabotage_test.py, test_completion_references.py and relevant existing tests; tooling/spec-check/src/corpus.rs/accounting.rs and relevant lib/main entrypoints; independent_raw_axes.rs, independent_r8_controls.rs and structural controls. Read oracle/R8-COMPLETION.json, R8-FINITE-COVERAGE.json, R8-LOW-ASSERTIONS.json selectively by structure/census and all independent formula axes. Inspect evidence/A and evidence/B authoring/derivation/helper provenance plus integration helpers and exact joined custody. Expected lane cannot import generated financial decisions; shape-only sharing is allowed. D3 forbids a hidden general reducer disguised as an authoring helper, but do not infer violation merely from a helper's existence. Challenge actual raw Python high/low/dedup checks and registered equivalent replacements; no Rust-only falsegreen. Validate every required activeunit/resultref and rollupscope/lowassertion by census, kinds/digests/dangling/omission/owner, affirmativeC/F/valuation/wholeorigin coverage for Exactbudgeted and genuine unbudgeted separate route. A/B own raw financial/membership truth; your consumer must actually challenge it, not compare two mirrored expected records. Inspect negativecontrols for intended failure cause: catch-any-exception after brokenrefs is not proof of semantic rejection; construct selfconsistent wrong output+rollup+suppliedrecord challenges where necessary. Check revisions175\u2192175 and342B reversal entries, old failures and exact postgate drift. Fullarbitrary raw reduction/liveauthority remain unestablished. Distinguish a serious evidence-design defect from an infrastructure or read-budget failure. All source/helpers read-only; ask root for exact write-requiring probe and return interim findings promptly.",
+      "projection": null,
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/C2-PACKET.md",
+      "packet_sha256": "f13c7832204789f9ad68e122d93f67d8aefc7a7575424310d06252d7f6ac4564",
+      "max_proxy_usd": 10,
+      "state": "final_collected_assessed_incomplete",
+      "collector": "root01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "fresh_reason": "Independent initial implementation review apart from all builder/designer conversations; no prior reviewer context reused.",
+      "launch_requested_at": "2026-11-14T05:15:01.277628+00:00",
+      "launch": {
+        "at_epoch": 1794633302.1737027,
+        "cwd": "/home/bline/code/work-engine",
+        "effort": "xhigh",
+        "event": "launch",
+        "host": "codex",
+        "model": "gpt-6-astra",
+        "name": "PI S1 R8 C2 independent review",
+        "parent_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+        "session_id": "01a1d87a-fd5d-7553-9001-87a86f61a11f",
+        "transport": "app_server",
+        "turn_id": "01a1d87b-0094-7e12-a61f-c42079c30b65"
+      },
+      "launch_receipt": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/C2-launch.json",
+      "identity": {
+        "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-15-02-01a1d87a-fd5d-7553-9001-87a86f61a11f.jsonl",
+        "session_id": "01a1d87a-fd5d-7553-9001-87a86f61a11f",
+        "source": "thread/read plus exact rollout session_meta"
+      },
+      "native_turn_context": {
+        "turn_id": "01a1d87b-0094-7e12-a61f-c42079c30b65",
+        "model": "gpt-6-astra",
+        "approval_policy": "never",
+        "sandbox_policy": {
+          "type": "read-only"
+        },
+        "permission_profile": {
+          "type": "managed",
+          "file_system": {
+            "type": "restricted",
+            "entries": [
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                },
+                "access": "read"
+              }
+            ]
+          },
+          "network": "restricted"
+        }
+      },
+      "observed_settings": {
+        "limitations": [
+          "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+          "Successor settings must be observed after launch and adoption; arguments are a request.",
+          "Runtime configuration does not establish backend fulfillment or billing."
+        ],
+        "model": "gpt-6-astra",
+        "preservation": "launch_arguments_available",
+        "reasoning_effort": "xhigh",
+        "recorded_cli_version": "0.169.0",
+        "service_tier": "default",
+        "session_id": "01a1d87a-fd5d-7553-9001-87a86f61a11f",
+        "source": {
+          "event_sha256": "056693696a7b9c1802af19b5a6e0306e08197be8ffbffa17dc6d3ff9ceba25ef",
+          "line": 13,
+          "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-15-02-01a1d87a-fd5d-7553-9001-87a86f61a11f.jsonl",
+          "timestamp": "2026-11-14T05:15:03.715Z"
+        },
+        "successor_host_args": [
+          "-m",
+          "gpt-6-astra",
+          "-c",
+          "model_reasoning_effort=\"xhigh\"",
+          "-c",
+          "service_tier=\"default\""
+        ],
+        "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+        "turn_attribution": "latest_session_observation",
+        "turn_id": null
+      },
+      "runtime_parent": null,
+      "collection_parent": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "session_id": "01a1d87a-fd5d-7553-9001-87a86f61a11f",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-15-02-01a1d87a-fd5d-7553-9001-87a86f61a11f.jsonl",
+      "pending_binding": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/C2-IDENTITY-BINDING.md",
+      "binding_delivery_exit": 40,
+      "binding_delivery_attempt": "{\"status\": \"refused_busy\", \"detail\": \"01a1d87a-fd5d-7553-9001-87a86f61a11f has a turn in progress (app_server)\"}\n",
+      "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/C2-REVIEW.md",
+      "report_sha256": "92daaa74c0ce9e233acf42aef75cc791558c6f5bd147c586f7992f4dfde91e03",
+      "verdict": "INCOMPLETE_WITH_P1_AND_TWO_P2",
+      "established_findings": [
+        "C2-R8-01/P1",
+        "C2-R8-02/P2",
+        "C2-R8-03/P2"
+      ],
+      "collection_receipt": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/C2-COLLECTION.json",
+      "processes": "All read-only processes terminal per native final; root probes77555/88906 collected zero leftovers",
+      "pending_work": {
+        "identity_ACK": "still pending; first busy delivery had no entry",
+        "review_omissions": "full external fragment/reference closure, full sabotage reason audit,342B/other reversals, authoring history attestation, remaining library/dependency; exact final owns limits",
+        "context": "187792 latest native input; initial complete final was INCOMPLETE because read-only cannot publish continuation. Do not dispatch substantial retained work without safe context decision. Root can bind/ACK in bounded turn or commission exact remaining obligations in fresh separate review; no false continuity."
+      }
+    },
+    "D7": {
+      "state": "initial_and_amendment_finals_fully_assessed",
+      "launch": {
+        "at_epoch": 1794634325.3975039,
+        "cwd": "/home/bline/code/work-engine",
+        "effort": "xhigh",
+        "event": "launch",
+        "host": "codex",
+        "model": "gpt-6-astra",
+        "name": "PI S1 R8 D7 independent review",
+        "parent_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+        "session_id": "01a1d88a-9a44-71e1-9dc5-b558108f35de",
+        "transport": "app_server",
+        "turn_id": "01a1d88a-9d8a-7391-9c14-cbe0d6e02a8a"
+      },
+      "session_id": "01a1d88a-9a44-71e1-9dc5-b558108f35de",
+      "launch_requested_at": "2026-11-14T05:32:04.476878+00:00",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/PACKET.md",
+      "packet_sha256": "2a9d69e3d3206cd645ae14ecc73c8ada62662d868a26649cc22fe9951394bf20",
+      "model_requested": "gpt-6-astra",
+      "effort": "xhigh",
+      "service_tier_requested": "default",
+      "max_proxy_usd": 7,
+      "collector": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "fresh_reason": "New separate top-level context, no builder/designer fork; exactR2 organization; requested native read-only/never.",
+      "collection_parent": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-32-05-01a1d88a-9a44-71e1-9dc5-b558108f35de.jsonl",
+      "identity": {
+        "session_id": "01a1d88a-9a44-71e1-9dc5-b558108f35de",
+        "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-32-05-01a1d88a-9a44-71e1-9dc5-b558108f35de.jsonl",
+        "source": "Exact native session_meta and turn_context; role_host launch ledger"
+      },
+      "runtime_parent": null,
+      "observed_settings": {
+        "limitations": [
+          "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+          "Successor settings must be observed after launch and adoption; arguments are a request.",
+          "Runtime configuration does not establish backend fulfillment or billing."
+        ],
+        "model": "gpt-6-astra",
+        "preservation": "launch_arguments_available",
+        "reasoning_effort": "xhigh",
+        "recorded_cli_version": "0.169.0",
+        "service_tier": "default",
+        "session_id": "01a1d88a-9a44-71e1-9dc5-b558108f35de",
+        "source": {
+          "event_sha256": "524f29ff487630504e308d1af8617302fa6f7f326dcae73c8942f2c2d1556ab5",
+          "line": 13,
+          "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-32-05-01a1d88a-9a44-71e1-9dc5-b558108f35de.jsonl",
+          "timestamp": "2026-11-14T05:32:07.582Z"
+        },
+        "successor_host_args": [
+          "-m",
+          "gpt-6-astra",
+          "-c",
+          "model_reasoning_effort=\"xhigh\"",
+          "-c",
+          "service_tier=\"default\""
+        ],
+        "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+        "turn_attribution": "latest_session_observation",
+        "turn_id": null
+      },
+      "pending_binding": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/D7-IDENTITY-BINDING.md",
+      "native_turn_context": {
+        "turn_id": "01a1d88a-9d8a-7391-9c14-cbe0d6e02a8a",
+        "root_turn_id": "01a1d88a-9d8a-7391-9c14-cbe0d6e02a8a",
+        "disabled_plugin_ids": [],
+        "cwd": "/home/bline/code/work-engine",
+        "approval_policy": "never",
+        "approvals_reviewer": "user",
+        "permission_profile": {
+          "type": "managed",
+          "file_system": {
+            "type": "restricted",
+            "entries": [
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                },
+                "access": "read"
+              }
+            ]
+          },
+          "network": "restricted"
+        },
+        "model": "gpt-6-astra",
+        "comp_hash": "3000",
+        "collaboration_mode": {
+          "mode": "default",
+          "settings": {
+            "model": "gpt-6-astra",
+            "reasoning_effort": "xhigh",
+            "developer_instructions": null
+          }
+        },
+        "multi_agent_version": "v2",
+        "realtime_active": false,
+        "effort": "xhigh",
+        "summary": "none",
+        "sandbox_policy": {
+          "type": "read-only"
+        }
+      },
+      "binding_delivery_exit": 40,
+      "binding_delivery_attempt": "{\"status\": \"refused_busy\", \"detail\": \"01a1d88a-9a44-71e1-9dc5-b558108f35de has a turn in progress (app_server)\"}\n",
+      "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/D7-REVIEW.md",
+      "report_sha256": "1a9f9e34171be455d016b29be4eff15e7bdec5220c4e35cd6170c11c4b14541e",
+      "collection": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/D7-COLLECTION.json",
+      "amendment": {
+        "state": "final_collected_full_read_root_bounded_adopted",
+        "turn_id": "01a1d89c-b2b1-72d1-aae5-79c1e1b31b04",
+        "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/D7-AMENDMENT-LAUNCH.md",
+        "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/PLAN-AMENDMENT.md",
+        "plan_sha256": "c8376f7a94a2ee775a8b117e6424acae457cb86e138f890cf2240fbe2190ce46",
+        "continuity": "retained_same_isolated_reviewer; initial judgment/history preserved",
+        "capacity_check": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/D7-amendment-capacity.json",
+        "node_allowance": "existing7total; no increase",
+        "collector": "root exactnativefinal",
+        "source": "role_host deliver succeeded",
+        "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/D7-AMENDMENT-REVIEW.md",
+        "report_sha256": "2c3b7ec129e649e6d0ec3bd1de64a7cc564c997fee334db35d87a2d1a86d3402",
+        "collection": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/D7-AMENDMENT-COLLECTION.json",
+        "root_adoption": "/home/bline/cbm-work/pi-accounting-continuation-20261114/ROOT-ADOPTION-R7-BOUNDED.json"
+      }
+    }
+  },
+  "listener": {
+    "exec_session_id": 49751,
+    "log": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/listener4.jsonl",
+    "argv": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/listener4-argv.json",
+    "owner": "root",
+    "state": "closed_collected_exit130",
+    "delivery": "root collects all3cursors at natural boundaries; explicit check before paid choices; no asyncwake",
+    "consumed_cursors": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/listener4-consumed.json",
+    "events": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/listener4-events-consumed.json"
+  },
+  "root_recovery": {
+    "sid": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+    "context_window": "01a1d878-6a47-7002-9dc3-44f6056743a3",
+    "wind_walker_invoked": true,
+    "semantic_recovery": "complete from TOKEN-MODE-CONTINUATION.md and native humans; no authority transfer",
+    "settings": "control/token-mode-recovery-settings.json",
+    "context": "control/token-mode-recovery-context.json",
+    "budget": "control/token-mode-recovery-budget.json",
+    "choice": "retained same root after own new_context; scope first3 launches and7report collection, forecast55000 growth; refresh early if185k warning",
+    "no_live_old_jobs": true
+  },
+  "root_preservation": {
+    "at": "2026-11-14T05:24:19.843044+00:00",
+    "reason": "developer mandatory preparation warning; stop ordinary work now and own new_context",
+    "root_input_last": 180993,
+    "next": "restore semantics under new pointer; preserve pending native A1/A2a, C2 final/probes/guard, remaining4 original unlaunched obligations plus mandatory fresh architecture and C2 omissions; budget reforecast before any new commitment",
+    "peer_observation": "control/token-refresh3-peer-observation.json"
+  }
+}

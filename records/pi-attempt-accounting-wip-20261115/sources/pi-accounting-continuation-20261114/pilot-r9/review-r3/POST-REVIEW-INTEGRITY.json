@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-14T06:47:54.339536+00:00",
+  "manifest_sha256": "0cad3d5ed66b9ef3c4796cb4039a16646d0ce0d451153948b08f972d8286df6a",
+  "expected_entries": 959,
+  "changed_or_missing": [],
+  "extra_nondirectories": [],
+  "standing": "pass",
+  "limitation": "Exact recorded file bytes and symlink targets; no semantic completeness claim"
+}

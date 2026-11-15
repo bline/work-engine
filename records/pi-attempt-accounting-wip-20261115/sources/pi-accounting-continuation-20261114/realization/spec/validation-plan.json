@@ -1,0 +1,64 @@
+{
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/tooling/spec-check",
+  "env": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/spec"
+  },
+  "steps": [
+    {
+      "name": "tests",
+      "argv": [
+        "cargo",
+        "test",
+        "--lib",
+        "--test",
+        "structural_r8",
+        "--offline"
+      ],
+      "timeout": 240
+    },
+    {
+      "name": "render",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/spec/debug/pi-accounting-spec-check",
+        "render",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1"
+      ]
+    },
+    {
+      "name": "check",
+      "argv": [
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/spec/debug/pi-accounting-spec-check",
+        "check",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+        "--generated"
+      ]
+    },
+    {
+      "name": "schema-agreement",
+      "argv": [
+        "python3",
+        "tests/schema_agreement.py",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/spec/debug/pi-accounting-spec-check"
+      ]
+    },
+    {
+      "name": "actual-wire",
+      "argv": [
+        "python3",
+        "tests/wire_corpus.py",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/spec/debug/pi-accounting-spec-check"
+      ]
+    },
+    {
+      "name": "independent-evidence",
+      "argv": [
+        "python3",
+        "tests/evidence_controls.py",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/spec/debug/pi-accounting-spec-check"
+      ]
+    }
+  ]
+}

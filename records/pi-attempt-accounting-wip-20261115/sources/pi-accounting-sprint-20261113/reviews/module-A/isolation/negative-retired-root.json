@@ -1,0 +1,10 @@
+{
+ "phase": "oneshot",
+ "at": "2026-11-13T23:01:00.763215+00:00",
+ "checks": {},
+ "caller": {
+  "host": "claude",
+  "session_id": "c110c95a-0e4b-4b0b-9f6e-b43c3e815972"
+ },
+ "refused": "caller is a retired earlier review root"
+}

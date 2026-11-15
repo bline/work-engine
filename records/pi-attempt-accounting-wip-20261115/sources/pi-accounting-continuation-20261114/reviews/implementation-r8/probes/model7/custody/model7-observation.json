@@ -1,0 +1,76 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "model7-observation",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "--manifest-path",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/subject/tooling/spec-check/Cargo.toml",
+    "--target-dir",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/target",
+    "--test",
+    "independent_raw_axes",
+    "root_probe_response_model_numeric_seven",
+    "--",
+    "--nocapture"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/subject",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 3227370,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/subject/tooling/spec-check/tests/independent_raw_axes.rs",
+      "type": "file",
+      "mode": 420,
+      "length": 41736,
+      "sha256": "94f892ebcaf49ad021a6cb57b0ec255569d68d9c703172d1c788a64943469487"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/subject/corpus/cases/VC01-openai-usage-settlement.json",
+      "type": "file",
+      "mode": 420,
+      "length": 14687,
+      "sha256": "1f8402b95a11a7b1b95a312535572148db557697131bb49b5a34fa668f94852c"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/subject/oracle/rates/openai_api_rates.json",
+      "type": "file",
+      "mode": 420,
+      "length": 736,
+      "sha256": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/subject/oracle/rates/anthropic_api_rates.json",
+      "type": "file",
+      "mode": 420,
+      "length": 1179,
+      "sha256": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5"
+    }
+  ],
+  "timeout_s": 240,
+  "pid": 3227376,
+  "pgid": 3227376,
+  "started_at": "2026-11-14T05:19:50.275125Z",
+  "ended_at": "2026-11-14T05:20:02.772889Z",
+  "duration_s": 12.498,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/custody/model7-observation.stdout",
+    "length": 304,
+    "sha256": "17c046482b59651635db5021696120f7a36d2fb49c921d8da4e7b0b215829be0"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/custody/model7-observation.stderr",
+    "length": 2683,
+    "sha256": "978fadad8747a6bcf9a3b0ecd7fcdc87e4e89fbea4fd7c227c48b777fa42d342"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

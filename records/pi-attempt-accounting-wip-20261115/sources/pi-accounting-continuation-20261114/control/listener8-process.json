@@ -1,0 +1,7 @@
+{
+  "pid": 3413061,
+  "owner": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "collector": "root foreground tool; natural boundary collection",
+  "binding": "fresh185k/220k context baseline after own native new_context; retained budget/board cursors",
+  "argv_file": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/listener8-argv.json"
+}

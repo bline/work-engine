@@ -1,0 +1,32 @@
+{
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+  "steps": [
+    {
+      "name": "schema_agreement",
+      "argv": [
+        "python3",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/tooling/spec-check/tests/schema_agreement.py",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check"
+      ]
+    },
+    {
+      "name": "wire_corpus",
+      "argv": [
+        "python3",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/tooling/spec-check/tests/wire_corpus.py",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check"
+      ]
+    },
+    {
+      "name": "evidence_controls",
+      "argv": [
+        "python3",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/tooling/spec-check/tests/evidence_controls.py",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+        "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check"
+      ]
+    }
+  ]
+}

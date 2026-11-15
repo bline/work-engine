@@ -1,0 +1,31 @@
+{
+  "status": "same-root own native recovery complete",
+  "session": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "meaning_owner": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/ROOT-CONTINUATION-R8.md",
+  "settings": {
+    "source_line": 10802,
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "tier": "default",
+    "new_postboundary": true
+  },
+  "listener": {
+    "tool_session": 10315,
+    "pid_record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/listener-r8-pid.json",
+    "argv": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/listener-r8-argv.json",
+    "output": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/listener-r8.jsonl",
+    "owner": "root",
+    "collector": "root",
+    "initial_context": {
+      "input": 65305,
+      "epoch": 22,
+      "source_line": 10855,
+      "delivered": true
+    },
+    "all_event_classes_owned": true
+  },
+  "budget": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/post-r8-budget.json",
+  "scheduler": "not configured",
+  "findings": "all3R3+11historical OPEN/fullS1owed",
+  "no_transfer_or_newgrant": true
+}

@@ -1,0 +1,15 @@
+{
+  "baseline": {
+    "root": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/owned-subject"
+  },
+  "changed": [
+    "corpus/cases/R6-C01-writer-reservation-floor-control.json",
+    "oracle/README.md",
+    "tooling/spec-check/tests/independent_raw_axes.rs"
+  ],
+  "added": [
+    "oracle/writer-controls.json"
+  ],
+  "removed": [],
+  "unchanged_count": 519
+}

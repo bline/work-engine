@@ -1,0 +1,1079 @@
+{
+  "version": "1.6-s1",
+  "revision": 7,
+  "author": "independent oracle Codex SID01a1d743",
+  "authority": "oracle-codex packet b428dc44/root policy and provisional clarification",
+  "changes": [
+    {
+      "case_id": "A04-undated-settlement-between-dated-neighbours",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "A06-reservation-usage-null-status-no-id",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "A1-01-upstream-error-and-unknown-event",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "A1-02-undated-row-inverted-neighbours",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "A1-03-unreferenced-log",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "C1-control-before-reference",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "C1-settlement-after-reference-time",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "C2-unsettled-reservation-after-reference-time",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "C3-identical-reservation-copy",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "C4-missing-charge-basis",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "D1-successor-constrained-by-predecessor-obligations",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "successor/s.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "D4-unbudgeted-error-status",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "DUP-response-id-across-attempts",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "Ha-control-consistent-split",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "Ha-inconsistent-cache-split-keeps-supported-low",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "Hb-window-independence",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "window-from-06:00/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "Hb-window-independence",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "window-from-06:20/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N01-control-served-pinned",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N01-identity-refusal-dearer-served",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N01-orphan-identity-refusal",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N01-variant-no-refusal-row",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N01-variant-reservation-above-both",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N02-malformed-anthropic-tier",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N03-api-row-other-provider",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N03-contradicted-admission",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N03-identity-refusal-in-subscription",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N04-ambiguous-read-failure",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N04-budgeted-header-failure-no-own-reservation",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N04-budgeted-header-failure-own-reservation",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N04-duplicated-read-failure",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N04-header-write-error-reused-n",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N05-control-consistent-retirement",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N05-retirement-before-later-delivery",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N06-null-cache-counts",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N07-control-retired-journal",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N07-control-retired-legacy",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N07-reopened-session-journal",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N07-reopened-session-legacy",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "N08-model-without-producer-rate",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "ORD-sessions-in-ledger-order",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "ORD-sessions-reversed",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "OWN-two-admitting-objectives",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "OWN-two-admitting-objectives",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/p.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-A5-unreadable-line-added",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-Q11-closure-uncertain",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-R01-usage-incomplete-terminal",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-R02-rounded-up-charge-admitted",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-R02-rounded-up-charge-admitted",
+      "rule": "R7-pinned-writer-floor-witness",
+      "field": "class",
+      "from": "producer_valid",
+      "to": "adversarial_synthetic"
+    },
+    {
+      "case_id": "P130-R02-rounded-up-charge-admitted",
+      "rule": "R7-pinned-writer-floor-witness",
+      "field": "reachability",
+      "from": "producer_reachable",
+      "to": "producer_unreachable"
+    },
+    {
+      "case_id": "P130-R02-rounded-up-charge-admitted",
+      "rule": "R7-pinned-writer-floor-witness",
+      "field": "notes",
+      "from": "gpt-6.1-terra at flex, 21 cached tokens: exact price 525 nano; the producer logs round(5.25e-7, 6) = 0.000001 USD.",
+      "to": "gpt-6.1-terra at flex, 21 cached tokens: exact price 525 nano; the producer logs round(5.25e-7, 6) = 0.000001 USD. R7 independent pinned-writer witness: exact raw floor0 is synthetic; missing observed tier requires floor>=2 (U08), requested null/default with observed flex requires floor>=1 (P130-R02). pi_container.py:964-966,1007-1020; original raw bytes preserved. New controls do not establish these old bytes reachable."
+    },
+    {
+      "case_id": "P130-R04-priority-overrun-above-cap",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-R04-retired-session-releases-commitment",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "limit-1.0/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-R05-conflicting-keeps-valuation-high",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-R06-reservation-amount-malformed",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-R06-reservation-rid-missing",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-R07-closed-unresolved-predecessor-constrains-successor",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "successor/p.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-R07-closed-unresolved-predecessor-constrains-successor",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "successor/s.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-R08-admissions-without-tree-still-block",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-R08-admissions-without-tree-still-block",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/p.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-R10-reopened-then-retired",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-R11-open-session-before-retirement",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-R12-outstanding-interval-keeps-candidate",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-R14-anthropic-null-tier-admitted",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P130-T-owned-before-window-summed",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-CP-close-after-reference-time",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-CP-close-entry-contradicts-closed-at",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-CP-closed-predecessor-outstanding",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "request-successor/s.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-CP-closed-predecessor-outstanding",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "request-predecessor/s.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-CP-closed-valid-close-entry",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-CP-known-over-limit",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-CP-retired-session-resumed-without-admission",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-CP-unknown-below-limit",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-FG-VC01-before-retirement",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-FG-VC01-no-gate",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-FG-VC14-open-no-billing-bound",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "limit-1.0/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-FG-VC14-open-session-billing-bound",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "limit-1.0/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-FG-gate-contradicted-by-reopening",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-FG-gate-expired",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-FG-gate-flag-only",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-FG-gate-receipt-missing",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-FG-gate-reopening-only",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-FG-gate-request-scope",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-FG-gate-self-asserted-file",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-FG-gate-starts-after-launch",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-FG-gate-wrong-authority",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P132-FG-gate-wrong-session",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P133-A01-incomplete-usage-above-reservation",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P133-A02-error-status-with-priceable-usage",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P133-A04-cached-malformed",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P133-A04-cached-nonzero",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P133-A04-mixed-observations",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P133-A05-model-case-variant",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P133-A06-error-status-null",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P133-A06-usage-settlement-status-absent",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P133-A09-conflicting-reservations-with-settlement",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P133-FG-bound-binding-mismatch",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "limit-1.0/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P133-FG-bound-coverage-incomplete",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "limit-1.0/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P133-FG-bound-exceeds-cap",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "limit-1.0/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P133-FG-bound-wrong-currency",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "limit-1.0/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P2-usage-settlement-unpriced-identity-keeps-charge",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "P9-claimed-charge-above-reservation",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "Q5-unrecognised-openai-tier",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "R01-dated-rows-backwards",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "R02-string-charge",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "R04-reused-reservation-id",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "R05-non-object-json-rows",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "R06-launch-row-missing",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "R6-C01-writer-reservation-floor-control",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "R6-C02-non200-success-terminal-usage-control",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "S01-reservation-basis-charged-less",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "S01-reserved-usd-omitted",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "S01-upstream-error-charged-zero",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "S02-attempt-number-differs",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "S02-control-error-status-after-reservation",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "S02-settlement-before-reservation",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "S03-settlement-stamped-far-future",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "S04-next-unrelated-row-does-not-close",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "S05-unrelated-orphan-log-does-not-block",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "S06-string-http-status",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "S08-control-pending-commitment",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "U01-malformed-attempt-number",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "U02-final-line-without-newline",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "U03-control",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "U03-retirement-before-turn-evidence",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "U04-control-settled-before-closure",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "U04-settled-after-closure-stays-with-owner",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "U05-inconsistent-charge-without-response-id",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "U05-usage-settlement-without-response-id",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "U06-subscription-upstream-error-unlabelled",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "U07-unrelated-non-object-usage-does-not-block",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "U08-missing-observed-tier",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "U08-missing-observed-tier",
+      "rule": "R7-pinned-writer-floor-witness",
+      "field": "class",
+      "from": "producer_valid",
+      "to": "adversarial_synthetic"
+    },
+    {
+      "case_id": "U08-missing-observed-tier",
+      "rule": "R7-pinned-writer-floor-witness",
+      "field": "reachability",
+      "from": "producer_reachable",
+      "to": "producer_unreachable"
+    },
+    {
+      "case_id": "U08-missing-observed-tier",
+      "rule": "R7-pinned-writer-floor-witness",
+      "field": "notes",
+      "from": "Producer charges a missing tier at the highest multiplier (2.0); the valuation range spans the cheapest (flex 0.5) to the dearest.",
+      "to": "Producer charges a missing tier at the highest multiplier (2.0); the valuation range spans the cheapest (flex 0.5) to the dearest. R7 independent pinned-writer witness: exact raw floor0 is synthetic; missing observed tier requires floor>=2 (U08), requested null/default with observed flex requires floor>=1 (P130-R02). pi_container.py:964-966,1007-1020; original raw bytes preserved. New controls do not establish these old bytes reachable."
+    },
+    {
+      "case_id": "V01-cheaper-response-model-undercharge",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "V01-control-producer-price",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "V01-usage-settlement-other-response-model",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "V02-control-producer-price",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "V02-unsplit-writes-undercharged",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "V03-subscription-upstream-error-labelled-api",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "V06-reservation-attempt-number-missing",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "V07-unrelated-unreadable-log-does-not-block",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "VC01-openai-usage-settlement",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "VC02-anthropic-usage-settlement",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "VC03-reservation-settlement-with-usage",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "VC04-upstream-error-keeps-reservation",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "VC05-unsettled-reservation",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "VC11-multi-turn-session",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "VC13-equal-timestamps",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "default/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "VC14-open-session-commitment",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "limit-1.0/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "VC14-open-session-commitment",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "limit-0.55/o.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "VC15-successor-not-charged-settled-predecessor-spend",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "successor/p.provisional",
+      "from": false,
+      "to": true
+    },
+    {
+      "case_id": "VC15-successor-not-charged-settled-predecessor-spend",
+      "rule": "R7-root-financial-provisionality: owned unresolved billing/predecessor AtLeast/noninvalid AtLeast commitment/unresolved PiApi candidate; lifecycle cannot clear money",
+      "field": "successor/s.provisional",
+      "from": false,
+      "to": true
+    }
+  ]
+}

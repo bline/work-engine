@@ -1,0 +1,9 @@
+[
+  {
+    "thread_id": "01a1d837-47ad-7320-8a7f-3b2f8d725b11",
+    "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+    "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+    "agent_path": "/root/context_refresh_helper",
+    "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T21-01-03-01a1d837-47ad-7320-8a7f-3b2f8d725b11.jsonl"
+  }
+]

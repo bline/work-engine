@@ -1,0 +1,44 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "usage_valuation",
+      "kind": "at_least",
+      "nano": "30000000"
+    },
+    "low": "15000000"
+  },
+  "credits": {
+    "alternatives": [
+      "u1",
+      "u2"
+    ],
+    "mode": "single_ambiguous"
+  },
+  "id": "result:L1",
+  "units": [
+    {
+      "high": {
+        "basis": "usage_valuation",
+        "kind": "at_least",
+        "nano": "15000000"
+      },
+      "id": "origin:u1",
+      "low": "15000000",
+      "origins": [
+        "u1"
+      ]
+    },
+    {
+      "high": {
+        "basis": "usage_valuation",
+        "kind": "at_least",
+        "nano": "15000000"
+      },
+      "id": "origin:u2",
+      "low": "15000000",
+      "origins": [
+        "u2"
+      ]
+    }
+  ]
+}

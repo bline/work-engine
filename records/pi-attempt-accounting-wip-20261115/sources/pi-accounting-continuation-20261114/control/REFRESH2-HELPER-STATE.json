@@ -1,0 +1,35 @@
+{
+  "helper_sid": "01a1d837-47ad-7320-8a7f-3b2f8d725b11",
+  "helper_rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T21-01-03-01a1d837-47ad-7320-8a7f-3b2f8d725b11.jsonl",
+  "root_sid": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "source_turn": "01a1d83b-9691-76e3-be28-b88eed83caad",
+  "operation_id": "8981fe43-5326-4236-9749-18657249ef6a",
+  "operation": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/refresh-2",
+  "exec_session_id": 40681,
+  "controller_pid": 3162695,
+  "terminal_collector": "/root/context_refresh_helper",
+  "delivery": "collaboration.send_message target /root; failure additionally existing-root mcp__codex_tui.send_message_to_thread without model and aspect:pi-accounting wake board",
+  "phase": "terminal_collected",
+  "result": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/REFRESH2-HELPER-RESULT.json",
+  "context_binary": "/home/bline/.local/state/work-engine/tools/context-status/a5f9db1fc8af4b0bc5ecad81ad5b8b8ae36d6087447dc5c62e6545262768116c/work-engine-context-status",
+  "context_sha256": "a5f9db1fc8af4b0bc5ecad81ad5b8b8ae36d6087447dc5c62e6545262768116c",
+  "own_observed_settings": {
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "tier": "default",
+    "record_line": 11,
+    "event_sha256": "683a91f5f679dc5997fc51d399e90a8bbea6a9c96b97da927ed5b3c61301195d",
+    "observation_scope": "latest applied record; no newer event"
+  },
+  "context_check": {
+    "input_tokens": 71522,
+    "context_window_tokens": 475000,
+    "recommendation": "retain_ok",
+    "observed_at": "2026-11-14T04:06:19.972Z",
+    "limitation": "idle prior usage; latest turn may increase input"
+  },
+  "created_at": "2026-11-14T04:39:44.450556+00:00",
+  "exit_code": 0,
+  "outcome": "wakeup_entered",
+  "controller_pid_alive": false
+}

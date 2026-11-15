@@ -1,0 +1,30 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/FINAL-PLAN.json",
+  "plan_sha256": "6f3eaee48b5965c77e98c3c878992b9a0922b73d91155ab327dde05b520abbff",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "python-partition",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/custody/final-1/python-partition.json",
+      "record_sha256": "31a0e16782eba6f6d6de0bb8590bb82397fd387f69425bdbe628e8e5d953cc37",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-corpus",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/custody/final-1/rust-corpus.json",
+      "record_sha256": "631da52adaae0b081093cf1cfadb5f6e3b9f810a518b6f3603d00267935211e5",
+      "leftovers": 0
+    },
+    {
+      "name": "negative-controls",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/B/custody/final-1/negative-controls.json",
+      "record_sha256": "60eacdb1c8e5c597a59047c87e9a54f003af1e21b7616dbe39ea0fbacfca70c2",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

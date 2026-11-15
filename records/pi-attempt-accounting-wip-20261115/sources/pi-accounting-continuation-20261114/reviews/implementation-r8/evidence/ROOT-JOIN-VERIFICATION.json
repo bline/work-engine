@@ -1,0 +1,12 @@
+{
+  "summary": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/join-2/summary.json",
+  "summary_sha256": "d3b62db1aae591ee22f552eba79891b0f0c9fd48daa1011f5ca673f1f26ff1a4",
+  "steps": 6,
+  "status": "passed",
+  "bad_records": [],
+  "current_input_drift": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/integration/SOURCE-BINDINGS.json",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/R8-COMPLETION.json",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/oracle/README.md"
+  ]
+}

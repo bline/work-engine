@@ -1,0 +1,10 @@
+{
+  "worker": "01a1d840-c933-78b1-8b7a-805a0ef28378",
+  "status": "source_stopped_worker_complete",
+  "source_bindings_sha256": "2471ec7d9564afb8185f3d6dd05d5fe6c262f27afcc62846a50766ff3375b56e",
+  "result_sha256": "2fc4a55decbe04a14484f1f5461442209d9361aa3c2ba0e57ea2ae25903bad67",
+  "continuation_sha256": "37132244ef794d081a339608db2393fb32323a126d5ecc588e2a822dee4d7068",
+  "joined_summary_sha256": "d3b62db1aae591ee22f552eba79891b0f0c9fd48daa1011f5ca673f1f26ff1a4",
+  "processes": "all terminal; zero leftovers",
+  "acceptance": "root pending separate review"
+}

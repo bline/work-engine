@@ -1,0 +1,14 @@
+{
+  "auxiliary_anchor": null,
+  "complete": true,
+  "distinct_primary_R_S": [
+    1,
+    1
+  ],
+  "models": [
+    "claude-sonnet-5",
+    "claude-fable-5-2"
+  ],
+  "raw_case": "V01-usage-settlement-other-response-model",
+  "raw_usage": "10000AnthropicInputTokens"
+}

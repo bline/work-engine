@@ -1,0 +1,27 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "none",
+      "kind": "at_least",
+      "nano": "0"
+    },
+    "low": "0"
+  },
+  "applicability": "unresolved",
+  "id": "result:A3",
+  "units": [
+    {
+      "high": {
+        "basis": "none",
+        "kind": "at_least",
+        "nano": "0"
+      },
+      "id": "OriginBase:refusal",
+      "low": "0",
+      "origins": [
+        "refusal"
+      ],
+      "pool": "pi_api"
+    }
+  ]
+}

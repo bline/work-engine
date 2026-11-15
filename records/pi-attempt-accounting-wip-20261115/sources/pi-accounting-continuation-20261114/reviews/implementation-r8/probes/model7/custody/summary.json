@@ -1,0 +1,16 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/plan.json",
+  "plan_sha256": "01062aaca86e6893a00bd803530aa65532c640663c1a21e1ae30a33513730f17",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "model7-observation",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/probes/model7/custody/model7-observation.json",
+      "record_sha256": "d49840238a5bec83a986bd8469ff08be845eb28a7a7ddbe57819e0e782ef1cbb",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

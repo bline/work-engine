@@ -1,0 +1,350 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "raw:origin-map",
+        "predecessor_subject_refs": [],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": []
+      },
+      "exact_links": [
+        {
+          "from_origin_ref": "anchor",
+          "grant_ref": "grant",
+          "link_id": "input-link",
+          "to_origin_ref": "usage"
+        }
+      ],
+      "grants": [
+        {
+          "admission": "conditional_fixture",
+          "admitted_payload": {
+            "pairs": [
+              {
+                "from": "anchor",
+                "to": "usage"
+              },
+              {
+                "from": "other-reserve",
+                "to": "other-usage"
+              }
+            ]
+          },
+          "assumption_refs": [
+            "conditional"
+          ],
+          "authority_ref": "fixture",
+          "covered_extent_ref": "raw:extent",
+          "covered_origin_refs": [
+            "anchor",
+            "reserve",
+            "settle",
+            "usage",
+            "other-reserve",
+            "other-settle",
+            "other-usage"
+          ],
+          "exact_payload_ref": "raw:exact-pairs",
+          "grant_id": "grant",
+          "guarantee_kind": "exact_row_coreference",
+          "observer_or_harness_ref": "synthetic"
+        }
+      ],
+      "id": "input",
+      "identity_bindings": [],
+      "initial_contracts": [
+        {
+          "contract_id": "c",
+          "duplicate_rule": "same_origin_only",
+          "reference_namespace": "unestablished"
+        }
+      ],
+      "kind": "accounting_input_proof",
+      "lineage_id": "L",
+      "origins": [
+        {
+          "initial_contract_ref": "c",
+          "origin_id": "anchor",
+          "original_position": 0,
+          "raw_bytes_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "source_origin_id": "source",
+          "source_revision_ref": "raw:revision"
+        },
+        {
+          "initial_contract_ref": "c",
+          "origin_id": "reserve",
+          "original_position": 1,
+          "raw_bytes_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "source_origin_id": "source",
+          "source_revision_ref": "raw:revision"
+        },
+        {
+          "initial_contract_ref": "c",
+          "origin_id": "settle",
+          "original_position": 2,
+          "raw_bytes_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "source_origin_id": "source",
+          "source_revision_ref": "raw:revision"
+        },
+        {
+          "initial_contract_ref": "c",
+          "origin_id": "usage",
+          "original_position": 3,
+          "raw_bytes_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "source_origin_id": "source",
+          "source_revision_ref": "raw:revision"
+        },
+        {
+          "initial_contract_ref": "c",
+          "origin_id": "other-reserve",
+          "original_position": 4,
+          "raw_bytes_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "source_origin_id": "source",
+          "source_revision_ref": "raw:revision"
+        },
+        {
+          "initial_contract_ref": "c",
+          "origin_id": "other-settle",
+          "original_position": 5,
+          "raw_bytes_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "source_origin_id": "source",
+          "source_revision_ref": "raw:revision"
+        },
+        {
+          "initial_contract_ref": "c",
+          "origin_id": "other-usage",
+          "original_position": 6,
+          "raw_bytes_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "source_origin_id": "source",
+          "source_revision_ref": "raw:revision"
+        }
+      ],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "anchor",
+            "reserve",
+            "settle",
+            "usage",
+            "other-reserve",
+            "other-settle",
+            "other-usage"
+          ]
+        }
+      ],
+      "continuity_result": "unestablished",
+      "coverage_decisions": [
+        {
+          "anchor_origin_refs": [
+            "anchor"
+          ],
+          "coverage_id": "coverage",
+          "definite_link_refs": [],
+          "monetary_origin_refs": [
+            "reserve",
+            "settle",
+            "usage"
+          ],
+          "obligation_id": "obligation",
+          "reason_refs": [],
+          "result_unit_ref": "replacement",
+          "retained_component_refs": [],
+          "route": "budgeted",
+          "status": "accepted",
+          "unit_refs": [
+            "hold"
+          ],
+          "validity_ref": "obligation",
+          "valuation_ref": "valuation"
+        }
+      ],
+      "definite_links": [
+        {
+          "admitted_input_link_ref": "input-link",
+          "from_origin_ref": "anchor",
+          "link_id": "result-link",
+          "to_origin_ref": "usage"
+        }
+      ],
+      "failure_refs": [],
+      "financial_candidates": [],
+      "id": "result",
+      "input_proof_ref": "input",
+      "kind": "accounting_result",
+      "lineage_id": "L",
+      "low_rollups": [],
+      "origins": [
+        {
+          "active_high_unit_id": "replacement",
+          "base_id": "base",
+          "evidence_atom_id": "anchor",
+          "origin_ref": "anchor"
+        },
+        {
+          "active_high_unit_id": "replacement",
+          "base_id": "base",
+          "evidence_atom_id": "reserve",
+          "origin_ref": "reserve"
+        },
+        {
+          "active_high_unit_id": "replacement",
+          "base_id": "base",
+          "evidence_atom_id": "settle",
+          "origin_ref": "settle"
+        },
+        {
+          "active_high_unit_id": "replacement",
+          "base_id": "base",
+          "evidence_atom_id": "usage",
+          "origin_ref": "usage"
+        },
+        {
+          "active_high_unit_id": "others",
+          "base_id": "base",
+          "evidence_atom_id": "other-reserve",
+          "origin_ref": "other-reserve"
+        },
+        {
+          "active_high_unit_id": "others",
+          "base_id": "base",
+          "evidence_atom_id": "other-settle",
+          "origin_ref": "other-settle"
+        },
+        {
+          "active_high_unit_id": "others",
+          "base_id": "base",
+          "evidence_atom_id": "other-usage",
+          "origin_ref": "other-usage"
+        }
+      ],
+      "primary_memberships": [
+        {
+          "obligation_id": "obligation",
+          "reservation_classes": [
+            {
+              "origin_refs": [
+                "reserve"
+              ],
+              "representative_origin_ref": "reserve"
+            }
+          ],
+          "settlement_classes": [
+            {
+              "origin_refs": [
+                "settle"
+              ],
+              "representative_origin_ref": "settle"
+            }
+          ],
+          "usage_origin_refs": [
+            "usage"
+          ]
+        },
+        {
+          "obligation_id": "other",
+          "reservation_classes": [
+            {
+              "origin_refs": [
+                "other-reserve"
+              ],
+              "representative_origin_ref": "other-reserve"
+            }
+          ],
+          "settlement_classes": [
+            {
+              "origin_refs": [
+                "other-settle"
+              ],
+              "representative_origin_ref": "other-settle"
+            }
+          ],
+          "usage_origin_refs": [
+            "other-usage"
+          ]
+        }
+      ],
+      "primary_validities": [
+        {
+          "applicable_check_refs": [
+            "computed:check"
+          ],
+          "distinct_reservation_refs": [
+            "reserve"
+          ],
+          "distinct_settlement_refs": [
+            "settle"
+          ],
+          "obligation_id": "obligation",
+          "validity_result": "valid"
+        },
+        {
+          "applicable_check_refs": [
+            "computed:check"
+          ],
+          "distinct_reservation_refs": [
+            "other-reserve"
+          ],
+          "distinct_settlement_refs": [
+            "other-settle"
+          ],
+          "obligation_id": "other",
+          "validity_result": "valid"
+        }
+      ],
+      "units": [
+        {
+          "exposure_ref": "computed:hold",
+          "origin_refs": [
+            "anchor",
+            "reserve",
+            "settle",
+            "usage"
+          ],
+          "state": "inactive",
+          "successor_ref": "replacement",
+          "unit_id": "hold"
+        },
+        {
+          "exposure_ref": "computed:replacement",
+          "origin_refs": [
+            "anchor",
+            "reserve",
+            "settle",
+            "usage"
+          ],
+          "state": "active",
+          "unit_id": "replacement"
+        },
+        {
+          "exposure_ref": "computed:others",
+          "origin_refs": [
+            "other-reserve",
+            "other-settle",
+            "other-usage"
+          ],
+          "state": "active",
+          "unit_id": "others"
+        }
+      ],
+      "valuation_records": [
+        {
+          "complete": true,
+          "usage_origin_refs": [
+            "usage"
+          ],
+          "valuation_id": "valuation",
+          "wire_ref": "opaque:wire"
+        }
+      ],
+      "version": "1.7-s1"
+    }
+  ]
+}

@@ -1,0 +1,1287 @@
+{
+ "module": "A",
+ "subject_root": "/home/bline/cbm-work/p136-s1r6/s1",
+ "freeze_manifest": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/freeze/manifest.json",
+ "freeze_sha256": "293b7a97583e591e8e84c0002f703e34e79161185f55ae034333378550b107ae",
+ "brief": "/home/bline/cbm-work/pi-accounting-sprint-20261113/reviews/module-A/packet/brief.md",
+ "brief_sha256": "f6ba9004bef8fbfa36d569368af573fd836016d207789ef984b41b788593a4f1",
+ "files": [
+  {
+   "path": "contract/CONTRACT.md",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/contract/CONTRACT.md",
+   "source_sha256": "46558c13b1c4ceaf76bd5f23d10e76175f24b3ac0d53e144466d8bdd987b8507",
+   "role": "Current contract/projection; canonical definitions own C-K",
+   "kind": "full"
+  },
+  {
+   "path": "contract/TRANSITIONS.md",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/contract/TRANSITIONS.md",
+   "source_sha256": "c0708a5cfef4842e3eb7a3c4453be36d11262fb6ed4c7acf02ed2b81aaabb4e0",
+   "role": "Current contract/projection; canonical definitions own C-K",
+   "kind": "full"
+  },
+  {
+   "path": "contract/INVARIANTS.md",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/contract/INVARIANTS.md",
+   "source_sha256": "3f98a47ef2178a5f4957d3b9f63994e8445e8194b641195567a445de6b6e65d0",
+   "role": "Current contract/projection; canonical definitions own C-K",
+   "kind": "full"
+  },
+  {
+   "path": "contract/MONEY.md",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/contract/MONEY.md",
+   "source_sha256": "6c7315ed832777766662303c5918b9239818750142709ba565ec3d31f91da836",
+   "role": "Current contract/projection; canonical definitions own C-K",
+   "kind": "full"
+  },
+  {
+   "path": "contract/RESERVATION-BOUNDS.md",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/contract/RESERVATION-BOUNDS.md",
+   "source_sha256": "3b391a6c0d8da2de9163dda95f888b53015c8334c07bfa58039f33fdfeaab7e8",
+   "role": "Current contract/projection; canonical definitions own C-K",
+   "kind": "full"
+  },
+  {
+   "path": "contract/S2A-ENTRY-CRITERIA.md",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/contract/S2A-ENTRY-CRITERIA.md",
+   "source_sha256": "1c60efba570cb90b2875cf52f728bb0c3a39cc98ac8c00d10ab714beed488545",
+   "role": "Current contract/projection; canonical definitions own C-K",
+   "kind": "full"
+  },
+  {
+   "path": "contract/CHANGELOG-1.5.md",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/contract/CHANGELOG-1.5.md",
+   "source_sha256": "2eb0aa528cdb58b0a3a1bd4b75840591a475c01a9790de87d177ebb5c9f5b142",
+   "role": "Current contract/projection; canonical definitions own C-K",
+   "kind": "full"
+  },
+  {
+   "path": "spec/ck.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.json",
+   "source_sha256": "1ac75ab5b44fa24ce35953d32d2b1ba145a1928fb5a06f884e3a434e0faa3371",
+   "role": "Current canonical source/schema/interface/registered dependencies",
+   "kind": "compact_json"
+  },
+  {
+   "path": "spec/ck.schema.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/spec/ck.schema.json",
+   "source_sha256": "1854822d6a4584f9aec4e517b1c2e952bb2e66a519d20600e4bba3f87378b93b",
+   "role": "Current canonical source/schema/interface/registered dependencies",
+   "kind": "compact_json"
+  },
+  {
+   "path": "spec/interface.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/spec/interface.json",
+   "source_sha256": "8020a947b6d306e85dbe93ddc512f0cd4310b7e8a8d5dbadc608e54755f1af2e",
+   "role": "Current canonical source/schema/interface/registered dependencies",
+   "kind": "compact_json"
+  },
+  {
+   "path": "spec/dependencies.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/spec/dependencies.json",
+   "source_sha256": "bc076d9cb0dbbb8559af74641c2eced788eee127b74a5e1b2aba95630809ed09",
+   "role": "Current canonical source/schema/interface/registered dependencies",
+   "kind": "compact_json"
+  },
+  {
+   "path": "root/POLICY-AND-PLAN-APPROVAL.md",
+   "source": "/home/bline/cbm-work/pi-accounting-sprint-20261113/POLICY-AND-PLAN-APPROVAL.md",
+   "source_sha256": "07303d5c5c36276f6038bf9368f3a5fe660e39ee9160b8b3d92049de98abb981",
+   "role": "Current owner-approved semantics; review may report defects in them",
+   "kind": "full"
+  },
+  {
+   "path": "history/ARCHITECTURE-GUARD.md",
+   "source": "/home/bline/cbm-work/p134-module-a/ARCHITECTURE-GUARD.md",
+   "source_sha256": "1d2b6fd6e27b3e37414132dcbfd5b2879f4eba7a2840fc7be27b144cac92617d",
+   "role": "Append-only rejection and architectural-risk history; no reset",
+   "kind": "full"
+  },
+  {
+   "path": "history/p135-architecture-response.md",
+   "source": "/home/bline/cbm-work/p135-arch-prep/review-kit/review/sealed/reviewer-response.md",
+   "source_sha256": "01e3c3cc8b6913d117f46ce0f5973735524af4bb6b86b0943f633fedafb42b42",
+   "role": "Sealed prior architecture review; evidence, not assumed correctness",
+   "kind": "full"
+  },
+  {
+   "path": "history/p134-reproduced.txt",
+   "source": "/home/bline/cbm-work/pi-accounting-sprint-20261113/evidence/p134-reproduced.txt",
+   "source_sha256": "2d8a802d0a9ffb8ffb4157de4f9af389b3f9963cb97ba5eff0c0eeb0be094ea9",
+   "role": "Root reproduction of historical nine findings on revision5",
+   "kind": "full"
+  },
+  {
+   "path": "producer/pi_container.py.excerpts",
+   "source": "/home/bline/cbm-work/p134-module-a/packet/sources/producer/pi_container.py.excerpts",
+   "source_sha256": "bfd226df9fc1fb8b5395a74490e3c1696273fab08e15d0e4da19b951320bb4b8",
+   "role": "Pinned deployed92a03789 producer/rates; line-numbered excerpt omissions declared",
+   "kind": "full"
+  },
+  {
+   "path": "producer/openai_api_rates.json",
+   "source": "/home/bline/cbm-work/p134-module-a/packet/sources/producer/openai_api_rates.json",
+   "source_sha256": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58",
+   "role": "Pinned deployed rates",
+   "kind": "full"
+  },
+  {
+   "path": "producer/anthropic_api_rates.json",
+   "source": "/home/bline/cbm-work/p134-module-a/packet/sources/producer/anthropic_api_rates.json",
+   "source_sha256": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "role": "Pinned deployed rates",
+   "kind": "full"
+  },
+  {
+   "path": "producer/supplement.md",
+   "source": "/home/bline/.local/share/work-engine/skill-releases/releases/92a03789327777b3cd9b5822c6df75a18fa63660/skills/manual-orchestration/scripts/pi_container.py",
+   "source_sha256": "780837341790780f84163ee6151b8ce66cff56f5a3f6ddf8c15f939dba50f470",
+   "role": "Supplement exact family billing fields/Anthropic pricing/refusal, original line ranges",
+   "kind": "excerpt",
+   "ranges": [
+    [
+     90,
+     120
+    ],
+    [
+     546,
+     624
+    ],
+    [
+     640,
+     679
+    ]
+   ]
+  },
+  {
+   "path": "oracle/README.md",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/oracle/README.md",
+   "source_sha256": "3e488fa580e0243024c301506dd9cfb452a1f7faf8d63af94bf7eefb5d472dbe",
+   "role": "Separately authored raw-axis qualification limits/writer witness; not full financial truth",
+   "kind": "full"
+  },
+  {
+   "path": "oracle/writer-controls.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/oracle/writer-controls.json",
+   "source_sha256": "374cbd62ace241db1cba48a81f307e21b14ff7828e839031f6622cd282377189",
+   "role": "Separately authored raw-axis qualification limits/writer witness; not full financial truth",
+   "kind": "compact_json"
+  },
+  {
+   "path": "evidence/joined-rust-tests.txt",
+   "source": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/custody/joined-rust-tests.stdout",
+   "source_sha256": "193045c6d601ea5bf29ae486cbd348e0f8542b1fa1348e0631a7c3693cf5797e",
+   "role": "Current joined10structural+4independent test output",
+   "kind": "full"
+  },
+  {
+   "path": "evidence/joined-legacy-check.txt",
+   "source": "/home/bline/cbm-work/pi-accounting-sprint-20261113/joined/legacy-custody/joined-check.stdout",
+   "source_sha256": "e70f93be61cff57cb905c317c327b29a8fb2b27486cd263918fe29557599d897",
+   "role": "Current exact175case consistency check, not independent truth",
+   "kind": "full"
+  },
+  {
+   "path": "cases/A06-reservation-usage-null-status-no-id.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/A06-reservation-usage-null-status-no-id.json",
+   "source_sha256": "d658a82f12c3748974855431a5e063ea28effb45eb4e6013c2539ffc3c3f8e57",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/A1-01-upstream-error-and-unknown-event.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/A1-01-upstream-error-and-unknown-event.json",
+   "source_sha256": "be095eb570e5f5ba21a6a1380f5d3ba7ffe720bb31b13ed0086611184301c3c5",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/C3-identical-reservation-copy.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/C3-identical-reservation-copy.json",
+   "source_sha256": "2ed7ea17d9f86928114119c639cdbe2257212df2587cd78f998995ee40cc23cb",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/C4-missing-charge-basis.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/C4-missing-charge-basis.json",
+   "source_sha256": "7150abda422dea533ece0d1d2d5a6472d0a57c0a85f980f2ab81cafb5989208f",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/Ha-control-consistent-split.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/Ha-control-consistent-split.json",
+   "source_sha256": "7c30664c81c0b599f43f52aefa3cd46cb583854b5a799bf397536acf27b7479e",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/Ha-inconsistent-cache-split-keeps-supported-low.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/Ha-inconsistent-cache-split-keeps-supported-low.json",
+   "source_sha256": "8f76f9b03811ae113f2ddb84d4a3f78a1c9d57af6a4c5fff36dced5c0d440441",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/N01-control-served-pinned.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/N01-control-served-pinned.json",
+   "source_sha256": "34bebb3d243c0c86a4961edc210589101cc9dfbadf097261baa85cc2298eed5c",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/N01-identity-refusal-dearer-served.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/N01-identity-refusal-dearer-served.json",
+   "source_sha256": "16825f2bf4502a372cebc5d4bd097ccfcd2de1a3e7991e04048583e59c2fa5d2",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/N01-orphan-identity-refusal.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/N01-orphan-identity-refusal.json",
+   "source_sha256": "a47315ab189e8be14188b1ffcc75db51612d1902bacb354eba9fda30fbffe212",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/N01-variant-no-refusal-row.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/N01-variant-no-refusal-row.json",
+   "source_sha256": "a1504eb3246596c82ff4b52aceee1af977d6956ca4f8e0ab67acf4742d528a61",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/N01-variant-reservation-above-both.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/N01-variant-reservation-above-both.json",
+   "source_sha256": "928298e005d8c3f692564bec7fc6b3d02f69e346b9badff68d8bb0c12d26a13e",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/N02-malformed-anthropic-tier.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/N02-malformed-anthropic-tier.json",
+   "source_sha256": "bed3f168672ebf8c61bf8ff762791945e2721f2b16ac87b2f2585ed595d49c44",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/N03-api-row-other-provider.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/N03-api-row-other-provider.json",
+   "source_sha256": "fe358d76e509756aafa50b79eada6c69756e9229cf48aa7c8e0502985dfcf669",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/N06-null-cache-counts.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/N06-null-cache-counts.json",
+   "source_sha256": "5343c092e1b550e06b732ca0054c01773f80ce29477e4981ec75657f7aad8a27",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/N08-model-without-producer-rate.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/N08-model-without-producer-rate.json",
+   "source_sha256": "52aca894a736ec00b8aeed701ebfc773fbe0d11203312468188ec387daa64a67",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P130-R01-usage-incomplete-terminal.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P130-R01-usage-incomplete-terminal.json",
+   "source_sha256": "4aa5a56ff74cbe6aa7169a592528d311fa51d5708e13f47c0a9350db6d147ee0",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P130-R02-rounded-up-charge-admitted.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P130-R02-rounded-up-charge-admitted.json",
+   "source_sha256": "693a07dd1c48264b827973ccd8b722f8919132846eb8c6169021a2b6aa1d7b85",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P130-R05-conflicting-keeps-valuation-high.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P130-R05-conflicting-keeps-valuation-high.json",
+   "source_sha256": "719c4c4f1e9299d2c7f252264d88a3a5103e05dc57ad505550257671b3182d6f",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P130-R06-reservation-rid-missing.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P130-R06-reservation-rid-missing.json",
+   "source_sha256": "df36ff3260705491ef990eb12749248081a3cf98b09c00f3407069ad98c98701",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P130-R14-anthropic-null-tier-admitted.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P130-R14-anthropic-null-tier-admitted.json",
+   "source_sha256": "a899fe6f5caa35491948b69fb10576d3bb4110afe25679a67567c7a65c6abef2",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P2-usage-settlement-unpriced-identity-keeps-charge.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P2-usage-settlement-unpriced-identity-keeps-charge.json",
+   "source_sha256": "9da26dbc581f88416ef890b60d2ef7bf1ad857551e8fcf3550318fe4fc8be923",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P9-claimed-charge-above-reservation.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P9-claimed-charge-above-reservation.json",
+   "source_sha256": "caa07bbcd01c1187e1d5132136411b26a66d0f289095b00f9f32ff2236295991",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/R06-launch-row-missing.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/R06-launch-row-missing.json",
+   "source_sha256": "6ceea4180877326124af6a37a16e1fe8bddd96d7629ab9d271a369461b8a15d0",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/R6-C01-writer-reservation-floor-control.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/R6-C01-writer-reservation-floor-control.json",
+   "source_sha256": "08058cfbbb4b8d233eca62e2337df05a7a01ae7cbe218ff84e8b75dfefc25b9d",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/R6-C02-non200-success-terminal-usage-control.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/R6-C02-non200-success-terminal-usage-control.json",
+   "source_sha256": "ff21cad7455ad3e8c7e38755c0f59cd118ba436b79e41b83982895a6008df848",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/S01-reservation-basis-charged-less.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/S01-reservation-basis-charged-less.json",
+   "source_sha256": "2563f95e4173c533f7e343411edcc6baae059d00a5e943eeb1f489297333a25b",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/S02-control-error-status-after-reservation.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/S02-control-error-status-after-reservation.json",
+   "source_sha256": "9929a40d57d21a63b9f0fe73dac5ab5995b5e75261a39c112c842d8ad713c8c8",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/S06-string-http-status.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/S06-string-http-status.json",
+   "source_sha256": "08500cafdb55c7102f1f939d438ed6d56331949694ec30b380fef8af25328bdb",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/U05-usage-settlement-without-response-id.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/U05-usage-settlement-without-response-id.json",
+   "source_sha256": "81eca5abacddea928489b4bf1a609e4dc2af6a972e2949df376f1aa9663b787a",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/U08-missing-observed-tier.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/U08-missing-observed-tier.json",
+   "source_sha256": "11271ad345ad2466b9b5191d91783d37eb44b77ec8b682002e9348ac3a8a3ac7",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/V01-cheaper-response-model-undercharge.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/V01-cheaper-response-model-undercharge.json",
+   "source_sha256": "a996ae844508e18d78e12f7ff0fcd9d4900c1174c21ab13146ae1157138ce6cf",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/V01-control-producer-price.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/V01-control-producer-price.json",
+   "source_sha256": "2d632d0e66827a3632bfb6b456bd7ef40db5edf04bf0b6e02b79171d4235338f",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/V01-usage-settlement-other-response-model.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/V01-usage-settlement-other-response-model.json",
+   "source_sha256": "49afdabbfbaf76d6f60dbd4dcfafa3bd49408e2d31a5862389d60a946207b49e",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/V02-control-producer-price.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/V02-control-producer-price.json",
+   "source_sha256": "a75cd8482490418b77e6509dfafa4c6c46e4455b2e2b3b76603ef23b44985ac3",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/V02-unsplit-writes-undercharged.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/V02-unsplit-writes-undercharged.json",
+   "source_sha256": "1b6f91e5a0ffa68fb7e796423c96ccf97b86bbfff864b0d5d527d8491502ed2b",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/VC01-openai-usage-settlement.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/VC01-openai-usage-settlement.json",
+   "source_sha256": "00f31b1f4d8580325d1dd5b07ef35b519cd08fdd3601d5e05685a1c460c31ff8",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/VC02-anthropic-usage-settlement.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/VC02-anthropic-usage-settlement.json",
+   "source_sha256": "51d975b5c5cfaf2adcdbb1339c2c747c4f770d0a400fdab55b10c518dd5b6090",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/VC03-reservation-settlement-with-usage.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/VC03-reservation-settlement-with-usage.json",
+   "source_sha256": "272ffe30372c88ddd3d3ee5c2db11b01f40113b9c3f326d23e8011da13431d48",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P133-FG-VC14-authenticated-bound.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P133-FG-VC14-authenticated-bound.json",
+   "source_sha256": "228e29261cbbf8158611735700504931a32be69de8f15f9b28dd8a524f3b5235",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P133-A01-incomplete-usage-above-reservation.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P133-A01-incomplete-usage-above-reservation.json",
+   "source_sha256": "a100fe02b26f0399690a70ca0b29c374f7a3dcb46c9ec005ec7d96b5e0418c26",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P133-A02-error-status-with-priceable-usage.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P133-A02-error-status-with-priceable-usage.json",
+   "source_sha256": "358f66d8588085e5f10dc8319f2fea301ef0c0461a83df118435cc3de2b682c7",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P133-A04-cache-counts-both-absent.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P133-A04-cache-counts-both-absent.json",
+   "source_sha256": "43afb8f0aa7f60c7184ad3bd0c90d42c82aa346576c06f9e5932086e6821c857",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P133-A04-cache-write-absent-legacy.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P133-A04-cache-write-absent-legacy.json",
+   "source_sha256": "2976af97278e3d414e5bc2a27c31ea3e87e6e03d847b362e15c883eb4bfa1893",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P133-A04-cached-malformed.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P133-A04-cached-malformed.json",
+   "source_sha256": "205c52c53f3ff0ee696e2b715bc479884615f9f8acc33dc528b27aae4ad52a75",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P133-A04-cached-nonzero.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P133-A04-cached-nonzero.json",
+   "source_sha256": "ec424ee0fa9af1c580bfca0ac22be2af0d5b2de204ae8f7ccc83c24945a110c8",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P133-A04-mixed-observations.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P133-A04-mixed-observations.json",
+   "source_sha256": "697db4f746ccea8e7fcb3d5976310d948581ef3e4f9db8a0942d023c937b9fe5",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P133-A05-model-case-variant.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P133-A05-model-case-variant.json",
+   "source_sha256": "f2edfc1ef63c29c2573de2adff5e4bd8f14db4ebee90755f1d2922aab1c140b6",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P133-A06-error-status-null.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P133-A06-error-status-null.json",
+   "source_sha256": "7f683304adaef7bda9c65f6964bbbf010197802d6f9a88ba6233dc659ec4e985",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P133-A06-usage-settlement-status-absent.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P133-A06-usage-settlement-status-absent.json",
+   "source_sha256": "ef40dbb6337ae1115ca7cc1ddb98f241e710497e289f2e0431392e3240b713cd",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  },
+  {
+   "path": "cases/P133-A09-conflicting-reservations-with-settlement.json",
+   "source": "/home/bline/cbm-work/p136-s1r6/s1/corpus/cases/P133-A09-conflicting-reservations-with-settlement.json",
+   "source_sha256": "62c20511746291c0b776927430d7a1a86692f5a81822c4d38c17d9d7597a5ab9",
+   "role": "Selected exact raw+expected financial boundary; top-level omissions declared",
+   "kind": "json_projection",
+   "keys": [
+    "case_id",
+    "class",
+    "profile",
+    "reachability",
+    "role",
+    "added_in",
+    "controls",
+    "invariants",
+    "ambiguity",
+    "inputs",
+    "trusted_fixture_inputs",
+    "expected"
+   ]
+  }
+ ],
+ "selected_case_ids": [
+  "A06-reservation-usage-null-status-no-id",
+  "A1-01-upstream-error-and-unknown-event",
+  "C3-identical-reservation-copy",
+  "C4-missing-charge-basis",
+  "Ha-control-consistent-split",
+  "Ha-inconsistent-cache-split-keeps-supported-low",
+  "N01-control-served-pinned",
+  "N01-identity-refusal-dearer-served",
+  "N01-orphan-identity-refusal",
+  "N01-variant-no-refusal-row",
+  "N01-variant-reservation-above-both",
+  "N02-malformed-anthropic-tier",
+  "N03-api-row-other-provider",
+  "N06-null-cache-counts",
+  "N08-model-without-producer-rate",
+  "P130-R01-usage-incomplete-terminal",
+  "P130-R02-rounded-up-charge-admitted",
+  "P130-R05-conflicting-keeps-valuation-high",
+  "P130-R06-reservation-rid-missing",
+  "P130-R14-anthropic-null-tier-admitted",
+  "P2-usage-settlement-unpriced-identity-keeps-charge",
+  "P9-claimed-charge-above-reservation",
+  "R06-launch-row-missing",
+  "R6-C01-writer-reservation-floor-control",
+  "R6-C02-non200-success-terminal-usage-control",
+  "S01-reservation-basis-charged-less",
+  "S02-control-error-status-after-reservation",
+  "S06-string-http-status",
+  "U05-usage-settlement-without-response-id",
+  "U08-missing-observed-tier",
+  "V01-cheaper-response-model-undercharge",
+  "V01-control-producer-price",
+  "V01-usage-settlement-other-response-model",
+  "V02-control-producer-price",
+  "V02-unsplit-writes-undercharged",
+  "VC01-openai-usage-settlement",
+  "VC02-anthropic-usage-settlement",
+  "VC03-reservation-settlement-with-usage",
+  "P133-FG-VC14-authenticated-bound",
+  "P133-A01-incomplete-usage-above-reservation",
+  "P133-A02-error-status-with-priceable-usage",
+  "P133-A04-cache-counts-both-absent",
+  "P133-A04-cache-write-absent-legacy",
+  "P133-A04-cached-malformed",
+  "P133-A04-cached-nonzero",
+  "P133-A04-mixed-observations",
+  "P133-A05-model-case-variant",
+  "P133-A06-error-status-null",
+  "P133-A06-usage-settlement-status-absent",
+  "P133-A09-conflicting-reservations-with-settlement"
+ ]
+}

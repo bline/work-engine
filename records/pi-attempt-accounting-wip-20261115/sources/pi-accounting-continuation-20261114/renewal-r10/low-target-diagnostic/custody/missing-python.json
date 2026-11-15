@@ -1,0 +1,71 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "missing-python",
+  "argv": [
+    "python3",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/missing/validator/validate_corpus.py",
+    "check",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/missing/corpus",
+    "--pilot"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/missing",
+  "env_clear": false,
+  "env_set": {
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/missing",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3697749,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+      "type": "file",
+      "mode": 509,
+      "length": 16162864,
+      "sha256": "8be4b340ebc2dfa61f6417a94ab219a0e37077afcee12790dcab1d72853a5ca3"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/freeze/manifest.json",
+      "type": "file",
+      "mode": 292,
+      "length": 225312,
+      "sha256": "34a2ddba957d2ae4bdcdfa30454641cbb29d59ee780141c518e9e93d95895d61"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/missing/oracle/r9-pilot/cases/equal-reservations.bundle.json",
+      "type": "file",
+      "mode": 420,
+      "length": 6650,
+      "sha256": "d77870ffbccdf587d7048c5c66ca2ceca366f18762741a515ee8315a8096ea85"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/missing/oracle/r9-pilot/cases/equal-reservations.json",
+      "type": "file",
+      "mode": 420,
+      "length": 17740,
+      "sha256": "82489a06f4ab1c9503b76642d65de4a81832bf65046377ceb1da1ac2630bb07b"
+    }
+  ],
+  "timeout_s": 180,
+  "pid": 3697758,
+  "pgid": 3697758,
+  "started_at": "2026-11-14T08:05:11.928127Z",
+  "ended_at": "2026-11-14T08:05:12.443798Z",
+  "duration_s": 0.516,
+  "returncode": 1,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/custody/missing-python.stdout",
+    "length": 2806,
+    "sha256": "a10363f0f464dee716deee15327784f7dfd6887c30dfa873008647b29c1d0d99"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-diagnostic/custody/missing-python.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

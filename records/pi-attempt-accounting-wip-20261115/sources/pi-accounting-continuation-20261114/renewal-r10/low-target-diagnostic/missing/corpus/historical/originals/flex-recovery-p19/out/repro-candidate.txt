@@ -1,0 +1,61 @@
+test_A01_forged_reconciliation_releases_budget (repro_unit_a.Repro.test_A01_forged_reconciliation_releases_budget) ... ok
+test_A02_replayed_decision_reverses_bill (repro_unit_a.Repro.test_A02_replayed_decision_reverses_bill) ... ok
+test_A02b_older_timestamp_appended_later_wins (repro_unit_a.Repro.test_A02b_older_timestamp_appended_later_wins) ... ok
+test_A03_unterminated_line_accepted_and_lost_append_overcommits (repro_unit_a.Repro.test_A03_unterminated_line_accepted_and_lost_append_overcommits) ... ok
+test_A03b_no_reconciliation_writer_in_cli (repro_unit_a.Repro.test_A03b_no_reconciliation_writer_in_cli) ... /home/bline/cbm-work/flex-recovery-p19/repro/repro_unit_a.py:112: ResourceWarning: unclosed file <_io.TextIOWrapper name='/home/bline/cbm-work/flex-recovery-p19/freeze/split/a/metrics/scripts/usage_ledger.py' mode='r' encoding='UTF-8'>
+  src = open(L.__file__).read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_A04_baseline_undated_usage_row_blocks (repro_unit_a.Repro.test_A04_baseline_undated_usage_row_blocks)
+Contrast: an undated usage-basis row is unpriced (valid_timestamp) and blocks, in baseline and candidate. ... FAIL
+test_A04_undated_reservation_charge_admitted_at_zero (repro_unit_a.Repro.test_A04_undated_reservation_charge_admitted_at_zero) ... ok
+test_A05_baseline_reader_undercounts_after_rollback (repro_unit_a.Repro.test_A05_baseline_reader_undercounts_after_rollback) ... ok
+test_A06_anthropic_retained_stream_loses_usage (repro_unit_a.Repro.test_A06_anthropic_retained_stream_loses_usage) ... ok
+test_A07_malformed_line_blocks_unrelated_objective (repro_unit_a.Repro.test_A07_malformed_line_blocks_unrelated_objective) ... ok
+test_replay_full_p17_objective_including_review (repro_unit_a.Repro.test_replay_full_p17_objective_including_review) ... ok
+
+======================================================================
+FAIL: test_A04_baseline_undated_usage_row_blocks (repro_unit_a.Repro.test_A04_baseline_undated_usage_row_blocks)
+Contrast: an undated usage-basis row is unpriced (valid_timestamp) and blocks, in baseline and candidate.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/flex-recovery-p19/repro/repro_unit_a.py", line 135, in test_A04_baseline_undated_usage_row_blocks
+    self.assertEqual(out['decision'], 'not_established')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'admitted' != 'not_established'
+- admitted
++ not_established
+
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.027s
+
+FAILED (failures=1)
+
+A-01 before forgery: refused spent_high=0.54105; after forgery: admitted spent_high=0.0 exposure=0.6; conservative exposure = 1.14105
+
+A-02 after unbilled, billed 0.20, replay of unbilled: usd_high=0.0 billing=confirmed_unbilled history=[1, 2, 3]; issues=[]
+
+A-02b older-dated unbilled appended after a billed decision: usd_high=0.0
+
+A-03 with unterminated line visible: admitted (spent_high=0.0); after the append is lost: spent_high=0.8 committed=0.9 spent+committed=1.70 against limit 1.0
+
+A-03b CLI subcommands: ['build', 'reconcile-trial', 'windows', 'tree', 'control', 'pi-admit']
+
+A-04 contrast, undated usage row (candidate): admitted
+
+A-04 undated reservation charge: admitted spent_high=0.0 tree_status=partial; conservative exposure = 1.156727
+
+A-05 candidate: refused spent_high=0.54105; baseline (rollback): admitted spent_high=0.0
+
+A-06 ('http_status None', 'candidate'): [('proxy_reservation_charge', False, 0.0, 0.25, None), []]
+
+A-06 ('http_status None', 'baseline'): [['pi_request_without_response']]
+
+A-06 ('http_status 200', 'candidate'): [('proxy_reservation_charge', False, 0.0, 0.25, None), []]
+
+A-06 ('http_status 200', 'baseline'): [('proxy_retained_charge', True, 0.00012, 0.25, None), []]
+
+A-07 unrelated objective, no failed requests: before=admitted after a truncated line for another objective=not_established
+
+full P1.7 replay (4 logs): high=1.314489 low=0.416711 unpriced=0; sum of proxy charged_usd=1.314488

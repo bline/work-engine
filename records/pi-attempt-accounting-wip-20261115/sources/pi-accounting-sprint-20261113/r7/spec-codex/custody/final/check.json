@@ -1,0 +1,48 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "check",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/target-spec/debug/pi-accounting-spec-check",
+    "check",
+    "/home/bline/cbm-work/p137-s1r7/s1",
+    "--generated"
+  ],
+  "cwd": "/home/bline/cbm-work/p137-s1r7/s1/tooling/spec-check",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/target-spec"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2634091,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/target-spec/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 16811096,
+      "sha256": "a27c9489c381923cda1c7f147b7f82dd52b595854a6653033325583a4d5ed2d9"
+    }
+  ],
+  "timeout_s": 60,
+  "pid": 2639992,
+  "pgid": 2639992,
+  "started_at": "2026-11-13T23:53:17.724912Z",
+  "ended_at": "2026-11-13T23:53:20.553624Z",
+  "duration_s": 2.829,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/custody/final/check.stdout",
+    "length": 306,
+    "sha256": "0b6d19529fa33f273f7884d8d207668ddb8b1490d6e7b0967cca4c8b198884f0"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/custody/final/check.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

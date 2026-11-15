@@ -1,0 +1,64 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "build",
+  "argv": [
+    "cargo",
+    "test",
+    "--locked",
+    "--no-run",
+    "--test",
+    "r9_spec_payloads",
+    "--test",
+    "r9_spec_applicability",
+    "--message-format=json"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/tooling/spec-check",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target",
+    "R10_SPEC_FIXTURE_OUT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/cli-fixtures"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3546201,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 3546203,
+  "pgid": 3546203,
+  "started_at": "2026-11-14T07:06:28.704442Z",
+  "ended_at": "2026-11-14T07:06:29.427515Z",
+  "duration_s": 0.723,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/tests-final/build.stdout",
+    "length": 86612,
+    "sha256": "605b4319d8706557d06ccc95a2d3a38e0569b32881d0bb1dcc912d4fe2ce6d6a"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/tests-final/build.stderr",
+    "length": 216,
+    "sha256": "87eca299de39613666c0cd21a6974d8abbde5a242c5f8e2b6f189b44bc75f0fe"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null,
+  "cargo_executables": [
+    {
+      "name": "r9_spec_payloads",
+      "kind": [
+        "test"
+      ],
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/deps/r9_spec_payloads-5c2dcd170a773e14",
+      "sha256": "42f4d3d7e960007293573882a8babfdcd50b518e4c7c4cddcffefe4145a4337d"
+    },
+    {
+      "name": "r9_spec_applicability",
+      "kind": [
+        "test"
+      ],
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/deps/r9_spec_applicability-7d28dcad672fbafd",
+      "sha256": "629300fffe30f7e96acc3dcc6268f2a43903d447357ddde9f03b02bb223d3bcf"
+    }
+  ]
+}

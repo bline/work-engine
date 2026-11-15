@@ -1,0 +1,948 @@
+{
+  "scope_budget": {
+    "schema": "manual-orchestration.scope-budget.v2",
+    "objective_id": "2c386030-0017-4c4d-9461-d9bd47d1cfc3",
+    "sessions": [
+      {
+        "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+        "provider": "codex",
+        "from": "2026-11-14T06:57:15Z",
+        "bound_by": "init",
+        "evidence": null
+      }
+    ],
+    "bindings": [],
+    "cost_limits": [
+      {
+        "pool": "codex",
+        "node": null,
+        "max_usd": 100.0,
+        "marks_usd": [
+          60.0,
+          80.0,
+          90.0
+        ],
+        "set_by": "user",
+        "set_at": "2026-11-14T06:58:26Z",
+        "reason": "New human $100 budget again at rollout line7843; separate nonadditive objective; no new wallclock limit stated",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d8da-c5bd-7612-bac2-bfdf1b189e87",
+        "max_usd": 15.0,
+        "marks_usd": [
+          12.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T07:00:18Z",
+        "reason": "Bounded exact R3 realization, independent roles, reserve for review and remediation",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d8da-e462-7c71-a278-e22e276bc26f",
+        "max_usd": 18.0,
+        "marks_usd": [
+          15.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T07:00:18Z",
+        "reason": "Bounded exact R3 realization, independent roles, reserve for review and remediation",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d8fb-cc66-7c02-80a6-d7c206e7396a",
+        "max_usd": 5.0,
+        "marks_usd": [
+          4.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T07:35:52Z",
+        "reason": "Fresh separate architecture assessment of executed reservation counterexample within renewed100; root owns all final collection",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d908-4697-72c2-ba83-578e092fb72a",
+        "max_usd": 8.0,
+        "marks_usd": [
+          6.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T07:49:45Z",
+        "reason": "Reviewed coherent reservation monetary and selectedreference repair inside renewed100; root retains review reserve",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d919-2544-7fb2-befe-00237c74ced2",
+        "max_usd": 9.0,
+        "marks_usd": [
+          7.0,
+          8.5
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T08:21:11.351286+00:00",
+        "reason": "Same retained design episode ownnative recovery+exact revisedplan review; preserve futurefullS1 and root/reservation/implementationreview reserves inside unchanged100, no addedhuman grant",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d92e-d14f-7df3-81b1-bf41c1c8a059",
+        "max_usd": 5.0,
+        "marks_usd": [
+          4.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T08:31:54Z",
+        "reason": "Exact reviewed R2 finite lowtarget and model7 correction in private successor; cap inside unchanged renewed100, preserve fullS1/root/review reserves",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d948-776f-7bb0-a3b2-66602a6eec79",
+        "max_usd": 8.0,
+        "marks_usd": [
+          6.0,
+          7.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T09:09:24Z",
+        "reason": "Same retained isolated design episode: own native recovery then bounded R2 local frontier revision review; same100 latest45.269 total,54.731remaining; no newgrant",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d95a-586c-7181-bbb7-9e7733ef27a4",
+        "max_usd": 5.0,
+        "marks_usd": [
+          4.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T09:19:31Z",
+        "reason": "Reviewed3f79f910 finite premise realization; fresh Solmedium worker bounded cap within same human100; no added grant.",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d8ee-19cd-7e12-ad6c-73356f2366a4",
+        "max_usd": 25.0,
+        "marks_usd": [
+          23.0
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T09:30:38Z",
+        "reason": "Same retained recovered isolated episode exact5e594cac premise successor review, target3/cumulativecap25 inside unchanged100/latest53.35complete; reserve for fullS1 and root; no new user grant.",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d96e-9d28-7c62-a661-7b3621f2160e",
+        "max_usd": 3.0,
+        "marks_usd": [
+          2.5
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T09:41:51Z",
+        "reason": "FreshSolxhigh fullS1 plan formation only after bounded5e594cac acceptance; target1.5/cap3 inside unchangedhuman100/latest57.11complete; no sourcework.",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d984-42de-7000-9c59-b3e8b2a7e094",
+        "max_usd": 4.0,
+        "marks_usd": [
+          3.5
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T10:05:04Z",
+        "reason": "FreshseparateAstraxhigh fullfiniteplan design review target2cap4 inside unchanged100; latest59.716complete, latermaterialization3notcommitted, rootfullreviewreserve retained",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "codex",
+        "node": "01a1d993-35ca-7293-a431-38daa0b9cdd6",
+        "max_usd": 3.0,
+        "marks_usd": [
+          2.5
+        ],
+        "set_by": "supervisor",
+        "set_at": "2026-11-14T10:21:39Z",
+        "reason": "Reviewed fullfinite firststage ledgeronly, Solhigh target2cap3 within samehuman100, preserve review20 qualification2 closure6 materialization3; root solecollector",
+        "basis": "speed_adjusted_api_usd"
+      }
+    ],
+    "objective": "Continue PI accounting S1 through reviewed local qualification amendment and exact independent implementation review",
+    "original_items": [
+      "Realize adopted R3 qualification amendment in a new isolated candidate with independent spec and raw oracle ownership",
+      "Freeze and execute joined Python/Rust positive and discriminating negative qualification; retain full S1 obligations",
+      "Collect independent exact candidate review, remediate within design guard and budget, and accept bounded result or preserve truthful continuation"
+    ],
+    "started_at": "2026-11-14T06:58:26Z",
+    "weekly_at_start": null,
+    "limits": {},
+    "limits_set_by": "user",
+    "limits_reason": "New human $100 budget again at rollout line7843; separate nonadditive objective; no new wallclock limit stated",
+    "limit_history": [
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": null,
+          "max_usd": 100.0,
+          "marks_usd": [
+            60.0,
+            80.0,
+            90.0
+          ],
+          "set_by": "user",
+          "set_at": "2026-11-14T06:58:26Z",
+          "reason": "New human $100 budget again at rollout line7843; separate nonadditive objective; no new wallclock limit stated",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d8da-c5bd-7612-bac2-bfdf1b189e87",
+          "max_usd": 15.0,
+          "marks_usd": [
+            12.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T07:00:18Z",
+          "reason": "Bounded exact R3 realization, independent roles, reserve for review and remediation",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d8da-e462-7c71-a278-e22e276bc26f",
+          "max_usd": 18.0,
+          "marks_usd": [
+            15.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T07:00:18Z",
+          "reason": "Bounded exact R3 realization, independent roles, reserve for review and remediation",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d8ee-19cd-7e12-ad6c-73356f2366a4",
+          "max_usd": 20.0,
+          "marks_usd": [
+            15.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T07:20:54Z",
+          "reason": "Fresh independent exact R10 implementation review, preserve root/remediation reserves within renewed100",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d8fb-cc66-7c02-80a6-d7c206e7396a",
+          "max_usd": 5.0,
+          "marks_usd": [
+            4.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T07:35:52Z",
+          "reason": "Fresh separate architecture assessment of executed reservation counterexample within renewed100; root owns all final collection",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d908-4697-72c2-ba83-578e092fb72a",
+          "max_usd": 8.0,
+          "marks_usd": [
+            6.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T07:49:45Z",
+          "reason": "Reviewed coherent reservation monetary and selectedreference repair inside renewed100; root retains review reserve",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d919-2544-7fb2-befe-00237c74ced2",
+          "max_usd": 6.0,
+          "marks_usd": [
+            5.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T08:07:58Z",
+          "reason": "Fresh design assessment exact0d558230 after lowtarget recurrence, within same100, no repair admitted",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d919-2544-7fb2-befe-00237c74ced2",
+          "max_usd": 9.0,
+          "marks_usd": [
+            7.0,
+            8.5
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T08:21:11.351286+00:00",
+          "reason": "Same retained design episode ownnative recovery+exact revisedplan review; preserve futurefullS1 and root/reservation/implementationreview reserves inside unchanged100, no addedhuman grant",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "codex",
+          "node": "01a1d919-2544-7fb2-befe-00237c74ced2",
+          "max_usd": 6.0,
+          "marks_usd": [
+            5.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T08:07:58Z",
+          "reason": "Fresh design assessment exact0d558230 after lowtarget recurrence, within same100, no repair admitted",
+          "basis": "speed_adjusted_api_usd"
+        }
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d92e-d14f-7df3-81b1-bf41c1c8a059",
+          "max_usd": 5.0,
+          "marks_usd": [
+            4.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T08:31:54Z",
+          "reason": "Exact reviewed R2 finite lowtarget and model7 correction in private successor; cap inside unchanged renewed100, preserve fullS1/root/review reserves",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d948-776f-7bb0-a3b2-66602a6eec79",
+          "max_usd": 6.0,
+          "marks_usd": [
+            4.0,
+            5.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T08:59:59Z",
+          "reason": "Fresh bounded evaluation-premise design review under same renewed100; root sole collector; no implementation admission",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d948-776f-7bb0-a3b2-66602a6eec79",
+          "max_usd": 8.0,
+          "marks_usd": [
+            6.0,
+            7.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T09:09:24Z",
+          "reason": "Same retained isolated design episode: own native recovery then bounded R2 local frontier revision review; same100 latest45.269 total,54.731remaining; no newgrant",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "codex",
+          "node": "01a1d948-776f-7bb0-a3b2-66602a6eec79",
+          "max_usd": 6.0,
+          "marks_usd": [
+            4.0,
+            5.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T08:59:59Z",
+          "reason": "Fresh bounded evaluation-premise design review under same renewed100; root sole collector; no implementation admission",
+          "basis": "speed_adjusted_api_usd"
+        }
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d95a-586c-7181-bbb7-9e7733ef27a4",
+          "max_usd": 5.0,
+          "marks_usd": [
+            4.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T09:19:31Z",
+          "reason": "Reviewed3f79f910 finite premise realization; fresh Solmedium worker bounded cap within same human100; no added grant.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d8ee-19cd-7e12-ad6c-73356f2366a4",
+          "max_usd": 25.0,
+          "marks_usd": [
+            23.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T09:30:38Z",
+          "reason": "Same retained recovered isolated episode exact5e594cac premise successor review, target3/cumulativecap25 inside unchanged100/latest53.35complete; reserve for fullS1 and root; no new user grant.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "codex",
+          "node": "01a1d8ee-19cd-7e12-ad6c-73356f2366a4",
+          "max_usd": 20.0,
+          "marks_usd": [
+            15.0
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T07:20:54Z",
+          "reason": "Fresh independent exact R10 implementation review, preserve root/remediation reserves within renewed100",
+          "basis": "speed_adjusted_api_usd"
+        }
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d96e-9d28-7c62-a661-7b3621f2160e",
+          "max_usd": 3.0,
+          "marks_usd": [
+            2.5
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T09:41:51Z",
+          "reason": "FreshSolxhigh fullS1 plan formation only after bounded5e594cac acceptance; target1.5/cap3 inside unchangedhuman100/latest57.11complete; no sourcework.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d984-42de-7000-9c59-b3e8b2a7e094",
+          "max_usd": 4.0,
+          "marks_usd": [
+            3.5
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T10:05:04Z",
+          "reason": "FreshseparateAstraxhigh fullfiniteplan design review target2cap4 inside unchanged100; latest59.716complete, latermaterialization3notcommitted, rootfullreviewreserve retained",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "codex",
+          "node": "01a1d993-35ca-7293-a431-38daa0b9cdd6",
+          "max_usd": 3.0,
+          "marks_usd": [
+            2.5
+          ],
+          "set_by": "supervisor",
+          "set_at": "2026-11-14T10:21:39Z",
+          "reason": "Reviewed fullfinite firststage ledgeronly, Solhigh target2cap3 within samehuman100, preserve review20 qualification2 closure6 materialization3; root solecollector",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      }
+    ],
+    "additions": []
+  },
+  "root": {
+    "session": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+    "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T14-48-30-01a1d6e2-32ba-7701-9115-740dcb41af11.jsonl",
+    "collector": "root",
+    "source_predecessor": "/home/bline/cbm-work/pi-accounting-continuation-20261114/assignment.json"
+  },
+  "grant": {
+    "human_source": {
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T14-48-30-01a1d6e2-32ba-7701-9115-740dcb41af11.jsonl",
+      "line": 7843,
+      "timestamp": "2026-11-14T06:57:15.215Z",
+      "text": "ok, $100 budget again."
+    },
+    "max_proxy_usd": 100,
+    "deadline": null,
+    "prior_budget_nonadditive": true
+  },
+  "plan": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/PLAN-AMENDMENT-R3.md",
+    "sha256": "90b6308e9608decf026437c89b98de597cd30046f56d792aa7461061f31f4abb",
+    "adoption": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ROOT-ADOPTION-R3-PLAN.json",
+    "review_sha256": "86d86bf3e271c2f86a1f2a31ec65b789be1105bb7a686c82c33251e68ad04ad0"
+  },
+  "source": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+  "guard": {
+    "ordinary_manual_repair_allowed": false,
+    "architecture_led_realization": "admitted exact reviewed R3 local amendment under renewed grant",
+    "history": "/home/bline/cbm-work/pi-accounting-continuation-20261114/../p134-module-a/ARCHITECTURE-GUARD.md",
+    "all_3_r3_and_11_historical_findings": "OPEN; no history reset",
+    "state": "EXACT_R2_BOUNDED_IMPLEMENTATION_COMPLETE_REVIEW_PENDING"
+  },
+  "roles": {
+    "spec": {
+      "task": "/root/s1r10_spec",
+      "session": "01a1d8da-c5bd-7612-bac2-bfdf1b189e87",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-59-38-01a1d8da-c5bd-7612-bac2-bfdf1b189e87.jsonl",
+      "state": "complete final collected; owned hashes/custody verified",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/SPEC-PACKET.md",
+      "collector": "root via collaboration.wait_agent",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "tier": "default"
+      },
+      "observed": {
+        "limitations": [
+          "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+          "Successor settings must be observed after launch and adoption; arguments are a request.",
+          "Runtime configuration does not establish backend fulfillment or billing."
+        ],
+        "model": "gpt-6.1-sol",
+        "preservation": "launch_arguments_available",
+        "reasoning_effort": "medium",
+        "recorded_cli_version": "0.169.0",
+        "service_tier": "default",
+        "session_id": "01a1d8da-c5bd-7612-bac2-bfdf1b189e87",
+        "source": {
+          "event_sha256": "ac98cb7dc4f33fabd0bcf42a1ac19f5699c7072f07d91ce3f81acc99aa19b6ce",
+          "line": 12,
+          "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-59-38-01a1d8da-c5bd-7612-bac2-bfdf1b189e87.jsonl",
+          "timestamp": "2026-11-14T06:59:40.214Z"
+        },
+        "successor_host_args": [
+          "-m",
+          "gpt-6.1-sol",
+          "-c",
+          "model_reasoning_effort=\"medium\"",
+          "-c",
+          "service_tier=\"default\""
+        ],
+        "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+        "turn_attribution": "latest_session_observation",
+        "turn_id": null
+      },
+      "allowance_proxy": 15,
+      "identity": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/IDENTITY.md",
+      "context_delivery": "child own route, ACK pending",
+      "identity_ack": "collaboration ACK verified; ownwait failedunsupportedstep, exit1collected; explicitcheck65705epoch0, nextphase check owed",
+      "interface": "spec/INTERFACE.md published; exact payload structural coherence only, actual CLI resolves",
+      "result": "spec/RESULT.md",
+      "continuation": "spec/CONTINUATION.json"
+    },
+    "oracle": {
+      "task": "/root/s1r10_oracle",
+      "session": "01a1d8da-e462-7c71-a278-e22e276bc26f",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-59-46-01a1d8da-e462-7c71-a278-e22e276bc26f.jsonl",
+      "state": "complete exact collaboration final collected; source stopped; hashes/custody verified",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/ORACLE-PACKET.md",
+      "collector": "root via collaboration.wait_agent",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "tier": "default"
+      },
+      "observed": {
+        "limitations": [
+          "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+          "Successor settings must be observed after launch and adoption; arguments are a request.",
+          "Runtime configuration does not establish backend fulfillment or billing."
+        ],
+        "model": "gpt-6.1-sol",
+        "preservation": "launch_arguments_available",
+        "reasoning_effort": "medium",
+        "recorded_cli_version": "0.169.0",
+        "service_tier": "default",
+        "session_id": "01a1d8da-e462-7c71-a278-e22e276bc26f",
+        "source": {
+          "event_sha256": "e76d7cbb33103db64c19a5766ca671693dc38ef72e3089d204f6b6510fb7fca9",
+          "line": 12,
+          "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-59-46-01a1d8da-e462-7c71-a278-e22e276bc26f.jsonl",
+          "timestamp": "2026-11-14T06:59:48.985Z"
+        },
+        "successor_host_args": [
+          "-m",
+          "gpt-6.1-sol",
+          "-c",
+          "model_reasoning_effort=\"medium\"",
+          "-c",
+          "service_tier=\"default\""
+        ],
+        "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+        "turn_attribution": "latest_session_observation",
+        "turn_id": null
+      },
+      "allowance_proxy": 18,
+      "identity": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/IDENTITY.md",
+      "context_delivery": "child owns wait7168, explicit initial64314 epoch0 reported; normal baseline and owncollector; exact terminal custody owed",
+      "identity_ack": "collaboration ACK verified; own observation setup underway",
+      "derivations": "oracle/DERIVATIONS.md published before supplied-output correction per worker",
+      "admissions": "subject/validator/r10_admitted.json nine selections; rawderivations beforecorrections reported",
+      "result": "oracle/RESULT.md",
+      "continuation": "oracle/CONTINUATION.json"
+    },
+    "review-r1": {
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/REVIEW-PACKET.md",
+      "packet_sha256": "a28ac6c37853241633206abe1e0cd6b42a9f4af45bb74e83398b0c3e69b8eb21",
+      "state": "ACTIVE exactrepairreevaluation; FULLnativefinalowed rootsolecollector",
+      "requested": {
+        "model": "gpt-6-astra",
+        "effort": "xhigh",
+        "tier": "default",
+        "sandbox": "read-only",
+        "approval": "never"
+      },
+      "collector": "root exact native final via wait_threads",
+      "allowance_proxy": 20,
+      "fresh_reason": "independent implementation review apart from design and builders",
+      "expected_context_growth": 110000,
+      "session": "01a1d8ee-19cd-7e12-ad6c-73356f2366a4",
+      "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T00-20-45-01a1d8ee-19cd-7e12-ad6c-73356f2366a4.jsonl",
+      "ready_final": "review-r1/READY.md",
+      "identity": "review-r1/IDENTITY-AND-PROCEED.md",
+      "observed": {
+        "limitations": [
+          "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+          "Successor settings must be observed after launch and adoption; arguments are a request.",
+          "Runtime configuration does not establish backend fulfillment or billing."
+        ],
+        "model": "gpt-6-astra",
+        "preservation": "launch_arguments_available",
+        "reasoning_effort": "xhigh",
+        "recorded_cli_version": "0.169.0",
+        "service_tier": "default",
+        "session_id": "01a1d8ee-19cd-7e12-ad6c-73356f2366a4",
+        "source": {
+          "event_sha256": "5f92842b1fb794ae7cc5b6b5522b26f1d572330cb4016df924db75df34b7ba07",
+          "line": 13,
+          "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T00-20-45-01a1d8ee-19cd-7e12-ad6c-73356f2366a4.jsonl",
+          "timestamp": "2026-11-14T07:20:48.048Z"
+        },
+        "successor_host_args": [
+          "-m",
+          "gpt-6-astra",
+          "-c",
+          "model_reasoning_effort=\"xhigh\"",
+          "-c",
+          "service_tier=\"default\""
+        ],
+        "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+        "turn_attribution": "latest_session_observation",
+        "turn_id": null
+      },
+      "context_check": "review-r1/PRE-SUBSTANTIVE-CONTEXT.json",
+      "context_decision": "56578epoch1 +100000forecast156578 below configured185000/220000; retained same isolatedreview after OWNnative refresh",
+      "turn": "01a1d910-5595-7e03-84fc-b27724d3b276",
+      "context_delivery": "Reviewer acknowledged actual SID/root binding. Ownwait produced cursor but no measured initialtelemetry, then stopped/collected; explicitcheck42959epoch0 and checks before substantialphases are fallback, ongoing listener delivery unestablished.",
+      "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/review-r1/REVIEW.md",
+      "report_sha256": "729a3656132aa649f5d6101f5140c8fa216c9c151ec9787fbe32e73e911f3d28",
+      "verdict": "CHANGES_REQUIRED one blockingP2 inheritedRust monetary qualification omission",
+      "remaining": "alloriginal3R3 demonstrated counterexamples addressed-selected only; no closure pending root exactdisposition",
+      "context_final": "165659epoch0 explicitchecks fallback; own waits stopped/collected, no refresh",
+      "refresh_turn": "01a1d90b-207c-75b1-a554-688df5fa3be5",
+      "continuation": "review-r1/RETAINED-CONTINUATION.md",
+      "infrastructure": "priorrefresh-onlyturn completeREFRESH_BLOCKED collected, no substantive rejection",
+      "observed_current": {
+        "limitations": [
+          "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+          "Successor settings must be observed after launch and adoption; arguments are a request.",
+          "Runtime configuration does not establish backend fulfillment or billing."
+        ],
+        "model": "gpt-6-astra",
+        "preservation": "launch_arguments_available",
+        "reasoning_effort": "xhigh",
+        "recorded_cli_version": "0.169.0",
+        "service_tier": "default",
+        "session_id": "01a1d8ee-19cd-7e12-ad6c-73356f2366a4",
+        "source": {
+          "event_sha256": "8d356ec36fd263661b1329964cf8f47f2cfefc198bc9001db21ac7943bc16dfe",
+          "line": 373,
+          "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T00-20-45-01a1d8ee-19cd-7e12-ad6c-73356f2366a4.jsonl",
+          "timestamp": "2026-11-14T07:58:08.794Z"
+        },
+        "successor_host_args": [
+          "-m",
+          "gpt-6-astra",
+          "-c",
+          "model_reasoning_effort=\"xhigh\"",
+          "-c",
+          "service_tier=\"default\""
+        ],
+        "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+        "turn_attribution": "latest_session_observation",
+        "turn_id": null
+      }
+    },
+    "reservation-design-r1": {
+      "session": "01a1d8fb-cc66-7c02-80a6-d7c206e7396a",
+      "turn": "01a1d8fc-dd46-7d80-9416-0ad0cb61b521",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-reservation-r1/PACKET.md",
+      "plan_sha256": "bc723a6c2411852dc5f4f7aaaccbb95c2d2bd699f0438f032d94f728c732b71c",
+      "state": "complete FULLFINALCOLLECTED/rootfullread",
+      "requested": {
+        "model": "gpt-6-astra",
+        "effort": "xhigh",
+        "tier": "default",
+        "sandbox": "read-only",
+        "approval": "never"
+      },
+      "collector": "root via native wait_threads",
+      "allowance_proxy": 5,
+      "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T00-35-42-01a1d8fb-cc66-7c02-80a6-d7c206e7396a.jsonl",
+      "identity": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-reservation-r1/IDENTITY-AND-PROCEED.md",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "xhigh",
+        "tier": "default",
+        "sandbox": "read-only",
+        "approval": "never",
+        "line": 13,
+        "turn_context_line": 12,
+        "capability_verified": true
+      },
+      "context_delivery": "Binding ACK at rollout60; ownwait unsupported --step-percent failed, terminalcollected. Explicit fallback61724 plus110000forecast171724 below185000; root listener covers root only.",
+      "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-reservation-r1/REVIEW.md",
+      "report_sha256": "b51105c6f3e004517eb0659eecc8e51a6bab79d661ba140115b9cc0cff5c3c68",
+      "verdict": "BOUNDED_REALIZATION_RECOMMENDED with actual selectedresult/unit/referencejoins required",
+      "context_final": "145258epoch0 explicitfallback; listenerfailed unsupportedsteppercent collected; noownedprocess"
+    },
+    "reservation-repair-r1": {
+      "task": "/root/s1r10_reservation_repair",
+      "session": "01a1d908-4697-72c2-ba83-578e092fb72a",
+      "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T00-49-20-01a1d908-4697-72c2-ba83-578e092fb72a.jsonl",
+      "state": "complete exactfinalcollected sourcefrozen, root9pass",
+      "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/PACKET.md",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "tier": "default"
+      },
+      "observed": {
+        "limitations": [
+          "Latest matching applied record in this bound rollout; later UI changes may not yet be applied.",
+          "Successor settings must be observed after launch and adoption; arguments are a request.",
+          "Runtime configuration does not establish backend fulfillment or billing."
+        ],
+        "model": "gpt-6.1-sol",
+        "preservation": "launch_arguments_available",
+        "reasoning_effort": "medium",
+        "recorded_cli_version": "0.169.0",
+        "service_tier": "default",
+        "session_id": "01a1d908-4697-72c2-ba83-578e092fb72a",
+        "source": {
+          "event_sha256": "00e2fff313d7bf949c694b26b675637c653e624d9171b1bf972ba996efb35268",
+          "line": 12,
+          "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T00-49-20-01a1d908-4697-72c2-ba83-578e092fb72a.jsonl",
+          "timestamp": "2026-11-14T07:49:22.602Z"
+        },
+        "successor_host_args": [
+          "-m",
+          "gpt-6.1-sol",
+          "-c",
+          "model_reasoning_effort=\"medium\"",
+          "-c",
+          "service_tier=\"default\""
+        ],
+        "tier_mapping_basis": "Historical CLI 0.164.0 probe metrics/probes/codex-manual-service-tier-20261028.json; runtime-reported 0.165.0 fixture evidence metrics/probes/outer-context-continuity-20261028.json",
+        "turn_attribution": "latest_session_observation",
+        "turn_id": null
+      },
+      "allowance_proxy": 8,
+      "collector": "root via collaboration.wait_agent",
+      "context_delivery": "child own route required; rootlistener notcoverage",
+      "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/worker/RESULT.md",
+      "freeze": "34a2ddba957d2ae4bdcdfa30454641cbb29d59ee780141c518e9e93d95895d61"
+    }
+  },
+  "processes": {
+    "root_combined_listener": {
+      "tool_session": 40651,
+      "binding": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/listener-r3-argv.json",
+      "state": "SIGINT terminal130 FULLCOLLECTED, noownedrootprocess; rearmONE afterrecovery",
+      "owner": "root",
+      "collector": "root natural boundaries",
+      "limitation": "explicit1percent flag failedexit1collected; corrected noflag active; rootonly",
+      "cursors": "control/listener-r3-consumed.json"
+    },
+    "root_listener_r6": {
+      "next_since": 5601,
+      "next_control_cursor": "{\"version\":1,\"binding\":{\"host\":\"codex\",\"session\":\"01a1d6e2-32ba-7701-9115-740dcb41af11\",\"agent\":null,\"rollout\":\"/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T14-48-30-01a1d6e2-32ba-7701-9115-740dcb41af11.jsonl\",\"trigger\":185000,\"band_floor\":220000,\"lead_calls\":3},\"level\":\"normal\",\"epoch\":20,\"model\":\"gpt-6.1-sol\",\"window\":475000,\"observation_status\":\"latest_valid_observation\",\"line\":10384}",
+      "next_budget_cursor": "eyJhY2NvdW50X3F1b3RhX3N0YXR1cyI6ICJvYnNlcnZlZCIsICJvYmplY3RpdmVfaWQiOiAiMmMzODYwMzAtMDAxNy00YzRkLTk0NjEtZDliZDQ3ZDFjZmMzIiwgInN0YXRlcyI6IHsiW1wiY292ZXJhZ2VfY2hhbmdlZFwiLG51bGwsbnVsbCxcImNvdmVyYWdlXCJdIjogeyJyYW5nZWQiOiBmYWxzZSwgInN0YXR1cyI6ICJjb21wbGV0ZSIsICJ1bmRhdGVkX2NhbGxzIjogMCwgInVua25vd25fc3BlbmQiOiBmYWxzZSwgInVucHJpY2VkX2NhbGxzIjogMH0sICJbXCJsaW1pdF9mcmFjdGlvblwiLFwiY29kZXhcIixudWxsLDUwLjAsXCJ1c2VyXCJdIjogZmFsc2UsICJbXCJsaW1pdF9mcmFjdGlvblwiLFwiY29kZXhcIixudWxsLDgwLjAsXCJ1c2VyXCJdIjogZmFsc2UsICJbXCJsaW1pdF9yZWFjaGVkXCIsXCJjb2RleFwiLG51bGwsMTAwLjAsXCJ1c2VyXCJdIjogZmFsc2UsICJbXCJtYXJrX2Nyb3NzZWRcIixcImNvZGV4XCIsbnVsbCw2MC4wLFwidXNlclwiXSI6IGZhbHNlLCAiW1wibWFya19jcm9zc2VkXCIsXCJjb2RleFwiLG51bGwsODAuMCxcInVzZXJcIl0iOiBmYWxzZSwgIltcIm1hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixudWxsLDkwLjAsXCJ1c2VyXCJdIjogZmFsc2UsICJbXCJub2RlX21hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixcIjAxYTFkOGRhLWM1YmQtNzYxMi1iYWMyLWJmZGYxYjE4OWU4N1wiLDEyLjAsXCJzdXBlcnZpc29yXCJdIjogZmFsc2UsICJbXCJub2RlX21hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixcIjAxYTFkOGRhLWM1YmQtNzYxMi1iYWMyLWJmZGYxYjE4OWU4N1wiLDE1LjAsXCJzdXBlcnZpc29yXCJdIjogZmFsc2UsICJbXCJub2RlX21hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixcIjAxYTFkOGRhLWU0NjItN2M3MS1hMjc4LWUyMmUyNzZiYzI2ZlwiLDE1LjAsXCJzdXBlcnZpc29yXCJdIjogZmFsc2UsICJbXCJub2RlX21hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixcIjAxYTFkOGRhLWU0NjItN2M3MS1hMjc4LWUyMmUyNzZiYzI2ZlwiLDE4LjAsXCJzdXBlcnZpc29yXCJdIjogZmFsc2UsICJbXCJub2RlX21hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixcIjAxYTFkOGVlLTE5Y2QtN2UxMi1hZDZjLTczMzU2ZjIzNjZhNFwiLDE1LjAsXCJzdXBlcnZpc29yXCJdIjogZmFsc2UsICJbXCJub2RlX21hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixcIjAxYTFkOGVlLTE5Y2QtN2UxMi1hZDZjLTczMzU2ZjIzNjZhNFwiLDIwLjAsXCJzdXBlcnZpc29yXCJdIjogZmFsc2UsICJbXCJub2RlX21hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixcIjAxYTFkOGZiLWNjNjYtN2MwMi04MGE2LWQ3YzIwNmU3Mzk2YVwiLDQuMCxcInN1cGVydmlzb3JcIl0iOiB0cnVlLCAiW1wibm9kZV9tYXJrX2Nyb3NzZWRcIixcImNvZGV4XCIsXCIwMWExZDhmYi1jYzY2LTdjMDItODBhNi1kN2MyMDZlNzM5NmFcIiw1LjAsXCJzdXBlcnZpc29yXCJdIjogZmFsc2UsICJbXCJub2RlX21hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixcIjAxYTFkOTA4LTQ2OTctNzJjMi1iYTgzLTU3OGUwOTJmYjcyYVwiLDYuMCxcInN1cGVydmlzb3JcIl0iOiBmYWxzZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ5MDgtNDY5Ny03MmMyLWJhODMtNTc4ZTA5MmZiNzJhXCIsOC4wLFwic3VwZXJ2aXNvclwiXSI6IGZhbHNlLCAiW1wibm9kZV9tYXJrX2Nyb3NzZWRcIixcImNvZGV4XCIsXCIwMWExZDkxOS0yNTQ0LTdmYjItYmVmZS0wMDIzN2M3NGNlZDJcIiw1LjAsXCJzdXBlcnZpc29yXCJdIjogdHJ1ZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ5MTktMjU0NC03ZmIyLWJlZmUtMDAyMzdjNzRjZWQyXCIsNi4wLFwic3VwZXJ2aXNvclwiXSI6IGZhbHNlLCAiW1wibm9kZV9tYXJrX2Nyb3NzZWRcIixcImNvZGV4XCIsXCIwMWExZDkxOS0yNTQ0LTdmYjItYmVmZS0wMDIzN2M3NGNlZDJcIiw3LjAsXCJzdXBlcnZpc29yXCJdIjogdHJ1ZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ5MTktMjU0NC03ZmIyLWJlZmUtMDAyMzdjNzRjZWQyXCIsOC41LFwic3VwZXJ2aXNvclwiXSI6IGZhbHNlLCAiW1wibm9kZV9tYXJrX2Nyb3NzZWRcIixcImNvZGV4XCIsXCIwMWExZDkxOS0yNTQ0LTdmYjItYmVmZS0wMDIzN2M3NGNlZDJcIiw5LjAsXCJzdXBlcnZpc29yXCJdIjogZmFsc2UsICJbXCJub2RlX21hcmtfY3Jvc3NlZFwiLFwiY29kZXhcIixcIjAxYTFkOTJlLWQxNGYtN2RmMy04MWIxLWJmNDFjMWM4YTA1OVwiLDQuMCxcInN1cGVydmlzb3JcIl0iOiBmYWxzZSwgIltcIm5vZGVfbWFya19jcm9zc2VkXCIsXCJjb2RleFwiLFwiMDFhMWQ5MmUtZDE0Zi03ZGYzLTgxYjEtYmY0MWMxYzhhMDU5XCIsNS4wLFwic3VwZXJ2aXNvclwiXSI6IGZhbHNlfX0",
+      "tool_session": 38354,
+      "pid": 3723356,
+      "owner": "root",
+      "collector": "root",
+      "state": "SIGINT terminal130 FULLCOLLECTED; no rootjobs",
+      "non_json_tail": [
+        {
+          "line": 3,
+          "text": "wait cancelled; board messages remain available"
+        }
+      ]
+    }
+  },
+  "forecast": {
+    "spec": 15,
+    "oracle": 18,
+    "independent_review": 20,
+    "root_validation_collection": 12,
+    "repair": 20,
+    "reserve": 15
+  },
+  "state": "ExactR2 adopted/privatecopy967verified/packetready; NOnewbuilderlaunched; rootownnative refresh NOW, no requiredchildfinal/jobs",
+  "context": {
+    "prepare": 185000,
+    "replace_before": 220000,
+    "next_root_scope_growth_estimate": 80000,
+    "decision": "Recovered root83470 epoch15 plus next review collection/organization50000 fits185000; recheck before further substantial scope.",
+    "actual_observation": {
+      "input_tokens": 132214,
+      "cached_input_tokens": 131840,
+      "output_tokens": 456,
+      "timestamp": "2026-11-14T07:00:56.715Z",
+      "line": 7964,
+      "epoch": 14
+    },
+    "next_phase": "bounded freeze/replay only; before subsequent fresh review dispatch forecast+40k calls requires own native context refresh",
+    "refresh": "own native new_context before fresh review admission; preserve all collections",
+    "fresh_recovery": "ROOT-CONTINUATION-R4.md",
+    "current_recovery": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/ROOT-CONTINUATION-R5.md",
+    "observer": "44424 stoppedSIGINT130fullycollected; all3cursorscontrol/listener-r4-consumed.json; rearmONE",
+    "current_recovery_sha256": "5af39bee7e620c5a6d2de6df86944fb1d66b829084147df5703e879adc68513a",
+    "latest_continuation": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/ROOT-CONTINUATION-R6.md",
+    "latest_continuation_sha256": "5216123890ca59cf0380fb1025505d752c6ebb219e308c0f7a70da81716a08e0",
+    "latest_recovery": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/ROOT-CONTINUATION-R7.md",
+    "refresh_reason": "155598epoch20+50000forecastcross185000prepare",
+    "root_settings": "control/pre-r7-refresh-settings.json",
+    "listener_consumed": "control/listener-r6-consumed.json"
+  },
+  "freeze": {
+    "manifest_sha256": "9234cec46402ebddcd6ae221c76867b038001b6022254e1ebcac3fd43d8425d6",
+    "entries": 967,
+    "archive_sha256": "6a9e75d11ba68965c9580a4d61c9aec11f3417933866763f71b2e1d4aa03946d",
+    "path": "freeze/manifest.json"
+  },
+  "root_join": {
+    "tool_session": 22023,
+    "state": "terminal0_collected",
+    "summary": "root-join/summary.json",
+    "sha256": "68e0b32b7ebe982a187d21c1deff6ae58e6270210e5d0eb94a6e31fc4583f925",
+    "steps_passed": 9,
+    "leftovers": 0
+  },
+  "reservation_repair": {
+    "adoption": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/ROOT-ADOPTION.json",
+    "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/PACKET.md",
+    "state": "CHANGES_REQUIRED missing selectedlowtarget; fullfinalcollected",
+    "source": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/subject",
+    "owner": "root until verified builder",
+    "root_join_summary_sha256": "b8ab29d49a60c7ccba767c90ae4bcdb4a5397903bdf4ea5e0772d8b2ec611716",
+    "review_claim": {
+      "resource": "review/pi-accounting-r10-reservation-repair-r1",
+      "claim_id": "bb03522c-fca8-4ad9-9431-a93d5e22e65e"
+    },
+    "review_collection": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-repair-r1/REVIEW-COLLECTION.json"
+  },
+  "low_target_design": {
+    "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-low-target-r1/PLAN.md",
+    "plan_sha256": "0d55823096785735c39ee3904d13b8675b2eaf818b70661c7e1fe1b3771c9d9d",
+    "state": "COMPLETE fullR2final collected/root exactadopted",
+    "cap_proxy": 6,
+    "forecast": {
+      "last_observed": 21.85406,
+      "design": 6,
+      "builder": 5,
+      "retained_review_remaining": 9.94,
+      "root": 10,
+      "future_fullwork_reserve": 40
+    },
+    "reviewer": "01a1d919-2544-7fb2-befe-00237c74ced2",
+    "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T01-07-46-01a1d919-2544-7fb2-befe-00237c74ced2.jsonl",
+    "identity": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-low-target-r1/IDENTITY.json",
+    "claim_id": "02d11706-c145-4704-bd18-2fed194b946d",
+    "collector": "root",
+    "settings": "Astra/xhigh/default/readonly/never observed",
+    "capacity": "24804epoch0+100000nextscope below185000/220000",
+    "turn": "01a1d91a-1e5d-78b2-8a2a-628d2034890e",
+    "settings_line29": "Astra/xhigh/readonly/never currentturn verified",
+    "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-low-target-r1/REVIEW.md",
+    "report_sha256": "ebf462affed78e042d6ceca4f4bf3bba8947ad52baac1d1b4771142f1ab76e5e",
+    "verdict": "ADOPT_DESIGN_REJECTION_REVISE_LOCAL_PLAN",
+    "revised_plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-low-target-r1/PLAN-R2.md",
+    "revised_plan_sha256": "727ad3974d492cbd523859b68bdfc0be8664dc5448277832565d17652d082904",
+    "refresh_turn": "01a1d922-8047-7601-9739-fecbd618cf82",
+    "refresh_state": "READY FULLCOLLECTED, NEWsettings242 readonlynever241 rootverified next",
+    "continuation": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-low-target-r1/RETAINED-CONTINUATION.md",
+    "context_forecast": "163179+40000 crosses185000 preparation; same reviewer ownnative refresh requested",
+    "context_choice": "retain sameisolatedreviewer after ownnative refresh, 62597+100000 below185000",
+    "review_r2": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-low-target-r1/REVIEW-R2.md",
+    "review_r2_sha256": "e0fa663de7e207c8fd016697b07508a46ccefce12f9ee2a20045d3a65c0f5094"
+  },
+  "budget_binding_reconciliation": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/BUDGET-BINDING-RECONCILIATION.json",
+  "low_target_repair": {
+    "adoption": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/ROOT-ADOPTION.json",
+    "state": "prepared NOTLAUNCHED before rootrefresh",
+    "context_choice": "fresh coherent Sol6.1medium/default oraclebuilder; oldbuilder108124+110000 forecastcross185000, no retained productive assignment",
+    "source_claim": "cdd31c70-209c-4f68-a1cd-7fd91343bad0",
+    "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/PACKET.md",
+    "packet_sha256": "38f862b3e517fd04ef22f0e6493c143cb8725ba270dd59c400072ca8197bed2d",
+    "worker": "/root/s1r10_low_targets",
+    "session": "01a1d92e-d14f-7df3-81b1-bf41c1c8a059",
+    "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T01-31-26-01a1d92e-d14f-7df3-81b1-bf41c1c8a059.jsonl",
+    "requested": "gpt-6.1-sol/medium/default",
+    "status": "workercomplete WHOLEFINALcollected; root9replayPASS; independentreviewdispatchnext",
+    "collector": "root",
+    "cap": 5,
+    "warning": 4,
+    "observed": "Sol6.1/medium/default line12;never/dangerfullaccess11",
+    "identity_delivered": true,
+    "reviewer_refresh": "whole1093char READY FULLCOLLECTED recovered line605; NEWsettings534 Astraxhighdefault readonlynever; explicit61720epoch2/fallback, nojobs. NOTyetappraising",
+    "freeze": "d60017dac28aa3a831cf13db520af94d8224b53f70b12229240bff8dab30ec61",
+    "root_replay": "3087957f00f22678b9e1920549751c1eb63916ea8cf23915a02a0301d6ee1dfb",
+    "review_claim": "de06120e-0aad-4c29-bcdb-8d63c61c65f7",
+    "review_packet_sha256": "c7c94ba0144bac7955ce39611aa3190c22d1e651bd7c8dc1c19da6a169e68c6d",
+    "reviewer_context_decision": "retain sameisolatedepisode ownnative refreshed/READY FULLCOLLECTED;71974epoch2+100000=171974below185000; actualAstraxhighdefault534readonlynever verified; root solecollector",
+    "review_turn": "01a1d93c-b5ba-72d0-ac97-b775adf6b0ce",
+    "review_status": "ACTIVE exactsubject; wholefinalOWED rootviawait_threads",
+    "reviewer_capability": "latestturn611 Astraxhighreadonlynever; applied534default",
+    "worker_complete": true,
+    "worker_final_collected": true
+  },
+  "full_design_binding_reconciliation": {
+    "at": "2026-11-14T10:08:24.711964+00:00",
+    "cause": "Redundant explicit same-parent binding plus verified role_host.launch parent makes ledger issue multiple_parents; not missing charges",
+    "removed_only": {
+      "session_id": "01a1d984-42de-7000-9c59-b3e8b2a7e094",
+      "provider": "codex",
+      "parent_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "bound_at": "2026-11-14T10:05:04Z",
+      "bound_by": "supervisor",
+      "reason": "Fresh separate fullS1 exactplan d1e93793 design criticism; target2cap4 inside unchangedhuman100; root solecollector"
+    },
+    "retained": "verifiedrole_hostparent01a1d6e2 fromlaunchandchildren; allcostlimits/sessioncosts/window retained",
+    "before_sha256": "d7f958f509fd6213e81a184cfae1ec0a91537f7c2289634c6adbb6e047bce516",
+    "before": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/control/pre-full-design-binding-reconciliation.json",
+    "source": "control/full-design-admission-tree.json issue",
+    "decision": "Remove redundant attribution edge; no funding or scope change; fullhistory retained"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "revision": "R3",
+  "prior": "R2 c70ba977",
+  "objective_unchanged": true,
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/PLAN-AMENDMENT.md",
+  "plan_sha256": "c8376f7a94a2ee775a8b117e6424acae457cb86e138f890cf2240fbe2190ce46",
+  "role": "D7 retained amendment judgment",
+  "retained_session": "01a1d88a-9a44-71e1-9dc5-b558108f35de",
+  "packet": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/D7-AMENDMENT-LAUNCH.md",
+  "context_check": "/home/bline/cbm-work/pi-accounting-continuation-20261114/control/D7-amendment-capacity.json",
+  "capacity_decision": "retain:139557+estimated40000<185000 preparation; preserve127k initial judgment and targeted delta",
+  "live_processes": "listener6 exec98549 only; C1 terminal/native final fully assessed",
+  "scope_change": "small route revision within original3items; no new deliverables,providers,mutations or acceptance waiver",
+  "not_authorized": "implementation remains held until review+root disposition",
+  "remaining_review_obligations": "A1,C2,A2b remainders and all106-case B2 remain required; failedR8 will not be accepted; proposed carry to exactsuccessor without clearance",
+  "forecast": {
+    "observed_proxy": 61.13562839999997,
+    "D7_remaining": 3.5735439999999996,
+    "conditional_discriminating_pilot_reserve": 8,
+    "independent_followup_reserve": 12,
+    "root_closure_reserve": 8,
+    "unsettled_tail_reserve": 2,
+    "sum": 94.70917239999997,
+    "basis": "Speed-adjusted API-equivalent proxy; reserve is planning, not spent or complete-S1 guarantee; laterdispatch needs freshdecision"
+  },
+  "owner": "root",
+  "created_at": "2026-11-14T05:51:44.274361+00:00"
+}

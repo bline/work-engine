@@ -1,0 +1,108 @@
+{
+  "schema": "independent-r7-oracle-evidence/1",
+  "version": "1.6-s1",
+  "revision": 7,
+  "worker_session": "01a1d743-6770-7f62-8b09-00671cb43500",
+  "collector": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "packet_sha256": "b428dc44de00b32aef4543f629b46014e10e11afd0aa523d7058ddc338980c03",
+  "requested_model": "gpt-6.1-sol",
+  "requested_effort": "medium",
+  "observed_model_effort": "gpt-6.1-sol/medium from context-status",
+  "cost_actual": "unknown",
+  "bound_proxy_usd": 15,
+  "records": {
+    "legacy-final/check.json": {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/legacy-final/check.json",
+      "sha256": "4103f0b8e3e85772d9098c83e5e99fed07439105fba39b4e70fb2a3c2acf51a8"
+    },
+    "legacy-final/selftest.json": {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/legacy-final/selftest.json",
+      "sha256": "166ec936ed12bd35f9944de3f257e577de40836c973bc91309eb0e20cdec8d1f"
+    },
+    "legacy-final/revisions.json": {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/legacy-final/revisions.json",
+      "sha256": "e2c239d9450a9fdc57e148ae2d77939374203f43ab3db43075ddad7883a3d6ed"
+    },
+    "sabotage-final/sabotage.json": {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/sabotage-final/sabotage.json",
+      "sha256": "4322420657728eba1a25a5b6f1b73401a9d76ecb29668bccad87d90aef5c3220"
+    },
+    "regression-probe/regression-probe.json": {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/regression-probe/regression-probe.json",
+      "sha256": "81d0e68569c686cab220170985b813bb144e584fd57a69da42203dee23ab89ab"
+    },
+    "rust-first/build.json": {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/rust-first/build.json",
+      "sha256": "b567591e5129f446987d5a85a9cbb0e1a207cf415276f21f901feb79ec6f1089"
+    },
+    "rust-first/assertions.json": {
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/rust-first/assertions.json",
+      "sha256": "322873799fc24de906c4597273e6796f8283a40465922983999f3855b3ad0724"
+    }
+  },
+  "freeze_manifest": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/freeze-final/manifest.json",
+    "sha256": "67cfe1432ed3c68b1e111137b7346da68acdc82b8d0b4670609074835be1e988"
+  },
+  "freeze_archive": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/freeze-final/subject.tar",
+    "sha256": "b2f5a5b28e1faca4d7173ada9243e7dd33ba8607efbcb54d90677b7b3c1dafcb"
+  },
+  "freeze_live_match": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/freeze-live-match.json",
+    "sha256": "0f71d50ab38f64718a5bf98f3404c0298a8cf170c7005cba99bdd2828f178820"
+  },
+  "raw_preservation": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/raw-preservation.json",
+    "sha256": "0900f57f48c08cb1fcab8e1ae07b49c475b24705b506556f49d9f01ff8484892"
+  },
+  "opaque_source_window_start": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/source-binding-start.json",
+    "sha256": "6ad0878c5542b4d7c126fc677b6b2acdc308a24d22d80d8a9197c95e5db7e447"
+  },
+  "opaque_source_window_after": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/source-binding-after.json",
+    "sha256": "9d55e9eebf6941c947e9ae0d3dc59dcc08573f2f4a21455367861aec8cc293a5"
+  },
+  "rust_binary": [
+    {
+      "name": "independent_raw_axes",
+      "kind": [
+        "test"
+      ],
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/target-oracle/debug/deps/independent_raw_axes-fd146da9d6dec9b5",
+      "sha256": "0e6467cd462ee70866d2079d89b75d4ed05edb3e78ac0fbbade80587152ff27e"
+    }
+  ],
+  "rust_assertions_passed": 7,
+  "legacy_sabotages_caught": 102,
+  "raw_cases_preserved": 175,
+  "raw_historical_qualification": {
+    "cases": 173,
+    "selected_cases": 137,
+    "sources": 142,
+    "rows": 287,
+    "groups": 147
+  },
+  "failures_preserved": [
+    "initial custody invocation missing --name; no process started",
+    "legacy-first no-op provisional=True mutation; legacy-final all102caught but intended-message matcher required old unlogged-change diagnostic; corrected toggle and exact logged-to mismatch; sabotage-final catches102 intended reasons"
+  ],
+  "conduct": {
+    "canonical_semantic_reads": false,
+    "canonical_imports": false,
+    "old_expected_and_validator_reads": "authorized migration only",
+    "new_interface": "JSON mechanics17e94308 only",
+    "opaque_hashes": "canonical source bytes hashed for identity; not semantically read",
+    "isolation_attestation": false,
+    "formatting_incident": "spec owner cargo fmt touched independent test23:43:58Z; no preformat snapshot, exact intermediate formatting-only delta unestablished; independently verified owned assertions and reran rustfmt23:45Z; final digest owned",
+    "incidental_board_exposure": "Mandatory final board read included spec-owner terminal summary sequence5293 after own source/tests frozen; not used as semantic oracle input. No underlying spec owner result/reasoning file read."
+  },
+  "limits": [
+    "Rust7/7 is intermediate build: canonical decisions.rs/lib.rs changed; root final joined exact-source validation required",
+    "Full raw C-K financial conformance unestablished",
+    "live gate authority unestablished;test_mock conditional only",
+    "worker completion is not root acceptance/integration/S2a entry"
+  ],
+  "processes": "all custody children terminal/no leftovers; no subagents"
+}

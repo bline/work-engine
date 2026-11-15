@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "recursive": false,
+  "completeness": "complete_within_scanned_directory",
+  "scanned_rollouts": 856,
+  "skipped_metadata": 0,
+  "diagnostics": [],
+  "diagnostics_omitted": 0,
+  "duplicate_thread_ids": [],
+  "conflicting_id_candidates": {},
+  "cycle_edges": [],
+  "ambiguous_agent_paths": {},
+  "agents": [
+    {
+      "thread_id": "01a1d837-47ad-7320-8a7f-3b2f8d725b11",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/context_refresh_helper",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T21-01-03-01a1d837-47ad-7320-8a7f-3b2f8d725b11.jsonl"
+    },
+    {
+      "thread_id": "01a1d802-f8d9-7880-9614-df28f2c43491",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1_arch_design_r6",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T20-03-55-01a1d802-f8d9-7880-9614-df28f2c43491.jsonl"
+    },
+    {
+      "thread_id": "01a1d77d-43dc-7210-a674-615860bfb6d2",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1_design_r3",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T17-37-53-01a1d77d-43dc-7210-a674-615860bfb6d2.jsonl"
+    },
+    {
+      "thread_id": "01a1d700-c690-7d90-a2b2-620ece8f2a2f",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1_oracle_build",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T15-21-54-01a1d700-c690-7d90-a2b2-620ece8f2a2f.jsonl"
+    },
+    {
+      "thread_id": "01a1d6f2-1f0e-7b70-8757-2d848076a2ce",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1_raw_oracle",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T15-05-54-01a1d6f2-1f0e-7b70-8757-2d848076a2ce.jsonl"
+    },
+    {
+      "thread_id": "01a1d700-afdf-7f52-94a6-7a59c5e81650",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1_spec_build",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T15-21-48-01a1d700-afdf-7f52-94a6-7a59c5e81650.jsonl"
+    },
+    {
+      "thread_id": "01a1d6f0-831b-7bd1-b290-46b347825c56",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1_spec_design",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T15-04-08-01a1d6f0-831b-7bd1-b290-46b347825c56.jsonl"
+    },
+    {
+      "thread_id": "01a1d95a-586c-7181-bbb7-9e7733ef27a4",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1r10_evaluation_premise",
+      "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T02-18-59-01a1d95a-586c-7181-bbb7-9e7733ef27a4.jsonl"
+    },
+    {
+      "thread_id": "01a1d92e-d14f-7df3-81b1-bf41c1c8a059",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1r10_low_targets",
+      "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T01-31-26-01a1d92e-d14f-7df3-81b1-bf41c1c8a059.jsonl"
+    },
+    {
+      "thread_id": "01a1d8da-e462-7c71-a278-e22e276bc26f",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1r10_oracle",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-59-46-01a1d8da-e462-7c71-a278-e22e276bc26f.jsonl"
+    },
+    {
+      "thread_id": "01a1d908-4697-72c2-ba83-578e092fb72a",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1r10_reservation_repair",
+      "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T00-49-20-01a1d908-4697-72c2-ba83-578e092fb72a.jsonl"
+    },
+    {
+      "thread_id": "01a1d8da-c5bd-7612-bac2-bfdf1b189e87",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1r10_spec",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-59-38-01a1d8da-c5bd-7612-bac2-bfdf1b189e87.jsonl"
+    },
+    {
+      "thread_id": "01a1d743-6770-7f62-8b09-00671cb43500",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1r7_oracle",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T16-34-41-01a1d743-6770-7f62-8b09-00671cb43500.jsonl"
+    },
+    {
+      "thread_id": "01a1d743-3af3-7300-83ba-5a5eb31c82ca",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1r7_spec",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T16-34-29-01a1d743-3af3-7300-83ba-5a5eb31c82ca.jsonl"
+    },
+    {
+      "thread_id": "01a1d840-e1a4-7b11-9b77-151fba94962a",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1r8_complete_a",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T21-11-33-01a1d840-e1a4-7b11-9b77-151fba94962a.jsonl"
+    },
+    {
+      "thread_id": "01a1d840-f94e-7631-aef9-15c312b1ae20",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1r8_complete_b",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T21-11-39-01a1d840-f94e-7631-aef9-15c312b1ae20.jsonl"
+    },
+    {
+      "thread_id": "01a1d840-c933-78b1-8b7a-805a0ef28378",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1r8_complete_integration",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T21-11-26-01a1d840-c933-78b1-8b7a-805a0ef28378.jsonl"
+    },
+    {
+      "thread_id": "01a1d81b-323b-7113-93ad-7cfb06e7c28f",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1r8_oracle",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T20-30-23-01a1d81b-323b-7113-93ad-7cfb06e7c28f.jsonl"
+    },
+    {
+      "thread_id": "01a1d81b-18c4-7f11-af00-c6a75867e8cc",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1r8_spec",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T20-30-16-01a1d81b-18c4-7f11-af00-c6a75867e8cc.jsonl"
+    },
+    {
+      "thread_id": "01a1d8a4-d798-7fd1-ae5e-6955ec003480",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1r9_oracle_pilot",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-00-44-01a1d8a4-d798-7fd1-ae5e-6955ec003480.jsonl"
+    },
+    {
+      "thread_id": "01a1d8a4-b80e-7163-af3b-d257f945693e",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1r9_spec_pilot",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-00-36-01a1d8a4-b80e-7163-af3b-d257f945693e.jsonl"
+    }
+  ]
+}

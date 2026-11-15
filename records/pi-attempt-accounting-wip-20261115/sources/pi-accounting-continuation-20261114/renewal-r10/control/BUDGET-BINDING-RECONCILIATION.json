@@ -1,0 +1,16 @@
+{
+  "at": "2026-11-14T08:12:41.994754+00:00",
+  "removed_duplicate_manual_binding": [
+    {
+      "session_id": "01a1d919-2544-7fb2-befe-00237c74ced2",
+      "provider": "codex",
+      "parent_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "bound_at": "2026-11-14T08:07:58Z",
+      "bound_by": "supervisor",
+      "reason": "Fresh separate exact lowtarget architecture review cap6 inside renewed100 rootsolecollector"
+    }
+  ],
+  "retained_edge": "verified role_host ledger parent root01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "reason": "same child and same parent duplicate caused multiple_parents partial coverage; no session, spend window, allowance or grant removed",
+  "before_tree": "control/post-r5-tree.json"
+}

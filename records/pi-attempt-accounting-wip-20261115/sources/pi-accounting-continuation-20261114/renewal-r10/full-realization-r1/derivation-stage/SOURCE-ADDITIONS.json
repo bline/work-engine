@@ -1,0 +1,27 @@
+[
+  {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/spec/ck.json",
+    "sha256": "a3a30398f289c9edcb4c3a3b0009a9dff88021378658062ed532e90226400787",
+    "standing": "targeted static source or selected policy read; no full Rust dependency closure"
+  },
+  {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/validator/r10_admitted.json",
+    "sha256": "a85e3374bbaab675b29459c7c88c38334144f14bd4e7cdb400ab5def06f905e8",
+    "standing": "targeted static source or selected policy read; no full Rust dependency closure"
+  },
+  {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/tooling/spec-check/tests/independent_raw_axes.rs",
+    "sha256": "faa1236dd0382443e7e920e87924a178635c76fe76d7b03e72af44b82d116c82",
+    "standing": "targeted static source or selected policy read; no full Rust dependency closure"
+  },
+  {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/tooling/spec-check/src/accounting.rs",
+    "sha256": "bd17b4c2af56835a17d1732ba9f580b333335140c01fbe758fbf661276a1a482",
+    "standing": "targeted static source or selected policy read; no full Rust dependency closure"
+  },
+  {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/tooling/spec-check/src/applicability.rs",
+    "sha256": "81b2c6834565bbb0a2ea723567a95279e14c19d82ac45980ab8d280353dde2eb",
+    "standing": "targeted static source or selected policy read; no full Rust dependency closure"
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "cases": 69,
+  "attempts": 68,
+  "active_units": 68,
+  "scopes": 150,
+  "existing_claims_preserved": 8,
+  "new_claims": 142,
+  "zero_scopes": 100,
+  "positive_scopes": 50,
+  "accepted_F_coverages": 50,
+  "valuation_records": 60,
+  "raw_input_digests_preserved": 69,
+  "exact_baseline_reversals": 69,
+  "consistent_wrong_controls": 10,
+  "partition_A_only": true,
+  "S1_acceptance": false
+}

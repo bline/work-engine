@@ -1,0 +1,208 @@
+{
+ "always_accept": {
+  "caught_for_intended_reason": true,
+  "differences": 393,
+  "intended_field": "admission",
+  "intended_field_differences": 158
+ },
+ "always_reject": {
+  "caught_for_intended_reason": true,
+  "differences": 235,
+  "intended_field": "admission",
+  "intended_field_differences": 131
+ },
+ "always_unknown": {
+  "caught_for_intended_reason": true,
+  "differences": 97,
+  "intended_field": "attempts",
+  "intended_field_differences": 97
+ },
+ "always_zero": {
+  "caught_for_intended_reason": true,
+  "differences": 301,
+  "intended_field": "attempts",
+  "intended_field_differences": 154
+ },
+ "billing_from_obligation": {
+  "caught_for_intended_reason": true,
+  "differences": 34,
+  "intended_field": "attempts",
+  "intended_field_differences": 34
+ },
+ "cap_as_bound": {
+  "caught_for_intended_reason": true,
+  "differences": 132,
+  "intended_field": "objectives",
+  "intended_field_differences": 132
+ },
+ "closure_precedence": {
+  "caught_for_intended_reason": true,
+  "differences": 3,
+  "intended_field": "admission",
+  "intended_field_differences": 3
+ },
+ "conflicting_reservations_summed": {
+  "caught_for_intended_reason": true,
+  "differences": 1,
+  "intended_field": "attempts",
+  "intended_field_differences": 1
+ },
+ "corpus_failures": 0,
+ "correct_result_set_failures": 0,
+ "current_retirement_released": {
+  "caught_for_intended_reason": true,
+  "differences": 96,
+  "intended_field": "objectives",
+  "intended_field_differences": 96
+ },
+ "diagnostics_move_money": {
+  "caught_for_intended_reason": true,
+  "differences": 16,
+  "intended_field": "attempts",
+  "intended_field_differences": 16
+ },
+ "double_count_closed": {
+  "caught_for_intended_reason": true,
+  "differences": 98,
+  "intended_field": "objectives",
+  "intended_field_differences": 98
+ },
+ "drop_malformed": {
+  "caught_for_intended_reason": true,
+  "differences": 12,
+  "intended_field": "attempts",
+  "intended_field_differences": 6
+ },
+ "early_release": {
+  "caught_for_intended_reason": true,
+  "differences": 133,
+  "intended_field": "objectives",
+  "intended_field_differences": 133
+ },
+ "erased_admission_contradiction": {
+  "caught_for_intended_reason": true,
+  "differences": 6,
+  "intended_field": "attribution",
+  "intended_field_differences": 3
+ },
+ "error_status_discards_usage": {
+  "caught_for_intended_reason": true,
+  "differences": 1,
+  "intended_field": "attempts",
+  "intended_field_differences": 1
+ },
+ "fake_billing_bound_qualified": {
+  "caught_for_intended_reason": true,
+  "differences": 6,
+  "intended_field": "objectives",
+  "intended_field_differences": 6
+ },
+ "false_finite_missing_tier": {
+  "caught_for_intended_reason": true,
+  "differences": 2,
+  "intended_field": "attempts",
+  "intended_field_differences": 2
+ },
+ "finite_high_from_incomplete_pricing": {
+  "caught_for_intended_reason": true,
+  "differences": 5,
+  "intended_field": "attempts",
+  "intended_field_differences": 5
+ },
+ "forwarding_always_unknown": {
+  "caught_for_intended_reason": true,
+  "differences": 138,
+  "intended_field": "attempts",
+  "intended_field_differences": 138
+ },
+ "incomplete_usage_releases_reservation": {
+  "caught_for_intended_reason": true,
+  "differences": 5,
+  "intended_field": "attempts",
+  "intended_field_differences": 5
+ },
+ "known_over_limit_not_refused": {
+  "caught_for_intended_reason": true,
+  "differences": 109,
+  "intended_field": "admission",
+  "intended_field_differences": 109
+ },
+ "lost_obligations": {
+  "caught_for_intended_reason": true,
+  "differences": 89,
+  "intended_field": "objectives",
+  "intended_field_differences": 44
+ },
+ "lost_predecessor_obligations": {
+  "caught_for_intended_reason": true,
+  "differences": 9,
+  "intended_field": "objectives",
+  "intended_field_differences": 5
+ },
+ "money_changes_with_window": {
+  "caught_for_intended_reason": true,
+  "differences": 8,
+  "intended_field": "window",
+  "intended_field_differences": 4
+ },
+ "more_restrictive_than_expected": {
+  "caught_for_intended_reason": true,
+  "differences": 97,
+  "intended_field": "attempts",
+  "intended_field_differences": 97
+ },
+ "qualified_billing_bound_ignored": {
+  "caught_for_intended_reason": true,
+  "differences": 1,
+  "intended_field": "objectives",
+  "intended_field_differences": 1
+ },
+ "self_asserted_gate_trusted": {
+  "caught_for_intended_reason": true,
+  "differences": 17,
+  "intended_field": "objectives",
+  "intended_field_differences": 17
+ },
+ "settlement_replaced_by_reservation": {
+  "caught_for_intended_reason": true,
+  "differences": 87,
+  "intended_field": "attempts",
+  "intended_field_differences": 87
+ },
+ "suppress_diagnostics": {
+  "caught_for_intended_reason": true,
+  "differences": 18,
+  "intended_field": "attempts",
+  "intended_field_differences": 18
+ },
+ "timestamp_only_placement": {
+  "caught_for_intended_reason": true,
+  "differences": 4,
+  "intended_field": "attribution",
+  "intended_field_differences": 2
+ },
+ "unadmitted_ignored": {
+  "caught_for_intended_reason": true,
+  "differences": 48,
+  "intended_field": "attribution",
+  "intended_field_differences": 26
+ },
+ "unknown_as_exact": {
+  "caught_for_intended_reason": true,
+  "differences": 74,
+  "intended_field": "attempts",
+  "intended_field_differences": 74
+ },
+ "unknown_below_limit_refused": {
+  "caught_for_intended_reason": true,
+  "differences": 46,
+  "intended_field": "admission",
+  "intended_field_differences": 46
+ },
+ "unresolved_as_zero": {
+  "caught_for_intended_reason": true,
+  "differences": 74,
+  "intended_field": "attempts",
+  "intended_field_differences": 74
+ }
+}

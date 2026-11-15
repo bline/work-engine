@@ -1,0 +1,39 @@
+{
+  "at": "2026-11-14T06:00:24.893258+00:00",
+  "owner": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "authority": "human ownership/futuredevelopment77;100/fourhour3204;continue4884",
+  "base_plan": "43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61",
+  "amendment": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/PLAN-AMENDMENT.md",
+    "sha256": "c8376f7a94a2ee775a8b117e6424acae457cb86e138f890cf2240fbe2190ce46"
+  },
+  "review": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/D7-AMENDMENT-REVIEW.md",
+    "sha256": "2c3b7ec129e649e6d0ec3bd1de64a7cc564c997fee334db35d87a2d1a86d3402",
+    "verdict": "RECOMMEND_BOUNDED_IMPLEMENTATION",
+    "full_read": true,
+    "continuity": "retained same isolated D7 episode, initial fresh Astraxhigh"
+  },
+  "decision": "adopt amendment only for staged discriminating realization; preserve all unimplemented portions as later dependencies",
+  "bounded_scope": [
+    "P9 raw-charge preservation actual Python/Rust finite consumers",
+    "C-owned primary membership and exact link/valuation application",
+    "actual response_model numeric7 conservative qualification",
+    "reservation evidence-class cardinality separately from amountmax"
+  ],
+  "guard": "DESIGN_REMEDIATION_REQUIRED_BOUNDED_PILOT_ONLY",
+  "not_accepted": [
+    "all11 implementation findings",
+    "failedR8",
+    "fullcorpusmigration",
+    "S1",
+    "S2a",
+    "production/integration"
+  ],
+  "history": "all prior rejections/inherited defects retained; infrastructure interruptions excluded; no counter reset",
+  "P3_disposition": {
+    "shared_grant_pair_substitution": "include in exactlink pilot",
+    "integer_representation_agreement": "retain required before eventual schema agreement; outside current fourclaim stage"
+  },
+  "full_acceptance_dependencies": "amendment section5 and original A/B/C obligations unchanged; A1/C2/A2b omissions and B2 carried explicitly to exact successor review, not cleared"
+}

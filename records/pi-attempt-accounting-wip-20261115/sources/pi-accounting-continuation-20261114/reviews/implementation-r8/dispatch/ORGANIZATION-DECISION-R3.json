@@ -1,0 +1,10 @@
+{
+  "candidate": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/dispatch/ORGANIZATION-CANDIDATE-R3.json",
+  "candidate_sha256": "c5f389b03e8548054d44358da0d1f9ff77f17fa9958d9b20bbb02bff3a46fe14",
+  "decision": "accepted_only_for_retained_D7_review",
+  "owner": "root",
+  "authority": "Existing delegated owner; user100/fourhour original3items; small route revision",
+  "implementation_admission": "held",
+  "conditional_reserves": "not dispatch grants",
+  "prior_decision_retained": "R2 role readsets/history and allunreviewedobligations preserved; no newwhole-clearance claim"
+}

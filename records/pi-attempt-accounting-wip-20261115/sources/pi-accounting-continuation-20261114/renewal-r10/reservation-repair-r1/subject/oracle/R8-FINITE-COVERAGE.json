@@ -1,0 +1,122 @@
+{
+  "all_nine_inherited_findings": {
+    "A01": "H1-H4/C1-C2 finite claims; executable confluence REQUIRED/UNMET",
+    "A02": "L4 actual local lows qualified15/15/20/60",
+    "A03": "A3 finite PiApi unresolved control; total full raw applicability REQUIRED/UNMET",
+    "A04": "W1 actual external schema and full175case/374scope supplied references pass joined-2; arbitrary raw-to-wire conformance remains unestablished",
+    "A05": "O1 spec-owned constructor removal plus independent raw C release negative",
+    "A06": "D1 actual semantic-node consumer/digest invalidation",
+    "A07": "F2-model7 finite malformed-state no favorable replacement control; inherited independent raw axes remain",
+    "A08": "P1 actual exact-byte cardinality; unknown-scope provenance admission REQUIRED/UNMET",
+    "A09": "S1 actual standard schema/Rust fixed agreement; full canonical schema suite spec/root-owned"
+  },
+  "group_count": 22,
+  "groups": {
+    "A3": {
+      "evidence": "oracle/r8-controls/A3.expected.json",
+      "required_unmet": "full executable raw-to-output and arbitrary discovery-order confluence",
+      "standing": "finite independently typed raw-policy literal acceptance/rejection only"
+    },
+    "C1": {
+      "evidence": "oracle/r8-controls/C1.expected.json",
+      "required_unmet": "full executable raw-to-output and arbitrary discovery-order confluence",
+      "standing": "finite independently typed raw-policy literal acceptance/rejection only"
+    },
+    "C2": {
+      "evidence": "oracle/r8-controls/C2.expected.json",
+      "required_unmet": "full executable raw-to-output and arbitrary discovery-order confluence",
+      "standing": "finite independently typed raw-policy literal acceptance/rejection only"
+    },
+    "D1": {
+      "evidence": "validator/test_r8_dependencies.py; actual impact CLI custody/specific-dependency-mutations",
+      "standing": "10protected nodes plus3field-policy variants;6required consumers actually reached and digests invalidated; null acknowledgements actually reported unestablished"
+    },
+    "F1": {
+      "evidence": "oracle/r8-controls/F1.expected.json",
+      "required_unmet": "full executable raw-to-output and arbitrary discovery-order confluence",
+      "standing": "finite independently typed raw-policy literal acceptance/rejection only"
+    },
+    "F2": {
+      "evidence": "oracle/r8-controls/F2-model7.expected.json",
+      "required_unmet": "full executable raw-to-output and arbitrary discovery-order confluence",
+      "standing": "finite independently typed raw-policy literal acceptance/rejection only"
+    },
+    "F3": {
+      "evidence": "oracle/r8-controls/F3-unlinked.expected.json",
+      "required_unmet": "full executable raw-to-output and arbitrary discovery-order confluence",
+      "standing": "finite independently typed raw-policy literal acceptance/rejection only"
+    },
+    "F4": {
+      "evidence": "oracle/r8-controls/F4.expected.json",
+      "required_unmet": "full executable raw-to-output and arbitrary discovery-order confluence",
+      "standing": "finite independently typed raw-policy literal acceptance/rejection only"
+    },
+    "G1": {
+      "evidence": "oracle/r8-controls/G1.expected.json",
+      "required_unmet": "full executable raw-to-output and arbitrary discovery-order confluence",
+      "standing": "finite independently typed raw-policy literal acceptance/rejection only"
+    },
+    "H1": {
+      "evidence": "oracle/r8-controls/H1.expected.json",
+      "required_unmet": "full executable raw-to-output and arbitrary discovery-order confluence",
+      "standing": "finite independently typed raw-policy literal acceptance/rejection only"
+    },
+    "H2": {
+      "evidence": "oracle/r8-controls/H2.expected.json",
+      "required_unmet": "full executable raw-to-output and arbitrary discovery-order confluence",
+      "standing": "finite independently typed raw-policy literal acceptance/rejection only"
+    },
+    "H3": {
+      "evidence": "oracle/r8-controls/H3.expected.json",
+      "required_unmet": "full executable raw-to-output and arbitrary discovery-order confluence",
+      "standing": "finite independently typed raw-policy literal acceptance/rejection only"
+    },
+    "H4": {
+      "evidence": "oracle/r8-controls/H4.expected.json",
+      "required_unmet": "full executable raw-to-output and arbitrary discovery-order confluence",
+      "standing": "finite independently typed raw-policy literal acceptance/rejection only"
+    },
+    "L1": {
+      "evidence": "oracle/r8-controls/L1.expected.json",
+      "required_unmet": "full executable raw-to-output and arbitrary discovery-order confluence",
+      "standing": "finite independently typed raw-policy literal acceptance/rejection only"
+    },
+    "L2": {
+      "evidence": "oracle/r8-controls/L2.expected.json",
+      "required_unmet": "full executable raw-to-output and arbitrary discovery-order confluence",
+      "standing": "finite independently typed raw-policy literal acceptance/rejection only"
+    },
+    "L3": {
+      "evidence": "oracle/r8-controls/L3.expected.json",
+      "required_unmet": "full executable raw-to-output and arbitrary discovery-order confluence",
+      "standing": "finite independently typed raw-policy literal acceptance/rejection only"
+    },
+    "L4": {
+      "evidence": "validator/test_r8_entrypoints.py; tooling/spec-check/tests/independent_r8_controls.rs; oracle/R8-LOW-ASSERTIONS.json",
+      "standing": "actual entrypoint15/15/20/60 local-low controls and all374independent raw-bound scope assertions pass joined-2; no full arbitrary raw evaluator"
+    },
+    "M1": {
+      "evidence": "oracle/r8-controls/M1.expected.json",
+      "required_unmet": "full executable raw-to-output and arbitrary discovery-order confluence",
+      "standing": "finite independently typed raw-policy literal acceptance/rejection only"
+    },
+    "O1": {
+      "evidence": "spec-owned tooling/spec-check/tests/structural_r8.rs; oracle/r8-controls/DOLLAR-BAD-ORDER.expected.json",
+      "standing": "S constructor structure owned by spec qualification; independent raw assertion rejects erased/forged dollar applicability; full C raw implementation REQUIRED/UNMET"
+    },
+    "P1": {
+      "evidence": "validator/test_r8_entrypoints.py; validator/test_r8_assertions.py; actual check/selftest/revisions/sabotage",
+      "standing": "actual copied Python local-low/exact-byte-cardinality/replacement-low consumers and self-consistent negative controls; legacy structural175pass not full qualification"
+    },
+    "S1": {
+      "evidence": "validator/test_r8_evidence.py; spec-owned tests/schema_agreement.py",
+      "standing": "actual Python Draft2020-12/Rust shape agreement for fixed evidence controls; canonical Stage/Boundary broader suite owned by spec/root"
+    },
+    "W1": {
+      "evidence": "validator/test_r8_evidence.py; corpus U08/Q5/U07 revision logs; spec-owned tests/wire_corpus.py",
+      "standing": "actual wire/schema controls and full175case per-active-unit AccountingResult/scope refs pass both joined-2 consumers; supplied finite declarations only"
+    }
+  },
+  "schema": "r8-bounded-control-coverage/1",
+  "completion_evidence": "R8-COMPLETION.json; completion/integration/join-2/summary.json d3b62db1aae591ee22f552eba79891b0f0c9fd48daa1011f5ca673f1f26ff1a4"
+}

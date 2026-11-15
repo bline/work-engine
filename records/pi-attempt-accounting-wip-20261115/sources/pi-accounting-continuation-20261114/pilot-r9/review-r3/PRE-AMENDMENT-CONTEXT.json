@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "session_id": "01a1d8c2-754e-7c13-84ec-570c1b872e56",
+  "root_session_id": "01a1d8c2-754e-7c13-84ec-570c1b872e56",
+  "forked_from_id": null,
+  "own_history_start_ordinal": null,
+  "inherited_records_skipped": 0,
+  "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T23-33-05-01a1d8c2-754e-7c13-84ec-570c1b872e56.jsonl",
+  "file_modified_unix_seconds": 1794638506,
+  "file_age_seconds": 156,
+  "freshness": "recent_file_modification",
+  "observed_at": "2026-11-14T06:41:46.147Z",
+  "recorded_model": "gpt-6-astra",
+  "recorded_effort": "xhigh",
+  "lineage": [],
+  "latest_request": {
+    "input_tokens": 181926,
+    "cached_input_tokens": 181248,
+    "output_tokens": 2978,
+    "timestamp": "2026-11-14T06:41:46.147Z",
+    "line": 232,
+    "epoch": 0
+  },
+  "latest_request_status": "latest_valid_observation",
+  "context_window_tokens": 258400,
+  "context_window_source": "event_msg.token_count.info.model_context_window",
+  "context_fraction_proxy": 0.7040479876160991,
+  "context_headroom_tokens_proxy": 76474,
+  "recent_requests": [
+    {
+      "input_tokens": 166896,
+      "cached_input_tokens": 165888,
+      "output_tokens": 948,
+      "timestamp": "2026-11-14T06:37:38.253Z",
+      "line": 178,
+      "epoch": 0
+    },
+    {
+      "input_tokens": 168428,
+      "cached_input_tokens": 167680,
+      "output_tokens": 1233,
+      "timestamp": "2026-11-14T06:38:13.208Z",
+      "line": 185,
+      "epoch": 0
+    },
+    {
+      "input_tokens": 170622,
+      "cached_input_tokens": 169472,
+      "output_tokens": 1078,
+      "timestamp": "2026-11-14T06:38:46.825Z",
+      "line": 193,
+      "epoch": 0
+    },
+    {
+      "input_tokens": 172499,
+      "cached_input_tokens": 171520,
+      "output_tokens": 977,
+      "timestamp": "2026-11-14T06:39:17.788Z",
+      "line": 203,
+      "epoch": 0
+    },
+    {
+      "input_tokens": 175091,
+      "cached_input_tokens": 173312,
+      "output_tokens": 562,
+      "timestamp": "2026-11-14T06:39:34.255Z",
+      "line": 211,
+      "epoch": 0
+    },
+    {
+      "input_tokens": 179235,
+      "cached_input_tokens": 175488,
+      "output_tokens": 931,
+      "timestamp": "2026-11-14T06:40:01.558Z",
+      "line": 219,
+      "epoch": 0
+    },
+    {
+      "input_tokens": 181124,
+      "cached_input_tokens": 179968,
+      "output_tokens": 330,
+      "timestamp": "2026-11-14T06:40:11.152Z",
+      "line": 226,
+      "epoch": 0
+    },
+    {
+      "input_tokens": 181926,
+      "cached_input_tokens": 181248,
+      "output_tokens": 2978,
+      "timestamp": "2026-11-14T06:41:46.147Z",
+      "line": 232,
+      "epoch": 0
+    }
+  ],
+  "recent_growth": {
+    "first_input_tokens": 166896,
+    "last_input_tokens": 181926,
+    "delta_tokens": 15030,
+    "sample_count": 8,
+    "provenance": "distinct token_count.last_token_usage snapshots in current observed epoch, at most 8; endpoint difference, not a sum"
+  },
+  "economics": null,
+  "limitations": [],
+  "diagnostic_counts": {},
+  "diagnostics_omitted": 0
+}

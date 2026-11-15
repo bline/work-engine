@@ -1,0 +1,1292 @@
+{
+  "authored_by": "01a1d840-f94e-7631-aef9-15c312b1ae20",
+  "at": "2026-11-14T04:22:11.746031+00:00",
+  "source_stopped": true,
+  "entries": [
+    {
+      "path": "corpus/cases/A04-undated-settlement-between-dated-neighbours.json",
+      "sha256": "7fb4a42887ddd7a17eaa6407454a1941a49e302404782501cd31166b71b014d5"
+    },
+    {
+      "path": "corpus/cases/A06-reservation-usage-null-status-no-id.json",
+      "sha256": "98e3ff4fda648b37b7fe034a63410112d3c1ef96aa1287a6790a9bd291ab1cab"
+    },
+    {
+      "path": "corpus/cases/A1-01-upstream-error-and-unknown-event.json",
+      "sha256": "1d1899c91bd23c30e00efd608ce91d95a7c3f8994981f97d6235377238b3404f"
+    },
+    {
+      "path": "corpus/cases/A1-02-undated-row-inverted-neighbours.json",
+      "sha256": "e7fc881dc95c80f326c7fc3a8e0444084109f7f1adc36f578a2f1fbd38754ac6"
+    },
+    {
+      "path": "corpus/cases/A1-03-unreferenced-log.json",
+      "sha256": "987fc49d6d10ee755ad5b5b302c2bed582f58428250c611c33e2fe8c084ea255"
+    },
+    {
+      "path": "corpus/cases/A1-06-control-no-session-file.json",
+      "sha256": "226bc82d4898027e42a65be7f91bd164fdae47527e77b6b6a7b48edefae36a7e"
+    },
+    {
+      "path": "corpus/cases/A1-06-session-file-is-not-evidence.json",
+      "sha256": "8c0577f37fa1f2cf01106cbb19f3ac7b894e6c740da97d04706f03a5f860d7e5"
+    },
+    {
+      "path": "corpus/cases/C1-control-before-reference.json",
+      "sha256": "51a92db3665f60327a4e4cebb9cb9089654fe2363f95f16a00e3a0fc01c48c17"
+    },
+    {
+      "path": "corpus/cases/C1-settlement-after-reference-time.json",
+      "sha256": "bebbd8e540291d6d1b4c52bb592349511372b0764019a6b55bd2a908a96717f4"
+    },
+    {
+      "path": "corpus/cases/C2-unsettled-reservation-after-reference-time.json",
+      "sha256": "1e0e60f29cf3549dea2dd241f02e57b0db85bbce0b941297c9d011331c71af8c"
+    },
+    {
+      "path": "corpus/cases/C3-identical-reservation-copy.json",
+      "sha256": "9f295056222746d91d671f4aaa879ad04f514f70a36e225b677b70bd5d90c8e3"
+    },
+    {
+      "path": "corpus/cases/C4-missing-charge-basis.json",
+      "sha256": "3bec5ba42c3cb0422e9d93e35891e686ac74b88dc06603c31a02f082addb0bd9"
+    },
+    {
+      "path": "corpus/cases/D1-closed-objective-provisional.json",
+      "sha256": "7110660f04a8af8e7576857ee13a23f46bde5075e5f2db9913ff9954c0a3094e"
+    },
+    {
+      "path": "corpus/cases/D1-successor-constrained-by-predecessor-obligations.json",
+      "sha256": "03c1c3ed6dc7151673486c086bc514af646fc009ccb19dc0c3bf09280dda51fb"
+    },
+    {
+      "path": "corpus/cases/D4-unbudgeted-error-status.json",
+      "sha256": "066343daf97d03b9eb0d466520a7c4425aecba1a6d941d03905e5cf7dd4a75d3"
+    },
+    {
+      "path": "corpus/cases/DUP-response-id-across-attempts.json",
+      "sha256": "cff0c790629520a79f61e2db2de469396d65c6056c6a890cde501f6c6449485d"
+    },
+    {
+      "path": "corpus/cases/Ha-control-consistent-split.json",
+      "sha256": "a4e39f5f7ea1b442b7444b42a8a2cc30c2552980fa38b798059dfe0b538574b9"
+    },
+    {
+      "path": "corpus/cases/Ha-inconsistent-cache-split-keeps-supported-low.json",
+      "sha256": "0f9255b92621b4ebf3db183d2abedd55514814c2bbeb8b898a02bd3dd5a25382"
+    },
+    {
+      "path": "corpus/cases/Hb-window-independence.json",
+      "sha256": "01a1ea3689ffc052621a0509c04c6b53da817b774539b6cca09241b3aabfbef7"
+    },
+    {
+      "path": "corpus/cases/N01-control-served-pinned.json",
+      "sha256": "edd51ea956eb2ebad28077ab8fa4230c980424ecc6570e0400517e715a96f6c2"
+    },
+    {
+      "path": "corpus/cases/N01-identity-refusal-dearer-served.json",
+      "sha256": "61bec75419276507eaecca7508d893928f904c55c09b128e4993a6fce913ed4a"
+    },
+    {
+      "path": "corpus/cases/N01-orphan-identity-refusal.json",
+      "sha256": "15851bc1b0af150a8424e84ff3b4381474036292bbdb9c18b22381b9a0b8b165"
+    },
+    {
+      "path": "corpus/cases/N01-variant-no-refusal-row.json",
+      "sha256": "39f129b5cfa0a09dd147ac7027fb7c975e65bdb166c2da6a78b0fb96bf176032"
+    },
+    {
+      "path": "corpus/cases/N01-variant-reservation-above-both.json",
+      "sha256": "fd432eb84e61e7a15705481beb2b707429ce1568b2ce18380be1df476ea8a9af"
+    },
+    {
+      "path": "corpus/cases/N02-malformed-anthropic-tier.json",
+      "sha256": "2eba1d7b297d6830148f6c2cd71ea46243cd9d03314f66848c51eb2a989983b5"
+    },
+    {
+      "path": "corpus/cases/N03-api-row-other-provider.json",
+      "sha256": "b3140cde74b20ced08fbb1c5f13938962fdf7e23cf00d734c7f1de013ca56c93"
+    },
+    {
+      "path": "corpus/cases/N03-contradicted-admission.json",
+      "sha256": "3d903413a344249af8a7ccfb8f47b1d51a0c022700b64883404d408e9877458c"
+    },
+    {
+      "path": "corpus/cases/N03-contradicted-refused-row.json",
+      "sha256": "036b26647fb7622657ac390ac8cd37c20366607c92ddc83eccc975ba7b954e07"
+    },
+    {
+      "path": "corpus/cases/N03-control-unlabelled-admission.json",
+      "sha256": "18906e43cbaaca4dc29e7978bc8c871f0e33de30ee19b2b909c3a972ce37e02a"
+    },
+    {
+      "path": "corpus/cases/N03-control-unlabelled-refused-row.json",
+      "sha256": "3c9048e03e790c714582e1c2c1892cfa3fad6df8f529692cec62ff2bc4461046"
+    },
+    {
+      "path": "corpus/cases/N03-identity-refusal-in-subscription.json",
+      "sha256": "8727c852f6b70d7dcd2973312348544f5233f365cc57d0b70258403d4faa2ac6"
+    },
+    {
+      "path": "corpus/cases/N04-ambiguous-read-failure.json",
+      "sha256": "1f67a4159000b3b04fba496d30903e948868519f8f9b65f6a5618865062f20f6"
+    },
+    {
+      "path": "corpus/cases/N04-budgeted-header-failure-no-own-reservation.json",
+      "sha256": "e2486269a08b6bb920e4ca3b5a8363b8fa4c64bf6fae96d5af5f03b818239eeb"
+    },
+    {
+      "path": "corpus/cases/N04-budgeted-header-failure-own-reservation.json",
+      "sha256": "edb7d5a8860d27268491c408326d1ef5e08d653f3454bb6ebd26ac6ab37b4e66"
+    },
+    {
+      "path": "corpus/cases/N04-control-request-alone.json",
+      "sha256": "8080e3d315fd720322c186864d7c0d2a05baa134511a986093473301ff4ab382"
+    },
+    {
+      "path": "corpus/cases/N04-duplicated-read-failure.json",
+      "sha256": "d0b19af17c3d7c77290df6f0a5cdc36283098890772b25f75803408ebd9f39d2"
+    },
+    {
+      "path": "corpus/cases/N04-header-write-error-reused-n.json",
+      "sha256": "d0267f11880966e8c2869ced75b1b5954f99f0cdd93f861f816f6e68416080ba"
+    },
+    {
+      "path": "corpus/cases/N05-control-consistent-retirement.json",
+      "sha256": "4771ad5196e1aebc92446a722194dc24536e79d709e551f150a61993393fdd2e"
+    },
+    {
+      "path": "corpus/cases/N05-retirement-before-later-delivery.json",
+      "sha256": "9137182f16bb42a0729221f9b37c9398a302d5eb0285bd6088f69c97c5aefbb1"
+    },
+    {
+      "path": "corpus/cases/N06-null-cache-counts.json",
+      "sha256": "0529b9de341ac576762ab6928ec5e4939fc783b1d4e4830fbe6077cf5f98c0a0"
+    },
+    {
+      "path": "corpus/cases/N07-control-retired-journal.json",
+      "sha256": "adc5ac3bdc86d41d23fcb14ec9ba00552f8175d28039d58060607f75449c3c4d"
+    },
+    {
+      "path": "corpus/cases/N07-control-retired-legacy.json",
+      "sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1"
+    },
+    {
+      "path": "corpus/cases/N07-reopened-session-journal.json",
+      "sha256": "54e24af4444a1d79fb35e3c47be506a7392aedd00d5989cbaa2bc8215aa296db"
+    },
+    {
+      "path": "corpus/cases/N07-reopened-session-legacy.json",
+      "sha256": "73cdd0a91a31d29df6fa47cce842589897ea97276fcea398b2a728ec191a9a2c"
+    },
+    {
+      "path": "corpus/cases/N08-control-priced-model.json",
+      "sha256": "ce5663a5f3047b1b804a83d8529a5694a29f8d746d617885729417a8c4097b00"
+    },
+    {
+      "path": "corpus/cases/N08-model-without-producer-rate.json",
+      "sha256": "0cefcea419e732cd0bb5c098b807638db25ac18951a5c38ef4186fdad338b5ff"
+    },
+    {
+      "path": "corpus/cases/ORD-sessions-in-ledger-order.json",
+      "sha256": "43bfb0a2b8fae8748bb77f7110b36ee304319b5fa29e36ad04cfaa0db09ea59a"
+    },
+    {
+      "path": "corpus/cases/ORD-sessions-reversed.json",
+      "sha256": "026ab955a281fdda861a48abf96c540d63c6723a9b9812096448d8e35f6ea597"
+    },
+    {
+      "path": "corpus/cases/OWN-budgeted-session-without-admission.json",
+      "sha256": "2b5d1be2d61da3b977b71434a97d42159890eca6bf1343d3f7372aa8f86a0ba5"
+    },
+    {
+      "path": "corpus/cases/OWN-two-admitting-objectives.json",
+      "sha256": "f58e8d57a92dd89486de277f73b603a39a708335dd12849ee09b53033ebe7eef"
+    },
+    {
+      "path": "corpus/cases/P2-usage-settlement-unpriced-identity-keeps-charge.json",
+      "sha256": "5894c45b3d275ebebab83edaddda1876925063566152a1c97049ae1fcb5030ab"
+    },
+    {
+      "path": "corpus/cases/P9-claimed-charge-above-reservation.json",
+      "sha256": "5623c428ae3d946f44034b8e0cda5e28a9a185171148d3190b26735d777af04b"
+    },
+    {
+      "path": "corpus/cases/Q5-unrecognised-openai-tier.json",
+      "sha256": "bd13b8d102f5ca48ddfce7b57b3330b4adad3869db358b600942815b8b5c8b84"
+    },
+    {
+      "path": "corpus/cases/Q8-unadmitted-outside-candidate-window.json",
+      "sha256": "2b7831a6cacb8ee5a4212d41eb515bf5ac3bbbd9af8b0248ebd21ae0c038e448"
+    },
+    {
+      "path": "corpus/cases/R01-dated-rows-backwards.json",
+      "sha256": "b731c53090008d7b51c9b97f18c5bccfd06aba22afd4d9e41063e1239efd7056"
+    },
+    {
+      "path": "corpus/cases/R02-string-charge.json",
+      "sha256": "2bd53f3d8cb9acb731f190aa4c271f8ec2d87a66d919af3ec84943e740007f10"
+    },
+    {
+      "path": "corpus/cases/R04-reused-reservation-id.json",
+      "sha256": "f3c3bee6955c07e847d309889f76a1b931687a20a06f5a8a991ab5f0305a5374"
+    },
+    {
+      "path": "corpus/cases/R05-non-object-json-rows.json",
+      "sha256": "3207f4549f56d1eecb4adadad160ae5cd25b5641b08b95d01b5c9b603c1336da"
+    },
+    {
+      "path": "corpus/cases/R06-launch-row-missing.json",
+      "sha256": "d302991cf7630db2eb5620143502fa1c174ca9f60887ad8f5f011ddd99165d24"
+    },
+    {
+      "path": "corpus/cases/R6-C01-writer-reservation-floor-control.json",
+      "sha256": "9de8f1feaf82b40641a090a2bd8ec17f92ad5f2b03576fb0116f0afe9b23d613"
+    },
+    {
+      "path": "corpus/cases/R6-C02-non200-success-terminal-usage-control.json",
+      "sha256": "298829c624dcaed960559322d5e1273d383a1ddbca72022bf04e507121bc7830"
+    },
+    {
+      "path": "corpus/cases/S01-reservation-basis-charged-less.json",
+      "sha256": "842edfa2ed6476607f12a5e86189a5f7d9e6f1713a25b539aadb1be435c11794"
+    },
+    {
+      "path": "corpus/cases/S01-reserved-usd-omitted.json",
+      "sha256": "7ee326177fc0e9a6708d5e680a76b95b42ce1a18b1399227f973c56f82d1088a"
+    },
+    {
+      "path": "corpus/cases/S01-upstream-error-charged-zero.json",
+      "sha256": "b8af14f1fe42e489a3153c30d4fee1ce41f872dd76e27aed770f39ad9557912c"
+    },
+    {
+      "path": "corpus/cases/S02-attempt-number-differs.json",
+      "sha256": "1e456e08a2b2ca1a98aa7673ff05a1b5e4f3f7024a72d5a688920d94bbd4800f"
+    },
+    {
+      "path": "corpus/cases/S02-control-error-status-after-reservation.json",
+      "sha256": "e9255d2d4088b9c3998373f8665fb3b88458713c15765a2dcca2454421d118f4"
+    },
+    {
+      "path": "corpus/cases/S02-settlement-before-reservation.json",
+      "sha256": "7e847c0b9d66ae19a1426592acfd03ccb44e53ebbeb579393399c2a9ffef973f"
+    },
+    {
+      "path": "corpus/cases/S03-settlement-stamped-far-future.json",
+      "sha256": "d5d3288f6170696cecb11fe245e6f75973bae294470f6f81ef4ffb77ca67521c"
+    },
+    {
+      "path": "corpus/cases/S04-next-unrelated-row-does-not-close.json",
+      "sha256": "f9c91ec78b4ec29ec6030d5e155892933e55f1086a1f4226ec34454deb7b1641"
+    },
+    {
+      "path": "corpus/cases/S05-unrelated-orphan-log-does-not-block.json",
+      "sha256": "fe5c3a38516c4189cce2d7ab9792a996d4043bb811f4e1ca851aee0b0f869648"
+    },
+    {
+      "path": "corpus/cases/S06-string-http-status.json",
+      "sha256": "b704a1dc6c4dbe85afe5d6c010b005e089df5a19b6b7d88dce9edd445b14b6fb"
+    },
+    {
+      "path": "corpus/cases/S08-control-pending-commitment.json",
+      "sha256": "b8d3c7f909f2176f428d21fdffe2e0fa499bdb9f4ac2a9670638a33e86fd0e4e"
+    },
+    {
+      "path": "corpus/cases/S08-negative-commitment-cap.json",
+      "sha256": "becbd87494ae221146862407faeb975fdf1fd522692b08a634465947c6c85e60"
+    },
+    {
+      "path": "corpus/cases/U01-malformed-attempt-number.json",
+      "sha256": "7ddeb05c4a1e4bffd55b5ece9ba4fb4574782a3bcc276dabf21bf3c9ce7ebf9b"
+    },
+    {
+      "path": "corpus/cases/U02-final-line-without-newline.json",
+      "sha256": "08261a5f0e3760ada086b685e5cedce1bdf6d2ce4cd2b4d4e9a70584d8c8e3e9"
+    },
+    {
+      "path": "corpus/cases/U03-control.json",
+      "sha256": "033d60dd8f7a5545a129fd0daf29844867230aadfc5fa79237a6d4368f8c6e5e"
+    },
+    {
+      "path": "corpus/cases/U03-retirement-before-turn-evidence.json",
+      "sha256": "f6d2063e4c9b8f34b6b1cb61f703150ddf8e157ba5dcbb4d41ce7962a91094b0"
+    },
+    {
+      "path": "corpus/cases/U04-control-settled-before-closure.json",
+      "sha256": "6e01eb589fcbe5e59ff5c59a9ff2c1b3aafe120419fd16772bf348833e2394f8"
+    },
+    {
+      "path": "corpus/cases/U04-settled-after-closure-stays-with-owner.json",
+      "sha256": "9a66311f226fbb30ab229e51bf9d15c7aec7bcd0a9d99e07c7ffe090e412da10"
+    },
+    {
+      "path": "corpus/cases/U05-inconsistent-charge-without-response-id.json",
+      "sha256": "3393a435b409dd3ddb8c6b2241035ad727778f255ee63f25f2e8ba42b3d5b67a"
+    },
+    {
+      "path": "corpus/cases/U05-usage-settlement-without-response-id.json",
+      "sha256": "182096305a593f91319701d2dc3cd628f6a247b332025d10b79054fe634f749a"
+    },
+    {
+      "path": "corpus/cases/U06-subscription-upstream-error-unlabelled.json",
+      "sha256": "391212c94264c8ce06416f52c2c91a8b3f2d240fa618c75c83ad51dfe983d93d"
+    },
+    {
+      "path": "corpus/cases/U07-unrelated-non-object-usage-does-not-block.json",
+      "sha256": "7a5c1340cb1b8eb649084064f60a4c7084173fa6088f758b3f19f8d074231887"
+    },
+    {
+      "path": "corpus/cases/U08-missing-observed-tier.json",
+      "sha256": "f0b35445aed77858ff92211b9684cffbef54454be37eb2fbafad37ae37bff421"
+    },
+    {
+      "path": "corpus/cases/V01-cheaper-response-model-undercharge.json",
+      "sha256": "5725a4fbf447c8f8ec95d30e955487ed2f234678b732948ff0e2d99dd3f2a3d3"
+    },
+    {
+      "path": "corpus/cases/V01-control-producer-price.json",
+      "sha256": "836b9c2cf62ecebe1c6d6702009687f74dbc76aa2ddc125186b8f7ea9edfcf1b"
+    },
+    {
+      "path": "corpus/cases/V01-usage-settlement-other-response-model.json",
+      "sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7"
+    },
+    {
+      "path": "corpus/cases/V02-control-producer-price.json",
+      "sha256": "c1838947f74b82ef34c0ca66c91dd2b422a2969700a8c79e5f1ea500fe968f71"
+    },
+    {
+      "path": "corpus/cases/V02-unsplit-writes-undercharged.json",
+      "sha256": "50f7a797303a1eccb88d5f7549eeab99149bdc5804a843d9a46f1444eb75e1ba"
+    },
+    {
+      "path": "corpus/cases/V03-control-labelled-upstream-error.json",
+      "sha256": "8d7925f48f94eac78d22bbd7c5cfa4e755996018bdc3661107283d3f5e840a1e"
+    },
+    {
+      "path": "corpus/cases/V03-subscription-upstream-error-labelled-api.json",
+      "sha256": "9785e6387d7e3e6809ca6c8af0f46e2a7e00c8d9ad2c0719647ff4108e877eb2"
+    },
+    {
+      "path": "corpus/cases/V06-reservation-attempt-number-missing.json",
+      "sha256": "3e081d938ae5971c6536aca57119e82c4efa90e515203cb3a96d609dd2376ce1"
+    },
+    {
+      "path": "corpus/cases/V07-unrelated-unreadable-log-does-not-block.json",
+      "sha256": "454397b260c2db62fd5a46dde6f57f7ad9a0500a87c3d8470acc09561791001d"
+    },
+    {
+      "path": "corpus/cases/VC01-openai-usage-settlement.json",
+      "sha256": "1f8402b95a11a7b1b95a312535572148db557697131bb49b5a34fa668f94852c"
+    },
+    {
+      "path": "corpus/cases/VC02-anthropic-usage-settlement.json",
+      "sha256": "2f22348564a329ce09d5f8b6a23f05cf78482476bd0b2abfe1ac83de35a0806a"
+    },
+    {
+      "path": "corpus/cases/VC03-reservation-settlement-with-usage.json",
+      "sha256": "41b5a3a4bbd373cae0210892271c42ff2bd10696024c661cbb45adc8e7e20fb5"
+    },
+    {
+      "path": "corpus/cases/VC04-upstream-error-keeps-reservation.json",
+      "sha256": "0615e95b194c350a48da4a2fbdf57a3cc0d14398ca986e576330617fa036b87b"
+    },
+    {
+      "path": "corpus/cases/VC05-unsettled-reservation.json",
+      "sha256": "9731ffb6c84fec1deac2a99d2c3bc53fdcca27dbd4188ff2127d4c5f99b8168f"
+    },
+    {
+      "path": "corpus/cases/VC06-unbudgeted-completed-request.json",
+      "sha256": "e42a96d8e403de57a92ec71d7293e462db9fdceb47cfb026777c24b60d4fb034"
+    },
+    {
+      "path": "corpus/cases/VC07-read-failure-paired.json",
+      "sha256": "e5326a1d47d8a62e0132c04e174531700ebd86e1443d76671460b43ea5264e6a"
+    },
+    {
+      "path": "corpus/cases/VC08-subscription-measured-request.json",
+      "sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65"
+    },
+    {
+      "path": "corpus/cases/VC11-multi-turn-session.json",
+      "sha256": "d2d3f95ce31a1f222fd5cbddda082f3b480a68cd7472f40ab11e855e1bcad971"
+    },
+    {
+      "path": "corpus/cases/VC12-reused-n-without-errors.json",
+      "sha256": "9f585cb9c9b34a2c4a555994f92ba0a0f9f490fa52b0bbff72afb4ea77e1a6b1"
+    },
+    {
+      "path": "corpus/cases/VC13-equal-timestamps.json",
+      "sha256": "894c393e7e6ce76478b0a5e1e2cd96e041ffc10bd60c5e7bb968349c05f67966"
+    },
+    {
+      "path": "corpus/cases/VC14-open-session-commitment.json",
+      "sha256": "dd3a704903d04a61a40ab9661332cff050eac7f6f5e1b587ea619c9fb961d530"
+    },
+    {
+      "path": "corpus/cases/VC15-successor-not-charged-settled-predecessor-spend.json",
+      "sha256": "bce7a0150302fee7a9698722d63dc8e0d4e36fb118fe3f6ae5d2674639ca2473"
+    },
+    {
+      "path": "oracle/r8-completion-B/A04-undated-settlement-between-dated-neighbours.bundle.json",
+      "sha256": "236620a3a2fd3374e11442f319aed7a3a57cde5755e66242e7d3d65b354ae9bc"
+    },
+    {
+      "path": "oracle/r8-completion-B/A04-undated-settlement-between-dated-neighbours.provenance.json",
+      "sha256": "16a2fea47b93174c43817846d94abbc38c4f81255f60281cff4d2f25c7c0d0f7"
+    },
+    {
+      "path": "oracle/r8-completion-B/A06-reservation-usage-null-status-no-id.bundle.json",
+      "sha256": "a30652be7c80a284647d239f314b04c555ecd232d7c1472ea96959f296d9fff9"
+    },
+    {
+      "path": "oracle/r8-completion-B/A06-reservation-usage-null-status-no-id.provenance.json",
+      "sha256": "e19e146977f436c7b48018b539f1f9922815cda0b15fbad3512e218a105f395c"
+    },
+    {
+      "path": "oracle/r8-completion-B/A1-01-upstream-error-and-unknown-event.bundle.json",
+      "sha256": "826885d38ce373f78154ecc911bf3a09d02675a8355152e6e6b931c006a0df0a"
+    },
+    {
+      "path": "oracle/r8-completion-B/A1-01-upstream-error-and-unknown-event.provenance.json",
+      "sha256": "53de08855e9cba082bddff806b8d6b9b6b8ee3319740530c20bd117982231046"
+    },
+    {
+      "path": "oracle/r8-completion-B/A1-02-undated-row-inverted-neighbours.bundle.json",
+      "sha256": "a6bf7cbc6ca22d050bbbf319d2490ce48af3ead9245c10d40770065edf8a0294"
+    },
+    {
+      "path": "oracle/r8-completion-B/A1-02-undated-row-inverted-neighbours.provenance.json",
+      "sha256": "5f0241aa841e5273de639c2ef2af32f347870b4db1a5db7156371651f6caf78e"
+    },
+    {
+      "path": "oracle/r8-completion-B/A1-03-unreferenced-log.bundle.json",
+      "sha256": "aa0ed373855f40646e7b3ac8242a6badfa47cad0fafa455b86887a484fe132f2"
+    },
+    {
+      "path": "oracle/r8-completion-B/A1-03-unreferenced-log.provenance.json",
+      "sha256": "28138dd3fa93222e160dc04077d801ecc6202b41c3548804655ff2f3888704ca"
+    },
+    {
+      "path": "oracle/r8-completion-B/A1-06-control-no-session-file.bundle.json",
+      "sha256": "78c0debcd741518fefe3f5bcf9ff4e85e9e681088821bb6aa087cc6b811bc50e"
+    },
+    {
+      "path": "oracle/r8-completion-B/A1-06-control-no-session-file.provenance.json",
+      "sha256": "6aebda6902a960f1d9af7b78bb3c7f861bcc8278419db748f0e8e8a8cfd661f5"
+    },
+    {
+      "path": "oracle/r8-completion-B/A1-06-session-file-is-not-evidence.bundle.json",
+      "sha256": "477a402bfa6d395578248c0dcf890a0383d4ea013aaf17a32ec02cc92ec92c76"
+    },
+    {
+      "path": "oracle/r8-completion-B/A1-06-session-file-is-not-evidence.provenance.json",
+      "sha256": "ba2b780f883be37d6e9465a1617c44c6d5e03afc03a73d214763edf34cd976fc"
+    },
+    {
+      "path": "oracle/r8-completion-B/C1-control-before-reference.bundle.json",
+      "sha256": "e7521b8814f5e0eca48167c12ea67187e4587a0ae23cfa621c6976192a9003c2"
+    },
+    {
+      "path": "oracle/r8-completion-B/C1-control-before-reference.provenance.json",
+      "sha256": "b902072a40bc28b7bbea2e9130b8cb7556b1ca6b90309298039ccaf728211f50"
+    },
+    {
+      "path": "oracle/r8-completion-B/C1-settlement-after-reference-time.bundle.json",
+      "sha256": "12a63999b8c1952af0f8aa9371a56bbb8f029a7cf710aca010ee8dc36255b02d"
+    },
+    {
+      "path": "oracle/r8-completion-B/C1-settlement-after-reference-time.provenance.json",
+      "sha256": "3322037ddda400c0459c1252b3d975875e04904c0cf6b93a75e1875535212ddb"
+    },
+    {
+      "path": "oracle/r8-completion-B/C2-unsettled-reservation-after-reference-time.bundle.json",
+      "sha256": "bd16ee196d048f0fb3df418d680ecd14ecd8cd51329f360b27ec357ac6875977"
+    },
+    {
+      "path": "oracle/r8-completion-B/C2-unsettled-reservation-after-reference-time.provenance.json",
+      "sha256": "db91d0504f1fd4baffb00a6e11c8767f57318f183ae3504866d7e9099ad51443"
+    },
+    {
+      "path": "oracle/r8-completion-B/C3-identical-reservation-copy.bundle.json",
+      "sha256": "73696694a66dccbc5bc846af0352796d9477b5a68c0e264a1f2d241276b5b0d4"
+    },
+    {
+      "path": "oracle/r8-completion-B/C3-identical-reservation-copy.provenance.json",
+      "sha256": "7efb63ccc3a9ea5c1fece0d79ad0cabd2fa3a6bc17d6763145b7c2512257d88a"
+    },
+    {
+      "path": "oracle/r8-completion-B/C4-missing-charge-basis.bundle.json",
+      "sha256": "8f5a3f3cb4bf458ab936950457b3a4638cd885ed79caa8f6e7b4525e70af0f1a"
+    },
+    {
+      "path": "oracle/r8-completion-B/C4-missing-charge-basis.provenance.json",
+      "sha256": "ac41a1736c5d5400cfa19cdf2d3a6df45e8d5cf62d8c6e8b30ab3f9c67f6ddf1"
+    },
+    {
+      "path": "oracle/r8-completion-B/D1-closed-objective-provisional.bundle.json",
+      "sha256": "aa2c76fa41f9c40b73431b526ed64323b6d5f50c371e47830c052e481036db38"
+    },
+    {
+      "path": "oracle/r8-completion-B/D1-closed-objective-provisional.provenance.json",
+      "sha256": "b0220f36965cf6e5288c46aca7a3baa830e795cf012ff0d62c1a7c257fb467ed"
+    },
+    {
+      "path": "oracle/r8-completion-B/D1-successor-constrained-by-predecessor-obligations.bundle.json",
+      "sha256": "fc5fba870303736e06ac14a9edaafdb50e388567b24252fc6825fba3ce17e932"
+    },
+    {
+      "path": "oracle/r8-completion-B/D1-successor-constrained-by-predecessor-obligations.provenance.json",
+      "sha256": "423b00fe2b99f8de2df776da12d8061da20e312a205053b44d6dbe65c6ad29f4"
+    },
+    {
+      "path": "oracle/r8-completion-B/D4-unbudgeted-error-status.bundle.json",
+      "sha256": "0d62c1acd3ecd24eaf9eb498366387a2ca12e3778b2bf4ddf721b883309ec7b4"
+    },
+    {
+      "path": "oracle/r8-completion-B/D4-unbudgeted-error-status.provenance.json",
+      "sha256": "d964af13d2e46e12f62dbc2bba2fc5420abb92467dc532a8f85bc1e45ddbfd22"
+    },
+    {
+      "path": "oracle/r8-completion-B/DERIVATIONS.json",
+      "sha256": "1ee8a47ae5969d11b82cb6346d3396fd0e304e91f477bf48f7da03b1026a9329"
+    },
+    {
+      "path": "oracle/r8-completion-B/DERIVATIONS.md",
+      "sha256": "d6e5f85d7a5ef172b4d6b2e4df5db9f40b5a3c2f751cb8436235505d1968695e"
+    },
+    {
+      "path": "oracle/r8-completion-B/DUP-response-id-across-attempts.bundle.json",
+      "sha256": "009a3a1e7007e6dcd3f315fb969f6051138d0625bb1b77a90eaffa54aeead251"
+    },
+    {
+      "path": "oracle/r8-completion-B/DUP-response-id-across-attempts.provenance.json",
+      "sha256": "d6fecc0cc7de09dab1f3a3eff851532112243d254a95aea427449964f9e39ecd"
+    },
+    {
+      "path": "oracle/r8-completion-B/Ha-control-consistent-split.bundle.json",
+      "sha256": "6f09f5cc95aa43f28757eae99ca6eb6e4d42c0a5ead06845f845e3cd275de555"
+    },
+    {
+      "path": "oracle/r8-completion-B/Ha-control-consistent-split.provenance.json",
+      "sha256": "96145a596a00037c002c9428540c4e02a3b6e0d588b1f1b3474c2e32cac87a74"
+    },
+    {
+      "path": "oracle/r8-completion-B/Ha-inconsistent-cache-split-keeps-supported-low.bundle.json",
+      "sha256": "8470fbbf98f5aa125d31bf921704bc5f2ac2468ce18deba5ef596b73045c23e9"
+    },
+    {
+      "path": "oracle/r8-completion-B/Ha-inconsistent-cache-split-keeps-supported-low.provenance.json",
+      "sha256": "525de7e158e15a97524bc871d7a49019af63774ba8c4d919e60d78253484a0a4"
+    },
+    {
+      "path": "oracle/r8-completion-B/Hb-window-independence.bundle.json",
+      "sha256": "c64f3d7dd8652ec56f7998091929bdbd8bbaf40498c214c0225d5f05d273e65d"
+    },
+    {
+      "path": "oracle/r8-completion-B/Hb-window-independence.provenance.json",
+      "sha256": "4650b9c6f3e5536ab69e869f56e44f558b2edbbf427b7a5b22baf5da0a72e03c"
+    },
+    {
+      "path": "oracle/r8-completion-B/LOW-ASSERTIONS.json",
+      "sha256": "587de76fd9fd99c54bcc5ca343785f6624194dd33c5692b9154fc5fd9435d206"
+    },
+    {
+      "path": "oracle/r8-completion-B/N01-control-served-pinned.bundle.json",
+      "sha256": "f30275f430b8bcd675b971692924c60658be96930227e62c11a5f02db26e0e69"
+    },
+    {
+      "path": "oracle/r8-completion-B/N01-control-served-pinned.provenance.json",
+      "sha256": "125c16fade740ca44697cbdec200fb1ab40024a08b3b6ecdb89316304cc2e2a1"
+    },
+    {
+      "path": "oracle/r8-completion-B/N01-identity-refusal-dearer-served.bundle.json",
+      "sha256": "6deff35f8f6fb26a6b04683a312b2003348c584aa2ce05e35349b8e7badb484a"
+    },
+    {
+      "path": "oracle/r8-completion-B/N01-identity-refusal-dearer-served.provenance.json",
+      "sha256": "7b9138bf2c192aa7dc2cbd2f49d2961872b4ae1ad9669a8dfe07e68f99ad74a6"
+    },
+    {
+      "path": "oracle/r8-completion-B/N01-orphan-identity-refusal.bundle.json",
+      "sha256": "7d7ac6881ed5b69c7940f42ac407619dcd5275145825439c527a584e09698cfa"
+    },
+    {
+      "path": "oracle/r8-completion-B/N01-orphan-identity-refusal.provenance.json",
+      "sha256": "001369db571b12229405649ca4497b4379a1df7a1d336e43f3dd550f52428b1a"
+    },
+    {
+      "path": "oracle/r8-completion-B/N01-variant-no-refusal-row.bundle.json",
+      "sha256": "de8422ec496647391a489e107ab945ca055da3f2ed69a7fa8533c0c53afe5fca"
+    },
+    {
+      "path": "oracle/r8-completion-B/N01-variant-no-refusal-row.provenance.json",
+      "sha256": "84685047a632a3052c00d691a36889b25dd3f3e8cb78858287c8d96074ff7627"
+    },
+    {
+      "path": "oracle/r8-completion-B/N01-variant-reservation-above-both.bundle.json",
+      "sha256": "15b44fc1d4924120fb54d6370f5675ebf6c54e7b761d1f848fef791e94a34e3d"
+    },
+    {
+      "path": "oracle/r8-completion-B/N01-variant-reservation-above-both.provenance.json",
+      "sha256": "2fce698f081c1103e7c03a0cb662d4769926ce69c41d32f5280bbdde4256cb1f"
+    },
+    {
+      "path": "oracle/r8-completion-B/N02-malformed-anthropic-tier.bundle.json",
+      "sha256": "53180d5e27e8ef43854a890b078db633a4cbe14d8ae47065196448a566022e98"
+    },
+    {
+      "path": "oracle/r8-completion-B/N02-malformed-anthropic-tier.provenance.json",
+      "sha256": "c49074cec320b55c2c519d7586312e532fc2e7b7ca2d544b480f6a467e191f29"
+    },
+    {
+      "path": "oracle/r8-completion-B/N03-api-row-other-provider.bundle.json",
+      "sha256": "6526c627dce3b6cc3c7f5de3ea18c2fd6a3356dfe2f7623d84a6a375612eee9d"
+    },
+    {
+      "path": "oracle/r8-completion-B/N03-api-row-other-provider.provenance.json",
+      "sha256": "a6df7c7de82bd4e110bef1e99f2b159c0c11cdec077326b43d2fb4ec1a18a508"
+    },
+    {
+      "path": "oracle/r8-completion-B/N03-contradicted-admission.bundle.json",
+      "sha256": "e5c0c38054ac30ad62444266e81a5eb0795426fe3e7991902b2dff32864d9464"
+    },
+    {
+      "path": "oracle/r8-completion-B/N03-contradicted-admission.provenance.json",
+      "sha256": "de6dfce2168762caaa1b2e1fa80649108463edcaa41bf1342197fddae83be62c"
+    },
+    {
+      "path": "oracle/r8-completion-B/N03-contradicted-refused-row.bundle.json",
+      "sha256": "ecdbd0cac6292ebcedaa0f1a67f2dfabe8452f1353223956fe64c644fde60ee1"
+    },
+    {
+      "path": "oracle/r8-completion-B/N03-contradicted-refused-row.provenance.json",
+      "sha256": "ea34a4ff15ac45cc93b92ece5acd79b844c8cfd8a2dcf2dab751291672d192c7"
+    },
+    {
+      "path": "oracle/r8-completion-B/N03-control-unlabelled-admission.bundle.json",
+      "sha256": "91ffb653b20eece30b4c0e0b60c82959f1e81b8b0aa4b988e276f588a5ff8d17"
+    },
+    {
+      "path": "oracle/r8-completion-B/N03-control-unlabelled-admission.provenance.json",
+      "sha256": "cfc42d7e104a0d41da485ad0fefc787ca335f5163f18261e3a80a64000234846"
+    },
+    {
+      "path": "oracle/r8-completion-B/N03-control-unlabelled-refused-row.bundle.json",
+      "sha256": "63fa40a3c3de50a282935258531f8bb99dc83a4de58168d16e3da2e768b4c5ad"
+    },
+    {
+      "path": "oracle/r8-completion-B/N03-control-unlabelled-refused-row.provenance.json",
+      "sha256": "09f9dbdc38bde943ffc8118e42cc748f69327154887c0deee9120177e67c4a6c"
+    },
+    {
+      "path": "oracle/r8-completion-B/N03-identity-refusal-in-subscription.bundle.json",
+      "sha256": "ea9e76bc2a46cdb0583fd047b77bf6270d8df8e211d63a27b28a041be7cbb2d6"
+    },
+    {
+      "path": "oracle/r8-completion-B/N03-identity-refusal-in-subscription.provenance.json",
+      "sha256": "d915ed864aeb0574dcafa534544279f398e030ec7438e092305bd0b719e40c2a"
+    },
+    {
+      "path": "oracle/r8-completion-B/N04-ambiguous-read-failure.bundle.json",
+      "sha256": "ceb6442a1ac5997291e1a767a70e63d15ac3d4226b3f9671f7fb718b090fc6c5"
+    },
+    {
+      "path": "oracle/r8-completion-B/N04-ambiguous-read-failure.provenance.json",
+      "sha256": "86bdaf99bcba938e37ff4596a53d96b6283642ace93f07dc6ed624983877c4c8"
+    },
+    {
+      "path": "oracle/r8-completion-B/N04-budgeted-header-failure-no-own-reservation.bundle.json",
+      "sha256": "271cfbd50ed85d7aceeee1b17b8bdaa56c94bcc944bcd0a12d7902bf9cf59d2c"
+    },
+    {
+      "path": "oracle/r8-completion-B/N04-budgeted-header-failure-no-own-reservation.provenance.json",
+      "sha256": "23f8312193bb5dc95638c9c697298fe5504c4238275818922a137b4d3587f526"
+    },
+    {
+      "path": "oracle/r8-completion-B/N04-budgeted-header-failure-own-reservation.bundle.json",
+      "sha256": "010958e1a1ba7a1abb930aa7349bb2e86237a33d1717e049c196729d78cf61a6"
+    },
+    {
+      "path": "oracle/r8-completion-B/N04-budgeted-header-failure-own-reservation.provenance.json",
+      "sha256": "278c5c35245c5ab7ca67ccbeb566cd5ffcd4c8eb1fcba8da1bf2f09950c7439e"
+    },
+    {
+      "path": "oracle/r8-completion-B/N04-control-request-alone.bundle.json",
+      "sha256": "9035d41e499b2da1ad5ee2cc9bdbce05f08b48273b7eae18c663fa62f05d91bb"
+    },
+    {
+      "path": "oracle/r8-completion-B/N04-control-request-alone.provenance.json",
+      "sha256": "be6b5101f7f35eb5d31306df6bddf78b59fedde1ef544ca61a4971c01ebf1e5b"
+    },
+    {
+      "path": "oracle/r8-completion-B/N04-duplicated-read-failure.bundle.json",
+      "sha256": "bbd2a63ea6567b30ec390e485b275ee5117ddb14019748c7f248bccce9f05ffa"
+    },
+    {
+      "path": "oracle/r8-completion-B/N04-duplicated-read-failure.provenance.json",
+      "sha256": "5eb8669dd062fcd93f720243ed727a79d48a56a87afc8b77e384396959ca230a"
+    },
+    {
+      "path": "oracle/r8-completion-B/N04-header-write-error-reused-n.bundle.json",
+      "sha256": "6907989d5c56e93acb6b2b9536f40c1cdecbab40aa5301c86e62f5d7f1a4e521"
+    },
+    {
+      "path": "oracle/r8-completion-B/N04-header-write-error-reused-n.provenance.json",
+      "sha256": "a1db0cc59264b523bf8d513f647a6e4e29a44c5c615ab5bf381e2ee4a95ee806"
+    },
+    {
+      "path": "oracle/r8-completion-B/N05-control-consistent-retirement.bundle.json",
+      "sha256": "e04c29bb70854096cc24c5c34c052ede3ee37a54b9811aa083dd5db3e380e511"
+    },
+    {
+      "path": "oracle/r8-completion-B/N05-control-consistent-retirement.provenance.json",
+      "sha256": "c841dddb7e09f6e680c85922520195859acd6b2e4df3cab01d1201ea9244d088"
+    },
+    {
+      "path": "oracle/r8-completion-B/N05-retirement-before-later-delivery.bundle.json",
+      "sha256": "a0376bec4560771b137f8c481eec4abb38f3da550979e05dda853dd7f7c92eb7"
+    },
+    {
+      "path": "oracle/r8-completion-B/N05-retirement-before-later-delivery.provenance.json",
+      "sha256": "3186142e532849cf476f267d72806d2f19bc24f61eeed8b9de2acb2e2bf1aa46"
+    },
+    {
+      "path": "oracle/r8-completion-B/N06-null-cache-counts.bundle.json",
+      "sha256": "b304261b4183a282fc75dd4e71a2c9b1159a8662f9908a542e6b01db42eb29ce"
+    },
+    {
+      "path": "oracle/r8-completion-B/N06-null-cache-counts.provenance.json",
+      "sha256": "e28c913756dc3e349de32fabd9769dfef2617a66dff6b60c8b24bcb869fc1150"
+    },
+    {
+      "path": "oracle/r8-completion-B/N07-control-retired-journal.bundle.json",
+      "sha256": "7f630cba1a4f2b6875eb49240acc151f4a02504920dfc6cf8e743302dece6b6e"
+    },
+    {
+      "path": "oracle/r8-completion-B/N07-control-retired-journal.provenance.json",
+      "sha256": "e3cf86d08d1ebbfcdc2e9ffec0be8bb81a686083ca89497b9ee1df0c8a913a1d"
+    },
+    {
+      "path": "oracle/r8-completion-B/N07-control-retired-legacy.bundle.json",
+      "sha256": "3e35cc06d6a200bb5af84145e20204f97cfd42ca3a5ed4000f22fb73709828a9"
+    },
+    {
+      "path": "oracle/r8-completion-B/N07-control-retired-legacy.provenance.json",
+      "sha256": "d80f32bf3dda1248f82c5573cd6c32d51eb937f1223b385bab89f1b827dc3ffb"
+    },
+    {
+      "path": "oracle/r8-completion-B/N07-reopened-session-journal.bundle.json",
+      "sha256": "402e12e98919ece55df3bbccd25203c66ce735685b4e4ace3a89127e3000e278"
+    },
+    {
+      "path": "oracle/r8-completion-B/N07-reopened-session-journal.provenance.json",
+      "sha256": "b0c04bfa6f62bbb0124d1cd9b68f48daecebde3a32b8415fff67f782c17085a0"
+    },
+    {
+      "path": "oracle/r8-completion-B/N07-reopened-session-legacy.bundle.json",
+      "sha256": "5c6611afc80319a5098cbcb904e99fd8a05b21b3ecb1fc63b166a521d63c7c4f"
+    },
+    {
+      "path": "oracle/r8-completion-B/N07-reopened-session-legacy.provenance.json",
+      "sha256": "ddd88eeaa0907ba0e60c459263dc0448c1a39b1c28059cdd36d9bff65b3ca67b"
+    },
+    {
+      "path": "oracle/r8-completion-B/N08-control-priced-model.bundle.json",
+      "sha256": "72bcba05b9811d0b243f15a0ead78c4595eea1d25f994b4ac92459475c1188a0"
+    },
+    {
+      "path": "oracle/r8-completion-B/N08-control-priced-model.provenance.json",
+      "sha256": "218bcb76215b00fd4a6ce5e202accb1c3579b396431312d0090e0b2b7c126e07"
+    },
+    {
+      "path": "oracle/r8-completion-B/N08-model-without-producer-rate.bundle.json",
+      "sha256": "3ca8683b7f727f53262abd0d8e0f500538df68c63d0251b2e9c3ad4afaf42a2d"
+    },
+    {
+      "path": "oracle/r8-completion-B/N08-model-without-producer-rate.provenance.json",
+      "sha256": "31c3a8ed9f8cd0066c0f3648fc204e205d9b649ef57b5eba16f7d4f9584923dc"
+    },
+    {
+      "path": "oracle/r8-completion-B/ORD-sessions-in-ledger-order.bundle.json",
+      "sha256": "0b8922409856dbbee984ee45fb8a82bd7a401dc24b74ffaceadf85cc4abde048"
+    },
+    {
+      "path": "oracle/r8-completion-B/ORD-sessions-in-ledger-order.provenance.json",
+      "sha256": "eb34a03be2308774918f1eb59d7e129fdf8ead7641afbbe833c0b38716bb06b2"
+    },
+    {
+      "path": "oracle/r8-completion-B/ORD-sessions-reversed.bundle.json",
+      "sha256": "219081a4d162f979f35359de7c7be7f926b508361c844c72cf3377e002818629"
+    },
+    {
+      "path": "oracle/r8-completion-B/ORD-sessions-reversed.provenance.json",
+      "sha256": "593aaa45700ab2240fcb0b01425d874ca5169d8f1978657deeb00fd7743e1ae5"
+    },
+    {
+      "path": "oracle/r8-completion-B/OWN-budgeted-session-without-admission.bundle.json",
+      "sha256": "5e687adf4e292a1dac7f2af8ef45a5f639a266b35c25bbf0d03d26d4f011d3cf"
+    },
+    {
+      "path": "oracle/r8-completion-B/OWN-budgeted-session-without-admission.provenance.json",
+      "sha256": "dd32d5d15dc30ae99aa18180af60360905b9b12675c4685836b863bfd0354c73"
+    },
+    {
+      "path": "oracle/r8-completion-B/OWN-two-admitting-objectives.bundle.json",
+      "sha256": "c89946d8608dce338bc02e8cacc13a92abbe57130f9a3a0969c04ad1ae34a42e"
+    },
+    {
+      "path": "oracle/r8-completion-B/OWN-two-admitting-objectives.provenance.json",
+      "sha256": "651ab7c515a782b70a8251c1f7fdf12f71ebc51885c37a0d8fcd274c8ab25106"
+    },
+    {
+      "path": "oracle/r8-completion-B/P2-usage-settlement-unpriced-identity-keeps-charge.bundle.json",
+      "sha256": "ba227b6c41088371abaedcb2b5eb7f9a8ffa13bf7c66c772e3c1d2831a9f0f8d"
+    },
+    {
+      "path": "oracle/r8-completion-B/P2-usage-settlement-unpriced-identity-keeps-charge.provenance.json",
+      "sha256": "caea16ec2afd4e204fd14567c5fddaeac1be7d0be8af2d9a0794c45ed7aebc18"
+    },
+    {
+      "path": "oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json",
+      "sha256": "5cf8a8778854310ddb989d4c76cebb031affed31da04ff06b510f7bcc3d0b867"
+    },
+    {
+      "path": "oracle/r8-completion-B/P9-claimed-charge-above-reservation.provenance.json",
+      "sha256": "7ade01e3a7b34475ed94141b32e18d327f2490779b15c85ab8ada6cd9cf5d691"
+    },
+    {
+      "path": "oracle/r8-completion-B/Q5-unrecognised-openai-tier.bundle.json",
+      "sha256": "e63463853738c0e350c27162ddc637039f3bf419685e2d2656dcc1cbc6d73e92"
+    },
+    {
+      "path": "oracle/r8-completion-B/Q5-unrecognised-openai-tier.provenance.json",
+      "sha256": "a753647344357e30b5e7c89c3e4828cb45dc3d1b3316f05ef7e506c65158299b"
+    },
+    {
+      "path": "oracle/r8-completion-B/Q8-unadmitted-outside-candidate-window.bundle.json",
+      "sha256": "2f54f0276e5f92103cf1f123db482941dc65d22d686e89f6a9e84dbe46df0ed8"
+    },
+    {
+      "path": "oracle/r8-completion-B/Q8-unadmitted-outside-candidate-window.provenance.json",
+      "sha256": "9ef12de024d70de1af07708b9e3295a41eaa9f94617198307eb9bbee53a913a9"
+    },
+    {
+      "path": "oracle/r8-completion-B/R01-dated-rows-backwards.bundle.json",
+      "sha256": "42660e7eb52f36ec5b8051e5483bc445d8a09ec1425781961279fb16f224c92b"
+    },
+    {
+      "path": "oracle/r8-completion-B/R01-dated-rows-backwards.provenance.json",
+      "sha256": "37a6acb35f7bcedb3bfc372fe4eb3e13a38099454f2abbc197da353041fb435f"
+    },
+    {
+      "path": "oracle/r8-completion-B/R02-string-charge.bundle.json",
+      "sha256": "e34887981d8db517fa9bda5444931bdf6d09d5f3786f794ff7f170613ef15bc9"
+    },
+    {
+      "path": "oracle/r8-completion-B/R02-string-charge.provenance.json",
+      "sha256": "9e04fba91054c8aea86b444fc699aaec35cf94032718f0102f3ab54699f8588c"
+    },
+    {
+      "path": "oracle/r8-completion-B/R04-reused-reservation-id.bundle.json",
+      "sha256": "9d61499e5e858d3ef0b45ffaa74eda634c4e6a86a4fa4970159b2f51e472c993"
+    },
+    {
+      "path": "oracle/r8-completion-B/R04-reused-reservation-id.provenance.json",
+      "sha256": "c025246b1d05b75335cf7291e4f641c8e55c03086388fbb9b417e7de79a69b48"
+    },
+    {
+      "path": "oracle/r8-completion-B/R05-non-object-json-rows.bundle.json",
+      "sha256": "1d66288ddd59d3af122a823cda903577fc0108055b447f738c85eeb27c1bc221"
+    },
+    {
+      "path": "oracle/r8-completion-B/R05-non-object-json-rows.provenance.json",
+      "sha256": "d68e2ddbce8f0112994b1a6ff2f3f0373f3301556614db278c7d84561f459ad2"
+    },
+    {
+      "path": "oracle/r8-completion-B/R06-launch-row-missing.bundle.json",
+      "sha256": "f4e274e26d740de7789150a6f04292191e5b5d1390993580966d4e9364a6b2a9"
+    },
+    {
+      "path": "oracle/r8-completion-B/R06-launch-row-missing.provenance.json",
+      "sha256": "f0e9d708cb6a81e2a4a4c51879005186663ab4a2227fbb5a387892f9e6571fa0"
+    },
+    {
+      "path": "oracle/r8-completion-B/R6-C01-writer-reservation-floor-control.bundle.json",
+      "sha256": "ca6ba3a9e40557d5c197533beaa207df798f9ead9095aa13a219637971574fc4"
+    },
+    {
+      "path": "oracle/r8-completion-B/R6-C01-writer-reservation-floor-control.provenance.json",
+      "sha256": "b89283aa9ae106811c8846c87cced8e5b18cfa3eabeb9a092021459af50133bb"
+    },
+    {
+      "path": "oracle/r8-completion-B/R6-C02-non200-success-terminal-usage-control.bundle.json",
+      "sha256": "6e4f9174df587be4b5b85fb99204f6765440a8ef120d276ac9986295cf66e5d0"
+    },
+    {
+      "path": "oracle/r8-completion-B/R6-C02-non200-success-terminal-usage-control.provenance.json",
+      "sha256": "136bbf3d944b025d1d17beab74dc74b9dd42536993a4072f211d8c6399522881"
+    },
+    {
+      "path": "oracle/r8-completion-B/S01-reservation-basis-charged-less.bundle.json",
+      "sha256": "b1cf80f618dd5d38c03e8003e9f35c46877a9962410e5d0f0cb9cad772d47b50"
+    },
+    {
+      "path": "oracle/r8-completion-B/S01-reservation-basis-charged-less.provenance.json",
+      "sha256": "b02376dc80e189b169c0f0486a7a3811c1ad31c594939edcf3e03648bd018b99"
+    },
+    {
+      "path": "oracle/r8-completion-B/S01-reserved-usd-omitted.bundle.json",
+      "sha256": "2a2296cc0db6f2afa34399e6a4cca108926dc940b3b9544286b1e3e53e038a64"
+    },
+    {
+      "path": "oracle/r8-completion-B/S01-reserved-usd-omitted.provenance.json",
+      "sha256": "9dd6e0a8dcd6292891f4b4d71e28e54f4bd8a82f4225c63a33db3f4ad2edf8c3"
+    },
+    {
+      "path": "oracle/r8-completion-B/S01-upstream-error-charged-zero.bundle.json",
+      "sha256": "9e3a377cd7ec994a5c4ffeed1b95bd5433a3af071f2716e4daff6b1a862f58a0"
+    },
+    {
+      "path": "oracle/r8-completion-B/S01-upstream-error-charged-zero.provenance.json",
+      "sha256": "8532af4893bcaa3a2351aadbd10269f43e536919938f7acbcd9cdf7d4ff41aae"
+    },
+    {
+      "path": "oracle/r8-completion-B/S02-attempt-number-differs.bundle.json",
+      "sha256": "fd9c867df66a0b1ff7d5f954e807a3dd073607ab74513b3c2fcb965743a568c3"
+    },
+    {
+      "path": "oracle/r8-completion-B/S02-attempt-number-differs.provenance.json",
+      "sha256": "48b46cdd875ca7a53e2d14a9d7302ae0188cfdc8642ab3e0bcb764410227e09b"
+    },
+    {
+      "path": "oracle/r8-completion-B/S02-control-error-status-after-reservation.bundle.json",
+      "sha256": "02621cb01386faeaf093aac2d2bc2daf3acf564de1801be09a3f221994a925a8"
+    },
+    {
+      "path": "oracle/r8-completion-B/S02-control-error-status-after-reservation.provenance.json",
+      "sha256": "c5442435b1780fcf056216719cd183bca93f1b389224b622d4e32db8d0a7efee"
+    },
+    {
+      "path": "oracle/r8-completion-B/S02-settlement-before-reservation.bundle.json",
+      "sha256": "f0597a1e334e0f27147d3b7269637d7c6afcfd9032964e168d12866b0d68531d"
+    },
+    {
+      "path": "oracle/r8-completion-B/S02-settlement-before-reservation.provenance.json",
+      "sha256": "5aa293343e526dfbfc8b28cc16b16426d485f766875753872b4fb309b7eed27b"
+    },
+    {
+      "path": "oracle/r8-completion-B/S03-settlement-stamped-far-future.bundle.json",
+      "sha256": "91923e930282428936b1327af0d4e658dccc5a1c2430d9159c21ab7b203e5a14"
+    },
+    {
+      "path": "oracle/r8-completion-B/S03-settlement-stamped-far-future.provenance.json",
+      "sha256": "ea168f686555e72fd7ff45457ccee0c8d3c59b1e4eabcddbcc9a47dc8561f424"
+    },
+    {
+      "path": "oracle/r8-completion-B/S04-next-unrelated-row-does-not-close.bundle.json",
+      "sha256": "9c86cf7e16b96a4fa04ef779b6bddbfd760d73e8cfbd8eaba650cddfb197cbbd"
+    },
+    {
+      "path": "oracle/r8-completion-B/S04-next-unrelated-row-does-not-close.provenance.json",
+      "sha256": "12009afc56ec003dc8f71e58d25c4ed1fdc94a2df8e87fe8bf696ea2b6803ca3"
+    },
+    {
+      "path": "oracle/r8-completion-B/S05-unrelated-orphan-log-does-not-block.bundle.json",
+      "sha256": "baecf58ed7ecc7935ee026928866996fd9c69c167a30d45a5195f2715e9d2250"
+    },
+    {
+      "path": "oracle/r8-completion-B/S05-unrelated-orphan-log-does-not-block.provenance.json",
+      "sha256": "4955bf8ff09aa6d96332231881295cd42cbaccc68421ad1cff6cf0cfaa643c8f"
+    },
+    {
+      "path": "oracle/r8-completion-B/S06-string-http-status.bundle.json",
+      "sha256": "37ea4b65790beeeac0d00de29ad942e076737c0be0ff7fe2b0bfbd8c28fc0766"
+    },
+    {
+      "path": "oracle/r8-completion-B/S06-string-http-status.provenance.json",
+      "sha256": "62b943689edd18bb3718fdebf635c1ff424fcde34821f7063fa756877e1df128"
+    },
+    {
+      "path": "oracle/r8-completion-B/S08-control-pending-commitment.bundle.json",
+      "sha256": "2b783d9042091c81ddcac60a5dab9b059622a7d0576516adfa63cdd8147f85b5"
+    },
+    {
+      "path": "oracle/r8-completion-B/S08-control-pending-commitment.provenance.json",
+      "sha256": "0c59caead993cfb8a8044f5541c983f5d1ecab61967f9fdf9f909aed46f2f9ec"
+    },
+    {
+      "path": "oracle/r8-completion-B/S08-negative-commitment-cap.bundle.json",
+      "sha256": "dc285303a0c3fbcc0d49b04fd0fbd872aa8d3c345c98db9830c91b7130cb5f60"
+    },
+    {
+      "path": "oracle/r8-completion-B/S08-negative-commitment-cap.provenance.json",
+      "sha256": "e57be6235950a1fb42cec9ec3b56e0116e42926ed5e000aff190e26bb9785035"
+    },
+    {
+      "path": "oracle/r8-completion-B/U01-malformed-attempt-number.bundle.json",
+      "sha256": "558ccb0841d7ad830401cfa312b54c4e5eb7566be9f641f69779f1ec91126bba"
+    },
+    {
+      "path": "oracle/r8-completion-B/U01-malformed-attempt-number.provenance.json",
+      "sha256": "b9d71a1b9f99e682b7c16e4748830e392546fe211693e2a6b840d2edb6987c46"
+    },
+    {
+      "path": "oracle/r8-completion-B/U02-final-line-without-newline.bundle.json",
+      "sha256": "dfd05cd596e4d5f7b8f8beefc8240206e7831158ef3baa632b4ce96a2b98a1f0"
+    },
+    {
+      "path": "oracle/r8-completion-B/U02-final-line-without-newline.provenance.json",
+      "sha256": "446ef58b37c3964876d8d54f0189520fa6dded3ed1e0182dcc6a9128ce2490cf"
+    },
+    {
+      "path": "oracle/r8-completion-B/U03-control.bundle.json",
+      "sha256": "541ecc97b52aa3bc97a71ee68061fe104da46a2449c877cdf4bedf8f3087b578"
+    },
+    {
+      "path": "oracle/r8-completion-B/U03-control.provenance.json",
+      "sha256": "b773b8a4a280d6dc29d23957aa69292e0e12d555439e52afd2c4913f4a247099"
+    },
+    {
+      "path": "oracle/r8-completion-B/U03-retirement-before-turn-evidence.bundle.json",
+      "sha256": "ac0ca1b6fd3743dc0a83901fe40f79d40d0742d9cc9c04effd73dd4d226c27ed"
+    },
+    {
+      "path": "oracle/r8-completion-B/U03-retirement-before-turn-evidence.provenance.json",
+      "sha256": "83caac1048d7982daed355746838c4183adbe7c63235e11ff2fcc6684cc7ad0f"
+    },
+    {
+      "path": "oracle/r8-completion-B/U04-control-settled-before-closure.bundle.json",
+      "sha256": "2030cf52a20ea653c7cd9c8c7e3185d440dbc0da77ef55c38547de1761706370"
+    },
+    {
+      "path": "oracle/r8-completion-B/U04-control-settled-before-closure.provenance.json",
+      "sha256": "a375fb47c8b56e492f7aab8baa87a5489c903f7c4a01a6bd1127a603c1d77398"
+    },
+    {
+      "path": "oracle/r8-completion-B/U04-settled-after-closure-stays-with-owner.bundle.json",
+      "sha256": "a8a6ecd38e5b0e885e15caa3434bf492bcb423c0a78ad7252d3683cbfce74e1b"
+    },
+    {
+      "path": "oracle/r8-completion-B/U04-settled-after-closure-stays-with-owner.provenance.json",
+      "sha256": "1ce686dc2e874902a04aa029a6fec1c8ecf96bdc2ce50460feec7227651da3c0"
+    },
+    {
+      "path": "oracle/r8-completion-B/U05-inconsistent-charge-without-response-id.bundle.json",
+      "sha256": "880096855e2dd91b4a131321ae1e772411cc28679b8e25a40f07050b080d2681"
+    },
+    {
+      "path": "oracle/r8-completion-B/U05-inconsistent-charge-without-response-id.provenance.json",
+      "sha256": "0eb8c552845027b057efc0452c0b9a426b248adbc4fae85179c53831be8fe977"
+    },
+    {
+      "path": "oracle/r8-completion-B/U05-usage-settlement-without-response-id.bundle.json",
+      "sha256": "ab0aa43207b6d5b0438eacf28278d66875e61dc59d2287e7b796ec47a006b3df"
+    },
+    {
+      "path": "oracle/r8-completion-B/U05-usage-settlement-without-response-id.provenance.json",
+      "sha256": "667b07f5583a28457ad363251da8f638e7e896924a280490bd1a52c9f59399fd"
+    },
+    {
+      "path": "oracle/r8-completion-B/U06-subscription-upstream-error-unlabelled.bundle.json",
+      "sha256": "dbf1c0fa86b37b31c5899c27a9097b68578a820cdcf32a5bf8b5c618909f2c25"
+    },
+    {
+      "path": "oracle/r8-completion-B/U06-subscription-upstream-error-unlabelled.provenance.json",
+      "sha256": "0ba87dcbc8e5ca6bd41e32753a590788d08326e57cc83a0f48a86aa559828146"
+    },
+    {
+      "path": "oracle/r8-completion-B/U07-unrelated-non-object-usage-does-not-block.bundle.json",
+      "sha256": "cead7f0b763d96c77ebb430181e7d57fa510d3f8d66f540eb782553c27f4931c"
+    },
+    {
+      "path": "oracle/r8-completion-B/U07-unrelated-non-object-usage-does-not-block.provenance.json",
+      "sha256": "83707757717753996a274cec9311e37bd2e395c6f8e80d8b8466a410991dc600"
+    },
+    {
+      "path": "oracle/r8-completion-B/U08-missing-observed-tier.bundle.json",
+      "sha256": "4a531b065ed17cd3974b9291beb43ce86d7bebad40861c40da50d5179bcdb22d"
+    },
+    {
+      "path": "oracle/r8-completion-B/U08-missing-observed-tier.provenance.json",
+      "sha256": "867350873368ac8a85101dd03b082862c09df63d3752f60291574c7a60fe429f"
+    },
+    {
+      "path": "oracle/r8-completion-B/V01-cheaper-response-model-undercharge.bundle.json",
+      "sha256": "cb9a4e054270f78147e79186ca9923e2098eb739881658688ac1f497d0e242f3"
+    },
+    {
+      "path": "oracle/r8-completion-B/V01-cheaper-response-model-undercharge.provenance.json",
+      "sha256": "7e9a119a5b8d2c354aa9f8e7fe0a687ee8d6fb1e84c470ff016b6c2a873a7c45"
+    },
+    {
+      "path": "oracle/r8-completion-B/V01-control-producer-price.bundle.json",
+      "sha256": "92fe7a3ff1aa827aab921be2c32a79d2c54f796f0d24dd353d7298d0d8bd4daf"
+    },
+    {
+      "path": "oracle/r8-completion-B/V01-control-producer-price.provenance.json",
+      "sha256": "b0f1ad8d7610721e67a0903068e09cb7bfeea4164285545702ecf2b586c6843c"
+    },
+    {
+      "path": "oracle/r8-completion-B/V01-usage-settlement-other-response-model.bundle.json",
+      "sha256": "4c5156c5f76ac64ce49357fced1495b95c3049177f72b6f3730cae51e4f185e8"
+    },
+    {
+      "path": "oracle/r8-completion-B/V01-usage-settlement-other-response-model.provenance.json",
+      "sha256": "a54c7a9a2ed2cbfec382162394353505b99f4097660022d44d82df88b65d65bf"
+    },
+    {
+      "path": "oracle/r8-completion-B/V02-control-producer-price.bundle.json",
+      "sha256": "4707d9ffdc37cc8dddf4f9ca669005f2beb979d0e85d624a1e3894cf54b6a757"
+    },
+    {
+      "path": "oracle/r8-completion-B/V02-control-producer-price.provenance.json",
+      "sha256": "e562c196c41d3617ec3e117c7b6e3b44b74b160c3425852d11bf2af798843e61"
+    },
+    {
+      "path": "oracle/r8-completion-B/V02-unsplit-writes-undercharged.bundle.json",
+      "sha256": "e63bdfb5b37c4a670079e51dba38ca9c34b07880951bc480d1bc59d68c978632"
+    },
+    {
+      "path": "oracle/r8-completion-B/V02-unsplit-writes-undercharged.provenance.json",
+      "sha256": "aa53f043f5f0d634a167e5b4a9387827b83b0b0cca9a3f67f4143eb18bffc261"
+    },
+    {
+      "path": "oracle/r8-completion-B/V03-control-labelled-upstream-error.bundle.json",
+      "sha256": "e7291c8f7e6430bd8567bc0a4f6497564cf477d85288bdcc5239020c64b41513"
+    },
+    {
+      "path": "oracle/r8-completion-B/V03-control-labelled-upstream-error.provenance.json",
+      "sha256": "34c555a0b91a93ba242aadba2fc70c9640e1d7abee9e2a6a48f5dea291562737"
+    },
+    {
+      "path": "oracle/r8-completion-B/V03-subscription-upstream-error-labelled-api.bundle.json",
+      "sha256": "07dd0a48a32b606113770c2bfc175fe2cf1d1121834c3cf94bce832282c9440a"
+    },
+    {
+      "path": "oracle/r8-completion-B/V03-subscription-upstream-error-labelled-api.provenance.json",
+      "sha256": "ca35ea4f5348be0ccfc865d7ec315c814e0c87353e2113952d007c8653111451"
+    },
+    {
+      "path": "oracle/r8-completion-B/V06-reservation-attempt-number-missing.bundle.json",
+      "sha256": "721480dfa5657e1ab94653ed7c90f9ed5b31246ef07e65a86d655fb0f8dec198"
+    },
+    {
+      "path": "oracle/r8-completion-B/V06-reservation-attempt-number-missing.provenance.json",
+      "sha256": "d8312c214ad2701e03e2e3ba54dec615c26a85cbf497048531dc04ed6452a2f9"
+    },
+    {
+      "path": "oracle/r8-completion-B/V07-unrelated-unreadable-log-does-not-block.bundle.json",
+      "sha256": "468aacb12a8a853ba3aa406d197b1d98fd2fa94ab8d1bfea677495572debc635"
+    },
+    {
+      "path": "oracle/r8-completion-B/V07-unrelated-unreadable-log-does-not-block.provenance.json",
+      "sha256": "208fd458e9f38dbdd89a643cfcb92e232e5034c8a7db0fcc73a12692f0412eac"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC01-openai-usage-settlement.bundle.json",
+      "sha256": "5c92dc0972c0faa950200b793c0b4e24488b267cfcb9acfc74d1d6776ec6e062"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC01-openai-usage-settlement.provenance.json",
+      "sha256": "a42fcd1919778469e22425d9f50611a52b5ac243fae8c8958fd377bb1b66bee5"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC02-anthropic-usage-settlement.bundle.json",
+      "sha256": "4f7e5a55bfaac08093718cb2a5e9a685b581fc77620e69cf6fd888845cb42c88"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC02-anthropic-usage-settlement.provenance.json",
+      "sha256": "9a76e43322c76004faf6ef29218d700c62d31a67bdfd03e485c2147f77c31389"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC03-reservation-settlement-with-usage.bundle.json",
+      "sha256": "8496bf5d398d3a93c16da55aa65a3887e72c81f810d48bf7aad5249cb919ba08"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC03-reservation-settlement-with-usage.provenance.json",
+      "sha256": "3087b568caaef103e6813bed1561a63ce57e66f4da14ceec199332aefe441eb4"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC04-upstream-error-keeps-reservation.bundle.json",
+      "sha256": "05ef5c2c05000ac00e113a845125aff16732b9729895d9c08a7c59d59381ec70"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC04-upstream-error-keeps-reservation.provenance.json",
+      "sha256": "ed4f2625e89aab422a0ff46a2765ffc0f91167e788e1097cefe0f84615fc4c40"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC05-unsettled-reservation.bundle.json",
+      "sha256": "bb18c7cf63aff93a87e04e985966bac23dd5b18157f34c3bcdb1e04b2eac9294"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC05-unsettled-reservation.provenance.json",
+      "sha256": "d5be3753dcd7269c40a08042e0c69060394058772fd00398f0f9183859b0582a"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC06-unbudgeted-completed-request.bundle.json",
+      "sha256": "b7462d8f9dfdbeab42934c958d76175f70d74c22d79eee51c1b4fcf34c57e0cf"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC06-unbudgeted-completed-request.provenance.json",
+      "sha256": "eeba0f05e9a933f187c20e79c31d2a1a2f16f5f92b24c0908ca3f7652709b75e"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC07-read-failure-paired.bundle.json",
+      "sha256": "477c81a7d8b3bc672f6e99b03dd050d60b82426eaba2b75592a36aa0670597db"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC07-read-failure-paired.provenance.json",
+      "sha256": "83cdfc65ff36f7d79348414b2ebd80b343c4678671476eb2bbc5cf919db5f1a2"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC08-subscription-measured-request.bundle.json",
+      "sha256": "855f7a1bc7f87831e859c7c31cd86a07aba481724e0055617ea7246d6f38dc65"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC08-subscription-measured-request.provenance.json",
+      "sha256": "ec77771e0ef04dd7b1439564bf8f0326c6b11d25a6ebba977717689cb2f7d6a0"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC11-multi-turn-session.bundle.json",
+      "sha256": "8974a50ea79e1b993a6c5445d40f9381dbbd5fa917ef2413eddf0fb59d9470f3"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC11-multi-turn-session.provenance.json",
+      "sha256": "f14632ac0622724993c4a24f3ec15c1699c766a9123c272ddc7fa41e7c229e03"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC12-reused-n-without-errors.bundle.json",
+      "sha256": "cbd790211258f03fbaf89e70d93e0bb11c94569f16041efb3de690d63fc388b5"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC12-reused-n-without-errors.provenance.json",
+      "sha256": "ec1755426f28a0306ef8ee5f78f0c030a2c25135c0a42974ec1e0b9232cc8e15"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC13-equal-timestamps.bundle.json",
+      "sha256": "7ba9ca1094060cf062c4f10d441208e01ec756e3a37a68842475691202dd714d"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC13-equal-timestamps.provenance.json",
+      "sha256": "ae40c06dca87b0be6a6c9d25984f40ab5f4d3c3e4eb88db4696cd227cf43adfc"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC14-open-session-commitment.bundle.json",
+      "sha256": "4a46ccd9eed71f45bec9cc3825e8e91c829090df005c366747fecee8b6f73423"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC14-open-session-commitment.provenance.json",
+      "sha256": "1a597dafcca88172fcc8aa5ba64a3561b2c1d1a810e7f92b2b874c15cb1d42b3"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC15-successor-not-charged-settled-predecessor-spend.bundle.json",
+      "sha256": "0842a7e33c8d271812ce7885f0037d44b01cfcc57a3d4cc0dce3fc41af912730"
+    },
+    {
+      "path": "oracle/r8-completion-B/VC15-successor-not-charged-settled-predecessor-spend.provenance.json",
+      "sha256": "bef1cc4668d58aec5391522e0cbda716777d7dec2894619ddec08ae67b7e7215"
+    }
+  ],
+  "revision_metadata_repair_ref": "completion/B/REVISION-REPAIR.json"
+}

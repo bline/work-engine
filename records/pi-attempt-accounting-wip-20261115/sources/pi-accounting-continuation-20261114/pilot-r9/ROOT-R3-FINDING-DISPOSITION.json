@@ -1,0 +1,41 @@
+{
+  "at": "2026-11-14T06:47:54.438031+00:00",
+  "subject_manifest_sha256": "0cad3d5ed66b9ef3c4796cb4039a16646d0ce0d451153948b08f972d8286df6a",
+  "review": "review-r3/REVIEW.md",
+  "review_sha256": "9b2bb1c26574127c337b19a44a34da367ca9158d2b10430e4c01034aeda755f0",
+  "full_report_collected_read": true,
+  "design_verdict": "REVISE_PLAN_LOCAL_QUALIFICATION",
+  "implementation_verdict": "CHANGES_REQUIRED",
+  "findings": [
+    {
+      "id": "R9-APPLICATION-01",
+      "severity": "P2",
+      "state": "open",
+      "origin": "inherited/corroborating plus incompleteR9enforcement",
+      "consequence": "exactraw/grantpayload/scope/namespace/endpoints notestablished acrossselected7+2",
+      "root_verification": "sourcecorroboration only; do not claim rootmutant executions for thisfinding"
+    },
+    {
+      "id": "R9-RESERVATION-OUTPUT-01",
+      "severity": "P2",
+      "state": "open",
+      "origin": "introduced qualification omission",
+      "consequence": "jointly deleting secondclass+validityref preserves0failurepositive",
+      "root_verification": "independent reviewerexecuted; root exactsource corroboration"
+    },
+    {
+      "id": "R9-CONSUMPTION-01",
+      "severity": "P2",
+      "state": "open",
+      "origin": "introduced dispatch defect",
+      "consequence": "controlselector skipsP9financialpredicate yet reportsconsumed",
+      "root_verification": "root-review-probes/custody/p9-routing-and-model7.json exit0 expecteddefect reproduced; wrongP9normalreject1/routebypassaccept0;0leftovers"
+    }
+  ],
+  "counting": "one exact stagedimplementation rejection, knownmodel7obs notadditionalround; historical/inheritedhistory retained; infra zeroincrements",
+  "historical_findings": "all11remainOPEN at reviews/implementation-r8/ROOT-FINDING-DISPOSITION.json",
+  "guard": "DESIGN_REVIEW_REQUIRED_R9_LOCAL_QUALIFICATION",
+  "ordinary_repair_allowed": false,
+  "newplan": "PLAN-AMENDMENT-R3.md90b6308e awaitingretainedAstraexactjudgment",
+  "root_reproduction_limits": "Pythonmain in-memorycontrol plusmodel7fullcompletehelpermutants; no newRustfinite mutation or composedRustfinancialbypass claimed"
+}

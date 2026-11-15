@@ -1,0 +1,130 @@
+# out=/home/bline/cbm-work/p126-a134/repro/final/repro_p113-on-a134.txt tree=/home/bline/cbm-work/p126-a134/repro/earlier args=-m unittest repro_p113 -v at=2026-11-13T03:58:35Z
+test_NE_legacy_openai_reservation_without_cache_writes_loses_low_bound (repro_p113.Repro.test_NE_legacy_openai_reservation_without_cache_writes_loses_low_bound) ... FAIL
+test_R01_dated_clock_conflict_erases_a_reservation (repro_p113.Repro.test_R01_dated_clock_conflict_erases_a_reservation) ... FAIL
+test_R02_malformed_charge_cancels_a_reservation (repro_p113.Repro.test_R02_malformed_charge_cancels_a_reservation) ... FAIL
+test_R03_orphan_log_for_a_recorded_turn_number (repro_p113.Repro.test_R03_orphan_log_for_a_recorded_turn_number) ... FAIL
+test_R04_reused_reservation_id_overwrites_exposure (repro_p113.Repro.test_R04_reused_reservation_id_overwrites_exposure) ... ERROR
+test_R05_valid_json_non_object_line_is_skipped (repro_p113.Repro.test_R05_valid_json_non_object_line_is_skipped) ... FAIL
+test_R06_lost_launch_link_hides_a_child (repro_p113.Repro.test_R06_lost_launch_link_hides_a_child) ... ok
+test_R09_editing_the_record_limit_flips_admission (repro_p113.Repro.test_R09_editing_the_record_limit_flips_admission) ... /home/bline/cbm-work/p126-a134/repro/earlier/repro_p113.py:98: ResourceWarning: unclosed file <_io.TextIOWrapper name='/home/bline/cbm-work/p126-a134/tests/tmp/td-My4L/tmpapj790gx/record.json' mode='r' encoding='UTF-8'>
+  doc = json.load(open(rec)); doc['scope_budget']['cost_limits'][0]['max_usd'] = 100.0; json.dump(doc, open(rec, 'w'))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/bline/cbm-work/p126-a134/repro/earlier/repro_p113.py:98: ResourceWarning: unclosed file <_io.TextIOWrapper name='/home/bline/cbm-work/p126-a134/tests/tmp/td-My4L/tmpapj790gx/record.json' mode='w' encoding='UTF-8'>
+  doc = json.load(open(rec)); doc['scope_budget']['cost_limits'][0]['max_usd'] = 100.0; json.dump(doc, open(rec, 'w'))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+
+======================================================================
+ERROR: test_R04_reused_reservation_id_overwrites_exposure (repro_p113.Repro.test_R04_reused_reservation_id_overwrites_exposure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p126-a134/repro/earlier/repro_p113.py", line 78, in test_R04_reused_reservation_id_overwrites_exposure
+    self.assertEqual((a[0], round(a[1], 6)), ('admitted', 0.1))
+                            ~~~~~^^^^^^^^^
+TypeError: type NoneType doesn't define __round__ method
+
+======================================================================
+FAIL: test_NE_legacy_openai_reservation_without_cache_writes_loses_low_bound (repro_p113.Repro.test_NE_legacy_openai_reservation_without_cache_writes_loses_low_bound)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p126-a134/repro/earlier/repro_p113.py", line 108, in test_NE_legacy_openai_reservation_without_cache_writes_loses_low_bound
+    self.assertEqual((r['charge_basis'], r['usd_low']), ('proxy_reservation_charge', 0.0))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('proxy_retained_charge', 0.008) != ('proxy_reservation_charge', 0.0)
+
+First differing element 0:
+'proxy_retained_charge'
+'proxy_reservation_charge'
+
+- ('proxy_retained_charge', 0.008)
+?            -  --             --
+
++ ('proxy_reservation_charge', 0.0)
+?           +++++  +
+
+
+======================================================================
+FAIL: test_R01_dated_clock_conflict_erases_a_reservation (repro_p113.Repro.test_R01_dated_clock_conflict_erases_a_reservation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p126-a134/repro/earlier/repro_p113.py", line 49, in test_R01_dated_clock_conflict_erases_a_reservation
+    self.assertEqual(a[:2], ('admitted', 0.0))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('not_established', None) != ('admitted', 0.0)
+
+First differing element 0:
+'not_established'
+'admitted'
+
+- ('not_established', None)
++ ('admitted', 0.0)
+
+======================================================================
+FAIL: test_R02_malformed_charge_cancels_a_reservation (repro_p113.Repro.test_R02_malformed_charge_cancels_a_reservation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p126-a134/repro/earlier/repro_p113.py", line 57, in test_R02_malformed_charge_cancels_a_reservation
+    self.assertEqual(a[:2], ('admitted', 0.0))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('not_established', None) != ('admitted', 0.0)
+
+First differing element 0:
+'not_established'
+'admitted'
+
+- ('not_established', None)
++ ('admitted', 0.0)
+
+======================================================================
+FAIL: test_R03_orphan_log_for_a_recorded_turn_number (repro_p113.Repro.test_R03_orphan_log_for_a_recorded_turn_number)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p126-a134/repro/earlier/repro_p113.py", line 72, in test_R03_orphan_log_for_a_recorded_turn_number
+    self.assertEqual(a[:2], ('admitted', 0.0))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('not_established', None) != ('admitted', 0.0)
+
+First differing element 0:
+'not_established'
+'admitted'
+
+- ('not_established', None)
++ ('admitted', 0.0)
+
+======================================================================
+FAIL: test_R05_valid_json_non_object_line_is_skipped (repro_p113.Repro.test_R05_valid_json_non_object_line_is_skipped)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/bline/cbm-work/p126-a134/repro/earlier/repro_p113.py", line 85, in test_R05_valid_json_non_object_line_is_skipped
+    self.assertEqual((a[0], a[2]), ('admitted', []))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('not_established', ['malformed_pi_proxy_row']) != ('admitted', [])
+
+First differing element 0:
+'not_established'
+'admitted'
+
+- ('not_established', ['malformed_pi_proxy_row'])
++ ('admitted', [])
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.029s
+
+FAILED (failures=5, errors=1)
+
+NE legacy OpenAI reservation row, cache writes missing: basis=proxy_retained_charge low=0.008 high=0.6 provider_usage=False
+
+R-01 reserve 06:40, settlement 06:20, objective from 06:30: A1.1 ('not_established', None, ['pi_session_clock_out_of_order', 'pi_undated_call_unattributable']); deac8099 ('admitted', 0.0, [])
+
+R-02 429 settlement with charged_usd '0.8' (string): A1.1 ('not_established', None, ['pi_settlement_invalid']); deac8099 ('admitted', 0.0, [])
+
+R-03 charged A/turn-2 log unreferenced; ledger names A/turn-1 and B/turn-2: A1.1 ('not_established', None, ['pi_proxy_log_unreferenced']); deac8099 ('admitted', 0.0, [])
+
+R-04 reserve rid 1 for 0.8 then 0.1, no settlement: A1.1 ('not_established', None, ['pi_reservation_conflict']); deac8099 ('admitted', 0.1, [])
+
+R-05 log with extra lines null and []: A1.1 ('not_established', None, ['malformed_pi_proxy_row']); deac8099 ('admitted', 0.4, [])
+
+R-06 child launch row lost (deliver turn 2 + retire remain), no journal: A1.1 ('admitted', 0.0, []); deac8099 ('admitted', 0.0, [])
+
+R-09 same-UID edit of the record limit (set_by stays 'user'): before ('refused', 0.9, []); after ('admitted', 0.9, [])
+exit=1

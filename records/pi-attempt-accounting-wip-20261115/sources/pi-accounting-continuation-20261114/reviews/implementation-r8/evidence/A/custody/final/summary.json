@@ -1,0 +1,30 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/A/final-plan.json",
+  "plan_sha256": "aa48b3d68bb20aa5cec586a8e2e4170842bf0018e35c6257d37009aca8a92fd1",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "python-partition",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/A/custody/final/python-partition.json",
+      "record_sha256": "01548662216e0f75582106bf1d7ee9e09f5ec139dcd4496c1c6b658bae4f40c7",
+      "leftovers": 0
+    },
+    {
+      "name": "rust-partition",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/A/custody/final/rust-partition.json",
+      "record_sha256": "793784a4b9f42f1384039e9ce851448d03cc7e36b1958719005c48f0cba64fd0",
+      "leftovers": 0
+    },
+    {
+      "name": "controls-rollback",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/A/custody/final/controls-rollback.json",
+      "record_sha256": "14e3b0add1574fd6608b4fead7f102cd954a23cd3fd2ad342362caf8363114ad",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

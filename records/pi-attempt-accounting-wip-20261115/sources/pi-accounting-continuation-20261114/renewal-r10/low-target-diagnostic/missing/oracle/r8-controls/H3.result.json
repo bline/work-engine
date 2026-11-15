@@ -1,0 +1,48 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "proxy_reservation",
+      "kind": "at_least",
+      "nano": "1000000000"
+    },
+    "low": "0"
+  },
+  "bases": [
+    {
+      "atomize": true,
+      "break_copies": true,
+      "conflicts": [
+        "copy-contract-contradicted"
+      ],
+      "id": "B"
+    }
+  ],
+  "coverage": [],
+  "id": "result:H3",
+  "units": [
+    {
+      "high": {
+        "basis": "proxy_reservation",
+        "kind": "at_least",
+        "nano": "500000000"
+      },
+      "id": "origin:A",
+      "low": "0",
+      "origins": [
+        "A"
+      ]
+    },
+    {
+      "high": {
+        "basis": "proxy_reservation",
+        "kind": "at_least",
+        "nano": "500000000"
+      },
+      "id": "origin:B",
+      "low": "0",
+      "origins": [
+        "B"
+      ]
+    }
+  ]
+}

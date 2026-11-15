@@ -1,0 +1,15 @@
+{
+  "baseline": {
+    "root": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/subject"
+  },
+  "changed": [
+    "tooling/spec-check/tests/independent_raw_axes.rs",
+    "validator/r10_admitted.json",
+    "validator/r9_pilot.py",
+    "validator/test_r10_qualification.py",
+    "validator/validate_corpus.py"
+  ],
+  "added": [],
+  "removed": [],
+  "unchanged_count": 962
+}

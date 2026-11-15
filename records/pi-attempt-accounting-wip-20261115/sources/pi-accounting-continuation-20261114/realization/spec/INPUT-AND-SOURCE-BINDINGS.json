@@ -1,0 +1,14 @@
+{
+  "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/SPEC-PACKET.md": "ecc32bca2dcc043f9485a5c74523753d55b882bf48bc18128fd1266755b31fbb",
+  "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/COMMON-PACKET.md": "2d5d4bf40ec4b716fefb03c79543f5e250d526b6558fa2e573a79de21a54f1c4",
+  "/home/bline/cbm-work/pi-accounting-continuation-20261114/design/PLAN.md": "43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61",
+  "/home/bline/cbm-work/pi-accounting-continuation-20261114/ROOT-POLICY-R6.md": "3dbe535668a7d625e025e16c9fa75e51a59dec109f5c842d877791b1d7332200",
+  "/home/bline/cbm-work/pi-accounting-continuation-20261114/ROOT-ADOPTION-R6.json": "73bd74576a0f9d6a95b436c9ad7dfbf2c9c74b76d82184853e8dd25b70292097",
+  "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r6/REVIEW.md": "74c3445edc99722c43aff21803ce22148e5da1299adc59ed7a5bb804ff4c93f9",
+  "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/spec/ck.json": "4836825c0a67587339f743749dc6de66334fbe242ed4e6afb9be05525b354891",
+  "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/spec/ck.schema.json": "9fbced0e80b6595ba1724132e9396427c29c70d8a86f644feb3cbdec6b3f44cc",
+  "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/spec/accounting.schema.json": "717e4e080c288d613cdd0793d3b4d0cdf7620a777efcd648036f2428388ed39c",
+  "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/spec/wire.schema.json": "35a7af6502ad80c554c8544134b991561637161371dfabc9972971ed8efcaf62",
+  "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1/spec/dependencies.json": "c213f680afeddb1cbe21f0ea34393585a41484e70ac3af2c698f4a798a50b043",
+  "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/spec/debug/pi-accounting-spec-check": "0c5f7378403c77ff117ba304db518777a6a5c622e22d3be758336a10e3929442"
+}

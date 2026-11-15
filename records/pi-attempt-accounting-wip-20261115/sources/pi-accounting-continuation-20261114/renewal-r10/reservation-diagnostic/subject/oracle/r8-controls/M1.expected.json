@@ -1,0 +1,52 @@
+{
+  "assertions": [
+    {
+      "claim_id": "M1",
+      "expected_fields_or_relations": {
+        "/aggregate": {
+          "high": {
+            "basis": "usage_valuation",
+            "kind": "exact",
+            "nano": "80000000"
+          },
+          "low": "20000000"
+        },
+        "/findings": [
+          "IdentityContradiction"
+        ],
+        "/units": [
+          {
+            "high": {
+              "basis": "usage_valuation",
+              "kind": "exact",
+              "nano": "80000000"
+            },
+            "id": "primary:r+s",
+            "low": "20000000",
+            "origins": [
+              "r",
+              "s"
+            ]
+          }
+        ]
+      },
+      "negative_control_refs": [
+        "M1.wrong.json"
+      ],
+      "raw_derivation_refs": [
+        "PLAN8:10000*2/1e6=.02;10000*8/1e6=.08; priced multiidentity finite, downstream finding retained"
+      ]
+    }
+  ],
+  "authored_by": "oracle01a1d81b; fixed literal assertions separately from supplied records",
+  "exact_subject_refs": [
+    "result:M1"
+  ],
+  "id": "expected:M1",
+  "kind": "accounting_expected_assertion",
+  "policy_refs": [
+    "PLAN43d0e7c8"
+  ],
+  "raw_subject_ref": "sha256:f982001925f8b554308b79aacc163efdd48a4827c22c85c2bfe75215b9ea659a",
+  "version": "1.7-s1"
+}

@@ -1,0 +1,178 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "oracle/r8-completion-B/DERIVATIONS.json#R6-C02-non200-success-terminal-usage-control",
+        "predecessor_subject_refs": [
+          "baseline:3e7ae4f5cc528b248804c73b41c28c69e6dcda6d517c2ca341d372b7e536309f"
+        ],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": [
+          "conditional-ticket:S1/turn-1"
+        ]
+      },
+      "exact_links": [],
+      "grants": [
+        {
+          "admission": "conditional_fixture",
+          "assumption_refs": [
+            "Inherited immutable ticket namespace only; no exact auxiliary link or physical-bill independence."
+          ],
+          "authority_ref": "ROOT-ADOPTION-R6.json",
+          "covered_extent_ref": "sha256:43c60fbcd61bf9b40185bfff174bb3a2dfc8ca3d70f96047fc00c5b641ecd920",
+          "covered_origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "exact_payload_ref": "oracle/r8-completion-B/R6-C02-non200-success-terminal-usage-control.provenance.json#S1/turn-1",
+          "grant_id": "initial-scope:S1/turn-1",
+          "guarantee_kind": "initial_reference_scope",
+          "observer_or_harness_ref": "inherited-corpus-conditional-fixture"
+        }
+      ],
+      "id": "input:R6-C02-non200-success-terminal-usage-control",
+      "identity_bindings": [],
+      "initial_contracts": [
+        {
+          "contract_id": "conditional-ticket:S1/turn-1",
+          "duplicate_rule": "same_origin_only",
+          "grant_ref": "initial-scope:S1/turn-1",
+          "reference_namespace": "dollar_ticket",
+          "scope_id": "R6-C02-non200-success-terminal-usage-control/S1/turn-1"
+        }
+      ],
+      "kind": "accounting_input_proof",
+      "lineage_id": "R6-C02-non200-success-terminal-usage-control",
+      "origins": [
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:1",
+          "original_position": 1,
+          "raw_bytes_sha256": "0d43dd59adfec545b32bb59a2e73ad8d7d4509f533a93833894e7b1d7aa8fa55",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:43c60fbcd61bf9b40185bfff174bb3a2dfc8ca3d70f96047fc00c5b641ecd920"
+        },
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:2",
+          "original_position": 2,
+          "raw_bytes_sha256": "9703845081a8a78ebd4df2ed42ce5e35b0b8568ab24ccb3d938add07e50010ab",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:43c60fbcd61bf9b40185bfff174bb3a2dfc8ca3d70f96047fc00c5b641ecd920"
+        }
+      ],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ]
+        }
+      ],
+      "continuity_result": "unestablished",
+      "coverage_decisions": [],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [
+        {
+          "context_origin_ref": "S1/turn-1:2",
+          "predicate_ref": "same-original-usage-origin",
+          "usage_origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "id": "result:R6-C02-non200-success-terminal-usage-control",
+      "input_proof_ref": "input:R6-C02-non200-success-terminal-usage-control",
+      "kind": "accounting_result",
+      "lineage_id": "R6-C02-non200-success-terminal-usage-control",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "basis": "usage_valuation",
+          "credit_mode": "single_ambiguous",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "R6-C02-non200-success-terminal-usage-control/default/o/owned_closed",
+          "seed_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "selected_low": "1000000000",
+          "single_floor": "1000000000"
+        },
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "R6-C02-non200-success-terminal-usage-control/default/o/owned_outstanding",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        }
+      ],
+      "origins": [
+        {
+          "active_high_unit_id": "res:S1/turn-1:rid=1",
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:1",
+          "origin_ref": "S1/turn-1:1"
+        },
+        {
+          "active_high_unit_id": "res:S1/turn-1:rid=1",
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:2",
+          "origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "primary_validities": [
+        {
+          "applicable_check_refs": [
+            "case:R6-C02-non200-success-terminal-usage-control#attempt:res:S1/turn-1:rid=1/settlement"
+          ],
+          "distinct_reservation_refs": [
+            "S1/turn-1:1"
+          ],
+          "distinct_settlement_refs": [
+            "S1/turn-1:2"
+          ],
+          "obligation_id": "validity:res:S1/turn-1:rid=1",
+          "validity_result": "valid"
+        }
+      ],
+      "unbudgeted_applicabilities": [],
+      "unbudgeted_completions": [],
+      "units": [
+        {
+          "exposure_ref": "case:R6-C02-non200-success-terminal-usage-control#attempt:res:S1/turn-1:rid=1",
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "state": "active",
+          "unit_id": "res:S1/turn-1:rid=1"
+        }
+      ],
+      "valuation_records": [
+        {
+          "complete": false,
+          "usage_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "valuation_id": "valuation:res:S1/turn-1:rid=1",
+          "wire_ref": "case:R6-C02-non200-success-terminal-usage-control#attempt:res:S1/turn-1:rid=1/valuation"
+        }
+      ],
+      "version": "1.7-s1"
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "files": [
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/validator/validate_corpus.py",
+      "sha256": "f938b227e3cebcf236c52724538c33bc12ccf70061ab231ab92269cce6188ee7"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/validator/r9_pilot.py",
+      "sha256": "2a89cd4db9a3515418b28852a6db90964403b84fc6b7e8927e85640aaa285423"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/validator/r10_admitted.json",
+      "sha256": "a85e3374bbaab675b29459c7c88c38334144f14bd4e7cdb400ab5def06f905e8"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/tooling/spec-check/src/lib.rs",
+      "sha256": "2ee98799071351ca9527d0106ef198436c2bad176944a05cb391598e8d49493a"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/tooling/spec-check/src/accounting.rs",
+      "sha256": "bd17b4c2af56835a17d1732ba9f580b333335140c01fbe758fbf661276a1a482"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/tooling/spec-check/src/applicability.rs",
+      "sha256": "81b2c6834565bbb0a2ea723567a95279e14c19d82ac45980ab8d280353dde2eb"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/tooling/spec-check/tests/independent_raw_axes.rs",
+      "sha256": "faa1236dd0382443e7e920e87924a178635c76fe76d7b03e72af44b82d116c82"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/tooling/spec-check/tests/structural_r8.rs",
+      "sha256": "7939cbc2773c4cf6d86df950d15a0c4f90ebc8cd8ba897eac216593a75101ba5"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/tooling/spec-check/tests/schema_agreement.py",
+      "sha256": "a89fd3c27453511d0f2887f9fa4522db15f2d0c5995572445f472be64e465ffb"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/tooling/spec-check/tests/wire_corpus.py",
+      "sha256": "e8c6f5340e7cf5801927bb01168b0c973698c24f1b4828d291d0939f5b5183d7"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/validator/test_r8_dependencies.py",
+      "sha256": "2e091a516682bd5614a70ff4d567df3a8d270681e7e0c907e8cf932f0085394b"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/spec/ck.json",
+      "sha256": "a3a30398f289c9edcb4c3a3b0009a9dff88021378658062ed532e90226400787"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/spec/ck.schema.json",
+      "sha256": "9fbced0e80b6595ba1724132e9396427c29c70d8a86f644feb3cbdec6b3f44cc"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/spec/accounting.schema.json",
+      "sha256": "84a229afbe21a8e47c21da0c28a0b9b3a3392960411b5a96e9a9258cdbcab6e7"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/spec/wire.schema.json",
+      "sha256": "35a7af6502ad80c554c8544134b991561637161371dfabc9972971ed8efcaf62"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/spec/dependencies.json",
+      "sha256": "41ebe125ea2d76762a2991717b1e059cb1da8c5e6107e3548880fc37dc4dc2ba"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/tooling/spec-check/Cargo.toml",
+      "sha256": "b2ba713e07688b923f92f48b6f15c1bcfdfd8838133ee0740698dacaff512d85"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/oracle/r9-pilot/claims.json",
+      "sha256": "a47bcf0a2d7dcdb9d6ac312fb6ddc06fe396e00228c9f9a48069d6d1f94b98fc"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/oracle/r8-completion-B/VC08-subscription-measured-request.provenance.json",
+      "sha256": "ec77771e0ef04dd7b1439564bf8f0326c6b11d25a6ebba977717689cb2f7d6a0"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/oracle/r8-completion-A/DERIVATIONS.json",
+      "sha256": "29750b3cfa65fece263a800a1e027e955686dcef95a084351e36b661e200ada8"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/oracle/r8-completion-B/DERIVATIONS.json",
+      "sha256": "1ee8a47ae5969d11b82cb6346d3396fd0e304e91f477bf48f7da03b1026a9329"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/oracle/R8-FINITE-COVERAGE.json",
+      "sha256": "19b2c1b268d7564b0118494c05d41af7d39b159d47fbba28e7fd8a8c07e0bea6"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/oracle/R8-CORPUS-CLASSIFICATION.json",
+      "sha256": "dc5ea08a8732460e580ca84741b1e205eddf45012b07f69586cbfb728d528f7f"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/oracle/R8-LOW-ASSERTIONS.json",
+      "sha256": "f3c76979b0f2587382b533620ec83c0c5f6ae6bb7791bd020dc21126fcb07642"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/oracle/r8-completion-A/LOW-ASSERTIONS.json",
+      "sha256": "3c098cf4cfa1fbd1e36a0f24177171f15d691fcd63a10ff750f09f0e1ae42ef7"
+    },
+    {
+      "matches_accepted_manifest": true,
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/subject/oracle/r8-completion-B/LOW-ASSERTIONS.json",
+      "sha256": "587de76fd9fd99c54bcc5ca343785f6624194dd33c5692b9154fc5fd9435d206"
+    }
+  ],
+  "standing": "exact current source fallback; targeted reads, not full audit"
+}

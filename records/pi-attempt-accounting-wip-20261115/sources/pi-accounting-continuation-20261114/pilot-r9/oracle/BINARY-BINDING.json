@@ -1,0 +1,8 @@
+{
+  "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+  "sha256": "dab04fa9d0845f7e1b5f05b36c9deba213a5f093be0d4ef0fc9ee15ab62f59c4",
+  "source_bindings": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/SOURCE-BINDINGS.json",
+  "source_bindings_sha256": "f1ce2a062237e624b674a572bf66d5bae8e382c93b71abf64708f97ce8b32fa1",
+  "custody_summary": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-final/summary.json",
+  "custody_summary_sha256": "3127dfb0c6c819133a32a1e27299f11bb7a9f38c265009520bccceb190c5ce98"
+}

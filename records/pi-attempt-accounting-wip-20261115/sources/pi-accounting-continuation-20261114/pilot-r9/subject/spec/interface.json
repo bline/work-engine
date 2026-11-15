@@ -1,0 +1,195 @@
+{
+  "accounting_evidence": {
+    "attempt_reference": "accounting_result_ref",
+    "kinds": [
+      "accounting_input_proof",
+      "accounting_result",
+      "accounting_expected_assertion"
+    ],
+    "low_semantics": "scope supported credits; never sum local attempt lows",
+    "rollup_reference": "supported_low_evidence_ref",
+    "schema": "spec/accounting.schema.json"
+  },
+  "classification": {
+    "additional_blocking": [
+      "MalformedEvidence(field)"
+    ],
+    "existing_codes": "preserved from contract revision5"
+  },
+  "contract": "pi-accounting-contract/1.7-s1",
+  "encoding": {
+    "evidence": "<alias>/turn-<n>:<line>",
+    "keys": "sorted",
+    "money": "nonnegative decimal nano-USD integer string, checked i128",
+    "reason_case": "existing PascalCase strings; parameterized reason as Code(field)"
+  },
+  "field": {
+    "tag": "state",
+    "variants": {
+      "absent": [],
+      "malformed": [
+        "json_type",
+        "raw"
+      ],
+      "null": [],
+      "present": [
+        "value"
+      ]
+    }
+  },
+  "gate_output_additions": {
+    "verification_payload_sha256": "exact verified payload digest when present",
+    "verification_source": "test_mock when supplied by separate harness; otherwise unverified"
+  },
+  "gate_reasons": [
+    "GateVerificationMissing",
+    "GateVerificationRejected",
+    "GateVerificationBinding",
+    "GateWriterNotAuthority",
+    "GateAuthorityMismatch",
+    "GateSessionMismatch",
+    "GateScopeInsufficient",
+    "GatePeriodInsufficient",
+    "GateMechanismMissing",
+    "GateReceiptMissing",
+    "GateBoundMissing",
+    "GateBoundExceedsCap",
+    "GateBoundCurrency",
+    "GateBoundCoverage",
+    "GateBoundBinding"
+  ],
+  "gate_verification": {
+    "rejected": {
+      "reasons": "string[]"
+    },
+    "tag": "state",
+    "unverified": {},
+    "verified": {
+      "authority_id": "string",
+      "payload_digest": "sha256",
+      "provenance": "test_mock|trusted_adapter",
+      "trust_policy_ref": "string",
+      "verification_evidence": "string",
+      "verifier_identity": "string",
+      "verifier_version": "string"
+    }
+  },
+  "limits": "Serialization agreement only. No financial derivation, fixture approval, production verifier or S2a readiness.",
+  "obligation": {
+    "closed": {
+      "amount_source": [
+        "settlement_amount",
+        "reservation_confirmed",
+        "reservation_bound"
+      ],
+      "by": "EvidenceRef",
+      "state": "closed"
+    },
+    "none": {
+      "amount_source": "none",
+      "cause": [
+        "unbudgeted",
+        "no_reservation",
+        "orphan",
+        "subscription"
+      ],
+      "state": "none"
+    },
+    "outstanding": {
+      "amount_source": "reservation_bound",
+      "state": "outstanding"
+    }
+  },
+  "replacement": {
+    "eligible": "bool",
+    "reason": [
+      "UsageBound",
+      "NotUsageSettlement",
+      "UsageIncomplete",
+      "UsageUnpriceable",
+      "NoReservation"
+    ]
+  },
+  "revision": 8,
+  "schema": "pi-accounting-interface/1",
+  "settlement": {
+    "basis": [
+      "usage",
+      "reservation",
+      "upstream_error",
+      "error_status"
+    ],
+    "decision": [
+      "absent",
+      "valid",
+      "rejected",
+      "conflicting",
+      "not_applicable"
+    ],
+    "reasons": [
+      "ReservationConflict",
+      "NoReservation",
+      "Order",
+      "AttemptNumber",
+      "AmountType",
+      "ReservedMismatch",
+      "BasisMissing",
+      "BasisUnknown",
+      "KeepAll",
+      "StatusType",
+      "ErrorCharge",
+      "UsageUnpriceable",
+      "ModelMismatch",
+      "ToleranceRange",
+      "Undercharge"
+    ]
+  },
+  "trusted_fixture_inputs": {
+    "placement": "top-level sibling of inputs; never inside producer log rows",
+    "schema": {
+      "gate_verifications": {
+        "<gate_id>": {
+          "authority_id": "string",
+          "payload_sha256": "64 lowercase hex",
+          "policy_ref": "string",
+          "session": "string",
+          "source": "test_mock",
+          "verification_evidence": "string"
+        }
+      }
+    }
+  },
+  "valuation": {
+    "existing_fields": [
+      "identities",
+      "low",
+      "high",
+      "complete",
+      "derivations",
+      "reasons",
+      "supported_low",
+      "priced_high"
+    ],
+    "identities": "List<String>; exact provider-qualified openai/<model_id> or anthropic/<model_id>; sorted and distinct; derivations retain provider/model",
+    "reasons": [
+      "IdentityWithoutRate",
+      "ModelUnresolved",
+      "TierUnestablished(Missing)",
+      "TierUnestablished(Unrecognised)",
+      "NonStandardTier",
+      "MalformedTier",
+      "MalformedCount(field)",
+      "MissingCount(field)",
+      "UsageSchemaMismatch",
+      "UsageShape",
+      "UnknownUsageSchema",
+      "RateTableUnusable"
+    ],
+    "state": [
+      "valued",
+      "unpriceable",
+      "not_reported",
+      "not_applicable"
+    ]
+  }
+}

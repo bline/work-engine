@@ -1,0 +1,13 @@
+{
+  "revision": "f957ccf2e3374edd4283822c056b0ca975eabc75",
+  "claim": {
+    "resource": "source/pi-accounting-r10-evaluation-premise-r1",
+    "claim_id": "80d23f74-209b-44e6-98a1-f7cb7bde5615",
+    "author": "codex-pi-accounting",
+    "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+    "claimed_at": "2026-11-14T09:18:48.083645Z",
+    "expires_at": "2026-11-14T12:18:48.083645Z",
+    "note": "Exact reviewed3f79f910/rootadopted81d0b291; new isolated existing11 premise successor only. Fresh Sol6.1 medium default worker cap5 within same100. Root sole collector; source d60017da immutable; no fullmigration or acceptance.",
+    "authority": "advisory_coordination_only"
+  }
+}

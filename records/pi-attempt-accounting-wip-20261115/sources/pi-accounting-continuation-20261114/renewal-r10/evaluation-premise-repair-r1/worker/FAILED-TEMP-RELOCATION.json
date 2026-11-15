@@ -1,0 +1,8 @@
+{
+  "original_path": "/tmp/r10-rust-3764316",
+  "relocated_path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/evaluation-premise-repair-r1/worker/failed-attempt-rust-3764316",
+  "cause": "qualification-1/rust-r10-controls: raw-extent rejected at new finite premise boundary but legacy reason assertion expected old raw reason",
+  "preservation": "whole directory moved without source edits",
+  "source_frozen_manifest": "5e594cac6957fb1550d48d10e86ba155590335fc7dfe742892d0ac34cab5fa1c",
+  "root_direction": "explicit ACK to preserve owned failed-attempt residue under worker"
+}

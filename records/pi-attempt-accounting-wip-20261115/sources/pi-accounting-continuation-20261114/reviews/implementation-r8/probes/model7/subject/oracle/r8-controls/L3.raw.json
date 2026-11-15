@@ -1,0 +1,34 @@
+{
+  "conditional_assumptions": {
+    "binding": [
+      [
+        "uP",
+        "P"
+      ],
+      [
+        "uQ",
+        "Q"
+      ]
+    ],
+    "distinct": [
+      [
+        "uP",
+        "Q"
+      ],
+      [
+        "uQ",
+        "P"
+      ]
+    ],
+    "slots": [
+      "P",
+      "Q"
+    ]
+  },
+  "origins": {
+    "uP": "usage15M",
+    "uQ": "usage20M",
+    "uX": "usage15M"
+  },
+  "uX": "unbound possible copy of either slot"
+}

@@ -1,0 +1,54 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "lib-tests",
+  "argv": [
+    "cargo",
+    "test",
+    "--lib"
+  ],
+  "cwd": "/home/bline/cbm-work/p137-s1r7/s1/tooling/spec-check",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/target-spec"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2626496,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/spec/ck.json",
+      "type": "file",
+      "mode": 436,
+      "length": 562186,
+      "sha256": "82359fe8b2adacccf180ba3285a4cc337c1f659aab65e2e2519af0d78faca68f"
+    },
+    {
+      "path": "/home/bline/cbm-work/p137-s1r7/s1/tooling/spec-check/src/lib.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 36568,
+      "sha256": "a74dcc927ce4c26d43effc47afe73894bd1ef26019d54ca4b08c3e8da70afdd8"
+    }
+  ],
+  "timeout_s": 300.0,
+  "pid": 2626672,
+  "pgid": 2626672,
+  "started_at": "2026-11-13T23:44:13.585811Z",
+  "ended_at": "2026-11-13T23:44:26.840248Z",
+  "duration_s": 13.254,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/custody/build3/lib-tests.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/spec-codex/custody/build3/lib-tests.stderr",
+    "length": 878,
+    "sha256": "ffa9db624a6404dfc3d959da4ca1e7133131bd83a765153e91aacfa2c9a97c48"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

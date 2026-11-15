@@ -1,0 +1,345 @@
+{
+  "author": "01a1d8a4-d798-7fd1-ae5e-6955ec003480",
+  "claims": [
+    {
+      "cases": [
+        {
+          "admission_id": "a1",
+          "attempt_key": "res:S1/turn-1:rid=1",
+          "case_id": "P9-claimed-charge-above-reservation",
+          "components": [
+            {
+              "kind": "reservation",
+              "nano": "400000000",
+              "origin_ref": "S1/turn-1:1"
+            },
+            {
+              "kind": "claimed_reserved",
+              "nano": "500000000",
+              "origin_ref": "S1/turn-1:2"
+            },
+            {
+              "kind": "charge",
+              "nano": "700000000",
+              "origin_ref": "S1/turn-1:2"
+            },
+            {
+              "kind": "usage",
+              "nano": "15000000",
+              "origin_ref": "S1/turn-1:2"
+            }
+          ],
+          "evaluation": "default",
+          "objective": "o",
+          "origins": [
+            {
+              "origin_ref": "S1/turn-1:1",
+              "original_position": 1,
+              "raw_bytes_sha256": "71e1c0ecb5b321cf500dbf8e44151042511977362d566b9e9b1c1d8c40333b98",
+              "source_origin_id": "S1/turn-1"
+            },
+            {
+              "origin_ref": "S1/turn-1:2",
+              "original_position": 2,
+              "raw_bytes_sha256": "58fa8807db35d0d11208a4512576fcdb42c06705f468d62bde93955c2cd8e823",
+              "source_origin_id": "S1/turn-1"
+            }
+          ]
+        }
+      ],
+      "claim_id": "P9-RETAINED-CHARGE",
+      "relation": "retained_charge"
+    },
+    {
+      "cases": [
+        {
+          "case_id": "VC11-multi-turn-session",
+          "obligations": [
+            {
+              "obligation_id": "validity:res:S1/turn-1:rid=1",
+              "reservation_origin_ref": "S1/turn-1:1",
+              "settlement_origin_ref": "S1/turn-1:2"
+            },
+            {
+              "obligation_id": "validity:res:S1/turn-2:rid=1",
+              "reservation_origin_ref": "S1/turn-2:1",
+              "settlement_origin_ref": "S1/turn-2:2"
+            }
+          ],
+          "origins": [
+            {
+              "origin_ref": "S1/turn-1:1",
+              "original_position": 1,
+              "raw_bytes_sha256": "70f7e415dc1a71b54acc58117be26d6107a68ec0a7ed057982c6a8653d59549a",
+              "source_origin_id": "S1/turn-1"
+            },
+            {
+              "origin_ref": "S1/turn-1:2",
+              "original_position": 2,
+              "raw_bytes_sha256": "5cc14fe7d2a745fa3fd69bd9a10804ffdae6ff3cb8c3c56892344a839dbbce22",
+              "source_origin_id": "S1/turn-1"
+            },
+            {
+              "origin_ref": "S1/turn-2:1",
+              "original_position": 1,
+              "raw_bytes_sha256": "32f4d69f1db6b69b8bec63d25c5e0ebbedba8f52c9d7989366d19b3b1df741cf",
+              "source_origin_id": "S1/turn-2"
+            },
+            {
+              "origin_ref": "S1/turn-2:2",
+              "original_position": 2,
+              "raw_bytes_sha256": "09c3d47278d20ed46ce335845f55015a5e4657fa005b68b2c9821989f7242b8f",
+              "source_origin_id": "S1/turn-2"
+            }
+          ]
+        },
+        {
+          "case_id": "P132-FG-VC11-gated",
+          "obligations": [
+            {
+              "obligation_id": "obligation:res:S1/turn-1:rid=1",
+              "reservation_origin_ref": "S1/turn-1:1",
+              "settlement_origin_ref": "S1/turn-1:2"
+            },
+            {
+              "obligation_id": "obligation:res:S1/turn-2:rid=1",
+              "reservation_origin_ref": "S1/turn-2:1",
+              "settlement_origin_ref": "S1/turn-2:2"
+            }
+          ],
+          "origins": [
+            {
+              "origin_ref": "S1/turn-1:1",
+              "original_position": 1,
+              "raw_bytes_sha256": "70f7e415dc1a71b54acc58117be26d6107a68ec0a7ed057982c6a8653d59549a",
+              "source_origin_id": "S1/turn-1"
+            },
+            {
+              "origin_ref": "S1/turn-1:2",
+              "original_position": 2,
+              "raw_bytes_sha256": "5cc14fe7d2a745fa3fd69bd9a10804ffdae6ff3cb8c3c56892344a839dbbce22",
+              "source_origin_id": "S1/turn-1"
+            },
+            {
+              "origin_ref": "S1/turn-2:1",
+              "original_position": 1,
+              "raw_bytes_sha256": "32f4d69f1db6b69b8bec63d25c5e0ebbedba8f52c9d7989366d19b3b1df741cf",
+              "source_origin_id": "S1/turn-2"
+            },
+            {
+              "origin_ref": "S1/turn-2:2",
+              "original_position": 2,
+              "raw_bytes_sha256": "09c3d47278d20ed46ce335845f55015a5e4657fa005b68b2c9821989f7242b8f",
+              "source_origin_id": "S1/turn-2"
+            }
+          ]
+        },
+        {
+          "case_id": "VC07-read-failure-paired",
+          "conditional_raw_sha256": "994b934d5b0d2d2eee1a02407dda62f39e617c4e03d2d6682069171e2842ae4f",
+          "origins": [
+            {
+              "origin_ref": "S1/turn-1:1",
+              "original_position": 1,
+              "raw_bytes_sha256": "3e786454e65394e5bfb0212d3ca5ea620ed695d6522d266f291af020f82bb037",
+              "source_origin_id": "S1/turn-1"
+            },
+            {
+              "origin_ref": "S1/turn-1:2",
+              "original_position": 2,
+              "raw_bytes_sha256": "42e084b9437a79d12de39c372daa6041183adf309a39b5c5f3800950ea4065ba",
+              "source_origin_id": "S1/turn-1"
+            }
+          ]
+        }
+      ],
+      "claim_id": "PRIMARY/ANCHOR-APPLICATION",
+      "relation": "primary_anchor"
+    },
+    {
+      "cases": [
+        {
+          "attempt_key": "res:S1/turn-1:rid=1",
+          "bundle_file": "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json",
+          "case_id": "VC01-openai-usage-settlement",
+          "control_file": "cases/model7-VC01-openai-usage-settlement.json",
+          "low_assertions": [
+            {
+              "alternative_origin_refs": [
+                "S1/turn-1:2"
+              ],
+              "evaluation": "default",
+              "expected_low": "0",
+              "label": "owned_closed",
+              "objective": "o",
+              "owned_unit_refs": [
+                "res:S1/turn-1:rid=1"
+              ],
+              "seed_origin_refs": [
+                "S1/turn-1:2"
+              ]
+            },
+            {
+              "alternative_origin_refs": [],
+              "evaluation": "default",
+              "expected_low": "0",
+              "label": "owned_outstanding",
+              "objective": "o",
+              "owned_unit_refs": [],
+              "seed_origin_refs": []
+            }
+          ],
+          "origin_ref": "S1/turn-1:2",
+          "origins": [
+            {
+              "origin_ref": "S1/turn-1:1",
+              "original_position": 1,
+              "raw_bytes_sha256": "70f7e415dc1a71b54acc58117be26d6107a68ec0a7ed057982c6a8653d59549a",
+              "source_origin_id": "S1/turn-1"
+            },
+            {
+              "origin_ref": "S1/turn-1:2",
+              "original_position": 2,
+              "raw_bytes_sha256": "6b3e308e170578afa395956bf309305762a3b1b2227e874caa3998987c43dfc3",
+              "source_origin_id": "S1/turn-1"
+            }
+          ],
+          "raw_file": "cases/model7-VC01-openai-usage-settlement.raw-case.json",
+          "raw_input_sha256": "8e9cedfbd77254e983fa35939c7cfa5b19ff516a0c9269e11ed9b31843edb3e2",
+          "response_model_state": "present_number",
+          "response_model_value": 7
+        },
+        {
+          "attempt_key": "res:S1/turn-1:rid=1",
+          "bundle_file": "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json",
+          "case_id": "A04-undated-settlement-between-dated-neighbours",
+          "control_file": "cases/model7-A04-undated-settlement-between-dated-neighbours.json",
+          "low_assertions": [
+            {
+              "alternative_origin_refs": [
+                "S1/turn-1:2"
+              ],
+              "evaluation": "default",
+              "expected_low": "0",
+              "label": "owned_closed",
+              "objective": "o",
+              "owned_unit_refs": [
+                "res:S1/turn-1:rid=1"
+              ],
+              "seed_origin_refs": [
+                "S1/turn-1:2"
+              ]
+            },
+            {
+              "alternative_origin_refs": [],
+              "evaluation": "default",
+              "expected_low": "0",
+              "label": "owned_outstanding",
+              "objective": "o",
+              "owned_unit_refs": [
+                "res:S1/turn-1:rid=2"
+              ],
+              "seed_origin_refs": []
+            }
+          ],
+          "origin_ref": "S1/turn-1:2",
+          "origins": [
+            {
+              "origin_ref": "S1/turn-1:1",
+              "original_position": 1,
+              "raw_bytes_sha256": "70f7e415dc1a71b54acc58117be26d6107a68ec0a7ed057982c6a8653d59549a",
+              "source_origin_id": "S1/turn-1"
+            },
+            {
+              "origin_ref": "S1/turn-1:2",
+              "original_position": 2,
+              "raw_bytes_sha256": "1a5e46f3fb11602f44bfa9f02198549b134e98997e5f243f762e916406170319",
+              "source_origin_id": "S1/turn-1"
+            },
+            {
+              "origin_ref": "S1/turn-1:3",
+              "original_position": 3,
+              "raw_bytes_sha256": "a322972d8f40670807c5f4dce520a38af2ecd679bf6a6e4cf30d4eeed89186c5",
+              "source_origin_id": "S1/turn-1"
+            }
+          ],
+          "raw_file": "cases/model7-A04-undated-settlement-between-dated-neighbours.raw-case.json",
+          "raw_input_sha256": "976a4b2acf473f87ac4850f8c5ad5178d672fd650d231d23d5cc0e691abd342a",
+          "response_model_state": "present_number",
+          "response_model_value": 7
+        }
+      ],
+      "claim_id": "RESPONSE-MODEL7-ACTUAL",
+      "relation": "malformed_response_model"
+    },
+    {
+      "cases": [
+        {
+          "attempt_key": "res:S1/turn-1:rid=1",
+          "bundle_file": "oracle/r9-pilot/cases/equal-reservations.bundle.json",
+          "case_id": "VC01-openai-usage-settlement",
+          "comparison_applicable": false,
+          "control_file": "cases/equal-reservations.json",
+          "expected_classes": 2,
+          "low_assertions": [
+            {
+              "alternative_origin_refs": [],
+              "evaluation": "default",
+              "expected_low": "0",
+              "label": "owned_closed",
+              "objective": "o",
+              "owned_unit_refs": [],
+              "seed_origin_refs": []
+            },
+            {
+              "alternative_origin_refs": [
+                "S1/turn-1:3"
+              ],
+              "evaluation": "default",
+              "expected_low": "15000000",
+              "label": "owned_outstanding",
+              "objective": "o",
+              "owned_unit_refs": [
+                "res:S1/turn-1:rid=1"
+              ],
+              "seed_origin_refs": [
+                "S1/turn-1:3"
+              ]
+            }
+          ],
+          "maximum_reservation_nano": "500000000",
+          "origins": [
+            {
+              "origin_ref": "S1/turn-1:1",
+              "original_position": 1,
+              "raw_bytes_sha256": "70f7e415dc1a71b54acc58117be26d6107a68ec0a7ed057982c6a8653d59549a",
+              "source_origin_id": "S1/turn-1"
+            },
+            {
+              "origin_ref": "S1/turn-1:2",
+              "original_position": 2,
+              "raw_bytes_sha256": "defd1f79ac5906156d7a0d77bd02578dc8b49305b36ae737d33a2d4658242ffc",
+              "source_origin_id": "S1/turn-1"
+            },
+            {
+              "origin_ref": "S1/turn-1:3",
+              "original_position": 3,
+              "raw_bytes_sha256": "5cc14fe7d2a745fa3fd69bd9a10804ffdae6ff3cb8c3c56892344a839dbbce22",
+              "source_origin_id": "S1/turn-1"
+            }
+          ],
+          "raw_file": "cases/equal-reservations.raw-case.json",
+          "raw_input_sha256": "5b6b16d647aaf00f681f234a72398b96d0ba6bc3006c77b335dc91a75ce9eeb3",
+          "reservation_origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ]
+        }
+      ],
+      "claim_id": "EQUAL-AMOUNT-DISTINCT-RESERVATIONS",
+      "relation": "reservation_classes"
+    }
+  ],
+  "derivation_ref": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/DERIVATIONS.md",
+  "version": "r9-finite-pilot/1"
+}

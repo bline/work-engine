@@ -1,0 +1,47 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "revision6-first-check",
+  "argv": [
+    "python3",
+    "validator/validate_corpus.py",
+    "check",
+    "corpus",
+    "oracle/rates"
+  ],
+  "cwd": "/home/bline/cbm-work/p136-s1r6/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 2439355,
+  "inputs": [
+    {
+      "path": "validator/validate_corpus.py",
+      "type": "file",
+      "mode": 436,
+      "length": 84742,
+      "sha256": "a5b61c64332b8bd61837dee401d204a5534ef1b4c04baa5ecf188677b3a80b2c"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 2439428,
+  "pgid": 2439428,
+  "started_at": "2026-11-13T22:30:04.058041Z",
+  "ended_at": "2026-11-13T22:30:04.254337Z",
+  "duration_s": 0.196,
+  "returncode": 1,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/custody/revision6-first-check.stdout",
+    "length": 262,
+    "sha256": "580c6f9cff832931553f6180bc5984e16e03340a902b516ac3efe5e0171007c4"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/oracle-build/custody/revision6-first-check.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

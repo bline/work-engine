@@ -1,0 +1,53 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "rust-partition",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-integration/debug/pi-accounting-spec-check",
+    "corpus",
+    ".",
+    "A"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 3087721,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/completion-integration/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 76675680,
+      "sha256": "cc169e5bad5d4aba90bbff2ce5a50a1d2ed5f707fa5563e87d5d6a58fbd35bf8"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/A/SOURCE-BINDINGS.json",
+      "type": "file",
+      "mode": 436,
+      "length": 37267,
+      "sha256": "c82929314fd580d4cbae3fb83972222cd3109954dae00d4e4afbe64834fb61ab"
+    }
+  ],
+  "timeout_s": 120,
+  "pid": 3087794,
+  "pgid": 3087794,
+  "started_at": "2026-11-14T04:19:41.399423Z",
+  "ended_at": "2026-11-14T04:19:43.767899Z",
+  "duration_s": 2.368,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/A/custody/final/rust-partition.stdout",
+    "length": 97,
+    "sha256": "8feb20176f3b3645ea27d815a3be0e904da5238e70fbff58b1e35ecfe2759f11"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/completion/A/custody/final/rust-partition.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

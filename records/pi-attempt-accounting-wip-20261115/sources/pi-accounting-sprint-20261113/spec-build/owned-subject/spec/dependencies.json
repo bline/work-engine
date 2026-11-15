@@ -1,0 +1,216 @@
+{
+  "consumers": [
+    {
+      "acknowledgement": null,
+      "dependencies": [
+        "MONEY",
+        "SETTLEMENT",
+        "TEMPORAL-AND-FINALIZATION",
+        "X-TABLE",
+        "CLASSIFICATION"
+      ],
+      "id": "view-contract",
+      "owner": "specification"
+    },
+    {
+      "acknowledgement": null,
+      "dependencies": [
+        "Field",
+        "Model",
+        "Bound",
+        "High",
+        "Replacement",
+        "SettlementDecision",
+        "TemporalObligation",
+        "Obligation",
+        "Valuation",
+        "Exposure",
+        "Correlation",
+        "GateVerification",
+        "SERIALIZATION"
+      ],
+      "id": "view-schema",
+      "owner": "specification"
+    },
+    {
+      "acknowledgement": null,
+      "dependencies": [
+        "C-KEY-1",
+        "C-KEY-2",
+        "C-KEY-3",
+        "C-KEY-4",
+        "C-KEY-5",
+        "C-KEY-6",
+        "C-KEY-7",
+        "S-zero-zero",
+        "S-zero-one-pass",
+        "S-zero-one-fail",
+        "S-zero-many",
+        "S-unique-zero",
+        "S-unique-one-pass",
+        "S-unique-one-fail",
+        "S-unique-many",
+        "S-conflicting-zero",
+        "S-conflicting-one-pass",
+        "S-conflicting-one-fail",
+        "S-conflicting-many",
+        "S-TIME-1",
+        "S-TIME-2",
+        "S-TIME-3",
+        "V-PRESENCE-1",
+        "V-PRESENCE-2",
+        "V-PRESENCE-3",
+        "V-PRESENCE-4",
+        "V-PRESENCE-5",
+        "V-PRESENCE-6",
+        "V-PRESENCE-7",
+        "V-PRESENCE-8",
+        "V-PRESENCE-9",
+        "F-REPLACEMENT-1",
+        "F-REPLACEMENT-2",
+        "F-REPLACEMENT-3",
+        "F-REPLACEMENT-4",
+        "F-REPLACEMENT-5",
+        "F-OBLIGATION-1",
+        "F-OBLIGATION-2",
+        "F-OBLIGATION-3",
+        "X-EXPOSURE-1",
+        "X-EXPOSURE-2",
+        "X-EXPOSURE-3",
+        "X-EXPOSURE-4",
+        "X-EXPOSURE-5",
+        "X-EXPOSURE-6",
+        "X-EXPOSURE-7",
+        "X-EXPOSURE-8",
+        "X-EXPOSURE-9",
+        "X-EXPOSURE-10",
+        "X-EXPOSURE-11",
+        "K-FINDINGS-1",
+        "K-FINDINGS-2"
+      ],
+      "id": "view-transitions",
+      "owner": "specification"
+    },
+    {
+      "acknowledgement": null,
+      "dependencies": [
+        "ENCODING",
+        "MONEY",
+        "EVIDENCE",
+        "CORRELATION",
+        "SETTLEMENT",
+        "TEMPORAL-AND-FINALIZATION",
+        "VALUATION",
+        "X-TABLE",
+        "CLASSIFICATION",
+        "USAGE-PRESENCE",
+        "INV-F1",
+        "INV-F2",
+        "INV-F3",
+        "INV-F4",
+        "INV-F5",
+        "INV-F6",
+        "INV-F7",
+        "INV-F8",
+        "INV-F9",
+        "INV-F10",
+        "INV-F12",
+        "INV-F13",
+        "INV-F11",
+        "BOUNDARY-CONSUMERS",
+        "S2A-SCOPE",
+        "PRICE-OPENAI",
+        "PRICE-ANTHROPIC",
+        "RESERVATION-MAX",
+        "ERROR-EXPOSURE",
+        "ELIGIBLE-EXPOSURE",
+        "INELIGIBLE-EXPOSURE",
+        "TOLERANCE",
+        "BASIS-TIE",
+        "COMMITMENT-RESIDUAL",
+        "SERIALIZATION"
+      ],
+      "id": "oracle-cases",
+      "owner": "independent oracle"
+    },
+    {
+      "acknowledgement": null,
+      "dependencies": [
+        "USAGE-PRESENCE",
+        "RESERVATION-MAX",
+        "TOLERANCE"
+      ],
+      "id": "producer-witnesses",
+      "owner": "independent producer oracle"
+    },
+    {
+      "acknowledgement": null,
+      "dependencies": [
+        "TEMPORAL-AND-FINALIZATION"
+      ],
+      "id": "consumer-L",
+      "owner": "lifecycle"
+    },
+    {
+      "acknowledgement": null,
+      "dependencies": [
+        "X-TABLE",
+        "BOUNDARY-CONSUMERS"
+      ],
+      "id": "consumer-T",
+      "owner": "attribution"
+    },
+    {
+      "acknowledgement": null,
+      "dependencies": [
+        "X-TABLE",
+        "COMMITMENT-RESIDUAL",
+        "BOUNDARY-CONSUMERS"
+      ],
+      "id": "consumer-R",
+      "owner": "rollup predecessor commitment"
+    },
+    {
+      "acknowledgement": null,
+      "dependencies": [
+        "GateVerification",
+        "BOUNDARY-CONSUMERS",
+        "COMMITMENT-RESIDUAL"
+      ],
+      "id": "gate-trust",
+      "owner": "external verifier admission owner"
+    },
+    {
+      "acknowledgement": null,
+      "dependencies": [
+        "oracle-cases",
+        "view-contract"
+      ],
+      "id": "review-A",
+      "owner": "independent Module A"
+    },
+    {
+      "acknowledgement": null,
+      "dependencies": [
+        "oracle-cases",
+        "producer-witnesses",
+        "view-schema",
+        "view-transitions"
+      ],
+      "id": "review-C",
+      "owner": "independent Module C"
+    },
+    {
+      "acknowledgement": null,
+      "dependencies": [
+        "consumer-L",
+        "consumer-T",
+        "consumer-R",
+        "gate-trust"
+      ],
+      "id": "review-B",
+      "owner": "independent relevant Module B"
+    }
+  ],
+  "schema": "pi-accounting-dependencies/1"
+}

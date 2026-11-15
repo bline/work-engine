@@ -1,0 +1,222 @@
+--- baseline/oracle/r9-pilot/cases/equal-reservations.json
++++ subject/oracle/r9-pilot/cases/equal-reservations.json
+@@ -48,7 +48,7 @@
+                 "nano": "0"
+               },
+               "low": "0",
+-              "supported_low_evidence_ref": "oracle/r8-completion-B/VC01-openai-usage-settlement.bundle.json#VC01-openai-usage-settlement/default/o/owned_closed"
++              "supported_low_evidence_ref": "oracle/r9-pilot/cases/equal-reservations.bundle.json#VC01-openai-usage-settlement/default/o/owned_closed"
+             },
+             "owned_outstanding": {
+               "high": {
+@@ -56,7 +56,7 @@
+                 "nano": "500000000"
+               },
+               "low": "15000000",
+-              "supported_low_evidence_ref": "oracle/r8-completion-B/VC01-openai-usage-settlement.bundle.json#VC01-openai-usage-settlement/default/o/owned_outstanding"
++              "supported_low_evidence_ref": "oracle/r9-pilot/cases/equal-reservations.bundle.json#VC01-openai-usage-settlement/default/o/owned_outstanding"
+             },
+             "predecessor_obligations": {
+               "high": {
+@@ -115,7 +115,7 @@
+   "expected": {
+     "attempts": [
+       {
+-        "accounting_result_ref": "oracle/r8-completion-B/VC01-openai-usage-settlement.bundle.json#result:VC01-openai-usage-settlement",
++        "accounting_result_ref": "oracle/r9-pilot/cases/equal-reservations.bundle.json#result:VC01-openai-usage-settlement",
+         "billing": "unresolved",
+         "blocking": [
+           "SettlementRejected",
+--- baseline/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json
++++ subject/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json
+@@ -61,7 +61,7 @@
+                 "nano": "500000000"
+               },
+               "low": "15000000",
+-              "supported_low_evidence_ref": "oracle/r8-completion-B/A04-undated-settlement-between-dated-neighbours.bundle.json#A04-undated-settlement-between-dated-neighbours/default/o/owned_closed"
++              "supported_low_evidence_ref": "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json#A04-undated-settlement-between-dated-neighbours/default/o/owned_closed"
+             },
+             "owned_outstanding": {
+               "high": {
+@@ -69,7 +69,7 @@
+                 "nano": "300000000"
+               },
+               "low": "0",
+-              "supported_low_evidence_ref": "oracle/r8-completion-B/A04-undated-settlement-between-dated-neighbours.bundle.json#A04-undated-settlement-between-dated-neighbours/default/o/owned_outstanding"
++              "supported_low_evidence_ref": "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json#A04-undated-settlement-between-dated-neighbours/default/o/owned_outstanding"
+             },
+             "predecessor_obligations": {
+               "high": {
+@@ -127,7 +127,7 @@
+   "expected": {
+     "attempts": [
+       {
+-        "accounting_result_ref": "oracle/r8-completion-B/A04-undated-settlement-between-dated-neighbours.bundle.json#result:A04-undated-settlement-between-dated-neighbours",
++        "accounting_result_ref": "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json#result:A04-undated-settlement-between-dated-neighbours",
+         "billing": "unresolved",
+         "blocking": [
+           "UnresolvedExposure",
+@@ -198,7 +198,7 @@
+         }
+       },
+       {
+-        "accounting_result_ref": "oracle/r8-completion-B/A04-undated-settlement-between-dated-neighbours.bundle.json#result:A04-undated-settlement-between-dated-neighbours",
++        "accounting_result_ref": "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json#result:A04-undated-settlement-between-dated-neighbours",
+         "billing": "unresolved",
+         "blocking": [
+           "UnresolvedExposure"
+--- baseline/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json
++++ subject/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json
+@@ -48,7 +48,7 @@
+                 "nano": "500000000"
+               },
+               "low": "15000000",
+-              "supported_low_evidence_ref": "oracle/r8-completion-B/VC01-openai-usage-settlement.bundle.json#VC01-openai-usage-settlement/default/o/owned_closed"
++              "supported_low_evidence_ref": "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json#VC01-openai-usage-settlement/default/o/owned_closed"
+             },
+             "owned_outstanding": {
+               "high": {
+@@ -56,7 +56,7 @@
+                 "nano": "0"
+               },
+               "low": "0",
+-              "supported_low_evidence_ref": "oracle/r8-completion-B/VC01-openai-usage-settlement.bundle.json#VC01-openai-usage-settlement/default/o/owned_outstanding"
++              "supported_low_evidence_ref": "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json#VC01-openai-usage-settlement/default/o/owned_outstanding"
+             },
+             "predecessor_obligations": {
+               "high": {
+@@ -114,7 +114,7 @@
+   "expected": {
+     "attempts": [
+       {
+-        "accounting_result_ref": "oracle/r8-completion-B/VC01-openai-usage-settlement.bundle.json#result:VC01-openai-usage-settlement",
++        "accounting_result_ref": "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json#result:VC01-openai-usage-settlement",
+         "billing": "unresolved",
+         "blocking": [
+           "UnresolvedExposure",
+--- baseline/tooling/spec-check/tests/independent_raw_axes.rs
++++ subject/tooling/spec-check/tests/independent_raw_axes.rs
+@@ -1416,6 +1416,7 @@
+                     ),
+                 );
+                 r10_reservation_inventory(&bundle)?;
++                r10_reservation_consequence(&c, a, b, &raw, &bundle)?;
+                 let provenance =
+                     read(r.join("oracle/r9-pilot/cases/equal-reservations.provenance.json"));
+                 let scope = &provenance["grant_payloads"][0];
+@@ -1627,7 +1628,7 @@
+                         c["expected"]["attempts"][0]["replacement"]["eligible"] = json!(true);
+                     },
+                 );
+-                "reservation evidence cardinality2"
++                "raw reservation outstanding obligation/replacement"
+             }
+             "missing" => {
+                 r9_edit(&subject, "oracle/r9-pilot/claims.json", |d| {
+@@ -1754,3 +1755,15 @@
+     }
+     fs::remove_dir_all(temp).unwrap();
+ }
++
++fn r10_reservation_consequence(c:&Value,a:&Value,b:&Value,raw:&std::collections::BTreeMap<String,String>,bundle:&Value)->Result<(),String>{
++ let maximum=b["reservation_origin_refs"].as_array().ok_or("reservation refs")?.iter().map(|o|{let row:Value=serde_json::from_str(&raw[o.as_str().unwrap()]).unwrap();dollars(&row["reserved_usd"]).ok_or("raw reservation amount")}).collect::<Result<Vec<_>,_>>()?.into_iter().max().ok_or("raw reservation maximum")?.to_string();
++ if a["exposure"]["high"]!=json!({"kind":"at_least","basis":"proxy_reservation","nano":maximum}) || a["exposure"]["pool"]!="pi_api" {return Err("R10 raw reservation maximum/conservative high".into());}
++ if a["settlement"]["reserved"]!=maximum {return Err("R10 raw reservation fixed settlement reserved amount".into());}
++ if a["obligation"]!=json!({"amount_source":"reservation_bound","state":"outstanding"}) || a["replacement"]["eligible"]!=false || a["settlement"]["decision"]!="rejected" {return Err("R10 raw reservation outstanding obligation/replacement".into());}
++ let cid=c["case_id"].as_str().ok_or("case id")?;let key=a["key"].as_str().ok_or("attempt key")?;let inp=&bundle["documents"][0];let result=&bundle["documents"][1];let origins:Vec<_>=raw.keys().collect();let obligation=format!("validity:{key}");let exposure=format!("case:{cid}#attempt:{key}");let ms=&result["primary_memberships"];let vs=&result["primary_validities"];
++ let owners:Vec<_>=result["origins"].as_array().ok_or("owners")?.iter().map(|o|json!([o["origin_ref"],o["active_high_unit_id"]])).collect();let want_owners:Vec<_>=origins.iter().map(|o|json!([o,key])).collect();
++ if inp["kind"]!="accounting_input_proof" || inp["id"]!=format!("input:{cid}") || inp["lineage_id"]!=cid || result["kind"]!="accounting_result" || result["id"]!=format!("result:{cid}") || result["lineage_id"]!=cid || result["input_proof_ref"]!=inp["id"] || a["accounting_result_ref"]!=format!("{}#result:{cid}",b["bundle_file"].as_str().unwrap()) || a["evidence"]!=json!(origins) || result["units"]!=json!([{"unit_id":key,"state":"active","origin_refs":origins,"exposure_ref":exposure}]) || ms.as_array().map(Vec::len)!=Some(1) || ms[0]["obligation_id"]!=obligation || ms[0]["settlement_classes"]!=json!([{"origin_refs":["S1/turn-1:3"],"representative_origin_ref":"S1/turn-1:3"}]) || ms[0]["usage_origin_refs"]!=json!(["S1/turn-1:3"]) || vs.as_array().map(Vec::len)!=Some(1) || vs[0]["obligation_id"]!=obligation || vs[0]["validity_result"]!="rejected" || vs[0]["applicable_check_refs"]!=json!([format!("{exposure}/settlement")]) || vs[0]["distinct_settlement_refs"]!=json!(["S1/turn-1:3"]) || result["coverage_decisions"]!=json!([]) || owners!=want_owners {return Err("R10 reservation selected raw/result/unit/validity join".into());}
++ for ev in c["evaluations"].as_array().ok_or("evaluations")?{for ob in ev["expected"]["objectives"].as_array().ok_or("objectives")?{for label in ["owned_closed","owned_outstanding"]{let scope=format!("{cid}/{}/{}/{label}",ev["name"].as_str().unwrap(),ob["objective"].as_str().unwrap());if ob[label]["supported_low_evidence_ref"]!=format!("{}#{scope}",b["bundle_file"].as_str().unwrap()){return Err("R10 reservation selected low reference join".into());}}}}
++ Ok(())
++}
+--- baseline/validator/r9_pilot.py
++++ subject/validator/r9_pilot.py
+@@ -92,6 +92,7 @@
+   if b['expected_classes']!=2 or b['maximum_reservation_nano']!='500000000' or b['comparison_applicable'] is not False:F.add(c['case_id'],'R9 independent reservation cardinality premises disagree with raw')
+   if len(set(ls))!=2 or any(x['reserved_usd']!=0.5 for x in rs):F.add(c['case_id'],'R9 two byte-distinct500M reservation premises')
+   if a['replacement']['eligible'] or a['settlement']['decision']=='valid':F.add(c['case_id'],'R9 evidence cardinality2 prohibits comparison/release despite max500M')
++  reservation_consequence(c,a,b,raw,F)
+   bundle=json.loads((root()/b['bundle_file']).read_text());reservation_inventory(bundle,F,c['case_id']);inp=bundle['documents'][0];provenance=json.loads((root()/'oracle/r9-pilot/cases/equal-reservations.provenance.json').read_text());scope=provenance['grant_payloads'][0]
+   if scope['source_origin_id']!='S1/turn-1' or scope['exact_origin_refs']!=sorted(raw) or provenance['raw_input_sha256']!=b['raw_input_sha256'] or inp['grants'][0]['covered_origin_refs']!=scope['exact_origin_refs'] or inp['grants'][0]['exact_payload_ref']!='oracle/r9-pilot/cases/equal-reservations.provenance.json#S1/turn-1':F.add(c['case_id'],'R9 equal-reservation exact inherited scope extent binding')
+ 
+@@ -254,3 +255,19 @@
+  if linked:
+   if len(covers)!=1 or covers[0]['status']!='accepted' or covers[0]['anchor_origin_refs']!=['a'] or covers[0]['monetary_origin_refs']!=['u'] or covers[0]['definite_link_refs']!=['result-link:a-u'] or len(links)!=1 or links[0]['from_origin_ref']!='a' or links[0]['to_origin_ref']!='u':F.add('VC07','R10 raw exact-link conditional financial consequence')
+  elif covers or links:F.add('VC07','R10 unlinked raw anchor cannot be covered/released')
++
++
++def reservation_consequence(c,a,b,raw,F):
++ from decimal import Decimal
++ cid=c['case_id'];maximum=max(int(Decimal(str(json.loads(raw[o])['reserved_usd']))*1000000000) for o in b['reservation_origin_refs'])
++ if a['exposure']['high']!={'kind':'at_least','basis':'proxy_reservation','nano':str(maximum)} or a['exposure']['pool']!='pi_api':F.add(cid,'R10 raw reservation maximum/conservative high')
++ if a['settlement'].get('reserved')!=str(maximum):F.add(cid,'R10 raw reservation fixed settlement reserved amount')
++ if a['obligation']!={'amount_source':'reservation_bound','state':'outstanding'} or a['replacement'].get('eligible') is not False or a['settlement'].get('decision')!='rejected':F.add(cid,'R10 raw reservation outstanding obligation/replacement')
++ bundle=json.loads((root()/b['bundle_file']).read_text());inp,result=bundle['documents'];key=a['key'];obligation='validity:'+key;exposure='case:'+cid+'#attempt:'+key
++ units=result['units'];ms=result.get('primary_memberships',[]);vs=result['primary_validities'];origins=sorted(raw)
++ if (inp.get('kind')!='accounting_input_proof' or inp.get('id')!='input:'+cid or inp.get('lineage_id')!=cid or result.get('kind')!='accounting_result' or result.get('id')!='result:'+cid or result.get('lineage_id')!=cid or result.get('input_proof_ref')!=inp['id'] or a.get('accounting_result_ref')!=b['bundle_file']+'#'+result['id'] or sorted(a['evidence'])!=origins or units!=[{'unit_id':key,'state':'active','origin_refs':origins,'exposure_ref':exposure}] or len(ms)!=1 or ms[0]['obligation_id']!=obligation or ms[0]['settlement_classes']!=[{'origin_refs':['S1/turn-1:3'],'representative_origin_ref':'S1/turn-1:3'}] or ms[0]['usage_origin_refs']!=['S1/turn-1:3'] or len(vs)!=1 or vs[0]['obligation_id']!=obligation or vs[0]['validity_result']!='rejected' or vs[0]['applicable_check_refs']!=[exposure+'/settlement'] or vs[0]['distinct_settlement_refs']!=['S1/turn-1:3'] or result['coverage_decisions'] or sorted((x['origin_ref'],x['active_high_unit_id']) for x in result['origins'])!=[(o,key) for o in origins]):F.add(cid,'R10 reservation selected raw/result/unit/validity join')
++ for ev in c['evaluations']:
++  for ob in ev['expected']['objectives']:
++   for label in ('owned_closed','owned_outstanding'):
++    scope=cid+'/'+ev['name']+'/'+ob['objective']+'/'+label
++    if ob[label].get('supported_low_evidence_ref')!=b['bundle_file']+'#'+scope:F.add(cid,'R10 reservation selected low reference join')
+--- baseline/validator/test_r10_qualification.py
++++ subject/validator/test_r10_qualification.py
+@@ -81,4 +81,47 @@
+    if exe:
+     structural=subprocess.run([exe,'evidence',str(r),str(r/P9)],capture_output=True,text=True);self.assertEqual(structural.returncode,0,structural.stdout+structural.stderr);print('R10 coherent wrong P9 structural pass; identical lawful raw/premises')
+   rc,msg=self.run_subject(mutate);self.assertEqual(rc,1,msg);self.assertIn('P9 raw retained charge700M',msg);self.assertNotIn('R10 exact raw applicability',msg);self.assertNotIn('R10 referenced payload',msg)
++ def test_reservation_financial_and_selected_joins(self):
++  case='oracle/r9-pilot/cases/equal-reservations.json'
++  for kind in ('high400','coherent400','kind','basis','pool','reserved','source','obligation','replacement','decision','stale-result','substituted-result','unit','unit-origin','unit-exposure','membership','validity','validity-check','input-ref','low-ref','stale-bundle'):
++   with self.subTest(kind=kind):
++    def mutate(r):
++     def change(c):
++      a=c['expected']['attempts'][0]
++      if kind in ('high400','coherent400'):a['exposure']['high']['nano']='400000000'
++      elif kind=='kind':a['exposure']['high']['kind']='exact'
++      elif kind=='basis':a['exposure']['high']['basis']='usage_valuation'
++      elif kind=='pool':a['exposure']['pool']='non_api'
++      elif kind=='reserved':a['settlement']['reserved']='400000000'
++      elif kind=='source':a['obligation']['amount_source']='settlement_amount'
++      elif kind=='obligation':a['obligation']['state']='closed'
++      elif kind=='replacement':a['replacement']['eligible']=True
++      elif kind=='decision':a['settlement']['decision']='valid'
++      elif kind=='stale-result':a['accounting_result_ref']='oracle/r8-completion-B/VC01-openai-usage-settlement.bundle.json#result:'+c['case_id']
++      elif kind=='substituted-result':a['accounting_result_ref']=EQ+'#input:'+c['case_id']
++      elif kind=='low-ref':c['evaluations'][0]['expected']['objectives'][0]['owned_outstanding']['supported_low_evidence_ref']='oracle/r8-completion-B/VC01-openai-usage-settlement.bundle.json#'+c['case_id']+'/default/o/owned_outstanding'
++      if kind=='coherent400':
++       ob=c['evaluations'][0]['expected']['objectives'][0];ob['owned_outstanding']['high']['nano']='400000000';ob['commitments'][0]['committed']='600000000'
++     edit(r,case,change)
++     def change_bundle(b):
++      res=b['documents'][1]
++      if kind=='unit':res['units'][0]['unit_id']='substituted'
++      elif kind=='unit-origin':res['units'][0]['origin_refs'].pop()
++      elif kind=='unit-exposure':res['units'][0]['exposure_ref']='case:other#attempt:other'
++      elif kind=='membership':res['primary_memberships'][0]['obligation_id']='other'
++      elif kind=='validity':res['primary_validities'][0]['validity_result']='valid'
++      elif kind=='validity-check':res['primary_validities'][0]['applicable_check_refs']=['case:other#attempt:other/settlement']
++      elif kind=='input-ref':res['input_proof_ref']='input:other'
++     edit(r,EQ,change_bundle)
++     if kind=='stale-bundle':shutil.copyfile(r/'oracle/r8-completion-B/VC01-openai-usage-settlement.bundle.json',r/EQ)
++     reason=('raw reservation maximum/conservative high' if kind in ('high400','coherent400','kind','basis','pool') else 'raw reservation fixed settlement reserved amount' if kind=='reserved' else 'raw reservation outstanding obligation/replacement' if kind in ('source','obligation','replacement','decision') else 'reservation selected low reference join' if kind=='low-ref' else 'reservation selected raw/result/unit/validity join' if kind!='stale-bundle' else 'applicability')
++     exe=os.environ['R10_FINANCIAL_EXECUTABLE'];env=dict(os.environ,R9_QUALIFICATION_SUBJECT=str(r))
++     rust=subprocess.run([exe,'--exact','r9_registered_actual_subject_qualification','--nocapture'],env=env,capture_output=True,text=True)
++     self.assertNotEqual(rust.returncode,0,rust.stdout+rust.stderr);self.assertIn(reason,rust.stdout+rust.stderr)
++     structural=subprocess.run([os.environ['R10_EVIDENCE_EXECUTABLE'],'evidence',str(r),str(r/EQ)],capture_output=True,text=True)
++     if kind in ('high400','coherent400','kind','basis','reserved','source','obligation','replacement','decision','stale-result','substituted-result','low-ref'):self.assertEqual(structural.returncode,0,structural.stdout+structural.stderr)
++     print('R10 reservation mutant',kind,'structural_exit',structural.returncode,'rust_financial_exit',rust.returncode,'reason',reason)
++    rc,msg=self.run_subject(mutate);self.assertEqual(rc,1,msg)
++    reason=('raw reservation maximum/conservative high' if kind in ('high400','coherent400','kind','basis','pool') else 'raw reservation fixed settlement reserved amount' if kind=='reserved' else 'raw reservation outstanding obligation/replacement' if kind in ('source','obligation','replacement','decision') else 'reservation selected low reference join' if kind=='low-ref' else 'reservation selected raw/result/unit/validity join' if kind!='stale-bundle' else 'applicability')
++    self.assertIn(reason,msg);print('R10 reservation mutant',kind,'python_financial_exit',rc,'reason',reason)
+ if __name__=='__main__':unittest.main()
+--- baseline/validator/validate_corpus.py
++++ subject/validator/validate_corpus.py
+@@ -679,7 +679,7 @@
+     from jsonschema import Draft202012Validator
+     root = str(r9_pilot.root())
+     cid = c['case_id']; part = 'A' if cid.startswith(('P130-', 'P132-', 'P133-')) else 'B'
+-    rel = f'oracle/r8-completion-{part}/{cid}.bundle.json'
++    rel = pilot_binding['bundle_file'] if pilot_binding else f'oracle/r8-completion-{part}/{cid}.bundle.json'
+     path = os.path.join(root, pilot_binding['bundle_file']) if pilot_binding else os.path.join(root, rel)
+     if not os.path.isfile(path): F.add(cid, 'supplied accounting bundle REQUIRED/UNMET'); return
+     bundle = json.load(open(path)); docs = bundle['documents']

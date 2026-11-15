@@ -1,0 +1,29 @@
+{
+  "admission": "conditional_fixture",
+  "authority_ref": "ROOT-ADOPTION-R6.json",
+  "case_id": "U03-retirement-before-turn-evidence",
+  "grant_payloads": [
+    {
+      "auxiliary_exact_row_coreference": "unestablished",
+      "exact_copy_equivalence": false,
+      "exact_origin_refs": [
+        "S1/turn-1:1",
+        "S1/turn-1:2"
+      ],
+      "guarantee": "Usable dollar rid is interpreted only within this immutable conditional fixture source scope; same-origin-only duplicate rule except the inherited C3 exact-byte-copy control.",
+      "immutable_reference_namespace": "U03-retirement-before-turn-evidence/S1/turn-1",
+      "physical_bill_independence": "unestablished",
+      "source_origin_id": "S1/turn-1"
+    }
+  ],
+  "initial_scope_contracts": [
+    {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "U03-retirement-before-turn-evidence/S1/turn-1"
+    }
+  ],
+  "raw_input_sha256": "308379b24461126976a75cb18dacc4968a6a4bd26e51c97c48060ac60d5180b3"
+}

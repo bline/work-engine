@@ -1,0 +1,48 @@
+{
+  "admission": "conditional_fixture",
+  "authority_ref": "ROOT-ADOPTION-R6.json",
+  "case_id": "VC11-multi-turn-session",
+  "grant_payloads": [
+    {
+      "auxiliary_exact_row_coreference": "unestablished",
+      "exact_copy_equivalence": false,
+      "exact_origin_refs": [
+        "S1/turn-1:1",
+        "S1/turn-1:2"
+      ],
+      "guarantee": "Usable dollar rid is interpreted only within this immutable conditional fixture source scope; same-origin-only duplicate rule except the inherited C3 exact-byte-copy control.",
+      "immutable_reference_namespace": "VC11-multi-turn-session/S1/turn-1",
+      "physical_bill_independence": "unestablished",
+      "source_origin_id": "S1/turn-1"
+    },
+    {
+      "auxiliary_exact_row_coreference": "unestablished",
+      "exact_copy_equivalence": false,
+      "exact_origin_refs": [
+        "S1/turn-2:1",
+        "S1/turn-2:2"
+      ],
+      "guarantee": "Usable dollar rid is interpreted only within this immutable conditional fixture source scope; same-origin-only duplicate rule except the inherited C3 exact-byte-copy control.",
+      "immutable_reference_namespace": "VC11-multi-turn-session/S1/turn-2",
+      "physical_bill_independence": "unestablished",
+      "source_origin_id": "S1/turn-2"
+    }
+  ],
+  "initial_scope_contracts": [
+    {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "VC11-multi-turn-session/S1/turn-1"
+    },
+    {
+      "contract_id": "conditional-ticket:S1/turn-2",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-2",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "VC11-multi-turn-session/S1/turn-2"
+    }
+  ],
+  "raw_input_sha256": "f3fdc23830b676be789d0489a879b0fc526205328d4cf1066664a02cf2499965"
+}

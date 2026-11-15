@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "premise-counterexample",
+  "argv": [
+    "python3",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/root-evaluation-probe.py"
+  ],
+  "cwd": "/home/bline/code/work-engine",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 3742772,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/root-evaluation-probe.py",
+      "type": "file",
+      "mode": 436,
+      "length": 1956,
+      "sha256": "7d1c077f2db34501d0b2ca2a9008b04d8ac4397d9596a3a68c1e743c3c2039a7"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/worker/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+      "type": "file",
+      "mode": 509,
+      "length": 16415024,
+      "sha256": "84809b6325b3d701bec4348579f35e6f0c79d83e79bd3c5845c74655eec6aee6"
+    }
+  ],
+  "timeout_s": 180.0,
+  "pid": 3742774,
+  "pgid": 3742774,
+  "started_at": "2026-11-14T08:54:08.070557Z",
+  "ended_at": "2026-11-14T08:54:08.986410Z",
+  "duration_s": 0.916,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/root-evaluation-probe/premise-counterexample.stdout",
+    "length": 15767,
+    "sha256": "d3301708f62fd02387c8bb7c99f62b8d174b4ab5a5c210318e235059e74c7411"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/low-target-repair-r1/root-evaluation-probe/premise-counterexample.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "recursive": false,
+  "completeness": "complete_within_scanned_directory",
+  "scanned_rollouts": 783,
+  "skipped_metadata": 0,
+  "diagnostics": [],
+  "diagnostics_omitted": 0,
+  "duplicate_thread_ids": [],
+  "conflicting_id_candidates": {},
+  "cycle_edges": [],
+  "ambiguous_agent_paths": {},
+  "agents": [
+    {
+      "thread_id": "01a1d81b-323b-7113-93ad-7cfb06e7c28f",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1r8_oracle",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T20-30-23-01a1d81b-323b-7113-93ad-7cfb06e7c28f.jsonl"
+    },
+    {
+      "thread_id": "01a1d81b-18c4-7f11-af00-c6a75867e8cc",
+      "root_session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "parent_thread_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+      "agent_path": "/root/s1r8_spec",
+      "rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T20-30-16-01a1d81b-18c4-7f11-af00-c6a75867e8cc.jsonl"
+    }
+  ]
+}

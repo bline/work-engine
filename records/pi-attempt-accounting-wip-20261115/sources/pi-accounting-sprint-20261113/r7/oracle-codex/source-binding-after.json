@@ -1,0 +1,15 @@
+{
+  "files": {
+    "tooling/spec-check/src/decisions.rs": "368ff1fe4d3515b0a3ee0a748ae26be46e71870e854328ea2cb02db0cd35256a",
+    "tooling/spec-check/src/lib.rs": "99c9e8ac5bb948c72d3149fef306e5abb52257071cb5255333faf168297a15df",
+    "tooling/spec-check/src/main.rs": "f3960be0439b29789d7793ffc4028c807c348b86ad556465977f952be63a0d09",
+    "tooling/spec-check/Cargo.toml": "a74409c9b478ce13e0e6baa0785bc797f1d555930ba171b0edb135e45174d437",
+    "tooling/spec-check/Cargo.lock": "bab53b79f7ddb0609189d9606c5666b9b19d3a659fb12055ed977d2e3f51d256",
+    "spec/interface.json": "17e9430821e4fe25ddfec3ea3788b0d63e795f6ba47fa38c52655bec626afa5e"
+  },
+  "changed": [
+    "tooling/spec-check/src/decisions.rs",
+    "tooling/spec-check/src/lib.rs"
+  ],
+  "standing": "intermediate_build_source_changed_no_current_joined_claim"
+}

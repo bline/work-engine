@@ -1,0 +1,18 @@
+{
+  "turn": "01a1d90b-207c-75b1-a554-688df5fa3be5",
+  "final_line": 369,
+  "final_timestamp": "2026-11-14T07:53:55.586Z",
+  "whole_final": true,
+  "own_native_boundary": {
+    "line": 296,
+    "timestamp": "2026-11-14T07:52:37.875Z",
+    "name": "new_context"
+  },
+  "post_boundary_settings": {
+    "event_sha256": "d26b650f6f2d1d41f4fe9c7374eb7a322d4d808085c9e306c5ea7e2f50fa31fe",
+    "line": 303,
+    "rollout": "/home/bline/.codex/sessions/2026/11/14/rollout-2026-11-14T00-20-45-01a1d8ee-19cd-7e12-ad6c-73356f2366a4.jsonl",
+    "timestamp": "2026-11-14T07:52:37.899Z"
+  },
+  "continuity": "same retained episode after ownnative refresh; no freshindependence"
+}

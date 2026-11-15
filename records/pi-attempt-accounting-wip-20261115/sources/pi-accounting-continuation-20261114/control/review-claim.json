@@ -1,0 +1,13 @@
+{
+  "revision": "ea9743126ba5109f9bae77ccf40924972ca4f0db",
+  "claim": {
+    "resource": "review/pi-accounting-s1-r8",
+    "claim_id": "f03ba7da-ddb5-456f-996c-e60f8b64cc6c",
+    "author": "codex-pi-accounting",
+    "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+    "claimed_at": "2026-11-14T05:14:38.135781Z",
+    "expires_at": "2026-11-14T07:14:38.135781Z",
+    "note": "Seven bounded independent R8 implementation obligations under exact dispatch decision e965003c; no ordinaryrepair; root solecollector; atmost3 active; frozen21df51b6",
+    "authority": "advisory_coordination_only"
+  }
+}

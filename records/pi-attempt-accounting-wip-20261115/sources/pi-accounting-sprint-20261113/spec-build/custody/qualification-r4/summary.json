@@ -1,0 +1,65 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/validation-plan.json",
+  "plan_sha256": "22f3d394c8ebc937f2771037916aed269ab1a1362c54fe7476460055ec83ef2b",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "build",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/custody/qualification-r4/build.json",
+      "record_sha256": "62547a36e4d1d3fadd336b96b2a4f9876ce2efbdcab0f0587fd95e54f686145a",
+      "leftovers": 0
+    },
+    {
+      "name": "structural-tests",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/custody/qualification-r4/structural-tests.json",
+      "record_sha256": "99d451050909f47df3c957542ee37e8d7241f8cee248e1f3be5f3b97cb782e88",
+      "leftovers": 0
+    },
+    {
+      "name": "render-reviewed-tree",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/custody/qualification-r4/render-reviewed-tree.json",
+      "record_sha256": "9037fe49bc93962bd7a2b01c561856abaf234641e65bc4ee290dc1ba00e2eb0a",
+      "leftovers": 0
+    },
+    {
+      "name": "compare-current",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/custody/qualification-r4/compare-current.json",
+      "record_sha256": "8e8bca12026d9b2b8f33a8bece485f87a648350c3e792935aae4f8eb9172ea41",
+      "leftovers": 0
+    },
+    {
+      "name": "render-a",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/custody/qualification-r4/render-a.json",
+      "record_sha256": "777b35b317c05120bb0b250209e643890249c75417fcfe2b70bc3bf7de01dbac",
+      "leftovers": 0
+    },
+    {
+      "name": "render-b",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/custody/qualification-r4/render-b.json",
+      "record_sha256": "64f3c5660abac1c4bcaa889137dcf25de7f84bd5914bd58c981f86c6509e7b4c",
+      "leftovers": 0
+    },
+    {
+      "name": "compare-clean-renders",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/custody/qualification-r4/compare-clean-renders.json",
+      "record_sha256": "9b0a5659abf176dd408056f8fb196a784d52b2cf39db159d71dee624ef206025",
+      "leftovers": 0
+    },
+    {
+      "name": "impact",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/pi-accounting-sprint-20261113/spec-build/custody/qualification-r4/impact.json",
+      "record_sha256": "5c98446a60103f191ac22b0dbefddc62c2defff08cbd48ecec2d3bb076f3ab94",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

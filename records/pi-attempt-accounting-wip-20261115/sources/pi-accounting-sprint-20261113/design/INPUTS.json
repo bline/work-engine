@@ -1,0 +1,107 @@
+{
+  "graph": {
+    "doctrine_paths": "all four requested paths content_verified metadata_match/no_recorded_issue; no further pagination",
+    "external_sources": "outside indexed repository; exact direct source reads, no graph absence claim",
+    "generation": "2026-11-13T21:53:10Z",
+    "project": "home-bline-code-work-engine",
+    "tier": 2
+  },
+  "inputs": [
+    {
+      "bytes": 4758,
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/packets/spec-design.md",
+      "sha256": "00917d6819d2bbebcd2b1bcd9b96110115bb6f5b99abef062bf09bc6903c0667"
+    },
+    {
+      "bytes": 3085,
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/ARCHITECTURE-DECISION.md",
+      "sha256": "4612c825ad0cbd02b3945904b7133dcbb7a69ed03bb0a3295d3821f771a20895"
+    },
+    {
+      "bytes": 26515,
+      "path": "/home/bline/cbm-work/p135-arch-prep/review-kit/review/sealed/reviewer-response.md",
+      "sha256": "01e3c3cc8b6913d117f46ce0f5973735524af4bb6b86b0943f633fedafb42b42"
+    },
+    {
+      "bytes": 4427,
+      "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/evidence/p134-reproduced.txt",
+      "sha256": "2d8a802d0a9ffb8ffb4157de4f9af389b3f9963cb97ba5eff0c0eeb0be094ea9"
+    },
+    {
+      "bytes": 41500,
+      "path": "/home/bline/code/work-engine/DESIGN.md",
+      "sha256": "2213ab9a32925e7792353489599201bf71f3268eb8981cc192f87c57e2952095"
+    },
+    {
+      "bytes": 34973,
+      "path": "/home/bline/code/work-engine/PHILOSOPHY.md",
+      "sha256": "299b0ad8192f3cc442f6491d2908f421f22333024ffb1423cae6856b69c3a307"
+    },
+    {
+      "bytes": 9740,
+      "path": "/home/bline/code/work-engine/docs/rust-development.md",
+      "sha256": "225d2ea65c088b6614dd56824157b847ea453518417cc0aab61ed3ed39f1e904"
+    },
+    {
+      "bytes": 6243,
+      "path": "/home/bline/code/work-engine/docs/repository-layout.md",
+      "sha256": "57cf4b927b7b10422a63950a7172604bfbaf02a7b36ba48eca90e9d6de4a4c5d"
+    },
+    {
+      "bytes": 65857,
+      "path": "/home/bline/cbm-work/p133-s1r5/s1/contract/CONTRACT.md",
+      "sha256": "f087d4a238b007efeff2b4b74d0e047b89197ae2b9169d63bd95fe1f7b281839"
+    },
+    {
+      "bytes": 14965,
+      "path": "/home/bline/cbm-work/p133-s1r5/s1/contract/TRANSITIONS.md",
+      "sha256": "f30a6b23abd64b6a2d0afa0ff9a59fda0fd63cde2aa3ece66792ebec1280932a"
+    },
+    {
+      "bytes": 17037,
+      "path": "/home/bline/cbm-work/p133-s1r5/s1/contract/INVARIANTS.md",
+      "sha256": "640da2dbf08313e685bc1f1d5ad6617f63299a07d77f8888d3f08c08c12ec882"
+    },
+    {
+      "bytes": 4842,
+      "path": "/home/bline/cbm-work/p133-s1r5/s1/contract/RESERVATION-BOUNDS.md",
+      "sha256": "ecde0cde26f8abda1842313f4a27d50ab06f685b54930c2f59f4cc79c6d51a36"
+    },
+    {
+      "bytes": 4746,
+      "path": "/home/bline/cbm-work/p133-s1r5/s1/contract/S2A-ENTRY-CRITERIA.md",
+      "sha256": "e4062843e194dc634b0fa6ccca26cb980c1bf16b7891284fd88596d1ee487d75"
+    },
+    {
+      "bytes": 19654,
+      "path": "/home/bline/cbm-work/p133-s1r5/s1/contract/DECISION-REGISTER.md",
+      "sha256": "6856585cb0f88ec2ec5975094eb3bcdcd13e3089e5a75801569e397268f52e2b"
+    },
+    {
+      "bytes": 7967,
+      "path": "/home/bline/cbm-work/p133-s1r5/s1/corpus/SCHEMA.md",
+      "sha256": "4a19726e854b1508a8e9e7e9f7b8c3151cf274c11ff124364fe6cb0ec685dad7"
+    }
+  ],
+  "observed_at": "2026-11-13T22:12:42.134541+00:00",
+  "role": "bounded_design_only",
+  "root_policy_message": {
+    "clarification": "Root corrected over-broad shorthand during this turn after checking FB-1 and D6; no independent defect in complete established multi-identity bounds was established by design worker.",
+    "directions": [
+      "explicit family/schema contradiction; no shape-based cross-provider inference; unestablished/unpriceable identity sets do not replace R; preserve eligible finite complete established multi-identity bounds with every identity/tier priced; downstream IdentityContradiction finding does not feed money",
+      "non-200 terminal usage writer possible; retain R and supported usage",
+      "billing ceiling separate from provisional exposure",
+      "explicit narrow D3 amendment for isolated Rust specification rendering/structural-check tool crate; no reducer/reference evaluator/production workspace integration"
+    ],
+    "exact_plan_acceptance": "pending root",
+    "from_session": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+    "received": "during design turn"
+  },
+  "schema": "pi-accounting-design-inputs/1",
+  "validation": {
+    "full_corpus": "not_inspected",
+    "implementation_tests": "not_run; planning only",
+    "p134_reproduction": "read root supplied 9/9 result; not rerun by worker",
+    "producer": "review/root-provided writer evidence, not newly executed or fully audited by worker"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "coverage_payload_origins": [
+    "r",
+    "s"
+  ],
+  "held_origins": [
+    "r",
+    "s",
+    "chargeC"
+  ],
+  "request": "partial subset coverage must not retire a whole three-origin hold",
+  "retained_known_charge_origin": "chargeC"
+}

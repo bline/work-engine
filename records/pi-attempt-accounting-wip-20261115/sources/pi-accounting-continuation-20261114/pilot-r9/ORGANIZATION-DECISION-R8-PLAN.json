@@ -1,0 +1,8 @@
+{
+  "at": "2026-11-14T06:45:44.381627+00:00",
+  "candidate_path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ORGANIZATION-R8-PLAN.json",
+  "candidate_sha256": "7400b25f4e7a83c42eb6285a2c54ce52a718a51e363466d8a4bbb26694f60538",
+  "decision": "approve bounded retainedplan review only",
+  "owner": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "basis": "Originaldesignreview obligation; recommendation requires wider finitequalification, no newfinancialsemantics. Source stopped. Root owns all final/processcollection."
+}

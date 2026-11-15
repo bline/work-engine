@@ -1,0 +1,14 @@
+{
+  "session_id": "01a1d88a-9e2a-7801-aed3-64705ff5585d",
+  "turn_id": "01a1d88a-9e9b-7b22-b6be-b3fb2bedc49f",
+  "status": "completed",
+  "native_rollout": "/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-32-05-01a1d88a-9e2a-7801-aed3-64705ff5585d.jsonl",
+  "native_line": 154,
+  "native_line_sha256": "abe459dec0a39658421bf63f883a8be765515bb96d2e51a6699469e83f5f12b7",
+  "report": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/A2b-REVIEW.md",
+  "report_sha256": "cbea61ecca1f09bc53be4294f96cea95dae26b99443949c9efe9400748ce0c6d",
+  "collected_at": "2026-11-14T05:38:06.783360+00:00",
+  "collection": "Native wait_threads completed exactturn; exact native rollout final sealed",
+  "assessment": "pending full report reading",
+  "identity_binding": "Consult native final; initial delivery refusedbusy; root file published and named in packet"
+}

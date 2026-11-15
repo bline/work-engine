@@ -1,0 +1,3700 @@
+{
+  "schema": "manual-orchestration.custody.freeze.v1",
+  "label": "independent-r7-oracle",
+  "root": "/home/bline/cbm-work/pi-accounting-sprint-20261113/r7/oracle-codex/owned-source",
+  "excludes": [],
+  "frozen_at": "2026-11-13T23:54:21.859827Z",
+  "entry_count": 527,
+  "entries_sha256": "ef71da1768da966fe27f77fadeb03a2bc1b147dad596673c06f5560c569415c8",
+  "entries": [
+    {
+      "path": "corpus/COVERAGE.md",
+      "type": "file",
+      "mode": 436,
+      "length": 12078,
+      "sha256": "34c9a82477be58a04f08565ecf27deaefba4237a23892c89ea0e98073dc30c1f"
+    },
+    {
+      "path": "corpus/INVARIANT-COVERAGE.md",
+      "type": "file",
+      "mode": 436,
+      "length": 7238,
+      "sha256": "b6b80be66e22ba82727166136ea52868114b81db1167e00f61b8017cbe76adee"
+    },
+    {
+      "path": "corpus/REVISION-2.md",
+      "type": "file",
+      "mode": 436,
+      "length": 11987,
+      "sha256": "b008367927be620cadac003dd8fbc0672920b51d41911b3d08ab43940eb9a9b1"
+    },
+    {
+      "path": "corpus/REVISION-3.md",
+      "type": "file",
+      "mode": 436,
+      "length": 11383,
+      "sha256": "7683506cbb28fe264950f022835025b107f1da53a0675910eddce5575ab5337f"
+    },
+    {
+      "path": "corpus/REVISION-4.md",
+      "type": "file",
+      "mode": 436,
+      "length": 14239,
+      "sha256": "97ace0c33b332670a68c2485c4c8818cb397ca3fb82dcc75aa554b648cb92a4e"
+    },
+    {
+      "path": "corpus/REVISION-5.md",
+      "type": "file",
+      "mode": 436,
+      "length": 14801,
+      "sha256": "dc4397a3fe61da5e1335f4d693d07fd0c6a06b28c06154c953b9cc3261f44b70"
+    },
+    {
+      "path": "corpus/REVISION-6.md",
+      "type": "file",
+      "mode": 436,
+      "length": 4374,
+      "sha256": "9d5285fb61a9afd764a273a0a3d10d3707bf37636a9bc03bf1a2d05f09dc8151"
+    },
+    {
+      "path": "corpus/REVISION-7.json",
+      "type": "file",
+      "mode": 436,
+      "length": 50745,
+      "sha256": "3ba207c3c56acc9d1c37cd32f513ff42a6cf4de9b1ed9fc528ae6c21bbfc08b1"
+    },
+    {
+      "path": "corpus/REVISION-7.md",
+      "type": "file",
+      "mode": 436,
+      "length": 1949,
+      "sha256": "cf3eb09f3e4ec479715e2e6ccde01cd23c29d75acf30d25ab0f4fd57e46c6bd9"
+    },
+    {
+      "path": "corpus/cases/A04-undated-settlement-between-dated-neighbours.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18140,
+      "sha256": "38ed8ef2d617a59a5cd210cc19a284ca088072a028c4f919530fcd1193c7e161"
+    },
+    {
+      "path": "corpus/cases/A06-reservation-usage-null-status-no-id.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17741,
+      "sha256": "a6da000895de34c137c595a6d8e231aa8b37acd354dbf9d1d9031cbc7cc6b701"
+    },
+    {
+      "path": "corpus/cases/A1-01-upstream-error-and-unknown-event.json",
+      "type": "file",
+      "mode": 436,
+      "length": 22712,
+      "sha256": "b8c7bc85b2e79ff503effbcdbecb2b40bd8c27c4a610bdea18764b792b0cd610"
+    },
+    {
+      "path": "corpus/cases/A1-02-undated-row-inverted-neighbours.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17839,
+      "sha256": "b21e6a3d27e3b6d17d4bc041f682be81e481f344b529485b981c772508cd4c26"
+    },
+    {
+      "path": "corpus/cases/A1-03-unreferenced-log.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13896,
+      "sha256": "aebd03e84417477e01ffb29c23bcce7e225f11b4c0f98b585441faa2aa618415"
+    },
+    {
+      "path": "corpus/cases/A1-06-control-no-session-file.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11760,
+      "sha256": "363cc0977fb0c1d99055c738914c87b7e48cd2aaee3f2b3275d4f57c2a65245c"
+    },
+    {
+      "path": "corpus/cases/A1-06-session-file-is-not-evidence.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11942,
+      "sha256": "d72352e13d0649d3842ca93d59cbec99772b835e6e148ca1341f9c45a91005b2"
+    },
+    {
+      "path": "corpus/cases/C1-control-before-reference.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12275,
+      "sha256": "1bd4f391741495e180952aafbe1d783af178e28de597e3ac43ca6c1c79e48e4c"
+    },
+    {
+      "path": "corpus/cases/C1-settlement-after-reference-time.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12300,
+      "sha256": "b4f9ac0fc554f50a03c9a42c1dd4b968c8f23994d1af037396bd013093e35cd8"
+    },
+    {
+      "path": "corpus/cases/C2-unsettled-reservation-after-reference-time.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8740,
+      "sha256": "1180c82b366d29f682c091e68a18a5a76c7b8d0a04b7e4e22175f41a0fb45028"
+    },
+    {
+      "path": "corpus/cases/C3-identical-reservation-copy.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13523,
+      "sha256": "8218f2056a4ceef5276381df23241fd332e4e5e92c01d53dd690240d48616bc4"
+    },
+    {
+      "path": "corpus/cases/C4-missing-charge-basis.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9981,
+      "sha256": "02e076ae2711607f84b2a6181575c8b520af1cba43de4683063c10e9e74ff0d4"
+    },
+    {
+      "path": "corpus/cases/D1-closed-objective-provisional.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9322,
+      "sha256": "b825da8566d94fc3a5b5e8969d09daab11d4d8570c23c0ba5a6436e0d936d192"
+    },
+    {
+      "path": "corpus/cases/D1-successor-constrained-by-predecessor-obligations.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11217,
+      "sha256": "59df625e92251325a3112a2c185ab672cb954563d04acf0dd8e5b0e818ae9a6c"
+    },
+    {
+      "path": "corpus/cases/D4-unbudgeted-error-status.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9602,
+      "sha256": "3272eba46511cfcc920b2d0f5a124824adc9160f5cb1a1d65635d0e960f92da8"
+    },
+    {
+      "path": "corpus/cases/DUP-response-id-across-attempts.json",
+      "type": "file",
+      "mode": 436,
+      "length": 19276,
+      "sha256": "73da36bd7f35a1e10bf81deae79ca2429fc711cdf1d02688e4672a4f2229a4b8"
+    },
+    {
+      "path": "corpus/cases/Ha-control-consistent-split.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15288,
+      "sha256": "8d7fb4f1b12a6c54316b4f6d3ce6d375c370694598bd4ac4660deb689a2470e4"
+    },
+    {
+      "path": "corpus/cases/Ha-inconsistent-cache-split-keeps-supported-low.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16944,
+      "sha256": "f2abd52888a127db01405387d6026d5ff11f7a3d0395092a83ef815c517c7a14"
+    },
+    {
+      "path": "corpus/cases/Hb-window-independence.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17205,
+      "sha256": "7c4fe0f8c59f9f656d69b0461a64e19f7312c8223da5963e5a6c7a7f2906aa23"
+    },
+    {
+      "path": "corpus/cases/N01-control-served-pinned.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14994,
+      "sha256": "eb25b3f8f178f42f3dd789113736414e43f4763902df69215271072590b03101"
+    },
+    {
+      "path": "corpus/cases/N01-identity-refusal-dearer-served.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16382,
+      "sha256": "e4b7fad7ea2ef6a02d4dc85992c4364e74680a488aa744f558b82d337ab3cfaf"
+    },
+    {
+      "path": "corpus/cases/N01-orphan-identity-refusal.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9388,
+      "sha256": "d90ba2f3724b1242f71677a2218bd884e7d6d735433655f920c68f3c4cbb5720"
+    },
+    {
+      "path": "corpus/cases/N01-variant-no-refusal-row.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15254,
+      "sha256": "dadb7c81f1c193a63e12f30f0d2eb9b0f0354ba0ff05e1eeefa21ba0373f0930"
+    },
+    {
+      "path": "corpus/cases/N01-variant-reservation-above-both.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16462,
+      "sha256": "0f922859950b4857e936390a3605d54acbc5ce5135a481f15196328a520d708e"
+    },
+    {
+      "path": "corpus/cases/N02-malformed-anthropic-tier.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10350,
+      "sha256": "c4ce636f367a79f55f4ac8d6560d00bb1c8255958bfa235df17df026f2cc428b"
+    },
+    {
+      "path": "corpus/cases/N03-api-row-other-provider.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18189,
+      "sha256": "bdb20fb6056c92d2088b3c8c03dceaaf559b6bfc52514a94616e2d05688bdf60"
+    },
+    {
+      "path": "corpus/cases/N03-contradicted-admission.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9659,
+      "sha256": "f1534391a5162b24b9915d9cdcc2c49854d8e83929c99f80c7eb96ba9397ab84"
+    },
+    {
+      "path": "corpus/cases/N03-contradicted-refused-row.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4436,
+      "sha256": "f67db8cc16169d770484e8e62096e9f0b8ec545518bfb0b9eded41ae06d9b224"
+    },
+    {
+      "path": "corpus/cases/N03-control-unlabelled-admission.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8192,
+      "sha256": "88f1685179c7bcd015c7a90c02ed39414448a5418cc9a2a9f4aa971e2f24f2a5"
+    },
+    {
+      "path": "corpus/cases/N03-control-unlabelled-refused-row.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4206,
+      "sha256": "2e00f17d4f911dad984dfc7d7d588232c1a135d5c776afa1a391aa9e921488ed"
+    },
+    {
+      "path": "corpus/cases/N03-identity-refusal-in-subscription.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9971,
+      "sha256": "eddb1c1287c55e6bcdac3df421999545e3637660b7e1430b30eb3f7bb33474e1"
+    },
+    {
+      "path": "corpus/cases/N04-ambiguous-read-failure.json",
+      "type": "file",
+      "mode": 436,
+      "length": 21448,
+      "sha256": "33aaba30c3aea5b0dc19be5ad387531c817df346c9d2f1346cba7eca0a0aa22d"
+    },
+    {
+      "path": "corpus/cases/N04-budgeted-header-failure-no-own-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16975,
+      "sha256": "fc62e53be5bbe0f82047f18c8f93335bc15eb9bd21e182eac23a90eb47839974"
+    },
+    {
+      "path": "corpus/cases/N04-budgeted-header-failure-own-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 19035,
+      "sha256": "76f02e5db56154651a5d0da341910a01550a4823941c5f1036c72463723808c0"
+    },
+    {
+      "path": "corpus/cases/N04-control-request-alone.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11263,
+      "sha256": "f3d24132ab9e074b572f255a7277002dd263aab71798e784390645fa7e7c9253"
+    },
+    {
+      "path": "corpus/cases/N04-duplicated-read-failure.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16501,
+      "sha256": "d394db79512b09a123bad63265d37e154ee4bfe90e5b504ffab24b10ba4c5b65"
+    },
+    {
+      "path": "corpus/cases/N04-header-write-error-reused-n.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15858,
+      "sha256": "bb9352f71ee71e6646a3c52576eafbefdbe455f68343a077e8e6cf30a1252657"
+    },
+    {
+      "path": "corpus/cases/N05-control-consistent-retirement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9638,
+      "sha256": "77828c5c983d095b75b858a360532496b4b46bdc164a0fcb466a354ebffbcd7a"
+    },
+    {
+      "path": "corpus/cases/N05-retirement-before-later-delivery.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9460,
+      "sha256": "7fb494178ba7a006a295265cbd1de9a8a3884d258357dbcc3679714cf5e56934"
+    },
+    {
+      "path": "corpus/cases/N06-null-cache-counts.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14977,
+      "sha256": "457da64126a37d6245b7b991026bac15e515b2e8b7595f4eff5bbdfed5541810"
+    },
+    {
+      "path": "corpus/cases/N07-control-retired-journal.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6558,
+      "sha256": "ac188518fc125865ce6c70d0a41e70f89b887c8743acd0249bed7f687e5cf005"
+    },
+    {
+      "path": "corpus/cases/N07-control-retired-legacy.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6738,
+      "sha256": "6d74c804bd5197500037a83478df76d4c86f5ab9c094358d1b27c349359a8f14"
+    },
+    {
+      "path": "corpus/cases/N07-reopened-session-journal.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6472,
+      "sha256": "5976904197a8c802f627e3a5c4237c33681dabeb51ddd7e5383642b7d9f48d22"
+    },
+    {
+      "path": "corpus/cases/N07-reopened-session-legacy.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6528,
+      "sha256": "59b7e37b774d6df943e495fa0fcc3fdb408adca77fd19981681fe019da9d524d"
+    },
+    {
+      "path": "corpus/cases/N08-control-priced-model.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11128,
+      "sha256": "e01d818d4b12887f46bf620ba061593b311d47cbbe0affa93ce9cc73c7de3a25"
+    },
+    {
+      "path": "corpus/cases/N08-model-without-producer-rate.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10267,
+      "sha256": "a1d694ddf610bb94ad1ba56e4d7d49d1e676a520a51a3708b6e560cae54628a4"
+    },
+    {
+      "path": "corpus/cases/ORD-sessions-in-ledger-order.json",
+      "type": "file",
+      "mode": 436,
+      "length": 20726,
+      "sha256": "5b80fddbf12b191642c0484cd2c0b60d6de89e8677321f5f4b68d162da779b3c"
+    },
+    {
+      "path": "corpus/cases/ORD-sessions-reversed.json",
+      "type": "file",
+      "mode": 436,
+      "length": 20763,
+      "sha256": "22855dd1b351cb5a7cd490182ac23e8b8dc1095a02dd9c9dfc89fbce2910fc14"
+    },
+    {
+      "path": "corpus/cases/OWN-budgeted-session-without-admission.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11327,
+      "sha256": "a5ec4b43691bea36fc20a41144c5f7fba89f9175b46da711356296536de32b12"
+    },
+    {
+      "path": "corpus/cases/OWN-two-admitting-objectives.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16399,
+      "sha256": "e598f3adff4e437b2e1dd83e392757563c33f351126e554edf8ffa37dc21e5c5"
+    },
+    {
+      "path": "corpus/cases/P130-A5-unreadable-line-added.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12948,
+      "sha256": "544a64d80ff4fb0360783020c4e60474597d0cece0fa279e1dbf5cca886ae425"
+    },
+    {
+      "path": "corpus/cases/P130-Q11-closure-uncertain.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12197,
+      "sha256": "af0ae11e7723e07874aa2952f47834c5b0e626f25aff2d6567bc8709d1bb33d3"
+    },
+    {
+      "path": "corpus/cases/P130-R01-usage-incomplete-terminal.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14310,
+      "sha256": "3072dbd8a108ca900aa63b6a786f68aadf3eb6b5e0a9175b8e85e16eb4473d62"
+    },
+    {
+      "path": "corpus/cases/P130-R02-rounded-up-charge-admitted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13649,
+      "sha256": "55d71e60101c8e7c339f9fd02b8dfc6394bd3dd6c796e4a33d04779f4cb3a2f5"
+    },
+    {
+      "path": "corpus/cases/P130-R04-priority-overrun-above-cap.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17129,
+      "sha256": "39620034bd1ba182c0683dac28dff248de0cfa7d789f4b4d4a904c1bf0086c89"
+    },
+    {
+      "path": "corpus/cases/P130-R04-retired-session-releases-commitment.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12848,
+      "sha256": "393a76849e680f1f2f3006a347b8d70d8120a303217fbc0a2fbc632812668d4c"
+    },
+    {
+      "path": "corpus/cases/P130-R05-conflicting-keeps-valuation-high.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16333,
+      "sha256": "95c0b57c716a89dc22e4861920ff9ea8eaff58f9126718b4757f316c3d3eb4f2"
+    },
+    {
+      "path": "corpus/cases/P130-R06-reservation-amount-malformed.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7811,
+      "sha256": "e9455875bef49b95ce24c6ccfe5746f49bb1bb25933fac20ef97d3fceeb833d7"
+    },
+    {
+      "path": "corpus/cases/P130-R06-reservation-rid-missing.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7955,
+      "sha256": "655aa199308c3362b530b64c7a63cd7ff5233bb807d1f8a0d94e5e9a31da84ea"
+    },
+    {
+      "path": "corpus/cases/P130-R07-closed-unresolved-predecessor-constrains-successor.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12550,
+      "sha256": "62aeb7dbfec98bbf393823021bdc28c41356f3690c6e037705c04d00d700f75a"
+    },
+    {
+      "path": "corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15557,
+      "sha256": "81bdc9e5993c86df53622d2d2b49d3eae62edeef0779c2aba17ffb905125917c"
+    },
+    {
+      "path": "corpus/cases/P130-R10-reopened-then-retired.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6647,
+      "sha256": "ea6649877fb265e1e023be759894e6a066357dfacb3b75c24ed3c7c2e5933476"
+    },
+    {
+      "path": "corpus/cases/P130-R11-open-session-before-retirement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5828,
+      "sha256": "6269680ee182da5ecad781b442c66ebd746760d06c7f44f70b4927002948f674"
+    },
+    {
+      "path": "corpus/cases/P130-R12-outstanding-interval-keeps-candidate.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5656,
+      "sha256": "bfc16562663d0bcfa9872fc8021ea64e94bc843ef952df7aada592631956b63f"
+    },
+    {
+      "path": "corpus/cases/P130-R12-untrusted-clock-keeps-candidate.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9810,
+      "sha256": "559fed288da0ab71e411958d95d446de635d06c0a69b654955049cb01ef7e3dc"
+    },
+    {
+      "path": "corpus/cases/P130-R14-anthropic-null-tier-admitted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12843,
+      "sha256": "475654a4bfcd1141a136745c5329fa77c7f7a443222b8a31771becbd87caa1f4"
+    },
+    {
+      "path": "corpus/cases/P130-T-owned-before-window-summed.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12612,
+      "sha256": "7bb13f2825539e76b01c651bd59113daf35b2897c464e02ee405031b6d54e52e"
+    },
+    {
+      "path": "corpus/cases/P132-CP-close-after-reference-time.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11265,
+      "sha256": "4007fc26eacb14582bd2ad493f73c3538fa7da11b54d6d9ca675e20698923575"
+    },
+    {
+      "path": "corpus/cases/P132-CP-close-entry-contradicts-closed-at.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11212,
+      "sha256": "889f6fd5781441e00db77809b407f978408b04067d329abed4ca8fcc81de1258"
+    },
+    {
+      "path": "corpus/cases/P132-CP-closed-predecessor-outstanding.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10691,
+      "sha256": "bf9bf810361d7b627f99744ca6d400eb0cf496bf67646f7a0f698da235e9d825"
+    },
+    {
+      "path": "corpus/cases/P132-CP-closed-valid-close-entry.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11075,
+      "sha256": "b3a2a538cfc83aa31175701078c8b35b4066c4b8c452e16cad22a1f6ba5d2066"
+    },
+    {
+      "path": "corpus/cases/P132-CP-known-over-limit.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6450,
+      "sha256": "6aa09bdf7cb0ffe4bea6764392afa9b6ab9bd69f02fbd05c2f45c5ff84c3b930"
+    },
+    {
+      "path": "corpus/cases/P132-CP-retired-session-resumed-without-admission.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16938,
+      "sha256": "4d0be28a4d8ff8a4065190cbd3f4090c3263dd8835069779f0ead24942a94cd7"
+    },
+    {
+      "path": "corpus/cases/P132-CP-unknown-below-limit.json",
+      "type": "file",
+      "mode": 436,
+      "length": 6365,
+      "sha256": "3deca1b13a5ee81e17eea6ec43509769c95f354f15b319c6b1bab59c0dbf7d85"
+    },
+    {
+      "path": "corpus/cases/P132-FG-N06-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 19630,
+      "sha256": "9854efe5a86974058ac1c6957b71dbfbcc0923ea39e1806a995b870f640a88b1"
+    },
+    {
+      "path": "corpus/cases/P132-FG-N07-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11214,
+      "sha256": "5f9efb80490474c2576ccca16a267993f4e6158127846b715eeafdddd2a7cd9b"
+    },
+    {
+      "path": "corpus/cases/P132-FG-P130-R02-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17615,
+      "sha256": "f53654e796947d17db66200ef88160481aef78e871730629b93afb1804184d99"
+    },
+    {
+      "path": "corpus/cases/P132-FG-P130-R04-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17750,
+      "sha256": "269fe37ae556091bdb7648010b7e30797ee6a9697d2c21ada196bc10dd4d77f3"
+    },
+    {
+      "path": "corpus/cases/P132-FG-P130-R14-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18087,
+      "sha256": "f5314800d84fa3b4ab293dd64ce1a6cd3d03d2404369497a0ea0b299346edb56"
+    },
+    {
+      "path": "corpus/cases/P132-FG-U03-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17673,
+      "sha256": "7aa40ef87dd6ddf45d10bd797bbe5f986ea7aac580dc97c1d033943713edf847"
+    },
+    {
+      "path": "corpus/cases/P132-FG-V01-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17719,
+      "sha256": "acb59e75bfd8d4de1678c0e06b49c7ad3803cffa8d183ca15b20a56c3e19a417"
+    },
+    {
+      "path": "corpus/cases/P132-FG-V02-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 19284,
+      "sha256": "cfd1e0310ef112ae5034a2c17c688086a0fc4654a17d0a047ebf6732fb9eae1d"
+    },
+    {
+      "path": "corpus/cases/P132-FG-VC01-before-retirement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 19146,
+      "sha256": "89260d089273d7f1b50289443b45b7e34bacbb846b41957ca68895f7cb085cdf"
+    },
+    {
+      "path": "corpus/cases/P132-FG-VC01-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17708,
+      "sha256": "13f49fed43d5e87c2fa9424adfd7b10683d39ee112a1410c764a90ecddb95e14"
+    },
+    {
+      "path": "corpus/cases/P132-FG-VC01-no-gate.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10907,
+      "sha256": "a92f88f7b0aef9c10c1ce9c35c16a5e1b05690d1dffdad8dd3e991d105999a11"
+    },
+    {
+      "path": "corpus/cases/P132-FG-VC02-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18079,
+      "sha256": "5b52a3feb906f8df6de32c79c04dc9efc9dfa85783ea8be3c63d39a89d1a5f53"
+    },
+    {
+      "path": "corpus/cases/P132-FG-VC11-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 23677,
+      "sha256": "785ecf2b0c421dfcf65e5f827468d888dc1c6261907959f92ba3bb13c538d872"
+    },
+    {
+      "path": "corpus/cases/P132-FG-VC13-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17694,
+      "sha256": "5996e2c841e04f53cbd8c020fc071a22d522d98334028c78f4166d917ed8399a"
+    },
+    {
+      "path": "corpus/cases/P132-FG-VC14-open-no-billing-bound.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18197,
+      "sha256": "db176ccb7fe682bf8cd6c3ff5de37b931f90f25b81ff0f52cd6c7b5d72d0669c"
+    },
+    {
+      "path": "corpus/cases/P132-FG-VC14-open-session-billing-bound.json",
+      "type": "file",
+      "mode": 436,
+      "length": 19862,
+      "sha256": "1f4b97e58c5c68541fd3b69e4289c2c8aa58980bafea3942b2106ef377f204d5"
+    },
+    {
+      "path": "corpus/cases/P132-FG-VC15-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 20682,
+      "sha256": "35dc4fa6c09917418dd3d1562a639dd212be377425aa3017a99f34242dd7fd3d"
+    },
+    {
+      "path": "corpus/cases/P132-FG-closure-authority.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18564,
+      "sha256": "c95846ce78ade5ec40b3c0f3cf0b15e207153ed274edf41ea07564e6a99c1b02"
+    },
+    {
+      "path": "corpus/cases/P132-FG-closure-legacy-entry-only.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18420,
+      "sha256": "25f77ada54bcb6ae0ed7e0bf343c146b69e1b26ede430f797674cf16f815e0d2"
+    },
+    {
+      "path": "corpus/cases/P132-FG-gate-contradicted-by-reopening.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12140,
+      "sha256": "d40d191aa1dd4d25c0abf3880aa06b35116b0aa37497682a7dc2b49c7befb9d6"
+    },
+    {
+      "path": "corpus/cases/P132-FG-gate-expired.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18300,
+      "sha256": "7c7229ddd3a1bd411d01fe23c3ac3a065390109bd9c2902eb0a7656d7814fd22"
+    },
+    {
+      "path": "corpus/cases/P132-FG-gate-flag-only.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17079,
+      "sha256": "0d240cc32734920771919acfcede5a2b0e3f66a0a083ea432cfa57de4212144a"
+    },
+    {
+      "path": "corpus/cases/P132-FG-gate-receipt-missing.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18124,
+      "sha256": "9e4a2a3e32797a419b5fbabb47f3728c10f58cce4643d965b3b9709d4d54dd97"
+    },
+    {
+      "path": "corpus/cases/P132-FG-gate-reopening-only.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17850,
+      "sha256": "01ce53b1dc0be27695fe42d5f896cdd357a5b101c6ae7c41ddbb603a6a70e5bc"
+    },
+    {
+      "path": "corpus/cases/P132-FG-gate-request-scope.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18316,
+      "sha256": "d8e86221c3cfa0bed9cc81df18e4efb1d57404a49f35842fa8ae262e9f5e8a10"
+    },
+    {
+      "path": "corpus/cases/P132-FG-gate-self-asserted-file.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18312,
+      "sha256": "f7e0aaaca9735b353943981f2b48d7a9359b773cc32234920163c9461b64d6fd"
+    },
+    {
+      "path": "corpus/cases/P132-FG-gate-starts-after-launch.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18302,
+      "sha256": "c3aa780d61720831652b603e384c56fd0c202bc0a4c294cd532beeb8b80baa46"
+    },
+    {
+      "path": "corpus/cases/P132-FG-gate-wrong-authority.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18252,
+      "sha256": "f7ffbce401434f0d645771bf26b0223ba4de498956fbf46df3660653ef99f87e"
+    },
+    {
+      "path": "corpus/cases/P132-FG-gate-wrong-session.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18267,
+      "sha256": "5357439467dafbd28d48541f2122f35e89301f3d37ce2e6302d4abecb9fc7003"
+    },
+    {
+      "path": "corpus/cases/P133-A01-incomplete-usage-above-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11553,
+      "sha256": "98b36a76e73046222678ad80960ab8b66b61df45dc4eeeb92319856889616e6a"
+    },
+    {
+      "path": "corpus/cases/P133-A02-error-status-with-priceable-usage.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11411,
+      "sha256": "42e17e5562313d6ebe8fdaf102ec671743b6af085669c470806877ec119dfb90"
+    },
+    {
+      "path": "corpus/cases/P133-A04-cache-counts-both-absent.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10255,
+      "sha256": "4c98f185b290a80f2342e029f387b117d53d18dd4abe1fd7898dec8346b434e1"
+    },
+    {
+      "path": "corpus/cases/P133-A04-cache-write-absent-legacy.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10299,
+      "sha256": "30f33bbd030dcc0f0824289f2cb8381f6a8494e5b6ca5897a312db979532439b"
+    },
+    {
+      "path": "corpus/cases/P133-A04-cached-malformed.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14966,
+      "sha256": "09374dd143c8f242145acec2167162049a05dd4dd124ed45e7586c9b2e04c6da"
+    },
+    {
+      "path": "corpus/cases/P133-A04-cached-nonzero.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10859,
+      "sha256": "1c073fbd1e7270a42637301b85d8076613b5bf5dcc989b804044659ab18d73b2"
+    },
+    {
+      "path": "corpus/cases/P133-A04-mixed-observations.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10832,
+      "sha256": "5abe225a3ad4303d47c05db2f6040577a6fa63534f7276d809dadc40867b9360"
+    },
+    {
+      "path": "corpus/cases/P133-A05-model-case-variant.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7271,
+      "sha256": "b6f9e48ac587dfe6d1296f77a6f0755fe8f34aecd64e49ae1de2a1398529b324"
+    },
+    {
+      "path": "corpus/cases/P133-A06-error-status-null.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7084,
+      "sha256": "3762f2e998c380fd91ccf54ae0eaa85623a1088a95ec1d99c81d3042fd4f61ab"
+    },
+    {
+      "path": "corpus/cases/P133-A06-usage-settlement-status-absent.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11109,
+      "sha256": "ad33871c5719f7066cd00be42681cfcbd472dd4d73f5414f3b7d61c8148ec43d"
+    },
+    {
+      "path": "corpus/cases/P133-A09-conflicting-reservations-with-settlement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11731,
+      "sha256": "a8a3b21ed32399cb25a0a9190356c2444ffae9ce0f555afcaf8e6721e4ec93ea"
+    },
+    {
+      "path": "corpus/cases/P133-FG-VC14-authenticated-bound.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17862,
+      "sha256": "58d62485f4a4fe7ded1a47b67b46004427b682efa8d2434f2ae9d3fd05d599ea"
+    },
+    {
+      "path": "corpus/cases/P133-FG-bound-binding-mismatch.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18367,
+      "sha256": "9ae7ff0e8ee8b4fd35f5cf1dacd8fd565a8951f41c6f75df5c005f70642dc8a0"
+    },
+    {
+      "path": "corpus/cases/P133-FG-bound-coverage-incomplete.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18326,
+      "sha256": "f1d88bb53270543b508092a1f73591e2637c4e5d0046859936fff9906989daa9"
+    },
+    {
+      "path": "corpus/cases/P133-FG-bound-exceeds-cap.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18368,
+      "sha256": "785330c6818d0c8609dbd7a4d96dd808bebb44737fb2b69d933285731a844f25"
+    },
+    {
+      "path": "corpus/cases/P133-FG-bound-wrong-currency.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18334,
+      "sha256": "e9a8449eb56b896ffa96d9e7119083404cf67320ede8609f1d5582a597c393ed"
+    },
+    {
+      "path": "corpus/cases/P2-usage-settlement-unpriced-identity-keeps-charge.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14949,
+      "sha256": "f53c63c445e5433a2ae6490ba0ae044ff135c45c6f62d9d50434c267241db32d"
+    },
+    {
+      "path": "corpus/cases/P9-claimed-charge-above-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14273,
+      "sha256": "f106f21eac7e5b68256584f3179403fec04f761179110c24a4d28664f7a53f91"
+    },
+    {
+      "path": "corpus/cases/Q5-unrecognised-openai-tier.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14375,
+      "sha256": "dc5d435bb9fb2dff6ca6dce03393a9085266da79e6846a065bfbcbc13077da2e"
+    },
+    {
+      "path": "corpus/cases/Q8-unadmitted-outside-candidate-window.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11838,
+      "sha256": "20bcefc131ee13a16a6506d12a56547ab6ef266a3d206b0226fca19002d015c9"
+    },
+    {
+      "path": "corpus/cases/R01-dated-rows-backwards.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13417,
+      "sha256": "a40e51827d2073eef76bb537769b508542a52c6738bdfb2607cd6308365df581"
+    },
+    {
+      "path": "corpus/cases/R02-string-charge.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10014,
+      "sha256": "0988e69c57634b314caedfcad8c47a27a03835d9056ef79ad6b6463a3902a2aa"
+    },
+    {
+      "path": "corpus/cases/R04-reused-reservation-id.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10360,
+      "sha256": "0e703c0096b0a838603c555351e5f3a62d2f5c834b19909e7d167b5a6e6940b6"
+    },
+    {
+      "path": "corpus/cases/R05-non-object-json-rows.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13833,
+      "sha256": "d400ad8c41d97ac82bc952cf6d092595f6370f057fb142043d5e0e71e36a3854"
+    },
+    {
+      "path": "corpus/cases/R06-launch-row-missing.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14790,
+      "sha256": "632952431ea7f74be493cdee61d933b4675cc035f9dbe4d68a25d85dca34713f"
+    },
+    {
+      "path": "corpus/cases/R6-C01-writer-reservation-floor-control.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7293,
+      "sha256": "aab4aeb262843844f2a9ddfcb9226226a3148c4067e9e2183ec55a6035272e44"
+    },
+    {
+      "path": "corpus/cases/R6-C02-non200-success-terminal-usage-control.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7266,
+      "sha256": "1f721d7c437f4227bc6e0005facad0475d31ae354709eabfbcef225a4d454302"
+    },
+    {
+      "path": "corpus/cases/S01-reservation-basis-charged-less.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10053,
+      "sha256": "37fece41e64b1ea5ed05fb19433d484d8675eae1c8b7d5e3dd6b90e5d072a3fb"
+    },
+    {
+      "path": "corpus/cases/S01-reserved-usd-omitted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9691,
+      "sha256": "594f544021c02282fd7415758b0d68e9a2530c6ec371d7e86af2e31ddd8fe672"
+    },
+    {
+      "path": "corpus/cases/S01-upstream-error-charged-zero.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9725,
+      "sha256": "97cca8b295628054b0a873646a7d203ae9b8324ffaaf752f36b16d69436f0769"
+    },
+    {
+      "path": "corpus/cases/S02-attempt-number-differs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10037,
+      "sha256": "260df7439e2f5c0389ab78c57a109502d74268bf3ff48862501bdd3f65d3d78f"
+    },
+    {
+      "path": "corpus/cases/S02-control-error-status-after-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13754,
+      "sha256": "6ae768a95642e8c3be9c4adba8a91992d600932a4e069aee3a8cbd6b4001b040"
+    },
+    {
+      "path": "corpus/cases/S02-settlement-before-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9999,
+      "sha256": "078b401006032180db7130f962ac9ac37260d4bedcc844dc05468f0dcd1f5be4"
+    },
+    {
+      "path": "corpus/cases/S03-settlement-stamped-far-future.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12319,
+      "sha256": "2c34592d0581f7d684a09a898e7b04f7d6d5ca0d46fad7348456292c0e0b04dc"
+    },
+    {
+      "path": "corpus/cases/S04-next-unrelated-row-does-not-close.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10007,
+      "sha256": "d7dc3fbee9b47364fec3038d79263f382b1270a038d0c2e1989d4e799df1de1a"
+    },
+    {
+      "path": "corpus/cases/S05-unrelated-orphan-log-does-not-block.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14756,
+      "sha256": "103812ee10bfa48039c269db682ebf7192e276b29743fde02c6e07b9ce18e319"
+    },
+    {
+      "path": "corpus/cases/S06-string-http-status.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14980,
+      "sha256": "219ee9aa754d57b3f1479399efce3af93bc55a73a0b05c5de695b48cd07232fa"
+    },
+    {
+      "path": "corpus/cases/S08-control-pending-commitment.json",
+      "type": "file",
+      "mode": 436,
+      "length": 5191,
+      "sha256": "45910dbcae96dab524d6b2066d0d848183be8da0507ff0fd819e384423af244a"
+    },
+    {
+      "path": "corpus/cases/S08-negative-commitment-cap.json",
+      "type": "file",
+      "mode": 436,
+      "length": 4515,
+      "sha256": "42c00bf968ef822d28bc0d32950134b72ccaf5635f742326f0f2eb94cc4bd99f"
+    },
+    {
+      "path": "corpus/cases/U01-malformed-attempt-number.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10062,
+      "sha256": "a7110e1772043a8eebcde50dc843cf64dd40db726ca6ef9e5d53bceedf135fce"
+    },
+    {
+      "path": "corpus/cases/U02-final-line-without-newline.json",
+      "type": "file",
+      "mode": 436,
+      "length": 7169,
+      "sha256": "5f25a3add23b00883d373e5b69c37999d86da488875b23b872bc20c97336b4d8"
+    },
+    {
+      "path": "corpus/cases/U03-control.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12961,
+      "sha256": "b77d880c6faacca1fa0e3626dbce7a0ffda1e9f02d5cdad2888ee552d294b5da"
+    },
+    {
+      "path": "corpus/cases/U03-retirement-before-turn-evidence.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13445,
+      "sha256": "e3ea6d3c2d625773d60ed923f43b46a739d900bf40cd7b4cfe7b564a4dd0a2ca"
+    },
+    {
+      "path": "corpus/cases/U04-control-settled-before-closure.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13056,
+      "sha256": "7253fd681a58d7cab8a7c4a289a2836d74f3a957a1fc70cc4c284477c176d349"
+    },
+    {
+      "path": "corpus/cases/U04-settled-after-closure-stays-with-owner.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13276,
+      "sha256": "8a5c9b5a93b432ac4565ce87c5397c4b36f3767c5b75d7fe9756935d3f165c05"
+    },
+    {
+      "path": "corpus/cases/U05-inconsistent-charge-without-response-id.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14354,
+      "sha256": "da20b7a62ea58834f22d77b1d6d53d7c7b3ce72c65103a6a9d6b4e4516103948"
+    },
+    {
+      "path": "corpus/cases/U05-usage-settlement-without-response-id.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13119,
+      "sha256": "48600acebdc209431e69d1ffac140f96728a1b46deba3b3f59d18a0726759cbf"
+    },
+    {
+      "path": "corpus/cases/U06-subscription-upstream-error-unlabelled.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10079,
+      "sha256": "3c4b893771deb8123cefc96497a16278787fbe72a7fcc616921534aafff1d4c4"
+    },
+    {
+      "path": "corpus/cases/U07-unrelated-non-object-usage-does-not-block.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18189,
+      "sha256": "b98aaa7d97a7d926d176871aeb2a2b7b9e472534b896423cf396f2d90d29592e"
+    },
+    {
+      "path": "corpus/cases/U08-missing-observed-tier.json",
+      "type": "file",
+      "mode": 436,
+      "length": 17899,
+      "sha256": "4b2981fec4bebac28cb4475378e15555be7d45cb7e01548a13d65390257d022a"
+    },
+    {
+      "path": "corpus/cases/V01-cheaper-response-model-undercharge.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15629,
+      "sha256": "edee53493a174952b22e4747b034d531f2b33c90caa645dd90f77f86283243ba"
+    },
+    {
+      "path": "corpus/cases/V01-control-producer-price.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13018,
+      "sha256": "7bdac21b73ce500185fcfa2027e65fc81816a315e659d244c70172a896aafdf4"
+    },
+    {
+      "path": "corpus/cases/V01-usage-settlement-other-response-model.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15454,
+      "sha256": "dec00265d0df5df6b68ca03426a50800c0c6ee5da838c9bd5b2501f4b563c7c7"
+    },
+    {
+      "path": "corpus/cases/V02-control-producer-price.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14571,
+      "sha256": "1fe4eb88b9482a94777955981c5740078cb703a45714ab13c74e8efa9697d77f"
+    },
+    {
+      "path": "corpus/cases/V02-unsplit-writes-undercharged.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15834,
+      "sha256": "6eda7417a2345382c359611f285b964f12169010183da9025228e48748df01ef"
+    },
+    {
+      "path": "corpus/cases/V03-control-labelled-upstream-error.json",
+      "type": "file",
+      "mode": 436,
+      "length": 8701,
+      "sha256": "2a591fd2e11f67ac6d74803b7904a3d00201437e13655510625180f08b39532f"
+    },
+    {
+      "path": "corpus/cases/V03-subscription-upstream-error-labelled-api.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10033,
+      "sha256": "bf54c7030bd01ed3e1099521cfa8afb88a9c2d63c307514602d9724afa190bb2"
+    },
+    {
+      "path": "corpus/cases/V06-reservation-attempt-number-missing.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9390,
+      "sha256": "54c6247935d912df9f9ac4bec15c0f348535596c2ac6e3eac9f3d94aded2f5bc"
+    },
+    {
+      "path": "corpus/cases/V07-unrelated-unreadable-log-does-not-block.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14360,
+      "sha256": "5aa32f875567ff6a46092ac06862e27f4dc54d4639e9c375da4f18b13710fd18"
+    },
+    {
+      "path": "corpus/cases/VC01-openai-usage-settlement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13017,
+      "sha256": "4395e4e781e68b420f07da44208e1d2c1ac608b0c5ab131535b1b5d5df24aaf0"
+    },
+    {
+      "path": "corpus/cases/VC02-anthropic-usage-settlement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 13382,
+      "sha256": "d8754704591f89725b5ec7eba0776badd3a951655f187c0bed8e8d6c5c8b2ae8"
+    },
+    {
+      "path": "corpus/cases/VC03-reservation-settlement-with-usage.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15104,
+      "sha256": "73258f83215411e690d732842173bd95a4e709329bae2ae5ec25cae61a4f4e6f"
+    },
+    {
+      "path": "corpus/cases/VC04-upstream-error-keeps-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12692,
+      "sha256": "26e30101cab2ace56a41f4dd5fe094e09aba39e36c8c694829c6116ed1303cc5"
+    },
+    {
+      "path": "corpus/cases/VC05-unsettled-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9604,
+      "sha256": "dad9fe85b6d654bb9b3eb4d2ec96e9f30bc9a6990b95fdba50c6e5f11bbf35a5"
+    },
+    {
+      "path": "corpus/cases/VC06-unbudgeted-completed-request.json",
+      "type": "file",
+      "mode": 436,
+      "length": 10978,
+      "sha256": "22c2ae02343784036f2eee02177d8d95ba6d9b0baaeb70c4be6cd1be85146f81"
+    },
+    {
+      "path": "corpus/cases/VC07-read-failure-paired.json",
+      "type": "file",
+      "mode": 436,
+      "length": 11797,
+      "sha256": "f89c9de4e82f5af2b13ae876f3e0d68085c90364b0c8280f7734768e9028dd90"
+    },
+    {
+      "path": "corpus/cases/VC08-subscription-measured-request.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9031,
+      "sha256": "493d173f82f6d4173e38dd5ce3188bfedca6df8462e94cffd393062ad4be4a50"
+    },
+    {
+      "path": "corpus/cases/VC11-multi-turn-session.json",
+      "type": "file",
+      "mode": 436,
+      "length": 18956,
+      "sha256": "f421d6991f22055246c137a9093fc714f15d805cbe84010b4271040184065c28"
+    },
+    {
+      "path": "corpus/cases/VC12-reused-n-without-errors.json",
+      "type": "file",
+      "mode": 436,
+      "length": 16731,
+      "sha256": "ce8f75968d7d7f1012ae2d9b098cb2987c47ac05d721f0f325793f5f7602ffce"
+    },
+    {
+      "path": "corpus/cases/VC13-equal-timestamps.json",
+      "type": "file",
+      "mode": 436,
+      "length": 12999,
+      "sha256": "7503900390ebb98a60292a6aaffc3d2271d019a5d66dee08e71efb457bd32265"
+    },
+    {
+      "path": "corpus/cases/VC14-open-session-commitment.json",
+      "type": "file",
+      "mode": 436,
+      "length": 15901,
+      "sha256": "6850c2082ef238fed373d6a7f7d3ae350033fb188c25ef6f5699f25775aa1898"
+    },
+    {
+      "path": "corpus/cases/VC15-successor-not-charged-settled-predecessor-spend.json",
+      "type": "file",
+      "mode": 436,
+      "length": 14779,
+      "sha256": "445a3f4e0748f286ac52c68c9461c0627486b3b8797723f237971df788c73cfa"
+    },
+    {
+      "path": "corpus/historical/ORIGINALS.sha256",
+      "type": "file",
+      "mode": 436,
+      "length": 3765,
+      "sha256": "eb4fa3680737a48a842dafad53dae42003da4c742ed2e685db0b76fbc932ba45"
+    },
+    {
+      "path": "corpus/historical/originals/a133-outputs/p123-repro-on-a132-f1helpers.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 5348,
+      "sha256": "313c085f83b6210dbf2632cfcc362f5ce294b09075c5b0a3a71f759caf14cb0f"
+    },
+    {
+      "path": "corpus/historical/originals/a133-outputs/p123-repro-on-a133-f1helpers.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 5603,
+      "sha256": "07cc874e3180886098815314325b89373ca580da3954ecf80acd937d2a9f7363"
+    },
+    {
+      "path": "corpus/historical/originals/a133-outputs/repro_p113-on-a133.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 7618,
+      "sha256": "24855331d3785e7c86c0f878cf722719b01699ae10a740eb07328241aab06fb0"
+    },
+    {
+      "path": "corpus/historical/originals/a133-outputs/repro_p115-on-a133.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 10882,
+      "sha256": "bb0535a9b9d79d18f2d8cdcdb087b82dd8fc8b21e09d34aa469ddb7d28e624d2"
+    },
+    {
+      "path": "corpus/historical/originals/a133-outputs/repro_p119_any-on-a133.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 4694,
+      "sha256": "d2775f4d36c9d0ad448ab4d231d421b995ddb35dddb3d411bac916eaaa642553"
+    },
+    {
+      "path": "corpus/historical/originals/a133-outputs/repro_p121-on-a133.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 7453,
+      "sha256": "e79b0ffa532c400747aa8795ab7731e486c0833f2ab446e08157ffba683327c0"
+    },
+    {
+      "path": "corpus/historical/originals/a134-outputs/n07-journal-on-a133-with-a134-tests.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 1960,
+      "sha256": "9684464b3a78d6e7e73110e90218b6fc5d9cbea6b23465dd38c84425dcaba6ce"
+    },
+    {
+      "path": "corpus/historical/originals/a134-outputs/n07-journal-on-work-engine.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 536,
+      "sha256": "70bcd6ea17ddd19447713c675fb1cd92fcbd1b8ab4cd41b71ee3380891cd2459"
+    },
+    {
+      "path": "corpus/historical/originals/a134-outputs/probe-on-a134.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 768,
+      "sha256": "6b1931e8f25a6b6704e2ebfb1db42cd775435e105fdb43ba0636d1e54e747a72"
+    },
+    {
+      "path": "corpus/historical/originals/a134-outputs/repro_p113-on-a134.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 7802,
+      "sha256": "0504ef69f10b40b0db46fafc779f164f7126756bcda389d357ec9e63af7061f7"
+    },
+    {
+      "path": "corpus/historical/originals/a134-outputs/repro_p115-on-a134.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 11066,
+      "sha256": "53764bfd9bfa344ffb0b8881890a8a5e0c98dbe6ad71f3c4563ecb8c809b99cf"
+    },
+    {
+      "path": "corpus/historical/originals/a134-outputs/repro_p119_any-on-a134.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 4886,
+      "sha256": "a7a0d301ca8a8f7f58c928ce1176e6a489e894f4938c0e95b03a329c98496f46"
+    },
+    {
+      "path": "corpus/historical/originals/a134-outputs/repro_p121-on-a134.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 7637,
+      "sha256": "791182c689fc7218f111ed26eb8a93b6fdc6f1b41508b80aeb2165d4d1fccaa5"
+    },
+    {
+      "path": "corpus/historical/originals/a134-outputs/repro_p123-on-a134.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 5684,
+      "sha256": "41e99818f47f202d869f4cb163d23a7fe895179be80ef210f72cb1b7bb932b6b"
+    },
+    {
+      "path": "corpus/historical/originals/a134-outputs/repro_p125-on-a134-a133helpers.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 6656,
+      "sha256": "aebded5aa9aead4232b665fc4eb94559db5c19e87bfdf0a12db265cbd696824e"
+    },
+    {
+      "path": "corpus/historical/originals/a134-outputs/repro_p125-on-a134.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 6644,
+      "sha256": "c135784869db79807142c8abd28870760aa10ce3e0ff9803564fa2b7d690ef0a"
+    },
+    {
+      "path": "corpus/historical/originals/flex-recovery-p19/out/repro-candidate.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 4101,
+      "sha256": "c9421b286929d699530f166b1ffe229e457929a4dc6b4ae1673d1352b92acae8"
+    },
+    {
+      "path": "corpus/historical/originals/flex-recovery-p19/out/repro-undated.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 516,
+      "sha256": "0a3f6a560d1e2917665f5016a8bbaee9f7c025cca3a410a2aa198241dca5db19"
+    },
+    {
+      "path": "corpus/historical/originals/p111-a1-rereview/out/repro-p111-output.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 4100,
+      "sha256": "058016607bc2cea3b93301dfc7208e03cbdacd0e9b064e7f968e83aa7c7e543f"
+    },
+    {
+      "path": "corpus/historical/originals/p111/repro_p111.py",
+      "type": "file",
+      "mode": 436,
+      "length": 13129,
+      "sha256": "c67667ad624b5fef59f6f4e89cb63648826c526b7c0b6d6a067028483febfb82"
+    },
+    {
+      "path": "corpus/historical/originals/p113-a11-review/out/repro-p113-output.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 2904,
+      "sha256": "985cb4d7906261221cc46434f79323d034a73e82549d408b2477904951df7cc8"
+    },
+    {
+      "path": "corpus/historical/originals/p113/repro_p113.py",
+      "type": "file",
+      "mode": 436,
+      "length": 6905,
+      "sha256": "995a016219095f241c2960ce1c5255c675305bc5c87afc61d19752dc8b45c79a"
+    },
+    {
+      "path": "corpus/historical/originals/p115-a12-review/out/p113-repro-against-a12-rerun.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 7648,
+      "sha256": "34575188ed5874218b534d1cd48f032a2fe98d5118958b6b1234a48fa5f97906"
+    },
+    {
+      "path": "corpus/historical/originals/p115-a12-review/out/repro-final.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 4981,
+      "sha256": "ef28bcc505e92438e8197a1427a8720131cc9bbf6c2508684e448b8c8baa3815"
+    },
+    {
+      "path": "corpus/historical/originals/p115-a12-review/out/repro-first.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 5754,
+      "sha256": "af782188c39c6d07d7c68062a6ee7b96bd8e0d66171064a1a983e1cfceef92be"
+    },
+    {
+      "path": "corpus/historical/originals/p115/repro_p115.py",
+      "type": "file",
+      "mode": 436,
+      "length": 13022,
+      "sha256": "e5063af5684038adc57ee1d161f7ba26d71d59ab0fff3c4c238dcbf9712d91ad"
+    },
+    {
+      "path": "corpus/historical/originals/p119_any/repro_p119_any.py",
+      "type": "file",
+      "mode": 436,
+      "length": 7585,
+      "sha256": "0bd7aee9a99278093116a44587119d18cd4e9dc0d9fd9ac7a106619f32a28ef7"
+    },
+    {
+      "path": "corpus/historical/originals/p121/repro_p121.py",
+      "type": "file",
+      "mode": 436,
+      "length": 12577,
+      "sha256": "915677525ea50bae2b84199ee0b56bf5c6891cb39f01bd2f7b70c895be724f75"
+    },
+    {
+      "path": "corpus/historical/originals/p123/repro_p123.py",
+      "type": "file",
+      "mode": 436,
+      "length": 10199,
+      "sha256": "d7a95ddd13077d0fa1313231542d6cce54fa2fc72c1f509e943788cf8bf9faaf"
+    },
+    {
+      "path": "corpus/historical/originals/p125/out/repro-on-a132.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 5982,
+      "sha256": "48e978d39aca0bb1f300395a3e73ef1efef8a0ab0f81caf6c0ada4f53389d6ab"
+    },
+    {
+      "path": "corpus/historical/originals/p125/out/repro-on-a133.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 6060,
+      "sha256": "b0fff36eab2c1843680de444c802d891f86fb9220557be65aab11d261da4c2c6"
+    },
+    {
+      "path": "corpus/historical/originals/p125/out/repro-on-deployed.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 5780,
+      "sha256": "5b6a79805c1c7890f4546b099a1d3532a58893dbe26f4dca9188dba4ef88d4fb"
+    },
+    {
+      "path": "corpus/historical/originals/p125/repro_p125.py",
+      "type": "file",
+      "mode": 436,
+      "length": 14982,
+      "sha256": "adaebfda93acacb118f8a044e4a7496dc5aee1c02bacb7fe9cbedc9f45071675"
+    },
+    {
+      "path": "corpus/historical/originals/p126/repro_n07_journal.py",
+      "type": "file",
+      "mode": 436,
+      "length": 2219,
+      "sha256": "c414ae037313fa61839a64353d7100851181db6ff393f4d1e2135e4579de0027"
+    },
+    {
+      "path": "corpus/historical/originals/p127/probe_p127.py",
+      "type": "file",
+      "mode": 436,
+      "length": 2068,
+      "sha256": "031217f719b3d729d12b57eb0d4de8ab441f27286a1d53189cc835494fb57f0c"
+    },
+    {
+      "path": "corpus/historical/originals/p19/repro_undated_baseline.py",
+      "type": "file",
+      "mode": 436,
+      "length": 1306,
+      "sha256": "061a240b3856099916c6915a6704cb354005facbe8d5d72ff36938535744d6e8"
+    },
+    {
+      "path": "corpus/historical/originals/p19/repro_unit_a.py",
+      "type": "file",
+      "mode": 436,
+      "length": 12633,
+      "sha256": "07937b67a7369f05f4882f77bc3aee55093fceb5265b97c967cd94384d313039"
+    },
+    {
+      "path": "corpus/real/MANIFEST.json",
+      "type": "file",
+      "mode": 436,
+      "length": 86765,
+      "sha256": "8fbf503ad4d190d06108ad7204157658efce5fad506f28b6990d524b128e69c3"
+    },
+    {
+      "path": "corpus/real/README.md",
+      "type": "file",
+      "mode": 436,
+      "length": 215,
+      "sha256": "cc5bbf598dc0b42cee22a563cc32a15361b464f6cfd18059a958b5eb09901a51"
+    },
+    {
+      "path": "corpus/real/ledger.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 62825,
+      "sha256": "24c23510f45347d869b4b78847e4d9f02f1b5714bc76982df471ebf01ecb3c75"
+    },
+    {
+      "path": "corpus/real/sessions/03c57d13-8892-4258-8ac6-2f45ff33ba7b/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 11689,
+      "sha256": "b18df6dc979fea92052ec84bfa26072c0186799d513b353c42edb3eca6f81d0c"
+    },
+    {
+      "path": "corpus/real/sessions/060d4ed2-ff06-4ba0-8473-9f06249db793/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 82549,
+      "sha256": "04dba0414206df79a45e03debbe47ccda1c9fa68c576c34377007a376fba3347"
+    },
+    {
+      "path": "corpus/real/sessions/07ad4d78-8b53-4867-af7c-0d599acbab75/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 1161,
+      "sha256": "c8c6ea9454faed694d77891a8d22e9d4a02e51bd9bd33d084cd1b76061b3b537"
+    },
+    {
+      "path": "corpus/real/sessions/09d22735-c016-428c-b4e8-3a891e9b3f02/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 32994,
+      "sha256": "f11286a55df4fb8d084241da6a31e8486335f9a23c6bb2255924d4cdf4ea2e7c"
+    },
+    {
+      "path": "corpus/real/sessions/0a7285b4-6992-4ff4-95ab-a98dc234b4ac/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 23945,
+      "sha256": "7830415801b37d9456c79819914516a8bd91b58048925f49bee820fed9085b99"
+    },
+    {
+      "path": "corpus/real/sessions/0d0539b9-a748-48d6-ae18-00ab7e910a2e/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 28540,
+      "sha256": "ed70c49f00ac3eb526ac3b86a4f6b7c2654db29db71401cd67ba9f0af197404b"
+    },
+    {
+      "path": "corpus/real/sessions/0e79517d-252e-4ca1-8bd9-e30aa2a74134/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 24634,
+      "sha256": "340cd891f9b3096712577b1a416f4fbdaa9b61531cf144e6e5d854db87a299cf"
+    },
+    {
+      "path": "corpus/real/sessions/1315ade8-9cce-484f-9b71-5ca579ce90dc/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 14227,
+      "sha256": "bfb4936f7394ff3ede6ea29ccc33ae6b27ea6e37e87896dd429ccbe1438cb156"
+    },
+    {
+      "path": "corpus/real/sessions/1b772ba9-9bc6-4b8f-b007-e0443e5104e8/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 12715,
+      "sha256": "9a96d9cd2b8b9ddec8867f373eba4f6843628b68332fba99886b50d69dd9d92f"
+    },
+    {
+      "path": "corpus/real/sessions/1f8ada52-643b-4468-816d-42cbd15e98bf/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 5889,
+      "sha256": "4cc3d34f54597179e183017f6f9ab4c672044fcc6209f803ce7a7a39317b77f8"
+    },
+    {
+      "path": "corpus/real/sessions/20e939d6-b40b-4cc1-8fd5-0ec64bed4167/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 8206,
+      "sha256": "4e6da857c175e00141cb2d3ffcf8f927bdd828fad64a030632ae90d2124ec2dc"
+    },
+    {
+      "path": "corpus/real/sessions/2b24ac31-4ac7-40fb-8968-f2fabcb250b0/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 19513,
+      "sha256": "d93d71e1f7c87bf75a34804eec3372641861cc547cd96c2f98e203d85c461248"
+    },
+    {
+      "path": "corpus/real/sessions/36c8eb85-6d2d-4b69-ae3b-980536701863/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 11215,
+      "sha256": "0226b583c4a9f39f8855ec683456111ad0f65a2905534f19c3cf6d0db85fbbee"
+    },
+    {
+      "path": "corpus/real/sessions/3737e24c-238d-4b50-8c49-9b9bbdd46bb0/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 1172,
+      "sha256": "bf996114b7054c944a963a41064d2446bbdb89d74adc18779f263681c0f9a0b0"
+    },
+    {
+      "path": "corpus/real/sessions/37d52ae3-a95b-4371-8a22-fc855ce3e012/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 16567,
+      "sha256": "c84fb47991ef59647de5fe36d012d3c5da7c37f87c08d2eb3ece974da9739905"
+    },
+    {
+      "path": "corpus/real/sessions/3879b6b8-70a2-4e41-99fa-7ab759ed21ab/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 16588,
+      "sha256": "897cd95ed7a55df2f09f22230e97b75ade9cb14175f5de6a29e996807002dd69"
+    },
+    {
+      "path": "corpus/real/sessions/442df8a3-1feb-4248-bd63-1b6802436fb5/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 10037,
+      "sha256": "5275c879cdb2dba79529b86e5bcfc22ba2224b533182c0e8217f20b73520e362"
+    },
+    {
+      "path": "corpus/real/sessions/46205a6d-1ac2-4a43-8797-cc0d984ae52f/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 12167,
+      "sha256": "2f644656bd7dd13183eae9402dfc3a9678f07a3b1403e17b3a7b86dceef120a9"
+    },
+    {
+      "path": "corpus/real/sessions/486392e5-9d21-4ba1-9527-269a64a44a53/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 20159,
+      "sha256": "c2734d802ccdbb91d01d6641855a6891be63f9fc158c963675d060c8651a2692"
+    },
+    {
+      "path": "corpus/real/sessions/486392e5-9d21-4ba1-9527-269a64a44a53/turn-2.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 4469,
+      "sha256": "ee6061f3d48b0a8834e1998609342203c233de024f20c7a010ed1c6f76fcaad2"
+    },
+    {
+      "path": "corpus/real/sessions/4bc916e4-eec4-416c-84fc-43b467bacedb/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 15712,
+      "sha256": "db37072371d74fd8916821acd33c0dc5ff486301b92ff4208400de4d4d193020"
+    },
+    {
+      "path": "corpus/real/sessions/4e4c89ca-1096-41ca-b852-93ca17775a56/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 9144,
+      "sha256": "00b0194fe9f7c6fc4c835cc965111e008f37a52633ffaf93154e27763e46d681"
+    },
+    {
+      "path": "corpus/real/sessions/50f365c7-7cfd-4856-ae7b-c99e6eb8947b/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 7006,
+      "sha256": "505d4e2382324e22b98dac3bc51590a5e89c2a57f6f912c360c702f635a6fd6b"
+    },
+    {
+      "path": "corpus/real/sessions/52132d73-f438-46f0-b3c6-418386f71445/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 17207,
+      "sha256": "adbb10b2b1f45a5f646ca91394a7e31ce5cf9ab9237a10a464a3460ee5b8afb1"
+    },
+    {
+      "path": "corpus/real/sessions/53c83e8e-1ba8-45a9-ab12-80d4d127e72f/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 19470,
+      "sha256": "2a81a2e5a078ae676e00289781e2788eb82cd5ddb11385ea7ce8bece9e505ef0"
+    },
+    {
+      "path": "corpus/real/sessions/5847c0f6-8f46-42f6-b80b-812a1e38ef3d/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 19447,
+      "sha256": "5c710f7e2b59cb312834ce4eef6834788c85bfdb6c89f24749506296663dd058"
+    },
+    {
+      "path": "corpus/real/sessions/60020bcf-7ae8-4465-b917-63745ad904d3/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 63046,
+      "sha256": "35bdb9b26bbed8dce48fe7da95ecb5a2fdd8b48823a615fd7fec7c65b4434e9a"
+    },
+    {
+      "path": "corpus/real/sessions/613a7824-b79c-4e7a-88be-4dd171857be3/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 11222,
+      "sha256": "8ca4e9d30ca94a20c1e6c080acefa9d975602c0e574d0335062bddba32609d38"
+    },
+    {
+      "path": "corpus/real/sessions/65a0e681-286c-4f67-aff3-64afc57a72fb/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 26177,
+      "sha256": "2215a23d363f7785f4871682ccaafe93679543634d693744e73ca13fd95bc566"
+    },
+    {
+      "path": "corpus/real/sessions/6e0e22f8-c019-4ec9-af58-b5638ecec937/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 38174,
+      "sha256": "3f97b766720db98d76e97913ec520cb61512f0e95e2fa2ac71b26120c4d85e02"
+    },
+    {
+      "path": "corpus/real/sessions/77ce50fc-ea70-428b-be22-ce8eca812c24/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 11682,
+      "sha256": "edb54f6bc56539533d722fdace86d64ffe209fae5e7a9d84130496c7e0b1229f"
+    },
+    {
+      "path": "corpus/real/sessions/78257454-ee1a-46c7-814b-8fcef8c96220/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 9712,
+      "sha256": "2d6c658072fa2e2632472fe045d94ef9a8ac60f21684adfd17579d0ef99b99ff"
+    },
+    {
+      "path": "corpus/real/sessions/7e5c4a52-4bb0-4b9f-98e8-9ee4f3b1a581/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 18728,
+      "sha256": "6737c313ebf51a75001a9684c72cf37e08bcf22dca40a90d123358a098484208"
+    },
+    {
+      "path": "corpus/real/sessions/7e973d32-cb56-44b3-a5b6-20e6c4f4b2c4/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 14212,
+      "sha256": "0bb26bee0405c971844d4d176225b7224ccb7cbc63bcfad2b3bef71af56f8669"
+    },
+    {
+      "path": "corpus/real/sessions/7f6d40ec-513a-4b50-b8ce-b917eecbbf4b/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 15014,
+      "sha256": "770ceb471e8c32c83ed6072d0cb6d263e872e5d51fa544c4550de1e46dac0187"
+    },
+    {
+      "path": "corpus/real/sessions/80f335e7-a4f0-4505-a0cd-da8c66b49f15/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 19466,
+      "sha256": "26fa747ee6222be415de8935cf8c94108fa1ff0a75def80ca26d566233c79fd5"
+    },
+    {
+      "path": "corpus/real/sessions/852d235a-718c-4a2e-8069-050b24b463d9/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 744,
+      "sha256": "11f71231df7671bdd44e7d3da89c84a013a4a7870844325326831858ad138604"
+    },
+    {
+      "path": "corpus/real/sessions/852d235a-718c-4a2e-8069-050b24b463d9/turn-2.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 749,
+      "sha256": "331c448daaa475f68bb9a8024a5d747c8eb16f2e9c04e530b3849113a4846802"
+    },
+    {
+      "path": "corpus/real/sessions/852d235a-718c-4a2e-8069-050b24b463d9/turn-3.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 751,
+      "sha256": "9767e294139b544247a32e48b8377bd160dcef2f3f6f6a739ec32d63a4468f1f"
+    },
+    {
+      "path": "corpus/real/sessions/8642fd00-9241-4dc9-a29d-2c7a9507f31f/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 11202,
+      "sha256": "846f34f78b0c24c356bda2a4cb9f3d672f822346f09f6199cd0d2a222a9b7df6"
+    },
+    {
+      "path": "corpus/real/sessions/87b552c4-d221-4152-ba17-58c9ae72d2a3/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 748,
+      "sha256": "2b50eca55da8a726651624095b9aba4b5ce9ad2ed91c398802452ff766d2dca7"
+    },
+    {
+      "path": "corpus/real/sessions/87e95b35-7fe9-47b6-ac86-8a7afb7b8c1e/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 24105,
+      "sha256": "65099426ffe7f88b24c32d046034ee7b29d39d0f9740ce64ce90231724c1dda9"
+    },
+    {
+      "path": "corpus/real/sessions/87e95b35-7fe9-47b6-ac86-8a7afb7b8c1e/turn-2.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 15079,
+      "sha256": "0928d38b8a3dcafe2490e1298ba35fd93fcfa8bc1e471f00faf9120cc6e1633c"
+    },
+    {
+      "path": "corpus/real/sessions/87f0140e-e11d-4a4d-a41b-ee971e84ac44/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 749,
+      "sha256": "33fd9ac4aae97a6a7df00a4b4a09df8c1fb8f5e622ee1f9ebf0553ff0fb98369"
+    },
+    {
+      "path": "corpus/real/sessions/8b36c73d-5e4c-47e0-8a74-6c86e0deefb0/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 12673,
+      "sha256": "3c7a234500ef546dd2798447bfd84811efe2fa7c460de0af1c1d520cebabd997"
+    },
+    {
+      "path": "corpus/real/sessions/8d28136f-dfd6-4656-a9e6-d9db1bb6681e/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 26974,
+      "sha256": "d66cfc959f0205693655ad619d90243e1b173ac370261bed8698ef9f61e72382"
+    },
+    {
+      "path": "corpus/real/sessions/8d4c8664-9253-4e76-8631-ea7bf43e605f/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 8221,
+      "sha256": "c01275714a28b11699d540e726f607e67f03484c6a82d0df25aeda6d962ec8c7"
+    },
+    {
+      "path": "corpus/real/sessions/90d0d446-bde8-47e2-a2c6-4b3df34a4dcf/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 1329,
+      "sha256": "0b075f49c0f2e0ba67d7c0af4bdc0bdd05b0d9d074d269db2b7a242ea938f4a1"
+    },
+    {
+      "path": "corpus/real/sessions/90f0c1c0-1cc8-4490-ae46-630bdab85336/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 18174,
+      "sha256": "70683021028e5f505f24334e9a5cbe75c96d5581ee77fd42182489ee57c089cc"
+    },
+    {
+      "path": "corpus/real/sessions/99d03b6b-7b08-4ccb-8b5d-442f83608c44/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 2321,
+      "sha256": "5ea122070ae5b8764542669810fa344d0fd184df1eb834b85b5363eeb4872cf4"
+    },
+    {
+      "path": "corpus/real/sessions/9a238d22-8c7b-4eee-a229-a29dc53dcbea/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 15717,
+      "sha256": "fb9ba3b414ea0ece92f586212f09e53909e0b62893d4c490807c73b2d2f9ad31"
+    },
+    {
+      "path": "corpus/real/sessions/9a847cad-e43e-4ece-8ad1-6dbfd0b53efa/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 412,
+      "sha256": "cd8724bc4e3af6b37c6b3f83a9355c6cdf7c9ead3c782eed9b5dcb7444a3808c"
+    },
+    {
+      "path": "corpus/real/sessions/9b8963b0-99c0-4708-8195-c8fc8b5f1b50/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 11823,
+      "sha256": "cefd1e0b1eb7c9c87fd9840915876dd4735ede8ba483d711d40f111b0698a5d2"
+    },
+    {
+      "path": "corpus/real/sessions/a1130f6d-d068-4b49-831b-02299727c786/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 11705,
+      "sha256": "d767569b7a6e4a74c6d1001e59cea9b67395fb6dd560c415edb585b1cdd2815a"
+    },
+    {
+      "path": "corpus/real/sessions/a3abca20-c0a3-444d-bd07-80fe312f9894/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 16404,
+      "sha256": "009522147fb42155602e173f523a5117fd2b680b8c231ae57cad6618158c8b88"
+    },
+    {
+      "path": "corpus/real/sessions/a83b73be-2be0-4ba0-9029-5bea24b7d9ea/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 18012,
+      "sha256": "d2c318f985e2a759e8b46b578d21d57f92507e6634467b295bc2bbd41a224f00"
+    },
+    {
+      "path": "corpus/real/sessions/ab0157a6-267f-4ba4-b6ba-fa43aa65428f/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 6641,
+      "sha256": "34f505c9ce52edd7408cc5f83b97e54e2a28ff408cb4a188d7a9f434b9c1257b"
+    },
+    {
+      "path": "corpus/real/sessions/ab85c579-dcda-404b-9a9f-2af3c3a24034/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 12864,
+      "sha256": "ff6638a7ec5558526893bf2869c35d7e41c2515a3b9f83373b8f565cc65d6414"
+    },
+    {
+      "path": "corpus/real/sessions/b0df0e23-d905-431d-9b8c-8c57ad0f3fdd/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 22491,
+      "sha256": "d9fa4c026c5be3323c27fcf8b8e16e4f9317e7964d726741dc0e051010f417ec"
+    },
+    {
+      "path": "corpus/real/sessions/b405fcd9-c66c-4185-a41f-709ff44dcad7/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 12720,
+      "sha256": "e46a602d3153c0a294bec29effd9f43f074a989839ef5ee0442ad26b188b3fb2"
+    },
+    {
+      "path": "corpus/real/sessions/b9b3dee2-3678-4c62-993c-0678072a2b56/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 9719,
+      "sha256": "c71adb02df3057c8688014d955900f25b23295b336edd100c79c228c875e254c"
+    },
+    {
+      "path": "corpus/real/sessions/be01585c-e7d9-4187-a3d1-3585207e82e3/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 12841,
+      "sha256": "9ef50a2504e6805e41da506decd72d598aea8de66fd183397510dee3110bb6ae"
+    },
+    {
+      "path": "corpus/real/sessions/c3b96365-45a3-45b8-828d-920dfcd0a002/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 14020,
+      "sha256": "158f56564c5012be86237605fa869f6c0bc3885bad89c4b8f2f22c379dc09d2f"
+    },
+    {
+      "path": "corpus/real/sessions/c4e9e311-2bac-436a-b9da-f4139f98a201/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 31700,
+      "sha256": "6f8ff3772c67c2d5b577f139c11e9d31f3eeffa96d1579b7ea5feca801191644"
+    },
+    {
+      "path": "corpus/real/sessions/c80583e9-e526-460b-9072-6f2b56bdebf0/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 4475,
+      "sha256": "05c458e4ed9173b21727883e9b925dca93d8bca52cc474a9b9b19e6c4c243db9"
+    },
+    {
+      "path": "corpus/real/sessions/c80583e9-e526-460b-9072-6f2b56bdebf0/turn-2.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 1531,
+      "sha256": "9f9e981d6ada8c6c6cd22600d541bba3a5616863a45c25b110e188d8d3cdc529"
+    },
+    {
+      "path": "corpus/real/sessions/d11e9434-da53-4d01-a58a-fefffe8b999f/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 20926,
+      "sha256": "0ef18adb5af026a3b0ab95ad36cc2a1cd78ec2e465352c67774a63b0bf8f2f7c"
+    },
+    {
+      "path": "corpus/real/sessions/d1986ca7-22db-4785-abaf-6e8abc39619e/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 14968,
+      "sha256": "96b1dd88290b8d161706888b77e9c793da5c726302db0b9e14ea4e6a4479fe52"
+    },
+    {
+      "path": "corpus/real/sessions/d247bcd8-4d6b-4e09-98be-cdc98832235a/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 22423,
+      "sha256": "54846a1740a629455db64345375939477c4f8e54de52718c8d25f296fb55af79"
+    },
+    {
+      "path": "corpus/real/sessions/d247bcd8-4d6b-4e09-98be-cdc98832235a/turn-2.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 3925,
+      "sha256": "7d18d562c2e3e6f38badd243dc6fc66d4e6d785721590f08b5a8ab1be862faf9"
+    },
+    {
+      "path": "corpus/real/sessions/d2658b88-b0db-40c9-80af-985799534eb7/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 14444,
+      "sha256": "b45cc924257192206bd010c7f523a58049016c99d43039d8e90a4ac3dbd1bf58"
+    },
+    {
+      "path": "corpus/real/sessions/d2de09a1-b9be-4d75-b580-58895d4b187e/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 19997,
+      "sha256": "e285941599518321557d135b74f7515604cee317f9f6f4c109187505b409b2b8"
+    },
+    {
+      "path": "corpus/real/sessions/d5c64a92-8e45-4835-a211-a20b14be31e6/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 24875,
+      "sha256": "4afbaec17b0724f4a618fb1270c177da2e5b51482b359bca98a9423cce176044"
+    },
+    {
+      "path": "corpus/real/sessions/d7531f66-986f-406a-ae05-f53bd7c2dc58/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 736,
+      "sha256": "2e52ee43d3dd17cd131d6de7ea2078dc325302f9284780702a533a8d7d06d26a"
+    },
+    {
+      "path": "corpus/real/sessions/db60a216-c012-43fd-93ca-58e6196ceb99/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 11924,
+      "sha256": "fb54067f783f4a8a26b3cf720471f632673554bd659ab9a7d399e933d715ae7e"
+    },
+    {
+      "path": "corpus/real/sessions/dbc8365a-6df2-4c0d-a4b3-c46e62218ad1/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 1171,
+      "sha256": "35e1080df432607a0a0b1f46868dca16e9abe2b74f283424ec68cb01719bef97"
+    },
+    {
+      "path": "corpus/real/sessions/dcc19682-2972-458f-a6a7-86c9328d7e0d/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 1172,
+      "sha256": "3295109a33f063c24593e00134095d315e4b7af499d84c83c65997a749050561"
+    },
+    {
+      "path": "corpus/real/sessions/e187e7a4-1db5-4b54-bb9e-636585c21bbb/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 742,
+      "sha256": "56b255bfd2f304a0b93b988c2b713d38a7752077578e8ea8f6486f1870ccf2d7"
+    },
+    {
+      "path": "corpus/real/sessions/e5ab1aa9-574e-4ed8-b7bf-47b20b094db3/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 9151,
+      "sha256": "ca840c3a0fb04d793d4674b29edfeebab0856507124dca6cf312fd615890ccb7"
+    },
+    {
+      "path": "corpus/real/sessions/e7686924-3794-4937-98ab-d541bf57a17f/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 3752,
+      "sha256": "4e55b5c1e638f277c5775fa2187d79195ae7ba8993da9f155c6d56948aa10e5c"
+    },
+    {
+      "path": "corpus/real/sessions/e91f17eb-74dc-469c-ba90-88bfc69301af/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 23445,
+      "sha256": "741982fc814588816f8bfbeef1660e6f2d3241ce6472f9f3530b9648cf501adf"
+    },
+    {
+      "path": "corpus/real/sessions/e97300f6-248a-46bf-a665-5d72bbf64c68/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 738,
+      "sha256": "28c5b20d5f799efc14e0a05a8c465bddc2651186b8a147baed8a66b15e910390"
+    },
+    {
+      "path": "corpus/real/sessions/f37cffe9-67c6-41e2-bb70-833415e7a434/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 30702,
+      "sha256": "42dfb6792fe306aaf45664265f7333319d1b7834cc38394326fdba30cb47050f"
+    },
+    {
+      "path": "corpus/real/sessions/f6453ec8-877c-452d-b666-bf3cf501ff69/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 10510,
+      "sha256": "4ce3371a627ae00cc27ab082ff609d10f0fc035e32c70363284a9c490dec1699"
+    },
+    {
+      "path": "corpus/real/sessions/f6de4feb-a0c7-4333-b2c8-495b9eb8ff16/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 8224,
+      "sha256": "ca3ebc5db1d6b527b019f685acab8fff94ecb0efb764456fcfd5831acd55ca98"
+    },
+    {
+      "path": "corpus/real/sessions/f97b6d11-c0ce-47e4-8240-16a33638b653/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 30493,
+      "sha256": "735b198f09fafcc4e2a6c91bd8f3141d3acdf4b2e324b3086896e4c1fa8f1f78"
+    },
+    {
+      "path": "corpus/real/sessions/f97b6d11-c0ce-47e4-8240-16a33638b653/turn-2.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 15270,
+      "sha256": "262cd3b80a8af5c50279f99433373455c0889ee1633a9479b7d07e94f3e6c31f"
+    },
+    {
+      "path": "corpus/real/sessions/fc4f03dd-be17-4a80-b371-50d42f852837/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 10608,
+      "sha256": "92c3b1abb8a898691a0243794d834eb8fee543c06d5c8b94a787cafe04f1b257"
+    },
+    {
+      "path": "corpus/real/sessions/fd3cf357-17e8-4579-9af7-7561a3772f20/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 9724,
+      "sha256": "35789c70d5131048f3219a75e9130927c2790b7b9da7b972494b9b2455ba9054"
+    },
+    {
+      "path": "corpus/real/sessions/fdc243f1-2bda-4e68-a805-718516a202ba/turn-1.proxy.jsonl",
+      "type": "file",
+      "mode": 436,
+      "length": 17994,
+      "sha256": "3d03df2789fcf3ed1013f721173c3b01df39ff488d95f93ce2f48077a7154106"
+    },
+    {
+      "path": "corpus/tools/build_corpus.py",
+      "type": "file",
+      "mode": 436,
+      "length": 103278,
+      "sha256": "0ac9f5094f446a286a51fbf9d7f0983ce1b10e93c59d0b753f1b802494904a2d"
+    },
+    {
+      "path": "corpus/tools/build_rev2_cases.py",
+      "type": "file",
+      "mode": 436,
+      "length": 4242,
+      "sha256": "88b017f6fd95c2af2078d6069c6730ee040222cc31b2acaad746581bffc8c502"
+    },
+    {
+      "path": "corpus/tools/build_rev3_cases.py",
+      "type": "file",
+      "mode": 436,
+      "length": 20169,
+      "sha256": "7d20dd8982943140c92c38f794fa76ccb77f5a3cfffa8a22c86a2f9d84995746"
+    },
+    {
+      "path": "corpus/tools/build_rev4_cases.py",
+      "type": "file",
+      "mode": 436,
+      "length": 23272,
+      "sha256": "4489f205e88d790b92c9ca5f72aa1035e751f008842e217bd08d379939837639"
+    },
+    {
+      "path": "corpus/tools/build_rev5_cases.py",
+      "type": "file",
+      "mode": 436,
+      "length": 15540,
+      "sha256": "80730b251542e341ed80e6e6294031ac76203e185c2ea6b90399f871939e5022"
+    },
+    {
+      "path": "corpus/tools/coverage.py",
+      "type": "file",
+      "mode": 436,
+      "length": 7630,
+      "sha256": "0e2bbe36ab613d39cfb61852e211ac8804cb680abbd755ca14e17dbeedd81dea"
+    },
+    {
+      "path": "corpus/tools/derive_real.py",
+      "type": "file",
+      "mode": 436,
+      "length": 6205,
+      "sha256": "5001ad65068440b8aac270bb4c1ca1007db9dfd1ace822df0ac2cfcf369ff962"
+    },
+    {
+      "path": "corpus/tools/historical_a134.py",
+      "type": "file",
+      "mode": 436,
+      "length": 6655,
+      "sha256": "fffb8b5fe1ab8609898f8f66923fd6efa9af5d00a173bea6c666c46a6620cf25"
+    },
+    {
+      "path": "corpus/tools/rev2_summary.py",
+      "type": "file",
+      "mode": 436,
+      "length": 2389,
+      "sha256": "abb42696297648d32fd040609b6775853c195ce245458bb0b6e5dc2ced059c48"
+    },
+    {
+      "path": "corpus/tools/rev3_summary.py",
+      "type": "file",
+      "mode": 436,
+      "length": 9560,
+      "sha256": "fa1355d1ed90630e4264d1728d364ac24bc76d707faac2271a430ec09b2e5ff1"
+    },
+    {
+      "path": "corpus/tools/rev4_summary.py",
+      "type": "file",
+      "mode": 436,
+      "length": 6586,
+      "sha256": "23bfc98edc6cc055011f0c940890acffc1287e560ca7f29b285c261981ae9be3"
+    },
+    {
+      "path": "corpus/tools/rev5_lib.py",
+      "type": "file",
+      "mode": 436,
+      "length": 13800,
+      "sha256": "890ce9f52a41fbab5801085e21b3b3f01444795a2d2e472fda14eefa900c9004"
+    },
+    {
+      "path": "corpus/tools/rev5_summary.py",
+      "type": "file",
+      "mode": 436,
+      "length": 5514,
+      "sha256": "a3be941d6c6371ecb6b061e39d2393b01b41c3c0c9af667575279454606b8e35"
+    },
+    {
+      "path": "corpus/tools/revise_rev2.py",
+      "type": "file",
+      "mode": 436,
+      "length": 8949,
+      "sha256": "2908c9d6171fbd51c9a80b9748d0fc27d23fd1f40b29e26de2e6a9835bb94c26"
+    },
+    {
+      "path": "corpus/tools/revise_rev3.py",
+      "type": "file",
+      "mode": 436,
+      "length": 13849,
+      "sha256": "49d5a487e006d7f4a2b29de31de206158f88366d3590db0cdfbba0c444a9f027"
+    },
+    {
+      "path": "corpus/tools/revise_rev3_fixups.py",
+      "type": "file",
+      "mode": 436,
+      "length": 2373,
+      "sha256": "1d3cd67c3ed96555e37479b55a2b62ea527c22d53abe726c7e0fdc07244a28b9"
+    },
+    {
+      "path": "corpus/tools/revise_rev4.py",
+      "type": "file",
+      "mode": 436,
+      "length": 8365,
+      "sha256": "963a15c3c8de10837a483ddee395abdfb9ab44a1098572e4e1b975b54b2d339d"
+    },
+    {
+      "path": "corpus/tools/revise_rev5.py",
+      "type": "file",
+      "mode": 436,
+      "length": 8896,
+      "sha256": "f1dfe2073e27c532b18b777695093f6ee652c2590fa4a66ad236ffcb7e839e55"
+    },
+    {
+      "path": "corpus/tools/rows.py",
+      "type": "file",
+      "mode": 436,
+      "length": 10444,
+      "sha256": "795d3bafacbfb72007c43fa0bc3c3354bb7279594b79ffc316a4d53fd93723d0"
+    },
+    {
+      "path": "oracle/FROZEN-FACTS.json",
+      "type": "file",
+      "mode": 436,
+      "length": 987018,
+      "sha256": "f097e5a541b279f2081c71f54ca3403151475348b8a30245e6846708590e293e"
+    },
+    {
+      "path": "oracle/FROZEN-RAW-MANIFEST.json",
+      "type": "file",
+      "mode": 436,
+      "length": 150239,
+      "sha256": "60b3eae7b42f4d44a0fa00ea3120d1461fa820f0a03a8f65a3f1f278b125f4fc"
+    },
+    {
+      "path": "oracle/POLICY-APPROVAL.md",
+      "type": "file",
+      "mode": 436,
+      "length": 7832,
+      "sha256": "07303d5c5c36276f6038bf9368f3a5fe660e39ee9160b8b3d92049de98abb981"
+    },
+    {
+      "path": "oracle/R7-WITNESSES.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1422,
+      "sha256": "9841056afa8e6b28db4488ccba429d9bf38538f711d262a3e640e589f7ebc79a"
+    },
+    {
+      "path": "oracle/README.md",
+      "type": "file",
+      "mode": 436,
+      "length": 5147,
+      "sha256": "866b2a3b9e409c962a6707c4312c59e26c76de7fed8d2a86617160c3d5a74769"
+    },
+    {
+      "path": "oracle/frozen-raw/A04-undated-settlement-between-dated-neighbours.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1747,
+      "sha256": "2b10480cfc714c9ee73c6fbafe6afde06fcf1569c09e41f20d07512203baa23c"
+    },
+    {
+      "path": "oracle/frozen-raw/A06-reservation-usage-null-status-no-id.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1586,
+      "sha256": "99860394911126d149e852ce79efb3fd239d23c5bc17ff4093fae20f81ef5884"
+    },
+    {
+      "path": "oracle/frozen-raw/A1-01-upstream-error-and-unknown-event.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1696,
+      "sha256": "2489a2a1d4e5318dc94dc38e072655a6bfbdc4cbf4827e406a54770f21b40fb7"
+    },
+    {
+      "path": "oracle/frozen-raw/A1-02-undated-row-inverted-neighbours.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1737,
+      "sha256": "271b7ee83341c50d8887e83fe2299f6bfbb9897a6a7e7433380114d1d15da5ad"
+    },
+    {
+      "path": "oracle/frozen-raw/A1-03-unreferenced-log.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1873,
+      "sha256": "ba13a091c4a6e4c4837dea49a317eb4db377d38775495e6b7f30d5f2824b9782"
+    },
+    {
+      "path": "oracle/frozen-raw/A1-06-control-no-session-file.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1270,
+      "sha256": "bef3e35054a39dfd754da6c3970540aa7b2c865efcf0941e6cb40da37e469729"
+    },
+    {
+      "path": "oracle/frozen-raw/A1-06-session-file-is-not-evidence.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1392,
+      "sha256": "eb82cb3eaa4835eeb0015e279e5561b458d61fde591fdc8b38b381d7ec95cca1"
+    },
+    {
+      "path": "oracle/frozen-raw/C1-control-before-reference.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1516,
+      "sha256": "53bc84d7e6ffe8fa7131abc4692be636c9b8cf7425a3580923bd4df6c03b5949"
+    },
+    {
+      "path": "oracle/frozen-raw/C1-settlement-after-reference-time.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1523,
+      "sha256": "cdaf89278593c3f63c9d6aee81409cfa3488230b066e7c59ac5fa6cb05143a07"
+    },
+    {
+      "path": "oracle/frozen-raw/C2-unsettled-reservation-after-reference-time.json",
+      "type": "file",
+      "mode": 436,
+      "length": 934,
+      "sha256": "2f6f84ea1a517ec25607e76e7e0926a6d725464f9c737565a7a0c99c8f62fdb7"
+    },
+    {
+      "path": "oracle/frozen-raw/C3-identical-reservation-copy.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1749,
+      "sha256": "9b5027c6a0a30358fbaaf262745ec61b0d69c6f67fc68e2c0f3d8471227bd006"
+    },
+    {
+      "path": "oracle/frozen-raw/C4-missing-charge-basis.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1537,
+      "sha256": "a4693b70d97a02066a4669c8abbd4a5f534e59fab7c695d83f1d97ac5838035b"
+    },
+    {
+      "path": "oracle/frozen-raw/D1-closed-objective-provisional.json",
+      "type": "file",
+      "mode": 436,
+      "length": 920,
+      "sha256": "d04d0851195835940c017977d544ae42ea20f3da2d93a19bf0388d0841cd9664"
+    },
+    {
+      "path": "oracle/frozen-raw/D1-successor-constrained-by-predecessor-obligations.json",
+      "type": "file",
+      "mode": 436,
+      "length": 940,
+      "sha256": "331a8b8710758690c9d01507d4bf0db0748fc54a08213f7bca14c8baf8babb99"
+    },
+    {
+      "path": "oracle/frozen-raw/D4-unbudgeted-error-status.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1247,
+      "sha256": "4ce03d2078cddea1c5ec0ded107d28478979809b624a43950fb58599828d2fb5"
+    },
+    {
+      "path": "oracle/frozen-raw/DUP-response-id-across-attempts.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2369,
+      "sha256": "9025ea6719159f2d9c3ced4cc0a56d23e8001b41d48dccb20cb76dd92931396b"
+    },
+    {
+      "path": "oracle/frozen-raw/Ha-control-consistent-split.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1728,
+      "sha256": "8759a3fcdddcd4c74346371c3cf9c6c16c6ebd80f3b26ec3e492e2270ef7e479"
+    },
+    {
+      "path": "oracle/frozen-raw/Ha-inconsistent-cache-split-keeps-supported-low.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1750,
+      "sha256": "dfed20bf6afacd866756386e342991a2102ad31c6ec63e3a00174901d58daa88"
+    },
+    {
+      "path": "oracle/frozen-raw/Hb-window-independence.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1586,
+      "sha256": "6286df0f738b1b0a31d605d4f2aef15059d9894b430ebb1ef86d87f63d39ccd2"
+    },
+    {
+      "path": "oracle/frozen-raw/N01-control-served-pinned.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1654,
+      "sha256": "acf8e0d5ef0b65c03d24139ef6f398b465122a4f36c8fa82bcd5d6ec8c2b0706"
+    },
+    {
+      "path": "oracle/frozen-raw/N01-identity-refusal-dearer-served.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2037,
+      "sha256": "752f846b5d0b44eba163c5f6a7b8a3029804c711e242d8ea973d2e3a8d21cbee"
+    },
+    {
+      "path": "oracle/frozen-raw/N01-orphan-identity-refusal.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1331,
+      "sha256": "96cd6dc849edb4fd884b498f1bd21571027bf5c994699476b94a5af1734fdc39"
+    },
+    {
+      "path": "oracle/frozen-raw/N01-variant-no-refusal-row.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1697,
+      "sha256": "f406c7fef3583e06e8ca929cc42d27724d2b2eca052fe4cc2ace23c544403f86"
+    },
+    {
+      "path": "oracle/frozen-raw/N01-variant-reservation-above-both.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2033,
+      "sha256": "26cf757085eff5c8aceb7f4f5f80981464af4a8d381ca953bc644343e63026f0"
+    },
+    {
+      "path": "oracle/frozen-raw/N02-malformed-anthropic-tier.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1656,
+      "sha256": "1542f6a27cef329577dcbe7c78db993211198fa6e6f3c921623a065e2abdfb54"
+    },
+    {
+      "path": "oracle/frozen-raw/N03-api-row-other-provider.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1662,
+      "sha256": "df07f6506bcf073215b9f7652f4e6ff2d2ec8dbfcf2b3f782f7b31b3d18d0dd2"
+    },
+    {
+      "path": "oracle/frozen-raw/N03-contradicted-admission.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1024,
+      "sha256": "883b460c42b9597ad8d3c7122a825bc0eb07a3e8c9b381d53367a996ae24fe16"
+    },
+    {
+      "path": "oracle/frozen-raw/N03-contradicted-refused-row.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1086,
+      "sha256": "6b2a613f4fac8624afb7eabdff784738e0de65178ce9c39ae8f10126ce3272a7"
+    },
+    {
+      "path": "oracle/frozen-raw/N03-control-unlabelled-admission.json",
+      "type": "file",
+      "mode": 436,
+      "length": 980,
+      "sha256": "560c7b9454f7ec87002aa2b5d0602fee81b188f638bc229eeaed6bab6d1b8c0e"
+    },
+    {
+      "path": "oracle/frozen-raw/N03-control-unlabelled-refused-row.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1042,
+      "sha256": "c0d00008972fa9bdfb688e9890e595d18dbdfa0b134a429a7494aad1d90a126e"
+    },
+    {
+      "path": "oracle/frozen-raw/N03-identity-refusal-in-subscription.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1173,
+      "sha256": "d24c024183f9f8e8fee03581032063d8a4fcdbd9f1cf0c3f466c76fa1001e640"
+    },
+    {
+      "path": "oracle/frozen-raw/N04-ambiguous-read-failure.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1834,
+      "sha256": "9f0d10b60e8b27b717dc07b067c704448e073dd78bac26d3eb9286c062859b83"
+    },
+    {
+      "path": "oracle/frozen-raw/N04-budgeted-header-failure-no-own-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1694,
+      "sha256": "561de509081790020cb2a8467314fc4a7c7f824680c362fc49a7b5d50701f5d9"
+    },
+    {
+      "path": "oracle/frozen-raw/N04-budgeted-header-failure-own-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1861,
+      "sha256": "c72b4218464be60fce0fe5ca14a58ac6a6dbdf75f0d4bfa37948cc57b98bb73b"
+    },
+    {
+      "path": "oracle/frozen-raw/N04-control-request-alone.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1448,
+      "sha256": "7bf9c5daebfebd1c472d38bc20a90833c8b8e1dc7612417b27d885ae29346d52"
+    },
+    {
+      "path": "oracle/frozen-raw/N04-duplicated-read-failure.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1517,
+      "sha256": "7971a3b3c3ecd5e7e1e1ded8b5937e4511e31d028430cc4ed2cc18ae42125e61"
+    },
+    {
+      "path": "oracle/frozen-raw/N04-header-write-error-reused-n.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1538,
+      "sha256": "85f7029ac187365f754cd656fcf09be17eada6572044c2791ded10fc1c9e0a60"
+    },
+    {
+      "path": "oracle/frozen-raw/N05-control-consistent-retirement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 997,
+      "sha256": "32a17b0aafb20c650308b1227c1bb4dfcd0a45c867dfa48f83712357f84ff047"
+    },
+    {
+      "path": "oracle/frozen-raw/N05-retirement-before-later-delivery.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1240,
+      "sha256": "a3a4c581997de7aa23d44d4d07ef8904b06d59a984629610d2ecc89500d20eaa"
+    },
+    {
+      "path": "oracle/frozen-raw/N06-null-cache-counts.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1591,
+      "sha256": "3183480b631839036d0807e4700461d42fd033e36058f494efe55e1b6d275952"
+    },
+    {
+      "path": "oracle/frozen-raw/N07-control-retired-journal.json",
+      "type": "file",
+      "mode": 436,
+      "length": 815,
+      "sha256": "c3eda242e6121d49e4af29998089819a2ee05a7168774c63f02fd6ea7de25275"
+    },
+    {
+      "path": "oracle/frozen-raw/N07-control-retired-legacy.json",
+      "type": "file",
+      "mode": 436,
+      "length": 814,
+      "sha256": "af6186b26e0fea149adef7e8f28c16102e63f92dd7d3b7219b9d2738687d3a4f"
+    },
+    {
+      "path": "oracle/frozen-raw/N07-reopened-session-journal.json",
+      "type": "file",
+      "mode": 436,
+      "length": 981,
+      "sha256": "7df8ab75304261f75eb7c45212f21291ea536e0789915badeed4ae33eb686eb1"
+    },
+    {
+      "path": "oracle/frozen-raw/N07-reopened-session-legacy.json",
+      "type": "file",
+      "mode": 436,
+      "length": 980,
+      "sha256": "510c014d2265813bae5ed99138045dce5e7f9590a0b5c856222dedfc8b095be8"
+    },
+    {
+      "path": "oracle/frozen-raw/N08-control-priced-model.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1333,
+      "sha256": "a24534bd68e16f7f2d26b097b085ad72d52adda85f16a67d0db304b96a9e1388"
+    },
+    {
+      "path": "oracle/frozen-raw/N08-model-without-producer-rate.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1343,
+      "sha256": "e930e6d33e2e0046c16e6a938b2263de58b3fce0657dd467f8a9fd082629af17"
+    },
+    {
+      "path": "oracle/frozen-raw/ORD-sessions-in-ledger-order.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2245,
+      "sha256": "d4ebcca5111f6e6cc05b84cdb8e089cee33db548bd2f0cc545134b1a9a3c85a9"
+    },
+    {
+      "path": "oracle/frozen-raw/ORD-sessions-reversed.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2238,
+      "sha256": "cd6902c6a19823a31f64bd0352d0290f3683e8f6f03d4a60e5ec0bcc9a244859"
+    },
+    {
+      "path": "oracle/frozen-raw/OWN-budgeted-session-without-admission.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1602,
+      "sha256": "12ecd1bdbb115f8c76671fe7640ca5b6f0300c56022c0e5f5066e40ce7208503"
+    },
+    {
+      "path": "oracle/frozen-raw/OWN-two-admitting-objectives.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1592,
+      "sha256": "5707d0a985826265af5531ac74ba6b96c39bbe68e1807b802dcd34e22cc1aba2"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-A5-unreadable-line-added.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1606,
+      "sha256": "62a3fdcad1335763395f52d64c24ff39246207f48ac5d026a3182063360024de"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-Q11-closure-uncertain.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1590,
+      "sha256": "5ca98632812f11f2005fa36c4c2ad5194a15d70b25c5bc44635accc02c45e7ee"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-R01-usage-incomplete-terminal.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1599,
+      "sha256": "54b7c2c1c618c5ca0ebf99647df3d22f791de799823a5a92b2c4eb2a84c6f5b6"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-R02-rounded-up-charge-admitted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1599,
+      "sha256": "b9ee8146224fd400a99258f6c349eb1546e29b707d69becdee3d92ab60a233ee"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-R04-priority-overrun-above-cap.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1603,
+      "sha256": "90ce4fe3ee978a0d2d626295f8d79840abac09abe7852a73d973208e46b30365"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-R04-retired-session-releases-commitment.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1608,
+      "sha256": "0d8a8473a935ddea4c868b77e01315fbfdcc754ad7ba53c73638a9a05e3be0f2"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-R05-conflicting-keeps-valuation-high.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2743,
+      "sha256": "88bd3dc5f3bb1be190489232b3cf13b9305e9f433a1efa25146f9f2e8a9c9e05"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-R06-reservation-amount-malformed.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1005,
+      "sha256": "d75b5ca1a9c9b8eb68ce57806d38cd90d7acd0d3e49385628b56ccbc1409e3dd"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-R06-reservation-rid-missing.json",
+      "type": "file",
+      "mode": 436,
+      "length": 984,
+      "sha256": "3e7a61a19d136721335e8954b2e6e7098d6c0c9098635fe5cdccda37ae466788"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-R07-closed-unresolved-predecessor-constrains-successor.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1301,
+      "sha256": "151a139ff0b22d4a649aecd4a5b4a0956fe85c482f57db71dab27d570b243877"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-R08-admissions-without-tree-still-block.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1608,
+      "sha256": "9a38b7e5a291121eb76fcea94404a504539a7a0e301e10c485afc3f9b35c6215"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-R10-reopened-then-retired.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1058,
+      "sha256": "1ca25afc7f1003c5ad3219e3b4afd7756b60e26d6674432aed49b598d253d4ed"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-R11-open-session-before-retirement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 752,
+      "sha256": "efc343d76a262ac3e59b77c46bff0a44aefd9a65c2e00fac9017daa86484a40a"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-R12-outstanding-interval-keeps-candidate.json",
+      "type": "file",
+      "mode": 436,
+      "length": 934,
+      "sha256": "8c50defefd1f1afefef44114d94f0116ae533d001bb98743287d9c21a16b582a"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-R12-untrusted-clock-keeps-candidate.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1278,
+      "sha256": "331e15624bbce01c3a0e025b3f50ff5b59472c8d626076996d6db3cb77519e0e"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-R14-anthropic-null-tier-admitted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1668,
+      "sha256": "3d62f91c058b2726b08b1ecf0fa1932eca25bbd827fad218abc2f3431f95b768"
+    },
+    {
+      "path": "oracle/frozen-raw/P130-T-owned-before-window-summed.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1597,
+      "sha256": "422095bebbd2c64dbd317348595795b2bc4f80e51f954b8ac61f3180d6349c0c"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-CP-close-after-reference-time.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1598,
+      "sha256": "2427b7834e0105ba27a50fc3df253874966630ecd73d582c20212376e44e6710"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-CP-close-entry-contradicts-closed-at.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1605,
+      "sha256": "d5298e7676cfe768c7263638c027cad3641b4eccd1460c14dc3c0f7d49858978"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-CP-closed-predecessor-outstanding.json",
+      "type": "file",
+      "mode": 436,
+      "length": 927,
+      "sha256": "b76ab9c852129674481203cab87b7e87a054fa3b05c4b8c9c3f0075f5aaa5f27"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-CP-closed-valid-close-entry.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1596,
+      "sha256": "27498057ad62d59f836310d71f7aaef26b738168e80f968c32094c752532cd77"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-CP-known-over-limit.json",
+      "type": "file",
+      "mode": 436,
+      "length": 988,
+      "sha256": "1891bb4c2409e0dd77b0ee9f913f8995d5ea8fc63e4c15e3adb353c49754a2a4"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-CP-retired-session-resumed-without-admission.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2553,
+      "sha256": "8d9a8bd5c141b441f15ca36a6aaf73109d32d3b28a908850581bc3589358940a"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-CP-unknown-below-limit.json",
+      "type": "file",
+      "mode": 436,
+      "length": 991,
+      "sha256": "2ae43738bca8569a2ec60494deaf03a1a764e323c3479fdf163c907a15ee7880"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-N06-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2833,
+      "sha256": "40dc43d668078e87fb5e3270bad70515f99a25837c049fe1cfb2aafefc50efbe"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-N07-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2051,
+      "sha256": "087ff42c0891c896137b84ac323080c40cd030034fb6839f6cd0297864c12dc1"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-P130-R02-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2832,
+      "sha256": "b3f88b1997782b9bd1d9112da1b72748612822a2038ced13824a15a3eae74afd"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-P130-R04-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2832,
+      "sha256": "d794babc030b027aab39362a9879d9bc1d8ab39531670fcdf6493703431fbb0a"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-P130-R14-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2899,
+      "sha256": "d12ee8bee4d654d9513d24557aa7227cf4d45d6575af2181e7b9ff35a80c186a"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-U03-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2827,
+      "sha256": "58c035f67cf837f94445bc231243bfd3e34a5e7886eb9446bbabf0482bf04cf8"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-V01-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2822,
+      "sha256": "4bfb6955b442f1446bd2c65d14bef3813939f81bad1498245c22f77cb1cda223"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-V02-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2900,
+      "sha256": "0c909a63db8aa1716528deea3a4361aeaa089c23baed86d5e59bbe0212597dff"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-VC01-before-retirement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2765,
+      "sha256": "77a42feb4bae781fb29e63d3135633ba93bb60a716aa4ae38ab403fe780f81cc"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-VC01-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2828,
+      "sha256": "d3798986b1d3787dee8c0799d2531c94bcbd7c23a53418f42b7851add9b403e9"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-VC01-no-gate.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1599,
+      "sha256": "53447a10758c6af2f9d27fa7b1dcd82c60655e190630d90214f5e6084b1c7423"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-VC02-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2903,
+      "sha256": "4b60b49921dd226faacf59563bbc9f558f1c05be462088f78d60b25035e1eb5a"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-VC11-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 3769,
+      "sha256": "29783744b18b2fdb5a78ea1145031d2e6c0d1cb127a3e93430dcecd588e91db4"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-VC13-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2828,
+      "sha256": "79f71f0d7d2faafd465266c90be8d7aaa85854a1c590a38d7eb95028cac4c89d"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-VC14-open-no-billing-bound.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2606,
+      "sha256": "b4a990d8e6d9b1b599cc1cab6c4b0274a4f08d3dde60a18c5f4b10bdcdda2621"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-VC14-open-session-billing-bound.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2774,
+      "sha256": "a0c33238ec5c17dff0911534081a1d1eb6cbc00574bb8224c01d9856020a0fb7"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-VC15-gated.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2828,
+      "sha256": "4d2082d6dd29ee132ac8221b690d885920fae5d73e5912670e17503ec1f75902"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-closure-authority.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2835,
+      "sha256": "828b3a384fbde7d944957da41e8fc7f91403129db1c130372eb23c9d10ac7dbc"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-closure-legacy-entry-only.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2843,
+      "sha256": "ed5a18941fb8b1f6ca83f8940704384b7c121034a9fbc6a5926474bd6ed1a6af"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-gate-contradicted-by-reopening.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2237,
+      "sha256": "46af0b166949d551f1d97c89b6119ff0648be93c3e30975be7850ad937147aae"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-gate-expired.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2848,
+      "sha256": "2ab32fff80a3f6c21308fc1719bb1377cdb9f82475d4d79ca80c529ebd510758"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-gate-flag-only.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1710,
+      "sha256": "5396fb55143aaa115ec269f1dc002d0d48bd04b140d5704b68743d9b73f12e71"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-gate-receipt-missing.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2673,
+      "sha256": "259b1c36db6c66ecb4dab1b7c3fd39a55bf802927d1081ebfba41e727272e6c1"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-gate-reopening-only.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2353,
+      "sha256": "a4ba9b835e2b51661dcb36a872fb47b2d10fd61bd181a43d7d93cd96aa017210"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-gate-request-scope.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2865,
+      "sha256": "80517cc99da9e903e1bba1d15a936921ffead6bdad08336cf21cc16235b48f34"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-gate-self-asserted-file.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2845,
+      "sha256": "5ba481d07de920a7b4778931f3652acefead8ae1ab37194668d746e60af82e2c"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-gate-starts-after-launch.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2842,
+      "sha256": "01257d27b6b8251d1938105a02e378d703fb3347edf1879411be86ff5212ad2f"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-gate-wrong-authority.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2830,
+      "sha256": "4af04ab29400194c3fac2c853b894a0d7fb48cec5db521e4bc0f81a86b4e306a"
+    },
+    {
+      "path": "oracle/frozen-raw/P132-FG-gate-wrong-session.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2836,
+      "sha256": "678499daa6dca902b629b6b88ce1d902fce734dc25ed9afd9397eacff6b67c1a"
+    },
+    {
+      "path": "oracle/frozen-raw/P133-A01-incomplete-usage-above-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1610,
+      "sha256": "89381878917e8855f500a4ddf82f02355fa237a243827240b7008d518da027fa"
+    },
+    {
+      "path": "oracle/frozen-raw/P133-A02-error-status-with-priceable-usage.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1584,
+      "sha256": "70235d7f799c40721bcbac36028b2ed3de4f4034ca452b9161b7e2e84054d8cb"
+    },
+    {
+      "path": "oracle/frozen-raw/P133-A04-cache-counts-both-absent.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1222,
+      "sha256": "38fc303b0e4ebbd8aafbcb88fdcb6a90d0681b368997fea287269923e372a554"
+    },
+    {
+      "path": "oracle/frozen-raw/P133-A04-cache-write-absent-legacy.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1245,
+      "sha256": "a9fc3ed5c49bdb0b0ed5a7d2fe0a3827747facba5c6465c09d73f5be9b246f81"
+    },
+    {
+      "path": "oracle/frozen-raw/P133-A04-cached-malformed.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1597,
+      "sha256": "f466ae9fc9fa5c3848f5c9891e2f514a7e27e78bf40aca7c7d3c7c040c50b821"
+    },
+    {
+      "path": "oracle/frozen-raw/P133-A04-cached-nonzero.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1591,
+      "sha256": "15e7a71ead9ee66c33e5456877c4660bc74c7e49c8378877d9df829eb4875bd9"
+    },
+    {
+      "path": "oracle/frozen-raw/P133-A04-mixed-observations.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2197,
+      "sha256": "430ded205cf25b71f94337dcac95183526d236014276c3b77f08a4dc6c060347"
+    },
+    {
+      "path": "oracle/frozen-raw/P133-A05-model-case-variant.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1591,
+      "sha256": "6b14de4d1b57e61a4e0c7a4005b1194f9654f10d996a38dda2ae79c23d393930"
+    },
+    {
+      "path": "oracle/frozen-raw/P133-A06-error-status-null.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1577,
+      "sha256": "2eec0faf76ea5db622ddf3ec3baa40ed277c7b7cb9fa95824bd01d3e879e425c"
+    },
+    {
+      "path": "oracle/frozen-raw/P133-A06-usage-settlement-status-absent.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1581,
+      "sha256": "98b14a024ead6698fc61fa64ada9f8b756478af8614f20f36eabb049b31e84dd"
+    },
+    {
+      "path": "oracle/frozen-raw/P133-A09-conflicting-reservations-with-settlement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1783,
+      "sha256": "bc469c158d8e33925fb22f408d513a4b60fa24a8f7ac6e42792bc3df01b84b64"
+    },
+    {
+      "path": "oracle/frozen-raw/P133-FG-VC14-authenticated-bound.json",
+      "type": "file",
+      "mode": 436,
+      "length": 3111,
+      "sha256": "1ac84ad677c7667d816871fad778e0b57012fdec9d62769e4c6472fcdb0ef3ac"
+    },
+    {
+      "path": "oracle/frozen-raw/P133-FG-bound-binding-mismatch.json",
+      "type": "file",
+      "mode": 436,
+      "length": 3109,
+      "sha256": "efc98965bae60023c9b8434f538a5bec7c92c619040907d3ea2163e08ff06628"
+    },
+    {
+      "path": "oracle/frozen-raw/P133-FG-bound-coverage-incomplete.json",
+      "type": "file",
+      "mode": 436,
+      "length": 3085,
+      "sha256": "8a09717f5138232fcbeccecadcfc2683a0c22fab35f1b5f3ed4b06f9d3f26a2f"
+    },
+    {
+      "path": "oracle/frozen-raw/P133-FG-bound-exceeds-cap.json",
+      "type": "file",
+      "mode": 436,
+      "length": 3104,
+      "sha256": "cd8966405b65c47433a7c630213c45d8c2464c67afec3aae3ab01b900526fa7d"
+    },
+    {
+      "path": "oracle/frozen-raw/P133-FG-bound-wrong-currency.json",
+      "type": "file",
+      "mode": 436,
+      "length": 3107,
+      "sha256": "60eb1bd8cb3d16f15cd7b867cda7a351abd0dfa38365a301d3a7231ac4412a4b"
+    },
+    {
+      "path": "oracle/frozen-raw/P2-usage-settlement-unpriced-identity-keeps-charge.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1612,
+      "sha256": "d66568b384bf9545c3b558e9bd5b0873370ab86fb4a8a8d18581f1cdc63e0cff"
+    },
+    {
+      "path": "oracle/frozen-raw/P9-claimed-charge-above-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1595,
+      "sha256": "c02ae3d58297acc3877b6f98d9aba0f3ad88113732ce0cae32d35721de70fbbb"
+    },
+    {
+      "path": "oracle/frozen-raw/Q5-unrecognised-openai-tier.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1587,
+      "sha256": "76bba8919806676286bb68c2699f72821234838ae1e6432f7af85338f697df44"
+    },
+    {
+      "path": "oracle/frozen-raw/Q8-unadmitted-outside-candidate-window.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1276,
+      "sha256": "1c56dc2db50a0904bd7239d72de0f6d82cbc6dd82cbb6b25bcc38d1a2080280e"
+    },
+    {
+      "path": "oracle/frozen-raw/R01-dated-rows-backwards.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1588,
+      "sha256": "185496f7becee955e0347cacbe1080b1c6edf22a961da6414468923beedb3b9f"
+    },
+    {
+      "path": "oracle/frozen-raw/R02-string-charge.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1575,
+      "sha256": "821f5d2eb0d5cc0d624c44ddd304cc8e53b6097cb2ea4cee7a76accc1368a940"
+    },
+    {
+      "path": "oracle/frozen-raw/R04-reused-reservation-id.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1159,
+      "sha256": "4a0c7e11caec3e874caca785fa5902da1a6c33b4d3c5f6b930c81a6ead69288f"
+    },
+    {
+      "path": "oracle/frozen-raw/R05-non-object-json-rows.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1616,
+      "sha256": "4ed397cf029cb8f9284774510889773bc791fac78b2afdc3ed961487c88757fe"
+    },
+    {
+      "path": "oracle/frozen-raw/R06-launch-row-missing.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1408,
+      "sha256": "b3678ba1ec1739ff4ab42b85ad2baefc8b8cb6caed26d818bcd4514d984c3cea"
+    },
+    {
+      "path": "oracle/frozen-raw/S01-reservation-basis-charged-less.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1585,
+      "sha256": "1acb40f5ad72f0d2635805e231248f9638352896f3b162666698c851caf604eb"
+    },
+    {
+      "path": "oracle/frozen-raw/S01-reserved-usd-omitted.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1243,
+      "sha256": "03dba73041fb80ec23a3ace69467cff336ca5d2b8d8d69087ccbdba1a38b87c0"
+    },
+    {
+      "path": "oracle/frozen-raw/S01-upstream-error-charged-zero.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1273,
+      "sha256": "b4a786cd8945a50b02e47dd40c6dc33307bd02ad77663f8d76ea330c6761cb52"
+    },
+    {
+      "path": "oracle/frozen-raw/S02-attempt-number-differs.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1576,
+      "sha256": "c1768c5677ad7dd2b67c2f5d772baba2df1ed7e54ac117036a7d2f771d84bfd2"
+    },
+    {
+      "path": "oracle/frozen-raw/S02-control-error-status-after-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1592,
+      "sha256": "c1095a22ba36a8d8720aeb9177d897754c734928eb81d99eab01f79d9b0131d5"
+    },
+    {
+      "path": "oracle/frozen-raw/S02-settlement-before-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1583,
+      "sha256": "ab6f28de290ece8658543d8e24090d77cc4830461ffaa3e797760edbfe848020"
+    },
+    {
+      "path": "oracle/frozen-raw/S03-settlement-stamped-far-future.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1522,
+      "sha256": "5ce02da04779c210bd0ac0c606652423bce2237a901b53e592e56c7a6b16956e"
+    },
+    {
+      "path": "oracle/frozen-raw/S04-next-unrelated-row-does-not-close.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1200,
+      "sha256": "449954b8193422be337bb3e5ceff485731d521f0a778c6e02f7a3b3ffe0ffb58"
+    },
+    {
+      "path": "oracle/frozen-raw/S05-unrelated-orphan-log-does-not-block.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2373,
+      "sha256": "2fbfbcb8870e343d5254586ae6f114be5e5353a7f4fb1349ec660f2056ee449e"
+    },
+    {
+      "path": "oracle/frozen-raw/S06-string-http-status.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1580,
+      "sha256": "88d02bbed0d369858eafed084730111280ca892df9d055f09376c08249c501d7"
+    },
+    {
+      "path": "oracle/frozen-raw/S08-control-pending-commitment.json",
+      "type": "file",
+      "mode": 436,
+      "length": 339,
+      "sha256": "2cffe04900a09bf5c862f271821f7706c66fa1d9511efefed43ebdded24156f4"
+    },
+    {
+      "path": "oracle/frozen-raw/S08-negative-commitment-cap.json",
+      "type": "file",
+      "mode": 436,
+      "length": 336,
+      "sha256": "c03c13ae3a89fab4ab8e28393fe2a9169465335c84c1c55d3cf47dc242d9d7c3"
+    },
+    {
+      "path": "oracle/frozen-raw/U01-malformed-attempt-number.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1581,
+      "sha256": "95aa71f396f848b128e8fa22d5be18606f7db1c1e3b4c4ef7ff3fd225fcf4981"
+    },
+    {
+      "path": "oracle/frozen-raw/U02-final-line-without-newline.json",
+      "type": "file",
+      "mode": 436,
+      "length": 995,
+      "sha256": "7030b4ee82980305c8ea0c08e4225e74ce7bfa67d419f149bb216f4244c848f5"
+    },
+    {
+      "path": "oracle/frozen-raw/U03-control.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1575,
+      "sha256": "75b362eff1d0386560330399909020600849ea8e89ec6f5ad0371d42e8368794"
+    },
+    {
+      "path": "oracle/frozen-raw/U03-retirement-before-turn-evidence.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1599,
+      "sha256": "e76846302f8374ef3bfb87354e3b1aa191bcf72fde0d4723bec2d774c56424fe"
+    },
+    {
+      "path": "oracle/frozen-raw/U04-control-settled-before-closure.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1598,
+      "sha256": "fd8b37c333cb13336fd04c62142303210deec6a37f75e70b0fbda07e1acdcf0b"
+    },
+    {
+      "path": "oracle/frozen-raw/U04-settled-after-closure-stays-with-owner.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1606,
+      "sha256": "6c6e1c602197f74f774be12c106b5c5194d6f74e09e31cd3d9a592e12bd1d4a4"
+    },
+    {
+      "path": "oracle/frozen-raw/U05-inconsistent-charge-without-response-id.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1599,
+      "sha256": "4729742321190bd2a60b9bf15825d0a1ba9642f99765a52f774c19934e0fc2d9"
+    },
+    {
+      "path": "oracle/frozen-raw/U05-usage-settlement-without-response-id.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1598,
+      "sha256": "94323c5a5d65acc26323f0cded9b8e7bfe254cc9b62bca2d40d225c598aae26f"
+    },
+    {
+      "path": "oracle/frozen-raw/U06-subscription-upstream-error-unlabelled.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1364,
+      "sha256": "55e2b76e2389f509082924a68139cc3cc8ce408d0c1f58eddb5f6329d1ff0eee"
+    },
+    {
+      "path": "oracle/frozen-raw/U07-unrelated-non-object-usage-does-not-block.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2422,
+      "sha256": "83bb2b744e262a4d9ed83959bb60a03a1a4cc2389ce5384740ead9306135b864"
+    },
+    {
+      "path": "oracle/frozen-raw/U08-missing-observed-tier.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1580,
+      "sha256": "7004f51e8b0abd46793f49261516ba669b3fbffbed69b93c89828c59d34873da"
+    },
+    {
+      "path": "oracle/frozen-raw/V01-cheaper-response-model-undercharge.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1601,
+      "sha256": "80d2828779ef8acf45b514e94bb0a924a1a135a0af94065d168b9651dc505d23"
+    },
+    {
+      "path": "oracle/frozen-raw/V01-control-producer-price.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1585,
+      "sha256": "47c276f23ed5cc98486e53c6c36fa8ed073bae271622ad24a53d37e0d8a411c5"
+    },
+    {
+      "path": "oracle/frozen-raw/V01-usage-settlement-other-response-model.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1702,
+      "sha256": "bc90bc54f4a64c07d4c9e1c184204689ecc2caa6069defac0667804b19898ffc"
+    },
+    {
+      "path": "oracle/frozen-raw/V02-control-producer-price.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1663,
+      "sha256": "b04fb5f5241a75e8cf8d9a6da035720a9737e1126427d450f16b206d190942ff"
+    },
+    {
+      "path": "oracle/frozen-raw/V02-unsplit-writes-undercharged.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1666,
+      "sha256": "fb832aeb1e3861f635f56c78f30c6d084e43f18640586a62cecfff3805821cd4"
+    },
+    {
+      "path": "oracle/frozen-raw/V03-control-labelled-upstream-error.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1450,
+      "sha256": "4c323d3943762c2ba36c2e8187246e52ea1e8aeb4cad00570e9cb4df6111dcb4"
+    },
+    {
+      "path": "oracle/frozen-raw/V03-subscription-upstream-error-labelled-api.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1416,
+      "sha256": "731bc76b198a28a891229d0123e4538d8b0a78e17cea3c9180f2e5b128b45c9c"
+    },
+    {
+      "path": "oracle/frozen-raw/V06-reservation-attempt-number-missing.json",
+      "type": "file",
+      "mode": 436,
+      "length": 992,
+      "sha256": "d500a7daeaf8ae86960bc10f54a49d9e36247e0ab9e27f2ebcfd1dafe19fc8ea"
+    },
+    {
+      "path": "oracle/frozen-raw/V07-unrelated-unreadable-log-does-not-block.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2116,
+      "sha256": "26fbff71ef31e345c69f655d81830a06549d3f439ef0f93e43a77647ddb58dc3"
+    },
+    {
+      "path": "oracle/frozen-raw/VC01-openai-usage-settlement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1592,
+      "sha256": "4c0a122d3dbfa4f65537fdacddf5671fcc060f59f839168070a8c11afc8b9387"
+    },
+    {
+      "path": "oracle/frozen-raw/VC02-anthropic-usage-settlement.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1670,
+      "sha256": "f711ed1e5b089eb1be833a0329cae0434f0ffe28e6b09335b42595d0a8672a90"
+    },
+    {
+      "path": "oracle/frozen-raw/VC03-reservation-settlement-with-usage.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1586,
+      "sha256": "966e075027dcad4bcf5c21fa97433c9218465e42a3fc7d71fa4bc7cd1859c2a5"
+    },
+    {
+      "path": "oracle/frozen-raw/VC04-upstream-error-keeps-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1279,
+      "sha256": "bdbdc6fb4ff7eea1d3fd686822dd174988084372e4102ccba38242121c9d45c8"
+    },
+    {
+      "path": "oracle/frozen-raw/VC05-unsettled-reservation.json",
+      "type": "file",
+      "mode": 436,
+      "length": 990,
+      "sha256": "14ec5f5bb617b73b0f03725052a0e46ac5dd13e8c6852161f86777014968c221"
+    },
+    {
+      "path": "oracle/frozen-raw/VC06-unbudgeted-completed-request.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1271,
+      "sha256": "c6f718a2c28ece10fb9a0d65e83ea13ee38d00a771f181f00edb81d46031d65a"
+    },
+    {
+      "path": "oracle/frozen-raw/VC07-read-failure-paired.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1388,
+      "sha256": "1cae2e063dd138e6c7a417df8f9cc067cb1b4666e2e5deefceac557c223ca05b"
+    },
+    {
+      "path": "oracle/frozen-raw/VC08-subscription-measured-request.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1787,
+      "sha256": "b998f7d2412e96250489b44f5f04628c3c2f750c8d29bc9081e1c3428897f818"
+    },
+    {
+      "path": "oracle/frozen-raw/VC11-multi-turn-session.json",
+      "type": "file",
+      "mode": 436,
+      "length": 2528,
+      "sha256": "ea91a2d207b58ea7219cb4af2ec2783108bb0e147d0fcedff74670b9e7b8e1a3"
+    },
+    {
+      "path": "oracle/frozen-raw/VC12-reused-n-without-errors.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1710,
+      "sha256": "b7a35b1777450f61f207c2870d748d421365f118cc27275ddfac4b0a79b2172c"
+    },
+    {
+      "path": "oracle/frozen-raw/VC13-equal-timestamps.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1585,
+      "sha256": "d5788d57390cbf2bf833af56ef2ae4c53e5a53dd06601fe16ee23d2c6bb6f1cd"
+    },
+    {
+      "path": "oracle/frozen-raw/VC14-open-session-commitment.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1517,
+      "sha256": "ccf9ffbff4db5a1e196a9bd1283a34cb229e0f4c6af333aefbdd6adafbb53a19"
+    },
+    {
+      "path": "oracle/frozen-raw/VC15-successor-not-charged-settled-predecessor-spend.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1616,
+      "sha256": "b03c9d8d35537d2d12f227c325aad4e8421d08293ff433e5ff566a24559a1fbb"
+    },
+    {
+      "path": "oracle/qualification-r7.json",
+      "type": "file",
+      "mode": 436,
+      "length": 133241,
+      "sha256": "016f93b94f19f6971bc5e11c953ba2fff8ef0c81e736bad25a51ce7007821eb5"
+    },
+    {
+      "path": "oracle/qualification.json",
+      "type": "file",
+      "mode": 436,
+      "length": 133241,
+      "sha256": "016f93b94f19f6971bc5e11c953ba2fff8ef0c81e736bad25a51ce7007821eb5"
+    },
+    {
+      "path": "oracle/rates/anthropic_api_rates.json",
+      "type": "file",
+      "mode": 436,
+      "length": 1179,
+      "sha256": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5"
+    },
+    {
+      "path": "oracle/rates/openai_api_rates.json",
+      "type": "file",
+      "mode": 436,
+      "length": 736,
+      "sha256": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+    },
+    {
+      "path": "oracle/writer-controls.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9006,
+      "sha256": "374cbd62ace241db1cba48a81f307e21b14ff7828e839031f6622cd282377189"
+    },
+    {
+      "path": "tooling/spec-check/tests/independent_raw_axes.rs",
+      "type": "file",
+      "mode": 436,
+      "length": 40583,
+      "sha256": "34b3ac6bd007dcfaa7659eae0f4935fac42d63f2cde21df8d924fd9daeebcd66"
+    },
+    {
+      "path": "validator/README.md",
+      "type": "file",
+      "mode": 436,
+      "length": 705,
+      "sha256": "e08904704dc058cfee8055d591519dbd44c37b23e770275a90cdeb434b99513b"
+    },
+    {
+      "path": "validator/final-check.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 155,
+      "sha256": "b2139687779c0936760f86d2fd1897858d704a3a9559015310adceb887015c84"
+    },
+    {
+      "path": "validator/first-run-check.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 314,
+      "sha256": "e142f7af15ae6ac70478bdc8b68e1408ea0a2417608b253b5ffd51a1245553ff"
+    },
+    {
+      "path": "validator/revisions-results.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 86,
+      "sha256": "4d1457fd03a69649107f1441216e033862378ffde9c48d498184e761ec9bed90"
+    },
+    {
+      "path": "validator/s2a-subset.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 3555,
+      "sha256": "a360d420ce4317622ebf83ab8ca8c57872ada06a156e6245a21f4a1d0f8ee9ea"
+    },
+    {
+      "path": "validator/sabotage-results.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 16685,
+      "sha256": "14baf0b2025ce550a8b16d8b96cf32f13f3c144a74788c66675a3449542524e7"
+    },
+    {
+      "path": "validator/sabotage_test.py",
+      "type": "file",
+      "mode": 436,
+      "length": 32939,
+      "sha256": "35409b7004d117d488a6437b870071ec6745de54a52813a2115eef2d86bb69d1"
+    },
+    {
+      "path": "validator/selftest-results.txt",
+      "type": "file",
+      "mode": 436,
+      "length": 5516,
+      "sha256": "d0d782924d37ac34ce1005b5911d4531e304a170696a634a3d1a23191c407643"
+    },
+    {
+      "path": "validator/validate_corpus.py",
+      "type": "file",
+      "mode": 436,
+      "length": 90353,
+      "sha256": "12cb4f55d21b0797b2932606fb9d0abb6a4a8e95e5a4c9880f301d4ff7f514e9"
+    }
+  ]
+}

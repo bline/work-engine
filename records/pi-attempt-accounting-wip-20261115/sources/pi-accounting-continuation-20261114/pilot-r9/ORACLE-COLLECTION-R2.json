@@ -1,0 +1,314 @@
+{
+  "collected_at": "2026-11-14T06:30:58.164215+00:00",
+  "collector": "same root",
+  "state": "native exact final fullyread, source stopped, bindings and15custody pass; model7 semantic applicability unmet",
+  "native_final": {
+    "line": 587,
+    "timestamp": "2026-11-14T06:29:14.988Z",
+    "payload": {
+      "type": "message",
+      "status": "completed",
+      "id": "msg_0105a1304517aecf016af7ffb942a887d0a7bb8e794e7a308a",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "R2 source stopped. [RESULT-R2.md](/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/RESULT-R2.md) records **15/15 passing checks**, including all nine Rust evidence positives.\n\nModel7 grant applicability remains explicitly **unestablished**, pending review. All processes are collected; zero leftovers.",
+          "annotations": [],
+          "logprobs": []
+        }
+      ],
+      "phase": "final_answer",
+      "internal_chat_message_metadata_passthrough": {
+        "turn_id": "01a1d8ba-17bd-7421-a19e-683386c1dda6",
+        "create_time": 1794637753.2647753,
+        "content_item_kinds": [
+          "unknown"
+        ]
+      }
+    }
+  },
+  "checks": [
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/README.md",
+      "expected": "55328e97cbca4e4d11727bd939de9d374b2184648d985ae2ad8683fa17ea5cf1",
+      "actual": "55328e97cbca4e4d11727bd939de9d374b2184648d985ae2ad8683fa17ea5cf1",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json",
+      "expected": "6abb14701c8c5705a7dbf7cf00d3e55c7ebc43d7d30adfe14e0235de1df00c17",
+      "actual": "6abb14701c8c5705a7dbf7cf00d3e55c7ebc43d7d30adfe14e0235de1df00c17",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json",
+      "expected": "ad6db6c34cd177c39d9cdf68f3f765b78634b18e6135eaa44381fae8deea0471",
+      "actual": "ad6db6c34cd177c39d9cdf68f3f765b78634b18e6135eaa44381fae8deea0471",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-completion-B/VC07-read-failure-paired.bundle.json",
+      "expected": "a6d710f82db91e8378b254d0c6e1b0678342ade5648e4ae6ba5c800d9679a504",
+      "actual": "a6d710f82db91e8378b254d0c6e1b0678342ade5648e4ae6ba5c800d9679a504",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-completion-B/VC11-multi-turn-session.bundle.json",
+      "expected": "10e28d415c267b02d7d105202bf6e7afa590f1b54c2f1fdb2410d64da37b2456",
+      "actual": "10e28d415c267b02d7d105202bf6e7afa590f1b54c2f1fdb2410d64da37b2456",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-controls/VC07-conditional.bundle.json",
+      "expected": "00cfa94e9716374f5669b0a091313c3ea4e314ab14214c329bfae6d6caef52a7",
+      "actual": "00cfa94e9716374f5669b0a091313c3ea4e314ab14214c329bfae6d6caef52a7",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r8-controls/VC07-unlinked.bundle.json",
+      "expected": "e6298a9a54fabb3820e5eec0508954b98b7da41c0e4e5cfb310ab3e1d5d67527",
+      "actual": "e6298a9a54fabb3820e5eec0508954b98b7da41c0e4e5cfb310ab3e1d5d67527",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/equal-reservations.bundle.json",
+      "expected": "06686ce1e3a401abfaaf52067858c6d4a19c46cc3d87356e1577315135e34fb9",
+      "actual": "06686ce1e3a401abfaaf52067858c6d4a19c46cc3d87356e1577315135e34fb9",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/equal-reservations.json",
+      "expected": "5493580d4b700ba1b771028dac9b35200ac105234486b89ee368c7314c416b1d",
+      "actual": "5493580d4b700ba1b771028dac9b35200ac105234486b89ee368c7314c416b1d",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/equal-reservations.provenance.json",
+      "expected": "68c472cd945ed72dc60d21995a59827b4e8759d634fa121e6ef8f7dd8d6430b8",
+      "actual": "68c472cd945ed72dc60d21995a59827b4e8759d634fa121e6ef8f7dd8d6430b8",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/equal-reservations.raw-case.json",
+      "expected": "58dcf2c393f053f470473e21f1a0b79b327946aaae4145d3d9e892a4865b0fb0",
+      "actual": "58dcf2c393f053f470473e21f1a0b79b327946aaae4145d3d9e892a4865b0fb0",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json",
+      "expected": "59316f312b00fb28d29b88de0d449c30e807c0cc65acdbf9b224c3be22abbf33",
+      "actual": "59316f312b00fb28d29b88de0d449c30e807c0cc65acdbf9b224c3be22abbf33",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json",
+      "expected": "a0d5d433ee52b82c4403463d2477ec33a2d8c404c8c2fad1c83b55bbafcc9175",
+      "actual": "a0d5d433ee52b82c4403463d2477ec33a2d8c404c8c2fad1c83b55bbafcc9175",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.raw-case.json",
+      "expected": "cce654e75243b7ae98a4f111b55ab1adc03e24133e3c7624c5ff273246aaa21b",
+      "actual": "cce654e75243b7ae98a4f111b55ab1adc03e24133e3c7624c5ff273246aaa21b",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json",
+      "expected": "7ddb2b04a10545d0cc1ada662d888f46c857c85ffc217f2fe2f40f9631a0c621",
+      "actual": "7ddb2b04a10545d0cc1ada662d888f46c857c85ffc217f2fe2f40f9631a0c621",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json",
+      "expected": "83a9db4b9ed663d4e81369ffac04e57f462e06caa3fd7dd7b6fc60ff11b54e32",
+      "actual": "83a9db4b9ed663d4e81369ffac04e57f462e06caa3fd7dd7b6fc60ff11b54e32",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.raw-case.json",
+      "expected": "e140598e87ad4ecc35f1969738023bcaf31d2cde309f3377860839cf39b7c683",
+      "actual": "e140598e87ad4ecc35f1969738023bcaf31d2cde309f3377860839cf39b7c683",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/claims.json",
+      "expected": "b34dcbd04918755ec4cf1c51cc0f4f993175fef21371176c0fb33d0182db8603",
+      "actual": "b34dcbd04918755ec4cf1c51cc0f4f993175fef21371176c0fb33d0182db8603",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/oracle/r9-pilot/claims.schema.json",
+      "expected": "bae1deefb3703f4b1289092bc1e1dd213eb1aa700efde6994b699461b9a44e17",
+      "actual": "bae1deefb3703f4b1289092bc1e1dd213eb1aa700efde6994b699461b9a44e17",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check/tests/independent_raw_axes.rs",
+      "expected": "417bdae2fca21de6d61e774dbf5a1835de699bfd8239fb952d1ee668ecb3c150",
+      "actual": "417bdae2fca21de6d61e774dbf5a1835de699bfd8239fb952d1ee668ecb3c150",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/validator/r9_pilot.py",
+      "expected": "3e1766cf37077ad393721daeb22ce8439be135f0853908bbe02cbc933b1723ea",
+      "actual": "3e1766cf37077ad393721daeb22ce8439be135f0853908bbe02cbc933b1723ea",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/validator/test_r9_pilot.py",
+      "expected": "cd8b673289107fbf13758b2bdd022b00fc5740892c73716bd7cdea8b4c4f081d",
+      "actual": "cd8b673289107fbf13758b2bdd022b00fc5740892c73716bd7cdea8b4c4f081d",
+      "pass": true
+    },
+    {
+      "kind": "source",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/validator/validate_corpus.py",
+      "expected": "8e0fcd9eda869761ee839dad41fdbeebaa35c09f825309c6201656679565690e",
+      "actual": "8e0fcd9eda869761ee839dad41fdbeebaa35c09f825309c6201656679565690e",
+      "pass": true
+    },
+    {
+      "kind": "binary",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+      "expected": "850779f25e407ed4119c96a6da64da7810e270ee8a2e3d8fad2f93b236b3959b",
+      "actual": "850779f25e407ed4119c96a6da64da7810e270ee8a2e3d8fad2f93b236b3959b",
+      "pass": true
+    },
+    {
+      "kind": "binary",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/target/debug/pi-accounting-spec-check",
+      "expected": "3cee159b91da619f73e97b90f0f0833481616afd5c760346d99ebb16aaf66149",
+      "actual": "3cee159b91da619f73e97b90f0f0833481616afd5c760346d99ebb16aaf66149",
+      "pass": true
+    },
+    {
+      "kind": "custody",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/python-positive.json",
+      "pass": true,
+      "outcome": "0",
+      "leftovers": 0
+    },
+    {
+      "kind": "custody",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/build.json",
+      "pass": true,
+      "outcome": "0",
+      "leftovers": 0
+    },
+    {
+      "kind": "custody",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/rust-positive.json",
+      "pass": true,
+      "outcome": "0",
+      "leftovers": 0
+    },
+    {
+      "kind": "custody",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/python-controls.json",
+      "pass": true,
+      "outcome": "0",
+      "leftovers": 0
+    },
+    {
+      "kind": "custody",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/legacy-independent-r8-controls.json",
+      "pass": true,
+      "outcome": "0",
+      "leftovers": 0
+    },
+    {
+      "kind": "custody",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/build-spec.json",
+      "pass": true,
+      "outcome": "0",
+      "leftovers": 0
+    },
+    {
+      "kind": "custody",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-0.json",
+      "pass": true,
+      "outcome": "0",
+      "leftovers": 0
+    },
+    {
+      "kind": "custody",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-1.json",
+      "pass": true,
+      "outcome": "0",
+      "leftovers": 0
+    },
+    {
+      "kind": "custody",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-2.json",
+      "pass": true,
+      "outcome": "0",
+      "leftovers": 0
+    },
+    {
+      "kind": "custody",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-3.json",
+      "pass": true,
+      "outcome": "0",
+      "leftovers": 0
+    },
+    {
+      "kind": "custody",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-4.json",
+      "pass": true,
+      "outcome": "0",
+      "leftovers": 0
+    },
+    {
+      "kind": "custody",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-5.json",
+      "pass": true,
+      "outcome": "0",
+      "leftovers": 0
+    },
+    {
+      "kind": "custody",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-6.json",
+      "pass": true,
+      "outcome": "0",
+      "leftovers": 0
+    },
+    {
+      "kind": "custody",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-7.json",
+      "pass": true,
+      "outcome": "0",
+      "leftovers": 0
+    },
+    {
+      "kind": "custody",
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/oracle/custody-r2-final/evidence-positive-8.json",
+      "pass": true,
+      "outcome": "0",
+      "leftovers": 0
+    }
+  ],
+  "all_checks_pass": true
+}

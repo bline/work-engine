@@ -1,0 +1,370 @@
+# role_host.py (sha256 of whole file cbca1bc9656ed6de2c1cd43e1e357d7ed27dbaa08b178a3131cc329ed3433475)
+# Line-numbered excerpts; everything else omitted.
+
+# ---- Ledger.append (flock, at): lines 242-247 ----
+  242|     def append(self, row: dict) -> None:
+  243|         row = {"at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), **row}
+  244|         with open(self.path, "a") as fh:
+  245|             fcntl.flock(fh, fcntl.LOCK_EX)
+  246|             fh.write(json.dumps(row, sort_keys=True) + "\n")
+  247| 
+
+# ---- Pi._spawn and turn rows: lines 1169-1312 ----
+ 1169|     def _spawn(self, sid, opts, *, cwd, prompt, ledger, event, name=None, parent=None, env=None):
+ 1170|         args = dict(cwd=cwd, prompt=prompt, ledger=ledger, event=event, name=name, parent=parent, env=env)
+ 1171|         if not env or (env.get("usd_limit") or {}).get("measurement") != "api_equivalent_cost_proxy":
+ 1172|             return self._spawn_unlocked(sid, opts, **args)
+ 1173|         # Session exclusion must span fresh busy/accounting checks, ordinal selection,
+ 1174|         # runner startup and ledger publication, not just one proxy's request threads.
+ 1175|         with open(Path(env["host_dir"]) / "turn-admission.lock", "a") as lock:
+ 1176|             try:
+ 1177|                 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+ 1178|             except BlockingIOError:
+ 1179|                 raise HostError(BUSY, "refused_busy", f"{sid} has a turn admission in progress") from None
+ 1180|             try:
+ 1181|                 if event == "deliver":
+ 1182|                     st = self.status(sid, ledger)
+ 1183|                     if st["state"] == "running":
+ 1184|                         raise HostError(BUSY, "refused_busy", f"{sid} has turn {st['turn']} in progress")
+ 1185|                     if st["state"] == "absent":
+ 1186|                         raise HostError(NOT_ESTABLISHED, "deliver_failed", f"pi session {sid} is unknown to this host")
+ 1187|                     turns = [r for r in self._turns(sid, ledger) if r.get("turn")]
+ 1188|                     if turns and turns[-1].get("pid_start") is None:
+ 1189|                         raise HostError(NOT_ESTABLISHED, "usd_spend_not_established",
+ 1190|                                         "previous runner identity is unknown; no turn started")
+ 1191|                 return self._spawn_unlocked(sid, opts, **args)
+ 1192|             finally:
+ 1193|                 fcntl.flock(lock, fcntl.LOCK_UN)
+ 1194| 
+ 1195|     def _spawn_unlocked(self, sid, opts, *, cwd, prompt, ledger, event, name=None, parent=None, env=None):
+ 1196|         turn = sum(1 for r in self._turns(sid, ledger) if r.get("turn")) + 1
+ 1197|         if env is not None:
+ 1198|             return self._spawn_container(sid, opts, cwd=cwd, prompt=prompt, ledger=ledger, event=event,
+ 1199|                                          turn=turn, env=env, name=name, parent=parent)
+ 1200|         folder = ledger.path.parent / "pi" / sid
+ 1201|         folder.mkdir(parents=True, exist_ok=True)
+ 1202|         files = {k: folder / f"turn-{turn}.{suffix}" for k, suffix in self.TURN_FILES.items()}
+ 1203|         self._write_prompt(files["prompt"], prompt)
+ 1204|         argv = [self.exe, "--mode", "json", "--session-id", sid, "-e", str(self.EXTENSION), *opts["argv"]]
+ 1205|         if name:
+ 1206|             argv += ["--name", name]
+ 1207|         env = {**child_env(), "WORK_ENGINE_PI_SERVICE_TIER": opts["tier"] or "",
+ 1208|                "WORK_ENGINE_PI_SERVICE_TIER_MODEL": opts["model"],
+ 1209|                "WORK_ENGINE_PI_SERVICE_TIER_RECORD": str(files["tier_record"])}
+ 1210|         try:
+ 1211|             proc = subprocess.Popen(["/bin/sh", "-c", self.WRAPPER, "sh",
+ 1212|                                      *(str(files[k]) for k in ("prompt", "events", "stderr", "exit")), *argv],
+ 1213|                                     cwd=cwd, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+ 1214|                                     stderr=subprocess.DEVNULL, start_new_session=True)
+ 1215|         except OSError as e:
+ 1216|             raise HostError(NOT_ESTABLISHED, "fail_launch", f"pi turn: {e}")
+ 1217|         row = self._turn_row(sid, opts, event=event, turn=turn, proc=proc, files=files)
+ 1218|         if event == "launch":
+ 1219|             row.update(name=name, cwd=str(Path(cwd).resolve()), parent_session_id=parent)
+ 1220|         ledger.append(row)
+ 1221|         self._verify_header(proc, row, files, ledger)
+ 1222|         return row
+ 1223| 
+ 1224|     @staticmethod
+ 1225|     def _write_prompt(path, prompt, *, durable=False):
+ 1226|         try:
+ 1227|             with open(path, "x") as fh:
+ 1228|                 fh.write(prompt)
+ 1229|                 if durable:
+ 1230|                     fh.flush()
+ 1231|                     os.fsync(fh.fileno())
+ 1232|             if durable:
+ 1233|                 fd = os.open(str(path.parent), os.O_RDONLY | os.O_DIRECTORY)
+ 1234|                 try:
+ 1235|                     os.fsync(fd)
+ 1236|                 finally:
+ 1237|                     os.close(fd)
+ 1238|         except FileExistsError:
+ 1239|             raise HostError(NOT_ESTABLISHED, "turn_not_established", f"{path} already exists")
+ 1240| 
+ 1241|     def _turn_row(self, sid, opts, *, event, turn, proc, files):
+ 1242|         return {"host": self.name, "event": event, "session_id": sid, "turn": turn, "pid": proc.pid,
+ 1243|                 "pid_start": self._start_time(proc.pid), "at_epoch": time.time(),
+ 1244|                 "files": {k: str(v) for k, v in files.items()}, "model": opts["model"],
+ 1245|                 "thinking": opts["thinking"], "auth_lane": opts["lane"], "service_tier": opts["tier"],
+ 1246|                 "host_argv": opts["argv"]}
+ 1247| 
+ 1248|     before_runner_start = None  # set by an objective-admitted launch: writes the runner_starting marker
+ 1249| 
+ 1250|     def _spawn_container(self, sid, opts, *, cwd, prompt, ledger, event, turn, env, name=None, parent=None):
+ 1251|         cdir, hdir = Path(env["container_dir"]), Path(env["host_dir"])
+ 1252|         files = {k: cdir / f"turn-{turn}.{suffix}" for k, suffix in self.TURN_FILES.items()}
+ 1253|         files.update({k: hdir / f"turn-{turn}.{suffix}" for k, suffix in (
+ 1254|             ("proxy_log", "proxy.jsonl"), ("runner_record", "runner.jsonl"),
+ 1255|             ("runner_log", "runner.log"), ("spec", "spec.json"))})
+ 1256|         prior = self._prior_usd(sid, ledger, env) if env.get("usd_limit") else None
+ 1257|         opts = {**opts, **({"container_subscription": True} if env["selection"].get("lane") == "subscription" else {})}
+ 1258|         key = self.provider_key(opts, cwd=cwd)
+ 1259|         if (env.get("usd_limit") or {}).get("measurement") == "api_equivalent_cost_proxy":
+ 1260|             # Reserve the ordinal in host-only storage before any runner effect.
+ 1261|             # Agent-writable prompt deletion must not hide an unrecorded orphan turn.
+ 1262|             admission = {"session_id": sid, "turn": turn, "proxy_log": str(files["proxy_log"])}
+ 1263|             self._write_prompt(hdir / f"turn-{turn}.admission.json", json.dumps(admission) + "\n", durable=True)
+ 1264|         self._write_prompt(files["prompt"], prompt)
+ 1265|         self.socket_root().mkdir(mode=0o700, parents=True, exist_ok=True)
+ 1266|         socket_dir = self.socket_root() / f"{sid}-{turn}"
+ 1267|         container_name = f"we-pi-{sid}-{turn}"
+ 1268|         pi_argv = ["--mode", "json", "--session-id", sid, "--session-dir", env["session_dir"],
+ 1269|                    "-e", str(self.EXTENSION), *opts["argv"]]
+ 1270|         if name:
+ 1271|             pi_argv += ["--name", name]
+ 1272|         container_env = _pi_container().container_env(env, str(files["tier_record"]))
+ 1273|         route = _pi_container().PROVIDERS[opts["provider"]]
+ 1274|         spec = {"session_id": sid, "turn": turn, "cwd": str(Path(cwd).resolve()), "container_name": container_name,
+ 1275|                 "docker": self.docker(), "socket_dir": str(socket_dir), "socket_path": str(socket_dir / "egress.sock"),
+ 1276|                 "container_dir": env["container_dir"], "environment": env, "container_env": container_env,
+ 1277|                 "pi_argv": pi_argv, "files": {k: str(v) for k, v in files.items()},
+ 1278|                 "upstream": os.environ.get(route["upstream_env"], route["upstream"]),
+ 1279|                 **({"provider": opts["provider"]} if opts["provider"] != "openai" else {}),
+ 1280|                 "model_id": opts["model"].split("/", 1)[1], "service_tier": opts["tier"],
+ 1281|                 "max_requests": env.get("max_requests"), "max_output_tokens": env.get("max_output_tokens"),
+ 1282|                 "usd_limit": {**env["usd_limit"], **prior} if prior is not None else None}
+ 1283|         files["spec"].write_text(json.dumps(spec, indent=1) + "\n")
+ 1284|         runner = Path(__file__).resolve().parent / "pi_container.py"
+ 1285|         if self.before_runner_start is not None:
+ 1286|             # Budget-admitted launch: the durable runner_starting marker is written and verified before any
+ 1287|             # provider-capable process exists; if it cannot be, nothing is started.
+ 1288|             self.before_runner_start(session_id=sid, turn=turn, spec=str(files["spec"]), container=container_name)
+ 1289|         with open(files["runner_log"], "ab") as log:
+ 1290|             try:
+ 1291|                 proc = subprocess.Popen([sys.executable, "-I", str(runner), "run-turn", str(files["spec"])],
+ 1292|                                         stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT,
+ 1293|                                         env=child_env(), cwd=str(hdir), start_new_session=True)
+ 1294|             except OSError as e:
+ 1295|                 raise HostError(NOT_ESTABLISHED, "fail_launch", f"pi container runner: {e}")
+ 1296|         try:
+ 1297|             proc.stdin.write((key + "\n").encode())
+ 1298|             proc.stdin.close()
+ 1299|         except OSError:
+ 1300|             pass  # the runner died; the header wait reports it
+ 1301|         del key
+ 1302|         row = self._turn_row(sid, opts, event=event, turn=turn, proc=proc, files=files)
+ 1303|         row["container"] = {"name": container_name, "fingerprint_sha256": env["fingerprint"]["sha256"]}
+ 1304|         if prior is not None:
+ 1305|             row["usd_limit"] = {**env["usd_limit"], "spent_before_usd": prior["spent_before_usd"],
+ 1306|                                 "max_output_tokens": env["max_output_tokens"]}
+ 1307|         if event == "launch":
+ 1308|             row.update(name=name, cwd=str(Path(cwd).resolve()), parent_session_id=parent, container_environment=env)
+ 1309|         ledger.append(row)
+ 1310|         self._verify_header(proc, row, files, ledger)
+ 1311|         return row
+ 1312| 
+
+# ---- status, launch, deliver, retire: lines 1486-1606 ----
+ 1486|     def status(self, sid, ledger=None) -> dict:
+ 1487|         rows = self._turns(sid, ledger) if ledger else []
+ 1488|         turns = [r for r in rows if r.get("turn")]
+ 1489|         session_dir = self._session_dir_for(sid, ledger)
+ 1490|         if not turns:
+ 1491|             if self.session_file(sid) is None:
+ 1492|                 return {"state": "absent", "kind": None}
+ 1493|             raise HostError(NOT_ESTABLISHED, "status_not_established",
+ 1494|                             f"pi session {sid} exists but role_host started none of its turns; its holder is not observable here")
+ 1495|         last = turns[-1]
+ 1496|         kind = "pi_container_turn" if last.get("container") else "pi_turn"
+ 1497|         if self._alive(last):
+ 1498|             return {"state": "running", "kind": kind, "turn": last["turn"], "pid": last["pid"]}
+ 1499|         if last.get("container") and self._container_state(last["container"]["name"]):
+ 1500|             # The runner (and with it the egress proxy) is gone; the container is not.
+ 1501|             return {"state": "running", "kind": "container_without_runner", "turn": last["turn"],
+ 1502|                     "container": last["container"]["name"]}
+ 1503|         lifecycle = [r for r in rows if r.get("event") in ("launch", "deliver", "retire")]
+ 1504|         state = "stopped" if lifecycle[-1].get("event") == "retire" else "idle"
+ 1505|         if state == "idle" and self.session_file(sid, session_dir) is None:
+ 1506|             state = "absent"
+ 1507|         out = {"state": state, "kind": kind, "last_turn": self.observe_turn(last)}
+ 1508|         leftovers = self._leftovers(last)
+ 1509|         if leftovers:
+ 1510|             out["leftovers"] = leftovers  # the runner died before cleanup; retire collects them
+ 1511|         return out
+ 1512| 
+ 1513|     def launch(self, *, cwd, name, prompt, host_args, ledger, parent=None, lane=None, tier=None, container=None) -> dict:
+ 1514|         opts = self.options(host_args, lane, tier)
+ 1515|         if container is not None:
+ 1516|             if lane == "subscription":
+ 1517|                 if opts["provider"] != "openai-codex":
+ 1518|                     raise HostError(USAGE, "usage", "container subscription uses the openai-codex provider and existing host Codex ChatGPT auth")
+ 1519|                 try:
+ 1520|                     __import__("zstandard")
+ 1521|                 except ImportError:
+ 1522|                     raise HostError(NOT_ESTABLISHED, "transport_not_ready", "Codex subscription requires the host zstandard decoder") from None
+ 1523|                 opts["container_subscription"] = True
+ 1524|             elif opts["provider"] == "openai-codex":
+ 1525|                 raise HostError(USAGE, "usage", "openai-codex is a subscription transport, not an API lane")
+ 1526|             routes = _pi_container().PROVIDERS
+ 1527|             if opts["provider"] not in routes:
+ 1528|                 raise HostError(USAGE, "usage", f"container mode routes providers {', '.join(sorted(routes))} "
+ 1529|                                 f"through its egress proxy, not {opts['provider']!r}")
+ 1530|             if container.get("codebase_memory") and "--no-mcp" in opts["argv"]:
+ 1531|                 raise HostError(USAGE, "usage", "--codebase-memory needs MCP; drop --no-mcp")
+ 1532|         auth = self.check_lane(opts, cwd=cwd, env=child_env())
+ 1533|         sid = str(uuid.uuid4())
+ 1534|         env = (self.container_environment(sid, ledger, cwd=cwd, container=container, opts=opts)
+ 1535|                if container is not None else None)
+ 1536|         row = self._spawn(sid, opts, cwd=cwd, prompt=prompt, ledger=ledger, event="launch", name=name,
+ 1537|                           parent=parent, env=env)
+ 1538|         out = {**row, "credential": auth, "session_header_verified": True}
+ 1539|         if env is not None:
+ 1540|             out["environment_fingerprint"] = env["fingerprint"]["sha256"]
+ 1541|         return out
+ 1542| 
+ 1543|     def deliver(self, sid, *, message, cwd, ledger, host_args=()) -> dict:
+ 1544|         if host_args:
+ 1545|             raise HostError(USAGE, "usage", "pi delivery reuses the launch settings; launch a new session to change them")
+ 1546|         st = self.status(sid, ledger)
+ 1547|         if st["state"] == "running":
+ 1548|             raise HostError(BUSY, "refused_busy", f"{sid} has turn {st['turn']} in progress")
+ 1549|         if st["state"] == "absent":
+ 1550|             raise HostError(NOT_ESTABLISHED, "deliver_failed", f"pi session {sid} is unknown to this host")
+ 1551|         launch = self._launch_row(sid, ledger)
+ 1552|         # Pi resolves --session-id within the working directory's project; from
+ 1553|         # another directory it would silently create a new session.
+ 1554|         if Path(cwd).resolve() != Path(launch["cwd"]):
+ 1555|             raise HostError(USAGE, "usage", f"pi sessions belong to their working directory; deliver with --cwd {launch['cwd']}")
+ 1556|         opts = {"argv": launch["host_argv"], "model": launch["model"], "provider": launch["model"].split("/", 1)[0],
+ 1557|                 "thinking": launch["thinking"], "lane": launch["auth_lane"], "tier": launch["service_tier"]}
+ 1558|         env = launch.get("container_environment")
+ 1559|         if env is not None:
+ 1560|             env = self._check_environment(env, cwd=launch["cwd"], ledger=ledger)
+ 1561|         if env is not None and env["selection"].get("lane") == "subscription":
+ 1562|             opts["container_subscription"] = True
+ 1563|         auth = self.check_lane(opts, cwd=cwd, env=child_env())
+ 1564|         row = self._spawn(sid, opts, cwd=cwd, prompt=message, ledger=ledger, event="deliver", env=env)
+ 1565|         return {"session_id": sid, "delivered": True, "turn": row["turn"], "credential": auth}
+ 1566| 
+ 1567|     def retire(self, sid, *, ledger, force=False) -> dict:
+ 1568|         st = self.status(sid, ledger)
+ 1569|         turns = [r for r in self._turns(sid, ledger) if r.get("turn")]
+ 1570|         if st["state"] in ("absent", "stopped"):
+ 1571|             collected = self._collect_leftovers(turns[-1]) if turns else {}
+ 1572|             if collected:
+ 1573|                 ledger.append({"host": self.name, "event": "collect", "session_id": sid,
+ 1574|                                "turn": turns[-1]["turn"], "collected": collected})
+ 1575|             return {"session_id": sid, "retired": "already_not_loaded", "state": st["state"],
+ 1576|                     **({"collected": collected} if collected else {})}
+ 1577|         if st["state"] == "running":
+ 1578|             if not force:
+ 1579|                 raise HostError(BUSY, "refused_busy", f"{sid} has turn {st['turn']} in progress")
+ 1580|             last = [r for r in self._turns(sid, ledger) if r.get("turn")][-1]
+ 1581|             name = (last.get("container") or {}).get("name")
+ 1582|             # SIGTERM only: on the host Pi kills the tool process trees it started
+ 1583|             # detached (utils/shell.js); in a container the runner stops the
+ 1584|             # container, and the kernel ends everything in it with its PID 1.
+ 1585|             if self._alive(last):
+ 1586|                 try:
+ 1587|                     os.killpg(last["pid"], signal.SIGTERM)
+ 1588|                 except ProcessLookupError:
+ 1589|                     pass
+ 1590|                 wait = self.STOP_WAIT + (20 if name else 0)
+ 1591|                 deadline = time.time() + wait
+ 1592|                 while self._group_alive(last["pid"]):
+ 1593|                     if time.time() > deadline:
+ 1594|                         raise HostError(NOT_ESTABLISHED, "retire_not_established",
+ 1595|                                         f"turn {last['turn']} process group {last['pid']} still alive {wait}s after SIGTERM")
+ 1596|                     time.sleep(0.2)
+ 1597|             collected = self._collect_leftovers(last)
+ 1598|             ledger.append({"host": self.name, "event": "retire", "session_id": sid, "terminated_turn": last["turn"],
+ 1599|                            **({"collected": collected} if collected else {})})
+ 1600|             return {"session_id": sid, "retired": "turn_terminated", "turn": last["turn"],
+ 1601|                     **({"collected": collected} if collected else {})}
+ 1602|         collected = self._collect_leftovers(turns[-1]) if turns else {}
+ 1603|         ledger.append({"host": self.name, "event": "retire", "session_id": sid,
+ 1604|                        **({"collected": collected} if collected else {})})
+ 1605|         return {"session_id": sid, "retired": "idle_released", **({"collected": collected} if collected else {})}
+ 1606| 
+
+# ---- objective_admission and admission journal: lines 1607-1695 ----
+ 1607| def objective_admission(record, max_usd, parent, ledger_path, journal=None) -> dict:
+ 1608|     """--objective-record: the usage ledger admits this Pi session's --max-usd against the objective's
+ 1609|     owner-set pi_api limit, counting spend and every open session's unspent limit. Anything but an
+ 1610|     admission refuses the launch; the per-session proxy limit is unchanged."""
+ 1611|     if max_usd is None:
+ 1612|         raise HostError(USAGE, "usage", "--objective-record needs --max-usd")
+ 1613|     if not parent:
+ 1614|         raise HostError(USAGE, "usage", "--objective-record needs --parent: the objective session that owns this Pi session")
+ 1615|     reader = os.environ.get("ROLE_HOST_USAGE_LEDGER")
+ 1616|     candidates = [Path(reader)] if reader else [Path(__file__).resolve().parents[3] / "metrics/scripts/usage_ledger.py"]
+ 1617|     if not reader:
+ 1618|         top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+ 1619|         if top.returncode == 0 and top.stdout.strip():
+ 1620|             candidates.append(Path(top.stdout.strip()) / "metrics/scripts/usage_ledger.py")
+ 1621|     found = next((c for c in candidates if c.is_file()), None)
+ 1622|     if found is None:
+ 1623|         raise HostError(NOT_ESTABLISHED, "objective_accounting_unavailable", "usage ledger not found")
+ 1624|     r = subprocess.run([sys.executable, "-I", str(found), "pi-admit", "--record", str(Path(record).resolve()),
+ 1625|                         "--max-usd", repr(float(max_usd)), "--parent", parent, "--role-host-ledger", str(ledger_path),
+ 1626|                         *(["--admission-journal", str(journal)] if journal else [])],
+ 1627|                        capture_output=True, text=True, timeout=600)
+ 1628|     try:
+ 1629|         out = json.loads(r.stdout)
+ 1630|     except ValueError:
+ 1631|         raise HostError(NOT_ESTABLISHED, "objective_accounting_unavailable", (r.stderr or r.stdout)[-800:])
+ 1632|     if r.returncode != 0 or out.get("decision") != "admitted":
+ 1633|         status = "objective_pi_limit_refused" if out.get("decision") == "refused" else "objective_accounting_unavailable"
+ 1634|         raise HostError(NOT_ESTABLISHED, status, json.dumps(out, sort_keys=True))
+ 1635|     out["reader"] = str(found)
+ 1636|     out["reader_sha256"] = hashlib.sha256(found.read_bytes()).hexdigest()
+ 1637|     return out
+ 1638| 
+ 1639| 
+ 1640| def admission_paths(record) -> tuple[Path, Path]:
+ 1641|     """Per-objective lock and admission journal at one host-wide place, whatever --state a launcher uses."""
+ 1642|     base = Path(os.environ.get("ROLE_HOST_OBJECTIVE_LOCK_DIR") or
+ 1643|                 Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "work-engine" / "pi-objective-admissions")
+ 1644|     base.mkdir(parents=True, exist_ok=True)
+ 1645|     key = hashlib.sha256(str(Path(record).resolve()).encode()).hexdigest()[:32]
+ 1646|     return base / f"{key}.lock", base / f"{key}.admissions.jsonl"
+ 1647| 
+ 1648| 
+ 1649| def journal_append(journal: Path, row: dict) -> None:
+ 1650|     row = {"at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "pid": os.getpid(), **row}
+ 1651|     with open(journal, "a") as fh:
+ 1652|         fh.write(json.dumps(row, sort_keys=True) + "\n")
+ 1653|         fh.flush()
+ 1654|         os.fsync(fh.fileno())
+ 1655| 
+ 1656| 
+ 1657| def journal_has(journal: Path, admission_id: str, event: str) -> bool:
+ 1658|     """Whether the journal holds `event` for this admission; an unreadable or corrupted journal raises."""
+ 1659|     rows = [json.loads(line) for line in journal.read_text().splitlines()]
+ 1660|     return any(isinstance(r, dict) and r.get("admission_id") == admission_id and r.get("event") == event for r in rows)
+ 1661| 
+ 1662| 
+ 1663| def mark_runner_starting(journal: Path, admission_id: str, **detail) -> None:
+ 1664|     journal_append(journal, {"event": "runner_starting", "admission_id": admission_id, **detail})
+ 1665|     try:
+ 1666|         verified = journal_has(journal, admission_id, "runner_starting")
+ 1667|     except (OSError, ValueError):
+ 1668|         verified = False
+ 1669|     if not verified:
+ 1670|         raise HostError(NOT_ESTABLISHED, "runner_marker_unverified", f"runner_starting for {admission_id} not readable in {journal}")
+ 1671| 
+ 1672| 
+ 1673| def admit_transaction(record, max_usd, parent, ledger_path, admission_id) -> tuple[dict, Path]:
+ 1674|     """Under the objective lock: refuse a reused admission id, recompute capacity with the journal, and write
+ 1675|     the pending allocation before the lock is released."""
+ 1676|     lock, journal = admission_paths(record)
+ 1677|     with open(lock, "a") as lf:
+ 1678|         fcntl.flock(lf, fcntl.LOCK_EX)
+ 1679|         try:
+ 1680|             if journal.exists():
+ 1681|                 for line in journal.read_text().splitlines():
+ 1682|                     try:
+ 1683|                         row = json.loads(line)
+ 1684|                     except ValueError:
+ 1685|                         raise HostError(NOT_ESTABLISHED, "objective_accounting_unavailable", f"corrupted admission journal {journal}")
+ 1686|                     if isinstance(row, dict) and row.get("admission_id") == admission_id:
+ 1687|                         raise HostError(NOT_ESTABLISHED, "admission_duplicate", f"admission {admission_id} already exists in {journal}")
+ 1688|             out = objective_admission(record, max_usd, parent, ledger_path, journal)
+ 1689|             journal_append(journal, {"event": "pending", "admission_id": admission_id, "objective_record": out["record"],
+ 1690|                                      "max_usd": float(max_usd), "parent": parent, "state_ledger": str(ledger_path),
+ 1691|                                      "admission": {k: out.get(k) for k in ("limit_usd", "spent_high_usd", "committed_usd",
+ 1692|                                                                            "exposure_usd", "reader_sha256")}})
+ 1693|         finally:
+ 1694|             fcntl.flock(lf, fcntl.LOCK_UN)
+ 1695|     return out, journal

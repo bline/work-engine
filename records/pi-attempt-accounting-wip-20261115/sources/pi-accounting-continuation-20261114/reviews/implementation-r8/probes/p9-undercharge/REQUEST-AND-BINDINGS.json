@@ -1,0 +1,11 @@
+{
+  "requester": "01a1d87a-fd5d-7553-9001-87a86f61a11f",
+  "request_turn": "01a1d87b-0094-7e12-a61f-c42079c30b65",
+  "request_native_message": "call_07cf6ae82a6548ada8606b8929f40b54",
+  "subject": "21df51b69391110beb6952c0eaebfb3c5bf99ac0ef19ce78a225fd24412afb36",
+  "changed_case_before": "5623c428ae3d946f44034b8e0cda5e28a9a185171148d3190b26735d777af04b",
+  "changed_case_after": "3967038528fabb54bb7d81a7634f272fa0da45ef3c413412cb5ce22d72e98824",
+  "changes": "only four expected fields as reviewer requested: charged and attempt/high and owned_outstanding/high 700M to500M; commitment300Mto500M; raw/low/refs/bundles unchanged",
+  "observation": "zero exits mean a wrong-undercharge negative slipped through, not policy pass",
+  "at": "2026-11-14T05:22:54.972422+00:00"
+}

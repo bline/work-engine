@@ -1,0 +1,32 @@
+ M rust/Cargo.lock
+ M rust/Cargo.toml
+ M rust/crates/session-query/README.md
+ M rust/crates/session-query/src/lib.rs
+ M rust/crates/session-query/tests/checkpoint.py
+ M rust/crates/terminal-ui/Cargo.lock
+ M rust/crates/terminal-ui/Cargo.toml
+ M rust/crates/terminal-ui/README.md
+ M rust/crates/terminal-ui/src/history_view.rs
+ M rust/crates/terminal-ui/src/main.rs
+ M rust/crates/terminal-ui/src/task_observation.rs
+ M rust/crates/terminal-ui/tests/support/terminal.rs
+ M rust/crates/terminal-ui/tests/task_refresh_host.rs
+?? .claude/
+?? notes/pi-accounting-architecture-review-20261112.md
+?? planning/knowledge-oracle-decision-aware-boundary-20261108.md
+?? planning/unified-operator-interface-20261112.md
+?? planning/unified-operator-interface-next-plan-20261113.md
+?? planning/unified-operator-interface-u1-budget-20261113.md
+?? planning/unified-operator-interface-u2-packet-20261113.md
+?? records/unified-operator-interface-first-increment-20261113.md
+?? records/unified-operator-interface-u1-acceptance-20261113.md
+?? records/unified-operator-interface-u1-result-20261113.md
+?? records/unified-operator-interface-u1-source-map-20261113.md
+?? reviews/unified-operator-interface-plan-20261113/
+?? reviews/unified-operator-interface-u1-20261113/
+?? rust/crates/operator-observation/
+?? rust/crates/terminal-ui/scripts/operator_observation_smoke.py
+?? rust/crates/terminal-ui/src/observation_view.rs
+?? rust/crates/terminal-ui/src/selected_task_view.rs
+?? rust/crates/terminal-ui/tests/selected_task_record.rs
+?? rust/crates/terminal-ui/tests/u2_realization.rs

@@ -1,0 +1,14 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "proxy_reservation",
+      "kind": "at_least",
+      "nano": "500000000"
+    },
+    "low": "0"
+  },
+  "authority": "unestablished",
+  "gate_qualified": false,
+  "id": "result:G1",
+  "live_standing": "unestablished"
+}

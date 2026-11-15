@@ -1,0 +1,8 @@
+{
+  "admission": "conditional_fixture",
+  "authority_ref": "ROOT-ADOPTION-R6.json",
+  "case_id": "N07-reopened-session-legacy",
+  "grant_payloads": [],
+  "initial_scope_contracts": [],
+  "raw_input_sha256": "85e1045b71649f952e515d9a2478eaf766fa5303d096e36c335cbf5900e9ce7e"
+}

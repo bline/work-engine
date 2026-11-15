@@ -1,0 +1,140 @@
+{
+  "standing": "stage-only worker delivery ready; mandatory same-session refresh recovered; no root acceptance or financial qualification",
+  "files": [
+    {
+      "path": "CONSUMER-READS.json",
+      "bytes": 256675,
+      "sha256": "dd1ca39870e9f63a42d0728c69ff936a55204e26ba099085c7771c0efc77a62c"
+    },
+    {
+      "path": "CONTINUATION.md",
+      "bytes": 5714,
+      "sha256": "8e7b2ae16ba25a2a0ecc73429a00478d42cc54741ecf78ebfaddff8fb7883a8b"
+    },
+    {
+      "path": "DERIVATIONS.md",
+      "bytes": 9974,
+      "sha256": "6efdc75be0a808e85f8eb93f77bb7e5865492c5cfe3f8e21d5bd615537b64c8f"
+    },
+    {
+      "path": "EVIDENCE-PATHS.json",
+      "bytes": 81639,
+      "sha256": "a172fe71bb604f62605559358e38f3572001ccf60fac43eded5aad140beb30bb"
+    },
+    {
+      "path": "FRONTIERS.json",
+      "bytes": 8530445,
+      "sha256": "b33141ecb60ea3595afb7d761f08d9eb07ef413f650c377f64526ff60c3d0585"
+    },
+    {
+      "path": "GRAPH-COVERAGE.json",
+      "bytes": 231562,
+      "sha256": "2ca617c4f35f02928858c7730cb975650939dd4b9a8241938574a04316df77b9"
+    },
+    {
+      "path": "IDENTITY.json",
+      "bytes": 1081,
+      "sha256": "9832e98f8fd3f7f601d003c4174fe2ecf19aad4b8c9c9ba23d8ecb7f4a8466f8"
+    },
+    {
+      "path": "INSTRUCTION-REVIEW.json",
+      "bytes": 610,
+      "sha256": "da7f2f174ee6a48d782d3a74547c6823ca5ab3435d2d342ba34257fe1750d919"
+    },
+    {
+      "path": "INTEGRITY.json",
+      "bytes": 224067,
+      "sha256": "15d00314cc1bbec19cdea68e4e1ee74cc85a3e87f99811becb4d6216cc19f481"
+    },
+    {
+      "path": "INTERFACES.md",
+      "bytes": 6705,
+      "sha256": "ae942db69d92f96d3cf142886d2bd34a39c16fd81bb0a279980bb5a02d575788"
+    },
+    {
+      "path": "LEDGER.json",
+      "bytes": 1511431,
+      "sha256": "56d48f661c32bd2dc7517a3541ce5ccdddbd7be572b3e7a64e009a24e5ac44df"
+    },
+    {
+      "path": "OBLIGATIONS.json",
+      "bytes": 14112,
+      "sha256": "c7b41e1c0ced5fc58caf4cc1d5b91d3a58cd99f9c0e149fe698ab95a01844cb3"
+    },
+    {
+      "path": "PACKET.md",
+      "bytes": 6756,
+      "sha256": "164b4f0e346587b436638266e0ddb040e3338f5862b7fa136e9c4dd5de531aa7"
+    },
+    {
+      "path": "PAYLOAD-RESOLUTION.json",
+      "bytes": 272,
+      "sha256": "433af4cddb747c4de6b3b2f43c48ce859d3509f9f787ce7b38845eb7d2a52ca7"
+    },
+    {
+      "path": "PILOT-PREMISE-COMPARISON.json",
+      "bytes": 5230,
+      "sha256": "9fdbfd3115af997adf2ad7f693565a29130903c6e0b26fc9847c4678c1bba5b2"
+    },
+    {
+      "path": "POLICY-BINDINGS.json",
+      "bytes": 2068,
+      "sha256": "29bcd0b4585143203433bb07dc6a638e3b9ccc78f24d3ff6bcfdced321706440"
+    },
+    {
+      "path": "POST-REFRESH-CONTEXT.json",
+      "bytes": 1230,
+      "sha256": "2cbc449e27c07c5b592a566c897926541231023b96c5be0e0c3c221dbcd244e3"
+    },
+    {
+      "path": "POST-REFRESH-SETTINGS.json",
+      "bytes": 1255,
+      "sha256": "054f972527756784d69be75f28e29636d0a453c1bdaf0ed13c13f0469962a93b"
+    },
+    {
+      "path": "PRE-REFRESH-SETTINGS.json",
+      "bytes": 1164,
+      "sha256": "9b51d003887413ef9eb8cf5d403b4baf8e0e2169675bef8df59bca4f5f728109"
+    },
+    {
+      "path": "RAW-ORIGINS.json",
+      "bytes": 972399,
+      "sha256": "d572211daca4ad991b70c242ef584007668684f73479598b7f242eb7a134a276"
+    },
+    {
+      "path": "REFRESH-STATE.json",
+      "bytes": 849,
+      "sha256": "a8465d18d00001443f68ac4dc0de6834729bdef03725e1709e7c4c708decbee8"
+    },
+    {
+      "path": "RESULT.md",
+      "bytes": 6105,
+      "sha256": "b925840eee5491a69899fb21dd607f44c1c09d4e1a39919940106f085249a07a"
+    },
+    {
+      "path": "SOURCE-ADDITIONS.json",
+      "bytes": 1720,
+      "sha256": "10365f3a451c60820d079bc14745c5509c8b85f8a302d48589d6577fc10e93cc"
+    },
+    {
+      "path": "STATE.json",
+      "bytes": 1096,
+      "sha256": "39b2a20acd460fbf7a3e8a1be60fffc99577be2be5fe5f812ecc274693ffd240"
+    },
+    {
+      "path": "UNIVERSE.json",
+      "bytes": 25121,
+      "sha256": "f3d983b5d184ba7785576ad5b53ec61e020ecac7c58fc2044a889b005fa9a175"
+    },
+    {
+      "path": "extract_ledger.py",
+      "bytes": 21827,
+      "sha256": "442e41948574e51ea0260c25ba5cbad1e66fc17417d5f63a965dc75a03d8a715"
+    },
+    {
+      "path": "finalize_inventory.py",
+      "bytes": 5387,
+      "sha256": "a4e609ed2d83f5212e1b7009ea73fb895d14e61fd8a802ff1b08dda03f199e4a"
+    }
+  ]
+}

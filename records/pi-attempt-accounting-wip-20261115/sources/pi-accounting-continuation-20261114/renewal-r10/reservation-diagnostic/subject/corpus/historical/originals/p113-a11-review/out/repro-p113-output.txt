@@ -1,0 +1,35 @@
+test_NE_legacy_openai_reservation_without_cache_writes_loses_low_bound (repro_p113.Repro.test_NE_legacy_openai_reservation_without_cache_writes_loses_low_bound) ... ok
+test_R01_dated_clock_conflict_erases_a_reservation (repro_p113.Repro.test_R01_dated_clock_conflict_erases_a_reservation) ... ok
+test_R02_malformed_charge_cancels_a_reservation (repro_p113.Repro.test_R02_malformed_charge_cancels_a_reservation) ... ok
+test_R03_orphan_log_for_a_recorded_turn_number (repro_p113.Repro.test_R03_orphan_log_for_a_recorded_turn_number) ... ok
+test_R04_reused_reservation_id_overwrites_exposure (repro_p113.Repro.test_R04_reused_reservation_id_overwrites_exposure) ... ok
+test_R05_valid_json_non_object_line_is_skipped (repro_p113.Repro.test_R05_valid_json_non_object_line_is_skipped) ... ok
+test_R06_lost_launch_link_hides_a_child (repro_p113.Repro.test_R06_lost_launch_link_hides_a_child) ... ok
+test_R09_editing_the_record_limit_flips_admission (repro_p113.Repro.test_R09_editing_the_record_limit_flips_admission) ... /home/bline/cbm-work/p113-a11-review/repro/repro_p113.py:98: ResourceWarning: unclosed file <_io.TextIOWrapper name='/home/bline/cbm-work/p113-a11-review/tmp/state-vZOs/tmpj0khxd0j/record.json' mode='r' encoding='UTF-8'>
+  doc = json.load(open(rec)); doc['scope_budget']['cost_limits'][0]['max_usd'] = 100.0; json.dump(doc, open(rec, 'w'))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/bline/cbm-work/p113-a11-review/repro/repro_p113.py:98: ResourceWarning: unclosed file <_io.TextIOWrapper name='/home/bline/cbm-work/p113-a11-review/tmp/state-vZOs/tmpj0khxd0j/record.json' mode='w' encoding='UTF-8'>
+  doc = json.load(open(rec)); doc['scope_budget']['cost_limits'][0]['max_usd'] = 100.0; json.dump(doc, open(rec, 'w'))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.017s
+
+OK
+
+NE legacy OpenAI reservation row, cache writes missing: basis=proxy_reservation_charge low=0.0 high=0.3 provider_usage=True
+
+R-01 reserve 06:40, settlement 06:20, objective from 06:30: A1.1 ('admitted', 0.0, []); deac8099 ('admitted', 0.0, [])
+
+R-02 429 settlement with charged_usd '0.8' (string): A1.1 ('admitted', 0.0, []); deac8099 ('admitted', 0.0, [])
+
+R-03 charged A/turn-2 log unreferenced; ledger names A/turn-1 and B/turn-2: A1.1 ('admitted', 0.0, []); deac8099 ('admitted', 0.0, [])
+
+R-04 reserve rid 1 for 0.8 then 0.1, no settlement: A1.1 ('admitted', 0.1, []); deac8099 ('admitted', 0.1, [])
+
+R-05 log with extra lines null and []: A1.1 ('admitted', 0.4, []); deac8099 ('admitted', 0.4, [])
+
+R-06 child launch row lost (deliver turn 2 + retire remain), no journal: A1.1 ('admitted', 0.0, []); deac8099 ('admitted', 0.0, [])
+
+R-09 same-UID edit of the record limit (set_by stays 'user'): before ('refused', 0.9, []); after ('admitted', 0.9, [])

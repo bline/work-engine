@@ -1,0 +1,14 @@
+{
+  "complete_priced_usage": "1000input+100output default gpt6astra",
+  "conditional_scope": "initial ticket scope S",
+  "coverage_prerequisites": "one distinct R/S, original R earlier, no unlinked anchors, explicit exact reference contract; all financial context complete",
+  "observation_orders": [
+    "S-first/R-last",
+    "R-first/S-last",
+    "all-at-once"
+  ],
+  "original_order": [
+    "reservation500M",
+    "settlement15M"
+  ]
+}

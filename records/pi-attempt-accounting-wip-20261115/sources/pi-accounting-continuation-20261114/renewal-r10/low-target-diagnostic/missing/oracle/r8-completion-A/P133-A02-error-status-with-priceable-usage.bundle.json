@@ -1,0 +1,176 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "oracle/r8-completion-A/DERIVATIONS.json#P133-A02-error-status-with-priceable-usage",
+        "predecessor_subject_refs": [],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": [
+          "initial:S1/turn-1"
+        ]
+      },
+      "exact_links": [],
+      "grants": [
+        {
+          "admission": "conditional_fixture",
+          "assumption_refs": [
+            "conditional initial ticket namespace in exact source; no auxiliary linkage or independence grant"
+          ],
+          "authority_ref": "ROOT-POLICY-R6.md@3dbe535668a7d625e025e16c9fa75e51a59dec109f5c842d877791b1d7332200",
+          "covered_extent_ref": "sha256:b5132516f7426785e9feafdadb8ef837291be69f3dc76d6907557d8c6df5ec1b",
+          "covered_origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "exact_payload_ref": "oracle/r8-completion-A/DERIVATIONS.json#P133-A02-error-status-with-priceable-usage/initial_reference_scope_payloads/scope:S1/turn-1",
+          "grant_id": "scope:S1/turn-1",
+          "guarantee_kind": "initial_reference_scope",
+          "observer_or_harness_ref": "S1-inherited-conditional-corpus"
+        }
+      ],
+      "id": "input:P133-A02-error-status-with-priceable-usage",
+      "identity_bindings": [],
+      "initial_contracts": [
+        {
+          "contract_id": "initial:S1/turn-1",
+          "duplicate_rule": "same_origin_only",
+          "grant_ref": "scope:S1/turn-1",
+          "reference_namespace": "dollar_ticket",
+          "scope_id": "P133-A02-error-status-with-priceable-usage/S1/turn-1"
+        }
+      ],
+      "kind": "accounting_input_proof",
+      "lineage_id": "P133-A02-error-status-with-priceable-usage",
+      "origins": [
+        {
+          "initial_contract_ref": "initial:S1/turn-1",
+          "origin_id": "S1/turn-1:1",
+          "original_position": 1,
+          "raw_bytes_sha256": "0d43dd59adfec545b32bb59a2e73ad8d7d4509f533a93833894e7b1d7aa8fa55",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:b5132516f7426785e9feafdadb8ef837291be69f3dc76d6907557d8c6df5ec1b"
+        },
+        {
+          "initial_contract_ref": "initial:S1/turn-1",
+          "origin_id": "S1/turn-1:2",
+          "original_position": 2,
+          "raw_bytes_sha256": "d22d1d56cb19a2ec39891f914103d17ea569fc31b49f13111e5cb1136dff9b32",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:b5132516f7426785e9feafdadb8ef837291be69f3dc76d6907557d8c6df5ec1b"
+        }
+      ],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ]
+        }
+      ],
+      "continuity_result": "conditional",
+      "coverage_decisions": [],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [
+        {
+          "context_origin_ref": "S1/turn-1:2",
+          "predicate_ref": "same-origin-identity-context",
+          "usage_origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "id": "result:P133-A02-error-status-with-priceable-usage",
+      "input_proof_ref": "input:P133-A02-error-status-with-priceable-usage",
+      "kind": "accounting_result",
+      "lineage_id": "P133-A02-error-status-with-priceable-usage",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "basis": "usage_valuation",
+          "credit_mode": "single_ambiguous",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "P133-A02-error-status-with-priceable-usage/default/o/owned_closed",
+          "seed_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "selected_low": "1000000000",
+          "single_floor": "1000000000"
+        },
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "P133-A02-error-status-with-priceable-usage/default/o/owned_outstanding",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        }
+      ],
+      "origins": [
+        {
+          "active_high_unit_id": "res:S1/turn-1:rid=1",
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:1",
+          "origin_ref": "S1/turn-1:1"
+        },
+        {
+          "active_high_unit_id": "res:S1/turn-1:rid=1",
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:2",
+          "origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "primary_validities": [
+        {
+          "applicable_check_refs": [
+            "case:P133-A02-error-status-with-priceable-usage#attempt:res:S1/turn-1:rid=1/settlement"
+          ],
+          "distinct_reservation_refs": [
+            "S1/turn-1:1"
+          ],
+          "distinct_settlement_refs": [
+            "S1/turn-1:2"
+          ],
+          "obligation_id": "obligation:res:S1/turn-1:rid=1",
+          "validity_result": "valid"
+        }
+      ],
+      "unbudgeted_applicabilities": [],
+      "unbudgeted_completions": [],
+      "units": [
+        {
+          "exposure_ref": "case:P133-A02-error-status-with-priceable-usage#attempt:res:S1/turn-1:rid=1",
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "state": "active",
+          "unit_id": "res:S1/turn-1:rid=1"
+        }
+      ],
+      "valuation_records": [
+        {
+          "complete": false,
+          "usage_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "valuation_id": "valuation:res:S1/turn-1:rid=1",
+          "wire_ref": "case:P133-A02-error-status-with-priceable-usage#attempt:res:S1/turn-1:rid=1/valuation"
+        }
+      ],
+      "version": "1.7-s1"
+    }
+  ]
+}

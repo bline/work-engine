@@ -1,0 +1,257 @@
+{
+  "documents": [
+    {
+      "continuity": {
+        "exact_origin_map_ref": "oracle/r8-completion-B/DERIVATIONS.json#A04-undated-settlement-between-dated-neighbours",
+        "predecessor_subject_refs": [
+          "baseline:f8fb91bbff627dedc9a02759d42de51fa67a950111774445a9ae6a7d0dbe787a"
+        ],
+        "preserved_fact_refs": [],
+        "preserved_initial_contract_refs": [
+          "conditional-ticket:S1/turn-1"
+        ]
+      },
+      "exact_links": [],
+      "grants": [
+        {
+          "admission": "conditional_fixture",
+          "assumption_refs": [
+            "Inherited immutable ticket namespace only; no exact auxiliary link or physical-bill independence."
+          ],
+          "authority_ref": "ROOT-ADOPTION-R6.json",
+          "covered_extent_ref": "sha256:b51f04a1da0404ecbf4a504f2fe98503f605220f74c343ae137b2aee1e28e1e0",
+          "covered_origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2",
+            "S1/turn-1:3"
+          ],
+          "exact_payload_ref": "oracle/r8-completion-B/A04-undated-settlement-between-dated-neighbours.provenance.json#S1/turn-1",
+          "grant_id": "initial-scope:S1/turn-1",
+          "guarantee_kind": "initial_reference_scope",
+          "observer_or_harness_ref": "inherited-corpus-conditional-fixture"
+        }
+      ],
+      "id": "input:A04-undated-settlement-between-dated-neighbours",
+      "identity_bindings": [],
+      "initial_contracts": [
+        {
+          "contract_id": "conditional-ticket:S1/turn-1",
+          "duplicate_rule": "same_origin_only",
+          "grant_ref": "initial-scope:S1/turn-1",
+          "reference_namespace": "dollar_ticket",
+          "scope_id": "A04-undated-settlement-between-dated-neighbours/S1/turn-1"
+        }
+      ],
+      "kind": "accounting_input_proof",
+      "lineage_id": "A04-undated-settlement-between-dated-neighbours",
+      "origins": [
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:1",
+          "original_position": 1,
+          "raw_bytes_sha256": "70f7e415dc1a71b54acc58117be26d6107a68ec0a7ed057982c6a8653d59549a",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:b51f04a1da0404ecbf4a504f2fe98503f605220f74c343ae137b2aee1e28e1e0"
+        },
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:2",
+          "original_position": 2,
+          "raw_bytes_sha256": "17cb3bce84377cc62128f7b5e0327c25c79084a33ed9add47f74b0bc4e3114d2",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:b51f04a1da0404ecbf4a504f2fe98503f605220f74c343ae137b2aee1e28e1e0"
+        },
+        {
+          "initial_contract_ref": "conditional-ticket:S1/turn-1",
+          "origin_id": "S1/turn-1:3",
+          "original_position": 3,
+          "raw_bytes_sha256": "a322972d8f40670807c5f4dce520a38af2ecd679bf6a6e4cf30d4eeed89186c5",
+          "source_origin_id": "S1/turn-1",
+          "source_revision_ref": "sha256:b51f04a1da0404ecbf4a504f2fe98503f605220f74c343ae137b2aee1e28e1e0"
+        }
+      ],
+      "version": "1.7-s1"
+    },
+    {
+      "bases": [
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ]
+        },
+        {
+          "atomize": false,
+          "atomize_fact_refs": [],
+          "base_id": "base:res:S1/turn-1:rid=2",
+          "break_copies": false,
+          "break_copies_fact_refs": [],
+          "origin_refs": [
+            "S1/turn-1:3"
+          ]
+        }
+      ],
+      "continuity_result": "unestablished",
+      "coverage_decisions": [
+        {
+          "anchor_origin_refs": [],
+          "coverage_id": "coverage:res:S1/turn-1:rid=1",
+          "definite_link_refs": [],
+          "monetary_origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "obligation_id": "validity:res:S1/turn-1:rid=1",
+          "reason_refs": [
+            "case:A04-undated-settlement-between-dated-neighbours#attempt:res:S1/turn-1:rid=1/replacement"
+          ],
+          "result_unit_ref": "res:S1/turn-1:rid=1",
+          "retained_component_refs": [
+            "case:A04-undated-settlement-between-dated-neighbours#attempt:res:S1/turn-1:rid=1/retained-charge-and-context"
+          ],
+          "route": "budgeted",
+          "status": "accepted",
+          "unit_refs": [
+            "held:res:S1/turn-1:rid=1"
+          ],
+          "validity_ref": "validity:res:S1/turn-1:rid=1",
+          "valuation_ref": "valuation:res:S1/turn-1:rid=1"
+        }
+      ],
+      "definite_links": [],
+      "failure_refs": [],
+      "financial_candidates": [
+        {
+          "context_origin_ref": "S1/turn-1:2",
+          "predicate_ref": "same-original-usage-origin",
+          "usage_origin_ref": "S1/turn-1:2"
+        }
+      ],
+      "id": "result:A04-undated-settlement-between-dated-neighbours",
+      "input_proof_ref": "input:A04-undated-settlement-between-dated-neighbours",
+      "kind": "accounting_result",
+      "lineage_id": "A04-undated-settlement-between-dated-neighbours",
+      "low_rollups": [
+        {
+          "alternative_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "basis": "usage_valuation",
+          "credit_mode": "single_ambiguous",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "A04-undated-settlement-between-dated-neighbours/default/o/owned_closed",
+          "seed_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "selected_low": "15000000",
+          "single_floor": "15000000"
+        },
+        {
+          "alternative_origin_refs": [],
+          "basis": "none",
+          "credit_mode": "none",
+          "credits": [],
+          "independent_floor": "0",
+          "scope_ref": "A04-undated-settlement-between-dated-neighbours/default/o/owned_outstanding",
+          "seed_origin_refs": [],
+          "selected_low": "0",
+          "single_floor": "0"
+        }
+      ],
+      "origins": [
+        {
+          "active_high_unit_id": "res:S1/turn-1:rid=1",
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:1",
+          "origin_ref": "S1/turn-1:1"
+        },
+        {
+          "active_high_unit_id": "res:S1/turn-1:rid=1",
+          "base_id": "base:res:S1/turn-1:rid=1",
+          "evidence_atom_id": "atom:S1/turn-1:2",
+          "origin_ref": "S1/turn-1:2"
+        },
+        {
+          "active_high_unit_id": "res:S1/turn-1:rid=2",
+          "base_id": "base:res:S1/turn-1:rid=2",
+          "evidence_atom_id": "atom:S1/turn-1:3",
+          "origin_ref": "S1/turn-1:3"
+        }
+      ],
+      "primary_validities": [
+        {
+          "applicable_check_refs": [
+            "case:A04-undated-settlement-between-dated-neighbours#attempt:res:S1/turn-1:rid=1/settlement"
+          ],
+          "distinct_reservation_refs": [
+            "S1/turn-1:1"
+          ],
+          "distinct_settlement_refs": [
+            "S1/turn-1:2"
+          ],
+          "obligation_id": "validity:res:S1/turn-1:rid=1",
+          "validity_result": "valid"
+        },
+        {
+          "applicable_check_refs": [
+            "case:A04-undated-settlement-between-dated-neighbours#attempt:res:S1/turn-1:rid=2/settlement"
+          ],
+          "distinct_reservation_refs": [
+            "S1/turn-1:3"
+          ],
+          "distinct_settlement_refs": [],
+          "obligation_id": "validity:res:S1/turn-1:rid=2",
+          "validity_result": "absent"
+        }
+      ],
+      "unbudgeted_applicabilities": [],
+      "unbudgeted_completions": [],
+      "units": [
+        {
+          "exposure_ref": "case:A04-undated-settlement-between-dated-neighbours#attempt:res:S1/turn-1:rid=1",
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "state": "active",
+          "unit_id": "res:S1/turn-1:rid=1"
+        },
+        {
+          "exposure_ref": "case:A04-undated-settlement-between-dated-neighbours#attempt:res:S1/turn-1:rid=2",
+          "origin_refs": [
+            "S1/turn-1:3"
+          ],
+          "state": "active",
+          "unit_id": "res:S1/turn-1:rid=2"
+        },
+        {
+          "exposure_ref": "case:A04-undated-settlement-between-dated-neighbours#attempt:res:S1/turn-1:rid=1/pre-release-hold",
+          "origin_refs": [
+            "S1/turn-1:1",
+            "S1/turn-1:2"
+          ],
+          "state": "inactive",
+          "successor_ref": "res:S1/turn-1:rid=1",
+          "unit_id": "held:res:S1/turn-1:rid=1"
+        }
+      ],
+      "valuation_records": [
+        {
+          "complete": true,
+          "usage_origin_refs": [
+            "S1/turn-1:2"
+          ],
+          "valuation_id": "valuation:res:S1/turn-1:rid=1",
+          "wire_ref": "case:A04-undated-settlement-between-dated-neighbours#attempt:res:S1/turn-1:rid=1/valuation"
+        }
+      ],
+      "version": "1.7-s1"
+    }
+  ]
+}

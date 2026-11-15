@@ -1,0 +1,12 @@
+{
+  "state": "WHOLE_NATIVE_FINAL_FULLCOLLECTED_FULLREAD",
+  "at": "2026-11-14T10:04:37.562967+00:00",
+  "collector": "root",
+  "plan_sha256": "d1e93793052f2c07397654d10cca2188e0fad1f06c920c5d9dcfc139a4563741",
+  "implementation_admitted": false,
+  "full_S1": "OPEN",
+  "jobs_children": "none reported",
+  "financial_qualification": "none; planning only",
+  "model": "Sol6.1/xhigh/default postrecoveryapplied377",
+  "planning_cost_proxy": 1.5234312
+}

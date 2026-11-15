@@ -1,0 +1,67 @@
+[
+  {
+    "path": "oracle/r8-controls/VC07-conditional.bundle.json",
+    "sha256": "d4d881e610941f539e1e8192a6d6c76e545ee4f1a092ceb36f999fc54e7533c6",
+    "baseline_sha256": "00cfa94e9716374f5669b0a091313c3ea4e314ab14214c329bfae6d6caef52a7"
+  },
+  {
+    "path": "oracle/r8-controls/VC07-unlinked.bundle.json",
+    "sha256": "25c74033c7a1cb66fe107ed5ba1051fd7188c07456b1eb3617e1c058a08777ee",
+    "baseline_sha256": "e6298a9a54fabb3820e5eec0508954b98b7da41c0e4e5cfb310ab3e1d5d67527"
+  },
+  {
+    "path": "oracle/r9-pilot/cases/admitted-copy.bundle.json",
+    "sha256": "5db8ec4ddc2f353f189f4b411c92fd38cf012fd8b6ff5a0d3c84c51a8a21312b",
+    "baseline_sha256": null
+  },
+  {
+    "path": "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json",
+    "sha256": "ab87fb782beab54657bf3ef6a8d607b0f2786f0998303370ccfd85c9ae5216fe",
+    "baseline_sha256": "59316f312b00fb28d29b88de0d449c30e807c0cc65acdbf9b224c3be22abbf33"
+  },
+  {
+    "path": "oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.provenance.json",
+    "sha256": "cb2f7ffe731d72b132ec8a0a4361099fbdda5726185c8b2d97d16a6969664f70",
+    "baseline_sha256": null
+  },
+  {
+    "path": "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json",
+    "sha256": "19b04106eb47d19c80554a858e09744d47db084de400666e8b372838b702d7f5",
+    "baseline_sha256": "7ddb2b04a10545d0cc1ada662d888f46c857c85ffc217f2fe2f40f9631a0c621"
+  },
+  {
+    "path": "oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.provenance.json",
+    "sha256": "9ecdffd442ac6bc84d1a482bd61860f9db5c4f5ad8ab61c47a7fc3a8a8255278",
+    "baseline_sha256": null
+  },
+  {
+    "path": "oracle/r9-pilot/cases/same-origin.bundle.json",
+    "sha256": "cf4f8e7179af43d7dddfa7e3aa5086b3e151f05ff489be30a53659459da0a6de",
+    "baseline_sha256": null
+  },
+  {
+    "path": "tooling/spec-check/tests/independent_raw_axes.rs",
+    "sha256": "7666a3d5f85d639429851765253b76a57deb67af5211a10c2ed8101cf6fc5a2c",
+    "baseline_sha256": "417bdae2fca21de6d61e774dbf5a1835de699bfd8239fb952d1ee668ecb3c150"
+  },
+  {
+    "path": "validator/r10_admitted.json",
+    "sha256": "d45e96d074b77b4c147a47879f8e7de9fcd86e6ef7fc2675e34da4611a0f4e71",
+    "baseline_sha256": null
+  },
+  {
+    "path": "validator/r9_pilot.py",
+    "sha256": "06abec6fb484263c46e328d8d226e58dd85d8682c9b71838d7315e12d76618c0",
+    "baseline_sha256": "3e1766cf37077ad393721daeb22ce8439be135f0853908bbe02cbc933b1723ea"
+  },
+  {
+    "path": "validator/test_r10_qualification.py",
+    "sha256": "c21efd9a96b888ef7bf12f6cbc0a86ce672f5923a0c774740c766e7824ca0182",
+    "baseline_sha256": null
+  },
+  {
+    "path": "validator/validate_corpus.py",
+    "sha256": "e5b37e0bdb0ea50cb0b7e939ad46f593f38fb37cc0e5070f47f7f379dd8887ab",
+    "baseline_sha256": "8e0fcd9eda869761ee839dad41fdbeebaa35c09f825309c6201656679565690e"
+  }
+]

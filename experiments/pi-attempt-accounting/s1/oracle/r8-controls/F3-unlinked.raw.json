@@ -1,0 +1,10 @@
+{
+  "definite_link": null,
+  "observed_same_n": 1,
+  "origins": [
+    "stream-error:1",
+    "request:2"
+  ],
+  "producer": "accepted n can be reused after preflight failure",
+  "raw_case": "VC07-read-failure-paired"
+}

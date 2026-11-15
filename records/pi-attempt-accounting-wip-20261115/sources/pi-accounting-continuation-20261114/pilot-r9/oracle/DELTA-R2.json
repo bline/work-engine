@@ -1,0 +1,11 @@
+[
+  "oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json",
+  "oracle/r8-completion-B/VC07-read-failure-paired.bundle.json",
+  "oracle/r8-completion-B/VC11-multi-turn-session.bundle.json",
+  "oracle/r8-controls/VC07-conditional.bundle.json",
+  "oracle/r9-pilot/cases/equal-reservations.bundle.json",
+  "oracle/r9-pilot/cases/equal-reservations.provenance.json",
+  "tooling/spec-check/tests/independent_raw_axes.rs",
+  "validator/r9_pilot.py",
+  "validator/test_r9_pilot.py"
+]

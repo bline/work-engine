@@ -1,0 +1,11 @@
+{
+  "candidate": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/ORGANIZATION-R5.json",
+  "sha256": "230fc2af0e9f76f38f45530800e80cff8a6ad42c39d2d1b7fb1bad24697660b5",
+  "prior_revision": "R4",
+  "classification": "small declaration/route revision implementing an already explicit component-output obligation; no changed financial semantics, outcome, consumer or approval boundary",
+  "basis": "P9 role/origin/amount semantics are settled by reviewed amendment. Missing concrete result fields are a realization gap, not an ambiguous policy or architectural owner. No new financial raw reducer or input authority. Fresh implementation review will examine the extension.",
+  "owner": "root01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "authority": "user delegated ownership and renewed100/fourhour plus ROOT-ADOPTION-R7-BOUNDED",
+  "decision": "admit exact bounded extension under unchanged caps, retaining all full acceptance obligations and eleven open findings",
+  "at": "2026-11-14T06:08:14.209758+00:00"
+}

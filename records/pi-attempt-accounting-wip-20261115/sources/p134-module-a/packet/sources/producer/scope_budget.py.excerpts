@@ -1,0 +1,19 @@
+# scope_budget.py (sha256 of whole file 5c546edb48ee71efe6db826dfd557d82e307d7e29910c562907f656124dd4e83)
+# Line-numbered excerpts; everything else omitted.
+
+# ---- scope_budget close: lines 338-352 ----
+  338| def cmd_close(args: argparse.Namespace) -> int:
+  339|     path = Path(args.record)
+  340|     doc = load(path)
+  341|     sb = section(doc, path)
+  342|     require_open(sb)
+  343|     at = parse(args.at) if args.at else now()
+  344|     if at.tzinfo is None:
+  345|         raise UsageError("--at must include a timezone")
+  346|     if at < parse(sb["started_at"]) or at > now():
+  347|         raise UsageError("--at must be between started_at and now")
+  348|     closed_at = stamp(at.astimezone(dt.timezone.utc))
+  349|     entry = {"at": closed_at, "disposition": args.disposition, "reason": args.reason, "set_by": args.set_by}
+  350|     sb["closed_at"], sb["close"] = closed_at, entry
+  351|     save(path, doc)
+  352|     print(json.dumps(entry))

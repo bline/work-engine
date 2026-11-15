@@ -1,0 +1,45 @@
+{
+  "policies": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/design/PLAN.md",
+      "sha256": "43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/PLAN-AMENDMENT.md",
+      "sha256": "c8376f7a94a2ee775a8b117e6424acae457cb86e138f890cf2240fbe2190ce46"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/PLAN-AMENDMENT-R3.md",
+      "sha256": "90b6308e9608decf026437c89b98de597cd30046f56d792aa7461061f31f4abb"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-evaluation-premise-r1/PLAN-R2.md",
+      "sha256": "3f79f910a6e87614d7ebff402f2f731f358886ab0ee74495d0a7425fc7950b70"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/design-low-target-r1/PLAN-R2.md",
+      "sha256": "727ad3974d492cbd523859b68bdfc0be8664dc5448277832565d17652d082904"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/policies/ROOT-POLICY-R5.md",
+      "sha256": "57303fdb466c49ebe8f0d6fa095628c57c3f2018603114e12949af663f65eec5"
+    },
+    {
+      "path": "/home/bline/cbm-work/p134-module-a/ARCHITECTURE-GUARD.md",
+      "sha256": "2c4063d3e2cb1a16a0c9af383b23c28d9cd9224a802f8b7b53960dd0b791ff51"
+    }
+  ],
+  "rates": [
+    {
+      "path": "oracle/rates/anthropic_api_rates.json",
+      "sha256": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+      "standing": "pinned rate premise, not live pricing"
+    },
+    {
+      "path": "oracle/rates/openai_api_rates.json",
+      "sha256": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58",
+      "standing": "pinned rate premise, not live pricing"
+    }
+  ],
+  "P1_P6_D3": "P1–P6 retain base plan and canonical clause authority; no raw reducer, general financial or grant interpreter, partition solver, producer/live grant or S2a is implemented."
+}

@@ -1,0 +1,45 @@
+{
+  "at": "2026-11-14T10:38:12.411334+00:00",
+  "status": "ACCEPTED_BOUNDED_INVENTORY_ONLY",
+  "root": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "ledger_sha256": "56d48f661c32bd2dc7517a3541ce5ccdddbd7be572b3e7a64e009a24e5ac44df",
+  "whole_native_final": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/full-realization-r1/DERIVATION-WHOLE-NATIVE-FINALS.json",
+    "chars": 1407,
+    "sha256": "1e4fb9dfe314ebc0a7579f71e089dcb009c8d84dc7db36bf99f28d78c7df590c",
+    "fully_collected_and_read": true
+  },
+  "verification": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/full-realization-r1/ROOT-LEDGER-VERIFICATION.json",
+  "meaning": "175/374 obligation inventory and lexical custody support planning. No complete financial case/scope qualified, no financial correction or source primitives admitted.",
+  "open": {
+    "financial_case_family_unexamined": 1046,
+    "scope_lows_unexamined": 374,
+    "namespace_required_unmet": 4,
+    "whole_cases_fully_derived": 0,
+    "whole_scopes_fully_derived": 0,
+    "historical_findings": 11,
+    "current_complete_ABC": "OPEN"
+  },
+  "truth_and_interface_status": "INTERFACES.md remains proposal; full causal closure and independent nominal truth remain unmet; sourcework held",
+  "guard": "No new executed serious counterexample or repair regression; prior full history/escalation retained",
+  "worker_observation": "Failed listener retained; explicit pinned checks and ownnative recovery acknowledged, NEW applied314 Sol6.1/high/default verified",
+  "process_disposition": "Whole worker final collected; worker declares no processes/children. No root build/test jobs. Root listener closing separately.",
+  "budget_snapshot": {
+    "basis": "speed_adjusted_api_usd",
+    "max_usd": 100.0,
+    "node_id": null,
+    "observed": {
+      "api_equivalent_usd_high": 67.429798,
+      "api_equivalent_usd_low": 67.429798,
+      "cost_basis": "speed_adjusted_api_usd",
+      "kind": "proxy",
+      "quota_usd_high": 67.429798,
+      "quota_usd_low": 67.429798,
+      "unpriced_calls": 0
+    },
+    "pool": "codex",
+    "remaining_usd": 32.570201999999995,
+    "set_by": "user"
+  },
+  "additions": 0
+}

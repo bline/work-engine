@@ -1,0 +1,1 @@
+{"cost_limit": {"pool": "codex", "node": "01a1d890-d020-74a0-a7d5-ed4a2902dd2f", "max_usd": 6.0, "marks_usd": [4.0], "set_by": "supervisor", "set_at": "2026-11-14T05:38:51Z", "reason": "ExactR2 C1 bounded independent review; no repair/delegation; original100/deadline retained", "basis": "speed_adjusted_api_usd"}}

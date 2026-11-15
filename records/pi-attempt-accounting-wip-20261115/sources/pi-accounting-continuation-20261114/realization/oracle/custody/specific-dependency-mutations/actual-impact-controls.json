@@ -1,0 +1,65 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "actual-impact-controls",
+  "argv": [
+    "python3",
+    "validator/test_r8_dependencies.py"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 2989444,
+  "inputs": [
+    {
+      "path": "validator/test_r8_dependencies.py",
+      "type": "file",
+      "mode": 436,
+      "length": 2482,
+      "sha256": "d4695f9e19cbc0de491562e69bb6a05ed2a98ff168325ade6464f274fedeb697"
+    },
+    {
+      "path": "spec/ck.json",
+      "type": "file",
+      "mode": 436,
+      "length": 225293,
+      "sha256": "4836825c0a67587339f743749dc6de66334fbe242ed4e6afb9be05525b354891"
+    },
+    {
+      "path": "spec/dependencies.json",
+      "type": "file",
+      "mode": 436,
+      "length": 52677,
+      "sha256": "c213f680afeddb1cbe21f0ea34393585a41484e70ac3af2c698f4a798a50b043"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/build/spec/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 75775896,
+      "sha256": "0c5f7378403c77ff117ba304db518777a6a5c622e22d3be758336a10e3929442"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 2990183,
+  "pgid": 2990183,
+  "started_at": "2026-11-14T03:52:56.163591Z",
+  "ended_at": "2026-11-14T03:52:58.957920Z",
+  "duration_s": 2.794,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/specific-dependency-mutations/actual-impact-controls.stdout",
+    "length": 1970,
+    "sha256": "a3887f5ba9e8129ea4a9a142290a0a1bd3253af32a71b92f64f54061b4cce312"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/oracle/custody/specific-dependency-mutations/actual-impact-controls.stderr",
+    "length": 98,
+    "sha256": "ea79ece5a9d1d38b0ea3065621cd49ce63b155ed5212ca3a63482daa5e4b4fca"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

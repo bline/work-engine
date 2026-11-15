@@ -1,0 +1,29 @@
+{
+  "observations": [
+    {
+      "sid": "01a1d87b-0106-76c1-a881-fd7637db17dd",
+      "turn": {
+        "id": "01a1d87b-0165-7813-b94e-c6be0c86aea9",
+        "status": "completed",
+        "error": null
+      },
+      "mid": "msg_0c7026fb5c7a6fb0016af7f033850c87d08151e3c4393d8468",
+      "cursor": "{\"updatedAt\":1794633823,\"status\":{\"type\":\"notLoaded\"},\"turnId\":\"01a1d87b-0165-7813-b94e-c6be0c86aea9\",\"turnStatus\":\"completed\",\"latestItemId\":\"msg_0c7026fb5c7a6fb0016af7f033850c87d08151e3c4393d8468\"}"
+    },
+    {
+      "sid": "01a1d87b-01de-7631-9623-0ab1026eba5d",
+      "turn": {
+        "id": "01a1d87b-025f-75c3-b6ce-fd6430b38a89",
+        "status": "inProgress",
+        "error": null,
+        "startedAt": 1794633302,
+        "completedAt": null,
+        "durationMs": null
+      },
+      "mid": "call_f567640fbe2b4b88b4198e1aad86a5e0",
+      "cursor": "{\"updatedAt\":1794633897,\"status\":{\"type\":\"active\",\"activeFlags\":[]},\"turnId\":\"01a1d87b-025f-75c3-b6ce-fd6430b38a89\",\"turnStatus\":\"inProgress\",\"latestItemId\":\"exec-f1e2b4a1-21a8-4db8-ba09-a1ef53567a97\"}"
+    }
+  ],
+  "owner": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+  "collection": "native wait_threads immediate preservation snapshot; exact native finals sealed separately"
+}

@@ -1,0 +1,90 @@
+**CHANGES_REQUIRED — B1 bounded review: 3 P2 findings.** This covers the assigned 69 P130/P132/P133 cases, comprising 70 evaluations, 75 objective results and 150 owned-low scopes. It does not approve the remaining 106 cases or the whole system.
+
+Subject verified: manifest `21df51b69391110beb6952c0eaebfb3c5bf99ac0ef19ce78a225fd24412afb36`; all 941 entries match. Archive, capsule bindings and dispatch projection bindings match. B1 projection fields also match their exact frozen originals.
+
+1. **B1-R8-01 — P2: Missing authority identities can qualify a conditional gate.**
+
+   **Location:** [validate_corpus.py:191](/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/subject/validator/validate_corpus.py:191), particularly comparisons at lines 197 and 201.
+
+   **Executed counterexample:** Starting from `P132-FG-VC01-gated`, remove:
+
+   - `evaluations[0].objectives[0].admission_authority.id`
+   - `inputs.gates[0].authority.id`
+   - `trusted_fixture_inputs.gate_verifications["g-S1"].authority_id`
+
+   Rebind the conditional witness’s payload digest to those exact gate bytes. Calling the actual `gate_qualification(..., purpose="release", ...)` returns **`(True, [], False)`**. Setting all three IDs to empty strings produces the same result.
+
+   **Expected:** absent authority identity fails qualification. **Actual:** equality of missing or empty values substitutes for an established matching identity.
+
+   **Owner/invariant:** G-1, P5 and the gate-verification admission boundary. A conditional harness can attest a supplied payload; it cannot make an unidentified authority satisfy the declared identity requirement.
+
+   **Origin:** unknown. This is an executed helper-boundary failure, not a demonstrated full-corpus or live-authority bypass. By contrast, removing the entire witness while adding raw `verified:true`, supplying a wrong payload digest, or removing the objective’s entire authority object correctly failed the corresponding probes.
+
+2. **B1-R8-02 — P2: Five current low-support scopes omit required candidate alternatives.**
+
+   **Locations:** `oracle/r8-completion-A/LOW-ASSERTIONS.json`, matching `DERIVATIONS.json.scope_claims`, and the corresponding bundles’ `accounting_result.low_rollups[].alternative_origin_refs`.
+
+   | Scope suffix: `default/<objective>/owned_closed` | Missing origin |
+   |---|---|
+   | `P130-R08-admissions-without-tree-still-block`, objective `o` | `S1/turn-1:2` |
+   | Same case, objective `p` | `S1/turn-1:2` |
+   | `P130-R12-untrusted-clock-keeps-candidate`, objective `o` | `S1/turn-1:1` |
+   | `P133-A04-cache-counts-both-absent`, objective `o` | `S1/turn-1:1` |
+   | `P133-A04-cache-write-absent-legacy`, objective `o` | `S1/turn-1:1` |
+
+   **Raw facts:** R08 has two admitting objectives, so neither owns the request but both remain candidates. The other cases have no admission and retain the tree objective as a candidate, including the untrusted-clock case. Each named origin contains usage evidence.
+
+   **Expected:** retain these origins in the possible-alternative inventory, with **no owned seed, no owned slot and low zero**. **Actual:** both seeds and alternatives are empty.
+
+   **Owner/invariant:** T supplies admitted/possible membership; R6 PLAN §5 defines `U` as the complete admitted-or-candidate usage inventory. An empty seed does not authorize deleting `U`.
+
+   The numeric zero is correct in these cases. The claimed exact membership evidence is not. Both consumers accept the supplied records: Python’s membership check at [validate_corpus.py:769](/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/subject/validator/validate_corpus.py:769) compares them with the equally incomplete assertion; Rust’s corpus consumer likewise accepts all 69 cases/150 scopes.
+
+   **Origin:** introduced in the R8 supported-low records; exact authoring-change attribution was not independently reconstructed.
+
+3. **B1-R8-03 — P2: Placement evidence is incorrect in a current case, and the Python qualifier accepts a consistent false placement.**
+
+   **Current-case location:** `corpus/cases/P132-CP-closed-predecessor-outstanding.json`, both `evaluations[*].expected.attribution[0].placement` and predecessor objective reasons.
+
+   **Raw facts:** reservation at `06:30`, no retirement or settlement, and established predecessor closure at `06:40`. The obligation interval is `[06:30, Open]`. The actual helpers independently return that open interval and `closure_state="closed"`.
+
+   **Expected:** closure-straddling placement, preserving ownership by `p`, with `PlacementStraddles`. **Actual:** both evaluations say `inside` and omit that reason. C1 preserves ownership and financial exposure; it does not make the interval wholly inside the closed window.
+
+   **Executed qualification counterexample:** In `P130-T-owned-before-window-summed`, change only expected placement from `before` to `inside` and remove `AttributionContradiction`. Raw reservation/settlement timestamps remain before the objective’s `06:40` start. The actual Python **`check_case` plus `check_accounting_references` return zero failures**.
+
+   **Location of consumer gap:** [validate_corpus.py:786](/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/implementation-r8/subject/validator/validate_corpus.py:786). Placement values are checked for vocabulary; subsequent reasons are derived from the supplied placement.
+
+   **Owner/invariant:** T placement, CONTRACT §11.2 P-1/P-4/P-5 and §12.1. Neither example changes money or transfers ownership.
+
+   **Origin:** unknown. The current-case discrepancy and executed false-positive probe establish the defect without requiring an arbitrary raw reducer.
+
+**Coverage and prior dispositions**
+
+I independently checked admission ownership and reopened-turn treatment against the raw journals/lifecycles for all 69 cases. There were no owner/candidate assignment differences. I examined every current evaluation’s placement, owned/predecessor membership, commitment, provisionality and budget decision. Financial amounts were assessed compositionally; independent provider pricing remains A’s responsibility.
+
+I checked all 150 seed/alternative scope memberships, finding the five discrepancies above. Candidate observations did not receive owned credit. Reviewed cases preserve unresolved zero anchors, exclude settled predecessor spend, and retain unresolved predecessor exposure and open commitments without adding them to successor-owned lines.
+
+Relevant prior findings remain bounded as follows:
+
+- **A-02:** the assigned P130-R05 and P133-A09 supported lows survive their current rollups; other protected examples require A’s coverage.
+- **A-07/A-08:** remain open cross-partition dependencies. This review does not independently close or duplicate those findings.
+- **A-01 and A-03–A-06/A-09:** not cleared by B1.
+- A1/C2’s C-to-F witness-scope failures and C2/root’s P9 undercharge evidence remain separate acceptance dependencies. I read those reports and the relevant supplied-record checking code; I did not rerun their mutations.
+
+Read set included repository startup doctrine, applicable evidence/review contracts and rationale, manual-orchestration worker/call-cost/Codex-host references, R6 PLAN/policies/adoption/design review, original P1–P6/D3, previous implementation review and relevant guard history. Source inspection covered the relevant T/R/gate contract sections, Python evaluation/gate/scope consumers, and relevant `decisions.rs`, `accounting.rs`, `corpus.rs` and command-dispatch sections.
+
+**Execution and evidence limits**
+
+- Python `check_case` on all 69 frozen originals: **zero failures**.
+- Python `check_accounting_references` on all 69: **zero failures**.
+- Pinned binary: `pi-accounting-spec-check corpus <frozen-subject> A`: **exit 0, 69 cases/150 scopes**.
+- Read-only `python3 -B` probes executed the gate and placement counterexamples above; mutations existed only in memory.
+- Verified the six joined custody-record hashes and stdout/stderr hashes; each records exit 0, no timeout and no leftover processes.
+- Verified binary SHA `66ec52f8d51bf591a29b529948fd5e9957929234701ba9867216c1c845aeefd2`.
+- Did not rerun long sabotage, compile Rust, reconstruct complete authorship history, or review the other 106 cases. Generic reference census and schema/dependency completeness remain C1/C2 obligations.
+- Postgate metadata drift remains disclosed; no byte-identical whole-subject execution claim is made.
+- Graph coverage reported the external subject outside the indexed project. Findings rely on exact frozen source, not graph completeness.
+
+D3 remains binding. These findings concern bounded records and existing consumers; they do not request a forbidden reducer or solver. Full arbitrary raw conformance/confluence, live provenance/currentness, predecessor accounting continuity and S2a readiness remain **UNESTABLISHED**. Root retains the existing `DESIGN_REVIEW_REQUIRED` disposition and authority over escalation and repairs.
+
+**Identity and process:** acknowledged session `01a1d88a-9f59-7aa1-82b0-67e78d64bf55`, bound rollout `/home/bline/.codex/sessions/2026/11/13/rollout-2026-11-13T22-32-05-01a1d88a-9f59-7aa1-82b0-67e78d64bf55.jsonl`; collector `01a1d6e2-32ba-7701-9115-740dcb41af11`. Root’s binding/settings and the context observer report `gpt-6-astra/high/default`, read-only/never. Backend fulfillment, invoice/quota and proxy spend are unknown. Last context observation: 168,462 input tokens, epoch 0; no reset. No files modified, commits, delegation, provider launches or settings changes; no outstanding owned processes. This native report is the continuation artifact until root seals it.

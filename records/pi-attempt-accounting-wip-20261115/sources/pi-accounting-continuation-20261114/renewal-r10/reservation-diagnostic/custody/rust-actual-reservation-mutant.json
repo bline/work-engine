@@ -1,0 +1,70 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "rust-actual-reservation-mutant",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+    "r9_registered_actual_subject_qualification",
+    "--nocapture"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-diagnostic/subject",
+  "env_clear": false,
+  "env_set": {
+    "R9_QUALIFICATION_SUBJECT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-diagnostic/subject",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "R10_EVIDENCE_EXECUTABLE": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/pi-accounting-spec-check"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3641496,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/freeze/manifest.json",
+      "type": "file",
+      "mode": 292,
+      "length": 225300,
+      "sha256": "9234cec46402ebddcd6ae221c76867b038001b6022254e1ebcac3fd43d8425d6"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648",
+      "type": "file",
+      "mode": 509,
+      "length": 15958320,
+      "sha256": "9ad2190b4a56d5d274985255378e65015411f00c1d6e43b702b9936af15cc752"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/oracle/cargo-target/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 78003400,
+      "sha256": "6daa4fdc82c4a0ea130e9d51d3c2aead9f1efa90581e848605fc86a5033ce5e1"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-diagnostic/subject/oracle/r9-pilot/cases/equal-reservations.json",
+      "type": "file",
+      "mode": 420,
+      "length": 17773,
+      "sha256": "fcbdf5f325fad85d7c4f71d4529647c8268228cb4783474c4812a627fd7d6623"
+    }
+  ],
+  "timeout_s": 120,
+  "pid": 3641498,
+  "pgid": 3641498,
+  "started_at": "2026-11-14T07:34:25.580970Z",
+  "ended_at": "2026-11-14T07:34:25.645285Z",
+  "duration_s": 0.064,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-diagnostic/custody/rust-actual-reservation-mutant.stdout",
+    "length": 2048,
+    "sha256": "7fe6d77a1ca5b16b886399ac3224db6e4792f3c7a95fcb7287abccb3e81d1f8a"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/reservation-diagnostic/custody/rust-actual-reservation-mutant.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

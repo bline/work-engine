@@ -1,0 +1,14 @@
+# out=/home/bline/cbm-work/p126-a134/handoff/n07-journal-on-work-engine.txt tree=/home/bline/cbm-work/p126-a134/handoff args=-m unittest repro_n07_journal at=2026-11-13T03:58:35Z
+# reader 086bdec1d443064f
+..........
+N-07 journal claimed: retire, then deliver (reopened): ('admitted', 0.0, 0.6)
+
+N-07 journal control: retire, no deliver: ('admitted', 0.0, 0.6)
+
+N-07 journal control: no retire: ('refused', 0.6, 1.2)
+..............
+----------------------------------------------------------------------
+Ran 24 tests in 0.035s
+
+OK
+exit=0

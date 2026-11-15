@@ -1,0 +1,38 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "schema_agreement",
+  "argv": [
+    "python3",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject/tooling/spec-check/tests/schema_agreement.py",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/target/debug/pi-accounting-spec-check"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/subject",
+  "env_clear": false,
+  "env_set": {},
+  "env_inherited": true,
+  "wrapper_pid": 3548300,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 3548303,
+  "pgid": 3548303,
+  "started_at": "2026-11-14T07:07:23.115716Z",
+  "ended_at": "2026-11-14T07:07:30.425984Z",
+  "duration_s": 7.31,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/consistency/schema_agreement.stdout",
+    "length": 181,
+    "sha256": "35bd5ee01d46d73844e70cadca435612f2161dfa204ebc3ee312a59bea22ea5e"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/renewal-r10/spec/consistency/schema_agreement.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

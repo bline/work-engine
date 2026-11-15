@@ -1,0 +1,3959 @@
+{
+ "conservation_scope": "dated calls in window",
+ "issues": [],
+ "known_gaps": [
+  "Claude Code title and other side calls are not in transcripts"
+ ],
+ "measurements": {
+  "account_quota": {
+   "account_wide": true,
+   "age_seconds": 0.670816,
+   "last_reported_remaining_percent": 99.0,
+   "limit_id": "codex",
+   "max_age_seconds": 300,
+   "observed_at": "2026-11-14T00:11:21.457Z",
+   "plan_type": "prolite",
+   "pool": "codex",
+   "reason": null,
+   "remaining_percent": 99.0,
+   "resets_at": 1795219565,
+   "source": "/home/bline/.codex/sessions/2026/11/11/rollout-2026-11-11T15-40-25-01a1ccc5-012b-7111-9ec6-21fc5648f678.jsonl",
+   "status": "observed",
+   "used_percent": 1.0
+  },
+  "cost_bounds": "scenario bounds for priced calls and unknown tier/cache details; not quota confidence intervals",
+  "labels": {
+   "quota_usd": "API-equivalent dollars adjusted for subscription speed",
+   "usd": "API-equivalent dollars"
+  },
+  "legacy_aliases": {
+   "quota_usd": "speed_adjusted_api_usd",
+   "usd": "api_equivalent_usd"
+  },
+  "objective": {
+   "claude_all_models": {
+    "api_equivalent_usd": {
+     "high": 1.8185586,
+     "low": 1.8185586
+    },
+    "estimated_quota_points": {
+     "calibration_version": null,
+     "high": null,
+     "low": null,
+     "status": "not_established"
+    },
+    "speed_adjusted_api_usd": {
+     "high": 1.8185586,
+     "kind": "proxy",
+     "low": 1.8185586
+    },
+    "unpriced_calls": 0
+   },
+   "claude_fable": {
+    "api_equivalent_usd": {
+     "high": 0.0,
+     "low": 0.0
+    },
+    "estimated_quota_points": {
+     "calibration_version": null,
+     "high": null,
+     "low": null,
+     "status": "not_established"
+    },
+    "speed_adjusted_api_usd": {
+     "high": 0.0,
+     "kind": "proxy",
+     "low": 0.0
+    },
+    "unpriced_calls": 0
+   },
+   "codex": {
+    "api_equivalent_usd": {
+     "high": 15.346471600000006,
+     "low": 15.346471600000006
+    },
+    "estimated_quota_points": {
+     "calibration_version": null,
+     "high": null,
+     "low": null,
+     "status": "not_established"
+    },
+    "speed_adjusted_api_usd": {
+     "high": 15.346471600000006,
+     "kind": "proxy",
+     "low": 15.346471600000006
+    },
+    "unpriced_calls": 3
+   },
+   "pi_api": {
+    "api_equivalent_usd": {
+     "high": 0.0,
+     "low": 0.0
+    },
+    "estimated_quota_points": {
+     "calibration_version": null,
+     "high": null,
+     "low": null,
+     "status": "not_established"
+    },
+    "speed_adjusted_api_usd": {
+     "high": 0.0,
+     "kind": "proxy",
+     "low": 0.0
+    },
+    "unpriced_calls": 0
+   }
+  },
+  "pricing_scenario": {
+   "actual_bill": false,
+   "id": "usage-ledger-standard-api-v1",
+   "kind": "modelled_api_equivalent",
+   "rates_sha256": "a2391a4097dec603a3aa6a99ffa95b71b30210733bf8599db670b97f371c903e",
+   "rules": {
+    "codex_long_input_multiplier": 2,
+    "codex_long_input_threshold": 272000,
+    "codex_long_output_multiplier": 1.5,
+    "haiku_long_input_threshold": 100000,
+    "haiku_long_multiplier": 5,
+    "unknown_tier_high": 2.5,
+    "unknown_tier_low": 1
+   },
+   "scenario_sha256": "b5aa87b9c879a59a8af86f3e624fd762b8e22a8bfd2fc9f092973bed0712d35a",
+   "speed_multipliers": {
+    "default": 1.0,
+    "priority": 2.5
+   },
+   "subscription_quota": false
+  },
+  "quota_estimates": "not calibrated; unknown is null, never zero",
+  "schema": "usage-ledger-measurements-v1"
+ },
+ "nodes": [
+  {
+   "direct": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 244,
+     "quota_usd_high": 7.849686799999995,
+     "quota_usd_low": 7.849686799999995,
+     "unpriced_calls": 0,
+     "usd_high": 7.849686799999995,
+     "usd_low": 7.849686799999995
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "first_call": "2026-11-13T21:53:21.589Z",
+   "inclusive": {
+    "claude_all_models": {
+     "calls": 18,
+     "quota_usd_high": 1.8185586,
+     "quota_usd_low": 1.8185586,
+     "unpriced_calls": 0,
+     "usd_high": 1.8185586,
+     "usd_low": 1.8185586
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 561,
+     "quota_usd_high": 15.346471599999996,
+     "quota_usd_low": 15.346471599999996,
+     "unpriced_calls": 3,
+     "usd_high": 15.346471599999996,
+     "usd_low": 15.346471599999996
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "last_call": "2026-11-14T00:11:21.916Z",
+   "link": "root",
+   "measurements": {
+    "direct": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 7.849686799999995,
+       "low": 7.849686799999995
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 7.849686799999995,
+       "kind": "proxy",
+       "low": 7.849686799999995
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    },
+    "inclusive": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 1.8185586,
+       "low": 1.8185586
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 1.8185586,
+       "kind": "proxy",
+       "low": 1.8185586
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 15.346471599999996,
+       "low": 15.346471599999996
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 15.346471599999996,
+       "kind": "proxy",
+       "low": 15.346471599999996
+      },
+      "unpriced_calls": 3
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    }
+   },
+   "models": [
+    "gpt-6.1-sol"
+   ],
+   "node_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+   "parent_node_id": null,
+   "provider": "codex",
+   "role_name": null,
+   "session_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+   "tiers": [
+    "default"
+   ]
+  },
+  {
+   "direct": {
+    "claude_all_models": {
+     "calls": 2,
+     "quota_usd_high": 0.1813156,
+     "quota_usd_low": 0.1813156,
+     "unpriced_calls": 0,
+     "usd_high": 0.1813156,
+     "usd_low": 0.1813156
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "first_call": "2026-11-13T23:16:31.254Z",
+   "inclusive": {
+    "claude_all_models": {
+     "calls": 2,
+     "quota_usd_high": 0.1813156,
+     "quota_usd_low": 0.1813156,
+     "unpriced_calls": 0,
+     "usd_high": 0.1813156,
+     "usd_low": 0.1813156
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 1,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 1,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "last_call": "2026-11-13T23:16:46.620Z",
+   "link": "binding",
+   "measurements": {
+    "direct": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.1813156,
+       "low": 0.1813156
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.1813156,
+       "kind": "proxy",
+       "low": 0.1813156
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    },
+    "inclusive": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.1813156,
+       "low": 0.1813156
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.1813156,
+       "kind": "proxy",
+       "low": 0.1813156
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 1
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    }
+   },
+   "models": [
+    "claude-opus-5-5"
+   ],
+   "node_id": "0d2b895e-1fba-496e-a975-30b8a1575696",
+   "parent_node_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+   "provider": "claude",
+   "role_name": null,
+   "session_id": "0d2b895e-1fba-496e-a975-30b8a1575696",
+   "tiers": [
+    "standard"
+   ]
+  },
+  {
+   "direct": {
+    "claude_all_models": {
+     "calls": 2,
+     "quota_usd_high": 0.29768680000000003,
+     "quota_usd_low": 0.29768680000000003,
+     "unpriced_calls": 0,
+     "usd_high": 0.29768680000000003,
+     "usd_low": 0.29768680000000003
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "first_call": "2026-11-13T23:01:32.976Z",
+   "inclusive": {
+    "claude_all_models": {
+     "calls": 2,
+     "quota_usd_high": 0.29768680000000003,
+     "quota_usd_low": 0.29768680000000003,
+     "unpriced_calls": 0,
+     "usd_high": 0.29768680000000003,
+     "usd_low": 0.29768680000000003
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 1,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 1,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "last_call": "2026-11-13T23:01:57.170Z",
+   "link": "binding",
+   "measurements": {
+    "direct": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.29768680000000003,
+       "low": 0.29768680000000003
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.29768680000000003,
+       "kind": "proxy",
+       "low": 0.29768680000000003
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    },
+    "inclusive": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.29768680000000003,
+       "low": 0.29768680000000003
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.29768680000000003,
+       "kind": "proxy",
+       "low": 0.29768680000000003
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 1
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    }
+   },
+   "models": [
+    "claude-opus-5-5"
+   ],
+   "node_id": "21941623-fb16-4ccc-bd21-70a36f6acee3",
+   "parent_node_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+   "provider": "claude",
+   "role_name": null,
+   "session_id": "21941623-fb16-4ccc-bd21-70a36f6acee3",
+   "tiers": [
+    "standard"
+   ]
+  },
+  {
+   "direct": {
+    "claude_all_models": {
+     "calls": 6,
+     "quota_usd_high": 0.5218108,
+     "quota_usd_low": 0.5218108,
+     "unpriced_calls": 0,
+     "usd_high": 0.5218108,
+     "usd_low": 0.5218108
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "first_call": "2026-11-13T23:31:50.471Z",
+   "inclusive": {
+    "claude_all_models": {
+     "calls": 6,
+     "quota_usd_high": 0.5218108,
+     "quota_usd_low": 0.5218108,
+     "unpriced_calls": 0,
+     "usd_high": 0.5218108,
+     "usd_low": 0.5218108
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "last_call": "2026-11-13T23:32:08.796Z",
+   "link": "binding",
+   "measurements": {
+    "direct": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.5218108,
+       "low": 0.5218108
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.5218108,
+       "kind": "proxy",
+       "low": 0.5218108
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    },
+    "inclusive": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.5218108,
+       "low": 0.5218108
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.5218108,
+       "kind": "proxy",
+       "low": 0.5218108
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    }
+   },
+   "models": [
+    "claude-opus-5-5"
+   ],
+   "node_id": "3e8dad39-fc7c-45d7-b994-afc2e05899a7",
+   "parent_node_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+   "provider": "claude",
+   "role_name": null,
+   "session_id": "3e8dad39-fc7c-45d7-b994-afc2e05899a7",
+   "tiers": [
+    "standard"
+   ]
+  },
+  {
+   "direct": {
+    "claude_all_models": {
+     "calls": 6,
+     "quota_usd_high": 0.5197656,
+     "quota_usd_low": 0.5197656,
+     "unpriced_calls": 0,
+     "usd_high": 0.5197656,
+     "usd_low": 0.5197656
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "first_call": "2026-11-13T23:31:49.854Z",
+   "inclusive": {
+    "claude_all_models": {
+     "calls": 6,
+     "quota_usd_high": 0.5197656,
+     "quota_usd_low": 0.5197656,
+     "unpriced_calls": 0,
+     "usd_high": 0.5197656,
+     "usd_low": 0.5197656
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "last_call": "2026-11-13T23:32:10.959Z",
+   "link": "binding",
+   "measurements": {
+    "direct": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.5197656,
+       "low": 0.5197656
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.5197656,
+       "kind": "proxy",
+       "low": 0.5197656
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    },
+    "inclusive": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.5197656,
+       "low": 0.5197656
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.5197656,
+       "kind": "proxy",
+       "low": 0.5197656
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    }
+   },
+   "models": [
+    "claude-opus-5-5"
+   ],
+   "node_id": "81122b03-138a-4efb-a485-74e3c0b40744",
+   "parent_node_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+   "provider": "claude",
+   "role_name": null,
+   "session_id": "81122b03-138a-4efb-a485-74e3c0b40744",
+   "tiers": [
+    "standard"
+   ]
+  },
+  {
+   "direct": {
+    "claude_all_models": {
+     "calls": 2,
+     "quota_usd_high": 0.2979798,
+     "quota_usd_low": 0.2979798,
+     "unpriced_calls": 0,
+     "usd_high": 0.2979798,
+     "usd_low": 0.2979798
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "first_call": "2026-11-13T21:55:17.630Z",
+   "inclusive": {
+    "claude_all_models": {
+     "calls": 2,
+     "quota_usd_high": 0.2979798,
+     "quota_usd_low": 0.2979798,
+     "unpriced_calls": 0,
+     "usd_high": 0.2979798,
+     "usd_low": 0.2979798
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 1,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 1,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "last_call": "2026-11-13T21:55:43.363Z",
+   "link": "binding",
+   "measurements": {
+    "direct": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.2979798,
+       "low": 0.2979798
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.2979798,
+       "kind": "proxy",
+       "low": 0.2979798
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    },
+    "inclusive": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.2979798,
+       "low": 0.2979798
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.2979798,
+       "kind": "proxy",
+       "low": 0.2979798
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 1
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    }
+   },
+   "models": [
+    "claude-opus-5-5"
+   ],
+   "node_id": "c110c95a-0e4b-4b0b-9f6e-b43c3e815972",
+   "parent_node_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+   "provider": "claude",
+   "role_name": null,
+   "session_id": "c110c95a-0e4b-4b0b-9f6e-b43c3e815972",
+   "tiers": [
+    "standard"
+   ]
+  },
+  {
+   "direct": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 26,
+     "quota_usd_high": 0.7269276000000001,
+     "quota_usd_low": 0.7269276000000001,
+     "unpriced_calls": 0,
+     "usd_high": 0.7269276000000001,
+     "usd_low": 0.7269276000000001
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "first_call": "2026-11-13T22:04:30.009Z",
+   "inclusive": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 26,
+     "quota_usd_high": 0.7269276000000001,
+     "quota_usd_low": 0.7269276000000001,
+     "unpriced_calls": 0,
+     "usd_high": 0.7269276000000001,
+     "usd_low": 0.7269276000000001
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "last_call": "2026-11-13T22:16:13.865Z",
+   "link": "codex_parent",
+   "measurements": {
+    "direct": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.7269276000000001,
+       "low": 0.7269276000000001
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.7269276000000001,
+       "kind": "proxy",
+       "low": 0.7269276000000001
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    },
+    "inclusive": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.7269276000000001,
+       "low": 0.7269276000000001
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.7269276000000001,
+       "kind": "proxy",
+       "low": 0.7269276000000001
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    }
+   },
+   "models": [
+    "gpt-6.1-sol"
+   ],
+   "node_id": "01a1d6f0-831b-7bd1-b290-46b347825c56",
+   "parent_node_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+   "provider": "codex",
+   "role_name": "Mencius",
+   "session_id": "01a1d6f0-831b-7bd1-b290-46b347825c56",
+   "tiers": [
+    "default"
+   ]
+  },
+  {
+   "direct": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 29,
+     "quota_usd_high": 0.7653948,
+     "quota_usd_low": 0.7653948,
+     "unpriced_calls": 0,
+     "usd_high": 0.7653948,
+     "usd_low": 0.7653948
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "first_call": "2026-11-13T22:06:25.543Z",
+   "inclusive": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 29,
+     "quota_usd_high": 0.7653948,
+     "quota_usd_low": 0.7653948,
+     "unpriced_calls": 0,
+     "usd_high": 0.7653948,
+     "usd_low": 0.7653948
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "last_call": "2026-11-13T22:16:34.607Z",
+   "link": "codex_parent",
+   "measurements": {
+    "direct": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.7653948,
+       "low": 0.7653948
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.7653948,
+       "kind": "proxy",
+       "low": 0.7653948
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    },
+    "inclusive": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.7653948,
+       "low": 0.7653948
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.7653948,
+       "kind": "proxy",
+       "low": 0.7653948
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    }
+   },
+   "models": [
+    "gpt-6.1-sol"
+   ],
+   "node_id": "01a1d6f2-1f0e-7b70-8757-2d848076a2ce",
+   "parent_node_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+   "provider": "codex",
+   "role_name": "Dirac",
+   "session_id": "01a1d6f2-1f0e-7b70-8757-2d848076a2ce",
+   "tiers": [
+    "default"
+   ]
+  },
+  {
+   "direct": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 54,
+     "quota_usd_high": 1.4172232000000005,
+     "quota_usd_low": 1.4172232000000005,
+     "unpriced_calls": 0,
+     "usd_high": 1.4172232000000005,
+     "usd_low": 1.4172232000000005
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "first_call": "2026-11-13T22:21:56.006Z",
+   "inclusive": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 54,
+     "quota_usd_high": 1.4172232000000005,
+     "quota_usd_low": 1.4172232000000005,
+     "unpriced_calls": 0,
+     "usd_high": 1.4172232000000005,
+     "usd_low": 1.4172232000000005
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "last_call": "2026-11-13T22:44:34.032Z",
+   "link": "codex_parent",
+   "measurements": {
+    "direct": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 1.4172232000000005,
+       "low": 1.4172232000000005
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 1.4172232000000005,
+       "kind": "proxy",
+       "low": 1.4172232000000005
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    },
+    "inclusive": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 1.4172232000000005,
+       "low": 1.4172232000000005
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 1.4172232000000005,
+       "kind": "proxy",
+       "low": 1.4172232000000005
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    }
+   },
+   "models": [
+    "gpt-6.1-sol"
+   ],
+   "node_id": "01a1d700-afdf-7f52-94a6-7a59c5e81650",
+   "parent_node_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+   "provider": "codex",
+   "role_name": "Chandrasekhar",
+   "session_id": "01a1d700-afdf-7f52-94a6-7a59c5e81650",
+   "tiers": [
+    "default"
+   ]
+  },
+  {
+   "direct": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 75,
+     "quota_usd_high": 1.8965900000000002,
+     "quota_usd_low": 1.8965900000000002,
+     "unpriced_calls": 0,
+     "usd_high": 1.8965900000000002,
+     "usd_low": 1.8965900000000002
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "first_call": "2026-11-13T22:22:02.525Z",
+   "inclusive": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 75,
+     "quota_usd_high": 1.8965900000000002,
+     "quota_usd_low": 1.8965900000000002,
+     "unpriced_calls": 0,
+     "usd_high": 1.8965900000000002,
+     "usd_low": 1.8965900000000002
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "last_call": "2026-11-13T22:52:38.180Z",
+   "link": "codex_parent",
+   "measurements": {
+    "direct": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 1.8965900000000002,
+       "low": 1.8965900000000002
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 1.8965900000000002,
+       "kind": "proxy",
+       "low": 1.8965900000000002
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    },
+    "inclusive": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 1.8965900000000002,
+       "low": 1.8965900000000002
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 1.8965900000000002,
+       "kind": "proxy",
+       "low": 1.8965900000000002
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    }
+   },
+   "models": [
+    "gpt-6.1-sol"
+   ],
+   "node_id": "01a1d700-c690-7d90-a2b2-620ece8f2a2f",
+   "parent_node_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+   "provider": "codex",
+   "role_name": "Pascal",
+   "session_id": "01a1d700-c690-7d90-a2b2-620ece8f2a2f",
+   "tiers": [
+    "default"
+   ]
+  },
+  {
+   "direct": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 60,
+     "quota_usd_high": 1.4314116000000003,
+     "quota_usd_low": 1.4314116000000003,
+     "unpriced_calls": 0,
+     "usd_high": 1.4314116000000003,
+     "usd_low": 1.4314116000000003
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "first_call": "2026-11-13T23:34:54.468Z",
+   "inclusive": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 60,
+     "quota_usd_high": 1.4314116000000003,
+     "quota_usd_low": 1.4314116000000003,
+     "unpriced_calls": 0,
+     "usd_high": 1.4314116000000003,
+     "usd_low": 1.4314116000000003
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "last_call": "2026-11-13T23:59:29.978Z",
+   "link": "codex_parent",
+   "measurements": {
+    "direct": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 1.4314116000000003,
+       "low": 1.4314116000000003
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 1.4314116000000003,
+       "kind": "proxy",
+       "low": 1.4314116000000003
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    },
+    "inclusive": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 1.4314116000000003,
+       "low": 1.4314116000000003
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 1.4314116000000003,
+       "kind": "proxy",
+       "low": 1.4314116000000003
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    }
+   },
+   "models": [
+    "gpt-6.1-sol"
+   ],
+   "node_id": "01a1d743-3af3-7300-83ba-5a5eb31c82ca",
+   "parent_node_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+   "provider": "codex",
+   "role_name": "Kierkegaard",
+   "session_id": "01a1d743-3af3-7300-83ba-5a5eb31c82ca",
+   "tiers": [
+    "default"
+   ]
+  },
+  {
+   "direct": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 70,
+     "quota_usd_high": 1.2592376,
+     "quota_usd_low": 1.2592376,
+     "unpriced_calls": 0,
+     "usd_high": 1.2592376,
+     "usd_low": 1.2592376
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "first_call": "2026-11-13T23:35:04.317Z",
+   "inclusive": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 70,
+     "quota_usd_high": 1.2592376,
+     "quota_usd_low": 1.2592376,
+     "unpriced_calls": 0,
+     "usd_high": 1.2592376,
+     "usd_low": 1.2592376
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "last_call": "2026-11-14T00:00:48.373Z",
+   "link": "codex_parent",
+   "measurements": {
+    "direct": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 1.2592376,
+       "low": 1.2592376
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 1.2592376,
+       "kind": "proxy",
+       "low": 1.2592376
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    },
+    "inclusive": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 1.2592376,
+       "low": 1.2592376
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 1.2592376,
+       "kind": "proxy",
+       "low": 1.2592376
+      },
+      "unpriced_calls": 0
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    }
+   },
+   "models": [
+    "gpt-6.1-sol"
+   ],
+   "node_id": "01a1d743-6770-7f62-8b09-00671cb43500",
+   "parent_node_id": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+   "provider": "codex",
+   "role_name": "Carson",
+   "session_id": "01a1d743-6770-7f62-8b09-00671cb43500",
+   "tiers": [
+    "default"
+   ]
+  },
+  {
+   "direct": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 1,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 1,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "first_call": "2026-11-13T23:23:06Z",
+   "inclusive": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 1,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 1,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "last_call": "2026-11-13T23:23:06Z",
+   "link": "role_host",
+   "measurements": {
+    "direct": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 1
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    },
+    "inclusive": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 1
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    }
+   },
+   "models": [
+    "gpt-6-astra"
+   ],
+   "node_id": "5b9f03b7-1ee4-47f6-9a90-babec8d480f3",
+   "parent_node_id": "0d2b895e-1fba-496e-a975-30b8a1575696",
+   "provider": "pi",
+   "role_name": "p137-architecture-realization",
+   "session_id": "5b9f03b7-1ee4-47f6-9a90-babec8d480f3",
+   "tiers": [
+    null
+   ]
+  },
+  {
+   "direct": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 1,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 1,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "first_call": "2026-11-13T23:04:45Z",
+   "inclusive": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 1,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 1,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "last_call": "2026-11-13T23:04:45Z",
+   "link": "role_host",
+   "measurements": {
+    "direct": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 1
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    },
+    "inclusive": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 1
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    }
+   },
+   "models": [
+    "gpt-6-astra"
+   ],
+   "node_id": "5e169aea-4706-44c6-b411-c4f3e219318b",
+   "parent_node_id": "21941623-fb16-4ccc-bd21-70a36f6acee3",
+   "provider": "pi",
+   "role_name": "p136-module-a",
+   "session_id": "5e169aea-4706-44c6-b411-c4f3e219318b",
+   "tiers": [
+    null
+   ]
+  },
+  {
+   "direct": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 1,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 1,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "first_call": "2026-11-13T22:01:12Z",
+   "inclusive": {
+    "claude_all_models": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "claude_fable": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "codex": {
+     "calls": 1,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 1,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    },
+    "pi_api": {
+     "calls": 0,
+     "quota_usd_high": 0.0,
+     "quota_usd_low": 0.0,
+     "unpriced_calls": 0,
+     "usd_high": 0.0,
+     "usd_low": 0.0
+    }
+   },
+   "last_call": "2026-11-13T22:01:12Z",
+   "link": "role_host",
+   "measurements": {
+    "direct": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 1
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    },
+    "inclusive": {
+     "claude_all_models": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "claude_fable": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     },
+     "codex": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 1
+     },
+     "pi_api": {
+      "api_equivalent_usd": {
+       "high": 0.0,
+       "low": 0.0
+      },
+      "estimated_quota_points": {
+       "calibration_version": null,
+       "high": null,
+       "low": null,
+       "status": "not_established"
+      },
+      "speed_adjusted_api_usd": {
+       "high": 0.0,
+       "kind": "proxy",
+       "low": 0.0
+      },
+      "unpriced_calls": 0
+     }
+    }
+   },
+   "models": [
+    "gpt-6-astra"
+   ],
+   "node_id": "e60d2cb6-f66e-4f60-a2d2-fc8e5c9fdd48",
+   "parent_node_id": "c110c95a-0e4b-4b0b-9f6e-b43c3e815972",
+   "provider": "pi",
+   "role_name": "p135-arch-review",
+   "session_id": "e60d2cb6-f66e-4f60-a2d2-fc8e5c9fdd48",
+   "tiers": [
+    null
+   ]
+  }
+ ],
+ "outside": {
+  "issues": {
+   "conflicting_native_counter": 6,
+   "pi_request_without_response": 2
+  },
+  "undated_calls": 0
+ },
+ "pricing": {
+  "fetched": "2026-10-30",
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+ },
+ "reader": {
+  "path": "/home/bline/code/work-engine/metrics/scripts/usage_ledger.py",
+  "sha256": "230441560e750345d7a9d9f10d8ee00b9b4f6d81a2bf0204567b7e9c04ed4235"
+ },
+ "record": {
+  "objective_id": "47d5a1cb-b785-441d-97e7-973844062b3d",
+  "path": "/home/bline/cbm-work/pi-accounting-sprint-20261113/assignment.json",
+  "sha256": "560f7f485e2838e059fbbca7149f64d44d28dc936de3ab8e231a6799df538826"
+ },
+ "schema": "objective-cost-tree-v1",
+ "snapshot_at": "2026-11-14T00:11:22.127816+00:00",
+ "status": "partial",
+ "time": {
+  "basis": "model_call_latency",
+  "calls": 579,
+  "calls_without_latency": 27,
+  "model_busy_hours": 2.0671,
+  "model_call_hours": 3.3896,
+  "status": "partial",
+  "window_hours": 2.3078
+ },
+ "totals": {
+  "claude_all_models": {
+   "calls": 18,
+   "quota_usd_high": 1.8185586,
+   "quota_usd_low": 1.8185586,
+   "unpriced_calls": 0,
+   "usd_high": 1.8185586,
+   "usd_low": 1.8185586
+  },
+  "claude_fable": {
+   "calls": 0,
+   "quota_usd_high": 0.0,
+   "quota_usd_low": 0.0,
+   "unpriced_calls": 0,
+   "usd_high": 0.0,
+   "usd_low": 0.0
+  },
+  "codex": {
+   "calls": 561,
+   "quota_usd_high": 15.346471600000006,
+   "quota_usd_low": 15.346471600000006,
+   "unpriced_calls": 3,
+   "usd_high": 15.346471600000006,
+   "usd_low": 15.346471600000006
+  },
+  "pi_api": {
+   "calls": 0,
+   "quota_usd_high": 0.0,
+   "quota_usd_low": 0.0,
+   "unpriced_calls": 0,
+   "usd_high": 0.0,
+   "usd_low": 0.0
+  }
+ },
+ "unattributed": {
+  "sessions": [
+   {
+    "calls": 116,
+    "provider": "codex",
+    "session_id": "01a1ccc5-012b-7111-9ec6-21fc5648f678",
+    "usd_high": 3.524054399999999,
+    "usd_low": 3.524054399999999
+   },
+   {
+    "calls": 208,
+    "provider": "codex",
+    "session_id": "01a1d319-1e58-7883-90af-992d225517d3",
+    "usd_high": 6.1841747999999965,
+    "usd_low": 6.1841747999999965
+   },
+   {
+    "calls": 183,
+    "provider": "codex",
+    "session_id": "01a1d364-788d-7490-8fed-758679336e2e",
+    "usd_high": 5.4786359999999945,
+    "usd_low": 5.4786359999999945
+   },
+   {
+    "calls": 175,
+    "provider": "codex",
+    "session_id": "01a1d6d5-d2a8-7f93-83ea-eb0176786513",
+    "usd_high": 5.7065044,
+    "usd_low": 5.7065044
+   },
+   {
+    "calls": 31,
+    "provider": "codex",
+    "session_id": "01a1d6d7-d865-74d2-8ba4-88cbd41290ac",
+    "usd_high": 0.8431904000000001,
+    "usd_low": 0.8431904000000001
+   },
+   {
+    "calls": 11,
+    "provider": "codex",
+    "session_id": "01a1d6d8-bd57-7963-8807-3d1fa9fa12d2",
+    "usd_high": 0.354754,
+    "usd_low": 0.354754
+   },
+   {
+    "calls": 13,
+    "provider": "codex",
+    "session_id": "01a1d6de-df39-7e82-aceb-bc490496334b",
+    "usd_high": 3.3194440000000003,
+    "usd_low": 3.3194440000000003
+   },
+   {
+    "calls": 3,
+    "provider": "codex",
+    "session_id": "01a1d6e3-1f10-77c0-8f6a-0beec0469f0a",
+    "usd_high": 0.845516,
+    "usd_low": 0.845516
+   },
+   {
+    "calls": 122,
+    "provider": "codex",
+    "session_id": "01a1d6e9-1f05-75d3-be0d-22f73a25734e",
+    "usd_high": 2.6491712000000005,
+    "usd_low": 2.6491712000000005
+   },
+   {
+    "calls": 44,
+    "provider": "codex",
+    "session_id": "01a1d6eb-8d3c-7d23-bd51-4448da4aa232",
+    "usd_high": 1.5323464000000002,
+    "usd_low": 1.5323464000000002
+   },
+   {
+    "calls": 77,
+    "provider": "codex",
+    "session_id": "01a1d6ec-65b9-7920-ba3b-e3f2f2d82085",
+    "usd_high": 2.1978675999999995,
+    "usd_low": 2.1978675999999995
+   },
+   {
+    "calls": 28,
+    "provider": "codex",
+    "session_id": "01a1d6f9-c5a4-7590-81fb-a672f44f183b",
+    "usd_high": 7.014139999999999,
+    "usd_low": 7.014139999999999
+   },
+   {
+    "calls": 27,
+    "provider": "codex",
+    "session_id": "01a1d6fa-669f-7242-8f0b-dae33ffa564b",
+    "usd_high": 5.409354000000001,
+    "usd_low": 5.409354000000001
+   },
+   {
+    "calls": 19,
+    "provider": "codex",
+    "session_id": "01a1d702-fb8f-77e0-bc6a-2e87bb617297",
+    "usd_high": 4.753214,
+    "usd_low": 4.753214
+   },
+   {
+    "calls": 113,
+    "provider": "codex",
+    "session_id": "01a1d704-15bf-7b51-8f84-96f80b005d47",
+    "usd_high": 2.593078,
+    "usd_low": 2.593078
+   },
+   {
+    "calls": 70,
+    "provider": "codex",
+    "session_id": "01a1d70f-b251-7460-b5a1-3781fa2341f6",
+    "usd_high": 1.9029896000000008,
+    "usd_low": 1.9029896000000008
+   },
+   {
+    "calls": 126,
+    "provider": "codex",
+    "session_id": "01a1d723-d33a-7112-8ffc-762ed65982ca",
+    "usd_high": 3.575743199999999,
+    "usd_low": 3.575743199999999
+   },
+   {
+    "calls": 31,
+    "provider": "codex",
+    "session_id": "01a1d728-b37b-7700-8a30-46ad67ce89eb",
+    "usd_high": 6.969188000000002,
+    "usd_low": 6.969188000000002
+   },
+   {
+    "calls": 70,
+    "provider": "codex",
+    "session_id": "01a1d73f-1865-71d0-9cc9-57be8a24861d",
+    "usd_high": 1.4373799999999999,
+    "usd_low": 1.4373799999999999
+   },
+   {
+    "calls": 33,
+    "provider": "codex",
+    "session_id": "01a1d746-76a3-70d1-9302-ca6256484aba",
+    "usd_high": 6.893761999999999,
+    "usd_low": 6.893761999999999
+   },
+   {
+    "calls": 6,
+    "provider": "anthropic",
+    "session_id": "66042eb5-0551-4ea3-9749-40046360c272",
+    "usd_high": 0.7912484,
+    "usd_low": 0.7912484
+   },
+   {
+    "calls": 55,
+    "provider": "anthropic",
+    "session_id": "866d0a69-bb71-4bad-aa1b-16e546e86c84",
+    "usd_high": 5.9348,
+    "usd_low": 5.9348
+   },
+   {
+    "calls": 61,
+    "provider": "anthropic",
+    "session_id": "9e94462f-611b-43ae-bec3-5aa4aed83fe9",
+    "usd_high": 4.6568511999999975,
+    "usd_low": 4.6568511999999975
+   }
+  ],
+  "totals": {
+   "claude_all_models": {
+    "calls": 122,
+    "quota_usd_high": 11.382899600000002,
+    "quota_usd_low": 11.382899600000002,
+    "unpriced_calls": 0,
+    "usd_high": 11.382899600000002,
+    "usd_low": 11.382899600000002
+   },
+   "claude_fable": {
+    "calls": 0,
+    "quota_usd_high": 0.0,
+    "quota_usd_low": 0.0,
+    "unpriced_calls": 0,
+    "usd_high": 0.0,
+    "usd_low": 0.0
+   },
+   "codex": {
+    "calls": 1500,
+    "quota_usd_high": 82.02399479999995,
+    "quota_usd_low": 82.02399479999995,
+    "unpriced_calls": 0,
+    "usd_high": 73.18450800000004,
+    "usd_low": 73.18450800000004
+   },
+   "pi_api": {
+    "calls": 0,
+    "quota_usd_high": 0.0,
+    "quota_usd_low": 0.0,
+    "unpriced_calls": 0,
+    "usd_high": 0.0,
+    "usd_low": 0.0
+   }
+  }
+ },
+ "undated": {
+  "counts": {
+   "claude_all_models": 0,
+   "claude_fable": 0,
+   "codex": 0,
+   "pi_api": 0
+  },
+  "sessions": []
+ },
+ "unrecorded": [],
+ "window": {
+  "closed_at": null,
+  "since": "2026-11-13T21:52:54Z",
+  "since_basis": "started_at",
+  "started_at": "2026-11-13T21:52:54Z",
+  "until": "2026-11-14T00:11:22.127816+00:00"
+ },
+ "window_totals": {
+  "claude_all_models": {
+   "calls": 140,
+   "quota_usd_high": 13.201458200000003,
+   "quota_usd_low": 13.201458200000003,
+   "unpriced_calls": 0,
+   "usd_high": 13.201458200000003,
+   "usd_low": 13.201458200000003
+  },
+  "claude_fable": {
+   "calls": 0,
+   "quota_usd_high": 0.0,
+   "quota_usd_low": 0.0,
+   "unpriced_calls": 0,
+   "usd_high": 0.0,
+   "usd_low": 0.0
+  },
+  "codex": {
+   "calls": 2061,
+   "quota_usd_high": 97.37046640000024,
+   "quota_usd_low": 97.37046640000024,
+   "unpriced_calls": 3,
+   "usd_high": 88.53097960000011,
+   "usd_low": 88.53097960000011
+  },
+  "pi_api": {
+   "calls": 0,
+   "quota_usd_high": 0.0,
+   "quota_usd_low": 0.0,
+   "unpriced_calls": 0,
+   "usd_high": 0.0,
+   "usd_low": 0.0
+  }
+ }
+}

@@ -1,0 +1,48 @@
+[
+  {
+    "event_type": "budget_events",
+    "event": {
+      "authority": "observation_only",
+      "kind": "node_mark_crossed",
+      "level": 6.0,
+      "node_id": "01a1d87b-01de-7631-9623-0ab1026eba5d",
+      "observed": {
+        "api_equivalent_usd_high": 6.321746,
+        "api_equivalent_usd_low": 6.321746,
+        "cost_basis": "speed_adjusted_api_usd",
+        "kind": "proxy",
+        "quota_usd_high": 6.321746,
+        "quota_usd_low": 6.321746,
+        "unpriced_calls": 0
+      },
+      "pool": "codex",
+      "set_by": "supervisor",
+      "snapshot_at": "2026-11-14T05:21:39.882489+00:00",
+      "summary": "spend mark",
+      "topic": "control:budget:de8667b6-b096-4483-8c6e-b94c39a9aa16"
+    }
+  },
+  {
+    "event_type": "budget_events",
+    "event": {
+      "authority": "observation_only",
+      "kind": "node_mark_crossed",
+      "level": 8.0,
+      "node_id": "01a1d87b-01de-7631-9623-0ab1026eba5d",
+      "observed": {
+        "api_equivalent_usd_high": 8.120312,
+        "api_equivalent_usd_low": 8.120312,
+        "cost_basis": "speed_adjusted_api_usd",
+        "kind": "proxy",
+        "quota_usd_high": 8.120312,
+        "quota_usd_low": 8.120312,
+        "unpriced_calls": 0
+      },
+      "pool": "codex",
+      "set_by": "supervisor",
+      "snapshot_at": "2026-11-14T05:23:40.140521+00:00",
+      "summary": "spend mark",
+      "topic": "control:budget:de8667b6-b096-4483-8c6e-b94c39a9aa16"
+    }
+  }
+]

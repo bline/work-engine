@@ -1,0 +1,8 @@
+{
+  "admission": "conditional_fixture",
+  "authority_ref": "ROOT-ADOPTION-R6.json",
+  "case_id": "N07-control-retired-legacy",
+  "grant_payloads": [],
+  "initial_scope_contracts": [],
+  "raw_input_sha256": "5979744d2b5035f0d5fa2290b1a9d6e95fbc3ea18503baf05c32c22e80af24e7"
+}

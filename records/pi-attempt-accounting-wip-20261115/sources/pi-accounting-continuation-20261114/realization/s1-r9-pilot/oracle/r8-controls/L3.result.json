@@ -1,0 +1,67 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "usage_valuation",
+      "kind": "at_least",
+      "nano": "50000000"
+    },
+    "low": "30000000"
+  },
+  "credits": [
+    {
+      "alternatives": [
+        "uP",
+        "uX"
+      ],
+      "low": "15000000",
+      "slot": "P"
+    },
+    {
+      "alternatives": [
+        "uQ",
+        "uX"
+      ],
+      "low": "15000000",
+      "slot": "Q"
+    }
+  ],
+  "id": "result:L3",
+  "units": [
+    {
+      "high": {
+        "basis": "usage_valuation",
+        "kind": "at_least",
+        "nano": "15000000"
+      },
+      "id": "P",
+      "low": "15000000",
+      "origins": [
+        "uP"
+      ]
+    },
+    {
+      "high": {
+        "basis": "usage_valuation",
+        "kind": "at_least",
+        "nano": "20000000"
+      },
+      "id": "Q",
+      "low": "20000000",
+      "origins": [
+        "uQ"
+      ]
+    },
+    {
+      "high": {
+        "basis": "usage_valuation",
+        "kind": "at_least",
+        "nano": "15000000"
+      },
+      "id": "X",
+      "low": "15000000",
+      "origins": [
+        "uX"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "revision": "R5",
+  "prior": "pilot-r9/ORGANIZATION-DECISION-R4.json",
+  "scope": "same four-claim pilot; original three items and two leaf roles unchanged",
+  "realization_gap": "P9 requires actual retained component records, but the inherited AccountingResult has only opaque exposure refs and unresolved coverage component refs",
+  "semantic_authority": {
+    "base_plan": "design/PLAN.md sections2/Concrete record boundaries: AccountingResult owns computed components; nano amounts are nonnegative decimal strings",
+    "reviewed_amendment": "c8376f7a94a2ee775a8b117e6424acae457cb86e138f890cf2240fbe2190ce46 section3 P9 explicitly requires omitted/altered output component rejection",
+    "review": "2c3b7ec129e649e6d0ec3bd1de64a7cc564c997fee334db35d87a2d1a86d3402"
+  },
+  "declaration_extension": {
+    "owner": "spec worker",
+    "result": "AccountingResult.retained_components: component_id, origin_ref, role enum reservation|claimed_reserved|charge|usage, nano_usd existing canonical nonnegative decimal string domain",
+    "unit": "Unit.retained_component_refs unique canonical refs; target must be in the unit original-origin inventory",
+    "coverage": "existing retained_component_refs resolves exact inventory; apply relevant ownership constraints",
+    "identity": "component IDs opaque equality keys; reject duplicate IDs/dangling refs; no semantic inference from ID spellings",
+    "boundary": "computed supplied result only, never AccountingInputProof or expected premise authority"
+  },
+  "oracle_obligation": "independently bind complete four component role/origin/amount inventory for exact P9 actual outputs; missing/altered/wrong-owner outputs fail actual Python check and Rust finite qualifier even with matching wrong supplied totals",
+  "consumer_route": "explicit fixed four-claim selection under actual Python check --pilot is permitted, using real check_case/check_attempt/reference consumers on each applicable fullcase/control; custom helper-only acceptance is insufficient. Registration remains required and exact. Full check175 remains unmet.",
+  "ownership": "spec declares shape/reference coherence; oracle authors raw-derived expected values and actual finite consumer; root joins/freezes and dispatches separate independent review",
+  "unaccepted": true,
+  "budget": "existing worker6 caps and original100/deadline06:55 unchanged; current spent65.1794056; forecast<=95.18 with conservative full12pilot+9review+8root+2tail reserves",
+  "context": "root101309 input epoch11 plus45000 join/declaration/review preparation forecast; retain for bounded scope, prepare refresh before185000 and replace before220000",
+  "created_at": "2026-11-14T06:08:14.209758+00:00"
+}

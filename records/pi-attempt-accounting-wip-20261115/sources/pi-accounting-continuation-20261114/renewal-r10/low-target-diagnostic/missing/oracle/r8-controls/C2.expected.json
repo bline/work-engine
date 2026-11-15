@@ -1,0 +1,40 @@
+{
+  "assertions": [
+    {
+      "claim_id": "C2",
+      "expected_fields_or_relations": {
+        "/aggregate": {
+          "high": {
+            "basis": "mixed",
+            "kind": "at_least",
+            "nano": "515000000"
+          },
+          "low": "15000000"
+        },
+        "/continuity_result": "unestablished",
+        "/failure_refs": [
+          "trigger-omission",
+          "initial-contract-rewrite"
+        ],
+        "/retained_subject": "result:H2"
+      },
+      "negative_control_refs": [
+        "C2.wrong.json"
+      ],
+      "raw_derivation_refs": [
+        "PLAN6: changed locator not new lineage; retained trigger/base/origin inventory necessary for successor admission"
+      ]
+    }
+  ],
+  "authored_by": "oracle01a1d81b; fixed literal assertions separately from supplied records",
+  "exact_subject_refs": [
+    "result:C2"
+  ],
+  "id": "expected:C2",
+  "kind": "accounting_expected_assertion",
+  "policy_refs": [
+    "PLAN43d0e7c8"
+  ],
+  "raw_subject_ref": "sha256:38c281f283f9b5923f63a3402c2b931822eed9d83d1e8c3da3381d52f4c4924d",
+  "version": "1.7-s1"
+}

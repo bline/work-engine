@@ -1,0 +1,7 @@
+{
+  "attempt_evidence": true,
+  "launch_auth_lane": "subscription",
+  "numeric_amount": null,
+  "producer_applicability": "Pi API; lane claim is not proof of Codex dollar exclusion",
+  "raw_origin": "identity-refusal lacking usable dollar rid"
+}

@@ -1,0 +1,56 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "wrongrequest",
+  "argv": [
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+    "evidence",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot",
+    "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/wrongrequest.json"
+  ],
+  "cwd": "/home/bline/cbm-work/pi-accounting-continuation-20261114/realization/s1-r9-pilot/tooling/spec-check",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target",
+    "R9_SPEC_FIXTURE_OUT": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3410607,
+  "inputs": [
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/target/debug/pi-accounting-spec-check",
+      "type": "file",
+      "mode": 509,
+      "length": 77302248,
+      "sha256": "c17f95c6842e32f037f83fd08f6f603e8eeb3ce0c98c17d0c66db5f173dc9df6"
+    },
+    {
+      "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/fixtures/wrongrequest.json",
+      "type": "file",
+      "mode": 436,
+      "length": 9513,
+      "sha256": "a74feac2e56e2e6bcff5260e23f3c34ff1eeca4c8ac8ca0af33cc2b64eb0fda1"
+    }
+  ],
+  "timeout_s": null,
+  "pid": 3412490,
+  "pgid": 3412490,
+  "started_at": "2026-11-14T06:06:25.378624Z",
+  "ended_at": "2026-11-14T06:06:25.845291Z",
+  "duration_s": 0.467,
+  "returncode": 1,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification/wrongrequest.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/pilot-r9/spec/qualification/wrongrequest.stderr",
+    "length": 67,
+    "sha256": "756bceca92bacf007fc2b2733f3d59b158b311903daeb8457806189042677cdc"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

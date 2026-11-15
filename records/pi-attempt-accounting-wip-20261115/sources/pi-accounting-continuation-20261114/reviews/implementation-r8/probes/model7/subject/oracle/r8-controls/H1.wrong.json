@@ -1,0 +1,37 @@
+{
+  "aggregate": {
+    "high": {
+      "basis": "none",
+      "kind": "exact",
+      "nano": "0"
+    },
+    "low": "0"
+  },
+  "fallback_holds": [
+    {
+      "high": "500000000",
+      "id": "OriginBase:A",
+      "origins": [
+        "A"
+      ]
+    },
+    {
+      "high": "500000000",
+      "id": "OriginBase:B",
+      "origins": [
+        "B"
+      ]
+    }
+  ],
+  "id": "result:H1",
+  "physical_bill_count": "unestablished",
+  "scope_hold": {
+    "high": "500000000",
+    "id": "TicketClaim:S:1",
+    "origins": [
+      "A",
+      "B"
+    ],
+    "tag": "at_least"
+  }
+}
