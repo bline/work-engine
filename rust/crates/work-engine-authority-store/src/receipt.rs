@@ -2,6 +2,8 @@
 //! claim (`status`) is a mechanical precondition here, never attestation.
 use crate::ident::{digest_fields, sha256_hex};
 use serde_json::Value;
+use std::collections::BTreeMap;
+use work_engine_manual_host::pi_docker::coding::SIGNED_PROFILE;
 use work_engine_manual_host::pi_docker::{Job, SCHEMA};
 
 pub const PROVIDER_CLASS: &str = "fake_fixture";
@@ -60,7 +62,8 @@ pub struct VerifiedReceipt {
 
 /// Checks (in order): bytes hash to `receipt_id`; parse; schema; job re-hash equals
 /// `execution_id`; `input_digest` equals `execution_id`; `job_id` matches; status; provider
-/// class; artifact digests present; job binding equals `binding`.
+/// class; artifact digests present; job binding equals `binding`; coding evidence when the bound
+/// job requires it (see `verify_real_host_run`).
 pub fn verify(
     bytes: &[u8],
     receipt_id: &str,
@@ -103,7 +106,12 @@ pub fn verify(
     if binding_digest(&job.image, &job.runtime.manifest.sha256) != binding {
         return Err(ReceiptRefusal::BindingMismatch);
     }
-    if !v["coding"].is_null() {
+    // The execution-identity-bound job decides whether a coding run is required, so the receipt
+    // cannot opt out by deleting or nulling its `coding` record or `profile`. A receipt that
+    // carries a coding record, or claims the signed profile, is checked the same way even when
+    // the job binds no coding profile (it then contradicts its own job). Receipts of jobs
+    // that bind no coding profile and claim none keep their existing semantics.
+    if job.coding.is_some() || !v["coding"].is_null() || v["profile"] == SIGNED_PROFILE {
         verify_real_host_run(&v, &job)?;
     }
     Ok(VerifiedReceipt {
@@ -112,12 +120,12 @@ pub fn verify(
     })
 }
 
-/// A receipt that carries the Host's `coding` record (every real Host receipt does) must be a
-/// signed-fixture run that completed and whose in-band exports were finalized, and its collected
+/// A receipt that must carry the Host's `coding` record (its bound job has a coding profile, or it
+/// carries the record or claims the signed profile; every real coding Host receipt carries it) must
+/// be a signed-fixture run that completed and whose in-band exports were finalized, and its collected
 /// export files (outside the Host's `workspace/` namespace) must be exactly the finalized set with
 /// the same digests, each also listed among the receipt's artifacts. Provisional evidence only.
 fn verify_real_host_run(v: &Value, job: &Job) -> Result<(), ReceiptRefusal> {
-    use work_engine_manual_host::pi_docker::coding::SIGNED_PROFILE;
     if v["profile"] != SIGNED_PROFILE
         || job
             .coding
@@ -138,16 +146,23 @@ fn verify_real_host_run(v: &Value, job: &Job) -> Result<(), ReceiptRefusal> {
     ) else {
         return Err(ReceiptRefusal::ExportInventoryMismatch);
     };
-    let in_band: Vec<(&String, &Value)> = collected
+    let in_band: BTreeMap<&str, &Value> = collected
         .iter()
         .filter(|(k, _)| !k.starts_with("workspace/"))
+        .map(|(k, e)| (k.as_str(), e))
         .collect();
     let artifact_sha = |sha: &str| artifacts.iter().any(|a| a["sha256"] == sha);
+    // Equal counts plus every finalized path being a collected in-band path (with a finalized
+    // digest that is a string and equals the collected one) make the two sets identical.
     if finalized.is_empty()
         || in_band.len() != finalized.len()
         || finalized.iter().any(|(path, f)| {
             f["done"] != true
-                || collected.get(path).and_then(|e| e["sha256"].as_str()) != f["sha256"].as_str()
+                || !f["sha256"].as_str().is_some_and(|sha| {
+                    in_band
+                        .get(path.as_str())
+                        .is_some_and(|e| e["sha256"].as_str() == Some(sha))
+                })
         })
         || collected
             .values()

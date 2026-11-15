@@ -1,0 +1,1 @@
+The binding confirms the recorded Astra/xhigh/default settings and read-only/never grant. My exact-session telemetry check shows 47,615 input tokens in epoch 0. I’m now checking the source and actual custody records behind the runtime, cold-verifier, and five executable-join claims.

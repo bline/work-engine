@@ -1,0 +1,64 @@
+{
+  "at": "2026-11-14T09:22:57.793478+00:00",
+  "inventory_exact_path_checks": [
+    {
+      "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/implementation-r6/preparation-03/verifier-prospective-inputs-01.json",
+      "sha256": "06448b9f5d0813d4ea310707a963fb7e6bd8383ca92934c60193766207adf6de",
+      "exact_probe_membership": {
+        "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/build/probe.rs": false,
+        "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro2-1.0.107/src/probe/proc_macro_span.rs": false
+      }
+    },
+    {
+      "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/implementation-r6/preparation-03/verifier-build-01/build.json",
+      "sha256": "69ca67f1099a73a84cbb6d3c62f10f0af4b0210c74bc8a0ba6641416917185ad",
+      "exact_probe_membership": {
+        "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/build/probe.rs": false,
+        "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro2-1.0.107/src/probe/proc_macro_span.rs": false
+      }
+    },
+    {
+      "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/implementation-r6/preparation-03/obligation-map.json",
+      "sha256": "af390383e27e63b2ee45a982107fef4640ebcf32a890d8cabea7e4a50cbeab51",
+      "exact_probe_membership": {
+        "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/build/probe.rs": false,
+        "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro2-1.0.107/src/probe/proc_macro_span.rs": false
+      }
+    },
+    {
+      "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/implementation-r6/preparation-03/source-manifest.json",
+      "sha256": "858741768f7bc6f374e984ff530a7a332e378aaa85e6ffe10c917d23040bb998",
+      "exact_probe_membership": {
+        "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/build/probe.rs": false,
+        "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro2-1.0.107/src/probe/proc_macro_span.rs": false
+      }
+    }
+  ],
+  "probe_metadata": [
+    {
+      "path": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/build/probe.rs",
+      "sha256": "8df55471d6b75623d423b17ebbf493335ee66140d1ddd232c88db3e59f61298c"
+    },
+    {
+      "path": "/home/bline/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro2-1.0.107/src/probe/proc_macro_span.rs",
+      "sha256": "53853f0c70170c9695294b8867821664d9b8f1c901957b003003a3c26987abbe"
+    }
+  ],
+  "build_outputs": [
+    {
+      "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/implementation-r6/preparation-03/verifier-cold-target-01/debug/build/thiserror-8193892ab42fb844/output",
+      "lines": [
+        "cargo:rerun-if-changed=build/probe.rs"
+      ]
+    },
+    {
+      "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/implementation-r6/preparation-03/verifier-cold-target-01/debug/build/proc-macro2-2737d31f4c77ada2/output",
+      "lines": [
+        "cargo:rerun-if-changed=src/probe/proc_macro_span.rs",
+        "cargo:rerun-if-changed=src/probe/proc_macro_span_location.rs",
+        "cargo:rerun-if-changed=src/probe/proc_macro_span_file.rs"
+      ]
+    }
+  ],
+  "source_read": "Root read thiserror build.rs20:45,100:180/proc-macro2 build.rs160:245 and entire verifier_bootstrap.py; direct fallback for outside MAIN. No artifact mutations or counterexample execution."
+}

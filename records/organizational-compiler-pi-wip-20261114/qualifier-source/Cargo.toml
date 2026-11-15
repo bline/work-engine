@@ -1,0 +1,31 @@
+[package]
+name = "we-evidence-gate"
+version = "0.2.0"
+edition = "2021"
+publish = false
+description = "Campaign-local evidence qualifier (PLAN-R4). Not a runner and not a production service: total required-check qualification of a custody plan, its records and retained outputs against a root-approved obligation map, delegating domain interpretation to the existing episode, preparation/fixture-consumer, organization and delivery owners."
+
+[workspace]
+
+[lib]
+name = "we_evidence_gate"
+path = "src/lib.rs"
+
+[[bin]]
+name = "we-evidence-gate"
+path = "src/main.rs"
+
+[features]
+# The qualifier's tests reuse the delivery crate's own fixture test support (tests/common), whose
+# fixture modules are gated on a feature of this name in the including crate.
+default = ["fixture"]
+fixture = []
+
+[dependencies]
+serde = "=1.0.229"
+serde_json = "=1.0.151"
+sha2 = "=0.10.9"
+review-episode-core = { path = "/home/bline/cbm-work/wt-p1-vertical-20261113/rust/crates/review-episode-core" }
+work-engine-organization = { path = "/home/bline/cbm-work/wt-p1-vertical-20261113/rust/crates/work-engine-organization" }
+work-engine-review-preparation = { path = "/home/bline/cbm-work/wt-p1-vertical-20261113/rust/crates/work-engine-review-preparation", features = ["fixture"] }
+work-engine-review-delivery = { path = "/home/bline/cbm-work/wt-p1-vertical-20261113/rust/crates/work-engine-review-delivery", features = ["fixture"] }

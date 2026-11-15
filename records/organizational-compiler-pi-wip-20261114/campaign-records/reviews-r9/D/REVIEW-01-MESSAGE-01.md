@@ -1,0 +1,1 @@
+I acknowledge Root’s binding of reviewer D to session `01a1d950-c03e-7702-ae2c-7d83944683ef`, with Root as sole collector and persistence owner. I’ll read the exact binding, perform the authorized board read, and load the packet before reviewing the runtime and custody evidence.

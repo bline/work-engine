@@ -1,0 +1,31 @@
+{
+  "at": "2026-11-14T09:23:28.981969+00:00",
+  "subject": {
+    "checkpoint_commit_oid": "2617a6c622c74f330e3bd7722dff2e59fb332c87",
+    "checkpoint_tree_oid": "e5bc27ac9dcdb6c9efd3930d01cc56f4b5caa46c",
+    "task_patch_digest": "aaa62bc36ad9aa55cbcd8f1391557ea27b252a342f7b28711cc29b39b4b01f4d",
+    "plan_version": "sha256:ab8cf7ad1d79565dbbce3b422ceb927999f13eed5e9d21f9041b343dbd21aa9d",
+    "scope_revision": "r9-capture-lifetime-complete-observed-bundle-whole-offline-vertical",
+    "gate_receipt_digest": "40cc6724663af029ca84abeef3371575ae3c06c19e24b7ff2fe24d0cccd176b8"
+  },
+  "report": {
+    "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/reviews-r9/D/REVIEW-01-MESSAGE-57.md",
+    "sha256": "bd086a5e16b68cb7ed3afa48d6c9ec99b431210f8b1ec426b828c5175cc810e6",
+    "chars": 12226,
+    "fully_read": true
+  },
+  "ack": {
+    "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/reviews-r9/D/REVIEW-01-MESSAGE-60.md",
+    "chars": 490,
+    "fully_read": true
+  },
+  "finding": "ORG-PV-R9D-001",
+  "severity": "blocking P2",
+  "status": "OPEN",
+  "decision": "Adopt omitted build-probe source closure defect; hold ordinary repair pending required fresh separate Astra xhigh design review and root disposition. No executed counterexample/new repair regression claim.",
+  "root_evidence": "/home/bline/cbm-work/org-pi-review-continuation-20261114/ROOT-R9-D1-SOURCE-OBSERVATIONS.json",
+  "origin": "Inherited/residual source closure omission, current concrete witness to prior RLA-005; same submitted candidate as C, no second rejection count.",
+  "runtime_node_concern": "Unresolved reviewer concern, not a separate finding.",
+  "all_D_remaining_obligations": "Preserved verbatim full report/CONTINUATION; D remains incomplete, B not launched, A/C incomplete.",
+  "listener": "12267 wrapper0/native130 terminal fully collected; no D result/process owed."
+}

@@ -1,0 +1,8 @@
+{
+  "checkpoint_commit_oid": "2617a6c622c74f330e3bd7722dff2e59fb332c87",
+  "checkpoint_tree_oid": "e5bc27ac9dcdb6c9efd3930d01cc56f4b5caa46c",
+  "task_patch_digest": "aaa62bc36ad9aa55cbcd8f1391557ea27b252a342f7b28711cc29b39b4b01f4d",
+  "plan_version": "sha256:ab8cf7ad1d79565dbbce3b422ceb927999f13eed5e9d21f9041b343dbd21aa9d",
+  "scope_revision": "r9-capture-lifetime-complete-observed-bundle-whole-offline-vertical",
+  "gate_receipt_digest": "40cc6724663af029ca84abeef3371575ae3c06c19e24b7ff2fe24d0cccd176b8"
+}

@@ -1,0 +1,1 @@
+The qualifier checks invocation, symlink, and endpoint identities separately, requires every mapped custody step, and joins direct test execution to Cargo-emitted binaries. I’m now checking the actual records and the remaining source-closure gaps: relative dep-info paths and generated `OUT_DIR` sources.

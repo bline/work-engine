@@ -1,0 +1,1 @@
+The harness distinguishes malformed evidence from coherent evidence of failure, and its corruption controls keep hashes consistent so they test semantic checks. I’m now checking the stage-specific and R9 controls, then tracing them against the actual retained bundles.

@@ -4388,6 +4388,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "work-engine-review-delivery"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "review-episode-core",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+ "work-engine-organization",
+ "work-engine-review-preparation",
+]
+
+[[package]]
 name = "work-engine-review-host"
 version = "0.1.0"
 dependencies = [
@@ -4403,6 +4417,18 @@ dependencies = [
  "slice-campaign",
  "tempfile",
  "tokio",
+]
+
+[[package]]
+name = "work-engine-review-preparation"
+version = "0.1.0"
+dependencies = [
+ "review-episode-core",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+ "work-engine-organization",
 ]
 
 [[package]]

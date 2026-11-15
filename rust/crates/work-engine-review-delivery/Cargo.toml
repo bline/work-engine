@@ -1,0 +1,38 @@
+[package]
+name = "work-engine-review-delivery"
+description = "Experimental offline review-contract delivery vertical. Default build: pure freezing of a full ReviewPreparation and exact-correspondence checks of an SDK observation. Non-default `fixture` feature: provider-disabled Pi SDK child plus the existing fixture consumer. Mints no authority, admits nothing, clears no blocker."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "work_engine_review_delivery"
+path = "src/lib.rs"
+
+[features]
+default = []
+# Fixture-only boundary: starts the provider-disabled Pi SDK child and reaches the existing
+# fixture consumer. Everything it supplies is a synthetic test assumption.
+fixture = ["work-engine-review-preparation/fixture", "dep:libc"]
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+# Fixture-only: poll(2)/fcntl for the single-owner native attempt (already in the workspace lock).
+libc = { version = "=0.2.190", optional = true }
+work-engine-review-preparation = { path = "../work-engine-review-preparation" }
+review-episode-core = { path = "../review-episode-core" }
+work-engine-organization = { path = "../work-engine-organization" }
+
+[[test]]
+name = "native_vertical"
+path = "tests/native_vertical.rs"
+required-features = ["fixture"]
+
+[[test]]
+name = "binding"
+path = "tests/binding.rs"
+required-features = ["fixture"]

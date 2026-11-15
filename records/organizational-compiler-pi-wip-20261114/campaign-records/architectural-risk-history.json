@@ -1,0 +1,887 @@
+{
+  "schema": "org-architecture-risk-history/v1",
+  "revision": 37,
+  "events": [
+    {
+      "id": "prior-c1-r1",
+      "subsystem": "review-preparation",
+      "invariant": "canonical typed ownership and provenance",
+      "kind": "independent_serious_rejection",
+      "severity": "P2",
+      "source": "/home/bline/cbm-work/org-recovery-campaign-20261113/slice1/ASTRA-CODE-REVIEW-R1.md",
+      "sha256": "18c332d50c850355e99c953589464b04cfa02a3db942a02486949a88217e282b",
+      "summary": "Namespace collision mixed unrelated rows; first serious rejection.",
+      "current_code_status": "previously repaired and boundedly accepted; architecture risk unreviewed"
+    },
+    {
+      "id": "prior-c1-r2",
+      "subsystem": "review-preparation",
+      "invariant": "canonical typed ownership and provenance",
+      "kind": "independent_serious_rejection_after_repair",
+      "severity": "P2",
+      "source": "/home/bline/cbm-work/org-recovery-campaign-20261113/slice1/ASTRA-CODE-REVIEW-R2.md",
+      "sha256": "d4d2ea41fbfaf297bacc47a126bb43b49e34f305dc78c7988b5617dee78c23be",
+      "summary": "Repair discarded selected separationRequirement provenance previously preserved; second rejection and repair regression.",
+      "current_code_status": "previously repaired and boundedly accepted; architecture risk unreviewed"
+    },
+    {
+      "id": "prior-c2-r1",
+      "subsystem": "authority-receipt-evidence",
+      "invariant": "exact evidence subject binding",
+      "kind": "substantive_evidence_rejection",
+      "severity": "P2",
+      "source": "/home/bline/cbm-work/org-recovery-campaign-20261113/slice2/ASTRA-CODE-REVIEW-R1.md",
+      "sha256": "4a2b4c2a03e94a70e3f031c4f1e16b38927e0b08cbcbf0a537a5e639485bc9ca",
+      "summary": "Doctests lacked required input binding; reports overstated evidence. Not infrastructure.",
+      "current_code_status": "previously repaired and boundedly accepted; architecture risk unreviewed"
+    },
+    {
+      "id": "prior-c2-inherited",
+      "subsystem": "authority-receipt-evidence",
+      "invariant": "exact exported inventory correspondence",
+      "kind": "inherited_counterexample",
+      "severity": "P3-original",
+      "source": "/home/bline/cbm-work/org-recovery-campaign-20261113/slice2/ASTRA-CODE-REVIEW-R1.md",
+      "sha256": "4a2b4c2a03e94a70e3f031c4f1e16b38927e0b08cbcbf0a537a5e639485bc9ca",
+      "summary": "Absent digest and absent path accepted via None==None.",
+      "current_code_status": "previously repaired and boundedly accepted; architecture risk unreviewed"
+    },
+    {
+      "id": "prior-c3-inherited",
+      "subsystem": "authority-receipt-evidence",
+      "invariant": "exact exported inventory correspondence",
+      "kind": "inherited_same_boundary_counterexample",
+      "severity": "P2-risk-assessment",
+      "source": "/home/bline/cbm-work/org-recovery-campaign-20261113/slice3/ASTRA-CODE-REVIEW-R1.md",
+      "sha256": "e831de187b61ed0474f29460e0cf58df661c322acbb2707c922f10e0963856ff",
+      "summary": "Workspace substitution exposed same inventory boundary; accepted repair does not erase history.",
+      "current_code_status": "previously repaired and boundedly accepted; architecture risk unreviewed"
+    },
+    {
+      "id": "org-pv-architecture-r1",
+      "kind": "architecture_plan_changes_required",
+      "subsystem": "offline-pi-sdk-initialization",
+      "invariants": [
+        "explicit synthetic auth preflight",
+        "no automatic external resource discovery"
+      ],
+      "findings": [
+        "ORG-PV-A-001",
+        "ORG-PV-A-002"
+      ],
+      "severity": "P2",
+      "source": "/home/bline/cbm-work/org-pi-review-vertical-20261113/ASTRA-ARCHITECTURE-REVIEW-R1.md",
+      "sha256": "539b005bea69a80d53209871c2279fd77faecb4e25ac1446b060d772c2f0c0af",
+      "implementation_rejection_count_increment": 0,
+      "reason": "Architecture review found design feasibility gaps before implementation; retains evidence and existing blocked gate, not infrastructure"
+    },
+    {
+      "id": "ORG-PV-RISK-001",
+      "kind": "confirmed_recurring_invariant",
+      "subsystem": "authority-receipt-evidence",
+      "invariant": "exact evidence subject binding",
+      "severity": "P2-root-confirmed",
+      "source": "/home/bline/cbm-work/org-pi-review-vertical-20261113/custody-binding-diagnostic.json",
+      "sha256": "7e9a652abda9f13b5e411c061cb8a7959c0151f0e08ba9b622add42033361e38",
+      "precedent": "prior-c2-r1 / ORG-C2-001",
+      "implementation_rejection_count_increment": 0,
+      "trigger": "immediate designescalation regardlessindependentrejectioncount",
+      "summary": "All five actualbuild/test/doctest runrecordsinputs[] despite packetrequiringownedsource/manifests/SDKbindings. Standaloneinput-hashstep doesnotprovideper-runbindings."
+    },
+    {
+      "id": "org-pv-recurrence-architecture-r1",
+      "kind": "independent_serious_architecture_rejection",
+      "subsystems": [
+        "authority-receipt-evidence",
+        "review-delivery-correspondence"
+      ],
+      "invariants": [
+        "exact evidence subject binding",
+        "canonical delivered and consumed contract correspondence",
+        "complete immutable observed output"
+      ],
+      "findings": [
+        "ORG-PV-RA-001",
+        "ORG-PV-RA-002",
+        "ORG-PV-RA-003"
+      ],
+      "severity": "P2",
+      "source": "/home/bline/cbm-work/org-pi-review-vertical-20261113/recurrence-architecture/ASTRA-ARCHITECTURE-REVIEW-R1.md",
+      "sha256": "f843ab57b06eca9aca111e35fedb7ceba1bcb45b389fec30288931649e8ae345",
+      "implementation_rejection_count_increment": 1,
+      "duplicate_of_root_risk_event": false,
+      "reason": "First independent review of new implementation; RA001 confirms root risk recurrence, RA002/003 new substantive design/code/evidence defects. No infrastructure exception; no product repair regression established."
+    },
+    {
+      "id": "org-pv-candidate2-code-r1",
+      "kind": "second_independent_serious_rejection_after_repair",
+      "subsystem": "authority-receipt-evidence",
+      "invariants": [
+        "required evidence qualification fails closed",
+        "complete canonical state/output correspondence",
+        "preservation of available failure evidence"
+      ],
+      "findings": [
+        "ORG-PV-IR-001",
+        "ORG-PV-IR-002",
+        "ORG-PV-IR-003"
+      ],
+      "severity": "P2",
+      "source": "/home/bline/cbm-work/org-pi-review-vertical-20261113/code-review/ASTRA-CODE-REVIEW-R1.md",
+      "sha256": "9946678ac41e8f2b6b19598f839a1ff16f794989b1e5e84fd5d71e546994d684",
+      "subject": "/home/bline/cbm-work/org-pi-review-vertical-20261113/candidate2/checkpoint.json",
+      "implementation_rejection_count_increment": 1,
+      "architectural_precedents": [
+        "org-pv-recurrence-architecture-r1",
+        "ORG-PV-RISK-001",
+        "prior-c2-r1",
+        "prior-c2-inherited"
+      ],
+      "trigger": "secondsubstantiverejectionafterR3repair in same subsystem; recurring failclosed evidence boundary contributes; freshAstraarchitecturalreview requiredbefore ordinaryrepair",
+      "limits": "Highconfidenceindependentstaticcounterexamples, notexecutedreproductions; actualpositive89sources/16records/17outputs internallyconsistent. No repaircausedregressionproved. Not infrastructure.",
+      "closed_subfinding": "RA002 canonicaldelivery/consumerjoin implementedclosedwithin boundedfixture scope"
+    },
+    {
+      "id": "second-escalation-architecture-r1",
+      "subsystem": "authority-receipt-evidence",
+      "invariant": "total fail-closed qualification and owner-preserving correspondence",
+      "kind": "architectural_diagnosis_of_existing_rejection",
+      "source": "/home/bline/cbm-work/org-pi-review-vertical-20261113/escalation2-architecture/ASTRA-ARCHITECTURE-REVIEW-R1.md",
+      "sha256": "b69eabf51c72395677abf340dc26525b76b2e9b1cecd76f4e8f90430c585f500",
+      "summary": "Amend R3: total required-check completion; reuse canonical state and pure consumer owners; capture independent of verdict/cleanup. EA001\u2013003 explain and extend IR001\u2013003, not extra rejection events. RA002 remains closed boundedly. No proven new repair regression.",
+      "current_code_status": "unimplemented; candidate2 unaccepted; plan amendment pending"
+    },
+    {
+      "id": "R4-reviewed-root-decision",
+      "subsystem": "authority-receipt-evidence",
+      "invariant": "total qualification, canonical domain ownership, preservation before cleanup",
+      "kind": "reviewed_plan_acceptance",
+      "source": "/home/bline/cbm-work/org-pi-review-vertical-20261113/PLAN-R4.md",
+      "sha256": "7ae6bfad2c4bcf53255cfea57d8f11dc343129d2b860b0741055aa008d645ba9",
+      "review_report": "/home/bline/cbm-work/org-pi-review-vertical-20261113/escalation2-architecture/ASTRA-ARCHITECTURE-REVIEW-R2.md",
+      "review_sha256": "3b3146aafc75f91d580b85b112563640ddd265f3b7eac22bb155bd400fd71a44",
+      "summary": "Root accepts exact reviewed R4 within original vertical. Structural amendment retains existing product owners; replacement of partial checking, owner-based consistency and independent capture lifetime address causal failure class. Not source/evidence acceptance.",
+      "current_code_status": "EA001\u2013003/IR001\u2013003/RA001/RA003 remain open until implementation review; RA002 stays closed boundedly"
+    },
+    {
+      "id": "ORG-PV-ARTIFACT-001",
+      "subsystem": "authority-receipt-evidence",
+      "invariant": "immutable preservation of exact executable evidence",
+      "kind": "inherited_boundary_defect_exposed_by_repair",
+      "severity": "P2 architectural-risk",
+      "source": "/home/bline/cbm-work/org-pi-review-vertical-20261113/repair-r4/RESULT.md",
+      "source_sha256": "687193c817093425ec96a20197bd211dec536fcd6c1a136a99c17ab841a59b2f",
+      "diagnostic": "/home/bline/cbm-work/org-pi-review-vertical-20261113/repair-r4/HISTORICAL-BINARY-PRESERVATION.json",
+      "summary": "R3 qualifier freeze pinned mutable target/debug executable; R4 bootstrap overwrote path. Existing old exact61014bbe bytes found in deps and copied into digest-named preservation directory. No irrecoverable bytes loss proved; current path no longer satisfies old pin. This is evidence-preservation boundary recurrence, not infrastructure or a new independent rejection. Root chose immediate targeted architecture escalation.",
+      "causality": "Builder identifies b02; root hashes confirm original pinned path changed to722d8803 and deps candidate matches old61014bbe. Before/after pins substantiate path overwrite, not semantic product regression.",
+      "current_code_status": "R4 already uses digest-named pinned executable copy; adequacy of publication/freeze boundary pending fresh architectural review"
+    },
+    {
+      "id": "artifact-architecture-retained-R4-root-decision",
+      "subsystem": "authority-receipt-evidence",
+      "invariant": "immutable preservation of exact executable evidence",
+      "kind": "reviewed_retained_design_decision",
+      "source": "/home/bline/cbm-work/org-pi-review-vertical-20261113/artifact-architecture/ASTRA-ARCHITECTURE-REVIEW-R1.md",
+      "sha256": "e756c940aed6c1e5499342a3d89c10070f375d1ba0eaebb77500f65ad47c2caf",
+      "summary": "Fresh architect confirms inheritedP2 mutable-build-path freeze defect; exact oldbytes recovered, R4 separately retained digest-named binary adequate. Root retains exactR4 under explicit retention/map/checkpoint conditions, no code/plan amendment. Wrong no-other-copy narrative superseded by additive preservation record. No semantic product regression or new independent rejection.",
+      "current_code_status": "Artifact architectural blocker closed for current retained arrangement; qualification/code acceptance obligations remain open"
+    },
+    {
+      "id": "ORG-PV-META-001",
+      "severity": "P2 architectural-risk",
+      "subsystem": "authority-receipt-evidence",
+      "invariant": "actual build-to-test executable evidence binding for every required gate",
+      "owner": "root authored plan",
+      "source": "/home/bline/cbm-work/org-pi-review-vertical-20261113/repair-r4/qualifier-tests-plan.json",
+      "source_sha256": "be9a8b8536a7691517ac181fd073d44b407066708930c50bf31417403c48e699",
+      "record": "/home/bline/cbm-work/org-pi-review-vertical-20261113/repair-r4/root-validation/qualifier-tests/qualifier-test.json",
+      "record_sha256": "039d38af13c30951b25490a14abcc71aeac64420a627a9adeb4c0feacfd1a4b6",
+      "observation": "Dedicated two-step gate has109source/tool inputs but actual test argv[0] is absent from run inputs. {exe:qualifier-build:gate} resolves a path; custody does not automatically digest it. Root mistakenly assumed resolution provided digest binding. No actual exe digest is in the record.",
+      "standing": "Both processes exit0/all14tests pass, but exact executable binding is unestablished. Diagnostic observations only; no retroactive digest or acceptance. Product16step plan unexecuted; its own mapping does bind exe inputs.",
+      "architectural_question": "Root added a required meta-gate outside the independently approved map, leaving manual construction unqualified by the total map/check closure. Diagnose how required qualifier validation enters the same completeness boundary or an explicitly bounded mechanically checked meta-boundary, without unbounded self-validation recursion.",
+      "causality": "Root generated and approved new plan, source/tool compilation changes not required for this defect; not infrastructure, no independent code rejection. Recurs prior exact input/executable evidence invariant.",
+      "kind": "recurring_invariant_violation_in_root_qualification_plan",
+      "current_code_status": "No ordinary plan/source repair or rerun admitted before fresh design review; no product gates executed"
+    },
+    {
+      "id": "META-reviewed-R5-root-decision",
+      "kind": "reviewed_architecture_amendment_acceptance",
+      "subsystem": "authority-receipt-evidence",
+      "invariant": "all required executable validation inside approved total qualification inventory",
+      "source": "/home/bline/cbm-work/org-pi-review-vertical-20261113/PLAN-R5.md",
+      "sha256": "ff282afb9b273d904def75910d060bedd266eda52d7df46cb9fe1c2111621bc1",
+      "architecture_report_sha256": "37500f93c054e40f48d8d42a2b77e580ef846d056916702655b4a5adfda02297",
+      "conformance_review_sha256": "9abbc232cd2e5cd49855de38f6ccef7990cde5517512669742c35a6ce6bf4e6b",
+      "summary": "Root accepts coherent common-map amendment, mandatory exe placeholder relationship, complete acyclic qualifier closure and finite verifier/root/fresh-review boundary. Root error and all old history preserved. Plan acceptance only, META001 remains implementation/evidence obligation."
+    },
+    {
+      "id": "candidate3-independent-review-r1",
+      "kind": "independent_implementation_rejection",
+      "subsystem": "authority-receipt-evidence-and-native-capture",
+      "invariant": [
+        "required evidence must be semantically validated before complete qualification",
+        "all received native frames retained and verdict before consumer"
+      ],
+      "source": "/home/bline/cbm-work/org-pi-review-vertical-20261113/final-review/ASTRA-CODE-REVIEW-R1.md",
+      "sha256": "b8667a219241dfc3670e196d1f67a7966d76d74a0682e1fcd0164ddeb684a26f",
+      "reviewer_session": "01a1d67a-1ff2-7cc1-8c5b-88fae0ea0f2c",
+      "reviewer_turn": "01a1d67a-225b-7a71-888a-c855d95989fa",
+      "subject": {
+        "checkpoint_commit_oid": "124ac61b71b68ef6db987b3585c5c173d03b9a5e",
+        "checkpoint_tree_oid": "3576bb0a0d6173412a0cd137e1d82702090e4d4b",
+        "task_patch_digest": "8ca398a9d93860d98e45d3b982e7ab6bee4f70518b5121ab50da9d8ec365ad45",
+        "plan_version": "sha256:ff282afb9b273d904def75910d060bedd266eda52d7df46cb9fe1c2111621bc1",
+        "scope_revision": "vertical-r5-single-complete-qualification-boundary",
+        "gate_receipt_digest": "324cc180d524c58b90b4260ec91e1ccbe0bf6057229a9c3c3be5bfcb6f279c90"
+      },
+      "findings": [
+        {
+          "id": "ORG-PV-IR-004",
+          "severity": "P2",
+          "contribution": "recurrence of RA001/EA001 complete fail-closed evaluation boundary; total identity ledger alone permits partial semantic evaluators",
+          "standing": "high-confidence static counterexamples, not executed; retained positive evidence valid"
+        },
+        {
+          "id": "ORG-PV-IR-005",
+          "severity": "P2",
+          "contribution": "inherited unchanged runner discards trailing received frames before evidence/qualification; RA003 preservation boundary",
+          "standing": "high-confidence static control-flow counterexample, not executed; no repair-caused regression established"
+        }
+      ],
+      "counting": "one substantive independent review rejection; two findings are not two independent episodes; inherited evidence contributes",
+      "root_judgment": "Both acceptance-blocking P2. Immediate recurrence escalation and repeated post-repair rejection; ordinary repair blocked. Existing positive runs stay observed, not sufficient acceptance.",
+      "at": "2026-11-13T20:03:57.833442+00:00"
+    },
+    {
+      "id": "candidate3-fresh-architecture-diagnosis",
+      "kind": "architecture_diagnosis",
+      "source": "/home/bline/cbm-work/org-pi-review-vertical-20261113/post-candidate3-architecture/ASTRA-ARCHITECTURE-REVIEW-R1.md",
+      "sha256": "cf8d175a93798cdbe6584a6134811cb548301e88fba8905424f639b9c04ed6ac",
+      "subject": {
+        "checkpoint_commit_oid": "124ac61b71b68ef6db987b3585c5c173d03b9a5e",
+        "checkpoint_tree_oid": "3576bb0a0d6173412a0cd137e1d82702090e4d4b",
+        "task_patch_digest": "8ca398a9d93860d98e45d3b982e7ab6bee4f70518b5121ab50da9d8ec365ad45",
+        "plan_version": "sha256:ff282afb9b273d904def75910d060bedd266eda52d7df46cb9fe1c2111621bc1",
+        "scope_revision": "vertical-r5-single-complete-qualification-boundary",
+        "gate_receipt_digest": "324cc180d524c58b90b4260ec91e1ccbe0bf6057229a9c3c3be5bfcb6f279c90"
+      },
+      "findings": [
+        "ORG-PV-IR-004",
+        "ORG-PV-IR-005"
+      ],
+      "advice": "Amend R4/R5 for shared stage-aware semantic evidence interpretation and complete native-attempt verdict before consumer; retain domain owners/common inventory/finite verifier boundary; no global framework",
+      "counting": "diagnosis of same rejection/finding IDs, not another independent rejection",
+      "ordinary_repair_authorized": false
+    },
+    {
+      "id": "exact-R6-plan-root-acceptance",
+      "kind": "design_decision",
+      "source": "/home/bline/cbm-work/org-pi-review-vertical-20261113/PLAN-R6-ACCEPTANCE.json",
+      "sha256": "64399b0404d8d864c864039f8b622f9d185d9b58288a68cc326eb8f682e6d701",
+      "at": "2026-11-13T20:24:27.885691+00:00",
+      "findings": [
+        "ORG-PV-IR-004",
+        "ORG-PV-IR-005"
+      ],
+      "counting": "same implementation rejection episode; plan conformance is not a new rejection or implementation closure",
+      "decision": "reopen only reviewed R6 bounded implementation/map_ready phase; implementation obligations remain open"
+    },
+    {
+      "id": "R6-root-confirmed-collector-recurrence",
+      "kind": "root_static_contract_finding",
+      "source": "/home/bline/cbm-work/org-pi-review-vertical-20261113/R6-COLLECTOR-ROOT-FINDING.json",
+      "sha256": "766236b79bdebcf67b55f650e5b2cb95b4dda5150ab6894081351f6c48a8883a",
+      "findings": [
+        "ORG-PV-IR-005"
+      ],
+      "counting": "root observation, no extra independent rejection; same invariant recurrence counts immediately",
+      "ordinary_repair_authorized": false
+    },
+    {
+      "id": "R6-fresh-realization-architecture-diagnosis",
+      "kind": "architecture_diagnosis",
+      "source": "/home/bline/cbm-work/org-pi-review-vertical-20261113/r6-realization-architecture/ASTRA-ARCHITECTURE-REVIEW-R1.md",
+      "sha256": "f764a28e5befb2d8f459e371aa7511d49665fd7d849bac1d126fead2a128e241",
+      "source_subject_sha256": "f22d066620139a9f95f0902fed1ae12248b558f94ab44aa43141955abe330a65",
+      "findings": [
+        {
+          "id": "ORG-PV-R6A-001",
+          "severity": "P2",
+          "lineage": [
+            "ORG-PV-IR-005"
+          ],
+          "meaning": "deadline owner blocks on sends; detached collectors, inaccessible partial stdout/stderr, incomplete reap/deadline semantics"
+        },
+        {
+          "id": "ORG-PV-R6A-002",
+          "severity": "P2",
+          "lineage": [
+            "ORG-PV-IR-004"
+          ],
+          "meaning": "nested evaluators drop None without defect; non-object capture/collection can qualify"
+        },
+        {
+          "id": "ORG-PV-R6A-003",
+          "severity": "P2",
+          "lineage": [
+            "ORG-PV-IR-004",
+            "ORG-PV-IR-005"
+          ],
+          "meaning": "partial evidence validation/byte joins/scenario/owner-refusal gaps; malformed completion facts can justify refusal"
+        }
+      ],
+      "advice": "retain exactR6 contract and owners; replace blocking lifecycle and complete semantic-check composition as coherent realization; no local join-only repair",
+      "counting": "same open IR004/005 architectural diagnosis; not another independent implementation rejection; static counterexamples, no repro execution",
+      "ordinary_repair_authorized": false,
+      "at": "2026-11-13T20:58:57.463443+00:00"
+    },
+    {
+      "id": "new100fourhour-retainedR6-admission",
+      "kind": "root_retained_design_decision",
+      "source": "/home/bline/cbm-work/org-pi-review-realization-20261113/RETAINED-R6-DESIGN-DECISION.json",
+      "sha256": "f7b9aa45bc2c41753ff0b73b9b7184a9fe81ae3a0b3c02d04cb76c7db4dcda6c",
+      "authority": "new explicit human100/fourhour grant2026-11-13T21:09:36.746Z",
+      "counting": "new budget/actor does not reset prior episodes or open findings",
+      "ordinary_repair_authorized": true
+    },
+    {
+      "id": "newwindow-first-qualified-native-control-failure",
+      "kind": "root_qualified_execution_failure_and_conservative_design_escalation",
+      "finding_id": "ORG-PV-RL-001",
+      "source": "/home/bline/cbm-work/org-pi-review-realization-20261113/failure-architecture-r1/ROOT-FINDING.json",
+      "sha256": "cb51e829bf02c22757ca04f4232a126ed85934f7d9649a53ce84236a5f3eb018",
+      "source_manifest_sha256": "f509da4d567c5680c740ced182fe5a9822480a996f873760169a134a7cdcd932",
+      "independent_rejection_count_increment": 0,
+      "ordinary_repair_authorized": false,
+      "classification": "Required control causality/reliability at inherited native attempt evidence boundary; not infrastructure, not yet a confirmed product regression.",
+      "at": "2026-11-13T22:13:16.435514+00:00"
+    },
+    {
+      "id": "native-control-architecture-r1-collected-retained-design",
+      "kind": "architecture_diagnosis_and_exact_root_retained_design",
+      "report": {
+        "path": "/home/bline/cbm-work/org-pi-review-realization-20261113/failure-architecture-r1/ASTRA-ARCHITECTURE-REVIEW-R1.md",
+        "sha256": "25de0fe8158dafcb1cb84ce4d270e05a0210f6256eca2f76b189175063217686",
+        "session_id": "01a1d6fa-669f-7242-8f0b-dae33ffa564b",
+        "turn_id": "01a1d6fa-74f7-7b52-a0e4-9fd40e547854",
+        "actual": "Astra/xhigh/default/read-only/never, final directly collected from exact native turn"
+      },
+      "root_decision": "/home/bline/cbm-work/org-pi-review-realization-20261113/failure-architecture-r1/ROOT-RETAINED-DESIGN-DECISION.json",
+      "root_decision_sha256": "ad7f9fa4c2667d51b6440c920bc053cfec4266d874b4ff2ea7ebd8cb8ad68cdd",
+      "new_findings": [
+        "ORG-PV-RL-001",
+        "ORG-PV-RLA-001",
+        "ORG-PV-RLA-002"
+      ],
+      "independent_rejection_count_increment": 0,
+      "correction": "ROOT-FINDING.json and initial packet incorrectly inferred that send was queued immediately. Current driver waits for stdout, establishing peer fd0-close ordering. This correction supersedes that inference additively; exact cause of historical Completed17 remains unestablished. Remaining reader references are a possibility, not an observed cause.",
+      "ordinary_repair_authorized": true
+    },
+    {
+      "id": "native-bound-recurrence-d2-d3",
+      "kind": "observed_repeated_bounded_lifecycle_failure_design_escalation",
+      "finding_id": "ORG-PV-RL-002",
+      "independent_rejection_count_increment": 0,
+      "classification": "Two diagnostics breached the existing native attempt timing assertion; same inherited bounded-owner boundary. No infrastructure classification, no confirmed repair regression or exact cause established. Subsequent source change and d4/d5 passes preserved, not acceptance.",
+      "evidence": [
+        {
+          "path": "/home/bline/cbm-work/org-pi-review-realization-20261113/implementation-r2/RESULT.md",
+          "sha256": "f233b9e71e740a1cedb37e05774360822d137fe6df3efc667a46463914ccb448"
+        },
+        {
+          "path": "/home/bline/cbm-work/org-pi-review-realization-20261113/implementation-r2/diag/d2-test-native_vertical/test-native_vertical.stdout",
+          "sha256": "1aedb75643e3df6f171b237ce72d3393960eacc0bcae9c628f6e231bc0d830af"
+        },
+        {
+          "path": "/home/bline/cbm-work/org-pi-review-realization-20261113/implementation-r2/diag/d3-test-native_vertical/test-native_vertical.stdout",
+          "sha256": "d4a24145d93b7435395c86c2a5ee268393a7c4b46212f0d5302d68ab058d2c1a"
+        },
+        {
+          "path": "/home/bline/cbm-work/org-pi-review-realization-20261113/implementation-r2/source-manifest.json",
+          "sha256": "a33d76960dac4c90c7666ed06b33edb3c0ed64b6498967cc30b5971c2813d7f2"
+        },
+        {
+          "path": "/home/bline/cbm-work/org-pi-review-realization-20261113/implementation-r2/delivery-freeze/manifest.json",
+          "sha256": "a47f444bac2a444fc9941a705a0d9b2b353ce9f62a4ab9b2a5ac9e766c37de4e"
+        }
+      ],
+      "ordinary_repair_authorized": false,
+      "at": "2026-11-13T23:06:04.006948+00:00"
+    },
+    {
+      "id": "native-lifecycle-architecture-r2-collected-retained-design",
+      "kind": "architecture_conformance_and_confirmed_evidence_regression",
+      "report": {
+        "path": "/home/bline/cbm-work/org-pi-review-realization-20261113/failure-architecture-r1/ASTRA-ARCHITECTURE-REVIEW-R2.md",
+        "sha256": "cf7f990cd9ddbb1fb0915bb347ae920c590bc31bcc7803bcf3d556a2761b3f0f",
+        "session_id": "01a1d6fa-669f-7242-8f0b-dae33ffa564b",
+        "turn_id": "01a1d72a-a97b-70e1-a70b-b95d99bb6110",
+        "collection": "/home/bline/cbm-work/org-pi-review-realization-20261113/failure-architecture-r1/review-r2-collection.json"
+      },
+      "root_decision": "/home/bline/cbm-work/org-pi-review-realization-20261113/failure-architecture-r1/ROOT-RETAINED-DESIGN-DECISION-R2.json",
+      "root_decision_sha256": "2cdbb2a5039f534e2351b52529d5ebed2e82f27e93a19260eb347021c205b0fa",
+      "new_findings": [
+        "ORG-PV-RL-002",
+        "ORG-PV-RLA-003",
+        "ORG-PV-RLA-004",
+        "ORG-PV-RLA-005"
+      ],
+      "independent_rejection_count_increment": 0,
+      "confirmed_regression": "RLA003 narrowed complete-attempt elapsed evidence; architecture escalation already applied before this new authorization",
+      "corrections": "Actual test bound is4000ms including1000ms tolerance, not documented3020ms; d2/d3 exceed both. Verifier q2 inputs[] despite named digest pointer; not wrongbinary or infrastructure.",
+      "ordinary_repair_authorized": true
+    },
+    {
+      "id": "ORG-PV-RL-003",
+      "at": "2026-11-14T02:39:21.702046+00:00",
+      "kind": "qualification_input_custody_boundary_recurrence",
+      "severity": "P2 acceptance-blocking evidence defect; no runtime regression demonstrated",
+      "boundary": "tool-input identity and custody semantics: custody represents link identity, verifier expects regular-file bytes at literal invocation paths",
+      "evidence": [
+        {
+          "path": "/home/bline/cbm-work/org-pi-review-realization-20261113/implementation-r3/root-validation-r3/postflight.json",
+          "sha256": "61d13d935644a1a88fa21df91e1cbcdfdf69b13dd58c42c16f31316d01924a50"
+        },
+        {
+          "path": "/home/bline/cbm-work/org-pi-review-realization-20261113/implementation-r3/runs/inv-impl-r3-qualify-01/custody/test-native.json",
+          "sha256": "2fe5797771fed2b42cdcdcee427a4b10cd1b784f03be27e28e7dfe75a80b2ef5"
+        },
+        {
+          "path": "/home/bline/cbm-work/org-pi-review-realization-20261113/implementation-r3/obligation-map.json",
+          "sha256": "ae118050013033fbdcb4d89350acccaa46d628d7829ebe3f3ed2432878514a8a"
+        },
+        {
+          "path": "/home/bline/cbm-work/org-pi-review-realization-20261113/implementation-r3/MAP-APPROVAL.json",
+          "sha256": "60179ea71e43bbb9329e053df5f36bdd8152f441971505b7bcd24420014815b3"
+        }
+      ],
+      "facts": {
+        "common_steps_passed": 18,
+        "native_tests_passed": 19,
+        "qualifier_tests_passed": 29,
+        "postflight_checks_passed": 24,
+        "postflight_checks_required": 63,
+        "failed_check": "record:test-native",
+        "paths": [
+          "/bin/sh",
+          "/usr/bin/readlink",
+          "/usr/bin/sleep"
+        ],
+        "record_observation": "All three inputs present with type symlink and link-text digest; verifier rejects them as nonregular and consequently unbound.",
+        "blocked_downstream": "step order/output manifest/scenario/control checks not evaluated. Test pass does not establish those checks."
+      },
+      "relation_to_prior_findings": [
+        "ORG-PV-RLA-005",
+        "inherited completeness/custody findings"
+      ],
+      "inherited_evidence_counts": true,
+      "guard_disposition": "Immediate design escalation conservatively required before changing map/plan/verifier or another ordinary repair. Need reconcile link identity, resolved executable bytes, actual invocations and consumption boundary; no ad hoc exclusion or retroactive record rewrite.",
+      "independent_rejection_count_increment": 0,
+      "implementation_rejection_explanation": "Root deterministic qualification failure, not a newly invented independent whole-review episode. Serious recurring evidence boundary still triggers escalation.",
+      "runtime_regression_confirmed": false,
+      "infrastructure_failure": false,
+      "ordinary_repair_authorized": false,
+      "architecture_review_performed": false,
+      "review_unperformed_reason": "Fourhour authority window expired; no new paid dispatch. Root first observed updated clock02:37Z after prior00:09Z tool result and new user continuations. No later time extension inferred."
+    },
+    {
+      "id": "RL003-architecture-r3-collected-R7-authorized",
+      "kind": "reviewed_localized_evidence_model_amendment",
+      "report": {
+        "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/architecture-r3/ASTRA-ARCHITECTURE-REVIEW-R3.md",
+        "sha256": "696218d1e5b885d43d16069ba86c78a17e3a10c7112ddfb59f9abcfba25f8e83",
+        "session_id": "01a1d6fa-669f-7242-8f0b-dae33ffa564b",
+        "turn_id": "01a1d7f4-bee0-7061-a079-f6c7ca9b222c"
+      },
+      "root_decision": "/home/bline/cbm-work/org-pi-review-continuation-20261114/ROOT-R7-DESIGN-DECISION.json",
+      "root_decision_sha256": "9a83b252be40e52f78a3f4ecbcd472d483007960ddb159fe85d2eb41b5928c1c",
+      "plan": {
+        "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/PLAN-R7.md",
+        "sha256": "e3a5981ab67fc5a4eee60e93c10ac93150ae49daf59545fc957a3542d89651d5"
+      },
+      "independent_rejection_count_increment": 0,
+      "ordinary_repair_authorized": true,
+      "findings_closed": []
+    },
+    {
+      "id": "R7-fresh-whole-review-serious-semantic-recurrence",
+      "at": "2026-11-14T03:58:19.479231+00:00",
+      "kind": "fresh_whole_implementation_review_partial_coverage_substantive_rejection",
+      "report": {
+        "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/whole-review-r7/ASTRA-WHOLE-IMPLEMENTATION-REVIEW-R7.md",
+        "sha256": "be144f99c1c6ee1ed5a88c066b7584a61c2d435287dd09e34f11bcec7e2cb6d4",
+        "session_id": "01a1d828-9532-79f0-bc41-f91f660dbeeb",
+        "turn_id": "01a1d828-9826-7103-8119-9b228136e81d"
+      },
+      "subject": {
+        "checkpoint_commit_oid": "d2656093be6e44645400f6081c3c7d680e295f51",
+        "checkpoint_tree_oid": "0417fbcb5293b47a0ac235c422a38142faa1c071",
+        "task_patch_digest": "ea24f098e874b52ebaf667cf283adbab104d63de9e972b342db12cea941591b6",
+        "plan_version": "sha256:e3a5981ab67fc5a4eee60e93c10ac93150ae49daf59545fc957a3542d89651d5",
+        "scope_revision": "r7-typed-runtime-inputs-whole-offline-vertical",
+        "gate_receipt_digest": "271aba9c8bc335e6bb6415e21f9a69e1edd306fc76a166a7a027491dd1b09df7"
+      },
+      "findings": [
+        {
+          "id": "ORG-PV-WR7-001",
+          "severity": "P2",
+          "meaning": "Received native JSON duplicate members normalize contradictory raw facts into valid typed observation; same lossy decode used before consumption and qualifier evaluation.",
+          "origin": "Inherited or introduced unestablished; static counterexample, not executed reproduction.",
+          "boundary": "Complete protocol and total evidence interpretation",
+          "lineage": [
+            "ORG-PV-IR-004",
+            "ORG-PV-IR-005",
+            "ORG-PV-R6A-002",
+            "ORG-PV-R6A-003"
+          ]
+        },
+        {
+          "id": "ORG-PV-WR7-002",
+          "severity": "P2",
+          "meaning": "native_error stage shortcuts can bypass semantics of surviving malformed process evidence after hash/absence accounting.",
+          "origin": "Inherited or introduced unestablished; static counterexample, not executed reproduction.",
+          "boundary": "Stage-aware validation of every surviving applicable artifact",
+          "lineage": [
+            "ORG-PV-IR-004",
+            "ORG-PV-R6A-003"
+          ]
+        }
+      ],
+      "independent_rejection_count_increment": 1,
+      "counting": "One distinct fresh implementation review on exact new submitted subject establishes two substantive P2 counterexamples. Incomplete coverage and automatic compaction separately count as infrastructure, no extra rejection. No new principal/cross-provider independence claim.",
+      "ordinary_repair_authorized": false,
+      "guard_disposition": "Immediate fresh separate Astraxhigh architecture/design review before ordinary repair because same invariant recurs, including inherited evidence. Consider architectural simplification/reopening and review decomposition; do not presume another local repair."
+    },
+    {
+      "id": "R7-semantic-architectureR4-collected-R8-authorized",
+      "kind": "fresh_architecture_localized_correction_and_review_route_revision",
+      "at": "2026-11-14T04:14:22.255710+00:00",
+      "report": {
+        "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/architecture-r4/ASTRA-ARCHITECTURE-REVIEW-R4.md",
+        "sha256": "a504e88e062251c90dd97cca88ca77c851d76d3841a56dcb35f6ccd9acbd0456",
+        "session_id": "01a1d836-ccb9-7601-9d73-3a9c36305ce4",
+        "turn_id": "01a1d836-d08a-7fd2-9eb2-5fe81261cedf",
+        "actual": "gpt6astra/xhigh/default/read-only/never; finalACK identity binding; exactterminal collected idle"
+      },
+      "root_decision": "/home/bline/cbm-work/org-pi-review-continuation-20261114/ROOT-R8-DESIGN-DECISION.json",
+      "root_decision_sha256": "1a4815ea22b83f5d345d757b98a196a08fddf209e2474c250a6d56b16222c673",
+      "plan": {
+        "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/PLAN-R8.md",
+        "sha256": "23c1deb496b56921efd3ab552d512d6fb638ccaa655f9b74ea7973c909bd3a8d"
+      },
+      "reviewed_history_revision": 28,
+      "reviewed_history_sha256": "51a8cccdf8654127cfff7a9e96b40c0fd32625216cfc394234e66ba63e098f16",
+      "independent_rejection_count_increment": 0,
+      "ordinary_repair_authorized": true,
+      "findings_closed": []
+    },
+    {
+      "id": "R8-fresh-partial-native-review-capture-recurrence",
+      "at": "2026-11-14T06:47:03.625511+00:00",
+      "kind": "fresh_implementation_review_partial_coverage_substantive_rejection",
+      "report": {
+        "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/reviews-r8/native/ASTRA-IMPLEMENTATION-REVIEW-R8.md",
+        "sha256": "1613a01fa1487d59ed671cac77af4a9013c2452d0d788203bf4e3d23a1bf5c9d",
+        "session_id": "01a1d8c0-81a9-71c2-8d34-e9b53454daea",
+        "turn_id": "01a1d8c0-82af-7bb0-a0b0-264dddb00f86"
+      },
+      "subject": {
+        "checkpoint_commit_oid": "b997621880100e3d6b17ee684cf6468fbd79739a",
+        "checkpoint_tree_oid": "4fe9f7ac1f13dc76919b0b8bfd95b9993ab773f2",
+        "task_patch_digest": "1af0869f8dbe4faf6b8f8f3785ea2d4d1d62273e7584c284cadc00bc180ca348",
+        "plan_version": "sha256:23c1deb496b56921efd3ab552d512d6fb638ccaa655f9b74ea7973c909bd3a8d",
+        "scope_revision": "r8-complete-wire-stage-bundle-whole-offline-vertical",
+        "gate_receipt_digest": "d970698d79fcb137793f77758b293083091bd8921e297955ad411bb27cbee261"
+      },
+      "findings": [
+        {
+          "id": "ORG-PV-R8N-001",
+          "severity": "P2",
+          "meaning": "Native delivery and consumer invocation assertions precede Evidence creation/input persistence/capture. Panic on wrong return or consumed duplicate drops native stdout/observation/state before any finalized failed/incomplete bundle can preserve them. Retained scratch alone does not contain all returned in-memory evidence.",
+          "boundary": "Failure preservation across every actual capture/control path",
+          "lineage": [
+            "ORG-PV-RA-003",
+            "ORG-PV-IR-003",
+            "ORG-PV-EA-003"
+          ],
+          "origin": "Same capture-before-assertion invariant as prior IR003/EA003 and RA003. New R8 control bypasses the already-correct run_vertical lifecycle helper. Recurrence sufficient for immediate architecture gate; no claim that an existing previously correct runtime path changed behavior."
+        }
+      ],
+      "independent_rejection_count_increment": 1,
+      "counting": "One R8 submitted candidate substantive rejection. Qualifier report on same candidate may add findings/coverage but cannot count a second distinct submitted revision. Mandatory refresh interruption separately infrastructure, no extra rejection.",
+      "ordinary_repair_authorized": false,
+      "guard_disposition": "Immediate fresh separate Astraxhigh architecture/design review before ordinaryrepair; approvedR8 plan and placement require reconsideration. Capture regression controls may need structural reuse instead of duplicate patch."
+    },
+    {
+      "id": "R8-qualifier-partial-review-composition-findings",
+      "at": "2026-11-14T06:52:35.263552+00:00",
+      "kind": "same_submitted_candidate_second_primary_review_supplement",
+      "report": {
+        "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/reviews-r8/qualifier/ASTRA-IMPLEMENTATION-REVIEW-R8.md",
+        "sha256": "633d950eb2d77cad187cc996d2a496eb7664558ea4e941cf38004558ddd7c506",
+        "session_id": "01a1d8c1-ae11-78d0-8fd1-3dd20888cd22",
+        "turn_id": "01a1d8c1-aed3-7073-b986-785724f1ce63"
+      },
+      "subject": {
+        "checkpoint_commit_oid": "b997621880100e3d6b17ee684cf6468fbd79739a",
+        "checkpoint_tree_oid": "4fe9f7ac1f13dc76919b0b8bfd95b9993ab773f2",
+        "task_patch_digest": "1af0869f8dbe4faf6b8f8f3785ea2d4d1d62273e7584c284cadc00bc180ca348",
+        "plan_version": "sha256:23c1deb496b56921efd3ab552d512d6fb638ccaa655f9b74ea7973c909bd3a8d",
+        "scope_revision": "r8-complete-wire-stage-bundle-whole-offline-vertical",
+        "gate_receipt_digest": "d970698d79fcb137793f77758b293083091bd8921e297955ad411bb27cbee261"
+      },
+      "findings": [
+        {
+          "id": "ORG-PV-QR8-001",
+          "severity": "P2",
+          "meaning": "Declared write_failures allows surviving untyped/unhashed episode-after content to bypass appraisal and transition fallback uses revision despite state absence.",
+          "counterexample": "Replace actual write-failure empty episode-after.json directory with regular file[]; retain declaredwritefailure/exclusion. Source-established, not executed.",
+          "boundary": "Every actual surviving artifact within a declared bundle must receive applicable complete appraisal",
+          "lineage": [
+            "ORG-PV-IR-004",
+            "ORG-PV-R6A-003",
+            "ORG-PV-WR7-002"
+          ],
+          "root_standing": "Review-supported staticcounterexample; full referenced source/root architectural classification pending."
+        },
+        {
+          "id": "ORG-PV-QR8-002",
+          "severity": "P2",
+          "meaning": "failure.json stage/message/scratch/listing fields lack type/meaning and retaineddirectory correspondence checks; malformed assertionfailure evidence passes strictJSON/key checks.",
+          "counterexample": "In actual assertion-unwind bundle setstage/message/scratchnull andlisting[null],retain scratch_retainedtrue/actualdirectory/underlyingconsumedbundle; updatehash/length. Not executed.",
+          "boundary": "Malformed artifact cannot establish expected laterfailure semantics",
+          "lineage": [
+            "ORG-PV-IR-004",
+            "ORG-PV-R6A-003",
+            "ORG-PV-WR7-002"
+          ],
+          "root_standing": "Review-supported staticcounterexample; full referenced source/root architectural classification pending."
+        }
+      ],
+      "independent_rejection_count_increment": 0,
+      "counting": "Sameexact R8 submittedcandidate already rejected bynativeprimary, so this addsfindings/coverage and zero distinctrevisionrejections. Context/budget interruptions are infrastructure, not extra substantiveevents.",
+      "ordinary_repair_authorized": false,
+      "findings_closed": []
+    },
+    {
+      "id": "R8-root-source-confirmation-QR8-recurrence",
+      "at": "2026-11-14T07:01:13.862273+00:00",
+      "kind": "root_source_confirmation_of_existing_findings",
+      "report": {
+        "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/reviews-r8/ROOT-QR8-ASSESSMENT.json",
+        "sha256": "6ef4a4de67613e78b556366e62ea9989487ee0804ab30f3073e2ae15bcd20bfa"
+      },
+      "findings": [
+        "ORG-PV-QR8-001",
+        "ORG-PV-QR8-002"
+      ],
+      "invariant": "Complete appraisal of every surviving applicable artifact, including later-failure support",
+      "classification": "Acceptance-blocking P2 recurring complete surviving-artifact semantic appraisal invariant; lineage IR004/R6A003/WR7-002. No execution reproduction and no repair-caused runtime regression established.",
+      "independent_rejection_count_increment": 0,
+      "ordinary_repair_authorized": false,
+      "findings_closed": []
+    },
+    {
+      "id": "R8-fresh-architectureR5-collected-revisedR9-pending",
+      "at": "2026-11-14T07:15:54.291624+00:00",
+      "kind": "fresh_architecture_local_structural_correction_required",
+      "report": {
+        "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/architecture-r5/ASTRA-ARCHITECTURE-REVIEW-R5.md",
+        "sha256": "ed3106de5e39a0b4a66eb5df9c8af29de2630c25ce34e20d14a6d33bd6dfe298",
+        "session_id": "01a1d8dd-a970-7173-a177-04a222601938",
+        "turn_id": "01a1d8dd-aa3e-7f70-953b-2e2a6dd14fe8",
+        "actual": "Astra/xhigh/default/read-only/never; identityACK; no contextreplacement, fullreport/exactterminalcompletedcollected"
+      },
+      "reviewed_history_revision": 32,
+      "reviewed_history_sha256": "fed66e7f46da8d570ccdb8faa65f6ac7504f2e0b255e2a88a1216d74267b30ae",
+      "judgment": "Retain domainowners. Require local structural correction: one capture lifecycle across inherited run_case/adjacent refusal/newduplicate paths; truthful secondary manifest-finalization failure; actual physically observed complete bundle and failure-support composition; bounded remaining whole-review obligations. No wholeproduct reopening justified.",
+      "new_inherited_counterexamples": "Architecture reviewer source-established run_case delivery without capture/cleanup-on-drop, adjacent refusal capturefirst but panicbeforefinish. Root has read report/common Evidence and correctmainrunner, but has not yet directly read full referencedrun_case bodies. Same captureinvariant contribution, not newdistinctimplementationrejection or confirmed repair-causedruntime regression.",
+      "revised_candidate": {
+        "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/PLAN-R9.md",
+        "sha256": "ab8cf7ad1d79565dbbce3b422ceb927999f13eed5e9d21f9041b343dbd21aa9d",
+        "standing": "Retainedarchitecture recheck and rootadoption pending; ordinaryrepair held"
+      },
+      "independent_rejection_count_increment": 0,
+      "ordinary_repair_authorized": false,
+      "findings_closed": []
+    },
+    {
+      "id": "R9-root-adoption-after-retained-R5-recheck",
+      "at": "2026-11-14T07:31:35.039154+00:00",
+      "kind": "root_design_adoption_bounded_repair",
+      "decision": {
+        "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/ROOT-R9-DESIGN-DECISION.json",
+        "sha256": "d0b63529494725acb534546436d4354190c482eac8f6f3a02b433649ce9dad64"
+      },
+      "reviewed_history_revision": 33,
+      "reviewed_history_sha256": "c333b3d10f9fe6977b571ae56a10f8aef51ab55e42107dba91184af0938056fb",
+      "independent_rejection_count_increment": 0,
+      "ordinary_repair_authorized": true,
+      "findings_closed": []
+    },
+    {
+      "id": "R9-diagnostic06-inherited-scratchselector-false-refusal",
+      "at": "2026-11-14T08:10:42.213860+00:00",
+      "kind": "bounded_local_diagnostic_correction",
+      "decision": {
+        "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/ROOT-R9-SCRATCH-SELECTOR-DISPOSITION.json",
+        "sha256": "f4e9d8a3c86eae7189e4eb91faf8d6190c419b67b9e65dca30a19df8c968872e"
+      },
+      "reviewed_history_revision": 34,
+      "reviewed_history_sha256": "3a5c7bfd9de2a6ec92650c3aac8a6ed9796f0f9c3eae38a273df5fcd9ca8be83",
+      "classification": "Inherited local scratch-identity selection false refusal exposed by complete53control appraisal; no false acceptance, lost evidence or confirmed serious repair-caused regression established. Not a repeated surviving-artifact appraisal bypass.",
+      "independent_rejection_count_increment": 0,
+      "ordinary_repair_authorized": true,
+      "findings_closed": []
+    },
+    {
+      "id": "R9-C-D-complete-appraisal-sourceclosure-rejection",
+      "at": "2026-11-14T09:23:28.981969+00:00",
+      "kind": "fresh_implementation_reviews_partial_coverage_substantive_rejection",
+      "subject": {
+        "checkpoint_commit_oid": "2617a6c622c74f330e3bd7722dff2e59fb332c87",
+        "checkpoint_tree_oid": "e5bc27ac9dcdb6c9efd3930d01cc56f4b5caa46c",
+        "task_patch_digest": "aaa62bc36ad9aa55cbcd8f1391557ea27b252a342f7b28711cc29b39b4b01f4d",
+        "plan_version": "sha256:ab8cf7ad1d79565dbbce3b422ceb927999f13eed5e9d21f9041b343dbd21aa9d",
+        "scope_revision": "r9-capture-lifetime-complete-observed-bundle-whole-offline-vertical",
+        "gate_receipt_digest": "40cc6724663af029ca84abeef3371575ae3c06c19e24b7ff2fe24d0cccd176b8"
+      },
+      "reports": [
+        {
+          "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/reviews-r9/C/REVIEW-02-MESSAGE-04.md",
+          "sha256": "48e25834e5bc731ba5de31726ae44fc3f1cdcf4f89310131e79243f8df77db1d"
+        },
+        {
+          "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/reviews-r9/D/REVIEW-01-MESSAGE-57.md",
+          "sha256": "bd086a5e16b68cb7ed3afa48d6c9ec99b431210f8b1ec426b828c5175cc810e6",
+          "chars": 12226,
+          "fully_read": true
+        }
+      ],
+      "findings": [
+        {
+          "id": "CR9-001",
+          "severity": "P2",
+          "meaning": "Diagnostic support accepted without corresponding producing diagnostic.",
+          "origin": "Residual recurring complete-appraisal failure; newly introduced origin not established."
+        },
+        {
+          "id": "CR9-002",
+          "severity": "P2",
+          "meaning": "Delivery refusal skips start/result contract-to-binding/history correspondence.",
+          "origin": "Residual recurring stage-conditional appraisal failure; newly introduced origin not established."
+        },
+        {
+          "id": "ORG-PV-R9D-001",
+          "severity": "P2",
+          "meaning": "Build-probe source files absent from prospective/common source input custody.",
+          "origin": "Residual inherited source closure failure; RLA-005 lineage; no regression claim."
+        }
+      ],
+      "root_dispositions": [
+        "/home/bline/cbm-work/org-pi-review-continuation-20261114/ROOT-R9-C2-FINDINGS-DISPOSITION.json",
+        "/home/bline/cbm-work/org-pi-review-continuation-20261114/ROOT-R9-D1-FINDINGS-DISPOSITION.json"
+      ],
+      "independent_rejection_count_increment": 1,
+      "counting": "One candidate3 submitted revision; three findings/two separate reviewers count one rejection. Context/cap interruptions are not separate rejections.",
+      "ordinary_repair_authorized": false,
+      "guard_disposition": "Fresh separate Astra xhigh architecture/design review of actual R9 plan/history before ordinary repair."
+    },
+    {
+      "id": "R10-local-correction-design-adoption-prerequisites-open",
+      "at": "2026-11-14T09:42:56.543257+00:00",
+      "kind": "root_design_adoption_conditional_realization_held",
+      "decision": {
+        "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/ROOT-R10-DESIGN-DECISION.json",
+        "sha256": "2266a8ad610b59bac4a865b74029d94d2ebebc0562aee78f197ddaa750879655"
+      },
+      "reviewed_history_revision": 36,
+      "reviewed_history_sha256": "4e3a692fb90c41de9c553621deb62959aa87cde8e41d4928dfab3968fa4bb5ae",
+      "independent_rejection_count_increment": 0,
+      "ordinary_repair_authorized": false,
+      "findings_closed": []
+    }
+  ],
+  "gate": {
+    "state": "R10_design_adopted_realization_prerequisites_open",
+    "finding_ids": [
+      "ORG-PV-IR-004",
+      "ORG-PV-IR-005",
+      "ORG-PV-R6A-001",
+      "ORG-PV-R6A-002",
+      "ORG-PV-R6A-003",
+      "ORG-PV-RL-001",
+      "ORG-PV-RLA-001",
+      "ORG-PV-RLA-002",
+      "ORG-PV-RL-002",
+      "ORG-PV-RLA-003",
+      "ORG-PV-RLA-004",
+      "ORG-PV-RLA-005",
+      "ORG-PV-RL-003",
+      "ORG-PV-WR7-001",
+      "ORG-PV-WR7-002",
+      "ORG-PV-R8N-001",
+      "ORG-PV-QR8-001",
+      "ORG-PV-QR8-002",
+      "CR9-001",
+      "CR9-002",
+      "ORG-PV-R9D-001"
+    ],
+    "ordinary_repair_authorized": false,
+    "reason": "Design judgment accepted; authorized protected-configuration-free input route, descendant correspondence and prospective budget/subject admission remain unmet."
+  },
+  "triggers": [
+    "second_rejection_after_repair",
+    "confirmed_serious_repair_regression",
+    "repeated_inherited_inventory_boundary"
+  ],
+  "architecture_reviews": [
+    {
+      "session_id": "01a1d58b-bf34-7330-bbd4-4c91570ba9f0",
+      "subject": "/home/bline/cbm-work/org-pi-review-vertical-20261113/PLAN-R1.md",
+      "verdict": "changes_required",
+      "disposition": "amend SDK initialization; retain ownership boundaries; no broad redesign justified",
+      "report": "/home/bline/cbm-work/org-pi-review-vertical-20261113/ASTRA-ARCHITECTURE-REVIEW-R1.md",
+      "required_findings": [
+        "ORG-PV-A-001",
+        "ORG-PV-A-002"
+      ]
+    },
+    {
+      "session_id": "01a1d58b-bf34-7330-bbd4-4c91570ba9f0",
+      "turn_id": "01a1d596-6471-72d1-a102-aedd14a7edaa",
+      "subject": "/home/bline/cbm-work/org-pi-review-vertical-20261113/PLAN-R2.md",
+      "verdict": "accept",
+      "report": "/home/bline/cbm-work/org-pi-review-vertical-20261113/ASTRA-ARCHITECTURE-REVIEW-R2.md",
+      "acknowledges_events": [
+        "prior-c1-r1",
+        "prior-c1-r2",
+        "prior-c2-r1",
+        "prior-c2-inherited",
+        "prior-c3-inherited",
+        "org-pv-architecture-r1"
+      ],
+      "root_acceptance": "/home/bline/cbm-work/org-pi-review-vertical-20261113/PLAN-ACCEPTANCE.json"
+    }
+  ],
+  "infrastructure_interruptions": [
+    {
+      "id": "recon-main-doctrine-read-denial",
+      "kind": "permission_mapping",
+      "counts_as_implementation_rejection": false,
+      "disposition": "Recon advisory only; exact doctrine copies verified to permit full read at next authorized builder turn; no permission bypass or source effect"
+    },
+    {
+      "id": "implementation-turn1-dns",
+      "kind": "api_connection_failed_EAI_AGAIN",
+      "source": "/home/bline/cbm-work/org-pi-review-vertical-20261113/implementation/turn1.transport.json",
+      "session_id": "ee071ef7-3cea-4440-a717-8334844f967f",
+      "counts_as_implementation_rejection": false,
+      "result": "Nativeguardverifiedexact/sessionmatch; exit1andconnectionerror; sourcebaselineunchanged, noimplementationresult"
+    }
+  ],
+  "last_design_decision": {
+    "path": "/home/bline/cbm-work/org-pi-review-continuation-20261114/ROOT-R10-DESIGN-DECISION.json",
+    "sha256": "2266a8ad610b59bac4a865b74029d94d2ebebc0562aee78f197ddaa750879655"
+  }
+}
