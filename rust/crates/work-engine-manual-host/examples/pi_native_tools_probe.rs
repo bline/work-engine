@@ -19,14 +19,15 @@ use std::{
     time::Duration,
 };
 use work_engine_manual_host::pi_native::{self as native, Result};
+use work_engine_manual_host::pi_stream as stream;
 
-fn dispatch(
+fn connect(
     address: std::net::SocketAddr,
     body: &[u8],
     access: &[u8],
     request_id: &str,
     lease: &session_task_admission::pi_pilot::EffectLease,
-) -> Result<Vec<u8>> {
+) -> Result<TcpStream> {
     let mut s = TcpStream::connect_timeout(&address, Duration::from_secs(5))
         .map_err(|_| "synthetic_connect")?;
     s.set_write_timeout(Some(Duration::from_secs(5)))
@@ -37,21 +38,57 @@ fn dispatch(
     lease.check_current()?;
     write!(s,"POST /offline-native HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer {access}\r\nX-Request-Id: {request_id}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",body.len()).map_err(|_|"synthetic_write")?;
     s.write_all(body).map_err(|_| "synthetic_write")?;
-    let mut b = vec![];
-    s.take(131073)
-        .read_to_end(&mut b)
-        .map_err(|_| "synthetic_read")?;
-    if b.len() > 131072 {
-        return Err("synthetic_response_bound");
-    };
-    let at = b
-        .windows(4)
-        .position(|w| w == b"\r\n\r\n")
-        .ok_or("synthetic_response")?;
-    if !b.starts_with(b"HTTP/1.1 200 OK\r\n") {
+    Ok(s)
+}
+/// Buffered duplicate used only for the endpoint deduplication control.
+fn drain(s: TcpStream) -> Result<Vec<u8>> {
+    let mut up = stream::Upstream::open(s)?;
+    if up.status != 200 {
         return Err("synthetic_status");
-    };
-    Ok(b[at + 4..].to_vec())
+    }
+    let mut b = vec![];
+    while let Some(x) = up.next(stream::CHUNK)? {
+        b.extend(x);
+        if b.len() > stream::MAX_RESPONSE {
+            return Err("synthetic_response_bound");
+        }
+    }
+    Ok(b)
+}
+/// Native channel for one relayed stream: every received frame is recorded
+/// and every host frame is sent under the provider effect lease.
+struct Native<'a> {
+    workload: &'a mut native::Workload,
+    store: &'a mut LiveStore,
+    lease: &'a session_task_admission::pi_pilot::EffectLease,
+    frames: &'a mut u64,
+    checked: std::time::Instant,
+}
+const LEASE_RECHECK: Duration = Duration::from_secs(5);
+impl stream::Screen for Native<'_> {
+    fn hold(&self, pending: &[u8]) -> Result<usize> {
+        self.store.stream_hold(pending)
+    }
+}
+impl stream::Channel for Native<'_> {
+    fn send(&mut self, v: &Value) -> Result<()> {
+        // Lease currentness is rechecked at most every LEASE_RECHECK while
+        // relaying one admitted provider response; revocation therefore stops
+        // delivery within that bounded window rather than per chunk.
+        if self.checked.elapsed() >= LEASE_RECHECK {
+            self.workload.send_effect(v, self.lease)?;
+            self.checked = std::time::Instant::now();
+            Ok(())
+        } else {
+            self.workload.send(v)
+        }
+    }
+    fn receive(&mut self) -> Result<Value> {
+        let f = receive_checked(self.workload, self.store, *self.frames)?;
+        *self.frames += 1;
+        self.store.check(&f)?;
+        Ok(f)
+    }
 }
 fn receive_checked(
     workload: &mut native::Workload,
@@ -155,7 +192,8 @@ fn run() -> Result<()> {
     owner.check_native(&binding.session)?;
     let inspection = workload.inspect(&store)?;
     let header = ready["header"].clone();
-    let mut frames = 1;
+    let mut frames: u64 = 1;
+    let mut streams = vec![];
     let mut sends = 0;
     let mut provider_attempts = 0;
     let mut tools = vec![];
@@ -188,25 +226,66 @@ fn run() -> Result<()> {
                         }
                     };
                     let lease = owner.enter(Effect::Provider(sends + 1))?;
-                    let response = store.transport(native::now(), |access| {
+                    let request_id = format!("{}-{}", binding.session, sends + 1);
+                    let socket = store.transport(native::now(), |access| {
                         lease.check_current()?;
-                        let request_id = format!("{}-{}", binding.session, sends + 1);
                         provider_attempts += 1;
-                        let response = dispatch(addr, &body, access, &request_id, &lease)?;
-                        if sends == 0 {
-                            // Same live operation, same exact request identity. The
-                            // external endpoint must deduplicate the second receipt.
-                            provider_attempts += 1;
-                            let duplicate = dispatch(addr, &body, access, &request_id, &lease)?;
-                            if response != duplicate {
-                                return Err("duplicate_response");
-                            }
-                        }
-                        Ok(response)
+                        connect(addr, &body, access, &request_id, &lease)
                     })?;
-                    store.check_raw(&response)?;
-                    workload.send_effect(&json!({"type":"response","binding":binding,"sequence":seq,"stream":stream,"status":200,"body":B64.encode(&response)}),&lease)?;
-                    lease.observed(&hash(&response))?;
+                    let mut upstream = match stream::Upstream::open(socket) {
+                        Ok(u) => u,
+                        Err(code) => {
+                            store.record_control("failure", json!({"stage":"upstream-head","code":code,"classification":"provider-attempt-unknown"}))?;
+                            return Err(code);
+                        }
+                    };
+                    let relay = {
+                        // The lease was checked immediately before the request in `connect`.
+                        let mut chan = Native {
+                            workload: &mut workload,
+                            store: &mut store,
+                            lease: &lease,
+                            frames: &mut frames,
+                            checked: std::time::Instant::now(),
+                        };
+                        stream::relay(&mut chan, &mut upstream, &binding, seq, stream)
+                    };
+                    let relay = match relay {
+                        Ok(r) => r,
+                        Err(code) => {
+                            store.record_control("failure", json!({"stage":"stream-relay","code":code,"classification":"provider-attempt-unknown"}))?;
+                            return Err(code);
+                        }
+                    };
+                    let evidence = relay.evidence();
+                    store.record_control(&format!("stream-{:03}", streams.len() + 1), json!({"sequence":seq,"stream":stream,"requestId":request_id,"relay":evidence}))?;
+                    if !matches!(
+                        relay.outcome,
+                        stream::Outcome::Completed
+                            | stream::Outcome::Cancelled { upstream_end: true }
+                    ) || relay.status != 200
+                    {
+                        // Lease stays UNKNOWN: no settlement or replay is inferred.
+                        // Record the native consumer's next frame to show how the
+                        // interruption reached the actual session.
+                        if let Ok(next) = receive_checked(&mut workload, &mut store, frames) {
+                            let _ = store.record_control("failure", json!({"stage":"stream-not-completed","outcome":relay.outcome.label(),"nativeNextType":next["type"],"nativeLastMessage":next["messages"].as_array().and_then(|m| m.last()).map(|m| json!({"role":m["role"],"stopReason":m["stopReason"],"errorMessage":m["errorMessage"]})),"classification":"provider-attempt-unknown"}));
+                        }
+                        return Err("stream_not_completed");
+                    }
+                    if sends == 0 {
+                        // Same live operation, same exact request identity. The
+                        // external endpoint must deduplicate the second receipt.
+                        let duplicate = store.transport(native::now(), |access| {
+                            provider_attempts += 1;
+                            drain(connect(addr, &body, access, &request_id, &lease)?)
+                        })?;
+                        if duplicate != relay.forwarded {
+                            return Err("duplicate_response");
+                        }
+                    }
+                    streams.push(evidence);
+                    lease.observed(&relay.sha256())?;
                     sends += 1;
                 }
                 Some("tool") => {
@@ -300,7 +379,7 @@ fn run() -> Result<()> {
     }
     store.record_control("closed-observation", closed.clone())?;
     let closure = workload.finish(&mut store)?;
-    let report = json!({"classification":"offline-actual-native-development","sdk":"1.5.0","binding":binding,"inspection":inspection,"ready":ready,"snapshots":snapshots,"frameReceipts":frames,"providerDispatches":provider_attempts,"providerResponsesConsumed":sends,"duplicateFirstRequest":true,"nativeTools":tools,"nativeResult":native_result,"closure":closure,"postDisposal":closed,"endpointEvidence":"externally root-owned observer; actor does not assert remote counts","sealedRestart":"read-only no reacquisition/no dispatch"});
+    let report = json!({"classification":"offline-actual-native-development","sdk":"1.5.0","binding":binding,"inspection":inspection,"ready":ready,"snapshots":snapshots,"frameReceipts":frames,"providerDispatches":provider_attempts,"providerResponsesConsumed":sends,"duplicateFirstRequest":true,"nativeTools":tools,"streams":streams,"nativeResult":native_result,"closure":closure,"postDisposal":closed,"endpointEvidence":"externally root-owned observer; actor does not assert remote counts","sealedRestart":"read-only no reacquisition/no dispatch"});
     store.check(&report)?;
     owner.record_native_result(store.result_publication(report.clone())?)?;
     store.emit_report(report)?;
@@ -340,6 +419,9 @@ fn run() -> Result<()> {
 fn main() {
     match run() {
         Ok(()) => (),
-        Err(_) => std::process::exit(1),
+        Err(code) => {
+            eprintln!("pi_native_tools_probe: {code}");
+            std::process::exit(1)
+        }
     }
 }

@@ -13,7 +13,11 @@ process.stdin.on('data',b=>{buffer=Buffer.concat([buffer,b]);if(buffer.length>MA
 process.stdin.on('end',()=>{ended=true;pump();});
 function pump(){if(!waiting)return;if(buffer.length>=4){const n=buffer.readUInt32BE();if(n===0||n>MAX)process.exit(3);if(buffer.length>=4+n){const b=buffer.subarray(4,4+n);buffer=buffer.subarray(4+n);const w=waiting;waiting=null;try{w.resolve(JSON.parse(b));}catch{w.reject(Error('frame_json'));}return;}}if(ended){waiting.reject(Error('frame_eof'));waiting=null;}}
 function read(){if(waiting)throw Error('concurrent_read');return new Promise((resolve,reject)=>{waiting={resolve,reject};pump();});}
-async function send(v){const b=Buffer.from(JSON.stringify(v));if(b.length>MAX)throw Error('frame_bound');const h=Buffer.alloc(4);h.writeUInt32BE(b.length);await new Promise((r,j)=>process.stdout.write(Buffer.concat([h,b]),e=>e?j(e):r()));}
+// Any open host response stream is released before another envelope, so the
+// host relay never observes an interleaved frame.
+let open=null;
+async function send(v){if(open){const o=open;open=null;await o.release();}await sendRaw(v);}
+async function sendRaw(v){const b=Buffer.from(JSON.stringify(v));if(b.length>MAX)throw Error('frame_bound');const h=Buffer.alloc(4);h.writeUInt32BE(b.length);await new Promise((r,j)=>process.stdout.write(Buffer.concat([h,b]),e=>e?j(e):r()));}
 let bind,seq=0,stream=0;
 const envelope=(type,data={})=>({type,binding:bind,sequence:seq,stream,...data});
 const observe=()=>({...observation,scratch:fs.readdirSync("/scratch",{recursive:true})});
@@ -48,7 +52,21 @@ try {
  runtime.streamSimple=(m,c,o)=>original(m,c,{...o,transport:'sse',maxRetries:0,timeoutMs:10000,cacheRetention:'none',fetch:async(url,req)=>{
    stream++;const body=typeof req.body==='string'?Buffer.from(req.body):Buffer.from(req.body);if(body.length>131072)throw Error('request_bound');
    await send(envelope('fetch',{url:String(url),method:req.method,headers:Object.fromEntries(req.headers),body:body.toString('base64')}));
-   const answer=await read();joined(answer,'response');return new Response(Buffer.from(answer.body,'base64'),{status:answer.status,headers:{'content-type':'text/event-stream'}});
+   const head=await read();joined(head,'response-head');if(!Number.isInteger(head.status))throw Error('response_head');
+   // Consumer-driven incremental body: one host chunk per native read demand.
+   let ordinal=0,done=false,chain=Promise.resolve();
+   const step=kind=>chain=chain.then(async()=>{if(done)return null;ordinal++;await sendRaw(envelope(kind,{ordinal}));const f=await read();
+     if(JSON.stringify(f.binding)!==JSON.stringify(bind)||f.sequence!==seq||f.stream!==stream||f.ordinal!==ordinal)throw Error('foreign_frame');return f;});
+   const responseBody=new ReadableStream({
+     async pull(c){const f=await step('pull');if(!f)return;
+       if(f.type==='response-chunk'){c.enqueue(new Uint8Array(Buffer.from(f.body,'base64')));}
+       else if(f.type==='response-end'){done=true;open=null;c.close();}
+       else if(f.type==='response-failure'){done=true;open=null;c.error(Error('relay_'+f.code));}
+       else{done=true;throw Error('stream_frame');}},
+     async cancel(){const f=await step('cancel');done=true;open=null;if(f&&f.type!=='response-cancelled')throw Error('stream_frame');}
+   },{highWaterMark:0});
+   open={release:async()=>{const f=await step('cancel');done=true;if(f&&f.type!=='response-cancelled')throw Error('stream_frame');}};
+   return new Response(responseBody,{status:head.status,headers:{'content-type':'text/event-stream'}});
  }});
  await send(envelope('ready',{sessionId:session.sessionId,header:manager.getHeader(),tools:session.getActiveToolNames(),observation:observe()}));
  for(;;){const op=await read();if(op.type==='close'){await session.dispose();await send(envelope('closed',{observation:observe()}));process.stdin.destroy();break;}seq++;stream=0;joined(op,'prompt');await session.prompt(op.prompt);await send(envelope('snapshot',{sessionId:session.sessionId,header:manager.getHeader(),entries:manager.getEntries(),leaf:manager.getLeafId(),messages:session.messages,exports:fs.existsSync('/scratch/dist.mjs')?[{name:'dist.mjs',data:fs.readFileSync('/scratch/dist.mjs').toString('base64')}]:[],observation:observe()}));}

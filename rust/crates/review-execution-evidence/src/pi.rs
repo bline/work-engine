@@ -346,6 +346,14 @@ fn check_value(v: &Value, a: &[u8], depth: usize) -> Result<()> {
     }
     .value(v, depth)
 }
+/// Longest suffix of `b` that is a proper, non-empty prefix of `a`.
+pub fn prefix_suffix(b: &[u8], a: &[u8]) -> usize {
+    let max = b.len().min(a.len().saturating_sub(1));
+    (1..=max)
+        .rev()
+        .find(|&n| b[b.len() - n..] == a[..n])
+        .unwrap_or(0)
+}
 fn check_bytes(b: &[u8], a: &[u8]) -> Result<()> {
     if a.is_empty() || b.windows(a.len()).any(|w| w == a) {
         Err("pi_original_a_exclusion")
@@ -585,6 +593,15 @@ impl LiveStore {
     pub fn check_raw(&self, b: &[u8]) -> Result<()> {
         check_bytes(b, &self.original)
     }
+    /// Incremental screening for a relayed byte stream. Refuses any complete
+    /// original-A occurrence in `pending` and returns how many trailing bytes
+    /// must be withheld because they form a proper prefix of A. Forwarding
+    /// only the remainder guarantees no forwarded byte can belong to a later-
+    /// completed occurrence, without exposing A or its length to callers.
+    pub fn stream_hold(&self, pending: &[u8]) -> Result<usize> {
+        check_bytes(pending, &self.original)?;
+        Ok(prefix_suffix(pending, &self.original))
+    }
     pub fn binding(&self) -> &Binding {
         &self.binding
     }
@@ -684,7 +701,10 @@ impl LiveStore {
                 | "closed-observation"
                 | "report"
                 | "failure"
-        ) {
+        ) && !label
+            .strip_prefix("stream-")
+            .is_some_and(|n| n.len() == 3 && n.bytes().all(|b| b.is_ascii_digit()))
+        {
             return Err("pi_control_label");
         };
         let b = self.check(&json!({"binding":self.binding,"event":event}))?;

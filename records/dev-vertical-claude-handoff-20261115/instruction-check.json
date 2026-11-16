@@ -1,0 +1,34 @@
+{
+  "standing": "Bounded author instruction check; advisory, same author/context, not independent engineering review or acceptance",
+  "skill": "skills/agent-instruction-review/SKILL.md",
+  "applicability": "applicable",
+  "reason": "The handoff includes a suggested successor launch instruction and projects inherited authority/review constraints.",
+  "subjects": [
+    {
+      "path": "planning/dev-vertical-completion-20261115.md",
+      "sha256": "cb58b75e4b676a0bd9a8e3d20ebc23415533aabfd5288955c1bc51f50afc728e"
+    },
+    {
+      "path": "records/dev-vertical-claude-handoff-20261115/README.md",
+      "sha256": "ff3a76be1224092636bd4d438df8f262343fbb7d0f8db0a5f954e20644587fcc"
+    }
+  ],
+  "inspected_material": [
+    "Plan standing, destination/scope, ownership table, delivery-sequence qualification, review/live-authority language",
+    "Handoff current direction, inherited obligations, efficient-entry guidance, and suggested operator launch text"
+  ],
+  "decisive_evidence": [
+    "The operator selected milestone scope; both documents distinguish that choice from an implementation resume.",
+    "The launch text is explicitly hypothetical and effective only if sent by the operator, preventing an assistant-authored authority grant.",
+    "The delivery sequence is labeled a practical default; architectural placement is recommended rather than promoted into a mandatory exact route.",
+    "Inherited scratch/publication, original-A exclusion, financial uncertainty, and review constraints have named owners and concrete failure consequences available in the effective packet.",
+    "The new session is not told to infer a renewed budget, live-account authorization, or replacement review provider from quota availability."
+  ],
+  "findings": [],
+  "outcome": "No material instruction-contract issue identified within this bounded author check.",
+  "limitations": [
+    "No freshness or independence claim.",
+    "No engineering correctness, complete qualification, production-path attestation, or gate closure claim.",
+    "The acceptance owner retains scope/authority/reviewer decisions."
+  ]
+}

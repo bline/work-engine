@@ -1,0 +1,257 @@
+{
+  "standing": "Dated preparation evidence; not production qualification or approval",
+  "observed_at_utc": "2026-11-16T04:20:10.963513+00:00",
+  "operator_selected_scope": "One production development path with authorized failover; qualify additional funding routes afterward (recommended)",
+  "scope_authority": "Operator reply to the optional scope question during this preparation; not an implementation resume or review-contract change",
+  "repository_head": "bd6673d37706491b937e3e57bbc09eb9d0174771",
+  "repository_branch": "rescue-detached-20260911",
+  "input_files": [
+    {
+      "path": "docs/rust-development.md",
+      "sha256": "225d2ea65c088b6614dd56824157b847ea453518417cc0aab61ed3ed39f1e904"
+    },
+    {
+      "path": "experiments/pi-attempt-accounting/README.md",
+      "sha256": "95850eadb672e6f7623cd2f6e7559f18954acabe10043a45eff39fafd06b3d82"
+    },
+    {
+      "path": "notes/inference-ideas-20261115/README.md",
+      "sha256": "c3407af60b3177a556226e0bf818d2d1202d30a38d5a1b267e9df6b58fe4cb59"
+    },
+    {
+      "path": "notes/inference-ideas-20261115/cache-affinity-and-effort.md",
+      "sha256": "765b20585146fa34476c06c04766c3f5924fe3fa30e4fbc0fd110458f211a7b4"
+    },
+    {
+      "path": "notes/inference-ideas-20261115/host-inference-gateway.md",
+      "sha256": "77dff72fbc3f926909dd4ba2031c14ac4be5a72d2250959c23de23643f09196d"
+    },
+    {
+      "path": "notes/inference-ideas-20261115/inference-optimization-and-routing.md",
+      "sha256": "7c00471caa53ead2070b883538060e471f55435ef06d17b45f64d2c671318fe4"
+    },
+    {
+      "path": "notes/inference-ideas-20261115/inference-resource-management.md",
+      "sha256": "85a7b74bbbadfa5f7018d1564b26d6cd72d83bf8ef8433432a3e4e36e9745a5c"
+    },
+    {
+      "path": "notes/inference-ideas-20261115/qualification-experiments.md",
+      "sha256": "f52e9df37f9b20051dae9bbb50aef5e53158c3eaacfc823173ca393dbce2f17d"
+    },
+    {
+      "path": "notes/inference-ideas-20261115/research-and-compiled-policy.md",
+      "sha256": "d1c73cc0f58874bf5b9e0af17806f5adcdf2f5b20c196f1a5b9645b171936fa3"
+    },
+    {
+      "path": "notes/inference-ideas-20261115/rust-implementation-comparison.md",
+      "sha256": "d1c374aaf0aa6c15ed10fefe932708177ba27f058627aa03303f725ad79fc0f5"
+    },
+    {
+      "path": "notes/inference-ideas-20261115/usage-and-attempt-evidence.md",
+      "sha256": "5fa9bb577272350108f2d284737c5c58d12696cf6d8fe197d6335306f97eb0d1"
+    },
+    {
+      "path": "notes/provider-auth-connections-and-fallback-direction-20261106.md",
+      "sha256": "f293ae96b2a59be740b48b6add6f7aa58a7938a410ff79408198dca01fa52fd1"
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/README.md",
+      "sha256": "798d71b61d733ca92107d73c5bfd9127984ecc5c8f896acf9e9bc80da8a1570b"
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/design-reassessment.md",
+      "sha256": "4a37d05b3dd19dcf7c4e49a3a5e4741b0ed2b56641e009819dc15e8ac2a5f91a"
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/evidence-manifest.json",
+      "sha256": "90a7ea9b7150809d9fba904fb0b1d71975791f1f8631c74ea21da5479fc08def"
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/ft02-acceptance.json",
+      "sha256": "aa2d6b2fc1a9e9b6b76eae2f45c84a8f4cffe22fe3b7b22c7b59fc54a8d33e4d"
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/ft02-result.md",
+      "sha256": "cb18dfb0baf7d3aef00ef8094d24cc59a1791c656bb8f3b1bd305b1d562b208b"
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/ft02-review.md",
+      "sha256": "17f7901994948b0ed0056ae0463f2b3ddd6133437f990ca0ee67ab1df16e8b4a"
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/fulltools-partial-review.md",
+      "sha256": "1d42fee7e8903184ee6961b840ac18ae04943b4824da4982738491d980ed5c49"
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/fulltools-qualification.json",
+      "sha256": "4cdf40fd993931969d0b6e0cfe37e602a0cf4b6b877796e4a4df1e265ff255d2"
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/fulltools-result.md",
+      "sha256": "121124ed4afd3fe041f20fca22e9b5155f309899f4fdc7cf67a51bfbc0d4fb53"
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/qualification-original.json",
+      "sha256": "ee7134fc3007cd9681a9a30f169fe5e25a91e36f35b65a30c283a9ddec6de9d4"
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/qualification-trusted-host-disposition.json",
+      "sha256": "c1ad40d1339fe221c7da194d76f0698c7afc502d5898c2ae55c90c8786272627"
+    },
+    {
+      "path": "rust/crates/bounded-inference/PUBLIC_HOST.md",
+      "sha256": "8db1f17f3cf744b3fd6b7c8370ecc87880c1268d41a212b0cc8a970d5a7a8c55"
+    },
+    {
+      "path": "rust/crates/bounded-inference/src/auth.rs",
+      "sha256": "e0ab7be7056b44e2ad9a1e7e23152cbbc7b5edc366f3ec05c8b43e0c10070fe9"
+    },
+    {
+      "path": "rust/crates/bounded-inference/src/journal.rs",
+      "sha256": "8f8f15deef3e79d62e6610a402bad97febd6b7d2beda4712ee1fbdfd5b6d4a6a"
+    },
+    {
+      "path": "rust/crates/bounded-inference/src/public_host.rs",
+      "sha256": "96f8f30a0c05e603407312ecee212b590c9183cb014459a63e8f0410a786c8cf"
+    },
+    {
+      "path": "rust/crates/bounded-inference/src/request.rs",
+      "sha256": "78d862dd6444ab62bd67459ba4874cdfaac8e9363ed838ada8fe7a5eb7e8da92"
+    },
+    {
+      "path": "rust/crates/bounded-inference/src/stream.rs",
+      "sha256": "ba822fd4c0d9fa2733f029670eafe8fbc3d943a8d2ad1f8341ac30cbfff3dc02"
+    },
+    {
+      "path": "rust/crates/work-engine-manual-host/Cargo.toml",
+      "sha256": "29521af58b75ac394d470e219fb14edb13c36055ce0f24820a702b90b3aa4629"
+    },
+    {
+      "path": "rust/crates/work-engine-manual-host/docs/pi-native-integration.md",
+      "sha256": "3f623aed56e494de73b856e39a925581b8e0f9e1e69d7eacee3c4545034321dc"
+    },
+    {
+      "path": "rust/crates/work-engine-manual-host/examples/pi_native_probe.rs",
+      "sha256": "9580bbb8c127814f426b29c9577bf9c138535b04ac8e067cbc4fb2a5cd926780"
+    },
+    {
+      "path": "rust/crates/work-engine-manual-host/receiver/pi-native-tools.mjs",
+      "sha256": "739997d15c6d5186e885e022a1cb8e95b859fad11d2336b0b908a28a0c2217a9"
+    },
+    {
+      "path": "rust/crates/work-engine-manual-host/receiver/pi-native.mjs",
+      "sha256": "ed2a02d796c51b74866b64d7c143d091be15b37daaccf7cd709cfe08418e18d9"
+    },
+    {
+      "path": "rust/crates/work-engine-manual-host/src/pi_coding_auth.rs",
+      "sha256": "03bc01c743b9b274c7f1ede9aace42316c38cf32fb20fffb2fc7ee2446c9ad8e"
+    },
+    {
+      "path": "rust/crates/work-engine-manual-host/src/pi_coding_provider.rs",
+      "sha256": "215ab3ddc59eb7c0c2726c8e326b33e5323d7ade950df9e28ee6f89619920d49"
+    },
+    {
+      "path": "rust/crates/work-engine-manual-host/src/pi_native.rs",
+      "sha256": "82440b7fd6073c03988e83d2f8e055dd706c4c880ca27b32cdb68494e6c72de1"
+    },
+    {
+      "path": "rust/crates/work-engine-task-host/src/lib.rs",
+      "sha256": "50aca3c8196788d73011ae466a47b94c9f323e8727f6c7440390ee41c321cc90"
+    }
+  ],
+  "historical_copy_verification": [
+    {
+      "path": "records/pi-native-development-pause-20261114/fulltools-result.md",
+      "sha256": "121124ed4afd3fe041f20fca22e9b5155f309899f4fdc7cf67a51bfbc0d4fb53",
+      "matches_manifest": true
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/ft02-result.md",
+      "sha256": "cb18dfb0baf7d3aef00ef8094d24cc59a1791c656bb8f3b1bd305b1d562b208b",
+      "matches_manifest": true
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/fulltools-partial-review.md",
+      "sha256": "1d42fee7e8903184ee6961b840ac18ae04943b4824da4982738491d980ed5c49",
+      "matches_manifest": true
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/design-reassessment.md",
+      "sha256": "4a37d05b3dd19dcf7c4e49a3a5e4741b0ed2b56641e009819dc15e8ac2a5f91a",
+      "matches_manifest": true
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/ft02-review.md",
+      "sha256": "17f7901994948b0ed0056ae0463f2b3ddd6133437f990ca0ee67ab1df16e8b4a",
+      "matches_manifest": true
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/ft02-acceptance.json",
+      "sha256": "aa2d6b2fc1a9e9b6b76eae2f45c84a8f4cffe22fe3b7b22c7b59fc54a8d33e4d",
+      "matches_manifest": true
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/qualification-original.json",
+      "sha256": "ee7134fc3007cd9681a9a30f169fe5e25a91e36f35b65a30c283a9ddec6de9d4",
+      "matches_manifest": true
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/qualification-trusted-host-disposition.json",
+      "sha256": "c1ad40d1339fe221c7da194d76f0698c7afc502d5898c2ae55c90c8786272627",
+      "matches_manifest": true
+    },
+    {
+      "path": "records/pi-native-development-pause-20261114/fulltools-qualification.json",
+      "sha256": "4cdf40fd993931969d0b6e0cfe37e602a0cf4b6b877796e4a4df1e265ff255d2",
+      "matches_manifest": true
+    }
+  ],
+  "private_paused_continuation": {
+    "path": "/home/bline/.local/state/work-engine/rust-production-claude-takeover-20261111/slice-13/codex-continuation-20261114/docker-rebaseline/COMMITTED-PAUSED.md",
+    "sha256": "79fd0d9012b72df1e926f50a0648f8988e9a7d9a54e7107edcd5f6b06cf89331"
+  },
+  "source_messages": {
+    "path": "recent-session-turns.json",
+    "sha256": "b5f7f96c66db585d6d64e1ec69d30cb65bcae929b39b89c6b365bbddb3d81dc8",
+    "count": 11
+  },
+  "coverage": {
+    "path": "coverage.json",
+    "sha256": "fdf75d01439ace172163ce4323edec84c28a3df0ee94924e330ac7e7ab499ef0"
+  },
+  "retrieval_limits": [
+    "Bounded static source and documentation analysis; no exhaustive architecture or caller claim.",
+    "Prior implementation comparison used as a dated secondary assessment.",
+    "All implementation paths checked by Codebase Memory; unresolved relationships qualified in coverage.json."
+  ],
+  "actions_not_performed": [
+    "campaign resume",
+    "source-code mutation",
+    "Docker or engineering tests",
+    "credential access",
+    "provider inference",
+    "paid subagent/reviewer invocation",
+    "commit/merge/push/deploy"
+  ],
+  "context_observation": {
+    "host_context_window_id": "01a1e288-efe3-74d1-804f-9544a5d77efe",
+    "id_use": "Planning coordination correlation only, not a verified transcript/session binding",
+    "listener_status": "unavailable: no matching local rollout in either Codex sessions root",
+    "fallback": "Preparation root owns explicit get_context_remaining checks before substantial phases",
+    "last_boundary_tokens_remaining": 105941
+  },
+  "external_documentation": [
+    {
+      "url": "https://developers.openai.com/siwc/token-sharing-open-source/models-and-inference",
+      "verified": "Public Responses endpoint, account model selection, store:false/stream:true; no local live compatibility claim."
+    },
+    {
+      "url": "https://developers.openai.com/siwc/token-sharing-open-source/sign-in",
+      "verified": "Registration identity and granted permission require qualification; legacy token interchangeability not established."
+    },
+    {
+      "url": "https://developers.openai.com/siwc/token-sharing-open-source/errors-and-recovery",
+      "verified": "Plan-usage failures preserve exact response evidence; usage-limit error can be app-specific and does not reveal full-plan exhaustion or reset time."
+    }
+  ]
+}

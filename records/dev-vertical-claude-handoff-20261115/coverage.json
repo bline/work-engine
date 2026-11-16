@@ -1,0 +1,255 @@
+{
+  "standing": "Bounded repository-search verification metadata, not completeness or runtime evidence",
+  "project": "home-bline-code-work-engine",
+  "summaries": [
+    {
+      "metadata": {
+        "generation": "2026-11-15T23:50:26Z",
+        "index_mode": "full",
+        "recorded_at": "2026-11-15T23:50:35Z",
+        "recording_status": "complete",
+        "ignored_files_stored": 60,
+        "ignored_files_total": 60,
+        "hash_records_complete": true,
+        "unresolved_calls_complete": true,
+        "coverage_version": 13,
+        "generation_matches": true,
+        "store_generation": "u3bbb4b0d0034775bg2"
+      },
+      "paths": [
+        {
+          "path": "rust/crates/work-engine-manual-host/src/pi_native.rs",
+          "status": "unresolved_calls",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "read_source_and_verify_calls"
+        },
+        {
+          "path": "rust/crates/work-engine-manual-host/receiver/pi-native.mjs",
+          "status": "unresolved_calls",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "read_source_and_verify_calls"
+        },
+        {
+          "path": "rust/crates/work-engine-manual-host/receiver/pi-native-tools.mjs",
+          "status": "unresolved_calls",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "read_source_and_verify_calls"
+        },
+        {
+          "path": "rust/crates/work-engine-manual-host/examples/pi_native_probe.rs",
+          "status": "unresolved_calls",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "read_source_and_verify_calls"
+        },
+        {
+          "path": "rust/crates/work-engine-manual-host/src/pi_coding_provider.rs",
+          "status": "unresolved_calls",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "read_source_and_verify_calls"
+        },
+        {
+          "path": "rust/crates/work-engine-manual-host/src/pi_coding_auth.rs",
+          "status": "unresolved_calls",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "read_source_and_verify_calls"
+        },
+        {
+          "path": "rust/crates/bounded-inference/src/public_host.rs",
+          "status": "unresolved_calls",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "read_source_and_verify_calls"
+        },
+        {
+          "path": "rust/crates/bounded-inference/src/request.rs",
+          "status": "unresolved_calls",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "read_source_and_verify_calls"
+        },
+        {
+          "path": "rust/crates/bounded-inference/src/stream.rs",
+          "status": "unresolved_calls",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "read_source_and_verify_calls"
+        },
+        {
+          "path": "rust/crates/bounded-inference/src/journal.rs",
+          "status": "unresolved_calls",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "read_source_and_verify_calls"
+        },
+        {
+          "path": "rust/crates/bounded-inference/src/auth.rs",
+          "status": "unresolved_calls",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "read_source_and_verify_calls"
+        },
+        {
+          "path": "rust/crates/work-engine-task-host/src/lib.rs",
+          "status": "unresolved_calls",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "read_source_and_verify_calls"
+        }
+      ],
+      "path_total": 12,
+      "path_has_more": false,
+      "has_more": false
+    },
+    {
+      "metadata": {
+        "generation": "2026-11-15T23:50:26Z",
+        "index_mode": "full",
+        "recorded_at": "2026-11-15T23:50:35Z",
+        "recording_status": "complete",
+        "ignored_files_stored": 60,
+        "ignored_files_total": 60,
+        "hash_records_complete": true,
+        "unresolved_calls_complete": true,
+        "coverage_version": 13,
+        "generation_matches": true,
+        "store_generation": "u3bbb4b0d0034775bg2"
+      },
+      "paths": [
+        {
+          "path": "notes/inference-ideas-20261115/README.md",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        },
+        {
+          "path": "notes/inference-ideas-20261115/host-inference-gateway.md",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        },
+        {
+          "path": "notes/inference-ideas-20261115/inference-resource-management.md",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        },
+        {
+          "path": "notes/inference-ideas-20261115/inference-optimization-and-routing.md",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        },
+        {
+          "path": "notes/inference-ideas-20261115/cache-affinity-and-effort.md",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        },
+        {
+          "path": "notes/inference-ideas-20261115/usage-and-attempt-evidence.md",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        },
+        {
+          "path": "notes/inference-ideas-20261115/research-and-compiled-policy.md",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        },
+        {
+          "path": "notes/inference-ideas-20261115/qualification-experiments.md",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        },
+        {
+          "path": "notes/inference-ideas-20261115/rust-implementation-comparison.md",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        },
+        {
+          "path": "records/pi-native-development-pause-20261114/README.md",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        },
+        {
+          "path": "records/pi-native-development-pause-20261114/evidence-manifest.json",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        },
+        {
+          "path": "records/pi-native-development-pause-20261114/qualification-original.json",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        },
+        {
+          "path": "records/pi-native-development-pause-20261114/fulltools-qualification.json",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        },
+        {
+          "path": "rust/crates/work-engine-manual-host/docs/pi-native-integration.md",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        },
+        {
+          "path": "rust/crates/bounded-inference/PUBLIC_HOST.md",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        },
+        {
+          "path": "experiments/pi-attempt-accounting/README.md",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        },
+        {
+          "path": "rust/crates/work-engine-manual-host/Cargo.toml",
+          "status": "no_recorded_issue",
+          "freshness": "metadata_match",
+          "content_verified": true,
+          "recommended_action": "use_graph_with_best_effort_caveat"
+        }
+      ],
+      "path_total": 17,
+      "path_has_more": false,
+      "has_more": false
+    }
+  ],
+  "limitations": [
+    "Implementation content matched, but unresolved call relationships remain.",
+    "Pi request inbound trace reported unknown caller total; exact source/import reads support only the bounded wiring assessment.",
+    "Documentation and note evidence was read directly.",
+    "No tests, Docker execution, credential access, provider inference or independent engineering review was performed."
+  ]
+}

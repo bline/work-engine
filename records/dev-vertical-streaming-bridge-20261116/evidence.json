@@ -1,0 +1,361 @@
+{
+ "standing": "bounded offline evidence copy; private run dirs own full artifacts",
+ "runs": {
+  "stream7": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/stream7",
+   "sha256": {
+    "store/control-closed-observation.json": "80c95b38e773cca1d380f7dabc2ea0663c867657d7a49d3f89feda0a59087092",
+    "store/control-closure.json": "a3cb249956bd6898d070631af166a0036c7b7cf1c80026b855a96c3f7432093e",
+    "store/control-create-intent.json": "85a6b286a22cef3b2730596a06be61486b3c16b16ffa6f644d81cc7a284590f8",
+    "store/control-created.json": "cd14344b652fb317fd345cf1cbb606b71f77adccb1fa016de20e102f111b08ae",
+    "store/control-ready.json": "63f44eb1554295c5fc650fdbb760257000dd47aaeb6aa3ee73611647d743313b",
+    "store/control-report.json": "4637bf51535d9544bfb5b9b12721cf0a8bae32f1177c3d1f4cefee8a5303b52d",
+    "store/control-stream-001.json": "711665d0b1c3daeb20ff68af0ad573d02da116cefef1eccabea14c72de15f7c5",
+    "store/control-stream-002.json": "79e51eb31eb73a63b441baceca502bc2dc14435db97273550feb26720f2f3619",
+    "store/control-stream-003.json": "6ce0d9d8d6d7c23dc49663409f3b2a3de41e6a63742951764dd52807f4e45d98",
+    "store/control-stream-004.json": "b84e7ff0a022a43b1ad45c9b70c39c6bc812f7ea560390561e2944bacff5d95f",
+    "store/control-stream-005.json": "8adcfb4e3ebdabfd244e33a79685abd422df7d30097fb389e1e0d352087598d5",
+    "observer.jsonl": "fdc6f197392f929b635b35dfee0bb5e1be7cd3e120364a0d4305626be53bcfa5",
+    "probe.err": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "inputs.sha256": "8aef535b4c54e66786d639896f84f1cd79d97f6ceecd7aedfbc854e16e9c078f"
+   }
+  },
+  "fault-truncate2": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/fault-truncate2",
+   "sha256": {
+    "store/control-create-intent.json": "f998cc14ff733f52bb18749f01484b1c2421c94c29467685e8fca646854f835d",
+    "store/control-created.json": "074815dea08086a882d504b19fd8e8a5fdec1ee92e509046059df05ab65bee07",
+    "store/control-failure.json": "882042afd31817d6e13d00777631d78abb8f5ff6776ac282c6c285d83b93b8e5",
+    "store/control-ready.json": "04d7db5019097246aee02964af28a3158f4722ffda947d5eced8caa7082c3031",
+    "store/control-stream-001.json": "2f9fec8301a0ce458c49c560f2da8e125cb1a365a2f783d912ce16fad32b2982",
+    "observer.jsonl": "416855a47391b38d2239f318d166057f8bb43c3b9c400138b57146e5c1f78718",
+    "probe.err": "26b7dfc1324dcb2ff8c3383ad112d3c4f45fdd4615d3892b04c61caf79ef5395",
+    "inputs.sha256": "8aef535b4c54e66786d639896f84f1cd79d97f6ceecd7aedfbc854e16e9c078f"
+   }
+  }
+ },
+ "faultTruncate2Failure": {
+  "classification": "provider-attempt-unknown",
+  "nativeLastMessage": {
+   "errorMessage": "relay_upstream_truncated",
+   "role": "assistant",
+   "stopReason": "error"
+  },
+  "nativeNextType": "snapshot",
+  "outcome": "interrupted-uncertain",
+  "stage": "stream-not-completed"
+ },
+ "stream7Report": {
+  "classification": "offline-actual-native-development",
+  "duplicateFirstRequest": true,
+  "providerDispatches": 6,
+  "providerResponsesConsumed": 5,
+  "snapshots": [
+   {
+    "entries": 9,
+    "leaf": "20dabe23",
+    "ordinal": 1,
+    "sha256": "d87c6e9f5f2ba692dbcc1748d4233730c7013e9ce4fadc378c7023a5419ed982"
+   },
+   {
+    "entries": 11,
+    "leaf": "3b720332",
+    "ordinal": 2,
+    "sha256": "dc7761f3c98b395f44e4102683866fc1cc00f33d00b26096abf951226c4b024f"
+   },
+   {
+    "entries": 13,
+    "leaf": "f79cbd7f",
+    "ordinal": 3,
+    "sha256": "10ea610938a8ab59be2a3dbbdba9b1f06461a54825ebb5a42e1ab59e10133980"
+   }
+  ],
+  "streams": [
+   {
+    "chunks": [
+     {
+      "bytes": 85,
+      "forwardMs": 1794805099841,
+      "ordinal": 1,
+      "pullMs": 1794805099841,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 178,
+      "forwardMs": 1794805099987,
+      "ordinal": 2,
+      "pullMs": 1794805099844,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 148,
+      "forwardMs": 1794805100137,
+      "ordinal": 3,
+      "pullMs": 1794805100001,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 238,
+      "forwardMs": 1794805100287,
+      "ordinal": 4,
+      "pullMs": 1794805100150,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 328,
+      "forwardMs": 1794805100437,
+      "ordinal": 5,
+      "pullMs": 1794805100303,
+      "upstreamEndedAtPull": false
+     }
+    ],
+    "forwardedBytes": 977,
+    "forwardedSha256": "0f97a212417ddb132e8cd92f5f642ddc0ff95dd77376af9e34ebd02a52316f23",
+    "interruption": null,
+    "openedMs": 1794805099837,
+    "outcome": "released-after-upstream-end",
+    "pullsBeforeUpstreamEnd": 4,
+    "status": 200,
+    "unforwardedAfterRelease": 0,
+    "upstreamEndMs": 1794805100440,
+    "usage": {
+     "cachedInputTokens": null,
+     "inputTokens": 1,
+     "observed": true,
+     "outputTokens": 1,
+     "reasoningTokens": null,
+     "responseId": "resp_1",
+     "totalTokens": 2
+    }
+   },
+   {
+    "chunks": [
+     {
+      "bytes": 85,
+      "forwardMs": 1794805109250,
+      "ordinal": 1,
+      "pullMs": 1794805109250,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 177,
+      "forwardMs": 1794805109387,
+      "ordinal": 2,
+      "pullMs": 1794805109252,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 1053,
+      "forwardMs": 1794805109538,
+      "ordinal": 3,
+      "pullMs": 1794805109402,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 1142,
+      "forwardMs": 1794805109688,
+      "ordinal": 4,
+      "pullMs": 1794805109551,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 1232,
+      "forwardMs": 1794805109838,
+      "ordinal": 5,
+      "pullMs": 1794805109701,
+      "upstreamEndedAtPull": false
+     }
+    ],
+    "forwardedBytes": 3689,
+    "forwardedSha256": "9ae2fe71805c3f00c9367b622f536dff05104d973203124ae904a66eda342b31",
+    "interruption": null,
+    "openedMs": 1794805109237,
+    "outcome": "released-after-upstream-end",
+    "pullsBeforeUpstreamEnd": 4,
+    "status": 200,
+    "unforwardedAfterRelease": 0,
+    "upstreamEndMs": 1794805109851,
+    "usage": {
+     "cachedInputTokens": null,
+     "inputTokens": 1,
+     "observed": true,
+     "outputTokens": 1,
+     "reasoningTokens": null,
+     "responseId": "resp_2",
+     "totalTokens": 2
+    }
+   },
+   {
+    "chunks": [
+     {
+      "bytes": 91,
+      "forwardMs": 1794805117346,
+      "ordinal": 1,
+      "pullMs": 1794805117346,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 162,
+      "forwardMs": 1794805117494,
+      "ordinal": 2,
+      "pullMs": 1794805117348,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 529,
+      "forwardMs": 1794805117644,
+      "ordinal": 3,
+      "pullMs": 1794805117496,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 646,
+      "forwardMs": 1794805117794,
+      "ordinal": 4,
+      "pullMs": 1794805117646,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 742,
+      "forwardMs": 1794805117944,
+      "ordinal": 5,
+      "pullMs": 1794805117797,
+      "upstreamEndedAtPull": false
+     }
+    ],
+    "forwardedBytes": 2170,
+    "forwardedSha256": "7758c9135005d6dff1c77a029455b0789da332ee6d97e29ffadf8e5b2eeddd14",
+    "interruption": null,
+    "openedMs": 1794805117344,
+    "outcome": "released-after-upstream-end",
+    "pullsBeforeUpstreamEnd": 4,
+    "status": 200,
+    "unforwardedAfterRelease": 0,
+    "upstreamEndMs": 1794805117947,
+    "usage": {
+     "cachedInputTokens": null,
+     "inputTokens": 1,
+     "observed": true,
+     "outputTokens": 1,
+     "reasoningTokens": null,
+     "responseId": "resp_offline",
+     "totalTokens": 2
+    }
+   },
+   {
+    "chunks": [
+     {
+      "bytes": 91,
+      "forwardMs": 1794805122918,
+      "ordinal": 1,
+      "pullMs": 1794805122918,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 162,
+      "forwardMs": 1794805123066,
+      "ordinal": 2,
+      "pullMs": 1794805122920,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 529,
+      "forwardMs": 1794805123216,
+      "ordinal": 3,
+      "pullMs": 1794805123068,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 646,
+      "forwardMs": 1794805123366,
+      "ordinal": 4,
+      "pullMs": 1794805123219,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 742,
+      "forwardMs": 1794805123516,
+      "ordinal": 5,
+      "pullMs": 1794805123369,
+      "upstreamEndedAtPull": false
+     }
+    ],
+    "forwardedBytes": 2170,
+    "forwardedSha256": "7758c9135005d6dff1c77a029455b0789da332ee6d97e29ffadf8e5b2eeddd14",
+    "interruption": null,
+    "openedMs": 1794805122915,
+    "outcome": "released-after-upstream-end",
+    "pullsBeforeUpstreamEnd": 4,
+    "status": 200,
+    "unforwardedAfterRelease": 0,
+    "upstreamEndMs": 1794805123520,
+    "usage": {
+     "cachedInputTokens": null,
+     "inputTokens": 1,
+     "observed": true,
+     "outputTokens": 1,
+     "reasoningTokens": null,
+     "responseId": "resp_offline",
+     "totalTokens": 2
+    }
+   },
+   {
+    "chunks": [
+     {
+      "bytes": 91,
+      "forwardMs": 1794805128526,
+      "ordinal": 1,
+      "pullMs": 1794805128526,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 162,
+      "forwardMs": 1794805128674,
+      "ordinal": 2,
+      "pullMs": 1794805128529,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 529,
+      "forwardMs": 1794805128825,
+      "ordinal": 3,
+      "pullMs": 1794805128676,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 646,
+      "forwardMs": 1794805128975,
+      "ordinal": 4,
+      "pullMs": 1794805128838,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 742,
+      "forwardMs": 1794805129125,
+      "ordinal": 5,
+      "pullMs": 1794805128977,
+      "upstreamEndedAtPull": false
+     }
+    ],
+    "forwardedBytes": 2170,
+    "forwardedSha256": "7758c9135005d6dff1c77a029455b0789da332ee6d97e29ffadf8e5b2eeddd14",
+    "interruption": null,
+    "openedMs": 1794805128523,
+    "outcome": "released-after-upstream-end",
+    "pullsBeforeUpstreamEnd": 4,
+    "status": 200,
+    "unforwardedAfterRelease": 0,
+    "upstreamEndMs": 1794805129138,
+    "usage": {
+     "cachedInputTokens": null,
+     "inputTokens": 1,
+     "observed": true,
+     "outputTokens": 1,
+     "reasoningTokens": null,
+     "responseId": "resp_offline",
+     "totalTokens": 2
+    }
+   }
+  ]
+ }
+}

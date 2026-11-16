@@ -60,6 +60,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut effects = BTreeMap::<String, (usize, String, Vec<u8>)>::new();
     let mut receipts = vec![];
     let mut authority = None;
+    let truncate = std::env::var("PI_OBSERVER_FAULT").as_deref() == Ok("truncate-first");
     while effects.len() < 5 {
         let (mut s, _) = match listener.accept() {
             Ok(x) => x,
@@ -135,12 +136,41 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
         std::io::stdout().flush()?;
         receipts.push(receipt);
+        // Incremental chunked SSE: each event is flushed separately and the
+        // endpoint stays open between them, so early native consumption is
+        // observable before the framed end.
         write!(
             s,
-            "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-            reply.len()
+            "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n"
         )?;
-        s.write_all(reply)?;
+        s.flush()?;
+        let text = std::str::from_utf8(reply)?;
+        let mut sent = vec![];
+        for (i, event) in text.split_inclusive("\n\n").enumerate() {
+            if truncate && i == 2 && !duplicate && *effect_id == 1 {
+                // Fault control: close mid-stream without the framed end.
+                println!(
+                    "{}",
+                    json!({"type":"fault","fault":"truncate","requestId":id,"eventSentMs":sent})
+                );
+                std::io::stdout().flush()?;
+                return Err("injected truncate fault".into());
+            }
+            if i > 0 {
+                std::thread::sleep(Duration::from_millis(150));
+            }
+            write!(s, "{:x}\r\n{event}\r\n", event.len())?;
+            s.flush()?;
+            sent.push(pi_native::now());
+        }
+        write!(s, "0\r\n\r\n")?;
+        s.flush()?;
+        sent.push(pi_native::now());
+        println!(
+            "{}",
+            json!({"type":"stream-sent","requestId":id,"duplicate":duplicate,"eventSentMs":sent})
+        );
+        std::io::stdout().flush()?;
     }
     println!(
         "{}",

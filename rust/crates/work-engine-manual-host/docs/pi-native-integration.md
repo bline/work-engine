@@ -10,9 +10,15 @@ for authority, bounded results, historical findings and remaining gates.
 
 `pi_native` is a bounded offline transport implementation exercised by
 `examples/pi_native_probe.rs`. It is separate from the earlier memory/FIFO
-mechanism experiment. The human's trusted laptop OS, encrypted storage and
-excluded host compromise are environment assumptions for this leaf; global
-kernel capture/backing attestation is not a result of this implementation.
+mechanism experiment. The current development environment, controlled and
+maintained by the responsible developer/operator, is trusted for this profile;
+host compromise is outside its claimed protection. The earlier laptop,
+encrypted-storage and disabled-hibernation details describe that run's
+environment, not a restriction to that machine or a universal configuration
+recipe. See the [operator's trust clarification](../../../../records/dev-vertical-claude-handoff-20261115/development-environment-trust.md).
+Global kernel capture/backing attestation is not a result of this implementation.
+Work Engine remains responsible for credential isolation from workers and its
+application-controlled retention, export and custody publication protections.
 
 The actual Pi 1.5.0 SDK creates an `AgentSession`, `ModelRuntime`, in-memory
 settings and in-memory native `SessionManager`. Native provider parsing and
@@ -60,6 +66,11 @@ observations are bounded behavior evidence, not an independent exhaustive
 syscall audit or a universal absence-of-write claim. Failed create/attach and
 Drop cleanup retain weaker historical disposition than a successful joined
 closure; absence afterward alone cannot repair missing history.
+
+Responses now stream incrementally through `pi_stream`: one screened host chunk
+per native pull, explicit cancel/failure frames, and uncertain outcomes for
+interrupted streams. See the [streaming bridge record](../../../../records/dev-vertical-streaming-bridge-20261116/README.md)
+for evidence and open limits.
 
 The probe uses independent random synthetic access material, a separately
 controlled host endpoint, two actual parsed assistant responses and two native

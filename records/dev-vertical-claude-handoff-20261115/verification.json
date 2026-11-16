@@ -1,0 +1,38 @@
+{
+  "standing": "Document/source consistency checks only; no engineering tests or independent review",
+  "checks": {
+    "relative_links_resolve": 11,
+    "input_hashes_match": 38,
+    "source_messages_match": 11,
+    "last_four_substantive_exchanges_verified": true,
+    "json_files_valid": 3,
+    "tracked_worktree_and_index_clean": true,
+    "initial_untracked_entries_preserved": 6,
+    "only_new_owned_paths": [
+      "planning/dev-vertical-completion-20261115.md",
+      "records/dev-vertical-claude-handoff-20261115/"
+    ]
+  },
+  "immutable_review_subjects": [
+    {
+      "path": "planning/dev-vertical-completion-20261115.md",
+      "sha256": "cb58b75e4b676a0bd9a8e3d20ebc23415533aabfd5288955c1bc51f50afc728e",
+      "lines": 259
+    },
+    {
+      "path": "records/dev-vertical-claude-handoff-20261115/README.md",
+      "sha256": "ff3a76be1224092636bd4d438df8f262343fbb7d0f8db0a5f954e20644587fcc",
+      "lines": 143
+    }
+  ],
+  "git_status": [
+    "?? .claude/",
+    "?? notes/inference-ideas-20261115/",
+    "?? notes/pi-accounting-architecture-review-20261112.md",
+    "?? notes/scratch.md",
+    "?? planning/dev-vertical-completion-20261115.md",
+    "?? planning/knowledge-oracle-decision-aware-boundary-20261108.md",
+    "?? protonvpn-stable-release_1.0.10_all.deb",
+    "?? records/dev-vertical-claude-handoff-20261115/"
+  ]
+}
