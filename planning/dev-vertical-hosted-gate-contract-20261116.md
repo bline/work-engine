@@ -23,8 +23,9 @@ is not independent review or qualification.
    max_attempts_per_request }`. Routes and payers are non-empty, bounded and
    unique; the attempt limit is between 1 and 8. Its digest is SHA-256 over
    its canonical JSON.
-2. **Grant binding.** In hosted mode the gate claims its turns under grant
-   ids that carry the policy digest: `grant:old:pi-hosted:<digest>` and
+2. **Grant binding.** In hosted mode the gate claims its turns (including
+   the successor's rehydration turn) under grant ids that carry the policy
+   digest: `grant:old:pi-hosted:<digest>` and
    `grant:new:pi-hosted:<digest>`. The trusted issuer must install exactly
    those grants. A different policy needs a different grant, and revoking or
    expiring the grant ends the policy. The lifecycle store's grant schema is
@@ -40,7 +41,10 @@ is not independent review or qualification.
      dispatched;
    - requires attempts in strict sequence, within the limit, on a bound
      `(route, payer)` pair;
-   - records `pi.provider_attempt` before entry;
+   - keeps the admitted attempt (intent and policy digest) for the
+     continuity report. It writes nothing into the turn's ingress, so the
+     settled Pi event grammar is unchanged; the Host ledger durably records
+     every attempt before its dispatch;
    - runs `dispatch(deadline)` inside `with_pi_coding_turn_send`, so the
      parent turn's grant currentness (not revoked, not expired, current
      revision, active ownership) holds while the dispatch starts. The
@@ -60,3 +64,13 @@ protocol and checkpoint derivation, which hosted transport does not change.
 Hosted turns are distinguished by their policy-bound grant ids. If an
 acceptance owner requires a separately versioned lifecycle kind, it is an
 additive `PiCodingKind` change.
+
+## Amendment, 2026-11-16 (offline hosted Docker run)
+
+The first offline Docker run of the hosted profile found two defects in the
+original implementation (9d24449c). Recording `pi.provider_attempt` in the
+turn ingress made every hosted turn's settlement fail closed, because the
+settled event grammar has no such event. The successor's rehydration turn
+also used the bare `grant:new`. Both are corrected as stated in items 2 and 4
+above; a full hosted flow test now settles all four turns.
+

@@ -414,6 +414,9 @@ struct SyntheticSdk {
     live: bool,
     preamble: bool,
     thinking: bool,
+    /// Hosted: after each live grant, attempt 1 on the primary route (taken
+    /// as refused) and attempt 2 on the secondary.
+    hosted: bool,
 }
 impl SyntheticSdk {
     fn new(session: &str, requests: u64) -> Self {
@@ -427,6 +430,7 @@ impl SyntheticSdk {
             live: false,
             preamble: false,
             thinking: false,
+            hosted: false,
         }
     }
     fn assistant(&self, mut m: serde_json::Value) -> serde_json::Value {
@@ -494,6 +498,11 @@ impl SyntheticSdk {
         let commands = c.frame(&frame).unwrap();
         assert_eq!(commands.len(), 1);
         control(c, &commands[0]);
+        if self.hosted {
+            for (n, route, payer) in [(1, "primary", "payer-a"), (2, "secondary", "payer-b")] {
+                attempt(c, intent(self.requests, n, route, payer)).unwrap();
+            }
+        }
         commands[0].clone()
     }
     fn turn(
@@ -779,7 +788,17 @@ fn run_complete_mode(
     preamble: bool,
     sol: bool,
 ) -> Result<(PathBuf, CodingContinuity), work_engine_manual_host::Error> {
-    let (root, c) = continuity_try_mode(live, None, None, sol);
+    run_complete_full(live, preamble, sol, false)
+}
+fn run_complete_full(
+    live: bool,
+    preamble: bool,
+    sol: bool,
+    hosted: bool,
+) -> Result<(PathBuf, CodingContinuity), work_engine_manual_host::Error> {
+    let policy = hosted.then(hosted_policy);
+    let (root, c) =
+        continuity_try_full(live, None, None, sol, policy.clone(), policy.as_ref(), 1000);
     let mut c = c?;
 
     let commands = c
@@ -801,6 +820,7 @@ fn run_complete_mode(
     sdk.live = live;
     sdk.thinking = sol;
     sdk.preamble = preamble;
+    sdk.hosted = hosted;
     let reset = sdk.turn(&mut c, &original, Some(&root))?;
     assert_eq!(reset["type"], "bridge_replace");
     control(&mut c, &reset);
@@ -824,6 +844,7 @@ fn run_complete_mode(
     let mut fresh = SyntheticSdk::new("physical:new", 2);
     fresh.live = live;
     fresh.thinking = sol;
+    fresh.hosted = hosted;
     let continued = fresh.turn(&mut c, &recovery, None).unwrap();
     control(&mut c, &continued);
     let close = fresh.turn(&mut c, &continued, None).unwrap();
@@ -967,6 +988,35 @@ fn hosted_started(
     let mut sdk = SyntheticSdk::new("physical:old", 0);
     sdk.live = true;
     (root, c, sdk, original)
+}
+#[test]
+fn hosted_attempts_leave_the_settled_event_grammar_unchanged_and_are_reported() {
+    // Real Docker run (dev-vertical step 4): attempts recorded in the turn
+    // ingress made every hosted settlement fail closed.
+    let (root, c) = run_complete_full(true, false, false, true).unwrap();
+    let report = c.report().unwrap();
+    assert_eq!(report["continued_parent"], "CompletedSettled");
+    let attempts = report["hosted_attempts"].as_array().unwrap();
+    assert_eq!(attempts.len(), 8);
+    assert_eq!(
+        attempts[0]["intent"],
+        json!(intent(1, 1, "primary", "payer-a"))
+    );
+    assert_eq!(
+        attempts[7]["intent"],
+        json!(intent(4, 2, "secondary", "payer-b"))
+    );
+    assert!(
+        attempts
+            .iter()
+            .all(|a| a["policy"] == hosted_policy().digest())
+    );
+    drop(c);
+    fs::remove_dir_all(root).unwrap();
+    let (root, c) = run_complete(true, false).unwrap();
+    assert!(c.report().unwrap().get("hosted_attempts").is_none());
+    drop(c);
+    fs::remove_dir_all(root).unwrap();
 }
 #[test]
 fn hosted_attempts_follow_the_granted_policy_and_are_consumed_once() {

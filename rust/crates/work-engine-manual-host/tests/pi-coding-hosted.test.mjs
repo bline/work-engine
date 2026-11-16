@@ -7,6 +7,7 @@ import vm from 'node:vm';
 import {EventEmitter} from 'node:events';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
+import {zstdCompressSync, zstdDecompressSync} from 'node:zlib';
 import {openResponse} from '../receiver/pi-native-tools.mjs';
 
 const binding = {session: 'hosted-session', attempt: 'job-attempt', generation: 1, profile: 'work-engine.pi-coding-hosted.v1'};
@@ -31,7 +32,7 @@ function queueStream() {
   };
 }
 
-async function runHosted({grantStream = {binding, sequence: 1, stream: 1}} = {}) {
+async function runHosted({grantStream = {binding, sequence: 1, stream: 1}, zstd = false} = {}) {
   const frames = [], input = new EventEmitter();
   input.close = () => {};
   const seen = {globalFetches: 0, accessReads: 0, accessImports: 0, credentials: null, responses: []};
@@ -44,7 +45,8 @@ async function runHosted({grantStream = {binding, sequence: 1, stream: 1}} = {})
       // The unchanged SDK stream function: it uses only the injected fetch.
       streamFunction: async (_m, _c, options) => {
         const response = await options.fetch('https://chatgpt.com/backend-api/codex/responses',
-          {method: 'POST', headers: {authorization: 'Bearer marker', 'content-type': 'application/json'}, body: requestBody});
+          zstd ? {method: 'POST', headers: {authorization: 'Bearer marker', 'content-type': 'application/json', 'content-encoding': 'zstd'}, body: new Uint8Array(zstdCompressSync(requestBody))}
+            : {method: 'POST', headers: {authorization: 'Bearer marker', 'content-type': 'application/json'}, body: requestBody});
         const text = await response.text();
         seen.responses.push({status: response.status, text});
         const out = queueStream();
@@ -96,6 +98,7 @@ async function runHosted({grantStream = {binding, sequence: 1, stream: 1}} = {})
   const modules = {
     'node:readline': {createInterface: () => input},
     'node:crypto': {createHash},
+    'node:zlib': {zstdDecompressSync},
     'node:fs': {
       existsSync: p => p === '/profile/job.json',
       readFileSync: p => { if (p.startsWith('/auth')) seen.accessReads++; return JSON.stringify(p === '/profile/job.json' ? config : {}); },
@@ -138,6 +141,14 @@ test('hosted receiver dispatches only through the Host relay, without network or
   // Settlement evidence is the Host's: the container sends no observations.
   assert.equal(frames.some(f => f.type === 'provider_observation'), false);
   assert.equal(frames.filter(f => f.type === 'provider_complete').length, 1);
+});
+
+test('hosted receiver sends the zstd-compressed SDK body to the Host as plain bounded JSON', {skip: !vm.SourceTextModule}, async () => {
+  const {frames} = await runHosted({zstd: true});
+  assert.equal(frames.at(-1).type, 'complete', JSON.stringify(frames.filter(f => f.type === 'error')));
+  const [fetch] = frames.filter(f => f.type === 'provider_fetch');
+  assert.equal(Buffer.from(fetch.body, 'base64').toString(), requestBody);
+  assert.equal(fetch.headers['content-encoding'], undefined);
 });
 
 test('hosted grant without a stream identity fails before any fetch frame', {skip: !vm.SourceTextModule}, async () => {

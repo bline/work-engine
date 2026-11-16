@@ -5,6 +5,7 @@ import {markRuntimeStreamFunction} from '/pi/node_modules/@earendil-works/pi-cod
 import {createHash} from 'node:crypto';
 import {Type} from '/pi/node_modules/typebox/build/index.mjs';
 import {createInterface} from 'node:readline';
+import {zstdDecompressSync} from 'node:zlib';
 import {openSync,writeFileSync,fsyncSync,closeSync,existsSync,readFileSync,readdirSync,lstatSync} from 'node:fs';
 const bridge=process.argv.includes('--lifecycle-bridge');
 const fixtureSigned=existsSync('/auth/signed-fixture.json');
@@ -232,10 +233,16 @@ try {
        checkConsumption(until);
        if(fetched||hostedFrames.open)throw Error('hosted fetch already used');
        fetched=true;
-       const body=typeof init.body==='string'?Buffer.from(init.body):Buffer.from(init.body??[]);
+       let body=typeof init.body==='string'?Buffer.from(init.body):Buffer.from(init.body??[]);
+       const headers=Object.fromEntries(new Headers(init.headers));
+       // The SDK zstd-compresses Codex SSE bodies. The Host validates and
+       // forwards plain JSON (the SDK's own uncompressed fallback), so the
+       // bounded decompression happens here, never on the Host.
+       if(headers['content-encoding']==='zstd'){body=zstdDecompressSync(body,{maxOutputLength:45001});delete headers['content-encoding'];}
+       else if(headers['content-encoding']!==undefined)throw Error('hosted request encoding');
        if(body.length>45000)throw Error('hosted request bound');
        hostedFrames.open=true;
-       emit({type:'provider_fetch',id,binding:sid.binding,sequence:sid.sequence,stream:sid.stream,url:String(url),method:init.method,headers:Object.fromEntries(new Headers(init.headers)),body:body.toString('base64')});
+       emit({type:'provider_fetch',id,binding:sid.binding,sequence:sid.sequence,stream:sid.stream,url:String(url),method:init.method,headers,body:body.toString('base64')});
        const handle=openResponse({id:sid,sendRaw:async v=>emit(v),read:()=>hostedFrames.read(),signal:init.signal,onSettled:()=>{hostedFrames.open=false;hostedFrames.queue=[];}});
        return handle.response;
       }});

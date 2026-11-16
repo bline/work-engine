@@ -419,6 +419,11 @@ impl Host {
             {
                 return refuse("provider fetch header name");
             }
+            // The receiver decompresses; the Host validates and forwards only
+            // plain JSON.
+            if k == "content-encoding" {
+                return refuse("provider fetch body encoding");
+            }
             if !ACCESS_HEADERS.contains(&k.as_str()) {
                 headers.insert(k, v.to_string());
             }
@@ -1362,7 +1367,7 @@ mod tests {
 
     #[test]
     fn fetch_identity_url_model_and_route_table_are_checked() {
-        for mutate in 0..5 {
+        for mutate in 0..6 {
             let (_dir, mut h, mut w) = host(vec![], None);
             let g = grant(&mut h, &mut w);
             let mut f = fetch(&g);
@@ -1371,6 +1376,7 @@ mod tests {
                 1 => f["body"] = json!(B64.encode(br#"{"model":"gpt-6-other","stream":true}"#)),
                 2 => f["stream"] = json!(2),
                 3 => f["id"] = json!(2),
+                4 => f["headers"]["content-encoding"] = json!("zstd"),
                 _ => f["method"] = json!("GET"),
             }
             assert!(push(&mut h, &mut w, f).is_err(), "case {mutate}");

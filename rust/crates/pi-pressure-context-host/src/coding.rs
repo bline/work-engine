@@ -268,6 +268,11 @@ struct ContinuityState {
     tool_result_sent: bool,
     /// Hosted attempts consumed for the current logical request.
     hosted_attempts: (u64, u64),
+    /// Every admitted hosted attempt, reported with the continuity result.
+    /// Not recorded in the turn's ingress: the Pi event grammar and the Live
+    /// lifecycle digests stay unchanged. The Host ledger durably records each
+    /// attempt before its dispatch.
+    hosted_log: Vec<Value>,
 }
 impl ContinuityState {
     fn live(&self) -> bool {
@@ -322,8 +327,7 @@ impl ContinuityState {
             .ok_or_else(|| refused("coding parent absent"))?
             .clone();
         let mut o = gate.0.borrow_mut();
-        let event = json!({"type":"pi.provider_attempt","invocationId":o.parent.invocation_id(),"intent":intent,"policy":policy.digest()});
-        o.record("pi.provider_attempt", &event)?;
+        self.hosted_log.push(json!({"invocationId":o.parent.invocation_id(),"intent":intent,"policy":policy.digest()}));
         let clock = (self.clock)();
         let configured = self.config.expires_ms;
         let CodingLifecycle { store, parent, .. } = &mut *o;
@@ -392,6 +396,7 @@ impl CodingContinuity {
             reset_entered: false,
             tool_result_sent: false,
             hosted_attempts: (0, 0),
+            hosted_log: vec![],
         }))))
     }
     pub fn report(&self) -> Result<Value> {
@@ -752,6 +757,9 @@ impl ContinuityState {
             self.report = Some(
                 json!({"schema":"work-engine.pi-coding-continuity-result.v1","standing":if self.live() {"live-provider disposable continuity pilot; real inference; no production/domain acceptance"} else {"provider-disabled disposable qualification; no production/domain acceptance"},"mode":if self.live() {"live"} else {"fixture"},"context":subject.context_id,"owner":subject.owner_kind,"checkpoint":self.checkpoint,"original_host_result":self.original_result,"workspace":self.workspace,"observations":self.observations,"fresh_successor":self.fresh_successor,"predecessor_history_external_only":true,"provider_requests":self.provider_calls,"tool_executions":1,"physical_resets":1,"recovery_receipt":self.recovery_receipt,"continued_parent":o.store.native_recovery("continued").map_err(refused)?.unwrap().class}),
             );
+            if self.config.hosted.is_some() {
+                self.report.as_mut().unwrap()["hosted_attempts"] = json!(self.hosted_log);
+            }
             self.phase = 4;
             self.queue(json!({"type":"bridge_close","sessionId":frame["sessionId"]}))
         } else {
@@ -916,11 +924,12 @@ impl ContinuityState {
         self.observations.push(frame["snapshot"].clone());
         drop(o);
         let checkpoint = self.checkpoint.clone().unwrap();
+        let grant = self.turn_grant("grant:new");
         self.prompt(
             "rehydrate",
             &checkpoint,
             NativeInvocationPurpose::SuccessorRehydrate,
-            "grant:new",
+            &grant,
         )
     }
     fn finish_rehydration(&mut self) -> Result<()> {
