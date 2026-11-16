@@ -33,6 +33,9 @@ pub struct ProviderPlan {
     /// Required exactly for the hosted profile.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stream_adapter: Option<Artifact>,
+    /// Route table, required exactly for the hosted profile.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hosted: Option<super::hosted::HostedRoutes>,
     pub model: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sol_high: Option<SolHighContract>,
@@ -336,6 +339,9 @@ struct Admission {
     budget_microusd: u64,
     allow_native_access_projection: bool,
     allow_provider: bool,
+    /// Digest of the hosted route table; present exactly for the hosted profile.
+    #[serde(default)]
+    hosted_routes_sha256: Option<String>,
 }
 impl ProviderPlan {
     pub(super) fn selected(&self) -> Result<Value> {
@@ -414,6 +420,11 @@ impl ProviderPlan {
             None if !hosted => {}
             _ => return refuse("stream adapter is exactly for the hosted profile"),
         }
+        match &self.hosted {
+            Some(routes) if hosted => routes.validate()?,
+            None if !hosted => {}
+            _ => return refuse("route table is exactly for the hosted profile"),
+        }
         self.lane.validate_references()?;
         if self.lane.native_auth_source.starts_with(&job.state_dir)
             || self.lane.native_auth_source.starts_with(&job.runtime.root)
@@ -473,6 +484,7 @@ impl ProviderPlan {
             || admission.budget_microusd != self.budget_microusd
             || !admission.allow_native_access_projection
             || !admission.allow_provider
+            || admission.hosted_routes_sha256 != self.hosted.as_ref().map(|r| r.digest())
         {
             return refuse("provider admission does not bind this exact realization");
         }
@@ -811,7 +823,18 @@ impl Host {
                     self.save()?;
                     return refuse("provider usage exceeds admitted catalog bound");
                 }
-                r.settled_microusd = Some(actual);
+                if r.attempts.is_empty() {
+                    r.settled_microusd = Some(actual);
+                } else {
+                    // Hosted: the completed attempt settles; refused attempts
+                    // already released theirs.
+                    let attempt = r.attempts.last().map(|a| a.attempt).unwrap_or(0);
+                    if let Err(e) = r.settle_completed(attempt, actual) {
+                        state.provider_failed = true;
+                        self.save()?;
+                        return Err(e);
+                    }
+                }
                 self.save()?;
                 Ok(None)
             }
@@ -832,9 +855,9 @@ mod tests {
 }
 
 #[cfg(test)]
-mod ledger_tests {
+pub(super) mod ledger_tests {
     use super::*;
-    pub(super) fn fixture() -> (tempfile::TempDir, Host) {
+    pub(crate) fn fixture() -> (tempfile::TempDir, Host) {
         let (dir, mut h) = super::super::tests::fixture();
         let path = dir.path().join("catalog.json");
         let bytes=serde_json::to_vec(&json!({"openai-codex-responses":{"chat:gpt-6-luna":{"id":"gpt-6-luna","provider":"openai-codex","api":"openai-codex-responses","baseUrl":"https://chatgpt.com/backend-api","contextWindow":272000,"maxTokens":128000,"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,"tiers":[{"input":0.2,"output":0.75,"cacheRead":0.02,"cacheWrite":0.25}]}}}})).unwrap();
@@ -856,6 +879,7 @@ mod ledger_tests {
             catalog: pin.clone(),
             access_adapter: pin,
             stream_adapter: None,
+            hosted: None,
             model: "gpt-6-luna".into(),
             sol_high: None,
             max_requests: 6,
@@ -999,6 +1023,7 @@ mod admission_tests {
                 sha256: digest(ACCESS_ADAPTER),
             },
             stream_adapter: None,
+            hosted: None,
             model: "gpt-6-luna".into(),
             sol_high: None,
             max_requests: 6,
@@ -1412,6 +1437,7 @@ mod signed_subscription_tests {
                     sha256: digest(ACCESS_ADAPTER),
                 },
                 stream_adapter: None,
+                hosted: None,
                 model: "gpt-6-luna".into(),
                 sol_high: None,
                 max_requests: requests,
@@ -1473,12 +1499,29 @@ mod signed_subscription_tests {
                     path: adapter.clone(),
                     sha256: digest(STREAM_ADAPTER),
                 });
+                let routes = super::super::hosted::HostedRoutes {
+                    routes: vec![super::super::hosted::HostedRoute {
+                        id: "primary".into(),
+                        payer: "payer-a".into(),
+                        endpoint: "loopback:9".into(),
+                    }],
+                    max_attempts_per_request: 2,
+                };
+                let mut authority: Value = serde_json::from_slice(&admission).unwrap();
+                authority["hosted_routes_sha256"] = json!(routes.digest());
+                plan.hosted = Some(routes);
                 match sol_case {
                     11 => plan.stream_adapter = None,
                     12 => profile.schema = super::super::LIVE_BRIDGE_PROFILE.into(),
                     13 => fs::write(&adapter, b"// other\n").unwrap(),
+                    14 => plan.hosted = None,
+                    15 => authority["hosted_routes_sha256"] = json!(digest(b"other routes")),
+                    16 => plan.hosted.as_mut().unwrap().routes[0].payer = "payer-b".into(),
                     _ => {}
                 }
+                let bytes = serde_json::to_vec(&authority).unwrap();
+                fs::write(&h.journal.job.authority.path, &bytes).unwrap();
+                h.journal.job.authority.sha256 = digest(&bytes);
             }
             let job = h.journal.job.clone();
             let result = h.journal.job.coding.as_ref().unwrap().validate(&job);
@@ -1539,7 +1582,7 @@ mod signed_subscription_tests {
         }
         admit(4, 24_000, 1).expect("Sol/high exact versioned tuple");
         admit(4, 24_000, 10).expect("hosted profile with its pinned stream adapter");
-        for case in 11..=13 {
+        for case in 11..=16 {
             assert!(
                 admit(4, 24_000, case).is_err(),
                 "hosted adapter case {case}"

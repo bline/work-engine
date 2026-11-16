@@ -339,6 +339,7 @@ fn run() -> Result<Value> {
                 coding::provider::ACCESS_ADAPTER,
             )?,
             stream_adapter: None,
+            hosted: None,
             model: "gpt-6.1-sol".into(),
             sol_high: Some(SolHighContract {
                 schema: "work-engine.sol-high.v1".into(),

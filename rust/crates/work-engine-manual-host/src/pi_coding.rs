@@ -7,6 +7,8 @@ pub mod auth;
 pub mod claims;
 #[path = "pi_coding_export.rs"]
 pub mod export;
+#[path = "pi_coding_hosted.rs"]
+pub mod hosted;
 #[path = "pi_coding_provider.rs"]
 pub mod provider;
 #[path = "pi_coding_validation.rs"]
@@ -788,6 +790,7 @@ impl Host {
         send: &mut dyn FnMut(&[u8]) -> Result<()>,
     ) -> Result<()> {
         let command: Value = serde_json::from_slice(raw)?;
+        let hosted = self.coding_hosted_grant(&command)?;
         let gate = self
             .coding_gate
             .as_mut()
@@ -810,6 +813,9 @@ impl Host {
             }
             let mut command = command.clone();
             command["consumptionDeadlineMs"] = json!(until);
+            if let (Some(o), Some(Value::Object(fields))) = (command.as_object_mut(), &hosted) {
+                o.extend(fields.clone());
+            }
             let mut bytes = serde_json::to_vec(&command)?;
             bytes.push(b'\n');
             send(&bytes)
@@ -1037,6 +1043,17 @@ impl Host {
                         // Live continuity entries reserve and are fenced only via
                         // `coding_provider_request`; a bare grant would bypass the gate.
                         return refuse("bare provider request in live continuity profile");
+                    }
+                    if is_hosted(&self.journal.job.coding.as_ref().unwrap().schema) {
+                        // Settlement evidence is the Host's own relay observation.
+                        if kind == "provider_observation" {
+                            return refuse("container provider observation in hosted profile");
+                        }
+                        if kind == "provider_complete" {
+                            self.coding_hosted_before_complete(frame["id"].as_u64().ok_or_else(
+                                || Error::Refused("provider request id invalid".into()),
+                            )?)?;
+                        }
                     }
                     if let Some(reply) = self.coding_provider_frame(&frame)? {
                         replies.push(serde_json::to_vec(&reply)?);
@@ -1502,6 +1519,9 @@ impl Host {
                         replies.extend(self.coding_bridge_frame(&frame)?);
                     }
                 }
+                "provider_fetch" | "pull" | "cancel" | "ack" => {
+                    self.coding_hosted_frame(&frame)?;
+                }
                 "export_part" | "export_final" => {
                     self.coding_export_frame(&frame, kind)?;
                 }
@@ -1828,6 +1848,8 @@ mod tests {
             journal,
             coding_gate: None,
             coding_gate_deadline_ms: None,
+            hosted_transport: None,
+            hosted: Default::default(),
             pi_owner: None,
             allocation_lease: None,
             reply_leases: vec![],

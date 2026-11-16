@@ -183,6 +183,8 @@ pub struct Host {
     journal: Journal,
     coding_gate: Option<Box<dyn coding::CodingEffectGate>>,
     coding_gate_deadline_ms: Option<i64>,
+    hosted_transport: Option<Box<dyn coding::hosted::HostedProviderTransport>>,
+    hosted: coding::hosted::Hosted,
     pi_owner: Option<session_task_admission::pi_pilot::PiOwner>,
     allocation_lease: Option<session_task_admission::pi_pilot::EffectLease>,
     reply_leases: Vec<session_task_admission::pi_pilot::EffectLease>,
@@ -460,6 +462,8 @@ impl Host {
             journal,
             coding_gate: None,
             coding_gate_deadline_ms: None,
+            hosted_transport: None,
+            hosted: Default::default(),
             _lock: lock,
             pi_owner: owner,
             allocation_lease: None,
@@ -498,6 +502,8 @@ impl Host {
             journal,
             coding_gate: None,
             coding_gate_deadline_ms: None,
+            hosted_transport: None,
+            hosted: Default::default(),
             _lock: lock,
             pi_owner: None,
             allocation_lease: None,
@@ -708,6 +714,30 @@ impl Host {
                                     lease
                                         .observed(digest(b"host IPC grant flushed").as_str())
                                         .map_err(|e| Error::Refused(e.into()))?;
+                                }
+                            }
+                            // Hosted relay frames are stream protocol, not lifecycle
+                            // commands; they are written directly in order.
+                            if write_result.is_ok() {
+                                match self.coding_hosted_tick(&stdout_path) {
+                                    Ok(frames) => {
+                                        for frame in frames {
+                                            write_result = stdin
+                                                .as_mut()
+                                                .ok_or_else(|| {
+                                                    Error::Refused("coding stdin absent".into())
+                                                })?
+                                                .write_all(&frame)
+                                                .and_then(|_| stdin.as_mut().unwrap().flush());
+                                            if write_result.is_err() {
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    Err(e) => {
+                                        self.failure(e);
+                                        aborted = true;
+                                    }
                                 }
                             }
                         }

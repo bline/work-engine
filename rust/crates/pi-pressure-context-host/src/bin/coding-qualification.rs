@@ -1,14 +1,17 @@
 //! Explicit finite local qualification entry. No defaults admit runtime effects.
 use lifecycle_core::*;
 use lifecycle_store::*;
-use pi_pressure_context_host::coding::{CodingConfig, CodingContinuity};
+use pi_pressure_context_host::coding::{CodingConfig, CodingContinuity, HostedProviderPolicy};
 use serde_json::{Value, json};
 use std::{fs, path::PathBuf};
 use work_engine_manual_host::{
     digest,
     pi_docker::{
         Host, Job, Journal,
-        coding::{BRIDGE_PROFILE, SOL_HIGH_BRIDGE_PROFILE, WorkspaceWriteBoundary, is_live_bridge},
+        coding::{
+            BRIDGE_PROFILE, SOL_HIGH_BRIDGE_PROFILE, WorkspaceWriteBoundary,
+            hosted::LoopbackTransport, is_hosted, is_live_bridge,
+        },
         request_cancel,
     },
 };
@@ -145,8 +148,27 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
         pressure_basis_points: packet["pressure_basis_points"]
             .as_u64()
             .ok_or("pressure fixture required")?,
-        hosted: None,
+        // Hosted: the gate's failover policy is exactly the pinned route table
+        // (bound by the runtime admission), carried in the turn grant ids.
+        hosted: if is_hosted(&profile.schema) {
+            let routes = profile
+                .provider
+                .as_ref()
+                .and_then(|p| p.hosted.as_ref())
+                .ok_or("hosted route table absent")?;
+            Some(HostedProviderPolicy {
+                routes: routes.pairs(),
+                max_attempts_per_request: routes.max_attempts_per_request,
+            })
+        } else {
+            None
+        },
     };
+    let turn = |base: &str| match &config.hosted {
+        Some(policy) => policy.grant_id(base),
+        None => base.into(),
+    };
+    let hosted = config.hosted.is_some();
     let state_dir = job.state_dir.clone();
     let initial_manifest = job.workspace.manifest.verify()?;
     let mut host = Host::admit(job)?;
@@ -161,14 +183,18 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
         clock(),
     )?;
     for (id, context, scope) in [
-        ("grant:old", "context:old", GrantScope::NativeTurn),
-        ("grant:new", "context:new", GrantScope::NativeTurn),
+        (turn("grant:old"), "context:old", GrantScope::NativeTurn),
+        (turn("grant:new"), "context:new", GrantScope::NativeTurn),
         (
-            "grant:replace",
+            "grant:replace".into(),
             "context:old",
             GrantScope::RequestReplacement,
         ),
-        ("grant:successor", "context:new", GrantScope::EnqueueInput),
+        (
+            "grant:successor".into(),
+            "context:new",
+            GrantScope::EnqueueInput,
+        ),
     ] {
         store.install_trusted_grant(TrustedGrant {
             id: GrantId::parse(id)?,
@@ -213,6 +239,11 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
     )?;
     let continuity = CodingContinuity::new(store, session, config, clock)?;
     host.bind_coding_effect_gate(Box::new(continuity.clone()))?;
+    if hosted {
+        // Offline qualification only: synthetic loopback routes and a
+        // synthetic Host-held access token.
+        host.bind_hosted_transport(Box::new(LoopbackTransport::new()?))?;
+    }
     let result = host.run()?;
     fs::write(
         state_dir.join("coding-host-result.json"),
