@@ -15,12 +15,16 @@ const CLAIMS_NAMES=['claims_discover','claims_resolve','claims_evidence','claims
 if(claimsTools&&(!process.argv.includes('--lifecycle-bridge')||existsSync('/profile/job.json')||existsSync('/auth/signed-fixture.json')))throw Error('claims tools require the provider-disabled lifecycle fixture bridge');
 const config=live?JSON.parse(readFileSync('/profile/job.json','utf8')):null;
 const LIVE_BRIDGE_SCHEMA='work-engine.pi-coding-lifecycle-live.v1';
+// Hosted transport: no network or access material here; the Host dispatches
+// each request and relays the response stream (pull/cancel/ack).
+const hosted=live&&config.schema==='work-engine.pi-coding-hosted.v1';
 // Only the separately versioned continuity schema may combine the lifecycle
 // bridge with the live provider route; every other profile keeps its old rule.
 const solHigh=live&&config.schema==='work-engine.pi-coding-lifecycle-sol-high.v1';
-const liveBridge=bridge&&live&&(config.schema===LIVE_BRIDGE_SCHEMA||solHigh);
+const liveBridge=bridge&&live&&(config.schema===LIVE_BRIDGE_SCHEMA||solHigh||hosted);
 if(bridge&&(fixtureSigned||(live&&!liveBridge)))throw Error('bridge is provider-disabled only');
-if(live&&!bridge&&(config.schema===LIVE_BRIDGE_SCHEMA||solHigh))throw Error('live continuity schema requires lifecycle bridge');
+if(live&&!bridge&&(config.schema===LIVE_BRIDGE_SCHEMA||solHigh||hosted))throw Error('live continuity schema requires lifecycle bridge');
+if(hosted)globalThis.fetch=async()=>{throw Error('network forbidden in hosted profile');};
 if(bridge&&!liveBridge)globalThis.fetch=async()=>{throw Error('network forbidden in coding bridge');};
 if(fixtureSigned&&live)throw Error('fixture/live conflict');
 const signedSubscription=live&&config.schema==='work-engine.pi-coding-signed-subscription.v1';
@@ -85,6 +89,11 @@ const start=new Promise(resolve=>{startResolve=resolve;});
 if(bridge)startResolve=null;
 const pending=new Map();
 const grants=new Map();
+// Host response frames for the one open hosted stream, read in order.
+const RESPONSE_FRAMES=['response-head','response-chunk','response-end','response-failure','response-unavailable','response-cancelled'];
+const hostedFrames={open:false,queue:[],waiting:null,
+ push(f){if(!this.open)throw Error('response frame without stream');if(this.waiting){const w=this.waiting;this.waiting=null;w(f);}else this.queue.push(f);},
+ read(){if(this.waiting)throw Error('concurrent_read');return this.queue.length?Promise.resolve(this.queue.shift()):new Promise(r=>{this.waiting=r;});}};
 const input=createInterface({input:process.stdin,crlfDelay:Infinity});
 input.on('line',line=>{
  try {
@@ -98,6 +107,7 @@ input.on('line',line=>{
   }
   else if(value.type===(live?'task_start':'fixture_start')&&startResolve&&value.sessionId===session?.sessionId){startResolve(value);startResolve=null;}
   else if(bridge&&['bridge_prompt','bridge_replace','bridge_close'].includes(value.type)&&value.sessionId===session?.sessionId&&!bridgeActive&&bridgeQueue.length===0){if(bridgeWake){const wake=bridgeWake;bridgeWake=null;wake(value);}else bridgeQueue.push(value);}
+  else if(hosted&&RESPONSE_FRAMES.includes(value.type))hostedFrames.push(value);
   else if(bridge&&value.type==='bridge_provider'&&grants.has(value.id)&&value.sessionId===session?.sessionId){grants.get(value.id)(value);grants.delete(value.id);}
   else if(value.type==='claims_result'&&claimsTools&&pending.has(value.id)&&value.sessionId===undefined){pending.get(value.id)(value);pending.delete(value.id);}
   else if(value.type==='tool_result'&&pending.has(value.id)&&(!signed||value.sessionId===manager?.getSessionId())){pending.get(value.id)(value);pending.delete(value.id);}
@@ -128,12 +138,20 @@ try {
  let modelRuntime,rawTerminalEvidence,providerOptions={thinkingLevel:'off'};
  if(live){
   if(config.schema!==schema||config.provider!=='openai-codex'||(solHigh?(config.model!=='gpt-6.1-sol'||config.solHigh?.schema!=='work-engine.sol-high.v1'||config.solHigh?.reasoning_effort!=='high'||typeof config.solHigh?.payer_account_id!=='string'||!config.solHigh.payer_account_id):config.model!=='gpt-6-luna'))throw Error('provider configuration rejected');
+  let credentials;
+  if(hosted){
+   // Nonauthenticating marker only; the Host holds and applies real access.
+   const marker='syntactic.'+Buffer.from(JSON.stringify({'https://api.openai.com/auth':{chatgpt_account_id:'nonsecret-marker'}})).toString('base64')+'.nonsecret';
+   const reject=async()=>{throw Error('credential_mutation');};
+   credentials={read:async p=>p==='openai-codex'?{type:'oauth',access:marker,refresh:'',expires:4102444800000,accountId:'nonsecret-marker'}:undefined,list:async()=>[{providerId:'openai-codex',type:'oauth'}],modify:reject,delete:reject};
+  }else{
   const nativeAccess=await import('/receiver/pi-native-access.mjs');
   if(signed)checkConsumption(signedDeadline);
   const {createNativeAccessStore}=nativeAccess;rawTerminalEvidence=nativeAccess.rawTerminalEvidence;
   const grant=JSON.parse(readFileSync('/auth/access.json','utf8'));
   providerOptions=nativeAccess.codingSessionOptions(config,grant);
-  const credentials=createNativeAccessStore(grant);
+  credentials=createNativeAccessStore(grant);
+  }
   modelRuntime=await ModelRuntime.create({credentials,modelsPath:null,allowModelNetwork:false,refreshOnCreate:false});
   if(signed)checkConsumption(signedDeadline);
   model=modelRuntime.getModel('openai-codex',config.model);
@@ -203,6 +221,39 @@ try {
      if(grant.mode!=='live')throw Error('bridge grant mode');
      const until=consumptionDeadline(grant,config.deadline*1000);
      checkConsumption(until);
+     if(hosted){
+      // One response stream identity per logical request; Host failover
+      // attempts stay behind it. Container observations are not evidence here.
+      const sid=grant.stream;
+      if(!sid||typeof sid.binding!=='object'||!Number.isSafeInteger(sid.sequence)||!Number.isSafeInteger(sid.stream)||!Number.isSafeInteger(grant.headTimeoutMs)||grant.headTimeoutMs<=0)throw Error('hosted stream identity');
+      const {openResponse}=await import('/receiver/pi-native-tools.mjs');
+      let fetched=false;
+      const inner=await original(requestModel,context,{...options,transport:'sse',maxRetries:0,cacheRetention:'none',timeoutMs:Math.max(1,Math.min(grant.headTimeoutMs,until-Date.now())),fetch:async(url,init)=>{
+       checkConsumption(until);
+       if(fetched||hostedFrames.open)throw Error('hosted fetch already used');
+       fetched=true;
+       const body=typeof init.body==='string'?Buffer.from(init.body):Buffer.from(init.body??[]);
+       if(body.length>45000)throw Error('hosted request bound');
+       hostedFrames.open=true;
+       emit({type:'provider_fetch',id,binding:sid.binding,sequence:sid.sequence,stream:sid.stream,url:String(url),method:init.method,headers:Object.fromEntries(new Headers(init.headers)),body:body.toString('base64')});
+       const handle=openResponse({id:sid,sendRaw:async v=>emit(v),read:()=>hostedFrames.read(),signal:init.signal,onSettled:()=>{hostedFrames.open=false;hostedFrames.queue=[];}});
+       return handle.response;
+      }});
+      const relay=createAssistantMessageEventStream();
+      (async()=>{
+       try{
+        for await(const event of inner){
+         if(event.type==='done'||event.type==='error'){
+          const message=event.type==='done'?event.message:event.error;
+          emit({type:'provider_complete',id,stopReason:message.stopReason,usage:message.usage});
+         }
+         relay.push(event);
+        }
+        relay.end();
+       }catch{const aborted=failure('provider stream failed');for await(const event of aborted)relay.push(event);relay.end();}
+      })();
+      return relay;
+     }
      const inner=await original(requestModel,context,{...options,transport:'sse',maxRetries:0,cacheRetention:'none',fetch:(url,init)=>{checkConsumption(until);return globalThis.fetch(url,{...init,redirect:'error'});},timeoutMs:Math.max(1,Math.min(30000,until-Date.now())),
       onResponse:response=>emit({type:'provider_observation',id,httpStatus:response.status}),
       onProviderStreamEvent:data=>{const backendModel=data?.response?.model;const rawTerminal=rawTerminalEvidence(data);if(typeof backendModel==='string'||rawTerminal)emit({type:'provider_observation',id,...(typeof backendModel==='string'?{backendModel}:{}),...(rawTerminal?{rawTerminal}:{})});},

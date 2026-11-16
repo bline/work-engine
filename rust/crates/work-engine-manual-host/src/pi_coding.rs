@@ -22,8 +22,14 @@ pub const BRIDGE_PROFILE: &str = "work-engine.pi-coding-lifecycle-fixture.v1";
 /// unchanged and cannot be selected by this schema.
 pub const LIVE_BRIDGE_PROFILE: &str = "work-engine.pi-coding-lifecycle-live.v1";
 pub const SOL_HIGH_BRIDGE_PROFILE: &str = "work-engine.pi-coding-lifecycle-sol-high.v1";
+/// Live lifecycle composition with Host-held access and Host dispatch: the
+/// inference container has no network and no credential mount.
+pub const HOSTED_BRIDGE_PROFILE: &str = "work-engine.pi-coding-hosted.v1";
 pub fn is_live_bridge(schema: &str) -> bool {
-    schema == LIVE_BRIDGE_PROFILE || schema == SOL_HIGH_BRIDGE_PROFILE
+    schema == LIVE_BRIDGE_PROFILE || schema == SOL_HIGH_BRIDGE_PROFILE || is_hosted(schema)
+}
+pub fn is_hosted(schema: &str) -> bool {
+    schema == HOSTED_BRIDGE_PROFILE
 }
 /// Opt-in, versioned fixture composition that additionally admits the four
 /// read-only claims tools before and after SDK context replacement. Provider-
@@ -421,7 +427,11 @@ fn base(j: &Journal, name: &str) -> Vec<String> {
     } else {
         "/tmp:rw,noexec,nosuid,nodev,size=64m"
     };
-    let live = j.job.coding.as_ref().is_some_and(|p| p.provider.is_some());
+    let live = j
+        .job
+        .coding
+        .as_ref()
+        .is_some_and(|p| p.provider.is_some() && !is_hosted(&p.schema));
     let network = if live && name == j.container_name {
         "bridge"
     } else {
@@ -514,7 +524,27 @@ fn expected_mounts(
     if profile.schema != SIGNED_PROFILE {
         mounts.push((j.job.state_dir.join("exports"), "/export", true));
     }
-    if let Some(plan) = &profile.provider {
+    if let Some(plan) = &profile.provider
+        && is_hosted(&profile.schema)
+    {
+        mounts.extend([
+            (
+                plan.stream_adapter
+                    .as_ref()
+                    .expect("validated hosted stream adapter")
+                    .path
+                    .clone(),
+                "/receiver/pi-native-tools.mjs",
+                false,
+            ),
+            (
+                j.job.state_dir.join("coding-public-config"),
+                "/config",
+                false,
+            ),
+            (j.job.state_dir.join("coding-public"), "/profile", false),
+        ]);
+    } else if let Some(plan) = &profile.provider {
         mounts.extend([
             (
                 plan.access_adapter.path.clone(),
@@ -604,7 +634,10 @@ fn verify(j: &Journal, v: &Value, tool: bool, validation: bool) -> Result<()> {
         || v["HostConfig"]["PidMode"] != ""
         || v["HostConfig"]["IpcMode"] != "private"
         || v["HostConfig"]["NetworkMode"]
-            != if !tool && j.job.coding.as_ref().unwrap().provider.is_some() {
+            != if !tool
+                && j.job.coding.as_ref().unwrap().provider.is_some()
+                && !is_hosted(&j.job.coding.as_ref().unwrap().schema)
+            {
                 "bridge"
             } else {
                 "none"
@@ -1621,6 +1654,9 @@ impl Host {
             plan.catalog.verify()?;
             plan.task.verify()?;
             plan.access_adapter.verify()?;
+            if let Some(adapter) = &plan.stream_adapter {
+                adapter.verify()?;
+            }
         }
         self.save()
     }

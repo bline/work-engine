@@ -3,6 +3,8 @@ use super::*;
 use std::os::unix::fs::OpenOptionsExt;
 pub const LIVE_PROFILE: &str = "work-engine.pi-coding-sdk.v1";
 pub const ACCESS_ADAPTER: &[u8] = include_bytes!("../receiver/pi-native-access.mjs");
+/// Host-relayed response stream (`openResponse`) imported by the hosted receiver.
+pub const STREAM_ADAPTER: &[u8] = include_bytes!("../receiver/pi-native-tools.mjs");
 const CATALOG: &str = "node_modules/@earendil-works/pi-ai/dist/providers/data/openai-codex.json";
 /// Explicit opt-in tuple. Absence retains the historical Luna contract and bytes.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -28,6 +30,9 @@ pub struct ProviderPlan {
     pub task: Artifact,
     pub catalog: Artifact,
     pub access_adapter: Artifact,
+    /// Required exactly for the hosted profile.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stream_adapter: Option<Artifact>,
     pub model: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sol_high: Option<SolHighContract>,
@@ -389,6 +394,26 @@ impl ProviderPlan {
         {
             return refuse("provider lane/catalog/limits conflict");
         }
+        let hosted = job
+            .coding
+            .as_ref()
+            .is_some_and(|p| super::is_hosted(&p.schema));
+        match &self.stream_adapter {
+            Some(adapter) if hosted => {
+                if adapter.verify()? != STREAM_ADAPTER
+                    || !adapter.path.is_absolute()
+                    || fs::canonicalize(&adapter.path)? != adapter.path
+                    || adapter
+                        .path
+                        .to_string_lossy()
+                        .contains([',', ':', '\n', '\r'])
+                {
+                    return refuse("hosted stream adapter pin conflict");
+                }
+            }
+            None if !hosted => {}
+            _ => return refuse("stream adapter is exactly for the hosted profile"),
+        }
         self.lane.validate_references()?;
         if self.lane.native_auth_source.starts_with(&job.state_dir)
             || self.lane.native_auth_source.starts_with(&job.runtime.root)
@@ -509,7 +534,15 @@ impl Host {
         let private = self.journal.job.state_dir.join("private-access");
         fs::create_dir(&private)?;
         fs::set_permissions(&private, fs::Permissions::from_mode(0o700))?;
-        if !self.signed_subscription() {
+        // Hosted access stays on the Host and is applied only at dispatch.
+        if !self.signed_subscription()
+            && !self
+                .journal
+                .job
+                .coding
+                .as_ref()
+                .is_some_and(|p| super::is_hosted(&p.schema))
+        {
             self.coding_project_provider_access(None)?;
         }
         let config = self.journal.job.state_dir.join("coding-public-config");
@@ -822,6 +855,7 @@ mod ledger_tests {
             task: pin.clone(),
             catalog: pin.clone(),
             access_adapter: pin,
+            stream_adapter: None,
             model: "gpt-6-luna".into(),
             sol_high: None,
             max_requests: 6,
@@ -964,6 +998,7 @@ mod admission_tests {
                 path: adapter,
                 sha256: digest(ACCESS_ADAPTER),
             },
+            stream_adapter: None,
             model: "gpt-6-luna".into(),
             sol_high: None,
             max_requests: 6,
@@ -1376,13 +1411,14 @@ mod signed_subscription_tests {
                     path: root.join("adapter.mjs"),
                     sha256: digest(ACCESS_ADAPTER),
                 },
+                stream_adapter: None,
                 model: "gpt-6-luna".into(),
                 sol_high: None,
                 max_requests: requests,
                 budget_microusd: 1_000_000,
                 max_context_bytes: context,
             });
-            if sol_case != 0 {
+            if (1..10).contains(&sol_case) {
                 let tuple = SolHighContract {
                     schema: "work-engine.sol-high.v1".into(),
                     reasoning_effort: "high".into(),
@@ -1427,8 +1463,60 @@ mod signed_subscription_tests {
                 fs::write(&h.journal.job.authority.path, &bytes).unwrap();
                 h.journal.job.authority.sha256 = digest(&bytes);
             }
+            if sol_case >= 10 {
+                let adapter = root.join("pi-native-tools.mjs");
+                fs::write(&adapter, STREAM_ADAPTER).unwrap();
+                let profile = h.journal.job.coding.as_mut().unwrap();
+                profile.schema = super::super::HOSTED_BRIDGE_PROFILE.into();
+                let plan = profile.provider.as_mut().unwrap();
+                plan.stream_adapter = Some(Artifact {
+                    path: adapter.clone(),
+                    sha256: digest(STREAM_ADAPTER),
+                });
+                match sol_case {
+                    11 => plan.stream_adapter = None,
+                    12 => profile.schema = super::super::LIVE_BRIDGE_PROFILE.into(),
+                    13 => fs::write(&adapter, b"// other\n").unwrap(),
+                    _ => {}
+                }
+            }
             let job = h.journal.job.clone();
-            h.journal.job.coding.as_ref().unwrap().validate(&job)
+            let result = h.journal.job.coding.as_ref().unwrap().validate(&job);
+            if result.is_ok() && matches!(sol_case, 0 | 10) {
+                let hosted = sol_case == 10;
+                let args = super::super::base(&h.journal, &h.journal.container_name);
+                let network = args.windows(2).find(|w| w[0] == "--network").unwrap()[1].clone();
+                assert_eq!(network, if hosted { "none" } else { "bridge" });
+                let targets: Vec<&str> = super::super::expected_mounts(&h.journal, false, false)
+                    .into_iter()
+                    .map(|(_, target, _)| target)
+                    .collect();
+                for target in [
+                    "/auth",
+                    "/auth/access.json",
+                    "/receiver/pi-native-access.mjs",
+                ] {
+                    assert_eq!(
+                        targets.contains(&target),
+                        !hosted && target != "/auth",
+                        "{target}"
+                    );
+                }
+                assert_eq!(targets.contains(&"/receiver/pi-native-tools.mjs"), hosted);
+                if hosted {
+                    // Access stays on the Host: the unreadable native source is
+                    // never opened and nothing is staged for the container.
+                    h.coding_prepare_provider().unwrap();
+                    let private = h.journal.job.state_dir.join("private-access");
+                    assert_eq!(fs::read_dir(private).unwrap().count(), 0);
+                    let job: Value = serde_json::from_slice(
+                        &fs::read(h.journal.job.state_dir.join("coding-public/job.json")).unwrap(),
+                    )
+                    .unwrap();
+                    assert_eq!(job["schema"], super::super::HOSTED_BRIDGE_PROFILE);
+                }
+            }
+            result
         };
         match admit(4, 24_000, 0) {
             Ok(()) => {}
@@ -1450,6 +1538,16 @@ mod signed_subscription_tests {
             );
         }
         admit(4, 24_000, 1).expect("Sol/high exact versioned tuple");
+        admit(4, 24_000, 10).expect("hosted profile with its pinned stream adapter");
+        for case in 11..=13 {
+            assert!(
+                admit(4, 24_000, case).is_err(),
+                "hosted adapter case {case}"
+            );
+        }
+        assert!(super::super::is_live_bridge(
+            super::super::HOSTED_BRIDGE_PROFILE
+        ));
         for case in 2..=7 {
             assert!(
                 admit(4, 24_000, case).is_err(),

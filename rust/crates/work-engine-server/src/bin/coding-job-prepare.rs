@@ -338,6 +338,7 @@ fn run() -> Result<Value> {
                 &out.join("pi-native-access.mjs"),
                 coding::provider::ACCESS_ADAPTER,
             )?,
+            stream_adapter: None,
             model: "gpt-6.1-sol".into(),
             sol_high: Some(SolHighContract {
                 schema: "work-engine.sol-high.v1".into(),
