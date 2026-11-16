@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::path::PathBuf;
 
-const HELP: &str = "Usage: work-engine-context-status control --session ID --rollout FILE (--trigger-percent P --band-floor-percent P | --trigger-tokens N --band-floor-tokens N) [--step-percent S] [--host codex|claude] [--agent ID] [--lead-calls N] [--cursor JSON]\nPercent levels are shares of the context window recorded with each reading, so they follow the model's window. Claude transcripts record no window and need token levels. In band, another event is sent each time input crosses a further multiple of --step-percent of the window (default 5). Levels are caller-selected planning hypotheses, not reset limits. Output is JSON; no publication or handoff occurs.";
+const HELP: &str = "Usage: work-engine-context-status control --session ID --rollout FILE (--trigger-percent P --band-floor-percent P | --trigger-tokens N --band-floor-tokens N) [--step-percent S] [--host codex|claude|pi] [--agent ID] [--lead-calls N] [--cursor JSON]\nPercent levels are shares of the context window recorded with each reading, so they follow the model's window. Claude transcripts and Pi session files record no window and need token levels. For --host pi, --rollout is the Pi session file. In band, another event is sent each time input crosses a further multiple of --step-percent of the window (default 5). Levels are caller-selected planning hypotheses, not reset limits. Output is JSON; no publication or handoff occurs.";
 
 const CURSOR_VERSION: u32 = 2;
 const DEFAULT_STEP_PERCENT: f64 = 5.0;
@@ -83,6 +83,9 @@ fn report(binding: &Binding) -> Result<Value, String> {
             binding.session.clone(),
             binding.agent.clone(),
         )?;
+        (serde_json::to_value(&report), report.last_record_gap_line)
+    } else if binding.host == "pi" {
+        let report = crate::pi::read_report(&binding.rollout, &binding.session)?;
         (serde_json::to_value(&report), report.last_record_gap_line)
     } else {
         let args = crate::args_for_child(binding.session.clone(), binding.rollout.clone());
@@ -332,6 +335,9 @@ pub(crate) fn run(args: impl Iterator<Item = String>) -> Result<(), String> {
         (None, None, Some(_), Some(_)) if host == "claude" => {
             return Err("Claude transcripts record no context window; use --trigger-tokens and --band-floor-tokens".into());
         }
+        (None, None, Some(_), Some(_)) if host == "pi" => {
+            return Err("Pi session files record no context window; use --trigger-tokens and --band-floor-tokens".into());
+        }
         (None, None, Some(trigger), Some(band_floor)) if band_floor > trigger => {
             Levels::WindowPercent {
                 trigger,
@@ -355,8 +361,8 @@ pub(crate) fn run(args: impl Iterator<Item = String>) -> Result<(), String> {
     };
     if !crate::valid_session_id(&binding.session)
         || !binding.rollout.is_absolute()
-        || !matches!(binding.host.as_str(), "codex" | "claude")
-        || (binding.host == "codex" && binding.agent.is_some())
+        || !matches!(binding.host.as_str(), "codex" | "claude" | "pi")
+        || (binding.host != "claude" && binding.agent.is_some())
         || binding.agent.as_ref().is_some_and(|id| {
             id.is_empty()
                 || !id

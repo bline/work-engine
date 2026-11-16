@@ -10,6 +10,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 mod agents;
 mod claude;
 mod control;
+mod pi;
 
 const MAX_FILE_BYTES: u64 = 256 * 1024 * 1024;
 const MAX_LINE_BYTES: usize = 8 * 1024 * 1024;
@@ -138,7 +139,8 @@ struct Report {
 }
 
 fn help() -> &'static str {
-    "Usage: work-engine-context-status --session ID [--rollout FILE | --sessions-dir DIR] [--json] [--fresh-input-tokens N --preparation-tokens N --launch-tokens N --rehydration-tokens N --reconstruction-tokens N [--fresh-cache-fraction F] [--cached-weight F] [--remaining-calls N]]\n       work-engine-context-status agents --parent-thread ID [--recursive] [--with-usage] [--sessions-dir DIR] [--json]\n       work-engine-context-status control --help"
+    "Usage: work-engine-context-status --session ID [--rollout FILE | --sessions-dir DIR] [--json] [--fresh-input-tokens N --preparation-tokens N --launch-tokens N --rehydration-tokens N --reconstruction-tokens N [--fresh-cache-fraction F] [--cached-weight F] [--remaining-calls N]]\n       work-engine-context-status agents --parent-thread ID [--recursive] [--with-usage] [--sessions-dir DIR] [--json]\n       work-engine-context-status pi --help
+       work-engine-context-status control --help"
 }
 
 /// Defaults for a report read on another session's rollout, as `agents
@@ -1013,6 +1015,13 @@ fn main() {
         };
         if let Err(e) = result {
             eprintln!("context-status {mode}: {e}");
+            std::process::exit(1);
+        }
+        return;
+    }
+    if env::args().nth(1).as_deref() == Some("pi") {
+        if let Err(e) = pi::run(env::args().skip(2)) {
+            eprintln!("context-status pi: {e}");
             std::process::exit(1);
         }
         return;

@@ -6,7 +6,8 @@ exposes the direct `functions.new_context` tool; distinguish that host capabilit
 from the separate Rust runtime's context controls. On Claude Code, the optional
 [context plugin](../claude-context-plugin/README.md) exposes
 `mcp__work-engine-context__new_context`. Native `/clear` changes Claude's session
-ID while the same role and process retain their obligations.
+ID while the same role and process retain their obligations. In Pi, the
+`pi-context-epochs` package exposes `new_context` and keeps the session ID.
 
 ## Choosing a response
 
@@ -38,6 +39,11 @@ When the plugin is loaded in the main conversation, read
 board recovery, configured deadlines and collection ownership are shared with
 Codex; tool names, turn-end deferral and session identity are host-specific.
 Native Claude subagents cannot use this adapter to reset their own context.
+
+## Pi context epochs
+
+When Pi's `new_context` or its automatic epoch rollover applies, read
+[native invocation and recovery](native-context.md#pi).
 
 ## Authority and control capability
 

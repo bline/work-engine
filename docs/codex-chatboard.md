@@ -289,7 +289,9 @@ integration, beyond this command.
 
 ## Session control subscription
 
-`wait` can also observe one explicitly bound Codex or Claude transcript through
+`wait` can also observe one explicitly bound Codex or Claude transcript, or Pi
+session file (`--context-host pi`, passed as `--context-rollout`; token levels
+only), through
 a pinned `work-engine-context-status` binary. The Rust reader owns telemetry
 interpretation; the board adapter multiplexes notifications. This is support for
 manual-orchestration handoffs, with no dependency on the Rust lifecycle runtime.
@@ -315,8 +317,8 @@ decides where a new Sol 6.1 session compacts. Astra compacts from about 239K on
 its 258,400 window. Shares follow the window instead
 (`--context-trigger-percent`, `--context-band-floor-percent`). They suit a
 session whose compaction point follows its window: 58% and 66% of 475,000 land
-above the 250,000 limit. Claude transcripts record no window and take tokens
-only. In band, another event arrives at each further multiple of
+above the 250,000 limit. Claude transcripts and Pi session files record no
+window and take tokens only. In band, another event arrives at each further multiple of
 `--context-step-percent` of a recorded window (default 5), so the listener does
 not go quiet for the rest of the window.
 `--context-host claude` uses Claude's telemetry reader; a child also needs

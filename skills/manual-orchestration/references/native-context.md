@@ -1,7 +1,7 @@
 # Native context replacement and recovery
 
 Scope: manual-orchestration role guidance; authority remains with the active assignment and owning contracts.
-Load when: using Codex token_budget, using Claude's native context plugin, preparing new_context, or recovering after native replacement.
+Load when: using Codex token_budget, using Claude's native context plugin, using Pi context epochs, preparing new_context, or recovering after native replacement.
 
 ## Codex token-budget refresh deadline
 
@@ -67,6 +67,31 @@ be refused when input closes, a limit is reached, or the user stops the turn.
 A failed or unconfirmed reset remains such; if clear succeeded but continuation
 failed, recover the current context from the predecessor note before requesting
 another clear. The adapter does not retry automatically.
+
+### Pi
+
+With the `pi-context-epochs` package loaded, Pi exposes **`new_context`**
+(named `mcp__pi__new_context` when a provider bridges Pi's tools over MCP),
+called with **`{}`**. It arms a rollover that runs when the current agent run
+settles: a package-owned boundary marker carrying the note keys and the
+verbatim latest user request, no summary, the same session ID and session
+file, then a one-line continuation nudge. The quoted request is a
+continuation anchor, not assignment state. Work done after the call is retired
+with the epoch, so preserve first, make the call the last action, and end the
+run. With the package's default `autoRollover`, Pi's compaction threshold or a
+provider overflow takes the same route, so, as with Codex `token_budget`,
+summarization is not the recovery fallback; if another extension replaces the
+compaction result, the package fails closed and sends no continuation. On a
+very small context the tool refuses instead of creating a boundary.
+
+`context_notes` survive the rollover on the session branch, so they can hold
+session-scoped state the extension's own contract assigns them. They are not
+repository, board or role-owner state and do not replace the recovery note
+below; the predecessor's other context remains searchable through
+`context_history`. Because the session ID does not change, the recovery topic
+is the same before and after. The extension's one-shot reminder (default 25%
+remaining, configurable) is a host default, not this session's preparation
+level.
 
 ## Preparation and recovery
 

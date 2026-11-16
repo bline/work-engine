@@ -179,7 +179,7 @@ pub(crate) fn control_report(
     Ok(report)
 }
 
-fn freshness_of(path_meta: &fs::Metadata) -> (Option<u64>, Option<u64>, &'static str) {
+pub(crate) fn freshness_of(path_meta: &fs::Metadata) -> (Option<u64>, Option<u64>, &'static str) {
     let modified = path_meta
         .modified()
         .ok()

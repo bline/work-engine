@@ -44,6 +44,25 @@ for a 250,000 limit, not defaults for every current session. Window percentages
 can put warnings above a configured limit and prevent them from firing. Claude
 transcripts record no window and take their own token levels.
 
+For Pi, bind `--context-host pi` with the absolute Pi session file as
+`--context-rollout` and the session ID in its header line; the reader rejects a
+mismatch. Inside a Pi turn, `role_host.py whoami` reads `PI_SESSION_ID` and
+`PI_SESSION_FILE` names the file; [Pi host](pi-host.md) records that its
+launcher does not pass these to sessions it starts, while other launchers are
+unchecked. A latest request whose model and timestamp match this session's own
+most recent call corroborates the binding independently of the environment. One binding serves
+every Pi inference route because Pi records normalized usage itself, while a
+provider-side transcript (such as a Claude Code process behind a Pi bridge) is
+route-specific and is not the accounting Pi's rollover uses. The session file
+records no window, so take token levels below Pi's automatic rollover point for
+the current model. Levels compare `input_tokens`, which excludes output; Pi's
+rollover compares `pi_context_tokens` (output included) with the window minus
+its reserve, so leave room for one response's output plus preservation work.
+The binding survives `new_context`; a new epoch reads `unavailable`
+(`awaiting_first_request_in_epoch`) until its first response, which is not a
+reader failure but also not a reading. `work-engine-context-status pi
+--session ID --session-file FILE` is the explicit check for this host.
+
 `--context-step-percent` controls repeated token-growth alerts. Choose it to
 fit the available headroom; neither the reader's default 5% nor a smaller step
 establishes timely delivery. A 5% step is 23,750 tokens on a 475,000-token

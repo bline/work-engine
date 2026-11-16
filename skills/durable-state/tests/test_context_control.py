@@ -174,6 +174,19 @@ class ControlWaitTest(unittest.TestCase):
         self.assertEqual(good.returncode, 0, good.stderr)
         self.assertEqual(json.loads(good.stdout)["status"], "control")
 
+    def test_pi_session_file_binding_reports_through_the_cli(self):
+        self.rollout.write_text("\n".join(json.dumps(row) for row in [
+            {"type": "session", "version": 3, "id": SESSION},
+            {"type": "message", "id": "a1", "parentId": None, "message": {
+                "role": "assistant", "provider": "anthropic", "model": "m", "stopReason": "stop",
+                "usage": {"input": 10, "output": 5, "cacheRead": 159000, "cacheWrite": 990}}},
+        ]) + "\n")
+        good = subprocess.run(self.command() + ["--context-host", "pi", "--timeout-seconds", "0"],
+                              text=True, capture_output=True)
+        self.assertEqual(good.returncode, 0, good.stderr)
+        event = json.loads(good.stdout)["control_events"][0]
+        self.assertEqual((event["host"], event["level"], event["input_tokens"]), ("pi", "planning", 160000))
+
     def test_percent_levels_follow_the_window_and_report_each_step_in_band(self):
         self.write(300000, window=475000)
         fixed = BOARD.wait_board(self.root, since=0, control=self.control(), timeout_seconds=0)

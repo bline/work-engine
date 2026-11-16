@@ -118,8 +118,11 @@ carry the tier is not established.
 
 `child_context.py` has no Pi reader yet. A Pi session file records each
 assistant message's `usage`; the context size of the latest call is
-`input + cacheRead + cacheWrite`. Pi compacts automatically near the model's
-limit. Make the retained-or-fresh decision from that reading as
+`input + cacheRead + cacheWrite`. `work-engine-context-status pi` and chatboard
+`wait --context-host pi` read it; see [session control](context-control.md).
+Near the model's limit Pi compacts automatically, or, with `pi-context-epochs`
+loaded, rolls over without a summary ([native recovery](native-context.md#pi)).
+Make the retained-or-fresh decision from that reading as
 [context boundary](context-boundary.md) describes, and record it.
 
 ## Container mode

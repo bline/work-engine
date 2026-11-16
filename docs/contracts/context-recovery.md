@@ -45,6 +45,15 @@ The adapter confirms native replacement separately from continuation submission;
 semantic recovery still follows Wind Walker. Native Claude subagent reset is
 unsupported because `/clear` acts on the main conversation.
 
+Pi's `pi-context-epochs` package exposes `new_context` (`mcp__pi__new_context`
+when a provider bridges Pi's tools over MCP) and also rolls over automatically
+at Pi's compaction threshold; see [native recovery](../../skills/manual-orchestration/references/native-context.md#pi).
+The session ID is unchanged, so the `context-recovery:<session-id>` note is
+found under the same topic. An automatic rollover is replacement outside the
+agent's control. The package's continuation turn asks the agent to re-ground
+from notes and history; that does not replace Wind Walker recovery through the
+board note and durable owners.
+
 ## Scoped recovery reads
 
 Recover the exact active objective, authority, durable continuation, and unresolved

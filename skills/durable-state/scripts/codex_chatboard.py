@@ -1302,7 +1302,8 @@ def parser() -> argparse.ArgumentParser:
     wait.add_argument("--context-rollout", type=Path, help="explicit bound rollout/transcript")
     wait.add_argument("--context-binary", type=Path, help="pinned context-status binary with control support")
     wait.add_argument("--context-sha256")
-    wait.add_argument("--context-host", choices=["codex", "claude"], default="codex")
+    wait.add_argument("--context-host", choices=["codex", "claude", "pi"], default="codex",
+                      help="pi: --context-rollout is the Pi session file")
     wait.add_argument("--context-agent", help="Claude child agent identity within the session")
     wait.add_argument("--context-trigger-percent", type=float,
                       help="planning level as a percent of the window recorded with each reading")
