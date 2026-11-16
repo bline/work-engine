@@ -163,6 +163,21 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
         std::io::stdout().flush()?;
         receipts.push(receipt);
+        if fault == "stall-head-first" && !duplicate && *effect_id == 1 {
+            // Fault control: accept the request, never send a head, and observe
+            // when (whether) the host closes the connection.
+            let at = Instant::now();
+            s.set_read_timeout(Some(Duration::from_secs(30)))?;
+            let mut b = [0u8; 1];
+            let closed =
+                matches!(s.read(&mut b), Ok(0) | Err(_)) && at.elapsed() < Duration::from_secs(30);
+            println!(
+                "{}",
+                json!({"type":"fault","fault":"stall-head","requestId":id,"stalledMs":at.elapsed().as_millis() as u64,"peerClosed":closed})
+            );
+            std::io::stdout().flush()?;
+            return Err("injected head stall fault".into());
+        }
         // Incremental chunked SSE: each event is flushed separately and the
         // endpoint stays open between them, so early native consumption is
         // observable before the framed end.

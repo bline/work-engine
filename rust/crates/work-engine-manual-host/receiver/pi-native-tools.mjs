@@ -5,25 +5,28 @@ import net from 'node:net';
 import {syncBuiltinESMExports} from 'node:module';
 const MAX=2*1024*1024;
 
-// Consumer-driven incremental response body: one host chunk per native read
-// demand. Every frame uses this response's immutable identity. A cancel may
-// overtake an outstanding pull; it then owns the frame reader until the host
-// confirms cancellation for the cancel's ordinal, including when the pull was
-// answered by a terminal frame (the host confirms such a racing cancel).
-// After a terminal frame the consumer acknowledges exactly once.
-export function createResponseStream({id,sendRaw,read,idleMs=0,onIdle=()=>{},onSettled=()=>{}}){
+// Host-relayed response for one fetch, under one immutable stream identity.
+// The head is awaited here; an abort while waiting sends cancel(1). Body reads
+// are consumer-driven (one host chunk per pull). A cancel may overtake an
+// outstanding read (head or pull) and then owns the frame reader until the
+// host confirms it, whatever terminal or head frame crossed it. After a host
+// terminal frame the consumer acknowledges exactly once.
+export function openResponse({id,sendRaw,read,idleMs=0,onIdle=()=>{},onSettled=()=>{},signal}){
  const key=JSON.stringify(id.binding);
  const env=(type,data)=>({type,binding:id.binding,sequence:id.sequence,stream:id.stream,...data});
  const mine=f=>{if(JSON.stringify(f.binding)!==key||f.sequence!==id.sequence||f.stream!==id.stream)throw Error('foreign_frame');return f;};
  let ordinal=0,done=false,inflight=null,cancelling=null;
  const settle=()=>{done=true;onSettled();};
+ const crossing=['response-head','response-chunk','response-end','response-failure','response-unavailable'];
  const release=()=>{if(done)return Promise.resolve();if(cancelling)return cancelling;
    cancelling=(async()=>{const my=++ordinal;await sendRaw(env('cancel',{ordinal:my}));
      let f=inflight?await inflight.catch(()=>null):null;
      for(;;){if(f&&f.type==='response-cancelled'&&f.ordinal===my)break;
-       if(f&&!['response-chunk','response-end','response-failure'].includes(f.type))throw Error('stream_frame');
+       if(f&&!crossing.includes(f.type))throw Error('stream_frame');
        f=mine(await read());}
      settle();})();return cancelling;};
+ const terminal=async(f,c)=>{settle();const ack=sendRaw(env('ack',{ordinal:++ordinal}));
+   if(f.type==='response-end')c?.close();else{const e=Error('relay_'+f.code);if(c)c.error(e);else{await ack;throw e;}}await ack;};
  const body=new ReadableStream({
    async pull(c){if(done||cancelling)return;const my=++ordinal;await sendRaw(env('pull',{ordinal:my}));
      const idle=idleMs?setTimeout(onIdle,idleMs):null;
@@ -31,15 +34,23 @@ export function createResponseStream({id,sendRaw,read,idleMs=0,onIdle=()=>{},onS
      if(cancelling)return;
      if(f.ordinal!==my)throw Error('foreign_frame');
      if(f.type==='response-chunk'){c.enqueue(new Uint8Array(Buffer.from(f.body,'base64')));}
-     else if(f.type==='response-end'||f.type==='response-failure'){
-       // Settle synchronously so a concurrent release cannot issue a cancel;
-       // the ack bytes are written before any later envelope.
-       settle();const ack=sendRaw(env('ack',{ordinal:++ordinal}));
-       if(f.type==='response-end')c.close();else c.error(Error('relay_'+f.code));await ack;}
+     else if(f.type==='response-end'||f.type==='response-failure'){await terminal(f,c);}
      else{settle();throw Error('stream_frame');}},
    cancel(){return release();}
  },{highWaterMark:0});
- return {body,release};
+ const onAbort=()=>{release().catch(()=>{});};
+ signal?.addEventListener('abort',onAbort,{once:true});
+ const response=(async()=>{
+   if(signal?.aborted)onAbort();
+   inflight=read().then(mine);let f;
+   try{f=await inflight;}finally{inflight=null;signal?.removeEventListener('abort',onAbort);}
+   if(cancelling){await cancelling;throw Error('Request was aborted');}
+   if(f.type==='response-unavailable'){settle();throw Error('route_unavailable_'+f.code);}
+   if(f.type==='response-failure'&&f.ordinal===0){await terminal(f,null);}
+   if(f.type!=='response-head'||!Number.isInteger(f.status)){settle();throw Error('response_head');}
+   return new Response(body,{status:f.status,headers:{'content-type':'text/event-stream'}});
+ })();
+ return {response,release};
 }
 // Runs only as the container entrypoint; importing for tests has no effects.
 if(import.meta.url==='file:///receiver.mjs')await main();
@@ -58,12 +69,12 @@ function read(){if(waiting)throw Error('concurrent_read');return new Promise((re
 let open=null;
 async function send(v){if(open){const o=open;open=null;await o.release();}await sendRaw(v);}
 async function sendRaw(v){const b=Buffer.from(JSON.stringify(v));if(b.length>MAX)throw Error('frame_bound');const h=Buffer.alloc(4);h.writeUInt32BE(b.length);await new Promise((r,j)=>process.stdout.write(Buffer.concat([h,b]),e=>e?j(e):r()));}
-let bind,seq=0,stream=0,streamIdleMs=0,session;
+let bind,seq=0,stream=0,streamIdleMs=0,headTimeoutMs=60000,session;
 const envelope=(type,data={})=>({type,binding:bind,sequence:seq,stream,...data});
 const observe=()=>({...observation,scratch:fs.readdirSync("/scratch",{recursive:true})});
 function joined(v,type){if(v.type!==type||JSON.stringify(v.binding)!==JSON.stringify(bind)||v.sequence!==seq||v.stream!==stream)throw Error('foreign_frame');}
 try {
- const init=await read();if(init.type!=='init'||init.binding?.profile!=='pi-native-inmemory-sse-v1'||init.binding?.generation!==1||init.sequence!==0||init.stream!==0)throw Error('init');bind=init.binding;streamIdleMs=Number.isInteger(init.streamIdleMs)?init.streamIdleMs:0;
+ const init=await read();if(init.type!=='init'||init.binding?.profile!=='pi-native-inmemory-sse-v1'||init.binding?.generation!==1||init.sequence!==0||init.stream!==0)throw Error('init');bind=init.binding;streamIdleMs=Number.isInteger(init.streamIdleMs)?init.streamIdleMs:0;headTimeoutMs=Number.isInteger(init.headTimeoutMs)?init.headTimeoutMs:60000;
  const {createAgentSession,DefaultResourceLoader,ModelRuntime,SessionManager,SettingsManager,createWriteTool,createBashTool}=await import('/pi/node_modules/@earendil-works/pi-coding-agent/dist/index.js');
  const manager=SessionManager.inMemory('/scratch',{id:bind.session});
  const settings=SettingsManager.inMemory({compaction:{enabled:false},retry:{enabled:false},cacheWarming:'off',transport:'sse'});
@@ -89,15 +100,13 @@ try {
  ({session}=await createAgentSession({cwd:'/scratch',agentDir:'/scratch/empty',sessionManager:manager,settingsManager:settings,resourceLoader:loader,modelRuntime:runtime,model,thinkingLevel:'off',noTools:'builtin',tools:['write','bash'],customTools:tools}));
  // Keep the actual native stream function and parser; inject only fetch transport.
  const original=runtime.streamSimple.bind(runtime);
- runtime.streamSimple=(m,c,o)=>original(m,c,{...o,transport:'sse',maxRetries:0,timeoutMs:10000,cacheRetention:'none',fetch:async(url,req)=>{
+ runtime.streamSimple=(m,c,o)=>original(m,c,{...o,transport:'sse',maxRetries:0,timeoutMs:headTimeoutMs,cacheRetention:'none',fetch:async(url,req)=>{
    stream++;const body=typeof req.body==='string'?Buffer.from(req.body):Buffer.from(req.body);if(body.length>131072)throw Error('request_bound');
    await send(envelope('fetch',{url:String(url),method:req.method,headers:Object.fromEntries(req.headers),body:body.toString('base64')}));
-   const head=await read();if(head.type==='response-unavailable'){joined(head,'response-unavailable');throw Error('route_unavailable_'+head.code);}joined(head,'response-head');if(!Number.isInteger(head.status))throw Error('response_head');
    // The response identity is fixed here; a later fetch cannot change it.
-   let handle;handle=createResponseStream({id:{binding:bind,sequence:seq,stream},sendRaw,read,idleMs:streamIdleMs,
+   let handle;handle=openResponse({id:{binding:bind,sequence:seq,stream},sendRaw,read,idleMs:streamIdleMs,signal:req.signal,
      onIdle:()=>{observation.streamIdleAborts++;session.abort();},onSettled:()=>{if(open===handle)open=null;}});
-   open=handle;const responseBody=handle.body;
-   return new Response(responseBody,{status:head.status,headers:{'content-type':'text/event-stream'}});
+   open=handle;return handle.response;
  }});
  await send(envelope('ready',{sessionId:session.sessionId,header:manager.getHeader(),tools:session.getActiveToolNames(),observation:observe()}));
  for(;;){const op=await read();if(op.type==='close'){await session.dispose();await send(envelope('closed',{observation:observe()}));process.stdin.destroy();break;}seq++;stream=0;joined(op,'prompt');await session.prompt(op.prompt);await send(envelope('snapshot',{sessionId:session.sessionId,header:manager.getHeader(),entries:manager.getEntries(),leaf:manager.getLeafId(),messages:session.messages,exports:fs.existsSync('/scratch/dist.mjs')?[{name:'dist.mjs',data:fs.readFileSync('/scratch/dist.mjs').toString('base64')}]:[],observation:observe()}));}

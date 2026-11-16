@@ -241,10 +241,17 @@ fn run() -> Result<()> {
         .and_then(|v| v.parse().ok())
         .filter(|v| (500..=60000).contains(v))
         .unwrap_or(30000);
+    // Pi's own response-head timeout. Hosted dispatch includes host admission
+    // (lease entry/currentness) and any authorized failover before a head.
+    let head_timeout_ms: u64 = std::env::var("PI_PROBE_HEAD_TIMEOUT_MS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .filter(|v| (1000..=300000).contains(v))
+        .unwrap_or(60000);
     let initialization = owner.enter(Effect::Initialization)?;
     initialization.consumption_deadline_millis((native::now() + 120000) / 1000)?;
     workload.send_effect(
-        &json!({"type":"init","binding":binding,"sequence":0,"stream":0,"streamIdleMs":stream_idle_ms}),
+        &json!({"type":"init","binding":binding,"sequence":0,"stream":0,"streamIdleMs":stream_idle_ms,"headTimeoutMs":head_timeout_ms}),
         &initialization,
     )?;
     let ready = receive_checked(&mut workload, &mut store, 0)?;
@@ -301,8 +308,19 @@ fn run() -> Result<()> {
                             Decision::Unavailable(reason) => {
                                 store.record_control(&format!("route-{:03}", route_records + 1), json!({"decision":"unavailable","request":stream_requests + 1,"reason":reason,"router":router.evidence()}))?;
                                 workload.send(&json!({"type":"response-unavailable","binding":binding,"sequence":seq,"stream":stream,"code":reason}))?;
-                                if let Ok(next) = receive_checked(&mut workload, &mut store, frames)
-                                {
+                                let mut next = receive_checked(&mut workload, &mut store, frames);
+                                if let Ok(c) = &next {
+                                    if c["type"] == "cancel"
+                                        && c["stream"] == stream
+                                        && c["ordinal"] == 1
+                                    {
+                                        // A head-phase cancel crossed the unavailable answer.
+                                        workload.send(&json!({"type":"response-cancelled","binding":binding,"sequence":seq,"stream":stream,"ordinal":1}))?;
+                                        next =
+                                            receive_checked(&mut workload, &mut store, frames + 1);
+                                    }
+                                }
+                                if let Ok(next) = next {
                                     let _ = store.record_control("failure", json!({"stage":"route-unavailable","reason":reason,"nativeNextType":next["type"],"nativeLastMessage":next["messages"].as_array().and_then(|m| m.last()).map(|m| json!({"role":m["role"],"stopReason":m["stopReason"],"errorMessage":m["errorMessage"]}))}));
                                 }
                                 return Err("route_unavailable");
@@ -324,47 +342,7 @@ fn run() -> Result<()> {
                         })?;
                         crash_at("connect", attempt);
                         let killer = socket.try_clone().map_err(|_| "synthetic_clone")?;
-                        let mut upstream = match stream::Upstream::open(socket) {
-                            Ok(u) => u,
-                            Err(code) => {
-                                router.settle(
-                                    attempt,
-                                    Disposition::Uncertain {
-                                        reason: code.into(),
-                                    },
-                                    json!(null),
-                                )?;
-                                store.record_control("failure", json!({"stage":"upstream-head","code":code,"classification":"provider-attempt-unknown","router":router.evidence()}))?;
-                                return Err(code);
-                            }
-                        };
-                        if route::refusal_status(upstream.status) {
-                            // Definitive refusal at the head: nothing is relayed.
-                            let mut refusal = vec![];
-                            while let Some(b) = upstream.next(stream::CHUNK)? {
-                                refusal.extend(b);
-                                if refusal.len() > 65536 {
-                                    return Err("refusal_bound");
-                                }
-                            }
-                            store.check_raw(&refusal)?;
-                            let code = serde_json::from_slice::<Value>(&refusal)
-                                .ok()
-                                .and_then(|v| v["error"]["code"].as_str().map(str::to_owned))
-                                .unwrap_or_else(|| "unspecified".into());
-                            let status = upstream.status;
-                            lease.observed(&hash(
-                                &[status.to_be_bytes().as_slice(), &refusal].concat(),
-                            ))?;
-                            router.settle(
-                                attempt,
-                                Disposition::Refused { status, code },
-                                json!(null),
-                            )?;
-                            store.record_control(&format!("settle-{attempt:03}"), json!({"attempt":router.attempts().iter().find(|a| a.attempt == attempt),"reservedUnits":router.reserved_units()}))?;
-                            continue;
-                        }
-                        let relay = {
+                        let relayed = {
                             // The lease was checked immediately before the request in `connect`.
                             let mut chan = Native {
                                 workload: &mut workload,
@@ -375,17 +353,39 @@ fn run() -> Result<()> {
                             };
                             stream::relay(
                                 &mut chan,
-                                upstream,
+                                socket,
                                 move || {
                                     let _ = killer.shutdown(std::net::Shutdown::Both);
                                 },
                                 &binding,
                                 seq,
                                 stream,
+                                route::refusal_status,
                             )
                         };
-                        let relay = match relay {
-                            Ok(r) => r,
+                        let relay = match relayed {
+                            Ok(stream::Relayed::Stream(r)) => r,
+                            Ok(stream::Relayed::Refused {
+                                status,
+                                body: refusal,
+                            }) => {
+                                // Definitive refusal at the head: drained, screened,
+                                // nothing relayed to the native consumer.
+                                let code = serde_json::from_slice::<Value>(&refusal)
+                                    .ok()
+                                    .and_then(|v| v["error"]["code"].as_str().map(str::to_owned))
+                                    .unwrap_or_else(|| "unspecified".into());
+                                lease.observed(&hash(
+                                    &[status.to_be_bytes().as_slice(), &refusal].concat(),
+                                ))?;
+                                router.settle(
+                                    attempt,
+                                    Disposition::Refused { status, code },
+                                    json!(null),
+                                )?;
+                                store.record_control(&format!("settle-{attempt:03}"), json!({"attempt":router.attempts().iter().find(|a| a.attempt == attempt),"reservedUnits":router.reserved_units()}))?;
+                                continue;
+                            }
                             Err(code) => {
                                 router.settle(
                                     attempt,

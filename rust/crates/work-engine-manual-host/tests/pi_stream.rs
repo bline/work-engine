@@ -103,6 +103,12 @@ impl Channel for Consumer {
         Ok(json!({"type":kind,"binding":self.b,"sequence":seq,"stream":1,"ordinal":self.ordinal}))
     }
 }
+fn stream(r: ps::Result<ps::Relayed>) -> ps::Result<ps::Relay> {
+    r.map(|x| match x {
+        ps::Relayed::Stream(r) => r,
+        ps::Relayed::Refused { .. } => panic!("refused"),
+    })
+}
 fn kinds(c: &Consumer) -> Vec<&str> {
     c.sent.iter().map(|v| v["type"].as_str().unwrap()).collect()
 }
@@ -134,10 +140,10 @@ fn early_chunk_is_forwarded_while_upstream_is_still_open() {
         ]);
         write!(c, "{:x}\r\n{rest}\r\n0\r\n\r\n", rest.len()).unwrap();
     });
-    let up = Upstream::open(TcpStream::connect(addr).unwrap()).unwrap();
+    let up = TcpStream::connect(addr).unwrap();
     let mut c = Consumer::new(store(&t));
     c.on_chunk = Some(tx);
-    let r = ps::relay(&mut c, up, || (), &binding(), 1, 1).unwrap();
+    let r = stream(ps::relay(&mut c, up, || (), &binding(), 1, 1, |_| false)).unwrap();
     server.join().unwrap();
     assert_eq!(r.outcome, Outcome::Completed);
     assert_eq!(
@@ -172,9 +178,9 @@ fn split_original_a_is_never_forwarded() {
         body.len(),
         tail.len()
     );
-    let up = Upstream::open(Cursor::new(raw.into_bytes())).unwrap();
+    let up = Cursor::new(raw.into_bytes());
     let mut c = Consumer::new(store(&t));
-    let r = ps::relay(&mut c, up, || (), &binding(), 1, 1).unwrap();
+    let r = stream(ps::relay(&mut c, up, || (), &binding(), 1, 1, |_| false)).unwrap();
     assert_eq!(r.outcome, Outcome::Interrupted("pi_original_a_exclusion"));
     assert_eq!(c.body, b"data: x");
     assert_eq!(
@@ -187,9 +193,9 @@ fn split_original_a_is_never_forwarded() {
 fn harmless_prefix_tail_is_released_at_end() {
     let t = tempfile::tempdir().unwrap();
     let raw = "HTTP/1.1 200 OK\r\nContent-Length: 8\r\n\r\nabc SYNT".to_string();
-    let up = Upstream::open(Cursor::new(raw.into_bytes())).unwrap();
+    let up = Cursor::new(raw.into_bytes());
     let mut c = Consumer::new(store(&t));
-    let r = ps::relay(&mut c, up, || (), &binding(), 1, 1).unwrap();
+    let r = stream(ps::relay(&mut c, up, || (), &binding(), 1, 1, |_| false)).unwrap();
     assert_eq!(r.outcome, Outcome::Completed);
     assert_eq!(c.body, b"abc SYNT");
     assert_eq!(
@@ -220,9 +226,9 @@ fn truncated_and_malformed_upstream_are_interrupted_not_completed() {
             "upstream_truncated",
         ),
     ] {
-        let up = Upstream::open(Cursor::new(raw.as_bytes().to_vec())).unwrap();
+        let up = Cursor::new(raw.as_bytes().to_vec());
         let mut c = Consumer::new(store(&t));
-        let r = ps::relay(&mut c, up, || (), &binding(), 1, 1).unwrap();
+        let r = stream(ps::relay(&mut c, up, || (), &binding(), 1, 1, |_| false)).unwrap();
         assert_eq!(r.outcome, Outcome::Interrupted(code), "{raw}");
         assert_eq!(kinds(&c).last(), Some(&"response-failure"));
     }
@@ -254,10 +260,10 @@ fn truncated_and_malformed_upstream_are_interrupted_not_completed() {
 fn cancel_closes_without_reading_further_and_records_upstream_state() {
     let t = tempfile::tempdir().unwrap();
     let raw = format!("HTTP/1.1 200 OK\r\n\r\n{}", "x".repeat(ps::CHUNK * 3));
-    let up = Upstream::open(Cursor::new(raw.into_bytes())).unwrap();
+    let up = Cursor::new(raw.into_bytes());
     let mut c = Consumer::new(store(&t));
     c.cancel_at = Some(2);
-    let r = ps::relay(&mut c, up, || (), &binding(), 1, 1).unwrap();
+    let r = stream(ps::relay(&mut c, up, || (), &binding(), 1, 1, |_| false)).unwrap();
     assert_eq!(
         r.outcome,
         Outcome::Cancelled {
@@ -280,9 +286,9 @@ fn slow_reader_bounds_host_buffer_to_one_chunk_per_pull() {
         ps::CHUNK * 4,
         "y".repeat(ps::CHUNK * 4)
     );
-    let up = Upstream::open(Cursor::new(raw.into_bytes())).unwrap();
+    let up = Cursor::new(raw.into_bytes());
     let mut c = Consumer::new(store(&t));
-    let r = ps::relay(&mut c, up, || (), &binding(), 1, 1).unwrap();
+    let r = stream(ps::relay(&mut c, up, || (), &binding(), 1, 1, |_| false)).unwrap();
     assert_eq!(r.outcome, Outcome::Completed);
     assert!(r.chunks.iter().all(|x| x.1 <= ps::CHUNK));
     assert!(r.chunks.len() >= 4);
@@ -292,11 +298,11 @@ fn slow_reader_bounds_host_buffer_to_one_chunk_per_pull() {
 #[test]
 fn foreign_or_interleaved_native_frames_refuse() {
     let t = tempfile::tempdir().unwrap();
-    let up = Upstream::open(Cursor::new(b"HTTP/1.1 200 OK\r\n\r\nx".to_vec())).unwrap();
+    let up = Cursor::new(b"HTTP/1.1 200 OK\r\n\r\nx".to_vec());
     let mut c = Consumer::new(store(&t));
     c.foreign = true;
     assert_eq!(
-        ps::relay(&mut c, up, || (), &binding(), 1, 1).err(),
+        stream(ps::relay(&mut c, up, || (), &binding(), 1, 1, |_| false)).err(),
         Some("stream_foreign_frame")
     );
     struct Tool(Binding, LiveStore);
@@ -316,9 +322,18 @@ fn foreign_or_interleaved_native_frames_refuse() {
             Ok(json!({"type":"tool","binding":self.0,"sequence":1,"stream":1,"ordinal":1}))
         }
     }
-    let up = Upstream::open(Cursor::new(b"HTTP/1.1 200 OK\r\n\r\nx".to_vec())).unwrap();
+    let up = Cursor::new(b"HTTP/1.1 200 OK\r\n\r\nx".to_vec());
     assert_eq!(
-        ps::relay(&mut Tool(binding(), store(&t)), up, || (), &binding(), 1, 1).err(),
+        stream(ps::relay(
+            &mut Tool(binding(), store(&t)),
+            up,
+            || (),
+            &binding(),
+            1,
+            1,
+            |_| false
+        ))
+        .err(),
         Some("stream_interleaved_frame")
     );
 }
@@ -358,11 +373,11 @@ fn cancel_overtakes_pending_pull_and_aborts_stalled_upstream() {
         .set_read_timeout(Some(Duration::from_secs(20)))
         .unwrap();
     let killer = socket.try_clone().unwrap();
-    let up = Upstream::open(socket).unwrap();
+    let up = socket;
     let mut c = Consumer::new(store(&t));
     c.overtake = Some((2, std::time::Instant::now() + Duration::from_secs(3600)));
     let start = std::time::Instant::now();
-    let r = ps::relay(
+    let r = stream(ps::relay(
         &mut c,
         up,
         move || {
@@ -371,7 +386,8 @@ fn cancel_overtakes_pending_pull_and_aborts_stalled_upstream() {
         &binding(),
         1,
         1,
-    )
+        |_| false,
+    ))
     .unwrap();
     assert!(
         start.elapsed() < Duration::from_secs(3),
@@ -404,10 +420,10 @@ fn crlf_sse_completion_is_recognized_for_release_after_end() {
         "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{body}",
         body.len()
     );
-    let up = Upstream::open(Cursor::new(raw.into_bytes())).unwrap();
+    let up = Cursor::new(raw.into_bytes());
     let mut c = Consumer::new(store(&t));
     c.cancel_at = Some(2);
-    let r = ps::relay(&mut c, up, || (), &binding(), 1, 1).unwrap();
+    let r = stream(ps::relay(&mut c, up, || (), &binding(), 1, 1, |_| false)).unwrap();
     assert_eq!(r.outcome, Outcome::Cancelled { upstream_end: true });
     let u = r.evidence()["usage"].clone();
     assert_eq!(u["completed"], true);
@@ -434,10 +450,10 @@ fn failed_terminal_event_is_reported_and_end_observed_after_release() {
         "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{body}",
         body.len()
     );
-    let up = Upstream::open(Cursor::new(raw.into_bytes())).unwrap();
+    let up = Cursor::new(raw.into_bytes());
     let mut c = Consumer::new(store(&t));
     c.cancel_at = Some(2);
-    let r = ps::relay(&mut c, up, || (), &binding(), 1, 1).unwrap();
+    let r = stream(ps::relay(&mut c, up, || (), &binding(), 1, 1, |_| false)).unwrap();
     assert_eq!(r.outcome, Outcome::Cancelled { upstream_end: true });
     let u = r.evidence()["usage"].clone();
     assert_eq!(u["completed"], false);
@@ -448,11 +464,11 @@ fn failed_terminal_event_is_reported_and_end_observed_after_release() {
 fn cancel_racing_a_terminal_frame_is_confirmed_not_left_waiting() {
     let t = tempfile::tempdir().unwrap();
     let raw = "HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\nabc".to_string();
-    let up = Upstream::open(Cursor::new(raw.into_bytes())).unwrap();
+    let up = Cursor::new(raw.into_bytes());
     let mut c = Consumer::new(store(&t));
     // Pulls 1 (chunk) and 2 (end); the consumer's cancel 3 crossed the end.
     c.cancel_at = Some(3);
-    let r = ps::relay(&mut c, up, || (), &binding(), 1, 1).unwrap();
+    let r = stream(ps::relay(&mut c, up, || (), &binding(), 1, 1, |_| false)).unwrap();
     assert_eq!(r.outcome, Outcome::Completed);
     assert_eq!(r.closing, Some("cancel-after-terminal"));
     assert_eq!(
@@ -466,15 +482,155 @@ fn cancel_racing_a_terminal_frame_is_confirmed_not_left_waiting() {
     );
     assert_eq!(c.sent.last().unwrap()["ordinal"], 3);
     // Normal close: exactly one ack, nothing further sent.
-    let up = Upstream::open(Cursor::new(
-        b"HTTP/1.1 200 OK\r\nContent-Length: 1\r\n\r\nx".to_vec(),
-    ))
-    .unwrap();
+    let up = Cursor::new(b"HTTP/1.1 200 OK\r\nContent-Length: 1\r\n\r\nx".to_vec());
     let mut c = Consumer::new(store(&t));
-    let r = ps::relay(&mut c, up, || (), &binding(), 1, 1).unwrap();
+    let r = stream(ps::relay(&mut c, up, || (), &binding(), 1, 1, |_| false)).unwrap();
     assert_eq!(r.closing, Some("ack"));
     assert_eq!(
         kinds(&c),
         ["response-head", "response-chunk", "response-end"]
     );
+}
+
+#[test]
+fn cancel_while_awaiting_head_is_prompt_and_closes_upstream() {
+    let t = tempfile::tempdir().unwrap();
+    let l = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = l.local_addr().unwrap();
+    let server = std::thread::spawn(move || {
+        let (mut c, _) = l.accept().unwrap();
+        // Never send a head; observe the host closing the connection.
+        let mut b = [0u8; 1];
+        let started = std::time::Instant::now();
+        let n = std::io::Read::read(&mut c, &mut b).unwrap_or(0);
+        (n, started.elapsed())
+    });
+    let socket = TcpStream::connect(addr).unwrap();
+    socket
+        .set_read_timeout(Some(Duration::from_secs(20)))
+        .unwrap();
+    let killer = socket.try_clone().unwrap();
+    let mut c = Consumer::new(store(&t));
+    // Readable after 200 ms with no pull outstanding: cancel ordinal 1.
+    c.overtake = Some((0, std::time::Instant::now() + Duration::from_millis(200)));
+    let start = std::time::Instant::now();
+    let r = stream(ps::relay(
+        &mut c,
+        socket,
+        move || {
+            let _ = killer.shutdown(std::net::Shutdown::Both);
+        },
+        &binding(),
+        1,
+        1,
+        |_| false,
+    ))
+    .unwrap();
+    assert!(start.elapsed() < Duration::from_secs(3));
+    assert_eq!(
+        r.outcome,
+        Outcome::Cancelled {
+            upstream_end: false
+        }
+    );
+    assert_eq!(r.status, 0);
+    assert_eq!(kinds(&c), ["response-cancelled"]);
+    assert_eq!(c.sent[0]["ordinal"], 1);
+    let (n, waited) = server.join().unwrap();
+    assert_eq!(n, 0);
+    assert!(waited < Duration::from_secs(3));
+}
+
+#[test]
+fn cancel_crossing_a_relayed_head_is_confirmed() {
+    let t = tempfile::tempdir().unwrap();
+    let s = store(&t);
+    let raw = b"HTTP/1.1 200 OK\r\nContent-Length: 1\r\n\r\nx".to_vec();
+    let mut sess =
+        ps::Session::start(Cursor::new(raw), || (), &binding(), 1, 1, |_| false).unwrap();
+    let mut frames = vec![];
+    while frames.is_empty() {
+        frames = sess.poll(&s, Duration::from_millis(50)).unwrap();
+    }
+    assert_eq!(frames[0]["type"], "response-head");
+    // The consumer had already sent cancel(1) before it saw the head.
+    let cancel = json!({"type":"cancel","binding":binding(),"sequence":1,"stream":1,"ordinal":1});
+    let out = sess.on_native(&cancel, &s).unwrap();
+    assert_eq!(out[0]["type"], "response-cancelled");
+    assert_eq!(out[0]["ordinal"], 1);
+    assert_eq!(sess.progress(), &ps::Progress::Finished);
+    // Pull before any head is refused in the head phase.
+    let raw = b"HTTP/1.1 200 OK\r\n\r\n".to_vec();
+    let slow = std::io::Read::chain(std::io::empty(), Cursor::new(raw));
+    let mut early = ps::Session::start(slow, || (), &binding(), 1, 1, |_| false).unwrap();
+    let pull = json!({"type":"pull","binding":binding(),"sequence":1,"stream":1,"ordinal":1});
+    assert_eq!(
+        early.on_native(&pull, &s).err(),
+        Some("stream_frame_before_head")
+    );
+}
+
+#[test]
+fn refused_head_is_drained_screened_and_never_relayed() {
+    let t = tempfile::tempdir().unwrap();
+    let body = r#"{"error":{"code":"insufficient_quota"}}"#;
+    let raw = format!(
+        "HTTP/1.1 429 Too Many Requests\r\nContent-Length: {}\r\n\r\n{body}",
+        body.len()
+    );
+    let mut c = Consumer::new(store(&t));
+    match ps::relay(
+        &mut c,
+        Cursor::new(raw.into_bytes()),
+        || (),
+        &binding(),
+        1,
+        1,
+        |s| s == 429,
+    )
+    .unwrap()
+    {
+        ps::Relayed::Refused { status, body: b } => {
+            assert_eq!(status, 429);
+            assert_eq!(b, body.as_bytes());
+        }
+        ps::Relayed::Stream(_) => panic!("relayed a refusal"),
+    }
+    assert!(c.sent.is_empty(), "nothing reached the consumer");
+    // A refusal body carrying the original credential is refused, not returned.
+    let raw = format!("HTTP/1.1 429 X\r\nContent-Length: {}\r\n\r\n{A}", A.len());
+    let mut c = Consumer::new(store(&t));
+    assert_eq!(
+        ps::relay(
+            &mut c,
+            Cursor::new(raw.into_bytes()),
+            || (),
+            &binding(),
+            1,
+            1,
+            |s| s == 429
+        )
+        .err(),
+        Some("pi_original_a_exclusion")
+    );
+}
+
+#[test]
+fn unreadable_head_fails_with_ordinal_zero_then_single_ack() {
+    let t = tempfile::tempdir().unwrap();
+    let mut c = Consumer::new(store(&t));
+    let r = stream(ps::relay(
+        &mut c,
+        Cursor::new(b"garbage\r\n\r\n".to_vec()),
+        || (),
+        &binding(),
+        1,
+        1,
+        |_| false,
+    ))
+    .unwrap();
+    assert_eq!(r.outcome, Outcome::Interrupted("upstream_version"));
+    assert_eq!(kinds(&c), ["response-failure"]);
+    assert_eq!(c.sent[0]["ordinal"], 0);
+    assert_eq!(r.closing, Some("ack"));
 }

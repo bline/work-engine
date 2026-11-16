@@ -349,29 +349,40 @@ fn frame(kind: &str, b: &Binding, seq: u64, stream: u64, data: Value) -> Value {
     v
 }
 
-enum Next {
-    Data(Vec<u8>),
-    End,
-    Failed(&'static str),
-    /// A native frame arrived while the host awaited upstream bytes.
-    Native(Value),
+/// Messages from the upstream reader thread.
+enum Msg {
+    Head(Result<u16>),
+    Data(Result<Option<Vec<u8>>>),
 }
-/// Upstream bytes are read on a dedicated thread, one bounded chunk per host
-/// request, so the host can observe a native `cancel` while a read is pending.
+/// The upstream connection is owned by a dedicated thread: it reads the
+/// response head, then one bounded chunk per host request. The host therefore
+/// never blocks on the provider and can act on native frames at any time.
 struct Reader {
     request: SyncSender<()>,
-    result: Receiver<Result<Option<Vec<u8>>>>,
+    result: Receiver<Msg>,
     outstanding: bool,
 }
 impl Reader {
-    fn spawn<R: Read + Send + 'static>(mut up: Upstream<R>) -> Self {
+    fn spawn<R: Read + Send + 'static>(r: R) -> Self {
         let (request, rx) = sync_channel::<()>(1);
         let (tx, result) = sync_channel(1);
         std::thread::spawn(move || {
+            let mut up = match Upstream::open(r) {
+                Ok(up) => {
+                    if tx.send(Msg::Head(Ok(up.status))).is_err() {
+                        return;
+                    }
+                    up
+                }
+                Err(code) => {
+                    let _ = tx.send(Msg::Head(Err(code)));
+                    return;
+                }
+            };
             while rx.recv().is_ok() {
                 let r = up.next(CHUNK);
                 let last = !matches!(r, Ok(Some(_)));
-                if tx.send(r).is_err() || last {
+                if tx.send(Msg::Data(r)).is_err() || last {
                     break;
                 }
             }
@@ -382,249 +393,424 @@ impl Reader {
             outstanding: false,
         }
     }
-    fn next<C: Channel>(&mut self, chan: &mut C, wait: Option<Duration>) -> Result<Next> {
+    /// Head message, if it arrives within `wait`.
+    fn head(&mut self, wait: Duration) -> Option<Result<u16>> {
+        match self.result.recv_timeout(wait) {
+            Ok(Msg::Head(h)) => Some(h),
+            Ok(Msg::Data(_)) => Some(Err("upstream_reader_order")),
+            Err(RecvTimeoutError::Timeout) => None,
+            Err(RecvTimeoutError::Disconnected) => Some(Err("upstream_reader")),
+        }
+    }
+    /// Next body bytes, if they arrive within `wait`. Requests a chunk when
+    /// none is outstanding.
+    fn data(&mut self, wait: Duration) -> Option<Result<Option<Vec<u8>>>> {
         if !self.outstanding {
-            self.request.send(()).map_err(|_| "upstream_reader")?;
+            if self.request.send(()).is_err() {
+                return Some(Err("upstream_reader"));
+            }
             self.outstanding = true;
         }
-        let deadline = wait.map(|w| Instant::now() + w);
-        loop {
-            match self.result.recv_timeout(POLL) {
-                Ok(r) => {
-                    self.outstanding = false;
-                    return Ok(match r {
-                        Ok(Some(b)) => Next::Data(b),
-                        Ok(None) => Next::End,
-                        Err(code) => Next::Failed(code),
-                    });
-                }
-                Err(RecvTimeoutError::Disconnected) => return Ok(Next::Failed("upstream_reader")),
-                Err(RecvTimeoutError::Timeout) => {
-                    if deadline.is_some_and(|d| Instant::now() >= d) {
-                        return Ok(Next::Failed("upstream_drain_deadline"));
-                    }
-                    if wait.is_none() && chan.readable()? {
-                        return Ok(Next::Native(chan.receive()?));
-                    }
-                }
+        match self.result.recv_timeout(wait) {
+            Ok(Msg::Data(d)) => {
+                self.outstanding = false;
+                Some(d)
             }
+            Ok(Msg::Head(_)) => Some(Err("upstream_reader_order")),
+            Err(RecvTimeoutError::Timeout) => None,
+            Err(RecvTimeoutError::Disconnected) => Some(Err("upstream_reader")),
         }
     }
 }
 const POLL: Duration = Duration::from_millis(10);
 const DRAIN: Duration = Duration::from_secs(1);
+const MAX_REFUSAL: usize = 64 * 1024;
 
-/// After a host terminal frame the consumer sends exactly one closing frame:
-/// `ack`, or a `cancel` it issued before seeing the terminal frame. The host
-/// confirms a racing cancel, so neither side waits on an unanswered frame and
-/// no stream frame reaches the session loop after the relay returns.
-fn close<C: Channel>(
-    chan: &mut C,
-    bind: &Value,
-    binding: &Binding,
-    seq: u64,
-    stream: u64,
-    ordinal: u64,
-) -> Result<Option<&'static str>> {
-    let op = chan.receive()?;
-    if op["binding"] != *bind
-        || op["sequence"] != seq
-        || op["stream"] != stream
-        || op["ordinal"] != ordinal
-    {
-        return Err("stream_foreign_frame");
-    }
-    match op["type"].as_str() {
-        Some("ack") => Ok(Some("ack")),
-        Some("cancel") => {
-            chan.send(&frame(
-                "response-cancelled",
-                binding,
-                seq,
-                stream,
-                json!({"ordinal":ordinal}),
-            ))?;
-            Ok(Some("cancel-after-terminal"))
-        }
-        _ => Err("stream_interleaved_frame"),
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum State {
+    /// Awaiting the upstream head; the consumer may cancel.
+    Head,
+    /// Head refused by policy: draining its bounded body, nothing relayed.
+    Refusal,
+    /// Awaiting a native `pull` or `cancel`.
+    AwaitOp,
+    /// A pull is outstanding; awaiting upstream bytes (or an overtaking cancel).
+    Upstream {
+        pulled: u64,
+        ended_at_pull: bool,
+    },
+    /// Terminal frame sent; awaiting the single closing `ack` or `cancel`.
+    Close,
+    Done,
 }
-
-/// Relay an opened upstream response to the native consumer under the given
-/// stream identity. Transport/protocol failures toward the native side are
-/// returned as errors; upstream failures after the head are reported to the
-/// consumer and returned as `Outcome::Interrupted`. `abort` closes the
-/// upstream connection; it runs whenever the relay stops before the upstream
-/// framed end, unblocking any pending read.
-pub fn relay<C: Channel + Screen, R: Read + Send + 'static>(
-    chan: &mut C,
-    upstream: Upstream<R>,
-    abort: impl FnOnce(),
-    binding: &Binding,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Progress {
+    Pending,
+    /// The head status was refused by the session's policy before anything was
+    /// relayed. The native consumer is still awaiting a head for this stream;
+    /// the caller may start another attempt under the same stream identity or
+    /// answer `response-unavailable`.
+    Refused {
+        status: u16,
+        body: Vec<u8>,
+    },
+    Finished,
+}
+/// Event-driven host side of one relayed response stream.
+///
+/// The host loop delivers native frames with [`Session::on_native`] and
+/// advances upstream progress with [`Session::poll`]; both return the frames
+/// to send to the native consumer. Frames carry one fixed stream identity.
+/// Protocol (ordinals count native operations from 1):
+/// - head phase: host `response-head`, or `response-failure` (ordinal 0) if
+///   the head cannot be read; the consumer may `cancel` (ordinal 1) at any time,
+///   confirmed with `response-cancelled` even if a head crossed it.
+/// - body: native `pull`/`cancel`; host `response-chunk`, `response-end`,
+///   `response-failure` or `response-cancelled`. A cancel may overtake an
+///   outstanding pull.
+/// - closing: after a terminal frame, exactly one native `ack`, or a crossing
+///   `cancel` that the host confirms.
+///
+/// Dropping an unfinished session closes the upstream connection.
+pub struct Session {
+    binding: Binding,
+    bind: Value,
     seq: u64,
     stream: u64,
-) -> Result<Relay> {
-    let mut abort = Some(abort);
-    let r = relay_inner(chan, upstream, binding, seq, stream);
-    if !matches!(&r, Ok(x) if x.upstream_end_ms.is_some()) {
-        if let Some(a) = abort.take() {
+    reader: Reader,
+    state: State,
+    held: Vec<u8>,
+    ordinal: u64,
+    r: Relay,
+    abort: Option<Box<dyn FnOnce() + Send>>,
+    refuse: fn(u16) -> bool,
+    refusal: (u16, Vec<u8>),
+    progress: Progress,
+}
+impl Drop for Session {
+    fn drop(&mut self) {
+        if let Some(a) = self.abort.take() {
             a();
         }
     }
-    r
 }
-fn relay_inner<C: Channel + Screen, R: Read + Send + 'static>(
+impl Session {
+    /// Start reading `upstream` (an already-sent request's response) on a
+    /// dedicated thread. `abort` closes the connection; `refuse` selects head
+    /// statuses that end the session as [`Progress::Refused`].
+    pub fn start<R: Read + Send + 'static>(
+        upstream: R,
+        abort: impl FnOnce() + Send + 'static,
+        binding: &Binding,
+        seq: u64,
+        stream: u64,
+        refuse: fn(u16) -> bool,
+    ) -> Result<Self> {
+        Ok(Self {
+            bind: serde_json::to_value(binding).map_err(|_| "binding")?,
+            binding: binding.clone(),
+            seq,
+            stream,
+            reader: Reader::spawn(upstream),
+            state: State::Head,
+            held: Vec::new(),
+            ordinal: 0,
+            r: Relay {
+                status: 0,
+                outcome: Outcome::Completed,
+                forwarded: Vec::new(),
+                chunks: Vec::new(),
+                upstream_end_ms: None,
+                opened_ms: now_millis(),
+                unforwarded_after_release: 0,
+                cancel_wait_ms: None,
+                closing: None,
+            },
+            abort: Some(Box::new(abort)),
+            refuse,
+            refusal: (0, Vec::new()),
+            progress: Progress::Pending,
+        })
+    }
+    pub fn progress(&self) -> &Progress {
+        &self.progress
+    }
+    pub fn relay(&self) -> &Relay {
+        &self.r
+    }
+    /// Whether the session is idle until a native frame arrives.
+    pub fn awaiting_native(&self) -> bool {
+        matches!(self.state, State::AwaitOp | State::Close)
+    }
+    pub fn into_relay(mut self) -> Relay {
+        std::mem::replace(
+            &mut self.r,
+            Relay {
+                status: 0,
+                outcome: Outcome::Completed,
+                forwarded: Vec::new(),
+                chunks: Vec::new(),
+                upstream_end_ms: None,
+                opened_ms: 0,
+                unforwarded_after_release: 0,
+                cancel_wait_ms: None,
+                closing: None,
+            },
+        )
+    }
+    fn out(&self, kind: &str, data: Value) -> Value {
+        frame(kind, &self.binding, self.seq, self.stream, data)
+    }
+    fn finish(&mut self) {
+        self.state = State::Done;
+        if self.progress == Progress::Pending {
+            self.progress = Progress::Finished;
+        }
+        if self.r.upstream_end_ms.is_some() {
+            self.abort = None;
+        } else if let Some(a) = self.abort.take() {
+            a();
+        }
+    }
+    fn terminal(&mut self, frames: &mut Vec<Value>, kind: &str, data: Value) {
+        frames.push(self.out(kind, data));
+        self.state = State::Close;
+    }
+    /// Handle one native frame for this stream.
+    pub fn on_native<S: Screen>(&mut self, op: &Value, _screen: &S) -> Result<Vec<Value>> {
+        if op["binding"] != self.bind || op["sequence"] != self.seq || op["stream"] != self.stream {
+            return Err("stream_foreign_frame");
+        }
+        if op["ordinal"] != self.ordinal + 1 {
+            return Err("stream_foreign_frame");
+        }
+        self.ordinal += 1;
+        let kind = op["type"].as_str().unwrap_or("");
+        let mut frames = vec![];
+        match (self.state, kind) {
+            (State::Head | State::Refusal, "cancel") => {
+                // Cancelled before any head was relayed.
+                frames.push(self.out("response-cancelled", json!({"ordinal":self.ordinal})));
+                self.r.outcome = Outcome::Cancelled {
+                    upstream_end: false,
+                };
+                self.finish();
+            }
+            (State::AwaitOp, "pull") => {
+                self.state = State::Upstream {
+                    pulled: now_millis(),
+                    ended_at_pull: self.r.upstream_end_ms.is_some(),
+                };
+                frames.extend(self.advance(_screen, Duration::ZERO)?);
+            }
+            (State::AwaitOp, "cancel") => {
+                frames.push(self.out("response-cancelled", json!({"ordinal":self.ordinal})));
+                // Common release right after a terminal provider event: observe
+                // whether the framed end follows within a short bound.
+                if self.r.upstream_end_ms.is_none() && self.held.is_empty() {
+                    let u = usage(&self.r.forwarded);
+                    if u["completed"] == true || !u["failed"].is_null() {
+                        match self.reader.data(DRAIN) {
+                            Some(Ok(None)) => self.r.upstream_end_ms = Some(now_millis()),
+                            Some(Ok(Some(b))) => self.r.unforwarded_after_release = b.len(),
+                            _ => {}
+                        }
+                    }
+                }
+                self.r.outcome = Outcome::Cancelled {
+                    upstream_end: self.r.upstream_end_ms.is_some() && self.held.is_empty(),
+                };
+                self.finish();
+            }
+            (State::Upstream { pulled, .. }, "cancel") => {
+                // Overtakes the outstanding pull, which this confirmation answers.
+                self.r.cancel_wait_ms = Some(now_millis().saturating_sub(pulled));
+                frames.push(self.out("response-cancelled", json!({"ordinal":self.ordinal})));
+                self.r.outcome = Outcome::Cancelled {
+                    upstream_end: false,
+                };
+                self.finish();
+            }
+            (State::Close, "ack") => {
+                self.r.closing = Some("ack");
+                self.finish();
+            }
+            (State::Close, "cancel") => {
+                frames.push(self.out("response-cancelled", json!({"ordinal":self.ordinal})));
+                self.r.closing = Some("cancel-after-terminal");
+                self.finish();
+            }
+            (State::Head | State::Refusal, _) => return Err("stream_frame_before_head"),
+            _ => return Err("stream_interleaved_frame"),
+        }
+        Ok(frames)
+    }
+    /// Advance upstream-driven work, waiting at most `wait` for the provider.
+    pub fn poll<S: Screen>(&mut self, screen: &S, wait: Duration) -> Result<Vec<Value>> {
+        match self.state {
+            State::Head => {
+                let mut frames = vec![];
+                match self.reader.head(wait) {
+                    None => {}
+                    Some(Ok(status)) => {
+                        self.r.status = status;
+                        if (self.refuse)(status) {
+                            self.refusal.0 = status;
+                            self.state = State::Refusal;
+                        } else {
+                            frames.push(self.out("response-head", json!({"status":status})));
+                            self.state = State::AwaitOp;
+                        }
+                    }
+                    Some(Err(code)) => {
+                        self.r.outcome = Outcome::Interrupted(code);
+                        self.terminal(
+                            &mut frames,
+                            "response-failure",
+                            json!({"ordinal":self.ordinal,"code":code}),
+                        );
+                    }
+                }
+                Ok(frames)
+            }
+            State::Refusal => {
+                match self.reader.data(wait) {
+                    None => {}
+                    Some(Ok(Some(b))) => {
+                        self.refusal.1.extend(b);
+                        if self.refusal.1.len() > MAX_REFUSAL {
+                            return Err("refusal_bound");
+                        }
+                    }
+                    Some(Ok(None)) => {
+                        self.r.upstream_end_ms = Some(now_millis());
+                        screen.hold(&self.refusal.1)?;
+                        let (status, body) = std::mem::take(&mut self.refusal);
+                        self.progress = Progress::Refused { status, body };
+                        self.finish();
+                    }
+                    Some(Err(code)) => {
+                        // A refusal whose body cannot be read is not definitive.
+                        self.r.outcome = Outcome::Interrupted(code);
+                        let mut frames = vec![];
+                        self.terminal(
+                            &mut frames,
+                            "response-failure",
+                            json!({"ordinal":self.ordinal,"code":code}),
+                        );
+                        return Ok(frames);
+                    }
+                }
+                Ok(vec![])
+            }
+            State::Upstream { .. } => self.advance(screen, wait),
+            _ => Ok(vec![]),
+        }
+    }
+    /// Satisfy the outstanding pull if upstream bytes are releasable.
+    fn advance<S: Screen>(&mut self, screen: &S, wait: Duration) -> Result<Vec<Value>> {
+        let State::Upstream {
+            pulled,
+            ended_at_pull,
+        } = self.state
+        else {
+            return Ok(vec![]);
+        };
+        let mut frames = vec![];
+        let deadline = Instant::now() + wait;
+        let release = loop {
+            if self.r.upstream_end_ms.is_some() {
+                break std::mem::take(&mut self.held);
+            }
+            let left = deadline.saturating_duration_since(Instant::now());
+            match self.reader.data(left) {
+                None => return Ok(frames),
+                Some(Ok(Some(b))) => {
+                    self.held.extend(b);
+                    if self.r.forwarded.len() + self.held.len() > MAX_RESPONSE {
+                        self.r.outcome = Outcome::Interrupted("upstream_response_bound");
+                        break Vec::new();
+                    }
+                    match screen.hold(&self.held) {
+                        Ok(h) if self.held.len() > h => {
+                            let rest = self.held.split_off(self.held.len() - h);
+                            break std::mem::replace(&mut self.held, rest);
+                        }
+                        Ok(_) => {}
+                        Err(code) => {
+                            self.r.outcome = Outcome::Interrupted(code);
+                            break Vec::new();
+                        }
+                    }
+                }
+                Some(Ok(None)) => self.r.upstream_end_ms = Some(now_millis()),
+                Some(Err(code)) => {
+                    self.r.outcome = Outcome::Interrupted(code);
+                    break Vec::new();
+                }
+            }
+        };
+        if let Outcome::Interrupted(code) = self.r.outcome {
+            self.terminal(
+                &mut frames,
+                "response-failure",
+                json!({"ordinal":self.ordinal,"code":code}),
+            );
+        } else if release.is_empty() {
+            self.terminal(&mut frames, "response-end", json!({"ordinal":self.ordinal}));
+        } else {
+            frames.push(self.out(
+                "response-chunk",
+                json!({"ordinal":self.ordinal,"body":B64.encode(&release)}),
+            ));
+            self.r.chunks.push((
+                self.ordinal,
+                release.len(),
+                pulled,
+                now_millis(),
+                ended_at_pull,
+            ));
+            self.r.forwarded.extend(release);
+            self.state = State::AwaitOp;
+        }
+        Ok(frames)
+    }
+}
+
+pub enum Relayed {
+    Stream(Relay),
+    Refused { status: u16, body: Vec<u8> },
+}
+/// Drive one [`Session`] to completion over a blocking channel. Native frames
+/// are read only when available, so a cancel is acted on while the provider
+/// is still silent (head or body).
+pub fn relay<C: Channel + Screen, R: Read + Send + 'static>(
     chan: &mut C,
-    upstream: Upstream<R>,
+    upstream: R,
+    abort: impl FnOnce() + Send + 'static,
     binding: &Binding,
     seq: u64,
     stream: u64,
-) -> Result<Relay> {
-    let opened_ms = now_millis();
-    let bind = serde_json::to_value(binding).map_err(|_| "binding")?;
-    let mut r = Relay {
-        status: upstream.status,
-        outcome: Outcome::Completed,
-        forwarded: Vec::new(),
-        chunks: Vec::new(),
-        upstream_end_ms: None,
-        opened_ms,
-        unforwarded_after_release: 0,
-        cancel_wait_ms: None,
-        closing: None,
-    };
-    chan.send(&frame(
-        "response-head",
-        binding,
-        seq,
-        stream,
-        json!({"status":upstream.status}),
-    ))?;
-    let mut reader = Reader::spawn(upstream);
-    let mut held: Vec<u8> = Vec::new();
-    let mut ordinal = 0u64;
-    let mut next_op: Option<Value> = None;
+    refuse: fn(u16) -> bool,
+) -> Result<Relayed> {
+    let mut s = Session::start(upstream, abort, binding, seq, stream, refuse)?;
     loop {
-        let op = match next_op.take() {
-            Some(op) => op,
-            None => chan.receive()?,
-        };
-        ordinal += 1;
-        if op["binding"] != bind
-            || op["sequence"] != seq
-            || op["stream"] != stream
-            || op["ordinal"] != ordinal
-        {
-            return Err("stream_foreign_frame");
+        for f in s.poll(chan, POLL)? {
+            chan.send(&f)?;
         }
-        let pulled = now_millis();
-        let ended_at_pull = r.upstream_end_ms.is_some();
-        match op["type"].as_str() {
-            Some("cancel") => {
-                chan.send(&frame(
-                    "response-cancelled",
-                    binding,
-                    seq,
-                    stream,
-                    json!({"ordinal":ordinal}),
-                ))?;
-                // A consumer commonly releases right after a terminal provider
-                // event (completed or failed). Only then, observe whether the framed end
-                // follows within a short bound; otherwise the end stays unobserved.
-                if r.upstream_end_ms.is_none() && held.is_empty() && {
-                    let u = usage(&r.forwarded);
-                    u["completed"] == true || !u["failed"].is_null()
-                } {
-                    match reader.next(chan, Some(DRAIN))? {
-                        Next::End => r.upstream_end_ms = Some(now_millis()),
-                        Next::Data(b) => r.unforwarded_after_release = b.len(),
-                        _ => {}
-                    }
-                }
-                r.outcome = Outcome::Cancelled {
-                    upstream_end: r.upstream_end_ms.is_some() && held.is_empty(),
-                };
-                return Ok(r);
+        match s.progress().clone() {
+            Progress::Finished => return Ok(Relayed::Stream(s.into_relay())),
+            Progress::Refused { status, body } => return Ok(Relayed::Refused { status, body }),
+            Progress::Pending => {}
+        }
+        if s.awaiting_native() || chan.readable()? {
+            let op = chan.receive()?;
+            for f in s.on_native(&op, chan)? {
+                chan.send(&f)?;
             }
-            Some("pull") => {}
-            _ => return Err("stream_interleaved_frame"),
-        }
-        // Read until something is releasable, the upstream ends, it fails, or
-        // the native consumer cancels while this pull is outstanding.
-        let release = loop {
-            if r.upstream_end_ms.is_some() {
-                break std::mem::take(&mut held);
+            if let Progress::Finished = s.progress() {
+                return Ok(Relayed::Stream(s.into_relay()));
             }
-            match reader.next(chan, None)? {
-                Next::Data(b) => {
-                    held.extend(b);
-                    if r.forwarded.len() + held.len() > MAX_RESPONSE {
-                        r.outcome = Outcome::Interrupted("upstream_response_bound");
-                        break Vec::new();
-                    }
-                    let hold = match chan.hold(&held) {
-                        Ok(h) => h,
-                        Err(code) => {
-                            r.outcome = Outcome::Interrupted(code);
-                            break Vec::new();
-                        }
-                    };
-                    if held.len() > hold {
-                        let rest = held.split_off(held.len() - hold);
-                        break std::mem::replace(&mut held, rest);
-                    }
-                }
-                Next::End => r.upstream_end_ms = Some(now_millis()),
-                Next::Failed(code) => {
-                    r.outcome = Outcome::Interrupted(code);
-                    break Vec::new();
-                }
-                Next::Native(op) => {
-                    // Only a cancel may overtake an outstanding pull; that
-                    // pull is answered by the cancellation itself.
-                    if op["type"] != "cancel" {
-                        return Err("stream_interleaved_frame");
-                    }
-                    r.cancel_wait_ms = Some(now_millis() - pulled);
-                    next_op = Some(op);
-                    break Vec::new();
-                }
-            }
-        };
-        if next_op.is_some() {
-            continue;
         }
-        if let Outcome::Interrupted(code) = r.outcome {
-            chan.send(&frame(
-                "response-failure",
-                binding,
-                seq,
-                stream,
-                json!({"ordinal":ordinal,"code":code}),
-            ))?;
-            r.closing = close(chan, &bind, binding, seq, stream, ordinal + 1)?;
-            return Ok(r);
-        }
-        if release.is_empty() {
-            chan.send(&frame(
-                "response-end",
-                binding,
-                seq,
-                stream,
-                json!({"ordinal":ordinal}),
-            ))?;
-            r.closing = close(chan, &bind, binding, seq, stream, ordinal + 1)?;
-            return Ok(r);
-        }
-        chan.send(&frame(
-            "response-chunk",
-            binding,
-            seq,
-            stream,
-            json!({"ordinal":ordinal,"body":B64.encode(&release)}),
-        ))?;
-        r.chunks
-            .push((ordinal, release.len(), pulled, now_millis(), ended_at_pull));
-        r.forwarded.extend(release);
     }
 }

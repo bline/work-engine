@@ -1,0 +1,411 @@
+{
+ "standing": "bounded offline evidence copy; private run dirs own full artifacts",
+ "runs": {
+  "stream14": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/stream14",
+   "sha256": {
+    "store/control-closed-observation.json": "63daec805372178baabf4729cc7298164e15a722b452ca374d03dc404c0f22f1",
+    "store/control-closure.json": "a20e77342a4325044db6bd1024e417ec303d8b10294107dd52c317fa8821b814",
+    "store/control-create-intent.json": "3a257696cf33229ac0006d68167e952e16ddf1986326d3dce50e9659e609e8e9",
+    "store/control-created.json": "aab5abc830b519bb03c83bd4dd1c3d26183abdb0044116483a67a102eb115e07",
+    "store/control-ready.json": "7c42e7461a43cadc88b89e5f896421ee6a9afc1bc77ce41e668970b3a2d3c46d",
+    "store/control-report.json": "05c093397247e1baea842cb63fc3ee5bcb285ae1ee16d1851f02f8af87837e48",
+    "store/control-route-000.json": "59e2d5051e337b284ec7c484ea2c860b367ad22a9d4d12bfa8b094c7f63596bd",
+    "store/control-route-001.json": "cbe2fa93321ee5e57d25b0b89f0d015cb5c06892d9624146a74549a15bbca6d4",
+    "store/control-route-002.json": "e687cd7317c1bfe7491c4c9eb0da1c9b573084df1a33fdafaca8742dfdb4433c",
+    "store/control-route-003.json": "04d479399942b41f807c01c063ebead5fa053dfdf2ad8401c7cd0a356c93cb00",
+    "store/control-route-004.json": "411eeb8c704254097207073f37cae684787598ccb8281f7ec0bdb106bcc2da86",
+    "store/control-route-005.json": "d10a17fc804d5ba2c82ee8b9aec290812c0a90034c7dde35bb283396aba37a0a",
+    "store/control-settle-001.json": "4a575740a59e379c0af15b37a651af5c7372e4c50ae98ee2166fe139a2062504",
+    "store/control-settle-002.json": "160b34db04737e2210a20046aa55ad800fc6e626f2a96bc277ed7413322449c6",
+    "store/control-settle-003.json": "7e233c5b843d8677c04a4fdd0208b623863526300359bacd0f6c299820155ad7",
+    "store/control-settle-004.json": "0e37740c186f1a3d0ea1813eea41327498aa885c0a3d629fa66fe766bd00ad11",
+    "store/control-settle-005.json": "99e8ce9d62db295a3abf131e018f2cc1f83bf55f59bc1424b192fa05d6cb6743",
+    "store/control-stream-001.json": "f8a0c1e28cab78a53726b7e8ac2229b14ce022b1d0b9e31fbc30140c00540dc3",
+    "store/control-stream-002.json": "4c45671e38cd9a08133e538d679461bae2a881a213cd8b0fb297bb05bd81b9c7",
+    "store/control-stream-003.json": "3da43116a31331a8cd4c3801ec7ef4a8162f7907f54edd3387c3ddfb30e55b06",
+    "store/control-stream-004.json": "971ee9c365521bca70939cd08bc0aee9ad76345cce6e05f6ca30921bd4bc0a36",
+    "store/control-stream-005.json": "1befeb1d340af4d751c93c2c743c0c9bb57a3ef3175540f3644bdb7115d04501",
+    "observer.jsonl": "7af29b2de57796fb26940c4a278f5ceed63f299cf6fdb9e18077803bba47a194",
+    "probe.err": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "inputs.sha256": "6482335de5b11fba9433481fd91f62c412a9925f9bf8522c66a60e23bc41375b"
+   },
+   "streams": [
+    {
+     "outcome": "released-after-upstream-end",
+     "status": 200,
+     "closing": null,
+     "cancelDuringPendingPullMs": null
+    },
+    {
+     "outcome": "released-after-upstream-end",
+     "status": 200,
+     "closing": null,
+     "cancelDuringPendingPullMs": null
+    },
+    {
+     "outcome": "released-after-upstream-end",
+     "status": 200,
+     "closing": null,
+     "cancelDuringPendingPullMs": null
+    },
+    {
+     "outcome": "released-after-upstream-end",
+     "status": 200,
+     "closing": null,
+     "cancelDuringPendingPullMs": null
+    },
+    {
+     "outcome": "released-after-upstream-end",
+     "status": 200,
+     "closing": null,
+     "cancelDuringPendingPullMs": null
+    }
+   ],
+   "probeErr": "",
+   "observerFaults": []
+  },
+  "failover6": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/failover6",
+   "sha256": {
+    "store/control-closed-observation.json": "6da7a4bfab68f4ed42d2bddf92a0b05d253164dbb53a2eaaea0b6c7818b1729f",
+    "store/control-closure.json": "9a38d5397b18368bb0fe595970d59e3f40d04bd3d25eb2cc0ac3c16f71844598",
+    "store/control-create-intent.json": "219049ca9e00a4e926bcaed054e6f4da19af89c70489b16d4077cb9e356c25e8",
+    "store/control-created.json": "b29be852027c13692ac659061779ad27ef4426e504f3f4f6461b8567f00842fb",
+    "store/control-ready.json": "93b66b3b87879d60aa85672cb8efcbf119de9d964411f295e431dc35c4d8b7fa",
+    "store/control-report.json": "47eec9e1d7310a876634b50c2eb29e7abb4ee33a2b3b442aaf9f2937a01b6bd5",
+    "store/control-route-000.json": "ef03c7bed39d9a08808866c02060c13f64810d020ac92f8d01c57c412de34357",
+    "store/control-route-001.json": "8a1923c2d00c6d7d343f6e81e2e11b20a284dedd2a80fa230e8f4ae1ca5e5de4",
+    "store/control-route-002.json": "52c03a4bb3bbe4964a9dbd795405da21356f31a014d90e0ae8c6dbe0f65aed80",
+    "store/control-route-003.json": "c3da3dbcc22f20a3530fdd6e289191dffe05f0051153357d899968314d929920",
+    "store/control-route-004.json": "68534229a1a062277d9eaf007e4bf69a7248df862cf13fc7974f7a7d083d948d",
+    "store/control-route-005.json": "c96311911ceeb0a3968e506fe5bb1536d4e0168a1378ad1fab6b6bf7b4f37900",
+    "store/control-route-006.json": "dfed942dc0093a9005c8b3183e1523018eda87d1a480feb4e10ee66a8c754739",
+    "store/control-settle-001.json": "3315856d1430cd7591f72975dc8e69c901e6b19e03019d88cf53075d4e9e5977",
+    "store/control-settle-002.json": "b0387a9c1812f4c9e5ebe4b8e3b049edfba4fb74b130342f0861b7899ea793ca",
+    "store/control-settle-003.json": "a74c22228faa16c8cdce26e03c36e3a4372dd6f755f7fc8ead4d2eb87958f89d",
+    "store/control-settle-004.json": "544419cf4da9d65ec4d715612725c2b5ef21cf00d997c6fb6fc7e68602b368ed",
+    "store/control-settle-005.json": "185bf05667dbc84fb7bf8cc572ffd77f5d65f03322ec5f9d31511651825b8a64",
+    "store/control-settle-006.json": "0e69a2e7c88936da7f521aaa2080788356d49546021b6257d0ee3662a8cf19cc",
+    "store/control-stream-001.json": "83f71af11352b3be69108bf25a7009584eb2b95a2986b60b75647993e743ed88",
+    "store/control-stream-002.json": "1574f5c77683bf1e7bfea7a0c455e3f773fe824521aa77a6767347cd163b8678",
+    "store/control-stream-003.json": "f75e71ff31d4f8dbee44aaf4e51b671e6444a5efaaf055bd86be93018f4ef565",
+    "store/control-stream-004.json": "a2afaf872fd1d0b21fa692209f87d1ee29ba89ccf4d03ccaf58478f9a790e931",
+    "store/control-stream-005.json": "e3b7e75ff30cf356e044c93865ed3123136dee4cbeab03318f6d13f3f097c919",
+    "observer1.jsonl": "44a548e119f522bff67db43ae7491734f744ea0f274156eaaa38e7616ad65d52",
+    "observer2.jsonl": "bca11cd891e734885122b99bcf72de3f3f3f631da5a31c70e794f65085151906",
+    "probe.err": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "inputs.sha256": "6482335de5b11fba9433481fd91f62c412a9925f9bf8522c66a60e23bc41375b",
+    "recovery.json": "d32eb51db8a4baf041eb5e5db10c50169dd11fc8dc65c9e3f99a3e744f67d197"
+   },
+   "streams": [
+    {
+     "outcome": "released-after-upstream-end",
+     "status": 200,
+     "closing": null,
+     "cancelDuringPendingPullMs": null
+    },
+    {
+     "outcome": "released-after-upstream-end",
+     "status": 200,
+     "closing": null,
+     "cancelDuringPendingPullMs": null
+    },
+    {
+     "outcome": "released-after-upstream-end",
+     "status": 200,
+     "closing": null,
+     "cancelDuringPendingPullMs": null
+    },
+    {
+     "outcome": "released-after-upstream-end",
+     "status": 200,
+     "closing": null,
+     "cancelDuringPendingPullMs": null
+    },
+    {
+     "outcome": "released-after-upstream-end",
+     "status": 200,
+     "closing": null,
+     "cancelDuringPendingPullMs": null
+    }
+   ],
+   "probeErr": "",
+   "observerFaults": []
+  },
+  "unavailable5": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/unavailable5",
+   "sha256": {
+    "store/control-create-intent.json": "4a5ceaf1b21af4c8d0267c0d1bd79ba419ba3c14d270bd8d878bd57436add764",
+    "store/control-created.json": "5c26e39efce83f188d4c961ef9af3c245a34ed9766bd1582537d37a584fc5c4f",
+    "store/control-failure.json": "00f52bafd628e8cf60acddda56fa0962d0de4fbbe2c5603523f13041e40d2bf1",
+    "store/control-ready.json": "4bfb9577df01556bdc46b89abde7fb66f9f6b17b1c97ee5d180922c4da33dd52",
+    "store/control-route-000.json": "6dd6522cfcdfbff37ba09b2ee15cb9cb7d2ac586bc9c690d28de7e1ddba238e6",
+    "store/control-route-001.json": "d39030e707c265836f36f28be8c5b6daac3e24f65fed324ef81763853b2812f1",
+    "store/control-route-002.json": "96bd1db3edef0b05959040fdd1b7428318d73121582447e3f889b08b39f04a44",
+    "store/control-route-003.json": "ee33ef68078f12906e751ab9638829a018e4de33502113e19a71edb3f9fdb692",
+    "store/control-settle-001.json": "d224489994fb25e4ef4fb16c4ea69f03cb957e0757d8efbba5df284500574aa1",
+    "store/control-settle-002.json": "2bee1e967f9ebcd14d5c3a449d5e5d216efbc23bdb8702fae4497ef9b231bbdf",
+    "observer1.jsonl": "bd6b31ef572cba51e2bf093d9f3d6ff986f5cfadb14f4bcf282264f8abf18ff5",
+    "observer2.jsonl": "c7ccaf823f27310a2f0370bc4b606eeaf2cd8ba837fc05ade3a6bc29982139aa",
+    "probe.err": "c4c5295dce62286c06088180fffb4d1ba47c71c4b1aedb81cf1182ec6c235862",
+    "inputs.sha256": "6482335de5b11fba9433481fd91f62c412a9925f9bf8522c66a60e23bc41375b",
+    "recovery.json": "f0862ba6a1b0a70c73240a03bf8e2f829a483b2a718672fa3309bc9791729499"
+   },
+   "streams": [],
+   "failure": {
+    "nativeLastMessage": {
+     "errorMessage": "route_unavailable_attempt_limit",
+     "role": "assistant",
+     "stopReason": "error"
+    },
+    "nativeNextType": "snapshot",
+    "reason": "attempt_limit",
+    "stage": "route-unavailable"
+   },
+   "probeErr": "pi_native_tools_probe: route_unavailable",
+   "observerFaults": []
+  },
+  "midquota5": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/midquota5",
+   "sha256": {
+    "store/control-create-intent.json": "5d7d1b1c8c7cb1178e358d0995ddbc6ad144fb20468b3e2ccf85ea67ff2b9006",
+    "store/control-created.json": "773bf1a92153a9ee7ab12ea739cea00223d343b3323003ac713b5dff0f359158",
+    "store/control-failure.json": "8d008283b9dd87cdf6886d13f787851d8ef1154967f630fa29ea9f9914e906c6",
+    "store/control-ready.json": "ab303c5d7b24920a760000188cfe46c35187bbf3327cf16a87a96a7ed274bd2a",
+    "store/control-route-000.json": "cc5165b60ba81202a0b593a42fcdbbf5e78c84d0e93592f40baec8b64552ad94",
+    "store/control-route-001.json": "845cfa193b33584685c1f3bcaea8c1346852361938389c2cec2eefca8fde8528",
+    "store/control-settle-001.json": "64862e1637088d0186354d2bd143e5f75eb8410955070a2f66260da8abbc623f",
+    "store/control-stream-001.json": "2646682d42d37938ff7aa320dc9687df4756dd1609c1827f8ee920c6fbd48b35",
+    "observer1.jsonl": "3002fbe9e383bc78e95e0259b76a22d1e40fbdc4888fd0768c2d1de6fc6d0842",
+    "observer2.jsonl": "7c1a09741a2f42270dc2a2a07f02082299bd8eac03db78600f68b3dd0b836208",
+    "probe.err": "26b7dfc1324dcb2ff8c3383ad112d3c4f45fdd4615d3892b04c61caf79ef5395",
+    "inputs.sha256": "6482335de5b11fba9433481fd91f62c412a9925f9bf8522c66a60e23bc41375b",
+    "recovery.json": "2288387a02b8a80d8a0348eac7dab07ed61736a5306e9612a10b4027da748d93"
+   },
+   "streams": [
+    {
+     "outcome": "released-after-upstream-end",
+     "status": 200,
+     "closing": null,
+     "cancelDuringPendingPullMs": null
+    }
+   ],
+   "failure": {
+    "classification": "provider-attempt-unknown",
+    "nativeLastMessage": {
+     "errorMessage": "synthetic quota exhausted mid-stream",
+     "role": "assistant",
+     "stopReason": "error"
+    },
+    "nativeNextType": "snapshot",
+    "outcome": "released-after-upstream-end",
+    "stage": "stream-not-completed"
+   },
+   "probeErr": "pi_native_tools_probe: stream_not_completed",
+   "observerFaults": []
+  },
+  "fault-stall6": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/fault-stall6",
+   "sha256": {
+    "store/control-create-intent.json": "15b3ba52a327247a4277be76513d8aa0eec285009292280aeb5549a5e135db36",
+    "store/control-created.json": "bf18f224ec57632de0e938998483fb34f0aa04a4dbec676d682f4bf329efeb0d",
+    "store/control-failure.json": "d8d734b6374978145ebb30dce6ebcc0f0a2276049f8e6a1e0d8b3903ccc75c71",
+    "store/control-ready.json": "cc8e6f98ce85440470747dfc287ad0339b4ec7901aee4c36405bc3aa3d1ea8df",
+    "store/control-route-000.json": "958151a3bae541115a461305d7c79aa07a88c3896f7351a1a52fb555d40fae50",
+    "store/control-route-001.json": "ee6cff5abf7fbe99caec36c14f61bc8a346303b8fae791dffaa135e4e037d8fd",
+    "store/control-settle-001.json": "66907a590754481cc278706fa767ce9d016ef82e118df894e8f1ad99cff42c30",
+    "store/control-stream-001.json": "8bbd83b25683c5559f4cf4920165e4475049856f1c02582c25e3c29f14b3d522",
+    "observer.jsonl": "0d6a38c03bfe7ac67e37c074359f98e4dbe9f011ea532a7342f67f6c5bc18bd6",
+    "probe.err": "26b7dfc1324dcb2ff8c3383ad112d3c4f45fdd4615d3892b04c61caf79ef5395",
+    "inputs.sha256": "6482335de5b11fba9433481fd91f62c412a9925f9bf8522c66a60e23bc41375b"
+   },
+   "streams": [
+    {
+     "outcome": "cancelled-before-upstream-end",
+     "status": 200,
+     "closing": null,
+     "cancelDuringPendingPullMs": 2012
+    }
+   ],
+   "failure": {
+    "classification": "provider-attempt-unknown",
+    "nativeLastMessage": {
+     "errorMessage": "Request was aborted",
+     "role": "assistant",
+     "stopReason": "aborted"
+    },
+    "nativeNextType": "snapshot",
+    "outcome": "cancelled-before-upstream-end",
+    "stage": "stream-not-completed"
+   },
+   "probeErr": "pi_native_tools_probe: stream_not_completed",
+   "observerFaults": [
+    {
+     "closedMs": 1794811581892,
+     "eventSentMs": [
+      1794811579725,
+      1794811579876
+     ],
+     "fault": "stall",
+     "peerClosed": true,
+     "requestId": "bf338664-563d-4f64-8973-dd09676d2c06-1",
+     "stalledMs": 2015,
+     "type": "fault"
+    }
+   ]
+  },
+  "fault-truncate8": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/fault-truncate8",
+   "sha256": {
+    "store/control-create-intent.json": "4eaaf91d9deee8d13796d07b92c5343d0d0b81fd0858da024d67c0642eba582b",
+    "store/control-created.json": "fac3b9413ad9427e4fa0ff50e0747724e7e111f78e6f7962d1e0c90decd5252f",
+    "store/control-failure.json": "123e0c063abe145311ede4f613ae2dc304ab67cc6911e8e4a51b11ab44c28f55",
+    "store/control-ready.json": "18aef00f86a4117e563c5241b9f749f1ad1f8a900dc1ae9702000a582e1244ca",
+    "store/control-route-000.json": "2efc63b18796c4b3b1b51fdc8e24889460ade9d52ec37c1f02e63a568e01583c",
+    "store/control-route-001.json": "ccdc3575a81d2b3f46fa232cb98fa9f69b5d7e1790cc4ba54b89f56e1ad24c43",
+    "store/control-settle-001.json": "63242e43279dfe2dbf106a77285d648aaa6cfc58ee96d91200ee04ce0b874281",
+    "store/control-stream-001.json": "2d8674685639a535964a510664b2dcd5b4f4a60a2340c4123a0e72735f6ce1de",
+    "observer.jsonl": "ba90801e2267c93c5490f5284257f41c2958176f2f73de5323975b9bdd837741",
+    "probe.err": "26b7dfc1324dcb2ff8c3383ad112d3c4f45fdd4615d3892b04c61caf79ef5395",
+    "inputs.sha256": "6482335de5b11fba9433481fd91f62c412a9925f9bf8522c66a60e23bc41375b"
+   },
+   "streams": [
+    {
+     "outcome": "interrupted-uncertain",
+     "status": 200,
+     "closing": "ack",
+     "cancelDuringPendingPullMs": null
+    }
+   ],
+   "failure": {
+    "classification": "provider-attempt-unknown",
+    "nativeLastMessage": {
+     "errorMessage": "relay_upstream_truncated",
+     "role": "assistant",
+     "stopReason": "error"
+    },
+    "nativeNextType": "snapshot",
+    "outcome": "interrupted-uncertain",
+    "stage": "stream-not-completed"
+   },
+   "probeErr": "pi_native_tools_probe: stream_not_completed",
+   "observerFaults": [
+    {
+     "eventSentMs": [
+      1794811609137,
+      1794811609287
+     ],
+     "fault": "truncate",
+     "requestId": "094841f3-ea64-4bc8-a273-362828cedd23-1",
+     "type": "fault"
+    }
+   ]
+  },
+  "crash-connect-2c": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/crash-connect-2c",
+   "sha256": {
+    "store/control-create-intent.json": "b31cefc8859fdecd5788e8dd7604cec24a20a194c7d27e02bccc961082e9114b",
+    "store/control-created.json": "ac2165fa819e87493ecd6735a6a51fc39c689c71cb7138cfbcbb30fa1ca8686b",
+    "store/control-ready.json": "8b641e69e5da45038884b1ad82846e3c9c4b6ba40f3ce658f7121be5932e8303",
+    "store/control-route-000.json": "c38f7e107d38312107fd5935091973f7b50c9f626fcac08dab702999c66677b6",
+    "store/control-route-001.json": "3fc12f5aef333251bfdce4f1d6c457b363ef0e4ac4f81a726c91a2ef309ee47a",
+    "store/control-route-002.json": "8019ec9c1525315a49c6e30fed27e4d42e219dfea91c6ea5eb4762a582d62436",
+    "store/control-settle-001.json": "b04a12b7f15023dc1e0bc6978b8818b2f0ab22f5cf0d772d13eb093d64c22fac",
+    "observer1.jsonl": "83dd35d3d1d465899a330eeb06afe2f407725a5903db99bb2945c06e3977d46a",
+    "observer2.jsonl": "d4e1b7f7788198332772128956185eed80bde1aab2fe707ce634b4bf3c0288ff",
+    "probe.err": "96d1206d99e83470ae5282ee3ba3e625e2953c9f761fc931e1420768a4ddd755",
+    "inputs.sha256": "6482335de5b11fba9433481fd91f62c412a9925f9bf8522c66a60e23bc41375b",
+    "recovery.json": "92c6b9b83af2d897489e9dfced6091cea55b34ca1dbc87bf941d16de46a232b7"
+   },
+   "streams": [],
+   "probeErr": "pi_native_tools_probe: injected crash connect:2",
+   "observerFaults": []
+  },
+  "fault-headstall3": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/fault-headstall3",
+   "sha256": {
+    "store/control-create-intent.json": "a4be622c1d89898a3e5522cbf192b34b32d07375f2dccf213b637e9202055d9f",
+    "store/control-created.json": "3404fc8d19f876f47acd53a3a9bed9329f8147cf51f8a3750d76e1fca9b07086",
+    "store/control-failure.json": "4e1368f71df34dd545276b911acbd25b26a9b5f816042b0b029fd44e26ec06f7",
+    "store/control-ready.json": "346fa99ba25a37129a71dcc7bd49778bdfbfc27cd82d270a241cabedbd4a4bb4",
+    "store/control-route-000.json": "95c30e44a7edf928764ba33080f3f74afeffb8208b09bd1494929418a9f2e221",
+    "store/control-route-001.json": "cc9d5bc339e9bc5ac3a0334220bfc65b28e15826ab7b666deaa819746919b6e3",
+    "store/control-settle-001.json": "cfbbd32196741cff36b15466453516f6b00e25de753ba6f91439332f6f06c27e",
+    "store/control-stream-001.json": "d009de046dffc75d527eed6bafedab670cf6539702e2de9f4979365297c23a3c",
+    "observer.jsonl": "7e4fc3d452f91a439b5b14bbfa226d5fe7ca4e03d7e868d594e6111a237f1541",
+    "probe.err": "26b7dfc1324dcb2ff8c3383ad112d3c4f45fdd4615d3892b04c61caf79ef5395",
+    "inputs.sha256": "6482335de5b11fba9433481fd91f62c412a9925f9bf8522c66a60e23bc41375b"
+   },
+   "streams": [
+    {
+     "outcome": "cancelled-before-upstream-end",
+     "status": 0,
+     "closing": null,
+     "cancelDuringPendingPullMs": null
+    }
+   ],
+   "failure": {
+    "classification": "provider-attempt-unknown",
+    "nativeLastMessage": {
+     "errorMessage": "Codex SSE response headers timed out after 10000ms",
+     "role": "assistant",
+     "stopReason": "error"
+    },
+    "nativeNextType": "snapshot",
+    "outcome": "cancelled-before-upstream-end",
+    "stage": "stream-not-completed"
+   },
+   "probeErr": "pi_native_tools_probe: stream_not_completed",
+   "observerFaults": [
+    {
+     "fault": "stall-head",
+     "peerClosed": true,
+     "requestId": "70e899d4-0884-48da-ab7a-c4778a566839-1",
+     "stalledMs": 6474,
+     "type": "fault"
+    }
+   ]
+  },
+  "unavailable4": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/unavailable4",
+   "sha256": {
+    "store/control-create-intent.json": "fc262041f2dfc8a96033bf6c73a1957b8125cf05a1b369bf08ea73e380017445",
+    "store/control-created.json": "c1c5249b4fd6856eca29487f785bd401f175d6840925ddf27dd8ef4413b438f2",
+    "store/control-failure.json": "8ccb6aaa60938226fb81b3fdfd31c3a420c062297fdf716d44fc973d7f471f24",
+    "store/control-ready.json": "a40a18d71acd368b332492cf744d4e260296da418aef4fa45efefcc66b78aea0",
+    "store/control-route-000.json": "30e4058f034bb2b827afbb3b7e247482cceac289449dd7543b642cc4ba5fbbd4",
+    "store/control-route-001.json": "df9d5e9dd900cb5a17fc3147a784a272a662e3b34a91e4e89af5e9ab24c6b917",
+    "store/control-settle-001.json": "9dd36a70285675e0606c10a6831e7cd346c670bd4e8708c5ee82cbf68dc4feb3",
+    "store/control-stream-001.json": "6c8ecaf3f2e36415ddc78fb6d630ecca53a36510b06a9d6cf00c6246a0ec9157",
+    "observer1.jsonl": "6f53b6df087bbf7538d451e5b21d1f73f28adb19e1c8e2ad7ed679a66ea08661",
+    "observer2.jsonl": "0c98869211beb28cedd92580a5d2587ef62b045616c390858056f90a795fe005",
+    "probe.err": "26b7dfc1324dcb2ff8c3383ad112d3c4f45fdd4615d3892b04c61caf79ef5395",
+    "inputs.sha256": "032d59ebb3deabcfafe765a5d8a2ccff8dedd5a079c9a875fef447b18cf2837b",
+    "recovery.json": "eb38dd814c694a912326ebbafa4b74b9f88f5700081529df52ca998819d2be7f"
+   },
+   "streams": [
+    {
+     "outcome": "cancelled-before-upstream-end",
+     "status": 429,
+     "closing": null,
+     "cancelDuringPendingPullMs": null
+    }
+   ],
+   "failure": {
+    "classification": "provider-attempt-unknown",
+    "nativeLastMessage": {
+     "errorMessage": "Codex SSE response headers timed out after 10000ms",
+     "role": "assistant",
+     "stopReason": "error"
+    },
+    "nativeNextType": "snapshot",
+    "outcome": "cancelled-before-upstream-end",
+    "stage": "stream-not-completed"
+   },
+   "probeErr": "pi_native_tools_probe: stream_not_completed",
+   "observerFaults": [],
+   "note": "previous subject (10 s Pi head timeout); host admission took ~10.3 s so Pi cancelled during head phase; attempt left uncertain"
+  }
+ }
+}
