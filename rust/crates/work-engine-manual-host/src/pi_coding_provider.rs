@@ -52,6 +52,267 @@ pub struct Reservation {
     pub usage: Option<Value>,
     #[serde(default)]
     pub raw_terminal: Option<Value>,
+    /// Upstream attempts under this logical request, in order. Empty for
+    /// single-attempt profiles, whose request-level fields stay authoritative.
+    /// When present, these records own reservation state; the request-level
+    /// `settled_microusd` mirrors a settled completion for existing checks.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub attempts: Vec<AttemptRecord>,
+}
+/// Financial disposition of one attempt, applied only by this ledger.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AttemptDisposition {
+    /// Reserved and persisted; no outcome recorded yet.
+    Pending,
+    /// Definitive head refusal, nothing relayed, body drained and screened.
+    /// Reservation released.
+    Refused,
+    /// Head-phase cancel confirmed before any upstream byte was written.
+    /// Reservation released.
+    NotDispatched,
+    /// Relayed to its framed end; full reservation kept until raw-usage
+    /// settlement.
+    Completed,
+    /// Anything else. Full reservation kept; blocks the request.
+    Uncertain,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AttemptRecord {
+    /// Per-request ordinal, matching the admission key
+    /// `provider:{request}:{attempt}`.
+    pub attempt: u64,
+    pub route: String,
+    pub payer: String,
+    pub reserved_microusd: u64,
+    pub disposition: AttemptDisposition,
+    #[serde(default)]
+    pub http_status: Option<u16>,
+    /// Digest of the screened bytes forwarded to the consumer.
+    #[serde(default)]
+    pub relay_sha256: Option<String>,
+    #[serde(default)]
+    pub refusal_body_sha256: Option<String>,
+    #[serde(default)]
+    pub settled_microusd: Option<u64>,
+    #[serde(default)]
+    pub reason: Option<String>,
+}
+/// Observed facts about one attempt, from which the ledger derives the
+/// disposition. Callers report evidence; they never choose a release.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum AttemptEvidence {
+    /// The response head was not relayed.
+    HeadRefusal {
+        status: u16,
+        relayed_bytes: u64,
+        drained_and_screened: bool,
+        body_sha256: String,
+    },
+    /// A head-phase cancel arrived before dispatch.
+    NotDispatched { confirmed_before_write: bool },
+    /// The response was relayed (fully or partly) to the consumer.
+    Relayed {
+        status: u16,
+        upstream_end: bool,
+        interrupted: bool,
+        relay_sha256: String,
+    },
+    /// No trustworthy observation.
+    Unknown { reason: String },
+}
+impl AttemptEvidence {
+    pub fn from_relay(relay: &crate::pi_stream::Relay) -> Self {
+        use crate::pi_stream::Outcome;
+        Self::Relayed {
+            status: relay.status,
+            upstream_end: matches!(
+                relay.outcome,
+                Outcome::Completed | Outcome::Cancelled { upstream_end: true }
+            ),
+            interrupted: matches!(relay.outcome, Outcome::Interrupted(_)),
+            relay_sha256: relay.sha256(),
+        }
+    }
+}
+impl Reservation {
+    /// Money this request currently holds against the budget.
+    pub fn charged_microusd(&self) -> u64 {
+        if self.attempts.is_empty() {
+            return self.settled_microusd.unwrap_or(self.reserved_microusd);
+        }
+        self.attempts
+            .iter()
+            .map(|a| match a.disposition {
+                AttemptDisposition::Refused | AttemptDisposition::NotDispatched => 0,
+                AttemptDisposition::Completed => a.settled_microusd.unwrap_or(a.reserved_microusd),
+                AttemptDisposition::Pending | AttemptDisposition::Uncertain => a.reserved_microusd,
+            })
+            .sum()
+    }
+    /// Whether this request still blocks new grants.
+    pub fn unsettled(&self) -> bool {
+        if self.attempts.is_empty() {
+            return self.settled_microusd.is_none();
+        }
+        self.attempts.iter().any(|a| match a.disposition {
+            AttemptDisposition::Refused | AttemptDisposition::NotDispatched => false,
+            AttemptDisposition::Completed => a.settled_microusd.is_none(),
+            AttemptDisposition::Pending | AttemptDisposition::Uncertain => true,
+        })
+    }
+    /// Apply the release rule to the current pending attempt.
+    pub fn settle_attempt(
+        &mut self,
+        attempt: u64,
+        evidence: AttemptEvidence,
+    ) -> Result<AttemptDisposition> {
+        let a = match self.attempts.last_mut() {
+            Some(a) if a.attempt == attempt && a.disposition == AttemptDisposition::Pending => a,
+            _ => return refuse("attempt is not the pending attempt"),
+        };
+        let (disposition, reason) = match evidence {
+            AttemptEvidence::HeadRefusal {
+                status,
+                relayed_bytes,
+                drained_and_screened,
+                body_sha256,
+            } => {
+                a.http_status = Some(status);
+                a.refusal_body_sha256 = Some(body_sha256);
+                if crate::pi_route::refusal_status(status)
+                    && relayed_bytes == 0
+                    && drained_and_screened
+                {
+                    (AttemptDisposition::Refused, None)
+                } else {
+                    (
+                        AttemptDisposition::Uncertain,
+                        Some("refusal not definitive".to_string()),
+                    )
+                }
+            }
+            AttemptEvidence::NotDispatched {
+                confirmed_before_write,
+            } => {
+                if confirmed_before_write {
+                    (AttemptDisposition::NotDispatched, None)
+                } else {
+                    (
+                        AttemptDisposition::Uncertain,
+                        Some("cancel not confirmed before dispatch".to_string()),
+                    )
+                }
+            }
+            AttemptEvidence::Relayed {
+                status,
+                upstream_end,
+                interrupted,
+                relay_sha256,
+            } => {
+                a.http_status = Some(status);
+                a.relay_sha256 = Some(relay_sha256);
+                if status == 200 && upstream_end && !interrupted {
+                    (AttemptDisposition::Completed, None)
+                } else {
+                    (
+                        AttemptDisposition::Uncertain,
+                        Some("relay incomplete or not successful".to_string()),
+                    )
+                }
+            }
+            AttemptEvidence::Unknown { reason } => (AttemptDisposition::Uncertain, Some(reason)),
+        };
+        a.disposition = disposition;
+        a.reason = reason;
+        Ok(disposition)
+    }
+    /// Record raw-usage settlement of the completed attempt.
+    pub fn settle_completed(&mut self, attempt: u64, actual_microusd: u64) -> Result<()> {
+        let a = match self.attempts.last_mut() {
+            Some(a)
+                if a.attempt == attempt
+                    && a.disposition == AttemptDisposition::Completed
+                    && a.settled_microusd.is_none() =>
+            {
+                a
+            }
+            _ => return refuse("attempt is not an unsettled completion"),
+        };
+        if actual_microusd > a.reserved_microusd {
+            return refuse("attempt usage exceeds its reservation");
+        }
+        a.settled_microusd = Some(actual_microusd);
+        self.settled_microusd = Some(self.charged_microusd());
+        Ok(())
+    }
+}
+/// Reserve the next attempt of request `id`. Attempt 1 needs a new request
+/// with no attempts; attempt k>1 needs attempt k-1 settled as `Refused`.
+/// Every other request must be settled, and the reservation must fit the
+/// budget. The caller persists the ledger before dispatching the attempt.
+pub fn reserve_attempt(
+    requests: &mut BTreeMap<u64, Reservation>,
+    id: u64,
+    route: &str,
+    payer: &str,
+    reserve_microusd: u64,
+    budget_microusd: u64,
+    max_attempts: u32,
+) -> Result<u64> {
+    if route.is_empty() || payer.is_empty() {
+        return refuse("attempt route/payer missing");
+    }
+    if requests.iter().any(|(k, r)| *k != id && r.unsettled()) {
+        return refuse("another provider request is unsettled");
+    }
+    let r = requests
+        .get(&id)
+        .ok_or_else(|| Error::Refused("attempt before provider request".into()))?;
+    if r.settled_microusd.is_some() {
+        return refuse("attempt after request settlement");
+    }
+    let next = match r.attempts.last() {
+        None => 1,
+        Some(a) if a.disposition == AttemptDisposition::Refused => a.attempt + 1,
+        Some(_) => return refuse("previous attempt not refused"),
+    };
+    if next > u64::from(max_attempts) {
+        return refuse("attempt limit reached");
+    }
+    // The target request is held only through its attempt records, so its
+    // request-level reservation is not counted alongside attempt 1.
+    let held: u64 = requests
+        .iter()
+        .map(|(k, r)| {
+            if *k == id && r.attempts.is_empty() {
+                0
+            } else {
+                r.charged_microusd()
+            }
+        })
+        .sum();
+    if held
+        .checked_add(reserve_microusd)
+        .is_none_or(|v| v > budget_microusd)
+    {
+        return refuse("provider budget exhausted");
+    }
+    let r = requests.get_mut(&id).expect("checked above");
+    r.attempts.push(AttemptRecord {
+        attempt: next,
+        route: route.into(),
+        payer: payer.into(),
+        reserved_microusd: reserve_microusd,
+        disposition: AttemptDisposition::Pending,
+        http_status: None,
+        relay_sha256: None,
+        refusal_body_sha256: None,
+        settled_microusd: None,
+        reason: None,
+    });
+    Ok(next)
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -379,10 +640,7 @@ impl Host {
                 if state.provider_failed
                     || state.provider_requests.contains_key(&id)
                     || id != state.provider_requests.len() as u64 + 1
-                    || state
-                        .provider_requests
-                        .values()
-                        .any(|r| r.settled_microusd.is_none())
+                    || state.provider_requests.values().any(Reservation::unsettled)
                     || plan.sol_high.as_ref().is_some_and(|tuple| {
                         frame["reasoningEffort"] != tuple.reasoning_effort
                             || frame["payerAccountId"] != tuple.payer_account_id
@@ -399,7 +657,7 @@ impl Host {
                 let spent: u64 = state
                     .provider_requests
                     .values()
-                    .map(|r| r.settled_microusd.unwrap_or(r.reserved_microusd))
+                    .map(Reservation::charged_microusd)
                     .sum();
                 if spent
                     .checked_add(reserve)
@@ -768,10 +1026,7 @@ impl Host {
                 let state = self.journal.coding.as_mut().unwrap();
                 if state.provider_failed
                     || id != state.provider_requests.len() as u64 + 1
-                    || state
-                        .provider_requests
-                        .values()
-                        .any(|r| r.settled_microusd.is_none())
+                    || state.provider_requests.values().any(Reservation::unsettled)
                     || frame["provider"] != "fake_fixture"
                     || frame["model"] != "fake-pi-model"
                     || frame["contextBytes"].as_u64().is_none_or(|n| n > 65536)
@@ -1209,5 +1464,223 @@ mod signed_subscription_tests {
         assert!(!super::super::is_bridge(
             super::super::SIGNED_SUBSCRIPTION_PROFILE
         ));
+    }
+}
+
+#[cfg(test)]
+mod attempt_tests {
+    use super::*;
+    const BUDGET: u64 = 1_000_000;
+    fn requests(ids: &[u64]) -> BTreeMap<u64, Reservation> {
+        ids.iter()
+            .map(|id| {
+                (
+                    *id,
+                    Reservation {
+                        reserved_microusd: 164001,
+                        ..Reservation::default()
+                    },
+                )
+            })
+            .collect()
+    }
+    fn reserve(rs: &mut BTreeMap<u64, Reservation>, id: u64, route: &str) -> Result<u64> {
+        reserve_attempt(rs, id, route, "payer-a", 164001, BUDGET, 3)
+    }
+    fn refusal(status: u16, relayed: u64, drained: bool) -> AttemptEvidence {
+        AttemptEvidence::HeadRefusal {
+            status,
+            relayed_bytes: relayed,
+            drained_and_screened: drained,
+            body_sha256: "c".repeat(64),
+        }
+    }
+    fn relayed(status: u16, upstream_end: bool, interrupted: bool) -> AttemptEvidence {
+        AttemptEvidence::Relayed {
+            status,
+            upstream_end,
+            interrupted,
+            relay_sha256: "d".repeat(64),
+        }
+    }
+    #[test]
+    fn single_attempt_reservations_keep_their_bytes_and_rules() {
+        let legacy = Reservation {
+            reserved_microusd: 7,
+            ..Reservation::default()
+        };
+        let json = serde_json::to_value(&legacy).unwrap();
+        assert!(json.get("attempts").is_none());
+        let back: Reservation = serde_json::from_value(json).unwrap();
+        assert!(back.attempts.is_empty());
+        assert_eq!((legacy.charged_microusd(), legacy.unsettled()), (7, true));
+        let settled = Reservation {
+            settled_microusd: Some(3),
+            ..legacy
+        };
+        assert_eq!(
+            (settled.charged_microusd(), settled.unsettled()),
+            (3, false)
+        );
+    }
+    #[test]
+    fn definitive_refusal_releases_and_admits_exactly_the_next_attempt() {
+        let mut rs = requests(&[1]);
+        assert_eq!(reserve(&mut rs, 1, "primary").unwrap(), 1);
+        // Attempt 1 is not counted twice with the request-level reservation.
+        assert_eq!(rs[&1].charged_microusd(), 164001);
+        assert_eq!(
+            reserve(&mut rs, 1, "secondary").unwrap_err().to_string(),
+            Error::Refused("previous attempt not refused".into()).to_string()
+        );
+        let r = rs.get_mut(&1).unwrap();
+        assert_eq!(
+            r.settle_attempt(1, refusal(429, 0, true)).unwrap(),
+            AttemptDisposition::Refused
+        );
+        assert_eq!((r.charged_microusd(), r.unsettled()), (0, false));
+        assert!(r.settle_attempt(1, refusal(429, 0, true)).is_err());
+        assert_eq!(reserve(&mut rs, 1, "secondary").unwrap(), 2);
+        let a = &rs[&1].attempts;
+        assert_eq!(
+            (a[1].route.as_str(), a[1].disposition, a[0].http_status),
+            ("secondary", AttemptDisposition::Pending, Some(429))
+        );
+        assert_eq!(rs[&1].charged_microusd(), 164001);
+    }
+    #[test]
+    fn non_definitive_refusals_retain_and_block() {
+        for evidence in [
+            refusal(500, 0, true),
+            refusal(503, 0, true),
+            refusal(429, 1, true),
+            refusal(401, 0, false),
+            AttemptEvidence::NotDispatched {
+                confirmed_before_write: false,
+            },
+            AttemptEvidence::Unknown {
+                reason: "stream_interleaved_frame".into(),
+            },
+        ] {
+            let mut rs = requests(&[1]);
+            reserve(&mut rs, 1, "primary").unwrap();
+            let r = rs.get_mut(&1).unwrap();
+            assert_eq!(
+                r.settle_attempt(1, evidence.clone()).unwrap(),
+                AttemptDisposition::Uncertain,
+                "{evidence:?}"
+            );
+            assert!(r.attempts[0].reason.is_some());
+            assert_eq!((r.charged_microusd(), r.unsettled()), (164001, true));
+            assert!(reserve(&mut rs, 1, "secondary").is_err());
+            rs.extend(requests(&[2]));
+            assert_eq!(
+                reserve(&mut rs, 2, "primary").unwrap_err().to_string(),
+                Error::Refused("another provider request is unsettled".into()).to_string()
+            );
+        }
+    }
+    #[test]
+    fn confirmed_not_dispatched_releases_and_ends_the_request() {
+        let mut rs = requests(&[1]);
+        reserve(&mut rs, 1, "primary").unwrap();
+        let r = rs.get_mut(&1).unwrap();
+        assert_eq!(
+            r.settle_attempt(
+                1,
+                AttemptEvidence::NotDispatched {
+                    confirmed_before_write: true
+                }
+            )
+            .unwrap(),
+            AttemptDisposition::NotDispatched
+        );
+        assert_eq!((r.charged_microusd(), r.unsettled()), (0, false));
+        assert!(r.settled_microusd.is_none());
+        assert!(reserve(&mut rs, 1, "secondary").is_err());
+        rs.extend(requests(&[2]));
+        assert_eq!(reserve(&mut rs, 2, "primary").unwrap(), 1);
+    }
+    #[test]
+    fn relayed_attempts_keep_the_reservation_until_raw_settlement() {
+        for (evidence, expected) in [
+            (relayed(200, true, false), AttemptDisposition::Completed),
+            (relayed(200, false, false), AttemptDisposition::Uncertain),
+            (relayed(200, false, true), AttemptDisposition::Uncertain),
+            (relayed(500, true, false), AttemptDisposition::Uncertain),
+        ] {
+            let mut rs = requests(&[1]);
+            reserve(&mut rs, 1, "primary").unwrap();
+            let r = rs.get_mut(&1).unwrap();
+            assert_eq!(r.settle_attempt(1, evidence).unwrap(), expected);
+            assert_eq!((r.charged_microusd(), r.unsettled()), (164001, true));
+            assert_eq!(
+                r.attempts[0].relay_sha256.as_deref(),
+                Some(&*"d".repeat(64))
+            );
+            if expected == AttemptDisposition::Uncertain {
+                assert!(r.settle_completed(1, 10).is_err());
+            }
+        }
+        // Refused, then completed on the secondary route and settled.
+        let mut rs = requests(&[1]);
+        reserve(&mut rs, 1, "primary").unwrap();
+        rs.get_mut(&1)
+            .unwrap()
+            .settle_attempt(1, refusal(402, 0, true))
+            .unwrap();
+        reserve(&mut rs, 1, "secondary").unwrap();
+        let r = rs.get_mut(&1).unwrap();
+        r.settle_attempt(2, relayed(200, true, false)).unwrap();
+        assert!(r.settle_completed(1, 10).is_err());
+        assert!(r.settle_completed(2, 164002).is_err());
+        r.settle_completed(2, 1234).unwrap();
+        assert!(r.settle_completed(2, 1234).is_err());
+        assert_eq!(
+            (r.charged_microusd(), r.unsettled(), r.settled_microusd),
+            (1234, false, Some(1234))
+        );
+        assert_eq!(
+            reserve(&mut rs, 1, "tertiary").unwrap_err().to_string(),
+            Error::Refused("attempt after request settlement".into()).to_string()
+        );
+        // The mirrored settlement keeps request-level completion checks valid.
+        assert!(!rs.values().any(|r| r.settled_microusd.is_none()));
+    }
+    #[test]
+    fn attempts_respect_order_limit_budget_and_identity() {
+        let mut rs = requests(&[1]);
+        assert!(reserve(&mut rs, 2, "primary").is_err());
+        assert!(reserve_attempt(&mut rs, 1, "", "payer-a", 1, BUDGET, 3).is_err());
+        assert!(reserve_attempt(&mut rs, 1, "primary", "", 1, BUDGET, 3).is_err());
+        assert!(
+            rs.get_mut(&1)
+                .unwrap()
+                .settle_attempt(1, refusal(429, 0, true))
+                .is_err()
+        );
+        for attempt in 1..=3 {
+            assert_eq!(reserve(&mut rs, 1, "route").unwrap(), attempt);
+            rs.get_mut(&1)
+                .unwrap()
+                .settle_attempt(attempt, refusal(403, 0, true))
+                .unwrap();
+        }
+        assert_eq!(
+            reserve(&mut rs, 1, "route").unwrap_err().to_string(),
+            Error::Refused("attempt limit reached".into()).to_string()
+        );
+        // Settled spend on other requests counts against the budget.
+        let mut rs = requests(&[1, 2]);
+        rs.get_mut(&1).unwrap().settled_microusd = Some(900_000);
+        assert!(reserve_attempt(&mut rs, 2, "primary", "payer-a", 100_001, BUDGET, 3).is_err());
+        assert_eq!(
+            reserve_attempt(&mut rs, 2, "primary", "payer-a", 100_000, BUDGET, 3).unwrap(),
+            1
+        );
+        // Records round-trip through the journal encoding.
+        let back: Reservation =
+            serde_json::from_value(serde_json::to_value(&rs[&2]).unwrap()).unwrap();
+        assert_eq!(back.attempts, rs[&2].attempts);
     }
 }
