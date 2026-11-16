@@ -145,6 +145,7 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
         pressure_basis_points: packet["pressure_basis_points"]
             .as_u64()
             .ok_or("pressure fixture required")?,
+        hosted: None,
     };
     let state_dir = job.state_dir.clone();
     let initial_manifest = job.workspace.manifest.verify()?;

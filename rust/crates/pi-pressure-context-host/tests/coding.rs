@@ -1,7 +1,7 @@
 //! Offline bridge tests. Synthetic Host process records are not Docker evidence.
 use lifecycle_core::*;
 use lifecycle_store::*;
-use pi_pressure_context_host::coding::CodingLifecycleGate;
+use pi_pressure_context_host::coding::{CodingLifecycleGate, HostedProviderPolicy};
 use serde_json::json;
 use std::{
     fs,
@@ -10,7 +10,7 @@ use std::{
 };
 use work_engine_manual_host::{
     Artifact, ProcessRecord, digest,
-    pi_docker::coding::{CodingEffectGate, CodingToolIntent},
+    pi_docker::coding::{CodingEffectGate, CodingToolIntent, ProviderAttemptIntent},
 };
 fn clock() -> ClockSample {
     ClockSample {
@@ -259,6 +259,39 @@ fn continuity_try_mode(
     PathBuf,
     Result<CodingContinuity, work_engine_manual_host::Error>,
 ) {
+    continuity_try_full(live, mixed, class, sol, None, None, 1000)
+}
+/// `hosted` configures the gate's policy; `granted` is the policy the issuer
+/// installs turn grants for (with `grant_expires`), if any.
+fn continuity_try_full(
+    live: bool,
+    mixed: Option<()>,
+    class: Option<&str>,
+    sol: bool,
+    hosted: Option<HostedProviderPolicy>,
+    granted: Option<&HostedProviderPolicy>,
+    grant_expires: i64,
+) -> (
+    PathBuf,
+    Result<CodingContinuity, work_engine_manual_host::Error>,
+) {
+    let (root, c, _) = continuity_build(live, mixed, class, sol, hosted, granted, grant_expires);
+    (root, c)
+}
+/// Also returns the store's grant-control lane, for issuer-side contraction.
+fn continuity_build(
+    live: bool,
+    mixed: Option<()>,
+    class: Option<&str>,
+    sol: bool,
+    hosted: Option<HostedProviderPolicy>,
+    granted: Option<&HostedProviderPolicy>,
+    grant_expires: i64,
+) -> (
+    PathBuf,
+    Result<CodingContinuity, work_engine_manual_host::Error>,
+    GrantControlHandle,
+) {
     let root = std::env::temp_dir().join(format!(
         "coding-protocol-{}-{}",
         std::process::id(),
@@ -278,16 +311,26 @@ fn continuity_try_mode(
             clock(),
         )
         .unwrap();
+    let turn = |base: &str| granted.map_or(base.to_string(), |p| p.grant_id(base));
     for (id, context, scope) in [
-        ("grant:old", "context:old", GrantScope::NativeTurn),
-        ("grant:new", "context:new", GrantScope::NativeTurn),
+        (turn("grant:old"), "context:old", GrantScope::NativeTurn),
+        (turn("grant:new"), "context:new", GrantScope::NativeTurn),
         (
-            "grant:replace",
+            "grant:replace".into(),
             "context:old",
             GrantScope::RequestReplacement,
         ),
-        ("grant:successor", "context:new", GrantScope::EnqueueInput),
+        (
+            "grant:successor".into(),
+            "context:new",
+            GrantScope::EnqueueInput,
+        ),
     ] {
+        let expires = if id.contains(":pi-hosted:") {
+            grant_expires
+        } else {
+            1000
+        };
         store
             .install_trusted_grant(TrustedGrant {
                 id: GrantId::parse(id).unwrap(),
@@ -298,7 +341,7 @@ fn continuity_try_mode(
                 build: BuildId::parse("build:pi:coding").unwrap(),
                 proof_run: ProofRunId::parse("proof:pi:coding").unwrap(),
                 scope,
-                expires: AuthorityExpiresAt::new(WallTimeMs::new(1000)),
+                expires: AuthorityExpiresAt::new(WallTimeMs::new(expires)),
                 revision: Revision::new(1),
                 revoked: false,
             })
@@ -339,8 +382,14 @@ fn continuity_try_mode(
         budget: json!({"schema":"work-engine.coding-budget-control.v1","classification":class.unwrap_or(if live {"live_provider_observation"} else {"provider_disabled_fixture"}),"available":true,"max_provider_requests":4,"max_tool_calls":1,"authority":"observation_only","sequence":1,"expires_ms":1000,"source":"synthetic-root-budget","generation":"fixture:1","observed_ms":100,"max_age_ms":300000}),
         expires_ms: 1000,
         pressure_basis_points: 9500,
+        hosted,
     };
-    (root, CodingContinuity::new(store, initial, config, clock))
+    let control = store.grant_control_handle().unwrap();
+    (
+        root,
+        CodingContinuity::new(store, initial, config, clock),
+        control,
+    )
 }
 fn snapshot(session: &str) -> serde_json::Value {
     json!({"sessionId":session,"idle":true,"observedMs":100,"observedAt":"2026-11-05T00:00:00Z","model":{"id":"fixture","provider":"fixture","contextWindow":32768},"usage":null})
@@ -409,9 +458,8 @@ impl SyntheticSdk {
         self.native(c, json!({"type":"message_end","message":m}));
         self.append(m);
     }
-    fn request(
+    fn request_frame(
         &mut self,
-        c: &mut CodingContinuity,
         command: &serde_json::Value,
         workspace: Option<&serde_json::Value>,
     ) -> serde_json::Value {
@@ -434,6 +482,15 @@ impl SyntheticSdk {
         if let Some(w) = workspace {
             frame["host_workspace"] = w.clone();
         }
+        frame
+    }
+    fn request(
+        &mut self,
+        c: &mut CodingContinuity,
+        command: &serde_json::Value,
+        workspace: Option<&serde_json::Value>,
+    ) -> serde_json::Value {
+        let frame = self.request_frame(command, workspace);
         let commands = c.frame(&frame).unwrap();
         assert_eq!(commands.len(), 1);
         control(c, &commands[0]);
@@ -861,5 +918,209 @@ fn sol_high_thinking_profile_resets_rehydrates_and_continues_exactly_once() {
         "CompletedSettled"
     );
     drop(reopened);
+    fs::remove_dir_all(root).unwrap();
+}
+fn hosted_policy() -> HostedProviderPolicy {
+    HostedProviderPolicy {
+        routes: vec![
+            ("primary".into(), "payer-a".into()),
+            ("secondary".into(), "payer-b".into()),
+        ],
+        max_attempts_per_request: 2,
+    }
+}
+fn intent(request: u64, attempt: u64, route: &str, payer: &str) -> ProviderAttemptIntent {
+    ProviderAttemptIntent {
+        request,
+        attempt,
+        route: route.into(),
+        payer: payer.into(),
+    }
+}
+fn send(c: &mut CodingContinuity, command: &serde_json::Value) {
+    c.dispatch(command, &mut |_| Ok(())).unwrap();
+}
+/// Attempt deadline seen by `dispatch`, or the gate's refusal.
+fn attempt(c: &mut CodingContinuity, i: ProviderAttemptIntent) -> Result<i64, String> {
+    let mut seen = None;
+    c.provider_attempt(&i, &mut |deadline| {
+        seen = Some(deadline);
+        Ok(())
+    })
+    .map_err(|e| e.to_string())?;
+    Ok(seen.unwrap())
+}
+fn hosted_started(
+    hosted: Option<HostedProviderPolicy>,
+    granted: Option<&HostedProviderPolicy>,
+    grant_expires: i64,
+) -> (PathBuf, CodingContinuity, SyntheticSdk, serde_json::Value) {
+    let (root, c) = continuity_try_full(true, None, None, false, hosted, granted, grant_expires);
+    let mut c = c.unwrap();
+    let original = c
+        .frame(
+            &json!({"type":"ready","sessionId":"physical:old","snapshot":snapshot("physical:old")}),
+        )
+        .unwrap()[0]
+        .clone();
+    send(&mut c, &original);
+    let mut sdk = SyntheticSdk::new("physical:old", 0);
+    sdk.live = true;
+    (root, c, sdk, original)
+}
+#[test]
+fn hosted_attempts_follow_the_granted_policy_and_are_consumed_once() {
+    let policy = hosted_policy();
+    let (root, mut c, mut sdk, original) = hosted_started(Some(policy.clone()), Some(&policy), 900);
+    let first = intent(1, 1, "primary", "payer-a");
+    assert!(
+        attempt(&mut c, first.clone())
+            .unwrap_err()
+            .contains("admitted request")
+    );
+    // The logical request's grant command is still pending: no entry yet.
+    let commands = c.frame(&sdk.request_frame(&original, None)).unwrap();
+    assert!(
+        attempt(&mut c, first.clone())
+            .unwrap_err()
+            .contains("admitted request")
+    );
+    send(&mut c, &commands[0]);
+    assert!(
+        attempt(&mut c, intent(2, 1, "primary", "payer-a"))
+            .unwrap_err()
+            .contains("admitted request")
+    );
+    assert!(
+        attempt(&mut c, intent(1, 2, "secondary", "payer-b"))
+            .unwrap_err()
+            .contains("order/limit")
+    );
+    for (route, payer) in [
+        ("primary", "payer-b"),
+        ("tertiary", "payer-a"),
+        ("secondary", "payer-a"),
+    ] {
+        assert!(
+            attempt(&mut c, intent(1, 1, route, payer))
+                .unwrap_err()
+                .contains("not granted")
+        );
+    }
+    // Deadline is the earlier of the current grant and the configured expiry.
+    assert_eq!(attempt(&mut c, first.clone()), Ok(900));
+    assert!(attempt(&mut c, first).unwrap_err().contains("order/limit"));
+    // A failed dispatch still consumes the attempt.
+    let second = intent(1, 2, "secondary", "payer-b");
+    assert!(
+        c.provider_attempt(&second, &mut |_| Err(
+            work_engine_manual_host::Error::Refused("write failed".into())
+        ))
+        .is_err()
+    );
+    assert!(attempt(&mut c, second).unwrap_err().contains("order/limit"));
+    assert!(
+        attempt(&mut c, intent(1, 3, "primary", "payer-a"))
+            .unwrap_err()
+            .contains("order/limit")
+    );
+    drop(c);
+    fs::remove_dir_all(root).unwrap();
+}
+#[test]
+fn hosted_turns_need_the_issuers_policy_bound_grant_and_a_valid_policy() {
+    let policy = hosted_policy();
+    let mut other = hosted_policy();
+    other.max_attempts_per_request = 1;
+    for granted in [None, Some(&other)] {
+        let (root, c) =
+            continuity_try_full(true, None, None, false, Some(policy.clone()), granted, 1000);
+        let mut c = c.unwrap();
+        assert!(
+            c.frame(&json!({"type":"ready","sessionId":"physical:old","snapshot":snapshot("physical:old")}))
+                .is_err()
+        );
+        drop(c);
+        fs::remove_dir_all(root).unwrap();
+    }
+    let mut invalid = vec![];
+    for change in 0..6 {
+        let mut p = hosted_policy();
+        match change {
+            0 => p.routes.clear(),
+            1 => p.routes.push(("primary".into(), "payer-a".into())),
+            2 => p.max_attempts_per_request = 0,
+            3 => p.max_attempts_per_request = 9,
+            4 => p.routes[0].1 = "payer a".into(),
+            _ => p.routes[1].0 = String::new(),
+        }
+        invalid.push((true, p));
+    }
+    invalid.push((false, hosted_policy()));
+    for (live, p) in invalid {
+        let (root, c) =
+            continuity_try_full(live, None, None, false, Some(p.clone()), Some(&p), 1000);
+        assert!(c.is_err());
+        let _ = fs::remove_dir_all(root);
+    }
+    // Live configuration without a policy admits no hosted attempt.
+    let (root, mut c, mut sdk, original) = hosted_started(None, None, 1000);
+    sdk.request(&mut c, &original, None);
+    assert!(
+        attempt(&mut c, intent(1, 1, "primary", "payer-a"))
+            .unwrap_err()
+            .contains("policy absent")
+    );
+    drop(c);
+    fs::remove_dir_all(root).unwrap();
+}
+#[test]
+fn contracted_hosted_grant_refuses_the_next_dispatch() {
+    let policy = hosted_policy();
+    let (root, c, mut issuer) = continuity_build(
+        true,
+        None,
+        None,
+        false,
+        Some(policy.clone()),
+        Some(&policy),
+        1000,
+    );
+    let mut c = c.unwrap();
+    let original = c
+        .frame(
+            &json!({"type":"ready","sessionId":"physical:old","snapshot":snapshot("physical:old")}),
+        )
+        .unwrap()[0]
+        .clone();
+    send(&mut c, &original);
+    let mut sdk = SyntheticSdk::new("physical:old", 0);
+    sdk.live = true;
+    sdk.request(&mut c, &original, None);
+    assert_eq!(
+        attempt(&mut c, intent(1, 1, "primary", "payer-a")),
+        Ok(1000)
+    );
+    issuer
+        .contract(
+            "command:contract-hosted",
+            &SubjectId::parse("subject:pi:coding").unwrap(),
+            "operator:fixture",
+            &GrantId::parse(policy.grant_id("grant:old")).unwrap(),
+            Revision::new(1),
+            b"contract hosted grant",
+            clock(),
+        )
+        .unwrap();
+    let mut entered = false;
+    assert!(
+        c.provider_attempt(&intent(1, 2, "secondary", "payer-b"), &mut |_| {
+            entered = true;
+            Ok(())
+        })
+        .is_err()
+    );
+    assert!(!entered);
+    drop(c);
     fs::remove_dir_all(root).unwrap();
 }

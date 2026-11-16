@@ -78,6 +78,15 @@ pub struct CodingToolIntent {
     pub call_id: String,
     pub command_sha256: String,
 }
+/// One upstream attempt under a logical hosted provider request.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct ProviderAttemptIntent {
+    pub request: u64,
+    pub attempt: u64,
+    pub route: String,
+    pub payer: String,
+}
 /// Trusted composition, not an inference capability. Implementations serialize
 /// current lifecycle admission with the supplied existing Host actuator.
 /// A gate error leaves the already-durable Host intent unresolved. Reopen never
@@ -108,6 +117,18 @@ pub trait CodingEffectGate {
         _send: &mut dyn FnMut(i64) -> Result<()>,
     ) -> Result<()> {
         refuse("coding lifecycle IPC unavailable")
+    }
+    /// Hosted profiles only: authorize one upstream provider attempt against
+    /// the current grant and its bound failover policy, and run `dispatch`
+    /// with the attempt deadline (ms) while that authority is held. Once
+    /// admitted against the policy, the attempt is consumed even if currentness
+    /// or `dispatch` then fails; it is never replayed.
+    fn provider_attempt(
+        &mut self,
+        _intent: &ProviderAttemptIntent,
+        _dispatch: &mut dyn FnMut(i64) -> Result<()>,
+    ) -> Result<()> {
+        refuse("hosted provider attempts unavailable")
     }
     /// Called only after the exact result artifact is persisted in the journal.
     fn observed(

@@ -7,7 +7,7 @@ use serde_json::{Value, json};
 use std::{cell::RefCell, rc::Rc};
 use work_engine_manual_host::{
     Artifact, Error, ProcessRecord, Result, digest,
-    pi_docker::coding::{CodingEffectGate, CodingToolIntent},
+    pi_docker::coding::{CodingEffectGate, CodingToolIntent, ProviderAttemptIntent},
 };
 
 pub struct CodingLifecycle {
@@ -195,6 +195,54 @@ pub struct CodingConfig {
     pub task: Option<String>,
     pub expires_ms: i64,
     pub pressure_basis_points: u64,
+    /// `Some` selects hosted provider transport for live mode. The policy is
+    /// bound into the turn grant ids, so the issuer's grant is what admits it.
+    pub hosted: Option<HostedProviderPolicy>,
+}
+/// Failover policy a hosted grant covers: the only `(route, payer)` pairs a
+/// provider attempt may use, and the attempt limit per logical request.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HostedProviderPolicy {
+    pub routes: Vec<(String, String)>,
+    pub max_attempts_per_request: u32,
+}
+impl HostedProviderPolicy {
+    fn validate(&self) -> Result<()> {
+        let bounded = |v: &str| {
+            !v.is_empty()
+                && v.len() <= 128
+                && v.bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b"._:-".contains(&b))
+        };
+        let mut pairs = self.routes.clone();
+        pairs.sort();
+        pairs.dedup();
+        if self.routes.is_empty()
+            || self.routes.len() > 8
+            || pairs.len() != self.routes.len()
+            || !self.routes.iter().all(|(r, p)| bounded(r) && bounded(p))
+            || !(1..=8).contains(&self.max_attempts_per_request)
+        {
+            return Err(refused("hosted provider policy invalid"));
+        }
+        Ok(())
+    }
+    pub fn digest(&self) -> String {
+        let routes: Vec<Value> = self
+            .routes
+            .iter()
+            .map(|(route, payer)| json!({"route":route,"payer":payer}))
+            .collect();
+        digest(
+            json!({"schema":"work-engine.pi-hosted-provider-policy.v1","routes":routes,"max_attempts_per_request":self.max_attempts_per_request})
+                .to_string()
+                .as_bytes(),
+        )
+    }
+    /// Turn grant id the trusted issuer must install for this policy.
+    pub fn grant_id(&self, base: &str) -> String {
+        format!("{base}:pi-hosted:{}", self.digest())
+    }
 }
 struct ContinuityState {
     store: Option<SqliteLifecycleStore>,
@@ -218,10 +266,70 @@ struct ContinuityState {
     report: Option<Value>,
     reset_entered: bool,
     tool_result_sent: bool,
+    /// Hosted attempts consumed for the current logical request.
+    hosted_attempts: (u64, u64),
 }
 impl ContinuityState {
     fn live(&self) -> bool {
         self.config.task.is_some()
+    }
+    fn turn_grant(&self, base: &str) -> String {
+        match &self.config.hosted {
+            Some(policy) => policy.grant_id(base),
+            None => base.into(),
+        }
+    }
+    fn provider_attempt(
+        &mut self,
+        intent: &ProviderAttemptIntent,
+        dispatch: &mut dyn FnMut(i64) -> Result<()>,
+    ) -> Result<()> {
+        self.check()?;
+        let policy = self
+            .config
+            .hosted
+            .clone()
+            .ok_or_else(|| refused("hosted provider policy absent"))?;
+        if !self.live()
+            || self.pending.is_some()
+            || intent.request == 0
+            || intent.request != self.provider_calls
+        {
+            return Err(refused("provider attempt outside an admitted request"));
+        }
+        let previous = if self.hosted_attempts.0 == intent.request {
+            self.hosted_attempts.1
+        } else {
+            0
+        };
+        if intent.attempt != previous + 1
+            || intent.attempt > u64::from(policy.max_attempts_per_request)
+        {
+            return Err(refused("provider attempt order/limit"));
+        }
+        if !policy
+            .routes
+            .iter()
+            .any(|(r, p)| *r == intent.route && *p == intent.payer)
+        {
+            return Err(refused("provider attempt route/payer not granted"));
+        }
+        // Consumed before entry: a refused or failed attempt is never replayed.
+        self.hosted_attempts = (intent.request, intent.attempt);
+        let gate = self
+            .gate
+            .as_ref()
+            .ok_or_else(|| refused("coding parent absent"))?
+            .clone();
+        let mut o = gate.0.borrow_mut();
+        let event = json!({"type":"pi.provider_attempt","invocationId":o.parent.invocation_id(),"intent":intent,"policy":policy.digest()});
+        o.record("pi.provider_attempt", &event)?;
+        let clock = (self.clock)();
+        let configured = self.config.expires_ms;
+        let CodingLifecycle { store, parent, .. } = &mut *o;
+        store
+            .with_pi_coding_turn_send(parent, clock, |granted| dispatch(granted.min(configured)))
+            .map_err(refused)?
     }
 }
 #[derive(Clone)]
@@ -253,6 +361,10 @@ impl CodingContinuity {
             || config.budget["max_tool_calls"] != 1
             || config.expires_ms <= clock().wall.get()
             || config.pressure_basis_points > 10000
+            || config
+                .hosted
+                .as_ref()
+                .is_some_and(|p| config.task.is_none() || p.validate().is_err())
         {
             return Err(refused("canonical coding budget/control refused"));
         }
@@ -279,6 +391,7 @@ impl CodingContinuity {
             report: None,
             reset_entered: false,
             tool_result_sent: false,
+            hosted_attempts: (0, 0),
         }))))
     }
     pub fn report(&self) -> Result<Value> {
@@ -453,7 +566,7 @@ impl ContinuityState {
             "coding",
             &prompt,
             NativeInvocationPurpose::DomainWork,
-            "grant:old",
+            &self.turn_grant("grant:old"),
             (self.clock)(),
         )?;
         let gate = CodingLifecycleGate::new(
@@ -619,11 +732,12 @@ impl ContinuityState {
             self.finish_rehydration()?;
             let prompt = "Continue text-only work after exact coding recovery: compute 6*7.";
             self.phase = 3;
+            let grant = self.turn_grant("grant:new");
             self.prompt(
                 "continued",
                 prompt,
                 NativeInvocationPurpose::DomainWork,
-                "grant:new",
+                &grant,
             )
         } else if self.phase == 3 {
             let mut o = gate.0.borrow_mut();
@@ -952,6 +1066,13 @@ impl CodingEffectGate for CodingContinuity {
             _ => Err(refused("unsupported coding frame")),
         }
     }
+    fn provider_attempt(
+        &mut self,
+        intent: &ProviderAttemptIntent,
+        dispatch: &mut dyn FnMut(i64) -> Result<()>,
+    ) -> Result<()> {
+        self.0.borrow_mut().provider_attempt(intent, dispatch)
+    }
     fn dispatch(&mut self, command: &Value, send: &mut dyn FnMut(i64) -> Result<()>) -> Result<()> {
         let mut s = self.0.borrow_mut();
         s.check()?;
@@ -1046,6 +1167,7 @@ mod control_tests {
                 budget: json!({"authority":"observation_only","sequence":1,"expires_ms":1000000,"source":"root-canonical-fixture","generation":"bound:1","observed_ms":500000,"max_age_ms":300000,"available":true}),
                 expires_ms: 1000000,
                 pressure_basis_points: 9500,
+                hosted: None,
             };
             match case {
                 1 => config.budget["observed_ms"] = json!(500001),
