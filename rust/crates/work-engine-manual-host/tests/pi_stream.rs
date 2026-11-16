@@ -416,3 +416,24 @@ fn crlf_sse_completion_is_recognized_for_release_after_end() {
     // CR-only line endings and an undispatched trailing event.
     assert_eq!(ps::sse_data(b"data: a\r\rdata: b\r"), vec!["a".to_string()]);
 }
+
+#[test]
+fn failed_terminal_event_is_reported_and_end_observed_after_release() {
+    let t = tempfile::tempdir().unwrap();
+    let body = sse(&[
+        r#"{"type":"response.created"}"#,
+        r#"{"type":"response.failed","response":{"error":{"code":"insufficient_quota"}}}"#,
+    ]);
+    let raw = format!(
+        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{body}",
+        body.len()
+    );
+    let up = Upstream::open(Cursor::new(raw.into_bytes())).unwrap();
+    let mut c = Consumer::new(store(&t));
+    c.cancel_at = Some(2);
+    let r = ps::relay(&mut c, up, || (), &binding(), 1, 1).unwrap();
+    assert_eq!(r.outcome, Outcome::Cancelled { upstream_end: true });
+    let u = r.evidence()["usage"].clone();
+    assert_eq!(u["completed"], false);
+    assert_eq!(u["failed"], "insufficient_quota");
+}

@@ -18,6 +18,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 mod inspection;
 pub mod pi_docker;
 pub mod pi_native;
+pub mod pi_route;
 pub mod pi_stream;
 pub use inspection::{compact_output, inspect};
 

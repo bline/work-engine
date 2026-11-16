@@ -63,7 +63,19 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let fault = std::env::var("PI_OBSERVER_FAULT").unwrap_or_default();
     let truncate = fault == "truncate-first";
     let stall = fault == "stall-first";
-    while effects.len() < 5 {
+    // quota-all: definitive 429 refusal for every request (a funding route
+    // whose quota is exhausted); runs until the expected receipt count.
+    let quota_all = fault == "quota-all";
+    let quota_midstream = fault == "quota-midstream";
+    let expect_receipts: usize = std::env::var("PI_OBSERVER_EXPECT_RECEIPTS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(1);
+    while if quota_all {
+        receipts.len() < expect_receipts
+    } else {
+        effects.len() < 5
+    } {
         let (mut s, _) = match listener.accept() {
             Ok(x) => x,
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
@@ -120,6 +132,19 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         if v["model"] != "gpt-6-luna" || v["store"] != false {
             return Err("projection".into());
         }
+        if quota_all {
+            let receipt = json!({"requestId":id,"bodySha256":digest,"refused":429});
+            println!("{}", json!({"type":"receipt","receipt":receipt}));
+            std::io::stdout().flush()?;
+            receipts.push(receipt);
+            let body = json!({"error":{"code":"insufficient_quota","message":"synthetic route quota exhausted"}}).to_string();
+            write!(
+                s,
+                "HTTP/1.1 429 Too Many Requests\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            )?;
+            continue;
+        }
         let duplicate = effects.contains_key(&id);
         let next = effects.len() + 1;
         let (effect_id, prior, reply) = effects
@@ -146,6 +171,22 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n"
         )?;
         s.flush()?;
+        let failed_reply;
+        let reply: &Vec<u8> = if quota_midstream && *effect_id == 1 {
+            // Quota failure after output began: two normal events, then a
+            // provider failure event, then a correctly framed end.
+            let t = std::str::from_utf8(reply)?;
+            let mut events: Vec<&str> = t.split_inclusive("\n\n").take(2).collect();
+            let failed = format!(
+                "data: {}\n\n",
+                json!({"type":"response.failed","response":{"id":"resp_1","status":"failed","error":{"code":"insufficient_quota","message":"synthetic quota exhausted mid-stream"}}})
+            );
+            events.push(&failed);
+            failed_reply = events.concat().into_bytes();
+            &failed_reply
+        } else {
+            reply
+        };
         let text = std::str::from_utf8(reply)?;
         let mut sent = vec![];
         for (i, event) in text.split_inclusive("\n\n").enumerate() {

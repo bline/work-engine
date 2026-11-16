@@ -19,6 +19,7 @@ use std::{
     time::Duration,
 };
 use work_engine_manual_host::pi_native::{self as native, Result};
+use work_engine_manual_host::pi_route::{self as route, Decision, Disposition};
 use work_engine_manual_host::pi_stream as stream;
 
 fn connect(
@@ -180,14 +181,39 @@ fn run() -> Result<()> {
     }
     store.bind_admission(&operation, &owner_profile)?;
     let binding = store.binding().clone();
-    let addr: std::net::SocketAddr = argv
+    // One or more loopback synthetic routes, in preference order.
+    let addrs: Vec<std::net::SocketAddr> = argv
         .get(4)
         .ok_or("external_observer_required")?
-        .parse()
-        .map_err(|_| "observer_address")?;
-    if !addr.ip().is_loopback() {
+        .split(',')
+        .map(|a| a.parse().map_err(|_| "observer_address"))
+        .collect::<Result<_>>()?;
+    if addrs.is_empty() || addrs.len() > 2 || addrs.iter().any(|a| !a.ip().is_loopback()) {
         return Err("offline_observer_only");
     }
+    let policy = route::Policy {
+        model: "gpt-6-luna".into(),
+        routes: addrs
+            .iter()
+            .enumerate()
+            .map(|(i, a)| route::Route {
+                id: ["primary", "secondary"][i].into(),
+                connection: format!("synthetic-loopback:{}", a.port()),
+                model: "gpt-6-luna".into(),
+                payer: ["synthetic-subscription", "synthetic-api"][i].into(),
+                authorized: true,
+                revoked: false,
+                max_attempts: 16,
+            })
+            .collect(),
+        max_attempts_per_request: 2,
+        allowance_units: 16,
+        reserve_units: 1,
+        expires_ms: native::now() + 3_600_000,
+    };
+    let mut router = route::Router::new(policy);
+    let mut route_records = 0u64;
+    let mut stream_requests = 0u64;
     let package = Path::new("/home/bline/cbm-work/pi-artifact-handoff-20261113/pi");
     let receiver = Path::new(env!("CARGO_MANIFEST_DIR")).join("receiver/pi-native-tools.mjs");
     let allocation = owner.enter(Effect::Allocation)?;
@@ -250,61 +276,149 @@ fn run() -> Result<()> {
                             return Err(code);
                         }
                     };
-                    let lease = owner.enter(Effect::Provider(sends + 1))?;
-                    let request_id = format!("{}-{}", binding.session, sends + 1);
-                    let socket = store.transport(native::now(), |access| {
-                        lease.check_current()?;
-                        provider_attempts += 1;
-                        connect(addr, &body, access, &request_id, &lease)
-                    })?;
-                    let killer = socket.try_clone().map_err(|_| "synthetic_clone")?;
-                    let upstream = match stream::Upstream::open(socket) {
-                        Ok(u) => u,
-                        Err(code) => {
-                            store.record_control("failure", json!({"stage":"upstream-head","code":code,"classification":"provider-attempt-unknown"}))?;
-                            return Err(code);
-                        }
-                    };
-                    let relay = {
-                        // The lease was checked immediately before the request in `connect`.
-                        let mut chan = Native {
-                            workload: &mut workload,
-                            store: &mut store,
-                            lease: &lease,
-                            frames: &mut frames,
-                            checked: std::time::Instant::now(),
+                    // Route admission precedes every provider attempt. Only a
+                    // definitive pre-output refusal can lead to another attempt.
+                    let (lease, request_id, addr, relay, evidence, attempt) = loop {
+                        let decision =
+                            router.next(stream_requests + 1, "gpt-6-luna", native::now());
+                        let (route, attempt) = match decision {
+                            Decision::Attempt { route, attempt } => (route, attempt),
+                            Decision::Unavailable(reason) => {
+                                store.record_control(&format!("route-{:03}", route_records + 1), json!({"decision":"unavailable","request":stream_requests + 1,"reason":reason,"router":router.evidence()}))?;
+                                workload.send(&json!({"type":"response-unavailable","binding":binding,"sequence":seq,"stream":stream,"code":reason}))?;
+                                if let Ok(next) = receive_checked(&mut workload, &mut store, frames)
+                                {
+                                    let _ = store.record_control("failure", json!({"stage":"route-unavailable","reason":reason,"nativeNextType":next["type"],"nativeLastMessage":next["messages"].as_array().and_then(|m| m.last()).map(|m| json!({"role":m["role"],"stopReason":m["stopReason"],"errorMessage":m["errorMessage"]}))}));
+                                }
+                                return Err("route_unavailable");
+                            }
                         };
-                        stream::relay(
-                            &mut chan,
-                            upstream,
-                            move || {
-                                let _ = killer.shutdown(std::net::Shutdown::Both);
-                            },
-                            &binding,
-                            seq,
-                            stream,
-                        )
-                    };
-                    let relay = match relay {
-                        Ok(r) => r,
-                        Err(code) => {
-                            store.record_control("failure", json!({"stage":"stream-relay","code":code,"classification":"provider-attempt-unknown"}))?;
-                            return Err(code);
+                        route_records += 1;
+                        store.record_control(
+                            &format!("route-{route_records:03}"),
+                            json!({"decision":"attempt","intent":router.last()}),
+                        )?;
+                        let addr = addrs[route];
+                        let lease = owner.enter(Effect::Provider(attempt))?;
+                        let request_id = format!("{}-{}", binding.session, attempt);
+                        let socket = store.transport(native::now(), |access| {
+                            lease.check_current()?;
+                            provider_attempts += 1;
+                            connect(addr, &body, access, &request_id, &lease)
+                        })?;
+                        let killer = socket.try_clone().map_err(|_| "synthetic_clone")?;
+                        let mut upstream = match stream::Upstream::open(socket) {
+                            Ok(u) => u,
+                            Err(code) => {
+                                router.settle(
+                                    attempt,
+                                    Disposition::Uncertain {
+                                        reason: code.into(),
+                                    },
+                                    json!(null),
+                                )?;
+                                store.record_control("failure", json!({"stage":"upstream-head","code":code,"classification":"provider-attempt-unknown","router":router.evidence()}))?;
+                                return Err(code);
+                            }
+                        };
+                        if route::refusal_status(upstream.status) {
+                            // Definitive refusal at the head: nothing is relayed.
+                            let mut refusal = vec![];
+                            while let Some(b) = upstream.next(stream::CHUNK)? {
+                                refusal.extend(b);
+                                if refusal.len() > 65536 {
+                                    return Err("refusal_bound");
+                                }
+                            }
+                            store.check_raw(&refusal)?;
+                            let code = serde_json::from_slice::<Value>(&refusal)
+                                .ok()
+                                .and_then(|v| v["error"]["code"].as_str().map(str::to_owned))
+                                .unwrap_or_else(|| "unspecified".into());
+                            let status = upstream.status;
+                            lease.observed(&hash(
+                                &[status.to_be_bytes().as_slice(), &refusal].concat(),
+                            ))?;
+                            router.settle(
+                                attempt,
+                                Disposition::Refused { status, code },
+                                json!(null),
+                            )?;
+                            store.record_control(&format!("settle-{attempt:03}"), json!({"attempt":router.attempts().iter().find(|a| a.attempt == attempt),"reservedUnits":router.reserved_units()}))?;
+                            continue;
                         }
+                        let relay = {
+                            // The lease was checked immediately before the request in `connect`.
+                            let mut chan = Native {
+                                workload: &mut workload,
+                                store: &mut store,
+                                lease: &lease,
+                                frames: &mut frames,
+                                checked: std::time::Instant::now(),
+                            };
+                            stream::relay(
+                                &mut chan,
+                                upstream,
+                                move || {
+                                    let _ = killer.shutdown(std::net::Shutdown::Both);
+                                },
+                                &binding,
+                                seq,
+                                stream,
+                            )
+                        };
+                        let relay = match relay {
+                            Ok(r) => r,
+                            Err(code) => {
+                                router.settle(
+                                    attempt,
+                                    Disposition::Uncertain {
+                                        reason: code.into(),
+                                    },
+                                    json!(null),
+                                )?;
+                                store.record_control("failure", json!({"stage":"stream-relay","code":code,"classification":"provider-attempt-unknown","router":router.evidence()}))?;
+                                return Err(code);
+                            }
+                        };
+                        let evidence = relay.evidence();
+                        let usage = evidence["usage"].clone();
+                        let disposition = if relay.status == 200
+                            && matches!(
+                                relay.outcome,
+                                stream::Outcome::Completed
+                                    | stream::Outcome::Cancelled { upstream_end: true }
+                            )
+                            && usage["completed"] == true
+                        {
+                            Disposition::Completed
+                        } else if let Some(code) = usage["failed"].as_str() {
+                            Disposition::Uncertain {
+                                reason: format!("provider-failed-after-output:{code}"),
+                            }
+                        } else {
+                            Disposition::Uncertain {
+                                reason: format!("{}:{}", relay.status, relay.outcome.label()),
+                            }
+                        };
+                        router.settle(attempt, disposition, usage)?;
+                        store.record_control(&format!("settle-{attempt:03}"), json!({"attempt":router.attempts().iter().find(|a| a.attempt == attempt),"reservedUnits":router.reserved_units()}))?;
+                        break (lease, request_id, addr, relay, evidence, attempt);
                     };
-                    let evidence = relay.evidence();
-                    store.record_control(&format!("stream-{:03}", streams.len() + 1), json!({"sequence":seq,"stream":stream,"requestId":request_id,"relay":evidence}))?;
-                    if !matches!(
-                        relay.outcome,
-                        stream::Outcome::Completed
-                            | stream::Outcome::Cancelled { upstream_end: true }
-                    ) || relay.status != 200
+                    stream_requests += 1;
+                    store.record_control(&format!("stream-{:03}", streams.len() + 1), json!({"sequence":seq,"stream":stream,"requestId":request_id,"attempt":attempt,"relay":evidence}))?;
+                    if router
+                        .attempts()
+                        .iter()
+                        .find(|a| a.attempt == attempt)
+                        .and_then(|a| a.disposition.clone())
+                        != Some(Disposition::Completed)
                     {
                         // Lease stays UNKNOWN: no settlement or replay is inferred.
                         // Record the native consumer's next frame to show how the
                         // interruption reached the actual session.
                         if let Ok(next) = receive_checked(&mut workload, &mut store, frames) {
-                            let _ = store.record_control("failure", json!({"stage":"stream-not-completed","outcome":relay.outcome.label(),"nativeNextType":next["type"],"nativeLastMessage":next["messages"].as_array().and_then(|m| m.last()).map(|m| json!({"role":m["role"],"stopReason":m["stopReason"],"errorMessage":m["errorMessage"]})),"classification":"provider-attempt-unknown"}));
+                            let _ = store.record_control("failure", json!({"stage":"stream-not-completed","outcome":relay.outcome.label(),"nativeNextType":next["type"],"nativeLastMessage":next["messages"].as_array().and_then(|m| m.last()).map(|m| json!({"role":m["role"],"stopReason":m["stopReason"],"errorMessage":m["errorMessage"]})),"classification":"provider-attempt-unknown","router":router.evidence()}));
                         }
                         return Err("stream_not_completed");
                     }
@@ -414,7 +528,7 @@ fn run() -> Result<()> {
     }
     store.record_control("closed-observation", closed.clone())?;
     let closure = workload.finish(&mut store)?;
-    let report = json!({"classification":"offline-actual-native-development","sdk":"1.5.0","binding":binding,"inspection":inspection,"ready":ready,"snapshots":snapshots,"frameReceipts":frames,"providerDispatches":provider_attempts,"providerResponsesConsumed":sends,"duplicateFirstRequest":true,"nativeTools":tools,"streams":streams,"nativeResult":native_result,"closure":closure,"postDisposal":closed,"endpointEvidence":"externally root-owned observer; actor does not assert remote counts","sealedRestart":"read-only no reacquisition/no dispatch"});
+    let report = json!({"classification":"offline-actual-native-development","sdk":"1.5.0","binding":binding,"inspection":inspection,"ready":ready,"snapshots":snapshots,"frameReceipts":frames,"providerDispatches":provider_attempts,"providerResponsesConsumed":sends,"duplicateFirstRequest":true,"nativeTools":tools,"streams":streams,"routing":router.evidence(),"nativeResult":native_result,"closure":closure,"postDisposal":closed,"endpointEvidence":"externally root-owned observer; actor does not assert remote counts","sealedRestart":"read-only no reacquisition/no dispatch"});
     store.check(&report)?;
     owner.record_native_result(store.result_publication(report.clone())?)?;
     store.emit_report(report)?;

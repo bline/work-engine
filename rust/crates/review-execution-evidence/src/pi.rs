@@ -701,10 +701,11 @@ impl LiveStore {
                 | "closed-observation"
                 | "report"
                 | "failure"
-        ) && !label
-            .strip_prefix("stream-")
-            .is_some_and(|n| n.len() == 3 && n.bytes().all(|b| b.is_ascii_digit()))
-        {
+        ) && !["stream-", "route-", "settle-"].iter().any(|p| {
+            label
+                .strip_prefix(p)
+                .is_some_and(|n| n.len() == 3 && n.bytes().all(|b| b.is_ascii_digit()))
+        }) {
             return Err("pi_control_label");
         };
         let b = self.check(&json!({"binding":self.binding,"event":event}))?;

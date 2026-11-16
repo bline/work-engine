@@ -296,17 +296,36 @@ pub fn sse_data(sse: &[u8]) -> Vec<String> {
 /// Normalized usage from a Responses SSE `response.completed` event. Missing
 /// values remain null; nothing is inferred from HTTP completion.
 pub fn usage(sse: &[u8]) -> Value {
-    let completed = sse_data(sse)
+    let events: Vec<Value> = sse_data(sse)
         .iter()
         .filter_map(|d| serde_json::from_str::<Value>(d).ok())
-        .filter(|v| v["type"] == "response.completed")
-        .last();
-    let Some(v) = completed else {
-        return json!({"completed": false, "observed": false});
+        .collect();
+    // A provider failure event inside a relayed stream (e.g. quota after
+    // output began) is reported, never treated as completion.
+    let failed = events.iter().find_map(|v| match v["type"].as_str() {
+        Some("response.failed") => Some(
+            v["response"]["error"]["code"]
+                .as_str()
+                .unwrap_or("response_failed")
+                .to_owned(),
+        ),
+        Some("error") => Some(
+            v["code"]
+                .as_str()
+                .or(v["error"]["code"].as_str())
+                .unwrap_or("error")
+                .to_owned(),
+        ),
+        _ => None,
+    });
+    let completed = events.iter().rfind(|v| v["type"] == "response.completed");
+    let Some(v) = completed.filter(|_| failed.is_none()) else {
+        return json!({"completed": false, "observed": false, "failed": failed});
     };
     let u = &v["response"]["usage"];
     json!({
         "completed": true,
+        "failed": null,
         "observed": u.is_object(),
         "responseId": v["response"]["id"],
         "inputTokens": u["input_tokens"],
@@ -467,13 +486,13 @@ fn relay_inner<C: Channel + Screen, R: Read + Send + 'static>(
                     stream,
                     json!({"ordinal":ordinal}),
                 ))?;
-                // A consumer commonly releases right after the terminal
-                // provider event. Only then, observe whether the framed end
+                // A consumer commonly releases right after a terminal provider
+                // event (completed or failed). Only then, observe whether the framed end
                 // follows within a short bound; otherwise the end stays unobserved.
-                if r.upstream_end_ms.is_none()
-                    && held.is_empty()
-                    && usage(&r.forwarded)["completed"] == true
-                {
+                if r.upstream_end_ms.is_none() && held.is_empty() && {
+                    let u = usage(&r.forwarded);
+                    u["completed"] == true || !u["failed"].is_null()
+                } {
                     match reader.next(chan, Some(DRAIN))? {
                         Next::End => r.upstream_end_ms = Some(now_millis()),
                         Next::Data(b) => r.unforwarded_after_release = b.len(),

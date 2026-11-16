@@ -87,7 +87,7 @@ try {
  runtime.streamSimple=(m,c,o)=>original(m,c,{...o,transport:'sse',maxRetries:0,timeoutMs:10000,cacheRetention:'none',fetch:async(url,req)=>{
    stream++;const body=typeof req.body==='string'?Buffer.from(req.body):Buffer.from(req.body);if(body.length>131072)throw Error('request_bound');
    await send(envelope('fetch',{url:String(url),method:req.method,headers:Object.fromEntries(req.headers),body:body.toString('base64')}));
-   const head=await read();joined(head,'response-head');if(!Number.isInteger(head.status))throw Error('response_head');
+   const head=await read();if(head.type==='response-unavailable'){joined(head,'response-unavailable');throw Error('route_unavailable_'+head.code);}joined(head,'response-head');if(!Number.isInteger(head.status))throw Error('response_head');
    // The response identity is fixed here; a later fetch cannot change it.
    let handle;handle=createResponseStream({id:{binding:bind,sequence:seq,stream},sendRaw,read,idleMs:streamIdleMs,
      onIdle:()=>{observation.streamIdleAborts++;session.abort();},onSettled:()=>{if(open===handle)open=null;}});

@@ -1,0 +1,718 @@
+{
+ "standing": "bounded offline evidence copy; private run dirs own full artifacts",
+ "runs": {
+  "stream10": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/stream10",
+   "sha256": {
+    "store/control-closed-observation.json": "8f942009a92f37df8d509f53a1749fde4d406d225ef39ba130358aa20c743cac",
+    "store/control-closure.json": "39a0fb7ab918f7614ab69b2a716b840e52248b20ca8f0befcd60f8ee6ff232f6",
+    "store/control-create-intent.json": "cde0303bce4e4168f474dc8471f9364aedf9d2b0226c80420c4d0dd954ac45df",
+    "store/control-created.json": "844aa7eadc91a0823ce689c74ddc102a6c3b97942196deedebb18824fd53728c",
+    "store/control-ready.json": "33b34a1e9fc9e248298b7e65b5f6ed9f1c895b6804214b4a5719603dd8b40588",
+    "store/control-report.json": "b4d559ae8e4d646786a7ccf2b5f09ff75a8146e0390be35f10e10816054ea2f3",
+    "store/control-route-001.json": "90a6651600a630a2d3318a95d77227ed2a128a60da422be5fba18615df4aafef",
+    "store/control-route-002.json": "ee4e5367f1d2ed3bcba85216abab0359eb5ce0bb8039ed0e938b291144a228f0",
+    "store/control-route-003.json": "381d2814ccc9befcfc4f4b6b469f4c6b53a32c27d6db6cbf4f8cd72fd0b47ace",
+    "store/control-route-004.json": "059744752d73fbd9a9435fed6a438c1873c50e8223d74998a1b2fa66937458a9",
+    "store/control-route-005.json": "25dac4c45541d2ba7e89447e0e55cab94e53c3cd8470b9111dfad0f674c336ea",
+    "store/control-settle-001.json": "f0daf4fc2731759d252828b01a4d01fdcadeec3c1a30e32135b929e248b21d0f",
+    "store/control-settle-002.json": "021cb7c73fbf7575e182406ddd789dbd7970f37ce5eaaf7fa72ede7b502b3c78",
+    "store/control-settle-003.json": "8dae8fec561ae59394bd900254f5feb4542ce474d027d5672b3e154fa09b2056",
+    "store/control-settle-004.json": "625e4de68328bf26d53bc14a32ebbe8d74df60eeb2223819c12761eb0da9575d",
+    "store/control-settle-005.json": "11e56089d3fa13553d743f1e2f25e4703063185cf26514862e441a7e0a8758a9",
+    "store/control-stream-001.json": "a1c49e53f7f4e9c0e9087f9614e0d7997bd8389857636c3a197ab90ff17daaf1",
+    "store/control-stream-002.json": "581a52efb6610d40c44335024dbad897b0f68c222a9b6f9dcaa41eeed6d76a7e",
+    "store/control-stream-003.json": "f6bb65553ff9d59e69967dd80cfab0884fd42de95d21bad0c26997dca74b5ffd",
+    "store/control-stream-004.json": "fed3ae4471dd940d82a14c3e79d30d2c6308f71a64bd8c0b4fd44323402d839f",
+    "store/control-stream-005.json": "545be733d9ac91de8d0e0b0e658196137caffd6de86fe8bbefff7bc2c162edc5",
+    "observer.jsonl": "b36a88560ba2d4a3564d2ebe21736a9a2b37443e008bd9549b7d3d26949a4ac5",
+    "probe.err": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "inputs.sha256": "3de519430b4afa3b74e10d505aba9ba49b6373a760aefecee33b043cd59379c6"
+   },
+   "routing": {
+    "attempts": [
+     {
+      "attempt": 1,
+      "connection": "synthetic-loopback:42373",
+      "disposition": {
+       "kind": "completed"
+      },
+      "model": "gpt-6-luna",
+      "payer": "synthetic-subscription",
+      "policy": "16f493494fd7c0805ef38f6f8ba601c58d4436447f53171c1ea8a791ba46d45e",
+      "predecessor": null,
+      "reason": "preferred",
+      "request": 1,
+      "reserved_units": 1,
+      "route": "primary",
+      "usage": {
+       "cachedInputTokens": null,
+       "completed": true,
+       "failed": null,
+       "inputTokens": 1,
+       "observed": true,
+       "outputTokens": 1,
+       "reasoningTokens": null,
+       "responseId": "resp_1",
+       "totalTokens": 2
+      }
+     },
+     {
+      "attempt": 2,
+      "connection": "synthetic-loopback:42373",
+      "disposition": {
+       "kind": "completed"
+      },
+      "model": "gpt-6-luna",
+      "payer": "synthetic-subscription",
+      "policy": "16f493494fd7c0805ef38f6f8ba601c58d4436447f53171c1ea8a791ba46d45e",
+      "predecessor": null,
+      "reason": "preferred",
+      "request": 2,
+      "reserved_units": 1,
+      "route": "primary",
+      "usage": {
+       "cachedInputTokens": null,
+       "completed": true,
+       "failed": null,
+       "inputTokens": 1,
+       "observed": true,
+       "outputTokens": 1,
+       "reasoningTokens": null,
+       "responseId": "resp_2",
+       "totalTokens": 2
+      }
+     },
+     {
+      "attempt": 3,
+      "connection": "synthetic-loopback:42373",
+      "disposition": {
+       "kind": "completed"
+      },
+      "model": "gpt-6-luna",
+      "payer": "synthetic-subscription",
+      "policy": "16f493494fd7c0805ef38f6f8ba601c58d4436447f53171c1ea8a791ba46d45e",
+      "predecessor": null,
+      "reason": "preferred",
+      "request": 3,
+      "reserved_units": 1,
+      "route": "primary",
+      "usage": {
+       "cachedInputTokens": null,
+       "completed": true,
+       "failed": null,
+       "inputTokens": 1,
+       "observed": true,
+       "outputTokens": 1,
+       "reasoningTokens": null,
+       "responseId": "resp_offline",
+       "totalTokens": 2
+      }
+     },
+     {
+      "attempt": 4,
+      "connection": "synthetic-loopback:42373",
+      "disposition": {
+       "kind": "completed"
+      },
+      "model": "gpt-6-luna",
+      "payer": "synthetic-subscription",
+      "policy": "16f493494fd7c0805ef38f6f8ba601c58d4436447f53171c1ea8a791ba46d45e",
+      "predecessor": null,
+      "reason": "preferred",
+      "request": 4,
+      "reserved_units": 1,
+      "route": "primary",
+      "usage": {
+       "cachedInputTokens": null,
+       "completed": true,
+       "failed": null,
+       "inputTokens": 1,
+       "observed": true,
+       "outputTokens": 1,
+       "reasoningTokens": null,
+       "responseId": "resp_offline",
+       "totalTokens": 2
+      }
+     },
+     {
+      "attempt": 5,
+      "connection": "synthetic-loopback:42373",
+      "disposition": {
+       "kind": "completed"
+      },
+      "model": "gpt-6-luna",
+      "payer": "synthetic-subscription",
+      "policy": "16f493494fd7c0805ef38f6f8ba601c58d4436447f53171c1ea8a791ba46d45e",
+      "predecessor": null,
+      "reason": "preferred",
+      "request": 5,
+      "reserved_units": 1,
+      "route": "primary",
+      "usage": {
+       "cachedInputTokens": null,
+       "completed": true,
+       "failed": null,
+       "inputTokens": 1,
+       "observed": true,
+       "outputTokens": 1,
+       "reasoningTokens": null,
+       "responseId": "resp_offline",
+       "totalTokens": 2
+      }
+     }
+    ],
+    "policy": {
+     "allowance_units": 16,
+     "expires_ms": 1794811909659,
+     "max_attempts_per_request": 2,
+     "model": "gpt-6-luna",
+     "reserve_units": 1,
+     "routes": [
+      {
+       "authorized": true,
+       "connection": "synthetic-loopback:42373",
+       "id": "primary",
+       "max_attempts": 16,
+       "model": "gpt-6-luna",
+       "payer": "synthetic-subscription",
+       "revoked": false
+      }
+     ]
+    },
+    "policyDigest": "16f493494fd7c0805ef38f6f8ba601c58d4436447f53171c1ea8a791ba46d45e",
+    "reservedUnits": 5,
+    "routeState": [
+     {
+      "attempts": 5,
+      "route": "primary",
+      "unavailable": null
+     }
+    ]
+   },
+   "observerReceipts": {
+    "observer.jsonl": 6
+   }
+  },
+  "failover2": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/failover2",
+   "sha256": {
+    "store/control-closed-observation.json": "9103822e4f70e2bf4cf2e20e6307c85b17b66c3693e2b940f9fcbc7b7a3f1035",
+    "store/control-closure.json": "097a831fe7650a0e316e10cada51a8f257ce33779bc44f45d3e1f5594b8440b2",
+    "store/control-create-intent.json": "c7055d53c2378cba3666349581cf7a54ae9096b1c264f8afe1b660a12f992e0b",
+    "store/control-created.json": "de6093955389b2724137db56cf059ae22371741d97cb9edef97d1d90d1a27832",
+    "store/control-ready.json": "0697880f0631cfc6295331ad5478f956f6c45618a75207065da1c73d6c2a6503",
+    "store/control-report.json": "2a68bf20751c91e57d6c7aad31e6be26ff45f3d31faceabc2144fdb77fa9ad8a",
+    "store/control-route-001.json": "a4abac7f1ac9f02d5a48b8e4412a8562ea417f993cb84dd0498bbd5a0fc0a763",
+    "store/control-route-002.json": "22bee7afefd8ff9ce16822b40238ad69ecc61d8fd8615d3b63b4aa3164d7bb72",
+    "store/control-route-003.json": "e4e5665651d922794caec10685450120624846fd5c5c857fc699681072780a1f",
+    "store/control-route-004.json": "67b813d207bf956d3b9737c03a6795606b7aa48da88a91fa34460e4528a0881d",
+    "store/control-route-005.json": "87b5fc8f3a3dbd66dd0eb686949ea82569b92432851a496d382a5eeb98cef4c3",
+    "store/control-route-006.json": "bd341038903394529470d51cc42f3485e8d07403b368615da1072b569ec51e9d",
+    "store/control-settle-001.json": "e4435a3686e1519f58252b3c21c56e5356915aeab96611aa024bc600f9258ac3",
+    "store/control-settle-002.json": "0aca303d8b3871744483b156b0d753f96aad6b387791c7e2c3309e6d67f7044b",
+    "store/control-settle-003.json": "06dad3319a0be1f00e6e4b17c6918e65365b8eba63295b58a63fdfc1913ae5b5",
+    "store/control-settle-004.json": "32c80133a6d5aa3aad9d67018e722c70e51a6335ef2909f5f445df21ac9ca581",
+    "store/control-settle-005.json": "ceb89735114c44b360a92e686b5813aeb290bd69928114c5b93a4b91e58947c9",
+    "store/control-settle-006.json": "22cfda1c0e7af719ac8381d8ea37c2132734d5e99bc7863bc4ff324c4b456964",
+    "store/control-stream-001.json": "ae6dbdba621e11f30f6683dd1eac8c20e7ccb9bbdfd3d3d368809bee185c0d88",
+    "store/control-stream-002.json": "ba10e832ec252bdcd762a186b2e94612459e08d4754d01b7b1de91c1e92534bf",
+    "store/control-stream-003.json": "2be3dfc742a257383b3cdde018ce9c5675fd03459ce48df4dc17e785c3395216",
+    "store/control-stream-004.json": "0b9c5305b65b3605defc7d4d0e97148a1d81570d1e831288e518a3361b535f9f",
+    "store/control-stream-005.json": "8d47118d202d7f4c928772326ab0142c4c44d4ce82f0616b47d9c94adcaa52df",
+    "observer1.jsonl": "8b08f25e349affaf7a63f6dfc367a919df82ffdde8e3285ef912bbc2c10ac338",
+    "observer2.jsonl": "459118d45de7f0e750def844c9cd4f4f31947b34a99cc0aa6db127dce24822ec",
+    "probe.err": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "inputs.sha256": "3de519430b4afa3b74e10d505aba9ba49b6373a760aefecee33b043cd59379c6"
+   },
+   "routing": {
+    "attempts": [
+     {
+      "attempt": 1,
+      "connection": "synthetic-loopback:41643",
+      "disposition": {
+       "code": "insufficient_quota",
+       "kind": "refused",
+       "status": 429
+      },
+      "model": "gpt-6-luna",
+      "payer": "synthetic-subscription",
+      "policy": "27c469c1219447644e30c9d3f2607d9863c8eee3c60ae883f5018bcdb2ffb8a6",
+      "predecessor": null,
+      "reason": "preferred",
+      "request": 1,
+      "reserved_units": 0,
+      "route": "primary",
+      "usage": null
+     },
+     {
+      "attempt": 2,
+      "connection": "synthetic-loopback:40353",
+      "disposition": {
+       "kind": "completed"
+      },
+      "model": "gpt-6-luna",
+      "payer": "synthetic-api",
+      "policy": "27c469c1219447644e30c9d3f2607d9863c8eee3c60ae883f5018bcdb2ffb8a6",
+      "predecessor": 1,
+      "reason": "failover-after-429-insufficient_quota",
+      "request": 1,
+      "reserved_units": 1,
+      "route": "secondary",
+      "usage": {
+       "cachedInputTokens": null,
+       "completed": true,
+       "failed": null,
+       "inputTokens": 1,
+       "observed": true,
+       "outputTokens": 1,
+       "reasoningTokens": null,
+       "responseId": "resp_1",
+       "totalTokens": 2
+      }
+     },
+     {
+      "attempt": 3,
+      "connection": "synthetic-loopback:40353",
+      "disposition": {
+       "kind": "completed"
+      },
+      "model": "gpt-6-luna",
+      "payer": "synthetic-api",
+      "policy": "27c469c1219447644e30c9d3f2607d9863c8eee3c60ae883f5018bcdb2ffb8a6",
+      "predecessor": null,
+      "reason": "preferred",
+      "request": 2,
+      "reserved_units": 1,
+      "route": "secondary",
+      "usage": {
+       "cachedInputTokens": null,
+       "completed": true,
+       "failed": null,
+       "inputTokens": 1,
+       "observed": true,
+       "outputTokens": 1,
+       "reasoningTokens": null,
+       "responseId": "resp_2",
+       "totalTokens": 2
+      }
+     },
+     {
+      "attempt": 4,
+      "connection": "synthetic-loopback:40353",
+      "disposition": {
+       "kind": "completed"
+      },
+      "model": "gpt-6-luna",
+      "payer": "synthetic-api",
+      "policy": "27c469c1219447644e30c9d3f2607d9863c8eee3c60ae883f5018bcdb2ffb8a6",
+      "predecessor": null,
+      "reason": "preferred",
+      "request": 3,
+      "reserved_units": 1,
+      "route": "secondary",
+      "usage": {
+       "cachedInputTokens": null,
+       "completed": true,
+       "failed": null,
+       "inputTokens": 1,
+       "observed": true,
+       "outputTokens": 1,
+       "reasoningTokens": null,
+       "responseId": "resp_offline",
+       "totalTokens": 2
+      }
+     },
+     {
+      "attempt": 5,
+      "connection": "synthetic-loopback:40353",
+      "disposition": {
+       "kind": "completed"
+      },
+      "model": "gpt-6-luna",
+      "payer": "synthetic-api",
+      "policy": "27c469c1219447644e30c9d3f2607d9863c8eee3c60ae883f5018bcdb2ffb8a6",
+      "predecessor": null,
+      "reason": "preferred",
+      "request": 4,
+      "reserved_units": 1,
+      "route": "secondary",
+      "usage": {
+       "cachedInputTokens": null,
+       "completed": true,
+       "failed": null,
+       "inputTokens": 1,
+       "observed": true,
+       "outputTokens": 1,
+       "reasoningTokens": null,
+       "responseId": "resp_offline",
+       "totalTokens": 2
+      }
+     },
+     {
+      "attempt": 6,
+      "connection": "synthetic-loopback:40353",
+      "disposition": {
+       "kind": "completed"
+      },
+      "model": "gpt-6-luna",
+      "payer": "synthetic-api",
+      "policy": "27c469c1219447644e30c9d3f2607d9863c8eee3c60ae883f5018bcdb2ffb8a6",
+      "predecessor": null,
+      "reason": "preferred",
+      "request": 5,
+      "reserved_units": 1,
+      "route": "secondary",
+      "usage": {
+       "cachedInputTokens": null,
+       "completed": true,
+       "failed": null,
+       "inputTokens": 1,
+       "observed": true,
+       "outputTokens": 1,
+       "reasoningTokens": null,
+       "responseId": "resp_offline",
+       "totalTokens": 2
+      }
+     }
+    ],
+    "policy": {
+     "allowance_units": 16,
+     "expires_ms": 1794811989573,
+     "max_attempts_per_request": 2,
+     "model": "gpt-6-luna",
+     "reserve_units": 1,
+     "routes": [
+      {
+       "authorized": true,
+       "connection": "synthetic-loopback:41643",
+       "id": "primary",
+       "max_attempts": 16,
+       "model": "gpt-6-luna",
+       "payer": "synthetic-subscription",
+       "revoked": false
+      },
+      {
+       "authorized": true,
+       "connection": "synthetic-loopback:40353",
+       "id": "secondary",
+       "max_attempts": 16,
+       "model": "gpt-6-luna",
+       "payer": "synthetic-api",
+       "revoked": false
+      }
+     ]
+    },
+    "policyDigest": "27c469c1219447644e30c9d3f2607d9863c8eee3c60ae883f5018bcdb2ffb8a6",
+    "reservedUnits": 5,
+    "routeState": [
+     {
+      "attempts": 1,
+      "route": "primary",
+      "unavailable": "429-insufficient_quota"
+     },
+     {
+      "attempts": 5,
+      "route": "secondary",
+      "unavailable": null
+     }
+    ]
+   },
+   "observerReceipts": {
+    "observer1.jsonl": 1,
+    "observer2.jsonl": 6
+   }
+  },
+  "unavailable2": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/unavailable2",
+   "sha256": {
+    "store/control-create-intent.json": "d3ab46c12eb69536de4d17852627009a398d4500495aa9c17007c46399e7797b",
+    "store/control-created.json": "98bf262ed55a9d1bcd4dd9c2865a7eb51421ddb8be80f90eae453aa7a50b21f7",
+    "store/control-failure.json": "7809c6a5d67dfc6a655ff69db86a30823c6da50906054eb7ad509152ef29b870",
+    "store/control-ready.json": "641af31bba03dc285bd63b100e8869f26ff282b97f28ba931e0d4bbd4bb2c16e",
+    "store/control-route-001.json": "8e2be42efd0caa2a00bd3395a8f3e47aee986fdac00f28b8ea511e374b0148cf",
+    "store/control-route-002.json": "06b15974b92e431a9928e1621607b9f1cd4ffd9c281f84740c529e2f57e13707",
+    "store/control-route-003.json": "a4326a2d068487d324163cd9520d52f5c2f70550db7e6547b0d598cb8115fa21",
+    "store/control-settle-001.json": "0ffa0d2418844677a0239f18264a6ab98fe7f877ea2544e88180c5cae51af1a5",
+    "store/control-settle-002.json": "12f213ff4a87c59fed11baa2f61f77fffb2aab80077b301e0eaa093409bbada2",
+    "observer1.jsonl": "f54b4d6074aa6791dd4e4cb0c2cbbd70c34bca84c5db317f07d87eb2bf447c9e",
+    "observer2.jsonl": "f3860dbcce70c32dd62fe581f2e2dca7330305deb2d55a859f9086274a1c75cb",
+    "probe.err": "c4c5295dce62286c06088180fffb4d1ba47c71c4b1aedb81cf1182ec6c235862",
+    "inputs.sha256": "3de519430b4afa3b74e10d505aba9ba49b6373a760aefecee33b043cd59379c6"
+   },
+   "failure": {
+    "nativeLastMessage": {
+     "errorMessage": "route_unavailable_attempt_limit",
+     "role": "assistant",
+     "stopReason": "error"
+    },
+    "nativeNextType": "snapshot",
+    "reason": "attempt_limit",
+    "stage": "route-unavailable"
+   },
+   "observerReceipts": {
+    "observer1.jsonl": 1,
+    "observer2.jsonl": 1
+   }
+  },
+  "midquota2": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/midquota2",
+   "sha256": {
+    "store/control-create-intent.json": "1f6cf6df17ab1ab03fa65eeabcb68964a528891bca07acdca13f10efb86dc51c",
+    "store/control-created.json": "912a2680e56e58a8d9faa3527ab4061870165767878e91f56acbdadfb472445a",
+    "store/control-failure.json": "bab57aadbaec8e6a613c08b3ab35d6bb8d487387145ea4f4290b40229565809f",
+    "store/control-ready.json": "061779ea648613ae335cfcce9f77165ef2b0a7cbbaff74490c9400a57a5e67da",
+    "store/control-route-001.json": "fc42d4c1e73ff0e58534203221e7125a978905c76fa782584c4b91f95c719ea1",
+    "store/control-settle-001.json": "e0556b6a26318a75965b190bf18a138c2c485e5daa1d2cbbe573841436d8441c",
+    "store/control-stream-001.json": "260c42661d414f4320e3767dc67c963f5acde92bdbb8634a4d915e260df5a488",
+    "observer1.jsonl": "3710462435e473a98c0b1aa90893e9f8a07cd897d0729641f804bd79e534bb1a",
+    "observer2.jsonl": "328a0f00a51b4de8009719699e6253a5eae52fa605152ab610391431c7320df8",
+    "probe.err": "26b7dfc1324dcb2ff8c3383ad112d3c4f45fdd4615d3892b04c61caf79ef5395",
+    "inputs.sha256": "3de519430b4afa3b74e10d505aba9ba49b6373a760aefecee33b043cd59379c6"
+   },
+   "failure": {
+    "classification": "provider-attempt-unknown",
+    "nativeLastMessage": {
+     "errorMessage": "synthetic quota exhausted mid-stream",
+     "role": "assistant",
+     "stopReason": "error"
+    },
+    "nativeNextType": "snapshot",
+    "outcome": "released-after-upstream-end",
+    "router": {
+     "attempts": [
+      {
+       "attempt": 1,
+       "connection": "synthetic-loopback:39963",
+       "disposition": {
+        "kind": "uncertain",
+        "reason": "provider-failed-after-output:insufficient_quota"
+       },
+       "model": "gpt-6-luna",
+       "payer": "synthetic-subscription",
+       "policy": "d74e83c49964058fc5d22c69c5bf517162f6634b89e639613a7f6bab0fbfa93c",
+       "predecessor": null,
+       "reason": "preferred",
+       "request": 1,
+       "reserved_units": 1,
+       "route": "primary",
+       "usage": {
+        "completed": false,
+        "failed": "insufficient_quota",
+        "observed": false
+       }
+      }
+     ],
+     "policy": {
+      "allowance_units": 16,
+      "expires_ms": 1794811871883,
+      "max_attempts_per_request": 2,
+      "model": "gpt-6-luna",
+      "reserve_units": 1,
+      "routes": [
+       {
+        "authorized": true,
+        "connection": "synthetic-loopback:39963",
+        "id": "primary",
+        "max_attempts": 16,
+        "model": "gpt-6-luna",
+        "payer": "synthetic-subscription",
+        "revoked": false
+       },
+       {
+        "authorized": true,
+        "connection": "synthetic-loopback:44453",
+        "id": "secondary",
+        "max_attempts": 16,
+        "model": "gpt-6-luna",
+        "payer": "synthetic-api",
+        "revoked": false
+       }
+      ]
+     },
+     "policyDigest": "d74e83c49964058fc5d22c69c5bf517162f6634b89e639613a7f6bab0fbfa93c",
+     "reservedUnits": 1,
+     "routeState": [
+      {
+       "attempts": 1,
+       "route": "primary",
+       "unavailable": null
+      },
+      {
+       "attempts": 0,
+       "route": "secondary",
+       "unavailable": null
+      }
+     ]
+    },
+    "stage": "stream-not-completed"
+   },
+   "observerReceipts": {
+    "observer1.jsonl": 1,
+    "observer2.jsonl": 0
+   }
+  },
+  "fault-stall3": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/fault-stall3",
+   "sha256": {
+    "store/control-create-intent.json": "0f38fa2f67ab8b332ea7c56fa21774f28ea4cd504bd0f893afdc1feba99c0bed",
+    "store/control-created.json": "388339c3e46f8ffba489f478b1251244543f788ba6592dada8766a7e9137213c",
+    "store/control-failure.json": "f63e278d1f7869630edd66e904aa5722f4caa3066e1550f564d4b3aed6019d49",
+    "store/control-ready.json": "fd407dfde612d51408dec0c346360ff2c7354587fed1e3a77c3b20690c6c82bf",
+    "store/control-route-001.json": "cfeab2b0816c3fbc3be0e0010fd383497d97b1491516ba63de038acce3b40b19",
+    "store/control-settle-001.json": "7c154caa62719de58e5ba9d7e56aff4588c2ebf3975000b174235f94a81585d6",
+    "store/control-stream-001.json": "538a2fdc12c32b9218b578baf9fb6b232361008b8b7bbafcfdc44b8f479431f6",
+    "observer.jsonl": "323d6e46a516015b56c341cb7128f66d349617589bf35099b4c880fd3a8b409a",
+    "probe.err": "26b7dfc1324dcb2ff8c3383ad112d3c4f45fdd4615d3892b04c61caf79ef5395",
+    "inputs.sha256": "3de519430b4afa3b74e10d505aba9ba49b6373a760aefecee33b043cd59379c6"
+   },
+   "failure": {
+    "classification": "provider-attempt-unknown",
+    "nativeLastMessage": {
+     "errorMessage": "Request was aborted",
+     "role": "assistant",
+     "stopReason": "aborted"
+    },
+    "nativeNextType": "snapshot",
+    "outcome": "cancelled-before-upstream-end",
+    "router": {
+     "attempts": [
+      {
+       "attempt": 1,
+       "connection": "synthetic-loopback:46731",
+       "disposition": {
+        "kind": "uncertain",
+        "reason": "200:cancelled-before-upstream-end"
+       },
+       "model": "gpt-6-luna",
+       "payer": "synthetic-subscription",
+       "policy": "a27ee79b1af84f95d3cd6bb2353c3fd29e828574474652bc87f5c9f99a880211",
+       "predecessor": null,
+       "reason": "preferred",
+       "request": 1,
+       "reserved_units": 1,
+       "route": "primary",
+       "usage": {
+        "completed": false,
+        "failed": null,
+        "observed": false
+       }
+      }
+     ],
+     "policy": {
+      "allowance_units": 16,
+      "expires_ms": 1794812068563,
+      "max_attempts_per_request": 2,
+      "model": "gpt-6-luna",
+      "reserve_units": 1,
+      "routes": [
+       {
+        "authorized": true,
+        "connection": "synthetic-loopback:46731",
+        "id": "primary",
+        "max_attempts": 16,
+        "model": "gpt-6-luna",
+        "payer": "synthetic-subscription",
+        "revoked": false
+       }
+      ]
+     },
+     "policyDigest": "a27ee79b1af84f95d3cd6bb2353c3fd29e828574474652bc87f5c9f99a880211",
+     "reservedUnits": 1,
+     "routeState": [
+      {
+       "attempts": 1,
+       "route": "primary",
+       "unavailable": null
+      }
+     ]
+    },
+    "stage": "stream-not-completed"
+   },
+   "observerReceipts": {
+    "observer.jsonl": 1
+   }
+  },
+  "fault-truncate5": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/fault-truncate5",
+   "sha256": {
+    "store/control-create-intent.json": "1b976eb7a5189bbe23156ce9b2dc38374154d3f19845088dab2c3a8b4fa7ebd2",
+    "store/control-created.json": "7c421699b88275336346a939c5f016e1960358c35b1f1ce9b81c20ca4c4b7d3a",
+    "store/control-failure.json": "37d0e17a0aa2e839774490fdbe76bda3434cbbfd1433b07b762623a3fb0cbe17",
+    "store/control-ready.json": "2e94970e757179bd4252957598e44f19ba09840b709f8313f41b60c27e16738d",
+    "store/control-route-001.json": "795e9db999397d404d56aa666f632d32df7b1513636452d8346cf1026df4c380",
+    "store/control-settle-001.json": "2ef20212dbb3bbb56035efa888ffbcd7bfdb6180af60633850d34a0654877f73",
+    "store/control-stream-001.json": "75dc2b68a3375b97dcc7710a62e94634c96f2ca44326053cc77570c51d42b700",
+    "observer.jsonl": "7f4a61b7853c8956cc6325262bdd6a87a830856d86ee3d218474e702115a686a",
+    "probe.err": "26b7dfc1324dcb2ff8c3383ad112d3c4f45fdd4615d3892b04c61caf79ef5395",
+    "inputs.sha256": "3de519430b4afa3b74e10d505aba9ba49b6373a760aefecee33b043cd59379c6"
+   },
+   "failure": {
+    "classification": "provider-attempt-unknown",
+    "nativeLastMessage": {
+     "errorMessage": "relay_upstream_truncated",
+     "role": "assistant",
+     "stopReason": "error"
+    },
+    "nativeNextType": "snapshot",
+    "outcome": "interrupted-uncertain",
+    "router": {
+     "attempts": [
+      {
+       "attempt": 1,
+       "connection": "synthetic-loopback:39741",
+       "disposition": {
+        "kind": "uncertain",
+        "reason": "200:interrupted-uncertain"
+       },
+       "model": "gpt-6-luna",
+       "payer": "synthetic-subscription",
+       "policy": "aee16978e7171ba2885879c5378088d4178150440fc34379a1c8748223a79b83",
+       "predecessor": null,
+       "reason": "preferred",
+       "request": 1,
+       "reserved_units": 1,
+       "route": "primary",
+       "usage": {
+        "completed": false,
+        "failed": null,
+        "observed": false
+       }
+      }
+     ],
+     "policy": {
+      "allowance_units": 16,
+      "expires_ms": 1794812094428,
+      "max_attempts_per_request": 2,
+      "model": "gpt-6-luna",
+      "reserve_units": 1,
+      "routes": [
+       {
+        "authorized": true,
+        "connection": "synthetic-loopback:39741",
+        "id": "primary",
+        "max_attempts": 16,
+        "model": "gpt-6-luna",
+        "payer": "synthetic-subscription",
+        "revoked": false
+       }
+      ]
+     },
+     "policyDigest": "aee16978e7171ba2885879c5378088d4178150440fc34379a1c8748223a79b83",
+     "reservedUnits": 1,
+     "routeState": [
+      {
+       "attempts": 1,
+       "route": "primary",
+       "unavailable": null
+      }
+     ]
+    },
+    "stage": "stream-not-completed"
+   },
+   "observerReceipts": {
+    "observer.jsonl": 1
+   }
+  }
+ }
+}
