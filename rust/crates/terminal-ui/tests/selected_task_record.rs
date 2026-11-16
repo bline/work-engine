@@ -2,14 +2,39 @@
 #[path = "support/terminal.rs"]
 #[allow(dead_code)]
 mod terminal;
+use operator_observation::selected_task::SelectedTask;
+use std::{fs, os::unix::fs::PermissionsExt, path::PathBuf};
+
+/// The generated consumer set (operator-observation `tests/fixture_set.rs`).
+fn fixture(name: &str) -> Vec<u8> {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../operator-observation/tests/fixtures/selected-task")
+        .join(format!("{name}.json"));
+    let bytes = fs::read(path).unwrap();
+    SelectedTask::parse(&bytes).unwrap();
+    bytes
+}
+fn evidence(label: &str) -> PathBuf {
+    let dir = std::env::var_os("U2_PTY_EVIDENCE")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| std::env::temp_dir().join(format!("s1-pty-{}", std::process::id())))
+        .join(label);
+    fs::create_dir_all(&dir).unwrap();
+    dir
+}
+fn write(record: &std::path::Path, bytes: &[u8]) {
+    fs::write(record, bytes).unwrap();
+    fs::set_permissions(record, fs::Permissions::from_mode(0o600)).unwrap();
+}
+
 #[test]
-#[ignore = "requires U2_SHARED_RECORD and U2_PTY_EVIDENCE"]
+#[ignore = "actual PTY; run explicitly with --ignored"]
 fn shared_record_detail_and_back_preserves_selection() {
-    let record = std::path::PathBuf::from(std::env::var_os("U2_SHARED_RECORD").unwrap());
-    let evidence = std::path::PathBuf::from(std::env::var_os("U2_PTY_EVIDENCE").unwrap());
-    let s =
-        operator_observation::selected_task::SelectedTask::parse(&std::fs::read(&record).unwrap())
-            .unwrap();
+    let evidence = evidence("detail-back");
+    let record = evidence.join("current.json");
+    let bytes = fixture("joined-fresh");
+    write(&record, &bytes);
+    let s = SelectedTask::parse(&bytes).unwrap();
     let mut ui =
         terminal::Terminal::launch_selected(&record, &s.endpoint, &s.request.task_id, &evidence);
     ui.wait_for("SELECTED TASK", "selected");
@@ -20,60 +45,40 @@ fn shared_record_detail_and_back_preserves_selection() {
     ui.wait_for("Owner observations", "back");
     ui.wait_for(&s.request.task_id, "selection-retained");
     ui.close_history();
-    println!(
-        "Shared Rust record rendered in actual PTY; detail/back retained explicit selection and terminal restored."
-    );
 }
 
 #[test]
-#[ignore = "requires Rust U2_VECTOR_DIR and U2_PTY_EVIDENCE"]
-fn shared_record_changing_failure_reconnect_and_identity() {
-    use operator_observation::selected_task::SelectedTask;
-    use std::{fs, path::PathBuf};
-    let vectors = PathBuf::from(std::env::var_os("U2_VECTOR_DIR").unwrap());
-    let evidence = PathBuf::from(std::env::var_os("U2_PTY_EVIDENCE").unwrap());
-    fs::create_dir_all(&evidence).unwrap();
+#[ignore = "actual PTY; run explicitly with --ignored"]
+fn shared_record_set_failure_anchor_and_identity() {
+    let evidence = evidence("transitions");
     let record = evidence.join("current.json");
-    let read = |name: &str| {
-        let bytes = fs::read(vectors.join(format!("vector-{name}.json"))).unwrap();
-        SelectedTask::parse(&bytes).unwrap();
-        bytes
-    };
-    let first = read("initial");
+    let first = fixture("joined-fresh");
     let s = SelectedTask::parse(&first).unwrap();
-    fs::write(&record, &first).unwrap();
-    use std::os::unix::fs::PermissionsExt;
-    fs::set_permissions(&record, fs::Permissions::from_mode(0o600)).unwrap();
+    write(&record, &first);
     let mut ui =
         terminal::Terminal::launch_selected(&record, &s.endpoint, &s.request.task_id, &evidence);
     ui.wait_for("Question question:u2", "pending-owner-id");
+    ui.wait_for("Independent synthetic result", "published-result");
     ui.input(b"\x1b[B\x1b[B\r");
     ui.wait_for("owner detail", "initial-detail");
-    fs::write(&record, read("answered")).unwrap();
+    write(&record, &fixture("stale-present"));
     ui.input(b"r");
     ui.wait_for("Owner observations", "revision-resets-detail");
-    ui.input(b"b");
-    ui.wait_for("Owner observations", "changed-back");
-    ui.wait_for("Yes, publish", "changed-answer");
-    fs::write(&record, read("failed")).unwrap();
-    ui.input(b"r");
     ui.wait_for("stale last known", "owner-failure");
-    ui.wait_for("Independent synthetic result", "retained-result");
-    fs::write(&record, read("reconnected")).unwrap();
+    ui.wait_for("last_known_owner", "retained-basis");
+    write(&record, &fixture("retained-anchor-refused"));
     ui.input(b"r");
-    ui.wait_for("read_completed", "reconnected");
+    ui.wait_for("Owner record refused", "refused-anchor");
     // Malformed file is a failed file read, retaining prior values under the same selection.
-    fs::write(&record, b"{}").unwrap();
+    write(&record, b"{}");
     ui.input(b"r");
     ui.wait_for("invalid_projection", "invalid-file");
     ui.wait_for("stale last known", "file-failure-stale");
-    fs::write(&record, read("host")).unwrap();
+    write(&record, &fixture("unobserved"));
     ui.input(b"r");
-    ui.wait_for("read_completed", "new-host");
-    ui.input(b"\x1b[B\x1b[B\r");
-    ui.wait_for("owner detail", "new-host-detail");
+    ui.wait_for("Compact summary unavailable", "unobserved");
     // A valid projection for a different explicit endpoint must clear all rows.
-    let mut other = SelectedTask::parse(&read("source")).unwrap();
+    let mut other = SelectedTask::parse(&first).unwrap();
     other.endpoint = "/other/host.sock".into();
     other.scope_id = operator_observation::digest(
         &serde_json::to_vec(&serde_json::json!([
@@ -85,7 +90,7 @@ fn shared_record_changing_failure_reconnect_and_identity() {
         .unwrap(),
     );
     other.validate().unwrap();
-    fs::write(&record, serde_json::to_vec(&other).unwrap()).unwrap();
+    write(&record, &serde_json::to_vec(&other).unwrap());
     ui.input(b"r");
     ui.wait_for("selected_endpoint_or_task_mismatch", "identity-clear");
     assert!(!ui.screen().contains("Independent synthetic result"));
@@ -95,21 +100,27 @@ fn shared_record_changing_failure_reconnect_and_identity() {
 }
 
 #[test]
-#[ignore = "requires R3 U2_VECTOR_DIR and U2_PTY_EVIDENCE"]
-fn r3_revision_only_inspection_reset() {
-    use std::{fs,path::PathBuf};
-    let dir=PathBuf::from(std::env::var_os("U2_VECTOR_DIR").unwrap());
-    let evidence=PathBuf::from(std::env::var_os("U2_PTY_EVIDENCE").unwrap()).join("r3-revision-only");fs::create_dir_all(&evidence).unwrap();
-    for field in ["owner_revision","cursor_revision"] {
-        let bytes=fs::read(dir.join(format!("r2-{field}_9007199254740993_fresh.json"))).unwrap();
-        let mut p=operator_observation::selected_task::SelectedTask::parse(&bytes).unwrap();
-        let record=evidence.join(format!("{field}.json"));fs::write(&record,bytes).unwrap();
-        use std::os::unix::fs::PermissionsExt;fs::set_permissions(&record,fs::Permissions::from_mode(0o600)).unwrap();
-        let mut ui=terminal::Terminal::launch_selected(&record,&p.endpoint,&p.request.task_id,&evidence);
-        ui.wait_for("Owner observations","r3-overview");ui.input(b"\x1b[B\x1b[B\r");ui.wait_for("owner detail","r3-detail");
-        // Metadata inspection scroll position is immaterial to reset: only these two strings change.
-        p.components.get_mut("owner").unwrap().revision[field]=serde_json::json!("9007199254740994");
-        p.components.get_mut("owner").unwrap().last_known_revision[field]=serde_json::json!("9007199254740994");
-        fs::write(&record,serde_json::to_vec(&p).unwrap()).unwrap();ui.input(b"r");ui.wait_for("Owner observations","r3-revision-reset");ui.close_history();
-    }
+#[ignore = "actual PTY; run explicitly with --ignored"]
+fn full_u64_revision_digits_and_revision_only_reset() {
+    let evidence = evidence("revision-only");
+    let record = evidence.join("current.json");
+    let bytes = fixture("large-revision-redacted");
+    let mut p = SelectedTask::parse(&bytes).unwrap();
+    write(&record, &bytes);
+    let mut ui =
+        terminal::Terminal::launch_selected(&record, &p.endpoint, &p.request.task_id, &evidence);
+    ui.wait_for("Owner observations", "overview");
+    ui.input(b"\x1b[B\x1b[B\r");
+    ui.wait_for("owner detail", "detail");
+    ui.wait_for("9007199254740993", "owner-revision-digits");
+    ui.wait_for("18446744073709551615", "cursor-revision-digits");
+    // Only the revision changes; the open inspection resets to the overview.
+    p.components.get_mut("owner").unwrap().revision["owner_revision"] =
+        serde_json::json!("9007199254740994");
+    p.components.get_mut("owner").unwrap().last_known_revision["owner_revision"] =
+        serde_json::json!("9007199254740994");
+    write(&record, &serde_json::to_vec(&p).unwrap());
+    ui.input(b"r");
+    ui.wait_for("Owner observations", "revision-reset");
+    ui.close_history();
 }

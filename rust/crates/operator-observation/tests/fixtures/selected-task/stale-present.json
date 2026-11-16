@@ -1,0 +1,249 @@
+{
+  "schema": "work-engine.selected-task.v2",
+  "endpoint": "/private/u2/host.sock",
+  "request": {
+    "task_id": "task:u2",
+    "delivery_id": "delivery:u2"
+  },
+  "source_id": "b3cc0475bb78a5026098858e9889acf666d31062d513d303314eca31d36e72f2",
+  "scope_id": "3112186b787fc4ca3c5d98d6167e1fa0c511234dd35bd1980be32ca238cadf68",
+  "standing": "fixture_replay",
+  "confidentiality": "private_operator_data",
+  "assembled_at_ms": 1794600031000,
+  "host_identity": {
+    "pid": 1,
+    "linux_starttime_ticks": "1",
+    "incarnation": "host:u2",
+    "build_id": "build:u2",
+    "profile": "retained-repository-analysis-v1",
+    "executable_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "source_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "lock_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "toolchain_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "features": [],
+    "provider_identity": "synthetic_no_provider"
+  },
+  "transport": "unavailable",
+  "components": {
+    "command_result": {
+      "state": "not_requested",
+      "scope": {
+        "command_id": null,
+        "subject_id": "subject:u2",
+        "task_binding": "not_established"
+      },
+      "revision": null,
+      "completeness": null,
+      "read_at_ms": 1794600000000,
+      "last_known_at_ms": null,
+      "stale": true,
+      "reason": "",
+      "rows": [],
+      "last_known_scope": null,
+      "last_known_revision": null,
+      "last_known_completeness": null
+    },
+    "control_result": {
+      "state": "not_requested",
+      "scope": {
+        "command_id": null,
+        "subject_id": "subject:u2",
+        "task_binding": "not_established"
+      },
+      "revision": null,
+      "completeness": null,
+      "read_at_ms": 1794600000000,
+      "last_known_at_ms": null,
+      "stale": true,
+      "reason": "",
+      "rows": [],
+      "last_known_scope": null,
+      "last_known_revision": null,
+      "last_known_completeness": null
+    },
+    "lifecycle": {
+      "state": "present",
+      "scope": {
+        "delivery_id": "delivery:u2",
+        "subject_id": "subject:u2"
+      },
+      "revision": {
+        "cursor": {
+          "commit_sequence": "1",
+          "store_id": "store:u2",
+          "stream_id": "stream:u2"
+        },
+        "kind": "lifecycle"
+      },
+      "completeness": null,
+      "read_at_ms": 1794600000000,
+      "last_known_at_ms": 1794600000000,
+      "stale": true,
+      "reason": "",
+      "rows": [
+        "{\"authority_refs\":[],\"blocking_reason\":{\"state\":\"unknown\"},\"context_generation\":\"context:u2\",\"current_admission\":{\"kind\":\"unknown\"},\"cursor\":{\"commit_sequence\":\"1\",\"store_id\":\"store:u2\",\"stream_id\":\"stream:u2\"},\"delivery\":{\"state\":\"unknown\"},\"evidence_refs\":[],\"measurement\":{\"state\":\"unknown\"},\"protocol_version\":1,\"runtime_availability\":\"unknown\",\"runtime_provenance\":{\"state\":\"unknown\"},\"subject_id\":\"subject:u2\",\"transition\":{\"state\":\"unknown\"}}"
+      ],
+      "last_known_scope": {
+        "delivery_id": "delivery:u2",
+        "subject_id": "subject:u2"
+      },
+      "last_known_revision": {
+        "cursor": {
+          "commit_sequence": "1",
+          "store_id": "store:u2",
+          "stream_id": "stream:u2"
+        },
+        "kind": "lifecycle"
+      },
+      "last_known_completeness": null
+    },
+    "native_delivery_status": {
+      "state": "present",
+      "scope": {
+        "collection": "native_delivery_segments",
+        "filter": "subject",
+        "subject_id": "subject:u2"
+      },
+      "revision": {
+        "kind": "not_provided"
+      },
+      "completeness": {
+        "kind": "complete_for_scope",
+        "limit": 64
+      },
+      "read_at_ms": 1794600000000,
+      "last_known_at_ms": 1794600000000,
+      "stale": true,
+      "reason": "",
+      "rows": [
+        "1 native segments (complete subject scope; limit 64)",
+        "{\"context_generation\":\"context:u2\",\"delivery_id\":\"delivery:u2\",\"delivery_state\":\"active\",\"effect_id\":\"effect:u2\",\"final_sha256\":null,\"history_status\":\"complete\",\"input_id\":\"input:u2\",\"invocation_id\":\"invocation:u2\",\"native_attempt_id\":\"native:u2\",\"native_state\":\"completed\",\"predecessor_invocation_id\":null,\"queue_attempt_id\":\"attempt:u2\",\"segment_no\":1,\"segment_state\":\"completed\",\"send_intent\":true,\"sequence\":1,\"thread_id\":\"01a142ba-b70b-7eb0-9900-b53bece80f30\",\"transition_id\":null,\"turn_id\":\"01a142ba-b722-7272-affc-928d3a20aeed\"}"
+      ],
+      "last_known_scope": {
+        "collection": "native_delivery_segments",
+        "filter": "subject",
+        "subject_id": "subject:u2"
+      },
+      "last_known_revision": {
+        "kind": "not_provided"
+      },
+      "last_known_completeness": {
+        "kind": "complete_for_scope",
+        "limit": 64
+      }
+    },
+    "owner": {
+      "state": "present",
+      "scope": {
+        "subject_id": "subject:u2",
+        "task_id": "task:u2"
+      },
+      "revision": {
+        "cursor_revision": "3",
+        "kind": "task",
+        "owner_revision": "7"
+      },
+      "completeness": null,
+      "read_at_ms": 1794600000000,
+      "last_known_at_ms": 1794600000000,
+      "stale": true,
+      "reason": "",
+      "rows": [
+        "objective: Verify selected task across clients",
+        "engineering_question: What remains pending?",
+        "Question question:u2: Publish the private synthetic result? · \"pending\"",
+        "Question question:u2:scope: Keep the review scope? · {\"answered\":{\"answer\":\"Yes, publish\",\"authority_ref\":\"operator:u2\"}}"
+      ],
+      "last_known_scope": {
+        "subject_id": "subject:u2",
+        "task_id": "task:u2"
+      },
+      "last_known_revision": {
+        "cursor_revision": "3",
+        "kind": "task",
+        "owner_revision": "7"
+      },
+      "last_known_completeness": null
+    }
+  },
+  "activity": [],
+  "activity_coverage": {
+    "state": "unlinked",
+    "linked_session_ids": [],
+    "limit": 20
+  },
+  "activity_source_id": null,
+  "linkage": "unestablished",
+  "summary": {
+    "state": "available",
+    "basis": "last_known_owner",
+    "reason": null,
+    "value": {
+      "objective": {
+        "text": "Verify selected task across clients",
+        "truncated": false
+      },
+      "engineering_question": {
+        "text": "What remains pending?",
+        "truncated": false
+      },
+      "questions": [
+        {
+          "id": {
+            "text": "question:u2",
+            "truncated": false
+          },
+          "recipient_ref": {
+            "text": "operator:u2",
+            "truncated": false
+          },
+          "scope_ref": {
+            "text": "task:u2",
+            "truncated": false
+          },
+          "text": {
+            "text": "Publish the private synthetic result?",
+            "truncated": false
+          },
+          "state": {
+            "state": "pending"
+          }
+        },
+        {
+          "id": {
+            "text": "question:u2:scope",
+            "truncated": false
+          },
+          "recipient_ref": {
+            "text": "operator:u2",
+            "truncated": false
+          },
+          "scope_ref": {
+            "text": "task:u2",
+            "truncated": false
+          },
+          "text": {
+            "text": "Keep the review scope?",
+            "truncated": false
+          },
+          "state": {
+            "state": "answered",
+            "answer": {
+              "text": "Yes, publish",
+              "truncated": false
+            },
+            "authority_ref": {
+              "text": "operator:u2",
+              "truncated": false
+            }
+          }
+        }
+      ],
+      "pending_count": 1,
+      "answered_count": 1,
+      "result": {
+        "state": "not_published"
+      }
+    }
+  }
+}

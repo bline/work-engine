@@ -160,17 +160,21 @@ pub fn decode(bytes: &[u8], request: &Request) -> Result<Observation, ReadError>
     // interoperable policy to every other byte-derived field, including ignored
     // extensions, rather than relying on downstream shape validators.
     let mut interoperable = raw.clone();
-    if let Some(owner) = interoperable.pointer_mut("/components/owner").and_then(Value::as_object_mut) {
-        if owner.get("state").and_then(Value::as_str) == Some("present") {
-            if let Some(revision) = owner.get_mut("revision").and_then(Value::as_object_mut) {
-                revision.remove("owner_revision");
-                revision.remove("cursor_revision");
-            }
-            owner.remove("value");
+    if let Some(owner) = interoperable
+        .pointer_mut("/components/owner")
+        .and_then(Value::as_object_mut)
+        && owner.get("state").and_then(Value::as_str) == Some("present")
+    {
+        if let Some(revision) = owner.get_mut("revision").and_then(Value::as_object_mut) {
+            revision.remove("owner_revision");
+            revision.remove("cursor_revision");
         }
+        owner.remove("value");
     }
-    parse_strict_json(&serde_json::to_vec(&interoperable).map_err(|_| ReadError::InvalidObservation)?)
-        .map_err(|_| ReadError::InvalidObservation)?;
+    parse_strict_json(
+        &serde_json::to_vec(&interoperable).map_err(|_| ReadError::InvalidObservation)?,
+    )
+    .map_err(|_| ReadError::InvalidObservation)?;
     if raw["code"] == "unsupported_observation_version" {
         return Err(ReadError::UnsupportedVersion);
     }

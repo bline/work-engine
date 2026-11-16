@@ -40,10 +40,11 @@ qualification.
 
 The [generated schema](selected-task.schema.json) describes DTO structure.
 Regenerate it with `cargo run --locked -p operator-observation --example
-selected_task_schema`. Rust `SelectedTask::validate` and the JavaScript envelope
-validator additionally enforce version, bounds, timestamps and scope digests;
-schema validity alone establishes no authority, provenance or valid owner join.
-The checked fixture and schema-generation test bind the consumers to these DTOs.
+selected_task_schema`. Rust `SelectedTask::validate` additionally enforces bounds,
+timestamps, scope digests and the finite claims below; schema validity alone
+establishes no authority, provenance or valid owner join. The schema-generation
+test and the generated fixture set (see "Consumer fixture set") bind the
+consumers to these DTOs.
 
 The closed envelope includes endpoint/request, source and scope IDs, host
 identity, standing, confidentiality, assembly time, transport, five independent
@@ -156,8 +157,9 @@ read lifecycle, authentication, or runtime owner.
 
 ## OwnerBasisCoherence and finite credential syntax
 
-Rust construction/parsing and JavaScript DTO verification enforce the same
-within-envelope relation, including unavailable summaries. A fresh present owner
+Rust alone establishes this within-envelope relation, at construction and at
+`SelectedTask::parse` (CLI and TUI), including unavailable summaries. JavaScript
+consumers make no coherence claim (see "Finite claims and non-claims"). A fresh present owner
 requires completed transport, latest-owner basis and a full retained tuple equal
 to its scope, revision, completeness and original read time. A stale present
 owner requires unavailable transport, last-known basis and the same equal tuple.
@@ -185,9 +187,9 @@ standalone Bearer. Existing provider-token recognition remains. Sanitization
 precedes clipping for typed excerpts and inspection rows. Arbitrary confidential
 prose and exotic encodings remain outside this defense-in-depth claim.
 
-The checked consistency expectation matrix is independent of validator results;
-Rust emits decoder/Selection-derived positives and single-relation mutations
-against it, and JavaScript consumes those exact serialized vectors.
+The checked Rust consistency expectation matrix is independent of validator
+results; Rust tests run decoder/Selection-derived positives and single-relation
+mutations against it. It is Rust-local and is not exported to JavaScript.
 
 ## Owner metadata in coordinated v2
 
@@ -195,6 +197,54 @@ Only owner metadata uses canonical ASCII decimal strings for the full unsigned 6
 
 Owner scope is a closed object with the requested string `task_id` and optional `subject_id` (string or null). Omitted and explicit-null subjects remain distinct: omission may retain a same-task older anchor; an incompatible explicit subject clears it. Retained present anchors require a string subject. Completeness is null. Latest absent/refused/unavailable revision is null, independently of a retained older revision. Extra scope/revision metadata is refused rather than silently discarded. An owner-approved extension requires revisiting its lossless representation.
 
-The sole missing-task exception is the exact unobserved sentinel: empty scope, unavailable/stale owner, `transport_unavailable`, zero read time, null revision/completeness, no anchor or rows, `none/no_owner_value`, and unavailable transport on completed publication. Initial selection has no host identity. Explicit task identity is checked even without a value or anchor. These checks establish within-envelope consistency, not historical authenticity.
+The sole missing-task exception is the unobserved envelope (below). With a host identity present, owner scope must be a valid owner scope; explicit task identity is checked even without a value or anchor. These checks establish within-envelope consistency, not historical authenticity.
 
-TO2 uses private strict task decoding to retain exact numeric task integers, including nested owner data. It rejects duplicate decoded names and trailing input. Only present owner revision/value use the task integer domain; all other fields retain lifecycle interoperable numeric qualification. The lifecycle default parser is unchanged. Presentation converts owner metadata to canonical full-u64 decimal strings before JavaScript parses JSON. Read preservation does not prove mutation reachability or advancement at u64::MAX.
+TO2 uses private strict task decoding to retain exact numeric task integers, including nested owner data. It rejects duplicate decoded names and trailing input. Only present owner revision/value use the task integer domain; all other fields retain lifecycle interoperable numeric qualification. The lifecycle default parser is unchanged. Presentation converts owner metadata to canonical full-u64 decimal strings before JavaScript parses JSON. Read preservation does not prove mutation reachability or advancement at u64::MAX. The full-u64 claim is frozen at representation and read preservation.
+
+## Finite claims and non-claims (R4)
+
+`host_identity == null` holds exactly when the envelope is unobserved: no read
+has established a host identity for this endpoint and task. `Selection::begin`
+clears components together with identity, a successful read installs identity
+and all five components together (TO2 decoding requires all five), and a failed
+read marks every component stale. The unobserved envelope is recognized only by
+equality with the producer's constructor values, never by a list of conjuncts:
+transport is `unavailable`; each of the five components equals
+`Presentation::unobserved()` (empty scope, `unavailable`, stale,
+`transport_unavailable`, zero read time, null metadata, no anchor or rows); the
+summary equals `Summary::unobserved()` (`unavailable`/`none`/`no_owner_value`/no
+value); activity is empty, coverage `unlinked` with no IDs, linkage
+`unestablished`, and `activity_source_id` null. With an identity present, no
+component has an empty scope and the owner scope is a valid owner scope.
+Transport `unavailable` requires every component to be stale.
+
+Rust validation claims exactly: the unobserved relation above, the four-state
+owner basis table (OwnerBasisCoherence), summary closure, and the existing DTO
+bounds (owner revision syntax, owner scope keys, timestamps, scope digest,
+activity coverage, row and size limits). It does not claim producer reachability
+in general, authenticity, historical continuity, or anchor coherence of the four
+non-owner components. A validator acceptance of an envelope the producer cannot
+emit is a defect only inside these claims.
+
+JavaScript (browser and mailbox) verifies version, closed shape, types and
+bounds (including owner revision syntax and owner scope keys), envelope
+identity (scope digest, selection match, and an owner `task_id` equal to the
+request), and totality of the fields its renderer dereferences. It makes no
+coherence claim. Against the Rust producer it can only agree or block. A
+mailbox-token holder can post a coherent but false envelope; authenticity is not
+claimed.
+
+## Consumer fixture set
+
+`tests/fixture_set.rs` is the one generator of the consumer fixtures: TO2 frame
+→ `task::decode` → `Selection` → `SelectedTask::project_at` with a fixed clock
+→ pretty JSON. It produces `tests/fixtures/selected-task/` — joined fresh (the
+U3 control: pending and answered questions, published result, linked activity),
+stale present, retained anchor under a refused owner with omitted subject,
+observed absent, unobserved, summary unavailable, and full-u64 revisions with a
+clipped excerpt and redacted credential — plus `MANIFEST.sha256` in `sha256sum`
+format. The default suite regenerates the set in memory and fails on any byte
+difference or extra file; `SELECTED_TASK_FIXTURES=update cargo test -p
+operator-observation --test fixture_set` rewrites it. devwits-auth checks in the
+same bytes under `tests/fixtures/selected-task/`, and its default suite verifies
+them against the manifest. Terminal UI tests render the same set.

@@ -40,7 +40,7 @@ pub struct ActivityCoverage {
     pub linked_session_ids: Vec<String>,
     pub limit: usize,
 }
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Presentation {
     pub state: String,
@@ -55,6 +55,28 @@ pub struct Presentation {
     pub last_known_scope: Value,
     pub last_known_revision: Value,
     pub last_known_completeness: Value,
+}
+impl Presentation {
+    /// The producer's only unobserved component value. `Selection::begin` clears
+    /// components together with host identity; projection writes this value for
+    /// each of the five, and validation recognizes the unobserved envelope only by
+    /// equality with it.
+    pub fn unobserved() -> Self {
+        Self {
+            state: "unavailable".into(),
+            scope: json!({}),
+            revision: Value::Null,
+            completeness: Value::Null,
+            read_at_ms: 0,
+            last_known_at_ms: None,
+            stale: true,
+            reason: "transport_unavailable".into(),
+            rows: vec![],
+            last_known_scope: Value::Null,
+            last_known_revision: Value::Null,
+            last_known_completeness: Value::Null,
+        }
+    }
 }
 fn components_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
     let presentation = generator.subschema_for::<Presentation>();
@@ -72,24 +94,43 @@ fn components_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Sch
 }
 // Only qualified numeric TO2 owner metadata is mapped; extensions are refused, never discarded.
 fn owner_wire_revision(value: &Value) -> Result<Value, &'static str> {
-    if value.is_null() { return Ok(Value::Null); }
+    if value.is_null() {
+        return Ok(Value::Null);
+    }
     let object = value.as_object().ok_or("unsupported_owner_metadata")?;
-    if object.len() != 3 || value["kind"] != "task" { return Err("unsupported_owner_metadata"); }
-    let owner = value["owner_revision"].as_u64().ok_or("unsupported_owner_metadata")?;
-    let cursor = value["cursor_revision"].as_u64().ok_or("unsupported_owner_metadata")?;
-    Ok(json!({"kind":"task", "owner_revision":owner.to_string(), "cursor_revision":cursor.to_string()}))
+    if object.len() != 3 || value["kind"] != "task" {
+        return Err("unsupported_owner_metadata");
+    }
+    let owner = value["owner_revision"]
+        .as_u64()
+        .ok_or("unsupported_owner_metadata")?;
+    let cursor = value["cursor_revision"]
+        .as_u64()
+        .ok_or("unsupported_owner_metadata")?;
+    Ok(
+        json!({"kind":"task", "owner_revision":owner.to_string(), "cursor_revision":cursor.to_string()}),
+    )
 }
 pub(super) fn owner_revision_valid(value: &Value) -> bool {
     value.as_object().is_some_and(|o| o.len() == 3)
         && value["kind"] == "task"
-        && ["owner_revision", "cursor_revision"].iter().all(|key| value[*key].as_str().is_some_and(|s|
-            !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit())
-            && (s == "0" || !s.starts_with('0')) && s.parse::<u64>().is_ok()))
+        && ["owner_revision", "cursor_revision"].iter().all(|key| {
+            value[*key].as_str().is_some_and(|s| {
+                !s.is_empty()
+                    && s.bytes().all(|b| b.is_ascii_digit())
+                    && (s == "0" || !s.starts_with('0'))
+                    && s.parse::<u64>().is_ok()
+            })
+        })
 }
 pub(super) fn owner_scope_valid(value: &Value, task_id: &str) -> bool {
-    value.as_object().is_some_and(|o| o.keys().all(|k| matches!(k.as_str(), "task_id" | "subject_id")))
-        && value["task_id"] == task_id
-        && value.get("subject_id").is_none_or(|v| v.is_null() || v.is_string())
+    value.as_object().is_some_and(|o| {
+        o.keys()
+            .all(|k| matches!(k.as_str(), "task_id" | "subject_id"))
+    }) && value["task_id"] == task_id
+        && value
+            .get("subject_id")
+            .is_none_or(|v| v.is_null() || v.is_string())
 }
 /// Consumer-clock display policy only; it does not expire an owner's record.
 pub fn age_label(at: u64, now: u64) -> String {
@@ -372,6 +413,24 @@ impl SelectedTask {
         replay: bool,
         activity_requested: bool,
     ) -> Result<Self, &'static str> {
+        Self::project_at(
+            selection,
+            source_id,
+            activity,
+            replay,
+            activity_requested,
+            now_ms(),
+        )
+    }
+    /// Projection with an explicit assembly clock; deterministic fixture generation uses it.
+    pub fn project_at(
+        selection: &Selection,
+        source_id: &str,
+        activity: Option<&Snapshot>,
+        replay: bool,
+        activity_requested: bool,
+        assembled_at_ms: u64,
+    ) -> Result<Self, &'static str> {
         let request = selection.request().ok_or("selection_missing")?.clone();
         let endpoint = selection
             .endpoint()
@@ -388,7 +447,11 @@ impl SelectedTask {
                     Presentation {
                         state: raw["state"].as_str().unwrap_or("unavailable").into(),
                         scope: view.latest.scope().clone(),
-                        revision: if name == "owner" { owner_wire_revision(&raw["revision"])? } else { raw["revision"].clone() },
+                        revision: if name == "owner" {
+                            owner_wire_revision(&raw["revision"])?
+                        } else {
+                            raw["revision"].clone()
+                        },
                         completeness: raw["completeness"].clone(),
                         read_at_ms: view.read_at_ms,
                         last_known_at_ms: view.last_known_at_ms,
@@ -405,8 +468,15 @@ impl SelectedTask {
                         },
                         last_known_scope: anchor.map(|c| c.scope().clone()).unwrap_or(Value::Null),
                         last_known_revision: {
-                            let revision = anchor.and_then(|c| serde_json::to_value(c).ok()).map(|c| c["revision"].clone()).unwrap_or(Value::Null);
-                            if name == "owner" { owner_wire_revision(&revision)? } else { revision }
+                            let revision = anchor
+                                .and_then(|c| serde_json::to_value(c).ok())
+                                .map(|c| c["revision"].clone())
+                                .unwrap_or(Value::Null);
+                            if name == "owner" {
+                                owner_wire_revision(&revision)?
+                            } else {
+                                revision
+                            }
                         },
                         last_known_completeness: anchor
                             .and_then(|c| serde_json::to_value(c).ok())
@@ -415,23 +485,7 @@ impl SelectedTask {
                     },
                 );
             } else {
-                components.insert(
-                    name.into(),
-                    Presentation {
-                        state: "unavailable".into(),
-                        scope: json!({}),
-                        revision: Value::Null,
-                        completeness: Value::Null,
-                        read_at_ms: 0,
-                        last_known_at_ms: None,
-                        stale: true,
-                        reason: "transport_unavailable".into(),
-                        rows: vec![],
-                        last_known_scope: Value::Null,
-                        last_known_revision: Value::Null,
-                        last_known_completeness: Value::Null,
-                    },
-                );
+                components.insert(name.into(), Presentation::unobserved());
             }
         }
         let linked = linked_sessions(selection);
@@ -467,7 +521,7 @@ impl SelectedTask {
             }
             .into(),
             confidentiality: "private_operator_data".into(),
-            assembled_at_ms: now_ms(),
+            assembled_at_ms,
             host_identity: selection.identity().cloned(),
             transport: if selection.transport_error.is_some() {
                 "unavailable"
@@ -523,11 +577,7 @@ impl SelectedTask {
         {
             return Err("invalid_projection");
         }
-        self.summary.validate(
-            &self.components["owner"],
-            &self.request.task_id,
-            &self.transport,
-        )?;
+        self.validate_observation_state()?;
         let coverage = &self.activity_coverage;
         let mut ids = coverage.linked_session_ids.clone();
         ids.sort();
@@ -614,6 +664,41 @@ impl SelectedTask {
             .validate()?;
         }
         Ok(())
+    }
+    /// RC2: `host_identity == null` holds exactly when the envelope is the producer's
+    /// unobserved state, recognized by equality with its constructor values.
+    fn validate_observation_state(&self) -> Result<(), &'static str> {
+        if self.transport == "unavailable" && self.components.values().any(|c| !c.stale) {
+            return Err("invalid_projection");
+        }
+        if self.host_identity.is_none() {
+            let unobserved = Presentation::unobserved();
+            if self.transport != "unavailable"
+                || self.components.values().any(|c| c != &unobserved)
+                || serde_json::to_value(&self.summary).ok()
+                    != serde_json::to_value(Summary::unobserved()).ok()
+                || !self.activity.is_empty()
+                || self.activity_coverage.state != "unlinked"
+                || !self.activity_coverage.linked_session_ids.is_empty()
+                || self.linkage != "unestablished"
+                || self.activity_source_id.is_some()
+            {
+                return Err("invalid_unobserved_envelope");
+            }
+            return Ok(());
+        }
+        if self
+            .components
+            .values()
+            .any(|c| c.scope.as_object().is_some_and(|o| o.is_empty()))
+        {
+            return Err("invalid_projection");
+        }
+        self.summary.validate(
+            &self.components["owner"],
+            &self.request.task_id,
+            &self.transport,
+        )
     }
     pub fn parse(bytes: &[u8]) -> Result<Self, &'static str> {
         if bytes.len() > crate::MAX_BYTES {

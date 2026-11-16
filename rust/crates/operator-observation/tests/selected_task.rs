@@ -123,27 +123,6 @@ fn shared_projection_fixture_and_private_redaction() {
             .contains("secret-value")
     );
     assert!(!safe_text(r#"{"body":"sk-private"}"#).contains("sk-private"));
-    if let Some(dir) = std::env::var_os("U2_FIXTURE_OUTPUT") {
-        let dir = std::path::Path::new(&dir);
-        std::fs::create_dir_all(dir).unwrap();
-        std::fs::write(dir.join("selected-task.json"), &bytes).unwrap();
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(
-            dir.join("selected-task.json"),
-            std::fs::Permissions::from_mode(0o600),
-        )
-        .unwrap();
-        std::fs::write(
-            dir.join("to2.json"),
-            serde_json::to_vec_pretty(&raw).unwrap(),
-        )
-        .unwrap();
-        std::fs::write(
-            dir.join("activity.json"),
-            serde_json::to_vec_pretty(&activity).unwrap(),
-        )
-        .unwrap();
-    }
     let mut invalid = p.clone();
     invalid.endpoint = "/changed".into();
     assert!(invalid.validate().is_err());
@@ -284,15 +263,8 @@ fn browser_vectors_are_shared_rust_records_with_independent_cuts() {
         ("source", source_changed),
     ] {
         let bytes = serde_json::to_vec_pretty(&projection).unwrap();
-        SelectedTask::parse(&bytes).unwrap();
+        SelectedTask::parse(&bytes).unwrap_or_else(|e| panic!("{name}: {e}"));
         assert!(!String::from_utf8_lossy(&bytes).contains("private multiword phrase"));
-        if let Some(dir) = std::env::var_os("U2_FIXTURE_OUTPUT") {
-            std::fs::write(
-                std::path::Path::new(&dir).join(format!("vector-{name}.json")),
-                bytes,
-            )
-            .unwrap();
-        }
     }
 }
 
@@ -654,7 +626,8 @@ fn summary_retains_original_anchor_and_clears_on_absence() {
         );
     }
     // The interrupted test directly replaced this component while leaving the
-    // failed transport in place. That synthetic publication must be rejected.
+    // failed transport in place. That synthetic publication must be rejected:
+    // RC2 requires every component to be stale under an unavailable transport.
     let absent = owner_failure(&raw, "absent", json!({"task_id":"task:u2"}));
     let owner: task::Component =
         serde_json::from_value(absent["components"]["owner"].clone()).unwrap();
@@ -665,7 +638,7 @@ fn summary_retains_original_anchor_and_clears_on_absence() {
     c.stale = false;
     assert_eq!(
         SelectedTask::project(&s, &digest(b"s"), None, true).unwrap_err(),
-        "invalid_summary_basis"
+        "invalid_projection"
     );
     // A real completed absence runs through decoding and Selection::apply_at,
     // clears the transport error, and clears every retained owner field.
@@ -998,31 +971,6 @@ fn reviewed_owner_basis_contract_and_shared_vectors() {
             "{name}"
         );
     }
-    if let Some(dir) = std::env::var_os("U2_FIXTURE_OUTPUT") {
-        let cli = std::path::Path::new(&dir).join("cli-consistency");
-        std::fs::create_dir_all(&cli).unwrap();
-        for case in contract["cases"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .filter(|c| c["accept"] == true)
-        {
-            let name = case["name"].as_str().unwrap();
-            let p = SelectedTask::parse(&serde_json::to_vec(&vectors[name]).unwrap()).unwrap();
-            for route in [None, Some("owner"), Some("questions"), Some("result")] {
-                std::fs::write(
-                    cli.join(format!("{name}-{}.txt", route.unwrap_or("overview"))),
-                    p.human_view(route, 15000, false),
-                )
-                .unwrap();
-            }
-        }
-        std::fs::write(
-            std::path::Path::new(&dir).join("consistency-vectors.json"),
-            serde_json::to_vec_pretty(&json!({"contract":contract,"vectors":vectors})).unwrap(),
-        )
-        .unwrap();
-    }
 }
 
 const REPAIR_FRAGMENTS: &[&str] = &[
@@ -1190,25 +1138,8 @@ fn lexical_credentials_and_equal_consumer_vectors() {
         for fragment in REPAIR_FRAGMENTS {
             assert!(!text.contains(fragment), "CLI {route:?}: {fragment}");
         }
-        if let Some(dir) = std::env::var_os("U2_FIXTURE_OUTPUT") {
-            std::fs::write(
-                std::path::Path::new(&dir)
-                    .join(format!("cli-lexical-{}.txt", route.unwrap_or("overview"))),
-                &text,
-            )
-            .unwrap();
-        }
     }
     std::fs::remove_file(path).unwrap();
-    if let Some(dir) = std::env::var_os("U2_FIXTURE_OUTPUT") {
-        let dir = std::path::Path::new(&dir);
-        std::fs::write(dir.join("vector-lexical.json"), &bytes).unwrap();
-        std::fs::write(
-            dir.join("lexical-fragments.json"),
-            serde_json::to_vec_pretty(REPAIR_FRAGMENTS).unwrap(),
-        )
-        .unwrap();
-    }
 }
 
 #[test]
@@ -1217,170 +1148,329 @@ fn r2_full_u64_producer_and_raw_json_contract() {
     let mut vectors = serde_json::Map::new();
     let mut cases = Vec::new();
     let mut add = |name: String, bytes: String, accept: bool| {
-        assert_eq!(SelectedTask::parse(bytes.as_bytes()).is_ok(), accept, "{name}");
+        assert_eq!(
+            SelectedTask::parse(bytes.as_bytes()).is_ok(),
+            accept,
+            "{name}"
+        );
         cases.push(json!({"name":name,"json":bytes,"accept":accept}));
     };
     for field in ["owner_revision", "cursor_revision"] {
-        for value in [0u64, 9007199254740991, 9007199254740992, 9007199254740993, 9007199254740994, u64::MAX] {
+        for value in [
+            0u64,
+            9007199254740991,
+            9007199254740992,
+            9007199254740993,
+            9007199254740994,
+            u64::MAX,
+        ] {
             let mut raw = base.clone();
             raw["components"]["owner"]["revision"][field] = json!(value);
-            raw["components"]["owner"]["value"][if field == "owner_revision" { "revision" } else {field}] = json!(value);
+            raw["components"]["owner"]["value"][if field == "owner_revision" {
+                "revision"
+            } else {
+                field
+            }] = json!(value);
             let mut selection = Selection::default();
-            eprintln!("R3 synthetic TO2 {field}={value}");
-            emit_to2(&format!("{field}_{value}"), &serde_json::to_vec(&raw).unwrap());
             let fresh = project_at(&mut selection, &request, &raw, 1000);
             assert_eq!(fresh.components["owner"].revision[field], value.to_string());
-            assert_eq!(fresh.components["owner"].last_known_revision[field], value.to_string());
+            assert_eq!(
+                fresh.components["owner"].last_known_revision[field],
+                value.to_string()
+            );
             let identity = fresh.owner_basis_identity();
-            for (state, at) in [("fresh",1000), ("retained",2000), ("repeated_failure",3000), ("reconnect",4000)] {
-                let p = if state == "fresh" {fresh.clone()} else if state == "reconnect" { project_at(&mut selection, &request, &raw, at) } else {
-                    let generation = selection.begin("/private/u2/host.sock".into(), request.clone());
+            for (state, at) in [
+                ("fresh", 1000),
+                ("retained", 2000),
+                ("repeated_failure", 3000),
+                ("reconnect", 4000),
+            ] {
+                let p = if state == "fresh" {
+                    fresh.clone()
+                } else if state == "reconnect" {
+                    project_at(&mut selection, &request, &raw, at)
+                } else {
+                    let generation =
+                        selection.begin("/private/u2/host.sock".into(), request.clone());
                     selection.apply_at(generation, Err(ReadError::Unavailable), at);
                     SelectedTask::project(&selection, &digest(b"synthetic"), None, true).unwrap()
                 };
-                assert_eq!(p.components["owner"].last_known_revision[field], value.to_string());
+                assert_eq!(
+                    p.components["owner"].last_known_revision[field],
+                    value.to_string()
+                );
                 let name = format!("{field}_{value}_{state}");
                 let bytes = serde_json::to_string(&p).unwrap();
-                add(name.clone(),bytes,true);
-                if value >= 9007199254740992 { assert!(p.human_view(Some("owner"),5000,false).contains(&value.to_string())); }
-                vectors.insert(name,serde_json::to_value(p).unwrap());
+                add(name.clone(), bytes, true);
+                if value >= 9007199254740992 {
+                    assert!(
+                        p.human_view(Some("owner"), 5000, false)
+                            .contains(&value.to_string())
+                    );
+                }
+                vectors.insert(name, serde_json::to_value(p).unwrap());
             }
             if value == 9007199254740993 {
                 let mut next = fresh.clone();
-                next.components.get_mut("owner").unwrap().revision[field] = json!("9007199254740994");
-                next.components.get_mut("owner").unwrap().last_known_revision[field] = json!("9007199254740994");
-                assert_ne!(identity,next.owner_basis_identity());
+                next.components.get_mut("owner").unwrap().revision[field] =
+                    json!("9007199254740994");
+                next.components
+                    .get_mut("owner")
+                    .unwrap()
+                    .last_known_revision[field] = json!("9007199254740994");
+                assert_ne!(identity, next.owner_basis_identity());
             }
         }
     }
     let positive = vectors["owner_revision_9007199254740993_fresh"].clone();
-    for field in ["owner_revision","cursor_revision"] {
-        for (label, value) in [("numeric",json!(9007199254740993u64)),("overflow",json!("18446744073709551616")),("leading_zero",json!("01")),("sign",json!("+1")),("space",json!(" 1")),("fraction",json!("1.0")),("exponent",json!("1e2")),("unicode",json!("١")),("null",Value::Null),("bool",json!(true)),("array",json!([])),("object",json!({}))] {
+    for field in ["owner_revision", "cursor_revision"] {
+        for (label, value) in [
+            ("numeric", json!(9007199254740993u64)),
+            ("overflow", json!("18446744073709551616")),
+            ("leading_zero", json!("01")),
+            ("sign", json!("+1")),
+            ("space", json!(" 1")),
+            ("fraction", json!("1.0")),
+            ("exponent", json!("1e2")),
+            ("unicode", json!("١")),
+            ("null", Value::Null),
+            ("bool", json!(true)),
+            ("array", json!([])),
+            ("object", json!({})),
+        ] {
             let mut bad = positive.clone();
-            bad["components"]["owner"]["revision"][field]=value.clone();
-            bad["components"]["owner"]["last_known_revision"][field]=value;
-            add(format!("{field}_{label}"),serde_json::to_string(&bad).unwrap(),false);
+            bad["components"]["owner"]["revision"][field] = value.clone();
+            bad["components"]["owner"]["last_known_revision"][field] = value;
+            add(
+                format!("{field}_{label}"),
+                serde_json::to_string(&bad).unwrap(),
+                false,
+            );
         }
-        let mut bad=positive.clone();bad["components"]["owner"]["last_known_revision"][field]=json!("9007199254740992");
-        add(format!("{field}_string_mismatch"),serde_json::to_string(&bad).unwrap(),false);
-        let mut numeric=positive.clone();numeric["components"]["owner"]["revision"][field]=json!(9007199254740993u64);numeric["components"]["owner"]["last_known_revision"][field]=json!(9007199254740992u64);
-        add(format!("{field}_numeric_collapse"),serde_json::to_string(&numeric).unwrap(),false);
+        let mut bad = positive.clone();
+        bad["components"]["owner"]["last_known_revision"][field] = json!("9007199254740992");
+        add(
+            format!("{field}_string_mismatch"),
+            serde_json::to_string(&bad).unwrap(),
+            false,
+        );
+        let mut numeric = positive.clone();
+        numeric["components"]["owner"]["revision"][field] = json!(9007199254740993u64);
+        numeric["components"]["owner"]["last_known_revision"][field] = json!(9007199254740992u64);
+        add(
+            format!("{field}_numeric_collapse"),
+            serde_json::to_string(&numeric).unwrap(),
+            false,
+        );
     }
-    for key in ["scope","revision"] {
-        let mut bad=positive.clone();bad["components"]["owner"][key]["extra"]=json!(9007199254740993u64);
-        bad["components"]["owner"][format!("last_known_{key}")]["extra"]=json!(9007199254740992u64);
-        add(format!("{key}_extra_collapse"),serde_json::to_string(&bad).unwrap(),false);
+    for key in ["scope", "revision"] {
+        let mut bad = positive.clone();
+        bad["components"]["owner"][key]["extra"] = json!(9007199254740993u64);
+        bad["components"]["owner"][format!("last_known_{key}")]["extra"] =
+            json!(9007199254740992u64);
+        add(
+            format!("{key}_extra_collapse"),
+            serde_json::to_string(&bad).unwrap(),
+            false,
+        );
     }
-    let mut bad=positive.clone();bad["components"]["owner"]["revision"].as_object_mut().unwrap().remove("cursor_revision");add("partial_revision".into(),serde_json::to_string(&bad).unwrap(),false);
-    for state in ["absent","unavailable","refused"] {
-        for subject in [None,Some(Value::Null),Some(json!("subject:different"))] {
-            let mut scope=json!({"task_id":"task:u2"});if let Some(subject)=subject {scope["subject_id"]=subject;}
-            let mut selection=Selection::default();
-            let p=project_at(&mut selection,&request,&owner_failure(&base,state,scope),5000);
-            let mut v=serde_json::to_value(p).unwrap();
-            add(format!("{state}_scope_{}",cases_len_tag(&v)),serde_json::to_string(&v).unwrap(),true);
-            for (label,id) in [("mismatch",json!("task:wrong")),("null",Value::Null),("number",json!(3))] {
-                v["components"]["owner"]["scope"]["task_id"]=id;
-                add(format!("{state}_{label}_{}",cases_len_tag(&v)),serde_json::to_string(&v).unwrap(),false);
+    let mut bad = positive.clone();
+    bad["components"]["owner"]["revision"]
+        .as_object_mut()
+        .unwrap()
+        .remove("cursor_revision");
+    add(
+        "partial_revision".into(),
+        serde_json::to_string(&bad).unwrap(),
+        false,
+    );
+    for state in ["absent", "unavailable", "refused"] {
+        for subject in [None, Some(Value::Null), Some(json!("subject:different"))] {
+            let mut scope = json!({"task_id":"task:u2"});
+            if let Some(subject) = subject {
+                scope["subject_id"] = subject;
+            }
+            let mut selection = Selection::default();
+            let p = project_at(
+                &mut selection,
+                &request,
+                &owner_failure(&base, state, scope),
+                5000,
+            );
+            let mut v = serde_json::to_value(p).unwrap();
+            add(
+                format!("{state}_scope_{}", cases_len_tag(&v)),
+                serde_json::to_string(&v).unwrap(),
+                true,
+            );
+            for (label, id) in [
+                ("mismatch", json!("task:wrong")),
+                ("null", Value::Null),
+                ("number", json!(3)),
+            ] {
+                v["components"]["owner"]["scope"]["task_id"] = id;
+                add(
+                    format!("{state}_{label}_{}", cases_len_tag(&v)),
+                    serde_json::to_string(&v).unwrap(),
+                    false,
+                );
             }
         }
     }
-    let mut selection=Selection::default();let generation=selection.begin("/private/u2/host.sock".into(),request.clone());selection.apply_at(generation,Err(ReadError::Unavailable),0);
-    let sentinel=SelectedTask::project(&selection,&digest(b"synthetic"),None,true).unwrap();
-    add("exact_sentinel".into(),serde_json::to_string(&sentinel).unwrap(),true);
-    for (label,scope) in [("missing_task",json!({"subject_id":"subject:u2"})),("extra",json!({"extra":1}))] {let mut v=serde_json::to_value(&sentinel).unwrap();v["components"]["owner"]["scope"]=scope;add(label.into(),serde_json::to_string(&v).unwrap(),false);}
-    if let Some(dir)=std::env::var_os("U2_FIXTURE_OUTPUT") {
-        std::fs::write(std::path::Path::new(&dir).join("r2-raw-vectors.json"),serde_json::to_vec_pretty(&cases).unwrap()).unwrap();
-        for (name,v) in vectors {std::fs::write(std::path::Path::new(&dir).join(format!("r2-{name}.json")),serde_json::to_vec_pretty(&v).unwrap()).unwrap();}
+    let mut selection = Selection::default();
+    let generation = selection.begin("/private/u2/host.sock".into(), request.clone());
+    selection.apply_at(generation, Err(ReadError::Unavailable), 0);
+    let sentinel = SelectedTask::project(&selection, &digest(b"synthetic"), None, true).unwrap();
+    add(
+        "exact_sentinel".into(),
+        serde_json::to_string(&sentinel).unwrap(),
+        true,
+    );
+    for (label, scope) in [
+        ("missing_task", json!({"subject_id":"subject:u2"})),
+        ("extra", json!({"extra":1})),
+    ] {
+        let mut v = serde_json::to_value(&sentinel).unwrap();
+        v["components"]["owner"]["scope"] = scope;
+        add(label.into(), serde_json::to_string(&v).unwrap(), false);
     }
 }
-fn cases_len_tag(v:&Value)->String { v["components"]["owner"]["scope"]["subject_id"].to_string() }
-
-fn emit_to2(name: &str, bytes: &[u8]) {
-    if let Some(dir) = std::env::var_os("U2_FIXTURE_OUTPUT") {
-        let dir = std::path::Path::new(&dir).join("raw-to2");
-        std::fs::create_dir_all(&dir).unwrap();
-        std::fs::write(dir.join(format!("{name}.json")), bytes).unwrap();
-    }
+fn cases_len_tag(v: &Value) -> String {
+    v["components"]["owner"]["scope"]["subject_id"].to_string()
 }
 
 #[test]
 fn r3_strict_task_domain_separation() {
     let (request, base) = fixture();
     let check = |name: &str, bytes: Vec<u8>, accept: bool| {
-        emit_to2(name, &bytes);
-        assert_eq!(operator_observation::task::decode(&bytes, &request).is_ok(), accept, "{name}");
+        assert_eq!(
+            operator_observation::task::decode(&bytes, &request).is_ok(),
+            accept,
+            "{name}"
+        );
     };
     for field in ["owner_revision", "cursor_revision"] {
-        let value_field = if field == "owner_revision" { "revision" } else {field};
-        for token in ["-1", "1.0", "1e0", "18446744073709551616", "\"1\"", "null", "true"] {
-            let mut raw=base.clone();
-            raw["components"]["owner"]["revision"][field]=json!("REPLACE_TOKEN");
-            raw["components"]["owner"]["value"][value_field]=json!("REPLACE_TOKEN");
-            let bytes=serde_json::to_string(&raw).unwrap().replace("\"REPLACE_TOKEN\"",token).into_bytes();
-            check(&format!("negative_{field}_{token:?}" ).replace('/',"_"),bytes,false);
+        let value_field = if field == "owner_revision" {
+            "revision"
+        } else {
+            field
+        };
+        for token in [
+            "-1",
+            "1.0",
+            "1e0",
+            "18446744073709551616",
+            "\"1\"",
+            "null",
+            "true",
+        ] {
+            let mut raw = base.clone();
+            raw["components"]["owner"]["revision"][field] = json!("REPLACE_TOKEN");
+            raw["components"]["owner"]["value"][value_field] = json!("REPLACE_TOKEN");
+            let bytes = serde_json::to_string(&raw)
+                .unwrap()
+                .replace("\"REPLACE_TOKEN\"", token)
+                .into_bytes();
+            check(
+                &format!("negative_{field}_{token:?}").replace('/', "_"),
+                bytes,
+                false,
+            );
         }
-        let mut raw=base.clone();raw["components"]["owner"]["revision"][field]=json!(u64::MAX);
-        check(&format!("unequal_{field}"),serde_json::to_vec(&raw).unwrap(),false);
+        let mut raw = base.clone();
+        raw["components"]["owner"]["revision"][field] = json!(u64::MAX);
+        check(
+            &format!("unequal_{field}"),
+            serde_json::to_vec(&raw).unwrap(),
+            false,
+        );
     }
-    let mut raw=base.clone();raw["components"]["owner"]["value"]["nested_integer"] = json!({"items":[u64::MAX,9007199254740993u64]});
-    check("nested_task_integers",serde_json::to_vec(&raw).unwrap(),true);
-    for name in ["lifecycle","native_delivery_status","command_result","control_result"] {
-        let mut raw=base.clone();raw["components"][name]["ignored_integer"]=json!(9007199254740992u64);
-        check(&format!("other_domain_{name}"),serde_json::to_vec(&raw).unwrap(),false);
+    let mut raw = base.clone();
+    raw["components"]["owner"]["value"]["nested_integer"] =
+        json!({"items":[u64::MAX,9007199254740993u64]});
+    check(
+        "nested_task_integers",
+        serde_json::to_vec(&raw).unwrap(),
+        true,
+    );
+    for name in [
+        "lifecycle",
+        "native_delivery_status",
+        "command_result",
+        "control_result",
+    ] {
+        let mut raw = base.clone();
+        raw["components"][name]["ignored_integer"] = json!(9007199254740992u64);
+        check(
+            &format!("other_domain_{name}"),
+            serde_json::to_vec(&raw).unwrap(),
+            false,
+        );
     }
-    for name in ["owner","lifecycle","native_delivery_status","command_result","control_result"] {
-        let mut raw=base.clone();raw["components"][name]["scope"]["integer_probe"]=json!(1);
-        check(&format!("scope_policy_control_{name}"),serde_json::to_vec(&raw).unwrap(),true);
-        raw["components"][name]["scope"]["integer_probe"]=json!(9007199254740992u64);
-        check(&format!("scope_policy_large_{name}"),serde_json::to_vec(&raw).unwrap(),false);
+    for name in [
+        "owner",
+        "lifecycle",
+        "native_delivery_status",
+        "command_result",
+        "control_result",
+    ] {
+        let mut raw = base.clone();
+        raw["components"][name]["scope"]["integer_probe"] = json!(1);
+        check(
+            &format!("scope_policy_control_{name}"),
+            serde_json::to_vec(&raw).unwrap(),
+            true,
+        );
+        raw["components"][name]["scope"]["integer_probe"] = json!(9007199254740992u64);
+        check(
+            &format!("scope_policy_large_{name}"),
+            serde_json::to_vec(&raw).unwrap(),
+            false,
+        );
     }
-    let mut ignored=base.clone();ignored["components"]["owner"]["value"]["ignored"]=json!("DUPLICATE_MARKER");
-    for (name,value) in [("ignored_duplicate",r#"{"x":1,"x":2}"#),("ignored_escaped_duplicate",r#"{"x":1,"\u0078":2}"#)] {
-        check(name,serde_json::to_string(&ignored).unwrap().replace("\"DUPLICATE_MARKER\"",value).into_bytes(),false);
+    let mut ignored = base.clone();
+    ignored["components"]["owner"]["value"]["ignored"] = json!("DUPLICATE_MARKER");
+    for (name, value) in [
+        ("ignored_duplicate", r#"{"x":1,"x":2}"#),
+        ("ignored_escaped_duplicate", r#"{"x":1,"\u0078":2}"#),
+    ] {
+        check(
+            name,
+            serde_json::to_string(&ignored)
+                .unwrap()
+                .replace("\"DUPLICATE_MARKER\"", value)
+                .into_bytes(),
+            false,
+        );
     }
-    for token in ["9007199254740991", "9007199254740992", "18446744073709551615"] {
-        assert_eq!(lifecycle_wire::parse_strict_json(token.as_bytes()).is_ok(), token=="9007199254740991");
+    for token in [
+        "9007199254740991",
+        "9007199254740992",
+        "18446744073709551615",
+    ] {
+        assert_eq!(
+            lifecycle_wire::parse_strict_json(token.as_bytes()).is_ok(),
+            token == "9007199254740991"
+        );
     }
-    let bytes=serde_json::to_string(&base).unwrap();
-    for (name,suffix) in [("trailing_json"," {}"),("trailing_garbage","x")] {check(name,format!("{bytes}{suffix}").into_bytes(),false);}
-    for (name,extra) in [("duplicate","\"x\":1,\"x\":2"),("escaped_duplicate","\"x\":1,\"\\u0078\":2"),("nested_duplicate","\"nested\":{\"x\":1,\"x\":2}")] {
-        check(name,bytes.replacen('{',&format!("{{{extra},"),1).into_bytes(),false);
+    let bytes = serde_json::to_string(&base).unwrap();
+    for (name, suffix) in [("trailing_json", " {}"), ("trailing_garbage", "x")] {
+        check(name, format!("{bytes}{suffix}").into_bytes(), false);
     }
-    check("frame_overflow",vec![b' ';operator_observation::task::MAX_FRAME+1],false);
-}
-
-#[test]
-fn r3_typed_host_construction_through_selection() {
-    let Some(dir)=std::env::var_os("U2_FIXTURE_OUTPUT") else {return};
-    let dir=std::path::Path::new(&dir);
-    if !dir.join("typed-owner").exists() {return;}
-    let (request,base)=fixture();
-    for field in ["owner_revision","cursor_revision"] {
-        for n in [0u64,9007199254740991,9007199254740992,9007199254740993,9007199254740994,u64::MAX] {
-            let mut raw=base.clone();
-            raw["components"]["owner"]=serde_json::from_slice(&std::fs::read(dir.join("typed-owner").join(format!("{field}_{n}.json"))).unwrap()).unwrap();
-            emit_to2(&format!("typed_{field}_{n}"),&serde_json::to_vec(&raw).unwrap());
-            let replay=dir.join("raw-to2").join(format!("typed_{field}_{n}.json"));
-            use std::os::unix::fs::PermissionsExt;
-            std::fs::set_permissions(&replay,std::fs::Permissions::from_mode(0o600)).unwrap();
-            let cli=std::process::Command::new(env!("CARGO_BIN_EXE_work-engine-observe"))
-                .args(["selected-task","/private/u2/host.sock","task:u2","--delivery","delivery:u2","--replay"])
-                .arg(&replay).output().unwrap();
-            assert!(cli.status.success(),"CLI stderr {}",String::from_utf8_lossy(&cli.stderr));
-            let cli_value:Value=serde_json::from_slice(&cli.stdout).unwrap();
-            assert_eq!(cli_value["components"]["owner"]["revision"][field],n.to_string());
-            std::fs::write(dir.join(format!("cli-{field}_{n}.json")),&cli.stdout).unwrap();
-            let human=std::process::Command::new(env!("CARGO_BIN_EXE_work-engine-observe"))
-                .args(["selected-task","/private/u2/host.sock","task:u2","--delivery","delivery:u2","--replay"])
-                .arg(&replay).args(["--human","--inspect","owner"]).output().unwrap();
-            assert!(human.status.success());assert!(String::from_utf8_lossy(&human.stdout).contains(&n.to_string()));
-            std::fs::write(dir.join(format!("cli-{field}_{n}.txt")),human.stdout).unwrap();
-            let mut selection=Selection::default();let p=project_at(&mut selection,&request,&raw,1000);
-            assert_eq!(p.components["owner"].revision[field],n.to_string());
-            let bytes=serde_json::to_vec(&p).unwrap();SelectedTask::parse(&bytes).unwrap();
-            std::fs::write(dir.join(format!("typed-{field}_{n}.json")),&bytes).unwrap();
-            if field=="owner_revision" && n==u64::MAX {std::fs::write(dir.join("canonical-typed-selected-task.json"),bytes).unwrap();}
-        }
+    for (name, extra) in [
+        ("duplicate", "\"x\":1,\"x\":2"),
+        ("escaped_duplicate", "\"x\":1,\"\\u0078\":2"),
+        ("nested_duplicate", "\"nested\":{\"x\":1,\"x\":2}"),
+    ] {
+        check(
+            name,
+            bytes.replacen('{', &format!("{{{extra},"), 1).into_bytes(),
+            false,
+        );
     }
+    check(
+        "frame_overflow",
+        vec![b' '; operator_observation::task::MAX_FRAME + 1],
+        false,
+    );
 }
