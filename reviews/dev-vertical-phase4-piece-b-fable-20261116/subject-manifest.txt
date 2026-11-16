@@ -1,0 +1,17 @@
+328d23e69f8af594f67458dfacdb580b6413259c planning/dev-vertical-hosted-gate-contract-20261116.md
+c5174fc2e15a7ce306839991625a559583eec3a0 records/dev-vertical-hosted-offline-run-20261116/README.md
+dac17b25471d67fbb17a08fd3e141c9b30780d40 records/dev-vertical-hosted-offline-run-20261116/evidence.json
+730c892e484984d04fcb0e0282bfc3fc5f7b3f6d records/dev-vertical-hosted-offline-run-20261116/run.py
+cac7fc3ec7cc216d2277d8a09bfdc171e9d4fa05 rust/crates/pi-pressure-context-host/src/bin/coding-qualification.rs
+8079cfb739c31e79ae9e8d3f778660c9ed713117 rust/crates/pi-pressure-context-host/src/coding.rs
+4bb9181a2c32b2f08b7e825a8efea0b78c1da236 rust/crates/pi-pressure-context-host/tests/coding.rs
+4036e27ba883658859b3cec95262b85654592128 rust/crates/session-task-admission/src/pi_pilot.rs
+d618c960da025b9fc27189ef269f3bf3245df3f7 rust/crates/session-task-admission/src/pi_pilot_tests.rs
+d143f16eed8388632a983bca65c56ff623859dc1 rust/crates/work-engine-manual-host/examples/pi_hosted_coding_observer.rs
+95faaf2a57653bd037964824d8f45e2760a5beb7 rust/crates/work-engine-manual-host/receiver/pi-coding.mjs
+a345c2f34a1ec2a78b4f807847fb0eb8d77a7a16 rust/crates/work-engine-manual-host/src/pi_coding.rs
+8090eca253c1755427bba0e60d65f3d80d7fde3a rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs
+2565fa8c410ae3fb79bd6c75af4b6f0c0bf35102 rust/crates/work-engine-manual-host/src/pi_coding_provider.rs
+ffa4829665aefff0d467a3153207c482ab5f63f0 rust/crates/work-engine-manual-host/src/pi_docker.rs
+d53196e1b228ebbdc8c98b9e455f3e5661db4505 rust/crates/work-engine-manual-host/tests/pi-coding-hosted.test.mjs
+4cb070d20310192e8c90802b8ee422b25662ce9f rust/crates/work-engine-server/src/bin/coding-job-prepare.rs
