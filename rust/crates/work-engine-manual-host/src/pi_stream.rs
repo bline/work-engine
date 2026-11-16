@@ -233,6 +233,10 @@ pub struct Relay {
     pub unforwarded_after_release: usize,
     /// Time a native cancel waited behind an outstanding pull, if any.
     pub cancel_wait_ms: Option<u64>,
+    /// How the consumer closed after a host terminal frame: `ack`, or a
+    /// `cancel` that raced the terminal frame (then confirmed). `None` when
+    /// the stream ended by cancellation.
+    pub closing: Option<&'static str>,
 }
 impl Relay {
     pub fn sha256(&self) -> String {
@@ -256,6 +260,7 @@ impl Relay {
             "pullsBeforeUpstreamEnd": self.pulls_before_upstream_end(),
             "unforwardedAfterRelease": self.unforwarded_after_release,
             "cancelDuringPendingPullMs": self.cancel_wait_ms,
+            "closing": self.closing,
             "usage": usage(&self.forwarded),
         })
     }
@@ -409,6 +414,42 @@ impl Reader {
 const POLL: Duration = Duration::from_millis(10);
 const DRAIN: Duration = Duration::from_secs(1);
 
+/// After a host terminal frame the consumer sends exactly one closing frame:
+/// `ack`, or a `cancel` it issued before seeing the terminal frame. The host
+/// confirms a racing cancel, so neither side waits on an unanswered frame and
+/// no stream frame reaches the session loop after the relay returns.
+fn close<C: Channel>(
+    chan: &mut C,
+    bind: &Value,
+    binding: &Binding,
+    seq: u64,
+    stream: u64,
+    ordinal: u64,
+) -> Result<Option<&'static str>> {
+    let op = chan.receive()?;
+    if op["binding"] != *bind
+        || op["sequence"] != seq
+        || op["stream"] != stream
+        || op["ordinal"] != ordinal
+    {
+        return Err("stream_foreign_frame");
+    }
+    match op["type"].as_str() {
+        Some("ack") => Ok(Some("ack")),
+        Some("cancel") => {
+            chan.send(&frame(
+                "response-cancelled",
+                binding,
+                seq,
+                stream,
+                json!({"ordinal":ordinal}),
+            ))?;
+            Ok(Some("cancel-after-terminal"))
+        }
+        _ => Err("stream_interleaved_frame"),
+    }
+}
+
 /// Relay an opened upstream response to the native consumer under the given
 /// stream identity. Transport/protocol failures toward the native side are
 /// returned as errors; upstream failures after the head are reported to the
@@ -450,6 +491,7 @@ fn relay_inner<C: Channel + Screen, R: Read + Send + 'static>(
         opened_ms,
         unforwarded_after_release: 0,
         cancel_wait_ms: None,
+        closing: None,
     };
     chan.send(&frame(
         "response-head",
@@ -560,6 +602,7 @@ fn relay_inner<C: Channel + Screen, R: Read + Send + 'static>(
                 stream,
                 json!({"ordinal":ordinal,"code":code}),
             ))?;
+            r.closing = close(chan, &bind, binding, seq, stream, ordinal + 1)?;
             return Ok(r);
         }
         if release.is_empty() {
@@ -570,6 +613,7 @@ fn relay_inner<C: Channel + Screen, R: Read + Send + 'static>(
                 stream,
                 json!({"ordinal":ordinal}),
             ))?;
+            r.closing = close(chan, &bind, binding, seq, stream, ordinal + 1)?;
             return Ok(r);
         }
         chan.send(&frame(

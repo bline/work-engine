@@ -8,7 +8,9 @@ const MAX=2*1024*1024;
 // Consumer-driven incremental response body: one host chunk per native read
 // demand. Every frame uses this response's immutable identity. A cancel may
 // overtake an outstanding pull; it then owns the frame reader until the host
-// confirms cancellation for the cancel's ordinal.
+// confirms cancellation for the cancel's ordinal, including when the pull was
+// answered by a terminal frame (the host confirms such a racing cancel).
+// After a terminal frame the consumer acknowledges exactly once.
 export function createResponseStream({id,sendRaw,read,idleMs=0,onIdle=()=>{},onSettled=()=>{}}){
  const key=JSON.stringify(id.binding);
  const env=(type,data)=>({type,binding:id.binding,sequence:id.sequence,stream:id.stream,...data});
@@ -29,8 +31,11 @@ export function createResponseStream({id,sendRaw,read,idleMs=0,onIdle=()=>{},onS
      if(cancelling)return;
      if(f.ordinal!==my)throw Error('foreign_frame');
      if(f.type==='response-chunk'){c.enqueue(new Uint8Array(Buffer.from(f.body,'base64')));}
-     else if(f.type==='response-end'){settle();c.close();}
-     else if(f.type==='response-failure'){settle();c.error(Error('relay_'+f.code));}
+     else if(f.type==='response-end'||f.type==='response-failure'){
+       // Settle synchronously so a concurrent release cannot issue a cancel;
+       // the ack bytes are written before any later envelope.
+       settle();const ack=sendRaw(env('ack',{ordinal:++ordinal}));
+       if(f.type==='response-end')c.close();else c.error(Error('relay_'+f.code));await ack;}
      else{settle();throw Error('stream_frame');}},
    cancel(){return release();}
  },{highWaterMark:0});

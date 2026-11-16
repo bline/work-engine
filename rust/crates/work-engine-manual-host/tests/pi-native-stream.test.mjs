@@ -24,7 +24,7 @@ test('chunks then end close the body in order', async () => {
     : []);
   const s = createResponseStream({id: {binding, sequence: 1, stream: 1}, sendRaw: h.sendRaw, read: h.read});
   assert.equal(await new Response(s.body).text(), 'c1;c2;');
-  assert.deepEqual(h.sent.map(v => [v.type, v.ordinal]), [['pull', 1], ['pull', 2], ['pull', 3]]);
+  assert.deepEqual(h.sent.map(v => [v.type, v.ordinal]), [['pull', 1], ['pull', 2], ['pull', 3], ['ack', 4]]);
 });
 
 test('release of an undrained earlier response keeps its own stream identity', async () => {
@@ -81,4 +81,34 @@ test('foreign frame and failure surface as errors', async () => {
   const g = host(v => v.type === 'pull' ? [frame(v, 'response-failure', {code: 'upstream_truncated'})] : []);
   const t = createResponseStream({id: {binding, sequence: 1, stream: 1}, sendRaw: g.sendRaw, read: g.read});
   await assert.rejects(new Response(t.body).text(), /relay_upstream_truncated/);
+});
+
+test('cancel racing a terminal end waits for confirmation and sends no ack', async () => {
+  // Host answers the pending pull with end, then confirms the crossing cancel.
+  let pull;
+  const h = host(v => {
+    if (v.type === 'pull') { pull = v; return []; }
+    if (v.type === 'cancel') return [frame(pull, 'response-end'), frame(v, 'response-cancelled')];
+    return [];
+  });
+  let settled = 0;
+  const s = createResponseStream({id: {binding, sequence: 1, stream: 1}, sendRaw: h.sendRaw, read: h.read, onSettled: () => settled++});
+  const reader = s.body.getReader();
+  const pending = reader.read();
+  await new Promise(r => setImmediate(r));
+  await Promise.race([reader.cancel(), new Promise((_, j) => setTimeout(() => j(Error('release hung')), 1000))]);
+  assert.equal((await pending).done, true);
+  assert.deepEqual(h.sent.map(v => [v.type, v.ordinal]), [['pull', 1], ['cancel', 2]]);
+  assert.equal(settled, 1);
+  // A later release is a no-op.
+  await s.release();
+  assert.equal(h.sent.length, 2);
+});
+
+test('release after a terminal frame sends nothing more', async () => {
+  const h = host(v => v.type === 'pull' ? [frame(v, 'response-end')] : []);
+  const s = createResponseStream({id: {binding, sequence: 1, stream: 1}, sendRaw: h.sendRaw, read: h.read});
+  assert.equal(await new Response(s.body).text(), '');
+  await s.release();
+  assert.deepEqual(h.sent.map(v => v.type), ['pull', 'ack']);
 });

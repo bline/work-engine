@@ -1,0 +1,257 @@
+{
+ "standing": "bounded offline evidence copy; private run dirs own full artifacts",
+ "runs": {
+  "stream11": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/stream11",
+   "sha256": {
+    "store/control-closed-observation.json": "5914632f6b8531f0493e5d92e0ca622a9d97373c731a4fc18cce2fa9a192797c",
+    "store/control-closure.json": "54c4162106190142a5ae8594c0e843b5f708277e35e93cb86bddd6511e815979",
+    "store/control-create-intent.json": "c478f8f52af5a805d809eb67c8fc441c0b5fdc8275df21747214840b26ceffbd",
+    "store/control-created.json": "37be9f14d5956ead3fe8c0976fbbb061aa47c04121c0aaeb6b1928d18afd30b2",
+    "store/control-ready.json": "66258422d610a4c9990b97bb1db8877f99eacf16c1392b94ee614af1e183190c",
+    "store/control-report.json": "b35cacaff674515e312af50facd57cc70c88518c59fe0140e1354081272ac89f",
+    "store/control-route-001.json": "482872e435496b699645767c4cd0de96c278b0c94503926261e2f97a8d52440a",
+    "store/control-route-002.json": "b466bf0359dfdca559a4d6b34cd9dd16e0318553e38a8ba5c349b423774b729d",
+    "store/control-route-003.json": "9bbb7f703fc5129e9031295296a98fc8f8989440d951a4a0f634b7cfeb909ca1",
+    "store/control-route-004.json": "79d5600be64b184a51df2635093207ae5b4f82740beb29b3ede71381aebc0b47",
+    "store/control-route-005.json": "9149d1545adebbff464c7ab04356fd3d12fa23a8b68d9473df3761c4c31f7208",
+    "store/control-settle-001.json": "76925a8305d3c5fe4b3b6dbc7c41d5856e03e8f8c61e3395d3bd3fd26bae9070",
+    "store/control-settle-002.json": "ae14e15c0485bdc0f62054e30528773cd9a2a3b44686ef75cfbc02cbe7174ce3",
+    "store/control-settle-003.json": "5220ffa6302648d11bf72edcd0b5cd6d0f533b2635ef1f612fb71c6743afe1d6",
+    "store/control-settle-004.json": "c40f017f54e695ec79c626f9494389aa473bbc477b2e8ce0aaef453978097a98",
+    "store/control-settle-005.json": "7bcd3eb52424685c0f2e4e6aff0ca67fdc1d56d1e5314a507259488f6514c1b2",
+    "store/control-stream-001.json": "472842fcfcab4b012561794dcf2c296de6ba242f07a14f585a8987f7031fbab6",
+    "store/control-stream-002.json": "8772c179bd10593fd29a1f8ee775fc83f218a0b9b9db0a716bf30aa60fbebb6c",
+    "store/control-stream-003.json": "4e5a67010ac80b72a827eecfd53040584c8b91df58f642f92e4576d8b232baaa",
+    "store/control-stream-004.json": "24dc7397f42c5a2c1f6d3bd5faa9f179beb08d6b3e353823553f780e9ed46ec7",
+    "store/control-stream-005.json": "334dc615900bef30b421507fa473348991d0e1b5e2691c4224f92ca059364997",
+    "observer.jsonl": "6523d21101191b3f0b42f8b397883d5693a3652cdebed244369a1e10446b4d7c",
+    "probe.err": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "inputs.sha256": "b95cafc3a91010eccd0da39da09f3f19368aeedd947eff2690a1ce382fc4fca6"
+   },
+   "streams": [
+    {
+     "outcome": "released-after-upstream-end",
+     "closing": null
+    },
+    {
+     "outcome": "released-after-upstream-end",
+     "closing": null
+    },
+    {
+     "outcome": "released-after-upstream-end",
+     "closing": null
+    },
+    {
+     "outcome": "released-after-upstream-end",
+     "closing": null
+    },
+    {
+     "outcome": "released-after-upstream-end",
+     "closing": null
+    }
+   ],
+   "observerReceipts": {
+    "observer.jsonl": 6
+   }
+  },
+  "failover3": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/failover3",
+   "sha256": {
+    "store/control-closed-observation.json": "c3ff0498a14ee27aaacc90399a165418afe7b949d400933fe815998cf5a24f20",
+    "store/control-closure.json": "1a7103c1d900b807aafa023fdb6df35b4de9d45abfb5b3b8aa60f8a647062a23",
+    "store/control-create-intent.json": "ba7e2218f42b0f089e54b80947514a4d162ae622f3f6d62b96f797a5211a2762",
+    "store/control-created.json": "3773b792be5492bfe532c9d3927c118576e256eb6d7eea2c82628945b8994bfc",
+    "store/control-ready.json": "b57ed76b007c7d7ebe631d4973228749039f44305813332c25c6b5da7ab5f527",
+    "store/control-report.json": "a274186638e11e4badfba966bb1d718957f14c900439705660c2c5d78e0d405c",
+    "store/control-route-001.json": "66bb0d62e902580848ba124d043497f6ba8e753588016c968e4ec2c1a06394af",
+    "store/control-route-002.json": "4d49efb76d897a195637dc47578ae2df791c423abdd150fd273422ecbfe1f80d",
+    "store/control-route-003.json": "9ae4298ea87e123eae7a094eda0ce9082f19e3cc38408dfffdb1bc6e903f529f",
+    "store/control-route-004.json": "44318577fa3d10a5944c82b850b8b35f4579d6fd648175d4b68ce6a7b4adc81e",
+    "store/control-route-005.json": "fea24c8f7b697f5a0dcde505f0166706eafc9814d8942b624896cd0fecb11f0b",
+    "store/control-route-006.json": "7ce3773eb138b1f12e036648d1b3e618b39849a74e1277c728b905779843b730",
+    "store/control-settle-001.json": "938e1566662521f3440b4a7e1f95bdab955e0f82ded8e59d19cb7b5658535075",
+    "store/control-settle-002.json": "c267eec8c280a2af2762e8f5da773bba470a2f1f94c72fff46c8ceda4f725e5d",
+    "store/control-settle-003.json": "b7af2d561d70a69f1f6baca6de7c7740a0366b9772210dc7e0d09c78b1ce9e96",
+    "store/control-settle-004.json": "73dfa83a9a0cbb15de304c5024fe44500d1903140e67c9b1159ad3d252445802",
+    "store/control-settle-005.json": "3da80e1a99ff1faf48b44c076169d8f3056a73044ddc5ad53cfcde3b645fff91",
+    "store/control-settle-006.json": "e619a33b338aa72f4f770102066ef26ec6fa613e7d78794bb629b2ea83d4e93b",
+    "store/control-stream-001.json": "5cdbf1f4c6a797b46be5f4bfeb8db4928a27b653cb260015d921098f62564f94",
+    "store/control-stream-002.json": "d669dcd3d0a9e6ec23b17e459b8c7cee6fc025e386e53b8801dde8c172e65dde",
+    "store/control-stream-003.json": "f8a8717e13d45665d920d616be6d69b2ec6f79fee83c3e276dc7e9e3a79df57c",
+    "store/control-stream-004.json": "90f8a54aa65b563a0b1fd3b0c9bf13127a1ea822a3ac563b288caff1c5f4832a",
+    "store/control-stream-005.json": "6ada032ffbac6bce66f8e023ea064f240b36aeb17a7125cd072f0567295629c6",
+    "observer1.jsonl": "ac4e6976ad37603f3c4074ca8cc0ae2680d4c52883b0ca4467b2b00d06f9b932",
+    "observer2.jsonl": "1c524469932947c97286e8ca45c839e885244c9083ac8bca73ddfbdb6432464f",
+    "probe.err": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "inputs.sha256": "b95cafc3a91010eccd0da39da09f3f19368aeedd947eff2690a1ce382fc4fca6"
+   },
+   "streams": [
+    {
+     "outcome": "released-after-upstream-end",
+     "closing": null
+    },
+    {
+     "outcome": "released-after-upstream-end",
+     "closing": null
+    },
+    {
+     "outcome": "released-after-upstream-end",
+     "closing": null
+    },
+    {
+     "outcome": "released-after-upstream-end",
+     "closing": null
+    },
+    {
+     "outcome": "released-after-upstream-end",
+     "closing": null
+    }
+   ],
+   "observerReceipts": {
+    "observer1.jsonl": 1,
+    "observer2.jsonl": 6
+   }
+  },
+  "unavailable3": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/unavailable3",
+   "sha256": {
+    "store/control-create-intent.json": "01969f2fd744442f0a1f73e6f68f9c9c090623d1a2b1df4f29ae9f8284f14872",
+    "store/control-created.json": "d4e6d161caa1540506055b0b44060968e774982e99d30cc9a995459498bffacb",
+    "store/control-failure.json": "6d8ecc7719e2c31e7d7757d55f74e3d45f222e40a33e1a5839a74236961c7000",
+    "store/control-ready.json": "1ae9001fdcc5a6936e4d2c5fd0b43a340c58177604d6240c5c6d91dd28f65f35",
+    "store/control-route-001.json": "ee847610e3d4cf6dfe0e8473e6c1b24ebda9d820f45bee9bd81a3126993937d4",
+    "store/control-route-002.json": "9623114da9bcfba15608981de8d66944c6c11c6b7ffb07b8311142e9c5103ecd",
+    "store/control-route-003.json": "087da7e51a1c374dd5b50c401137e7fe393ecc24412d6b62706bb16e4472a7f6",
+    "store/control-settle-001.json": "a6e3560463b466e0c9a0ac17a21d07a5e51a2f177975aaa0429ae6a71fe45e71",
+    "store/control-settle-002.json": "ea041af0f919ebdfafad8b6e08c2a67cdfd0a315cd5b0668d250bf3af46336bf",
+    "observer1.jsonl": "1153f5e2a4bacfc71f6cabac66479bbc7f80d194605a9ccacb766047f51762b7",
+    "observer2.jsonl": "8eee9f254c458338c218f134e5c154df46d989708bfbc23d1f6f51f324104f85",
+    "probe.err": "c4c5295dce62286c06088180fffb4d1ba47c71c4b1aedb81cf1182ec6c235862",
+    "inputs.sha256": "b95cafc3a91010eccd0da39da09f3f19368aeedd947eff2690a1ce382fc4fca6"
+   },
+   "streams": [],
+   "failure": {
+    "nativeLastMessage": {
+     "errorMessage": "route_unavailable_attempt_limit",
+     "role": "assistant",
+     "stopReason": "error"
+    },
+    "nativeNextType": "snapshot",
+    "reason": "attempt_limit",
+    "stage": "route-unavailable"
+   },
+   "observerReceipts": {
+    "observer1.jsonl": 1,
+    "observer2.jsonl": 1
+   }
+  },
+  "midquota3": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/midquota3",
+   "sha256": {
+    "store/control-create-intent.json": "e3e8cde4223e5fde18e3ed99aa0225b85d9f3ebc3d40d9d62dff433666386941",
+    "store/control-created.json": "18b88878d008e280b98a4482bdd52edae4660e0b4a4ca8b5a56686392bf270e0",
+    "store/control-failure.json": "e9705a2481b2a91b2b76955f119770a60d00fdb6033adb67cb80aecbc597834c",
+    "store/control-ready.json": "96aef97bf19cc10dd8a6caf5d050b414eb3354cee2841f305110f6f6cfd60be0",
+    "store/control-route-001.json": "3291d515cad2ab39c5842880f00d8315e88fb789c45315cd8eb1dff6c119de65",
+    "store/control-settle-001.json": "e2a909b6b8a3ada2865e216328ff7b0bf93b2dea64090b7b40f235f378d3d079",
+    "store/control-stream-001.json": "bb406f676b73a7d8fcd62db841f31b9be2700aabe394a940c5a8c5935f7b8dee",
+    "observer1.jsonl": "9b303add5fc1a4e47bc101feca75b54d5594076d1445a35c32c7097277569a87",
+    "observer2.jsonl": "30a6890a6dbf25ce546fb3945024121b8d4e20d188af22c8e902555ac170a482",
+    "probe.err": "26b7dfc1324dcb2ff8c3383ad112d3c4f45fdd4615d3892b04c61caf79ef5395",
+    "inputs.sha256": "b95cafc3a91010eccd0da39da09f3f19368aeedd947eff2690a1ce382fc4fca6"
+   },
+   "streams": [
+    {
+     "outcome": "released-after-upstream-end",
+     "closing": null
+    }
+   ],
+   "failure": {
+    "classification": "provider-attempt-unknown",
+    "nativeLastMessage": {
+     "errorMessage": "synthetic quota exhausted mid-stream",
+     "role": "assistant",
+     "stopReason": "error"
+    },
+    "nativeNextType": "snapshot",
+    "outcome": "released-after-upstream-end",
+    "stage": "stream-not-completed"
+   },
+   "observerReceipts": {
+    "observer1.jsonl": 1,
+    "observer2.jsonl": 0
+   }
+  },
+  "fault-stall4": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/fault-stall4",
+   "sha256": {
+    "store/control-create-intent.json": "4832edbe63f4323b8a954aefa773192e6abb83459525283e462d8793db2d5c8d",
+    "store/control-created.json": "d625e6e4ae703ed7819da80bf37211bd7270ae262c728df22f4a4e8830c15af6",
+    "store/control-failure.json": "36b097c2bcd9329c164dd87bc4c6be11c0025437c0cea07fb5fe92385f1ccda9",
+    "store/control-ready.json": "cd65712955dc2d602a8a4797ce15beaa56293591ef30ae1eb3e716466f40ba25",
+    "store/control-route-001.json": "aed14c4b64e13864d7fbc2957abaad6202f4b732d0d37d2acfb52eda2ec79659",
+    "store/control-settle-001.json": "ac9740adb29135c4734c177eb7c3f4bac36031064a29fa873ef517ea35c488bc",
+    "store/control-stream-001.json": "9659b2f425c5a511254af6c1993220d0efd718c49ccc5dcf245ca45325d1d45c",
+    "observer.jsonl": "c005e09e17eeecd64463b7663cff7c4fad18990cf76370649bdfcd158ad7d9d0",
+    "probe.err": "26b7dfc1324dcb2ff8c3383ad112d3c4f45fdd4615d3892b04c61caf79ef5395",
+    "inputs.sha256": "b95cafc3a91010eccd0da39da09f3f19368aeedd947eff2690a1ce382fc4fca6"
+   },
+   "streams": [
+    {
+     "outcome": "cancelled-before-upstream-end",
+     "closing": null
+    }
+   ],
+   "failure": {
+    "classification": "provider-attempt-unknown",
+    "nativeLastMessage": {
+     "errorMessage": "Request was aborted",
+     "role": "assistant",
+     "stopReason": "aborted"
+    },
+    "nativeNextType": "snapshot",
+    "outcome": "cancelled-before-upstream-end",
+    "stage": "stream-not-completed"
+   },
+   "observerReceipts": {
+    "observer.jsonl": 1
+   }
+  },
+  "fault-truncate6": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/fault-truncate6",
+   "sha256": {
+    "store/control-create-intent.json": "4e0720d53cb5d03ca8c31941e924d5a8ba55f1f79dbbb92c7c5445444b3bf61f",
+    "store/control-created.json": "62ee30fdca73131df8106cd0992eb067f834a15bcdbed013cbd00cf6772f1d46",
+    "store/control-failure.json": "a22aef95c1a26f72d434bd781f2617f414f3819f6142db14ba2ae2eb611db20e",
+    "store/control-ready.json": "d34d398f061e6865d091390c2168699eb2f11ad2af6a0d5f64c8dc9f8163905e",
+    "store/control-route-001.json": "d876c5975b0018960e942717876d7d868e8a72dbaafaafae86d8029aa591af42",
+    "store/control-settle-001.json": "f12739d290878fc44a88d6113227f948d836f5baf0077d23beb3e4eff8f3bf19",
+    "store/control-stream-001.json": "da1a8ec6f744685ac36336f6b8e0ed75f8f2896007eb077033ce2de4394aaf0f",
+    "observer.jsonl": "3b0539a1402cae01713a4fd26fb08242b44d2f4548578f3aaeba07c12bafb90e",
+    "probe.err": "26b7dfc1324dcb2ff8c3383ad112d3c4f45fdd4615d3892b04c61caf79ef5395",
+    "inputs.sha256": "b95cafc3a91010eccd0da39da09f3f19368aeedd947eff2690a1ce382fc4fca6"
+   },
+   "streams": [
+    {
+     "outcome": "interrupted-uncertain",
+     "closing": "ack"
+    }
+   ],
+   "failure": {
+    "classification": "provider-attempt-unknown",
+    "nativeLastMessage": {
+     "errorMessage": "relay_upstream_truncated",
+     "role": "assistant",
+     "stopReason": "error"
+    },
+    "nativeNextType": "snapshot",
+    "outcome": "interrupted-uncertain",
+    "stage": "stream-not-completed"
+   },
+   "observerReceipts": {
+    "observer.jsonl": 1
+   }
+  }
+ }
+}

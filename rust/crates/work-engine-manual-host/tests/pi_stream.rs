@@ -83,8 +83,14 @@ impl Channel for Consumer {
     }
     fn receive(&mut self) -> ps::Result<Value> {
         self.ordinal += 1;
+        let terminal = self
+            .sent
+            .last()
+            .is_some_and(|v| v["type"] == "response-end" || v["type"] == "response-failure");
         let kind = if self.cancel_at == Some(self.ordinal) {
             "cancel"
+        } else if terminal {
+            "ack"
         } else {
             "pull"
         };
@@ -436,4 +442,39 @@ fn failed_terminal_event_is_reported_and_end_observed_after_release() {
     let u = r.evidence()["usage"].clone();
     assert_eq!(u["completed"], false);
     assert_eq!(u["failed"], "insufficient_quota");
+}
+
+#[test]
+fn cancel_racing_a_terminal_frame_is_confirmed_not_left_waiting() {
+    let t = tempfile::tempdir().unwrap();
+    let raw = "HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\nabc".to_string();
+    let up = Upstream::open(Cursor::new(raw.into_bytes())).unwrap();
+    let mut c = Consumer::new(store(&t));
+    // Pulls 1 (chunk) and 2 (end); the consumer's cancel 3 crossed the end.
+    c.cancel_at = Some(3);
+    let r = ps::relay(&mut c, up, || (), &binding(), 1, 1).unwrap();
+    assert_eq!(r.outcome, Outcome::Completed);
+    assert_eq!(r.closing, Some("cancel-after-terminal"));
+    assert_eq!(
+        kinds(&c),
+        [
+            "response-head",
+            "response-chunk",
+            "response-end",
+            "response-cancelled"
+        ]
+    );
+    assert_eq!(c.sent.last().unwrap()["ordinal"], 3);
+    // Normal close: exactly one ack, nothing further sent.
+    let up = Upstream::open(Cursor::new(
+        b"HTTP/1.1 200 OK\r\nContent-Length: 1\r\n\r\nx".to_vec(),
+    ))
+    .unwrap();
+    let mut c = Consumer::new(store(&t));
+    let r = ps::relay(&mut c, up, || (), &binding(), 1, 1).unwrap();
+    assert_eq!(r.closing, Some("ack"));
+    assert_eq!(
+        kinds(&c),
+        ["response-head", "response-chunk", "response-end"]
+    );
 }

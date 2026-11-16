@@ -121,7 +121,15 @@ fn refuses_unauthorized_revoked_incompatible_stale_and_over_budget() {
     r.settle(a, refused(), json!(null)).unwrap();
     assert_eq!(
         r.next(1, "gpt-6-luna", 0),
-        Decision::Unavailable("no_permitted_route")
+        Decision::Unavailable("route_revoked")
+    );
+    // Revoked primary never grants the secondary without a refusal.
+    let mut p = policy();
+    p.routes[0].revoked = true;
+    let mut r = Router::new(p);
+    assert_eq!(
+        r.next(1, "gpt-6-luna", 0),
+        Decision::Unavailable("route_revoked")
     );
 
     // Secondary serves another model: billing fallback never substitutes models.
@@ -178,7 +186,39 @@ fn per_request_and_per_route_limits() {
     r.settle(a, Disposition::Completed, json!(null)).unwrap();
     assert_eq!(
         r.next(2, "gpt-6-luna", 0),
-        Decision::Unavailable("no_permitted_route")
+        Decision::Unavailable("route_limit")
     );
     assert_eq!(r.evidence()["routeState"][0]["attempts"], 1);
+}
+
+#[test]
+fn exhausted_route_limit_does_not_switch_without_refusal() {
+    let mut p = policy();
+    p.routes[0].max_attempts = 1;
+    let mut r = Router::new(p);
+    let (route0, a) = attempt(r.next(1, "gpt-6-luna", 0));
+    assert_eq!(route0, 0);
+    r.settle(a, Disposition::Completed, json!(null)).unwrap();
+    assert_eq!(
+        r.next(2, "gpt-6-luna", 0),
+        Decision::Unavailable("route_limit")
+    );
+    assert!(r.attempts().iter().all(|a| a.route == "primary"));
+}
+
+#[test]
+fn allowance_arithmetic_fails_closed_at_extremes() {
+    let mut p = policy();
+    p.allowance_units = u64::MAX;
+    p.reserve_units = u64::MAX;
+    let mut r = Router::new(p);
+    let (_, a) = attempt(r.next(1, "gpt-6-luna", 0));
+    r.settle(a, Disposition::Completed, json!(null)).unwrap();
+    assert_eq!(r.reserved_units(), u64::MAX);
+    // reserved + reserve would overflow: refuse, never wrap or panic.
+    assert_eq!(
+        r.next(2, "gpt-6-luna", 0),
+        Decision::Unavailable("allowance_exhausted")
+    );
+    assert_eq!(r.reserved_units(), u64::MAX);
 }

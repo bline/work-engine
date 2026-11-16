@@ -6,7 +6,8 @@
 //! happens only after a definitive refusal that produced no output. Anything
 //! that may have entered the provider or reached the consumer is uncertain and
 //! is returned to the continuation owner instead of being retried. Reservations
-//! are conservative: only definitive refusals release them.
+//! are conservative: only definitive refusals release them. Leaving a route
+//! requires its definitive refusal; limits and revocation stop admission.
 use serde::Serialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -151,19 +152,31 @@ impl Router {
         if prior.len() as u32 >= self.policy.max_attempts_per_request {
             return Decision::Unavailable("attempt_limit");
         }
+        // The active route is the first statically eligible route (authorized,
+        // same model) without a recorded definitive refusal. Moving past a
+        // route requires such a refusal; revocation or an exhausted per-route
+        // limit stops admission instead of switching. Changing that needs a
+        // new policy (a separate, authorized policy transition).
         let Some(route) = self.policy.routes.iter().enumerate().position(|(i, r)| {
-            r.authorized
-                && !r.revoked
-                && r.model == self.policy.model
-                && self.state[i].1.is_none()
-                && self.state[i].0 < r.max_attempts
+            r.authorized && r.model == self.policy.model && self.state[i].1.is_none()
         }) else {
             return Decision::Unavailable("no_permitted_route");
         };
-        if self.reserved + self.policy.reserve_units > self.policy.allowance_units {
-            return Decision::Unavailable("allowance_exhausted");
+        let candidate = &self.policy.routes[route];
+        if candidate.revoked {
+            return Decision::Unavailable("route_revoked");
         }
-        self.reserved += self.policy.reserve_units;
+        if self.state[route].0 >= candidate.max_attempts {
+            return Decision::Unavailable("route_limit");
+        }
+        let Some(reserved) = self
+            .reserved
+            .checked_add(self.policy.reserve_units)
+            .filter(|r| *r <= self.policy.allowance_units)
+        else {
+            return Decision::Unavailable("allowance_exhausted");
+        };
+        self.reserved = reserved;
         self.state[route].0 += 1;
         let r = &self.policy.routes[route];
         let attempt = self.attempts.len() as u64 + 1;
@@ -198,7 +211,10 @@ impl Router {
             return Err("route_attempt_settled");
         }
         if let Disposition::Refused { status, code } = &disposition {
-            self.reserved -= a.reserved_units;
+            self.reserved = self
+                .reserved
+                .checked_sub(a.reserved_units)
+                .ok_or("route_reservation_accounting")?;
             a.reserved_units = 0;
             let i = self
                 .policy
