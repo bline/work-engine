@@ -376,6 +376,7 @@ impl NativeHarness {
         &self,
         thread: &str,
         turn: &str,
+        expected: &crate::ExpectedToolSet,
     ) -> Result<crate::AcquiredNativeInput, crate::NativeInputError> {
         self.capture
             .as_ref()
@@ -387,6 +388,7 @@ impl NativeHarness {
                 self.input_terminal
                     .as_ref()
                     .ok_or(crate::NativeInputError)?,
+                expected,
             )
     }
 

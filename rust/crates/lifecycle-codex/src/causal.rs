@@ -113,6 +113,27 @@ fn payload<'a>(
     Ok((members.get(&path).ok_or(NativeInputError)?, path))
 }
 
+/// Ids of every ordinary `tool_call_started` event of this turn, for the one-way
+/// cross-check that each has a strict dispatch row.
+pub(crate) fn started_tool_call_ids(
+    dir: &File,
+    thread: &str,
+    turn: &str,
+) -> Result<BTreeSet<String>> {
+    let trace = read_child_bounded(dir, "trace.jsonl", TRACE_LIMIT)?;
+    if !trace.ends_with(b"\n") {
+        return Err(NativeInputError);
+    }
+    let mut ids = BTreeSet::new();
+    for line in trace[..trace.len() - 1].split(|b| *b == b'\n') {
+        let event = json(line)?;
+        if scoped(&event, thread, turn) && event["payload"]["type"] == "tool_call_started" {
+            ids.insert(text(&event["payload"], "tool_call_id")?.to_owned());
+        }
+    }
+    Ok(ids)
+}
+
 pub(crate) fn acquire(
     dir: &File,
     strict: &[u8],

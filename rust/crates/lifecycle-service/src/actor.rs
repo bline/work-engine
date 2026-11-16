@@ -1509,7 +1509,7 @@ impl Actor {
                     let turn = self.native_turn.as_ref().ok_or(StoreError::Rejected)?;
                     let terminal = observation.terminal();
                     self.store
-                        .retain_native_input(
+                        .retain_native_input_with_registry(
                             session,
                             turn,
                             observation.transport_session(),
@@ -1528,6 +1528,10 @@ impl Actor {
                                     bytes: p.bytes.clone(),
                                 })
                                 .collect(),
+                            observation
+                                .tool_registry()
+                                .map(lifecycle_codex::CheckedToolRegistry::bytes)
+                                .unwrap_or_default(),
                             observation.eligible(),
                             observation.outcome(),
                             clock_sample(),
