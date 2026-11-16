@@ -327,12 +327,21 @@ impl ContinuityState {
             .ok_or_else(|| refused("coding parent absent"))?
             .clone();
         let mut o = gate.0.borrow_mut();
-        self.hosted_log.push(json!({"invocationId":o.parent.invocation_id(),"intent":intent,"policy":policy.digest()}));
+        let entry = json!({"invocationId":o.parent.invocation_id(),"intent":intent,"policy":policy.digest()});
         let clock = (self.clock)();
         let configured = self.config.expires_ms;
+        let log = &mut self.hosted_log;
         let CodingLifecycle { store, parent, .. } = &mut *o;
         store
-            .with_pi_coding_turn_send(parent, clock, |granted| dispatch(granted.min(configured)))
+            .with_pi_coding_turn_send(parent, clock, |granted| {
+                // Logged only once currentness of the parent grant has been
+                // established for this dispatch.
+                let deadline = granted.min(configured);
+                let mut entry = entry;
+                entry["deadlineMs"] = json!(deadline);
+                log.push(entry);
+                dispatch(deadline)
+            })
             .map_err(refused)?
     }
 }
@@ -398,6 +407,11 @@ impl CodingContinuity {
             hosted_attempts: (0, 0),
             hosted_log: vec![],
         }))))
+    }
+    /// Hosted attempts admitted under a current grant so far (empty otherwise).
+    /// Available on every exit, unlike the success-only report.
+    pub fn hosted_attempts(&self) -> Vec<Value> {
+        self.0.borrow().hosted_log.clone()
     }
     pub fn report(&self) -> Result<Value> {
         self.0

@@ -1171,6 +1171,14 @@ fn contracted_hosted_grant_refuses_the_next_dispatch() {
         .is_err()
     );
     assert!(!entered);
+    // Only the attempt admitted under a current grant is logged, with its deadline.
+    let logged = c.hosted_attempts();
+    assert_eq!(logged.len(), 1);
+    assert_eq!(
+        logged[0]["intent"],
+        json!(intent(1, 1, "primary", "payer-a"))
+    );
+    assert_eq!(logged[0]["deadlineMs"], 1000);
     drop(c);
     fs::remove_dir_all(root).unwrap();
 }

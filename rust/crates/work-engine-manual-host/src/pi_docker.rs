@@ -824,6 +824,10 @@ impl Host {
             }
             std::thread::sleep(Duration::from_millis(20));
         }
+        if rpc && let Err(e) = self.coding_hosted_abort("run loop ended with the stream open") {
+            self.failure(e);
+            aborted = true;
+        }
         drop(stdin);
         let record = &mut self.journal.processes[number];
         record.leftovers = group_members(child.id());
@@ -996,6 +1000,16 @@ impl Host {
         {
             return refuse("coding lifecycle profile requires installed admission gate");
         }
+        if self
+            .journal
+            .job
+            .coding
+            .as_ref()
+            .is_some_and(|p| coding::is_hosted(&p.schema))
+            && self.hosted_transport.is_none()
+        {
+            return refuse("hosted profile requires a bound provider transport");
+        }
         if self.signed_pi() && self.pi_owner.is_none() {
             return refuse("signed fixture cannot resume allocation");
         }
@@ -1055,6 +1069,11 @@ impl Host {
             Ok(())
         })();
         if let Err(error) = launch {
+            self.failure(error);
+            self.save()?;
+        }
+        // Covers refusals that left the run loop early.
+        if let Err(error) = self.coding_hosted_abort("launch ended with the stream open") {
             self.failure(error);
             self.save()?;
         }

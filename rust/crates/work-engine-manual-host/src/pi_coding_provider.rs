@@ -106,6 +106,16 @@ pub struct AttemptRecord {
     pub settled_microusd: Option<u64>,
     #[serde(default)]
     pub reason: Option<String>,
+    /// Hosted: the lifecycle gate admitted this attempt under the current
+    /// grant; persisted before any upstream byte is written.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub gate_entered: bool,
+    /// Hosted: the admitted dispatch deadline (ms).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deadline_ms: Option<i64>,
+    /// Hosted: digest of the admitted route table the gate policy mirrors.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub routes_sha256: Option<String>,
 }
 /// Observed facts about one attempt, from which the ledger derives the
 /// disposition. Callers report evidence; they never choose a release.
@@ -319,6 +329,9 @@ pub fn reserve_attempt(
         refusal_body_sha256: None,
         settled_microusd: None,
         reason: None,
+        gate_entered: false,
+        deadline_ms: None,
+        routes_sha256: None,
     });
     Ok(next)
 }

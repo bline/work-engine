@@ -244,7 +244,15 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
         // synthetic Host-held access token.
         host.bind_hosted_transport(Box::new(LoopbackTransport::new()?))?;
     }
-    let result = host.run()?;
+    let result = host.run();
+    if hosted {
+        // Gate-admitted attempts are retained on every exit, including failures.
+        fs::write(
+            state_dir.join("coding-hosted-gate-attempts.json"),
+            serde_json::to_vec_pretty(&continuity.hosted_attempts())?,
+        )?;
+    }
+    let result = result?;
     fs::write(
         state_dir.join("coding-host-result.json"),
         serde_json::to_vec_pretty(&result)?,

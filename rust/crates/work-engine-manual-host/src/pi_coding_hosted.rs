@@ -443,16 +443,12 @@ impl Host {
     }
     fn hosted_native(&mut self, s: &mut Stream, frame: &Value) -> Result<()> {
         if !Self::own_stream_frame(s, frame) {
+            // Never a bare protocol error while an attempt is open.
+            self.hosted_close_uncertain(s, "stream_foreign_frame")?;
             return refuse("foreign hosted stream frame");
         }
         match &mut s.phase {
-            StreamPhase::Active {
-                session,
-                attempt,
-                routed,
-                ..
-            } if session.accepts_native() => {
-                let (attempt, routed) = (*attempt, *routed);
+            StreamPhase::Active { session, .. } if session.accepts_native() => {
                 let transport = self
                     .hosted_transport
                     .take()
@@ -462,10 +458,9 @@ impl Host {
                 match sent {
                     Ok(frames) => self.hosted.out.extend(frames),
                     Err(code) => {
-                        // Never a bare protocol error: the attempt is uncertain
-                        // and keeps its reservation.
-                        self.hosted_uncertain(s.request, attempt, routed, code)?;
-                        s.phase = StreamPhase::Closed;
+                        // Never a bare protocol error: the attempt is uncertain,
+                        // keeps its reservation, and its relayed bytes are kept.
+                        self.hosted_close_uncertain(s, code)?;
                         return refuse(format!("hosted stream protocol: {code}"));
                     }
                 }
@@ -491,7 +486,10 @@ impl Host {
                     None => refuse("hosted stream frame after unavailable answer"),
                 }
             }
-            _ => refuse("hosted stream frame out of phase"),
+            _ => {
+                self.hosted_close_uncertain(s, "stream_frame_out_of_phase")?;
+                refuse("hosted stream frame out of phase")
+            }
         }
     }
     /// One Host-loop step: dispatch a fetched request once every pending
@@ -528,13 +526,7 @@ impl Host {
                 }
                 Ok(())
             }
-            StreamPhase::Active {
-                session,
-                attempt,
-                routed,
-                ..
-            } => {
-                let (attempt, routed) = (*attempt, *routed);
+            StreamPhase::Active { session, .. } => {
                 let transport = self
                     .hosted_transport
                     .take()
@@ -544,8 +536,7 @@ impl Host {
                 match polled {
                     Ok(frames) => self.hosted.out.extend(frames),
                     Err(code) => {
-                        self.hosted_uncertain(s.request, attempt, routed, code)?;
-                        s.phase = StreamPhase::Closed;
+                        self.hosted_close_uncertain(s, code)?;
                         return refuse(format!("hosted stream: {code}"));
                     }
                 }
@@ -633,19 +624,23 @@ impl Host {
             headers: fetch.headers.clone(),
             body: fetch.body.clone(),
         };
-        let mut gate = self
-            .coding_gate
-            .take()
-            .ok_or_else(|| Error::Refused("coding lifecycle gate missing".into()))?;
-        let mut transport = self
-            .hosted_transport
-            .take()
-            .ok_or_else(|| Error::Refused("hosted transport absent".into()))?;
+        let Some(mut transport) = self.hosted_transport.take() else {
+            self.hosted_uncertain(s.request, attempt, routed, "hosted transport absent")?;
+            return refuse("hosted transport absent");
+        };
+        let Some(mut gate) = self.coding_gate.take() else {
+            self.hosted_transport = Some(transport);
+            self.hosted_uncertain(s.request, attempt, routed, "coding lifecycle gate missing")?;
+            return refuse("coding lifecycle gate missing");
+        };
         let mut cancelled = false;
         let mut opened = None;
         let mut entered = false;
         let bind = s.bind.clone();
         let sequence = s.request;
+        let request_id = s.request;
+        let routes_sha256 = routes.digest();
+        let host = &mut *self;
         let admitted = gate.provider_attempt(&intent, &mut |deadline_ms| {
             if std::mem::replace(&mut entered, true) {
                 return refuse("hosted dispatch already consumed");
@@ -656,7 +651,7 @@ impl Host {
             }
             // Last check before any upstream byte: a head-phase cancel that
             // arrived meanwhile means this attempt is not dispatched.
-            if self.unprocessed(stdout)?.iter().any(|f| {
+            if host.unprocessed(stdout)?.iter().any(|f| {
                 f["type"] == "cancel"
                     && f["ordinal"] == 1
                     && f["binding"] == bind
@@ -666,17 +661,48 @@ impl Host {
                 cancelled = true;
                 return Ok(());
             }
+            // Durable gate admission (current grant held now) before any
+            // upstream byte is written.
+            let a = host
+                .journal
+                .coding
+                .as_mut()
+                .unwrap()
+                .provider_requests
+                .get_mut(&request_id)
+                .and_then(|r| r.attempts.last_mut())
+                .filter(|a| a.attempt == attempt)
+                .ok_or_else(|| Error::Refused("hosted attempt record absent".into()))?;
+            a.gate_entered = true;
+            a.deadline_ms = Some(until);
+            a.routes_sha256 = Some(routes_sha256.clone());
+            host.save()?;
             opened = Some(transport.open(&route, &request, until)?);
             Ok(())
         });
         self.coding_gate = Some(gate);
         self.hosted_transport = Some(transport);
         if let Err(e) = admitted {
+            let gate_entered = self
+                .journal
+                .coding
+                .as_ref()
+                .unwrap()
+                .provider_requests
+                .get(&s.request)
+                .and_then(|r| r.attempts.last())
+                .is_some_and(|a| a.attempt == attempt && a.gate_entered);
             self.hosted_uncertain(
                 s.request,
                 attempt,
                 routed,
-                "attempt admission or dispatch failed",
+                &if gate_entered {
+                    format!("dispatch failed after gate admission: {e}")
+                } else if entered {
+                    format!("refused inside gate admission before dispatch: {e}")
+                } else {
+                    format!("gate refused: {e}")
+                },
             )?;
             return Err(e);
         }
@@ -709,15 +735,20 @@ impl Host {
             self.hosted_uncertain(s.request, attempt, routed, "gate returned without dispatch")?;
             return refuse("hosted gate returned without dispatch evidence");
         };
-        let session = Session::start(
+        let session = match Session::start(
             reader,
             abort,
             &s.binding,
             s.request,
             STREAM,
             route::refusal_status,
-        )
-        .map_err(|c| Error::Refused(c.into()))?;
+        ) {
+            Ok(session) => session,
+            Err(code) => {
+                self.hosted_uncertain(s.request, attempt, routed, code)?;
+                return refuse(format!("hosted stream start: {code}"));
+            }
+        };
         s.phase = StreamPhase::Active {
             session,
             attempt,
@@ -822,12 +853,12 @@ impl Host {
     ) -> Result<()> {
         let (plan, _) = self.hosted_plan()?;
         let sha = self.hosted_retain(request, attempt, "stream.sse", &relay.forwarded)?;
-        let path = self
-            .journal
-            .job
-            .state_dir
-            .join(format!("coding-hosted-{request}-{attempt}.json"));
-        atomic(&path, &relay.evidence())?;
+        self.hosted_retain(
+            request,
+            attempt,
+            "relay.json",
+            &serde_json::to_vec(&relay.evidence())?,
+        )?;
         let terminal = stream::sse_data(&relay.forwarded)
             .iter()
             .filter_map(|d| serde_json::from_str::<Value>(d).ok())
@@ -912,26 +943,93 @@ impl Host {
         }
         self.save()
     }
-    /// Create-only retention of exact screened bytes; returns their digest.
+    /// Create-only retention of exact screened bytes, registered as a journal
+    /// artifact so collection verifies it; returns the digest.
     fn hosted_retain(
-        &self,
+        &mut self,
         request: u64,
         attempt: u64,
         kind: &str,
         bytes: &[u8],
     ) -> Result<String> {
-        let path = self
-            .journal
-            .job
-            .state_dir
-            .join(format!("coding-hosted-{request}-{attempt}.{kind}"));
+        let dir = self.journal.job.state_dir.clone();
+        let path = dir.join(format!("coding-hosted-{request}-{attempt}.{kind}"));
         let mut f = OpenOptions::new()
             .create_new(true)
             .write(true)
             .open(&path)?;
         f.write_all(bytes)?;
         f.sync_all()?;
-        Ok(digest(bytes))
+        File::open(&dir)?.sync_all()?;
+        let sha = digest(bytes);
+        self.journal.artifacts.push(Artifact {
+            path,
+            sha256: sha.clone(),
+        });
+        self.save()?;
+        Ok(sha)
+    }
+    /// Close an open attempt as uncertain (reservation kept), retaining the
+    /// exact screened bytes already relayed to the container. Does nothing
+    /// unless an attempt is active.
+    fn hosted_close_uncertain(&mut self, s: &mut Stream, reason: &str) -> Result<()> {
+        let StreamPhase::Active {
+            session,
+            attempt,
+            routed,
+            ..
+        } = std::mem::replace(&mut s.phase, StreamPhase::Closed)
+        else {
+            return Ok(());
+        };
+        let relay = session.into_relay();
+        let sha = self.hosted_retain(s.request, attempt, "stream.sse", &relay.forwarded)?;
+        self.hosted_retain(
+            s.request,
+            attempt,
+            "relay.json",
+            &serde_json::to_vec(&relay.evidence())?,
+        )?;
+        let state = self.journal.coding.as_mut().unwrap();
+        if let Some(r) = state.provider_requests.get_mut(&s.request) {
+            let _ = r.settle_attempt(
+                attempt,
+                AttemptEvidence::Relayed {
+                    status: relay.status,
+                    upstream_end: false,
+                    interrupted: true,
+                    relay_sha256: sha,
+                },
+            );
+            if let Some(a) = r.attempts.last_mut().filter(|a| a.attempt == attempt) {
+                a.reason = Some(format!("closed uncertain: {reason}"));
+            }
+        }
+        state.provider_failed = true;
+        if let Some(router) = self.hosted.router.as_mut() {
+            let _ = router.settle(
+                routed,
+                Disposition::Uncertain {
+                    reason: reason.into(),
+                },
+                Value::Null,
+            );
+        }
+        self.save()
+    }
+    /// Run-loop exit (completion, deadline, cancellation, write failure or
+    /// any refusal): an attempt still open is closed uncertain with its
+    /// relayed bytes retained, and its upstream connection is closed.
+    pub(crate) fn coding_hosted_abort(&mut self, reason: &str) -> Result<()> {
+        if !self.hosted_profile() {
+            return Ok(());
+        }
+        let Some(mut s) = self.hosted.stream.take() else {
+            return Ok(());
+        };
+        let result = self.hosted_close_uncertain(&mut s, reason);
+        self.hosted.stream = Some(s);
+        result
     }
     /// Before the container's `provider_complete` for `request`: the relay
     /// must be over for the consumer, and a bounded release drain is finished
@@ -945,17 +1043,10 @@ impl Host {
                 return refuse("hosted completion for another request");
             }
             let deadline = Instant::now() + Duration::from_secs(2);
-            while let StreamPhase::Active {
-                session,
-                attempt,
-                routed,
-                ..
-            } = &mut s.phase
-            {
+            while let StreamPhase::Active { session, .. } = &mut s.phase {
                 if session.accepts_native() || Instant::now() >= deadline {
                     return refuse("hosted completion before the relay closed");
                 }
-                let (attempt, routed) = (*attempt, *routed);
                 let transport = self
                     .hosted_transport
                     .take()
@@ -963,8 +1054,7 @@ impl Host {
                 let polled = session.poll(&Screen(transport.as_ref()), Duration::from_millis(50));
                 self.hosted_transport = Some(transport);
                 if let Err(code) = polled {
-                    self.hosted_uncertain(request, attempt, routed, code)?;
-                    s.phase = StreamPhase::Closed;
+                    self.hosted_close_uncertain(&mut s, code)?;
                     return refuse(format!("hosted stream: {code}"));
                 }
                 self.hosted_progress(&mut s)?;
@@ -1012,6 +1102,8 @@ mod tests {
         /// Appended to the container output while the attempt is admitted,
         /// just before its dispatch closure runs.
         inject: Option<(PathBuf, Vec<u8>)>,
+        /// Refuse every attempt without running its dispatch.
+        refuse_attempts: bool,
     }
     impl CodingEffectGate for HostedGate {
         fn execute(
@@ -1048,6 +1140,9 @@ mod tests {
             dispatch: &mut dyn FnMut(i64) -> Result<()>,
         ) -> Result<()> {
             self.intents.lock().unwrap().push(intent.clone());
+            if self.refuse_attempts {
+                return refuse("test gate: grant not current");
+            }
             if let Some((path, line)) = self.inject.take() {
                 let mut raw = fs::read(&path)?;
                 raw.extend(line);
@@ -1125,6 +1220,7 @@ mod tests {
         h.coding_gate = Some(Box::new(HostedGate {
             intents: intents.clone(),
             inject: inject.map(|v| (path.clone(), line(v))),
+            refuse_attempts: false,
         }));
         h.hosted_transport = Some(Box::new(FakeTransport {
             responses: responses.into(),
@@ -1229,6 +1325,21 @@ mod tests {
         push(&mut h, &mut w, op(&g, "ack", ordinal)).unwrap();
         let r = request(&h);
         assert_eq!(r.attempts.len(), 2);
+        // Gate admission is durable on each attempt record.
+        for a in &r.attempts {
+            assert!(a.gate_entered);
+            assert!(a.deadline_ms.is_some());
+            assert_eq!(
+                a.routes_sha256.as_deref(),
+                Some(h.hosted_plan().unwrap().1.digest().as_str())
+            );
+        }
+        // Retained bytes are journal artifacts, verified at collection.
+        for name in ["1-1.refusal.body", "1-2.stream.sse", "1-2.relay.json"] {
+            let path = dir.path().join(format!("coding-hosted-{name}"));
+            let a = h.journal.artifacts.iter().find(|a| a.path == path).unwrap();
+            a.verify().unwrap();
+        }
         assert_eq!(r.attempts[0].disposition, AttemptDisposition::Refused);
         assert_eq!(r.attempts[0].http_status, Some(429));
         assert_eq!(r.attempts[1].disposition, AttemptDisposition::Completed);
@@ -1287,6 +1398,7 @@ mod tests {
         h.coding_gate = Some(Box::new(HostedGate {
             intents: w.intents.clone(),
             inject: Some((w.path.clone(), line(op(&g, "cancel", 1)))),
+            refuse_attempts: false,
         }));
         push(&mut h, &mut w, fetch(&g)).unwrap();
         assert!(h.coding_hosted_tick(&w.path).unwrap().is_empty());
@@ -1396,5 +1508,96 @@ mod tests {
         routes.routes[0].endpoint = "loopback:9".into();
         routes.max_attempts_per_request = 9;
         assert!(routes.validate().is_err());
+    }
+
+    fn chunked_head() -> Vec<u8> {
+        // Head and one event; the body never ends (the reader sees EOF later).
+        let event = "data: {\"type\":\"response.created\",\"response\":{\"id\":\"r1\"}}\n\n";
+        format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nTransfer-Encoding: chunked\r\n\r\n{:x}\r\n{event}\r\n",
+            event.len()
+        )
+        .into_bytes()
+    }
+    /// Open request 1 on the secondary-free path and relay its first chunk.
+    fn mid_body(h: &mut Host, w: &mut Wire) -> Value {
+        let g = grant(h, w);
+        push(h, w, fetch(&g)).unwrap();
+        tick_until(h, w, has("response-head"));
+        push(h, w, op(&g, "pull", 1)).unwrap();
+        let f = tick_until(h, w, has("response-chunk"));
+        assert_eq!(f.len(), 1);
+        g
+    }
+    fn assert_uncertain_with_bytes(dir: &tempfile::TempDir, h: &Host, reason: &str) {
+        let r = request(h);
+        let a = &r.attempts[0];
+        assert_eq!(a.disposition, AttemptDisposition::Uncertain);
+        assert!(
+            a.reason.as_deref().unwrap().contains(reason),
+            "{:?}",
+            a.reason
+        );
+        assert!(r.unsettled());
+        assert!(h.journal.coding.as_ref().unwrap().provider_failed);
+        let path = dir.path().join("coding-hosted-1-1.stream.sse");
+        let bytes = fs::read(&path).unwrap();
+        assert!(!bytes.is_empty(), "relayed bytes are retained");
+        assert_eq!(a.relay_sha256.as_deref(), Some(digest(&bytes).as_str()));
+        assert!(h.journal.artifacts.iter().any(|x| x.path == path));
+    }
+
+    #[test]
+    fn protocol_errors_and_run_exit_keep_relayed_bytes_and_leave_the_attempt_uncertain() {
+        // Out-of-order pull mid-body.
+        let (dir, mut h, mut w) = host(vec![chunked_head()], None);
+        let g = mid_body(&mut h, &mut w);
+        assert!(push(&mut h, &mut w, op(&g, "pull", 5)).is_err());
+        assert_uncertain_with_bytes(&dir, &h, "stream_foreign_frame");
+        // A frame of another stream while the attempt is open.
+        let (dir, mut h, mut w) = host(vec![chunked_head()], None);
+        let g = mid_body(&mut h, &mut w);
+        let mut foreign = op(&g, "pull", 2);
+        foreign["stream"] = json!(7);
+        assert!(push(&mut h, &mut w, foreign).is_err());
+        assert_uncertain_with_bytes(&dir, &h, "stream_foreign_frame");
+        // The run loop ends (deadline, cancellation, container exit) mid-body.
+        let (dir, mut h, mut w) = host(vec![chunked_head()], None);
+        mid_body(&mut h, &mut w);
+        h.coding_hosted_abort("run loop ended with the stream open")
+            .unwrap();
+        assert_uncertain_with_bytes(&dir, &h, "run loop ended");
+        // Idempotent once closed.
+        h.coding_hosted_abort("again").unwrap();
+    }
+
+    #[test]
+    fn gate_refusal_and_missing_transport_are_recorded_without_dispatch() {
+        let (_dir, mut h, mut w) = host(vec![completed()], None);
+        h.coding_gate = Some(Box::new(HostedGate {
+            intents: w.intents.clone(),
+            inject: None,
+            refuse_attempts: true,
+        }));
+        let g = grant(&mut h, &mut w);
+        push(&mut h, &mut w, fetch(&g)).unwrap();
+        assert!(h.coding_hosted_tick(&w.path).is_err());
+        assert!(w.opened.lock().unwrap().is_empty());
+        let a = request(&h).attempts[0].clone();
+        assert_eq!(a.disposition, AttemptDisposition::Uncertain);
+        assert!(!a.gate_entered);
+        assert!(a.reason.unwrap().starts_with("gate refused"));
+        assert!(h.coding_gate.is_some(), "gate is kept");
+        // Transport absent: refused before the gate is consulted.
+        let (_dir, mut h, mut w) = host(vec![completed()], None);
+        let g = grant(&mut h, &mut w);
+        push(&mut h, &mut w, fetch(&g)).unwrap();
+        h.hosted_transport = None;
+        assert!(h.coding_hosted_tick(&w.path).is_err());
+        assert!(w.intents.lock().unwrap().is_empty());
+        assert!(h.coding_gate.is_some());
+        let a = request(&h).attempts[0].clone();
+        assert_eq!(a.disposition, AttemptDisposition::Uncertain);
+        assert_eq!(a.reason.as_deref(), Some("hosted transport absent"));
     }
 }
