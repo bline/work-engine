@@ -81,7 +81,11 @@ fn expected_function(namespace: Option<&str>, tool: &Value) -> Option<ExpectedTo
 #[derive(Debug, Clone)]
 pub(crate) struct SendCitation {
     pub(crate) router_snapshot_id: String,
+    /// The request's top-level `tools` field, when present.
     pub(crate) tools: Option<Value>,
+    /// `tools` of each `additional_tools` input item: Responses Lite models carry their
+    /// tool declarations there instead of in the top-level field.
+    pub(crate) additional_tools: Vec<Value>,
 }
 
 /// Native registry rows for one turn, after every check below passed.
@@ -138,6 +142,7 @@ fn sha(value: &Value) -> Option<String> {
 struct Snapshot {
     keys: BTreeSet<ToolKey>,
     specs: Value,
+    lite_specs: Value,
 }
 
 /// `ordinary_started` is the set of `tool_call_started` ids in the ordinary trace.
@@ -192,6 +197,8 @@ pub(crate) fn check(
                     "code_mode_tools",
                     "model_visible_specs",
                     "model_visible_specs_sha256",
+                    "model_visible_specs_responses_lite",
+                    "model_visible_specs_responses_lite_sha256",
                 ],
             ) || row["version"] != 1
             {
@@ -254,16 +261,28 @@ pub(crate) fn check(
     }
     for send in sends {
         let snapshot = snapshots.get(&send.router_snapshot_id).ok_or(JOIN)?;
-        match &send.tools {
-            Some(Value::Array(tools)) if !tools.is_empty() => {
+        let visible = snapshot.specs.as_array().is_some_and(|s| !s.is_empty());
+        let top_level_empty = send
+            .tools
+            .as_ref()
+            .is_none_or(|tools| tools.as_array().is_some_and(Vec::is_empty));
+        match send.additional_tools.as_slice() {
+            // The classic request path: top-level `tools` equal to the snapshot's specs.
+            [] if !top_level_empty => {
                 if send.tools.as_ref() != Some(&snapshot.specs) {
                     return Err(JOIN);
                 }
             }
-            _ if snapshot.specs.as_array().is_some_and(|s| !s.is_empty()) => {
-                return Err(INCREMENTAL);
+            // The Responses Lite path: exactly one declaration item, no top-level field.
+            [declared] if top_level_empty => {
+                if declared != &snapshot.lite_specs {
+                    return Err(JOIN);
+                }
             }
-            _ => {}
+            [_, ..] => return Err(JOIN),
+            // No declaration at all, e.g. an incremental send: nothing to join.
+            [] if visible => return Err(INCREMENTAL),
+            [] => {}
         }
     }
     // One way only: ordinary writes are best effort, strict rows are not.
@@ -366,12 +385,22 @@ fn check_snapshot(
     if sha(&specs).as_deref() != row["model_visible_specs_sha256"].as_str() {
         return Err(SPEC);
     }
+    let lite_specs = row["model_visible_specs_responses_lite"].clone();
+    if !lite_specs.is_array()
+        || sha(&lite_specs).as_deref() != row["model_visible_specs_responses_lite_sha256"].as_str()
+    {
+        return Err(SPEC);
+    }
     for spec in specs.as_array().ok_or(UNAVAILABLE)? {
         if !visible_spec_allowed(spec, wanted) {
             return Err(EXTRA_OR_MISSING);
         }
     }
-    Ok(Snapshot { keys, specs })
+    Ok(Snapshot {
+        keys,
+        specs,
+        lite_specs,
+    })
 }
 
 fn spec_matches(spec: &Value, requested: &ExpectedTool) -> bool {
@@ -446,6 +475,8 @@ pub(crate) mod fixtures {
         }
         snapshot["model_visible_specs_sha256"] =
             json!(sha(&snapshot["model_visible_specs"]).unwrap());
+        snapshot["model_visible_specs_responses_lite_sha256"] =
+            json!(sha(&snapshot["model_visible_specs_responses_lite"]).unwrap());
     }
     /// A native-shaped snapshot for the expected set with code mode on.
     pub(crate) fn snapshot(id: &str, thread: &str, turn: &str) -> Value {
@@ -469,7 +500,10 @@ pub(crate) mod fixtures {
                 "workspace__snapshot_read":{"namespace":"workspace","name":"snapshot_read"},
                 "task__result_publish":{"namespace":"task","name":"result_publish"}},
             "model_visible_specs":[workspace,task,exec,wait],
-            "model_visible_specs_sha256":""});
+            "model_visible_specs_sha256":"","model_visible_specs_responses_lite":[],
+            "model_visible_specs_responses_lite_sha256":""});
+        row["model_visible_specs_responses_lite"] = json!([{"type":"namespace","name":"functions",
+            "description":"functions","tools":[row["model_visible_specs"][2].clone(), row["model_visible_specs"][3].clone()]}]);
         seal(&mut row);
         row
     }
@@ -498,6 +532,7 @@ pub(crate) mod fixtures {
         let sends = vec![SendCitation {
             router_snapshot_id: "snap-1".into(),
             tools: Some(snapshot["model_visible_specs"].clone()),
+            additional_tools: Vec::new(),
         }];
         (
             vec![
@@ -716,6 +751,35 @@ mod tests {
         empty[0].tools = Some(json!([]));
         refused(&rows, &empty, INCREMENTAL);
         refused(&rows, &[], UNAVAILABLE);
+    }
+
+    #[test]
+    fn responses_lite_requests_join_through_the_single_additional_tools_item() {
+        let (rows, sends) = positive();
+        let lite = rows[0]["model_visible_specs_responses_lite"].clone();
+        let lite_send = SendCitation {
+            router_snapshot_id: "snap-1".into(),
+            tools: None,
+            additional_tools: vec![lite.clone()],
+        };
+        assert!(run(&rows, std::slice::from_ref(&lite_send)).is_ok());
+        let mut empty_top = lite_send.clone();
+        empty_top.tools = Some(json!([]));
+        assert!(run(&rows, &[empty_top]).is_ok());
+        // Both declarations, two declarations, or a different declaration are refused.
+        let mut both = lite_send.clone();
+        both.tools = sends[0].tools.clone();
+        refused(&rows, &[both], JOIN);
+        let mut twice = lite_send.clone();
+        twice.additional_tools.push(lite);
+        refused(&rows, &[twice], JOIN);
+        let mut other = lite_send.clone();
+        other.additional_tools = vec![json!([{"type":"namespace","name":"functions","tools":[]}])];
+        refused(&rows, &[other], JOIN);
+        // Classic equality is not satisfied by the lite value, nor the reverse.
+        let mut classic_with_lite_value = sends[0].clone();
+        classic_with_lite_value.tools = Some(rows[0]["model_visible_specs_responses_lite"].clone());
+        refused(&rows, &[classic_with_lite_value], JOIN);
     }
 
     #[test]

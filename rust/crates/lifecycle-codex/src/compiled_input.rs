@@ -643,6 +643,13 @@ fn decode_checked(
             citations.push(SendCitation {
                 router_snapshot_id: snapshot.clone(),
                 tools: request.get("tools").cloned(),
+                additional_tools: request["input"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter(|item| item["type"] == "additional_tools")
+                    .map(|item| item["tools"].clone())
+                    .collect(),
             });
             if !request.is_object()
                 || request.get("input").and_then(Value::as_array).is_none()
