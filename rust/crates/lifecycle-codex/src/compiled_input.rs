@@ -1011,6 +1011,9 @@ mod tests {
             assert!(observation.tool_registry().is_none(), "{label}");
             // The transport bytes stay retained and checked; only eligibility is withheld.
             assert_eq!(observation.payloads().len(), 2, "{label}");
+            // The refused observation reaches the store as ineligible, which is the flag
+            // the causal-read fence and task-host preparation check refuse on.
+            assert_diagnostic_restart(&observation);
         }
         std::fs::remove_file(&registry).unwrap();
         let observation = acquire(&owner, &terminal);
@@ -1061,6 +1064,62 @@ mod tests {
                 "{case}"
             );
         }
+    }
+    fn copy_tree(from: &Path, to: &Path) {
+        std::fs::create_dir(to).unwrap();
+        for entry in std::fs::read_dir(from).unwrap() {
+            let entry = entry.unwrap();
+            let target = to.join(entry.file_name());
+            if entry.file_type().unwrap().is_dir() {
+                copy_tree(&entry.path(), &target);
+            } else {
+                std::fs::copy(entry.path(), target).unwrap();
+            }
+        }
+    }
+    /// Reads one completed native fixture directory (harness output) through the real
+    /// consumer. It never runs native code and has no default input.
+    #[test]
+    #[ignore = "requires WE_REGISTRY_FIXTURE_DIR from a completed native tool-registry fixture"]
+    fn native_tool_registry_fixture_through_the_consumer() {
+        let out = PathBuf::from(std::env::var("WE_REGISTRY_FIXTURE_DIR").unwrap());
+        let expect_eligible = std::env::var("WE_REGISTRY_EXPECT").unwrap() == "eligible";
+        let temp = tempfile::tempdir().unwrap();
+        let owner = CaptureOwner::create(temp.path().join("capture")).unwrap();
+        copy_tree(&out.join("traces"), &owner.path().join("traces"));
+        let terminal: Value =
+            serde_json::from_slice(&std::fs::read(out.join("native-terminal.json")).unwrap())
+                .unwrap();
+        let terminal_event = crate::parse_event(
+            "transport".into(),
+            1,
+            serde_json::to_vec(&terminal).unwrap(),
+        )
+        .unwrap();
+        let requested: Value = serde_json::from_slice(
+            &std::fs::read(out.join("dynamic-tools-requested.json")).unwrap(),
+        )
+        .unwrap();
+        let expected = ExpectedToolSet::from_dynamic_tools(&requested, true).unwrap();
+        let thread = terminal["params"]["threadId"].as_str().unwrap();
+        let turn = terminal["params"]["turn"]["id"].as_str().unwrap();
+        let observation = owner
+            .acquire("transport", thread, turn, &terminal_event, &expected)
+            .unwrap();
+        let result = json!({
+            "eligible": observation.eligible(),
+            "outcome": observation.outcome(),
+            "payloads": observation.payloads().len(),
+            "tool_registry_snapshots": observation.tool_registry().map(|r| r.snapshots()),
+            "tool_registry_dispatches": observation.tool_registry().map(|r| r.dispatches()),
+            "tool_registry_sha256": observation.tool_registry().map(|r| sha(r.bytes())),
+        });
+        std::fs::write(
+            out.join("consumer-result.json"),
+            serde_json::to_vec_pretty(&result).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(observation.eligible(), expect_eligible, "{result}");
     }
     #[test]
     fn provider_stream_failures_keep_checked_payloads_without_eligibility() {
