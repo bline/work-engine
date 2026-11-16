@@ -55,7 +55,10 @@ fn response(n: usize) -> Vec<u8> {
                 "arguments":json!({"command":"printf 'pub fn answer() -> u32 { 42 }\\n' >> src/lib.rs"}).to_string(),"status":"completed"}),
         ),
         2 => text(2, "Added answer() returning 42 to src/lib.rs."),
-        3 => text(3, "Recovered the exact coding result and workspace from the checkpoint."),
+        3 => text(
+            3,
+            "Recovered the exact coding result and workspace from the checkpoint.",
+        ),
         _ => text(n, "42"),
     }
 }
@@ -152,7 +155,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         let receipt = json!({"route":route,"requestId":r.id,"bodySha256":hash(&r.body)});
         if route == "primary" {
             refused += 1;
-            println!("{}", json!({"type":"refused","status":429,"receipt":receipt}));
+            println!(
+                "{}",
+                json!({"type":"refused","status":429,"receipt":receipt})
+            );
             std::io::stdout().flush()?;
             let body = json!({"error":{"code":"insufficient_quota","message":"synthetic primary route quota exhausted"}}).to_string();
             write!(
