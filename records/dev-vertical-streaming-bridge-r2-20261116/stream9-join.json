@@ -1,0 +1,107 @@
+[
+ {
+  "stream": "001",
+  "outcome": "released-after-upstream-end",
+  "chunks": 5,
+  "chunk1ForwardBeforeEndpointLastEvent": true,
+  "pullsBeforeEndpointLastEvent": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "endpointFinalMinusChunk1Ms": 597,
+  "pullWaitMs": [
+   1,
+   146,
+   149,
+   147,
+   149
+  ],
+  "usageObserved": true
+ },
+ {
+  "stream": "002",
+  "outcome": "released-after-upstream-end",
+  "chunks": 5,
+  "chunk1ForwardBeforeEndpointLastEvent": true,
+  "pullsBeforeEndpointLastEvent": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "endpointFinalMinusChunk1Ms": 600,
+  "pullWaitMs": [
+   0,
+   147,
+   149,
+   148,
+   149
+  ],
+  "usageObserved": true
+ },
+ {
+  "stream": "003",
+  "outcome": "released-after-upstream-end",
+  "chunks": 5,
+  "chunk1ForwardBeforeEndpointLastEvent": true,
+  "pullsBeforeEndpointLastEvent": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "endpointFinalMinusChunk1Ms": 599,
+  "pullWaitMs": [
+   0,
+   149,
+   149,
+   149,
+   150
+  ],
+  "usageObserved": true
+ },
+ {
+  "stream": "004",
+  "outcome": "released-after-upstream-end",
+  "chunks": 5,
+  "chunk1ForwardBeforeEndpointLastEvent": true,
+  "pullsBeforeEndpointLastEvent": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "endpointFinalMinusChunk1Ms": 600,
+  "pullWaitMs": [
+   0,
+   148,
+   149,
+   150,
+   150
+  ],
+  "usageObserved": true
+ },
+ {
+  "stream": "005",
+  "outcome": "released-after-upstream-end",
+  "chunks": 5,
+  "chunk1ForwardBeforeEndpointLastEvent": true,
+  "pullsBeforeEndpointLastEvent": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "endpointFinalMinusChunk1Ms": 599,
+  "pullWaitMs": [
+   1,
+   149,
+   150,
+   149,
+   149
+  ],
+  "usageObserved": true
+ }
+]

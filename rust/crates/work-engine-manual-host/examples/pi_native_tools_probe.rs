@@ -84,10 +84,28 @@ impl stream::Channel for Native<'_> {
         }
     }
     fn receive(&mut self) -> Result<Value> {
-        let f = receive_checked(self.workload, self.store, *self.frames)?;
-        *self.frames += 1;
+        // Content-free pulls are summarized per chunk in the stream control;
+        // every other native frame is retained individually.
+        let f = match self.workload.receive() {
+            Ok(f) if f["type"] == "pull" => f,
+            Ok(f) => {
+                self.store.record_frame(*self.frames, f.clone())?;
+                *self.frames += 1;
+                f
+            }
+            Err(code) => {
+                self.store.record_control(
+                    "failure",
+                    json!({"frameOrdinal":*self.frames,"transportError":code}),
+                )?;
+                return Err(code);
+            }
+        };
         self.store.check(&f)?;
         Ok(f)
+    }
+    fn readable(&mut self) -> Result<bool> {
+        self.workload.readable()
     }
 }
 fn receive_checked(
@@ -175,10 +193,17 @@ fn run() -> Result<()> {
     let allocation = owner.enter(Effect::Allocation)?;
     let mut workload = native::Workload::create(package, &receiver, &mut store, &allocation)?;
     drop(allocation); // Allocation remains unknown until native UUID is observed.
+    // Native consumer aborts its session if a pulled chunk does not arrive in
+    // time; the abort reaches the host as a stream cancel.
+    let stream_idle_ms: u64 = std::env::var("PI_PROBE_STREAM_IDLE_MS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .filter(|v| (500..=60000).contains(v))
+        .unwrap_or(30000);
     let initialization = owner.enter(Effect::Initialization)?;
     initialization.consumption_deadline_millis((native::now() + 120000) / 1000)?;
     workload.send_effect(
-        &json!({"type":"init","binding":binding,"sequence":0,"stream":0}),
+        &json!({"type":"init","binding":binding,"sequence":0,"stream":0,"streamIdleMs":stream_idle_ms}),
         &initialization,
     )?;
     let ready = receive_checked(&mut workload, &mut store, 0)?;
@@ -232,7 +257,8 @@ fn run() -> Result<()> {
                         provider_attempts += 1;
                         connect(addr, &body, access, &request_id, &lease)
                     })?;
-                    let mut upstream = match stream::Upstream::open(socket) {
+                    let killer = socket.try_clone().map_err(|_| "synthetic_clone")?;
+                    let upstream = match stream::Upstream::open(socket) {
                         Ok(u) => u,
                         Err(code) => {
                             store.record_control("failure", json!({"stage":"upstream-head","code":code,"classification":"provider-attempt-unknown"}))?;
@@ -248,7 +274,16 @@ fn run() -> Result<()> {
                             frames: &mut frames,
                             checked: std::time::Instant::now(),
                         };
-                        stream::relay(&mut chan, &mut upstream, &binding, seq, stream)
+                        stream::relay(
+                            &mut chan,
+                            upstream,
+                            move || {
+                                let _ = killer.shutdown(std::net::Shutdown::Both);
+                            },
+                            &binding,
+                            seq,
+                            stream,
+                        )
                     };
                     let relay = match relay {
                         Ok(r) => r,

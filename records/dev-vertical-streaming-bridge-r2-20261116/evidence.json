@@ -1,0 +1,179 @@
+{
+ "standing": "bounded offline evidence copy; private run dirs own full artifacts",
+ "runs": {
+  "stream9": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/stream9",
+   "sha256": {
+    "store/control-closed-observation.json": "fa8b355b1fef5fe74741dc87ce2387d71fc0f6ffb3204cf57bb2b747500ab599",
+    "store/control-closure.json": "8066ea8ff1d6f5cc400d33c35c60138e2d608cc5839ef58e7cbfc31b1d3f169b",
+    "store/control-create-intent.json": "1f56f2cf066c0d150be4e2c84d9e9558f394b896a5519581688d7b567e9f3661",
+    "store/control-created.json": "68a1de954f025ef9a62a03ad42b8a31ae295f510f54d4438d3a154dd56234b5a",
+    "store/control-ready.json": "ae01dd91ea93b208de2d9affabaff3341f38df20e3f85894d3e670e6060a4125",
+    "store/control-report.json": "27733da9bc4beb44e2f085aaf939afa51320a71aa4036aecbbcdb8119c55eb36",
+    "store/control-stream-001.json": "c473e1e7d091a20133bbd3bfec2529ee9e80fe1c0473c9590a66b01bb27a11d2",
+    "store/control-stream-002.json": "590670ad0db2b5d9176f07d8a727fedf210af6c638ab467a63359f5333120266",
+    "store/control-stream-003.json": "bb7c1cf2e19a00ca94897d618095130bff75e1d4ed5d0e0fd77768f46b06999b",
+    "store/control-stream-004.json": "91da1e85a35f2f9fe00038996e67ff4f5245711523829735fef60c40f2e3385e",
+    "store/control-stream-005.json": "1b964bff597be8ef1a33480c46559879c5bf13cbe78924d9015fc26f80af9ad7",
+    "observer.jsonl": "446b12d4d27a5efd162e893ebd7d8890ced34d48ada18380ae7c706884011b4b",
+    "probe.err": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "inputs.sha256": "7b4a648341b878b82a176ce910947e1cb9e365d68da9b180da74641a7430aa2c"
+   },
+   "frameFiles": 19
+  },
+  "fault-stall2": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/fault-stall2",
+   "sha256": {
+    "store/control-create-intent.json": "6b5e8d488535e39f6fa9d2eb77209401ddf9a8c0372ff99d86bff3a343bb5553",
+    "store/control-created.json": "bf1df48cb7193f7d92b7a7d3d2203cf960bcacfc5c740e4521e463ea0453e4ff",
+    "store/control-failure.json": "7da217d04ae1dc44bb5cf3738a60ed62d9b3eb8f85c7e2fe8a9d364aaa230470",
+    "store/control-ready.json": "8dc7d651bad8628a2e34c3c7a3167f8e2335f1f9644abd9fb59da057a3a0a9d6",
+    "store/control-stream-001.json": "eeed94e4426360258d173bdd2b1f0777cce70183038a88d47f46bf67c9fb34ec",
+    "observer.jsonl": "5094051dbe41e713d44f280937464abed64eb75ded65337997fe4110c0fbc217",
+    "probe.err": "26b7dfc1324dcb2ff8c3383ad112d3c4f45fdd4615d3892b04c61caf79ef5395",
+    "inputs.sha256": "7b4a648341b878b82a176ce910947e1cb9e365d68da9b180da74641a7430aa2c"
+   },
+   "frameFiles": 4,
+   "failure": {
+    "classification": "provider-attempt-unknown",
+    "nativeLastMessage": {
+     "errorMessage": "Request was aborted",
+     "role": "assistant",
+     "stopReason": "aborted"
+    },
+    "nativeNextType": "snapshot",
+    "outcome": "cancelled-before-upstream-end",
+    "stage": "stream-not-completed"
+   },
+   "stream001": {
+    "cancelDuringPendingPullMs": 2015,
+    "chunks": [
+     {
+      "bytes": 85,
+      "forwardMs": 1794807138459,
+      "ordinal": 1,
+      "pullMs": 1794807138459,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 178,
+      "forwardMs": 1794807138607,
+      "ordinal": 2,
+      "pullMs": 1794807138460,
+      "upstreamEndedAtPull": false
+     }
+    ],
+    "forwardedBytes": 263,
+    "forwardedSha256": "2b8ced87e1eb7534430be95d371a12ab9c25ba9d4fce912b78fc40582cd687ad",
+    "interruption": null,
+    "openedMs": 1794807138456,
+    "outcome": "cancelled-before-upstream-end",
+    "pullsBeforeUpstreamEnd": 1,
+    "status": 200,
+    "unforwardedAfterRelease": 0,
+    "upstreamEndMs": null,
+    "usage": {
+     "completed": false,
+     "observed": false
+    }
+   },
+   "observerFault": [
+    {
+     "closedMs": 1794807140624,
+     "eventSentMs": [
+      1794807138456,
+      1794807138606
+     ],
+     "fault": "stall",
+     "peerClosed": true,
+     "requestId": "10d671f4-9ccc-4d12-a80d-bfe1513d8f7f-1",
+     "stalledMs": 2017,
+     "type": "fault"
+    }
+   ]
+  },
+  "fault-truncate4": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/fault-truncate4",
+   "sha256": {
+    "store/control-create-intent.json": "47052fb0212196b214dbf8bd2dc469ed0a2f8d5e95b07717180b2c7002cb5b41",
+    "store/control-created.json": "0a2fce65549157b6d4e02c271182fc56819fa10d20083b81542a03f51d80c926",
+    "store/control-failure.json": "5141d681d5e405be63eafb0d1f8e1ed5a0e2949a3a8d5a9d21f7a36d37760509",
+    "store/control-ready.json": "6aa72318489521e0175df6e4d206e6aaa557c6042350fd837c939918a4c9b326",
+    "store/control-stream-001.json": "adf9070d24a0b95b6158d70bde2b718df52639d53f68265e25ba47ff1b4977ff",
+    "observer.jsonl": "ac944ff826f02efed06d9b29489ea75c72cf02fc5bcf38b071cbb8e90056a445",
+    "probe.err": "26b7dfc1324dcb2ff8c3383ad112d3c4f45fdd4615d3892b04c61caf79ef5395",
+    "inputs.sha256": "7b4a648341b878b82a176ce910947e1cb9e365d68da9b180da74641a7430aa2c"
+   },
+   "frameFiles": 3,
+   "failure": {
+    "classification": "provider-attempt-unknown",
+    "nativeLastMessage": {
+     "errorMessage": "relay_upstream_truncated",
+     "role": "assistant",
+     "stopReason": "error"
+    },
+    "nativeNextType": "snapshot",
+    "outcome": "interrupted-uncertain",
+    "stage": "stream-not-completed"
+   },
+   "stream001": {
+    "cancelDuringPendingPullMs": null,
+    "chunks": [
+     {
+      "bytes": 85,
+      "forwardMs": 1794807164661,
+      "ordinal": 1,
+      "pullMs": 1794807164661,
+      "upstreamEndedAtPull": false
+     },
+     {
+      "bytes": 178,
+      "forwardMs": 1794807164809,
+      "ordinal": 2,
+      "pullMs": 1794807164662,
+      "upstreamEndedAtPull": false
+     }
+    ],
+    "forwardedBytes": 263,
+    "forwardedSha256": "2b8ced87e1eb7534430be95d371a12ab9c25ba9d4fce912b78fc40582cd687ad",
+    "interruption": "upstream_truncated",
+    "openedMs": 1794807164659,
+    "outcome": "interrupted-uncertain",
+    "pullsBeforeUpstreamEnd": 1,
+    "status": 200,
+    "unforwardedAfterRelease": 0,
+    "upstreamEndMs": null,
+    "usage": {
+     "completed": false,
+     "observed": false
+    }
+   }
+  }
+ },
+ "stream9Report": {
+  "classification": "offline-actual-native-development",
+  "duplicateFirstRequest": true,
+  "providerDispatches": 6,
+  "providerResponsesConsumed": 5,
+  "snapshots": [
+   {
+    "entries": 9,
+    "leaf": "cb624cc6",
+    "ordinal": 1,
+    "sha256": "cf7f5a011bd5b606dd46b30d659a2f57c279b7ccddde6a99a9881e7d133f8c16"
+   },
+   {
+    "entries": 11,
+    "leaf": "b5b48d1c",
+    "ordinal": 2,
+    "sha256": "298b144fa6695a4caef4624c1e48a2032a37ed4717b2ef22177ab13f7237358e"
+   },
+   {
+    "entries": 13,
+    "leaf": "5a139b57",
+    "ordinal": 3,
+    "sha256": "10c921be34938ef1816ca322a77530fcdae7a5b1c2730f1bea0296d887d323c5"
+   }
+  ]
+ }
+}

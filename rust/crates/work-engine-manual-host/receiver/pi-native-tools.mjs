@@ -4,7 +4,42 @@ import fs from 'node:fs';
 import net from 'node:net';
 import {syncBuiltinESMExports} from 'node:module';
 const MAX=2*1024*1024;
-const observation={writeAttempts:[],networkAttempts:0};
+
+// Consumer-driven incremental response body: one host chunk per native read
+// demand. Every frame uses this response's immutable identity. A cancel may
+// overtake an outstanding pull; it then owns the frame reader until the host
+// confirms cancellation for the cancel's ordinal.
+export function createResponseStream({id,sendRaw,read,idleMs=0,onIdle=()=>{},onSettled=()=>{}}){
+ const key=JSON.stringify(id.binding);
+ const env=(type,data)=>({type,binding:id.binding,sequence:id.sequence,stream:id.stream,...data});
+ const mine=f=>{if(JSON.stringify(f.binding)!==key||f.sequence!==id.sequence||f.stream!==id.stream)throw Error('foreign_frame');return f;};
+ let ordinal=0,done=false,inflight=null,cancelling=null;
+ const settle=()=>{done=true;onSettled();};
+ const release=()=>{if(done)return Promise.resolve();if(cancelling)return cancelling;
+   cancelling=(async()=>{const my=++ordinal;await sendRaw(env('cancel',{ordinal:my}));
+     let f=inflight?await inflight.catch(()=>null):null;
+     for(;;){if(f&&f.type==='response-cancelled'&&f.ordinal===my)break;
+       if(f&&!['response-chunk','response-end','response-failure'].includes(f.type))throw Error('stream_frame');
+       f=mine(await read());}
+     settle();})();return cancelling;};
+ const body=new ReadableStream({
+   async pull(c){if(done||cancelling)return;const my=++ordinal;await sendRaw(env('pull',{ordinal:my}));
+     const idle=idleMs?setTimeout(onIdle,idleMs):null;
+     inflight=read().then(mine);let f;try{f=await inflight;}finally{clearTimeout(idle);inflight=null;}
+     if(cancelling)return;
+     if(f.ordinal!==my)throw Error('foreign_frame');
+     if(f.type==='response-chunk'){c.enqueue(new Uint8Array(Buffer.from(f.body,'base64')));}
+     else if(f.type==='response-end'){settle();c.close();}
+     else if(f.type==='response-failure'){settle();c.error(Error('relay_'+f.code));}
+     else{settle();throw Error('stream_frame');}},
+   cancel(){return release();}
+ },{highWaterMark:0});
+ return {body,release};
+}
+// Runs only as the container entrypoint; importing for tests has no effects.
+if(import.meta.url==='file:///receiver.mjs')await main();
+async function main(){
+const observation={writeAttempts:[],networkAttempts:0,streamIdleAborts:0};
 net.Socket.prototype.connect=function(){observation.networkAttempts++;throw Error('native_network_refused');};
 globalThis.fetch=()=>{observation.networkAttempts++;throw Error('global_fetch_refused');};
 syncBuiltinESMExports();
@@ -18,12 +53,12 @@ function read(){if(waiting)throw Error('concurrent_read');return new Promise((re
 let open=null;
 async function send(v){if(open){const o=open;open=null;await o.release();}await sendRaw(v);}
 async function sendRaw(v){const b=Buffer.from(JSON.stringify(v));if(b.length>MAX)throw Error('frame_bound');const h=Buffer.alloc(4);h.writeUInt32BE(b.length);await new Promise((r,j)=>process.stdout.write(Buffer.concat([h,b]),e=>e?j(e):r()));}
-let bind,seq=0,stream=0;
+let bind,seq=0,stream=0,streamIdleMs=0,session;
 const envelope=(type,data={})=>({type,binding:bind,sequence:seq,stream,...data});
 const observe=()=>({...observation,scratch:fs.readdirSync("/scratch",{recursive:true})});
 function joined(v,type){if(v.type!==type||JSON.stringify(v.binding)!==JSON.stringify(bind)||v.sequence!==seq||v.stream!==stream)throw Error('foreign_frame');}
 try {
- const init=await read();if(init.type!=='init'||init.binding?.profile!=='pi-native-inmemory-sse-v1'||init.binding?.generation!==1||init.sequence!==0||init.stream!==0)throw Error('init');bind=init.binding;
+ const init=await read();if(init.type!=='init'||init.binding?.profile!=='pi-native-inmemory-sse-v1'||init.binding?.generation!==1||init.sequence!==0||init.stream!==0)throw Error('init');bind=init.binding;streamIdleMs=Number.isInteger(init.streamIdleMs)?init.streamIdleMs:0;
  const {createAgentSession,DefaultResourceLoader,ModelRuntime,SessionManager,SettingsManager,createWriteTool,createBashTool}=await import('/pi/node_modules/@earendil-works/pi-coding-agent/dist/index.js');
  const manager=SessionManager.inMemory('/scratch',{id:bind.session});
  const settings=SettingsManager.inMemory({compaction:{enabled:false},retry:{enabled:false},cacheWarming:'off',transport:'sse'});
@@ -46,28 +81,20 @@ try {
    await send(envelope('tool-observed',{id,name:tool.name,toolOrdinal:ordinal,result}));
    return result;
  };}
- const {session}=await createAgentSession({cwd:'/scratch',agentDir:'/scratch/empty',sessionManager:manager,settingsManager:settings,resourceLoader:loader,modelRuntime:runtime,model,thinkingLevel:'off',noTools:'builtin',tools:['write','bash'],customTools:tools});
+ ({session}=await createAgentSession({cwd:'/scratch',agentDir:'/scratch/empty',sessionManager:manager,settingsManager:settings,resourceLoader:loader,modelRuntime:runtime,model,thinkingLevel:'off',noTools:'builtin',tools:['write','bash'],customTools:tools}));
  // Keep the actual native stream function and parser; inject only fetch transport.
  const original=runtime.streamSimple.bind(runtime);
  runtime.streamSimple=(m,c,o)=>original(m,c,{...o,transport:'sse',maxRetries:0,timeoutMs:10000,cacheRetention:'none',fetch:async(url,req)=>{
    stream++;const body=typeof req.body==='string'?Buffer.from(req.body):Buffer.from(req.body);if(body.length>131072)throw Error('request_bound');
    await send(envelope('fetch',{url:String(url),method:req.method,headers:Object.fromEntries(req.headers),body:body.toString('base64')}));
    const head=await read();joined(head,'response-head');if(!Number.isInteger(head.status))throw Error('response_head');
-   // Consumer-driven incremental body: one host chunk per native read demand.
-   let ordinal=0,done=false,chain=Promise.resolve();
-   const step=kind=>chain=chain.then(async()=>{if(done)return null;ordinal++;await sendRaw(envelope(kind,{ordinal}));const f=await read();
-     if(JSON.stringify(f.binding)!==JSON.stringify(bind)||f.sequence!==seq||f.stream!==stream||f.ordinal!==ordinal)throw Error('foreign_frame');return f;});
-   const responseBody=new ReadableStream({
-     async pull(c){const f=await step('pull');if(!f)return;
-       if(f.type==='response-chunk'){c.enqueue(new Uint8Array(Buffer.from(f.body,'base64')));}
-       else if(f.type==='response-end'){done=true;open=null;c.close();}
-       else if(f.type==='response-failure'){done=true;open=null;c.error(Error('relay_'+f.code));}
-       else{done=true;throw Error('stream_frame');}},
-     async cancel(){const f=await step('cancel');done=true;open=null;if(f&&f.type!=='response-cancelled')throw Error('stream_frame');}
-   },{highWaterMark:0});
-   open={release:async()=>{const f=await step('cancel');done=true;if(f&&f.type!=='response-cancelled')throw Error('stream_frame');}};
+   // The response identity is fixed here; a later fetch cannot change it.
+   let handle;handle=createResponseStream({id:{binding:bind,sequence:seq,stream},sendRaw,read,idleMs:streamIdleMs,
+     onIdle:()=>{observation.streamIdleAborts++;session.abort();},onSettled:()=>{if(open===handle)open=null;}});
+   open=handle;const responseBody=handle.body;
    return new Response(responseBody,{status:head.status,headers:{'content-type':'text/event-stream'}});
  }});
  await send(envelope('ready',{sessionId:session.sessionId,header:manager.getHeader(),tools:session.getActiveToolNames(),observation:observe()}));
  for(;;){const op=await read();if(op.type==='close'){await session.dispose();await send(envelope('closed',{observation:observe()}));process.stdin.destroy();break;}seq++;stream=0;joined(op,'prompt');await session.prompt(op.prompt);await send(envelope('snapshot',{sessionId:session.sessionId,header:manager.getHeader(),entries:manager.getEntries(),leaf:manager.getLeafId(),messages:session.messages,exports:fs.existsSync('/scratch/dist.mjs')?[{name:'dist.mjs',data:fs.readFileSync('/scratch/dist.mjs').toString('base64')}]:[],observation:observe()}));}
 }catch{try{await send(envelope('failure',{code:'native_refused',observation}));}catch{}process.exitCode=2;process.stdin.destroy();}
+}

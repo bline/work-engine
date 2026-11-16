@@ -11,6 +11,8 @@ use review_execution_evidence::pi::{Binding, LiveStore};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::io::{BufRead, BufReader, Read};
+use std::sync::mpsc::{Receiver, RecvTimeoutError, SyncSender, sync_channel};
+use std::time::{Duration, Instant};
 
 pub type Result<T> = std::result::Result<T, &'static str>;
 pub const CHUNK: usize = 16 * 1024;
@@ -21,6 +23,8 @@ const MAX_HEAD: usize = 8192;
 pub trait Channel {
     fn send(&mut self, v: &Value) -> Result<()>;
     fn receive(&mut self) -> Result<Value>;
+    /// Whether a native frame (or EOF) can be received without blocking.
+    fn readable(&mut self) -> Result<bool>;
 }
 /// Exclusion screen for relayed bytes. See [`LiveStore::stream_hold`].
 pub trait Screen {
@@ -227,6 +231,8 @@ pub struct Relay {
     pub upstream_end_ms: Option<u64>,
     pub opened_ms: u64,
     pub unforwarded_after_release: usize,
+    /// Time a native cancel waited behind an outstanding pull, if any.
+    pub cancel_wait_ms: Option<u64>,
 }
 impl Relay {
     pub fn sha256(&self) -> String {
@@ -249,26 +255,58 @@ impl Relay {
             "upstreamEndMs": self.upstream_end_ms,
             "pullsBeforeUpstreamEnd": self.pulls_before_upstream_end(),
             "unforwardedAfterRelease": self.unforwarded_after_release,
+            "cancelDuringPendingPullMs": self.cancel_wait_ms,
             "usage": usage(&self.forwarded),
         })
     }
 }
 
+/// Data payloads of complete SSE events. Lines end in CRLF, LF or CR; a
+/// blank line dispatches; multiple `data` lines join with LF; one leading
+/// space after the colon is removed. A trailing undispatched event is ignored.
+pub fn sse_data(sse: &[u8]) -> Vec<String> {
+    let text = String::from_utf8_lossy(sse);
+    let mut out = Vec::new();
+    let mut data: Option<String> = None;
+    let mut rest: &str = &text;
+    while let Some(i) = rest.find(['\r', '\n']) {
+        let line = &rest[..i];
+        let skip = if rest[i..].starts_with("\r\n") { 2 } else { 1 };
+        rest = &rest[i + skip..];
+        if line.is_empty() {
+            if let Some(d) = data.take() {
+                out.push(d);
+            }
+            continue;
+        }
+        let (field, value) = line.split_once(':').unwrap_or((line, ""));
+        if field == "data" {
+            let value = value.strip_prefix(' ').unwrap_or(value);
+            match &mut data {
+                Some(d) => {
+                    d.push('\n');
+                    d.push_str(value);
+                }
+                None => data = Some(value.to_owned()),
+            }
+        }
+    }
+    out
+}
 /// Normalized usage from a Responses SSE `response.completed` event. Missing
 /// values remain null; nothing is inferred from HTTP completion.
 pub fn usage(sse: &[u8]) -> Value {
-    let text = String::from_utf8_lossy(sse);
-    let completed = text
-        .split("\n\n")
-        .filter_map(|e| e.lines().find_map(|l| l.strip_prefix("data: ")))
+    let completed = sse_data(sse)
+        .iter()
         .filter_map(|d| serde_json::from_str::<Value>(d).ok())
         .filter(|v| v["type"] == "response.completed")
         .last();
     let Some(v) = completed else {
-        return json!({"observed": false});
+        return json!({"completed": false, "observed": false});
     };
     let u = &v["response"]["usage"];
     json!({
+        "completed": true,
         "observed": u.is_object(),
         "responseId": v["response"]["id"],
         "inputTokens": u["input_tokens"],
@@ -287,18 +325,103 @@ fn frame(kind: &str, b: &Binding, seq: u64, stream: u64, data: Value) -> Value {
     v
 }
 
+enum Next {
+    Data(Vec<u8>),
+    End,
+    Failed(&'static str),
+    /// A native frame arrived while the host awaited upstream bytes.
+    Native(Value),
+}
+/// Upstream bytes are read on a dedicated thread, one bounded chunk per host
+/// request, so the host can observe a native `cancel` while a read is pending.
+struct Reader {
+    request: SyncSender<()>,
+    result: Receiver<Result<Option<Vec<u8>>>>,
+    outstanding: bool,
+}
+impl Reader {
+    fn spawn<R: Read + Send + 'static>(mut up: Upstream<R>) -> Self {
+        let (request, rx) = sync_channel::<()>(1);
+        let (tx, result) = sync_channel(1);
+        std::thread::spawn(move || {
+            while rx.recv().is_ok() {
+                let r = up.next(CHUNK);
+                let last = !matches!(r, Ok(Some(_)));
+                if tx.send(r).is_err() || last {
+                    break;
+                }
+            }
+        });
+        Self {
+            request,
+            result,
+            outstanding: false,
+        }
+    }
+    fn next<C: Channel>(&mut self, chan: &mut C, wait: Option<Duration>) -> Result<Next> {
+        if !self.outstanding {
+            self.request.send(()).map_err(|_| "upstream_reader")?;
+            self.outstanding = true;
+        }
+        let deadline = wait.map(|w| Instant::now() + w);
+        loop {
+            match self.result.recv_timeout(POLL) {
+                Ok(r) => {
+                    self.outstanding = false;
+                    return Ok(match r {
+                        Ok(Some(b)) => Next::Data(b),
+                        Ok(None) => Next::End,
+                        Err(code) => Next::Failed(code),
+                    });
+                }
+                Err(RecvTimeoutError::Disconnected) => return Ok(Next::Failed("upstream_reader")),
+                Err(RecvTimeoutError::Timeout) => {
+                    if deadline.is_some_and(|d| Instant::now() >= d) {
+                        return Ok(Next::Failed("upstream_drain_deadline"));
+                    }
+                    if wait.is_none() && chan.readable()? {
+                        return Ok(Next::Native(chan.receive()?));
+                    }
+                }
+            }
+        }
+    }
+}
+const POLL: Duration = Duration::from_millis(10);
+const DRAIN: Duration = Duration::from_secs(1);
+
 /// Relay an opened upstream response to the native consumer under the given
 /// stream identity. Transport/protocol failures toward the native side are
 /// returned as errors; upstream failures after the head are reported to the
-/// consumer and returned as `Outcome::Interrupted`.
-pub fn relay<C: Channel + Screen, R: Read>(
+/// consumer and returned as `Outcome::Interrupted`. `abort` closes the
+/// upstream connection; it runs whenever the relay stops before the upstream
+/// framed end, unblocking any pending read.
+pub fn relay<C: Channel + Screen, R: Read + Send + 'static>(
     chan: &mut C,
-    upstream: &mut Upstream<R>,
+    upstream: Upstream<R>,
+    abort: impl FnOnce(),
+    binding: &Binding,
+    seq: u64,
+    stream: u64,
+) -> Result<Relay> {
+    let mut abort = Some(abort);
+    let r = relay_inner(chan, upstream, binding, seq, stream);
+    if !matches!(&r, Ok(x) if x.upstream_end_ms.is_some()) {
+        if let Some(a) = abort.take() {
+            a();
+        }
+    }
+    r
+}
+fn relay_inner<C: Channel + Screen, R: Read + Send + 'static>(
+    chan: &mut C,
+    upstream: Upstream<R>,
     binding: &Binding,
     seq: u64,
     stream: u64,
 ) -> Result<Relay> {
     let opened_ms = now_millis();
+    let bind = serde_json::to_value(binding).map_err(|_| "binding")?;
     let mut r = Relay {
         status: upstream.status,
         outcome: Outcome::Completed,
@@ -307,6 +430,7 @@ pub fn relay<C: Channel + Screen, R: Read>(
         upstream_end_ms: None,
         opened_ms,
         unforwarded_after_release: 0,
+        cancel_wait_ms: None,
     };
     chan.send(&frame(
         "response-head",
@@ -315,12 +439,17 @@ pub fn relay<C: Channel + Screen, R: Read>(
         stream,
         json!({"status":upstream.status}),
     ))?;
+    let mut reader = Reader::spawn(upstream);
     let mut held: Vec<u8> = Vec::new();
     let mut ordinal = 0u64;
+    let mut next_op: Option<Value> = None;
     loop {
-        let op = chan.receive()?;
+        let op = match next_op.take() {
+            Some(op) => op,
+            None => chan.receive()?,
+        };
         ordinal += 1;
-        if op["binding"] != serde_json::to_value(binding).map_err(|_| "binding")?
+        if op["binding"] != bind
             || op["sequence"] != seq
             || op["stream"] != stream
             || op["ordinal"] != ordinal
@@ -340,15 +469,15 @@ pub fn relay<C: Channel + Screen, R: Read>(
                 ))?;
                 // A consumer commonly releases right after the terminal
                 // provider event. Only then, observe whether the framed end
-                // follows; unforwarded bytes keep the end unobserved.
+                // follows within a short bound; otherwise the end stays unobserved.
                 if r.upstream_end_ms.is_none()
                     && held.is_empty()
-                    && usage(&r.forwarded)["observed"] == true
+                    && usage(&r.forwarded)["completed"] == true
                 {
-                    match upstream.next(CHUNK) {
-                        Ok(None) => r.upstream_end_ms = Some(now_millis()),
-                        Ok(Some(b)) => r.unforwarded_after_release = b.len(),
-                        Err(_) => {}
+                    match reader.next(chan, Some(DRAIN))? {
+                        Next::End => r.upstream_end_ms = Some(now_millis()),
+                        Next::Data(b) => r.unforwarded_after_release = b.len(),
+                        _ => {}
                     }
                 }
                 r.outcome = Outcome::Cancelled {
@@ -359,13 +488,14 @@ pub fn relay<C: Channel + Screen, R: Read>(
             Some("pull") => {}
             _ => return Err("stream_interleaved_frame"),
         }
-        // Read until something is releasable, the upstream ends, or it fails.
+        // Read until something is releasable, the upstream ends, it fails, or
+        // the native consumer cancels while this pull is outstanding.
         let release = loop {
             if r.upstream_end_ms.is_some() {
                 break std::mem::take(&mut held);
             }
-            match upstream.next(CHUNK) {
-                Ok(Some(b)) => {
+            match reader.next(chan, None)? {
+                Next::Data(b) => {
                     held.extend(b);
                     if r.forwarded.len() + held.len() > MAX_RESPONSE {
                         r.outcome = Outcome::Interrupted("upstream_response_bound");
@@ -383,13 +513,26 @@ pub fn relay<C: Channel + Screen, R: Read>(
                         break std::mem::replace(&mut held, rest);
                     }
                 }
-                Ok(None) => r.upstream_end_ms = Some(now_millis()),
-                Err(code) => {
+                Next::End => r.upstream_end_ms = Some(now_millis()),
+                Next::Failed(code) => {
                     r.outcome = Outcome::Interrupted(code);
+                    break Vec::new();
+                }
+                Next::Native(op) => {
+                    // Only a cancel may overtake an outstanding pull; that
+                    // pull is answered by the cancellation itself.
+                    if op["type"] != "cancel" {
+                        return Err("stream_interleaved_frame");
+                    }
+                    r.cancel_wait_ms = Some(now_millis() - pulled);
+                    next_op = Some(op);
                     break Vec::new();
                 }
             }
         };
+        if next_op.is_some() {
+            continue;
+        }
         if let Outcome::Interrupted(code) = r.outcome {
             chan.send(&frame(
                 "response-failure",

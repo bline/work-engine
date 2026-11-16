@@ -506,6 +506,19 @@ impl Workload {
     pub fn receive(&mut self) -> Result<Value> {
         decode(&mut self.output, &mut self.remaining)
     }
+    /// Nonblocking readiness of the native output (data, EOF or error).
+    pub fn readable(&mut self) -> Result<bool> {
+        let mut p = libc::pollfd {
+            fd: self.output.as_raw_fd(),
+            events: libc::POLLIN,
+            revents: 0,
+        };
+        let n = unsafe { libc::poll(&mut p, 1, 0) };
+        if n < 0 {
+            return Err("pipe_poll");
+        }
+        Ok(n > 0)
+    }
     pub fn inspect(&mut self, store: &LiveStore) -> Result<Value> {
         let b = cmd(&args(&["inspect", &self.id]), store)?;
         let v: Value = serde_json::from_slice(&b).map_err(|_| "inspect_json")?;

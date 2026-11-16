@@ -60,7 +60,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut effects = BTreeMap::<String, (usize, String, Vec<u8>)>::new();
     let mut receipts = vec![];
     let mut authority = None;
-    let truncate = std::env::var("PI_OBSERVER_FAULT").as_deref() == Ok("truncate-first");
+    let fault = std::env::var("PI_OBSERVER_FAULT").unwrap_or_default();
+    let truncate = fault == "truncate-first";
+    let stall = fault == "stall-first";
     while effects.len() < 5 {
         let (mut s, _) = match listener.accept() {
             Ok(x) => x,
@@ -147,6 +149,21 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         let text = std::str::from_utf8(reply)?;
         let mut sent = vec![];
         for (i, event) in text.split_inclusive("\n\n").enumerate() {
+            if stall && i == 2 && !duplicate && *effect_id == 1 {
+                // Fault control: hold the stream open mid-response and observe
+                // when (whether) the host closes the connection.
+                let at = Instant::now();
+                s.set_read_timeout(Some(Duration::from_secs(20)))?;
+                let mut b = [0u8; 1];
+                let closed = matches!(s.read(&mut b), Ok(0) | Err(_))
+                    && at.elapsed() < Duration::from_secs(20);
+                println!(
+                    "{}",
+                    json!({"type":"fault","fault":"stall","requestId":id,"eventSentMs":sent,"stalledMs":at.elapsed().as_millis() as u64,"peerClosed":closed,"closedMs":pi_native::now()})
+                );
+                std::io::stdout().flush()?;
+                return Err("injected stall fault".into());
+            }
             if truncate && i == 2 && !duplicate && *effect_id == 1 {
                 // Fault control: close mid-stream without the framed end.
                 println!(
