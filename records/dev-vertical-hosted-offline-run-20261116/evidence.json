@@ -1,0 +1,187 @@
+{
+ "schema": "work-engine.dev-vertical-hosted-offline-run.v1",
+ "subject": {
+  "commit": "3c1948b1",
+  "note": "release coding-qualification built from the working tree later committed unchanged as 3c1948b1"
+ },
+ "run": {
+  "state_dir": "/home/bline/.local/state/work-engine/dev-vertical-hosted-step4-20261116/r4/state",
+  "job_sha256": "e63fc1b1334fd583b32d883d35970f7dd9c2712687324f4c9e36c4e7ab973cdf",
+  "coding_qualification_sha256": "06ce9c84d29c00df29e30e1f53649636d39df991dd3743fc839dd6901e408a03",
+  "hosted_routes_sha256": "c65e77d6b48afffd23482530a928974fcd02b2eb1aaa82d119f4486d2eac44d6",
+  "stdout": "{\"acceptance\":\"owner_pending\",\"domain_effect_settlement\":\"not_claimed\",\"receipt_id\":\"2b66c40b09af99c8bd82fa9e18b48ec544659880f4305d2c579f81d200d5265b\",\"result\":\"/home/bline/.local/state/work-engine/dev-vertical-hosted-step4-20261116/r4/state/coding-continuity-result.json\",\"status\":\"bounded_live_continuity_completed\"}"
+ },
+ "inference_container": {
+  "NetworkMode": "none",
+  "ReadonlyRootfs": true,
+  "mount_targets": [
+   "/config",
+   "/export",
+   "/pi",
+   "/profile",
+   "/receiver/pi-native-tools.mjs",
+   "/receiver/receiver.mjs"
+  ],
+  "env_names": [
+   "HOME",
+   "NODE_VERSION",
+   "PATH",
+   "PI_CODING_AGENT_DIR",
+   "YARN_VERSION"
+  ],
+  "private_access_entries": 0
+ },
+ "ledger": {
+  "1": {
+   "settled_microusd": 266,
+   "backend_model": "gpt-6-luna",
+   "http_status": 200,
+   "attempts": [
+    {
+     "attempt": 1,
+     "route": "primary",
+     "payer": "synthetic-subscription",
+     "disposition": "refused",
+     "http_status": 429,
+     "settled_microusd": null,
+     "relay_sha256": null,
+     "refusal_body_sha256": "a02bb0a4371acb98b4df55387e55872b2be5a5c844e188cfaca724ba74d9bdfe"
+    },
+    {
+     "attempt": 2,
+     "route": "secondary",
+     "payer": "synthetic-api",
+     "disposition": "completed",
+     "http_status": 200,
+     "settled_microusd": 266,
+     "relay_sha256": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+     "refusal_body_sha256": null
+    }
+   ]
+  },
+  "2": {
+   "settled_microusd": 266,
+   "backend_model": "gpt-6-luna",
+   "http_status": 200,
+   "attempts": [
+    {
+     "attempt": 1,
+     "route": "secondary",
+     "payer": "synthetic-api",
+     "disposition": "completed",
+     "http_status": 200,
+     "settled_microusd": 266,
+     "relay_sha256": "69c8ee1ff7f8061cb4b7ef36346b41673ec038a59d1198dce7442cdac3a7d849",
+     "refusal_body_sha256": null
+    }
+   ]
+  },
+  "3": {
+   "settled_microusd": 266,
+   "backend_model": "gpt-6-luna",
+   "http_status": 200,
+   "attempts": [
+    {
+     "attempt": 1,
+     "route": "secondary",
+     "payer": "synthetic-api",
+     "disposition": "completed",
+     "http_status": 200,
+     "settled_microusd": 266,
+     "relay_sha256": "3d67b43cff79cd3cc1a78372755e6a362cd8c95407059f6c9e37c48708c7f541",
+     "refusal_body_sha256": null
+    }
+   ]
+  },
+  "4": {
+   "settled_microusd": 266,
+   "backend_model": "gpt-6-luna",
+   "http_status": 200,
+   "attempts": [
+    {
+     "attempt": 1,
+     "route": "secondary",
+     "payer": "synthetic-api",
+     "disposition": "completed",
+     "http_status": 200,
+     "settled_microusd": 266,
+     "relay_sha256": "bb7ff09c5fd9667bde2255abf362192d6bf118014527b49830ddf368766f6344",
+     "refusal_body_sha256": null
+    }
+   ]
+  }
+ },
+ "retained_bytes": {
+  "coding-hosted-1-1.refusal.body": "a02bb0a4371acb98b4df55387e55872b2be5a5c844e188cfaca724ba74d9bdfe",
+  "coding-hosted-1-2.stream.sse": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+  "coding-hosted-2-1.stream.sse": "69c8ee1ff7f8061cb4b7ef36346b41673ec038a59d1198dce7442cdac3a7d849",
+  "coding-hosted-3-1.stream.sse": "3d67b43cff79cd3cc1a78372755e6a362cd8c95407059f6c9e37c48708c7f541",
+  "coding-hosted-4-1.stream.sse": "bb7ff09c5fd9667bde2255abf362192d6bf118014527b49830ddf368766f6344"
+ },
+ "lifecycle_report": {
+  "continued_parent": "CompletedSettled",
+  "provider_requests": 4,
+  "physical_resets": 1,
+  "hosted_attempts": [
+   {
+    "attempt": 1,
+    "payer": "synthetic-subscription",
+    "request": 1,
+    "route": "primary"
+   },
+   {
+    "attempt": 2,
+    "payer": "synthetic-api",
+    "request": 1,
+    "route": "secondary"
+   },
+   {
+    "attempt": 1,
+    "payer": "synthetic-api",
+    "request": 2,
+    "route": "secondary"
+   },
+   {
+    "attempt": 1,
+    "payer": "synthetic-api",
+    "request": 3,
+    "route": "secondary"
+   },
+   {
+    "attempt": 1,
+    "payer": "synthetic-api",
+    "request": 4,
+    "route": "secondary"
+   }
+  ],
+  "policy": [
+   "ed37aeb3034a44d52cd9d0a16f1e306e17745adea9034febc0f4a376ca94f41b"
+  ]
+ },
+ "host_receipt": {
+  "status": "component_passed",
+  "receipt_id": "2b66c40b09af99c8bd82fa9e18b48ec544659880f4305d2c579f81d200d5265b"
+ },
+ "validation": {
+  "validation_exit": 0,
+  "final_acceptance": {
+   "process_index": 16,
+   "stdout_sha256": "54d0cf82b917b6c0fb4238cab3e76ab6d84dd24b0105e1524a4aa8c2718136e5",
+   "acceptance_sha256": "a56ef69a94ab16f219bc62c7a9938c44335a61ec31f1212b732ca1c6884689ae",
+   "workspace_manifest_sha256": "5e016dfa8f21b3eb7205e03b41991af7db6c011f4d6760f44e77e9040a9f7229",
+   "validator_id": "61a434a69903475f027aeec58eb31ea2f3b1abce077a69f23b50c4fc18f39c24"
+  }
+ },
+ "observer": {
+  "rawAuthOrBodyRetained": false,
+  "refused": 1,
+  "served": 4,
+  "type": "complete"
+ },
+ "failures": [],
+ "earlier_runs": {
+  "r1": "refused at provider_fetch: SDK zstd-compressed request body (fixed in 3c1948b1)",
+  "r2": "debug build: Host self-hashing took ~268 s; gate budget freshness (5 min) expired at request 2; harness issue, release build used afterwards. Request 1 completed with failover and Host-produced settlement",
+  "r3": "requests 1-2 settled; lifecycle settlement refused pi.provider_attempt in turn ingress (gate defect, fixed in 3c1948b1)"
+ }
+}
