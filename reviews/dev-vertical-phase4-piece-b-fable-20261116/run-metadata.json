@@ -1,0 +1,15 @@
+{
+ "reviewer": "anthropic/claude-fable-5-2",
+ "thinking": "high",
+ "launch": "direct pi --mode json --api-key (operator-approved workaround; pi-subagents run 10243313 failed 429, see notes/pi-subagents-api-key-not-inherited-20261116.md)",
+ "tools": "read,grep,find,ls,bash (read-only by instruction)",
+ "subject": "c66f2baf",
+ "assistant_turns": 48,
+ "tokens": {
+  "input": 98,
+  "output": 63240,
+  "cacheRead": 5977368,
+  "cacheWrite": 217614
+ },
+ "cost_usd": 5.902
+}
