@@ -1,0 +1,334 @@
+{
+ "standing": "bounded offline evidence copy; private run dirs own full artifacts",
+ "runs": {
+  "crash-intent-2": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/crash-intent-2",
+   "sha256": {
+    "store/control-create-intent.json": "8cdf31b5496a5e985fdc09704e078ac29446920e75ce58406c08c8342170199b",
+    "store/control-created.json": "1b7beddba70a27dc81f244b8c83445736a2f8049b9140f5f154322a6623e34af",
+    "store/control-ready.json": "cf03bad76ef7b275f276d63d1a590a768dfdf9c56912d13394018b51ac0d76af",
+    "store/control-route-000.json": "e28f4d2d7c59f857b8cfdb9123e37b2661cf5171cff07823fae70adcb4966c38",
+    "store/control-route-001.json": "c9620e025833ee29352d003ba6f44b55acd6f3b2e4a1fa5ad3112076fd6e8475",
+    "store/control-route-002.json": "e95ca8f3146db4e7a46bc6343bfc907373cd666602f3faef4feb4fc40d535846",
+    "store/control-settle-001.json": "c04d3421f1974bf4b65e779fbbabd72f969d84452f7a0f6474fafaccf6d3d275",
+    "observer1.jsonl": "614ae2550720340e54f36d22d328af55952f8a8f8d93e08fc51a683c2fa49255",
+    "observer2.jsonl": "58128e3f973d7e4a74f679d1ba74c5d6588320182136686dbf9cee7a9ed01f68",
+    "probe.err": "172a1b8216c50f731efa4845be31ecd12c07b0e2bd54891131502ce876c5992d",
+    "inputs.sha256": "774b2e99155a33204a2159d028651ce02badaed8e7ec6089308dc1ceed9485f4",
+    "recovery.json": "3ea0eb6f088b8878e585c3d892306b0db3a557040b5544a8b5282be901435ae6",
+    "effects.txt": "086ea6b0073aa558327b0bde676362be80819925bfaee68badaac36890a653ec",
+    "leftover-containers.txt": "e2b917c9a88c446ef82e2eeb34ff03095dccd1452b585600de30468b53c73265"
+   },
+   "recovery": {
+    "attempts": [
+     {
+      "attempt": 1,
+      "request": 1,
+      "route": "primary",
+      "payer": "synthetic-subscription",
+      "reason": "preferred",
+      "predecessor": null,
+      "disposition": {
+       "code": "insufficient_quota",
+       "kind": "refused",
+       "status": 429
+      },
+      "reserved_units": 0
+     },
+     {
+      "attempt": 2,
+      "request": 1,
+      "route": "secondary",
+      "payer": "synthetic-api",
+      "reason": "failover-after-429-insufficient_quota",
+      "predecessor": 1,
+      "disposition": {
+       "kind": "uncertain",
+       "reason": "restart-unsettled"
+      },
+      "reserved_units": 1
+     }
+    ],
+    "reservedUnits": 1,
+    "next": [
+     {
+      "decision": "unavailable",
+      "reason": "uncertain_predecessor",
+      "request": 1
+     }
+    ]
+   },
+   "registryEffects": [
+    "allocation|observed",
+    "initialization|observed",
+    "provider:1|observed"
+   ],
+   "probeErr": "pi_native_tools_probe: injected crash intent:2",
+   "observerReceipts": {
+    "observer1.jsonl": 1,
+    "observer2.jsonl": 0
+   }
+  },
+  "crash-connect-2": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/crash-connect-2",
+   "sha256": {
+    "store/control-create-intent.json": "e1eaeddcf7ad70d7b726f45505de090e58f4847de71652435cfa89aab833edca",
+    "store/control-created.json": "f4cbeceb14afc586224d3ea8b4248b8300d8a8e6647dc1671204c800778c5136",
+    "store/control-ready.json": "00b8f1ebaa5387636960c5c6f18d5e76353ae34d5097938b8542788452e5b7aa",
+    "store/control-route-000.json": "2442ad0d309f009bbc13fd457f20067f9da5fb34bc308cd1e6618f3ba995027e",
+    "store/control-route-001.json": "a9dcb58d4b72c3cea5496c3b7cb3a5b9c3520e38488e8a3eda6b9ad5a55b75cc",
+    "store/control-route-002.json": "3d684cdf343669866b03e20aaadac28853a183866c9167d085497f828f3a1bad",
+    "store/control-settle-001.json": "fc68897b0beaa4bc2fb853bc6eb640b808422f261a64c62254cd8322afb14d6f",
+    "observer1.jsonl": "bde1f653f218c2c58a76c0255ee8760c0acf21ddee84a92e95e8ff9676b65821",
+    "observer2.jsonl": "1c7c79e08c72311f4dc4c6bcc0ac5b7f8d9cd15eb7e24a82f7d2e3897f20b208",
+    "probe.err": "96d1206d99e83470ae5282ee3ba3e625e2953c9f761fc931e1420768a4ddd755",
+    "inputs.sha256": "774b2e99155a33204a2159d028651ce02badaed8e7ec6089308dc1ceed9485f4",
+    "recovery.json": "ee719df82828f4c5b3144ae5d0373c3e88943601895d772d3f184a90a4a3a70c",
+    "effects.txt": "0147936770d97feacc26942f7eed735e8cde56c91d15cb2cfb0fe8ce8a891efc",
+    "leftover-containers.txt": "e7e4348d0e0270ed8d1bab638322f74c582a30749192b149911aebd3f982b262"
+   },
+   "recovery": {
+    "attempts": [
+     {
+      "attempt": 1,
+      "request": 1,
+      "route": "primary",
+      "payer": "synthetic-subscription",
+      "reason": "preferred",
+      "predecessor": null,
+      "disposition": {
+       "code": "insufficient_quota",
+       "kind": "refused",
+       "status": 429
+      },
+      "reserved_units": 0
+     },
+     {
+      "attempt": 2,
+      "request": 1,
+      "route": "secondary",
+      "payer": "synthetic-api",
+      "reason": "failover-after-429-insufficient_quota",
+      "predecessor": 1,
+      "disposition": {
+       "kind": "uncertain",
+       "reason": "restart-unsettled"
+      },
+      "reserved_units": 1
+     }
+    ],
+    "reservedUnits": 1,
+    "next": [
+     {
+      "decision": "unavailable",
+      "reason": "uncertain_predecessor",
+      "request": 1
+     }
+    ]
+   },
+   "registryEffects": [
+    "allocation|observed",
+    "initialization|observed",
+    "provider:1|observed",
+    "provider:2|unknown"
+   ],
+   "probeErr": "pi_native_tools_probe: injected crash connect:2",
+   "observerReceipts": {
+    "observer1.jsonl": 1,
+    "observer2.jsonl": 1
+   }
+  },
+  "failover4": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/failover4",
+   "sha256": {
+    "store/control-closed-observation.json": "346e454a552f7ddd288cfc6596307fdf70aa37399dddb26e7d2e7deb9f3f64b9",
+    "store/control-closure.json": "227b13ee2c67d76047948f4170df8b749e9306c3a453ce872b57458ba118f30e",
+    "store/control-create-intent.json": "d27ec84fc312e32fe8973161b604cdba30e0da79fbc5c8bc4a14ca7cc04b5d3a",
+    "store/control-created.json": "a92bfd7429c4bdcaed6dbdb71f0b643ef78d2b5dd7b70c12dbbf249625d046fb",
+    "store/control-ready.json": "54de9ff6ed7291f1b307ab008950e165e9ec1b2ab5c6eb7ba468ba850b3164c6",
+    "store/control-report.json": "5aeb6112edb7d92a6fd0fe4768b6531bc0d95e5652ecc6840991446ec488d7e7",
+    "store/control-route-000.json": "afdb758ca3ceceafee0a375bd82bafd7eabce0e8e1b61c03517889e1cf56c9fc",
+    "store/control-route-001.json": "cefd7127bd43a45bf610c736ef975928d689ca9f7748542df41979cc48fadfe4",
+    "store/control-route-002.json": "ab04d08f9647ba81fa4b7cf781190003f4d2c5b7779cd1dcafb3f2d4dc172c23",
+    "store/control-route-003.json": "2c79f00217e5befb84917c3f48f2109ea11494e73acb30d62f3e890e43b11029",
+    "store/control-route-004.json": "254c354bfb8f9f86089dd829b8140f7023dfb4e62ce18c8678b365217944663e",
+    "store/control-route-005.json": "d7b35996e11ef07ce7a70e79df614cc89fc0f32bfd1a00db1d39a714107379ad",
+    "store/control-route-006.json": "7753af710666a6329575da90b5d78b55a0b4a21e122f1910b7537beaf066e417",
+    "store/control-settle-001.json": "8bc238945a838b68c7aaa0437cf06cdd9f85974eb98fffa61a29a65f5c0dcb12",
+    "store/control-settle-002.json": "6a76884c7be1cd13bf4fbfbaabca1794f4ba952422ea5d34586629aaaa2efb6d",
+    "store/control-settle-003.json": "6e470c83925617415143f14a0a00cd733bd8559acf976b5ec46bd81ada89a9af",
+    "store/control-settle-004.json": "796045aa773e51a5bd0674806a0fbc4e637fdc47bab372a85a7b9c37f4c52265",
+    "store/control-settle-005.json": "14d3130b284d683eb9ce96e77534ed46fa61e87b7cb5c5d126f44c72bc01fbb8",
+    "store/control-settle-006.json": "497afcf4485c703b43f2c4ead8bb1f0047ae3e6c840c958e421d269bded0bb8f",
+    "store/control-stream-001.json": "0644122f49317205f10065f70b9a88dcb926ac556fca0219d369d5bd3ed051b8",
+    "store/control-stream-002.json": "0999da9e1ce06762d1f86437b092eff1d22bca5c66551e88c9395a9604f63741",
+    "store/control-stream-003.json": "40635f2aa62b819339beadb532ab32dd746c9b1c5798e68162e77d370f1dff55",
+    "store/control-stream-004.json": "7720ba0e0f00ce4de1226fb4b71eb0d6724c9ab41ca7a41c99fa8dced241d814",
+    "store/control-stream-005.json": "51f85f5af2927e629c4ddbf5c5dc421329f81534139573ea70eecf402d7f246e",
+    "observer1.jsonl": "59118e74bd47ffce53a8c79f94efc35aae122a0266d4f80297015570a86174b2",
+    "observer2.jsonl": "19eea2cb78b4d4eb84e5f6ade6dc78f3105a52ef5df97e0f4634294dbeabb392",
+    "probe.err": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "inputs.sha256": "774b2e99155a33204a2159d028651ce02badaed8e7ec6089308dc1ceed9485f4",
+    "recovery.json": "362c7b4f770a784456b73d6a022d2302221e18d08a3fe5cc66ef4e19cc1814b3",
+    "effects.txt": "7541f2b986f7e2fe467af14da5503dd55e9a2674809033fd70920a7251374188"
+   },
+   "recovery": {
+    "attempts": [
+     {
+      "attempt": 1,
+      "request": 1,
+      "route": "primary",
+      "payer": "synthetic-subscription",
+      "reason": "preferred",
+      "predecessor": null,
+      "disposition": {
+       "code": "insufficient_quota",
+       "kind": "refused",
+       "status": 429
+      },
+      "reserved_units": 0
+     },
+     {
+      "attempt": 2,
+      "request": 1,
+      "route": "secondary",
+      "payer": "synthetic-api",
+      "reason": "failover-after-429-insufficient_quota",
+      "predecessor": 1,
+      "disposition": {
+       "kind": "completed"
+      },
+      "reserved_units": 1
+     },
+     {
+      "attempt": 3,
+      "request": 2,
+      "route": "secondary",
+      "payer": "synthetic-api",
+      "reason": "preferred",
+      "predecessor": null,
+      "disposition": {
+       "kind": "completed"
+      },
+      "reserved_units": 1
+     },
+     {
+      "attempt": 4,
+      "request": 3,
+      "route": "secondary",
+      "payer": "synthetic-api",
+      "reason": "preferred",
+      "predecessor": null,
+      "disposition": {
+       "kind": "completed"
+      },
+      "reserved_units": 1
+     },
+     {
+      "attempt": 5,
+      "request": 4,
+      "route": "secondary",
+      "payer": "synthetic-api",
+      "reason": "preferred",
+      "predecessor": null,
+      "disposition": {
+       "kind": "completed"
+      },
+      "reserved_units": 1
+     },
+     {
+      "attempt": 6,
+      "request": 5,
+      "route": "secondary",
+      "payer": "synthetic-api",
+      "reason": "preferred",
+      "predecessor": null,
+      "disposition": {
+       "kind": "completed"
+      },
+      "reserved_units": 1
+     }
+    ],
+    "reservedUnits": 5,
+    "next": [
+     {
+      "decision": "unavailable",
+      "reason": "request_completed",
+      "request": 1
+     },
+     {
+      "decision": "unavailable",
+      "reason": "request_completed",
+      "request": 2
+     },
+     {
+      "decision": "unavailable",
+      "reason": "request_completed",
+      "request": 3
+     },
+     {
+      "decision": "unavailable",
+      "reason": "request_completed",
+      "request": 4
+     },
+     {
+      "decision": "unavailable",
+      "reason": "request_completed",
+      "request": 5
+     }
+    ]
+   },
+   "registryEffects": [
+    "allocation|observed",
+    "initialization|observed",
+    "provider:1|observed",
+    "provider:2|observed",
+    "tool:call_1|fc_1",
+    "provider:3|observed",
+    "tool:call_2|fc_2",
+    "provider:4|observed",
+    "provider:5|observed",
+    "provider:6|observed"
+   ],
+   "probeErr": "",
+   "observerReceipts": {
+    "observer1.jsonl": 1,
+    "observer2.jsonl": 6
+   }
+  },
+  "stream12": {
+   "dir": "/home/bline/.local/state/work-engine/dev-vertical-pi-20261116/stream12",
+   "sha256": {
+    "store/control-closed-observation.json": "d0b3ca35d90558ff097498097e3689a6d4d42ba4f389c9eee4defe3cac35fbc8",
+    "store/control-closure.json": "4ecf12f387aec6cb537e3eed0330cb50f2698d798478bcda5d62a9c63a61bdc3",
+    "store/control-create-intent.json": "5604d66fb30e6ef2e14759d014ca1ac3a4a6f275d14a942ee8e83810d5660a1a",
+    "store/control-created.json": "0e0d164924fad0c66105991a58ad3ba24d9110795a4e38ba8b8da00d72cf2d66",
+    "store/control-ready.json": "4c428091810e83fa4c2b332f63e5c23423cb872f57742c37ff331b8ed8421f7e",
+    "store/control-report.json": "66c6c530803ee7568ebc67c6949d8d6a3cfe7927f581b3710062ae490ad230af",
+    "store/control-route-000.json": "2747b16b75687157a386ae9010cabd5b9d45a38a68f5927826c250de5e88f596",
+    "store/control-route-001.json": "7757b4a8571cac412b3fe6c60b5c8df44ff9329c438e9a7894f00f8e9a8a9111",
+    "store/control-route-002.json": "3a3037ab712161c30e3424ec3b595af6e80038c2594571e7e5d843e769e81bb7",
+    "store/control-route-003.json": "213236a791a6400cb27e40a639ede69240d3120850084ca9d5af0f51729400ff",
+    "store/control-route-004.json": "a586eabd16080c6e0b82a67922fd92ad0f5d85474393374b9dc0d95e2534a2cd",
+    "store/control-route-005.json": "1da31e184b7b3835ea0b65ee410f6154381ec14a660c7af1b1002b39798ddf70",
+    "store/control-settle-001.json": "5421b56142a85aeb5002b3c437a8d9bf91cb552005764ae5afc646e33c7e69be",
+    "store/control-settle-002.json": "95297d302a65eed487d067819bcf441ebc38e1b2329c62d34a406c826d29bc5f",
+    "store/control-settle-003.json": "42ea11251b48666de2513550fffbc44d2bf979c6fa7f3825f7b12ac09cf800c0",
+    "store/control-settle-004.json": "1780db7e7d9b865f467281deef320a91211fb7a45eb151c549980c19d9223602",
+    "store/control-settle-005.json": "178700dfa12118bfd3aaedfb8702436f45bef4a8ed4b204c49ffa0728a7a0d5f",
+    "store/control-stream-001.json": "b43d1606acc93b2481d0ed9a6ec332f6bfb5f532623636b0d022b89c5abddaaf",
+    "store/control-stream-002.json": "44ca6920301b9d3b5e4ed924de0b644dfc72b2419964002b3510e1ad85b44458",
+    "store/control-stream-003.json": "f46d907d3465dfc9babd7e3f301d6a2f7c55045c95de0f5d92dfc3d61ecbae4c",
+    "store/control-stream-004.json": "87b99f5fdcbd0774af88a009847f1af11bcca96a73dec337146593a793561878",
+    "store/control-stream-005.json": "bf783c1c1057955886fc8af49efd9541a99a2b8da19a5a18dd0b0f24cc591b21",
+    "observer.jsonl": "6a41fa056d218fda2d68f0f1d2b9a81b1332f8be191af179580cf2148ca5f05c",
+    "probe.err": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "inputs.sha256": "774b2e99155a33204a2159d028651ce02badaed8e7ec6089308dc1ceed9485f4"
+   },
+   "probeErr": "",
+   "observerReceipts": {
+    "observer.jsonl": 6
+   }
+  }
+ }
+}

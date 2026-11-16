@@ -8,11 +8,11 @@
 //! is returned to the continuation owner instead of being retried. Reservations
 //! are conservative: only definitive refusals release them. Leaving a route
 //! requires its definitive refusal; limits and revocation stop admission.
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Route {
     pub id: String,
     /// Nonsecret connection identity (not a credential).
@@ -24,7 +24,7 @@ pub struct Route {
     pub revoked: bool,
     pub max_attempts: u32,
 }
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Policy {
     pub model: String,
     /// Preference order.
@@ -43,7 +43,7 @@ impl Policy {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum Disposition {
     Completed,
@@ -63,7 +63,7 @@ pub fn refusal_status(status: u16) -> bool {
     matches!(status, 401 | 402 | 403 | 429)
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Attempt {
     pub attempt: u64,
     pub request: u64,
@@ -227,6 +227,70 @@ impl Router {
         a.disposition = Some(disposition);
         a.usage = usage;
         Ok(())
+    }
+    /// Rebuild routing state in a fresh process from durable attempt intents
+    /// and settlements of the same pinned policy. An intent without a
+    /// settlement becomes `Uncertain(restart-unsettled)`: its reservation is
+    /// kept and the request cannot be retried or switched by this router.
+    pub fn recover(
+        policy: Policy,
+        intents: &[Attempt],
+        settles: &[Attempt],
+    ) -> Result<Self, &'static str> {
+        let mut r = Self::new(policy);
+        let mut intents = intents.to_vec();
+        intents.sort_by_key(|a| a.attempt);
+        for (i, a) in intents.iter().enumerate() {
+            if a.attempt != i as u64 + 1 || a.disposition.is_some() {
+                return Err("route_intent_sequence");
+            }
+            if a.policy != r.digest {
+                return Err("route_policy_mismatch");
+            }
+            let route = r
+                .policy
+                .routes
+                .iter()
+                .position(|x| x.id == a.route)
+                .ok_or("route_unknown")?;
+            r.state[route].0 = r.state[route]
+                .0
+                .checked_add(1)
+                .ok_or("route_attempt_accounting")?;
+            r.reserved = r
+                .reserved
+                .checked_add(a.reserved_units)
+                .ok_or("route_reservation_accounting")?;
+            r.attempts.push(a.clone());
+        }
+        for s in settles {
+            let intent = r
+                .attempts
+                .iter()
+                .find(|a| a.attempt == s.attempt)
+                .ok_or("route_settle_without_intent")?;
+            if (intent.request, &intent.route, &intent.payer) != (s.request, &s.route, &s.payer) {
+                return Err("route_settle_mismatch");
+            }
+            let d = s.disposition.clone().ok_or("route_settle_empty")?;
+            r.settle(s.attempt, d, s.usage.clone())?;
+        }
+        let unsettled: Vec<u64> = r
+            .attempts
+            .iter()
+            .filter(|a| a.disposition.is_none())
+            .map(|a| a.attempt)
+            .collect();
+        for a in unsettled {
+            r.settle(
+                a,
+                Disposition::Uncertain {
+                    reason: "restart-unsettled".into(),
+                },
+                Value::Null,
+            )?;
+        }
+        Ok(r)
     }
     pub fn evidence(&self) -> Value {
         json!({

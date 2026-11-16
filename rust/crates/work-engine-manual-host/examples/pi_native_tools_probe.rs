@@ -211,7 +211,22 @@ fn run() -> Result<()> {
         reserve_units: 1,
         expires_ms: native::now() + 3_600_000,
     };
+    // The pinned policy is retained first so a fresh process can recover
+    // routing state and verify every attempt's policy digest.
+    store.record_control(
+        "route-000",
+        json!({"policy":policy,"policyDigest":policy.digest()}),
+    )?;
     let mut router = route::Router::new(policy);
+    // Crash injection for restart controls: `intent:N` exits right after the
+    // durable intent of attempt N; `connect:N` after its request was sent.
+    let crash = std::env::var("PI_PROBE_CRASH").unwrap_or_default();
+    let crash_at = |point: &str, attempt: u64| {
+        if crash == format!("{point}:{attempt}") {
+            eprintln!("pi_native_tools_probe: injected crash {point}:{attempt}");
+            std::process::exit(86);
+        }
+    };
     let mut route_records = 0u64;
     let mut stream_requests = 0u64;
     let package = Path::new("/home/bline/cbm-work/pi-artifact-handoff-20261113/pi");
@@ -298,6 +313,7 @@ fn run() -> Result<()> {
                             &format!("route-{route_records:03}"),
                             json!({"decision":"attempt","intent":router.last()}),
                         )?;
+                        crash_at("intent", attempt);
                         let addr = addrs[route];
                         let lease = owner.enter(Effect::Provider(attempt))?;
                         let request_id = format!("{}-{}", binding.session, attempt);
@@ -306,6 +322,7 @@ fn run() -> Result<()> {
                             provider_attempts += 1;
                             connect(addr, &body, access, &request_id, &lease)
                         })?;
+                        crash_at("connect", attempt);
                         let killer = socket.try_clone().map_err(|_| "synthetic_clone")?;
                         let mut upstream = match stream::Upstream::open(socket) {
                             Ok(u) => u,

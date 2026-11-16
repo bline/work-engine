@@ -222,3 +222,56 @@ fn allowance_arithmetic_fails_closed_at_extremes() {
     );
     assert_eq!(r.reserved_units(), u64::MAX);
 }
+
+#[test]
+fn fresh_router_recovers_mid_switch_without_retry_or_lost_attempts() {
+    let mut r = Router::new(policy());
+    let (_, a1) = attempt(r.next(1, "gpt-6-luna", 0));
+    let intent1 = r.last().unwrap().clone();
+    r.settle(a1, refused(), json!(null)).unwrap();
+    let settle1 = r.attempts()[0].clone();
+    let (_, _a2) = attempt(r.next(1, "gpt-6-luna", 0));
+    let intent2 = r.last().unwrap().clone();
+    // Crash: attempt 2's intent is durable, its settlement is not.
+    let mut f = Router::recover(
+        policy(),
+        &[intent2.clone(), intent1.clone()],
+        &[settle1.clone()],
+    )
+    .unwrap();
+    assert_eq!(f.attempts().len(), 2);
+    assert_eq!(f.attempts()[0].disposition, Some(refused()));
+    assert_eq!(
+        f.attempts()[1].disposition,
+        Some(Disposition::Uncertain {
+            reason: "restart-unsettled".into()
+        })
+    );
+    assert_eq!(
+        f.reserved_units(),
+        2,
+        "unsettled attempt keeps its reservation"
+    );
+    assert_eq!(
+        f.next(1, "gpt-6-luna", 0),
+        Decision::Unavailable("uncertain_predecessor")
+    );
+    // Stable routing survives restart: a new request goes to the secondary.
+    assert_eq!(attempt(f.next(2, "gpt-6-luna", 0)).0, 1);
+
+    // Another policy, gaps, or settlement without intent are refused.
+    let mut other = policy();
+    other.allowance_units = 11;
+    assert_eq!(
+        Router::recover(other, &[intent1.clone()], &[]).err(),
+        Some("route_policy_mismatch")
+    );
+    assert_eq!(
+        Router::recover(policy(), &[intent2.clone()], &[]).err(),
+        Some("route_intent_sequence")
+    );
+    assert_eq!(
+        Router::recover(policy(), &[], &[settle1]).err(),
+        Some("route_settle_without_intent")
+    );
+}
