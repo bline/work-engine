@@ -450,6 +450,7 @@ impl PiOwner {
                 let count:i64=db.query_row("SELECT count(*) FROM pi_effect WHERE profile_sha=?1 AND effect_key='allocation' AND state='unknown'",[&self.d.profile.sha256],|r|r.get(0)).map_err(|_|"pi_registry")?;
                 if count!=1{return Err("pi_allocation_unknown");}
             }
+            attempt_order(&db, &self.d.profile.sha256, &effect, &key)?;
             if effect == Effect::Allocation {
                 if native.is_some() {
                     return Err("pi_allocation_replacement");
@@ -575,6 +576,18 @@ pub enum Effect {
     Allocation,
     Initialization,
     Provider(u64),
+    /// One upstream attempt `(request, attempt)` under a logical provider
+    /// request. Attempts are strictly sequential: attempt 1 requires no prior
+    /// attempt of the request, and attempt k>1 requires attempt k-1 to be
+    /// `observed` with no attempt k or later recorded. An unknown attempt
+    /// therefore blocks every successor. A request uses either `Provider` or
+    /// `ProviderAttempt`, never both.
+    ///
+    /// This owner guarantees only that ordering. It does not interpret
+    /// observation evidence, so an observed predecessor is necessary, not
+    /// sufficient, for another attempt. Refusal-only failover and reservation
+    /// release remain with the financial owner and router.
+    ProviderAttempt(u64, u64),
     Tool(String),
 }
 impl Effect {
@@ -583,10 +596,77 @@ impl Effect {
             Self::Allocation => "allocation".into(),
             Self::Initialization => "initialization".into(),
             Self::Provider(n) if *n > 0 => format!("provider:{n}"),
+            Self::ProviderAttempt(r, a) if *r > 0 && *a > 0 => format!("provider:{r}:{a}"),
             Self::Tool(id) if !id.is_empty() && id.len() < 128 => format!("tool:{id}"),
             _ => return Err("pi_effect_key"),
         })
     }
+}
+/// Enforce provider attempt ordering and `Provider`/`ProviderAttempt`
+/// exclusion inside the caller's `enter` transaction, before the unknown row.
+fn attempt_order(db: &OwnerDatabase, profile: &str, effect: &Effect, key: &str) -> Result<()> {
+    let attempts = |r: u64| -> Result<Vec<(u64, String)>> {
+        let prefix = format!("provider:{r}:");
+        let mut s = db
+            .prepare("SELECT substr(effect_key,?3),state FROM pi_effect WHERE profile_sha=?1 AND substr(effect_key,1,?2)=?4")
+            .map_err(|_| "pi_registry")?;
+        let rows = s
+            .query_map(
+                params![
+                    profile,
+                    prefix.len() as i64,
+                    prefix.len() as i64 + 1,
+                    prefix
+                ],
+                |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
+            )
+            .map_err(|_| "pi_registry")?
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(|_| "pi_registry")?;
+        rows.into_iter()
+            .map(|(n, state)| Ok((n.parse::<u64>().map_err(|_| "pi_registry")?, state)))
+            .collect()
+    };
+    let exists = |k: &str| -> Result<bool> {
+        db.query_row(
+            "SELECT count(*) FROM pi_effect WHERE profile_sha=?1 AND effect_key=?2",
+            params![profile, k],
+            |r| r.get::<_, i64>(0),
+        )
+        .map(|n| n > 0)
+        .map_err(|_| "pi_registry")
+    };
+    match *effect {
+        Effect::Provider(r) => {
+            if !attempts(r)?.is_empty() {
+                return Err("pi_attempt_exclusive");
+            }
+        }
+        Effect::ProviderAttempt(r, a) => {
+            if exists(&format!("provider:{r}"))? {
+                return Err("pi_attempt_exclusive");
+            }
+            // An exact replay keeps the generic one-time refusal.
+            if exists(key)? {
+                return Err("pi_effect_unknown_no_retry");
+            }
+            let prior = attempts(r)?;
+            if prior.iter().any(|(n, _)| *n >= a) {
+                return Err("pi_attempt_order");
+            }
+            let ordered = if a == 1 {
+                prior.is_empty()
+            } else {
+                prior.len() as u64 == a - 1
+                    && prior.iter().any(|(n, s)| *n == a - 1 && s == "observed")
+            };
+            if !ordered {
+                return Err("pi_attempt_order");
+            }
+        }
+        _ => {}
+    }
+    Ok(())
 }
 /// Opaque ordering lease. Only the owner can construct it. No callback claims
 /// qualification; the runtime supplies attributable effect evidence afterwards.

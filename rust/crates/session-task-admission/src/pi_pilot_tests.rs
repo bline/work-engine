@@ -993,3 +993,97 @@ fn checked_native_registry_uses_real_admission_leases_and_keeps_unknown() {
     );
     assert!(std::fs::read_dir(registry_path).unwrap().count() > 2);
 }
+fn sealed() -> (Fixture, PiOwner) {
+    let (f, o) = admitted();
+    drop(o.enter(Effect::Allocation).unwrap());
+    o.seal(&"a".repeat(64), "00000000-0000-4000-8000-000000000001")
+        .unwrap();
+    (f, o)
+}
+fn refusal(r: Result<EffectLease>) -> &'static str {
+    match r {
+        Err(e) => e,
+        Ok(_) => panic!("effect unexpectedly admitted"),
+    }
+}
+fn observe(o: &PiOwner, effect: Effect) {
+    o.enter(effect).unwrap().observed(&"b".repeat(64)).unwrap();
+}
+#[test]
+fn provider_attempts_are_strictly_sequential_at_the_owner() {
+    let (_f, o) = sealed();
+    // Unknown first attempt, lease held: the successor cannot enter.
+    let held = o.enter(Effect::ProviderAttempt(1, 1)).unwrap();
+    // The held lease owns the registry write lock, so the successor is refused
+    // by that lock before ordering is evaluated.
+    assert_eq!(
+        refusal(o.enter(Effect::ProviderAttempt(1, 2))),
+        "pi_registry"
+    );
+    // Dropped unobserved lease leaves attempt 1 unknown; it still blocks.
+    drop(held);
+    assert_eq!(
+        refusal(o.enter(Effect::ProviderAttempt(1, 2))),
+        "pi_attempt_order"
+    );
+    assert_eq!(
+        refusal(o.enter(Effect::ProviderAttempt(1, 1))),
+        "pi_effect_unknown_no_retry"
+    );
+    // Observed predecessor admits exactly the next attempt.
+    observe(&o, Effect::ProviderAttempt(2, 1));
+    observe(&o, Effect::ProviderAttempt(2, 2));
+    assert_eq!(
+        refusal(o.enter(Effect::ProviderAttempt(2, 2))),
+        "pi_effect_unknown_no_retry"
+    );
+    assert_eq!(
+        refusal(o.enter(Effect::ProviderAttempt(2, 1))),
+        "pi_effect_unknown_no_retry"
+    );
+    drop(o.enter(Effect::ProviderAttempt(2, 3)).unwrap());
+    // No gaps.
+    observe(&o, Effect::ProviderAttempt(3, 1));
+    assert_eq!(
+        refusal(o.enter(Effect::ProviderAttempt(3, 3))),
+        "pi_attempt_order"
+    );
+    assert_eq!(
+        refusal(o.enter(Effect::ProviderAttempt(4, 2))),
+        "pi_attempt_order"
+    );
+}
+#[test]
+fn provider_attempt_keys_and_request_prefixes_are_exact() {
+    let (_f, o) = sealed();
+    for effect in [Effect::ProviderAttempt(0, 1), Effect::ProviderAttempt(1, 0)] {
+        assert_eq!(refusal(o.enter(effect)), "pi_effect_key");
+    }
+    // Request 1 has an unknown attempt; request 10 is independent of it.
+    drop(o.enter(Effect::ProviderAttempt(1, 1)).unwrap());
+    observe(&o, Effect::ProviderAttempt(10, 1));
+    observe(&o, Effect::ProviderAttempt(10, 2));
+    assert_eq!(
+        refusal(o.enter(Effect::ProviderAttempt(1, 2))),
+        "pi_attempt_order"
+    );
+    // Request 1's attempts do not satisfy or block request 11 either.
+    drop(o.enter(Effect::ProviderAttempt(11, 1)).unwrap());
+}
+#[test]
+fn provider_and_provider_attempt_are_exclusive_per_request() {
+    let (_f, o) = sealed();
+    observe(&o, Effect::Provider(5));
+    assert_eq!(
+        refusal(o.enter(Effect::ProviderAttempt(5, 1))),
+        "pi_attempt_exclusive"
+    );
+    drop(o.enter(Effect::ProviderAttempt(6, 1)).unwrap());
+    assert_eq!(
+        refusal(o.enter(Effect::Provider(6))),
+        "pi_attempt_exclusive"
+    );
+    // Other requests keep existing Provider behaviour.
+    drop(o.enter(Effect::Provider(7)).unwrap());
+    assert!(o.enter(Effect::Provider(7)).is_err());
+}
