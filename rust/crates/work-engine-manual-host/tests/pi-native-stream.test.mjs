@@ -123,3 +123,12 @@ test('foreign frame and relayed failure surface as errors', async () => {
   await assert.rejects((await openResponse({id: id(), sendRaw: g.sendRaw, read: g.read}).response).text(), /relay_upstream_truncated/);
   assert.deepEqual(types(g), [['pull', 1], ['ack', 2]]);
 });
+
+test('unexpected body frame errors and still closes with a cancel handshake', async () => {
+  const h = host(v => v.type === 'pull' ? [frame(v, 'response-weird')] : v.type === 'cancel' ? [frame(v, 'response-cancelled')] : []);
+  h.deliver(head());
+  const r = openResponse({id: id(), sendRaw: h.sendRaw, read: h.read});
+  await assert.rejects((await r.response).text(), /stream_frame/);
+  await tick();
+  assert.deepEqual(types(h), [['pull', 1], ['cancel', 2]]);
+});

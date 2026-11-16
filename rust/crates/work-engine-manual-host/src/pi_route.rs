@@ -56,6 +56,10 @@ pub enum Disposition {
     Uncertain {
         reason: String,
     },
+    /// The consumer cancelled after admission but before any upstream byte
+    /// was written: known not entered. Releases the reservation; the request
+    /// is over (no switch).
+    NotDispatched,
 }
 /// HTTP statuses treated as definitive funding/authorization refusals when
 /// observed at the response head, before anything is relayed.
@@ -145,6 +149,9 @@ impl Router {
             Some((_, Some(Disposition::Uncertain { .. }))) => {
                 return Decision::Unavailable("uncertain_predecessor");
             }
+            Some((_, Some(Disposition::NotDispatched))) => {
+                return Decision::Unavailable("request_cancelled");
+            }
             Some((_, Some(Disposition::Refused { status, code }))) => {
                 format!("failover-after-{status}-{code}")
             }
@@ -209,6 +216,13 @@ impl Router {
             .ok_or("route_attempt_unknown")?;
         if a.disposition.is_some() {
             return Err("route_attempt_settled");
+        }
+        if disposition == Disposition::NotDispatched {
+            self.reserved = self
+                .reserved
+                .checked_sub(a.reserved_units)
+                .ok_or("route_reservation_accounting")?;
+            a.reserved_units = 0;
         }
         if let Disposition::Refused { status, code } = &disposition {
             self.reserved = self

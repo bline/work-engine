@@ -441,6 +441,11 @@ enum State {
     },
     /// Terminal frame sent; awaiting the single closing `ack` or `cancel`.
     Close,
+    /// Consumer released after a terminal provider event; observing (polled,
+    /// bounded) whether the upstream framed end follows. No native frames.
+    Draining {
+        until: Instant,
+    },
     Done,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -542,6 +547,18 @@ impl Session {
     pub fn awaiting_native(&self) -> bool {
         matches!(self.state, State::AwaitOp | State::Close)
     }
+    /// Whether a native frame may belong to this stream now. False once the
+    /// consumer has finished with it (draining or done): later native frames
+    /// belong to the session loop.
+    pub fn accepts_native(&self) -> bool {
+        !matches!(self.state, State::Draining { .. } | State::Done)
+    }
+    fn release_done(&mut self) {
+        self.r.outcome = Outcome::Cancelled {
+            upstream_end: self.r.upstream_end_ms.is_some() && self.held.is_empty(),
+        };
+        self.finish();
+    }
     pub fn into_relay(mut self) -> Relay {
         std::mem::replace(
             &mut self.r,
@@ -605,22 +622,20 @@ impl Session {
             }
             (State::AwaitOp, "cancel") => {
                 frames.push(self.out("response-cancelled", json!({"ordinal":self.ordinal})));
-                // Common release right after a terminal provider event: observe
-                // whether the framed end follows within a short bound.
-                if self.r.upstream_end_ms.is_none() && self.held.is_empty() {
-                    let u = usage(&self.r.forwarded);
-                    if u["completed"] == true || !u["failed"].is_null() {
-                        match self.reader.data(DRAIN) {
-                            Some(Ok(None)) => self.r.upstream_end_ms = Some(now_millis()),
-                            Some(Ok(Some(b))) => self.r.unforwarded_after_release = b.len(),
-                            _ => {}
-                        }
-                    }
+                // Common release right after a terminal provider event: observe,
+                // without blocking, whether the framed end follows within a
+                // short bound. The stream is already over for the consumer.
+                let u = usage(&self.r.forwarded);
+                if self.r.upstream_end_ms.is_none()
+                    && self.held.is_empty()
+                    && (u["completed"] == true || !u["failed"].is_null())
+                {
+                    self.state = State::Draining {
+                        until: Instant::now() + DRAIN,
+                    };
+                } else {
+                    self.release_done();
                 }
-                self.r.outcome = Outcome::Cancelled {
-                    upstream_end: self.r.upstream_end_ms.is_some() && self.held.is_empty(),
-                };
-                self.finish();
             }
             (State::Upstream { pulled, .. }, "cancel") => {
                 // Overtakes the outstanding pull, which this confirmation answers.
@@ -704,6 +719,23 @@ impl Session {
                 Ok(vec![])
             }
             State::Upstream { .. } => self.advance(screen, wait),
+            State::Draining { until } => {
+                let left = until.saturating_duration_since(Instant::now()).min(wait);
+                match self.reader.data(left) {
+                    Some(Ok(None)) => {
+                        self.r.upstream_end_ms = Some(now_millis());
+                        self.release_done();
+                    }
+                    Some(Ok(Some(b))) => {
+                        self.r.unforwarded_after_release = b.len();
+                        self.release_done();
+                    }
+                    Some(Err(_)) => self.release_done(),
+                    None if Instant::now() >= until => self.release_done(),
+                    None => {}
+                }
+                Ok(vec![])
+            }
             _ => Ok(vec![]),
         }
     }
@@ -803,7 +835,7 @@ pub fn relay<C: Channel + Screen, R: Read + Send + 'static>(
             Progress::Refused { status, body } => return Ok(Relayed::Refused { status, body }),
             Progress::Pending => {}
         }
-        if s.awaiting_native() || chan.readable()? {
+        if s.awaiting_native() || (s.accepts_native() && chan.readable()?) {
             let op = chan.receive()?;
             for f in s.on_native(&op, chan)? {
                 chan.send(&f)?;
@@ -813,4 +845,90 @@ pub fn relay<C: Channel + Screen, R: Read + Send + 'static>(
             }
         }
     }
+}
+
+/// Answer a stream with no permitted provider attempt. The consumer may have
+/// sent a head-phase `cancel(1)` before reading this answer; the host must
+/// offer its next native frame to [`Unavailable::on_next`], which confirms
+/// such a crossing cancel and otherwise hands the frame back.
+pub struct Unavailable {
+    binding: Binding,
+    bind: Value,
+    seq: u64,
+    stream: u64,
+}
+impl Unavailable {
+    pub fn answer(binding: &Binding, seq: u64, stream: u64, code: &str) -> Result<(Self, Value)> {
+        let bind = serde_json::to_value(binding).map_err(|_| "binding")?;
+        Ok((
+            Self {
+                binding: binding.clone(),
+                bind,
+                seq,
+                stream,
+            },
+            frame(
+                "response-unavailable",
+                binding,
+                seq,
+                stream,
+                json!({"code":code}),
+            ),
+        ))
+    }
+    /// `Ok(Some(confirmation))` for the crossing cancel, `Ok(None)` for a
+    /// frame that belongs to the session loop, error for any other frame of
+    /// this stream.
+    pub fn on_next(&self, op: &Value) -> Result<Option<Value>> {
+        // Session envelopes (snapshot, tool, fetch, ...) carry the native's
+        // current stream counter too; only stream-protocol frames are judged.
+        if !matches!(op["type"].as_str(), Some("cancel" | "pull" | "ack")) {
+            return Ok(None);
+        }
+        if op["binding"] != self.bind || op["sequence"] != self.seq || op["stream"] != self.stream {
+            return Err("stream_foreign_frame");
+        }
+        if op["type"] == "cancel" && op["ordinal"] == 1 {
+            return Ok(Some(frame(
+                "response-cancelled",
+                &self.binding,
+                self.seq,
+                self.stream,
+                json!({"ordinal":1}),
+            )));
+        }
+        Err("stream_interleaved_frame")
+    }
+}
+
+/// Last check after admission and before any upstream byte is written: a
+/// head-phase `cancel(1)` that arrived meanwhile is confirmed here, and the
+/// attempt is then known not to have been dispatched. Returns `true` when
+/// cancelled. Any other native frame while the fetch awaits its head is a
+/// protocol error.
+pub fn pre_dispatch<C: Channel>(
+    chan: &mut C,
+    binding: &Binding,
+    seq: u64,
+    stream: u64,
+) -> Result<bool> {
+    if !chan.readable()? {
+        return Ok(false);
+    }
+    let op = chan.receive()?;
+    let bind = serde_json::to_value(binding).map_err(|_| "binding")?;
+    if op["binding"] != bind || op["sequence"] != seq || op["stream"] != stream {
+        return Err("stream_foreign_frame");
+    }
+    if op["type"] != "cancel" || op["ordinal"] != 1 {
+        return Err("stream_interleaved_frame");
+    }
+    chan.send(&frame(
+        "response-cancelled",
+        binding,
+        seq,
+        stream,
+        json!({"ordinal":1}),
+    ))?;
+    Ok(true)
 }

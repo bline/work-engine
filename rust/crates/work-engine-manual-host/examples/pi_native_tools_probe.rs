@@ -307,15 +307,14 @@ fn run() -> Result<()> {
                             Decision::Attempt { route, attempt } => (route, attempt),
                             Decision::Unavailable(reason) => {
                                 store.record_control(&format!("route-{:03}", route_records + 1), json!({"decision":"unavailable","request":stream_requests + 1,"reason":reason,"router":router.evidence()}))?;
-                                workload.send(&json!({"type":"response-unavailable","binding":binding,"sequence":seq,"stream":stream,"code":reason}))?;
+                                let (unavailable, answer) =
+                                    stream::Unavailable::answer(&binding, seq, stream, reason)?;
+                                workload.send(&answer)?;
                                 let mut next = receive_checked(&mut workload, &mut store, frames);
-                                if let Ok(c) = &next {
-                                    if c["type"] == "cancel"
-                                        && c["stream"] == stream
-                                        && c["ordinal"] == 1
-                                    {
+                                if let Ok(op) = &next {
+                                    if let Some(confirm) = unavailable.on_next(op)? {
                                         // A head-phase cancel crossed the unavailable answer.
-                                        workload.send(&json!({"type":"response-cancelled","binding":binding,"sequence":seq,"stream":stream,"ordinal":1}))?;
+                                        workload.send(&confirm)?;
                                         next =
                                             receive_checked(&mut workload, &mut store, frames + 1);
                                     }
@@ -335,6 +334,28 @@ fn run() -> Result<()> {
                         let addr = addrs[route];
                         let lease = owner.enter(Effect::Provider(attempt))?;
                         let request_id = format!("{}-{}", binding.session, attempt);
+                        // A head-phase cancel that arrived during admission is
+                        // honoured before any upstream byte is written.
+                        let cancelled = {
+                            let mut chan = Native {
+                                workload: &mut workload,
+                                store: &mut store,
+                                lease: &lease,
+                                frames: &mut frames,
+                                checked: std::time::Instant::now(),
+                            };
+                            stream::pre_dispatch(&mut chan, &binding, seq, stream)?
+                        };
+                        if cancelled {
+                            lease
+                                .observed(&hash(format!("not-dispatched:{attempt}").as_bytes()))?;
+                            router.settle(attempt, Disposition::NotDispatched, json!(null))?;
+                            store.record_control(&format!("settle-{attempt:03}"), json!({"attempt":router.attempts().iter().find(|a| a.attempt == attempt),"reservedUnits":router.reserved_units()}))?;
+                            if let Ok(next) = receive_checked(&mut workload, &mut store, frames) {
+                                let _ = store.record_control("failure", json!({"stage":"cancelled-before-dispatch","attempt":attempt,"nativeNextType":next["type"],"nativeLastMessage":next["messages"].as_array().and_then(|m| m.last()).map(|m| json!({"role":m["role"],"stopReason":m["stopReason"],"errorMessage":m["errorMessage"]})),"router":router.evidence()}));
+                            }
+                            return Err("request_cancelled");
+                        }
                         let socket = store.transport(native::now(), |access| {
                             lease.check_current()?;
                             provider_attempts += 1;

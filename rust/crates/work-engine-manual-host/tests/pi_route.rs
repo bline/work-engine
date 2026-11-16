@@ -275,3 +275,18 @@ fn fresh_router_recovers_mid_switch_without_retry_or_lost_attempts() {
         Some("route_settle_without_intent")
     );
 }
+
+#[test]
+fn not_dispatched_releases_and_ends_the_request_without_switching() {
+    let mut r = Router::new(policy());
+    let (_, a) = attempt(r.next(1, "gpt-6-luna", 0));
+    r.settle(a, Disposition::NotDispatched, json!(null))
+        .unwrap();
+    assert_eq!(r.reserved_units(), 0);
+    assert_eq!(
+        r.next(1, "gpt-6-luna", 0),
+        Decision::Unavailable("request_cancelled")
+    );
+    // The route stays usable for later requests.
+    assert_eq!(attempt(r.next(2, "gpt-6-luna", 0)).0, 0);
+}

@@ -35,7 +35,7 @@ export function openResponse({id,sendRaw,read,idleMs=0,onIdle=()=>{},onSettled=(
      if(f.ordinal!==my)throw Error('foreign_frame');
      if(f.type==='response-chunk'){c.enqueue(new Uint8Array(Buffer.from(f.body,'base64')));}
      else if(f.type==='response-end'||f.type==='response-failure'){await terminal(f,c);}
-     else{settle();throw Error('stream_frame');}},
+     else{const e=Error('stream_frame');release().catch(()=>{});throw e;}},
    cancel(){return release();}
  },{highWaterMark:0});
  const onAbort=()=>{release().catch(()=>{});};

@@ -634,3 +634,121 @@ fn unreadable_head_fails_with_ordinal_zero_then_single_ack() {
     assert_eq!(c.sent[0]["ordinal"], 0);
     assert_eq!(r.closing, Some("ack"));
 }
+
+#[test]
+fn release_after_terminal_event_drains_without_blocking_native_handling() {
+    let t = tempfile::tempdir().unwrap();
+    let s = store(&t);
+    let l = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = l.local_addr().unwrap();
+    let server = std::thread::spawn(move || {
+        let (mut c, _) = l.accept().unwrap();
+        let e = sse(&[
+            r#"{"type":"response.completed","response":{"id":"r","usage":{"input_tokens":1}}}"#,
+        ]);
+        write!(
+            c,
+            "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n{:x}\r\n{e}\r\n",
+            e.len()
+        )
+        .unwrap();
+        std::thread::sleep(Duration::from_secs(3)); // framed end withheld
+    });
+    let mut sess = ps::Session::start(
+        TcpStream::connect(addr).unwrap(),
+        || (),
+        &binding(),
+        1,
+        1,
+        |_| false,
+    )
+    .unwrap();
+    let op = |kind: &str, o: u64| json!({"type":kind,"binding":binding(),"sequence":1,"stream":1,"ordinal":o});
+    while sess.poll(&s, Duration::from_millis(50)).unwrap().is_empty() {}
+    let chunk = sess.on_native(&op("pull", 1), &s).unwrap();
+    let chunk = if chunk.is_empty() {
+        let mut f = vec![];
+        while f.is_empty() {
+            f = sess.poll(&s, Duration::from_millis(50)).unwrap();
+        }
+        f
+    } else {
+        chunk
+    };
+    assert_eq!(chunk[0]["type"], "response-chunk");
+    let start = std::time::Instant::now();
+    let out = sess.on_native(&op("cancel", 2), &s).unwrap();
+    assert!(
+        start.elapsed() < Duration::from_millis(100),
+        "cancel handling blocked"
+    );
+    assert_eq!(out[0]["type"], "response-cancelled");
+    assert!(
+        !sess.accepts_native(),
+        "later native frames belong to the session loop"
+    );
+    assert_eq!(sess.progress(), &ps::Progress::Pending);
+    while sess.progress() == &ps::Progress::Pending {
+        sess.poll(&s, Duration::from_millis(50)).unwrap();
+    }
+    assert!(start.elapsed() < Duration::from_millis(1500));
+    assert_eq!(
+        sess.relay().outcome,
+        Outcome::Cancelled {
+            upstream_end: false
+        }
+    );
+    drop(sess);
+    server.join().unwrap();
+}
+
+#[test]
+fn unavailable_answer_owns_only_its_crossing_cancel() {
+    let (u, answer) = ps::Unavailable::answer(&binding(), 1, 2, "attempt_limit").unwrap();
+    assert_eq!(answer["type"], "response-unavailable");
+    assert_eq!(answer["code"], "attempt_limit");
+    let cancel = json!({"type":"cancel","binding":binding(),"sequence":1,"stream":2,"ordinal":1});
+    let confirm = u.on_next(&cancel).unwrap().unwrap();
+    assert_eq!(
+        (confirm["type"].as_str(), confirm["ordinal"].as_u64()),
+        (Some("response-cancelled"), Some(1))
+    );
+    // Session envelopes carry the native's current stream counter.
+    let snapshot = json!({"type":"snapshot","binding":binding(),"sequence":1,"stream":2});
+    assert_eq!(u.on_next(&snapshot).unwrap(), None);
+    let pull = json!({"type":"pull","binding":binding(),"sequence":1,"stream":2,"ordinal":1});
+    assert_eq!(u.on_next(&pull).err(), Some("stream_interleaved_frame"));
+}
+
+#[test]
+fn pre_dispatch_confirms_a_crossed_head_cancel_only() {
+    struct One(Option<Value>, Vec<Value>);
+    impl Channel for One {
+        fn send(&mut self, v: &Value) -> ps::Result<()> {
+            self.1.push(v.clone());
+            Ok(())
+        }
+        fn receive(&mut self) -> ps::Result<Value> {
+            self.0.take().ok_or("empty")
+        }
+        fn readable(&mut self) -> ps::Result<bool> {
+            Ok(self.0.is_some())
+        }
+    }
+    let mut idle = One(None, vec![]);
+    assert!(!ps::pre_dispatch(&mut idle, &binding(), 1, 1).unwrap());
+    let mut c = One(
+        Some(json!({"type":"cancel","binding":binding(),"sequence":1,"stream":1,"ordinal":1})),
+        vec![],
+    );
+    assert!(ps::pre_dispatch(&mut c, &binding(), 1, 1).unwrap());
+    assert_eq!(c.1[0]["type"], "response-cancelled");
+    let mut bad = One(
+        Some(json!({"type":"tool","binding":binding(),"sequence":1,"stream":1})),
+        vec![],
+    );
+    assert_eq!(
+        ps::pre_dispatch(&mut bad, &binding(), 1, 1).err(),
+        Some("stream_interleaved_frame")
+    );
+}
