@@ -139,3 +139,47 @@ Observed limits that matter for H2: the Host admits a job deadline of at most
 would need that bound revisited; and the subscription route served this run,
 so on this evidence it is not exhausted for the Pi path (the route
 comparison had inferred it might share the exhausted Codex quota).
+
+## Review and remediation (`22487ec6`)
+
+[Fable review](../../reviews/dev-vertical-h2-slices123-fable-20261117/REVIEW.md)
+of slices 1–3 (Claude subscription quota): OK with notes, no P0 or P1. An
+earlier Opus review of slices 1–2 alone stopped at the subscription's 5-hour
+limit and was replaced by this one.
+
+| Finding | Disposition |
+| --- | --- |
+| P2-1 `tool_request` reachable under the analysis profile (refused only by a Docker inspect failure) | Fixed: refused by policy before any intent is journaled (unit test `analysis_profile_refuses_workspace_tool_requests_by_policy`). |
+| P3-a stream binding named the coding profile for analysis streams | Fixed: the binding names the job's profile. |
+| P3-b request bounds disagree (Host 32, gate 64, grammar 64) | Gate now uses the Host bound (32). The store grammar's 64 is a looser structural bound by design; the Host plan governs. |
+| P3-c gate did not validate its provider policy | Fixed. |
+| P3-d answer bound only at settlement | Fixed: the Host refuses a final answer over 64 KiB when its `message_end` is observed (unit test). |
+| P3-e an oversize encoded page failed the job | Fixed: answered to the model as an error ("request fewer bytes"). |
+| P3-f `snapshot_list` sizes from file metadata | Kept: `snapshot_read` verifies every member's digest; sizes are informational. |
+| P3-g `TOOLS_SHA256` derivation | Inputs: receiver `pi-coding.mjs` SHA-256 `3ec041c7…` (unchanged since `1051e660`), Pi SDK index pin `PI_SDK_INDEX_SHA256` (`lifecycle-store`), canonical `serde_json` serialization of all declared tools; the value was read from the first offline run's refusal message, and every later request body (for example a3 `ok/state/coding-hosted-1.body.json`) reproduces it. |
+| P3-h, P3-i | Notes; no change. |
+| P3-j coding coverage of the tightened tools policy | Closed by run sets s3 and s4. |
+
+Tests on `22487ec6`: `lifecycle-store`, `work-engine-manual-host`,
+`work-engine-server` and `pi-pressure-context-host` pass, except the known
+inherited `tests/lifecycle.rs` timing failure. One integration test,
+`tests/pi_stream.rs` `split_original_a_is_never_forwarded`, failed: its
+upstream was a `Cursor`, so both chunks were already received and the new
+coalescing merged them; the screen then saw the secret whole and forwarded
+nothing (the safe direction) instead of the expected prefix. The test now
+delivers the chunks in separate reads, as its name intends, and a new test
+`coalesced_original_a_is_never_forwarded` covers the merged case (test-only
+change after `22487ec6`).
+
+**Run set a4** on `22487ec6` (`analysis-qualification` `150384ad…`): 4 of 4
+pass ([matrix-a4.json](matrix-a4.json)). **Run set s4** (coding,
+`coding-qualification` `a0cdd111…`): 20 of 20 pass
+([matrix-s4.json](matrix-s4.json)) after one check correction: in `echo-body`
+the echoed event arrived in the same relayed chunk as the events before it,
+so the screen tripped before anything was forwarded (`forwardedBytes` 0,
+434 held bytes dropped, `hosted_access_exclusion`). The old check required
+some bytes to be forwarded first, which held only when each provider event
+was relayed separately. The check now accepts either order of events and
+still requires the exclusion interruption, an Uncertain attempt with its
+reservation retained, and no access token in any run file. s3 passes under
+the corrected check as well.

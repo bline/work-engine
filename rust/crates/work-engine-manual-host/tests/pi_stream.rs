@@ -166,19 +166,41 @@ fn early_chunk_is_forwarded_while_upstream_is_still_open() {
     );
 }
 
+/// Upstream bytes delivered one scripted piece per read, so later pieces are
+/// not yet received (and cannot be coalesced) when earlier ones are relayed.
+struct Pieces(Vec<Vec<u8>>);
+impl std::io::Read for Pieces {
+    fn read(&mut self, out: &mut [u8]) -> std::io::Result<usize> {
+        if self.0.is_empty() {
+            return Ok(0);
+        }
+        let mut p = self.0.remove(0);
+        let n = p.len().min(out.len());
+        out[..n].copy_from_slice(&p[..n]);
+        if n < p.len() {
+            self.0.insert(0, p.split_off(n));
+        }
+        Ok(n)
+    }
+}
+fn split_a_wire() -> (String, String) {
+    let (p1, p2) = A.split_at(10);
+    let body = format!("data: x{p1}");
+    let tail = format!("{p2}\n\n");
+    (
+        format!(
+            "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n{:x}\r\n{body}\r\n",
+            body.len()
+        ),
+        format!("{:x}\r\n{tail}\r\n0\r\n\r\n", tail.len()),
+    )
+}
 #[test]
 fn split_original_a_is_never_forwarded() {
     let t = tempfile::tempdir().unwrap();
     // A arrives split across two upstream reads; its prefix must be withheld.
-    let (p1, p2) = A.split_at(10);
-    let body = format!("data: x{p1}");
-    let tail = format!("{p2}\n\n");
-    let raw = format!(
-        "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n{:x}\r\n{body}\r\n{:x}\r\n{tail}\r\n0\r\n\r\n",
-        body.len(),
-        tail.len()
-    );
-    let up = Cursor::new(raw.into_bytes());
+    let (first, second) = split_a_wire();
+    let up = Pieces(vec![first.into_bytes(), second.into_bytes()]);
     let mut c = Consumer::new(store(&t));
     let r = stream(ps::relay(&mut c, up, || (), &binding(), 1, 1, |_| false)).unwrap();
     assert_eq!(r.outcome, Outcome::Interrupted("pi_original_a_exclusion"));
@@ -187,6 +209,21 @@ fn split_original_a_is_never_forwarded() {
         kinds(&c),
         ["response-head", "response-chunk", "response-failure"]
     );
+}
+/// When both chunks were already received, the reader coalesces them: A is
+/// seen whole and nothing of it (or after it) is forwarded.
+#[test]
+fn coalesced_original_a_is_never_forwarded() {
+    let t = tempfile::tempdir().unwrap();
+    let (first, second) = split_a_wire();
+    let up = Cursor::new(format!("{first}{second}").into_bytes());
+    let mut c = Consumer::new(store(&t));
+    let r = stream(ps::relay(&mut c, up, || (), &binding(), 1, 1, |_| false)).unwrap();
+    assert_eq!(r.outcome, Outcome::Interrupted("pi_original_a_exclusion"));
+    let body = String::from_utf8(c.body.clone()).unwrap();
+    assert!("data: x".starts_with(&body), "{body}");
+    assert!(!body.contains(&A[..10]));
+    assert_eq!(*kinds(&c).last().unwrap(), "response-failure");
 }
 
 #[test]

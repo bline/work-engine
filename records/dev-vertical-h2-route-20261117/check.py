@@ -172,6 +172,12 @@ def check(name, s, st):
         if name in ('stall-head', 'cancel-head'):
             expect('relay digest recorded (no head: zero bytes, no status)',
                    len(a) == 2 and a[1]['relay_sha256'] == hashlib.sha256(b'').hexdigest() and a[1]['http_status'] is None)
+        elif name == 'echo-body':
+            # With relay coalescing, the echoed event may arrive in the same
+            # relayed chunk as the events before it (timing): then nothing is
+            # forwarded and the held bytes are dropped. Both are retained truthfully.
+            expect('relay digest recorded (possibly empty: coalesced before the screen tripped)',
+                   len(a) == 2 and a[1]['relay_sha256'] is not None)
         else:
             expect('relayed bytes retained', len(a) == 2 and a[1]['relay_sha256'] not in (None, hashlib.sha256(b'').hexdigest()))
     if name == 'midstream-failed':
@@ -183,8 +189,9 @@ def check(name, s, st):
         expect('unforwarded data event retained', p.exists() and b'after the terminal event' in p.read_bytes())
     if name == 'echo-body':
         rel = relay_json(run, 1, 2)
-        expect('access screen interrupted the relay before the echoed chunk',
-               rel.get('interruption') == 'hosted_access_exclusion' and rel.get('forwardedBytes', 0) > 0
+        expect('access screen interrupted the relay before the echoed bytes (earlier bytes relayed, or all held and dropped)',
+               rel.get('interruption') == 'hosted_access_exclusion'
+               and (rel.get('forwardedBytes', 0) > 0 or rel.get('heldDropped', 0) > 0)
                and '(interrupted: hosted_access_exclusion)' in (a[-1]['reason'] or ''))
     if name == 'echo-trailing':
         rel = relay_json(run, 1, 2)

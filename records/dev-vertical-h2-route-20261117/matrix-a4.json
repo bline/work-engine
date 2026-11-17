@@ -1,0 +1,133 @@
+{
+ "schema": "work-engine.dev-vertical-hosted-analysis-check.v1",
+ "subject": "22487ec6",
+ "runs_root": "/home/bline/.local/state/work-engine/dev-vertical-h2-route-20261117/a4",
+ "analysis_qualification_sha256": "150384adf7bb21f6fec002180e9d5a43c8012746e3015c7940822ec536a12a95",
+ "observer_sha256": "67d699964a8c65d6fbd5c102627002fccde79e517970a251daa12a476f370edf",
+ "all_pass": true,
+ "runs": {
+  "ok": {
+   "pass": true,
+   "checks": {
+    "run used the checked binaries": true,
+    "exit 0, receipt passed, turn CompletedSettled": true,
+    "no containers left": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container: network none, no /auth, no /workspace or snapshot mount": true,
+    "every attempt records the retained body digest, and the provider received exactly that body": true,
+    "registered body artifacts": true,
+    "request 1 refused on the primary, then completed on the secondary with the same body": true,
+    "every request settled": true,
+    "every Host delivery retained and matched natively": true,
+    "delivery call_1_0|fc_1_0 artifact verifies": true,
+    "delivery call_2_0|fc_2_0 artifact verifies": true,
+    "gate log equals the attempt records": true,
+    "the shell call was refused by the SDK and never reached the Host": true
+   },
+   "observations": {},
+   "elapsed_s": 5.4,
+   "requests": 3,
+   "deliveries": 2,
+   "failures": []
+  },
+  "long-answer": {
+   "pass": true,
+   "checks": {
+    "run used the checked binaries": true,
+    "exit 0, receipt passed, turn CompletedSettled": true,
+    "no containers left": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container: network none, no /auth, no /workspace or snapshot mount": true,
+    "every attempt records the retained body digest, and the provider received exactly that body": true,
+    "registered body artifacts": true,
+    "request 1 refused on the primary, then completed on the secondary with the same body": true,
+    "every request settled": true,
+    "every Host delivery retained and matched natively": true,
+    "delivery call_1_0|fc_1_0 artifact verifies": true,
+    "delivery call_2_0|fc_2_0 artifact verifies": true,
+    "gate log equals the attempt records": true,
+    "the shell call was refused by the SDK and never reached the Host": true,
+    "long answer (16 000 characters) settled": true
+   },
+   "observations": {},
+   "elapsed_s": 6.6,
+   "requests": 3,
+   "deliveries": 2,
+   "failures": []
+  },
+  "read-all-treatment": {
+   "pass": true,
+   "checks": {
+    "run used the checked binaries": true,
+    "exit 0, receipt passed, turn CompletedSettled": true,
+    "no containers left": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container: network none, no /auth, no /workspace or snapshot mount": true,
+    "every attempt records the retained body digest, and the provider received exactly that body": true,
+    "registered body artifacts": true,
+    "request 1 refused on the primary, then completed on the secondary with the same body": true,
+    "every request settled": true,
+    "every Host delivery retained and matched natively": true,
+    "delivery call_1_0|fc_1_0 artifact verifies": true,
+    "delivery call_2_0|fc_2_0 artifact verifies": true,
+    "delivery call_2_1|fc_2_1 artifact verifies": true,
+    "delivery call_2_2|fc_2_2 artifact verifies": true,
+    "delivery call_2_3|fc_2_3 artifact verifies": true,
+    "delivery call_3_0|fc_3_0 artifact verifies": true,
+    "delivery call_3_1|fc_3_1 artifact verifies": true,
+    "delivery call_3_2|fc_3_2 artifact verifies": true,
+    "delivery call_3_3|fc_3_3 artifact verifies": true,
+    "delivery call_4_0|fc_4_0 artifact verifies": true,
+    "delivery call_4_1|fc_4_1 artifact verifies": true,
+    "delivery call_4_2|fc_4_2 artifact verifies": true,
+    "delivery call_4_3|fc_4_3 artifact verifies": true,
+    "delivery call_5_0|fc_5_0 artifact verifies": true,
+    "delivery call_5_1|fc_5_1 artifact verifies": true,
+    "delivery call_5_2|fc_5_2 artifact verifies": true,
+    "gate log equals the attempt records": true,
+    "every snapshot byte was delivered (pages cover each member)": true
+   },
+   "observations": {
+    "largest context bytes (observation)": 191527
+   },
+   "elapsed_s": 7.3,
+   "requests": 6,
+   "deliveries": 16,
+   "failures": []
+  },
+  "read-all-baseline": {
+   "pass": true,
+   "checks": {
+    "run used the checked binaries": true,
+    "exit 0, receipt passed, turn CompletedSettled": true,
+    "no containers left": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container: network none, no /auth, no /workspace or snapshot mount": true,
+    "every attempt records the retained body digest, and the provider received exactly that body": true,
+    "registered body artifacts": true,
+    "request 1 refused on the primary, then completed on the secondary with the same body": true,
+    "every request settled": true,
+    "every Host delivery retained and matched natively": true,
+    "delivery call_1_0|fc_1_0 artifact verifies": true,
+    "delivery call_2_0|fc_2_0 artifact verifies": true,
+    "delivery call_2_1|fc_2_1 artifact verifies": true,
+    "delivery call_2_2|fc_2_2 artifact verifies": true,
+    "delivery call_2_3|fc_2_3 artifact verifies": true,
+    "delivery call_3_0|fc_3_0 artifact verifies": true,
+    "gate log equals the attempt records": true,
+    "every snapshot byte was delivered (pages cover each member)": true
+   },
+   "observations": {
+    "largest context bytes (observation)": 57184
+   },
+   "elapsed_s": 7.0,
+   "requests": 4,
+   "deliveries": 6,
+   "failures": []
+  }
+ }
+}
