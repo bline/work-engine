@@ -425,11 +425,30 @@ fn check_tool_registry(
     sends: &[SendCitation],
 ) -> std::result::Result<CheckedToolRegistry, &'static str> {
     const UNAVAILABLE: &str = "tool_registry_unavailable_or_malformed";
-    let file = read_child_bounded(dir, "strict-tool-registry.jsonl", 2 * 1024 * 1024)
-        .map_err(|_| UNAVAILABLE)?;
     let started =
         crate::causal::started_tool_call_ids(dir, thread, turn).map_err(|_| UNAVAILABLE)?;
-    crate::tool_registry::check(&file, thread, turn, expected, sends, &started)
+    // The registry file grows with every step of the thread, so it is streamed: the check
+    // bounds each row and the turn's retained bytes, not the file. The file must be
+    // unchanged and the same entry from the first byte to the last.
+    const NAME: &str = "strict-tool-registry.jsonl";
+    let file = open_child(dir, NAME, false).map_err(|_| UNAVAILABLE)?;
+    let original = identity(&file).map_err(|_| UNAVAILABLE)?;
+    let before = file.metadata().map_err(|_| UNAVAILABLE)?;
+    let checked = crate::tool_registry::check(&file, thread, turn, expected, sends, &started)?;
+    let after = file.metadata().map_err(|_| UNAVAILABLE)?;
+    let unchanged = before.len() == after.len()
+        && before.mtime() == after.mtime()
+        && before.mtime_nsec() == after.mtime_nsec()
+        && before.ctime() == after.ctime()
+        && before.ctime_nsec() == after.ctime_nsec();
+    let same_entry = open_child(dir, NAME, false)
+        .and_then(|reopened| identity(&reopened))
+        .is_ok_and(|now| now == original);
+    if unchanged && same_entry {
+        Ok(checked)
+    } else {
+        Err(UNAVAILABLE)
+    }
 }
 pub(crate) fn fields(v: &Value, expected: &[&str]) -> Result<()> {
     let o = v.as_object().ok_or(NativeInputError)?;

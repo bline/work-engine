@@ -6,9 +6,13 @@
 //! controlled fixture re-digests the file after the native process is waited.
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
+use std::io::{BufRead, BufReader, Read};
 
-const FILE_LIMIT: usize = 2 * 1024 * 1024;
-const ROW_LIMIT: usize = 512 * 1024;
+/// One row, including its newline. Observed snapshot rows are about 52 KB.
+const ROW_LIMIT: usize = 1024 * 1024;
+/// The bytes retained for one turn; rows of other turns are not retained or counted.
+const RETAINED_LIMIT: usize = 2 * 1024 * 1024;
+/// Rows of the current turn.
 const ROW_COUNT_LIMIT: usize = 2048;
 const CODE_MODE_NAMES: [&str; 2] = ["exec", "wait"];
 
@@ -93,6 +97,10 @@ struct ExpectedTool {
     description: String,
     input_schema: Value,
     deferred: bool,
+    /// The sent namespace description, for a namespaced tool.
+    namespace_description: Option<String>,
+    /// The sent `outputSchema`, when present. Native never finalizes one.
+    output_schema: Option<Value>,
 }
 
 /// The tool set Work Engine itself requested for one thread.
@@ -110,8 +118,14 @@ impl ExpectedToolSet {
             match entry["type"].as_str()? {
                 "namespace" => {
                     let namespace = entry["name"].as_str()?;
+                    let description = match entry.get("description") {
+                        Some(sent) => Some(sent.as_str()?),
+                        None => None,
+                    };
                     for tool in entry["tools"].as_array()? {
-                        tools.push(expected_function(Some(namespace), tool)?);
+                        let mut function = expected_function(Some(namespace), tool)?;
+                        function.namespace_description = description.map(str::to_owned);
+                        tools.push(function);
                     }
                 }
                 "function" => tools.push(expected_function(None, entry)?),
@@ -152,6 +166,8 @@ fn expected_function(namespace: Option<&str>, tool: &Value) -> Option<ExpectedTo
         description: tool["description"].as_str()?.to_owned(),
         input_schema: tool.get("inputSchema")?.clone(),
         deferred: tool["deferLoading"] == true,
+        namespace_description: None,
+        output_schema: tool.get("outputSchema").cloned(),
     })
 }
 
@@ -224,25 +240,40 @@ struct Snapshot {
 }
 
 /// `ordinary_started` is the set of `tool_call_started` ids in the ordinary trace.
+///
+/// `file` is read as a stream of rows. Every row of the file must be a strict JSON row of a
+/// known kind and at most `ROW_LIMIT` bytes, so a malformed file is refused wherever the
+/// bad row sits. Only rows of this thread and turn are retained, counted and checked; the
+/// size bound applies to those retained bytes, not to the file. Snapshot ids are scoped to
+/// the turn's own rows, so rows of other turns take no part in the row-set rules.
 pub(crate) fn check(
-    file: &[u8],
+    file: impl Read,
     thread: &str,
     turn: &str,
     expected: &ExpectedToolSet,
     sends: &[SendCitation],
     ordinary_started: &BTreeSet<String>,
 ) -> Result<CheckedToolRegistry, Refused> {
-    if file.is_empty() || file.len() > FILE_LIMIT || !file.ends_with(b"\n") {
-        return Err(UNAVAILABLE);
-    }
     let wanted = expected.keys();
     let mut selected = Vec::new();
     let mut retained = Vec::new();
-    for (index, span) in file.split_inclusive(|b| *b == b'\n').enumerate() {
-        if index >= ROW_COUNT_LIMIT || span.len() > ROW_LIMIT {
-            return Err(UNAVAILABLE);
+    let mut reader = BufReader::new(file);
+    let mut span = Vec::new();
+    let mut rows = 0usize;
+    loop {
+        span.clear();
+        let read = (&mut reader)
+            .take(ROW_LIMIT as u64 + 1)
+            .read_until(b'\n', &mut span)
+            .map_err(|_| UNAVAILABLE)?;
+        if read == 0 {
+            break;
         }
-        let line = span.strip_suffix(b"\n").unwrap_or(span);
+        // An oversized row and an unterminated final row both lack the newline here.
+        let Some(line) = span.strip_suffix(b"\n") else {
+            return Err(UNAVAILABLE);
+        };
+        rows += 1;
         let row = lifecycle_wire::parse_strict_json(line).map_err(|_| UNAVAILABLE)?;
         if !matches!(
             row["kind"].as_str(),
@@ -251,9 +282,15 @@ pub(crate) fn check(
             return Err(UNAVAILABLE);
         }
         if row["thread_id"] == thread && row["codex_turn_id"] == turn {
-            retained.extend_from_slice(span);
+            if selected.len() >= ROW_COUNT_LIMIT || retained.len() + span.len() > RETAINED_LIMIT {
+                return Err(UNAVAILABLE);
+            }
+            retained.extend_from_slice(&span);
             selected.push(row);
         }
+    }
+    if rows == 0 {
+        return Err(UNAVAILABLE);
     }
     let mut snapshots: BTreeMap<String, Snapshot> = BTreeMap::new();
     let mut calls = BTreeSet::new();
@@ -497,10 +534,22 @@ fn check_snapshot(
     })
 }
 
+/// The finalized function object carries exactly `type`, `name`, `description`, `strict`
+/// and `parameters`, plus `defer_loading: true` when the tool was sent deferred and
+/// `output_schema` when one was sent. Native finalizes dynamic tools with `strict: false`
+/// (`tool_definition_to_responses_api_tool`) and never serializes `output_schema`, so a
+/// sent `outputSchema` does not match. Any other key or value refuses.
 fn spec_matches(spec: &Value, requested: &ExpectedTool) -> bool {
     let function = match &requested.key.0 {
         Some(namespace) => {
-            if spec["type"] != "namespace" || spec["name"] != namespace.as_str() {
+            if !exact(spec, &["type", "name", "description", "tools"])
+                || spec["type"] != "namespace"
+                || spec["name"] != namespace.as_str()
+                || requested
+                    .namespace_description
+                    .as_deref()
+                    .is_some_and(|d| spec["description"] != d)
+            {
                 return false;
             }
             match spec["tools"].as_array().map(Vec::as_slice) {
@@ -510,9 +559,23 @@ fn spec_matches(spec: &Value, requested: &ExpectedTool) -> bool {
         }
         None => spec,
     };
-    function["type"] == "function"
+    let mut keys = vec!["type", "name", "description", "strict", "parameters"];
+    if requested.deferred {
+        keys.push("defer_loading");
+    }
+    if requested.output_schema.is_some() {
+        keys.push("output_schema");
+    }
+    exact(function, &keys)
+        && function["type"] == "function"
         && function["name"] == requested.key.1.as_str()
         && function["description"] == requested.description.as_str()
+        && function["strict"] == false
+        && (!requested.deferred || function["defer_loading"] == true)
+        && requested
+            .output_schema
+            .as_ref()
+            .is_none_or(|schema| &function["output_schema"] == schema)
         && function["parameters"] == native_sanitized(&requested.input_schema)
 }
 
@@ -730,7 +793,7 @@ mod tests {
 
     fn run(rows: &[Value], sends: &[SendCitation]) -> Result<CheckedToolRegistry, Refused> {
         check(
-            &file(rows),
+            &file(rows)[..],
             "thread",
             "turn",
             &expected(),
@@ -828,6 +891,153 @@ mod tests {
         }
         seal(&mut rows[0]);
         refused(&rows, &sends, SPEC);
+    }
+
+    #[test]
+    fn finalized_function_object_must_match_the_sent_keys_and_values_exactly() {
+        let (rows, sends) = positive();
+        // `result_publish` is registered at index 1; its function object is `tools[0]`.
+        let mutate = |change: &dyn Fn(&mut Value, &mut Value)| {
+            let mut changed = rows.clone();
+            let tool = &mut changed[0]["registered_tools"][1]["spec"];
+            let mut namespace_description = Value::Null;
+            change(&mut tool["tools"][0], &mut namespace_description);
+            if !namespace_description.is_null() {
+                tool["description"] = namespace_description;
+            }
+            seal(&mut changed[0]);
+            changed
+        };
+        refused(&mutate(&|f, _| f["extra"] = json!(true)), &sends, SPEC);
+        refused(&mutate(&|f, _| f["strict"] = json!(true)), &sends, SPEC);
+        refused(
+            &mutate(&|f, _| f["defer_loading"] = json!(true)),
+            &sends,
+            SPEC,
+        );
+        refused(
+            &mutate(&|f, _| f["output_schema"] = json!({})),
+            &sends,
+            SPEC,
+        );
+        refused(
+            &mutate(&|f, _| {
+                f.as_object_mut().unwrap().remove("strict");
+            }),
+            &sends,
+            SPEC,
+        );
+        refused(
+            &mutate(&|_, description| *description = json!("another namespace description")),
+            &sends,
+            SPEC,
+        );
+        // A sent deferLoading requires the exposure and the `defer_loading` key together.
+        let mut deferred = dynamic_tools();
+        deferred[1]["tools"][0]["deferLoading"] = json!(true);
+        let expected = ExpectedToolSet::from_dynamic_tools(&deferred, true).unwrap();
+        let requested = expected
+            .tools
+            .iter()
+            .find(|t| t.key.1 == "result_publish")
+            .unwrap();
+        let mut spec = rows[0]["registered_tools"][1]["spec"].clone();
+        assert!(!spec_matches(&spec, requested));
+        spec["tools"][0]["defer_loading"] = json!(true);
+        assert!(spec_matches(&spec, requested));
+        // A sent outputSchema is never finalized by native, so it cannot match.
+        let mut with_output = dynamic_tools();
+        with_output[1]["tools"][0]["outputSchema"] = json!({"type":"object"});
+        let expected = ExpectedToolSet::from_dynamic_tools(&with_output, true).unwrap();
+        let requested = expected
+            .tools
+            .iter()
+            .find(|t| t.key.1 == "result_publish")
+            .unwrap();
+        assert!(!spec_matches(
+            &rows[0]["registered_tools"][1]["spec"],
+            requested
+        ));
+    }
+
+    #[test]
+    fn earlier_turn_rows_beyond_the_retained_bound_do_not_refuse_the_current_turn() {
+        let (rows, sends) = positive();
+        let mut earlier = Vec::new();
+        let mut size = 0;
+        let mut index = 0;
+        while size <= RETAINED_LIMIT + 1024 {
+            let row = snapshot(&format!("snap-earlier-{index}"), "thread", "earlier-turn");
+            size += file(std::slice::from_ref(&row)).len();
+            earlier.push(row);
+            index += 1;
+        }
+        let mut all = earlier;
+        all.extend(rows.iter().cloned());
+        let bytes = file(&all);
+        assert!(bytes.len() > RETAINED_LIMIT);
+        let checked = check(
+            &bytes[..],
+            "thread",
+            "turn",
+            &expected(),
+            &sends,
+            &BTreeSet::new(),
+        )
+        .unwrap();
+        assert_eq!(checked.bytes(), file(&rows));
+        assert_eq!(checked.snapshots(), 1);
+        // Rows of other turns are still parsed strictly: a bad one anywhere refuses.
+        let mut bad = all.clone();
+        bad[0].as_object_mut().unwrap().remove("kind");
+        assert_eq!(
+            check(
+                &file(&bad)[..],
+                "thread",
+                "turn",
+                &expected(),
+                &sends,
+                &BTreeSet::new()
+            )
+            .unwrap_err(),
+            UNAVAILABLE
+        );
+    }
+
+    #[test]
+    fn one_oversized_row_or_turn_retained_bytes_beyond_the_bound_refuse() {
+        let (rows, sends) = positive();
+        let run_bytes = |bytes: Vec<u8>| {
+            check(
+                &bytes[..],
+                "thread",
+                "turn",
+                &expected(),
+                &sends,
+                &BTreeSet::new(),
+            )
+        };
+        // One row above the row limit, even for another turn.
+        let mut oversized = snapshot("snap-big", "thread", "earlier-turn");
+        oversized["pad"] = json!("x".repeat(ROW_LIMIT));
+        let mut with_big = vec![oversized];
+        with_big.extend(rows.iter().cloned());
+        assert_eq!(run_bytes(file(&with_big)).unwrap_err(), UNAVAILABLE);
+        // A row of another turn just under the limit is read and skipped.
+        let mut large = dispatch("snap-x", "call-x", None, "exec", "registered", false);
+        large["codex_turn_id"] = json!("earlier-turn");
+        large["pad"] = json!("x".repeat(ROW_LIMIT - 4096));
+        let mut with_large = vec![large];
+        with_large.extend(rows.iter().cloned());
+        assert_eq!(run_bytes(file(&with_large)).unwrap().snapshots(), 1);
+        // Many current-turn rows beyond the retained bound.
+        let mut crowded = rows.clone();
+        let mut index = 0;
+        while file(&crowded).len() <= RETAINED_LIMIT {
+            crowded.push(snapshot(&format!("snap-crowd-{index}"), "thread", "turn"));
+            index += 1;
+        }
+        assert_eq!(run_bytes(file(&crowded)).unwrap_err(), UNAVAILABLE);
     }
 
     #[test]
@@ -968,14 +1178,22 @@ mod tests {
             .is_err()
         );
         assert_eq!(
-            check(b"", "thread", "turn", &expected(), &sends, &BTreeSet::new()).unwrap_err(),
+            check(
+                &b""[..],
+                "thread",
+                "turn",
+                &expected(),
+                &sends,
+                &BTreeSet::new()
+            )
+            .unwrap_err(),
             UNAVAILABLE
         );
         let mut unterminated = file(&rows);
         unterminated.pop();
         assert_eq!(
             check(
-                &unterminated,
+                &unterminated[..],
                 "thread",
                 "turn",
                 &expected(),
@@ -1054,7 +1272,7 @@ mod tests {
         let started = BTreeSet::from(["call-1".to_owned(), "call-2".to_owned()]);
         assert!(
             check(
-                &file(&rows),
+                &file(&rows)[..],
                 "thread",
                 "turn",
                 &expected(),
@@ -1066,7 +1284,7 @@ mod tests {
         let started = BTreeSet::from(["call-unrecorded".to_owned()]);
         assert_eq!(
             check(
-                &file(&rows),
+                &file(&rows)[..],
                 "thread",
                 "turn",
                 &expected(),
