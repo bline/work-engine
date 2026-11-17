@@ -32,6 +32,9 @@ pub struct NativeInputRecord {
     pub terminal_raw: Vec<u8>,
     pub metadata: Vec<u8>,
     pub payloads: Vec<NativeInputPayload>,
+    /// Checked native router snapshots and dispatch rows for this turn, as produced.
+    #[serde(default)]
+    pub tool_registry: Vec<u8>,
     pub qualification_scope: String,
     pub eligible: bool,
     pub outcome: String,
@@ -64,6 +67,38 @@ impl SqliteLifecycleStore {
         outcome: &str,
         clock: ClockSample,
     ) -> Result<NativeInputApply, StoreError> {
+        self.retain_native_input_with_registry(
+            session,
+            turn,
+            transport,
+            sequence,
+            terminal,
+            metadata,
+            payloads,
+            &[],
+            eligible,
+            outcome,
+            clock,
+        )
+    }
+
+    /// As `retain_native_input`, also retaining the checked tool-registry bytes in the
+    /// same immutable record. The consumer owns whether they qualify the turn.
+    #[allow(clippy::too_many_arguments)]
+    pub fn retain_native_input_with_registry(
+        &mut self,
+        session: &NativeSessionEntry,
+        turn: &NativeTurnEntry,
+        transport: &str,
+        sequence: u64,
+        terminal: &[u8],
+        metadata: &[u8],
+        payloads: Vec<NativeInputPayload>,
+        tool_registry: &[u8],
+        eligible: bool,
+        outcome: &str,
+        clock: ClockSample,
+    ) -> Result<NativeInputApply, StoreError> {
         self.verify_identity()?;
         if session.profile_digest() != turn.profile_digest() {
             return Err(StoreError::ClaimConflict);
@@ -77,6 +112,7 @@ impl SqliteLifecycleStore {
                 .try_fold(0usize, |n, p| n.checked_add(p.bytes.len()))
                 .is_none_or(|n| n > 8 * 1024 * 1024)
             || terminal.len() > 1_048_576
+            || tool_registry.len() > 2 * 1024 * 1024
         {
             return Err(StoreError::Rejected);
         }
@@ -138,6 +174,7 @@ impl SqliteLifecycleStore {
             terminal_raw: terminal.to_vec(),
             metadata: metadata.to_vec(),
             payloads,
+            tool_registry: tool_registry.to_vec(),
             qualification_scope:
                 "controlled-native-input-observation-v1; historical evidence; no research authority"
                     .into(),

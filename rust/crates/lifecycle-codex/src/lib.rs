@@ -13,6 +13,8 @@ pub use compiled_input::{AcquiredNativeInput, CheckedNativePayload, NativeInputE
 
 mod isolation;
 mod protocol;
+mod tool_registry;
+pub use tool_registry::{CheckedToolRegistry, ExpectedToolSet};
 mod transport;
 
 pub use isolation::{

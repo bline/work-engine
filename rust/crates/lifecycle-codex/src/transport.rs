@@ -376,6 +376,7 @@ impl NativeHarness {
         &self,
         thread: &str,
         turn: &str,
+        expected: &crate::ExpectedToolSet,
     ) -> Result<crate::AcquiredNativeInput, crate::NativeInputError> {
         self.capture
             .as_ref()
@@ -387,6 +388,7 @@ impl NativeHarness {
                 self.input_terminal
                     .as_ref()
                     .ok_or(crate::NativeInputError)?,
+                expected,
             )
     }
 
@@ -786,11 +788,11 @@ mod tests {
         let bytes = std::fs::read(&path).unwrap();
         assert_eq!(
             format!("{:x}", Sha256::digest(&bytes)),
-            "0d79af323b3448f4ff2dc75feff233054ae6c4d490cefbac7952c0d219b95699"
+            "77fbfa4bfd4d62f095b182a6606025345f84c126653a5713ec47388275734d39"
         );
         assert!(!controlled_input_binary(
             Path::new("/native-app-server"),
-            "0d79af323b3448f4ff2dc75feff233054ae6c4d490cefbac7952c0d219b95699"
+            "77fbfa4bfd4d62f095b182a6606025345f84c126653a5713ec47388275734d39"
         ));
         assert!(matches!(
             NativeHarness::spawn(
@@ -986,7 +988,7 @@ pub fn controlled_input_binary(path: &Path, digest: &str) -> bool {
     {
         cfg!(debug_assertions)
             && path == Path::new("/native-app-server")
-            && digest == "0d79af323b3448f4ff2dc75feff233054ae6c4d490cefbac7952c0d219b95699"
+            && digest == "77fbfa4bfd4d62f095b182a6606025345f84c126653a5713ec47388275734d39"
             && unsafe { libc::geteuid() } == 1000
             && Path::new("/.dockerenv").exists()
             && std::fs::read_to_string("/proc/self/status").is_ok_and(|s| {

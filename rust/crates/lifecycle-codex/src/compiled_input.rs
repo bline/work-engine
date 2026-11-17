@@ -1,5 +1,6 @@
 //! Checked foreign transport observations. Construction is confined to an owned harness.
 use crate::NativeEvent;
+use crate::tool_registry::{CheckedToolRegistry, ExpectedToolSet, SendCitation};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::{
@@ -50,8 +51,13 @@ pub struct AcquiredNativeInput {
     pub(crate) eligible: bool,
     pub(crate) outcome: &'static str,
     pub(crate) causal: Option<crate::causal::AcquiredNativeCausal>,
+    pub(crate) tool_registry: Option<CheckedToolRegistry>,
 }
 impl AcquiredNativeInput {
+    /// Present only when the native router snapshots matched the requested tool set.
+    pub fn tool_registry(&self) -> Option<&CheckedToolRegistry> {
+        self.tool_registry.as_ref()
+    }
     pub fn causal(&self) -> Option<&crate::causal::AcquiredNativeCausal> {
         self.causal.as_ref()
     }
@@ -210,13 +216,14 @@ impl CaptureOwner {
         thread: &str,
         turn: &str,
         terminal: &NativeEvent,
+        expected: &ExpectedToolSet,
     ) -> Result<AcquiredNativeInput> {
         // A diagnostic preserves owner/terminal attribution without granting eligibility.
         // Never attach bytes from an unsafe/replaced root to that diagnostic.
         if terminal.transport_session != session {
             return bad();
         }
-        match self.acquire_checked(session, thread, turn, terminal) {
+        match self.acquire_checked(session, thread, turn, terminal, expected) {
             Ok(observation) => Ok(observation),
             Err(_) => {
                 let mut metadata = Vec::new();
@@ -248,6 +255,7 @@ impl CaptureOwner {
                     eligible: false,
                     outcome: "capture_unavailable_or_malformed",
                     causal: None,
+                    tool_registry: None,
                 })
             }
         }
@@ -272,6 +280,7 @@ impl CaptureOwner {
         thread: &str,
         turn: &str,
         terminal: &NativeEvent,
+        expected: &ExpectedToolSet,
     ) -> Result<AcquiredNativeInput> {
         if identity(&self.root)? != self.identity
             || identity(
@@ -349,15 +358,34 @@ impl CaptureOwner {
         }
         let (dir, metadata) = selected.ok_or(NativeInputError)?;
         let decoded = decode_checked(&dir, &metadata, thread, turn);
-        let eligible = eligible_terminal && decoded.as_ref().is_ok_and(|(_, complete)| *complete);
+        let transport_eligible =
+            eligible_terminal && decoded.as_ref().is_ok_and(|(_, complete, _)| *complete);
+        // The registry claim is checked only for an otherwise eligible turn; its refusal
+        // reaches the same `eligible` flag the task-host preparation fence already reads.
+        let registry = if transport_eligible {
+            let sends = decoded.as_ref().map(|(_, _, sends)| sends.as_slice());
+            Some(check_tool_registry(
+                &dir,
+                thread,
+                turn,
+                expected,
+                sends.unwrap_or_default(),
+            ))
+        } else {
+            None
+        };
+        let eligible = transport_eligible && registry.as_ref().is_some_and(|r| r.is_ok());
         let outcome = if !eligible_terminal {
             "native_terminal_ineligible"
-        } else if !eligible {
+        } else if !transport_eligible {
             "capture_malformed_or_incomplete"
+        } else if let Some(Err(refused)) = &registry {
+            refused
         } else {
             "checked_completed"
         };
-        let payloads = decoded.map(|(payloads, _)| payloads).unwrap_or_default();
+        let tool_registry = registry.and_then(|r| r.ok());
+        let payloads = decoded.map(|(payloads, _, _)| payloads).unwrap_or_default();
         let causal = if eligible {
             crate::causal::acquire(
                 &dir,
@@ -384,7 +412,42 @@ impl CaptureOwner {
             eligible,
             outcome,
             causal,
+            tool_registry,
         })
+    }
+}
+
+fn check_tool_registry(
+    dir: &File,
+    thread: &str,
+    turn: &str,
+    expected: &ExpectedToolSet,
+    sends: &[SendCitation],
+) -> std::result::Result<CheckedToolRegistry, &'static str> {
+    const UNAVAILABLE: &str = "tool_registry_unavailable_or_malformed";
+    let started =
+        crate::causal::started_tool_call_ids(dir, thread, turn).map_err(|_| UNAVAILABLE)?;
+    // The registry file grows with every step of the thread, so it is streamed: the check
+    // bounds each row and the turn's retained bytes, not the file. The file must be
+    // unchanged and the same entry from the first byte to the last.
+    const NAME: &str = "strict-tool-registry.jsonl";
+    let file = open_child(dir, NAME, false).map_err(|_| UNAVAILABLE)?;
+    let original = identity(&file).map_err(|_| UNAVAILABLE)?;
+    let before = file.metadata().map_err(|_| UNAVAILABLE)?;
+    let checked = crate::tool_registry::check(&file, thread, turn, expected, sends, &started)?;
+    let after = file.metadata().map_err(|_| UNAVAILABLE)?;
+    let unchanged = before.len() == after.len()
+        && before.mtime() == after.mtime()
+        && before.mtime_nsec() == after.mtime_nsec()
+        && before.ctime() == after.ctime()
+        && before.ctime_nsec() == after.ctime_nsec();
+    let same_entry = open_child(dir, NAME, false)
+        .and_then(|reopened| identity(&reopened))
+        .is_ok_and(|now| now == original);
+    if unchanged && same_entry {
+        Ok(checked)
+    } else {
+        Err(UNAVAILABLE)
     }
 }
 pub(crate) fn fields(v: &Value, expected: &[&str]) -> Result<()> {
@@ -401,7 +464,7 @@ fn decode(
     thread: &str,
     turn: &str,
 ) -> Result<Vec<CheckedNativePayload>> {
-    let (payloads, complete) = decode_checked(dir, metadata, thread, turn)?;
+    let (payloads, complete, _) = decode_checked(dir, metadata, thread, turn)?;
     if !complete {
         return bad();
     }
@@ -412,7 +475,7 @@ fn decode_checked(
     metadata: &[u8],
     thread: &str,
     turn: &str,
-) -> Result<(Vec<CheckedNativePayload>, bool)> {
+) -> Result<(Vec<CheckedNativePayload>, bool, Vec<SendCitation>)> {
     if metadata.is_empty() || !metadata.ends_with(b"\n") {
         return bad();
     }
@@ -423,6 +486,7 @@ fn decode_checked(
     let mut inodes = BTreeSet::new();
     let mut previous = BTreeMap::new();
     let mut sends = Vec::new();
+    let mut citations = Vec::new();
     for (index, line) in metadata[..metadata.len() - 1]
         .split(|b| *b == b'\n')
         .enumerate()
@@ -454,11 +518,18 @@ fn decode_checked(
             "thread_id",
             "codex_turn_id",
             "inference_call_id",
+            "router_snapshot_id",
             "physical_send",
             "stage",
             "payloads",
             "payload_limit",
         ];
+        // Pairing by position or order is refused: every row names its router snapshot.
+        let snapshot = row["router_snapshot_id"]
+            .as_str()
+            .filter(|s| !s.is_empty() && s.len() <= 256)
+            .ok_or(NativeInputError)?
+            .to_owned();
         let transport = matches!(
             stage,
             "before_send"
@@ -588,6 +659,17 @@ fn decode_checked(
             };
             let request =
                 lifecycle_wire::parse_strict_json(&decoded).map_err(|_| NativeInputError)?;
+            citations.push(SendCitation {
+                router_snapshot_id: snapshot.clone(),
+                tools: request.get("tools").cloned(),
+                additional_tools: request["input"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter(|item| item["type"] == "additional_tools")
+                    .map(|item| item["tools"].clone())
+                    .collect(),
+            });
             if !request.is_object()
                 || request.get("input").and_then(Value::as_array).is_none()
                 || request
@@ -608,6 +690,11 @@ fn decode_checked(
     let mut incomplete = false;
     for key in sends {
         let g = groups.get(&key).ok_or(NativeInputError)?;
+        if g.iter()
+            .any(|r| r["router_snapshot_id"] != g[0]["router_snapshot_id"])
+        {
+            return bad();
+        }
         let stages = g
             .iter()
             .map(|r| r["stage"].as_str().unwrap())
@@ -671,7 +758,7 @@ fn decode_checked(
         }
         accepted = true;
     }
-    Ok((payloads, accepted && !incomplete))
+    Ok((payloads, accepted && !incomplete, citations))
 }
 
 #[cfg(test)]
@@ -684,12 +771,17 @@ mod tests {
         let bundle = owner.path().join("trace");
         std::fs::create_dir(&bundle).unwrap();
         std::fs::create_dir(bundle.join("payloads")).unwrap();
-        let decoded = br#"{"input":[{"text":"synthetic complete input"}]}"#;
-        let wire = zstd::stream::encode_all(decoded.as_slice(), 0).unwrap();
+        let (registry_rows, sends) = crate::tool_registry::fixtures::positive();
+        let decoded = serde_json::to_vec(
+            &json!({"input":[{"text":"synthetic complete input"}],"tools":sends[0].tools}),
+        )
+        .unwrap();
+        let decoded = decoded.as_slice();
+        let wire = zstd::stream::encode_all(decoded, 0).unwrap();
         std::fs::write(bundle.join("payloads/wire.bin"), &wire).unwrap();
         std::fs::write(bundle.join("payloads/decoded.bin"), decoded).unwrap();
         let mut rows = vec![
-            json!({"kind":"strict_transport_input","version":1,"thread_id":"thread","codex_turn_id":"turn","inference_call_id":"inference","physical_send":1,"stage":"before_send","payload_limit":8388608,"transport":"http","encoding":"zstd","self_contained":true,"payloads":[{"representation":"wire","path":"payloads/wire.bin","length":wire.len(),"sha256":sha(&wire)},{"representation":"decoded","path":"payloads/decoded.bin","length":decoded.len(),"sha256":sha(decoded)}]}),
+            json!({"kind":"strict_transport_input","version":1,"thread_id":"thread","codex_turn_id":"turn","inference_call_id":"inference","router_snapshot_id":"snap-1","physical_send":1,"stage":"before_send","payload_limit":8388608,"transport":"http","encoding":"zstd","self_contained":true,"payloads":[{"representation":"wire","path":"payloads/wire.bin","length":wire.len(),"sha256":sha(&wire)},{"representation":"decoded","path":"payloads/decoded.bin","length":decoded.len(),"sha256":sha(decoded)}]}),
         ];
         let mut response = rows[0].clone();
         response["stage"] = json!("http_status:200");
@@ -697,8 +789,18 @@ mod tests {
         response["payloads"] = json!([]);
         rows.push(response);
         for stage in ["provider_created", "provider_completed"] {
-            rows.push(json!({"kind":"strict_transport_input","version":1,"thread_id":"thread","codex_turn_id":"turn","inference_call_id":"inference","physical_send":1,"stage":stage,"payload_limit":8388608,"response_id":"response","payloads":[]}));
+            rows.push(json!({"kind":"strict_transport_input","version":1,"thread_id":"thread","codex_turn_id":"turn","inference_call_id":"inference","router_snapshot_id":"snap-1","physical_send":1,"stage":stage,"payload_limit":8388608,"response_id":"response","payloads":[]}));
         }
+        std::fs::write(
+            bundle.join("strict-tool-registry.jsonl"),
+            crate::tool_registry::fixtures::file(&registry_rows),
+        )
+        .unwrap();
+        std::fs::write(
+            bundle.join("trace.jsonl"),
+            "{\"thread_id\":\"thread\",\"codex_turn_id\":\"turn\",\"payload\":{\"type\":\"codex_turn_started\"}}\n",
+        )
+        .unwrap();
         let terminal=crate::parse_event("transport".into(),1,serde_json::to_vec(&json!({"method":"turn/completed","params":{"threadId":"thread","turn":{"id":"turn","status":"completed","error":null}}})).unwrap()).unwrap();
         write(&owner, &rows);
         (temp, owner, rows, terminal)
@@ -848,17 +950,220 @@ mod tests {
         );
     }
     #[test]
+    fn tool_registry_evidence_gates_eligibility_with_exact_reason() {
+        use crate::tool_registry::fixtures::{dispatch, expected, file, positive, seal};
+        let acquire = |owner: &CaptureOwner, terminal: &NativeEvent| {
+            owner
+                .acquire("transport", "thread", "turn", terminal, &expected())
+                .unwrap()
+        };
+        let (_temp, owner, _rows, terminal) = fixture();
+        let eligible = acquire(&owner, &terminal);
+        assert!(eligible.eligible());
+        assert_eq!(eligible.outcome(), "checked_completed");
+        assert_eq!(eligible.tool_registry().unwrap().dispatches(), 2);
+        let registry = owner.path().join("trace/strict-tool-registry.jsonl");
+        let original = std::fs::read(&registry).unwrap();
+        let (rows, _) = positive();
+        let cases: Vec<(&str, Vec<u8>, &str)> = vec![
+            (
+                "extra tool",
+                {
+                    let mut rows = rows.clone();
+                    rows[0]["registered_tools"].as_array_mut().unwrap().push(json!({"namespace":null,"name":"shell","exposure":"direct","cached_runtime":false,"code_mode_name":null,"spec":{"type":"function","name":"shell"},"spec_sha256":""}));
+                    seal(&mut rows[0]);
+                    file(&rows)
+                },
+                "tool_registry_set_mismatch",
+            ),
+            (
+                "tools order differs from request",
+                {
+                    let mut rows = rows.clone();
+                    rows[0]["model_visible_specs"]
+                        .as_array_mut()
+                        .unwrap()
+                        .swap(0, 1);
+                    seal(&mut rows[0]);
+                    file(&rows)
+                },
+                "tool_registry_request_join_mismatch",
+            ),
+            (
+                "orphan dispatch",
+                {
+                    let mut rows = rows.clone();
+                    rows.push(dispatch(
+                        "unknown",
+                        "call-9",
+                        None,
+                        "exec",
+                        "registered",
+                        false,
+                    ));
+                    file(&rows)
+                },
+                "tool_registry_dispatch_mismatch",
+            ),
+            (
+                "snapshot only for another turn",
+                {
+                    let mut rows = rows.clone();
+                    for row in &mut rows {
+                        row["codex_turn_id"] = json!("other-turn");
+                    }
+                    file(&rows)
+                },
+                "tool_registry_unavailable_or_malformed",
+            ),
+            (
+                "empty file",
+                Vec::new(),
+                "tool_registry_unavailable_or_malformed",
+            ),
+        ];
+        for (label, bytes, outcome) in cases {
+            std::fs::write(&registry, bytes).unwrap();
+            let observation = acquire(&owner, &terminal);
+            assert!(!observation.eligible(), "{label}");
+            assert_eq!(observation.outcome(), outcome, "{label}");
+            assert!(observation.tool_registry().is_none(), "{label}");
+            // The transport bytes stay retained and checked; only eligibility is withheld.
+            assert_eq!(observation.payloads().len(), 2, "{label}");
+            // The refused observation reaches the store as ineligible, which is the flag
+            // the causal-read fence and task-host preparation check refuse on.
+            assert_diagnostic_restart(&observation);
+        }
+        std::fs::remove_file(&registry).unwrap();
+        let observation = acquire(&owner, &terminal);
+        assert!(!observation.eligible());
+        assert_eq!(
+            observation.outcome(),
+            "tool_registry_unavailable_or_malformed"
+        );
+        std::fs::write(&registry, &original).unwrap();
+        // An ordinary-trace call with no strict dispatch row is refused (one way only).
+        std::fs::write(
+            owner.path().join("trace/trace.jsonl"),
+            "{\"thread_id\":\"thread\",\"codex_turn_id\":\"turn\",\"payload\":{\"type\":\"tool_call_started\",\"tool_call_id\":\"call-untraced\"}}\n",
+        )
+        .unwrap();
+        let observation = acquire(&owner, &terminal);
+        assert!(!observation.eligible());
+        assert_eq!(observation.outcome(), "tool_registry_dispatch_missing");
+    }
+    #[test]
+    fn strict_transport_rows_must_cite_one_router_snapshot_each() {
+        let (_temp, owner, rows, terminal) = fixture();
+        for case in ["missing", "split", "empty"] {
+            let mut altered = rows.clone();
+            match case {
+                "missing" => {
+                    for row in &mut altered {
+                        row.as_object_mut().unwrap().remove("router_snapshot_id");
+                    }
+                }
+                "split" => altered[3]["router_snapshot_id"] = json!("snap-2"),
+                _ => altered[0]["router_snapshot_id"] = json!(""),
+            }
+            write(&owner, &altered);
+            let observation = owner
+                .acquire(
+                    "transport",
+                    "thread",
+                    "turn",
+                    &terminal,
+                    &crate::tool_registry::fixtures::expected(),
+                )
+                .unwrap();
+            assert!(!observation.eligible(), "{case}");
+            assert_eq!(
+                observation.outcome(),
+                "capture_malformed_or_incomplete",
+                "{case}"
+            );
+        }
+    }
+    fn copy_tree(from: &Path, to: &Path) {
+        std::fs::create_dir(to).unwrap();
+        for entry in std::fs::read_dir(from).unwrap() {
+            let entry = entry.unwrap();
+            let target = to.join(entry.file_name());
+            if entry.file_type().unwrap().is_dir() {
+                copy_tree(&entry.path(), &target);
+            } else {
+                std::fs::copy(entry.path(), target).unwrap();
+            }
+        }
+    }
+    /// Reads one completed native fixture directory (harness output) through the real
+    /// consumer. It never runs native code and has no default input.
+    #[test]
+    #[ignore = "requires WE_REGISTRY_FIXTURE_DIR from a completed native tool-registry fixture"]
+    fn native_tool_registry_fixture_through_the_consumer() {
+        let out = PathBuf::from(std::env::var("WE_REGISTRY_FIXTURE_DIR").unwrap());
+        let expect_eligible = std::env::var("WE_REGISTRY_EXPECT").unwrap() == "eligible";
+        let temp = tempfile::tempdir().unwrap();
+        let owner = CaptureOwner::create(temp.path().join("capture")).unwrap();
+        copy_tree(&out.join("traces"), &owner.path().join("traces"));
+        let terminal: Value =
+            serde_json::from_slice(&std::fs::read(out.join("native-terminal.json")).unwrap())
+                .unwrap();
+        let terminal_event = crate::parse_event(
+            "transport".into(),
+            1,
+            serde_json::to_vec(&terminal).unwrap(),
+        )
+        .unwrap();
+        let requested: Value = serde_json::from_slice(
+            &std::fs::read(out.join("dynamic-tools-requested.json")).unwrap(),
+        )
+        .unwrap();
+        let expected = ExpectedToolSet::from_dynamic_tools(&requested, true).unwrap();
+        let thread = terminal["params"]["threadId"].as_str().unwrap();
+        let turn = terminal["params"]["turn"]["id"].as_str().unwrap();
+        let observation = owner
+            .acquire("transport", thread, turn, &terminal_event, &expected)
+            .unwrap();
+        let result = json!({
+            "eligible": observation.eligible(),
+            "outcome": observation.outcome(),
+            "payloads": observation.payloads().len(),
+            "tool_registry_snapshots": observation.tool_registry().map(|r| r.snapshots()),
+            "tool_registry_dispatches": observation.tool_registry().map(|r| r.dispatches()),
+            "tool_registry_sha256": observation.tool_registry().map(|r| sha(r.bytes())),
+        });
+        std::fs::write(
+            out.join("consumer-result.json"),
+            serde_json::to_vec_pretty(&result).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(observation.eligible(), expect_eligible, "{result}");
+    }
+    #[test]
     fn provider_stream_failures_keep_checked_payloads_without_eligibility() {
         for created in [false, true] {
             let (_temp, owner, mut rows, terminal) = fixture();
             let expected = owner
-                .acquire("transport", "thread", "turn", &terminal)
+                .acquire(
+                    "transport",
+                    "thread",
+                    "turn",
+                    &terminal,
+                    &crate::tool_registry::fixtures::expected(),
+                )
                 .unwrap();
             rows.truncate(if created { 3 } else { 2 });
-            rows.push(json!({"kind":"strict_transport_input","version":1,"thread_id":"thread","codex_turn_id":"turn","inference_call_id":"inference","physical_send":1,"stage":"provider_failed_or_unknown","payload_limit":8388608,"response_id":if created {json!("response")} else {Value::Null},"payloads":[]}));
+            rows.push(json!({"kind":"strict_transport_input","version":1,"thread_id":"thread","codex_turn_id":"turn","inference_call_id":"inference","router_snapshot_id":"snap-1","physical_send":1,"stage":"provider_failed_or_unknown","payload_limit":8388608,"response_id":if created {json!("response")} else {Value::Null},"payloads":[]}));
             write(&owner, &rows);
             let actual = owner
-                .acquire("transport", "thread", "turn", &terminal)
+                .acquire(
+                    "transport",
+                    "thread",
+                    "turn",
+                    &terminal,
+                    &crate::tool_registry::fixtures::expected(),
+                )
                 .unwrap();
             assert!(!actual.eligible());
             assert_eq!(actual.payloads().len(), 2);
@@ -892,7 +1197,13 @@ mod tests {
             }
             std::fs::write(path, &bytes).unwrap();
             let actual = owner
-                .acquire("transport", "thread", "turn", &terminal)
+                .acquire(
+                    "transport",
+                    "thread",
+                    "turn",
+                    &terminal,
+                    &crate::tool_registry::fixtures::expected(),
+                )
                 .unwrap();
             assert!(!actual.eligible());
             assert_eq!(actual.metadata(), bytes);
@@ -906,7 +1217,13 @@ mod tests {
     fn complete_compression_requires_owned_terminal_and_location() {
         let (_temp, owner, rows, terminal) = fixture();
         let observation = owner
-            .acquire("transport", "thread", "turn", &terminal)
+            .acquire(
+                "transport",
+                "thread",
+                "turn",
+                &terminal,
+                &crate::tool_registry::fixtures::expected(),
+            )
             .unwrap();
         assert!(observation.eligible());
         assert_eq!(observation.payloads().len(), 2);
@@ -917,7 +1234,13 @@ mod tests {
         ] {
             assert!(
                 owner
-                    .acquire(session, thread, turn, &terminal)
+                    .acquire(
+                        session,
+                        thread,
+                        turn,
+                        &terminal,
+                        &crate::tool_registry::fixtures::expected()
+                    )
                     .map_or(true, |o| !o.eligible())
             );
         }
@@ -925,7 +1248,13 @@ mod tests {
         failed.value["params"]["turn"]["status"] = json!("failed");
         failed.raw = serde_json::to_vec(&failed.value).unwrap();
         let observation = owner
-            .acquire("transport", "thread", "turn", &failed)
+            .acquire(
+                "transport",
+                "thread",
+                "turn",
+                &failed,
+                &crate::tool_registry::fixtures::expected(),
+            )
             .unwrap();
         assert!(!observation.eligible());
         assert_eq!(observation.payloads().len(), 2);
@@ -937,7 +1266,13 @@ mod tests {
         absent.raw = serde_json::to_vec(&absent.value).unwrap();
         assert!(
             !owner
-                .acquire("transport", "thread", "turn", &absent)
+                .acquire(
+                    "transport",
+                    "thread",
+                    "turn",
+                    &absent,
+                    &crate::tool_registry::fixtures::expected()
+                )
                 .unwrap()
                 .eligible()
         );
@@ -946,7 +1281,13 @@ mod tests {
         write_copy(owner.path(), &rows);
         assert!(
             !owner
-                .acquire("transport", "thread", "turn", &terminal)
+                .acquire(
+                    "transport",
+                    "thread",
+                    "turn",
+                    &terminal,
+                    &crate::tool_registry::fixtures::expected()
+                )
                 .unwrap()
                 .eligible()
         );
@@ -1009,7 +1350,13 @@ mod tests {
         .unwrap();
         assert!(
             !owner
-                .acquire("transport", "thread", "turn", &terminal)
+                .acquire(
+                    "transport",
+                    "thread",
+                    "turn",
+                    &terminal,
+                    &crate::tool_registry::fixtures::expected()
+                )
                 .unwrap()
                 .eligible()
         );
@@ -1024,7 +1371,13 @@ mod tests {
         write(&owner, &ws);
         assert!(
             owner
-                .acquire("transport", "thread", "turn", &terminal)
+                .acquire(
+                    "transport",
+                    "thread",
+                    "turn",
+                    &terminal,
+                    &crate::tool_registry::fixtures::expected()
+                )
                 .unwrap()
                 .eligible()
         );
@@ -1048,7 +1401,13 @@ mod tests {
         write(&owner, &retry);
         assert!(
             owner
-                .acquire("transport", "thread", "turn", &terminal)
+                .acquire(
+                    "transport",
+                    "thread",
+                    "turn",
+                    &terminal,
+                    &crate::tool_registry::fixtures::expected()
+                )
                 .unwrap()
                 .eligible()
         );
@@ -1058,7 +1417,13 @@ mod tests {
         )
         .unwrap();
         let diagnostic = owner
-            .acquire("transport", "thread", "turn", &terminal)
+            .acquire(
+                "transport",
+                "thread",
+                "turn",
+                &terminal,
+                &crate::tool_registry::fixtures::expected(),
+            )
             .unwrap();
         assert!(!diagnostic.eligible());
         assert_eq!(diagnostic.metadata(), b"{duplicate malformed\n");
@@ -1069,7 +1434,13 @@ mod tests {
         )
         .unwrap();
         let diagnostic = owner
-            .acquire("transport", "thread", "turn", &terminal)
+            .acquire(
+                "transport",
+                "thread",
+                "turn",
+                &terminal,
+                &crate::tool_registry::fixtures::expected(),
+            )
             .unwrap();
         assert!(!diagnostic.eligible());
         assert!(diagnostic.metadata().len() <= METADATA_LIMIT);
@@ -1082,7 +1453,13 @@ mod tests {
         write(&owner, &rows);
         assert!(
             !owner
-                .acquire("transport", "thread", "turn", &terminal)
+                .acquire(
+                    "transport",
+                    "thread",
+                    "turn",
+                    &terminal,
+                    &crate::tool_registry::fixtures::expected()
+                )
                 .unwrap()
                 .eligible()
         );
@@ -1095,7 +1472,13 @@ mod tests {
         write(&owner, &rows);
         assert!(
             !owner
-                .acquire("transport", "thread", "turn", &terminal)
+                .acquire(
+                    "transport",
+                    "thread",
+                    "turn",
+                    &terminal,
+                    &crate::tool_registry::fixtures::expected()
+                )
                 .unwrap()
                 .eligible()
         );

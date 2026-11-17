@@ -156,6 +156,8 @@ struct Runner {
     gate: Arc<NativeGate>,
     startup_stage: Option<&'static str>,
     startup_canceled: bool,
+    /// Derived from the exact `dynamicTools` bytes of the `thread/start` this runner sent.
+    expected_tools: Option<lifecycle_codex::ExpectedToolSet>,
 }
 
 impl Runner {
@@ -279,7 +281,11 @@ impl Runner {
                 .ok_or(StoreError::Rejected)?;
             let observation = self
                 .harness
-                .acquire_native_input(thread, turn)
+                .acquire_native_input(
+                    thread,
+                    turn,
+                    self.expected_tools.as_ref().ok_or(StoreError::Rejected)?,
+                )
                 .map_err(|_| StoreError::Rejected)?;
             self.ask(|reply| NativeMessage::CaptureInput { observation, reply })
                 .await?;
@@ -463,6 +469,13 @@ impl Runner {
         let task_profile = task_work.is_some();
         self.startup_stage = Some("init_thread");
         let thread_request = domain_thread_start(&launch.work, task_profile, &launch.provider_name);
+        self.expected_tools = Some(
+            lifecycle_codex::ExpectedToolSet::from_dynamic_tools(
+                &thread_request["dynamicTools"],
+                launch.code_mode_host,
+            )
+            .ok_or(StoreError::Rejected)?,
+        );
         let (started, coordinate) = self.rpc("thread/start", thread_request.clone()).await?;
         let mut thread = started["thread"]["id"]
             .as_str()
@@ -642,12 +655,16 @@ impl Runner {
                             }
                             return Err(StoreError::Rejected);
                         }
-                        let (started, _) = self
-                            .rpc(
-                                "thread/start",
-                                domain_thread_start(&launch.work, true, &launch.provider_name),
+                        let successor_request =
+                            domain_thread_start(&launch.work, true, &launch.provider_name);
+                        self.expected_tools = Some(
+                            lifecycle_codex::ExpectedToolSet::from_dynamic_tools(
+                                &successor_request["dynamicTools"],
+                                launch.code_mode_host,
                             )
-                            .await?;
+                            .ok_or(StoreError::Rejected)?,
+                        );
+                        let (started, _) = self.rpc("thread/start", successor_request).await?;
                         let successor = started["thread"]["id"]
                             .as_str()
                             .ok_or(StoreError::Unavailable)?
@@ -779,7 +796,11 @@ impl Runner {
         if self.harness.captures_native_input() {
             let observation = self
                 .harness
-                .acquire_native_input(thread, &turn)
+                .acquire_native_input(
+                    thread,
+                    &turn,
+                    self.expected_tools.as_ref().ok_or(StoreError::Rejected)?,
+                )
                 .map_err(|_| StoreError::Rejected)?;
             self.ask(|reply| NativeMessage::CaptureInput { observation, reply })
                 .await?;
@@ -924,6 +945,7 @@ pub async fn run_native(
                 gate: gate.clone(),
                 startup_stage: Some("init_registration"),
                 startup_canceled: false,
+                expected_tools: None,
             };
             #[cfg(feature = "native-sim-proof")]
             let mut diagnostic_errors = Vec::new();
@@ -2521,6 +2543,7 @@ mod provider_launch_tests {
             gate: Arc::new(NativeGate::new(false)),
             startup_stage: Some("init_registration"),
             startup_canceled: false,
+            expected_tools: None,
         };
         let run = tokio::spawn(async move {
             let mut runner = runner;
