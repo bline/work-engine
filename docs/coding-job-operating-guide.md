@@ -46,19 +46,26 @@ newly built `coding-qualification` producing executable, pinned by SHA-256.
 Version 1 remains the offline class and continues to refuse provider fields.
 The two classes cannot select each other's capability or version.
 
-The exact job uses `work-engine.pi-coding-lifecycle-live.v1`, the existing
-provider plan and `src_lib_rs` write boundary, one tool call, four provider
-requests, `gpt-6-luna`, at most 700000 microUSD reservation and 24000 context
-bytes, no fixture command or receiver, at most 8192 task bytes and a fresh
-deadline within 240 seconds. The live
-digest uses the Host owner's public typed `Job` serialization. Unknown fields
-are rejected; omitted defaults serialize exactly as the Host serializes them.
-The existing pinned job includes the authority, task, workspace, validator,
-runtime, toolchain, catalog, access adapter, model, budget and deadline.
+The exact job uses `work-engine.pi-coding-hosted.v1`, the only live profile
+(the credential-mounted live profiles were retired on 2026-11-17). Provider
+access never enters the job, the bundle or the inference container: the
+producing Host reads each payer's access from the credentials file named by
+`WORK_ENGINE_HOSTED_CREDENTIALS` in the job profile's `env`, holds it in its
+own memory, and dispatches each provider attempt itself over HTTPS to fixed
+origins (`https:chatgpt-codex`, `https:openai-responses`), with a lifecycle
+gate admission per attempt and failover only after a definitive refusal. The
+job uses the pinned route table, the `src_lib_rs` write boundary, one tool
+call, four provider requests, `gpt-6-luna`, at most 700000 microUSD
+reservation and 24000 context bytes, no fixture command or receiver, at most
+8192 task bytes and a fresh deadline within 240 seconds. The live digest uses
+the Host owner's public typed `Job` serialization. Unknown fields are rejected;
+omitted defaults serialize exactly as the Host serializes them. The pinned job
+includes the authority, task, workspace, validator, runtime, toolchain,
+catalog, stream adapter, route table, model, budget and deadline.
 
 For fresh admission the server verifies those public artifact pins and the
-existing provider authority's job/binary/model/access-source/config/task/catalog/
-request/budget bindings. The packet must be
+runtime admission's job/binary/model/config/task/catalog/request/budget and
+route-table (`hosted_routes_sha256`) bindings. The packet must be
 `work-engine.coding-live-continuity-packet.v1` with the existing one-inference,
 one-tool, one-validator, two-SDK-session, one-workspace-command, one-reset and
 four-live-request bounds. These checks run at fresh startup, at submission and
@@ -113,7 +120,7 @@ On SIGTERM the server stops accepting work, closes the collector registry and ca
 
 ## Limits
 
-- Offline fixture only. A live profile, provider lane or native auth lane needs a separate qualification and is refused by the capability check.
+- The offline class refuses provider fields. The live class admits only the hosted profile; its live qualification is recorded in `records/dev-vertical-hosted-qualification-20261117/`.
 - A server crash (not SIGTERM) can leave a Host running in its process group with the adapter lock released. Reads then report `host_state_unreadable` while the Host holds its lock, or reconcile once it stops. Host cleanup is then the Host's reconcile path.
 - The Host binary is hashed then executed by path; a swap between those steps is not prevented. The job file, by contrast, is snapshotted after verification and the Host runs the snapshot (re-hashed before spawn).
 - The binding records the job-file digest before execution and the Host `input_digest` afterward, not the Host digest before execution.

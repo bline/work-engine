@@ -76,6 +76,8 @@ Status: source and offline tests only. No Docker, SDK or provider operation has
 run for it; actual runtime compatibility and real model behaviour are `not
 established`. The fixture profile above is unchanged.
 
+> **Retired 2026-11-17.** `work-engine.pi-coding-lifecycle-live.v1` mounted provider access into the inference container and is refused at admission. The only live coding profile is `work-engine.pi-coding-hosted.v1` (Host-held access, Host dispatch); see `records/dev-vertical-hosted-qualification-20261117/README.md`. The text below is kept as history.
+
 `work-engine.pi-coding-lifecycle-live.v1` composes the existing direct live Host
 provider route (`gpt-6-luna`, pinned catalog, existing native credential
 projection, fixed endpoint, existing exact provider admission) with this lifecycle

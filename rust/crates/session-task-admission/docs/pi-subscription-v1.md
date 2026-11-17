@@ -29,6 +29,8 @@ protected config/profile/admission request and the fixed authenticated transport
 tuple. HTTP identity verification remains with the endpoint. Opaque PiOwner and
 EffectLease remain non-deserializable with no public constructors.
 
+> **Retired 2026-11-17.** `work-engine.pi-coding-signed-subscription.v1` mounted provider access into the inference container and is refused at admission. The only live coding profile is `work-engine.pi-coding-hosted.v1` (Host-held access, Host dispatch); see `records/dev-vertical-hosted-qualification-20261117/README.md`. The text below is kept as history.
+
 The Host profile is `work-engine.pi-coding-signed-subscription.v1`. Only
 `Host::admit_signed_subscription(job, owner)` admits it; ordinary Host admission
 refuses it. Trusted startup chooses every path/model/job/helper/config input.

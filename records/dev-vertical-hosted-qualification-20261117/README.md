@@ -1,25 +1,29 @@
-# Dev vertical: hosted-profile offline qualification (phase 4 piece (c)), 2026-11-17
+# Dev vertical: hosted-profile qualification, live routes and cutover, 2026-11-17
 
-Standing: offline qualification of the hosted Pi coding profile, piece (c)
-of the [phase 4 design r2](../../planning/dev-vertical-phase4-hosted-transport-r2-20261116.md),
-updated for the required changes of the
-[second independent review](../../reviews/dev-vertical-phase4-piece-c-fable-20261117/REVIEW.md).
-It is not acceptance, not independent review and not live qualification.
-Every run uses synthetic loopback routes and a synthetic access token held by
-the Host. No live credential, provider inference, push or deploy was involved.
-The remediation below has not been independently reviewed.
+Standing: qualification record of the hosted Pi coding profile (phase 4
+piece (c) of the [phase 4 design r2](../../planning/dev-vertical-phase4-hosted-transport-r2-20261116.md),
+the required changes of the
+[second independent review](../../reviews/dev-vertical-phase4-piece-c-fable-20261117/REVIEW.md),
+and phase 6 of the [completion plan](../../planning/dev-vertical-completion-20261115.md)).
+It is not owner acceptance. Live provider use was authorized by the operator
+on 2026-11-17 ("I authorize anything we need to finish, including live tests
+and budget"). Nothing was pushed or deployed by this work. The changes after
+review 2 have not yet been independently reviewed.
 
-Subject: `96fe54de`. Run set r6 (`~/.local/state/work-engine/dev-vertical-hosted-qual-20261117-r6`,
-driven by its `matrix.sh`). Earlier run sets: r5 on `30d0fc1c` (the same
-scenarios, before the label fixes in `96fe54de`) passed; r4 on `bd8478ed`
-(14 scenarios) was the subject of the second review.
+Subjects:
+- Offline matrix: `8fa71188`, run set r7
+  (`~/.local/state/work-engine/dev-vertical-hosted-qual-20261117-r7`, driven by
+  [matrix-r7.sh](matrix-r7.sh)); 19 of 19 scenarios pass. Earlier sets: r6 on
+  `96fe54de` and r5 on `30d0fc1c` passed the same scenarios; r4 on `bd8478ed`
+  (14 scenarios) was the subject of review 2.
+- Live runs (section "Live qualification"): `38803cff` and `8fa71188`.
+- Code after the matrix: `cab80a3a` adds two crash-cut unit tests only.
 
-[matrix.json](matrix.json) is the output of `check.py <r6> 96fe54de`; rerunning
+[matrix.json](matrix.json) is the output of `check.py <r7> 8fa71188`; rerunning
 that command over the run set reproduces it. It records the SHA-256 of the
-release `coding-qualification` binary and the observer binary, and checks
-that every run used them (the runtime admission's `binary_sha256` and each
-run's summary). Nothing binds those binaries to the source commit beyond
-having been built from this checkout at `96fe54de`.
+release `coding-qualification` binary and the observer binary (copies kept in
+the run set's `bin/`), and checks that every run used them. Nothing binds those
+binaries to the source commit beyond having been built from this checkout.
 
 ## Method
 
@@ -72,7 +76,7 @@ framed end not observed" (K-a). Everything else is Uncertain. A backend that
 sends a `data: [DONE]` sentinel would make every turn Uncertain, so phase 6
 must check the live backend for one before live use.
 
-## Results: all 19 scenarios pass (run set r6)
+## Offline results: all 19 scenarios pass (run set r7)
 
 Every attempt's reason below is as the Host recorded it.
 
@@ -101,6 +105,61 @@ Money, from the recorded dispositions: a refused attempt is released, a
 completed attempt is charged its settled cost (266 µUSD each), and every other
 attempt keeps its full reservation (164001 µUSD). Nothing was dispatched after
 an uncertain or pending attempt.
+
+## Live qualification (phase 6)
+
+Real routes, Host-held access, `gpt-6-luna`, the four-request coding
+continuity task (tool call, answer, reset with rehydration, continued turn),
+the real tool and validator containers. Secrets were searched for in every
+file of every run directory (access token, refresh token, API key): none
+found. The inference container had `NetworkMode=none` and no `/auth` mount in
+every run.
+
+**Backend stream end** ([probe](../../metrics/probes/codex_stream_end_probe.py),
+raw bytes in `~/.local/state/work-engine/dev-vertical-live-probe-20261117`):
+three runs against the ChatGPT Codex backend and one against the public
+Responses API. In every run the chunked framed end arrived 20–120 ms after
+`response.completed`, with no bytes between them and no `data: [DONE]`
+sentinel. So K-a's "framed end not observed" branch and Q-a's tail rule are not
+triggered by these backends at this size. The public Responses API accepted
+the Codex-shaped request body unchanged and returned the same event shapes; the
+same model is listed for the API key.
+
+**Routes:** primary `https:chatgpt-codex` (ChatGPT subscription, access from
+Pi's auth store), secondary `https:openai-responses` (API key). Each payer's
+credential kind must match its route; every payer's secret is screened.
+
+| Run | Path | Outcome |
+| --- | --- | --- |
+| `live-1` (`38803cff`) | qualify.py | 4 requests completed on the subscription route; one tool effect; validator passed; settled 268/267/203/200 µUSD (catalog rates; subscription-funded). |
+| `live-transition-1` (`38803cff`) | qualify.py | Primary payer `chatgpt-revoked` (access the backend must refuse): real 401, definitive refusal, released; failover to the API route, which completed requests 1–4. |
+| `c1` (`8fa71188`) | **operational entrypoint**: `coding-job-prepare` → `work-engine-server` (local-live class) → `work-engine-command` → producing Host | Operation `collected`, Host `component_passed`, acceptance `owner_pending`; 4 requests on the subscription route; the model's edit passed the validator. |
+| `c2-transition` (`8fa71188`) | operational entrypoint | Real 401 on the primary, failover to the API route; collected, `component_passed`. |
+
+Runs: `~/.local/state/work-engine/dev-vertical-hosted-live-20261117` and
+`~/.local/state/work-engine/dev-vertical-cutover-20261117`.
+[live_check.py](live_check.py) checks secrets and results; [cutover.py](cutover.py)
+drives the entrypoint runs. API spend: about 8 Luna requests of about 1 000
+tokens each, well under one cent. The transition exercised is a revoked
+credential (401); a quota refusal (429) on a real route was not produced.
+
+## Cutover and retirement
+
+- `38803cff`: HTTPS transport (`pi_coding_https.rs`), per-payer access
+  (K-b), a per-endpoint header allowlist (K-b), connection and TLS before
+  gate admission and outside the store transaction (K-e), hosted
+  `max_context_bytes` ≤ 32768 (K-d), container usage labelled (K-g).
+- `8fa71188`: the credential-mounted live profiles are retired
+  (`pi-coding-sdk.v1`, `lifecycle-live.v1`, `lifecycle-sol-high.v1`,
+  `signed-subscription.v1`; admission refuses them by name), with the native
+  access projection, the access adapter, `/auth` mounts and the Sol-high
+  contract (K-f: the hosted admission no longer carries native-access fields).
+  The operational server's live class and `coding-job-prepare` now prepare and
+  verify hosted jobs; the job profile passes only the credentials-file path.
+  Net −1 538 lines.
+- `cab80a3a`: crash cuts before gate entry (charged, nothing relayed, never
+  dispatched) and between relay settlement and the container's completion (the
+  full hold stays; nothing is released or relabelled).
 
 ## Review 2 required changes
 
@@ -145,39 +204,31 @@ never committed and are superseded by this record.
 
 ## Tests
 
-On `96fe54de`, after the matrix:
-- manual-host lib: 77 pass (6 ignored).
-- `tests/pi_stream.rs`: 25 pass. New: the drain reads to its bound, screens
-  what it reads, and screens or drops held-back bytes; the first terminal
-  event wins.
-- `tests/lifecycle.rs`: 50 pass. `mutation_during_snapshot_collection_is_a_conflict`
-  failed once under load before the matrix (a 10 s timing bound) and passed
-  alone and in the full run.
-- All other manual-host integration tests pass; `pi-pressure-context-host`
-  tests pass.
-
-The observer binary in r6 (`f677f09f…`) rebuilds byte-identically from
-`96fe54de`'s source (a later rustfmt-only change alters its digest). The release `coding-qualification` and observer binaries used
-by r6 are retained in the run set's `bin/`, which `check.py` reads.
-[matrix-r6.sh](matrix-r6.sh) is the run set's driver.
+At `8fa71188`/`cab80a3a`: manual-host lib (all pass, 6 ignored), all
+manual-host integration tests including `tests/lifecycle.rs` (50) and
+`tests/pi_stream.rs` (25), the hosted receiver test under
+`--experimental-vm-modules`, `pi-pressure-context-host` tests, and
+`work-engine-server` `preparation`, `coding_job` and `job::` tests. The broad
+workspace regression is recorded separately.
 
 ## Not exercised
 
 - Pre-dispatch cancel ending `NotDispatched` (unit-tested only).
-- The 1 MiB response bound (D4), 401/403 refusals, an expired or revoked
-  grant between attempts in the Docker flow, job-deadline expiry mid-stream,
-  and framings other than chunked.
-- Crashes other than mid-body: between reservation and gate entry, during the
-  drain, between relay settlement and `provider_complete`.
-- The lifecycle store's turn and grant state after a crash.
-- Q-d is unchanged: the gate log is still an embedder convenience file,
-  written after the receipt and absent after a crash. The durable evidence is
-  `gate_entered`, `deadline_ms` and `routes_sha256` on the attempt record.
+- The 1 MiB response bound (D4), 403 refusals, an expired or revoked grant
+  between attempts in the Docker flow, job-deadline expiry mid-stream, and
+  framings other than chunked.
+- A crash during the release drain (covered in kind by the mid-body crash:
+  the attempt is pending and its relayed bytes are retained), and live crash
+  cuts against real routes.
+- A real 429 quota refusal; subscription access refresh (the Host refuses
+  access expiring within 10 minutes rather than refreshing).
+- Q-d is unchanged: the gate log is an embedder convenience file; the durable
+  evidence is `gate_entered`, `deadline_ms` and `routes_sha256` on each attempt.
 
 ## Open
 
-- Independent review of this remediation (only if the operator asks; API cost).
-- Phase 6: live backend close timing, trailing bytes and any `[DONE]`
-  sentinel (K-a, Q-a); public HTTPS transport; the response bound (D4);
-  credentials per payer and a header allowlist (K-b); then removal of the
-  credential-mounted profiles. K-c to K-g remain as the review lists them.
+- Independent review of the changes since review 2 (`81c68b3b`..`cab80a3a`).
+- K-c (self-issued qualification grants), K-h, and Q-c/Q-d notes as review 2
+  lists them; the D4 response bound is unchanged at 1 MiB (largest live
+  response here about 8 KiB).
+- Owner acceptance of the exported results (`owner_pending`).

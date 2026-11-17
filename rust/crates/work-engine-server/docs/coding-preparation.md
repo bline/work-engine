@@ -28,8 +28,8 @@ The spec has schema `work-engine.coding-preparation.v1` and these exact fields:
 | `image` | Existing immutable Docker image digest |
 | `deadline_unix_seconds`, `command_timeout_seconds` | Host deadline and 1–30 second command bound |
 | `collector_deadline_seconds`, `cancel_grace_seconds` | Separate server collector deadline (1–900 seconds) and cancellation grace (1–30 seconds) |
-| `fixture_command` | Explicit deterministic command for provider-disabled preparation; empty for Sol/high |
-| `sol_high` | Absent/null for offline fixture, or the explicit future live preparation inputs below |
+| `fixture_command` | Explicit deterministic command for provider-disabled preparation; empty for a live job |
+| `hosted` | Absent/null for offline fixture, or the live hosted inputs below |
 
 All files and tree roots are canonical absolute references. Source mutation
 between inspection and preparation invalidates the input digest. A bundle or
@@ -71,44 +71,30 @@ Exact repeat reads the original operation and cannot admit replacement work.
 The result's `owner_pending` acceptance and exact raw receipt numbers remain
 unchanged by command rendering or transport success.
 
-## Sol/high preparation
+## Live hosted preparation
 
-The optional `sol_high` object has exact fields `pi_config` (public config root),
-`native_auth_source` (reference only), `payer_account_id`, `runtime_admission`
-(an existing `{path,sha256}` artifact), and `budget_control` (the existing
-canonical observation-only continuity budget). Preparation never opens the
-native source reference. It requires an independently supplied future runtime
-admission; the preparation grant's `allow_provider:false` cannot create one.
-A successful preparation is not permission to execute the resulting live job.
+The optional `hosted` object has exact fields `pi_config` (public config root),
+`routes` (the route table: ordered `{id, payer, endpoint}` with endpoints
+`https:chatgpt-codex` or `https:openai-responses`, and
+`max_attempts_per_request`), `credentials` (the Host embedder's owner-only
+credentials file, schema `work-engine.pi-hosted-credentials.v1`, naming each
+payer's access source; preparation never opens it), `runtime_admission` (an
+existing `{path,sha256}` artifact) and `budget_control` (the canonical
+observation-only continuity budget). The admission must be
+`work-engine.pi-coding-runtime-admission.v1` for this exact job, Host binary,
+task, catalog, config, `gpt-6-luna`, four requests, a budget of at most
+700000 microUSD covering the conservative reservation, and the route table's
+digest (`hosted_routes_sha256`). The preparation grant's `allow_provider:false`
+cannot create it. A successful preparation is not permission to execute.
 
-The new Host profile is `work-engine.pi-coding-lifecycle-sol-high.v1`, with
-runtime admission `work-engine.pi-coding-runtime-admission.v2` and tuple:
-
-```json
-{"schema":"work-engine.sol-high.v1","reasoning_effort":"high","payer_account_id":"<explicit account>"}
-```
-
-It admits only `gpt-6.1-sol`, `openai-codex`, `openai-codex-responses`,
-`https://chatgpt.com/backend-api` and four requests. Prepared jobs use 24,000
-context bytes (the server ceiling) and the conservative 17,680,004 microUSD hold. The pinned catalog's maximum tier rates
-and full context/output reservation are retained: 4,420,001 microUSD/request.
-This is a hold, not expected use, measured billing or subscription quota.
-The receiver validates the projected payer and selects high reasoning. Host
-frames bind the same effort and payer before reserving provider entry.
-
-Lifecycle v5 preserves native thinking/signature blocks in exact history,
-derives final text only from text blocks, and creates the separately named
-`work-engine.pi-coding-sol-high-continuity.v1` checkpoint. Legacy v3/v4 grammar,
-profile digests, encoding and receipts keep their old meanings. New profiles
-cannot settle through the generic text-settlement entry.
-
-The opt-in `sol_wire` test captures the actual pinned Pi adapter's serialized
-request through substituted SSE fetch, including its zstd wire bytes. It uses
-a deterministic synthetic JWT, removes authorization from the capture, and
-stops transport before any network request. The same receiver session-options
-helper supplies its effort. This establishes preparation/serialization only;
-actual account/model eligibility, backend responses and coding quality require
-separate live authority and qualification.
+The prepared job uses profile `work-engine.pi-coding-hosted.v1` and 24,000
+context bytes; the job profile is version 2, class `local-live`, with
+`env.WORK_ENGINE_HOSTED_CREDENTIALS` set to the credentials file. Credential
+sources are `chatgpt-pi-auth` (Pi's auth store, not refreshed by the Host),
+`api-key-file` (owner-only file) and, for qualification only,
+`chatgpt-invalid-for-qualification` (an access the backend refuses, to exercise
+a real definitive refusal). The retired Sol/high profile and its v2 admission
+are refused.
 
 ## Failure evidence
 

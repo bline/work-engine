@@ -173,6 +173,8 @@ fixture success do not qualify a signed Pi coding request.
 
 ## Signed subscription candidate
 
+> **Retired 2026-11-17.** `work-engine.pi-coding-signed-subscription.v1` mounted provider access into the inference container and is refused at admission. The only live coding profile is `work-engine.pi-coding-hosted.v1` (Host-held access, Host dispatch); see `records/dev-vertical-hosted-qualification-20261117/README.md`. The text below is kept as history.
+
 `work-engine.pi-coding-signed-subscription.v1` composes the existing subscription
 adapter with the opaque signed `PiOwner`; use `Host::admit_signed_subscription`.
 It first allocates/seals the actual SDK UUID, then projects access under current
