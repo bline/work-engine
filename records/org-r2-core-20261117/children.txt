@@ -1,0 +1,10 @@
+00338afc-95b6-4f70-a385-ed1dcc406ccf S-A builder Opus
+90fce6b0-fc73-403d-8dfe-9f8d9a53e7ae S-A review Fable
+b233a3ba-11fc-4069-938e-3998fc9fcfbd S-A remediation-1 Sonnet
+050ea10d-ca2e-48dc-be90-21bec0a8914f S-A recheck (copy-on-resume of 90fce6b0)
+21e2c363-6da8-4eed-b40e-828e070fa025 S-B builder attempt1 (5h limit, no work)
+73263159-b4ea-48bf-9a1e-cf13e2ef228b S-B builder Opus r2
+34b6c010-d61b-4558-96e2-2f6819f12f63 S-B review Opus xhigh
+26e3b11c-ac59-4eca-9e5a-33e7a81e1886 S-B escalation design review Fable
+f138de3b-e733-4e7d-b859-80f369c58134 S-B remediation-1 Sonnet
+534383ab-cdf3-400c-ab27-a3381299b78a S-B recheck (copy-on-resume of 34b6c010)

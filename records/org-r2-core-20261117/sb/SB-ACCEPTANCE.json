@@ -1,0 +1,69 @@
+{
+ "schema": "org-slice-acceptance/v1",
+ "at": "2026-11-17T19:05:57.389916+00:00",
+ "slice": "S-B consumption seam and real discharges (review-delivery), with host-constructed admission request",
+ "decision": "accepted_bounded_private_readiness",
+ "decision_owner": "Pi root 01a1e56e-be12-7424-977b-c7c7983887d0",
+ "authority": {
+  "path": "/home/bline/cbm-work/org-r2-core-20261117/OWNER-DECISION-R2REC.json",
+  "sha256": "57693ea659f65367c1c9944e91ca73e450848d95b70ef38f877c393c9ee1fbd1"
+ },
+ "subject": {
+  "repository": "/home/bline/cbm-work/wt-org-r2-core-20261117",
+  "checkpoint_commit_oid": "77c57abf50949f158844a9e54b97d893f23c401e",
+  "checkpoint_tree_oid": "06e9f75e9dd8b9a83c6266216db5dc245a96f4ef",
+  "task_patch_digest": "fb341d7bf3fc3fa88761b09334b7caa44e7900e7c584b092a8053feb1f5f3b3a",
+  "baseline": "561c6ffc301f9faac7609ad07e8a9704dd379e0b",
+  "includes": "accepted S-A (bfaa455c) + S-B",
+  "ref": "refs/work-engine/checkpoints/org-r2-core-20261117/slice-2/candidate-2"
+ },
+ "design_decision": {
+  "path": "/home/bline/cbm-work/org-r2-core-20261117/sb/ROOT-SB-DESIGN-DECISION.json",
+  "sha256": "38988dff5c5b5c1d802cab777b4fdee9bb3b775008050c46caf6c41d92220d50"
+ },
+ "evidence": {
+  "root_gate": {
+   "path": "/home/bline/cbm-work/org-r2-core-20261117/sb/ROOT-GATE-2.json",
+   "sha256": "11d6f360d29958eb96ccb3e720889cf2c3748c77e3c225f5649c5de1418497b3"
+  },
+  "matrix": "/home/bline/cbm-work/org-r2-core-20261117/sb/MATRIX.md",
+  "review": {
+   "path": "/home/bline/cbm-work/org-r2-core-20261117/sb/review/REVIEW-1.md",
+   "verdict": "changes_required (P2-1)",
+   "session": "34b6c010-d61b-4558-96e2-2f6819f12f63"
+  },
+  "design_review": {
+   "path": "/home/bline/cbm-work/org-r2-core-20261117/sb/design-review/REVIEW.md",
+   "verdict": "local_design_correction",
+   "session": "26e3b11c-ac59-4eca-9e5a-33e7a81e1886"
+  },
+  "recheck": {
+   "path": "/home/bline/cbm-work/org-r2-core-20261117/sb/review/RECHECK-1.md",
+   "sha256": "41765de928576f97ac10e06187c624e0401de12f872f031177edffedf8620d4d",
+   "verdict": "accept_private_readiness",
+   "session": "534383ab-cdf3-400c-ab27-a3381299b78a (copy-on-resume)"
+  }
+ },
+ "r2_exit": "Met on fixture standing as amended by N1/O4 (operator decision R2REC): real check-derived discharges for separation, component-binding, authority-requirement, realization-admission, observer-identity; regate before spawn and before consumption with fresh observations and sampled time; mapping kinds assumed; realization checks never discharged.",
+ "p3_carried": [
+  "delivery regate revision not carried into Delivered (regate_revision None)",
+  "S-B mutants M1-M11 not re-established on corrected code (N1-N7 cover new paths); M6 replay not re-killed on new regate()",
+  "T1 shows no admissible V' world",
+  "T5 asserts [O4] not AuthorityExpired reason"
+ ],
+ "carried_open": [
+  "organization id caller-asserted, unanchored; plan-level item: organization anchor record, owner to be named",
+  "declared actor identity/installed digests (O8)",
+  "node/sdk_root/control presumed inputs",
+  "consume_fixture_result and test_support routes outside the gate",
+  "O10 single-use gap (same binding -> same boundary identity)",
+  "fixture standing; assumed mapping kinds (O7)",
+  "doctest error codes not enforced (N-1)"
+ ],
+ "unclaimed": [
+  "fixture standing only",
+  "no hosted path, storage, issuance, production admission",
+  "independence = separate session/context, same provider family",
+  "private readiness only; not committed"
+ ]
+}

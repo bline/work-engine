@@ -4404,6 +4404,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "work-engine-organization-authority"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "sha2",
+ "thiserror",
+ "work-engine-organization",
+]
+
+[[package]]
 name = "work-engine-query"
 version = "0.1.0"
 dependencies = [
@@ -4424,6 +4434,7 @@ dependencies = [
  "sha2",
  "thiserror",
  "work-engine-organization",
+ "work-engine-organization-authority",
  "work-engine-review-preparation",
 ]
 

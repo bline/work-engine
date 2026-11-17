@@ -17,13 +17,15 @@
 //! same checked binding. [`FrozenDelivery`] is a transport byte type; freezing never establishes
 //! canonical derivation.
 //!
-//! With `fixture`, the R2-S gate ([`gate`]) refuses delivery before any child is spawned, and
-//! again immediately before consumption, on a known realization incompatibility or a blocker kind
-//! without a discharge. The host derives the realization description from what it runs; the only
-//! discharges are labelled fixture **assumptions** (`AssumedDischarge`), not admissions.
+//! With `fixture`, the delivery gate ([`gate`]) refuses delivery before any child is spawned, and
+//! again immediately before consumption, on a known realization incompatibility, a blocker kind
+//! without a discharge, or a refused, mismatched or non-current fixture-domain organizational
+//! admission (S-A) that the host obtains itself. The host derives the realization description from
+//! what it runs. Admitted kinds are discharged by named S-A check ids; the mapping kinds remain
+//! labelled fixture **assumptions** (`AssumedDischarge`), never admissions.
 //!
-//! Nothing here clears a preparation blocker, creates an admission, grants capability or accepts
-//! anything. Session/attempt bindings are transport correspondences, never grants. The fixture
+//! Nothing here clears a preparation blocker outside the fixture runner, creates a production
+//! admission, grants capability or accepts anything. Session/attempt bindings are transport correspondences, never grants. The fixture
 //! child is behaviour-constrained fixture code, not an OS sandbox.
 //!
 //! Without the feature the native runner does not exist:

@@ -10,15 +10,21 @@
 //! R2-S: the suite's positive and failure-path controls run on the labelled **assumption world**
 //! (`tests/fixtures/assumption-world/`, the frozen requirements without realization constraints;
 //! the child is not confined; the host's read-only claim is scoped to "no granted tool" and is
-//! backed by construction and refusal, not by confinement). Every blocker on it passes
-//! only as a labelled fixture `AssumedDischarge`. The frozen world is the negative: refused before
-//! spawn by a known realization incompatibility (spawn attempts 0, consumer invocations 0).
+//! backed by construction and refusal, not by confinement). S-B: its admitted kinds pass only by
+//! the host's fixture-domain S-A admission over the synthetic fixture authority world
+//! (`common::authority`), regated before consumption; its mapping kinds pass only as labelled
+//! fixture `AssumedDischarge`s. The frozen world is the negative: refused before spawn by a known
+//! realization incompatibility (spawn attempts 0, consumer invocations 0).
 //!
 //! Every verdict is asserted in-process. When an assertion fails after a native run, the raw
 //! frames and stderr of that run are printed as ordinary failure diagnostics and its scratch
 //! root is kept; nothing is written as retained evidence.
 mod common;
 
+use common::authority::{
+    ACTOR, FIXED, ORG, ScriptedClock, Shape, Switch, authority_world, authority_world_shaped,
+    fixture_authority, fixture_authority_with, requirements_from,
+};
 use common::native_inputs::{Scratch, sdk_root};
 use common::world::{World, frozen_world, host_request, world};
 use common::*;
@@ -28,16 +34,28 @@ use review_episode_core::identity::{Authority, Revision};
 use review_episode_core::state::{Phase, ReviewEpisodeState};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
+use std::cell::{Cell, RefCell};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
+use work_engine_organization_authority::fixture::FixtureSource;
+use work_engine_organization_authority::{
+    AdmissionRefusal, AdmissionState, AuthorityObservation, AuthorityState, BoundaryKind, CheckId,
+    CheckOutcome, Domain, Reason, ReasonCode, StaleReason, SubjectRef, UnknownReason, Unobserved,
+};
 use work_engine_review_delivery::binding::{EpisodeInputs, ExperimentBinding};
-use work_engine_review_delivery::gate::{ASSUMED_DISCHARGE_LABEL, Boundary, GateRefusal};
+use work_engine_review_delivery::gate::{
+    ASSUMED_DISCHARGE_LABEL, Boundary, CALLER_ASSERTED_LABEL, Discharge, FIXTURE_ADMISSION_LABEL,
+    GateRefusal, TimeSource, discharge,
+};
+use work_engine_review_delivery::native::test_support::{
+    run_generic_attempt as run_attempt, run_generic_attempt_observed as run_attempt_observed,
+};
 use work_engine_review_delivery::native::{
     AttemptDriver, AttemptFacts, AttemptPolicy, BetweenBoundaries, CANARY_MARKER, Control,
     DeliverError, Delivered, DriverStep, KillFact, KillReason, Limits, NativeConfig, NativeRun,
     ProcessFacts, ReapFact, SendCancel, SendOutcome, SendRecord, StreamCollector, StreamEnd,
-    StreamRecord, TimingFacts, Trailing, WaitObserver, WriteShape, check_attempt_evidence,
-    deliver_and_consume, deliver_and_consume_observed, run_attempt, run_attempt_observed,
+    StreamRecord, TimingFacts, Trailing, WaitObserver, WriteShape, boundary_operation,
+    check_attempt_evidence, deliver_and_consume, deliver_and_consume_observed,
 };
 use work_engine_review_delivery::{DeliveryRefusal, Transport};
 use work_engine_review_preparation::fixture::{ConsumeRefusal, FixtureDeclaration};
@@ -99,6 +117,10 @@ fn base<'a>(w: &'a World, state: &'a ReviewEpisodeState, authority: &'a Authorit
 }
 
 fn binding_for(case: &Case<'_>, result: &str) -> ExperimentBinding {
+    binding_with_attempt(case, result, "attempt-1")
+}
+
+fn binding_with_attempt(case: &Case<'_>, result: &str, attempt_id: &str) -> ExperimentBinding {
     ExperimentBinding::new(
         &case.w.candidate,
         &request(None),
@@ -113,7 +135,7 @@ fn binding_for(case: &Case<'_>, result: &str) -> ExperimentBinding {
         },
         result,
         Transport {
-            attempt_id: "attempt-1".into(),
+            attempt_id: attempt_id.into(),
             generation: 1,
         },
     )
@@ -151,7 +173,8 @@ fn deliver(
     scratch: Scratch,
     binding: &ExperimentBinding,
 ) -> (Result<Delivered, DeliverError>, Diagnostics) {
-    let outcome = deliver_and_consume(cfg, binding);
+    let world = authority_world();
+    let outcome = deliver_and_consume(cfg, binding, &fixture_authority(&world.src));
     let text = match run_of(&outcome) {
         Some(run) => format!(
             "native diagnostics ({:?}): consumer invocations {}\nstdout frames:\n{}\nstderr:\n{}\nfacts: {:?}",
@@ -238,29 +261,107 @@ fn positive_assertions(
                 && b.kind != BlockerKind::RealizationCheck),
         "only assumable kinds remain on the assumption world"
     );
-    // F-4: the success output shows that it passed only by labelled assumed discharges, at both
-    // boundaries, covering exactly the blockers of the delivered preparation.
-    let blocker_ids: Vec<(String, BlockerKind)> = binding
-        .preparation()
-        .blockers
-        .iter()
-        .map(|b| (b.id.clone(), b.kind))
-        .collect();
+    // S-B invariant 4: the success output carries, at both boundaries, the admission summary
+    // (Domain::Fixture, every outcome by check id passed, revision) with the blockers it
+    // discharged by check id, and the remaining labelled assumed discharges for the mapping kinds
+    // only; together they cover exactly the blockers of the delivered preparation.
+    let blockers = &binding.preparation().blockers;
     assert!(
-        !blocker_ids.is_empty(),
+        !blockers.is_empty(),
         "the assumption world carries blockers"
     );
-    for (assumed, boundary) in [
-        (&delivered.assumed_before_spawn, Boundary::BeforeSpawn),
+    let admitted_ids: Vec<(String, BlockerKind, Vec<CheckId>)> = blockers
+        .iter()
+        .filter_map(|b| match discharge(b.kind) {
+            Discharge::Admitted(checks) => Some((b.id.clone(), b.kind, checks.to_vec())),
+            _ => None,
+        })
+        .collect();
+    let assumed_ids: Vec<(String, BlockerKind)> = blockers
+        .iter()
+        .filter(|b| discharge(b.kind) == Discharge::AssumedDischarge)
+        .map(|b| (b.id.clone(), b.kind))
+        .collect();
+    assert_eq!(admitted_ids.len() + assumed_ids.len(), blockers.len());
+    assert!(!admitted_ids.is_empty() && !assumed_ids.is_empty());
+    for (admitted, assumed, boundary, kind) in [
         (
+            &delivered.admitted_before_spawn,
+            &delivered.assumed_before_spawn,
+            Boundary::BeforeSpawn,
+            BoundaryKind::Delivery,
+        ),
+        (
+            &delivered.admitted_before_consumption,
             &delivered.assumed_before_consumption,
             Boundary::BeforeConsumption,
+            BoundaryKind::Consumption,
         ),
     ] {
+        assert_eq!(admitted.boundary(), boundary);
+        assert_eq!(admitted.bound_to(), frozen.contract_sha256());
+        assert_eq!(admitted.admitted(), admitted_ids.as_slice());
+        let summary = admitted.admission();
+        assert_eq!(summary.label(), FIXTURE_ADMISSION_LABEL);
+        assert_eq!(summary.domain(), Domain::Fixture);
+        assert_eq!(summary.boundary().kind(), kind);
+        assert_eq!(summary.boundary().epoch(), 1);
+        // T7: the boundary operation is derived from the binding.
+        assert_eq!(summary.boundary().operation(), boundary_operation(binding));
+        // T2: the host-constructed request identity is the binding's (vantage of the preparation,
+        // subject, candidate digest), and the caller-asserted inputs reach the success output
+        // under their label.
+        let bound_subject = &binding.request().subject;
+        assert_eq!(
+            summary.request().vantage,
+            binding.preparation().model_context.vantage.id
+        );
+        assert_eq!(summary.request().vantage, common::authority::VANTAGE);
+        assert_eq!(
+            summary.request().subject,
+            SubjectRef {
+                commit: bound_subject.commit.clone(),
+                tree: bound_subject.tree.clone(),
+                patch_identity: bound_subject.patch_identity.clone(),
+            }
+        );
+        assert_eq!(
+            summary.request().candidate_digest,
+            w.candidate.content_digest()
+        );
+        assert_eq!(CALLER_ASSERTED_LABEL, "caller_asserted_unanchored");
+        assert_eq!(summary.asserted().label(), CALLER_ASSERTED_LABEL);
+        assert_eq!(summary.asserted().organization_id, ORG);
+        assert_eq!(summary.asserted().actor_identity, ACTOR);
+        assert!(summary.outcomes().all_passed());
+        assert_eq!(
+            summary
+                .outcomes()
+                .iter()
+                .map(|(id, _)| id)
+                .collect::<Vec<_>>(),
+            CheckId::ALL
+        );
         assert_eq!(assumed.boundary(), boundary);
         assert_eq!(assumed.label(), ASSUMED_DISCHARGE_LABEL);
-        assert_eq!(assumed.assumed(), blocker_ids.as_slice());
+        assert_eq!(assumed.bound_to(), frozen.contract_sha256());
+        assert_eq!(assumed.assumed(), assumed_ids.as_slice());
     }
+    assert_eq!(
+        delivered
+            .admitted_before_spawn
+            .admission()
+            .regate_revision(),
+        None
+    );
+    assert!(
+        delivered
+            .admitted_before_consumption
+            .admission()
+            .regate_revision()
+            .is_some(),
+        "the consumption admission was regated against a fresh observation"
+    );
     assert_eq!(binding.spawn_attempts(), 1);
     // SDK-observed: actual SDK identity, one request, exact bytes, empty toolset, idle, no provider/network.
     assert_eq!(bound.allocation().sdk_version, "1.5.0");
@@ -551,7 +652,7 @@ fn assumption_world_is_the_frozen_world_without_realization_constraints() {
             .all(|c| c.normative.mutation == "none"),
         "mutation: none stays a requirement; the host claims only that no tool is granted \
          (process-level writes are not established, and the realization-admission blocker \
-         passes only by the labelled assumed discharge)"
+         passes only by a fixture-domain admission over a synthetic realization acceptance)"
     );
 }
 
@@ -566,7 +667,8 @@ fn the_frozen_world_is_refused_before_spawn_by_known_realization_incompatibility
     let writer = authority();
     let (cfg, scratch) = config("frozen-negative", Control::Positive);
     let binding = binding_for(&base(&w, &state, &writer), &result_json(|_| {}));
-    let outcome = deliver_and_consume(&cfg, &binding);
+    let authority = authority_world();
+    let outcome = deliver_and_consume(&cfg, &binding, &fixture_authority(&authority.src));
     let DeliverError::Refused {
         boundary,
         refusal,
@@ -615,7 +717,8 @@ fn a_non_default_adapter_is_refused_before_spawn_because_the_description_differs
     let (mut cfg, scratch) = config("non-default-adapter", Control::Positive);
     cfg.adapter = scratch.path.join("another-adapter.mjs");
     let binding = binding_for(&base(&w, &state, &writer), &result_json(|_| {}));
-    let outcome = deliver_and_consume(&cfg, &binding);
+    let authority = authority_world();
+    let outcome = deliver_and_consume(&cfg, &binding, &fixture_authority(&authority.src));
     let DeliverError::Refused {
         boundary,
         refusal,
@@ -691,7 +794,13 @@ fn the_pre_consumption_recheck_refuses_after_a_verified_attempt() {
         let (cfg, scratch) = config(name, Control::Positive);
         let binding = binding_for(&base(&w, &state, &writer), &result_json(|_| {}));
         let id = observed.id.clone();
-        let outcome = deliver_and_consume_observed(&cfg, &binding, &mut Observe(vec![observed]));
+        let authority = authority_world();
+        let outcome = deliver_and_consume_observed(
+            &cfg,
+            &binding,
+            &fixture_authority(&authority.src),
+            &mut Observe(vec![observed]),
+        );
         let _scratch = scratch;
         let DeliverError::Refused {
             boundary,
@@ -724,6 +833,340 @@ fn the_pre_consumption_recheck_refuses_after_a_verified_attempt() {
         );
         assert_eq!(canonical(&state), before, "{name}");
     }
+}
+
+// --- S-B: organizational admission at delivery, regate before consumption ---------------------
+
+/// Delivers on the assumption world against `authority`, expecting a refusal before any spawn;
+/// returns the refusal after asserting spawn 0, consumer 0 and an untouched fixture root.
+fn sb_refused_before_spawn(
+    name: &str,
+    fixture: &work_engine_review_delivery::native::FixtureAuthority<'_>,
+) -> GateRefusal {
+    let w = world();
+    let state = begun();
+    let writer = authority();
+    let (cfg, scratch) = config(name, Control::Positive);
+    let binding = binding_for(&base(&w, &state, &writer), &result_json(|_| {}));
+    let DeliverError::Refused {
+        boundary,
+        refusal,
+        run,
+    } = refused(deliver_and_consume(&cfg, &binding, fixture))
+    else {
+        panic!("{name}: expected a gate refusal")
+    };
+    assert_eq!(boundary, Boundary::BeforeSpawn, "{name}");
+    assert!(run.is_none(), "{name}: no native run exists");
+    assert_eq!(binding.spawn_attempts(), 0, "{name}: no child was spawned");
+    assert_eq!(
+        binding.consumer_invocations(),
+        0,
+        "{name}: consumer never ran"
+    );
+    assert!(
+        std::fs::read_dir(&scratch.path).unwrap().next().is_none(),
+        "{name}: the fixture root was never set up"
+    );
+    refusal
+}
+
+/// S-B invariant 2: the host's own admission refuses before spawn: a revoked owner grant (O4
+/// refuses, every outcome carried) and an unobservable authority source (no observation).
+#[test]
+fn sb_an_admission_refusal_refuses_before_spawn() {
+    let revoked = authority_world();
+    revoked.src.revoke(&revoked.ids.owner_grant.unwrap());
+    match sb_refused_before_spawn("sb-admission-refused", &fixture_authority(&revoked.src)) {
+        GateRefusal::Admission(work_engine_organization_authority::AdmissionRefusal::Checks(
+            outcomes,
+        )) => assert_eq!(outcomes.refused(), [CheckId::O4]),
+        other => panic!("expected an O4 admission refusal, got {other:?}"),
+    }
+    let unknown = authority_world();
+    unknown.src.inject_unknown("authority source unavailable");
+    assert_eq!(
+        sb_refused_before_spawn("sb-admission-unobserved", &fixture_authority(&unknown.src)),
+        GateRefusal::NoObservation("authority source unavailable".into())
+    );
+}
+
+/// Counts the observations taken from the wrapped source.
+struct Counting<'a> {
+    inner: &'a FixtureSource,
+    calls: Cell<u32>,
+}
+impl AuthorityObservation for Counting<'_> {
+    fn observe(&self) -> Result<AuthorityState, Unobserved> {
+        self.calls.set(self.calls.get() + 1);
+        self.inner.observe()
+    }
+}
+
+/// Runs `act` just before the `at`-th observation (1-based) and counts observations.
+struct Scripted<'a> {
+    inner: &'a FixtureSource,
+    calls: Cell<u32>,
+    at: u32,
+    act: RefCell<Option<Box<dyn FnOnce() + 'a>>>,
+}
+impl AuthorityObservation for Scripted<'_> {
+    fn observe(&self) -> Result<AuthorityState, Unobserved> {
+        let n = self.calls.get() + 1;
+        self.calls.set(n);
+        if n == self.at {
+            (self.act.borrow_mut().take().expect("acts once"))();
+        }
+        self.inner.observe()
+    }
+}
+
+/// T3 (host-constructed request; requirements are a digest-bound preimage): requirements that are
+/// not the binding candidate's refuse before spawn with `AdmissionMismatch { requirements }` and
+/// before any observation of the authority source, whether they come from another world (the
+/// frozen one) or are an edited, admissible variant of this world's.
+#[test]
+fn sb_requirements_that_are_not_the_candidates_refuse_before_any_observation() {
+    let w = authority_world();
+    let mut edited_world: Value = serde_json::from_slice(ASSUMPTION_REQ).unwrap();
+    edited_world["acceptanceConditions"][0]["proposition"] = json!("another proposition");
+    let edited_bytes = serde_json::to_vec(&edited_world).unwrap();
+    for (name, bytes) in [
+        ("sb-requirements-frozen-world", REQ),
+        ("sb-requirements-edited", edited_bytes.as_slice()),
+    ] {
+        let counting = Counting {
+            inner: &w.src,
+            calls: Cell::new(0),
+        };
+        let fixture = fixture_authority_with(&counting, &FIXED, requirements_from(bytes));
+        assert_eq!(
+            sb_refused_before_spawn(name, &fixture),
+            GateRefusal::AdmissionMismatch {
+                field: "requirements"
+            },
+            "{name}"
+        );
+        assert_eq!(counting.calls.get(), 0, "{name}: no observation was taken");
+    }
+}
+
+/// T1 (the vantage is the preparation's, not a caller's): in a world where the preparation's
+/// vantage is bound to another actor than the declared one, and a second vantage (V') is bound to
+/// the declared actor and the host's realization digest, delivery refuses before spawn, and the
+/// refusal is R3 ActorMismatch for the preparation's vantage: the admission was decided for that
+/// vantage, not for V'.
+#[test]
+fn sb_the_admission_is_decided_for_the_preparations_vantage() {
+    let w = authority_world_shaped(Shape {
+        owner_grant: true,
+        owner_expiry: None,
+        swap_actors: true,
+    });
+    match sb_refused_before_spawn("sb-vantage", &fixture_authority(&w.src)) {
+        GateRefusal::Admission(AdmissionRefusal::Checks(outcomes)) => {
+            assert_eq!(outcomes.refused(), [CheckId::R3]);
+            assert_eq!(
+                outcomes.get(CheckId::R3),
+                &CheckOutcome::Refused(vec![Reason {
+                    code: ReasonCode::ActorMismatch,
+                    subject: common::authority::VANTAGE.to_owned(),
+                }])
+            );
+        }
+        other => panic!("expected an R3 admission refusal, got {other:?}"),
+    }
+}
+
+/// T4 (P3-1, delivery admission regated before the spawn): a pinned issuance superseded between
+/// the two admissions by a replacement that still passes would be pinned by the consumption
+/// admission and invisible to it; the delivery admission's own regate immediately before the spawn
+/// sees it: refused before spawn.
+#[test]
+fn sb_a_pin_replaced_between_the_two_admissions_refuses_before_spawn() {
+    let w = authority_world();
+    let pinned = w.ids.reviewer_binding;
+    let scripted = Scripted {
+        inner: &w.src,
+        calls: Cell::new(0),
+        at: 2,
+        act: RefCell::new(Some(Box::new(|| {
+            w.src.supersede(
+                &pinned,
+                work_engine_organization_authority::records::Record::fixture_vantage_binding(
+                    common::authority::ORG,
+                    common::authority::VANTAGE,
+                    w.ids.reviewer,
+                    common::authority::host_digest(),
+                    common::authority::ACTOR,
+                ),
+            );
+        }))),
+    };
+    assert_eq!(
+        sb_refused_before_spawn("sb-replaced-between", &fixture_authority(&scripted)),
+        GateRefusal::NotCurrent(AdmissionState::Stale(StaleReason::IssuanceSuperseded(
+            vec![pinned]
+        )))
+    );
+    assert_eq!(scripted.calls.get(), 3, "two admissions and one regate");
+}
+
+/// T7: the boundary operation is derived from the binding: two bindings (different transport
+/// attempt, so different frozen contract bytes) yield different operations; one binding yields the
+/// same operation every time.
+#[test]
+fn sb_the_boundary_operation_is_derived_from_the_binding() {
+    let w = world();
+    let state = begun();
+    let writer = authority();
+    let case = base(&w, &state, &writer);
+    let result = result_json(|_| {});
+    let one = binding_with_attempt(&case, &result, "attempt-1");
+    let again = binding_with_attempt(&case, &result, "attempt-1");
+    let other = binding_with_attempt(&case, &result, "attempt-2");
+    assert_eq!(boundary_operation(&one), boundary_operation(&again));
+    assert_ne!(boundary_operation(&one), boundary_operation(&other));
+    assert!(boundary_operation(&one).contains(one.frozen().contract_sha256()));
+}
+
+/// Runs `change` once between the boundaries (after the verified attempt, before consumption).
+struct Change<'a>(Option<Box<dyn FnOnce() + 'a>>);
+impl BetweenBoundaries for Change<'_> {
+    fn observed_before_consumption(&mut self, binding: &ExperimentBinding) -> Vec<Blocker> {
+        assert_eq!(binding.spawn_attempts(), 1, "called after the spawn");
+        assert_eq!(
+            binding.consumer_invocations(),
+            0,
+            "called before consumption"
+        );
+        (self.0.take().expect("called once"))();
+        Vec::new()
+    }
+}
+
+/// Delivers on the assumption world with `change` applied to the authority between the spawn and
+/// consumption; expects the consumption regate to refuse with the returned state, after a complete
+/// verified attempt, with the consumer never invoked.
+fn sb_regate_refusal<'a>(
+    name: &str,
+    source: &'a dyn AuthorityObservation,
+    change: impl FnOnce() + 'a,
+) -> AdmissionState {
+    sb_regate_refusal_clocked(name, source, &FIXED, change)
+}
+
+fn sb_regate_refusal_clocked<'a>(
+    name: &str,
+    source: &'a dyn AuthorityObservation,
+    clock: &'a dyn TimeSource,
+    change: impl FnOnce() + 'a,
+) -> AdmissionState {
+    let w = world();
+    let state = begun();
+    let before = canonical(&state);
+    let writer = authority();
+    let (cfg, scratch) = config(name, Control::Positive);
+    let binding = binding_for(&base(&w, &state, &writer), &result_json(|_| {}));
+    let outcome = deliver_and_consume_observed(
+        &cfg,
+        &binding,
+        &fixture_authority_with(source, clock, requirements_from(ASSUMPTION_REQ)),
+        &mut Change(Some(Box::new(change))),
+    );
+    let _scratch = scratch;
+    let DeliverError::Refused {
+        boundary,
+        refusal,
+        run,
+    } = refused(outcome)
+    else {
+        panic!("{name}: expected a gate refusal")
+    };
+    assert_eq!(boundary, Boundary::BeforeConsumption, "{name}");
+    let run = run.expect("the verified run is retained");
+    assert_eq!(run.incompleteness(), Vec::<String>::new(), "{name}");
+    assert_eq!(binding.spawn_attempts(), 1, "{name}");
+    assert_eq!(
+        binding.consumer_invocations(),
+        0,
+        "{name}: consumer never ran"
+    );
+    assert_eq!(canonical(&state), before, "{name}");
+    match refusal {
+        GateRefusal::NotCurrent(state) => state,
+        other => panic!("{name}: expected a regate refusal, got {other:?}"),
+    }
+}
+
+/// S-B invariant 3: revocation, supersession or a missing grant between spawn and consumption is
+/// seen by the regate's fresh observation; the consumer is not invoked.
+#[test]
+fn sb_revocation_supersession_or_missing_grant_between_boundaries_refuses_consumption() {
+    let revoked = authority_world();
+    let grant = revoked.ids.owner_grant.unwrap();
+    assert_eq!(
+        sb_regate_refusal("sb-between-revoked", &revoked.src, || revoked
+            .src
+            .revoke(&grant)),
+        AdmissionState::Revoked(vec![grant])
+    );
+    let superseded = authority_world();
+    let binding = superseded.ids.reviewer_binding;
+    assert_eq!(
+        sb_regate_refusal("sb-between-superseded", &superseded.src, || {
+            superseded.src.supersede(
+                &binding,
+                work_engine_organization_authority::records::Record::fixture_vantage_binding(
+                    common::authority::ORG,
+                    common::authority::VANTAGE,
+                    superseded.ids.reviewer,
+                    common::authority::host_digest(),
+                    common::authority::ACTOR,
+                ),
+            );
+        }),
+        AdmissionState::Stale(StaleReason::IssuanceSuperseded(vec![binding]))
+    );
+    let missing = Switch::missing_owner_grant();
+    let grant = missing.a.ids.owner_grant.unwrap();
+    assert_eq!(
+        sb_regate_refusal("sb-between-missing", &missing, || missing
+            .switched
+            .set(true)),
+        AdmissionState::Unknown(UnknownReason::IssuanceRetracted(vec![grant]))
+    );
+}
+
+/// S-B invariant 3: an unobservable source at the regate is Unknown and fails closed.
+#[test]
+fn sb_unknown_at_the_regate_fails_closed() {
+    let w = authority_world();
+    assert_eq!(
+        sb_regate_refusal("sb-between-unknown", &w.src, || {
+            w.src.inject_unknown("write in progress")
+        }),
+        AdmissionState::Unknown(UnknownReason::NoObservation("write in progress".into()))
+    );
+}
+
+/// T5 (P3-2, time sampled at each evaluation): a grant that expires between the delivery admission
+/// and the consumption regate is seen by the regate, because the host samples its time source at
+/// each evaluation (two admissions, the delivery regate, the consumption regate) and never reuses
+/// the admission-time sample: `Refused` at consumption, consumer 0, run retained.
+#[test]
+fn sb_a_grant_that_expires_between_boundaries_refuses_consumption() {
+    let w = authority_world_shaped(Shape {
+        owner_grant: true,
+        owner_expiry: Some(2_000),
+        swap_actors: false,
+    });
+    let clock = ScriptedClock::new(&[1_000, 1_000, 1_000, 3_000]);
+    match sb_regate_refusal_clocked("sb-between-expired", &w.src, &clock, || {}) {
+        AdmissionState::Refused(outcomes) => assert_eq!(outcomes.refused(), [CheckId::O4]),
+        other => panic!("expected a refused regate, got {other:?}"),
+    }
+    assert_eq!(clock.samples(), 4);
 }
 
 /// Native correspondence holds in each case below; the refusal comes from the existing consumer

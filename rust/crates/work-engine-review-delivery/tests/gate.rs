@@ -1,26 +1,37 @@
-//! R2-S refusal seam, pure part (feature `fixture`, no native child): the closed blocker kinds,
-//! the host's total discharge function with its labelled assumption set, and the evaluation's
-//! refusals. The native boundaries (spawn, consumption) are exercised in native_vertical.rs.
+//! Delivery gate, pure part (feature `fixture`, no native child): the closed blocker kinds, the
+//! host's total discharge function (admitted kinds keyed on S-A check ids, labelled assumed
+//! mapping kinds, never-dischargeable realization checks), the screening refusals, and the
+//! host-held admission's regate (fresh observation, finality, Unknown). The native boundaries
+//! (spawn, consumption) are exercised in native_vertical.rs.
 mod common;
 
+use common::authority::{
+    ACTOR, FIXED, ORG, VANTAGE, authority_world, boundary, declared, host_digest, operation_request,
+};
 use common::world::host_request;
 use common::*;
+use work_engine_organization_authority::fixture::FixtureSource;
+use work_engine_organization_authority::records::Record;
+use work_engine_organization_authority::{
+    AdmissionState, BoundaryKind, CheckId, Domain, StaleReason, UnknownReason, observe_for, reserve,
+};
 use work_engine_review_delivery::gate::{
-    ASSUMED_DISCHARGE_LABEL, Boundary, Discharge, GateRefusal, assess, assess_preparation,
-    discharge,
+    ASSUMED_DISCHARGE_LABEL, Discharge, GateRefusal, HeldAdmission, discharge, screen,
 };
 use work_engine_review_preparation::{
     Blocker, BlockerClass, BlockerKind, MutationClaim, RealizationClaim, prepare,
 };
 
-/// Invariant 4: discharge is total over the closed kinds; the assumption set is exactly the root
-/// ruling; realization checks are never assumable.
+/// Invariant 1: discharge is total over the closed kinds; the admitted kinds name exactly the S-B
+/// check ids; the three mapping kinds stay labelled assumptions; realization checks are never
+/// dischargeable.
 #[test]
-fn discharge_is_total_and_realization_checks_are_never_assumable() {
+fn discharge_is_total_admitted_kinds_name_their_check_ids() {
     let table: Vec<(BlockerKind, Discharge)> = BlockerKind::ALL
         .iter()
         .map(|k| (*k, discharge(*k)))
         .collect();
+    use CheckId::*;
     assert_eq!(
         table,
         [
@@ -36,16 +47,22 @@ fn discharge_is_total_and_realization_checks_are_never_assumable() {
                 BlockerKind::ConsumptionEvidenceMapping,
                 Discharge::AssumedDischarge
             ),
-            (BlockerKind::Separation, Discharge::AssumedDischarge),
-            (BlockerKind::ObserverIdentity, Discharge::AssumedDischarge),
+            (BlockerKind::Separation, Discharge::Admitted(&[O8, R3])),
+            (
+                BlockerKind::ObserverIdentity,
+                Discharge::Admitted(&[R2, R3])
+            ),
             (
                 BlockerKind::RealizationAdmission,
-                Discharge::AssumedDischarge
+                Discharge::Admitted(&[R1, R2, R4])
             ),
-            (BlockerKind::ComponentBinding, Discharge::AssumedDischarge),
+            (
+                BlockerKind::ComponentBinding,
+                Discharge::Admitted(&[O4, R3])
+            ),
             (
                 BlockerKind::AuthorityRequirement,
-                Discharge::AssumedDischarge
+                Discharge::Admitted(&[O4])
             ),
             (BlockerKind::RealizationCheck, Discharge::Undischarged),
         ]
@@ -56,11 +73,13 @@ fn discharge_is_total_and_realization_checks_are_never_assumable() {
     );
 }
 
-/// The assumption world under the host's description: no realization check blocker remains, and
-/// every blocker passes only as a labelled assumption.
+/// The assumption world under the host's description: no realization check blocker remains;
+/// every blocker is either admitted by named checks or a labelled mapping assumption, and both
+/// families occur.
 #[test]
-fn the_assumption_world_passes_only_by_labelled_assumed_discharges() {
+fn the_assumption_world_screens_into_admitted_and_assumed_mapping_kinds() {
     let prep = prepare(&assumption_candidate(), &host_request()).unwrap();
+    // Restored S3 assertion: the host-derived evaluation has no `realization:`-prefixed check row.
     let evaluation = prep.realization_evaluation.as_ref().expect("host-derived");
     assert!(evaluation.conditions.iter().all(|c| {
         c.checks
@@ -72,18 +91,37 @@ fn the_assumption_world_passes_only_by_labelled_assumed_discharges() {
             .iter()
             .all(|b| b.kind != BlockerKind::RealizationCheck)
     );
-    let passed = assess_preparation(Boundary::BeforeSpawn, &prep).expect("assumed away");
-    assert_eq!(passed.label(), ASSUMED_DISCHARGE_LABEL);
-    assert_eq!(passed.boundary(), Boundary::BeforeSpawn);
-    assert_eq!(passed.assumed().len(), prep.blockers.len());
-    assert!(!passed.assumed().is_empty());
+    let classified = screen(&prep.blockers).expect("screened");
+    assert_eq!(classified.len(), prep.blockers.len());
+    let mapping = [
+        BlockerKind::ScopeDigestToSubject,
+        BlockerKind::ProblemScopeToEpisodeIdentity,
+        BlockerKind::ConsumptionEvidenceMapping,
+    ];
+    for (id, kind, d) in &classified {
+        match d {
+            Discharge::AssumedDischarge => assert!(mapping.contains(kind), "{id}"),
+            Discharge::Admitted(_) => assert!(!mapping.contains(kind), "{id}"),
+            Discharge::Undischarged => panic!("{id} undischarged"),
+        }
+    }
+    assert!(
+        classified
+            .iter()
+            .any(|(_, _, d)| matches!(d, Discharge::Admitted(_)))
+    );
+    assert!(
+        classified
+            .iter()
+            .any(|(_, _, d)| *d == Discharge::AssumedDischarge)
+    );
 }
 
 /// The frozen world under the host's description: four known incompatibilities, refused.
 #[test]
 fn the_frozen_world_is_a_known_incompatibility() {
     let prep = prepare(&candidate(), &host_request()).unwrap();
-    match assess_preparation(Boundary::BeforeSpawn, &prep) {
+    match screen(&prep.blockers) {
         Err(GateRefusal::KnownIncompatibility { ids }) => assert_eq!(
             ids,
             [
@@ -111,22 +149,20 @@ fn an_unestablished_realization_check_has_no_discharge_and_refuses() {
             .iter()
             .all(|b| b.class == BlockerClass::Unestablished)
     );
-    for boundary in [Boundary::BeforeSpawn, Boundary::BeforeConsumption] {
-        match assess_preparation(boundary, &prep) {
-            Err(GateRefusal::Undischarged { ids }) => assert_eq!(
-                ids,
-                [
-                    format!("realization:{COND_BUILDER}:mutation"),
-                    format!("realization:{COND_CAMPAIGN}:mutation"),
-                ]
-            ),
-            other => panic!("{boundary:?}: expected undischarged, got {other:?}"),
-        }
+    match screen(&prep.blockers) {
+        Err(GateRefusal::Undischarged { ids }) => assert_eq!(
+            ids,
+            [
+                format!("realization:{COND_BUILDER}:mutation"),
+                format!("realization:{COND_CAMPAIGN}:mutation"),
+            ]
+        ),
+        other => panic!("expected undischarged, got {other:?}"),
     }
 }
 
 /// A blocker whose kind is not the one its id names refuses: an unknown id family, or a
-/// realization check relabelled with an assumable kind.
+/// realization check relabelled with a dischargeable kind.
 #[test]
 fn an_unknown_or_mislabelled_blocker_kind_refuses() {
     let base = prepare(&assumption_candidate(), &host_request()).unwrap();
@@ -152,8 +188,135 @@ fn an_unknown_or_mislabelled_blocker_kind_refuses() {
         let kind = extra.kind;
         blockers.push(extra);
         assert_eq!(
-            assess(Boundary::BeforeSpawn, &blockers),
+            screen(&blockers),
             Err(GateRefusal::KindMismatch { id, kind, named })
         );
     }
+}
+
+// --- the host-held admission -----------------------------------------------------------------
+
+fn held(src: &FixtureSource) -> HeldAdmission<'_> {
+    HeldAdmission::admit(
+        src,
+        &FIXED,
+        boundary(BoundaryKind::Consumption),
+        &operation_request(),
+        &declared(),
+    )
+    .expect("the fixture authority world admits the assumption world's request")
+}
+
+/// Invariant 6: the fixture authority world admits the assumption world's request in
+/// `Domain::Fixture` with every check passed; an empty world refuses (no observation is enough).
+#[test]
+fn the_fixture_authority_world_admits_and_an_empty_world_refuses() {
+    let w = authority_world();
+    let admission = held(&w.src);
+    assert_eq!(admission.admission().domain(), Domain::Fixture);
+    assert!(admission.admission().outcomes().all_passed());
+    assert!(
+        admission
+            .admission()
+            .pins()
+            .grants
+            .contains(&w.ids.owner_grant.unwrap())
+    );
+    let empty = FixtureSource::new();
+    match HeldAdmission::admit(
+        &empty,
+        &FIXED,
+        boundary(BoundaryKind::Delivery),
+        &operation_request(),
+        &declared(),
+    ) {
+        Err(GateRefusal::Admission(_)) => {}
+        other => panic!("expected an admission refusal, got {other:?}"),
+    }
+    empty.inject_unknown("torn record");
+    match HeldAdmission::admit(
+        &empty,
+        &FIXED,
+        boundary(BoundaryKind::Delivery),
+        &operation_request(),
+        &declared(),
+    ) {
+        Err(GateRefusal::NoObservation(detail)) => assert_eq!(detail, "torn record"),
+        other => panic!("expected no observation, got {other:?}"),
+    }
+}
+
+/// S-A F-2: every regate reads a fresh observation; a revocation after admission is seen by the
+/// next regate.
+#[test]
+fn regate_reads_a_fresh_observation() {
+    let w = authority_world();
+    let mut admission = held(&w.src);
+    assert!(admission.regate().permits_effect());
+    w.src.revoke(&w.ids.reviewer_binding);
+    assert_eq!(
+        admission.regate(),
+        AdmissionState::Revoked(vec![w.ids.reviewer_binding])
+    );
+}
+
+/// S-A F-3: the first non-current state other than Unknown is final for the admission. A refusal
+/// caused by an ambiguous decision scope stays final after the ambiguity is revoked, although a
+/// point check by S-A alone would find the admission current again.
+#[test]
+fn the_first_non_current_state_other_than_unknown_is_final() {
+    let w = authority_world();
+    let mut admission = held(&w.src);
+    let extra = w.src.issue(Record::fixture_decision_scope(
+        "ds-1",
+        1,
+        common::authority::problem_scope(),
+        &["accept_claim"],
+        None,
+    ));
+    let refused = admission.regate();
+    assert!(matches!(refused, AdmissionState::Refused(_)), "{refused:?}");
+    w.src.revoke(&extra);
+    let reservation = reserve(boundary(BoundaryKind::Consumption));
+    assert!(
+        admission
+            .admission()
+            .admission_state(&observe_for(&w.src, &reservation), common::authority::NOW)
+            .permits_effect(),
+        "S-A alone finds the admission current again"
+    );
+    assert_eq!(admission.regate(), refused, "final");
+    // Supersession: a superseded pin stays superseded in `FixtureSource`, so S-A alone returns the
+    // same `Stale` at every regate. This half therefore does NOT separate finality from
+    // recomputation (the `Refused` half above does); it pins only that the state is stable.
+    let w = authority_world();
+    let mut admission = held(&w.src);
+    let binding = w.ids.reviewer_binding;
+    let _ = w.src.supersede(
+        &binding,
+        Record::fixture_vantage_binding(ORG, VANTAGE, w.ids.reviewer, host_digest(), ACTOR),
+    );
+    let stale = admission.regate();
+    assert_eq!(
+        stale,
+        AdmissionState::Stale(StaleReason::IssuanceSuperseded(vec![binding]))
+    );
+    assert_eq!(admission.regate(), stale);
+}
+
+/// Unknown fails closed and is not final: it never permits the effect, and a later regate with an
+/// observation decides normally.
+#[test]
+fn unknown_does_not_permit_and_is_not_final() {
+    let w = authority_world();
+    let mut admission = held(&w.src);
+    w.src.inject_unknown("read failed");
+    let unknown = admission.regate();
+    assert_eq!(
+        unknown,
+        AdmissionState::Unknown(UnknownReason::NoObservation("read failed".into()))
+    );
+    assert!(!unknown.permits_effect());
+    w.src.clear_unknown();
+    assert!(admission.regate().permits_effect());
 }

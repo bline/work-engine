@@ -1,0 +1,5 @@
+{"schema":"org-sa-root-gate/v1","at":"2026-11-17T11:16:04Z","owner":"01a1e56e-be12-7424-977b-c7c7983887d0",
+"subject":{"checkpoint_commit_oid":"1b8bf3015a14d5465ba4d73beeb9d1db45b7fcde","checkpoint_tree_oid":"5e6390fcb6423b1a657e8f6c4c95c68e680f0b8b","task_patch_digest":"08d0ca2989db144feb351335f1e0b780ada39b38b98df9db6af14a4a83dad7a2","baseline":"561c6ffc","parent_checkpoint":"de6b6837"},
+"root_edits_before_checkpoint":"renamed tests/probe_tmp.rs -> tests/base_candidate_shape.rs and removed its stale leftover-name comment (builder could not delete)",
+"export":"/home/bline/cbm-work/org-r2-core-20261117/sa/export (git archive full tree)","plan":"/home/bline/cbm-work/org-r2-core-20261117/sa/root-gate-plan.json","records":"/home/bline/cbm-work/org-r2-core-20261117/sa/root-gate","summary_sha256":"d1c49203935ac4750074e644d2971edc81b41dfe3e5839c758c00f90631b1243","status":"passed",
+"results":{"fmt":"pass","clippy_all_features":"pass","clippy_default":"pass","test_all_features":"34 passed","test_default":"5 passed","test_organization_unchanged":"156 passed"}}

@@ -1,0 +1,27 @@
+{
+ "schema": "org-design-decision/v1",
+ "at": "2026-11-17T18:43:41.760258+00:00",
+ "decision_owner": "Pi root 01a1e56e-be12-7424-977b-c7c7983887d0",
+ "trigger": "ARCHITECTURE-GUARD rules 2/3: second substantive rejection + recurring invariant in review-delivery host gate (S3 REVIEW-1 F-2; S-B REVIEW-1 P2-1)",
+ "review": {
+  "path": "/home/bline/cbm-work/org-r2-core-20261117/sb/design-review/REVIEW.md",
+  "sha256": "18160bab67fa8efa1f4e2db5ee6375dff39b1fb0acf733f00d6466afdab7f4cc",
+  "session": "26e3b11c-ac59-4eca-9e5a-33e7a81e1886",
+  "verdict": "local_design_correction"
+ },
+ "decision": "adopt_local_design_correction",
+ "invariant": "What the gate evaluates is determined by what the host will run and consume: every gate input is host-derived, digest-bound, or a named labelled caller assertion.",
+ "ruling_restatement": "S-A obligation F-7 and S-B packet invariant 2 are restated from 'compare candidate, requirements, subject and realization digests with the binding' to 'the host constructs the admission request from the binding; requirements are a digest-bound preimage; no caller-supplied request exists'. Within the approved S-B subject; no operator decision needed.",
+ "scope": "design-review REVIEW.md section 6 items 1-8 with tests T1-T7 (section 7); compare_with_binding deleted; retire sb_an_admission_for_another_subject_or_candidate test and M5 as replaced claims; restore or record REVIEW-1 P3-5/P3-6.",
+ "carried": [
+  "organization id caller-asserted and unanchored; plan-level open item: organization anchor record, owner to be named",
+  "declared actor identity and installed digests (O8)",
+  "node/sdk_root/control presumed inputs (unrepaired remainder of S3 occurrence)",
+  "consume_fixture_result public route (S3 p3_carried[1]); belongs to the slice introducing committed consumption",
+  "O10, fixture standing, assumed mapping kinds"
+ ],
+ "ordinary_repair_authorized": true,
+ "history_considered": {
+  "revision": 43
+ }
+}
