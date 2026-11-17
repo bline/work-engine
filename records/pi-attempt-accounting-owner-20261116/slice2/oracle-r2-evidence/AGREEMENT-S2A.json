@@ -1,0 +1,809 @@
+{
+ "standing": "Recorded after the slice-2a derivations were written. Base disagreements are the historical findings; final agreements follow the attributed r11 revisions.",
+ "counts": {
+  "supplied_at_base_2729107": {
+   "agree": 34,
+   "disagree": 38,
+   "not_compared": 40,
+   "agree_if_admitted": 1
+  },
+  "supplied_at_final": {
+   "agree": 72,
+   "not_compared": 40,
+   "agree_if_admitted": 1
+  }
+ },
+ "rows": [
+  {
+   "case": "N03-contradicted-admission",
+   "claim_id": "N03X/E1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "N03-contradicted-admission",
+   "claim_id": "N03X/NS1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "N03-contradicted-admission",
+   "claim_id": "N03X/NS3",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "N03-contradicted-admission",
+   "claim_id": "N03X/VA2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "N03-contradicted-admission",
+   "claim_id": "N03X/PM",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "N03-contradicted-admission",
+   "claim_id": "N03X/T",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "N03-contradicted-admission",
+   "claim_id": "N03X/G",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "N03-contradicted-admission",
+   "claim_id": "N03X/CO",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "N03-control-unlabelled-admission",
+   "claim_id": "N03C/E1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "N03-control-unlabelled-admission",
+   "claim_id": "N03C/NS1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "N03-control-unlabelled-admission",
+   "claim_id": "N03C/NS3",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "N03-control-unlabelled-admission",
+   "claim_id": "N03C/VA2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "N03-control-unlabelled-admission",
+   "claim_id": "N03C/PM",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "N03-control-unlabelled-admission",
+   "claim_id": "N03C/T",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "N03-control-unlabelled-admission",
+   "claim_id": "N03C/G",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "N03-control-unlabelled-admission",
+   "claim_id": "N03C/CO",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R02-rounded-up-charge-admitted",
+   "claim_id": "P130R02/VA2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P130-R02-rounded-up-charge-admitted",
+   "claim_id": "P130R02/E",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R02-rounded-up-charge-admitted",
+   "claim_id": "P130R02/NS",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R02-rounded-up-charge-admitted",
+   "claim_id": "P130R02/PM",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R02-rounded-up-charge-admitted",
+   "claim_id": "P130R02/T",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R02-rounded-up-charge-admitted",
+   "claim_id": "P130R02/G",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R02-rounded-up-charge-admitted",
+   "claim_id": "P130R02/CO",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R08-admissions-without-tree-still-block",
+   "claim_id": "R08/T2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P130-R08-admissions-without-tree-still-block",
+   "claim_id": "R08/VA1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P130-R08-admissions-without-tree-still-block",
+   "claim_id": "R08/E",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R08-admissions-without-tree-still-block",
+   "claim_id": "R08/NS",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R08-admissions-without-tree-still-block",
+   "claim_id": "R08/PM",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R08-admissions-without-tree-still-block",
+   "claim_id": "R08/G",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R08-admissions-without-tree-still-block",
+   "claim_id": "R08/CO",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R08-admissions-without-tree-still-block",
+   "scope_id": "P130-R08-admissions-without-tree-still-block/default/o/owned_closed",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle and LOW-ASSERTIONS alternative_origin_refs [] omitted candidate usage ['S1/turn-1:2']; DERIVATIONS.json scope_claims still omit it, see REVISIONS not_changed)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P130-R08-admissions-without-tree-still-block",
+   "scope_id": "P130-R08-admissions-without-tree-still-block/default/o/owned_outstanding",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P130-R08-admissions-without-tree-still-block",
+   "scope_id": "P130-R08-admissions-without-tree-still-block/default/p/owned_closed",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle and LOW-ASSERTIONS alternative_origin_refs [] omitted candidate usage ['S1/turn-1:2']; DERIVATIONS.json scope_claims still omit it, see REVISIONS not_changed)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P130-R08-admissions-without-tree-still-block",
+   "scope_id": "P130-R08-admissions-without-tree-still-block/default/p/owned_outstanding",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P130-R12-untrusted-clock-keeps-candidate",
+   "claim_id": "R12/T2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P130-R12-untrusted-clock-keeps-candidate",
+   "claim_id": "R12/VA1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P130-R12-untrusted-clock-keeps-candidate",
+   "claim_id": "R12/E",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R12-untrusted-clock-keeps-candidate",
+   "claim_id": "R12/NS",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R12-untrusted-clock-keeps-candidate",
+   "claim_id": "R12/PM",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R12-untrusted-clock-keeps-candidate",
+   "claim_id": "R12/G",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R12-untrusted-clock-keeps-candidate",
+   "claim_id": "R12/CO",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-R12-untrusted-clock-keeps-candidate",
+   "scope_id": "P130-R12-untrusted-clock-keeps-candidate/default/o/owned_closed",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle and LOW-ASSERTIONS alternative_origin_refs [] omitted candidate usage ['S1/turn-1:1']; DERIVATIONS.json scope_claims still omit it, see REVISIONS not_changed)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P130-R12-untrusted-clock-keeps-candidate",
+   "scope_id": "P130-R12-untrusted-clock-keeps-candidate/default/o/owned_outstanding",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P130-T-owned-before-window-summed",
+   "claim_id": "P130T/T3",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "agree_if_admitted",
+   "supplied_at_final": "agree_if_admitted"
+  },
+  {
+   "case": "P130-T-owned-before-window-summed",
+   "claim_id": "P130T/E",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-T-owned-before-window-summed",
+   "claim_id": "P130T/NS",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-T-owned-before-window-summed",
+   "claim_id": "P130T/PM",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-T-owned-before-window-summed",
+   "claim_id": "P130T/VA",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-T-owned-before-window-summed",
+   "claim_id": "P130T/G",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P130-T-owned-before-window-summed",
+   "claim_id": "P130T/CO",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P133-A04-cache-counts-both-absent",
+   "claim_id": "A04B/T2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P133-A04-cache-counts-both-absent",
+   "claim_id": "A04B/VA1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P133-A04-cache-counts-both-absent",
+   "claim_id": "A04B/E",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P133-A04-cache-counts-both-absent",
+   "claim_id": "A04B/NS",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P133-A04-cache-counts-both-absent",
+   "claim_id": "A04B/PM",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P133-A04-cache-counts-both-absent",
+   "claim_id": "A04B/G",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P133-A04-cache-counts-both-absent",
+   "claim_id": "A04B/CO",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P133-A04-cache-counts-both-absent",
+   "scope_id": "P133-A04-cache-counts-both-absent/default/o/owned_closed",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle and LOW-ASSERTIONS alternative_origin_refs [] omitted candidate usage ['S1/turn-1:1']; DERIVATIONS.json scope_claims still omit it, see REVISIONS not_changed)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P133-A04-cache-counts-both-absent",
+   "scope_id": "P133-A04-cache-counts-both-absent/default/o/owned_outstanding",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P133-A04-cache-write-absent-legacy",
+   "claim_id": "A04W/T2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P133-A04-cache-write-absent-legacy",
+   "claim_id": "A04W/VA1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P133-A04-cache-write-absent-legacy",
+   "claim_id": "A04W/E",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P133-A04-cache-write-absent-legacy",
+   "claim_id": "A04W/NS",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P133-A04-cache-write-absent-legacy",
+   "claim_id": "A04W/PM",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P133-A04-cache-write-absent-legacy",
+   "claim_id": "A04W/G",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P133-A04-cache-write-absent-legacy",
+   "claim_id": "A04W/CO",
+   "status": "RequiredUnmet",
+   "supplied_at_base_2729107": "not_compared",
+   "supplied_at_final": "not_compared"
+  },
+  {
+   "case": "P133-A04-cache-write-absent-legacy",
+   "scope_id": "P133-A04-cache-write-absent-legacy/default/o/owned_closed",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle and LOW-ASSERTIONS alternative_origin_refs [] omitted candidate usage ['S1/turn-1:1']; DERIVATIONS.json scope_claims still omit it, see REVISIONS not_changed)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P133-A04-cache-write-absent-legacy",
+   "scope_id": "P133-A04-cache-write-absent-legacy/default/o/owned_outstanding",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "U06-subscription-upstream-error-unlabelled",
+   "claim_id": "U06/E1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "U06-subscription-upstream-error-unlabelled",
+   "claim_id": "U06/NS1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins; single grouped unit adm:S1/turn-1:rid=1)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "U06-subscription-upstream-error-unlabelled",
+   "claim_id": "U06/NS2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins; single grouped unit adm:S1/turn-1:rid=1)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "U06-subscription-upstream-error-unlabelled",
+   "claim_id": "U06/NS3",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins; single grouped unit adm:S1/turn-1:rid=1)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "U06-subscription-upstream-error-unlabelled",
+   "claim_id": "U06/PM2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins; single grouped unit adm:S1/turn-1:rid=1)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "U06-subscription-upstream-error-unlabelled",
+   "claim_id": "U06/VA2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (one grouped attempt/attribution instead of two OriginBase units; money/standing equal)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "U06-subscription-upstream-error-unlabelled",
+   "claim_id": "U06/T2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (one grouped attempt/attribution instead of two OriginBase units; money/standing equal)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "U06-subscription-upstream-error-unlabelled",
+   "claim_id": "U06/G2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (one grouped attempt/attribution instead of two OriginBase units; money/standing equal)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "U06-subscription-upstream-error-unlabelled",
+   "claim_id": "U06/CO1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "U06-subscription-upstream-error-unlabelled",
+   "scope_id": "U06-subscription-upstream-error-unlabelled/default/o/owned_closed",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "U06-subscription-upstream-error-unlabelled",
+   "scope_id": "U06-subscription-upstream-error-unlabelled/default/o/owned_outstanding",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-control-labelled-upstream-error",
+   "claim_id": "V03C/E1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-control-labelled-upstream-error",
+   "claim_id": "V03C/NS1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins; single grouped unit adm:S1/turn-1:rid=1)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-control-labelled-upstream-error",
+   "claim_id": "V03C/NS2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins; single grouped unit adm:S1/turn-1:rid=1)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-control-labelled-upstream-error",
+   "claim_id": "V03C/NS3",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins; single grouped unit adm:S1/turn-1:rid=1)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-control-labelled-upstream-error",
+   "claim_id": "V03C/PM2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins; single grouped unit adm:S1/turn-1:rid=1)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-control-labelled-upstream-error",
+   "claim_id": "V03C/VA2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (one grouped attempt/attribution instead of two OriginBase units; money/standing equal)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-control-labelled-upstream-error",
+   "claim_id": "V03C/T2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (one grouped attempt/attribution instead of two OriginBase units; money/standing equal)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-control-labelled-upstream-error",
+   "claim_id": "V03C/G2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (one grouped attempt/attribution instead of two OriginBase units; money/standing equal)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-control-labelled-upstream-error",
+   "claim_id": "V03C/CO1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-control-labelled-upstream-error",
+   "scope_id": "V03-control-labelled-upstream-error/default/o/owned_closed",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-control-labelled-upstream-error",
+   "scope_id": "V03-control-labelled-upstream-error/default/o/owned_outstanding",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-subscription-upstream-error-labelled-api",
+   "claim_id": "V03A/E1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-subscription-upstream-error-labelled-api",
+   "claim_id": "V03A/NS1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins; single grouped unit adm:S1/turn-1:rid=1)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-subscription-upstream-error-labelled-api",
+   "claim_id": "V03A/NS2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins; single grouped unit adm:S1/turn-1:rid=1)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-subscription-upstream-error-labelled-api",
+   "claim_id": "V03A/NS3",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins; single grouped unit adm:S1/turn-1:rid=1)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-subscription-upstream-error-labelled-api",
+   "claim_id": "V03A/PM2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins; single grouped unit adm:S1/turn-1:rid=1)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-subscription-upstream-error-labelled-api",
+   "claim_id": "V03A/VA2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (one grouped attempt/attribution instead of two OriginBase units; money/standing equal)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-subscription-upstream-error-labelled-api",
+   "claim_id": "V03A/T2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (one grouped attempt/attribution instead of two OriginBase units; money/standing equal)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-subscription-upstream-error-labelled-api",
+   "claim_id": "V03A/G2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (one grouped attempt/attribution instead of two OriginBase units; money/standing equal)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-subscription-upstream-error-labelled-api",
+   "claim_id": "V03A/CO1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-subscription-upstream-error-labelled-api",
+   "scope_id": "V03-subscription-upstream-error-labelled-api/default/o/owned_closed",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "V03-subscription-upstream-error-labelled-api",
+   "scope_id": "V03-subscription-upstream-error-labelled-api/default/o/owned_outstanding",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "VC08-subscription-measured-request",
+   "claim_id": "VC08/E1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "VC08-subscription-measured-request",
+   "claim_id": "VC08/NS1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins; single grouped unit adm:S1/turn-1:rid=1)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "VC08-subscription-measured-request",
+   "claim_id": "VC08/NS2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins; single grouped unit adm:S1/turn-1:rid=1)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "VC08-subscription-measured-request",
+   "claim_id": "VC08/NS3",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins; single grouped unit adm:S1/turn-1:rid=1)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "VC08-subscription-measured-request",
+   "claim_id": "VC08/PM2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (bundle declared dollar_ticket contract/grant on admission-namespace origins; single grouped unit adm:S1/turn-1:rid=1)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "VC08-subscription-measured-request",
+   "claim_id": "VC08/VA2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (one grouped attempt/attribution instead of two OriginBase units; money/standing equal)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "VC08-subscription-measured-request",
+   "claim_id": "VC08/T2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (one grouped attempt/attribution instead of two OriginBase units; money/standing equal)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "VC08-subscription-measured-request",
+   "claim_id": "VC08/G2",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (one grouped attempt/attribution instead of two OriginBase units; money/standing equal)",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "VC08-subscription-measured-request",
+   "claim_id": "VC08/CO1",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "VC08-subscription-measured-request",
+   "scope_id": "VC08-subscription-measured-request/default/o/owned_closed",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "VC08-subscription-measured-request",
+   "scope_id": "VC08-subscription-measured-request/default/o/owned_outstanding",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "agree",
+   "supplied_at_final": "agree"
+  },
+  {
+   "case": "P132-CP-closed-predecessor-outstanding",
+   "claim_id": "P132CP/T3,P132CP/G3 (batch-1 dossier)",
+   "status": "DerivedNominal",
+   "supplied_at_base_2729107": "disagree (placement inside; PlacementStraddles missing)",
+   "supplied_at_final": "agree"
+  }
+ ]
+}

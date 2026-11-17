@@ -13,12 +13,17 @@
         {
           "from_origin_ref": "a",
           "grant_ref": "fixture-link:a-u",
+          "link_id": "input-link:a-u",
           "to_origin_ref": "u"
         }
       ],
       "grants": [
         {
           "admission": "conditional_fixture",
+          "admitted_payload": {
+            "from": "a",
+            "to": "u"
+          },
           "assumption_refs": [
             "VC07-exact.raw.json#/conditional_harness_assumptions/exact_row_coreference"
           ],
@@ -52,7 +57,7 @@
           "original_position": 1,
           "raw_bytes_sha256": "3e786454e65394e5bfb0212d3ca5ea620ed695d6522d266f291af020f82bb037",
           "source_origin_id": "S1/turn-1",
-          "source_revision_ref": "sha256:494704ac531f23a49ff754816199ebf960775ac37e162641ce6632b401de562f"
+          "source_revision_ref": "sha256:d730fa470dde241e774a1cacb46e8e3ba299f1bf4e98369049bd7a512aee8e39"
         },
         {
           "initial_contract_ref": "no-admitted-ticket",
@@ -60,7 +65,7 @@
           "original_position": 2,
           "raw_bytes_sha256": "42e084b9437a79d12de39c372daa6041183adf309a39b5c5f3800950ea4065ba",
           "source_origin_id": "S1/turn-1",
-          "source_revision_ref": "sha256:494704ac531f23a49ff754816199ebf960775ac37e162641ce6632b401de562f"
+          "source_revision_ref": "sha256:d730fa470dde241e774a1cacb46e8e3ba299f1bf4e98369049bd7a512aee8e39"
         }
       ],
       "version": "1.7-s1"
@@ -97,7 +102,7 @@
           "completion_ref": "completion:u",
           "coverage_id": "F:a-u",
           "definite_link_refs": [
-            "fixture-link:a-u"
+            "result-link:a-u"
           ],
           "monetary_origin_refs": [
             "u"
@@ -120,8 +125,9 @@
       ],
       "definite_links": [
         {
-          "admitted_input_link_ref": "fixture-link:a-u",
+          "admitted_input_link_ref": "input-link:a-u",
           "from_origin_ref": "a",
+          "link_id": "result-link:a-u",
           "to_origin_ref": "u"
         }
       ],
@@ -168,6 +174,23 @@
           "origin_ref": "u"
         }
       ],
+      "primary_memberships": [
+        {
+          "obligation_id": "orphan-dollar",
+          "reservation_classes": [],
+          "settlement_classes": [
+            {
+              "origin_refs": [
+                "u"
+              ],
+              "representative_origin_ref": "u"
+            }
+          ],
+          "usage_origin_refs": [
+            "u"
+          ]
+        }
+      ],
       "primary_validities": [
         {
           "applicable_check_refs": [
@@ -179,6 +202,14 @@
           ],
           "obligation_id": "orphan-dollar",
           "validity_result": "rejected"
+        }
+      ],
+      "retained_components": [
+        {
+          "component_id": "usage:u",
+          "nano_usd": "15000000",
+          "origin_ref": "u",
+          "role": "usage"
         }
       ],
       "unbudgeted_applicabilities": [
@@ -198,6 +229,9 @@
           "complete": true,
           "completion_id": "completion:u",
           "usage_origin_ref": "u",
+          "usage_origin_refs": [
+            "u"
+          ],
           "valuation_ref": "valuation:u"
         }
       ],
@@ -225,6 +259,9 @@
           "origin_refs": [
             "a",
             "u"
+          ],
+          "retained_component_refs": [
+            "usage:u"
           ],
           "state": "active",
           "unit_id": "unit:F:a-u"

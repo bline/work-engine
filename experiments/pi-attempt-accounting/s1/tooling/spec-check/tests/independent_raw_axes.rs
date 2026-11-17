@@ -598,6 +598,14 @@ fn policy_edge_controls() {
 fn corpus_case(id: &str) -> Value {
     read(root().join(format!("corpus/cases/{id}.json")))
 }
+// R8-GATE-IDENTITY-01: identity equality is meaningful only between present canonical nonempty strings.
+fn canonical_id(v: &Value) -> bool {
+    v.as_str().is_some_and(|s| !s.is_empty() && s.trim() == s)
+}
+fn gate_identity_triple(objective: &Value, g: &Value, w: &Value) -> bool {
+    let ids = [&objective["admission_authority"]["id"], &g["authority"]["id"], &w["authority_id"]];
+    ids.iter().all(|v| canonical_id(v)) && ids[0] == ids[1] && ids[1] == ids[2]
+}
 fn mock_binding(c: &Value, g: &Value) -> bool {
     let Some(gid) = g["gate_id"].as_str() else {
         return false;
@@ -605,6 +613,8 @@ fn mock_binding(c: &Value, g: &Value) -> bool {
     let w = &c["trusted_fixture_inputs"]["gate_verifications"][gid];
     w["source"] == "test_mock"
         && w["payload_sha256"].as_str() == Some(hash(&serde_json::to_vec(g).unwrap()).as_str())
+        && canonical_id(&w["authority_id"])
+        && canonical_id(&g["authority"]["id"])
         && w["authority_id"] == g["authority"]["id"]
         && w["session"] == g["session"]
         && w["policy_ref"].as_str().is_some_and(|s| !s.is_empty())
@@ -901,7 +911,26 @@ fn r7_financial_provisionality_and_semantic_mutants() {
 }
 
 // Bounded raw-to-output checks are independent semantic assertions, not a reducer.
+// R8-IDENTITY-01: a present identity field that is not a canonical nonempty string is an unpriceable identity (V-1/V-6).
+fn malformed_identity(row: &Value) -> bool {
+    ["model", "response_model", "authorized_model"].iter().any(|k| {
+        // present null is malformed identity evidence (review-r2 D-3); an absent member keeps V-1 handling
+        row.get(*k).is_some_and(|v| !v.as_str().is_some_and(|s| !s.is_empty() && s.trim() == s))
+    })
+}
 fn accepts_usage_axis(row: &Value, launch: &Value, rates: &Value, a: &Value) -> bool {
+    if malformed_identity(row) {
+        // Malformed evidence cannot disappear into a complete favourable set; the independently priced high survives.
+        let v = &a["valuation"];
+        return v["state"] == "unpriceable"
+            && v.get("supported_low").is_none_or(Value::is_null)
+            && v["complete"] != true
+            && a["replacement"]["eligible"] != true
+            && match price_range(row, launch, rates) {
+                Some((_, hi, _)) => v["priced_high"] == hi.to_string(),
+                None => v.get("priced_high").is_none_or(Value::is_null),
+            };
+    }
     match price_range(row, launch, rates) {
         None => a["valuation"]["state"] != "valued" && a["replacement"]["eligible"] != true,
         Some((lo, hi, complete)) => {
@@ -1901,4 +1930,351 @@ fn r10_selected_low_consequence(c:&Value,b:&Value,bundle:&Value)->Result<(),Stri
  // Full-list comparison preserves uniqueness and total inventory before maps exist.
  if result["low_rollups"]!=json!(lows){return Err("R10 selected complete low witness inventory/fields".into());}
  Ok(())
+}
+
+// ---------------------------------------------------------------------------------------------
+// Slice 2a (r11): independent finite predicates for the oracle-side historical findings.
+// Each predicate reads raw lines and supplied outputs; none computes a C-K result.
+fn r11_cases() -> Vec<Value> {
+    let mut v: Vec<_> = fs::read_dir(root().join("corpus/cases"))
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .filter(|p| p.extension().is_some_and(|x| x == "json"))
+        .collect();
+    v.sort();
+    v.into_iter().map(read).collect()
+}
+fn r11_lines(c: &Value) -> std::collections::BTreeMap<String, (String, Value)> {
+    let mut m = std::collections::BTreeMap::new();
+    for s in c["inputs"]["sessions"].as_array().unwrap() {
+        for (t, l) in s["logs"].as_object().unwrap() {
+            for (i, x) in l["lines"].as_array().unwrap().iter().enumerate() {
+                let raw = x.as_str().unwrap_or("").to_string();
+                let row = serde_json::from_str(&raw).unwrap_or(Value::Null);
+                m.insert(format!("{}/{}:{}", s["alias"].as_str().unwrap(), t, i + 1), (raw, row));
+            }
+        }
+    }
+    m
+}
+fn r11_bundle(cid: &str) -> Value {
+    let part = if ["P130-", "P132-", "P133-"].iter().any(|p| cid.starts_with(p)) { "A" } else { "B" };
+    read(root().join(format!("oracle/r8-completion-{part}/{cid}.bundle.json")))
+}
+fn r11_nano(v: &Value) -> Option<i128> {
+    v.as_str()?.parse().ok()
+}
+/// Exact decimal (including exponent forms such as 1e-6) to nano-USD; None for non-exact/negative/non-numbers (MONEY).
+fn r11_dollars(v: &Value) -> Option<i128> {
+    if !v.is_number() { return None; }
+    let s = v.to_string().to_ascii_lowercase();
+    let (m, e) = s.split_once('e').map(|(m, e)| (m, e.parse::<i32>().ok())).unwrap_or((s.as_str(), Some(0)));
+    let e = e?;
+    let (a, b) = m.split_once('.').unwrap_or((m, ""));
+    if a.starts_with('-') || !a.chars().chain(b.chars()).all(|c| c.is_ascii_digit()) { return None; }
+    let digits: i128 = format!("{a}{b}").parse().ok()?;
+    let shift = 9 + e - b.len() as i32; // nano = digits * 10^(9 + e - frac_len)
+    if shift >= 0 { digits.checked_mul(10i128.checked_pow(shift as u32)?) }
+    else { let d = 10i128.checked_pow((-shift) as u32)?; (digits % d == 0).then_some(digits / d) }
+}
+/// R8-FIN-01: the retained raw charge (largest well-formed usd.charged_usd among distinct settlement rows) is the
+/// supplied settlement.charged and a lower bound of the unit high, whatever the other supplied fields say.
+fn r11_raw_charge_violation(c: &Value) -> Option<String> {
+    let lines = r11_lines(c);
+    for a in c["expected"]["attempts"].as_array().unwrap() {
+        let mut seen = BTreeSet::new();
+        let mut best: Option<i128> = None;
+        for r in a["evidence"].as_array().unwrap() {
+            let Some((raw, row)) = lines.get(r.as_str().unwrap()) else { continue };
+            let ev = row["event"].as_str().unwrap_or("");
+            if !(ev == "request" || ev == "upstream_error") || !row["usd"].is_object() || !seen.insert(raw.clone()) {
+                continue;
+            }
+            if let Some(n) = r11_dollars(&row["usd"]["charged_usd"]) {
+                best = Some(best.map_or(n, |b| b.max(n)));
+            }
+        }
+        if let Some(ch) = best {
+            if r11_nano(&a["settlement"]["charged"]) != Some(ch) {
+                return Some(format!("{} settlement.charged != raw charge {ch}", a["key"]));
+            }
+            if a["exposure"]["pool"] == "pi_api" && !r11_nano(&a["exposure"]["high"]["nano"]).is_some_and(|h| h >= ch) {
+                return Some(format!("{} high below retained raw charge {ch}", a["key"]));
+            }
+        }
+    }
+    None
+}
+#[test]
+fn r11_fin_retained_raw_charge() {
+    for c in r11_cases() {
+        assert_eq!(r11_raw_charge_violation(&c), None, "{}", c["case_id"]);
+    }
+    let mut c = corpus_case("P9-claimed-charge-above-reservation");
+    let a = &mut c["expected"]["attempts"][0];
+    a["settlement"]["charged"] = json!("500000000");
+    a["exposure"]["high"]["nano"] = json!("500000000");
+    for e in c["evaluations"].as_array_mut().unwrap() {
+        let o = &mut e["expected"]["objectives"][0];
+        o["owned_outstanding"]["high"]["nano"] = json!("500000000");
+        o["commitments"][0]["committed"] = json!("500000000");
+    }
+    let why = r11_raw_charge_violation(&c).expect("coherent 700->500 mutant must be rejected");
+    assert!(why.contains("raw charge 700000000"), "{why}");
+    // non-pilot: P130-R02's exponent-form rounded-up raw charge 1e-6 USD = 1000 nano is the retained Exact high
+    assert_eq!(r11_dollars(&json!(1e-6)), Some(1000));
+    let mut c = corpus_case("P130-R02-rounded-up-charge-admitted");
+    assert_eq!(r11_raw_charge_violation(&c), None);
+    let a = &mut c["expected"]["attempts"][0];
+    a["settlement"]["charged"] = json!("525");
+    a["exposure"]["high"] = json!({"basis":"usage_valuation","kind":"exact","nano":"525"});
+    let why = r11_raw_charge_violation(&c).expect("coherent 1000->525 non-pilot rewrite must be rejected");
+    assert!(why.contains("raw charge 1000"), "{why}");
+}
+#[test]
+fn r11_identity_malformed_cannot_be_favourable() {
+    let rates = json!({"openai": read(root().join("oracle/rates/openai_api_rates.json")), "anthropic": read(root().join("oracle/rates/anthropic_api_rates.json"))});
+    let check = |c: &Value, a: &Value| {
+        let lines = r11_lines(c);
+        let launch = &c["inputs"]["sessions"][0]["launch"];
+        a["evidence"].as_array().unwrap().iter().filter_map(|r| lines.get(r.as_str().unwrap())).filter(|(_, row)| row["event"] == "request")
+            .all(|(_, row)| accepts_usage_axis(row, launch, &rates, a))
+    };
+    for f in ["model7-VC01-openai-usage-settlement", "model7-A04-undated-settlement-between-dated-neighbours"] {
+        let c = read(root().join(format!("oracle/r9-pilot/cases/{f}.json")));
+        let a = &c["expected"]["attempts"][0];
+        assert!(check(&c, a), "repaired conservative positive {f}");
+        // consistent wrong: the old coherent complete valued 15M with unchanged raw numeric response_model 7
+        let mut w = a.clone();
+        w["valuation"] = json!({"state":"valued","identities":["openai/gpt-6-astra"],"low":"15000000","high":"15000000","complete":true});
+        w["replacement"] = json!({"eligible":true,"reason":"UsageBound"});
+        assert!(!check(&c, &w), "malformed identity made complete/favourable must be rejected ({f})");
+        let mut w2 = a.clone();
+        w2["valuation"]["supported_low"] = json!("15000000");
+        assert!(!check(&c, &w2), "unsupported minimum invented ({f})");
+    }
+    // other malformed shapes injected into a valid corpus request row, with its unchanged favourable outputs
+    let c = corpus_case("P132-FG-VC15-gated");
+    for bad in [json!(""), json!(true), json!({}), json!(" gpt-6-astra"), json!(7), Value::Null] {
+        let mut m = c.clone();
+        let line = m["inputs"]["sessions"][0]["logs"]["turn-1"]["lines"][1].as_str().unwrap().to_string();
+        let mut row: Value = serde_json::from_str(&line).unwrap();
+        row["response_model"] = bad.clone();
+        m["inputs"]["sessions"][0]["logs"]["turn-1"]["lines"][1] = json!(row.to_string());
+        let a = m["expected"]["attempts"][0].clone();
+        assert!(!check(&m, &a), "malformed response_model {bad} disappeared into a complete set");
+    }
+    // priced multi-identity remains finite and supported
+    let v = corpus_case("V01-usage-settlement-other-response-model");
+    assert!(check(&v, &v["expected"]["attempts"][0]));
+}
+#[test]
+fn r11_gate_identity_triple_nonempty() {
+    let c = corpus_case("P132-FG-VC15-gated");
+    let o = &c["evaluations"][0]["objectives"][0];
+    let g = c["inputs"]["gates"][0].clone();
+    let w = &c["trusted_fixture_inputs"]["gate_verifications"]["g-S1"];
+    assert!(gate_identity_triple(o, &g, w) && mock_binding(&c, &g));
+    for val in [None, Some(json!("")), Some(json!(" ")), Some(json!(7))] {
+        let mut m = c.clone();
+        let set = |x: &mut Value, k: &str| match &val {
+            None => { x.as_object_mut().unwrap().remove(k); }
+            Some(v) => { x[k] = v.clone(); }
+        };
+        set(&mut m["evaluations"][0]["objectives"][0]["admission_authority"], "id");
+        set(&mut m["inputs"]["gates"][0]["authority"], "id");
+        set(&mut m["trusted_fixture_inputs"]["gate_verifications"]["g-S1"], "authority_id");
+        let g2 = m["inputs"]["gates"][0].clone();
+        m["trusted_fixture_inputs"]["gate_verifications"]["g-S1"]["payload_sha256"] = json!(hash(&serde_json::to_vec(&g2).unwrap()));
+        let (o2, w2) = (&m["evaluations"][0]["objectives"][0], &m["trusted_fixture_inputs"]["gate_verifications"]["g-S1"]);
+        assert!(!gate_identity_triple(o2, &g2, w2), "triple {val:?} with recomputed payload must not qualify");
+        assert!(!mock_binding(&m, &g2), "witness binding with {val:?} identities must not qualify");
+    }
+    let mut m = c.clone();
+    m["trusted_fixture_inputs"]["gate_verifications"]["g-S1"]["authority_id"] = json!("wev-admission-authority-2");
+    assert!(!gate_identity_triple(&m["evaluations"][0]["objectives"][0], &g, &m["trusted_fixture_inputs"]["gate_verifications"]["g-S1"]));
+}
+/// Raw-namespace rule table oracle/r11-controls/raw-namespace-rules.json (review-r2 D-4): D1 usd_reserved+rid, D2 usd.rid;
+/// A1 subscription_proxy_admitted+rid, A2 subscription_proxy.rid; both families -> conflict; neither -> none.
+fn r11_raw_namespace(row: &Value) -> Option<&'static str> {
+    let has = |v: &Value| v.as_object().is_some_and(|o| o.contains_key("rid"));
+    let dollar = (row["event"] == "usd_reserved" && has(row)) || has(&row["usd"]);
+    let admission = (row["event"] == "subscription_proxy_admitted" && has(row)) || has(&row["subscription_proxy"]);
+    match (dollar, admission) {
+        (true, true) => Some("conflict"),
+        (true, false) => Some("dollar_ticket"),
+        (false, true) => Some("admission"),
+        _ => None,
+    }
+}
+#[test]
+fn r11_raw_namespace_census_agreement() {
+    // Cross-classifier agreement control: the Python actual consumer and this independent classifier must both reproduce
+    // the committed census over every corpus raw row plus synthetic rule-coverage rows.
+    let census = read(root().join("oracle/r11-controls/raw-namespace-census.json"));
+    let rows = census["rows"].as_array().unwrap();
+    assert!(rows.len() > 300);
+    for r in rows {
+        let line = r["raw"].as_str().unwrap();
+        assert_eq!(hash(line.as_bytes()), r["raw_utf8_sha256"].as_str().unwrap());
+        let got = serde_json::from_str::<Value>(line).ok().filter(|v| v.is_object()).and_then(|v| r11_raw_namespace(&v));
+        assert_eq!(got.map(Value::from).unwrap_or(Value::Null), r["class"], "{} {}", r["case_id"], r["origin_id"]);
+    }
+    for want in ["dollar_ticket", "admission", "conflict"] {
+        assert!(rows.iter().any(|r| r["class"] == want), "census lacks {want}");
+    }
+}
+/// R8-NAMESPACE-01: an initial contract's namespace must equal the raw reference namespace of each covered origin.
+fn r11_namespace_violation(c: &Value, bundle: &Value) -> Option<String> {
+    let lines = r11_lines(c);
+    let inp = bundle["documents"].as_array()?.iter().find(|d| d["kind"] == "accounting_input_proof")?;
+    for o in inp["origins"].as_array()? {
+        let Some(ic) = inp["initial_contracts"].as_array()?.iter().find(|x| x["contract_id"] == o["initial_contract_ref"]) else {
+            return Some(format!("{} dangling initial_contract_ref", o["origin_id"])); // review-r2 D-5 observation
+        };
+        let ns = ic["reference_namespace"].as_str()?;
+        let raw = lines.get(o["origin_id"].as_str()?).and_then(|(_, r)| r11_raw_namespace(r));
+        if matches!(ns, "dollar_ticket" | "admission") && raw.is_some_and(|r| r != ns) {
+            return Some(format!("{} contract {ns} on raw {raw:?}", o["origin_id"]));
+        }
+    }
+    None
+}
+#[test]
+fn r11_namespace_application() {
+    for c in r11_cases() {
+        let cid = c["case_id"].as_str().unwrap();
+        assert_eq!(r11_namespace_violation(&c, &r11_bundle(cid)), None, "{cid}");
+    }
+    for cid in ["VC08-subscription-measured-request", "U06-subscription-upstream-error-unlabelled", "V03-control-labelled-upstream-error", "V03-subscription-upstream-error-labelled-api"] {
+        let c = corpus_case(cid);
+        let mut b = r11_bundle(cid);
+        // consistent wrong: re-declare the withdrawn dollar_ticket contract; bundle, grant and refs all agree
+        b["documents"][0]["initial_contracts"][0]["reference_namespace"] = json!("dollar_ticket");
+        assert!(r11_namespace_violation(&c, &b).is_some(), "{cid} dollar_ticket on admission origins must fail");
+        // OriginBase truth: one active unit per origin (no admitted admission-namespace scope)
+        let units: Vec<_> = r11_bundle(cid)["documents"][1]["units"].as_array().unwrap().iter().filter(|u| u["state"] == "active").map(|u| u["origin_refs"].clone()).collect();
+        assert_eq!(units, vec![json!(["S1/turn-1:1"]), json!(["S1/turn-1:2"])], "{cid}");
+    }
+    let ctl = root().join("oracle/r11-controls/admission-namespace");
+    let c = read(ctl.join("case.json"));
+    let b = read(ctl.join("bundle.json"));
+    assert_eq!(r11_namespace_violation(&c, &b), None, "conditional admission-namespace positive control");
+}
+/// R8-LOW-INVENTORY-01: U holds every owned/candidate PiApi usage origin on that line; Seed only owned usage.
+fn r11_low_violation(c: &Value, bundle: &Value) -> Option<String> {
+    let cid = c["case_id"].as_str()?;
+    let lines = r11_lines(c);
+    let result = bundle["documents"].as_array()?.iter().find(|d| d["kind"] == "accounting_result")?;
+    let attempts: std::collections::BTreeMap<_, _> = c["expected"]["attempts"].as_array()?.iter().map(|a| (a["key"].as_str().unwrap(), a)).collect();
+    for e in c["evaluations"].as_array()? {
+        for o in e["objectives"].as_array()? {
+            let name = o["objective"].as_str()?;
+            for label in ["owned_closed", "owned_outstanding"] {
+                let scope = format!("{cid}/{}/{name}/{label}", e["name"].as_str()?);
+                let Some(low) = result["low_rollups"].as_array()?.iter().find(|r| r["scope_ref"].as_str().is_some_and(|s| s.ends_with(&scope))) else { continue };
+                let (mut u, mut seed) = (BTreeSet::new(), BTreeSet::new());
+                for at in e["expected"]["attribution"].as_array()? {
+                    let Some(a) = attempts.get(at["attempt"].as_str()?) else { continue };
+                    if a["exposure"]["pool"] != "pi_api" || (a["obligation"]["state"] == "outstanding") != (label == "owned_outstanding") { continue }
+                    let owned = at["ownership"] == "owned" && at["objective"] == name;
+                    let cand = (at["ownership"] == "uncertain" || at["ownership"] == "unadmitted") && at["candidates"].as_array().is_some_and(|x| x.iter().any(|y| y == name));
+                    let usage: BTreeSet<String> = a["evidence"].as_array()?.iter().filter_map(|r| r.as_str()).filter(|r| lines.get(*r).is_some_and(|(_, row)| row["usage"].is_object())).map(String::from).collect();
+                    if owned { seed.extend(usage.clone()); }
+                    if owned || cand { u.extend(usage); }
+                }
+                let alt: BTreeSet<String> = low["alternative_origin_refs"].as_array()?.iter().filter_map(|x| x.as_str().map(String::from)).collect();
+                let got_seed: BTreeSet<String> = low["seed_origin_refs"].as_array()?.iter().filter_map(|x| x.as_str().map(String::from)).collect();
+                if !u.is_subset(&alt) { return Some(format!("{scope} U omits {:?}", u.difference(&alt).collect::<Vec<_>>())); }
+                if !got_seed.is_subset(&seed) { return Some(format!("{scope} Seed has non-owned usage")); }
+            }
+        }
+    }
+    None
+}
+#[test]
+fn r11_low_inventory_keeps_candidates() {
+    for c in r11_cases() {
+        let cid = c["case_id"].as_str().unwrap();
+        assert_eq!(r11_low_violation(&c, &r11_bundle(cid)), None, "{cid}");
+    }
+    for (cid, scope, origin) in [
+        ("P130-R08-admissions-without-tree-still-block", "default/o/owned_closed", "S1/turn-1:2"),
+        ("P130-R08-admissions-without-tree-still-block", "default/p/owned_closed", "S1/turn-1:2"),
+        ("P130-R12-untrusted-clock-keeps-candidate", "default/o/owned_closed", "S1/turn-1:1"),
+        ("P133-A04-cache-counts-both-absent", "default/o/owned_closed", "S1/turn-1:1"),
+        ("P133-A04-cache-write-absent-legacy", "default/o/owned_closed", "S1/turn-1:1"),
+    ] {
+        let c = corpus_case(cid);
+        let mut b = r11_bundle(cid);
+        let lows = b["documents"][1]["low_rollups"].as_array_mut().unwrap();
+        let low = lows.iter_mut().find(|r| r["scope_ref"].as_str().unwrap().ends_with(scope)).unwrap();
+        assert_eq!(low["alternative_origin_refs"], json!([origin]));
+        assert_eq!((low["seed_origin_refs"].clone(), low["selected_low"].clone()), (json!([]), json!("0")), "candidate adds no seed/credit");
+        low["alternative_origin_refs"] = json!([]); // the historical jointly-omitted U (zero low unchanged)
+        assert!(r11_low_violation(&c, &b).is_some(), "{cid} {scope}");
+        let low = b["documents"][1]["low_rollups"].as_array_mut().unwrap().iter_mut().find(|r| r["scope_ref"].as_str().unwrap().ends_with(scope)).unwrap();
+        low["alternative_origin_refs"] = json!([origin]);
+        low["seed_origin_refs"] = json!([origin]); // candidate promoted to owned seed
+        assert!(r11_low_violation(&c, &b).is_some(), "{cid} {scope} candidate seed");
+    }
+}
+/// R8-PLACEMENT-01 for fully dated owned attempts on a trusted clock (others are outside this finite predicate).
+fn r11_placement_violation(c: &Value) -> Option<String> {
+    let lines = r11_lines(c);
+    let reference = c["inputs"]["reference_time"].as_str()?;
+    for e in c["evaluations"].as_array()? {
+        for at in e["expected"]["attribution"].as_array()? {
+            if at["ownership"] != "owned" { continue }
+            let a = c["expected"]["attempts"].as_array()?.iter().find(|a| a["key"] == at["attempt"])?;
+            let alias = a["key"].as_str()?.split(':').nth(1)?.split('/').next()?;
+            let sess = c["inputs"]["sessions"].as_array()?.iter().find(|s| s["alias"] == alias)?;
+            let stamps: Vec<&str> = a["evidence"].as_array()?.iter().filter_map(|r| lines.get(r.as_str()?)).map(|(_, row)| row["at"].as_str().unwrap_or("")).collect();
+            let all_rows: Vec<&str> = sess["logs"].as_object()?.values().flat_map(|l| l["lines"].as_array().unwrap().iter()).filter_map(|x| serde_json::from_str::<Value>(x.as_str()?).ok()).filter_map(|r| r["at"].as_str().map(String::from)).map(|s| Box::leak(s.into_boxed_str()) as &str).collect();
+            let life: Vec<&str> = sess["lifecycle"].as_array()?.iter().filter_map(|r| r["at"].as_str()).collect();
+            let first_retire = sess["lifecycle"].as_array()?.iter().filter(|r| r["event"] == "retire").filter_map(|r| r["at"].as_str()).min();
+            // L-1..L-3/L-6: an untrusted or contradicted clock is outside this finite predicate (P-2/P-3 unplaceable route).
+            if stamps.iter().any(|s| s.len() != 20) || all_rows.iter().any(|s| *s > reference) || all_rows.windows(2).any(|w| w[0] > w[1])
+                || life.windows(2).any(|w| w[0] > w[1]) || first_retire.is_some_and(|r| all_rows.iter().any(|s| *s > r))
+                || !sess["lifecycle"].as_array()?.iter().any(|r| r["event"] == "launch" && r["at"].as_str().is_some_and(|l| all_rows.iter().all(|s| *s >= l)))
+                || sess["lifecycle"].as_array()?.iter().any(|r| r["at"].is_null() || r["event"] == "deliver") { continue }
+            let lo = *stamps.iter().min()?;
+            let mut hi = Some(*stamps.iter().max()?);
+            if a["obligation"]["state"] == "outstanding" {
+                hi = sess["lifecycle"].as_array()?.iter().filter(|r| r["event"] == "retire").filter_map(|r| r["at"].as_str()).filter(|s| *s >= lo).min();
+            }
+            let o = e["objectives"].as_array()?.iter().find(|o| o["objective"] == at["objective"])?;
+            let ca = o["closed_at"].as_str();
+            let closed = match (c["profile"].as_str()?, ca) {
+                ("current_producer", Some(ca)) => (o["close"]["at"].as_str() == Some(ca) && o["closure_record"].is_null() && ca >= o["started_at"].as_str()? && ca <= reference
+                    && !o["admissions"].as_array()?.iter().flat_map(|x| x["rows"].as_array().unwrap()).any(|r| r["at"].as_str().is_some_and(|s| s > ca))).then_some(ca),
+                _ => None, // future-profile closure records are outside this finite predicate (treated as claimed)
+            };
+            if c["profile"] != "current_producer" && o["closure_record"].is_object() { continue }
+            let start = o["started_at"].as_str()?;
+            let want = if hi.is_some_and(|h| h < start) { "before" }
+                else if closed.is_some_and(|c| lo > c) { "after" }
+                else if lo < start { "straddles_start" }
+                else if closed.is_some_and(|c| hi.is_none_or(|h| h > c)) { "straddles_closure" }
+                else { "inside" };
+            if at["placement"] != want { return Some(format!("{} {} placement {} != raw {want}", e["name"], a["key"], at["placement"])); }
+        }
+    }
+    None
+}
+#[test]
+fn r11_placement_from_raw_interval() {
+    for c in r11_cases() {
+        assert_eq!(r11_placement_violation(&c), None, "{}", c["case_id"]);
+    }
+    let mut c = corpus_case("P132-CP-closed-predecessor-outstanding");
+    for e in c["evaluations"].as_array_mut().unwrap() {
+        e["expected"]["attribution"][0]["placement"] = json!("inside");
+        let o = &mut e["expected"]["objectives"][0];
+        o["reasons"] = json!(["UnenforcedCommitment", "UnresolvedExposure"]); // matching wrong reasons
+    }
+    assert!(r11_placement_violation(&c).unwrap().contains("raw straddles_closure"));
+    let t = corpus_case("P130-T-owned-before-window-summed");
+    assert_eq!(r11_placement_violation(&t), None);
+    assert!(t["evaluations"].as_array().unwrap().iter().any(|e| e["expected"]["attribution"].as_array().unwrap().iter().any(|a| a["placement"] == "before")));
 }

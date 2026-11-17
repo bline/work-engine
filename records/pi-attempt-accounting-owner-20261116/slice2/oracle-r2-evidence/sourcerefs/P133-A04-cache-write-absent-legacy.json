@@ -1,0 +1,631 @@
+{
+ "file": "oracle-r2/corpus/cases/P133-A04-cache-write-absent-legacy.json",
+ "file_sha256": "a216f54e7ad4e42a8f455207a41cb6dad8d9aea9cbfcb4392d5f9f9806014f51",
+ "inputs_canonical_sha256": "91c75f7a3a0832b836adfee93687e20fd423e13a21afbc56970f2c8a52d6c3bb",
+ "lines": [
+  {
+   "byte_end_exclusive": 6537,
+   "byte_start": 6129,
+   "fields": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:02Z",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "request",
+     "presence": "value"
+    },
+    "/http_status": {
+     "json_type": "number",
+     "lexeme": "200",
+     "presence": "value"
+    },
+    "/model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/observed_tier": {
+     "json_type": "string",
+     "lexeme": "default",
+     "presence": "value"
+    },
+    "/requested_tier": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/response_id": {
+     "json_type": "string",
+     "lexeme": "resp_1",
+     "presence": "value"
+    },
+    "/response_model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/seconds": {
+     "json_type": "number",
+     "lexeme": "1.0",
+     "presence": "value"
+    },
+    "/terminal": {
+     "json_type": "string",
+     "lexeme": "response.completed",
+     "presence": "value"
+    },
+    "/usage": {
+     "json_type": "object",
+     "members": [
+      "input_tokens",
+      "output_tokens",
+      "cached_tokens",
+      "reasoning_tokens"
+     ],
+     "presence": "value"
+    },
+    "/usage/cached_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usage/input_tokens": {
+     "json_type": "number",
+     "lexeme": "1000",
+     "presence": "value"
+    },
+    "/usage/output_tokens": {
+     "json_type": "number",
+     "lexeme": "100",
+     "presence": "value"
+    },
+    "/usage/reasoning_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    }
+   },
+   "origin_id": "S1/turn-1:1",
+   "parse_state": "object",
+   "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+   "raw_utf8_length": 360,
+   "raw_utf8_sha256": "ee5686f0294976a7867d8050a7c07f0af1af08f6a4a35af566c8ff7c4bb98291",
+   "token_sha256": "526551444e61ceb9867186e7f19739e10d267bd245ed83b5f69289bc4a1d5e37"
+  }
+ ],
+ "log_final_newline": {
+  "S1/turn-1": true
+ },
+ "tokens": {
+  "/added_in": {
+   "byte_end_exclusive": 24,
+   "byte_start": 16,
+   "json_type": "string",
+   "lexeme": "1.4-s1",
+   "token_sha256": "fd709c99bcda557f1153e912da731b35c594f0ecd4e69360e184165b727756c5"
+  },
+  "/ambiguity": {
+   "byte_end_exclusive": 45,
+   "byte_start": 41,
+   "json_type": "null",
+   "lexeme": "null",
+   "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  },
+  "/case_id": {
+   "byte_end_exclusive": 96,
+   "byte_start": 60,
+   "json_type": "string",
+   "lexeme": "P133-A04-cache-write-absent-legacy",
+   "token_sha256": "d4fb77e893071c7671af197952b28471856902c2bfd838714801bd684355f89f"
+  },
+  "/class": {
+   "byte_end_exclusive": 128,
+   "byte_start": 109,
+   "json_type": "string",
+   "lexeme": "historical_legacy",
+   "token_sha256": "01330ee7918f5c4ac406f75222fd666e331bb2a6f27f65d537aea24cfd2c5989"
+  },
+  "/contract": {
+   "byte_end_exclusive": 175,
+   "byte_start": 144,
+   "json_type": "string",
+   "lexeme": "pi-accounting-contract/1.7-s1",
+   "token_sha256": "67f788fb6397af3ef74d42c6baea23eebce8ecf9de0e6e577e02a9c1b644402d"
+  },
+  "/controls": {
+   "byte_end_exclusive": 236,
+   "byte_start": 191,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "37d2149d87df8375e90b1208c99355e00241b45a2c61351dfdaab05e3d5424ab"
+  },
+  "/controls/0": {
+   "byte_end_exclusive": 232,
+   "byte_start": 197,
+   "json_type": "string",
+   "lexeme": "VC06-unbudgeted-completed-request",
+   "token_sha256": "b22b76d0b5dfd43a59cb37d2380677785e3135bf833f08a97eb4ba8a16d3350c"
+  },
+  "/evaluations": {
+   "byte_end_exclusive": 2353,
+   "byte_start": 255,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "c193c6ab8e4afc1210780d17919dc3c3d6440b8a730d199d4c33db4c338ece1d"
+  },
+  "/evaluations/0": {
+   "byte_end_exclusive": 2349,
+   "byte_start": 261,
+   "json_type": "object",
+   "members": [
+    "admission_request",
+    "expected",
+    "name",
+    "objectives"
+   ],
+   "token_sha256": "bdeccedb3799d534c530604efe69b499cf27178d31a65657adbffe032da060e0"
+  },
+  "/evaluations/0/admission_request": {
+   "byte_end_exclusive": 352,
+   "byte_start": 290,
+   "json_type": "object",
+   "members": [
+    "new",
+    "objective"
+   ],
+   "token_sha256": "4ac4e6112d6df5df9f7e683f0c9d9cc466c714caa9a9f262597fda7ca7863c33"
+  },
+  "/evaluations/0/admission_request/new": {
+   "byte_end_exclusive": 318,
+   "byte_start": 307,
+   "json_type": "string",
+   "lexeme": "100000000",
+   "token_sha256": "490cf7575da10dc49f2b973c322411b18ff6b65018411050f5288306f8db8207"
+  },
+  "/evaluations/0/admission_request/objective": {
+   "byte_end_exclusive": 344,
+   "byte_start": 341,
+   "json_type": "string",
+   "lexeme": "o",
+   "token_sha256": "f83c7a6ef728085a83084f105bd7ccd74b8a9d671a80e1a348393eb570d89441"
+  },
+  "/evaluations/0/name": {
+   "byte_end_exclusive": 2003,
+   "byte_start": 1994,
+   "json_type": "string",
+   "lexeme": "default",
+   "token_sha256": "1080a60800d9e5bddc69f51489c636a776bacaadb5368f46db4aa0947c67e3ba"
+  },
+  "/evaluations/0/objectives": {
+   "byte_end_exclusive": 2343,
+   "byte_start": 2025,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "819a6496a432a3b633bd340d03de89ac852b34f88035f6a9ffc669b7ce06a754"
+  },
+  "/evaluations/0/objectives/0": {
+   "byte_end_exclusive": 2335,
+   "byte_start": 2035,
+   "json_type": "object",
+   "members": [
+    "admissions",
+    "closed_at",
+    "limit",
+    "objective",
+    "predecessor",
+    "started_at",
+    "tree_sessions"
+   ],
+   "token_sha256": "9409dc7665be2680ffcc6204f07ddaa2d280eb038394c7e0d7e7cc8716754e85"
+  },
+  "/evaluations/0/objectives/0/admissions": {
+   "byte_end_exclusive": 2063,
+   "byte_start": 2061,
+   "json_type": "array",
+   "members": [],
+   "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "/evaluations/0/objectives/0/closed_at": {
+   "byte_end_exclusive": 2092,
+   "byte_start": 2088,
+   "json_type": "null",
+   "lexeme": "null",
+   "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  },
+  "/evaluations/0/objectives/0/limit": {
+   "byte_end_exclusive": 2125,
+   "byte_start": 2113,
+   "json_type": "string",
+   "lexeme": "1000000000",
+   "token_sha256": "bdb588ee73547b3eafede9d045805cb5a4a9e97271207895bb4c8b17968b2c78"
+  },
+  "/evaluations/0/objectives/0/objective": {
+   "byte_end_exclusive": 2153,
+   "byte_start": 2150,
+   "json_type": "string",
+   "lexeme": "o",
+   "token_sha256": "f83c7a6ef728085a83084f105bd7ccd74b8a9d671a80e1a348393eb570d89441"
+  },
+  "/evaluations/0/objectives/0/predecessor": {
+   "byte_end_exclusive": 2184,
+   "byte_start": 2180,
+   "json_type": "null",
+   "lexeme": "null",
+   "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  },
+  "/evaluations/0/objectives/0/started_at": {
+   "byte_end_exclusive": 2232,
+   "byte_start": 2210,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:00:00Z",
+   "token_sha256": "9b9e53bacf50073b057d6e27a753cd3daec461d599689c15898c840d302aee84"
+  },
+  "/evaluations/0/objectives/0/tree_sessions": {
+   "byte_end_exclusive": 2325,
+   "byte_start": 2261,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "ef22f48f021e00459f341960fefe2f8f9234e4b6f582e1491aa086fbf30f5cd1"
+  },
+  "/evaluations/0/objectives/0/tree_sessions/0": {
+   "byte_end_exclusive": 2313,
+   "byte_start": 2275,
+   "json_type": "string",
+   "lexeme": "00000000-0000-4000-8000-0000000000c1",
+   "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c"
+  },
+  "/findings": {
+   "byte_end_exclusive": 4791,
+   "byte_start": 4769,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "4e45936506bbc3354bd0d93d434bcc53a37ea016e5a6123305eb694aa5a49d45"
+  },
+  "/findings/0": {
+   "byte_end_exclusive": 4787,
+   "byte_start": 4775,
+   "json_type": "string",
+   "lexeme": "P1.32-A-04",
+   "token_sha256": "c1d90e77822b363c2359f1b6209e9ef0146dea0743ebeb87e151901d56352490"
+  },
+  "/group": {
+   "byte_end_exclusive": 4811,
+   "byte_start": 4804,
+   "json_type": "string",
+   "lexeme": "P1.33",
+   "token_sha256": "628afa970d04d8825a06add18b71672384240721005a99eacaa94fbe19e608ec"
+  },
+  "/inputs": {
+   "byte_end_exclusive": 6653,
+   "byte_start": 5319,
+   "json_type": "object",
+   "members": [
+    "rates",
+    "reference_time",
+    "sessions"
+   ],
+   "token_sha256": "2894596ece3dd754c2cfd4d4ce7b5780fdc37392156e3dd0c3988f1f7ba14b69"
+  },
+  "/inputs/rates": {
+   "byte_end_exclusive": 5541,
+   "byte_start": 5334,
+   "json_type": "object",
+   "members": [
+    "anthropic_api_rates.json",
+    "openai_api_rates.json"
+   ],
+   "token_sha256": "428d05b21b29b8c6c445ee3a0b197cc20c1eff50a6f95592d506cbfb74564737"
+  },
+  "/inputs/rates/anthropic_api_rates.json": {
+   "byte_end_exclusive": 5436,
+   "byte_start": 5370,
+   "json_type": "string",
+   "lexeme": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "token_sha256": "afdb9fc9a73b4ff0d2440343e0645b70ba622d8f5e0762d2b5f2b9c1a08fc266"
+  },
+  "/inputs/rates/openai_api_rates.json": {
+   "byte_end_exclusive": 5535,
+   "byte_start": 5469,
+   "json_type": "string",
+   "lexeme": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58",
+   "token_sha256": "fdb98b6121ea0fe2999399f52f431f0eb22d9fb18eb143a4a880b30506250b73"
+  },
+  "/inputs/reference_time": {
+   "byte_end_exclusive": 5587,
+   "byte_start": 5565,
+   "json_type": "string",
+   "lexeme": "2026-11-10T07:00:00Z",
+   "token_sha256": "a1359231eec5e473f993cee1c7181caf272627cfbf575f464781eaee718966af"
+  },
+  "/inputs/sessions": {
+   "byte_end_exclusive": 6649,
+   "byte_start": 5605,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "1357d4b60b17122e334c091289af5dc3d412b342681916174921b54ca0810966"
+  },
+  "/inputs/sessions/0": {
+   "byte_end_exclusive": 6643,
+   "byte_start": 5613,
+   "json_type": "object",
+   "members": [
+    "alias",
+    "launch",
+    "lifecycle",
+    "logs",
+    "session_id"
+   ],
+   "token_sha256": "ce3036e507cdb324e833ffbaa5dfca1ac6284f702b9838b7d6b39f9670c6b032"
+  },
+  "/inputs/sessions/0/alias": {
+   "byte_end_exclusive": 5636,
+   "byte_start": 5632,
+   "json_type": "string",
+   "lexeme": "S1",
+   "token_sha256": "b769fcb6dd480523a6d584b38fe7f280638c58e540d6af98400a1345dc2edb0c"
+  },
+  "/inputs/sessions/0/launch": {
+   "byte_end_exclusive": 5765,
+   "byte_start": 5656,
+   "json_type": "object",
+   "members": [
+    "auth_lane",
+    "model",
+    "parent"
+   ],
+   "token_sha256": "879f45398e283f6e97621f9ed2230da67d73426baf9a8c22476dd58ef5173897"
+  },
+  "/inputs/sessions/0/launch/auth_lane": {
+   "byte_end_exclusive": 5686,
+   "byte_start": 5681,
+   "json_type": "string",
+   "lexeme": "api",
+   "token_sha256": "63e3a42fcd0c2bc3820823b61f131b485a5d862055faad68bd11e4d7ee5ad107"
+  },
+  "/inputs/sessions/0/launch/model": {
+   "byte_end_exclusive": 5727,
+   "byte_start": 5707,
+   "json_type": "string",
+   "lexeme": "openai/gpt-6-astra",
+   "token_sha256": "d7b73e09e6c232b56aa266c1e4d43a5aa09c3ed551381d91c3817f91295349bb"
+  },
+  "/inputs/sessions/0/launch/parent": {
+   "byte_end_exclusive": 5755,
+   "byte_start": 5749,
+   "json_type": "string",
+   "lexeme": "root",
+   "token_sha256": "956e6e33fe8b21fbf3e7e43d41c304862c78627deb92e26a72fd2b3b57bc60f2"
+  },
+  "/inputs/sessions/0/lifecycle": {
+   "byte_end_exclusive": 6015,
+   "byte_start": 5788,
+   "json_type": "array",
+   "members": [
+    "0",
+    "1"
+   ],
+   "token_sha256": "9bc42244e4dbb454632af7136c10dcdaf15adecd480eb52d31e39b55080dadd4"
+  },
+  "/inputs/sessions/0/lifecycle/0": {
+   "byte_end_exclusive": 5908,
+   "byte_start": 5800,
+   "json_type": "object",
+   "members": [
+    "at",
+    "event",
+    "turn"
+   ],
+   "token_sha256": "144ebce2244efa8deb70135a473a6c3d69877e2f19c2597f831761f54c1081d5"
+  },
+  "/inputs/sessions/0/lifecycle/0/at": {
+   "byte_end_exclusive": 5842,
+   "byte_start": 5820,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:00:10Z",
+   "token_sha256": "b31f04a43f1b490762781c4ede3d044f008696aed570770bda5fa0857d0b7de2"
+  },
+  "/inputs/sessions/0/lifecycle/0/event": {
+   "byte_end_exclusive": 5873,
+   "byte_start": 5865,
+   "json_type": "string",
+   "lexeme": "launch",
+   "token_sha256": "6164c16405ffad14780cca15e85cf8688c355069ccb5b8dfa55b25603379a449"
+  },
+  "/inputs/sessions/0/lifecycle/0/turn": {
+   "byte_end_exclusive": 5896,
+   "byte_start": 5895,
+   "json_type": "number",
+   "lexeme": "1",
+   "token_sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+  },
+  "/inputs/sessions/0/lifecycle/1": {
+   "byte_end_exclusive": 6005,
+   "byte_start": 5920,
+   "json_type": "object",
+   "members": [
+    "at",
+    "event"
+   ],
+   "token_sha256": "48c35553fd8b49bb551b700f3417fed55bd3c35c4d72c2aa0176f9654b45060b"
+  },
+  "/inputs/sessions/0/lifecycle/1/at": {
+   "byte_end_exclusive": 5962,
+   "byte_start": 5940,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:50:00Z",
+   "token_sha256": "850ed653176f6a62af66509ba56533632926260d4cfbd8eea55f6dd2470857c4"
+  },
+  "/inputs/sessions/0/lifecycle/1/event": {
+   "byte_end_exclusive": 5993,
+   "byte_start": 5985,
+   "json_type": "string",
+   "lexeme": "retire",
+   "token_sha256": "a2a9d4ffbc4c361801bc55cbc97e993b34974d1cb94ba86138a02d7b5630ad91"
+  },
+  "/inputs/sessions/0/logs": {
+   "byte_end_exclusive": 6573,
+   "byte_start": 6033,
+   "json_type": "object",
+   "members": [
+    "turn-1"
+   ],
+   "token_sha256": "d18a604654e4bf25257f1df393645d16e0a65a8ff6ef18c830279d836beec62d"
+  },
+  "/inputs/sessions/0/logs/turn-1": {
+   "byte_end_exclusive": 6563,
+   "byte_start": 6055,
+   "json_type": "object",
+   "members": [
+    "final_newline",
+    "lines"
+   ],
+   "token_sha256": "1bd1fdebcec2bdb6b93452d412ae1baf79d516dfca1d7cab734b11fdc3cf859b"
+  },
+  "/inputs/sessions/0/logs/turn-1/final_newline": {
+   "byte_end_exclusive": 6090,
+   "byte_start": 6086,
+   "json_type": "boolean",
+   "lexeme": "true",
+   "token_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+  },
+  "/inputs/sessions/0/logs/turn-1/lines": {
+   "byte_end_exclusive": 6551,
+   "byte_start": 6113,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "4a36328adb6655bed781a8658ecd27f9c23013d3a8e7732432bfeaba4c6d68d0"
+  },
+  "/inputs/sessions/0/logs/turn-1/lines/0": {
+   "byte_end_exclusive": 6537,
+   "byte_start": 6129,
+   "json_type": "string",
+   "lexeme": "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0}",
+   "token_sha256": "526551444e61ceb9867186e7f19739e10d267bd245ed83b5f69289bc4a1d5e37"
+  },
+  "/inputs/sessions/0/session_id": {
+   "byte_end_exclusive": 6635,
+   "byte_start": 6597,
+   "json_type": "string",
+   "lexeme": "00000000-0000-4000-8000-0000000000c1",
+   "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c"
+  },
+  "/invariants": {
+   "byte_end_exclusive": 6689,
+   "byte_start": 6671,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "e09f6e6be0a59398609664a8126841a9965d9437b32e67b176777fa6c4198bcc"
+  },
+  "/invariants/0": {
+   "byte_end_exclusive": 6685,
+   "byte_start": 6677,
+   "json_type": "string",
+   "lexeme": "INV-F5",
+   "token_sha256": "c519abc19d16159a29dea40f98d9dbe3d822e61faf72e9fc50617f07b2089979"
+  },
+  "/notes": {
+   "byte_end_exclusive": 6877,
+   "byte_start": 6702,
+   "json_type": "string",
+   "lexeme": "Single condition changed from VC06: the row has no cache_write_tokens key, as written by producers before ab2a0f84 (59 real unbudgeted rows). The count is unknown, not zero.",
+   "token_sha256": "fa05b9fd76bc6bccab318155fa68f5f14e633d13994b537012e5f274295182b1"
+  },
+  "/profile": {
+   "byte_end_exclusive": 6910,
+   "byte_start": 6892,
+   "json_type": "string",
+   "lexeme": "current_producer",
+   "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611"
+  },
+  "/provenance": {
+   "byte_end_exclusive": 7022,
+   "byte_start": 6928,
+   "json_type": "object",
+   "members": [
+    "origin"
+   ],
+   "token_sha256": "f8493dee00b88850e52eb51610eca96c350e4591ceb51f372d618bb31c7e97e5"
+  },
+  "/provenance/origin": {
+   "byte_end_exclusive": 7018,
+   "byte_start": 6944,
+   "json_type": "string",
+   "lexeme": "contract::P1.33 Module A repair (from VC06-unbudgeted-completed-request)",
+   "token_sha256": "09fb3044ff3eb2a3694a7aa28eb56b22b2a0ed2d8173204969a61c2dd51d2b61"
+  },
+  "/reachability": {
+   "byte_end_exclusive": 7589,
+   "byte_start": 7581,
+   "json_type": "string",
+   "lexeme": "legacy",
+   "token_sha256": "e4c13c4401d43136853edf41d4fa114389d5228b7f01ca06038e4ec9b73796ea"
+  },
+  "/role": {
+   "byte_end_exclusive": 14420,
+   "byte_start": 14411,
+   "json_type": "string",
+   "lexeme": "finding",
+   "token_sha256": "e996ee63bc2d00dfcba6388c8ddeee47d4fbce806e00f97d2e6f15e8e697e6cf"
+  },
+  "/schema": {
+   "byte_end_exclusive": 14458,
+   "byte_start": 14434,
+   "json_type": "string",
+   "lexeme": "pi-accounting-corpus/1",
+   "token_sha256": "306af7cfa4a45640f62858c9928b68d0884ab7a6457e219d2186b0ea0a835e12"
+  }
+ },
+ "top_inventory": [
+  "added_in",
+  "ambiguity",
+  "case_id",
+  "class",
+  "contract",
+  "controls",
+  "evaluations",
+  "expected",
+  "findings",
+  "group",
+  "historical",
+  "inputs",
+  "invariants",
+  "notes",
+  "profile",
+  "provenance",
+  "rationale",
+  "reachability",
+  "revisions",
+  "revisions_r3",
+  "revisions_r4",
+  "revisions_r5",
+  "revisions_r6",
+  "revisions_r7",
+  "revisions_r8",
+  "role",
+  "schema"
+ ]
+}

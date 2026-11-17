@@ -11,9 +11,11 @@ fn bundle() -> Value {
         "other-settle",
         "other-usage",
     ];
-    let mut input = json!({"kind":"accounting_input_proof","id":"input","version":"1.7-s1","lineage_id":"L","origins":[],"initial_contracts":[{"contract_id":"c","reference_namespace":"unestablished","duplicate_rule":"same_origin_only"}],"grants":[],"identity_bindings":[],"exact_links":[],"continuity":{"predecessor_subject_refs":[],"preserved_initial_contract_refs":[],"preserved_fact_refs":[],"exact_origin_map_ref":"raw:origin-map"}});
+    let mut input = json!({"kind":"accounting_input_proof","id":"input","version":"1.7-s1","lineage_id":"L","origins":[],"initial_contracts":[{"contract_id":"c","reference_namespace":"dollar_ticket","scope_id":"fixture-scope","grant_ref":"base-scope-grant","duplicate_rule":"same_origin_only"}],"grants":[],"identity_bindings":[],"exact_links":[],"continuity":{"predecessor_subject_refs":[],"preserved_initial_contract_refs":[],"preserved_fact_refs":[],"exact_origin_map_ref":"raw:origin-map"}});
     input["origins"] = json!(ids.iter().enumerate().map(|(i,id)| json!({"origin_id":id,"source_origin_id":"source","original_position":i,"raw_bytes_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","source_revision_ref":"raw:revision","initial_contract_ref":"c"})).collect::<Vec<_>>());
     input["grants"] = json!([{"grant_id":"grant","guarantee_kind":"exact_row_coreference","admission":"conditional_fixture","exact_payload_ref":"raw:exact-pairs","covered_origin_refs":ids,"covered_extent_ref":"raw:extent","authority_ref":"fixture","observer_or_harness_ref":"synthetic","assumption_refs":["conditional"],"admitted_payload":{"pairs":[{"from":"anchor","to":"usage"},{"from":"other-reserve","to":"other-usage"}]}}]);
+    // one base groups every origin, so the contract must carry an admitted scope (BASE §3)
+    input["grants"].as_array_mut().unwrap().push(json!({"grant_id":"base-scope-grant","guarantee_kind":"initial_reference_scope","admission":"conditional_fixture","exact_payload_ref":"raw:scope","covered_origin_refs":ids,"covered_extent_ref":"raw:extent","authority_ref":"fixture","observer_or_harness_ref":"fixture","assumption_refs":["fixture"]}));
     input["exact_links"] = json!([{"link_id":"input-link","from_origin_ref":"anchor","to_origin_ref":"usage","grant_ref":"grant"}]);
     let covered = ["anchor", "reserve", "settle", "usage"];
     let others = ["other-reserve", "other-settle", "other-usage"];
@@ -106,7 +108,7 @@ fn exact_links_and_shared_grant_pair_application() {
             b["documents"][0]["exact_links"][0]["to_origin_ref"] = json!("other-usage");
             b["documents"][1]["definite_links"][0]["to_origin_ref"] = json!("other-usage");
         },
-        "lacks cited exact link",
+        "does not join a covered anchor to the covered request",
     );
 }
 #[test]
@@ -115,8 +117,10 @@ fn unlinked_anchor_and_genuine_unbudgeted_remain_distinct() {
     let r = &mut b["documents"][1];
     r["coverage_decisions"] = json!([]);
     r["definite_links"] = json!([]);
+    // nothing is released: the hold stays active and no replacement unit exists
     r["units"][0]["state"] = json!("active");
-    r["units"][1]["state"] = json!("inactive");
+    r["units"][0].as_object_mut().unwrap().remove("successor_ref");
+    r["units"].as_array_mut().unwrap().remove(1);
     for o in r["origins"].as_array_mut().unwrap() {
         if o["active_high_unit_id"] == "replacement" {
             o["active_high_unit_id"] = json!("hold");
@@ -135,6 +139,20 @@ fn unlinked_anchor_and_genuine_unbudgeted_remain_distinct() {
     c["completion_ref"] = json!("completion");
     c.as_object_mut().unwrap().remove("obligation_id");
     c.as_object_mut().unwrap().remove("validity_ref");
+    // a genuine unbudgeted completion covers only the anchor and its usage request; the dollar
+    // rows (reserve, settle) are not part of it
+    c["monetary_origin_refs"] = json!(["usage"]);
+    for unit in ["hold", "replacement"] {
+        let u = r["units"].as_array_mut().unwrap().iter_mut().find(|u| u["unit_id"] == unit).unwrap();
+        u["origin_refs"] = json!(["anchor", "usage"]);
+    }
+    let others = r["units"].as_array_mut().unwrap().iter_mut().find(|u| u["unit_id"] == "others").unwrap();
+    others["origin_refs"].as_array_mut().unwrap().extend([json!("reserve"), json!("settle")]);
+    for o in r["origins"].as_array_mut().unwrap() {
+        if o["origin_ref"] == "reserve" || o["origin_ref"] == "settle" {
+            o["active_high_unit_id"] = json!("others");
+        }
+    }
     validate_accounting_bundle(&b).unwrap();
 }
 
@@ -219,6 +237,9 @@ fn primary_exact_copy_is_admitted_evidence_not_value_equality() {
         .as_array_mut()
         .unwrap()
         .push(copy);
+    let grants = b["documents"][0]["grants"].as_array_mut().unwrap();
+    let base_scope = grants.iter_mut().find(|g| g["grant_id"] == "base-scope-grant").unwrap();
+    base_scope["covered_origin_refs"].as_array_mut().unwrap().push(json!("reserve-copy"));
     let mut owner = b["documents"][1]["origins"][1].clone();
     owner["origin_ref"] = json!("reserve-copy");
     owner["evidence_atom_id"] = json!("reserve-copy");

@@ -1,0 +1,9 @@
+{
+  "schema": "pi-accounting-root-decisions/1",
+  "at": "2026-11-17T01:0xZ",
+  "root": "01a1e569-2805-72ff-b837-03d1577c405d",
+  "question": "oracle slice 2a supervisor request 949ccd30: unit grouping for corrected VC08/U06/V03 outputs",
+  "decision": "OriginBase split (option B)",
+  "basis": "ROOT-DECISIONS-R1 Q-NAMESPACE = NOT ADMITTED for historical cases, so the not-admitted branch is nominal truth; BASE 43d0e7c8 section 3: without an admitted initial reference scope or admitted exact link each origin is OriginBase. Keeping one grouped unit (option A) would retain an unjustified grouping.",
+  "consequences": "VC08/U06/V03 supplied outputs rewritten to two units with attributed revisions; dossier NS3/PM2 become DerivedNominal; grouped form only in a separate private positive control under an exact conditional admission-namespace declaration admitted by root; money unchanged (codex, no money)."
+}

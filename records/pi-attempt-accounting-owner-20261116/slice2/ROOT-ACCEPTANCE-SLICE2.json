@@ -1,0 +1,32 @@
+{
+  "status": "ACCEPTED_BOUNDED_PRIVATE",
+  "at": "2026-11-17",
+  "root": "01a1e569-2805-72ff-b837-03d1577c405d",
+  "scope": "Operator option 3: close the eleven historical findings; full S1 OPEN",
+  "subject": {"repo": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/successor/subject", "commit": "3883d04", "base": "2729107 (slice-1b accepted bounded)", "joined_as": "branch s1-successor", "history": "oracle-r2 9e00f55 + spec-r2 fb31455 -> join 0ccaf02 -> join remediation 3be98f2, 53e7db7 -> review remediation 042eddc, 3883d04"},
+  "root_decisions": ["slice2/ROOT-DECISION-R2-NAMESPACE-UNITS.json", "slice2/ROOT-DECISION-R3.json", "slice2/ROOT-ADMISSIONS.json (v2, 10 entries, sha256 0f62460b452ac25040cea3a07b5a78c45f51e87e5950d97befa9703f2c88db1e)", "slice2/REVIEW-R2-REMEDIATION.md"],
+  "root_verification": "clean checkout /tmp/rootv-final @3883d04, fresh target slice2/root-verify-target-r3: 18/18 gates PASS with R11_ROOT_ADMISSIONS bound outside the subject (tools/replay_gates.sh); without admissions the self-declared admission regrouping is UNMET, a forged in-subject admissions file is ignored, and the positive control cannot qualify; raw inputs and evaluation premises unchanged in all 175 cases vs 5e594cac; every non-merge commit within its author's files; fixture repairs changed no assertion line. Root also found and had remediated a join defect (oracle-corrected namespace bundles invalid under Rust evidence; positive control rejected) before review.",
+  "review": {"reviewer": "claude-sdk/claude-fable-5-1 xhigh (operator substitute for Astra), fresh, read-only, executed probes; same retained episode for the re-check", "standing": "same-provider review", "report": "slice2/review-r2/REVIEW.md sha256 afa7659c697199d27da06e4202e6a5a0d9dfac9b21b3135e21d5d7d331eeaa60", "verdicts": ["ACCEPT_WITH_CHANGES on 53e7db7 (D-1 P2, D-2..D-5 P3)", "ACCEPT (bounded) after remediation 3883d04; D-1..D-5 closed"], "architecture_assessment": "bounded_repair_credible"},
+  "finding_dispositions": {
+    "R8-FIN-01": "CLOSED_BOUNDED",
+    "R8-IDENTITY-01": "CLOSED_BOUNDED (null identity malformed per D-3)",
+    "R8-COVERAGE-01": "CLOSED_BOUNDED for spec coherence; independent raw primary/usage/anchor membership derivation not attempted -> full S1",
+    "R8-RESERVATION-01": "CLOSED_BOUNDED (predicate already fixed at R8/R10; full-path control added)",
+    "R8-DOC-01": "CLOSED_BOUNDED",
+    "R8-NAMESPACE-01": "CLOSED_BOUNDED; admission-namespace authority bound to outside root admissions at the Python actual path; Rust evidence has no admission input (documented)",
+    "R8-GATE-IDENTITY-01": "CLOSED_BOUNDED (Rust objective-gate comparison only in test helper)",
+    "R8-LOW-INVENTORY-01": "CLOSED_BOUNDED; r8-completion-A/DERIVATIONS.json stale by root decision",
+    "R8-PLACEMENT-01": "CLOSED_BOUNDED (Rust predicate for fully dated owned attempts on trusted lifecycles)",
+    "R8-OWNER-01": "CLOSED_BOUNDED (slice 1b, no regression)",
+    "R8-SCHEMA-DOMAIN-01": "CLOSED_BOUNDED (slice 1b + P3-1, no regression)"
+  },
+  "explicit_limits": [
+    "dollar_ticket (D-SCOPE) admissions are not consumed by the actual check path; a subject could self-declare a dollar_ticket scope -> full S1",
+    "Rust evidence has no admission input; passing it is not admission",
+    "149/182 oracle bundles schema-stale (inherited); full check reports 476 inherited accounting-reference failures",
+    "COVERAGE-01 raw membership half; DERIVATIONS.json; INITIAL-REFERENCE canonical text; 19 null acknowledgements",
+    "Closure is bounded to the reviewed private subject; complete exact-current A/B/C review of the full successor not performed"
+  ],
+  "escalation": "no implementation rejection in this campaign; guard history unchanged",
+  "not_established": "full S1 (175/374/complete ABC) OPEN; no integration, production or S2a"
+}

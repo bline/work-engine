@@ -22,6 +22,8 @@ run wire_corpus python3 "$S/tooling/spec-check/tests/wire_corpus.py" "$S" "$SPEC
 run evidence_controls python3 "$S/tooling/spec-check/tests/evidence_controls.py" "$S" "$SPEC"
 # Added after spec-r1 review P3-5: full crate tests and slice-1b controls when present.
 run cargo-test bash -c "cd '$S/tooling/spec-check' && CARGO_TARGET_DIR='$T' cargo test --offline"
-for t in c_owner_cli.py nano_domain.py numeric_domains.py no_panic_mutations.py; do
+for t in c_owner_cli.py nano_domain.py numeric_domains.py no_panic_mutations.py coverage_namespace_controls.py; do
   [ -f "$S/tooling/spec-check/tests/$t" ] && run "$t" python3 "$S/tooling/spec-check/tests/$t" "$S" "$SPEC"
 done
+# R11 oracle controls (slice 2a); root admissions bound from outside the subject via R11_ROOT_ADMISSIONS if set by caller.
+for t in $(ls "$S/validator" | grep -E '^test_r11.*\.py$'); do run "$t" python3 -m unittest discover -s validator -p "$t"; done

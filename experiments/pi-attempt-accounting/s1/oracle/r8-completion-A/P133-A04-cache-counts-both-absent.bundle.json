@@ -87,7 +87,9 @@
       "lineage_id": "P133-A04-cache-counts-both-absent",
       "low_rollups": [
         {
-          "alternative_origin_refs": [],
+          "alternative_origin_refs": [
+            "S1/turn-1:1"
+          ],
           "basis": "none",
           "credit_mode": "none",
           "credits": [],

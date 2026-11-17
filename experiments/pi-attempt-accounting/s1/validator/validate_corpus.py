@@ -66,6 +66,7 @@ COVERS = ['failures', 'forwarding', 'partial_streams', 'retries', 'settlement']
 PROVIDERS = {'openai': 'openai', 'openai-codex': 'openai', 'anthropic': 'anthropic'}
 RANK = {'admitted': 0, 'refused': 1, 'not_established': 1}     # OQ-2: refused and not_established are equally non-permissive
 VERTICAL = 'vertical_admission_authority'
+IDENTITY_FIELDS = ('model', 'response_model', 'authorized_model')
 MECHS = ('new_forwarding', 'retries', 'reopening', 'billing_bound')
 
 
@@ -198,6 +199,9 @@ def gate_qualification(c, o, adm, purpose, ref, lifecycle_by_sid, sessions_by_si
     elif witness.get('payload_sha256') != payload or witness.get('authority_id') != (g.get('authority') or {}).get('id') or witness.get('session') != g.get('session'):
         reasons.append('GateVerificationBinding')
     ceiling = None
+    ids = (auth.get('id'), (g.get('authority') or {}).get('id'), witness.get('authority_id') if isinstance(witness, dict) else None)
+    if not all(isinstance(x, str) and x and x.strip() == x for x in ids):              # R8-GATE-IDENTITY-01: present canonical nonempty before equality
+        reasons.append('GateAuthorityMismatch')
     if g['writer'] != 'authority': reasons.append('GateWriterNotAuthority')
     if (g['authority'] or {}).get('kind') != VERTICAL or (g['authority'] or {}).get('id') != auth.get('id') or auth.get('kind') != VERTICAL: reasons.append('GateAuthorityMismatch')
     if g['session'] != adm['session']: reasons.append('GateSessionMismatch')
@@ -451,6 +455,20 @@ def raw_reservation(a, lines):
     return (max(vals) if vals else None), n
 
 
+def raw_charge(a, lines):
+    """R8-FIN-01 (X-COMPONENTS): the largest well-formed claimed charge among the attempt's own distinct settlement rows,
+    taken exactly from the raw usd.charged_usd decimal; None when no settlement row carries one."""
+    vals = set(); seen = set()
+    for r in a['evidence']:
+        raw = lines.get(r); row = parse(raw)
+        if not (row and row.get('event') in ('request', 'upstream_error') and isinstance(row.get('usd'), dict)) or raw in seen: continue
+        seen.add(raw); amt = row['usd'].get('charged_usd')
+        if isinstance(amt, (int, float)) and not isinstance(amt, bool) and amt >= 0:
+            d = Decimal(str(amt))
+            if d == d.quantize(Decimal('0.000001')): vals.add(int(d * 10 ** 9))
+    return max(vals) if vals else None
+
+
 def table_x(cid, k, a, lo, kd, hi, F, lines=None):
     """Consistency of expected exposure with TRANSITIONS Table X (1.4-s1), including the X-0 basis on ties."""
     s, v = a['settlement'], a['valuation']
@@ -459,6 +477,11 @@ def table_x(cid, k, a, lo, kd, hi, F, lines=None):
         Rraw, nres = raw_reservation(a, lines)
         if Rraw is not None: R = Rraw                                               # X-0 (1.4-s1): the largest distinct reservation (A-09)
     ch = nano(s['charged']) if 'charged' in s else None
+    if lines is not None:
+        raw_ch = raw_charge(a, lines)
+        if raw_ch is not None:
+            if ch != raw_ch: F.add(cid, f'{k}: supplied settlement.charged {s.get("charged")} != retained raw charge {raw_ch} (R8-FIN-01)')
+            ch = raw_ch                                                             # money terms use the raw charge, never the supplied claim
     vl, vh = (nano(v['low']), nano(v['high'])) if v.get('state') == 'valued' else (None, None)
     ph = nano(v['priced_high']) if v.get('state') == 'unpriceable' and v.get('priced_high') is not None else None
     sl = nano(v['supported_low']) if v.get('state') == 'unpriceable' and v.get('supported_low') is not None else 0
@@ -512,6 +535,10 @@ def raw_usage_policy_checks(cid, a, rows, F):
     """Root P1/P2 assertions; auxiliary counts do not establish a billing report."""
     requests = [r for r in rows if r and r.get('event') == 'request']
     v = a['valuation']; k = a['key']
+    for row in requests:                                                          # R8-IDENTITY-01 (V-1): presence/type before identity collection
+        bad = [f for f in IDENTITY_FIELDS if f in row and not (isinstance(row[f], str) and row[f].strip() == row[f] and row[f])]   # present null is malformed (D-3); absent keeps V-1
+        if bad and (v.get('state') == 'valued' or v.get('complete') or v.get('supported_low') is not None or a.get('replacement', {}).get('eligible')):
+            F.add(cid, f'{k}: malformed identity {bad} cannot join a complete/priced favourable set; valuation must be unpriceable with no supported minimum (R8-IDENTITY-01, V-1/V-6)')
     for row in requests:
         fam = PROVIDERS.get(row.get('provider', 'openai'))
         billing = ('input_tokens', 'output_tokens', 'cached_tokens', 'cache_write_tokens') if fam == 'openai' else ('input_tokens', 'output_tokens', 'cache_read_input_tokens', 'cache_creation_input_tokens', 'ephemeral_5m_input_tokens', 'ephemeral_1h_input_tokens')
@@ -637,6 +664,22 @@ def o7_candidates(c, e, a, lines, order, lifecycle, ref):
     return sorted(out)
 
 
+def raw_placement(c, a, o, lines, order, lifecycle, ref):
+    """R8-PLACEMENT-01 (11.2 P-1..P-3): placement of an owned attempt's raw obligation interval against its owner's
+    window [started_at, closed_at only when the closure is established]; independent of supplied placement/reasons."""
+    iv = obligation_interval(c, a, lines, order, lifecycle)
+    if iv == 'unplaceable': return 'unplaceable'
+    lo, hi = iv
+    if lo is None or (hi is None and a['obligation']['state'] != 'outstanding'): return 'unplaceable'
+    start = o['started_at']
+    closed = o['closed_at'] if closure_state(o, ref, c.get('profile')) == 'closed' else None
+    if hi is not None and hi < start: return 'before'
+    if closed and lo > closed: return 'after'
+    if lo < start: return 'straddles_start'
+    if closed and (hi is None or hi > closed): return 'straddles_closure'
+    return 'inside'
+
+
 def admitting_objectives(c, e, a):
     alias = a['key'].split(':')[1].split('/')[0]
     sid = next(s_['session_id'] for s_ in c['inputs']['sessions'] if s_['alias'] == alias)
@@ -689,6 +732,12 @@ def check_accounting_references(c, F, pilot_binding=None):
     r9_pilot.reference_relations(bundle, F, cid)
     if pilot_binding:
         r9_pilot.selected_low_consequence(c, pilot_binding, bundle, F)
+    low_inventory(c, docs, F)
+    inp0 = next((d for d in docs if d.get('kind') == 'accounting_input_proof'), None)
+    if inp0 is not None:                          # namespace/authority/grouping run on every bundle, before shape validation
+        namespace_application(c, inp0, F)
+        root_admission_application(c, inp0, F)
+        grouping_application(c, docs, F)
     schema = json.load(open(os.path.join(root, 'spec/accounting.schema.json')))
     validator = Draft202012Validator(schema)
     by = {}
@@ -787,6 +836,134 @@ def check_accounting_references(c, F, pilot_binding=None):
     if set(lows) != required: F.add(cid, 'total low scope coverage mismatch')
 
 
+def raw_reference_namespace(row):
+    """R8-NAMESPACE-01 raw-namespace rule table (oracle/r11-controls/raw-namespace-rules.json; review-r2 D-4), raw fields only:
+    D1 usd_reserved row with a `rid` member; D2 any row whose `usd` object has a `rid` member -> dollar_ticket;
+    A1 subscription_proxy_admitted row with a `rid` member; A2 any row whose `subscription_proxy` object has a `rid` member -> admission.
+    Both families -> 'conflict'; neither (including rid-less admission rows) -> None (no usable reference)."""
+    if not isinstance(row, dict): return None
+    usd, sp = row.get('usd'), row.get('subscription_proxy')
+    dollar = (row.get('event') == 'usd_reserved' and 'rid' in row) or (isinstance(usd, dict) and 'rid' in usd)
+    admission = (row.get('event') == 'subscription_proxy_admitted' and 'rid' in row) or (isinstance(sp, dict) and 'rid' in sp)
+    return 'conflict' if dollar and admission else 'dollar_ticket' if dollar else 'admission' if admission else None
+
+
+def namespace_application(c, inp, F):
+    """R8-NAMESPACE-01 (BASE 3; c8376f7a NAMESPACE-APPLICATION): an initial contract's namespace must equal the raw reference
+    namespace of every origin it covers. A dollar_ticket contract never applies to admission-namespace origins, even when the
+    bundle, grant and references agree; an admission contract never applies to dollar origins."""
+    cid = c['case_id']; lines, _ = source_lines(c)
+    contracts = {ic['contract_id']: ic for ic in inp.get('initial_contracts', [])}
+    for ic in contracts.values():                     # presence of the scope references only; authority is checked by root_admission_application
+        if ic.get('reference_namespace') in ('dollar_ticket', 'admission') and not (ic.get('grant_ref') and ic.get('scope_id')):
+            F.add(cid, f"initial contract {ic['contract_id']} declares {ic['reference_namespace']} without grant_ref/scope_id; use unestablished (R8-NAMESPACE-01)")
+    for o in inp.get('origins', []):
+        ic = contracts.get(o.get('initial_contract_ref'))
+        if ic is None:
+            F.add(cid, f"origin {o.get('origin_id')} has dangling initial_contract_ref {o.get('initial_contract_ref')!r} (R8-NAMESPACE-01, review-r2 D-5)"); continue
+        raw_ns = raw_reference_namespace(parse(lines.get(o['origin_id'])))
+        ns = ic.get('reference_namespace')
+        if ns in ('dollar_ticket', 'admission') and raw_ns == 'conflict':
+            F.add(cid, f"initial contract {ic['contract_id']} namespace {ns} applied to {o['origin_id']} whose raw row carries both reference families (R8-NAMESPACE-01)"); continue
+        if ns in ('dollar_ticket', 'admission') and raw_ns in ('dollar_ticket', 'admission') and raw_ns != ns:
+            F.add(cid, f"initial contract {ic['contract_id']} namespace {ns} does not apply to {o['origin_id']} (raw namespace {raw_ns}) (R8-NAMESPACE-01)")
+
+
+def low_inventory(c, docs, F):
+    """R8-LOW-INVENTORY-01 (BASE 5; SUPPORTED-LOW): each scope's U contains the raw usage origins of every PiApi unit that the
+    objective owns or is a candidate for on that line; Seed holds only owned usage. Candidate membership adds no seed/credit."""
+    cid = c['case_id']; lines, _ = source_lines(c)
+    result = next((d for d in docs if d.get('kind') == 'accounting_result'), None)
+    if result is None: return
+    lows = {r.get('scope_ref', '').split('#')[-1]: r for r in result.get('low_rollups', [])}
+    attempts = {a['key']: a for a in c['expected']['attempts']}
+    def usage_origins(a):
+        return {r for r in a['evidence'] if isinstance(parse(lines.get(r)), dict) and isinstance(parse(lines[r]).get('usage'), dict)}
+    for ev in c['evaluations']:
+        for obj in ev['objectives']:
+            name = obj['objective']
+            for label in ('owned_closed', 'owned_outstanding'):
+                low = lows.get(f"{cid}/{ev['name']}/{name}/{label}")
+                if low is None: continue
+                need_u, need_seed = set(), set()
+                for at in ev['expected']['attribution']:
+                    a = attempts.get(at['attempt'])
+                    if not a or a['exposure'].get('pool') != 'pi_api' or (a['obligation']['state'] == 'outstanding') != (label == 'owned_outstanding'): continue
+                    owned = at['ownership'] == 'owned' and at.get('objective') == name
+                    cand = at['ownership'] in ('uncertain', 'unadmitted') and name in at.get('candidates', [])
+                    if owned: need_seed |= usage_origins(a)
+                    if owned or cand: need_u |= usage_origins(a)
+                if not need_u <= set(low.get('alternative_origin_refs', [])):
+                    F.add(cid, f"{ev['name']}/{name}/{label}: low U omits owned/candidate usage origins {sorted(need_u - set(low.get('alternative_origin_refs', [])))} (R8-LOW-INVENTORY-01)")
+                if not set(low.get('seed_origin_refs', [])) <= need_seed:
+                    F.add(cid, f"{ev['name']}/{name}/{label}: low Seed contains non-owned usage {sorted(set(low.get('seed_origin_refs', [])) - need_seed)} (R8-LOW-INVENTORY-01)")
+
+
+def root_admissions_path():
+    """The only admission source: R11_ROOT_ADMISSIONS, bound by the caller and outside the subject (review-r2 D-1)."""
+    p = os.environ.get('R11_ROOT_ADMISSIONS')
+    if not p or not os.path.isfile(p): return None
+    subject = os.path.realpath(str(r9_pilot.root()))
+    real = os.path.realpath(p)
+    return None if real == subject or real.startswith(subject + os.sep) else real
+
+
+def root_admission_application(c, inp, F):
+    """Review-r2 D-1: on the actual check path every `admission` initial contract (and any grouping it carries) is accepted only
+    when the root admission record bound from outside the subject admits that exact declaration; otherwise REQUIRED/UNMET.
+    dollar_ticket scopes (D-SCOPE) are a recorded full-S1 limit and are not wired here."""
+    if any(ic.get('reference_namespace') == 'admission' for ic in inp.get('initial_contracts', [])):
+        admission_contract_matches(c, inp, root_admissions_path(), F)
+
+
+def grouping_application(c, docs, F):
+    """Review-r2 D-2 (BASE 3 OriginBase): a base grouping several origins needs an admitted reference scope for every member
+    (a non-unestablished contract with grant_ref/scope_id) or an admitted exact link / identity binding joining them."""
+    cid = c['case_id']
+    inp = next((d for d in docs if d.get('kind') == 'accounting_input_proof'), None)
+    result = next((d for d in docs if d.get('kind') == 'accounting_result'), None)
+    if inp is None or result is None: return
+    contracts = {ic['contract_id']: ic for ic in inp.get('initial_contracts', [])}
+    scoped = {o['origin_id'] for o in inp.get('origins', []) if (contracts.get(o.get('initial_contract_ref')) or {}).get('reference_namespace') in ('dollar_ticket', 'admission')
+              and contracts[o['initial_contract_ref']].get('grant_ref') and contracts[o['initial_contract_ref']].get('scope_id')}
+    edges = [(l.get('from_origin_ref'), l.get('to_origin_ref')) for l in inp.get('exact_links', [])]
+    by_attempt = {}
+    for b in inp.get('identity_bindings', []): by_attempt.setdefault(b.get('producer_attempt_id'), set()).add(b.get('origin_ref'))
+    for group in by_attempt.values():
+        g = sorted(x for x in group if x)
+        edges += [(g[0], x) for x in g[1:]]
+    for base in result.get('bases', []):
+        members = list(base.get('origin_refs', []))
+        if len(members) < 2 or all(m in scoped for m in members): continue
+        comp = {members[0]}; changed = True
+        while changed:
+            changed = False
+            for a, b in edges:
+                if (a in comp) != (b in comp) and a in members and b in members: comp |= {a, b}; changed = True
+        if comp != set(members):
+            F.add(cid, f"base {base.get('base_id')} groups {members} without an admitted scope or exact link/identity binding; BASE 3 OriginBase per origin (review-r2 D-2)")
+
+
+def admission_namespace_control(c, bundle, admissions_path, F):
+    """R8-NAMESPACE-01 positive route for a private control: as root_admission_application, with an explicit admissions path."""
+    inp = next(d for d in bundle['documents'] if d.get('kind') == 'accounting_input_proof')
+    namespace_application(c, inp, F)
+    admission_contract_matches(c, inp, admissions_path, F)
+
+
+def admission_contract_matches(c, inp, admissions_path, F):
+    cid = c['case_id']; lines, _ = source_lines(c)
+    entries = json.load(open(admissions_path))['entries'] if admissions_path and os.path.isfile(admissions_path) else []
+    digest = hashlib.sha256(json.dumps(c['inputs'], sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    for ic in inp.get('initial_contracts', []):
+        if ic.get('reference_namespace') != 'admission': continue
+        covered = sorted((o['origin_id'], hashlib.sha256(lines.get(o['origin_id'], '').encode()).hexdigest()) for o in inp['origins'] if o.get('initial_contract_ref') == ic['contract_id'])
+        ok = any(e.get('case_id') == cid and e.get('reference_namespace') == 'admission' and e.get('guarantee_kind') == 'initial_reference_scope' and e.get('admission') == 'conditional_fixture'
+                 and e.get('duplicate_rule') == ic.get('duplicate_rule') and e.get('raw_input_sha256', digest) == digest
+                 and sorted((x['origin_id'], x['raw_utf8_sha256']) for x in e.get('covered_origins', [])) == covered for e in entries)
+        if not ok: F.add(cid, f"conditional admission-namespace grouping {ic['contract_id']} REQUIRED/UNMET: no exact root admission (R8-NAMESPACE-01)")
+
+
 def check_evaluation(cid, c, e, keys, sessions, lines, order, F):
     ex, ee = c['expected'], e['expected']
     ref = c['inputs']['reference_time']
@@ -833,6 +1010,9 @@ def check_evaluation(cid, c, e, keys, sessions, lines, order, F):
             want = hsum(items) if items else (0, 'exact', 0)
             if esum_of(oe[label])[1:] != want[1:]: F.add(cid, f'{e["name"]}/{name}: {label} high {esum_of(oe[label])[1:]} != sum of owned unit highs {want[1:]}')
             check_independent_low_assertion(cid, c, e['name'], name, label, oe[label], F)
+        for at in owned:                                                                  # R8-PLACEMENT-01: raw interval fixes placement
+            want_pl = raw_placement(c, attempts[at['attempt']], o, lines, order, ex['lifecycle'], ref)
+            if at['placement'] != want_pl: F.add(cid, f'{e["name"]}/{name}: placement {at["placement"]} of {at["attempt"]} != raw interval placement {want_pl} (R8-PLACEMENT-01)')
         implied = set()
         for at in owned:
             implied |= set(attempts[at['attempt']]['blocking'])

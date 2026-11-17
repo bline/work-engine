@@ -178,9 +178,12 @@ fn two_origin_bundle() -> Value {
         .unwrap()
         .push(second);
     b["documents"][1]["origins"].as_array_mut().unwrap().push(
-        json!({"origin_ref":"s","base_id":"b","evidence_atom_id":"s","active_high_unit_id":"u"}),
+        json!({"origin_ref":"s","base_id":"b2","evidence_atom_id":"s","active_high_unit_id":"u"}),
     );
-    b["documents"][1]["bases"][0]["origin_refs"] = json!(["o", "s"]);
+    // unestablished contract: one OriginBase per origin (BASE §3)
+    b["documents"][1]["bases"].as_array_mut().unwrap().push(
+        json!({"base_id":"b2","origin_refs":["s"],"atomize":false,"atomize_fact_refs":[],"break_copies":false,"break_copies_fact_refs":[]}),
+    );
     b["documents"][1]["units"][0]["origin_refs"] = json!(["o", "s"]);
     b
 }

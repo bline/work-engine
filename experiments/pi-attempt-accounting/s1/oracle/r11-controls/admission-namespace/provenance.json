@@ -1,0 +1,29 @@
+{
+  "admission": "conditional_fixture",
+  "authority_ref": "ROOT-ADMISSIONS.json#ADM-bd1c5011d2a2c4d9",
+  "case_id": "R11-CTL-admission-namespace-grouped",
+  "grant_payloads": [
+    {
+      "auxiliary_exact_row_coreference": "unestablished",
+      "exact_copy_equivalence": false,
+      "exact_origin_refs": [
+        "S1/turn-1:1",
+        "S1/turn-1:2"
+      ],
+      "guarantee": "Admission-namespace rid is interpreted only within this immutable conditional fixture source scope (root admission ADM-bd1c5011d2a2c4d9); same-origin-only duplicate rule.",
+      "immutable_reference_namespace": "R11-CTL-admission-namespace-grouped/S1/turn-1",
+      "physical_bill_independence": "unestablished",
+      "source_origin_id": "S1/turn-1"
+    }
+  ],
+  "initial_scope_contracts": [
+    {
+      "contract_id": "conditional-admission:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "admission-scope:S1/turn-1",
+      "reference_namespace": "admission",
+      "scope_id": "R11-CTL-admission-namespace-grouped/S1/turn-1"
+    }
+  ],
+  "raw_input_sha256": "161c9e12c09346a019fb9f74f214c96f1c2dd18afaa1a6820316f789a4cad1dc"
+}

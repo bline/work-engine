@@ -211,3 +211,11 @@ Operator directed Pi session 01a1e569-2805-72ff-b837-03d1577c405d (Claude Opus 5
 ## Slice 1b spec-r1 review — 2026-11-16
 
 Fresh Fable xhigh (claude-sdk/claude-fable-5-1, operator substitute for Astra, same-provider, read-only without execution) reviewed commit 2729107 (R8-OWNER-01, R8-SCHEMA-DOMAIN-01): ACCEPT, bounded_repair_credible, P3 only. Root executed verification. Not a rejection; no count change. Earlier interruptions this session (Claude 5-hour limit on oracle, spec and reviewer runs) are infrastructure, not rejections. Root acceptance: /home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice1/ROOT-ACCEPTANCE-SPEC-R1.json.
+
+## Slice 2 (historical findings) review — 2026-11-17
+
+Fresh Fable xhigh (claude-sdk/claude-fable-5-1, operator substitute for Astra, same-provider, executed probes read-only) reviewed join-r2 53e7db7 (oracle-r2 + spec-r2 + join remediation): ACCEPT_WITH_CHANGES, all nine slice-2 findings closed_bounded, OWNER-01/SCHEMA-DOMAIN-01 no regression, bounded_repair_credible. D-1 (P2, inherited): actual consumers do not bind root admissions, so a self-declared admission scope regrouping passes; D-2..D-5 P3. Accept-with-changes on an inherited P2 is not an implementation rejection; no count change. Earlier in slice 2 a root-found join defect (oracle-corrected bundles invalid under Rust evidence; positive control rejected) was caught before review and remediated; recorded as a join integration defect, not an independent rejection. One bounded repair round admitted: slice2/REVIEW-R2-REMEDIATION.md. A recurrence of the same admission-authority gap after this repair escalates per the guard.
+
+## Slice 2 accepted after one bounded repair — 2026-11-17
+
+Retained Fable re-check of remediation 3883d04 closed D-1..D-5 with executed counterexamples: ACCEPT (bounded). The admission-authority gap did not recur. Root acceptance: /home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/ROOT-ACCEPTANCE-SLICE2.json. No rejection count change; all eleven historical findings CLOSED_BOUNDED within the reviewed private subject; full S1 remains OPEN.

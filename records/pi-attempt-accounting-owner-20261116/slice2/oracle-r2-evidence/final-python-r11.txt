@@ -1,0 +1,18 @@
+test_all_175_cases_pass_check_case_with_new_predicates (test_r11_findings.CorpusPositive.test_all_175_cases_pass_check_case_with_new_predicates) ... ok
+test_no_r11_reference_predicate_fires_on_current_bundles (test_r11_findings.CorpusPositive.test_no_r11_reference_predicate_fires_on_current_bundles) ... ok
+test_coherent_700_to_500_rewrite_rejected_for_raw_charge (test_r11_findings.Fin01.test_coherent_700_to_500_rewrite_rejected_for_raw_charge) ... ok
+test_non_pilot_coherent_charge_rewrite_rejected (test_r11_findings.Fin01.test_non_pilot_coherent_charge_rewrite_rejected) ... ok
+test_positive_and_triple_absent_empty_rejected (test_r11_findings.GateIdentity01.test_positive_and_triple_absent_empty_rejected) ... ok
+test_injected_malformed_identity_with_unchanged_favourable_outputs_rejected (test_r11_findings.Identity01.test_injected_malformed_identity_with_unchanged_favourable_outputs_rejected) ... ok
+test_model7_conservative_controls_accepted_and_favourable_outputs_rejected (test_r11_findings.Identity01.test_model7_conservative_controls_accepted_and_favourable_outputs_rejected) ... ok
+test_priced_multiidentity_stays_finite (test_r11_findings.Identity01.test_priced_multiidentity_stays_finite) ... ok
+test_jointly_omitted_U_rejected_and_candidate_seed_rejected (test_r11_findings.LowInventory01.test_jointly_omitted_U_rejected_and_candidate_seed_rejected) ... ok
+test_dollar_ticket_on_admission_origins_rejected_even_when_bundle_agrees (test_r11_findings.Namespace01.test_dollar_ticket_on_admission_origins_rejected_even_when_bundle_agrees) ... ok
+test_origin_base_split_and_private_admission_control (test_r11_findings.Namespace01.test_origin_base_split_and_private_admission_control) ... ok
+test_raw_straddle_and_before_window (test_r11_findings.Placement01.test_raw_straddle_and_before_window) ... ok
+test_two_byte_distinct_equal_reservations_cannot_be_unique (test_r11_findings.Reservation01.test_two_byte_distinct_equal_reservations_cannot_be_unique) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 10.096s
+
+OK

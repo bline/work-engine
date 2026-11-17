@@ -6,13 +6,15 @@ updated on 2026-11-16.
 `s1/` started as the exact 967-file subject accepted for the selected
 eleven-admission pilot and governing-premise repairs (manifest `5e594cac`). On
 2026-11-16 it received the bounded-accepted spec change for R8-OWNER-01 and
-R8-SCHEMA-DOMAIN-01; see the
+R8-SCHEMA-DOMAIN-01, and on 2026-11-17 the bounded-accepted fixes for the other nine
+historical findings (all eleven are now closed within the reviewed private subject, with
+recorded limits); see the
 [owner continuation record](../../records/pi-attempt-accounting-owner-20261116/README.md). It is a standalone
 snapshot containing the contract, corpus, oracle, specification, tooling,
 Python validator and independent Rust consumer.
 
-Full 175-case/374-scope financial qualification, all eleven historical findings,
-and complete current A/B/C review remain open. The snapshot is not qualified
+Full 175-case/374-scope financial qualification and complete current A/B/C
+review remain open. The snapshot is not qualified
 for production or S2a. Copying it into this repository does not establish that
 historical absolute paths or manifest-root checks work at this location.
 

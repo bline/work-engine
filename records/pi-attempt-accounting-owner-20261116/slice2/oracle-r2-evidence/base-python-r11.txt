@@ -1,0 +1,20 @@
+FAIL: test_coherent_700_to_500_rewrite_rejected_for_raw_charge (test_r11_findings.Fin01.test_coherent_700_to_500_rewrite_rejected_for_raw_charge)
+AssertionError: [] is not true : ['P9-claimed-charge-above-reservation: R9 P9 raw retained charge700M violated', 'P9-claimed-charge-above-reservation: R9 P9 raw rollup/commitment700M/300M violated']
+FAIL: test_non_pilot_coherent_charge_rewrite_rejected (test_r11_findings.Fin01.test_non_pilot_coherent_charge_rewrite_rejected)
+AssertionError: [] is not true : []
+FAIL: test_positive_and_triple_absent_empty_rejected (test_r11_findings.GateIdentity01.test_positive_and_triple_absent_empty_rejected)
+AssertionError: True is not false : None
+FAIL: test_injected_malformed_identity_with_unchanged_favourable_outputs_rejected (test_r11_findings.Identity01.test_injected_malformed_identity_with_unchanged_favourable_outputs_rejected)
+AssertionError: [] is not true : ''
+FAIL: test_model7_conservative_controls_accepted_and_favourable_outputs_rejected (test_r11_findings.Identity01.test_model7_conservative_controls_accepted_and_favourable_outputs_rejected)
+AssertionError: [] is not true : model7-VC01-openai-usage-settlement
+FAIL: test_jointly_omitted_U_rejected_and_candidate_seed_rejected (test_r11_findings.LowInventory01.test_jointly_omitted_U_rejected_and_candidate_seed_rejected)
+AssertionError: [] is not true : ('P130-R08-admissions-without-tree-still-block', 'default/o/owned_closed', 'omit', ['P130-R08-admissions-without-tree-still-block: R9 missing/duplicate primary membership', 'P130-R08-admi
+FAIL: test_dollar_ticket_on_admission_origins_rejected_even_when_bundle_agrees (test_r11_findings.Namespace01.test_dollar_ticket_on_admission_origins_rejected_even_when_bundle_agrees)
+AssertionError: [] is not true : ('VC08-subscription-measured-request', [])
+FAIL: test_origin_base_split_and_private_admission_control (test_r11_findings.Namespace01.test_origin_base_split_and_private_admission_control)
+AssertionError: Lists differ: [['S1/turn-1:1', 'S1/turn-1:2']] != [['S1/turn-1:1'], ['S1/turn-1:2']]
+FAIL: test_raw_straddle_and_before_window (test_r11_findings.Placement01.test_raw_straddle_and_before_window)
+AssertionError: 0 != 2 : []
+Ran 13 tests in 5.757s
+FAILED (failures=9)

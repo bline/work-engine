@@ -1,0 +1,1584 @@
+{
+ "schema": "pi-accounting-oracle-dossier/1",
+ "case_id": "VC08-subscription-measured-request",
+ "author": {
+  "role": "independent oracle (slice 2a)",
+  "owner_session": "01a1e569-2805-72ff-b837-03d1577c405d"
+ },
+ "standing": "Independently authored finite derivation for slice-2a finding controls; not consumer qualification. R8-NAMESPACE-01 OriginBase truth.",
+ "subject": {
+  "branch": "oracle-r2",
+  "case_file": {
+   "path": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+   "sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494"
+  },
+  "inputs_canonical_sha256": "161c9e12c09346a019fb9f74f214c96f1c2dd18afaa1a6820316f789a4cad1dc"
+ },
+ "policy_refs": [
+  {
+   "policy_id": "BASE",
+   "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/design/PLAN.md",
+   "sha256": "43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61"
+  },
+  {
+   "policy_id": "AMD",
+   "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/PLAN-AMENDMENT.md",
+   "sha256": "c8376f7a94a2ee775a8b117e6424acae457cb86e138f890cf2240fbe2190ce46"
+  },
+  {
+   "policy_id": "CK",
+   "path": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/oracle-r2/spec/ck.json",
+   "sha256": "6dd58aa6f0c098c4e8124723f0113017c4d3bb367d9fe709b02493ec25a661c4"
+  },
+  {
+   "policy_id": "CONTRACT",
+   "path": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/oracle-r2/contract/CONTRACT.md",
+   "sha256": "96122db955a1d8b530e20cdc0a7653ae70c4bb127c7ef83b00d1c3daef7739ae"
+  },
+  {
+   "policy_id": "RD1",
+   "path": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice1/ROOT-DECISIONS-R1.json",
+   "sha256": "d76214ac8e26dd2343e4c8b08bd3f8f66437d89a43dd0be745619896b594e76d"
+  },
+  {
+   "policy_id": "RA",
+   "path": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice1/ROOT-ADMISSIONS.json",
+   "sha256": "1a2f508123cecfd2c0dbb588b68183020f10008861e43ee8f2e99faa83c67586"
+  },
+  {
+   "policy_id": "RATES-OPENAI",
+   "path": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/oracle-r2/oracle/rates/openai_api_rates.json",
+   "sha256": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  }
+ ],
+ "causal_admission": {
+  "top_inventory": [
+   {
+    "key": "ambiguity",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/ambiguity",
+     "byte_start": 17,
+     "byte_end_exclusive": 21,
+     "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+     "presence": "null",
+     "json_type": "null"
+    }
+   },
+   {
+    "key": "case_id",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/case_id",
+     "byte_start": 36,
+     "byte_end_exclusive": 72,
+     "token_sha256": "d94ce349929183754d58c67608f7e073e737e3436f5d94f0124a49c5734381cb",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "class",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/class",
+     "byte_start": 85,
+     "byte_end_exclusive": 101,
+     "token_sha256": "df26b0b61f87cf75159b3e070d3da40f83f3833d7b3c67f064c09203b7b41e7a",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "contract",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/contract",
+     "byte_start": 117,
+     "byte_end_exclusive": 148,
+     "token_sha256": "67f788fb6397af3ef74d42c6baea23eebce8ecf9de0e6e577e02a9c1b644402d",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "controls",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/controls",
+     "byte_start": 164,
+     "byte_end_exclusive": 166,
+     "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "presence": "value",
+     "json_type": "array"
+    }
+   },
+   {
+    "key": "evaluations",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/evaluations",
+     "byte_start": 185,
+     "byte_end_exclusive": 2461,
+     "token_sha256": "8d2043668cff0af7652bd7f30f3f2616c1de9c3b0691b97fa656a9423893defe",
+     "presence": "value",
+     "json_type": "array"
+    }
+   },
+   {
+    "key": "expected",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/expected"
+    }
+   },
+   {
+    "key": "findings",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/findings",
+     "byte_start": 4658,
+     "byte_end_exclusive": 4660,
+     "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "presence": "value",
+     "json_type": "array"
+    }
+   },
+   {
+    "key": "group",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/group",
+     "byte_start": 4673,
+     "byte_end_exclusive": 4677,
+     "token_sha256": "0082d2f84dbf820ee07bc6edbcd8daf8988a4cb9083f4c64826cb93fb7211bc0",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "historical",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/historical"
+    }
+   },
+   {
+    "key": "inputs",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/inputs",
+     "byte_start": 5171,
+     "byte_end_exclusive": 7054,
+     "token_sha256": "6f6d965a17133ff731b74a305c7ce07d45a4454f44893bb9bef4839015308972",
+     "presence": "value",
+     "json_type": "object"
+    }
+   },
+   {
+    "key": "invariants",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/invariants",
+     "byte_start": 7072,
+     "byte_end_exclusive": 7104,
+     "token_sha256": "cc062310d1d476ee1f946767a5de7c91571d5d460a498ff5727dc6ae7fcf6a6c",
+     "presence": "value",
+     "json_type": "array"
+    }
+   },
+   {
+    "key": "notes",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/notes",
+     "byte_start": 7117,
+     "byte_end_exclusive": 7201,
+     "token_sha256": "f6948514aaa1549fdc3663f32ea745d2ed44bfc423b348c801a38d2861b79e46",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "profile",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/profile",
+     "byte_start": 7216,
+     "byte_end_exclusive": 7234,
+     "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "provenance",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/provenance",
+     "byte_start": 7252,
+     "byte_end_exclusive": 7375,
+     "token_sha256": "7f12fc487574ce334eb1028ea34b7bbc5aeadeb76a1ccc008d5ad6884da2fb4d",
+     "presence": "value",
+     "json_type": "object"
+    }
+   },
+   {
+    "key": "rationale",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/rationale"
+    }
+   },
+   {
+    "key": "reachability",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/reachability",
+     "byte_start": 7771,
+     "byte_end_exclusive": 7791,
+     "token_sha256": "79a8504e3358e1b5517e63c84bd2926385b95fa3100cd1cb117ab2c4dd8e0c4a",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "revisions",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions"
+    }
+   },
+   {
+    "key": "revisions_r3",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r3"
+    }
+   },
+   {
+    "key": "revisions_r4",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r4"
+    }
+   },
+   {
+    "key": "revisions_r5",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r5"
+    }
+   },
+   {
+    "key": "revisions_r6",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r6"
+    }
+   },
+   {
+    "key": "revisions_r7",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r7"
+    }
+   },
+   {
+    "key": "revisions_r8",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r8"
+    }
+   },
+   {
+    "key": "role",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/role",
+     "byte_start": 13490,
+     "byte_end_exclusive": 13505,
+     "token_sha256": "8eb07fb42ee3f49e42ef6ae4dd152cec0d398b4b35665783dce104fe1310a41e",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "schema",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/schema",
+     "byte_start": 13519,
+     "byte_end_exclusive": 13543,
+     "token_sha256": "306af7cfa4a45640f62858c9928b68d0884ab7a6457e219d2186b0ea0a835e12",
+     "presence": "value",
+     "json_type": "string"
+    }
+   }
+  ],
+  "trusted_fixture_inputs": {
+   "ref": "case_token",
+   "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+   "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+   "pointer": "/trusted_fixture_inputs",
+   "presence": "absent"
+  },
+  "profile": {
+   "ref": "case_token",
+   "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+   "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+   "pointer": "/profile",
+   "byte_start": 7216,
+   "byte_end_exclusive": 7234,
+   "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "current_producer"
+  },
+  "contract": {
+   "ref": "case_token",
+   "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+   "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+   "pointer": "/contract",
+   "byte_start": 117,
+   "byte_end_exclusive": 148,
+   "token_sha256": "67f788fb6397af3ef74d42c6baea23eebce8ecf9de0e6e577e02a9c1b644402d",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "pi-accounting-contract/1.7-s1"
+  },
+  "schema": {
+   "ref": "case_token",
+   "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+   "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+   "pointer": "/schema",
+   "byte_start": 13519,
+   "byte_end_exclusive": 13543,
+   "token_sha256": "306af7cfa4a45640f62858c9928b68d0884ab7a6457e219d2186b0ea0a835e12",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "pi-accounting-corpus/1"
+  },
+  "role": {
+   "ref": "case_token",
+   "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+   "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+   "pointer": "/role",
+   "byte_start": 13490,
+   "byte_end_exclusive": 13505,
+   "token_sha256": "8eb07fb42ee3f49e42ef6ae4dd152cec0d398b4b35665783dce104fe1310a41e",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "valid_control"
+  },
+  "inputs_canonical_sha256": "161c9e12c09346a019fb9f74f214c96f1c2dd18afaa1a6820316f789a4cad1dc",
+  "log_final_newline": {
+   "S1/turn-1": true
+  },
+  "required_scopes": [
+   "VC08-subscription-measured-request/default/o/owned_closed",
+   "VC08-subscription-measured-request/default/o/owned_outstanding"
+  ],
+  "additional_channels": []
+ },
+ "origins": [
+  {
+   "origin_id": "S1/turn-1:1",
+   "source_origin_id": "S1/turn-1",
+   "original_position": 1,
+   "source_ref": {
+    "ref": "raw_line",
+    "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+    "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+    "origin_id": "S1/turn-1:1",
+    "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+    "byte_start": 5996,
+    "byte_end_exclusive": 6126,
+    "token_sha256": "1ff755a5967970b4d6fe4827cb664a0dc022aaa9cbd3ed2b8593e58b4c575b19",
+    "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+    "raw_utf8_length": 112
+   },
+   "parse_state": "object",
+   "field_states": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:00Z",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "subscription_proxy_admitted",
+     "presence": "value"
+    },
+    "/model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/rid": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    }
+   }
+  },
+  {
+   "origin_id": "S1/turn-1:2",
+   "source_origin_id": "S1/turn-1",
+   "original_position": 2,
+   "source_ref": {
+    "ref": "raw_line",
+    "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+    "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+    "origin_id": "S1/turn-1:2",
+    "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+    "byte_start": 6142,
+    "byte_end_exclusive": 6938,
+    "token_sha256": "57fc6ca5a9073dc928c9f03b48fe9e78b439ff6bfacdcf5b54efa9cef682b6fe",
+    "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+    "raw_utf8_length": 704
+   },
+   "parse_state": "object",
+   "field_states": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:02Z",
+     "presence": "value"
+    },
+    "/auth_lane": {
+     "json_type": "string",
+     "lexeme": "subscription",
+     "presence": "value"
+    },
+    "/billing": {
+     "json_type": "string",
+     "lexeme": "unknown",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "request",
+     "presence": "value"
+    },
+    "/http_status": {
+     "json_type": "number",
+     "lexeme": "200",
+     "presence": "value"
+    },
+    "/model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/observed_tier": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/provider": {
+     "json_type": "string",
+     "lexeme": "openai-codex",
+     "presence": "value"
+    },
+    "/quota": {
+     "json_type": "string",
+     "lexeme": "unknown",
+     "presence": "value"
+    },
+    "/requested_tier": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/response_id": {
+     "json_type": "string",
+     "lexeme": "resp_s1",
+     "presence": "value"
+    },
+    "/response_model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/seconds": {
+     "json_type": "number",
+     "lexeme": "1.0",
+     "presence": "value"
+    },
+    "/subscription_proxy": {
+     "json_type": "object",
+     "members": [
+      "rid",
+      "status",
+      "cost_proxy_usd",
+      "valuation_basis",
+      "reason",
+      "measurement",
+      "billing",
+      "quota"
+     ],
+     "presence": "value"
+    },
+    "/subscription_proxy/billing": {
+     "json_type": "string",
+     "lexeme": "unknown",
+     "presence": "value"
+    },
+    "/subscription_proxy/cost_proxy_usd": {
+     "json_type": "number",
+     "lexeme": "0.015",
+     "presence": "value"
+    },
+    "/subscription_proxy/measurement": {
+     "json_type": "string",
+     "lexeme": "api_equivalent_cost_proxy",
+     "presence": "value"
+    },
+    "/subscription_proxy/quota": {
+     "json_type": "string",
+     "lexeme": "unknown",
+     "presence": "value"
+    },
+    "/subscription_proxy/reason": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/subscription_proxy/rid": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/subscription_proxy/status": {
+     "json_type": "string",
+     "lexeme": "valued",
+     "presence": "value"
+    },
+    "/subscription_proxy/valuation_basis": {
+     "json_type": "string",
+     "lexeme": "reported_cache_usage",
+     "presence": "value"
+    },
+    "/terminal": {
+     "json_type": "string",
+     "lexeme": "response.completed",
+     "presence": "value"
+    },
+    "/usage": {
+     "json_type": "object",
+     "members": [
+      "input_tokens",
+      "output_tokens",
+      "cached_tokens",
+      "cache_write_tokens",
+      "reasoning_tokens"
+     ],
+     "presence": "value"
+    },
+    "/usage/cache_write_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usage/cached_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usage/input_tokens": {
+     "json_type": "number",
+     "lexeme": "1000",
+     "presence": "value"
+    },
+    "/usage/output_tokens": {
+     "json_type": "number",
+     "lexeme": "100",
+     "presence": "value"
+    },
+    "/usage/reasoning_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    }
+   }
+  }
+ ],
+ "premises": [
+  {
+   "premise_id": "Q-NAMESPACE",
+   "kind": "policy_clause",
+   "statement": "ROOT-DECISIONS-R1 Q-NAMESPACE: no admission-namespace scope is admitted for these historical cases; the not-admitted branch is nominal (root reply 2026-11-16: OriginBase split).",
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "source_refs": [
+    {
+     "ref": "root_admission",
+     "record": "ROOT-DECISIONS-R1.json",
+     "entry_id": "Q-NAMESPACE"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "RD1",
+     "section": "Q-NAMESPACE"
+    },
+    {
+     "policy_id": "BASE",
+     "section": "\u00a73"
+    }
+   ]
+  }
+ ],
+ "claims": [
+  {
+   "claim_id": "VC08/E1",
+   "family": "raw_E_identity_cardinality",
+   "subject": {
+    "origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_line",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "origin_id": "S1/turn-1:1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+     "byte_start": 5996,
+     "byte_end_exclusive": 6126,
+     "token_sha256": "1ff755a5967970b4d6fe4827cb664a0dc022aaa9cbd3ed2b8593e58b4c575b19",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "raw_utf8_length": 112
+    },
+    {
+     "ref": "raw_line",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "origin_id": "S1/turn-1:2",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+     "byte_start": 6142,
+     "byte_end_exclusive": 6938,
+     "token_sha256": "57fc6ca5a9073dc928c9f03b48fe9e78b439ff6bfacdcf5b54efa9cef682b6fe",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "raw_utf8_length": 704
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "field": "/event",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "subscription_proxy_admitted"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/event",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "request"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/usd",
+     "presence": "absent"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "EVIDENCE E-1, E-2"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "vc08"
+   },
+   "expected": {
+    "variant": "RawOriginInventory",
+    "origin_count": 2,
+    "origins": [
+     {
+      "origin_id": "S1/turn-1:1",
+      "original_position": 1,
+      "evidence_kind": "Admission",
+      "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac"
+     },
+     {
+      "origin_id": "S1/turn-1:2",
+      "original_position": 2,
+      "evidence_kind": "Request/UpstreamError (subscription-labelled)",
+      "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c"
+     }
+    ],
+    "unreadable": [],
+    "non_attempt": [],
+    "final_newline": true
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "VC08/NS1",
+   "family": "namespace_grants",
+   "subject": {
+    "origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "field": "/rid",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "1"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/subscription_proxy/rid",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "1"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/usd",
+     "presence": "absent"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "BASE",
+     "section": "\u00a73"
+    },
+    {
+     "policy_id": "AMD",
+     "section": "\u00a73 NAMESPACE-APPLICATION"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "vc08"
+   },
+   "expected": {
+    "variant": "RawReferenceNamespace",
+    "per_origin": {
+     "S1/turn-1:1": {
+      "namespace": "admission",
+      "rid": "1"
+     },
+     "S1/turn-1:2": {
+      "namespace": "admission",
+      "rid": "1",
+      "via": "subscription_proxy.rid"
+     }
+    },
+    "dollar_ticket_origins": []
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "corrected input proof: one unestablished initial contract (no grant, no scope), OriginBase per origin (join remediation)"
+    ],
+    "negative": [
+     {
+      "mutation": "re-declare dollar_ticket contract with matching grant/refs",
+      "intended_predicate": "R8-NAMESPACE-01 namespace_application"
+     }
+    ]
+   },
+   "findings": [
+    {
+     "finding_id": "R8-NAMESPACE-01",
+     "relation": "direct"
+    }
+   ]
+  },
+  {
+   "claim_id": "VC08/NS2",
+   "family": "namespace_grants",
+   "subject": {
+    "historical_declared_contract": "conditional-ticket:S1/turn-1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_line",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "origin_id": "S1/turn-1:1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+     "byte_start": 5996,
+     "byte_end_exclusive": 6126,
+     "token_sha256": "1ff755a5967970b4d6fe4827cb664a0dc022aaa9cbd3ed2b8593e58b4c575b19",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "raw_utf8_length": 112
+    },
+    {
+     "ref": "raw_line",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "origin_id": "S1/turn-1:2",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+     "byte_start": 6142,
+     "byte_end_exclusive": 6938,
+     "token_sha256": "57fc6ca5a9073dc928c9f03b48fe9e78b439ff6bfacdcf5b54efa9cef682b6fe",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "raw_utf8_length": 704
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "INITIAL-REFERENCE rev2"
+    },
+    {
+     "policy_id": "AMD",
+     "section": "\u00a73 NAMESPACE-APPLICATION"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "vc08"
+   },
+   "expected": {
+    "variant": "DeclaredPayloadRawConsistency",
+    "declared": {
+     "reference_namespace": "dollar_ticket",
+     "covered_origin_refs": [
+      "S1/turn-1:1",
+      "S1/turn-1:2"
+     ]
+    },
+    "raw_consistent": false,
+    "mismatches": [
+     "declared dollar_ticket vs raw admission-namespace references"
+    ],
+    "establishes_admission": false,
+    "disposition": "withdrawn from supplied outputs (r11 revision)"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": [
+    {
+     "finding_id": "R8-NAMESPACE-01",
+     "relation": "direct"
+    }
+   ]
+  },
+  {
+   "claim_id": "VC08/NS3",
+   "family": "namespace_grants",
+   "subject": {
+    "source": "S1/turn-1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "Q-NAMESPACE"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "RD1",
+     "section": "Q-NAMESPACE"
+    },
+    {
+     "policy_id": "BASE",
+     "section": "\u00a73 unestablished scope => OriginBase"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "vc08"
+   },
+   "expected": {
+    "variant": "NamespaceApplication",
+    "initial_base": [
+     {
+      "kind": "OriginBase",
+      "origins": [
+       "S1/turn-1:1"
+      ]
+     },
+     {
+      "kind": "OriginBase",
+      "origins": [
+       "S1/turn-1:2"
+      ]
+     }
+    ],
+    "atomize": false,
+    "break_copies": false,
+    "hold_units": [
+     [
+      "S1/turn-1:1"
+     ],
+     [
+      "S1/turn-1:2"
+     ]
+    ]
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": [
+    {
+     "finding_id": "R8-NAMESPACE-01",
+     "relation": "direct"
+    }
+   ],
+   "note": "Grouped single-unit form exists only in the private conditional control oracle/r11-controls/admission-namespace under a root-admitted declaration."
+  },
+  {
+   "claim_id": "VC08/PM2",
+   "family": "primary_membership_validity_exact_F",
+   "subject": {
+    "units": [
+     "adm:S1/turn-1:rid=1",
+     "row:S1/turn-1:line=2"
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "VC08/NS3",
+    {
+     "ref": "raw_line",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "origin_id": "S1/turn-1:1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+     "byte_start": 5996,
+     "byte_end_exclusive": 6126,
+     "token_sha256": "1ff755a5967970b4d6fe4827cb664a0dc022aaa9cbd3ed2b8593e58b4c575b19",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "raw_utf8_length": 112
+    },
+    {
+     "ref": "raw_line",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "origin_id": "S1/turn-1:2",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+     "byte_start": 6142,
+     "byte_end_exclusive": 6938,
+     "token_sha256": "57fc6ca5a9073dc928c9f03b48fe9e78b439ff6bfacdcf5b54efa9cef682b6fe",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "raw_utf8_length": 704
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "TEMPORAL-AND-FINALIZATION \u00a76.1-6.2"
+    },
+    {
+     "policy_id": "CK",
+     "section": "C-KEY-5"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "vc08"
+   },
+   "expected": {
+    "variant": "PrimaryCoverage",
+    "dollar_primary_obligations": [],
+    "units": {
+     "adm:S1/turn-1:rid=1": {
+      "origins": [
+       "S1/turn-1:1"
+      ],
+      "execution": "not_terminal",
+      "forwarding": "unknown",
+      "settlement_validity": "not_applicable",
+      "obligation": {
+       "state": "none",
+       "cause": "subscription",
+       "amount_source": "none"
+      },
+      "replacement": {
+       "eligible": false,
+       "reason": "NoReservation"
+      }
+     },
+     "row:S1/turn-1:line=2": {
+      "execution": "terminal",
+      "forwarding": "forwarded",
+      "settlement_validity": "not_applicable",
+      "obligation": {
+       "state": "none",
+       "cause": "subscription",
+       "amount_source": "none"
+      },
+      "replacement": {
+       "eligible": false,
+       "reason": "NoReservation"
+      },
+      "origins": [
+       "S1/turn-1:2"
+      ]
+     }
+    },
+    "accepted_coverage": [],
+    "definite_links": []
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": [
+    {
+     "finding_id": "R8-NAMESPACE-01",
+     "relation": "direct"
+    }
+   ]
+  },
+  {
+   "claim_id": "VC08/VA2",
+   "family": "valuation_retained_amounts",
+   "subject": {
+    "units": [
+     "adm:S1/turn-1:rid=1",
+     "row:S1/turn-1:line=2"
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/usd",
+     "presence": "absent"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "field": "/reserved_usd",
+     "presence": "absent"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "X-DECISION X-BRANCH-017"
+    },
+    {
+     "policy_id": "CK",
+     "section": "INV-F9"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "vc08"
+   },
+   "expected": {
+    "variant": "RetainedComponents",
+    "components": [],
+    "exposure": {
+     "adm:S1/turn-1:rid=1": {
+      "pool": "codex",
+      "billing": "unknown"
+     },
+     "row:S1/turn-1:line=2": {
+      "pool": "codex",
+      "billing": "unknown"
+     }
+    }
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": [],
+   "note": "clean subscription lane on both origins"
+  },
+  {
+   "claim_id": "VC08/T2",
+   "family": "T_ownership_candidates_lifecycle_placement",
+   "subject": {
+    "units": [
+     "adm:S1/turn-1:rid=1",
+     "row:S1/turn-1:line=2"
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/evaluations/0/objectives/0/admissions",
+     "byte_start": 2169,
+     "byte_end_exclusive": 2171,
+     "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "presence": "value",
+     "json_type": "array"
+    },
+    {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/evaluations/0/objectives/0/tree_sessions/0",
+     "byte_start": 2383,
+     "byte_end_exclusive": 2421,
+     "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "00000000-0000-4000-8000-0000000000c1"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a711.1 O-5, O-6, O-7"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "vc08"
+   },
+   "expected": {
+    "variant": "Ownership",
+    "per_unit": {
+     "adm:S1/turn-1:rid=1": {
+      "ownership": "unadmitted",
+      "candidates": [
+       "o"
+      ]
+     },
+     "row:S1/turn-1:line=2": {
+      "ownership": "unadmitted",
+      "candidates": [
+       "o"
+      ]
+     }
+    }
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "VC08/G2",
+   "family": "gate_commitment_provisionality",
+   "subject": {
+    "evaluation": "default",
+    "objective": "o"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "VC08/T2",
+    "VC08/VA2",
+    {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/evaluations/0/admission_request/new",
+     "byte_start": 237,
+     "byte_end_exclusive": 248,
+     "token_sha256": "490cf7575da10dc49f2b973c322411b18ff6b65018411050f5288306f8db8207",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "100000000"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a712.1, \u00a712.4"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "vc08"
+   },
+   "expected": {
+    "variant": "ObjectiveStandingAndAdmission",
+    "objective": "o",
+    "status": "established",
+    "reasons": [],
+    "provisional": false,
+    "commitments": [],
+    "admission": {
+     "decision": "admitted",
+     "known": "100000000"
+    },
+    "invariant": "unchanged by the OriginBase split (money identical in both branches)"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "VC08/CO1",
+   "family": "finite_continuity_order",
+   "subject": {
+    "case": "VC08-subscription-measured-request"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "2cb0a7c4af1daf372fe49b9ce42c826e271f4a317ab77ded207044f3a66f8494",
+     "pointer": "/evaluations",
+     "byte_start": 185,
+     "byte_end_exclusive": 2461,
+     "token_sha256": "8d2043668cff0af7652bd7f30f3f2616c1de9c3b0691b97fa656a9423893defe",
+     "presence": "value",
+     "json_type": "array"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "CONTINUITY rev1"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "vc08"
+   },
+   "expected": {
+    "variant": "FiniteContinuity",
+    "continuity_applicable": false,
+    "reason": "no predecessor accounting subject",
+    "cross_evaluation_equalities": []
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": []
+  }
+ ],
+ "family_status": {
+  "raw_E_identity_cardinality": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "VC08/E1"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "namespace_grants": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "VC08/NS1",
+    "VC08/NS2",
+    "VC08/NS3"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "primary_membership_validity_exact_F": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "VC08/PM2"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "valuation_retained_amounts": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "VC08/VA2"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "T_ownership_candidates_lifecycle_placement": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "VC08/T2"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "gate_commitment_provisionality": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "VC08/G2"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "finite_continuity_order": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "VC08/CO1"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  }
+ },
+ "scope_lows": [
+  {
+   "scope_id": "VC08-subscription-measured-request/default/o/owned_closed",
+   "evaluation": "default",
+   "objective": "o",
+   "label": "owned_closed",
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "VC08/T2"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "SUPPORTED-LOW"
+    },
+    {
+     "policy_id": "BASE",
+     "section": "\u00a75"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "vc08"
+   },
+   "expected_low": {
+    "owned_unit_origin_sets": [],
+    "U": [],
+    "seed": [],
+    "slots": [],
+    "single_floor": {
+     "nano": "0"
+    },
+    "independent_floor": {
+     "nano": "0"
+    },
+    "credits": [],
+    "selected_low": {
+     "nano": "0"
+    },
+    "credit_mode": "none",
+    "basis": "none"
+   },
+   "high": {
+    "status": {
+     "kind": "DerivedNominal"
+    },
+    "expected": {
+     "kind": "exact",
+     "nano": "0",
+     "basis_histogram": {}
+    }
+   },
+   "consequence_if_admitted": null,
+   "note": "no owned unit; the PiApi candidate (if any) has no usage observation"
+  },
+  {
+   "scope_id": "VC08-subscription-measured-request/default/o/owned_outstanding",
+   "evaluation": "default",
+   "objective": "o",
+   "label": "owned_outstanding",
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "VC08/T2"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "SUPPORTED-LOW"
+    },
+    {
+     "policy_id": "BASE",
+     "section": "\u00a75"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "vc08"
+   },
+   "expected_low": {
+    "owned_unit_origin_sets": [],
+    "U": [],
+    "seed": [],
+    "slots": [],
+    "single_floor": {
+     "nano": "0"
+    },
+    "independent_floor": {
+     "nano": "0"
+    },
+    "credits": [],
+    "selected_low": {
+     "nano": "0"
+    },
+    "credit_mode": "none",
+    "basis": "none"
+   },
+   "high": {
+    "status": {
+     "kind": "DerivedNominal"
+    },
+    "expected": {
+     "kind": "exact",
+     "nano": "0",
+     "basis_histogram": {}
+    }
+   },
+   "consequence_if_admitted": null,
+   "note": "no owned unit; the PiApi candidate (if any) has no usage observation"
+  }
+ ],
+ "excluded_channels": [
+  {
+   "channel": "K attempt finding codes",
+   "reason": "not one of the seven families"
+  }
+ ],
+ "reuse": []
+}

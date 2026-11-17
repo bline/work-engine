@@ -1,0 +1,38 @@
+{
+ "schema": "pi-accounting-raw-namespace-rules/1",
+ "finding": "R8-NAMESPACE-01",
+ "review": "review-r2 D-4",
+ "standing": "single raw-namespace rule table shared by Python raw_reference_namespace, independent Rust r11_raw_namespace and spec namespace.rs classify",
+ "rules": [
+  {
+   "id": "D1",
+   "when": "event == \"usd_reserved\" and the row object has a \"rid\" member (any value)",
+   "class": "dollar_ticket"
+  },
+  {
+   "id": "D2",
+   "when": "the row has a \"usd\" object with a \"rid\" member (settlement rows)",
+   "class": "dollar_ticket"
+  },
+  {
+   "id": "A1",
+   "when": "event == \"subscription_proxy_admitted\" and the row object has a \"rid\" member",
+   "class": "admission"
+  },
+  {
+   "id": "A2",
+   "when": "the row has a \"subscription_proxy\" object with a \"rid\" member",
+   "class": "admission"
+  },
+  {
+   "id": "X",
+   "when": "any D rule and any A rule both hold",
+   "class": "conflict"
+  },
+  {
+   "id": "N",
+   "when": "no rule holds (including rid-less admission rows, non-objects and unreadable lines)",
+   "class": null
+  }
+ ]
+}

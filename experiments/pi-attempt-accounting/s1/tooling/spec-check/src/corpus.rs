@@ -23,11 +23,11 @@ fn set(v: &Value, k: &str) -> Result<BTreeSet<String>> {
         .map(|v| v.as_str().map(str::to_owned).ok_or("non-string ref".into()))
         .collect()
 }
-fn hash(bytes: &[u8]) -> String {
+pub(crate) fn hash(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 // Python's established digest convention uses ensure_ascii=True.
-fn canonical(v: &Value) -> Result<String> {
+pub(crate) fn canonical(v: &Value) -> Result<String> {
     let s = serde_json::to_string(v).map_err(|e| e.to_string())?;
     let mut out = String::new();
     for c in s.chars() {

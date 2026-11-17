@@ -1,0 +1,161 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running unittests src/lib.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/join-r2-target/debug/deps/pi_accounting_spec_check-4a4e4ae09ee1651c)
+
+running 26 tests
+test namespace::tests::a_base_cannot_group_rows_of_two_reference_namespaces ... ok
+test namespace::tests::a_row_with_both_reference_kinds_accepts_no_namespace_declaration ... ok
+test namespace::tests::dollar_declaration_over_admission_rows_is_rejected_even_when_everything_agrees ... ok
+test namespace::tests::raw_rows_classify_by_their_own_reference ... ok
+test numbers::tests::classifies_exactly ... ok
+test namespace::tests::origin_bytes_must_match_the_bound_raw_row_and_unbound_sources_are_not_judged ... ok
+test numbers::tests::exact_parser_matches_serde_json_on_every_non_numeric_construct ... ok
+test numbers::tests::u64_frontier_is_exact_without_float_rounding ... ok
+test namespace::tests::separately_declared_admission_namespace_and_unreferenced_rows_are_accepted ... ok
+test numbers::tests::stand_ins_keep_equality_and_distinctness_exact ... ok
+test tests::all_declared_projection_cases_validate ... ok
+test decisions::controls::financial_provisionality_source_and_finalization ... ok
+test tests::guard_gap_and_overlap ... ok
+test tests::stale_dependency_ack_without_revision_bump ... ok
+test tests::illegal_s_reads_v_and_classification_money ... ok
+test tests::missing_constructor_field ... ok
+test decisions::controls::branch_gaps_overlap_and_unavailable_money ... ok
+test decisions::controls::total_projection_controls ... ok
+test generation_controls::unknown_symbol_reference_and_stale_interface_fail ... ok
+test decisions::controls::retention_and_positive_lawful_branches ... ok
+test tests::fixed_schema_and_partitions ... ok
+test decisions::controls::causal_direction_and_named_type_invalidation ... ok
+test namespace::tests::classifier_reproduces_the_shared_census_over_every_corpus_row ... ok
+test generation_controls::hand_edited_generated_error_formula_is_detected_without_rewriting ... ok
+test tests::stale_formula_and_idempotence ... ok
+test generation_controls::each_canonical_node_revision_invalidates_generated_identity ... ok
+
+test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.20s
+
+     Running unittests src/main.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/join-r2-target/debug/deps/pi_accounting_spec_check-12b41431c9ebe762)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/c_owner_domains.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/join-r2-target/debug/deps/c_owner_domains-0ceae1f91c7d1f7f)
+
+running 12 tests
+test u64_constructor_fields_use_exact_checked_conversion ... ok
+test c_owns_validity_exact_counterexample_in_v_is_rejected ... ok
+test a_type_carrying_a_c_decision_is_c_owned_too ... ok
+test nano_string_domain_is_i128_max_in_wire_and_evidence_and_constructors ... ok
+test s_forwarding_of_the_c_reference_still_passes_and_is_typed ... ok
+test only_c_may_declare_the_settlement_validity_output ... ok
+test values_from_the_standard_parser_are_read_at_face_value_and_never_panic ... ok
+test free_form_unique_items_decide_on_exact_values_not_collapsed_stand_ins ... ok
+test origin_position_domain_is_exactly_zero_to_u64_max_without_panic ... ok
+test exact_parser_agrees_with_serde_json_on_every_repository_json_file ... ok
+test revision_domain_is_exactly_one_to_u32_max_in_schema_and_rust ... ok
+test every_non_c_rule_and_every_variant_is_rejected_while_c_passes ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.61s
+
+     Running tests/coverage_r2.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/join-r2-target/debug/deps/coverage_r2-27ff76a3d35e4284)
+
+running 8 tests
+test exact_unbudgeted_positive_survives ... ok
+test an_anchor_cannot_be_smuggled_in_as_a_monetary_origin ... ok
+test partial_and_overlapping_coverage_are_rejected ... ok
+test valuation_usage_and_completion_must_name_the_covered_request ... ok
+test self_and_rewritten_links_are_rejected ... ok
+test anchor_release_needs_the_covered_request_link ... ok
+test a_hold_is_released_only_by_an_accepted_coverage_into_its_successor ... ok
+test a_multi_origin_base_needs_a_scope_a_link_or_an_identity_binding ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
+
+     Running tests/independent_r8_controls.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/join-r2-target/debug/deps/independent_r8_controls-51da13cf430c7b6d)
+
+running 2 tests
+test raw_supported_local_lows_survive_invalid_settlement ... ok
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.091s
+
+OK
+....
+----------------------------------------------------------------------
+Ran 4 tests in 3.231s
+
+OK
+test actual_python_entrypoints_and_finite_literals ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.51s
+
+     Running tests/independent_raw_axes.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/join-r2-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648)
+
+running 18 tests
+test policy_edge_controls ... ok
+test r7_anthropic_completeness_negative_witnesses ... ok
+test independent_writer_positive_controls ... ok
+test r11_gate_identity_triple_nonempty ... ok
+test r11_identity_malformed_cannot_be_favourable ... ok
+test r9_priced_multiidentity_and_reservation_evidence_controls ... ok
+test r7_semantically_wrong_consistent_outputs_are_rejected ... ok
+test historical_findings_have_independent_controls ... ok
+test r11_raw_namespace_census_agreement ... ok
+test r9_registered_actual_subject_qualification ... ok
+test r7_financial_provisionality_and_semantic_mutants ... ok
+test r11_placement_from_raw_interval ... ok
+test r11_fin_retained_raw_charge ... ok
+test r11_namespace_application ... ok
+test r11_low_inventory_keeps_candidates ... ok
+test frozen_raw_coverage_and_independent_arithmetic ... ok
+test r9_consistent_wrong_actual_subjects_rejected ... ok
+test r10_exact_applicability_and_registration_mutants ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.46s
+
+     Running tests/r9_spec_applicability.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/join-r2-target/debug/deps/r9_spec_applicability-7d28dcad672fbafd)
+
+running 7 tests
+test export_cli_subjects_when_requested ... ok
+test unlinked_anchor_and_genuine_unbudgeted_remain_distinct ... ok
+test primary_exact_copy_is_admitted_evidence_not_value_equality ... ok
+test exact_positive_and_witness_application ... ok
+test changed_applicability_clauses_invalidate_actual_registered_consumers ... ok
+test exact_links_and_shared_grant_pair_application ... ok
+test typed_retained_components_have_exact_active_owners ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+
+     Running tests/r9_spec_payloads.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/join-r2-target/debug/deps/r9_spec_payloads-5c2dcd170a773e14)
+
+running 6 tests
+test export_payload_cli_subjects_when_requested ... ok
+test resolution_rejects_missing_ambiguous_or_unknown_payloads ... ok
+test gated_derivation_fragment_and_endpoint_inventory_are_exact ... ok
+test conditional_pair_binds_endpoint_bytes_not_only_ids ... ok
+test referenced_subject_scope_fragment_and_inventory_are_exact ... ok
+test all_selected_supplied_payloads_are_coherent ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.52s
+
+     Running tests/structural_r8.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/join-r2-target/debug/deps/structural_r8-e6bab57c54821d38)
+
+running 11 tests
+test actual_wire_flattening_and_amount_strings ... ok
+test s_cannot_construct_or_replace_validity ... ok
+test standard_schema_distinguishes_stage_boundary ... ok
+test physical_credit_keeps_every_ambiguous_alternative ... ok
+test exact_grant_kinds_and_scopes_are_not_interchangeable ... ok
+test unbudgeted_completion_uses_computed_applicability_not_expected_authority ... ok
+test whole_coverage_rejects_partial_ownership_and_invalid_witness ... ok
+test evidence_shapes_and_exact_kinds ... ok
+test exact_ownership_and_refinement_negatives ... ok
+test continuity_rejects_rewritten_origin_and_initial_contract ... ok
+test semantic_changes_invalidate_actual_consumers ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.57s
+
+   Doc-tests pi_accounting_spec_check
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
