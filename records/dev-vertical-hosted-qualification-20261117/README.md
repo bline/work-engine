@@ -258,6 +258,35 @@ manual-host integration tests including `tests/lifecycle.rs` (50) and
 `work-engine-server` `preparation`, `coding_job` and `job::` tests. The broad
 workspace regression is recorded separately.
 
+## Broad regression
+
+`cargo test --workspace --no-fail-fast` at `cab80a3a` (run r2, log
+`~/.local/state/work-engine/dev-vertical-regression-20261117/r2.log`, 54 min):
+1 940 passed, 141 failed. Attribution:
+
+- **This vertical's crates** (`work-engine-manual-host`, `pi-pressure-context-host`,
+  `work-engine-server`): two failures, both reruns pass.
+  `tests/lifecycle.rs` `mutation_during_snapshot_collection_is_a_conflict` is the
+  known load-sensitive timing control (50/50 on rerun). `coding_job`
+  `server_stop_…` failed because `session_events.py`, which the server pins by
+  digest, was briefly edited during the run (reverted; 5/5 on rerun at
+  `7c103ad2`).
+- **Other crates** (no file changed by this vertical): reran each failing suite
+  with `TMPDIR` pinned (`r2-rerun-tmpdir.log`). `claim-evidence`,
+  `lifecycle-service` and `review-execution-evidence` `claude_custody`/
+  `claude_guarded` then pass. The rest need fixtures or environment absent here
+  (persistent W1 test root, `S8_INSTALLED_HOST`, frozen native binaries,
+  issued unit-gate packets, the slice-checkpoint analyzer binding) or are the
+  inherited `ProgramDrift` CBM-pin failures. A baseline at `4ceb14ff` (before
+  this work, `baseline-4ceb14ff.log`) fails the same way in
+  `workspace-publication` (9), `lifecycle-admin` `recovery` (1),
+  `research-register` `bounded_read` (1) and `bounded-inference` (8, a varying
+  set across runs: 8, 10 and 13 failures in three runs).
+
+So no regression is attributed to this vertical, and no fully green broad gate
+is claimed: the inherited environment-dependent and flaky suites still need
+their own owners' fixtures or dispositions.
+
 ## Not exercised
 
 - Pre-dispatch cancel ending `NotDispatched` (unit-tested only).
