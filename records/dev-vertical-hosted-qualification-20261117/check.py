@@ -9,8 +9,9 @@ from pathlib import Path
 
 root, subject = Path(sys.argv[1]), sys.argv[2]
 RESERVE = 164001
-FAULTS = ['truncate', 'midstream-failed', 'late-close-long', 'trailing', 'stall-head', 'stall-body']
-ORDER = ['ok', 'late-close-short', 'refuse-all', 'primary-500', *FAULTS, 'crash', 'cancel', 'cancel-head']
+FAULTS = ['truncate', 'midstream-failed', 'trailing-data', 'stall-head', 'stall-body']
+COMPLETES = ['ok', 'late-close-short', 'late-close-long', 'trailing']
+ORDER = [*COMPLETES, 'refuse-all', 'primary-500', *FAULTS, 'crash', 'cancel', 'cancel-head']
 
 
 def attempts(s, req='1'):
@@ -52,7 +53,18 @@ def check(name, s, st):
                 p = root / name / 'state' / f"coding-hosted-{[k for k, v in s['ledger'].items() if v is r][0]}-{a['attempt']}.stream.sse"
                 expect(f"attempt {a['attempt']} relay bytes match digest",
                        p.exists() and hashlib.sha256(p.read_bytes()).hexdigest() == a['relay_sha256'])
-    if name in ('ok', 'late-close-short'):
+    if name in COMPLETES:
+        st_attempts = st['coding']['provider_requests']['1']['attempts']
+        if name in ('late-close-long', 'trailing'):
+            # K-a (operator decision 2026-11-17): settled on the terminal event.
+            expect('settled on terminal event, framed end not observed',
+                   st_attempts[-1].get('framed_end_observed') is False
+                   and 'framed end not observed' in (st_attempts[-1].get('reason') or ''))
+        else:
+            expect('framed end observed', st_attempts[-1].get('framed_end_observed') is True)
+        if name == 'trailing':
+            p = run / 'state' / 'coding-hosted-1-2.unforwarded.bin'
+            expect('unforwarded trailing comment retained', p.exists() and b'trailing' in p.read_bytes())
         expect('exit 0', s['exit'] == 0)
         expect('four requests settled', len(s['ledger']) == 4 and all(r['settled_microusd'] is not None for r in s['ledger'].values()))
         expect('request 1 refused then completed',
@@ -84,12 +96,11 @@ def check(name, s, st):
         expect('relayed bytes retained', len(a) == 2 and a[1]['relay_sha256'] is not None)
     if name == 'midstream-failed':
         expect('reason names the provider failure', 'provider failure event' in (a[-1]['reason'] or ''))
-    if name in ('late-close-long', 'trailing'):
+    if name == 'trailing-data':
         expect('completion refusal names the uncertain attempt',
                any('container completion cannot settle' in f for f in s['failures']))
-    if name == 'trailing':
         p = run / 'state' / 'coding-hosted-1-2.unforwarded.bin'
-        expect('unforwarded trailing bytes retained', p.exists() and b'trailing' in p.read_bytes())
+        expect('unforwarded data event retained', p.exists() and b'after the terminal event' in p.read_bytes())
     if name in ('cancel', 'cancel-head'):
         rel = json.loads((run / 'state' / 'coding-hosted-1-2.relay.json').read_text())
         expect('relay evidence reads interrupted, not completed', rel['outcome'] == 'interrupted-uncertain')
