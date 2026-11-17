@@ -8,6 +8,7 @@ streamed. Usage: recproxy.py <port> <outdir>
 import http.client, http.server, json, os, ssl, sys, threading, hashlib, time
 
 PORT, OUT = int(sys.argv[1]), sys.argv[2]
+UPSTREAM = sys.argv[3] if len(sys.argv) > 3 else "https://api.anthropic.com"
 os.makedirs(OUT, exist_ok=True)
 SECRET = {"authorization", "x-api-key", "cookie", "proxy-authorization"}
 HOP = {"host", "connection", "keep-alive", "transfer-encoding", "content-length", "accept-encoding", "proxy-connection", "te", "upgrade"}
@@ -36,9 +37,14 @@ class H(http.server.BaseHTTPRequestHandler):
         meta = {"n": n, "t": time.time(), "method": method, "path": self.path, "headers": hdrs,
                 "body_sha256": hashlib.sha256(body).hexdigest(), "body_len": len(body)}
         fwd = {k: v for k, v in self.headers.items() if k.lower() not in HOP}
-        fwd["Host"] = "api.anthropic.com"
         fwd["Accept-Encoding"] = "identity"
-        conn = http.client.HTTPSConnection("api.anthropic.com", 443, context=ssl.create_default_context(), timeout=600)
+        if UPSTREAM.startswith("https://"):
+            fwd["Host"] = UPSTREAM[8:]
+            conn = http.client.HTTPSConnection(UPSTREAM[8:], 443, context=ssl.create_default_context(), timeout=600)
+        else:
+            hp = UPSTREAM[7:]
+            fwd["Host"] = hp
+            conn = http.client.HTTPConnection(hp.split(":")[0], int(hp.split(":")[1]), timeout=600)
         try:
             conn.request(method, self.path, body=body, headers=fwd)
             resp = conn.getresponse()
