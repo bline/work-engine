@@ -72,9 +72,11 @@ runtime compatibility, model comprehension or production/domain acceptance.
 
 ## Live continuity profile (separately versioned)
 
-Status: source and offline tests only. No Docker, SDK or provider operation has
-run for it; actual runtime compatibility and real model behaviour are `not
-established`. The fixture profile above is unchanged.
+Status: this composition's credential-mounted Host profile is retired. The
+same live lifecycle mode (v4 digests, checkpoint derivation, one reset) is the
+lifecycle side of the hosted profile, which always carries a hosted policy and
+has run live (`records/dev-vertical-hosted-qualification-20261117/README.md`).
+The fixture profile above is unchanged.
 
 > **Retired 2026-11-17.** `work-engine.pi-coding-lifecycle-live.v1` mounted provider access into the inference container and is refused at admission. The only live coding profile is `work-engine.pi-coding-hosted.v1` (Host-held access, Host dispatch); see `records/dev-vertical-hosted-qualification-20261117/README.md`. The text below is kept as history.
 

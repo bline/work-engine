@@ -88,7 +88,7 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
     };
     if live {
         // The Host's existing provider admission document (exact binary, job,
-        // model, auth-source path, task, catalog, requests, budget). It is not
+        // model, config, task, catalog, requests, budget, route-table digest). It is not
         // widened; bounds travel in the pinned packet below.
         if authority["schema"] != "work-engine.pi-coding-runtime-admission.v1"
             || authority["job_id"] != job.job_id

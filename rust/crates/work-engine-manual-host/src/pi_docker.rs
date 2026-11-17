@@ -1322,11 +1322,32 @@ impl Host {
                 value["model"] = json!("fake-pi-model");
                 value["cost_evidence"] = json!("synthetic zero-cost fixture usage; not billing");
             }
-            if self.journal.job.coding.as_ref().unwrap().provider.is_some() {
-                value["provider"] = json!("openai-codex");
-                value["model"] = json!("gpt-6-luna");
-                value["cost_evidence"] =
-                    json!("pinned_catalog_proxy_only_not_subscription_billing");
+            if let Some(plan) = &self.journal.job.coding.as_ref().unwrap().provider {
+                // M1: the provider that served each attempt, from the attempt
+                // records and the pinned route table, not a static label.
+                let attempts: Vec<Value> = coding
+                    .provider_requests
+                    .iter()
+                    .flat_map(|(request, r)| r.attempts.iter().map(move |a| (*request, a)))
+                    .map(|(request, a)| {
+                        let endpoint = plan
+                            .hosted
+                            .routes
+                            .iter()
+                            .find(|r| r.id == a.route)
+                            .map(|r| r.endpoint.clone());
+                        json!({"request":request,"attempt":a.attempt,"route":a.route,
+                            "payer":a.payer,"endpoint":endpoint,"disposition":a.disposition})
+                    })
+                    .collect();
+                value["provider"] = json!("hosted-routes");
+                value["provider_attempts"] = json!(attempts);
+                value["container_provider_identity"] = json!("openai-codex");
+                value["model"] = json!(plan.model);
+                value["cost_evidence"] = json!(
+                    "pinned openai-codex catalog rates applied to Host-observed raw usage on every route; a proxy, not provider billing"
+                );
+                value["hosted_transport"] = json!(coding.hosted_transport);
             }
         }
         let bytes = serde_json::to_vec(&value)?;

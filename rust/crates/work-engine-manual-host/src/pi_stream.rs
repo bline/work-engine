@@ -16,7 +16,9 @@ use std::time::{Duration, Instant};
 
 pub type Result<T> = std::result::Result<T, &'static str>;
 pub const CHUNK: usize = 16 * 1024;
-pub const MAX_RESPONSE: usize = 1024 * 1024;
+/// Relayed response bound: covers the catalog's 128k output tokens at the
+/// live delta size (about 250 bytes per token, phase 6 measurement).
+pub const MAX_RESPONSE: usize = 32 * 1024 * 1024;
 const MAX_HEAD: usize = 8192;
 
 /// Framed native endpoint; the probe wrapper records every received frame.
@@ -641,6 +643,12 @@ impl Session {
         }
     }
     pub fn into_relay(mut self) -> Relay {
+        // Bytes an unfinished drain read were never screened, and bytes the
+        // screen held back were never relayed: neither is kept or digested.
+        if !self.r.drained {
+            self.r.held_dropped += std::mem::take(&mut self.r.unforwarded).len();
+        }
+        self.r.held_dropped += std::mem::take(&mut self.held).len();
         std::mem::replace(
             &mut self.r,
             Relay {

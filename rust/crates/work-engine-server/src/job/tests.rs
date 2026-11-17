@@ -1127,6 +1127,13 @@ fn live_fixture(deadline: u64) -> Fx {
     profile.version = 2;
     profile.capability = CAPABILITY_LIVE.into();
     profile.class = CLASS_LIVE.into();
+    profile.env.insert(
+        "WORK_ENGINE_HOSTED_CREDENTIALS".into(),
+        fx.root
+            .join("hosted-credentials.json")
+            .to_string_lossy()
+            .into(),
+    );
     profile.authorizations = vec![fx.auth.clone()];
     fx.jobs = Arc::new(Jobs::new(profile).unwrap());
     fx

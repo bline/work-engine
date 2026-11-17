@@ -174,6 +174,15 @@ fn inputs(s: &Spec) -> Result<Inputs> {
             return Err("live deadline/canonical budget not current".into());
         }
         live.routes.validate()?;
+        use work_engine_manual_host::pi_docker::coding::hosted::Endpoint;
+        if live.routes.routes.iter().any(|r| {
+            !matches!(
+                Endpoint::parse(&r.endpoint),
+                Some(Endpoint::ChatGptCodex | Endpoint::OpenAiResponses)
+            )
+        }) {
+            return Err("live routes are the fixed HTTPS endpoints only".into());
+        }
         let m = fs::symlink_metadata(&live.credentials)?;
         if !live.credentials.is_absolute()
             || fs::canonicalize(&live.credentials)? != live.credentials
@@ -296,7 +305,8 @@ fn run() -> Result<Value> {
         let catalog = pin(&spec
             .runtime
             .join("node_modules/@earendil-works/pi-ai/dist/providers/data/openai-codex.json"))?;
-        if admission["schema"] != "work-engine.pi-coding-runtime-admission.v1"
+        if admission.as_object().map_or(0, |o| o.len()) != 11
+            || admission["schema"] != "work-engine.pi-coding-runtime-admission.v1"
             || admission["job_id"] != spec.job_id
             || admission["binary_sha256"] != inputs.host_binary.sha256
             || admission["model"] != "gpt-6-luna"
@@ -411,13 +421,13 @@ fn run() -> Result<Value> {
     };
     let input_digest = digest(&serde_json::to_vec(&job)?);
     let job_artifact = write_json(&out.join("job.json"), &job)?;
-    let sol = spec.hosted.is_some();
+    let live = spec.hosted.is_some();
     let env = match &spec.hosted {
         Some(live) => json!({"WORK_ENGINE_HOSTED_CREDENTIALS": live.credentials}),
         None => json!({}),
     };
     let auth = json!({"authorization_id":authority.authorization_id,"caller":authority.caller,"credential_sha256":authority.credential_sha256,"job_file":job_artifact.path,"job_sha256":job_artifact.sha256,"packet_sha256":job.packet.sha256,"job_id":job.job_id,"state_dir":job.state_dir,"host_input_digest":input_digest});
-    let profile = json!({"version":if sol{2}else{1},"kind":"coding-job-profile","capability":if sol{"coding-job-local-live-v1"}else{"coding-job-offline-fixture-v1"},"class":if sol{"local-live"}else{"offline-fixture"},"host_binary":inputs.host_binary.path,"host_binary_sha256":inputs.host_binary.sha256,"operation_root":spec.operation_root,"env":env,"collector_deadline_seconds":spec.collector_deadline_seconds,"cancel_grace_seconds":spec.cancel_grace_seconds,"authorizations":[auth]});
+    let profile = json!({"version":if live{2}else{1},"kind":"coding-job-profile","capability":if live{"coding-job-local-live-v1"}else{"coding-job-offline-fixture-v1"},"class":if live{"local-live"}else{"offline-fixture"},"host_binary":inputs.host_binary.path,"host_binary_sha256":inputs.host_binary.sha256,"operation_root":spec.operation_root,"env":env,"collector_deadline_seconds":spec.collector_deadline_seconds,"cancel_grace_seconds":spec.cancel_grace_seconds,"authorizations":[auth]});
     let profile = write_json(&out.join("job-profile.json"), &profile)?;
     Ok(
         json!({"schema":"work-engine.coding-preparation-result.v1","job":job_artifact,"job_profile":profile,"host_input_digest":input_digest,"packet_sha256":job.packet.sha256,"provider_execution":false,"runtime_admission":"separate_existing_authority_required","acceptance":"owner_pending"}),

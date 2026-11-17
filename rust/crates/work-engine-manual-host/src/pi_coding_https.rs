@@ -61,11 +61,27 @@ impl Credential {
         }
     }
 }
+/// Owner-only regular file of the current user, at most `limit` bytes.
+fn owner_only(path: &Path, limit: u64) -> Result<Vec<u8>> {
+    use std::os::unix::fs::{MetadataExt, PermissionsExt};
+    let m = std::fs::symlink_metadata(path)?;
+    if !m.is_file()
+        || m.len() > limit
+        || m.permissions().mode() & 0o077 != 0
+        || m.uid() != unsafe { libc::geteuid() }
+    {
+        return refuse(format!(
+            "{} must be a small owner-only regular file",
+            path.display()
+        ));
+    }
+    Ok(std::fs::read(path)?)
+}
 fn valid_token(v: &str) -> bool {
     (16..=8192).contains(&v.len()) && v.bytes().all(|b| b.is_ascii_graphic())
 }
 fn pi_auth(path: &Path) -> Result<(String, String)> {
-    let v: serde_json::Value = serde_json::from_slice(&std::fs::read(path)?)?;
+    let v: serde_json::Value = serde_json::from_slice(&owner_only(path, 1 << 20)?)?;
     let e = &v["openai-codex"];
     let access = e["access"].as_str().unwrap_or("").to_string();
     let account = e["accountId"].as_str().unwrap_or("").to_string();
@@ -74,7 +90,13 @@ fn pi_auth(path: &Path) -> Result<(String, String)> {
         .duration_since(std::time::UNIX_EPOCH)
         .map_err(|_| Error::Refused("clock".into()))?
         .as_millis() as i64;
-    if !valid_token(&access) || account.is_empty() || account.len() > 128 {
+    if !valid_token(&access)
+        || account.is_empty()
+        || account.len() > 128
+        || !account
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"-_".contains(&b))
+    {
         return refuse("Pi auth store has no usable openai-codex access");
     }
     if expires <= now + 600_000 {
@@ -87,15 +109,39 @@ fn pi_auth(path: &Path) -> Result<(String, String)> {
 pub struct HttpsTransport {
     credentials: BTreeMap<String, Credential>,
     tls: Arc<rustls::ClientConfig>,
+    identity: serde_json::Value,
 }
 impl HttpsTransport {
     /// Load each payer's access from the embedder's credentials file.
     pub fn from_file(path: &Path) -> Result<Self> {
-        let file: CredentialsFile = serde_json::from_slice(&std::fs::read(path)?)?;
+        let raw = owner_only(path, 65536)?;
+        let file: CredentialsFile = serde_json::from_slice(&raw)?;
         if file.schema != CREDENTIALS_SCHEMA || file.payers.is_empty() || file.payers.len() > 8 {
             return refuse("hosted credentials file invalid");
         }
         let mut credentials = BTreeMap::new();
+        let kinds: BTreeMap<String, &'static str> = file
+            .payers
+            .iter()
+            .map(|(payer, source)| {
+                (
+                    payer.clone(),
+                    match source {
+                        CredentialSource::ChatgptPiAuth { .. } => "chatgpt-pi-auth",
+                        CredentialSource::ApiKeyEnv { .. } => "api-key-env",
+                        CredentialSource::ApiKeyFile { .. } => "api-key-file",
+                        CredentialSource::ChatgptInvalidForQualification { .. } => {
+                            "chatgpt-invalid-for-qualification"
+                        }
+                    },
+                )
+            })
+            .collect();
+        let identity = serde_json::json!({
+            "transport": "https",
+            "credentials_file_sha256": crate::digest(&raw),
+            "payer_sources": kinds,
+        });
         for (payer, source) in file.payers {
             let credential = match source {
                 CredentialSource::ChatgptPiAuth { path } => {
@@ -110,16 +156,7 @@ impl HttpsTransport {
                     Credential::ApiKey(key)
                 }
                 CredentialSource::ApiKeyFile { path } => {
-                    use std::os::unix::fs::{MetadataExt, PermissionsExt};
-                    let m = std::fs::symlink_metadata(&path)?;
-                    if !m.is_file()
-                        || m.len() > 4096
-                        || m.permissions().mode() & 0o077 != 0
-                        || m.uid() != unsafe { libc::geteuid() }
-                    {
-                        return refuse("API key file must be a small owner-only regular file");
-                    }
-                    let key = String::from_utf8(std::fs::read(&path)?)
+                    let key = String::from_utf8(owner_only(&path, 4096)?)
                         .map_err(|_| Error::Refused("API key file encoding".into()))?
                         .trim()
                         .to_string();
@@ -144,15 +181,16 @@ impl HttpsTransport {
             };
             credentials.insert(payer, credential);
         }
-        Self::new(credentials)
+        Self::new(credentials, identity)
     }
-    fn new(credentials: BTreeMap<String, Credential>) -> Result<Self> {
+    fn new(credentials: BTreeMap<String, Credential>, identity: serde_json::Value) -> Result<Self> {
         use rustls_platform_verifier::ConfigVerifierExt;
         let tls = rustls::ClientConfig::with_platform_verifier()
             .map_err(|e| Error::Refused(format!("TLS configuration: {e}")))?;
         Ok(Self {
             credentials,
             tls: Arc::new(tls),
+            identity,
         })
     }
     fn credential(&self, route: &HostedRoute) -> Result<(Endpoint, &Credential)> {
@@ -169,6 +207,9 @@ impl HttpsTransport {
     }
 }
 impl HostedProviderTransport for HttpsTransport {
+    fn identity(&self) -> serde_json::Value {
+        self.identity.clone()
+    }
     fn check(&self, routes: &HostedRoutes) -> Result<()> {
         for route in &routes.routes {
             self.credential(route)?;
@@ -241,19 +282,22 @@ mod tests {
     use std::collections::BTreeMap;
 
     fn transport() -> HttpsTransport {
-        HttpsTransport::new(BTreeMap::from([
-            (
-                "subscription".to_string(),
-                Credential::ChatGpt {
-                    access: "chatgpt-access-0123456789".into(),
-                    account: "acct-1".into(),
-                },
-            ),
-            (
-                "api".to_string(),
-                Credential::ApiKey("sk-test-0123456789abcdef".into()),
-            ),
-        ]))
+        HttpsTransport::new(
+            BTreeMap::from([
+                (
+                    "subscription".to_string(),
+                    Credential::ChatGpt {
+                        access: "chatgpt-access-0123456789".into(),
+                        account: "acct-1".into(),
+                    },
+                ),
+                (
+                    "api".to_string(),
+                    Credential::ApiKey("sk-test-0123456789abcdef".into()),
+                ),
+            ]),
+            serde_json::json!({}),
+        )
         .unwrap()
     }
     fn route(id: &str, payer: &str, endpoint: &str) -> HostedRoute {

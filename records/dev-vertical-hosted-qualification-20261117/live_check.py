@@ -35,4 +35,5 @@ out = {
                      'attempts': [(a['route'], a['payer'], a['disposition'], a.get('http_status'), a.get('framed_end_observed')) for a in r['attempts']],
                      'raw_usage': (r.get('raw_terminal') or {}).get('usage')} for k, r in c['provider_requests'].items()},
 }
+(run / 'live-check.json').write_text(json.dumps(out, indent=1))
 print(json.dumps(out, indent=1))

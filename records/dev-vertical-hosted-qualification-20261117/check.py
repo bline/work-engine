@@ -57,8 +57,9 @@ def check(name, s, st):
            and json.loads((run / 'inputs' / 'authority.json').read_text())['binary_sha256'] == BINARIES['coding_qualification_sha256'])
     expect('no containers left', s['containers_after'] == [])
     expect('retained artifacts verify', all(a['verified'] for a in s['hosted_artifacts']))
-    expect('every attempt gate-admitted before dispatch',
-           all(a['gate_entered'] for r in s['ledger'].values() for a in r['attempts']))
+    expect('every dispatched attempt gate-admitted before dispatch',
+           all(a['gate_entered'] for r in s['ledger'].values() for a in r['attempts']
+               if a['disposition'] != 'not_dispatched'))
     leaked = [str(p.relative_to(run)) for p in run.rglob('*') if p.is_file() and b'synthetic-A-' in p.read_bytes()]
     expect('Host access token appears in no run file', leaked == [])
     expect('private-access empty', not any((run / 'state' / 'private-access').iterdir()))

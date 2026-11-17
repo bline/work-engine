@@ -154,6 +154,9 @@ impl AttemptEvidence {
             terminal_last: crate::pi_stream::usage(&relay.forwarded)["completed"] == true
                 && crate::pi_stream::terminal_is_last(&relay.forwarded, &relay.unforwarded)
                 && relay.held_dropped == 0
+                // A drain that ended on a read or framing error may have
+                // dropped provider bytes (M4): never clean.
+                && relay.drain_error.is_none()
                 && (relay.drained
                     || matches!(
                         relay.outcome,
@@ -955,12 +958,20 @@ mod admission_tests {
         assert!(error.to_string().contains("runtime admission"), "{error}");
         assert!(!h.journal.job.state_dir.join("private-access").exists());
         assert!(h.journal.processes.is_empty());
-        // A retired credential-mounted schema is refused by name.
-        let schema = &mut h.journal.job.coding.as_mut().unwrap().schema;
-        *schema = super::super::RETIRED_LIVE_PROFILES[1].into();
-        let job = h.journal.job.clone();
-        let error = job.coding.as_ref().unwrap().validate(&job).unwrap_err();
-        assert!(error.to_string().contains("retired"), "{error}");
+        // Every retired credential-mounted schema is refused by name, with or
+        // without a provider plan (F7).
+        for retired in super::super::RETIRED_LIVE_PROFILES {
+            for with_provider in [true, false] {
+                let mut job = h.journal.job.clone();
+                let profile = job.coding.as_mut().unwrap();
+                profile.schema = retired.into();
+                if !with_provider {
+                    profile.provider = None;
+                }
+                let error = job.coding.as_ref().unwrap().validate(&job).unwrap_err();
+                assert!(error.to_string().contains("retired"), "{retired}: {error}");
+            }
+        }
     }
 }
 
@@ -1441,6 +1452,10 @@ mod attempt_tests {
         assert!(!clean(&relay(released.clone(), ": c\n\n", true, 1)));
         // Q-a: bytes after the terminal fail with or without the framed end.
         assert!(!clean(&relay(Outcome::Completed, "data: {}\n\n", false, 0)));
-        assert!(!clean(&relay(released, done, true, 0)));
+        assert!(!clean(&relay(released.clone(), done, true, 0)));
+        // M4: a drain that ended on an error is never clean.
+        let mut errored = relay(released, ": c\n\n", true, 0);
+        errored.drain_error = Some("upstream_chunk_line");
+        assert!(!clean(&errored));
     }
 }

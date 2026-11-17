@@ -79,16 +79,16 @@ fn call(c: Config, r: Request) -> Result<Value, String> {
     if r.method != "submit" || existing["state"] != "not_admitted" {
         return Ok(existing);
     }
+    if c.schema == SUBSCRIPTION_PROTOCOL {
+        // The signed subscription profile (provider access mounted in the
+        // container) is retired; refused before the owner ingests anything.
+        return Err("pi_subscription_profile_retired".into());
+    }
     let job: Job = serde_json::from_slice(&c.job.verify().map_err(|e| e.to_string())?)
         .map_err(|e| e.to_string())?;
     let owner = PiOwner::open(c.descriptor.clone()).map_err(str::to_owned)?;
     if owner.is_subscription() != (c.schema == SUBSCRIPTION_PROTOCOL) {
         return Err("pi_protocol_profile".into());
-    }
-    if c.schema == SUBSCRIPTION_PROTOCOL {
-        // The signed subscription profile (provider access mounted in the
-        // container) is retired; the hosted profile replaces it.
-        return Err("pi_subscription_profile_retired".into());
     }
     let mut host = Host::admit_signed_fixture(job, owner).map_err(|e| e.to_string())?;
     let _native = host.run().map_err(|e| e.to_string())?;

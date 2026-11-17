@@ -90,8 +90,9 @@ cannot create it. A successful preparation is not permission to execute.
 The prepared job uses profile `work-engine.pi-coding-hosted.v1` and 24,000
 context bytes; the job profile is version 2, class `local-live`, with
 `env.WORK_ENGINE_HOSTED_CREDENTIALS` set to the credentials file. Credential
-sources are `chatgpt-pi-auth` (Pi's auth store, not refreshed by the Host),
-`api-key-file` (owner-only file) and, for qualification only,
+sources are `chatgpt-pi-auth` (Pi's owner-only auth store, not refreshed by the
+Host), `api-key-file` (owner-only file), `api-key-env` (not usable through the
+server, which clears the Host's environment) and, for qualification only,
 `chatgpt-invalid-for-qualification` (an access the backend refuses, to exercise
 a real definitive refusal). The retired Sol/high profile and its v2 admission
 are refused.

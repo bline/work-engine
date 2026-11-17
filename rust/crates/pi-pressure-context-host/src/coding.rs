@@ -352,8 +352,11 @@ impl CodingContinuity {
         config: CodingConfig,
         clock: fn() -> ClockSample,
     ) -> Result<Self> {
-        // The retired credential-mounted Sol-high profile cannot be resumed.
+        // The retired credential-mounted Sol-high profile cannot be resumed,
+        // and live mode exists only with a hosted policy (the retired
+        // lifecycle-live composition had none, F4).
         if initial.profile_digest() == pi_coding_sol_high_profile_digest()
+            || config.task.is_some() != config.hosted.is_some()
             || config.budget["schema"] != "work-engine.coding-budget-control.v1"
             || config.budget["classification"]
                 != if config.task.is_some() {

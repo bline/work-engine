@@ -193,6 +193,9 @@ pub trait HostedProviderTransport {
     /// Refuse a route table this transport cannot serve: an endpoint it does
     /// not support, or a payer it holds no access for.
     fn check(&self, routes: &HostedRoutes) -> Result<()>;
+    /// Nonsecret identity recorded in the journal at binding: which access
+    /// source kind serves each payer, and the source file's digest.
+    fn identity(&self) -> Value;
     /// Connect to `route` before gate admission. Writes no request byte, so
     /// it is never provider entry; it runs outside the lifecycle store's
     /// transaction.
@@ -286,6 +289,9 @@ impl LoopbackTransport {
     }
 }
 impl HostedProviderTransport for LoopbackTransport {
+    fn identity(&self) -> Value {
+        json!({"transport":"loopback","access":"synthetic per payer, generated in the Host"})
+    }
     fn check(&self, routes: &HostedRoutes) -> Result<()> {
         if routes
             .routes
@@ -411,6 +417,10 @@ impl Host {
         }
         let (_, routes) = self.hosted_plan()?;
         transport.check(&routes)?;
+        if let Some(state) = self.journal.coding.as_mut() {
+            state.hosted_transport = Some(transport.identity());
+            self.save()?;
+        }
         self.hosted_transport = Some(transport);
         Ok(())
     }
@@ -558,6 +568,24 @@ impl Host {
             || parsed["stream"] != true
         {
             return refuse("provider fetch body bound/model/stream conflict");
+        }
+        // R-a: body fields the Host pins on real routes. Nothing stored at the
+        // provider, no background processing, no non-default service tier,
+        // and only the container's own function tools (no provider-hosted
+        // tools: the container stays networkless and tool spend stays inside
+        // token settlement).
+        let tools_ok = match &parsed["tools"] {
+            Value::Null => true,
+            Value::Array(tools) => tools.iter().all(|t| t["type"] == "function"),
+            _ => false,
+        };
+        if parsed["store"] != false
+            || !matches!(&parsed["background"], Value::Null | Value::Bool(false))
+            || !(parsed["service_tier"].is_null()
+                || matches!(parsed["service_tier"].as_str(), Some("auto" | "default")))
+            || !tools_ok
+        {
+            return refuse("provider fetch body policy: store/background/service_tier/tools");
         }
         Ok(Fetch { headers, body })
     }
@@ -1423,12 +1451,19 @@ mod tests {
     struct FakeTransport {
         responses: VecDeque<Vec<u8>>,
         opened: Opened,
+        unreachable: bool,
     }
     impl HostedProviderTransport for FakeTransport {
         fn check(&self, _: &HostedRoutes) -> Result<()> {
             Ok(())
         }
+        fn identity(&self) -> Value {
+            json!({"transport":"fake"})
+        }
         fn connect(&mut self, _: &HostedRoute, _: i64) -> Result<Connection> {
+            if self.unreachable {
+                return refuse("synthetic connect failure");
+            }
             Ok(Connection {
                 stream: Box::new(std::io::Cursor::new(Vec::new())),
                 abort: Box::new(|| {}),
@@ -1586,6 +1621,7 @@ mod tests {
         h.hosted_transport = Some(Box::new(FakeTransport {
             responses: responses.into(),
             opened: opened.clone(),
+            unreachable: false,
         }));
         let wire = Wire {
             path,
@@ -1630,7 +1666,7 @@ mod tests {
         json!({"type":"provider_fetch","id":1,"binding":s["binding"],"sequence":s["sequence"],"stream":s["stream"],
             "url":"https://chatgpt.com/backend-api/codex/responses","method":"POST",
             "headers":{"Authorization":"Bearer syntactic.marker","chatgpt-account-id":"nonsecret-marker","content-type":"application/json","originator":"pi"},
-            "body":B64.encode(br#"{"model":"gpt-6-luna","stream":true,"input":[]}"#)})
+            "body":B64.encode(br#"{"model":"gpt-6-luna","stream":true,"store":false,"input":[]}"#)})
     }
     fn op(grant: &Value, kind: &str, ordinal: u64) -> Value {
         let s = &grant["stream"];
@@ -2009,6 +2045,80 @@ mod tests {
         assert_eq!(request(&h).attempts, after.attempts);
     }
 
+    #[test]
+    fn connect_failure_is_a_confirmed_non_dispatch_that_releases_and_ends_the_request() {
+        // M2: the transport fails before any request byte (TCP/TLS).
+        let (dir, mut h, mut w) = host(vec![], None);
+        h.hosted_transport = Some(Box::new(FakeTransport {
+            responses: VecDeque::new(),
+            opened: w.opened.clone(),
+            unreachable: true,
+        }));
+        let g = grant(&mut h, &mut w);
+        push(&mut h, &mut w, fetch(&g)).unwrap();
+        let f = tick_until(&mut h, &w, has("response-unavailable"));
+        assert_eq!(f[0]["code"], "route_unreachable");
+        let r = request(&h);
+        assert_eq!(r.attempts.len(), 1);
+        let a = &r.attempts[0];
+        assert_eq!(a.disposition, AttemptDisposition::NotDispatched);
+        assert!(!a.gate_entered);
+        assert!(
+            a.reason
+                .as_deref()
+                .unwrap()
+                .contains("route connection failed")
+        );
+        assert_eq!(r.charged_microusd(), 0);
+        assert!(
+            w.intents.lock().unwrap().is_empty(),
+            "the gate was never consulted"
+        );
+        assert!(
+            w.opened.lock().unwrap().is_empty(),
+            "no request was written"
+        );
+        assert!(h.journal.coding.as_ref().unwrap().provider_failed);
+        assert!(!dir.path().join("coding-hosted-1-1.stream.sse").exists());
+        // No later attempt for this request.
+        let state = h.journal.coding.as_mut().unwrap();
+        assert!(
+            provider::reserve_attempt(
+                &mut state.provider_requests,
+                1,
+                "secondary",
+                "payer-b",
+                1,
+                1_000_000,
+                2
+            )
+            .is_err()
+        );
+    }
+    #[test]
+    fn body_policy_refuses_stored_background_tiered_or_hosted_tool_requests() {
+        // R-a: fields the Host pins on real routes.
+        for body in [
+            r#"{"model":"gpt-6-luna","stream":true,"input":[]}"#,
+            r#"{"model":"gpt-6-luna","stream":true,"store":true,"input":[]}"#,
+            r#"{"model":"gpt-6-luna","stream":true,"store":false,"background":true}"#,
+            r#"{"model":"gpt-6-luna","stream":true,"store":false,"service_tier":"priority"}"#,
+            r#"{"model":"gpt-6-luna","stream":true,"store":false,"service_tier":1}"#,
+            r#"{"model":"gpt-6-luna","stream":true,"store":false,"tools":[{"type":"web_search"}]}"#,
+            r#"{"model":"gpt-6-luna","stream":true,"store":false,"tools":{"type":"function"}}"#,
+        ] {
+            let (_dir, mut h, mut w) = host(vec![], None);
+            let g = grant(&mut h, &mut w);
+            let mut f = fetch(&g);
+            f["body"] = json!(B64.encode(body.as_bytes()));
+            assert!(push(&mut h, &mut w, f).is_err(), "{body}");
+        }
+        let (_dir, mut h, mut w) = host(vec![], None);
+        let g = grant(&mut h, &mut w);
+        let mut f = fetch(&g);
+        f["body"] = json!(B64.encode(br#"{"model":"gpt-6-luna","stream":true,"store":false,"service_tier":"auto","tools":[{"type":"function","name":"workspace_exec"}]}"#));
+        assert!(push(&mut h, &mut w, f).is_ok());
+    }
     #[test]
     fn crash_between_reservation_and_gate_entry_stays_charged_with_nothing_relayed() {
         // Phase 5 cut: the attempt is durably reserved, the process dies before

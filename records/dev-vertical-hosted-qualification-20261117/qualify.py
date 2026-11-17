@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Offline hosted-profile qualification scenario (dev-vertical phase 4 piece (c)).
 
-Synthetic loopback routes only; synthetic Host-held access; no live provider,
-credentials or network for the inference container.
+Offline scenarios: synthetic loopback routes and synthetic Host-held access.
+Scenarios named live* use the real HTTPS routes with Host-held access named in
+a credentials file (operator-authorized live runs). The inference container
+never has network or credentials.
 Usage: qualify.py <root-dir> <run-name> <observer-scenario> [none|crash|cancel]
 Writes <root-dir>/<run-name>/ and prints a JSON summary (also summary.json).
 """

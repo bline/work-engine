@@ -275,6 +275,11 @@ fn continuity_try_full(
     PathBuf,
     Result<CodingContinuity, work_engine_manual_host::Error>,
 ) {
+    // Live mode always runs under a hosted policy (the retired lifecycle-live
+    // composition had none); default it where a test does not choose one.
+    let default = (live && hosted.is_none()).then(hosted_policy);
+    let granted = granted.or(default.as_ref());
+    let hosted = hosted.or(default.clone());
     let (root, c, _) = continuity_build(live, mixed, class, sol, hosted, granted, grant_expires);
     (root, c)
 }
@@ -916,9 +921,11 @@ fn live_and_fixture_budget_labels_and_mixed_identities_cannot_substitute() {
 
 #[test]
 fn retired_sol_high_profile_cannot_start_continuity() {
-    // The credential-mounted Sol-high profile is retired; a session reserved
-    // under its digest is refused by the gate.
-    assert!(run_complete_mode(true, true, true).is_err());
+    // The credential-mounted Sol-high profile is retired: a session reserved
+    // under its digest is refused at construction, before any turn (F7).
+    let (root, c) = continuity_try_full(true, None, None, true, None, None, 1000);
+    assert!(c.is_err());
+    let _ = fs::remove_dir_all(root);
 }
 fn hosted_policy() -> HostedProviderPolicy {
     HostedProviderPolicy {
@@ -990,10 +997,6 @@ fn hosted_attempts_leave_the_settled_event_grammar_unchanged_and_are_reported() 
             .iter()
             .all(|a| a["policy"] == hosted_policy().digest())
     );
-    drop(c);
-    fs::remove_dir_all(root).unwrap();
-    let (root, c) = run_complete(true, false).unwrap();
-    assert!(c.report().unwrap().get("hosted_attempts").is_none());
     drop(c);
     fs::remove_dir_all(root).unwrap();
 }
@@ -1092,16 +1095,11 @@ fn hosted_turns_need_the_issuers_policy_bound_grant_and_a_valid_policy() {
         assert!(c.is_err());
         let _ = fs::remove_dir_all(root);
     }
-    // Live configuration without a policy admits no hosted attempt.
-    let (root, mut c, mut sdk, original) = hosted_started(None, None, 1000);
-    sdk.request(&mut c, &original, None);
-    assert!(
-        attempt(&mut c, intent(1, 1, "primary", "payer-a"))
-            .unwrap_err()
-            .contains("policy absent")
-    );
-    drop(c);
-    fs::remove_dir_all(root).unwrap();
+    // A live configuration without a policy (the retired lifecycle-live
+    // composition) is refused at construction (F4).
+    let (root, c, _) = continuity_build(true, None, None, false, None, None, 1000);
+    assert!(c.is_err());
+    let _ = fs::remove_dir_all(root);
 }
 #[test]
 fn contracted_hosted_grant_refuses_the_next_dispatch() {

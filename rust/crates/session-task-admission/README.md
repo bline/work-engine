@@ -109,10 +109,12 @@ Refusal retains the unique effect and full unsettled provider reservation, with
 no replay. `host IPC grant flushed` establishes local dispatch only; it does not
 establish remote HTTP entry, acknowledgement or completion.
 
-Provider-disabled deadline regressions run the fixed receiver with VM SDK,
-clock and IPC fixtures: `node --experimental-vm-modules --test
-rust/crates/work-engine-manual-host/tests/pi-signed-subscription.test.mjs` from
-the repository root. Without the VM flag those cases are explicitly skipped.
+The signed-subscription receiver deadline regressions were retired with that
+profile (2026-11-17). The provider-disabled receiver path runs with VM SDK and
+IPC fixtures: `node --experimental-vm-modules --test
+rust/crates/work-engine-manual-host/tests/pi-coding-fixture.test.mjs` (and
+`pi-coding-hosted.test.mjs` for the hosted profile) from the repository root.
+Without the VM flag those cases are explicitly skipped.
 Synthetic SDK/fetch evidence does not establish real provider qualification.
 
 The [synthetic owner boundary](docs/owner-boundary-v1.md) exposes real-registry

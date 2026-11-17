@@ -38,6 +38,7 @@ def b64(b):
 
 @unittest.skipUnless(os.environ.get('PI_CODING_ACTUAL') == '1', 'explicit actual fixture admission required')
 class ActualCoding(unittest.TestCase):
+
     def test_authenticated_mcp_signed_pi_fake_provider_and_pure_reads(self):
         root = Path(os.environ['PI_CODING_EVIDENCE']).resolve()
         root.mkdir(mode=0o700)
@@ -170,3 +171,20 @@ printf 'SIGNED_FAKE_PROVIDER_TOOL_DONE\\n'
             write(root/'mcp-transcript.json',transcript)
             httpd.shutdown();httpd.server_close();thread.join(timeout=5)
             self.assertFalse(thread.is_alive())
+
+
+class CodingSwitches(unittest.TestCase):
+    """Restored from the retired subscription test (F2). The subscription switch
+    itself is unchanged here because session_events.py is pinned by digest
+    (session-query OWNER_SHAS); a retired subscription submit is refused by the
+    Rust helper before it opens the owner."""
+    def test_coding_switches_disabled_by_default_and_conflicting_switches_fail(self):
+        from unittest.mock import patch
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertIsNone(SE.CodingHelper.from_environment())
+        with patch.dict(os.environ, {'PI_CODING_FIXTURE_ENABLED': '1'}, clear=True):
+            with self.assertRaises(ValueError): SE.CodingHelper.from_environment()
+        with patch.dict(os.environ, {'PI_CODING_SUBSCRIPTION_ENABLED': '1'}, clear=True):
+            with self.assertRaises(ValueError): SE.CodingHelper.from_environment()
+        with patch.dict(os.environ, {'PI_CODING_SUBSCRIPTION_ENABLED': '1', 'PI_CODING_FIXTURE_ENABLED': '1'}, clear=True):
+            with self.assertRaises(ValueError): SE.CodingHelper.from_environment()

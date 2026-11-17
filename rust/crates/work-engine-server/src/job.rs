@@ -168,7 +168,7 @@ mod host {
     }
 }
 
-/// The Host input digest for the bounded offline or lifecycle-live class. Other
+/// The Host input digest for the bounded offline or hosted live class. Other
 /// Host job/profile versions and unknown fields have no supported digest.
 fn host_input_digest(job: &Value) -> Option<String> {
     // The live class uses the owner's public versioned DTO, including emitted defaults.
@@ -216,15 +216,40 @@ fn verify_live_job(value: &Value, binary: &str) -> Result<(), &'static str> {
         || provider.budget_microusd > 700_000
         || !(1024..=24_000).contains(&provider.max_context_bytes)
         || provider.hosted.validate().is_err()
-        || !(1..=30).contains(&job.command_timeout_seconds)
-        || job.idle_seconds != 0
+        // Live routes are the fixed HTTPS endpoints only (M5).
+        || provider.hosted.routes.iter().any(|r| {
+            !matches!(
+                work_engine_manual_host::pi_docker::coding::hosted::Endpoint::parse(&r.endpoint),
+                Some(
+                    work_engine_manual_host::pi_docker::coding::hosted::Endpoint::ChatGptCodex
+                        | work_engine_manual_host::pi_docker::coding::hosted::Endpoint::OpenAiResponses
+                )
+            )
+        }) || !(1..=30).contains(&job.command_timeout_seconds) || job.idle_seconds != 0
     {
         return Err("capability_mismatch");
     }
     let authority: Value =
         serde_json::from_slice(&job.authority.verify().map_err(|_| "job_mismatch")?)
             .map_err(|_| "job_mismatch")?;
-    if authority["schema"] != "work-engine.pi-coding-runtime-admission.v1"
+    // Exactly the Host admission's fields (it rejects unknown ones, F6).
+    const KEYS: [&str; 11] = [
+        "allow_provider",
+        "binary_sha256",
+        "budget_microusd",
+        "catalog_sha256",
+        "hosted_routes_sha256",
+        "job_id",
+        "max_requests",
+        "model",
+        "pi_config_manifest_sha256",
+        "schema",
+        "task_sha256",
+    ];
+    if authority
+        .as_object()
+        .is_none_or(|o| o.len() != KEYS.len() || !KEYS.iter().all(|k| o.contains_key(*k)))
+        || authority["schema"] != "work-engine.pi-coding-runtime-admission.v1"
         || authority["binary_sha256"] != binary
         || authority["job_id"] != job.job_id
         || authority["model"] != provider.model
@@ -453,6 +478,13 @@ impl JobProfile {
                 .env
                 .keys()
                 .any(|k| k.contains("TOKEN") || k.contains("KEY"))
+            // The live class's Host binds real routes only through its
+            // credentials file (M5).
+            || (self.live()
+                && self
+                    .env
+                    .get("WORK_ENGINE_HOSTED_CREDENTIALS")
+                    .is_none_or(|v| !Path::new(v).is_absolute()))
         {
             return Err("invalid_job_profile");
         }

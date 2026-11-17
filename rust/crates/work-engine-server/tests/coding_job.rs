@@ -264,6 +264,8 @@ impl Fx {
         private(&self.root.join("job.json"), &bytes, 0o600);
         self.job_sha = hex(&bytes);
         profile["version"] = json!(2);
+        profile["env"] =
+            json!({"WORK_ENGINE_HOSTED_CREDENTIALS": self.root.join("hosted-credentials.json")});
         profile["capability"] = json!("coding-job-local-live-v1");
         profile["class"] = json!("local-live");
         profile["authorizations"][0]["job_sha256"] = json!(self.job_sha);

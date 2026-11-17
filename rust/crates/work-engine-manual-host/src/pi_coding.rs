@@ -285,6 +285,10 @@ pub struct State {
     pub provider_requests: BTreeMap<u64, provider::Reservation>,
     #[serde(default)]
     pub provider_failed: bool,
+    /// Hosted: nonsecret identity of the bound provider transport (credentials
+    /// file digest and each payer's access-source kind), recorded at binding.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hosted_transport: Option<Value>,
     #[serde(default)]
     pub access_removed: bool,
     #[serde(default)]
@@ -431,16 +435,9 @@ fn base(j: &Journal, name: &str) -> Vec<String> {
     } else {
         "/tmp:rw,noexec,nosuid,nodev,size=64m"
     };
-    let live = j
-        .job
-        .coding
-        .as_ref()
-        .is_some_and(|p| p.provider.is_some() && !is_hosted(&p.schema));
-    let network = if live && name == j.container_name {
-        "bridge"
-    } else {
-        "none"
-    };
+    // Every coding container is networkless; the hosted profile's provider
+    // traffic is dispatched by the Host (F5).
+    let network = "none";
     let mut args = strings(&[
         "create",
         "--pull",
@@ -604,15 +601,7 @@ fn verify(j: &Journal, v: &Value, tool: bool, validation: bool) -> Result<()> {
         || v["Config"]["WorkingDir"] != "/workspace"
         || v["HostConfig"]["PidMode"] != ""
         || v["HostConfig"]["IpcMode"] != "private"
-        || v["HostConfig"]["NetworkMode"]
-            != if !tool
-                && j.job.coding.as_ref().unwrap().provider.is_some()
-                && !is_hosted(&j.job.coding.as_ref().unwrap().schema)
-            {
-                "bridge"
-            } else {
-                "none"
-            }
+        || v["HostConfig"]["NetworkMode"] != "none"
         || v["HostConfig"]["ReadonlyRootfs"] != true
         || v["HostConfig"]["Privileged"] != false
         || v["HostConfig"]["CapDrop"] != json!(["ALL"])
@@ -1397,7 +1386,7 @@ impl Host {
                         let request = json!({"type":"provider_request","id":frame["id"],
                             "provider":frame["requestModel"]["provider"],
                             "model":frame["requestModel"]["id"],
-                            "contextBytes":frame["contextBytes"],"reasoningEffort":frame["reasoningEffort"],"payerAccountId":frame["payerAccountId"]});
+                            "contextBytes":frame["contextBytes"]});
                         self.coding_provider_frame(&request)?;
                     }
                     replies.extend(self.coding_bridge_frame(&frame)?);

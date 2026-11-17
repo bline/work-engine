@@ -51,6 +51,8 @@ def main():
     task = write(inputs / 'task.txt', 'Add pub fn answer() -> u32 returning 42 to src/lib.rs using one workspace_exec command, then report briefly.', 0o644)
     acceptance = write(inputs / 'acceptance.rs', '#[path="/workspace/src/lib.rs"] mod task; #[test] fn answer(){assert_eq!(task::answer(),42);}', 0o644)
     config = inputs / 'pi-config'; config.mkdir()
+    # The operator's API key, persisted once (owner-only) so the server-launched
+    # Host, whose environment is cleared, can load it through `api-key-file`.
     if not API_KEY_FILE.exists():
         API_KEY_FILE.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
         write(API_KEY_FILE, os.environ['OPENAI_API_KEY'] + '\n')

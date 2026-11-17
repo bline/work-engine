@@ -239,7 +239,7 @@ operator action.
 **Status: experimental Host/receiver scaffolding.** The standalone Rust reader
 is tested, but this profile has no lifecycle proof implementation, claims-aware
 continuity checkpoint, or end-to-end SDK qualification. Merging these sources
-does not activate a supported coding profile. Existing fixture/live/Sol profiles
+does not activate a supported coding profile. Existing fixture/hosted live profile
 retain their own contracts. The two workspace calls and twelve claims calls below
 are the current scaffold bounds; they do not establish lifecycle admission or
 sufficient capacity for full evidence recovery.

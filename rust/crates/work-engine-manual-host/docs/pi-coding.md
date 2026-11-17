@@ -11,6 +11,8 @@ credential material only and network-none. Actual qualification demonstrated a
 seeded minute assertion failure, an explicit fixture edit, three original pinned
 acceptance tests passing, both containers removed and receipt acknowledged.
 
+> **Retired 2026-11-17.** The credential-mounted live lane described in this section (native access projected into the container, bridge networking) is refused at admission. See "Hosted live profile" below.
+
 `work-engine.pi-coding-sdk.v1` adds a distinct, explicitly admitted subscription
 lane. Its `coding.provider` object requires `lane`, `task`, `catalog`,
 `access_adapter`, exact `model`, `max_requests`, `budget_microusd` and
@@ -19,7 +21,31 @@ commands cannot substitute for inference. Current bounded task mutation permits
 only `src/lib.rs` in a disposable workspace. Rust runs original immutable
 acceptance tests after the native session ends and retains actual outputs.
 
-## Authority and configuration
+## Hosted live profile (current)
+
+`work-engine.pi-coding-hosted.v1` is the only live coding profile. Its
+`coding.provider` requires `lane.pi_config`, `task`, `catalog`,
+`stream_adapter` (`receiver/pi-native-tools.mjs`), `hosted` (the route table:
+ordered `{id, payer, endpoint}` with `https:chatgpt-codex` or
+`https:openai-responses`, and `max_attempts_per_request`), `model`
+(`gpt-6-luna`), `max_requests`, `budget_microusd` and `max_context_bytes`
+(at most 32768). The runtime admission is
+`work-engine.pi-coding-runtime-admission.v1` with exactly `schema`, `job_id`,
+`binary_sha256`, `model`, `pi_config_manifest_sha256`, `task_sha256`,
+`catalog_sha256`, `max_requests`, `budget_microusd`, `allow_provider` and
+`hosted_routes_sha256`.
+
+The inference container runs `--network none` with only the stream adapter,
+`/config` and `/profile` mounted; it has no credential. The Host's embedder
+binds a `HostedProviderTransport` (`pi_coding_https.rs` for real routes, with
+each payer's access loaded from the credentials file named by
+`WORK_ENGINE_HOSTED_CREDENTIALS`), and the lifecycle gate admits each attempt.
+The Host validates the request body (model, `stream`, `store:false`, no
+`background`, default `service_tier`, function tools only), relays the response
+through `pi_stream`, retains the screened bytes create-only, and settles from
+its own observation. Qualification: `records/dev-vertical-hosted-qualification-20261117/README.md`.
+
+## Authority and configuration (retired lane, history)
 
 Provider execution requires an exact `job.authority` JSON document with schema
 `work-engine.pi-coding-runtime-admission.v1`, `job_id`, current executable
@@ -72,8 +98,8 @@ Both containers use UID1000, read-only rootfs, dropped capabilities,
 no-new-privileges, finite CPU/memory/PIDs and separate PID/private IPC namespaces.
 Inference tmpfs is noexec; tool tmpfs explicitly permits compiled test execution.
 Rust inspects exact identities, commands, mounts, network and security settings
-before start/exec and collection. Live inference uses bridge networking for the
-fixed SDK subscription endpoint; tools remain network-none. No model-facing tool
+before start/exec and collection. Every container, including hosted live
+inference, is network-none; the Host dispatches provider requests itself. No model-facing tool
 can issue arbitrary inference-container network operations. This is not a claim
 that a general network firewall enforces provider-only egress.
 
