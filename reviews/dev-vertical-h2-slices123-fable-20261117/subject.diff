@@ -1,0 +1,3703 @@
+diff --git a/planning/dev-vertical-h2-pi-route-20261117.md b/planning/dev-vertical-h2-pi-route-20261117.md
+new file mode 100644
+index 00000000..b7239cb1
+--- /dev/null
++++ b/planning/dev-vertical-h2-pi-route-20261117.md
+@@ -0,0 +1,136 @@
++# Dev vertical: Pi-route capabilities for the research-lifecycle H2 run
++
++2026-11-17, revision 1. Owner: the dev vertical (Pi session
++`01a1e2a4-f353-743a-ba23-f42394958125`). Board claim `dev-vertical:pi-h2-route`.
++
++## Authority and what this does not decide
++
++Operator, 2026-11-17, after the dev-vertical closure report said the Pi route
++was not ready to carry H2 and that the "Pi under the task host" route was the
++operator's decision: "Once we finish review/remidiation we can build what H2
++needs." The dev vertical closed at `4d5b0b34`. This plan reads that statement
++as authority to build the Pi-route capabilities named in the
++[route comparison](research-lifecycle-h2-route-comparison-20261117.md)
++(research-lifecycle lane, uncommitted): the response-ceiling fix (open item
++D4), a no-shell analysis profile with H2-sized bounds and request evidence,
++and the connection to the research lifecycle's task host.
++
++It does not answer the route comparison's decisions R3–R5 or R7, and it does not
++accept anything on behalf of the research-lifecycle owners. Slices 1–3 change
++only dev-vertical components (Pi Host and receiver, the Pi lifecycle gate, the
++Pi grammar in `lifecycle-store`, the hosted server admission and job
++preparation). Slice 4 touches `lifecycle-service` and the task host, so it
++starts with a read-only sizing shared with that lane and needs their
++architecture acceptance before code. If the operator meant less than this,
++slices 1 and 2 remain useful on their own: D4 is required before any real
++coding turn longer than the qualification task.
++
++## Starting point
++
++The hosted profile `work-engine.pi-coding-hosted.v1` runs one fixed coding
++continuity job: 4 provider requests, one `workspace_exec` shell call, one
++reset, model `gpt-6-luna`, context at most 24 000 bytes (Host plan at most
++32 768), request body at most 45 000 bytes, receiver frames at most 64 KiB in
++both directions (input 128 KiB), and an 8 MiB bound on the container's stdout
++for the whole job. The Host re-reads the whole stdout file every 20 ms. Each
++`message_update` the receiver forwards carries the accumulated message, so the
++job's output grows quadratically with answer length (D4, about 1 500 output
++tokens per response). The lifecycle gate records every forwarded native event
++in the store, so the store grows the same way. The H2 snapshot is about
++179 000 bytes, and the audit prohibits shell, edits and network.
++
++## Slices
++
++### 1. Response ceiling (D4)
++
++The receiver stops forwarding `message_update` events in the hosted profile.
++They are progress projections of the stream: the final message arrives in
++`message_end`, and the exact provider bytes are already retained Host-side per
++attempt (`stream.sse`, digest on the attempt record). Both Pi grammars in
++`lifecycle-store` accept a turn without updates (the provider-disabled fixtures
++never produce them), so neither grammar changes. Qualification: a new observer
++scenario streams one long answer (far beyond the current ceiling) and must
++settle Completed; the existing offline matrix must still pass.
++
++### 2. Host output handling
++
++Read the container's stdout incrementally (byte offset, complete lines only)
++instead of re-reading and re-splitting the whole file on every tick, and make
++the job-wide output bound and the per-frame bound profile parameters. The coding
++profile keeps its current values.
++
++### 3. Analysis profile
++
++A new versioned profile, `work-engine.pi-analysis-hosted.v1`, on the same Host,
++ledger, gate entry, transport and containment:
++
++- **Tools.** No shell, no tool or validator container, no repository mount.
++  The Host serves read-only tools over a Host-side snapshot whose members are
++  pinned by path, size and SHA-256 in the job packet (`snapshot_list`,
++  `snapshot_read` with offset and a bounded page). The answer is the final
++  assistant text, bounded and retained. A tool list outside the profile is
++  refused at `ready`, and the Host checks each request body's `tools` array
++  against the profile's pinned tool-spec digest before any provider byte.
++- **Request evidence.** Before dispatch, the Host retains each request body
++  create-only and records its SHA-256 on the attempt record; failover attempts
++  reference the same body.
++- **Bounds.** Context, request body, request count, frame and job output
++  bounds sized for the H2 snapshot, fixed per profile and admitted by the
++  server.
++- **Lifecycle.** A gate script for one analysis turn (prompt, any number of
++  bounded tool rounds, final answer, settlement, close) and the matching
++  grammar in `lifecycle-store`.
++- **Admission and preparation.** A server admission class and job preparation
++  for the analysis profile.
++- **Qualification.** Offline observer scenarios (tool rounds, long answer,
++  tools-digest refusal, body retention under failover, crash and cancel) and
++  one live run.
++
++The model for an H2 arm is not chosen here (R6); the profile pins the model
++named in the job packet, from a closed set.
++
++Design decisions for slice 3 (revision 2):
++
++- The snapshot is the job's workspace tree, pinned by its manifest and
++  verified at admission and collection as today. It is not mounted in the
++  inference container; the Host reads members and checks each against the
++  manifest before returning bytes.
++- Tool frames follow the claims-tools pattern: `snapshot_request` from the
++  container, a create-only retained result artifact, `snapshot_result` back,
++  and a check that the native `tool_execution_end` equals what the Host
++  delivered. The lifecycle gate records each delivery as Host ingress
++  (`pi.analysis_read`), and the store's analysis grammar checks every tool
++  result in the settled turn against it. A tool call the SDK refuses before
++  execution (unknown tool, invalid arguments) is an error result with no Host
++  delivery, and the grammar admits it only in that form.
++- One turn: prompt, up to `max_requests` provider requests, sequential tool
++  calls, a final text answer. No reset, tool container or validator.
++- Initial bounds: context 400 000 bytes, request body 600 000 bytes,
++  container frame 1 MiB, job output 64 MiB, 32 requests, 64 reads, read page
++  24 KiB, snapshot 1 MiB in at most 256 files, answer 64 KiB.
++- Request body retention applies to both hosted profiles: the body is written
++  create-only once per request before its first attempt, and each attempt
++  records `request_body_sha256`.
++- The tools check: the request's `tools` array names exactly the profile's
++  tools, all `type: function`, and its canonical digest equals a constant
++  pinned in the Host (a function of the pinned receiver and SDK).
++- The producer is a separate binary, `analysis-qualification`, beside
++  `coding-qualification`. A server admission class and job preparation wait
++  for slice 4 to settle which entry the task host uses.
++
++### 4. Task-host connection
++
++Start with the read-only sizing the route comparison calls P0, done with the
++research-lifecycle lane: how a Pi realization under `lifecycle-service` maps
++native turns, retains request bytes as native input, produces the delivery
++causal record and passes the preparation fence and install predicate. Code in
++those crates waits for their owners' architecture acceptance. Production
++prepare/adopt (G4) is shared with the Codex route and remains theirs.
++
++## Reviews and billing
++
++Slice reviews run as Pi subagents on the Claude subscription
++(`claude-sdk/` namespace): Opus at xhigh for slices 1 and 2, Fable for the
++analysis profile's evidence and admission design. Live runs use the hosted
++routes (subscription first, API key on failover), within the operator's
++2026-11-17 authorization.
+diff --git a/rust/crates/lifecycle-store/src/lib.rs b/rust/crates/lifecycle-store/src/lib.rs
+index 5473104c..2d82cfcf 100644
+--- a/rust/crates/lifecycle-store/src/lib.rs
++++ b/rust/crates/lifecycle-store/src/lib.rs
+@@ -9,13 +9,14 @@ mod native_causal;
+ pub use native_causal::NativeCausalRecord;
+ mod native_input;
+ pub use native_input::{NativeInputApply, NativeInputPayload, NativeInputRecord};
++mod pi_analysis_proof;
+ mod pi_coding;
+ mod pi_coding_proof;
+ mod pi_settlement;
+ pub use pi_coding::{
+-    pi_coding_live_profile_digest, pi_coding_live_protocol_digest, pi_coding_profile_digest,
+-    pi_coding_protocol_digest, pi_coding_sol_high_profile_digest,
+-    pi_coding_sol_high_protocol_digest,
++    pi_analysis_profile_digest, pi_analysis_protocol_digest, pi_coding_live_profile_digest,
++    pi_coding_live_protocol_digest, pi_coding_profile_digest, pi_coding_protocol_digest,
++    pi_coding_sol_high_profile_digest, pi_coding_sol_high_protocol_digest,
+ };
+ pub use pi_settlement::{
+     PI_SDK_INDEX_SHA256, PiSettlementProof, pi_multiturn_profile_digest,
+diff --git a/rust/crates/lifecycle-store/src/native.rs b/rust/crates/lifecycle-store/src/native.rs
+index 61cd1e3a..19c29db2 100644
+--- a/rust/crates/lifecycle-store/src/native.rs
++++ b/rust/crates/lifecycle-store/src/native.rs
+@@ -2491,6 +2491,12 @@ impl SqliteLifecycleStore {
+                     // The live coding task is exact operator-admitted text plus
+                     // the observation block; the fixture's 2 KiB cap does not fit.
+                     16_384
++                } else if request.purpose == NativeInvocationPurpose::DomainWork
++                    && session.profile_digest == crate::pi_analysis_profile_digest()
++                {
++                    // An analysis request is exact operator-admitted text (for
++                    // H2, an audit request with its evidence references).
++                    32_768
+                 } else if request.purpose == NativeInvocationPurpose::DomainWork
+                     && request
+                         .attempt
+@@ -3025,6 +3031,8 @@ impl SqliteLifecycleStore {
+             || profile == crate::pi_coding::pi_coding_live_profile_digest()
+             || protocol == crate::pi_coding::pi_coding_sol_high_protocol_digest()
+             || profile == crate::pi_coding::pi_coding_sol_high_profile_digest()
++            || protocol == crate::pi_coding::pi_analysis_protocol_digest()
++            || profile == crate::pi_coding::pi_analysis_profile_digest()
+         {
+             return Err(StoreError::Rejected);
+         }
+diff --git a/rust/crates/lifecycle-store/src/pi_analysis_proof.rs b/rust/crates/lifecycle-store/src/pi_analysis_proof.rs
+new file mode 100644
+index 00000000..2989123d
+--- /dev/null
++++ b/rust/crates/lifecycle-store/src/pi_analysis_proof.rs
+@@ -0,0 +1,215 @@
++//! Closed grammar of one settled hosted analysis turn (no shell, no workspace
++//! effect): the prompt, any number of provider requests, sequential calls of
++//! the Host-served read-only snapshot tools, and a final text answer. Every
++//! tool result the SDK recorded as executed must equal the Host delivery the
++//! lifecycle gate recorded as trusted ingress (`pi.analysis_read`); a call the
++//! SDK refused before execution is an error result with no Host delivery.
++use crate::StoreError;
++use crate::pi_coding_proof::{Parser, history, request, text};
++use serde_json::{Value, json};
++use work_engine_types::CodecContract;
++
++/// The tools the analysis profile admits; any other name is an SDK refusal.
++pub(crate) const ANALYSIS_TOOLS: [&str; 2] = ["snapshot_list", "snapshot_read"];
++const MAX_ANSWER_BYTES: usize = 65_536;
++const MAX_ROUNDS: usize = 64;
++
++fn bad<T>() -> Result<T, StoreError> {
++    Err(StoreError::ClaimConflict)
++}
++fn hash(b: &[u8]) -> String {
++    CodecContract::BinaryArtifactV1
++        .digest_binary(b)
++        .expect("binary codec")
++        .hex()
++}
++/// The Host delivery for one executed call, checked against its own bytes.
++fn delivery<'a>(reads: &[&'a Value], inv: &str, call: &Value) -> Result<&'a Value, StoreError> {
++    let id = call["id"].as_str().ok_or(StoreError::ClaimConflict)?;
++    let matching: Vec<_> = reads.iter().filter(|r| r["call_id"] == id).collect();
++    let [read] = matching.as_slice() else {
++        return bad();
++    };
++    let raw = read["artifact_bytes"]
++        .as_str()
++        .ok_or(StoreError::ClaimConflict)?;
++    let delivered: Value = serde_json::from_str(raw).map_err(|_| StoreError::ClaimConflict)?;
++    if read["invocationId"] != inv
++        || read["tool"] != call["name"]
++        || read["arguments"] != call["arguments"]
++        || hash(raw.as_bytes()) != read["artifact"]["sha256"]
++        || delivered != read["result"]
++        || delivered["type"] != "snapshot_result"
++        || delivered["id"] != id
++        || !delivered["ok"].is_boolean()
++    {
++        return bad();
++    }
++    Ok(read)
++}
++/// What the receiver returns to the SDK for a Host delivery.
++fn expected_content(delivered: &Value) -> Value {
++    if delivered["ok"] == true {
++        delivered["result"].clone()
++    } else {
++        json!({"error": delivered["error"]})
++    }
++}
++
++/// Validate the turn and return the final assistant text.
++#[allow(clippy::too_many_arguments)]
++pub(crate) fn validate(
++    values: &[Value],
++    inv: &str,
++    correlation: &str,
++    thread: &str,
++    prompt: &[u8],
++    prompt_hash: &str,
++) -> Result<String, StoreError> {
++    if values.iter().any(|v| {
++        v["type"]
++            .as_str()
++            .is_some_and(|t| t.starts_with("pi.coding_"))
++    }) {
++        return bad();
++    }
++    let reads: Vec<&Value> = values
++        .iter()
++        .filter(|v| v["type"] == "pi.analysis_read")
++        .collect();
++    let position = |pred: &dyn Fn(&Value) -> bool| values.iter().position(pred);
++    let mut p = Parser {
++        v: values
++            .iter()
++            .filter(|v| v["type"] != "pi.analysis_read")
++            .collect(),
++        i: 0,
++    };
++    p.take("agent_start")?;
++    p.take("turn_start")?;
++    let mut generated = Vec::new();
++    if p.v
++        .get(p.i)
++        .is_some_and(|v| v["type"] == "message_start" && v["message"]["role"] == "system")
++    {
++        generated.push(p.pair("system")?);
++    }
++    let user = p.pair("user")?;
++    if text(&user)?.as_bytes() != prompt {
++        return bad();
++    }
++    generated.push(user);
++    let mut used = 0usize;
++    let mut rounds = 0usize;
++    let final_message = loop {
++        rounds += 1;
++        if rounds > MAX_ROUNDS {
++            return bad();
++        }
++        if rounds > 1 {
++            p.take("turn_start")?;
++        }
++        request(
++            p.take("pi.provider_request")?,
++            inv,
++            correlation,
++            thread,
++            prompt_hash,
++            &generated,
++        )?;
++        let message = p.assistant()?;
++        let content = message["content"]
++            .as_array()
++            .ok_or(StoreError::ClaimConflict)?;
++        if content
++            .iter()
++            .any(|c| c["type"] != "text" && c["type"] != "toolCall")
++        {
++            return bad();
++        }
++        let calls: Vec<&Value> = content.iter().filter(|c| c["type"] == "toolCall").collect();
++        if message["stopReason"] == "stop" && calls.is_empty() {
++            break message;
++        }
++        if message["stopReason"] != "toolUse" || calls.is_empty() {
++            return bad();
++        }
++        let mut results = Vec::new();
++        for call in calls {
++            let id = call["id"].as_str().ok_or(StoreError::ClaimConflict)?;
++            let start = p.take("tool_execution_start")?;
++            let end = p.take("tool_execution_end")?;
++            let tool = p.pair("toolResult")?;
++            if start["toolCallId"] != id
++                || start["toolName"] != call["name"]
++                || start["args"] != call["arguments"]
++                || end["toolCallId"] != id
++                || end["toolName"] != call["name"]
++                || tool["toolCallId"] != id
++                || tool["toolName"] != call["name"]
++                || tool["isError"] != end["isError"]
++                || end["result"] != json!({"content":tool["content"],"details":tool["details"]})
++            {
++                return bad();
++            }
++            let executed = end["isError"] == false;
++            if executed {
++                // Executed only through the Host: one delivery, recorded between
++                // this call's start and end, equal to what the SDK returned.
++                let read = delivery(&reads, inv, call)?;
++                let delivered = &read["result"];
++                let native = tool["content"]
++                    .as_array()
++                    .filter(|a| a.len() == 1 && a[0]["type"] == "text")
++                    .and_then(|a| a[0]["text"].as_str())
++                    .and_then(|t| serde_json::from_str::<Value>(t).ok());
++                let at = position(&|v| v["type"] == "pi.analysis_read" && v["call_id"] == id);
++                let s = position(&|v| v["type"] == "tool_execution_start" && v["toolCallId"] == id);
++                let e = position(&|v| v["type"] == "tool_execution_end" && v["toolCallId"] == id);
++                if !ANALYSIS_TOOLS.contains(&call["name"].as_str().unwrap_or(""))
++                    || native.as_ref() != Some(&expected_content(delivered))
++                    || tool["details"] != json!({"hostReportedSuccess": delivered["ok"]})
++                    || !matches!((s, at, e), (Some(s), Some(at), Some(e)) if s < at && at < e)
++                {
++                    return bad();
++                }
++                used += 1;
++            } else if end["isError"] != true || reads.iter().any(|r| r["call_id"] == id) {
++                // An SDK refusal never reached the Host.
++                return bad();
++            }
++            results.push(tool);
++        }
++        let turn = p.take("turn_end")?;
++        if turn["message"] != message || turn["toolResults"] != json!(results) {
++            return bad();
++        }
++        generated.push(message);
++        generated.extend(results);
++    };
++    // Every Host delivery belongs to exactly one executed call.
++    if used != reads.len() {
++        return bad();
++    }
++    let answer = text(&final_message)?;
++    if answer.is_empty() || answer.len() > MAX_ANSWER_BYTES {
++        return bad();
++    }
++    let turn = p.take("turn_end")?;
++    if turn["message"] != final_message || turn["toolResults"] != json!([]) {
++        return bad();
++    }
++    generated.push(final_message);
++    let end = p.take("agent_end")?;
++    if end["willRetry"] != false
++        || end["messages"] != json!(generated)
++        || p.take("agent_settled")?["aborted"] != false
++    {
++        return bad();
++    }
++    history(p.take("pi.session_history")?, thread, &generated, None)?;
++    if p.i != p.v.len() {
++        return bad();
++    }
++    Ok(answer)
++}
+diff --git a/rust/crates/lifecycle-store/src/pi_coding.rs b/rust/crates/lifecycle-store/src/pi_coding.rs
+index 3115efff..7daff965 100644
+--- a/rust/crates/lifecycle-store/src/pi_coding.rs
++++ b/rust/crates/lifecycle-store/src/pi_coding.rs
+@@ -19,9 +19,13 @@ pub fn pi_coding_protocol_digest() -> String {
+ pub fn pi_coding_live_profile_digest() -> String {
+     digest(b"pi-1.5.0-coding-host-live-continuity-v4:real-provider:one-workspace-exec:host-journal:owner-derived-checkpoint")
+ }
++/// The live wire forwards raw agent events except `message_update` (each
++/// carried the whole message so far; the final message is in `message_end`
++/// and the Host retains the exact provider stream). The v4 grammar is
++/// unchanged: it already admits a turn without updates.
+ pub fn pi_coding_live_protocol_digest() -> String {
+     digest(
+-        b"pi-1.5.0:raw-agent-events+host-intent-result+session-branch+owner-derived-checkpoint:v4",
++        b"pi-1.5.0:raw-agent-events-except-message-update+host-intent-result+session-branch+owner-derived-checkpoint:v4",
+     )
+ }
+ /// Sol/high v5 preserves native thinking blocks under a distinct grammar.
+@@ -31,6 +35,15 @@ pub fn pi_coding_sol_high_profile_digest() -> String {
+ pub fn pi_coding_sol_high_protocol_digest() -> String {
+     digest(b"pi-1.5.0:raw-agent-events+host-intent-result+thinking-history+owner-derived-checkpoint:v5")
+ }
++/// Hosted analysis: one turn of Host-served read-only snapshot tools and a
++/// final text answer; no shell, workspace effect, checkpoint or reset
++/// (`pi_analysis_proof`).
++pub fn pi_analysis_profile_digest() -> String {
++    digest(b"pi-1.5.0-analysis-hosted-v1:real-provider:host-snapshot-tools:no-shell:final-text")
++}
++pub fn pi_analysis_protocol_digest() -> String {
++    digest(b"pi-1.5.0:raw-agent-events-except-message-update+host-snapshot-deliveries+session-branch:analysis-v1")
++}
+ /// Profile and protocol must come from the same version; mixed bindings are
+ /// refused rather than interpreted.
+ #[derive(Clone, Copy, PartialEq, Eq)]
+@@ -38,6 +51,7 @@ pub(crate) enum PiCodingKind {
+     Fixture,
+     Live,
+     SolHigh,
++    Analysis,
+ }
+ pub(crate) fn pi_coding_kind(profile: &str, protocol: &str) -> Option<PiCodingKind> {
+     if profile == pi_coding_profile_digest() && protocol == pi_coding_protocol_digest() {
+@@ -50,6 +64,8 @@ pub(crate) fn pi_coding_kind(profile: &str, protocol: &str) -> Option<PiCodingKi
+         && protocol == pi_coding_sol_high_protocol_digest()
+     {
+         Some(PiCodingKind::SolHigh)
++    } else if profile == pi_analysis_profile_digest() && protocol == pi_analysis_protocol_digest() {
++        Some(PiCodingKind::Analysis)
+     } else {
+         None
+     }
+@@ -94,8 +110,12 @@ impl SqliteLifecycleStore {
+             params![parent.invocation_id(),turn.as_str(),&self.trusted_issuer,clock.wall.get()],
+             |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?,r.get(6)?,r.get(7)?)))
+             .map_err(|_| StoreError::ClaimConflict)?;
++        // Analysis turns have no workspace effect to enter.
+         if thread != parent.thread().as_str()
+-            || pi_coding_kind(&profile, &protocol).is_none()
++            || !matches!(
++                pi_coding_kind(&profile, &protocol),
++                Some(PiCodingKind::Fixture | PiCodingKind::Live | PiCodingKind::SolHigh)
++            )
+             || profile != parent.profile_digest()
+             || binary != crate::PI_SDK_INDEX_SHA256
+             || clock.wall.get() < last_wall
+@@ -291,7 +311,7 @@ impl SqliteLifecycleStore {
+         self.verify_identity()?;
+         if proof.first_sequence == 0
+             || proof.history_sequence < proof.first_sequence
+-            || proof.history_sequence - proof.first_sequence > 1024
++            || proof.history_sequence - proof.first_sequence > 4096
+         {
+             return Err(StoreError::Rejected);
+         }
+@@ -345,6 +365,33 @@ impl SqliteLifecycleStore {
+         if values.len() as u64 != proof.history_sequence - proof.first_sequence + 1 {
+             return Err(StoreError::ClaimConflict);
+         }
++        if b.kind == PiCodingKind::Analysis {
++            // One domain turn on a fresh session: no anchor, no checkpoint.
++            if b.purpose != "domain_work" || proof.first_sequence != 1 {
++                return Err(StoreError::ClaimConflict);
++            }
++            let answer = crate::pi_analysis_proof::validate(
++                &values,
++                parent.invocation_id(),
++                parent.turn().unwrap().as_str(),
++                &b.thread,
++                &b.prompt,
++                &b.prompt_hash,
++            )?;
++            drop(stmt);
++            crate::native::commit_native_settlement(
++                &tx,
++                parent,
++                &answer,
++                "observed_complete",
++                &proof.transport,
++                proof.history_sequence,
++                wall,
++                &b.purpose,
++                clock,
++            )?;
++            return tx.commit().map_err(|_| StoreError::Unavailable);
++        }
+         let profile_digest = if b.kind == PiCodingKind::SolHigh {
+             pi_coding_sol_high_profile_digest()
+         } else if b.kind == PiCodingKind::Live {
+diff --git a/rust/crates/lifecycle-store/src/pi_coding_proof.rs b/rust/crates/lifecycle-store/src/pi_coding_proof.rs
+index d62f7161..30683866 100644
+--- a/rust/crates/lifecycle-store/src/pi_coding_proof.rs
++++ b/rust/crates/lifecycle-store/src/pi_coding_proof.rs
+@@ -18,7 +18,7 @@ fn hash(b: &[u8]) -> String {
+         .expect("binary codec")
+         .hex()
+ }
+-fn text(m: &Value) -> Result<String, StoreError> {
++pub(crate) fn text(m: &Value) -> Result<String, StoreError> {
+     if let Some(s) = m["content"].as_str() {
+         return Ok(s.into());
+     }
+@@ -32,12 +32,12 @@ fn text(m: &Value) -> Result<String, StoreError> {
+     }
+     Ok(out)
+ }
+-struct Parser<'a> {
+-    v: Vec<&'a Value>,
+-    i: usize,
++pub(crate) struct Parser<'a> {
++    pub(crate) v: Vec<&'a Value>,
++    pub(crate) i: usize,
+ }
+ impl<'a> Parser<'a> {
+-    fn take(&mut self, k: &str) -> Result<&'a Value, StoreError> {
++    pub(crate) fn take(&mut self, k: &str) -> Result<&'a Value, StoreError> {
+         let v = *self.v.get(self.i).ok_or(StoreError::ClaimConflict)?;
+         if v["type"] != k {
+             return bad();
+@@ -45,7 +45,7 @@ impl<'a> Parser<'a> {
+         self.i += 1;
+         Ok(v)
+     }
+-    fn pair(&mut self, role: &str) -> Result<Value, StoreError> {
++    pub(crate) fn pair(&mut self, role: &str) -> Result<Value, StoreError> {
+         let a = self.take("message_start")?;
+         let b = self.take("message_end")?;
+         if a["message"] != b["message"] || b["message"]["role"] != role {
+@@ -53,7 +53,7 @@ impl<'a> Parser<'a> {
+         }
+         Ok(b["message"].clone())
+     }
+-    fn assistant(&mut self) -> Result<Value, StoreError> {
++    pub(crate) fn assistant(&mut self) -> Result<Value, StoreError> {
+         let a = self.take("message_start")?;
+         if a["message"]["role"] != "assistant" {
+             return bad();
+@@ -73,7 +73,7 @@ impl<'a> Parser<'a> {
+     }
+ }
+ #[allow(clippy::too_many_arguments)]
+-fn request(
++pub(crate) fn request(
+     v: &Value,
+     inv: &str,
+     correlation: &str,
+@@ -107,7 +107,7 @@ fn request(
+     }
+     Ok(())
+ }
+-fn history(
++pub(crate) fn history(
+     v: &Value,
+     thread: &str,
+     full: &[Value],
+diff --git a/rust/crates/lifecycle-store/tests/pi_analysis.rs b/rust/crates/lifecycle-store/tests/pi_analysis.rs
+new file mode 100644
+index 00000000..2376080f
+--- /dev/null
++++ b/rust/crates/lifecycle-store/tests/pi_analysis.rs
+@@ -0,0 +1,354 @@
++//! Synthetic protocol-unit fixtures for the hosted analysis grammar; never
++//! original SDK evidence or authority.
++use lifecycle_core::*;
++use lifecycle_store::*;
++use serde_json::{Value, json};
++use tempfile::tempdir;
++use work_engine_types::CodecContract;
++fn clock() -> ClockSample {
++    ClockSample {
++        wall: WallTimeMs::new(100),
++        wait_budget: WaitBudgetMs::new(100),
++    }
++}
++fn hash(b: &[u8]) -> String {
++    CodecContract::BinaryArtifactV1
++        .digest_binary(b)
++        .unwrap()
++        .hex()
++}
++fn setup(
++    root: &std::path::Path,
++    profile: &str,
++    protocol: &str,
++) -> (SqliteLifecycleStore, NativeSessionEntry) {
++    let mut s = SqliteLifecycleStore::open(root, "issuer".into()).unwrap();
++    s.register_subject(
++        SubjectId::parse("s").unwrap(),
++        ContextGeneration::parse("c").unwrap(),
++        BuildId::parse("b").unwrap(),
++        ProofRunId::parse("p").unwrap(),
++        clock(),
++    )
++    .unwrap();
++    s.install_trusted_grant(TrustedGrant {
++        id: GrantId::parse("g").unwrap(),
++        issuer: "issuer".into(),
++        principal: "operator".into(),
++        subject: SubjectId::parse("s").unwrap(),
++        context: ContextGeneration::parse("c").unwrap(),
++        build: BuildId::parse("b").unwrap(),
++        proof_run: ProofRunId::parse("p").unwrap(),
++        scope: GrantScope::NativeTurn,
++        expires: AuthorityExpiresAt::new(WallTimeMs::new(1000)),
++        revision: Revision::new(1),
++        revoked: false,
++    })
++    .unwrap();
++    let mut session = s
++        .reserve_native_session(
++            NativeSessionId::parse("n").unwrap(),
++            SubjectId::parse("s").unwrap(),
++            ContextGeneration::parse("c").unwrap(),
++            RuntimeIncarnation::parse("i").unwrap(),
++            profile,
++            PI_SDK_INDEX_SHA256,
++            protocol,
++            SnapshotId::parse("snap").unwrap(),
++            &"a".repeat(64),
++            false,
++            clock(),
++        )
++        .unwrap();
++    s.bind_native_thread(
++        &mut session,
++        ProviderThreadId::parse("physical:pi").unwrap(),
++    )
++    .unwrap();
++    (s, session)
++}
++fn record(
++    s: &mut SqliteLifecycleStore,
++    session: &NativeSessionEntry,
++    inv: &str,
++    values: &[Value],
++) -> (NativeTurnEntry, PiSettlementProof) {
++    let mut turn = s
++        .claim_native_turn(
++            session,
++            NativeTurnRequest {
++                invocation_id: inv.into(),
++                attempt: AttemptId::parse(format!("attempt:{inv}")).unwrap(),
++                grant: GrantId::parse("g").unwrap(),
++                grant_revision: 1,
++                purpose: NativeInvocationPurpose::DomainWork,
++                prompt: inv.as_bytes().to_vec(),
++            },
++            "operator",
++            clock(),
++        )
++        .unwrap();
++    s.mark_native_send_intent(&turn).unwrap();
++    s.bind_native_turn(
++        &mut turn,
++        ProviderTurnId::parse(format!("turn:{inv}")).unwrap(),
++    )
++    .unwrap();
++    for (i, v) in values.iter().enumerate() {
++        s.record_native_ingress(
++            session.id(),
++            "wire",
++            1 + i as u64,
++            &serde_json::to_vec(v).unwrap(),
++            "qualified",
++            v["type"].as_str(),
++            Some("physical:pi"),
++            Some(&format!("turn:{inv}")),
++            None,
++            clock(),
++        )
++        .unwrap();
++    }
++    (
++        turn,
++        PiSettlementProof {
++            transport: "wire".into(),
++            first_sequence: 1,
++            history_sequence: values.len() as u64,
++        },
++    )
++}
++fn delivery(inv: &str, id: &str, tool: &str, arguments: Value, result: Value) -> (Value, Value) {
++    let delivered = json!({"type":"snapshot_result","id":id,"ok":true,"result":result});
++    let bytes = serde_json::to_string(&delivered).unwrap();
++    let read = json!({"type":"pi.analysis_read","invocationId":inv,"call_id":id,"tool":tool,"arguments":arguments,
++        "result":delivered,"artifact":{"path":format!("/state/{id}.json"),"sha256":hash(bytes.as_bytes())},"artifact_bytes":bytes});
++    let content = json!([{"type":"text","text":serde_json::to_string(&result).unwrap()}]);
++    let tool_message = json!({"role":"toolResult","toolCallId":id,"toolName":tool,"content":content,"details":{"hostReportedSuccess":true},"isError":false});
++    (read, tool_message)
++}
++fn request(inv: &str, input: &[Value]) -> Value {
++    json!({"type":"pi.provider_request","producer":"pi-1.5.0","sessionId":"physical:pi","invocationId":inv,
++        "turnCorrelation":format!("turn:{inv}"),"prompt_sha256":hash(inv.as_bytes()),"messages":input,"agentMessages":input})
++}
++/// Three provider requests: a list call, then a read and an SDK-refused call
++/// in one message, then the final answer.
++fn events(inv: &str) -> Vec<Value> {
++    let user = json!({"role":"user","content":[{"type":"text","text":inv}]});
++    let call1 = json!({"type":"toolCall","id":"c1","name":"snapshot_list","arguments":{}});
++    let a1 = json!({"role":"assistant","content":[call1],"stopReason":"toolUse"});
++    let (r1, t1) = delivery(
++        inv,
++        "c1",
++        "snapshot_list",
++        json!({}),
++        json!({"members":[{"path":"a.md","bytes":5}]}),
++    );
++    let call2 =
++        json!({"type":"toolCall","id":"c2","name":"snapshot_read","arguments":{"path":"a.md"}});
++    let call3 = json!({"type":"toolCall","id":"c3","name":"bogus","arguments":{}});
++    let a2 = json!({"role":"assistant","content":[{"type":"text","text":"reading"},call2,call3],"stopReason":"toolUse"});
++    let (r2, t2) = delivery(
++        inv,
++        "c2",
++        "snapshot_read",
++        json!({"path":"a.md"}),
++        json!({"path":"a.md","text":"hello"}),
++    );
++    let t3 = json!({"role":"toolResult","toolCallId":"c3","toolName":"bogus","content":[{"type":"text","text":"Tool bogus not found"}],"details":{},"isError":true});
++    let a3 = json!({"role":"assistant","content":[{"type":"text","text":"supported: hello"}],"stopReason":"stop"});
++    let full = vec![
++        user.clone(),
++        a1.clone(),
++        t1.clone(),
++        a2.clone(),
++        t2.clone(),
++        t3.clone(),
++        a3.clone(),
++    ];
++    let mut branch = vec![];
++    let mut parent = Value::Null;
++    for (i, m) in full.iter().enumerate() {
++        branch.push(json!({"type":"message","id":format!("m{i}"),"parentId":parent,"message":m}));
++        parent = json!(format!("m{i}"));
++    }
++    let end = |id: &str, name: &str, t: &Value| json!({"type":"tool_execution_end","toolCallId":id,"toolName":name,"result":{"content":t["content"],"details":t["details"]},"isError":t["isError"]});
++    vec![
++        json!({"type":"agent_start"}),
++        json!({"type":"turn_start"}),
++        json!({"type":"message_start","message":user}),
++        json!({"type":"message_end","message":user}),
++        request(inv, &full[..1]),
++        json!({"type":"message_start","message":{"role":"assistant"}}),
++        json!({"type":"message_end","message":a1}),
++        json!({"type":"tool_execution_start","toolCallId":"c1","toolName":"snapshot_list","args":{}}),
++        r1,
++        end("c1", "snapshot_list", &t1),
++        json!({"type":"message_start","message":t1}),
++        json!({"type":"message_end","message":t1}),
++        json!({"type":"turn_end","message":a1,"toolResults":[t1]}),
++        json!({"type":"turn_start"}),
++        request(inv, &full[..3]),
++        json!({"type":"message_start","message":{"role":"assistant"}}),
++        json!({"type":"message_end","message":a2}),
++        json!({"type":"tool_execution_start","toolCallId":"c2","toolName":"snapshot_read","args":{"path":"a.md"}}),
++        r2,
++        end("c2", "snapshot_read", &t2),
++        json!({"type":"message_start","message":t2}),
++        json!({"type":"message_end","message":t2}),
++        json!({"type":"tool_execution_start","toolCallId":"c3","toolName":"bogus","args":{}}),
++        end("c3", "bogus", &t3),
++        json!({"type":"message_start","message":t3}),
++        json!({"type":"message_end","message":t3}),
++        json!({"type":"turn_end","message":a2,"toolResults":[t2,t3]}),
++        json!({"type":"turn_start"}),
++        request(inv, &full[..6]),
++        json!({"type":"message_start","message":{"role":"assistant"}}),
++        json!({"type":"message_end","message":a3}),
++        json!({"type":"turn_end","message":a3,"toolResults":[]}),
++        json!({"type":"agent_end","messages":full,"willRetry":false}),
++        json!({"type":"agent_settled","aborted":false}),
++        json!({"type":"pi.session_history","producer":"pi-1.5.0","sessionId":"physical:pi","header":{"type":"session","id":"physical:pi"},"leafId":"m6","messages":full,"branch":branch}),
++    ]
++}
++fn settle(
++    values: &[Value],
++) -> (
++    Result<(), StoreError>,
++    SqliteLifecycleStore,
++    tempfile::TempDir,
++) {
++    let root = tempdir().unwrap();
++    let (mut s, session) = setup(
++        root.path(),
++        &pi_analysis_profile_digest(),
++        &pi_analysis_protocol_digest(),
++    );
++    let (turn, proof) = record(&mut s, &session, "audit", values);
++    let r = s.settle_pi_coding(&turn, &proof, clock());
++    (r, s, root)
++}
++#[test]
++fn analysis_turn_settles_with_host_deliveries_and_sdk_refusals() {
++    let (r, s, _root) = settle(&events("audit"));
++    r.unwrap();
++    let recovery = s.native_recovery("audit").unwrap().unwrap();
++    assert_eq!(recovery.class, "CompletedSettled");
++}
++#[test]
++fn analysis_grammar_refuses_each_unbound_or_altered_tool_result() {
++    let base = events("audit");
++    let pos = |kind: &str, id: &str| {
++        base.iter()
++            .position(|v| v["type"] == kind && (v["call_id"] == id || v["toolCallId"] == id))
++            .unwrap()
++    };
++    let mut cases: Vec<(&str, Vec<Value>)> = vec![];
++    // The SDK result differs from the Host delivery.
++    let mut v = base.clone();
++    let i = pos("tool_execution_end", "c2");
++    v[i]["result"]["content"][0]["text"] = json!("{\"path\":\"a.md\",\"text\":\"forged\"}");
++    cases.push(("result differs from delivery", v));
++    // Executed call without a Host delivery.
++    let mut v = base.clone();
++    v.remove(pos("pi.analysis_read", "c2"));
++    cases.push(("missing delivery", v));
++    // The same delivery twice.
++    let mut v = base.clone();
++    let i = pos("pi.analysis_read", "c2");
++    v.insert(i, base[i].clone());
++    cases.push(("duplicate delivery", v));
++    // Delivery recorded after the call ended.
++    let mut v = base.clone();
++    let i = pos("pi.analysis_read", "c2");
++    let r = v.remove(i);
++    v.insert(i + 1, r);
++    cases.push(("delivery after end", v));
++    // An SDK refusal that reached the Host.
++    let mut v = base.clone();
++    let i = pos("tool_execution_end", "c3");
++    let mut forged = base[pos("pi.analysis_read", "c2")].clone();
++    forged["call_id"] = json!("c3");
++    v.insert(i, forged);
++    cases.push(("refusal with delivery", v));
++    // Delivery bytes that do not match their digest.
++    let mut v = base.clone();
++    let i = pos("pi.analysis_read", "c1");
++    v[i]["artifact_bytes"] = json!(
++        v[i]["artifact_bytes"]
++            .as_str()
++            .unwrap()
++            .replace("a.md", "b.md")
++    );
++    cases.push(("tampered delivery bytes", v));
++    // A delivery under another tool name.
++    let mut v = base.clone();
++    let i = pos("pi.analysis_read", "c1");
++    v[i]["tool"] = json!("snapshot_read");
++    cases.push(("delivery tool mismatch", v));
++    // A coding effect inside an analysis turn.
++    let mut v = base.clone();
++    v.insert(
++        8,
++        json!({"type":"pi.coding_tool_intent","invocationId":"audit","intent":{}}),
++    );
++    cases.push(("coding intent", v));
++    // The final answer is not a clean stop.
++    let mut v = base.clone();
++    let n = v.len();
++    for j in [n - 5, n - 4, n - 3] {
++        if v[j]["message"]["role"] == "assistant" {
++            v[j]["message"]["stopReason"] = json!("length");
++        }
++    }
++    cases.push(("final not stop", v));
++    // The request input omits a tool result.
++    let mut v = base.clone();
++    let i = base
++        .iter()
++        .rposition(|v| v["type"] == "pi.provider_request")
++        .unwrap();
++    v[i]["agentMessages"].as_array_mut().unwrap().pop();
++    cases.push(("request input altered", v));
++    for (name, values) in cases {
++        let (r, s, _root) = settle(&values);
++        assert!(r.is_err(), "{name}");
++        assert_eq!(
++            s.native_recovery("audit").unwrap().unwrap().class,
++            "EnteredUncertain",
++            "{name}"
++        );
++    }
++}
++#[test]
++fn analysis_turns_need_the_analysis_binding_and_have_no_effect_entry() {
++    // The coding live grammar refuses an analysis turn.
++    let root = tempdir().unwrap();
++    let (mut s, session) = setup(
++        root.path(),
++        &pi_coding_live_profile_digest(),
++        &pi_coding_live_protocol_digest(),
++    );
++    let (turn, proof) = record(&mut s, &session, "audit", &events("audit"));
++    assert!(s.settle_pi_coding(&turn, &proof, clock()).is_err());
++    // Mixed analysis bindings are not a Pi coding kind.
++    let root = tempdir().unwrap();
++    let (mut s, session) = setup(
++        root.path(),
++        &pi_analysis_profile_digest(),
++        &pi_coding_live_protocol_digest(),
++    );
++    let (turn, proof) = record(&mut s, &session, "audit", &events("audit"));
++    assert!(s.settle_pi_coding(&turn, &proof, clock()).is_err());
++    // No workspace effect can be entered under the analysis binding.
++    let root = tempdir().unwrap();
++    let (mut s, session) = setup(
++        root.path(),
++        &pi_analysis_profile_digest(),
++        &pi_analysis_protocol_digest(),
++    );
++    let (turn, _) = record(&mut s, &session, "audit", &events("audit")[..4]);
++    let intent = json!({"job_id":"j","input_digest":"a".repeat(64),"session_id":"physical:pi","call_id":"c1","command_sha256":"b".repeat(64)});
++    let entered = s.with_pi_coding_effect(&turn, "wire", 1, &intent, clock(), |_| Ok::<(), ()>(()));
++    assert!(entered.is_err());
++}
+diff --git a/rust/crates/pi-pressure-context-host/src/analysis.rs b/rust/crates/pi-pressure-context-host/src/analysis.rs
+new file mode 100644
+index 00000000..530020d9
+--- /dev/null
++++ b/rust/crates/pi-pressure-context-host/src/analysis.rs
+@@ -0,0 +1,455 @@
++//! Lifecycle gate for the hosted analysis profile
++//! (`work-engine.pi-analysis-hosted.v1`): one domain turn on a fresh native
++//! session. The lifecycle store owns the turn (claim, send intent, current
++//! grant through every IPC write and provider attempt, settlement against the
++//! analysis grammar). The Host owns every effect: provider attempts and the
++//! read-only snapshot deliveries, which this gate records as trusted ingress
++//! before their replies are dispatched. No shell, workspace effect, checkpoint
++//! or reset exists here.
++use crate::coding::HostedProviderPolicy;
++use lifecycle_core::*;
++use lifecycle_store::{
++    NativeSessionEntry, NativeTurnEntry, NativeTurnRequest, PiSettlementProof, SqliteLifecycleStore,
++};
++use serde_json::{Value, json};
++use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
++use work_engine_manual_host::{
++    Artifact, Error, ProcessRecord, Result,
++    pi_docker::coding::{CodingEffectGate, CodingToolIntent, ProviderAttemptIntent},
++};
++
++fn refused(message: impl ToString) -> Error {
++    Error::Refused(message.to_string())
++}
++const INVOCATION: &str = "analysis";
++const TRANSPORT: &str = "analysis-wire";
++const MAX_PROMPT_BYTES: usize = 32_768;
++
++/// Pinned outside controls of one analysis job.
++#[derive(Clone)]
++pub struct AnalysisConfig {
++    /// Exact task bytes admitted by the Host plan.
++    pub task: String,
++    pub expires_ms: i64,
++    pub max_requests: u64,
++    /// The failover policy the turn grant covers (bound into its id).
++    pub hosted: HostedProviderPolicy,
++}
++impl AnalysisConfig {
++    pub fn grant_id(&self) -> String {
++        self.hosted.grant_id("grant:analysis")
++    }
++    fn prompt(&self) -> String {
++        format!(
++            "{}\n\nBounded read-only analysis job. The snapshot tools are the only material available: there is no shell, network or file editing. Read what you need, then give the complete answer as your final message.",
++            self.task
++        )
++    }
++}
++struct State {
++    store: SqliteLifecycleStore,
++    session: NativeSessionEntry,
++    parent: Option<NativeTurnEntry>,
++    config: AnalysisConfig,
++    clock: fn() -> ClockSample,
++    sequence: u64,
++    pending: Option<Value>,
++    provider_calls: u64,
++    hosted_attempts: (u64, u64),
++    hosted_log: Vec<Value>,
++    /// Host deliveries recorded as ingress; each reply is sent once.
++    deliveries: BTreeMap<String, (Value, bool)>,
++    closing: bool,
++    report: Option<Value>,
++}
++#[derive(Clone)]
++pub struct AnalysisSession(Rc<RefCell<State>>);
++impl AnalysisSession {
++    pub fn new(
++        store: SqliteLifecycleStore,
++        session: NativeSessionEntry,
++        config: AnalysisConfig,
++        clock: fn() -> ClockSample,
++    ) -> Result<Self> {
++        if config.task.is_empty()
++            || config.prompt().len() > MAX_PROMPT_BYTES
++            || !(1..=64).contains(&config.max_requests)
++            || config.expires_ms <= clock().wall.get()
++            || session.profile_digest() != lifecycle_store::pi_analysis_profile_digest()
++        {
++            return Err(refused("analysis control refused"));
++        }
++        Ok(Self(Rc::new(RefCell::new(State {
++            store,
++            session,
++            parent: None,
++            config,
++            clock,
++            sequence: 0,
++            pending: None,
++            provider_calls: 0,
++            hosted_attempts: (0, 0),
++            hosted_log: vec![],
++            deliveries: BTreeMap::new(),
++            closing: false,
++            report: None,
++        }))))
++    }
++    /// Hosted attempts admitted under the current grant (every exit).
++    pub fn hosted_attempts(&self) -> Vec<Value> {
++        self.0.borrow().hosted_log.clone()
++    }
++    pub fn report(&self) -> Result<Value> {
++        self.0
++            .borrow()
++            .report
++            .clone()
++            .ok_or_else(|| refused("analysis unfinished"))
++    }
++}
++impl State {
++    fn check(&self) -> Result<()> {
++        if (self.clock)().wall.get() >= self.config.expires_ms {
++            return Err(refused("analysis deadline passed"));
++        }
++        Ok(())
++    }
++    fn parent(&self) -> Result<&NativeTurnEntry> {
++        self.parent
++            .as_ref()
++            .ok_or_else(|| refused("analysis turn absent"))
++    }
++    fn record(&mut self, method: &str, value: &Value) -> Result<()> {
++        let State {
++            store,
++            session,
++            parent,
++            sequence,
++            clock,
++            ..
++        } = self;
++        let parent = parent
++            .as_ref()
++            .ok_or_else(|| refused("analysis turn absent"))?;
++        *sequence += 1;
++        store
++            .record_native_ingress(
++                session.id(),
++                TRANSPORT,
++                *sequence,
++                &serde_json::to_vec(value)?,
++                "qualified",
++                Some(method),
++                Some(parent.thread().as_str()),
++                parent.turn().map(|t| t.as_str()),
++                None,
++                clock(),
++            )
++            .map_err(refused)?;
++        Ok(())
++    }
++    fn queue(&mut self, command: Value) -> Result<Vec<Value>> {
++        if self.pending.is_some() {
++            return Err(refused("analysis command already pending"));
++        }
++        self.pending = Some(command.clone());
++        Ok(vec![command])
++    }
++    fn correlated(&self, frame: &Value) -> Result<()> {
++        let parent = self.parent()?;
++        if frame["sessionId"] != parent.thread().as_str()
++            || frame["invocationId"] != parent.invocation_id()
++            || frame["turnCorrelation"] != parent.turn().map(|t| t.as_str()).unwrap_or("")
++        {
++            return Err(refused("analysis owner correlation conflict"));
++        }
++        Ok(())
++    }
++    fn ready(&mut self, frame: &Value) -> Result<Vec<Value>> {
++        let thread = frame["sessionId"]
++            .as_str()
++            .filter(|s| !s.is_empty())
++            .ok_or_else(|| refused("native session absent"))?;
++        if self.parent.is_some()
++            || frame["snapshot"]["idle"] != true
++            || frame["snapshot"]["sessionId"] != thread
++        {
++            return Err(refused("analysis initial observation conflict"));
++        }
++        self.store
++            .bind_native_thread(
++                &mut self.session,
++                ProviderThreadId::parse(thread).map_err(refused)?,
++            )
++            .map_err(refused)?;
++        let prompt = self.config.prompt();
++        let mut turn = self
++            .store
++            .claim_native_turn(
++                &self.session,
++                NativeTurnRequest {
++                    invocation_id: INVOCATION.into(),
++                    attempt: AttemptId::parse(format!("attempt:{INVOCATION}")).map_err(refused)?,
++                    grant: GrantId::parse(self.config.grant_id()).map_err(refused)?,
++                    grant_revision: 1,
++                    purpose: NativeInvocationPurpose::DomainWork,
++                    prompt: prompt.as_bytes().to_vec(),
++                },
++                "operator:analysis",
++                (self.clock)(),
++            )
++            .map_err(refused)?;
++        self.store.mark_native_send_intent(&turn).map_err(refused)?;
++        self.store
++            .bind_native_turn(
++                &mut turn,
++                ProviderTurnId::parse(format!("turn:{INVOCATION}")).map_err(refused)?,
++            )
++            .map_err(refused)?;
++        self.parent = Some(turn);
++        self.queue(json!({"type":"bridge_prompt","sessionId":thread,"invocationId":INVOCATION,"turnCorrelation":format!("turn:{INVOCATION}"),"prompt":prompt}))
++    }
++    fn provider(&mut self, frame: &Value) -> Result<Vec<Value>> {
++        self.correlated(frame)?;
++        if self.closing
++            || self.provider_calls >= self.config.max_requests
++            || frame["id"] != self.provider_calls + 1
++        {
++            return Err(refused(
++                "analysis provider request outside its admitted count",
++            ));
++        }
++        self.provider_calls += 1;
++        let mut request = frame.clone();
++        request["type"] = json!("pi.provider_request");
++        if let Some(m) = request.as_object_mut() {
++            m.remove("schema");
++            m.remove("host_workspace");
++        }
++        self.record("pi.provider_request", &request)?;
++        let session = frame["sessionId"].clone();
++        let id = self.provider_calls;
++        self.queue(json!({"type":"bridge_provider","sessionId":session,"id":id,"mode":"live"}))
++    }
++    fn native(&mut self, frame: &Value) -> Result<Vec<Value>> {
++        if frame["sessionId"] != self.parent()?.thread().as_str() || self.closing {
++            return Err(refused("analysis native event outside the turn"));
++        }
++        let kind = frame["event"]["type"]
++            .as_str()
++            .ok_or_else(|| refused("native event kind"))?
++            .to_string();
++        self.record(&kind, &frame["event"])?;
++        Ok(vec![])
++    }
++    fn history(&mut self, frame: &Value) -> Result<Vec<Value>> {
++        let parent = self.parent()?;
++        if frame["sessionId"] != parent.thread().as_str()
++            || frame["invocationId"] != parent.invocation_id()
++            || frame["snapshot"]["idle"] != true
++            || self.closing
++        {
++            return Err(refused("analysis history mismatch"));
++        }
++        let mut history = frame.clone();
++        history["type"] = json!("pi.session_history");
++        if let Some(m) = history.as_object_mut() {
++            m.remove("schema");
++            m.remove("host_workspace");
++        }
++        self.record("pi.session_history", &history)?;
++        let proof = PiSettlementProof {
++            transport: TRANSPORT.into(),
++            first_sequence: 1,
++            history_sequence: self.sequence,
++        };
++        let clock = (self.clock)();
++        let State { store, parent, .. } = self;
++        let parent = parent
++            .as_ref()
++            .ok_or_else(|| refused("analysis turn absent"))?;
++        store
++            .settle_pi_coding(parent, &proof, clock)
++            .map_err(refused)?;
++        let class = self
++            .store
++            .native_recovery(INVOCATION)
++            .map_err(refused)?
++            .ok_or_else(|| refused("analysis turn absent after settlement"))?
++            .class;
++        // The answer the grammar validated: the final assistant message.
++        let answer = frame["messages"]
++            .as_array()
++            .and_then(|m| m.last())
++            .filter(|m| m["role"] == "assistant")
++            .and_then(|m| m["content"].as_array())
++            .map(|c| {
++                c.iter()
++                    .filter_map(|b| b["text"].as_str())
++                    .collect::<String>()
++            })
++            .ok_or_else(|| refused("analysis answer absent"))?;
++        self.report = Some(json!({
++            "schema":"work-engine.pi-analysis-result.v1",
++            "standing":"live-provider hosted analysis; real inference; no research standing, owner acceptance or domain effect",
++            "settlement":class,
++            "answer":answer,
++            "answer_sha256":work_engine_manual_host::digest(answer.as_bytes()),
++            "provider_requests":self.provider_calls,
++            "snapshot_deliveries":self.deliveries.len(),
++            "hosted_attempts":self.hosted_log,
++        }));
++        self.closing = true;
++        let session = frame["sessionId"].clone();
++        self.queue(json!({"type":"bridge_close","sessionId":session}))
++    }
++}
++impl CodingEffectGate for AnalysisSession {
++    fn execute(
++        &mut self,
++        _intent: &CodingToolIntent,
++        _actuator: &mut dyn FnMut(i64) -> Result<(bool, Vec<u8>)>,
++    ) -> Result<(bool, Vec<u8>)> {
++        Err(refused("the analysis profile has no workspace effect"))
++    }
++    fn observed(
++        &mut self,
++        _intent: &CodingToolIntent,
++        _result: &Artifact,
++        _process: &ProcessRecord,
++        _container: &str,
++    ) -> Result<()> {
++        Err(refused("the analysis profile has no workspace effect"))
++    }
++    fn frame(&mut self, frame: &Value) -> Result<Vec<Value>> {
++        let mut s = self.0.borrow_mut();
++        s.check()?;
++        match frame["type"].as_str() {
++            Some("ready") => s.ready(frame),
++            Some("native_event") => s.native(frame),
++            Some("coding_provider_request") => s.provider(frame),
++            Some("coding_history") => s.history(frame),
++            _ => Err(refused("unsupported analysis frame")),
++        }
++    }
++    fn snapshot_delivered(
++        &mut self,
++        id: &str,
++        tool: &str,
++        arguments: &Value,
++        result: &Value,
++        artifact: &Artifact,
++    ) -> Result<()> {
++        let mut s = self.0.borrow_mut();
++        s.check()?;
++        let bytes = artifact.verify()?;
++        let artifact_bytes = String::from_utf8(bytes).map_err(refused)?;
++        if s.closing
++            || s.deliveries.contains_key(id)
++            || serde_json::from_str::<Value>(&artifact_bytes)? != *result
++            || result["id"] != id
++        {
++            return Err(refused("analysis delivery conflict"));
++        }
++        let invocation = s.parent()?.invocation_id().to_string();
++        let read = json!({"type":"pi.analysis_read","invocationId":invocation,"call_id":id,"tool":tool,
++            "arguments":arguments,"result":result,"artifact":artifact,"artifact_bytes":artifact_bytes});
++        s.record("pi.analysis_read", &read)?;
++        s.deliveries.insert(id.into(), (result.clone(), false));
++        Ok(())
++    }
++    fn provider_attempt(
++        &mut self,
++        intent: &ProviderAttemptIntent,
++        dispatch: &mut dyn FnMut(i64) -> Result<()>,
++    ) -> Result<()> {
++        let mut s = self.0.borrow_mut();
++        s.check()?;
++        let policy = s.config.hosted.clone();
++        if s.pending.is_some() || intent.request == 0 || intent.request != s.provider_calls {
++            return Err(refused("provider attempt outside an admitted request"));
++        }
++        let previous = if s.hosted_attempts.0 == intent.request {
++            s.hosted_attempts.1
++        } else {
++            0
++        };
++        if intent.attempt != previous + 1
++            || intent.attempt > u64::from(policy.max_attempts_per_request)
++        {
++            return Err(refused("provider attempt order/limit"));
++        }
++        if !policy
++            .routes
++            .iter()
++            .any(|(r, p)| *r == intent.route && *p == intent.payer)
++        {
++            return Err(refused("provider attempt route/payer not granted"));
++        }
++        // Consumed before entry: a refused or failed attempt is never replayed.
++        s.hosted_attempts = (intent.request, intent.attempt);
++        let clock = (s.clock)();
++        let configured = s.config.expires_ms;
++        let State {
++            store,
++            hosted_log,
++            parent,
++            ..
++        } = &mut *s;
++        let parent = parent
++            .as_ref()
++            .ok_or_else(|| refused("analysis turn absent"))?;
++        let entry =
++            json!({"invocationId":parent.invocation_id(),"intent":intent,"policy":policy.digest()});
++        store
++            .with_pi_coding_turn_send(parent, clock, |granted| {
++                let deadline = granted.min(configured);
++                let mut entry = entry;
++                entry["deadlineMs"] = json!(deadline);
++                hosted_log.push(entry);
++                dispatch(deadline)
++            })
++            .map_err(refused)?
++    }
++    fn dispatch(&mut self, command: &Value, send: &mut dyn FnMut(i64) -> Result<()>) -> Result<()> {
++        let mut s = self.0.borrow_mut();
++        s.check()?;
++        let clock = (s.clock)();
++        // A snapshot reply is exactly the recorded delivery, sent once under
++        // the current turn grant.
++        if command["type"] == "snapshot_result" {
++            let id = command["id"].as_str().unwrap_or("").to_string();
++            match s.deliveries.get_mut(&id) {
++                Some((delivered, sent)) if !*sent && delivered == command => *sent = true,
++                _ => return Err(refused("snapshot reply differs from the recorded delivery")),
++            }
++            let State { store, parent, .. } = &mut *s;
++            let parent = parent
++                .as_ref()
++                .ok_or_else(|| refused("analysis turn absent"))?;
++            return store
++                .with_pi_coding_turn_send(parent, clock, send)
++                .map_err(refused)?;
++        }
++        let expected = s
++            .pending
++            .take()
++            .ok_or_else(|| refused("analysis command consumed"))?;
++        if *command != expected {
++            return Err(refused("analysis command differs from admitted bytes"));
++        }
++        if command["type"] == "bridge_close" {
++            if !s.closing {
++                return Err(refused("close before settlement"));
++            }
++            return send(s.config.expires_ms);
++        }
++        let State { store, parent, .. } = &mut *s;
++        let parent = parent
++            .as_ref()
++            .ok_or_else(|| refused("analysis turn absent"))?;
++        store
++            .with_pi_coding_turn_send(parent, clock, send)
++            .map_err(refused)?
++    }
++}
+diff --git a/rust/crates/pi-pressure-context-host/src/bin/analysis-qualification.rs b/rust/crates/pi-pressure-context-host/src/bin/analysis-qualification.rs
+new file mode 100644
+index 00000000..165b248d
+--- /dev/null
++++ b/rust/crates/pi-pressure-context-host/src/bin/analysis-qualification.rs
+@@ -0,0 +1,189 @@
++//! Explicit finite entry for one hosted analysis job
++//! (`work-engine.pi-analysis-hosted.v1`). No defaults admit runtime effects:
++//! the Host's exact provider admission must name this binary and job.
++use lifecycle_core::*;
++use lifecycle_store::*;
++use pi_pressure_context_host::{
++    analysis::{AnalysisConfig, AnalysisSession},
++    coding::HostedProviderPolicy,
++};
++use serde_json::{Value, json};
++use std::{fs, path::PathBuf};
++use work_engine_manual_host::{
++    digest,
++    pi_docker::{
++        Host, Job, Journal,
++        coding::{ANALYSIS_PROFILE, hosted::LoopbackTransport},
++        request_cancel,
++    },
++};
++const PACKET_SCHEMA: &str = "work-engine.pi-analysis-packet.v1";
++fn clock() -> ClockSample {
++    ClockSample {
++        wall: WallTimeMs::new(
++            std::time::SystemTime::now()
++                .duration_since(std::time::UNIX_EPOCH)
++                .unwrap()
++                .as_millis() as i64,
++        ),
++        wait_budget: WaitBudgetMs::new(100),
++    }
++}
++fn main() -> Result<(), Box<dyn std::error::Error>> {
++    work_engine_manual_host::install_signals();
++    let args: Vec<_> = std::env::args().collect();
++    if args.get(1).is_some_and(|v| v == "pi-docker") {
++        if args.len() != 5 {
++            return Err("fixed pi-docker action and one path required".into());
++        }
++        let output = match (args[2].as_str(), args[3].as_str()) {
++            ("inspect", "--state") => {
++                serde_json::to_value(Host::open(&PathBuf::from(&args[4]))?.journal())?
++            }
++            ("reconcile", "--state") => Host::open(&PathBuf::from(&args[4]))?.reconcile()?,
++            ("cancel", "--state") => {
++                let state = PathBuf::from(&args[4]);
++                let journal: Journal =
++                    serde_json::from_slice(&fs::read(state.join("pi-state.json"))?)?;
++                if journal.binary_sha256 != digest(&fs::read(std::env::current_exe()?)?) {
++                    return Err("producer journal binary conflict".into());
++                }
++                request_cancel(&state)?
++            }
++            _ => return Err("unsupported fixed producer action".into()),
++        };
++        println!("{}", output);
++        return Ok(());
++    }
++    if args.len() != 3 || args[1] != "--execute" {
++        return Err("explicit --execute <pinned-job.json> required; no runtime entered".into());
++    }
++    let result = execute(&args[2])?;
++    println!(
++        "{}",
++        json!({"status":"bounded_live_analysis_completed","result":PathBuf::from(result["receipt"]["job"]["state_dir"].as_str().ok_or("state absent")?).join("analysis-result.json"),"receipt_id":result["receipt_id"],"acceptance":"owner_pending","domain_effect_settlement":"not_claimed"})
++    );
++    Ok(())
++}
++fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
++    let job: Job = serde_json::from_slice(&fs::read(path)?)?;
++    let profile = job.coding.as_ref().ok_or("analysis profile missing")?;
++    let plan = profile
++        .provider
++        .as_ref()
++        .ok_or("analysis provider plan missing")?;
++    if profile.schema != ANALYSIS_PROFILE {
++        return Err("hosted analysis profile required".into());
++    }
++    let own_hash = digest(&fs::read(std::env::current_exe()?)?);
++    let authority: Value = serde_json::from_slice(&job.authority.verify()?)?;
++    // The Host's exact provider admission (binary, job, model, config, task,
++    // catalog, requests, budget, route table), checked again in Host::admit.
++    if authority["schema"] != "work-engine.pi-coding-runtime-admission.v1"
++        || authority["job_id"] != job.job_id
++        || authority["binary_sha256"] != own_hash
++    {
++        return Err("exact analysis provider admission/binary missing".into());
++    }
++    let sdk = job
++        .runtime
++        .root
++        .join("node_modules/@earendil-works/pi-coding-agent/dist/index.js");
++    if digest(&fs::read(sdk)?) != PI_SDK_INDEX_SHA256 {
++        return Err("Pi SDK pin conflict".into());
++    }
++    let packet: Value = serde_json::from_slice(&job.packet.verify()?)?;
++    if packet["schema"] != PACKET_SCHEMA
++        || packet["max_provider_requests"] != plan.max_requests
++        || packet["max_snapshot_reads"] != profile.max_tool_calls
++    {
++        return Err("analysis packet schema/bounds".into());
++    }
++    let config = AnalysisConfig {
++        task: String::from_utf8(plan.task.verify()?)?,
++        expires_ms: job.deadline_unix_seconds.saturating_mul(1000).try_into()?,
++        max_requests: plan.max_requests.into(),
++        hosted: HostedProviderPolicy {
++            routes: plan.hosted.pairs(),
++            max_attempts_per_request: plan.hosted.max_attempts_per_request,
++        },
++    };
++    let state_dir = job.state_dir.clone();
++    let snapshot_manifest = job.workspace.manifest.verify()?;
++    let mut host = Host::admit(job)?;
++    let mut store =
++        SqliteLifecycleStore::open(&state_dir.join("lifecycle"), "analysis-root".into())?;
++    let subject = SubjectId::parse("subject:pi:analysis")?;
++    store.register_subject(
++        subject.clone(),
++        ContextGeneration::parse("context:analysis")?,
++        BuildId::parse("build:pi:analysis")?,
++        ProofRunId::parse("proof:pi:analysis")?,
++        clock(),
++    )?;
++    store.install_trusted_grant(TrustedGrant {
++        id: GrantId::parse(config.grant_id())?,
++        issuer: "analysis-root".into(),
++        principal: "operator:analysis".into(),
++        subject: subject.clone(),
++        context: ContextGeneration::parse("context:analysis")?,
++        build: BuildId::parse("build:pi:analysis")?,
++        proof_run: ProofRunId::parse("proof:pi:analysis")?,
++        scope: GrantScope::NativeTurn,
++        expires: AuthorityExpiresAt::new(WallTimeMs::new(config.expires_ms)),
++        revision: Revision::new(1),
++        revoked: false,
++    })?;
++    let staged = store.stage_artifact(subject.clone(), &snapshot_manifest)?;
++    let published = store.publish_artifact(staged, clock())?;
++    let session = store.reserve_native_session(
++        NativeSessionId::parse("session:analysis")?,
++        subject,
++        ContextGeneration::parse("context:analysis")?,
++        RuntimeIncarnation::parse("incarnation:pi:analysis")?,
++        &pi_analysis_profile_digest(),
++        PI_SDK_INDEX_SHA256,
++        &pi_analysis_protocol_digest(),
++        SnapshotId::parse("snapshot:analysis")?,
++        &published.digest_hex,
++        false,
++        clock(),
++    )?;
++    let analysis = AnalysisSession::new(store, session, config, clock)?;
++    host.bind_coding_effect_gate(Box::new(analysis.clone()))?;
++    // Live routes: the embedder's credentials file (never part of the job).
++    // Without it, offline qualification over synthetic loopback routes.
++    match std::env::var_os("WORK_ENGINE_HOSTED_CREDENTIALS") {
++        Some(path) => host.bind_hosted_transport(Box::new(
++            work_engine_manual_host::pi_docker::coding::https::HttpsTransport::from_file(
++                std::path::Path::new(&path),
++            )?,
++        ))?,
++        None => host.bind_hosted_transport(Box::new(LoopbackTransport::new()?))?,
++    }
++    let result = host.run();
++    fs::write(
++        state_dir.join("coding-hosted-gate-attempts.json"),
++        serde_json::to_vec_pretty(&analysis.hosted_attempts())?,
++    )?;
++    let result = result?;
++    fs::write(
++        state_dir.join("analysis-host-result.json"),
++        serde_json::to_vec_pretty(&result)?,
++    )?;
++    let report = analysis.report()?;
++    fs::write(
++        state_dir.join("analysis-result.json"),
++        serde_json::to_vec_pretty(&report)?,
++    )?;
++    if result["receipt"]["status"] != "component_passed"
++        || report["settlement"] != "CompletedSettled"
++    {
++        return Err("analysis unestablished; retain Host/lifecycle uncertainty and custody".into());
++    }
++    let id = result["receipt_id"]
++        .as_str()
++        .ok_or("receipt identity absent")?;
++    host.acknowledge(id)?;
++    Ok(result)
++}
+diff --git a/rust/crates/pi-pressure-context-host/src/lib.rs b/rust/crates/pi-pressure-context-host/src/lib.rs
+index 6da2dbba..1c5ff41e 100644
+--- a/rust/crates/pi-pressure-context-host/src/lib.rs
++++ b/rust/crates/pi-pressure-context-host/src/lib.rs
+@@ -3,6 +3,7 @@ use lifecycle_core::*;
+ use lifecycle_store::*;
+ use pi_context_transition::{Error, PiAdapter};
+ use serde_json::{Value, json};
++pub mod analysis;
+ pub mod coding;
+ 
+ const GRANTS: [&str; 3] = ["grant:old", "grant:new", "grant:replace"];
+diff --git a/rust/crates/pi-runtime-pressure/src/main.rs b/rust/crates/pi-runtime-pressure/src/main.rs
+index 70a95613..06a623dd 100644
+--- a/rust/crates/pi-runtime-pressure/src/main.rs
++++ b/rust/crates/pi-runtime-pressure/src/main.rs
+@@ -53,8 +53,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
+   let packet=PressurePacket{schema:PRESSURE_PROFILE.into(),source:"s10:pi-sdk".into(),generation:format!("{}:g1",job.job_id),budget,max_age_ms:30000};
+   job.packet=artifact(&out.join("packet.json"),&serde_json::to_vec(&packet)?);
+   let p=job.coding.as_mut().ok_or("coding profile required")?;p.shim=artifact(&out.join("pi-coding.mjs"),SHIM);
+-  let toolchain=Instant::now();p.toolchain=tree(p.toolchain.root.clone(),&out.join("toolchain.json"));let toolchain_ms=toolchain.elapsed().as_millis();
+-  p.acceptance=artifact(&out.join("acceptance.rs"),b"#[path=\"/workspace/src/lib.rs\"]mod x;#[test]fn checkpoint(){assert!(x::checkpoint());}\n");
++  let toolchain=Instant::now();p.toolchain=Some(tree(p.toolchain.as_ref().ok_or("coding toolchain required")?.root.clone(),&out.join("toolchain.json")));let toolchain_ms=toolchain.elapsed().as_millis();
++  p.acceptance=Some(artifact(&out.join("acceptance.rs"),b"#[path=\"/workspace/src/lib.rs\"]mod x;#[test]fn checkpoint(){assert!(x::checkpoint());}\n"));
+   p.fixture_command="printf 'pub fn checkpoint()->bool{true}\\n' > src/lib.rs".into();
+   if prepare_case==Some("cancel")||prepare_case==Some("deadline"){p.fixture_command="printf 'PRESSURE_STOP_TOOL_ACTIVE\\n'; sleep 29; printf 'pub fn checkpoint()->bool{true}\\n' > src/lib.rs".into();}
+   job.deadline_unix_seconds=SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs()+if prepare_case==Some("deadline"){50}else{240};job.command_timeout_seconds=30;
+diff --git a/rust/crates/work-engine-authority-store/tests/e2e_support/mod.rs b/rust/crates/work-engine-authority-store/tests/e2e_support/mod.rs
+index adfbb156..6d7d1cbc 100644
+--- a/rust/crates/work-engine-authority-store/tests/e2e_support/mod.rs
++++ b/rust/crates/work-engine-authority-store/tests/e2e_support/mod.rs
+@@ -143,8 +143,8 @@ pub fn rig(run: &Path, signed: bool, deadline: u64) -> Rig {
+     let coding = Profile {
+         schema: if signed { SIGNED_PROFILE } else { PROFILE }.into(),
+         shim: art(&meta.join("pi-coding.mjs"), SHIM),
+-        toolchain: pinned_tree("toolchain", TOOLCHAIN_MANIFEST_SHA),
+-        acceptance: art(&meta.join("acceptance.rs"), ACCEPTANCE.as_bytes()),
++        toolchain: Some(pinned_tree("toolchain", TOOLCHAIN_MANIFEST_SHA)),
++        acceptance: Some(art(&meta.join("acceptance.rs"), ACCEPTANCE.as_bytes())),
+         fixture_command: COMMAND.into(),
+         max_tool_calls: 1,
+         workspace_write_boundary: WorkspaceWriteBoundary::SrcLibRs,
+diff --git a/rust/crates/work-engine-manual-host/examples/pi_hosted_analysis_observer.rs b/rust/crates/work-engine-manual-host/examples/pi_hosted_analysis_observer.rs
+new file mode 100644
+index 00000000..49679c0c
+--- /dev/null
++++ b/rust/crates/work-engine-manual-host/examples/pi_hosted_analysis_observer.rs
+@@ -0,0 +1,330 @@
++//! Offline synthetic Codex endpoint for the hosted analysis profile. Two
++//! loopback routes: the primary refuses its first request with a definitive
++//! 429 (Host failover; the second attempt must dispatch the same retained
++//! body), the secondary serves a three-request analysis: a `snapshot_list`
++//! call; a `snapshot_read` of the first listed member together with a call of
++//! an unknown tool (refused by the SDK, never reaching the Host); then the
++//! final text answer. No auth or body is retained; only digests.
++//!
++//! `HOSTED_OBSERVER_SCENARIO`: `ok` (default), `long-answer` (the final
++//! answer is 8 000 small deltas) or `read-all` (after the list, every member
++//! is read page by page, up to four reads per response, until all are read or
++//! `HOSTED_OBSERVER_MAX_REQUESTS` (default 24) is one request away; then the
++//! answer). `read-all` carries the whole snapshot into the context.
++use serde_json::{Value, json};
++use sha2::{Digest, Sha256};
++use std::{
++    io::{Read, Write},
++    net::{TcpListener, TcpStream},
++    time::{Duration, Instant},
++};
++fn hash(b: &[u8]) -> String {
++    format!("{:x}", Sha256::digest(b))
++}
++/// One response whose output items are `items`; text items stream as
++/// `deltas` pieces.
++fn sse(n: usize, items: &[Value], deltas: usize) -> Vec<u8> {
++    let mut out = vec![
++        json!({"type":"response.created","response":{"id":format!("resp_{n}"),"status":"in_progress"}}),
++    ];
++    for (i, item) in items.iter().enumerate() {
++        if item["type"] == "function_call" {
++            out.push(json!({"type":"response.output_item.added","output_index":i,"item":{"type":"function_call","id":item["id"],"call_id":item["call_id"],"name":item["name"],"arguments":"","status":"in_progress"}}));
++            out.push(json!({"type":"response.function_call_arguments.delta","output_index":i,"delta":item["arguments"]}));
++        } else {
++            out.push(json!({"type":"response.output_item.added","output_index":i,"item":{"type":"message","id":item["id"],"role":"assistant","status":"in_progress","content":[]}}));
++            let text = item["content"][0]["text"].as_str().unwrap_or("");
++            let pieces = deltas.max(1);
++            let size = text.len().div_ceil(pieces).max(1);
++            for chunk in text.as_bytes().chunks(size) {
++                out.push(json!({"type":"response.output_text.delta","output_index":i,"content_index":0,"delta":std::str::from_utf8(chunk).unwrap()}));
++            }
++        }
++        out.push(json!({"type":"response.output_item.done","output_index":i,"item":item}));
++    }
++    out.push(json!({"type":"response.completed","response":{"id":format!("resp_{n}"),"model":"gpt-6-luna","status":"completed","output":items,"usage":{"input_tokens":4000,"output_tokens":200,"total_tokens":4200}}}));
++    out.iter()
++        .map(|v| format!("data: {v}\n\n"))
++        .collect::<String>()
++        .into_bytes()
++}
++fn call(n: usize, k: usize, name: &str, arguments: Value) -> Value {
++    json!({"type":"function_call","id":format!("fc_{n}_{k}"),"call_id":format!("call_{n}_{k}"),"name":name,"arguments":arguments.to_string(),"status":"completed"})
++}
++fn message(n: usize, text: &str) -> Value {
++    json!({"type":"message","id":format!("msg_{n}"),"role":"assistant","status":"completed","content":[{"type":"output_text","text":text,"annotations":[]}]})
++}
++fn response(n: usize, first_member: &str, long: bool) -> Vec<u8> {
++    match n {
++        1 => sse(1, &[call(1, 0, "snapshot_list", json!({}))], 1),
++        2 => sse(
++            2,
++            &[
++                call(2, 0, "snapshot_read", json!({"path":first_member})),
++                call(2, 1, "workspace_exec", json!({"command":"cat /etc/passwd"})),
++            ],
++            1,
++        ),
++        _ if long => sse(n, &[message(n, &"w ".repeat(8000))], 8000),
++        _ => sse(
++            n,
++            &[message(
++                n,
++                "Supported: the snapshot member was read. Unsupported: none. Unknown: none.",
++            )],
++            4,
++        ),
++    }
++}
++/// The next reads of `read-all`, derived only from the Host outputs already
++/// in the request's input: the member list and each page's `next_offset`.
++fn next_reads(input: &[Value]) -> Vec<(String, u64)> {
++    let outputs: Vec<Value> = input
++        .iter()
++        .filter(|i| i["type"] == "function_call_output")
++        .filter_map(|i| serde_json::from_str(i["output"].as_str()?).ok())
++        .collect();
++    let Some(list) = outputs.iter().find(|o| o["members"].is_array()) else {
++        return vec![];
++    };
++    let mut reads = vec![];
++    for m in list["members"].as_array().unwrap() {
++        let path = m["path"].as_str().unwrap_or("").to_string();
++        let total = m["bytes"].as_u64().unwrap_or(0);
++        let mut end = 0u64;
++        let mut done = false;
++        for o in outputs.iter().filter(|o| o["path"] == path.as_str()) {
++            let stop = o["offset"].as_u64().unwrap_or(0) + o["bytes"].as_u64().unwrap_or(0);
++            if o["offset"].as_u64().unwrap_or(0) <= end && stop > end {
++                end = stop;
++            }
++            if o["next_offset"].is_null() && o["offset"].as_u64().unwrap_or(0) <= end {
++                done = true;
++            }
++        }
++        while !done && end < total.max(1) && reads.len() < 4 {
++            reads.push((path.clone(), end));
++            end += 24_576;
++            done = end >= total;
++        }
++        if reads.len() >= 4 {
++            break;
++        }
++    }
++    reads
++}
++struct Request {
++    id: String,
++    auth: String,
++    body: Vec<u8>,
++}
++fn read(s: &mut TcpStream) -> Result<Request, Box<dyn std::error::Error>> {
++    s.set_read_timeout(Some(Duration::from_secs(10)))?;
++    s.set_write_timeout(Some(Duration::from_secs(10)))?;
++    let mut header = vec![];
++    let mut byte = [0];
++    while !header.ends_with(b"\r\n\r\n") {
++        if header.len() > 16384 {
++            return Err("header bound".into());
++        }
++        s.read_exact(&mut byte)?;
++        header.push(byte[0]);
++    }
++    let header = std::str::from_utf8(&header)?;
++    if !header.starts_with("POST /backend-api/codex/responses HTTP/1.1\r\n") {
++        return Err("route".into());
++    }
++    let field = |name: &str| {
++        header
++            .lines()
++            .find_map(|l| {
++                let (k, v) = l.split_once(':')?;
++                k.eq_ignore_ascii_case(name).then(|| v.trim().to_string())
++            })
++            .ok_or("header")
++    };
++    let auth = field("authorization")?;
++    let auth = auth.strip_prefix("Bearer ").ok_or("auth scheme")?;
++    if !auth.starts_with("synthetic-A-") || header.contains("nonsecret-marker") {
++        return Err("auth profile".into());
++    }
++    let n: usize = field("content-length")?.parse()?;
++    if n > 700_000 {
++        return Err("body bound".into());
++    }
++    let mut body = vec![0; n];
++    s.read_exact(&mut body)?;
++    Ok(Request {
++        id: field("x-request-id")?,
++        auth: hash(auth.as_bytes()),
++        body,
++    })
++}
++fn run() -> Result<(), Box<dyn std::error::Error>> {
++    let primary = TcpListener::bind("127.0.0.1:0")?;
++    let secondary = TcpListener::bind("127.0.0.1:0")?;
++    primary.set_nonblocking(true)?;
++    secondary.set_nonblocking(true)?;
++    println!(
++        "{}",
++        json!({"type":"ready","primary":primary.local_addr()?.port(),"secondary":secondary.local_addr()?.port(),"protocol":"offline-hosted-analysis-observer-v1"})
++    );
++    std::io::stdout().flush()?;
++    let scenario = std::env::var("HOSTED_OBSERVER_SCENARIO").unwrap_or_else(|_| "ok".into());
++    if !matches!(scenario.as_str(), "ok" | "long-answer" | "read-all") {
++        return Err("unknown scenario".into());
++    }
++    let long = scenario == "long-answer";
++    let read_all = scenario == "read-all";
++    let max_requests: usize = std::env::var("HOSTED_OBSERVER_MAX_REQUESTS")
++        .ok()
++        .and_then(|v| v.parse().ok())
++        .unwrap_or(24);
++    let mut finished = false;
++    let deadline = Instant::now() + Duration::from_secs(600);
++    let mut served = 0usize;
++    let mut refused = 0usize;
++    let mut first_member = String::new();
++    let mut authority: std::collections::BTreeMap<&str, String> = Default::default();
++    while if read_all { !finished } else { served < 3 } {
++        if Instant::now() > deadline {
++            return Err("observer deadline".into());
++        }
++        let mut accepted = None;
++        for (route, l) in [("primary", &primary), ("secondary", &secondary)] {
++            match l.accept() {
++                Ok((s, _)) => {
++                    accepted = Some((route, s));
++                    break;
++                }
++                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {}
++                Err(e) => return Err(e.into()),
++            }
++        }
++        let Some((route, mut s)) = accepted else {
++            std::thread::sleep(Duration::from_millis(10));
++            continue;
++        };
++        s.set_nonblocking(false)?;
++        let r = read(&mut s)?;
++        if authority.get(route).is_some_and(|a| a != &r.auth) {
++            return Err("authority changed".into());
++        }
++        authority.insert(route, r.auth.clone());
++        let v: Value = serde_json::from_slice(&r.body)?;
++        // Declared at the top level or as `additional_tools` input items.
++        let mut tools: Vec<&str> = v["tools"]
++            .as_array()
++            .into_iter()
++            .flatten()
++            .chain(
++                v["input"]
++                    .as_array()
++                    .into_iter()
++                    .flatten()
++                    .filter(|i| i["type"] == "additional_tools")
++                    .flat_map(|i| i["tools"].as_array().into_iter().flatten()),
++            )
++            .filter_map(|t| t["name"].as_str())
++            .collect();
++        tools.sort_unstable();
++        if v["model"] != "gpt-6-luna"
++            || v["stream"] != true
++            || tools != ["snapshot_list", "snapshot_read"]
++        {
++            return Err("projection".into());
++        }
++        // The member list the Host returned to request 1 is in request 2's input.
++        if first_member.is_empty()
++            && let Some(input) = v["input"].as_array()
++        {
++            for item in input {
++                if item["type"] == "function_call_output"
++                    && let Some(out) = item["output"].as_str()
++                    && let Ok(list) = serde_json::from_str::<Value>(out)
++                    && let Some(path) = list["members"][0]["path"].as_str()
++                {
++                    first_member = path.to_string();
++                }
++            }
++        }
++        let receipt = json!({"route":route,"requestId":r.id,"bodySha256":hash(&r.body)});
++        if route == "primary" {
++            refused += 1;
++            println!(
++                "{}",
++                json!({"type":"refused","status":429,"receipt":receipt})
++            );
++            std::io::stdout().flush()?;
++            let body = json!({"error":{"code":"insufficient_quota","message":"synthetic primary route quota exhausted"}}).to_string();
++            write!(
++                s,
++                "HTTP/1.1 429 Too Many Requests\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
++                body.len()
++            )?;
++            continue;
++        }
++        served += 1;
++        let reply = if read_all && served > 1 {
++            let reads = next_reads(v["input"].as_array().map(Vec::as_slice).unwrap_or(&[]));
++            if reads.is_empty() || served >= max_requests {
++                finished = true;
++                let read: usize = v["input"]
++                    .as_array()
++                    .into_iter()
++                    .flatten()
++                    .filter(|i| i["type"] == "function_call_output")
++                    .count();
++                sse(
++                    served,
++                    &[message(
++                        served,
++                        &format!("Read {read} tool outputs; the snapshot is summarized here."),
++                    )],
++                    4,
++                )
++            } else {
++                let calls: Vec<Value> = reads
++                    .iter()
++                    .enumerate()
++                    .map(|(k, (path, offset))| {
++                        call(
++                            served,
++                            k,
++                            "snapshot_read",
++                            json!({"path":path,"offset":offset}),
++                        )
++                    })
++                    .collect();
++                sse(served, &calls, 1)
++            }
++        } else {
++            response(served, &first_member, long)
++        };
++        println!(
++            "{}",
++            json!({"type":"served","effect":served,"receipt":receipt,"responseSha256":hash(&reply)})
++        );
++        std::io::stdout().flush()?;
++        write!(
++            s,
++            "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n"
++        )?;
++        for event in std::str::from_utf8(&reply)?.split_inclusive("\n\n") {
++            write!(s, "{:x}\r\n{event}\r\n", event.len())?;
++        }
++        write!(s, "0\r\n\r\n")?;
++        s.flush()?;
++    }
++    println!(
++        "{}",
++        json!({"type":"complete","served":served,"refused":refused,"rawAuthOrBodyRetained":false})
++    );
++    Ok(())
++}
++fn main() {
++    if let Err(e) = run() {
++        eprintln!("hosted_analysis_observer: {e}");
++        std::process::exit(1);
++    }
++}
+diff --git a/rust/crates/work-engine-manual-host/examples/pi_hosted_coding_observer.rs b/rust/crates/work-engine-manual-host/examples/pi_hosted_coding_observer.rs
+index 5fccaca6..1cb77508 100644
+--- a/rust/crates/work-engine-manual-host/examples/pi_hosted_coding_observer.rs
++++ b/rust/crates/work-engine-manual-host/examples/pi_hosted_coding_observer.rs
+@@ -17,6 +17,8 @@
+ //! - `echo-body` (a text delta carrying the request's bearer before the
+ //!   terminal event) and `echo-trailing` (an SSE comment carrying it after
+ //!   the terminal event): the Host's access screen must stop both.
++//! - `long-answer`: the served response is one long text answer streamed as
++//!   many small deltas (the response-size ceiling, open item D4); it completes.
+ //! - A secondary fault may name the served response it applies to:
+ //!   `truncate@3` truncates the third (the first turn after the reset).
+ //! - `primary-429-echo` (a 429 whose body carries the bearer) and
+@@ -70,6 +72,26 @@ fn text(n: usize, t: &str) -> Vec<u8> {
+         json!({"type":"message","id":format!("msg_{n}"),"role":"assistant","status":"completed","content":[{"type":"output_text","text":t,"annotations":[]}]}),
+     )
+ }
++/// One text answer of `LONG_DELTAS` small deltas: the response-size case.
++const LONG_DELTAS: usize = 3000;
++fn long_text(n: usize) -> Vec<u8> {
++    let piece = "w ";
++    let full = piece.repeat(LONG_DELTAS);
++    let item = json!({"type":"message","id":format!("msg_{n}"),"role":"assistant","status":"completed","content":[{"type":"output_text","text":full,"annotations":[]}]});
++    let mut out = vec![
++        json!({"type":"response.created","response":{"id":format!("resp_{n}"),"status":"in_progress"}}),
++        json!({"type":"response.output_item.added","output_index":0,"item":{"type":"message","id":item["id"],"role":"assistant","status":"in_progress","content":[]}}),
++    ];
++    for _ in 0..LONG_DELTAS {
++        out.push(json!({"type":"response.output_text.delta","output_index":0,"content_index":0,"delta":piece}));
++    }
++    out.push(json!({"type":"response.output_item.done","output_index":0,"item":item}));
++    out.push(json!({"type":"response.completed","response":{"id":format!("resp_{n}"),"model":"gpt-6-luna","status":"completed","output":[item],"usage":{"input_tokens":1000,"output_tokens":LONG_DELTAS,"total_tokens":1000 + LONG_DELTAS}}}));
++    out.iter()
++        .map(|v| format!("data: {v}\n\n"))
++        .collect::<String>()
++        .into_bytes()
++}
+ fn response(n: usize) -> Vec<u8> {
+     match n {
+         1 => events(
+@@ -180,7 +202,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
+         ),
+         None => (scenario.clone(), 1),
+     };
+-    const SCENARIOS: [&str; 15] = [
++    const SCENARIOS: [&str; 16] = [
++        "long-answer",
+         "echo-body",
+         "echo-trailing",
+         "primary-429-echo",
+@@ -204,7 +227,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
+     // accepting until killed, so later dispatches are visible.
+     let completes = matches!(
+         scenario.as_str(),
+-        "ok" | "late-close-short" | "late-close-long" | "trailing"
++        "ok" | "late-close-short" | "late-close-long" | "trailing" | "long-answer"
+     );
+     while !(completes && served >= 4) {
+         if Instant::now() > deadline {
+@@ -318,17 +341,21 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
+             continue;
+         }
+         served += 1;
+-        let reply = response(served);
+-        println!(
+-            "{}",
+-            json!({"type":"served","effect":served,"receipt":receipt,"responseSha256":hash(&reply)})
+-        );
+-        std::io::stdout().flush()?;
+         let fault = if served == fault_at {
+             scenario.as_str()
+         } else {
+             "ok"
+         };
++        let reply = if fault == "long-answer" {
++            long_text(served)
++        } else {
++            response(served)
++        };
++        println!(
++            "{}",
++            json!({"type":"served","effect":served,"receipt":receipt,"responseSha256":hash(&reply)})
++        );
++        std::io::stdout().flush()?;
+         if fault == "stall-head" {
+             hold(&mut s, "stall-head", &r.id)?;
+             continue;
+@@ -372,7 +399,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
+             }
+             write!(s, "{:x}\r\n{event}\r\n", event.len())?;
+             s.flush()?;
+-            std::thread::sleep(Duration::from_millis(20));
++            // Long answers stream without pacing (thousands of events).
++            if fault != "long-answer" {
++                std::thread::sleep(Duration::from_millis(20));
++            }
+         }
+         if !ended {
+             continue;
+@@ -398,7 +428,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
+             _ => {}
+         }
+         let _ = write!(s, "0\r\n\r\n").and_then(|_| s.flush());
+-        if fault != "ok" {
++        if fault != "ok" && fault != "long-answer" {
+             println!("{}", json!({"type":"fault","fault":fault,"requestId":r.id}));
+             std::io::stdout().flush()?;
+         }
+diff --git a/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs b/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs
+index 3c9ae2cc..12644b31 100644
+--- a/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs
++++ b/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs
+@@ -17,7 +17,14 @@ if(claimsTools&&(!process.argv.includes('--lifecycle-bridge')||existsSync('/prof
+ const config=live?JSON.parse(readFileSync('/profile/job.json','utf8')):null;
+ // Hosted transport: no network or access material here; the Host dispatches
+ // each request and relays the response stream (pull/cancel/ack).
+-const hosted=live&&config.schema==='work-engine.pi-coding-hosted.v1';
++// Hosted analysis: same transport and lifecycle bridge; no shell, only the
++// Host-served read-only snapshot tools.
++const analysis=live&&config.schema==='work-engine.pi-analysis-hosted.v1';
++const hosted=live&&(config.schema==='work-engine.pi-coding-hosted.v1'||analysis);
++const SNAPSHOT_NAMES=['snapshot_list','snapshot_read'];
++const FRAME_BYTES=analysis?config.frameBytes:65536;
++const MAX_BODY=analysis?config.maxBodyBytes:45000;
++const MAX_REQUESTS=analysis?config.maxRequests:4;
+ // The hosted profile is the only live profile; credential-mounted live
+ // profiles are retired. It always runs on the lifecycle bridge.
+ if(live&&(!hosted||!bridge))throw Error('only the hosted live profile on the lifecycle bridge is supported');
+@@ -47,7 +54,7 @@ let initializeResolve;
+ const initialization=new Promise(resolve=>{initializeResolve=resolve;});
+ const emit=value=>{
+  const bytes=JSON.stringify({schema,sessionId:session?.sessionId??manager?.getSessionId(),...(fixtureSigned?{classification:'fixture provider/signing/identity; actual SDK runtime'}:{}),...value})+'\n';
+- if(Buffer.byteLength(bytes)>65536)throw Error('output frame bound');
++ if(Buffer.byteLength(bytes)>FRAME_BYTES)throw Error('output frame bound');
+  process.stdout.write(bytes);
+ };
+ // Signed fixture only: /export is a size-limited tmpfs the Host cannot read, so its regular files are
+@@ -108,6 +115,7 @@ input.on('line',line=>{
+   else if(hosted&&RESPONSE_FRAMES.includes(value.type))hostedFrames.push(value);
+   else if(bridge&&value.type==='bridge_provider'&&grants.has(value.id)&&value.sessionId===session?.sessionId){grants.get(value.id)(value);grants.delete(value.id);}
+   else if(value.type==='claims_result'&&claimsTools&&pending.has(value.id)&&value.sessionId===undefined){pending.get(value.id)(value);pending.delete(value.id);}
++  else if(value.type==='snapshot_result'&&analysis&&pending.has(value.id)&&value.sessionId===undefined){pending.get(value.id)(value);pending.delete(value.id);}
+   else if(value.type==='tool_result'&&pending.has(value.id)&&(!signed||value.sessionId===manager?.getSessionId())){pending.get(value.id)(value);pending.delete(value.id);}
+   else if(value.type==='provider_grant'&&grants.has(value.id)&&(!signed||(value.sessionId===manager?.getSessionId()&&(!fixtureSigned||value.classification==='fake_fixture')))){grants.get(value.id)(value);grants.delete(value.id);}
+   else throw Error('unexpected host frame');
+@@ -177,13 +185,31 @@ try {
+    });
+    return {content:[{type:'text',text:JSON.stringify(result.ok?result.result:{error:result.error})}],details:{hostReportedSuccess:result.ok}};
+   }})):[];
+- const activeNames=['workspace_exec',...(claimsTools?CLAIMS_NAMES:[])];
+- const baseOptions={cwd:'/workspace',agentDir,settingsManager,resourceLoader,modelRuntime,model,...providerOptions,noTools:'builtin',tools:activeNames,customTools:[tool,...claimsCustom]};
++ // Analysis tools: the Host reads the manifest-pinned snapshot and validates
++ // every request; nothing here can name another path, server or scope.
++ const snapshotExecute=name=>async(id,args,signal)=>{
++  const result=await new Promise((resolve,reject)=>{
++   pending.set(id,resolve);
++   signal?.addEventListener('abort',()=>{pending.delete(id);reject(Error('snapshot read cancelled'));},{once:true});
++   emit({type:'snapshot_request',id,tool:name,arguments:args});
++  });
++  return {content:[{type:'text',text:JSON.stringify(result.ok?result.result:{error:result.error})}],details:{hostReportedSuccess:result.ok}};
++ };
++ const snapshotCustom=analysis?[
++  {name:'snapshot_list',label:'snapshot_list',description:'List the members of the read-only analysis snapshot (path, size in bytes, SHA-256). The snapshot is the only material available.',promptSnippet:'List the snapshot members',parameters:Type.Object({}),executionMode:'sequential',execute:snapshotExecute('snapshot_list')},
++  {name:'snapshot_read',label:'snapshot_read',description:`Read one snapshot member as UTF-8 text, one page at a time: at most ${config.pageBytes} bytes from offset (default 0); next_offset is null at the end of the member.`,promptSnippet:'Read a page of a snapshot member',parameters:Type.Object({path:Type.String({minLength:1,maxLength:256}),offset:Type.Optional(Type.Integer({minimum:0})),max_bytes:Type.Optional(Type.Integer({minimum:1,maximum:config.pageBytes}))}),executionMode:'sequential',execute:snapshotExecute('snapshot_read')},
++ ]:[];
++ const activeNames=analysis?SNAPSHOT_NAMES:['workspace_exec',...(claimsTools?CLAIMS_NAMES:[])];
++ const baseOptions={cwd:'/workspace',agentDir,settingsManager,resourceLoader,modelRuntime,model,...providerOptions,noTools:'builtin',tools:activeNames,customTools:analysis?snapshotCustom:[tool,...claimsCustom]};
+  function bindBridge(selected,services){
+   session=selected;
+   session.setAutoCompactionEnabled(false);session.setAutoRetryEnabled(false);
+   if(bridgeResets)session.setActiveToolsByName(claimsTools?activeNames:[]);
+-  session.subscribe(event=>{if(bridgeActive)emit({type:'native_event',event});});
++  // Live bridge: message_update events are not forwarded. Each carries the
++  // whole message so far (twice), so forwarding them grows the output
++  // quadratically with answer length (open item D4). message_end carries the
++  // final message, and the Host retains the provider's exact stream bytes.
++  session.subscribe(event=>{if(bridgeActive&&!(liveBridge&&event.type==='message_update'))emit({type:'native_event',event});});
+   if(liveBridge){
+    // Real inference through the same SDK stream the direct live profile wraps.
+    // Re-bound for every SDK session (the factory runs again on newSession()); one
+@@ -200,7 +226,7 @@ try {
+     try{
+      const id=++bridgeCalls;
+      const contextBytes=Buffer.byteLength(JSON.stringify(context));
+-     if(!bridgeActive||id>config.maxRequests||id>4||contextBytes>config.maxContextBytes||Date.now()>=config.deadline*1000||requestModel.id!==model.id||requestModel.provider!==model.provider)return failure('outside host admission unavailable');
++     if(!bridgeActive||id>config.maxRequests||id>MAX_REQUESTS||contextBytes>config.maxContextBytes||Date.now()>=config.deadline*1000||requestModel.id!==model.id||requestModel.provider!==model.provider)return failure('outside host admission unavailable');
+      const grant=await new Promise((resolve,reject)=>{
+       grants.set(id,resolve);
+       options?.signal?.addEventListener('abort',()=>{grants.delete(id);reject(Error('provider grant cancelled'));},{once:true});
+@@ -225,9 +251,9 @@ try {
+        // The SDK zstd-compresses Codex SSE bodies. The Host validates and
+        // forwards plain JSON (the SDK's own uncompressed fallback), so the
+        // bounded decompression happens here, never on the Host.
+-       if(headers['content-encoding']==='zstd'){body=zstdDecompressSync(body,{maxOutputLength:45001});delete headers['content-encoding'];}
++       if(headers['content-encoding']==='zstd'){body=zstdDecompressSync(body,{maxOutputLength:MAX_BODY+1});delete headers['content-encoding'];}
+        else if(headers['content-encoding']!==undefined)throw Error('hosted request encoding');
+-       if(body.length>45000)throw Error('hosted request bound');
++       if(body.length>MAX_BODY)throw Error('hosted request bound');
+        hostedFrames.open=true;
+        emit({type:'provider_fetch',id,binding:sid.binding,sequence:sid.sequence,stream:sid.stream,url:String(url),method:init.method,headers,body:body.toString('base64')});
+        const handle=openResponse({id:sid,sendRaw:async v=>emit(v),read:()=>hostedFrames.read(),signal:init.signal,onSettled:()=>{hostedFrames.open=false;hostedFrames.queue=[];}});
+diff --git a/rust/crates/work-engine-manual-host/src/pi_coding.rs b/rust/crates/work-engine-manual-host/src/pi_coding.rs
+index 21d9bdde..94f15185 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_coding.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_coding.rs
+@@ -1,6 +1,8 @@
+ //! Provider-disabled coding-path qualification in the existing Pi custody owner.
+ //! This profile intentionally cannot authorize provider or credential effects.
+ use super::*;
++#[path = "pi_coding_analysis.rs"]
++pub mod analysis;
+ #[path = "pi_coding_claims.rs"]
+ pub mod claims;
+ #[path = "pi_coding_export.rs"]
+@@ -29,11 +31,22 @@ pub const RETIRED_LIVE_PROFILES: [&str; 4] = [
+ /// Live lifecycle composition with Host-held access and Host dispatch: the
+ /// inference container has no network and no credential mount.
+ pub const HOSTED_BRIDGE_PROFILE: &str = "work-engine.pi-coding-hosted.v1";
+-/// The only live profile: Host-held access, Host dispatch, lifecycle gate.
++/// Hosted analysis: the same Host-held access, dispatch and lifecycle gate,
++/// no shell, tool container or workspace effect; the Host serves read-only
++/// tools over the job's manifest-pinned workspace (`analysis`).
++pub const ANALYSIS_PROFILE: &str = "work-engine.pi-analysis-hosted.v1";
++/// The live profiles: Host-held access, Host dispatch, lifecycle gate.
+ pub fn is_live_bridge(schema: &str) -> bool {
+     is_hosted(schema)
+ }
+ pub fn is_hosted(schema: &str) -> bool {
++    schema == HOSTED_BRIDGE_PROFILE || schema == ANALYSIS_PROFILE
++}
++pub fn is_analysis(schema: &str) -> bool {
++    schema == ANALYSIS_PROFILE
++}
++/// The live coding continuity profile (one shell call, one reset).
++fn is_continuity(schema: &str) -> bool {
+     schema == HOSTED_BRIDGE_PROFILE
+ }
+ /// Opt-in, versioned fixture composition that additionally admits the four
+@@ -62,14 +75,16 @@ fn tools_match(advertised: &Value, schema: &str) -> bool {
+         Some(names)
+     };
+     let expected = ready_tools(schema);
+-    if schema == CLAIMS_BRIDGE_PROFILE {
++    if schema == CLAIMS_BRIDGE_PROFILE || is_analysis(schema) {
+         sorted(advertised).is_some() && sorted(advertised) == sorted(&expected)
+     } else {
+         *advertised == expected
+     }
+ }
+ fn ready_tools(schema: &str) -> Value {
+-    if schema == CLAIMS_BRIDGE_PROFILE {
++    if is_analysis(schema) {
++        json!(analysis::TOOLS)
++    } else if schema == CLAIMS_BRIDGE_PROFILE {
+         json!(
+             ["workspace_exec"]
+                 .into_iter()
+@@ -141,6 +156,18 @@ pub trait CodingEffectGate {
+     ) -> Result<()> {
+         refuse("hosted provider attempts unavailable")
+     }
++    /// Analysis profile only: record one Host snapshot delivery (already
++    /// persisted create-only) before its reply is dispatched.
++    fn snapshot_delivered(
++        &mut self,
++        _id: &str,
++        _tool: &str,
++        _arguments: &Value,
++        _result: &Value,
++        _artifact: &Artifact,
++    ) -> Result<()> {
++        refuse("analysis snapshot deliveries unavailable")
++    }
+     /// Called only after the exact result artifact is persisted in the journal.
+     fn observed(
+         &mut self,
+@@ -254,8 +281,12 @@ impl WorkspaceWriteBoundary {
+ pub struct Profile {
+     pub schema: String,
+     pub shim: Artifact,
+-    pub toolchain: Tree,
+-    pub acceptance: Artifact,
++    /// Coding profiles only (the tool and validator containers); the analysis
++    /// profile has neither.
++    #[serde(default, skip_serializing_if = "Option::is_none")]
++    pub toolchain: Option<Tree>,
++    #[serde(default, skip_serializing_if = "Option::is_none")]
++    pub acceptance: Option<Artifact>,
+     /// Pinned fixture input, never represented as provider-generated work.
+     #[serde(default)]
+     pub fixture_command: String,
+@@ -320,6 +351,17 @@ pub struct State {
+     /// In-band export collection (signed fixture only); absent for every other profile.
+     #[serde(default, skip_serializing_if = "Option::is_none")]
+     pub export: Option<export::ExportState>,
++    /// Analysis profile: Host snapshot deliveries per call id (`None` while
++    /// the read's outcome is unknown), the tool each call named, the calls
++    /// whose native completion matched, and SDK-refused calls (never at the Host).
++    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
++    pub snapshot_requests: BTreeMap<String, Option<Artifact>>,
++    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
++    pub snapshot_tools: BTreeMap<String, String>,
++    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
++    pub native_snapshot_ids: BTreeSet<String>,
++    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
++    pub sdk_refused_ids: BTreeSet<String>,
+ }
+ fn is_zero(v: &u32) -> bool {
+     *v == 0
+@@ -333,7 +375,11 @@ impl Profile {
+         }
+         if self.schema
+             != if self.provider.is_some() {
+-                HOSTED_BRIDGE_PROFILE
++                if is_analysis(&self.schema) {
++                    ANALYSIS_PROFILE
++                } else {
++                    HOSTED_BRIDGE_PROFILE
++                }
+             } else if self.schema == BRIDGE_PROFILE {
+                 BRIDGE_PROFILE
+             } else if self.schema == CLAIMS_BRIDGE_PROFILE {
+@@ -352,16 +398,29 @@ impl Profile {
+             } else {
+                 !self.fixture_command.is_empty()
+             }
+-            || !(1..=8).contains(&self.max_tool_calls)
++            // Analysis: `max_tool_calls` bounds the Host snapshot deliveries.
++            || !(1..=if is_analysis(&self.schema) {
++                analysis::MAX_READS
++            } else {
++                8
++            })
++                .contains(&self.max_tool_calls)
+             || (is_bridge(&self.schema)
++                && !is_analysis(&self.schema)
+                 && self.max_tool_calls
+                     != if self.schema == CLAIMS_BRIDGE_PROFILE {
+                         2
+                     } else {
+                         1
+                     })
+-            || (is_live_bridge(&self.schema)
++            || (is_continuity(&self.schema)
+                 && self.workspace_write_boundary != WorkspaceWriteBoundary::SrcLibRs)
++            || (is_analysis(&self.schema)
++                && (self.workspace_write_boundary != WorkspaceWriteBoundary::LegacyWorkspace
++                    || self.toolchain.is_some()
++                    || self.acceptance.is_some()))
++            || (!is_analysis(&self.schema)
++                && (self.toolchain.is_none() || self.acceptance.is_none()))
+             || job.idle_seconds != 0
+         {
+             return refuse("coding fixture profile/pins/limits conflict");
+@@ -371,7 +430,7 @@ impl Profile {
+             // One tool turn, final text, recovery and one continued turn.
+             // Each coding_provider_request frame carries the context twice and must
+             // fit the receiver's 64 KiB frame bound.
+-            if is_live_bridge(&self.schema)
++            if is_continuity(&self.schema)
+                 && (plan.max_requests != 4 || plan.max_context_bytes > 24_000)
+             {
+                 return refuse(
+@@ -382,9 +441,13 @@ impl Profile {
+         if self.workspace_write_boundary == WorkspaceWriteBoundary::SrcLibRs {
+             strict_source_file(&job.workspace.root)?;
+         }
+-        self.toolchain.verify()?;
+-        self.acceptance.verify()?;
+-        for path in [&self.toolchain.root, &self.acceptance.path] {
++        let (Some(toolchain), Some(acceptance)) = (&self.toolchain, &self.acceptance) else {
++            // Analysis: the workspace is the read-only snapshot the Host serves.
++            return analysis::validate_snapshot(job);
++        };
++        toolchain.verify()?;
++        acceptance.verify()?;
++        for path in [&toolchain.root, &acceptance.path] {
+             if !path.is_absolute()
+                 || fs::canonicalize(path)? != *path
+                 || path.to_string_lossy().contains([',', ':'])
+@@ -396,7 +459,7 @@ impl Profile {
+                 return refuse("coding toolchain/acceptance isolation conflict");
+             }
+         }
+-        if !self.toolchain.root.join("bin/rustc").is_file() {
++        if !toolchain.root.join("bin/rustc").is_file() {
+             return refuse("offline rustc absent");
+         }
+         Ok(())
+@@ -488,8 +551,26 @@ fn expected_mounts(
+     let profile = j.job.coding.as_ref().expect("coding profile");
+     if tool {
+         let mut mounts = vec![
+-            (profile.toolchain.root.clone(), "/toolchain", false),
+-            (profile.acceptance.path.clone(), "/acceptance.rs", false),
++            (
++                profile
++                    .toolchain
++                    .as_ref()
++                    .expect("coding toolchain")
++                    .root
++                    .clone(),
++                "/toolchain",
++                false,
++            ),
++            (
++                profile
++                    .acceptance
++                    .as_ref()
++                    .expect("coding acceptance")
++                    .path
++                    .clone(),
++                "/acceptance.rs",
++                false,
++            ),
+             (
+                 if validation {
+                     j.coding
+@@ -684,7 +765,10 @@ impl Host {
+     }
+     pub(super) fn coding_bridge_frame(&mut self, frame: &Value) -> Result<Vec<Vec<u8>>> {
+         let mut frame = frame.clone();
+-        if frame["type"] == "coding_provider_request" && frame["id"] == 2 {
++        if frame["type"] == "coding_provider_request"
++            && frame["id"] == 2
++            && !self.analysis_profile()
++        {
+             self.coding_collect_tool()?;
+             if !self.journal.coding.as_ref().unwrap().tool_removed {
+                 return refuse("coding checkpoint writers not excluded");
+@@ -844,6 +928,11 @@ impl Host {
+     }
+     pub(super) fn coding_prepare_tool(&mut self) -> Result<()> {
+         self.coding_prepare_provider()?;
++        if self.analysis_profile() {
++            // No tool container and no workspace copy: the Host serves the
++            // pinned snapshot itself.
++            return Ok(());
++        }
+         let j = &self.journal;
+         let workspace = j.job.state_dir.join("coding-workspace");
+         fs::create_dir(&workspace)?;
+@@ -900,15 +989,35 @@ impl Host {
+         }
+         Ok(())
+     }
++    /// Process the container's frames given its whole output so far: the
++    /// first `frames` complete lines were already applied and are skipped.
+     pub(super) fn coding_advance(&mut self, raw: &[u8]) -> Result<Vec<Vec<u8>>> {
+-        let mut replies = vec![];
+         let count = self.journal.coding.as_ref().unwrap().frames;
+-        let lines: Vec<_> = raw
+-            .split_inclusive(|b| *b == b'\n')
+-            .filter(|line| line.ends_with(b"\n"))
+-            .collect();
+-        for line in lines.into_iter().skip(count) {
+-            if line.len() > 65536 {
++        let replies = self.coding_advance_lines(complete_lines(raw).skip(count).collect())?;
++        let done = self.journal.coding.as_ref().unwrap().frames;
++        self.coding_out_offset = complete_lines(raw).take(done).map(|l| l.len() as u64).sum();
++        Ok(replies)
++    }
++    /// The Host loop's path: read only the output written after the last
++    /// applied frame (`coding_out_offset`) and process its complete lines, so
++    /// each tick costs the new output, not the whole output so far.
++    pub(super) fn coding_advance_from(&mut self, stdout: &Path) -> Result<Vec<Vec<u8>>> {
++        let tail = read_from(stdout, self.coding_out_offset)?;
++        let lines: Vec<&[u8]> = complete_lines(&tail).collect();
++        let consumed: u64 = lines.iter().map(|l| l.len() as u64).sum();
++        let replies = self.coding_advance_lines(lines)?;
++        self.coding_out_offset += consumed;
++        Ok(replies)
++    }
++    fn coding_advance_lines(&mut self, lines: Vec<&[u8]>) -> Result<Vec<Vec<u8>>> {
++        let mut replies = vec![];
++        let frame_limit = if self.analysis_profile() {
++            analysis::FRAME_BYTES
++        } else {
++            65536
++        };
++        for line in lines {
++            if line.len() > frame_limit {
+                 return refuse("coding frame exceeded bound");
+             }
+             let frame: Value = serde_json::from_slice(line)?;
+@@ -1402,8 +1511,14 @@ impl Host {
+                         );
+                     }
+                 }
++                "snapshot_request" => {
++                    let reply = self.coding_snapshot_frame(&frame)?;
++                    replies.push(reply);
++                }
+                 "native_event" => {
+-                    if frame["event"]["type"] == "tool_execution_end"
++                    if frame["event"]["type"] == "tool_execution_end" && self.analysis_profile() {
++                        self.analysis_native_end(&frame["event"])?;
++                    } else if frame["event"]["type"] == "tool_execution_end"
+                         && self.journal.job.coding.as_ref().unwrap().schema == CLAIMS_BRIDGE_PROFILE
+                         && frame["event"]["toolName"]
+                             .as_str()
+@@ -1467,6 +1582,10 @@ impl Host {
+                 "export_part" | "export_final" => {
+                     self.coding_export_frame(&frame, kind)?;
+                 }
++                "complete" if self.analysis_profile() => {
++                    self.analysis_complete(&frame)?;
++                    self.journal.coding.as_mut().unwrap().completed = true;
++                }
+                 "complete" => {
+                     if self.is_signed_fixture() && !self.export_finalized() {
+                         return refuse("coding completion before export finalization");
+@@ -1488,7 +1607,7 @@ impl Host {
+                         || self.journal.job.coding.as_ref().unwrap().schema == SIGNED_PROFILE)
+                         && (state.provider_failed
+                             || state.provider_requests.is_empty()
+-                            || (is_live_bridge(&self.journal.job.coding.as_ref().unwrap().schema)
++                            || (is_continuity(&self.journal.job.coding.as_ref().unwrap().schema)
+                                 && state.provider_requests.len() != 4)
+                             || state
+                                 .provider_requests
+@@ -1525,6 +1644,13 @@ impl Host {
+         }
+         Ok(replies)
+     }
++    /// Complete container lines not yet applied, from `coding_out_offset`.
++    pub(super) fn coding_unprocessed(&self, stdout: &Path) -> Result<Vec<Value>> {
++        let tail = read_from(stdout, self.coding_out_offset)?;
++        complete_lines(&tail)
++            .map(|l| Ok(serde_json::from_slice(l)?))
++            .collect()
++    }
+     pub(super) fn coding_complete(&mut self, raw: &[u8]) -> Result<()> {
+         if !raw.ends_with(b"\n")
+             || !self.coding_advance(raw)?.is_empty()
+@@ -1605,8 +1731,12 @@ impl Host {
+         self.journal.coding.as_mut().unwrap().tool_removed = true;
+         self.save()?;
+         let profile = self.journal.job.coding.as_ref().unwrap();
+-        profile.toolchain.verify()?;
+-        profile.acceptance.verify()?;
++        if let Some(toolchain) = &profile.toolchain {
++            toolchain.verify()?;
++        }
++        if let Some(acceptance) = &profile.acceptance {
++            acceptance.verify()?;
++        }
+         if let Some(plan) = &profile.provider {
+             let expected: BTreeMap<String, Entry> =
+                 serde_json::from_slice(&plan.lane.pi_config.manifest.verify()?)?;
+@@ -1753,8 +1883,8 @@ mod tests {
+             coding: Some(Profile {
+                 schema: PROFILE.into(),
+                 shim: pin.clone(),
+-                toolchain: tree,
+-                acceptance: pin,
++                toolchain: Some(tree),
++                acceptance: Some(pin),
+                 fixture_command: "unused".into(),
+                 max_tool_calls: 1,
+                 workspace_write_boundary: WorkspaceWriteBoundary::LegacyWorkspace,
+@@ -1792,6 +1922,7 @@ mod tests {
+             pi_owner: None,
+             allocation_lease: None,
+             reply_leases: vec![],
++            coding_out_offset: 0,
+             _lock: File::create(root.join("lock")).unwrap(),
+         };
+         (dir, host)
+@@ -1928,6 +2059,36 @@ mod tests {
+         assert!(h.coding_advance(&duplicate).is_err());
+         assert!(h.journal.processes.is_empty());
+     }
++    /// The Host loop reads only output after the last applied frame: a partial
++    /// line waits, and a later frame is applied exactly once.
++    #[test]
++    fn incremental_output_applies_each_complete_frame_once() {
++        let (dir, mut h) = fixture();
++        let out = dir.path().join("rpc.stdout");
++        let ready = frame(
++            json!({"schema":PROFILE,"sessionId":"native","type":"ready","tools":["workspace_exec"]}),
++        );
++        let (head, rest) = ready.split_at(ready.len() / 2);
++        fs::write(&out, head).unwrap();
++        assert!(h.coding_advance_from(&out).unwrap().is_empty());
++        assert_eq!(h.coding_out_offset, 0);
++        assert!(h.coding_unprocessed(&out).unwrap().is_empty());
++        let mut file = OpenOptions::new().append(true).open(&out).unwrap();
++        file.write_all(rest).unwrap();
++        assert_eq!(h.coding_unprocessed(&out).unwrap().len(), 1);
++        assert_eq!(h.coding_advance_from(&out).unwrap().len(), 1);
++        assert_eq!(h.coding_out_offset, ready.len() as u64);
++        assert_eq!(h.journal.coding.as_ref().unwrap().frames, 1);
++        // Nothing new: nothing applied again.
++        assert!(h.coding_advance_from(&out).unwrap().is_empty());
++        // A second ready frame is new output and is refused as a duplicate.
++        file.write_all(&ready).unwrap();
++        assert!(h.coding_advance_from(&out).is_err());
++        // The whole-output path agrees with the offset it leaves behind.
++        let (_dir2, mut g) = fixture();
++        g.coding_advance(&ready).unwrap();
++        assert_eq!(g.coding_out_offset, ready.len() as u64);
++    }
+     #[test]
+     fn signed_fixture_dispatch_and_replacement_fail_before_effects() {
+         let (_dir, mut h) = fixture();
+diff --git a/rust/crates/work-engine-manual-host/src/pi_coding_analysis.rs b/rust/crates/work-engine-manual-host/src/pi_coding_analysis.rs
+new file mode 100644
+index 00000000..3a4e262c
+--- /dev/null
++++ b/rust/crates/work-engine-manual-host/src/pi_coding_analysis.rs
+@@ -0,0 +1,396 @@
++//! Hosted analysis profile (`work-engine.pi-analysis-hosted.v1`): no shell,
++//! tool container or workspace effect. The job's workspace is a read-only
++//! snapshot pinned by its manifest; the Host serves it through two tools and
++//! checks every member against the manifest before returning bytes. The
++//! container never sees the snapshot directly.
++use super::*;
++
++/// The profile's tools, in the receiver's registration order.
++pub const TOOLS: [&str; 2] = ["snapshot_list", "snapshot_read"];
++/// Host snapshot deliveries per job (`Profile::max_tool_calls` upper bound).
++pub const MAX_READS: u32 = 64;
++pub const MAX_REQUESTS: u32 = 32;
++/// Bytes of the SDK context per provider request. A `coding_provider_request`
++/// frame and the gate's `pi.provider_request` ingress carry it twice, which
++/// must fit the 1 MiB frame and the store's 1 MiB ingress bound.
++pub const MAX_CONTEXT_BYTES: u64 = 400_000;
++pub const MAX_REQUEST_BODY: usize = 600_000;
++/// One container frame (either direction is checked where it is read).
++pub const FRAME_BYTES: usize = 1 << 20;
++/// The inference container's stdout for the whole job.
++pub const OUTPUT_BYTES: u64 = 64 << 20;
++pub const PAGE_BYTES: usize = 24_576;
++const SNAPSHOT_BYTES: u64 = 1 << 20;
++const SNAPSHOT_FILES: usize = 256;
++const MAX_ARGUMENT_BYTES: usize = 1024;
++const MAX_RESULT_BYTES: usize = 100_000;
++/// SHA-256 of the canonical (`serde_json`, sorted keys) `tools` array the
++/// pinned receiver and SDK send. Any other tool surface is refused before a
++/// provider byte is written.
++pub const TOOLS_SHA256: &str = "f447e25baf341152fe46cd10c84b2f9cdcec9d80ada958c37b9ce593ca047fc4";
++
++/// Admission check of the snapshot (the job workspace).
++pub(super) fn validate_snapshot(job: &Job) -> Result<()> {
++    job.workspace.verify()?;
++    let entries = inventory(&job.workspace.root)?;
++    let mut total = 0u64;
++    for (path, entry) in &entries {
++        if !matches!(entry, Entry::File { .. }) || path.len() > 256 {
++            return refuse("analysis snapshot member is not a bounded regular file");
++        }
++        total += fs::metadata(job.workspace.root.join(path))?.len();
++    }
++    if entries.is_empty() || entries.len() > SNAPSHOT_FILES || total > SNAPSHOT_BYTES {
++        return refuse("analysis snapshot bounds");
++    }
++    Ok(())
++}
++
++/// The request's tool surface: exactly the profile's function tools, with the
++/// pinned specification digest.
++pub(super) fn check_request_tools(tools: &Value) -> Result<()> {
++    let Some(list) = tools.as_array() else {
++        return refuse("analysis request tools absent");
++    };
++    let mut names: Vec<&str> = list.iter().filter_map(|t| t["name"].as_str()).collect();
++    names.sort_unstable();
++    let mut expected = TOOLS.to_vec();
++    expected.sort_unstable();
++    let actual = digest(&serde_json::to_vec(tools)?);
++    if names != expected || list.iter().any(|t| t["type"] != "function") {
++        return refuse("analysis request tool set differs from the profile");
++    }
++    if actual != TOOLS_SHA256 {
++        return refuse(format!(
++            "analysis request tool specification differs from the pinned digest (got {actual})"
++        ));
++    }
++    Ok(())
++}
++
++/// One read-only tool call over the snapshot, or the error text returned to
++/// the model.
++fn serve(snapshot: &Tree, tool: &str, arguments: &Value) -> std::result::Result<Value, String> {
++    let manifest: BTreeMap<String, Entry> = snapshot
++        .manifest
++        .verify()
++        .ok()
++        .and_then(|b| serde_json::from_slice(&b).ok())
++        .ok_or("snapshot manifest unavailable")?;
++    let args = arguments.as_object().ok_or("arguments must be an object")?;
++    match tool {
++        "snapshot_list" => {
++            if !args.is_empty() {
++                return Err("snapshot_list takes no arguments".into());
++            }
++            let mut members = vec![];
++            for (path, entry) in &manifest {
++                let Entry::File { sha256 } = entry else {
++                    return Err("snapshot member is not a file".into());
++                };
++                let bytes = fs::metadata(snapshot.root.join(path))
++                    .map_err(|_| "snapshot member unavailable")?
++                    .len();
++                members.push(json!({"path":path,"bytes":bytes,"sha256":sha256}));
++            }
++            Ok(json!({"members":members}))
++        }
++        "snapshot_read" => {
++            if args
++                .keys()
++                .any(|k| !matches!(k.as_str(), "path" | "offset" | "max_bytes"))
++            {
++                return Err("snapshot_read takes path, offset and max_bytes".into());
++            }
++            let path = args
++                .get("path")
++                .and_then(Value::as_str)
++                .ok_or("path is required")?;
++            let Some(Entry::File { sha256 }) = manifest.get(path) else {
++                return Err(format!("{path} is not a snapshot member"));
++            };
++            let offset = match args.get("offset") {
++                None => 0,
++                Some(v) => v.as_u64().ok_or("offset must be a non-negative integer")? as usize,
++            };
++            let max = match args.get("max_bytes") {
++                None => PAGE_BYTES,
++                Some(v) => v
++                    .as_u64()
++                    .filter(|n| (1..=PAGE_BYTES as u64).contains(n))
++                    .ok_or(format!("max_bytes must be 1..={PAGE_BYTES}"))?
++                    as usize,
++            };
++            let bytes =
++                fs::read(snapshot.root.join(path)).map_err(|_| "snapshot member unavailable")?;
++            if digest(&bytes) != *sha256 {
++                return Err("snapshot member changed".into());
++            }
++            let text = std::str::from_utf8(&bytes).map_err(|_| "member is not UTF-8 text")?;
++            if offset > text.len() || !text.is_char_boundary(offset) {
++                return Err("offset is outside the member or inside a character".into());
++            }
++            let mut end = (offset + max).min(text.len());
++            while !text.is_char_boundary(end) {
++                end -= 1;
++            }
++            Ok(
++                json!({"path":path,"sha256":sha256,"total":text.len(),"offset":offset,
++                "bytes":end - offset,"next_offset":if end < text.len() {json!(end)} else {Value::Null},
++                "text":&text[offset..end]}),
++            )
++        }
++        _ => Err(format!("unknown tool {tool}")),
++    }
++}
++
++impl Host {
++    pub(crate) fn analysis_profile(&self) -> bool {
++        self.journal
++            .job
++            .coding
++            .as_ref()
++            .is_some_and(|p| is_analysis(&p.schema))
++    }
++    /// One Host-served snapshot call: durable intent, the read, a create-only
++    /// retained result, the gate's delivery record, then the reply.
++    pub(super) fn coding_snapshot_frame(&mut self, frame: &Value) -> Result<Vec<u8>> {
++        if !self.analysis_profile() {
++            return refuse("snapshot request outside the analysis profile");
++        }
++        if self.expired() || self.cancelled() {
++            return refuse("snapshot admission expired/cancelled");
++        }
++        let id = frame["id"]
++            .as_str()
++            .filter(|s| !s.is_empty() && s.len() < 128)
++            .ok_or_else(|| Error::Refused("snapshot id absent".into()))?
++            .to_string();
++        let tool = frame["tool"]
++            .as_str()
++            .filter(|t| TOOLS.contains(t))
++            .ok_or_else(|| Error::Refused("unknown snapshot tool".into()))?
++            .to_string();
++        let arguments = frame["arguments"].clone();
++        if !arguments.is_object() || arguments.to_string().len() > MAX_ARGUMENT_BYTES {
++            return refuse("snapshot arguments bound");
++        }
++        let limit = self.journal.job.coding.as_ref().unwrap().max_tool_calls as usize;
++        let state = self.journal.coding.as_mut().unwrap();
++        if state.snapshot_requests.contains_key(&id)
++            || state.sdk_refused_ids.contains(&id)
++            || state.snapshot_requests.len() >= limit
++        {
++            return refuse("duplicate or excess snapshot request");
++        }
++        state.snapshot_requests.insert(id.clone(), None);
++        state.snapshot_tools.insert(id.clone(), tool.clone());
++        self.save()?; // intent precedes the read; None stays unknown
++        let result = match serve(&self.journal.job.workspace, &tool, &arguments) {
++            Ok(v) => json!({"type":"snapshot_result","id":id,"ok":true,"result":v}),
++            Err(e) => json!({"type":"snapshot_result","id":id,"ok":false,"error":e}),
++        };
++        let bytes = serde_json::to_vec(&result)?;
++        if bytes.len() > MAX_RESULT_BYTES {
++            return refuse("snapshot result exceeded frame bound");
++        }
++        let path = self
++            .journal
++            .job
++            .state_dir
++            .join(format!("coding-snapshot-{}.json", digest(id.as_bytes())));
++        let mut file = OpenOptions::new()
++            .create_new(true)
++            .write(true)
++            .open(&path)?;
++        file.write_all(&bytes)?;
++        file.sync_all()?;
++        let artifact = Artifact {
++            sha256: digest(&bytes),
++            path,
++        };
++        self.journal
++            .coding
++            .as_mut()
++            .unwrap()
++            .snapshot_requests
++            .insert(id.clone(), Some(artifact.clone()));
++        self.save()?;
++        self.coding_gate
++            .as_mut()
++            .ok_or_else(|| Error::Refused("coding lifecycle gate missing".into()))?
++            .snapshot_delivered(&id, &tool, &arguments, &result, &artifact)?;
++        Ok(bytes)
++    }
++    /// A native completion of an analysis tool call: either exactly the Host
++    /// delivery, or an SDK refusal that never reached the Host.
++    pub(super) fn analysis_native_end(&mut self, event: &Value) -> Result<()> {
++        let id = event["toolCallId"]
++            .as_str()
++            .ok_or_else(|| Error::Refused("native snapshot id absent".into()))?;
++        let state = self.journal.coding.as_mut().unwrap();
++        let Some(slot) = state.snapshot_requests.get(id) else {
++            if event["isError"] != true || !state.sdk_refused_ids.insert(id.into()) {
++                return refuse("native analysis completion without a Host delivery");
++            }
++            return Ok(());
++        };
++        let delivered: Option<Value> = slot
++            .as_ref()
++            .and_then(|a| a.verify().ok())
++            .and_then(|b| serde_json::from_slice(&b).ok());
++        let Some(delivered) = delivered else {
++            return refuse("native snapshot completion mismatch");
++        };
++        let ok = delivered["ok"] == true;
++        let expected = if ok {
++            delivered["result"].clone()
++        } else {
++            json!({"error":delivered["error"]})
++        };
++        let native_text = event["result"]["content"][0]["text"]
++            .as_str()
++            .and_then(|t| serde_json::from_str::<Value>(t).ok());
++        if event["isError"] != false
++            || state.snapshot_tools.get(id).map(String::as_str) != event["toolName"].as_str()
++            || event["result"]["content"].as_array().map(Vec::len) != Some(1)
++            || native_text.as_ref() != Some(&expected)
++            || event["result"]["details"]["hostReportedSuccess"] != json!(ok)
++            || !state.native_snapshot_ids.insert(id.into())
++        {
++            return refuse("native snapshot completion mismatch");
++        }
++        Ok(())
++    }
++    /// Completion of an analysis job: every Host delivery resolved and matched
++    /// natively, every provider request settled, counts as reported.
++    pub(super) fn analysis_complete(&self, frame: &Value) -> Result<()> {
++        let state = self.journal.coding.as_ref().unwrap();
++        if state.completed
++            || state.snapshot_requests.values().any(Option::is_none)
++            || state.native_snapshot_ids.len() != state.snapshot_requests.len()
++            || !state.tool_requests.is_empty()
++            || state.provider_failed
++            || state.provider_requests.is_empty()
++            || state
++                .provider_requests
++                .values()
++                .any(|r| r.settled_microusd.is_none())
++            || frame["counts"]
++                != json!({"providerRequests":state.provider_requests.len(),"resets":0})
++        {
++            return refuse("analysis completion lacks settled requests or native tool evidence");
++        }
++        Ok(())
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    fn snapshot(files: &[(&str, &[u8])]) -> (tempfile::TempDir, Tree) {
++        let dir = tempfile::tempdir().unwrap();
++        let root = dir.path().join("snap");
++        for (path, bytes) in files {
++            let p = root.join(path);
++            fs::create_dir_all(p.parent().unwrap()).unwrap();
++            fs::write(p, bytes).unwrap();
++        }
++        let manifest = serde_json::to_vec(&inventory(&root).unwrap()).unwrap();
++        let mpath = dir.path().join("manifest.json");
++        fs::write(&mpath, &manifest).unwrap();
++        let tree = Tree {
++            root,
++            manifest: Artifact {
++                path: mpath,
++                sha256: digest(&manifest),
++            },
++        };
++        (dir, tree)
++    }
++    #[test]
++    fn snapshot_tools_serve_only_manifest_members_in_bounded_pages() {
++        let long = "é".repeat(PAGE_BYTES); // two bytes per character
++        let (_dir, tree) = snapshot(&[("a.md", b"hello"), ("d/long.md", long.as_bytes())]);
++        let list = serve(&tree, "snapshot_list", &json!({})).unwrap();
++        assert_eq!(list["members"].as_array().unwrap().len(), 2);
++        assert_eq!(list["members"][0]["path"], "a.md");
++        assert_eq!(list["members"][0]["bytes"], 5);
++        let page = serve(&tree, "snapshot_read", &json!({"path":"a.md"})).unwrap();
++        assert_eq!(page["text"], "hello");
++        assert!(page["next_offset"].is_null());
++        // A page ends on a character boundary and names where the next starts.
++        let first = serve(
++            &tree,
++            "snapshot_read",
++            &json!({"path":"d/long.md","max_bytes":5}),
++        )
++        .unwrap();
++        assert_eq!(first["bytes"], 4);
++        assert_eq!(first["next_offset"], 4);
++        let rest = serve(
++            &tree,
++            "snapshot_read",
++            &json!({"path":"d/long.md","offset":PAGE_BYTES}),
++        )
++        .unwrap();
++        assert_eq!(rest["bytes"], PAGE_BYTES);
++        assert!(rest["next_offset"].is_null());
++        for (tool, args) in [
++            ("snapshot_read", json!({"path":"../etc/passwd"})),
++            ("snapshot_read", json!({"path":"a.md","offset":1,"extra":1})),
++            ("snapshot_read", json!({"path":"d/long.md","offset":1})),
++            (
++                "snapshot_read",
++                json!({"path":"a.md","max_bytes":PAGE_BYTES + 1}),
++            ),
++            ("snapshot_read", json!({"path":"a.md","offset":6})),
++            ("snapshot_list", json!({"path":"a.md"})),
++            ("workspace_exec", json!({"command":"id"})),
++        ] {
++            assert!(serve(&tree, tool, &args).is_err(), "{tool} {args}");
++        }
++        // A member that changed after pinning is never served.
++        fs::write(tree.root.join("a.md"), b"HELLO").unwrap();
++        assert!(serve(&tree, "snapshot_read", &json!({"path":"a.md"})).is_err());
++    }
++    #[test]
++    fn request_tools_must_be_exactly_the_pinned_function_tools() {
++        let tool = |name: &str| json!({"type":"function","name":name,"parameters":{}});
++        let err = |v: Value| match check_request_tools(&v) {
++            Err(Error::Refused(m)) => m,
++            other => panic!("{other:?}"),
++        };
++        assert!(
++            err(json!([tool("snapshot_list"), tool("snapshot_read")])).contains("pinned digest")
++        );
++        assert!(err(json!([tool("snapshot_list")])).contains("tool set"));
++        assert!(
++            err(json!([
++                tool("snapshot_list"),
++                tool("snapshot_read"),
++                tool("workspace_exec")
++            ]))
++            .contains("tool set")
++        );
++        let mut hosted = json!([tool("snapshot_list"), tool("snapshot_read")]);
++        hosted[1]["type"] = json!("web_search");
++        assert!(err(hosted).contains("tool set"));
++        assert!(err(Value::Null).contains("absent"));
++    }
++    #[test]
++    fn snapshot_admission_bounds() {
++        let (_dir, tree) = snapshot(&[("a.md", b"x")]);
++        let mut job: Job = serde_json::from_value(json!({"schema":"s","job_id":"j","state_dir":"/tmp",
++            "authority":{"path":"/a","sha256":"0"},"packet":{"path":"/p","sha256":"0"},"docker":{"path":"/d","sha256":"0"},
++            "image":"i","runtime":{"root":"/r","manifest":{"path":"/m","sha256":"0"}},
++            "workspace":{"root":"/w","manifest":{"path":"/m","sha256":"0"}},
++            "deadline_unix_seconds":1,"command_timeout_seconds":1,"idle_seconds":0})).unwrap();
++        job.workspace = tree.clone();
++        validate_snapshot(&job).unwrap();
++        let big = vec![b'x'; SNAPSHOT_BYTES as usize + 1];
++        let (_dir2, tree2) = snapshot(&[("big.md", &big)]);
++        job.workspace = tree2;
++        assert!(validate_snapshot(&job).is_err());
++    }
++}
+diff --git a/rust/crates/work-engine-manual-host/src/pi_coding_export.rs b/rust/crates/work-engine-manual-host/src/pi_coding_export.rs
+index e9df4329..38143663 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_coding_export.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_coding_export.rs
+@@ -876,7 +876,7 @@ mod tests {
+         fs::write(src.path().join("empty"), b"").unwrap();
+         let script = format!(
+             "import {{createHash}} from 'node:crypto';import {{readdirSync,lstatSync,readFileSync}} from 'node:fs';\n\
+-             const fixtureSigned=true,schema='{SIGNED_PROFILE}';let session;const manager={{getSessionId:()=>'{SESSION}'}};\n{emit}\n{}\nexportBundle();\n",
++             const fixtureSigned=true,schema='{SIGNED_PROFILE}',FRAME_BYTES=65536;let session;const manager={{getSessionId:()=>'{SESSION}'}};\n{emit}\n{}\nexportBundle();\n",
+             bundle.replace(
+                 "walk('/export'",
+                 &format!("walk('{}'", src.path().display())
+diff --git a/rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs b/rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs
+index e0db306c..b4c558ba 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs
+@@ -25,6 +25,24 @@ pub const HEAD_TIMEOUT_MS: u64 = 60_000;
+ /// deadline.
+ pub const READ_IDLE_MS: u64 = 30_000;
+ const MAX_REQUEST_BODY: usize = 45_000;
++/// Every tool a request body declares: the top-level `tools` array and the
++/// tools of each `additional_tools` input item, in order. `None` when either
++/// is malformed.
++fn declared_tools(body: &Value) -> Option<Vec<Value>> {
++    let mut out = match &body["tools"] {
++        Value::Null => vec![],
++        Value::Array(tools) => tools.clone(),
++        _ => return None,
++    };
++    if let Some(input) = body["input"].as_array() {
++        for item in input.iter().filter(|i| i["type"] == "additional_tools") {
++            out.extend(item["tools"].as_array()?.iter().cloned());
++        }
++    } else if !body["input"].is_null() {
++        return None;
++    }
++    Some(out)
++}
+ const MAX_HEADERS: usize = 64;
+ /// Credential-bearing request headers. The container's values are markers;
+ /// the transport applies real access itself.
+@@ -500,6 +518,26 @@ impl Host {
+         let kind = frame["type"].as_str().unwrap_or("");
+         if kind == "provider_fetch" {
+             let fetch = self.hosted_fetch(frame)?;
++            // The exact body, retained create-only before the request's first
++            // attempt; every attempt records its digest before dispatch.
++            let request = self.hosted.stream.as_ref().unwrap().request;
++            let path = self
++                .journal
++                .job
++                .state_dir
++                .join(format!("coding-hosted-{request}.body.json"));
++            let mut file = OpenOptions::new()
++                .create_new(true)
++                .write(true)
++                .open(&path)?;
++            file.write_all(&fetch.body)?;
++            file.sync_all()?;
++            File::open(&self.journal.job.state_dir)?.sync_all()?;
++            self.journal.artifacts.push(Artifact {
++                path,
++                sha256: digest(&fetch.body),
++            });
++            self.save()?;
+             self.hosted.stream.as_mut().unwrap().phase = StreamPhase::Fetched(fetch);
+             return Ok(());
+         }
+@@ -563,7 +601,13 @@ impl Host {
+             .map_err(|_| Error::Refused("provider fetch body encoding".into()))?;
+         let parsed: Value = serde_json::from_slice(&body)
+             .map_err(|_| Error::Refused("provider fetch body JSON".into()))?;
+-        if body.len() > MAX_REQUEST_BODY
++        let analysis = self.analysis_profile();
++        if body.len()
++            > if analysis {
++                super::analysis::MAX_REQUEST_BODY
++            } else {
++                MAX_REQUEST_BODY
++            }
+             || parsed["model"] != plan.model
+             || parsed["stream"] != true
+         {
+@@ -574,11 +618,12 @@ impl Host {
+         // and only the container's own function tools (no provider-hosted
+         // tools: the container stays networkless and tool spend stays inside
+         // token settlement).
+-        let tools_ok = match &parsed["tools"] {
+-            Value::Null => true,
+-            Value::Array(tools) => tools.iter().all(|t| t["type"] == "function"),
+-            _ => false,
+-        };
++        // Tools are declared at the top level or, for the Codex API, as
++        // `additional_tools` input items; both count.
++        let declared = declared_tools(&parsed);
++        let tools_ok = declared
++            .as_ref()
++            .is_some_and(|tools| tools.iter().all(|t| t["type"] == "function"));
+         if parsed["store"] != false
+             || !matches!(&parsed["background"], Value::Null | Value::Bool(false))
+             || !(parsed["service_tier"].is_null()
+@@ -587,6 +632,9 @@ impl Host {
+         {
+             return refuse("provider fetch body policy: store/background/service_tier/tools");
+         }
++        if analysis {
++            super::analysis::check_request_tools(&json!(declared.unwrap_or_default()))?;
++        }
+         Ok(Fetch { headers, body })
+     }
+     fn hosted_native(&mut self, s: &mut Stream, frame: &Value) -> Result<()> {
+@@ -667,7 +715,7 @@ impl Host {
+     fn hosted_step(&mut self, s: &mut Stream, stdout: &Path) -> Result<()> {
+         match &mut s.phase {
+             StreamPhase::Fetched(_) => {
+-                if self.unprocessed(stdout)?.is_empty() {
++                if self.coding_unprocessed(stdout)?.is_empty() {
+                     let StreamPhase::Fetched(fetch) =
+                         std::mem::replace(&mut s.phase, StreamPhase::Closed)
+                     else {
+@@ -710,16 +758,6 @@ impl Host {
+             _ => Ok(()),
+         }
+     }
+-    /// Complete container lines not yet processed by `coding_advance`.
+-    fn unprocessed(&self, stdout: &Path) -> Result<Vec<Value>> {
+-        let raw = fs::read(stdout)?;
+-        let done = self.journal.coding.as_ref().unwrap().frames;
+-        raw.split_inclusive(|b| *b == b'\n')
+-            .filter(|l| l.ends_with(b"\n"))
+-            .skip(done)
+-            .map(|l| Ok(serde_json::from_slice(l)?))
+-            .collect()
+-    }
+     /// Admit, reserve and dispatch the next attempt of the stream's request,
+     /// or answer that no attempt is permitted.
+     fn hosted_attempt(&mut self, s: &mut Stream, fetch: Fetch, stdout: &Path) -> Result<()> {
+@@ -756,6 +794,18 @@ impl Host {
+                 return self.hosted_unavailable(s, "ledger_refused");
+             }
+         };
++        if let Some(a) = self
++            .journal
++            .coding
++            .as_mut()
++            .unwrap()
++            .provider_requests
++            .get_mut(&s.request)
++            .and_then(|r| r.attempts.last_mut())
++            .filter(|a| a.attempt == attempt)
++        {
++            a.request_body_sha256 = Some(digest(&fetch.body));
++        }
+         self.save()?; // Durable attempt reservation before any upstream byte.
+         if self.expired() || self.cancelled() {
+             self.hosted_uncertain(
+@@ -844,7 +894,7 @@ impl Host {
+             }
+             // Last check before any upstream byte: a head-phase cancel that
+             // arrived meanwhile means this attempt is not dispatched.
+-            if host.unprocessed(stdout)?.iter().any(|f| {
++            if host.coding_unprocessed(stdout)?.iter().any(|f| {
+                 f["type"] == "cancel"
+                     && f["ordinal"] == 1
+                     && f["binding"] == bind
+@@ -1679,6 +1729,27 @@ mod tests {
+         h.journal.coding.as_ref().unwrap().provider_requests[&1].clone()
+     }
+ 
++    /// Tools count wherever the body declares them: the top-level array and
++    /// every Codex `additional_tools` input item.
++    #[test]
++    fn declared_tools_include_additional_tools_items() {
++        let f = |name: &str, kind: &str| json!({"type":kind,"name":name});
++        let body = json!({"tools":[f("a","function")],"input":[
++            {"type":"additional_tools","role":"developer","tools":[f("b","function"),f("c","web_search")]},
++            {"type":"message","role":"user","content":"x"}]});
++        let names: Vec<_> = declared_tools(&body)
++            .unwrap()
++            .iter()
++            .map(|t| t["name"].clone())
++            .collect();
++        assert_eq!(names, vec![json!("a"), json!("b"), json!("c")]);
++        assert!(declared_tools(&json!({"tools":{}})).is_none());
++        assert!(
++            declared_tools(&json!({"input":[{"type":"additional_tools","tools":{}}]})).is_none()
++        );
++        assert!(declared_tools(&json!({"input":"text"})).is_none());
++        assert_eq!(declared_tools(&json!({})).unwrap(), Vec::<Value>::new());
++    }
+     #[test]
+     fn refusal_fails_over_within_the_grant_and_host_evidence_settles_completion() {
+         let (dir, mut h, mut w) = host(vec![refusal(429), completed()], None);
+diff --git a/rust/crates/work-engine-manual-host/src/pi_coding_provider.rs b/rust/crates/work-engine-manual-host/src/pi_coding_provider.rs
+index 08db4c62..77cb12c3 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_coding_provider.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_coding_provider.rs
+@@ -102,6 +102,11 @@ pub struct AttemptRecord {
+     /// completion settled on the terminal event alone records `false`.
+     #[serde(default, skip_serializing_if = "Option::is_none")]
+     pub framed_end_observed: Option<bool>,
++    /// Hosted: SHA-256 of the exact request body this attempt dispatched,
++    /// retained create-only (`coding-hosted-{request}.body.json`) before the
++    /// request's first attempt and persisted here before any upstream byte.
++    #[serde(default, skip_serializing_if = "Option::is_none")]
++    pub request_body_sha256: Option<String>,
+ }
+ /// Observed facts about one attempt, from which the ledger derives the
+ /// disposition. Callers report evidence; they never choose a release.
+@@ -376,6 +381,7 @@ pub fn reserve_attempt(
+         deadline_ms: None,
+         routes_sha256: None,
+         framed_end_observed: None,
++        request_body_sha256: None,
+     });
+     Ok(next)
+ }
+@@ -426,16 +432,27 @@ impl ProviderPlan {
+                 && fs::canonicalize(&a.path)? == a.path
+                 && !a.path.to_string_lossy().contains([',', ':', '\n', '\r']))
+         };
++        let analysis = job
++            .coding
++            .as_ref()
++            .is_some_and(|p| super::is_analysis(&p.schema));
+         if job
+             .coding
+             .as_ref()
+             .is_none_or(|p| !super::is_hosted(&p.schema))
+             || self.model != "gpt-6-luna"
+-            || !(1..=6).contains(&self.max_requests)
+-            || !(1..=1_000_000).contains(&self.budget_microusd)
++            || !(1..=if analysis { super::analysis::MAX_REQUESTS } else { 6 })
++                .contains(&self.max_requests)
++            || !(1..=if analysis { 10_000_000 } else { 1_000_000 })
++                .contains(&self.budget_microusd)
+             // K-d: a turn admitted by context bytes must fit the hosted request
+             // body bound (instructions and tools need the remaining room).
+-            || !(1024..=32768).contains(&self.max_context_bytes)
++            || !(1024..=if analysis {
++                super::analysis::MAX_CONTEXT_BYTES
++            } else {
++                32768
++            })
++                .contains(&self.max_context_bytes)
+             || self.catalog.path != job.runtime.root.join(CATALOG)
+             || self.stream_adapter.verify()? != STREAM_ADAPTER
+             || !canonical(&self.stream_adapter)?
+@@ -565,10 +582,17 @@ impl Host {
+         fs::create_dir(&public)?;
+         let task = String::from_utf8(plan.task.verify()?)
+             .map_err(|_| Error::Refused("task is not UTF8".into()))?;
+-        atomic(
+-            &public.join("job.json"),
+-            &json!({"schema":super::HOSTED_BRIDGE_PROFILE,"provider":"openai-codex","model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes}),
+-        )?;
++        let mut job = json!({"schema":super::HOSTED_BRIDGE_PROFILE,"provider":"openai-codex","model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes});
++        if super::is_analysis(&profile.schema) {
++            // The receiver's own bounds for this profile; the Host checks
++            // every one of them again where it reads.
++            job["schema"] = json!(super::ANALYSIS_PROFILE);
++            job["maxBodyBytes"] = json!(super::analysis::MAX_REQUEST_BODY);
++            job["frameBytes"] = json!(super::analysis::FRAME_BYTES);
++            job["maxReads"] = json!(profile.max_tool_calls);
++            job["pageBytes"] = json!(super::analysis::PAGE_BYTES);
++        }
++        atomic(&public.join("job.json"), &job)?;
+         Ok(())
+     }
+     pub(super) fn coding_provider_frame(&mut self, frame: &Value) -> Result<Option<Value>> {
+diff --git a/rust/crates/work-engine-manual-host/src/pi_coding_validation.rs b/rust/crates/work-engine-manual-host/src/pi_coding_validation.rs
+index eeaa45bb..3d841a10 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_coding_validation.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_coding_validation.rs
+@@ -147,6 +147,8 @@ impl Host {
+                 .as_ref()
+                 .unwrap()
+                 .acceptance
++                .as_ref()
++                .ok_or_else(|| Error::Refused("coding acceptance absent".into()))?
+                 .sha256
+                 .clone(),
+             workspace_manifest_sha256: tree.manifest.sha256.clone(),
+@@ -294,8 +296,6 @@ impl Host {
+             || !state.validation_removed
+             || state.validation_exit != Some(0)
+             || state.validation_id.as_deref() != Some(&proof.validator_id)
+-            || proof.acceptance_sha256
+-                != self.journal.job.coding.as_ref().unwrap().acceptance.sha256
+             || self
+                 .journal
+                 .job
+@@ -303,8 +303,8 @@ impl Host {
+                 .as_ref()
+                 .unwrap()
+                 .acceptance
+-                .verify()
+-                .is_err()
++                .as_ref()
++                .is_none_or(|a| proof.acceptance_sha256 != a.sha256 || a.verify().is_err())
+             || proof.workspace_manifest_sha256 != tree.manifest.sha256
+             || tree.verify().is_err()
+             || process.status != Some(0)
+diff --git a/rust/crates/work-engine-manual-host/src/pi_docker.rs b/rust/crates/work-engine-manual-host/src/pi_docker.rs
+index 70fe5bff..734e2115 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_docker.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_docker.rs
+@@ -188,6 +188,10 @@ pub struct Host {
+     pi_owner: Option<session_task_admission::pi_pilot::PiOwner>,
+     allocation_lease: Option<session_task_admission::pi_pilot::EffectLease>,
+     reply_leases: Vec<session_task_admission::pi_pilot::EffectLease>,
++    /// Byte offset just past the last coding frame applied from the running
++    /// inference process's stdout (in memory: a restarted Host reconciles
++    /// instead of resuming the process).
++    coding_out_offset: u64,
+     _lock: File,
+ }
+ 
+@@ -384,10 +388,13 @@ impl Host {
+         }
+         if let Some(profile) = &job.coding {
+             for input in [
+-                &profile.shim,
+-                &profile.toolchain.manifest,
+-                &profile.acceptance,
+-            ] {
++                Some(&profile.shim),
++                profile.toolchain.as_ref().map(|t| &t.manifest),
++                profile.acceptance.as_ref(),
++            ]
++            .into_iter()
++            .flatten()
++            {
+                 input_pins.push(Artifact {
+                     path: input.snapshot(&job.state_dir.join("snapshots"))?,
+                     sha256: input.sha256.clone(),
+@@ -445,6 +452,7 @@ impl Host {
+             pi_owner: owner,
+             allocation_lease: None,
+             reply_leases: vec![],
++            coding_out_offset: 0,
+         };
+         host.save()?;
+         Ok(host)
+@@ -485,6 +493,7 @@ impl Host {
+             pi_owner: None,
+             allocation_lease: None,
+             reply_leases: vec![],
++            coding_out_offset: 0,
+         })
+     }
+     fn save(&self) -> Result<()> {
+@@ -633,17 +642,29 @@ impl Host {
+         let mut verified = false;
+         let mut verified_at = None;
+         let mut aborted = false;
++        // A tick that applied container output or wrote stream frames runs
++        // the next one at once: a relayed response is one pull per chunk, so
++        // a fixed sleep per tick would bound the relay at ~50 chunks a second.
++        let mut busy;
++        let output_limit = if rpc && self.analysis_profile() {
++            coding::analysis::OUTPUT_BYTES
++        } else {
++            LIMIT
++        };
+         loop {
++            busy = false;
+             let output_size = fs::metadata(&stdout_path)?.len();
+             let error_size = fs::metadata(&stderr_path)?.len();
+-            if output_size > LIMIT || error_size > LIMIT {
++            if output_size > output_limit || error_size > LIMIT {
+                 self.failure("process output exceeded bound");
+                 aborted = true;
+             }
+-            if rpc && !verified && output_size <= LIMIT {
+-                let raw = fs::read(&stdout_path)?;
++            if rpc && !verified && output_size <= output_limit {
+                 if self.journal.job.coding.is_some() {
+-                    match self.coding_advance(&raw) {
++                    let before = self.coding_out_offset;
++                    let advanced = self.coding_advance_from(&stdout_path);
++                    busy |= self.coding_out_offset != before;
++                    match advanced {
+                         Ok(commands) => {
+                             let leases = std::mem::take(&mut self.reply_leases);
+                             // Hold all owner ordering leases through the actual IPC grant write.
+@@ -698,6 +719,7 @@ impl Host {
+                             if write_result.is_ok() {
+                                 match self.coding_hosted_tick(&stdout_path) {
+                                     Ok(frames) => {
++                                        busy |= !frames.is_empty();
+                                         for frame in frames {
+                                             write_result = stdin
+                                                 .as_mut()
+@@ -724,6 +746,7 @@ impl Host {
+                         }
+                     }
+                 } else if self.journal.job.receiver.is_some() {
++                    let raw = fs::read(&stdout_path)?;
+                     match self.receiver_advance(&raw, number) {
+                         Ok(Some(command)) => {
+                             write_result = stdin
+@@ -743,6 +766,7 @@ impl Host {
+                         }
+                     }
+                 } else {
++                    let raw = fs::read(&stdout_path)?;
+                     match verify_rpc(&raw, false) {
+                         Ok(Some(session)) => {
+                             self.journal.session_id = Some(session);
+@@ -799,7 +823,9 @@ impl Host {
+                 self.journal.processes[number].status = status.code();
+                 break;
+             }
+-            std::thread::sleep(Duration::from_millis(20));
++            if !busy {
++                std::thread::sleep(Duration::from_millis(20));
++            }
+         }
+         if rpc && let Err(e) = self.coding_hosted_abort("run loop ended with the stream open") {
+             self.failure(e);
+@@ -820,7 +846,10 @@ impl Host {
+             && !aborted
+             && write_result.is_ok();
+         self.save()?;
+-        let bytes = crate::bytes(&stdout_path)?;
++        if fs::metadata(&stdout_path)?.len() > output_limit {
++            return refuse("process output exceeded bound");
++        }
++        let bytes = fs::read(&stdout_path)?;
+         if rpc && success {
+             let session = if self.journal.job.coding.is_some() {
+                 self.coding_complete(&bytes)?;
+@@ -1038,7 +1067,7 @@ impl Host {
+             if !ok {
+                 return refuse("Pi attach/start failed or uncertain");
+             }
+-            if self.journal.job.coding.is_some() {
++            if self.journal.job.coding.is_some() && !self.analysis_profile() {
+                 self.coding_validate_task()?;
+             }
+             self.journal.phase = Phase::Running;
+@@ -1070,6 +1099,11 @@ impl Host {
+         if self.journal.phase == Phase::Collected {
+             return self.receipt();
+         }
++        let output_limit = if self.analysis_profile() {
++            coding::analysis::OUTPUT_BYTES
++        } else {
++            LIMIT
++        };
+         for process in &mut self.journal.processes {
+             if process.status.is_none()
+                 && let (Some(pid), Some(expected)) = (process.pid, &process.start)
+@@ -1091,7 +1125,7 @@ impl Host {
+             if process.status.is_none() {
+                 // Lost exit status stays unknown. Retain any bounded raw bytes
+                 // after the old CLI has stopped, without inventing its exit.
+-                if process.stdout.exists() && fs::metadata(&process.stdout)?.len() <= LIMIT {
++                if process.stdout.exists() && fs::metadata(&process.stdout)?.len() <= output_limit {
+                     process.stdout_sha256 = Some(file_digest(&process.stdout, None)?);
+                 }
+                 if process.stderr.exists() && fs::metadata(&process.stderr)?.len() <= LIMIT {
+@@ -1270,12 +1304,15 @@ impl Host {
+         for artifact in &self.journal.artifacts {
+             artifact.verify()?;
+         }
++        // Analysis: no tool container or validator; completion already
++        // required every delivery matched and every request settled.
++        let analysis = self.analysis_profile();
+         let pass = self.journal.coding.as_ref().is_none_or(|c| {
+-            c.tool_removed
++            (c.tool_removed || (analysis && !c.tool_create_intent))
+                 && c.completed
+                 && (!self.is_signed_fixture()
+                     || (self.export_finalized() && self.export_collection_consistent()))
+-                && self.coding_final_proof_valid()
++                && (analysis || self.coding_final_proof_valid())
+                 && (self.journal.job.coding.as_ref().unwrap().provider.is_none()
+                     || c.access_removed)
+         }) && self.journal.rpc_verified
+@@ -1418,6 +1455,26 @@ pub fn request_cancel(dir: &Path) -> Result<Value> {
+     )
+ }
+ 
++/// Newline-terminated lines of `raw`; a trailing partial line is not yet a frame.
++fn complete_lines(raw: &[u8]) -> impl Iterator<Item = &[u8]> {
++    raw.split_inclusive(|b| *b == b'\n')
++        .filter(|line| line.ends_with(b"\n"))
++}
++/// The bytes of `path` from `offset` to its current end, bounded like the
++/// whole output.
++fn read_from(path: &Path, offset: u64) -> Result<Vec<u8>> {
++    use std::io::{Read, Seek, SeekFrom};
++    let bound = coding::analysis::OUTPUT_BYTES.max(LIMIT);
++    let mut file = File::open(path)?;
++    file.seek(SeekFrom::Start(offset))?;
++    let mut tail = vec![];
++    Read::take(file, bound + 1).read_to_end(&mut tail)?;
++    if tail.len() as u64 > bound {
++        return refuse("process output exceeded bound");
++    }
++    Ok(tail)
++}
++
+ fn rpc_input() -> Vec<u8> {
+     b"{\"id\":\"state-before\",\"type\":\"get_state\"}\n{\"id\":\"disable-auto-compact\",\"type\":\"set_auto_compaction\",\"enabled\":false}\n{\"id\":\"disable-auto-retry\",\"type\":\"set_auto_retry\",\"enabled\":false}\n{\"id\":\"state-after\",\"type\":\"get_state\"}\n".to_vec()
+ }
+diff --git a/rust/crates/work-engine-manual-host/src/pi_stream.rs b/rust/crates/work-engine-manual-host/src/pi_stream.rs
+index afbb0b56..953bf666 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_stream.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_stream.rs
+@@ -183,6 +183,38 @@ impl<R: Read> Upstream<R> {
+         }
+         Ok(Some(b))
+     }
++    /// Like `next`, but only when every byte it would consume (body and chunk
++    /// framing) is already buffered, so it never blocks. `None`: it would
++    /// block (or the body has ended); the caller uses `next`.
++    pub fn next_buffered(&mut self, max: usize) -> Option<Result<Option<Vec<u8>>>> {
++        if self.done || max == 0 {
++            return None;
++        }
++        let buf = self.reader.buffer();
++        let ready = match self.framing {
++            Framing::Length(_) | Framing::Close => !buf.is_empty(),
++            Framing::Chunked => {
++                let (header, left) = if self.chunk_left > 0 {
++                    (0, self.chunk_left)
++                } else {
++                    let i = buf.windows(2).position(|w| w == b"\r\n")?;
++                    let size = std::str::from_utf8(&buf[..i])
++                        .ok()?
++                        .split(';')
++                        .next()?
++                        .trim();
++                    let n = usize::from_str_radix(size, 16).ok()?;
++                    if n == 0 || n > MAX_RESPONSE {
++                        return None;
++                    }
++                    (i + 2, n)
++                };
++                let take = left.min(max);
++                buf.len() >= header + take + if take == left { 2 } else { 0 }
++            }
++        };
++        ready.then(|| self.next(max))
++    }
+     fn line(&mut self) -> Result<String> {
+         let mut l = Vec::new();
+         let n = (&mut self.reader)
+@@ -437,8 +469,25 @@ impl Reader {
+                     return;
+                 }
+             };
++            // A result found while coalescing, delivered at the next request.
++            let mut held: Option<Result<Option<Vec<u8>>>> = None;
+             while rx.recv().is_ok() {
+-                let r = up.next(CHUNK);
++                let mut r = held.take().unwrap_or_else(|| up.next(CHUNK));
++                // Coalesce body bytes already received (never blocks): one
++                // relayed chunk per HTTP chunk would cost a round trip and a
++                // durable append per provider event.
++                if let Ok(Some(bytes)) = &mut r {
++                    while bytes.len() < CHUNK {
++                        match up.next_buffered(CHUNK - bytes.len()) {
++                            Some(Ok(Some(more))) => bytes.extend(more),
++                            Some(other) => {
++                                held = Some(other);
++                                break;
++                            }
++                            None => break,
++                        }
++                    }
++                }
+                 let last = !matches!(r, Ok(Some(_)));
+                 if tx.send(Msg::Data(r)).is_err() || last {
+                     break;
+@@ -1039,3 +1088,60 @@ pub fn pre_dispatch<C: Channel>(
+     ))?;
+     Ok(true)
+ }
++
++#[cfg(test)]
++mod coalescing_tests {
++    use super::*;
++    /// A reader that returns its scripted pieces one `read` at a time, so a
++    /// later piece is not buffered until the earlier ones are consumed.
++    struct Pieces(Vec<Vec<u8>>);
++    impl Read for Pieces {
++        fn read(&mut self, out: &mut [u8]) -> std::io::Result<usize> {
++            if self.0.is_empty() {
++                return Ok(0);
++            }
++            let mut p = self.0.remove(0);
++            let n = p.len().min(out.len());
++            out[..n].copy_from_slice(&p[..n]);
++            if n < p.len() {
++                self.0.insert(0, p.split_off(n));
++            }
++            Ok(n)
++        }
++    }
++    #[test]
++    fn buffered_chunks_coalesce_without_blocking_and_bytes_are_unchanged() {
++        let head = b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n".to_vec();
++        let mut body = vec![];
++        for e in ["data: a\n\n", "data: b\n\n", "data: c\n\n"] {
++            body.extend(format!("{:x}\r\n{e}\r\n", e.len()).into_bytes());
++        }
++        let mut wire = head.clone();
++        wire.extend(&body);
++        // Head and three chunks arrive together; a fourth chunk later.
++        let later = b"9\r\ndata: d\n\n\r\n0\r\n\r\n".to_vec();
++        let mut up = Upstream::open(Pieces(vec![wire, later])).unwrap();
++        let mut got = up.next(CHUNK).unwrap().unwrap();
++        while let Some(more) = up.next_buffered(CHUNK - got.len()) {
++            got.extend(more.unwrap().unwrap());
++        }
++        assert_eq!(got, b"data: a\n\ndata: b\n\ndata: c\n\n");
++        // Nothing buffered now: coalescing stops instead of blocking.
++        assert!(up.next_buffered(CHUNK).is_none());
++        assert_eq!(up.next(CHUNK).unwrap().unwrap(), b"data: d\n\n");
++        assert!(up.next(CHUNK).unwrap().is_none());
++    }
++    #[test]
++    fn a_partially_buffered_chunk_is_not_coalesced() {
++        let wire =
++            b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n9\r\ndata: a\n\n\r\n9\r\ndata"
++                .to_vec();
++        let mut up = Upstream::open(Pieces(vec![wire, b": b\n\n\r\n0\r\n\r\n".to_vec()])).unwrap();
++        assert_eq!(up.next(CHUNK).unwrap().unwrap(), b"data: a\n\n");
++        // Four of the next chunk's nine bytes are buffered: not coalesced.
++        assert!(up.next_buffered(CHUNK).is_none());
++        // `next` itself still returns what is available (unchanged).
++        assert_eq!(up.next(CHUNK).unwrap().unwrap(), b"data");
++        assert_eq!(up.next(CHUNK).unwrap().unwrap(), b": b\n\n");
++    }
++}
+diff --git a/rust/crates/work-engine-manual-host/tests/pi_coding_actual.rs b/rust/crates/work-engine-manual-host/tests/pi_coding_actual.rs
+index ab395bf2..83f3c0b1 100644
+--- a/rust/crates/work-engine-manual-host/tests/pi_coding_actual.rs
++++ b/rust/crates/work-engine-manual-host/tests/pi_coding_actual.rs
+@@ -142,8 +142,8 @@ printf 'STRICT_PERSISTENT_WRITE_BOUNDARY_PASSED\n'"#,
+         coding: Some(Profile {
+             schema: PROFILE.into(),
+             shim,
+-            toolchain,
+-            acceptance,
++            toolchain: Some(toolchain),
++            acceptance: Some(acceptance),
+             fixture_command: command,
+             max_tool_calls: 1,
+             workspace_write_boundary: if strict {
+diff --git a/rust/crates/work-engine-server/src/bin/coding-job-prepare.rs b/rust/crates/work-engine-server/src/bin/coding-job-prepare.rs
+index ba84b6d6..84a98042 100644
+--- a/rust/crates/work-engine-server/src/bin/coding-job-prepare.rs
++++ b/rust/crates/work-engine-server/src/bin/coding-job-prepare.rs
+@@ -406,13 +406,13 @@ fn run() -> Result<Value> {
+             }
+             .into(),
+             shim,
+-            toolchain: prepared_tree(
++            toolchain: Some(prepared_tree(
+                 &spec.toolchain,
+                 out,
+                 "toolchain-manifest.json",
+                 &inputs.toolchain,
+-            )?,
+-            acceptance: inputs.validator,
++            )?),
++            acceptance: Some(inputs.validator),
+             fixture_command: spec.fixture_command,
+             max_tool_calls: 1,
+             workspace_write_boundary: WorkspaceWriteBoundary::SrcLibRs,
+diff --git a/rust/crates/work-engine-server/src/job.rs b/rust/crates/work-engine-server/src/job.rs
+index bc4c6af4..7fc7da0b 100644
+--- a/rust/crates/work-engine-server/src/job.rs
++++ b/rust/crates/work-engine-server/src/job.rs
+@@ -198,14 +198,16 @@ fn host_input_digest(job: &Value) -> Option<String> {
+ fn verify_live_job(value: &Value, binary: &str) -> Result<(), &'static str> {
+     use work_engine_manual_host::pi_docker::{
+         Job,
+-        coding::{WorkspaceWriteBoundary, is_hosted},
++        coding::{HOSTED_BRIDGE_PROFILE, WorkspaceWriteBoundary},
+     };
+     let job: Job = serde_json::from_value(value.clone()).map_err(|_| "host_identity_mismatch")?;
+     let coding = job.coding.as_ref().ok_or("capability_mismatch")?;
+     let provider = coding.provider.as_ref().ok_or("capability_mismatch")?;
+     // The hosted profile is the only live class: provider access stays in the
+     // Host process; the inference container has no network or credential.
+-    if !is_hosted(&coding.schema)
++    // The coding continuity class only; the hosted analysis profile has no
++    // server class yet.
++    if coding.schema != HOSTED_BRIDGE_PROFILE
+         || coding.max_tool_calls != 1
+         || coding.workspace_write_boundary != WorkspaceWriteBoundary::SrcLibRs
+         || !coding.fixture_command.is_empty()
+@@ -270,9 +272,13 @@ fn verify_live_job(value: &Value, binary: &str) -> Result<(), &'static str> {
+         &provider.catalog,
+         &provider.stream_adapter,
+         &coding.shim,
+-        &coding.acceptance,
++        coding.acceptance.as_ref().ok_or("capability_mismatch")?,
+         &job.workspace.manifest,
+-        &coding.toolchain.manifest,
++        &coding
++            .toolchain
++            .as_ref()
++            .ok_or("capability_mismatch")?
++            .manifest,
+         &job.runtime.manifest,
+         &provider.lane.pi_config.manifest,
+     ] {

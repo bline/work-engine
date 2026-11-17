@@ -46,3 +46,65 @@ What remains of the ceiling: frames. Each container frame is bounded at
 turn's answer is now limited by the frame bound (several thousand tokens at
 the coding profile's 24 000-byte context), not by the job's output bound.
 The analysis profile (slice 3) raises the frame bound.
+
+## Slice 3: hosted analysis profile (`1051e660`)
+
+Changes: the analysis profile `work-engine.pi-analysis-hosted.v1` (Host-served
+read-only snapshot tools, no shell, tool container or validator), its
+lifecycle grammar and gate, the `analysis-qualification` producer, request
+body retention for both hosted profiles, the tools policy over Codex
+`additional_tools` items, and relay coalescing (see the
+[plan](../../planning/dev-vertical-h2-pi-route-20261117.md), revision 2).
+
+Two findings during development changed the design:
+
+- **Tools are not in the top-level `tools` array.** Pi 1.5 declares the Codex
+  tools as an `additional_tools` input item. The coding profile's body policy
+  ("only `type: function` tools") had checked only the top-level array, so it
+  never saw the declared tools. Both profiles now check every declared tool.
+  The analysis profile also pins the canonical digest of the declared tool
+  specifications (`TOOLS_SHA256`, taken from the first offline run's
+  refusal message).
+- **Relay throughput.** A response streamed as one HTTP chunk per event (as
+  real backends do) was relayed as one chunk per event, each costing a
+  container round trip and a durable append: 8 000 deltas took about 260 s.
+  The upstream reader now appends bytes it has already received, up to
+  16 KiB, without ever blocking (`Upstream::next_buffered`); the relayed bytes
+  are unchanged. The same answer then took 38 s in a debug build.
+
+Harness: [analyze.py](analyze.py) prepares and runs one analysis job (offline
+observer `examples/pi_hosted_analysis_observer.rs`, or `live`);
+[h2_snapshot.py](h2_snapshot.py) materializes an arm of the draft S2 H2
+snapshot from git and checks every member's size and SHA-256 against the
+draft manifest (`0fe767fd…`); [check_analysis.py](check_analysis.py) checks a
+run set; [matrix-a.sh](matrix-a.sh) runs one.
+
+**Run set a3** on `1051e660`
+(`~/.local/state/work-engine/dev-vertical-h2-route-20261117/a3`,
+`analysis-qualification` `21de2d53…`, observer `67d69996…`): all four runs
+pass ([matrix-a3.json](matrix-a3.json)). Every run: exit 0, Host receipt
+passed, analysis turn `CompletedSettled`; request 1 refused on the primary
+and completed on the secondary; each request's body retained create-only,
+every attempt's `request_body_sha256` equal to it and to the body the
+synthetic provider received; every Host delivery retained and matched
+natively; gate log equal to the attempt records; no container left, no access
+token in any file, `private-access` empty; the inference container had
+network `none`, no `/auth` and no snapshot or `/workspace` mount.
+
+| Run | Requests | Deliveries | Notes |
+| --- | --- | --- | --- |
+| `ok` | 3 | 2 | The model's `workspace_exec` call was refused by the SDK ("not found") and never reached the Host. |
+| `long-answer` | 3 | 2 | A 16 000-character answer in 8 000 deltas settled. |
+| `read-all-treatment` | 6 | 16 | The draft H2 treatment arm (12 members, 158 961 bytes): every byte delivered; largest request context 191 527 bytes. |
+| `read-all-baseline` | 4 | 6 | The baseline arm (5 members, 45 812 bytes): every byte delivered; largest context 57 184 bytes. |
+
+**Run set s3** (coding regression) on `1051e660`: all 20 scenarios pass
+([matrix-s3.json](matrix-s3.json), `coding-qualification` `29b98861…`),
+including the relay fault and tail-rule scenarios (`trailing`,
+`trailing-data`, `echo-trailing`, `late-close-long`, `crash`, cancels) under
+coalescing. Scenario times fell (for example `long-answer` 90 s in s12, 12 s
+here).
+
+Not covered offline for the analysis profile: crash and cancel (the transport
+is shared with the coding profile, whose matrix covers them), and the
+tools-digest refusal end to end (unit-tested).
