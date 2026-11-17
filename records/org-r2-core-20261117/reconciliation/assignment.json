@@ -1,0 +1,64 @@
+{
+  "scope_budget": {
+    "schema": "manual-orchestration.scope-budget.v2",
+    "objective_id": "f41d0c74-6686-418c-b332-1f7a0488145e",
+    "sessions": [],
+    "bindings": [
+      {
+        "session_id": "93ceeb8b-a5f8-4f98-afdf-194c815a8aa4",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T09:08:54Z",
+        "bound_by": "supervisor",
+        "reason": "R2 reconciliation Opus xhigh"
+      },
+      {
+        "session_id": "b4a96d45-3bce-4265-95b7-c76f6f3d3771",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T09:17:30Z",
+        "bound_by": "supervisor",
+        "reason": "R2 reconciliation review Fable xhigh"
+      }
+    ],
+    "cost_limits": [
+      {
+        "pool": "claude_all_models",
+        "node": null,
+        "max_usd": 10.0,
+        "marks_usd": [],
+        "set_by": "user",
+        "set_at": "2026-11-17T09:08:17Z",
+        "reason": "Operator 2026-11-17 'proceed' on root proposal: reconciliation pass capped at $10, Claude subscription (claude-sdk-equivalent via Claude Code / Claude Max)",
+        "basis": "speed_adjusted_api_usd"
+      }
+    ],
+    "objective": "R2 reconciliation with finished dev vertical: define seam between organizational admission and the hosted Pi lifecycle grant/gate; decide single-use owner; rescope R2-A'/R2-B; revised estimate",
+    "original_items": [
+      "Opus xhigh reconciliation design (read-only)",
+      "Fable xhigh focused review",
+      "Root revised estimate for operator"
+    ],
+    "started_at": "2026-11-17T09:08:17Z",
+    "weekly_at_start": null,
+    "limits": {},
+    "limits_set_by": "user",
+    "limits_reason": "Operator 2026-11-17 'proceed' on root proposal: reconciliation pass capped at $10, Claude subscription (claude-sdk-equivalent via Claude Code / Claude Max)",
+    "limit_history": [
+      {
+        "cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 10.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-17T09:08:17Z",
+          "reason": "Operator 2026-11-17 'proceed' on root proposal: reconciliation pass capped at $10, Claude subscription (claude-sdk-equivalent via Claude Code / Claude Max)",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      }
+    ],
+    "additions": []
+  }
+}

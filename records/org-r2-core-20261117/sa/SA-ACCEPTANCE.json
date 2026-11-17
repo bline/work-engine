@@ -1,0 +1,69 @@
+{
+ "schema": "org-slice-acceptance/v1",
+ "at": "2026-11-17T11:48:19.852568+00:00",
+ "slice": "S-A pure organizational admission core (crate work-engine-organization-authority)",
+ "decision": "accepted_bounded_private_readiness",
+ "decision_owner": "Pi root 01a1e56e-be12-7424-977b-c7c7983887d0",
+ "authority": {
+  "path": "/home/bline/cbm-work/org-r2-core-20261117/OWNER-DECISION-R2REC.json",
+  "sha256": "57693ea659f65367c1c9944e91ca73e450848d95b70ef38f877c393c9ee1fbd1"
+ },
+ "subject": {
+  "repository": "/home/bline/cbm-work/wt-org-r2-core-20261117",
+  "checkpoint_commit_oid": "bfaa455c7a58dbee4ec19fba66ff442d687ef03a",
+  "checkpoint_tree_oid": "5ca8321c4600e0d8c08468918747d1d2eaec3918",
+  "task_patch_digest": "62dae9dfe5fe6f680761e2203702f766fdab94da3f6b88da91f2b574cbdc8514",
+  "baseline": "561c6ffc301f9faac7609ad07e8a9704dd379e0b",
+  "ref": "refs/work-engine/checkpoints/org-r2-core-20261117/slice-1/candidate-3"
+ },
+ "rulings": {
+  "path": "/home/bline/cbm-work/org-r2-core-20261117/sa/ROOT-RULINGS-1.md",
+  "sha256": "0077d5eb0053d6e7e188e4aeb4c09a7de004529d8fbe1c4d48d2895ba10c5504"
+ },
+ "evidence": {
+  "root_gate": {
+   "path": "/home/bline/cbm-work/org-r2-core-20261117/sa/ROOT-GATE-3.json",
+   "sha256": "8c6f3265a03d0cbd3f24a9f4f8a2d4512aa7d6cd856b56f6564a0704298a391d"
+  },
+  "matrix": "/home/bline/cbm-work/org-r2-core-20261117/sa/MATRIX.md",
+  "review": {
+   "path": "/home/bline/cbm-work/org-r2-core-20261117/sa/review/REVIEW-1.md",
+   "sha256": "abb052989007ea14d7f82976099e4a78de13f078a94c90b9661120be666d50e0",
+   "session": "90fce6b0-fc73-403d-8dfe-9f8d9a53e7ae",
+   "verdict": "changes_required (1 P2)"
+  },
+  "recheck": {
+   "path": "/home/bline/cbm-work/org-r2-core-20261117/sa/review/RECHECK-1.md",
+   "sha256": "f1dce578e65bcc23b0a9a00866f99c2b48602382cff0ace6a577269e5f0f0154",
+   "session": "050ea10d-ca2e-48dc-be90-21bec0a8914f (copy-on-resume)",
+   "verdict": "accept_private_readiness"
+  }
+ },
+ "p3_carried": [
+  "F-6 first class of a dimension wins (latent)",
+  "F-9 AdmissionState::Current constructible",
+  "o8_bindings redundant",
+  "O9 wiring tested at function level only",
+  "N-1 compile_fail error codes not enforced on stable; doctests assert only non-compilation",
+  "N-2 AuthorityRevoked not asserted directly",
+  "N-3 two acceptances same digest different profiles refuse as ambiguous",
+  "N-4 ReasonCode not non_exhaustive",
+  "N-5 minor test labelling"
+ ],
+ "sb_obligations": [
+  "F-2 fresh observation for every regate",
+  "F-3 first non-current state other than Unknown is final",
+  "F-7 compare candidate/requirements/subject/realization digests with the binding",
+  "F-8 assert and label Domain::Fixture",
+  "F-10 key discharges on CheckId"
+ ],
+ "unclaimed": [
+  "fixture standing only",
+  "no storage, publication, issuance, installation or production admission",
+  "observation obligations are contract text only",
+  "O3 checks request self-consistency only (no committed admission anchor)",
+  "R3 compares declared actor values",
+  "stale conditions owned by host/episode owner not represented",
+  "private readiness only; not committed"
+ ]
+}

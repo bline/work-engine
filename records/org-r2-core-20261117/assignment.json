@@ -1,0 +1,119 @@
+{
+  "scope_budget": {
+    "schema": "manual-orchestration.scope-budget.v2",
+    "objective_id": "00541524-8f3d-486e-97a8-fac731664d8b",
+    "sessions": [],
+    "bindings": [
+      {
+        "session_id": "00338afc-95b6-4f70-a385-ed1dcc406ccf",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T10:52:02Z",
+        "bound_by": "supervisor",
+        "reason": "S-A builder Opus high"
+      },
+      {
+        "session_id": "90fce6b0-fc73-403d-8dfe-9f8d9a53e7ae",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T11:16:12Z",
+        "bound_by": "supervisor",
+        "reason": "S-A review Fable xhigh"
+      },
+      {
+        "session_id": "b233a3ba-11fc-4069-938e-3998fc9fcfbd",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T11:31:31Z",
+        "bound_by": "supervisor",
+        "reason": "S-A remediation-1 Sonnet"
+      },
+      {
+        "session_id": "050ea10d-ca2e-48dc-be90-21bec0a8914f",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T11:43:24Z",
+        "bound_by": "supervisor",
+        "reason": "S-A recheck copy-on-resume of 90fce6b0"
+      },
+      {
+        "session_id": "73263159-b4ea-48bf-9a1e-cf13e2ef228b",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T17:53:35Z",
+        "bound_by": "supervisor",
+        "reason": "S-B builder Opus high r2"
+      },
+      {
+        "session_id": "34b6c010-d61b-4558-96e2-2f6819f12f63",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T18:25:59Z",
+        "bound_by": "supervisor",
+        "reason": "S-B review Opus xhigh"
+      },
+      {
+        "session_id": "26e3b11c-ac59-4eca-9e5a-33e7a81e1886",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T18:36:25Z",
+        "bound_by": "supervisor",
+        "reason": "S-B escalation design review Fable xhigh"
+      },
+      {
+        "session_id": "f138de3b-e733-4e7d-b859-80f369c58134",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T18:44:00Z",
+        "bound_by": "supervisor",
+        "reason": "S-B remediation-1 Sonnet"
+      },
+      {
+        "session_id": "534383ab-cdf3-400c-ab27-a3381299b78a",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T19:02:57Z",
+        "bound_by": "supervisor",
+        "reason": "S-B recheck copy-on-resume of 34b6c010"
+      }
+    ],
+    "cost_limits": [
+      {
+        "pool": "claude_all_models",
+        "node": null,
+        "max_usd": 65.0,
+        "marks_usd": [],
+        "set_by": "user",
+        "set_at": "2026-11-17T10:50:11Z",
+        "reason": "Operator 2026-11-17 'approved' on ROOT-SUMMARY.md: $65, N1a yes, N1b conditional, O4 amended, S-C held; Claude subscription",
+        "basis": "speed_adjusted_api_usd"
+      }
+    ],
+    "objective": "R2 completion on fixture standing as amended by N1/O4: S-A admission core, S-B consumption seam and real discharges",
+    "original_items": [
+      "S-A pure admission core crate (records 6.1 F4/F5, reservation-sealed observation, Gate O subset O3/O4/O5/O8/O9, Gate R R1-R4, five states, 6.1 sec6 oracles)",
+      "S-B review-delivery discharges from S-A outcomes + consumption regate + close R2-S P3s (ungated run_attempt*, mintable AssumedDischarges)"
+    ],
+    "started_at": "2026-11-17T10:50:11Z",
+    "weekly_at_start": null,
+    "limits": {},
+    "limits_set_by": "user",
+    "limits_reason": "Operator 2026-11-17 'approved' on ROOT-SUMMARY.md: $65, N1a yes, N1b conditional, O4 amended, S-C held; Claude subscription",
+    "limit_history": [
+      {
+        "cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 65.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-17T10:50:11Z",
+          "reason": "Operator 2026-11-17 'approved' on ROOT-SUMMARY.md: $65, N1a yes, N1b conditional, O4 amended, S-C held; Claude subscription",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      }
+    ],
+    "additions": []
+  }
+}
