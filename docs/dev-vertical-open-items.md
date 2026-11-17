@@ -33,8 +33,13 @@ invalid-token transitions from qualification, not real events.
 - **Grants are self-issued (K-c).** The producing binary (`coding-qualification`)
   issues the lifecycle grants for its own job. Authority today rests on the
   operator-pinned runtime admission, the job profile and the preparation
-  authority; the grant adds no independent authority.
-- **Owner acceptance.** Every result is `owner_pending`; see the record.
+  authority; the grant adds no independent authority. Operator (2026-11-17):
+  acceptable for single-operator local use; revisit (independent grant issuer)
+  before jobs can be submitted by anyone other than the funder.
+- **Owner acceptance.** Every result is `owner_pending`: the Host and server
+  never accept a job's output; adopting the exported change is the owner's
+  action. Operator (2026-11-17): no change for this vertical; unattended
+  acceptance would need its own policy and owner.
 - **Follow-ups from review 3:** remove the Sol-high grammar from
   `lifecycle-store`; remove the retired subscription switch from
   `session_events.py` (digest-pinned by `session-query` `OWNER_SHAS`, so it needs
