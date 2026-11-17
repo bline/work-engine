@@ -84,7 +84,7 @@ def prepare(base, scenario, snapshot_src, task_src):
             'max_attempts_per_request': 2}
     routes_digest = sha(canon({'schema': 'work-engine.pi-hosted-routes.v1', 'routes': routes['routes'], 'max_attempts_per_request': 2}).encode())
     now = int(time.time())
-    deadline = now + 290
+    deadline = now + int(os.environ.get('ANALYSIS_DEADLINE_S', 290))
     job_id = 'dev-vertical-hosted-analysis-' + base.name
     catalog = RUNTIME / CATALOG
     authority = write(inputs / 'authority.json', canon({

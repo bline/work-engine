@@ -108,3 +108,34 @@ here).
 Not covered offline for the analysis profile: crash and cancel (the transport
 is shared with the coding profile, whose matrix covers them), and the
 tools-digest refusal end to end (unit-tested).
+
+## Live analysis run `live-1` (`1051e660`)
+
+Real routes (primary `https:chatgpt-codex` on the ChatGPT subscription,
+secondary `https:openai-responses` on the API key), Host-held access,
+`gpt-6-luna`, the draft H2 **treatment** snapshot (12 members, 158 961 bytes),
+and a qualification task that asks nothing about H2
+([live-task-1.txt](live-task-1.txt): name each member and say in one
+sentence what it is about, reading only first pages). It is not an H2 arm and
+has no research standing. Run directory
+`~/.local/state/work-engine/dev-vertical-h2-route-20261117/live/live-1`,
+binary `21de2d53…` (the a3 binary).
+
+Result: exit 0, receipt passed, analysis turn `CompletedSettled`, 25 s. Three
+requests, all completed on the primary route (subscription-funded; settled
+188, 589 and 10 252 µUSD at catalog rates): the list, then twelve
+`snapshot_read` calls in one response, then the answer. 13 Host deliveries,
+all matched natively; no SDK refusals. Each request body retained (3 170,
+5 347 and 152 686 bytes) with the matching `request_body_sha256`. The answer
+names all twelve members with a plausible one-line description each.
+`live_check.py` (the closed milestone's) scanned 93 run files: no
+subscription access or refresh token and no API key. Inference container:
+network `none`, mounts `/pi`, the receiver, `/export`, the stream adapter,
+`/config` and `/profile` only. The live observation log gained no entries
+(no refusal, uncertain attempt or failed job).
+
+Observed limits that matter for H2: the Host admits a job deadline of at most
+300 s (the fresh-fixture deadline), so a slower model or many more requests
+would need that bound revisited; and the subscription route served this run,
+so on this evidence it is not exhausted for the Pi path (the route
+comparison had inferred it might share the exhausted Codex quota).

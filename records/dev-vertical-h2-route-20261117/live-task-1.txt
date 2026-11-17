@@ -1,0 +1,1 @@
+Qualification task for the hosted analysis profile; this is not the H2 audit and asks no question about it. List every snapshot member and state in one sentence what each one is about. Read only the first page of each member (one snapshot_read per member, no offset). Answer as a list of path: sentence lines.
