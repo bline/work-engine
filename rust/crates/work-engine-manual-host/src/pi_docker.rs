@@ -1122,6 +1122,9 @@ impl Host {
                 }
             }
         }
+        // Prior owned processes are gone: a still-pending hosted attempt has an
+        // unknown outcome. It stays charged and is never released or replayed.
+        self.coding_hosted_reconcile_unsettled()?;
         self.journal.phase = Phase::Collecting;
         self.save()?;
         let collect = (|| -> Result<()> {

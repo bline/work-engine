@@ -136,6 +136,9 @@ pub enum AttemptEvidence {
         upstream_end: bool,
         interrupted: bool,
         relay_sha256: String,
+        /// Provider failure event (`response.failed`/`error`) in the relayed
+        /// bytes; such a stream is never a completion.
+        provider_failure: Option<String>,
     },
     /// No trustworthy observation.
     Unknown { reason: String },
@@ -151,6 +154,9 @@ impl AttemptEvidence {
             ),
             interrupted: matches!(relay.outcome, Outcome::Interrupted(_)),
             relay_sha256: relay.sha256(),
+            provider_failure: crate::pi_stream::usage(&relay.forwarded)["failed"]
+                .as_str()
+                .map(String::from),
         }
     }
 }
@@ -228,10 +234,16 @@ impl Reservation {
                 upstream_end,
                 interrupted,
                 relay_sha256,
+                provider_failure,
             } => {
                 a.http_status = Some(status);
                 a.relay_sha256 = Some(relay_sha256);
-                if status == 200 && upstream_end && !interrupted {
+                if let Some(code) = provider_failure {
+                    (
+                        AttemptDisposition::Uncertain,
+                        Some(format!("provider failure event in relayed stream: {code}")),
+                    )
+                } else if status == 200 && upstream_end && !interrupted {
                     (AttemptDisposition::Completed, None)
                 } else {
                     (
@@ -1655,6 +1667,7 @@ mod attempt_tests {
             upstream_end,
             interrupted,
             relay_sha256: "d".repeat(64),
+            provider_failure: None,
         }
     }
     #[test]
@@ -1762,6 +1775,16 @@ mod attempt_tests {
             (relayed(200, false, false), AttemptDisposition::Uncertain),
             (relayed(200, false, true), AttemptDisposition::Uncertain),
             (relayed(500, true, false), AttemptDisposition::Uncertain),
+            (
+                AttemptEvidence::Relayed {
+                    status: 200,
+                    upstream_end: true,
+                    interrupted: false,
+                    relay_sha256: "d".repeat(64),
+                    provider_failure: Some("insufficient_quota".into()),
+                },
+                AttemptDisposition::Uncertain,
+            ),
         ] {
             let mut rs = requests(&[1]);
             reserve(&mut rs, 1, "primary").unwrap();

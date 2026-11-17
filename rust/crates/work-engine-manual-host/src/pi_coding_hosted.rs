@@ -943,6 +943,39 @@ impl Host {
         }
         self.save()
     }
+    /// Reconcile after the producing process is gone: every still-pending
+    /// attempt becomes `Uncertain` (unsettled at restart). Nothing is
+    /// released; the reservation stays charged and blocks new grants.
+    pub(crate) fn coding_hosted_reconcile_unsettled(&mut self) -> Result<()> {
+        if !self.hosted_profile() {
+            return Ok(());
+        }
+        let Some(state) = self.journal.coding.as_mut() else {
+            return Ok(());
+        };
+        let mut changed = false;
+        for r in state.provider_requests.values_mut() {
+            if let Some(a) = r
+                .attempts
+                .last()
+                .filter(|a| a.disposition == AttemptDisposition::Pending)
+                .map(|a| a.attempt)
+            {
+                r.settle_attempt(
+                    a,
+                    AttemptEvidence::Unknown {
+                        reason: "unsettled at restart; producing process gone".into(),
+                    },
+                )?;
+                changed = true;
+            }
+        }
+        if changed {
+            state.provider_failed = true;
+            self.save()?;
+        }
+        Ok(())
+    }
     /// Create-only retention of exact screened bytes, registered as a journal
     /// artifact so collection verifies it; returns the digest.
     fn hosted_retain(
@@ -999,6 +1032,7 @@ impl Host {
                     upstream_end: false,
                     interrupted: true,
                     relay_sha256: sha,
+                    provider_failure: None,
                 },
             );
             if let Some(a) = r.attempts.last_mut().filter(|a| a.attempt == attempt) {
@@ -1545,6 +1579,61 @@ mod tests {
         assert!(!bytes.is_empty(), "relayed bytes are retained");
         assert_eq!(a.relay_sha256.as_deref(), Some(digest(&bytes).as_str()));
         assert!(h.journal.artifacts.iter().any(|x| x.path == path));
+    }
+
+    #[test]
+    fn provider_failure_event_in_a_relayed_stream_is_uncertain_not_completed() {
+        // Found by the piece (c) Docker matrix (`midstream-failed`).
+        let body = [
+            json!({"type":"response.created","response":{"id":"r1"}}),
+            json!({"type":"response.failed","response":{"id":"r1","status":"failed","error":{"code":"insufficient_quota"}}}),
+        ]
+        .iter()
+        .map(|e| format!("data: {e}\n\n"))
+        .collect::<String>();
+        let failed = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\n\r\n{body}",
+            body.len()
+        )
+        .into_bytes();
+        let (_dir, mut h, mut w) = host(vec![failed], None);
+        let g = grant(&mut h, &mut w);
+        push(&mut h, &mut w, fetch(&g)).unwrap();
+        tick_until(&mut h, &w, has("response-head"));
+        let mut ordinal = 1;
+        loop {
+            push(&mut h, &mut w, op(&g, "pull", ordinal)).unwrap();
+            let f = tick_until(&mut h, &w, |a| !a.is_empty());
+            ordinal += 1;
+            if f[0]["type"] != "response-chunk" {
+                break;
+            }
+        }
+        push(&mut h, &mut w, op(&g, "ack", ordinal)).unwrap();
+        let a = &request(&h).attempts[0];
+        assert_eq!(a.disposition, AttemptDisposition::Uncertain);
+        assert!(a.reason.as_deref().unwrap().contains("insufficient_quota"));
+        assert!(request(&h).unsettled());
+        assert!(h.journal.coding.as_ref().unwrap().provider_failed);
+    }
+
+    #[test]
+    fn reconcile_marks_a_pending_attempt_uncertain_and_keeps_it_charged() {
+        // Crash after durable gate admission: the attempt is pending.
+        let (_dir, mut h, mut w) = host(vec![chunked_head()], None);
+        mid_body(&mut h, &mut w);
+        h.hosted = Hosted::default(); // the producing process is gone
+        let before = request(&h);
+        assert_eq!(before.attempts[0].disposition, AttemptDisposition::Pending);
+        h.coding_hosted_reconcile_unsettled().unwrap();
+        let after = request(&h);
+        assert_eq!(after.attempts[0].disposition, AttemptDisposition::Uncertain);
+        assert!(after.attempts[0].gate_entered);
+        assert_eq!(after.charged_microusd(), before.charged_microusd());
+        assert!(after.unsettled());
+        // Idempotent.
+        h.coding_hosted_reconcile_unsettled().unwrap();
+        assert_eq!(request(&h).attempts, after.attempts);
     }
 
     #[test]
