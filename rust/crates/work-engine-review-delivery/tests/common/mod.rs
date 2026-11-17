@@ -273,6 +273,394 @@ pub mod world {
     }
 }
 
+/// The S-B fixture authority world (labelled synthetic): owner-attested records that admit the
+/// R2-S assumption world's request under the S-A fixture policy. Principals, vantage-actor
+/// bindings, component bindings, grants, one decision scope and the realization acceptance of the
+/// host's own realization digest. Nothing here is a production record or evidence.
+#[cfg(feature = "fixture")]
+pub mod authority {
+    use super::*;
+    use std::cell::Cell;
+    use work_engine_organization::{
+        Continuity, EvidenceCustody, Integrity, Mutation, ObserverClass,
+    };
+    use work_engine_organization_authority::fixture::FixtureSource;
+    use work_engine_organization_authority::records::{
+        ActorAnchor, AnchorKind, PrincipalKind, ProblemScopeRef, RealizationProperties, Record,
+    };
+    use work_engine_organization_authority::{
+        AuthorityObservation, AuthorityState, Boundary, BoundaryKind, DeclaredRealization,
+        ExecutableDigest, IssuanceId, OperationRequest, RealizationDigest, SubjectRef, Unobserved,
+    };
+    use work_engine_review_delivery::gate::TimeSource;
+    use work_engine_review_delivery::native::{FixtureAuthority, realization_digest};
+
+    /// A synthetic clock that always reads the same time.
+    pub struct FixedTime(pub u64);
+    impl TimeSource for FixedTime {
+        fn now_millis(&self) -> u64 {
+            self.0
+        }
+    }
+    pub static FIXED: FixedTime = FixedTime(NOW);
+
+    /// A synthetic clock that reads `times[n]` at its n-th sample (the last value afterwards) and
+    /// counts its samples, so a test sees exactly when the host sampled time.
+    pub struct ScriptedClock {
+        times: Vec<u64>,
+        samples: Cell<usize>,
+    }
+    impl ScriptedClock {
+        pub fn new(times: &[u64]) -> Self {
+            Self {
+                times: times.to_vec(),
+                samples: Cell::new(0),
+            }
+        }
+        pub fn samples(&self) -> usize {
+            self.samples.get()
+        }
+    }
+    impl TimeSource for ScriptedClock {
+        fn now_millis(&self) -> u64 {
+            let n = self.samples.get();
+            self.samples.set(n + 1);
+            self.times[n.min(self.times.len() - 1)]
+        }
+    }
+
+    pub const ORG: &str = "org-fixture-review-delivery";
+    /// The reviewer vantage the v1 compiler derives for the obligation.
+    pub const VANTAGE: &str = "vantage:rp3-initial-implementation-review";
+    /// The acceptor both authority requirements name.
+    pub const ACCEPTOR: &str = "operator-production-qualification-20261107";
+    /// The declared actor identity of the native runner (a fixture value R3 compares).
+    pub const ACTOR: &str = "uid:fixture-native-runner";
+    pub const OPERATION: &str = "fixture-review-delivery-op-1";
+    pub const NOW: u64 = 1_000;
+    const DS: (&str, u64) = ("ds-1", 1);
+
+    pub fn problem_scope() -> ProblemScopeRef {
+        ProblemScopeRef::fixture(
+            "production-qualification-20261107",
+            "timestamp-projection-v1",
+            1,
+        )
+    }
+
+    /// The host's realization digest of its own description (what the binding prepares with).
+    pub fn host_digest() -> RealizationDigest {
+        realization_digest(world::host_request().realization.as_ref().unwrap())
+    }
+
+    pub struct Ids {
+        pub owner: IssuanceId,
+        pub reviewer: IssuanceId,
+        pub ds: IssuanceId,
+        pub reviewer_binding: IssuanceId,
+        pub campaign_binding: IssuanceId,
+        pub acceptance: IssuanceId,
+        pub owner_grant: Option<IssuanceId>,
+    }
+
+    fn principal(
+        src: &FixtureSource,
+        id: &str,
+        kind: PrincipalKind,
+        anchor: (AnchorKind, &str),
+    ) -> IssuanceId {
+        src.issue(Record::fixture_principal(
+            id,
+            kind,
+            ActorAnchor::fixture(anchor.0, anchor.1),
+        ))
+    }
+
+    /// Variations of the authority world.
+    #[derive(Clone, Copy)]
+    pub struct Shape {
+        pub owner_grant: bool,
+        /// Expiry of the owner's grant (`g-owner`).
+        pub owner_expiry: Option<u64>,
+        /// Bind the preparation's vantage to a different actor than the declared one and bind the
+        /// builder vantage (a second vantage, V') to the declared actor and the host digest.
+        pub swap_actors: bool,
+    }
+
+    pub const OTHER_ACTOR: &str = "uid:some-other-actor";
+
+    /// Issue the world into `src`. The owner's grant is the last issuance, so a world issued
+    /// without it shares every other issuance identity with one issued with it.
+    pub fn issue(src: &FixtureSource, owner_grant: bool) -> Ids {
+        issue_with(
+            src,
+            Shape {
+                owner_grant,
+                owner_expiry: None,
+                swap_actors: false,
+            },
+        )
+    }
+
+    pub fn issue_with(src: &FixtureSource, shape: Shape) -> Ids {
+        let (owner_grant, owner_expiry) = (shape.owner_grant, shape.owner_expiry);
+        let owner = principal(
+            src,
+            ACCEPTOR,
+            PrincipalKind::Human,
+            (AnchorKind::OwnerAccount, "operator"),
+        );
+        let reviewer = principal(
+            src,
+            "reviewer-fixture",
+            PrincipalKind::Service,
+            (AnchorKind::ServiceAccount, "svc-reviewer"),
+        );
+        let builder = principal(
+            src,
+            "builder-1",
+            PrincipalKind::Service,
+            (AnchorKind::ServiceAccount, "svc-builder"),
+        );
+        let campaign = principal(
+            src,
+            "campaign-svc",
+            PrincipalKind::Service,
+            (AnchorKind::ServiceAccount, "svc-campaign"),
+        );
+        let episode = principal(
+            src,
+            "episode-svc",
+            PrincipalKind::Service,
+            (AnchorKind::ServiceAccount, "svc-episode"),
+        );
+        let ds = src.issue(Record::fixture_decision_scope(
+            DS.0,
+            DS.1,
+            problem_scope(),
+            &[
+                "accept_claim",
+                "terminalize_campaign",
+                "read_episode",
+                "write_episode",
+            ],
+            None,
+        ));
+        src.issue(Record::fixture_grant(
+            "g-campaign",
+            campaign,
+            &["terminalize_campaign"],
+            problem_scope(),
+            DS,
+            None,
+        ));
+        src.issue(Record::fixture_grant(
+            "g-episode",
+            episode,
+            &["read_episode", "write_episode"],
+            problem_scope(),
+            DS,
+            None,
+        ));
+        let campaign_binding = src.issue(Record::fixture_component_binding(
+            "component:campaign",
+            campaign,
+            ExecutableDigest::new("exe-campaign"),
+            problem_scope(),
+        ));
+        src.issue(Record::fixture_component_binding(
+            "component:episode_host",
+            episode,
+            ExecutableDigest::new("exe-episode"),
+            problem_scope(),
+        ));
+        let (reviewer_actor, builder_realization, builder_actor) = if shape.swap_actors {
+            (OTHER_ACTOR, host_digest(), ACTOR)
+        } else {
+            (
+                ACTOR,
+                RealizationDigest::new("real-builder"),
+                "uid:svc-builder",
+            )
+        };
+        let reviewer_binding = src.issue(Record::fixture_vantage_binding(
+            ORG,
+            VANTAGE,
+            reviewer,
+            host_digest(),
+            reviewer_actor,
+        ));
+        src.issue(Record::fixture_vantage_binding(
+            ORG,
+            "vantage-builder",
+            builder,
+            builder_realization,
+            builder_actor,
+        ));
+        let acceptance = src.issue(Record::fixture_realization_acceptance(
+            host_digest(),
+            "fixed-slice-review-v1",
+            RealizationProperties::fixture(
+                &[],
+                Some(Continuity::FreshInitial),
+                Some(Mutation::None),
+                Some(Integrity::VerifiedArtifacts),
+                Some(EvidenceCustody::ExecutionEvidenceCustody),
+                Some(ObserverClass::IndependentExecutionEvidence),
+            ),
+        ));
+        let owner_grant = owner_grant.then(|| {
+            src.issue(Record::fixture_grant(
+                "g-owner",
+                owner,
+                &["accept_claim"],
+                problem_scope(),
+                DS,
+                owner_expiry,
+            ))
+        });
+        Ids {
+            owner,
+            reviewer,
+            ds,
+            reviewer_binding,
+            campaign_binding,
+            acceptance,
+            owner_grant,
+        }
+    }
+
+    pub struct AuthorityWorld {
+        pub src: FixtureSource,
+        pub ids: Ids,
+    }
+
+    pub fn authority_world() -> AuthorityWorld {
+        let src = FixtureSource::new();
+        let ids = issue(&src, true);
+        AuthorityWorld { src, ids }
+    }
+
+    pub fn authority_world_shaped(shape: Shape) -> AuthorityWorld {
+        let src = FixtureSource::new();
+        let ids = issue_with(&src, shape);
+        AuthorityWorld { src, ids }
+    }
+
+    pub fn installed() -> Vec<(String, ExecutableDigest)> {
+        vec![
+            (
+                "component:campaign".to_owned(),
+                ExecutableDigest::new("exe-campaign"),
+            ),
+            (
+                "component:episode_host".to_owned(),
+                ExecutableDigest::new("exe-episode"),
+            ),
+        ]
+    }
+
+    /// The host's declared realization (what `deliver_and_consume` builds), for direct S-A tests.
+    pub fn declared() -> DeclaredRealization {
+        DeclaredRealization::declared(host_digest(), ACTOR, installed())
+    }
+
+    pub fn operation_request_from(requirements: &[u8], subject: Subject) -> OperationRequest {
+        let requirements = OrganizationalRequirements::from_json_bytes(requirements).unwrap();
+        let digest =
+            derive(&requirements, Profile::FixedSliceReviewV1).candidates[0].content_digest();
+        OperationRequest::new(
+            ORG,
+            requirements,
+            digest,
+            VANTAGE,
+            SubjectRef {
+                commit: subject.commit,
+                tree: subject.tree,
+                patch_identity: subject.patch_identity,
+            },
+        )
+    }
+
+    /// The assumption world's request for the frozen subject. For direct S-A / `HeldAdmission`
+    /// tests only: `FixtureAuthority` has no request (the host constructs it).
+    pub fn operation_request() -> OperationRequest {
+        operation_request_from(ASSUMPTION_REQ, super::subject())
+    }
+
+    /// The requirements preimage of the assumption world.
+    pub fn requirements_from(bytes: &[u8]) -> OrganizationalRequirements {
+        OrganizationalRequirements::from_json_bytes(bytes).unwrap()
+    }
+
+    pub fn fixture_authority(source: &dyn AuthorityObservation) -> FixtureAuthority<'_> {
+        fixture_authority_with(source, &FIXED, requirements_from(ASSUMPTION_REQ))
+    }
+
+    pub fn fixture_authority_with<'a>(
+        source: &'a dyn AuthorityObservation,
+        clock: &'a dyn TimeSource,
+        requirements: OrganizationalRequirements,
+    ) -> FixtureAuthority<'a> {
+        FixtureAuthority {
+            source,
+            clock,
+            organization_id: ORG.to_owned(),
+            requirements,
+            actor_identity: ACTOR.to_owned(),
+            installed: installed(),
+        }
+    }
+
+    pub fn boundary(kind: BoundaryKind) -> Boundary {
+        Boundary::new(OPERATION, kind, 1)
+    }
+
+    /// A source whose observations come from `a` until `switched`, then from `b`. With `b` issued
+    /// as `a` without the owner's grant and padded past `a`'s revision, a pinned grant is missing
+    /// at a later revision.
+    pub struct Switch {
+        pub a: AuthorityWorld,
+        pub b: FixtureSource,
+        pub switched: Cell<bool>,
+    }
+
+    impl Switch {
+        pub fn missing_owner_grant() -> Self {
+            let a = authority_world();
+            let b = FixtureSource::new();
+            issue(&b, false);
+            principal(
+                &b,
+                "padding-1",
+                PrincipalKind::Human,
+                (AnchorKind::OwnerAccount, "pad-1"),
+            );
+            principal(
+                &b,
+                "padding-2",
+                PrincipalKind::Human,
+                (AnchorKind::OwnerAccount, "pad-2"),
+            );
+            Switch {
+                a,
+                b,
+                switched: Cell::new(false),
+            }
+        }
+    }
+
+    impl AuthorityObservation for Switch {
+        fn observe(&self) -> Result<AuthorityState, Unobserved> {
+            if self.switched.get() {
+                self.b.observe()
+            } else {
+                self.a.src.observe()
+            }
+        }
+    }
+}
+
 /// Explicit external inputs of the native vertical, and per-control scratch roots.
 #[cfg(feature = "fixture")]
 pub mod native_inputs {

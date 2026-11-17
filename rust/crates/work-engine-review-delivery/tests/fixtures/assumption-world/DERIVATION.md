@@ -33,10 +33,17 @@ What is assumed, and what is not established:
   session with `noTools` and an empty tool list) and by **refusal at allocation**
   (`BoundAttempt::bind`) and **at request** (`verify`) of any allocated, active or advertised tool.
   **Not established**: process-level writes by the unconfined child. The evidence gap is the
-  `realization-admission` blocker, which passes only by the labelled assumed discharge; the
-  realization checks themselves stay never-assumable (root ruling, option 1).
-- Every remaining blocker on this world (mapping rules, separation, observer identity, component
-  binding, authority requirement, realization admission) passes only by a labelled fixture
-  `AssumedDischarge` (`gate::ASSUMED_DISCHARGE_LABEL`), never by an admission.
+  `realization-admission` blocker; the realization checks themselves stay never-dischargeable
+  (root ruling, option 1).
+- S-B: separation, observer identity, component binding, authority requirement and realization
+  admission are discharged by the host's own fixture-domain S-A admission, keyed on check ids
+  (`gate::discharge`). That admission decides over the **fixture authority world**
+  (`tests/common/mod.rs`, module `authority`): synthetic owner attestations, including a
+  `RealizationAcceptance` of the host's realization digest whose `provides` (mutation `none`,
+  fresh continuity, verified artifacts, execution-evidence custody, independent observer) is a
+  fixture statement, not an established property of the unconfined child. So a realization
+  admission here closes the evidence gap only at fixture standing.
+- The three mapping-rule blockers still pass only by a labelled fixture `AssumedDischarge`
+  (`gate::ASSUMED_DISCHARGE_LABEL`), never by an admission (no owner for those rules, O7).
 
 The frozen world remains the negative: refused before spawn by known realization incompatibility.

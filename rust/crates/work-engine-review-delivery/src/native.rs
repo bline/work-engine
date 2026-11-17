@@ -11,13 +11,43 @@
 //! invalid-UTF-8/incomplete frames, delayed or prompt) stays in `raw_stdout` and refuses success.
 //! Bytes beyond a configured limit are counted as overflow, never retained or papered over.
 //!
-//! The only route that runs the SDK delivery protocol from a binding is [`deliver_and_consume`]
-//! (or its observed form): the R2-S gate ([`crate::gate`]) runs before the spawn and again
-//! immediately before consumption. The runner itself is private and takes the gate's pre-spawn
-//! output. ([`run_attempt`] remains a public generic spawn route and is not gated.)
+//! The only function in this crate that takes a binding and runs the SDK delivery protocol from it
+//! is [`deliver_and_consume`] (or its observed form): before the spawn the host constructs the
+//! admission request from the binding, obtains fixture-domain organizational admissions itself,
+//! runs the delivery gate ([`crate::gate`]) and regates the delivery admission; immediately before
+//! consumption it regates against a fresh observation and runs the gate again. The runner itself
+//! is private and takes the gate's pre-spawn output. The generic owned-attempt runner is
+//! crate-private, but [`test_support`] (public wrappers, present in every build in which this
+//! module exists, i.e. under `fixture`; it is not behind a separate feature) runs it from a
+//! caller-built command outside the gate. A route around the gate through the generic runner or
+//! the preparation crate's public `consume_fixture_result` therefore exists in a fixture build:
+//! absence of a spawn route is not claimed beyond this crate's binding-taking function.
 //!
 //! ```compile_fail,E0603
 //! use work_engine_review_delivery::native::run_native;
+//! ```
+//!
+//! ```compile_fail,E0603
+//! use work_engine_review_delivery::native::run_attempt;
+//! ```
+//!
+//! ```compile_fail,E0603
+//! use work_engine_review_delivery::native::run_attempt_observed;
+//! ```
+//!
+//! No caller supplies an operation request or a boundary operation: `FixtureAuthority` has
+//! neither field (stable rustdoc asserts only that these fail to compile, not the error code):
+//!
+//! ```compile_fail,E0609
+//! fn request(a: &work_engine_review_delivery::native::FixtureAuthority<'_>) {
+//!     let _ = &a.request;
+//! }
+//! ```
+//!
+//! ```compile_fail,E0609
+//! fn operation(a: &work_engine_review_delivery::native::FixtureAuthority<'_>) {
+//!     let _ = &a.operation;
+//! }
 //! ```
 
 use std::fs::{self, File};
@@ -28,12 +58,20 @@ use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
 
 use serde_json::json;
+use work_engine_organization::OrganizationalRequirements;
+use work_engine_organization_authority::{
+    AdmissionState, AuthorityObservation, Boundary as AuthorityBoundary, BoundaryKind,
+    DeclaredRealization, ExecutableDigest, OperationRequest, RealizationDigest, SubjectRef,
+};
 use work_engine_review_preparation::fixture::{ConsumeRefusal, FixtureConsumption};
 use work_engine_review_preparation::{Blocker, MutationClaim, RealizationClaim, prepare};
 
 pub use crate::attempt::*;
 use crate::binding::ExperimentBinding;
-use crate::gate::{AssumedDischarges, Boundary, GateRefusal, assess};
+use crate::gate::{
+    AdmittedDischarges, AssumedDischarges, Boundary, GateRefusal, HeldAdmission, TimeSource,
+    assess, screen,
+};
 use crate::{
     BoundAttempt, DeliveryRefusal, NativeObservation, StreamInterpretation, VerifiedDelivery,
     interpret_stream,
@@ -183,7 +221,7 @@ pub struct NativeConfig {
     pub timeout: Duration,
     /// Cleanup bound after the deadline (or after an earlier stop): kill, reap and draining the
     /// pipes for evidence. Both bounds are checked by the owner loop, not preemptive; they are not
-    /// a wall-clock guarantee for the whole attempt (see [`run_attempt`]).
+    /// a wall-clock guarantee for the whole attempt (see `run_attempt`).
     pub cleanup: Duration,
     pub control: Control,
     pub limits: Limits,
@@ -222,8 +260,8 @@ pub const NATIVE_EXECUTION_CONFINEMENT: &str = "none_unconfined_child_process";
 ///   ([`BoundAttempt::bind`]) and at **request** (`verify`) of any allocated, active or advertised
 ///   tool. **Not established**: writes by the child process itself, which is unconfined (see
 ///   `execution_confinement`). The evidence gap is the `realization-admission` blocker, which
-///   passes only by the labelled assumed discharge; the realization checks themselves are never
-///   assumable.
+///   passes only by a fixture-domain admission (S-A R1, R2, R4 over a synthetic realization
+///   acceptance); the realization checks themselves are never dischargeable.
 ///
 /// `adapter` selects the program that runs, so the description depends on it: for any adapter
 /// other than [`NativeConfig::default_adapter`] the host cannot describe what runs, and returns
@@ -255,6 +293,18 @@ pub fn realization_description(cfg: &NativeConfig) -> RealizationClaim {
         };
     }
     runner_realization()
+}
+
+/// The host's realization digest of a realization description. **Labelled fixture definition**:
+/// `fixture-realization-sha256:` followed by the SHA-256 of the description's JSON serialization
+/// (field order fixed by the type). It identifies a description, not the bytes that run; no
+/// production realization digest is defined (S-A leaves its definition to the host).
+pub fn realization_digest(description: &RealizationClaim) -> RealizationDigest {
+    let bytes = serde_json::to_vec(description).expect("a realization description serializes");
+    RealizationDigest::new(format!(
+        "fixture-realization-sha256:{}",
+        crate::sha256_hex(&bytes)
+    ))
 }
 
 /// [`realization_description`] for the one runner this crate has, before a configuration exists.
@@ -561,7 +611,11 @@ const POLL_QUANTUM: Duration = Duration::from_millis(20);
 /// the child; the deadline kills it. Either way a cleanup phase of at most `policy.cleanup` keeps
 /// draining open pipes and reaping; when it ends, open streams are `Cancelled` and an unreaped
 /// child is `NotReaped`. Facts are recorded as they happen, never inferred afterwards.
-pub fn run_attempt(
+///
+/// Crate-private. The gated delivery path is the only caller that takes a binding; a generic
+/// caller-built-command route also exists as [`test_support`] under `fixture` (outside the gate,
+/// for lifecycle tests with ordinary commands).
+pub(crate) fn run_attempt(
     command: Command,
     driver: &mut dyn AttemptDriver,
     policy: &AttemptPolicy,
@@ -569,10 +623,39 @@ pub fn run_attempt(
     run_attempt_observed(command, driver, policy, &mut OsWait)
 }
 
-/// [`run_attempt`] with an explicit wait observer (see [`WaitObserver`]). A failed wait is never
+/// Test support (feature `fixture`) for the owned-attempt lifecycle: the generic runner over an
+/// ordinary caller-built command, exported only so lifecycle tests can drive `/bin/sh` children.
+/// It is not a delivery route: it takes no binding, never sends a contract from a binding and
+/// never reaches the consumer. Delivery of a binding is reachable only through
+/// [`deliver_and_consume`].
+#[doc(hidden)]
+pub mod test_support {
+    use super::*;
+
+    /// `run_attempt` for lifecycle tests.
+    pub fn run_generic_attempt(
+        command: Command,
+        driver: &mut dyn AttemptDriver,
+        policy: &AttemptPolicy,
+    ) -> Result<AttemptRecord, NativeError> {
+        run_attempt(command, driver, policy)
+    }
+
+    /// `run_attempt_observed` for lifecycle tests.
+    pub fn run_generic_attempt_observed(
+        command: Command,
+        driver: &mut dyn AttemptDriver,
+        policy: &AttemptPolicy,
+        waiter: &mut dyn WaitObserver,
+    ) -> Result<AttemptRecord, NativeError> {
+        run_attempt_observed(command, driver, policy, waiter)
+    }
+}
+
+/// `run_attempt` with an explicit wait observer (see [`WaitObserver`]). A failed wait is never
 /// treated as termination: it is recorded, the child is killed within the cleanup bound, waiting
 /// continues until that bound, and only a successful wait establishes the reap.
-pub fn run_attempt_observed(
+pub(crate) fn run_attempt_observed(
     mut command: Command,
     driver: &mut dyn AttemptDriver,
     policy: &AttemptPolicy,
@@ -1113,9 +1196,11 @@ fn run_native(
     binding: &ExperimentBinding,
     pre_spawn: &AssumedDischarges,
 ) -> Result<NativeRun, NativeError> {
-    if pre_spawn.boundary() != Boundary::BeforeSpawn {
+    if pre_spawn.boundary() != Boundary::BeforeSpawn
+        || pre_spawn.bound_to() != binding.frozen().contract_sha256()
+    {
         return Err(NativeError::Setup(
-            "the gate output is not a pre-spawn evaluation".into(),
+            "the gate output is not this binding's pre-spawn evaluation".into(),
         ));
     }
     let cwd = setup_fixture_root(&cfg.fixture_root)?;
@@ -1247,15 +1332,88 @@ pub struct Delivered {
     pub verified: VerifiedDelivery,
     pub consumption: FixtureConsumption,
     pub run: NativeRun,
-    /// The pre-spawn gate evaluation: which blockers passed only by labelled assumed discharge.
+    /// The pre-spawn evaluation: blockers discharged by the host's delivery-boundary admission
+    /// (`Domain::Fixture`, outcomes by check id, revision).
+    pub admitted_before_spawn: AdmittedDischarges,
+    /// The pre-spawn evaluation: blockers that passed only by labelled assumed discharge.
     pub assumed_before_spawn: AssumedDischarges,
-    /// The pre-consumption gate evaluation, with the same label.
+    /// The pre-consumption evaluation over the consumption-boundary admission, carrying the
+    /// revision of the fresh regate observation that found it current.
+    pub admitted_before_consumption: AdmittedDischarges,
+    /// The pre-consumption evaluation's labelled assumed discharges.
     pub assumed_before_consumption: AssumedDischarges,
+}
+
+/// The fixture authority inputs of one delivery. There is no caller-supplied operation request:
+/// the host constructs it (`construct_request`, private) from the binding (vantage from the preparation,
+/// subject and candidate digest from the binding), so only the inputs below reach the gate, each
+/// host-owned, digest-bound or a labelled assertion:
+///
+/// - `source`: stands in for a protected authority source (the one input meant to be supplied;
+///   synthetic).
+/// - `clock`: a synthetic time *source*, sampled by the host at each evaluation.
+/// - `requirements`: a **digest-bound preimage**. The host refuses before any observation unless
+///   its digest is the binding candidate's requirements digest
+///   (`AdmissionMismatch { field: "requirements" }`); the candidate digest itself is the
+///   binding's, so S-A O3 then checks that these requirements derive the binding's candidate.
+/// - `organization_id`: caller-asserted and unanchored ([`crate::gate::CALLER_ASSERTED_LABEL`]):
+///   no record relates an organization to a candidate or problem scope. S-A O8 and R3 consult
+///   the vantage bindings of this organization.
+/// - `actor_identity` and `installed`: declared values that S-A R3 compares with the bound ones
+///   (no host observation of the spawned process exists); the identity is caller-asserted.
+///
+/// The realization digest is not an input: the host computes it from its own realization
+/// description ([`realization_digest`]). The boundary operation is host-derived
+/// ([`boundary_operation`]).
+pub struct FixtureAuthority<'a> {
+    pub source: &'a dyn AuthorityObservation,
+    pub clock: &'a dyn TimeSource,
+    pub organization_id: String,
+    pub requirements: OrganizationalRequirements,
+    pub actor_identity: String,
+    pub installed: Vec<(String, ExecutableDigest)>,
+}
+
+/// The operation whose delivery and consumption boundaries the host reserves, derived from the
+/// binding (its frozen contract digest; epoch 1 each, single use of a boundary is not recorded,
+/// the O10 gap: the same binding delivered again reserves the same boundary identities).
+pub fn boundary_operation(binding: &ExperimentBinding) -> String {
+    format!("review-delivery:{}", binding.frozen().contract_sha256())
+}
+
+/// The one host construction of the admission request. Vantage is the preparation's
+/// ([`ExperimentBinding::preparation`]`.model_context.vantage.id`), subject and candidate digest
+/// are the binding's; the requirements are the caller's preimage, refused before any observation
+/// unless it is the one the binding's candidate names; the organization id is the caller's
+/// labelled assertion. `OperationRequest::new` takes every field, so a field added upstream is a
+/// compile error here rather than a caller-chosen value.
+fn construct_request(
+    binding: &ExperimentBinding,
+    authority: &FixtureAuthority<'_>,
+) -> Result<OperationRequest, GateRefusal> {
+    let candidate = binding.candidate();
+    if authority.requirements.requirements_digest() != candidate.requirements_digest() {
+        return Err(GateRefusal::AdmissionMismatch {
+            field: "requirements",
+        });
+    }
+    let subject = &binding.request().subject;
+    Ok(OperationRequest::new(
+        authority.organization_id.clone(),
+        authority.requirements.clone(),
+        candidate.content_digest(),
+        binding.preparation().model_context.vantage.id.clone(),
+        SubjectRef {
+            commit: subject.commit.clone(),
+            tree: subject.tree.clone(),
+            patch_identity: subject.patch_identity.clone(),
+        },
+    ))
 }
 
 #[derive(Debug, thiserror::Error)]
 pub enum DeliverError {
-    /// The R2-S gate refused at `boundary`. Before the spawn no child exists (`run` is `None`);
+    /// The delivery gate refused at `boundary`. Before the spawn no child exists (`run` is `None`);
     /// before consumption the verified run is carried and the consumer was not called.
     #[error("gate refused at {boundary:?}: {refusal}")]
     Refused {
@@ -1301,16 +1459,13 @@ fn completed(run: &NativeRun) -> Result<CompletedRun<'_>, DeliveryRefusal> {
     }
 }
 
-/// One gate evaluation at `boundary`: re-derive the host's realization description from `cfg`,
-/// require it to be the one the binding prepared with, recompute the preparation from the
-/// binding's canonical inputs, require it to equal the delivered preparation in full, and assess
-/// its blockers (plus any `observed` between the boundaries) with the host's discharge function.
-fn evaluate(
-    boundary: Boundary,
+/// The blockers one gate evaluation reads: re-derive the host's realization description from
+/// `cfg`, require it to be the one the binding prepared with, recompute the preparation from the
+/// binding's canonical inputs and require it to equal the delivered preparation in full.
+fn prepared_blockers(
     cfg: &NativeConfig,
     binding: &ExperimentBinding,
-    observed: Vec<Blocker>,
-) -> Result<AssumedDischarges, GateRefusal> {
+) -> Result<Vec<Blocker>, GateRefusal> {
     if binding.request().realization.as_ref() != Some(&realization_description(cfg)) {
         return Err(GateRefusal::RealizationDiffers);
     }
@@ -1319,17 +1474,14 @@ fn evaluate(
     if &recomputed != binding.frozen().preparation() {
         return Err(GateRefusal::PreparationChanged);
     }
-    let mut blockers = recomputed.blockers;
-    blockers.extend(observed);
-    assess(boundary, &blockers)
+    Ok(recomputed.blockers)
 }
 
-/// Deterministic fixture seam between the delivery and consumption boundaries. In R2-S nothing
-/// the gate reads can change between its two evaluations (the preparation is a pure function of
-/// the binding and the host's description), so this seam is how a test shows that the
-/// pre-consumption evaluation runs and is acted on. It can only **add** blockers, which the same
-/// evaluation then assesses: it cannot remove, replace or discharge one, so it cannot widen what
-/// passes. A later slice replaces it with the host's fresh observation for the boundary.
+/// Deterministic fixture seam between the delivery and consumption boundaries: a test may change
+/// the fixture authority source here (revoke, supersede, make unobservable) or add blockers, which
+/// the pre-consumption evaluation then assesses. Added blockers cannot remove, replace or
+/// discharge one, so they cannot widen what passes; the regate that follows reads a fresh
+/// observation of the source.
 pub trait BetweenBoundaries {
     fn observed_before_consumption(&mut self, binding: &ExperimentBinding) -> Vec<Blocker>;
 }
@@ -1342,22 +1494,36 @@ impl BetweenBoundaries for NothingObserved {
     }
 }
 
-/// The vertical: gate before any child exists, run the native SDK from the checked binding to its
-/// complete end, require a complete clean attempt over the whole stream, verify exact observation
-/// correspondence, gate again, then call the existing `consume_fixture_result` with the text found
-/// in the native history and the binding's own candidate, declaration and episode inputs. There is
-/// no independent candidate, preparation, declaration, realization or discharge argument, and it
-/// is the only route that runs the SDK delivery protocol from a binding (the generic
-/// [`run_attempt`] spawns any caller-built command and is not gated).
+/// The vertical. Before any child exists: screen the canonical preparation's blockers; construct
+/// the admission request from the binding (`construct_request`: the requirements preimage is
+/// refused unless it is the candidate's, before any observation); reserve the binding-derived
+/// operation's delivery and consumption boundaries and obtain a fixture-domain admission for each
+/// from its own observation of the fixture authority source; derive discharges from the delivery
+/// admission by check id; **regate the delivery admission** against a fresh observation
+/// immediately before the spawn and require `Current` (so a pin replaced since the admission, or
+/// an expired grant, refuses before any child exists). Then run the native SDK from the checked
+/// binding to its complete end, require a complete clean attempt over the whole stream and verify
+/// exact observation correspondence. Immediately before consumption: evaluate again over the
+/// consumption admission, then regate it against a **fresh** observation at a freshly sampled
+/// time and require `Current` (Unknown fails closed), then call the existing
+/// `consume_fixture_result` with the text found in the native history and the binding's own
+/// inputs. There is no independent candidate, preparation, declaration, realization digest,
+/// request, admission or discharge argument. It is the only function in this crate that takes a
+/// binding and runs the SDK delivery protocol from it; a fixture build can also reach the generic
+/// runner through [`test_support`] with a caller-built command and consume a result through the
+/// preparation crate's public `consume_fixture_result`, both outside this gate (carried, not
+/// closed here).
 ///
-/// On success [`Delivered`] carries both gate evaluations, so a delivered result shows that it
-/// passed only by labelled assumed discharges.
+/// On success [`Delivered`] carries both admission summaries (with the constructed request
+/// identity and the caller-asserted inputs) and the remaining labelled assumed discharges at both
+/// boundaries.
 #[allow(clippy::result_large_err)] // the error carries the retained native run so failure evidence survives
 pub fn deliver_and_consume(
     cfg: &NativeConfig,
     binding: &ExperimentBinding,
+    authority: &FixtureAuthority<'_>,
 ) -> Result<Delivered, DeliverError> {
-    deliver_and_consume_observed(cfg, binding, &mut NothingObserved)
+    deliver_and_consume_observed(cfg, binding, authority, &mut NothingObserved)
 }
 
 /// [`deliver_and_consume`] with the fixture seam between the boundaries.
@@ -1365,16 +1531,47 @@ pub fn deliver_and_consume(
 pub fn deliver_and_consume_observed(
     cfg: &NativeConfig,
     binding: &ExperimentBinding,
+    authority: &FixtureAuthority<'_>,
     between: &mut dyn BetweenBoundaries,
 ) -> Result<Delivered, DeliverError> {
-    let assumed_before_spawn =
-        evaluate(Boundary::BeforeSpawn, cfg, binding, Vec::new()).map_err(|refusal| {
-            DeliverError::Refused {
-                boundary: Boundary::BeforeSpawn,
-                refusal,
-                run: None,
-            }
-        })?;
+    let before_spawn = |refusal| DeliverError::Refused {
+        boundary: Boundary::BeforeSpawn,
+        refusal,
+        run: None,
+    };
+    let blockers = prepared_blockers(cfg, binding).map_err(before_spawn)?;
+    screen(&blockers).map_err(before_spawn)?;
+    let request = construct_request(binding, authority).map_err(before_spawn)?;
+    let operation = boundary_operation(binding);
+    let realization = DeclaredRealization::declared(
+        realization_digest(&realization_description(cfg)),
+        authority.actor_identity.clone(),
+        authority.installed.iter().cloned(),
+    );
+    let admit_at = |kind| {
+        HeldAdmission::admit(
+            authority.source,
+            authority.clock,
+            AuthorityBoundary::new(operation.clone(), kind, 1),
+            &request,
+            &realization,
+        )
+    };
+    let mut delivery = admit_at(BoundaryKind::Delivery).map_err(before_spawn)?;
+    let mut held_consumption = admit_at(BoundaryKind::Consumption).map_err(before_spawn)?;
+    let (admitted_before_spawn, assumed_before_spawn) = assess(
+        Boundary::BeforeSpawn,
+        binding,
+        &blockers,
+        delivery.admission(),
+    )
+    .map_err(before_spawn)?;
+    // The spawn is an effect: its own admission is regated against a fresh observation
+    // immediately before it, like the consumption's. Only `Current` permits.
+    match delivery.regate() {
+        AdmissionState::Current { .. } => {}
+        other => return Err(before_spawn(GateRefusal::NotCurrent(other))),
+    }
     let run = run_native(cfg, binding, &assumed_before_spawn)?;
     let verdict = completed(&run).and_then(|done| {
         done.bound
@@ -1390,23 +1587,40 @@ pub fn deliver_and_consume_observed(
         }
     };
     let observed = between.observed_before_consumption(binding);
-    let assumed_before_consumption =
-        match evaluate(Boundary::BeforeConsumption, cfg, binding, observed) {
-            Ok(assumed) => assumed,
-            Err(refusal) => {
-                return Err(DeliverError::Refused {
-                    boundary: Boundary::BeforeConsumption,
-                    refusal,
-                    run: Some(Box::new(run)),
-                });
-            }
-        };
+    let evaluated = prepared_blockers(cfg, binding).and_then(|mut blockers| {
+        blockers.extend(observed);
+        assess(
+            Boundary::BeforeConsumption,
+            binding,
+            &blockers,
+            held_consumption.admission(),
+        )
+    });
+    // The regate is the last step before the consumer: a fresh observation for the consumption
+    // reservation, never the admission-time one. Only `Current` permits; Unknown fails closed.
+    let regated = evaluated.and_then(|discharges| match held_consumption.regate() {
+        AdmissionState::Current { revision } => Ok((discharges, revision)),
+        other => Err(GateRefusal::NotCurrent(other)),
+    });
+    let ((admitted, assumed_before_consumption), revision) = match regated {
+        Ok(passed) => passed,
+        Err(refusal) => {
+            return Err(DeliverError::Refused {
+                boundary: Boundary::BeforeConsumption,
+                refusal,
+                run: Some(Box::new(run)),
+            });
+        }
+    };
+    let admitted_before_consumption = admitted.with_regate(revision);
     match binding.consume(&verified.result_text) {
         Ok(consumption) => Ok(Delivered {
             verified,
             consumption,
             run,
+            admitted_before_spawn,
             assumed_before_spawn,
+            admitted_before_consumption,
             assumed_before_consumption,
         }),
         Err(refusal) => Err(DeliverError::Consumer {
