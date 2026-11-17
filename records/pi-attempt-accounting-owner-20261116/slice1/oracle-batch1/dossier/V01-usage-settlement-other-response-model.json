@@ -1,0 +1,2694 @@
+{
+ "schema": "pi-accounting-oracle-dossier/0.1-proposal",
+ "case_id": "V01-usage-settlement-other-response-model",
+ "author": {
+  "role": "independent oracle (slice1 oracle-batch1 worker)",
+  "owner_session": "01a1e569-2805-72ff-b837-03d1577c405d"
+ },
+ "standing": "Independently authored finite derivation proposal; not consumer qualification; root binds/admits. ",
+ "subject": {
+  "manifest_sha256_prefix": "5e594cac",
+  "case_file": {
+   "path": "corpus/cases/V01-usage-settlement-other-response-model.json",
+   "sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7"
+  },
+  "inputs_canonical_sha256": "da87c96096013cfd80ab4e9e0224966f07dc0d9e6a2f01cacb5a57ca251b7e3c"
+ },
+ "policy_refs": [
+  {
+   "policy_id": "BASE",
+   "path": "continuation:design/PLAN.md",
+   "sha256": "43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61"
+  },
+  {
+   "policy_id": "AMD",
+   "path": "continuation:reviews/design-r7/PLAN-AMENDMENT.md",
+   "sha256": "c8376f7a94a2ee775a8b117e6424acae457cb86e138f890cf2240fbe2190ce46"
+  },
+  {
+   "policy_id": "R3",
+   "path": "continuation:pilot-r9/PLAN-AMENDMENT-R3.md",
+   "sha256": "90b6308e9608decf026437c89b98de597cd30046f56d792aa7461061f31f4abb"
+  },
+  {
+   "policy_id": "EPR",
+   "path": "continuation:renewal-r10/design-evaluation-premise-r1/PLAN-R2.md",
+   "sha256": "3f79f910a6e87614d7ebff402f2f731f358886ab0ee74495d0a7425fc7950b70"
+  },
+  {
+   "policy_id": "LOWT",
+   "path": "continuation:renewal-r10/design-low-target-r1/PLAN-R2.md",
+   "sha256": "727ad3974d492cbd523859b68bdfc0be8664dc5448277832565d17652d082904"
+  },
+  {
+   "policy_id": "RP5",
+   "path": "continuation:reviews/implementation-r8/policies/ROOT-POLICY-R5.md",
+   "sha256": "57303fdb466c49ebe8f0d6fa095628c57c3f2018603114e12949af663f65eec5"
+  },
+  {
+   "policy_id": "RA6",
+   "path": "continuation:ROOT-ADOPTION-R6.json",
+   "sha256": "73bd74576a0f9d6a95b436c9ad7dfbf2c9c74b76d82184853e8dd25b70292097"
+  },
+  {
+   "policy_id": "RP6",
+   "path": "continuation:ROOT-POLICY-R6.md",
+   "sha256": "3dbe535668a7d625e025e16c9fa75e51a59dec109f5c842d877791b1d7332200"
+  },
+  {
+   "policy_id": "FRPLAN",
+   "path": "continuation:renewal-r10/full-realization-r1/planning/PLAN.md",
+   "sha256": "d1e93793052f2c07397654d10cca2188e0fad1f06c920c5d9dcfc139a4563741"
+  },
+  {
+   "policy_id": "CK",
+   "path": "subject:spec/ck.json",
+   "sha256": "a3a30398f289c9edcb4c3a3b0009a9dff88021378658062ed532e90226400787"
+  },
+  {
+   "policy_id": "CONTRACT",
+   "path": "subject:contract/CONTRACT.md",
+   "sha256": "96122db955a1d8b530e20cdc0a7653ae70c4bb127c7ef83b00d1c3daef7739ae"
+  },
+  {
+   "policy_id": "PAPPROVAL",
+   "path": "subject:oracle/POLICY-APPROVAL.md",
+   "sha256": "07303d5c5c36276f6038bf9368f3a5fe660e39ee9160b8b3d92049de98abb981"
+  },
+  {
+   "policy_id": "RATES-OPENAI",
+   "path": "subject:oracle/rates/openai_api_rates.json",
+   "sha256": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  },
+  {
+   "policy_id": "RATES-ANTHROPIC",
+   "path": "subject:oracle/rates/anthropic_api_rates.json",
+   "sha256": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5"
+  }
+ ],
+ "causal_admission": {
+  "top_inventory": [
+   {
+    "key": "ambiguity",
+    "classification": "noncausal_metadata",
+    "reason": "Annotation; read by no adopted policy clause for any claim here.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/ambiguity"
+    }
+   },
+   {
+    "key": "case_id",
+    "classification": "governing_premise",
+    "reason": "Opaque equality selector only; no financial meaning.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/case_id"
+    }
+   },
+   {
+    "key": "class",
+    "classification": "noncausal_metadata",
+    "reason": "Corpus coverage label; no adopted financial/attribution clause reads it. Consumer-coverage side-condition only.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/class"
+    }
+   },
+   {
+    "key": "contract",
+    "classification": "governing_premise",
+    "reason": "Exact contract selector pi-accounting-contract/1.7-s1 binds the policy version used.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/contract"
+    }
+   },
+   {
+    "key": "controls",
+    "classification": "noncausal_metadata",
+    "reason": "Cross-case control relation; selects no consequence of this case.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/controls"
+    }
+   },
+   {
+    "key": "evaluations",
+    "classification": "governing_premise",
+    "reason": "Ordered evaluation configurations minus expected: objectives, windows, closure, predecessor, tree, admissions/journal rows, limits, admission_request, authority/gate ids.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/evaluations"
+    }
+   },
+   {
+    "key": "expected",
+    "classification": "supplied_outcome",
+    "reason": "Challenged output; never nominal truth. Read only after derivation (AGREEMENT.json).",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/expected"
+    }
+   },
+   {
+    "key": "findings",
+    "classification": "supplied_outcome",
+    "reason": "Historical finding labels; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/findings"
+    }
+   },
+   {
+    "key": "group",
+    "classification": "noncausal_metadata",
+    "reason": "Grouping label.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/group"
+    }
+   },
+   {
+    "key": "historical",
+    "classification": "supplied_outcome",
+    "reason": "Historical reader outcome; comparison only.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/historical"
+    }
+   },
+   {
+    "key": "inputs",
+    "classification": "governing_premise",
+    "reason": "Complete raw sessions/launch/lifecycle/log lines, reference_time, rate digests, gates.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/inputs"
+    }
+   },
+   {
+    "key": "invariants",
+    "classification": "noncausal_metadata",
+    "reason": "Invariant coverage labels; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/invariants"
+    }
+   },
+   {
+    "key": "notes",
+    "classification": "noncausal_metadata",
+    "reason": "Free text.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/notes"
+    }
+   },
+   {
+    "key": "profile",
+    "classification": "governing_premise",
+    "reason": "Selects gate/closure semantics (CONTRACT \u00a72.3, \u00a712.4 step 1).",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/profile"
+    }
+   },
+   {
+    "key": "provenance",
+    "classification": "noncausal_metadata",
+    "reason": "Origin test label; confers no grant (base plan \u00a72: labels cannot mint admission).",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/provenance"
+    }
+   },
+   {
+    "key": "rationale",
+    "classification": "supplied_outcome",
+    "reason": "Narrative about output revisions; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/rationale"
+    }
+   },
+   {
+    "key": "reachability",
+    "classification": "noncausal_metadata",
+    "reason": "Producer reachability label; no financial clause reads it.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/reachability"
+    }
+   },
+   {
+    "key": "revisions",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions"
+    }
+   },
+   {
+    "key": "revisions_r3",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r3"
+    }
+   },
+   {
+    "key": "revisions_r4",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r4"
+    }
+   },
+   {
+    "key": "revisions_r5",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r5"
+    }
+   },
+   {
+    "key": "revisions_r6",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r6"
+    }
+   },
+   {
+    "key": "revisions_r7",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r7"
+    }
+   },
+   {
+    "key": "revisions_r8",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r8"
+    }
+   },
+   {
+    "key": "role",
+    "classification": "governing_premise",
+    "reason": "Selector (finding/control/valid_control); qualification mode only, no money.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/role"
+    }
+   },
+   {
+    "key": "schema",
+    "classification": "governing_premise",
+    "reason": "Corpus schema selector.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/schema"
+    }
+   }
+  ],
+  "trusted_fixture_inputs": {
+   "ref": "case_token",
+   "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+   "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+   "pointer": "/trusted_fixture_inputs",
+   "presence": "absent"
+  },
+  "profile": {
+   "ref": "case_token",
+   "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+   "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+   "pointer": "/profile",
+   "byte_start": 7386,
+   "byte_end_exclusive": 7404,
+   "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "current_producer"
+  },
+  "contract": {
+   "ref": "case_token",
+   "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+   "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+   "pointer": "/contract",
+   "byte_start": 127,
+   "byte_end_exclusive": 158,
+   "token_sha256": "67f788fb6397af3ef74d42c6baea23eebce8ecf9de0e6e577e02a9c1b644402d",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "pi-accounting-contract/1.7-s1"
+  },
+  "schema": {
+   "ref": "case_token",
+   "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+   "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+   "pointer": "/schema",
+   "byte_start": 17292,
+   "byte_end_exclusive": 17316,
+   "token_sha256": "306af7cfa4a45640f62858c9928b68d0884ab7a6457e219d2186b0ea0a835e12",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "pi-accounting-corpus/1"
+  },
+  "role": {
+   "ref": "case_token",
+   "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+   "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+   "pointer": "/role",
+   "byte_start": 17270,
+   "byte_end_exclusive": 17279,
+   "token_sha256": "e996ee63bc2d00dfcba6388c8ddeee47d4fbce806e00f97d2e6f15e8e697e6cf",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "finding"
+  },
+  "inputs_canonical_sha256": "da87c96096013cfd80ab4e9e0224966f07dc0d9e6a2f01cacb5a57ca251b7e3c",
+  "log_final_newline": {
+   "S1/turn-1": true
+  },
+  "required_scopes": [
+   "V01-usage-settlement-other-response-model/default/o/owned_closed",
+   "V01-usage-settlement-other-response-model/default/o/owned_outstanding"
+  ],
+  "additional_channels": []
+ },
+ "origins": [
+  {
+   "origin_id": "S1/turn-1:1",
+   "source_origin_id": "S1/turn-1",
+   "original_position": 1,
+   "source_ref": {
+    "ref": "raw_line",
+    "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+    "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+    "origin_id": "S1/turn-1:1",
+    "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+    "byte_start": 6272,
+    "byte_end_exclusive": 6433,
+    "token_sha256": "1274b86f591ba2f213701e1c56fb3d5c51fbfcf5531298041b166a481c109b9f",
+    "raw_utf8_sha256": "170a83e49c141394ac3c3be091c2db0a930e9f93b201b9621151fdd493a68acb",
+    "raw_utf8_length": 139
+   },
+   "parse_state": "object",
+   "evidence_kind": "Reservation",
+   "field_states": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:00Z",
+     "presence": "value"
+    },
+    "/bound_basis": {
+     "json_type": "string",
+     "lexeme": "bytes",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "usd_reserved",
+     "presence": "value"
+    },
+    "/input_bound": {
+     "json_type": "number",
+     "lexeme": "6000",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/reserved_usd": {
+     "json_type": "number",
+     "lexeme": "0.3",
+     "presence": "value"
+    },
+    "/rid": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    }
+   }
+  },
+  {
+   "origin_id": "S1/turn-1:2",
+   "source_origin_id": "S1/turn-1",
+   "original_position": 2,
+   "source_ref": {
+    "ref": "raw_line",
+    "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+    "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+    "origin_id": "S1/turn-1:2",
+    "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+    "byte_start": 6442,
+    "byte_end_exclusive": 7122,
+    "token_sha256": "32ceed699d5f1bd96ec2b78678d7d0aab6b85de107f3f7a4b47f1f47cd8486c0",
+    "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+    "raw_utf8_length": 606
+   },
+   "parse_state": "object",
+   "evidence_kind": "Settlement(request)",
+   "field_states": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:01Z",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "request",
+     "presence": "value"
+    },
+    "/http_status": {
+     "json_type": "number",
+     "lexeme": "200",
+     "presence": "value"
+    },
+    "/model": {
+     "json_type": "string",
+     "lexeme": "claude-fable-5-2",
+     "presence": "value"
+    },
+    "/model_mismatch": {
+     "json_type": "boolean",
+     "lexeme": "true",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/observed_tier": {
+     "json_type": "string",
+     "lexeme": "standard",
+     "presence": "value"
+    },
+    "/provider": {
+     "json_type": "string",
+     "lexeme": "anthropic",
+     "presence": "value"
+    },
+    "/requested_tier": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/response_id": {
+     "json_type": "string",
+     "lexeme": "msg_1",
+     "presence": "value"
+    },
+    "/response_model": {
+     "json_type": "string",
+     "lexeme": "claude-sonnet-5",
+     "presence": "value"
+    },
+    "/response_model_check": {
+     "json_type": "string",
+     "lexeme": "verified",
+     "presence": "value"
+    },
+    "/seconds": {
+     "json_type": "number",
+     "lexeme": "1.0",
+     "presence": "value"
+    },
+    "/terminal": {
+     "json_type": "string",
+     "lexeme": "message_stop",
+     "presence": "value"
+    },
+    "/usage": {
+     "json_type": "object",
+     "members": [
+      "input_tokens",
+      "cache_read_input_tokens",
+      "cache_creation_input_tokens",
+      "output_tokens"
+     ],
+     "presence": "value"
+    },
+    "/usage/cache_creation_input_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usage/cache_read_input_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usage/input_tokens": {
+     "json_type": "number",
+     "lexeme": "10000",
+     "presence": "value"
+    },
+    "/usage/output_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usd": {
+     "json_type": "object",
+     "members": [
+      "rid",
+      "reserved_usd",
+      "charged_usd",
+      "charge_basis",
+      "session_spent_usd",
+      "multiplier_floor"
+     ],
+     "presence": "value"
+    },
+    "/usd/charge_basis": {
+     "json_type": "string",
+     "lexeme": "usage",
+     "presence": "value"
+    },
+    "/usd/charged_usd": {
+     "json_type": "number",
+     "lexeme": "0.08",
+     "presence": "value"
+    },
+    "/usd/multiplier_floor": {
+     "json_type": "number",
+     "lexeme": "0.0",
+     "presence": "value"
+    },
+    "/usd/reserved_usd": {
+     "json_type": "number",
+     "lexeme": "0.3",
+     "presence": "value"
+    },
+    "/usd/rid": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/usd/session_spent_usd": {
+     "json_type": "number",
+     "lexeme": "0.08",
+     "presence": "value"
+    }
+   }
+  }
+ ],
+ "premises": [
+  {
+   "premise_id": "V01/PREM-SCOPE",
+   "kind": "payload_premise",
+   "statement": "Conditional initial_reference_scope for source S1/turn-1: reference_namespace=dollar_ticket, duplicate_rule=same_origin_only, covered origins ['S1/turn-1:1', 'S1/turn-1:2'] (declared contract conditional-ticket:S1/turn-1, grant initial-scope:S1/turn-1, payload oracle/r8-completion-B/V01-usage-settlement-other-response-model.provenance.json#S1/turn-1, authority_ref ROOT-ADOPTION-R6.json).",
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "Declared conditional_fixture payload is located and raw-consistent (see V01/NS2) but no root admission of this per-case declaration exists; the cited authority_ref (ROOT-ADOPTION-R6.json) does not admit per-case scopes. Base plan \u00a73 requires an expressly admitted initial reference scope for TicketClaim grouping.",
+    "decision_owner": "root",
+    "unmet_premise_refs": []
+   },
+   "source_refs": [
+    {
+     "ref": "raw_line",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "origin_id": "S1/turn-1:1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+     "byte_start": 6272,
+     "byte_end_exclusive": 6433,
+     "token_sha256": "1274b86f591ba2f213701e1c56fb3d5c51fbfcf5531298041b166a481c109b9f",
+     "raw_utf8_sha256": "170a83e49c141394ac3c3be091c2db0a930e9f93b201b9621151fdd493a68acb",
+     "raw_utf8_length": 139
+    },
+    {
+     "ref": "raw_line",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "origin_id": "S1/turn-1:2",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+     "byte_start": 6442,
+     "byte_end_exclusive": 7122,
+     "token_sha256": "32ceed699d5f1bd96ec2b78678d7d0aab6b85de107f3f7a4b47f1f47cd8486c0",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "raw_utf8_length": 606
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "BASE",
+     "section": "\u00a72 provenance admission; \u00a73 canonical high ownership"
+    },
+    {
+     "policy_id": "CK",
+     "section": "INITIAL-REFERENCE rev2"
+    },
+    {
+     "policy_id": "FRPLAN",
+     "section": "Finite truth and applicability interfaces"
+    }
+   ]
+  },
+  {
+   "premise_id": "V01/PREM-RATES",
+   "kind": "policy_clause",
+   "statement": "inputs.rates binds openai_api_rates.json c0bdfd66\u2026 and anthropic_api_rates.json 8a286433\u2026, byte-equal to the pinned oracle/rates files (pinned premise, not live pricing). Rates are USD per million tokens; 1 USD/M = 1000 nano per token.",
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "source_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/inputs/rates/openai_api_rates.json",
+     "byte_start": 5726,
+     "byte_end_exclusive": 5792,
+     "token_sha256": "fdb98b6121ea0fe2999399f52f431f0eb22d9fb18eb143a4a880b30506250b73",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/inputs/rates/anthropic_api_rates.json",
+     "byte_start": 5630,
+     "byte_end_exclusive": 5696,
+     "token_sha256": "afdb9fc9a73b4ff0d2440343e0645b70ba622d8f5e0762d2b5f2b9c1a08fc266",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "MONEY rates"
+    },
+    {
+     "policy_id": "RATES-OPENAI",
+     "section": "models.gpt-6-astra; tier_multiplier"
+    },
+    {
+     "policy_id": "RATES-ANTHROPIC",
+     "section": "models; source unit statement"
+    }
+   ]
+  }
+ ],
+ "claims": [
+  {
+   "claim_id": "V01/E1",
+   "family": "raw_E_identity_cardinality",
+   "subject": {
+    "origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_line",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "origin_id": "S1/turn-1:1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+     "byte_start": 6272,
+     "byte_end_exclusive": 6433,
+     "token_sha256": "1274b86f591ba2f213701e1c56fb3d5c51fbfcf5531298041b166a481c109b9f",
+     "raw_utf8_sha256": "170a83e49c141394ac3c3be091c2db0a930e9f93b201b9621151fdd493a68acb",
+     "raw_utf8_length": 139
+    },
+    {
+     "ref": "raw_line",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "origin_id": "S1/turn-1:2",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+     "byte_start": 6442,
+     "byte_end_exclusive": 7122,
+     "token_sha256": "32ceed699d5f1bd96ec2b78678d7d0aab6b85de107f3f7a4b47f1f47cd8486c0",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "raw_utf8_length": 606
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "170a83e49c141394ac3c3be091c2db0a930e9f93b201b9621151fdd493a68acb",
+     "field": "/event",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "usd_reserved"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/event",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "request"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "EVIDENCE E-1, E-2"
+    },
+    {
+     "policy_id": "BASE",
+     "section": "\u00a72 Origin identity"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": {
+    "variant": "RawOriginInventory",
+    "origin_count": 2,
+    "origins": [
+     {
+      "origin_id": "S1/turn-1:1",
+      "original_position": 1,
+      "evidence_kind": "Reservation",
+      "raw_utf8_sha256": "170a83e49c141394ac3c3be091c2db0a930e9f93b201b9621151fdd493a68acb"
+     },
+     {
+      "origin_id": "S1/turn-1:2",
+      "original_position": 2,
+      "evidence_kind": "Settlement(request)",
+      "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2"
+     }
+    ],
+    "unreadable": [],
+    "non_attempt": [],
+    "final_newline": true
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "accept exact origin inventory"
+    ],
+    "negative": [
+     {
+      "mutation": "delete an origin from the RawOriginInventory while outputs stay coherent",
+      "intended_predicate": "E-1 totality / RawOriginInventory equality"
+     },
+     {
+      "mutation": "re-encode a raw line (key order/whitespace) keeping decoded JSON equal",
+      "intended_predicate": "raw_utf8_sha256 / exact-byte origin identity"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "V01/E2",
+   "family": "raw_E_identity_cardinality",
+   "subject": {
+    "origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_line",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "origin_id": "S1/turn-1:1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+     "byte_start": 6272,
+     "byte_end_exclusive": 6433,
+     "token_sha256": "1274b86f591ba2f213701e1c56fb3d5c51fbfcf5531298041b166a481c109b9f",
+     "raw_utf8_sha256": "170a83e49c141394ac3c3be091c2db0a930e9f93b201b9621151fdd493a68acb",
+     "raw_utf8_length": 139
+    },
+    {
+     "ref": "raw_line",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "origin_id": "S1/turn-1:2",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+     "byte_start": 6442,
+     "byte_end_exclusive": 7122,
+     "token_sha256": "32ceed699d5f1bd96ec2b78678d7d0aab6b85de107f3f7a4b47f1f47cd8486c0",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "raw_utf8_length": 606
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "LOGICAL-PRIMARY rev2"
+    },
+    {
+     "policy_id": "AMD",
+     "section": "\u00a72 primary_memberships evidence classes"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": {
+    "variant": "EvidenceClassCardinality",
+    "reservation_classes": [
+     [
+      "S1/turn-1:1"
+     ]
+    ],
+    "settlement_classes": [
+     [
+      "S1/turn-1:2"
+     ]
+    ],
+    "reservation_class_count": 1,
+    "settlement_class_count": 1,
+    "exact_copy_classes": [],
+    "byte_identical_pairs": []
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "accept class counts"
+    ],
+    "negative": [
+     {
+      "mutation": "add/merge/delete an evidence class with matching validity refs",
+      "intended_predicate": "R8-RESERVATION-01 class cardinality"
+     }
+    ]
+   },
+   "findings": [
+    {
+     "finding_id": "R8-RESERVATION-01",
+     "relation": "bears_on"
+    }
+   ]
+  },
+  {
+   "claim_id": "V01/E3",
+   "family": "raw_E_identity_cardinality",
+   "subject": {
+    "origin": "S1/turn-1:2"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/inputs/sessions/0/launch/model",
+     "byte_start": 5937,
+     "byte_end_exclusive": 5965,
+     "token_sha256": "a24a93ceda35e3ae9f74d9631b672ff29d0a53ad7a6b58ff64df73e221a192ae",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "anthropic/claude-fable-5-2"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/provider",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "anthropic"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/model",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "claude-fable-5-2"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/response_model",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "claude-sonnet-5"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/response_model_check",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "verified"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/model_mismatch",
+     "presence": "value",
+     "json_type": "boolean",
+     "lexeme": "true"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/observed_tier",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "standard"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "EVIDENCE MC-1..MC-3"
+    },
+    {
+     "policy_id": "CK",
+     "section": "VALUATION V-1"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": {
+    "variant": "IdentityStates",
+    "pinned": {
+     "family": "anthropic",
+     "model_id": "claude-fable-5-2"
+    },
+    "canonical_identity_set": [
+     {
+      "family": "anthropic",
+      "model_id": "claude-fable-5-2"
+     },
+     {
+      "family": "anthropic",
+      "model_id": "claude-sonnet-5"
+     }
+    ],
+    "malformed_identities": [],
+    "all_identities_priced": true,
+    "note": "response_model_check/model_mismatch are retained raw labels; identity set comes from MC-1..MC-3 only"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "two priced identities"
+    ],
+    "negative": [
+     {
+      "mutation": "drop claude-sonnet-5 from identity set (narrowing)",
+      "intended_predicate": "V-1 / FINANCIAL-CANDIDATES no narrowing"
+     },
+     {
+      "mutation": "treat set as unpriceable",
+      "intended_predicate": "R8-IDENTITY-01 priced multiidentity remains finite"
+     }
+    ]
+   },
+   "findings": [
+    {
+     "finding_id": "R8-IDENTITY-01",
+     "relation": "direct"
+    }
+   ]
+  },
+  {
+   "claim_id": "V01/NS1",
+   "family": "namespace_grants",
+   "subject": {
+    "origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "170a83e49c141394ac3c3be091c2db0a930e9f93b201b9621151fdd493a68acb",
+     "field": "/rid",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "1"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/usd/rid",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "1"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/inputs/sessions/0/launch/auth_lane",
+     "byte_start": 5916,
+     "byte_end_exclusive": 5921,
+     "token_sha256": "63e3a42fcd0c2bc3820823b61f131b485a5d862055faad68bd11e4d7ee5ad107",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "api"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "BASE",
+     "section": "\u00a73 C base IDs"
+    },
+    {
+     "policy_id": "AMD",
+     "section": "\u00a73 NAMESPACE-APPLICATION"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": {
+    "variant": "RawReferenceNamespace",
+    "per_origin": {
+     "S1/turn-1:1": {
+      "namespace": "dollar_ticket",
+      "rid": "1",
+      "usable": true
+     },
+     "S1/turn-1:2": {
+      "namespace": "dollar_ticket",
+      "rid": "1",
+      "usable": true
+     }
+    },
+    "admission_namespace_origins": []
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "dollar_ticket applies"
+    ],
+    "negative": [
+     {
+      "mutation": "declare reference_namespace=admission for these dollar origins",
+      "intended_predicate": "NAMESPACE-APPLICATION mismatch"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "V01/NS2",
+   "family": "namespace_grants",
+   "subject": {
+    "declared_contract": "conditional-ticket:S1/turn-1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_line",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "origin_id": "S1/turn-1:1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+     "byte_start": 6272,
+     "byte_end_exclusive": 6433,
+     "token_sha256": "1274b86f591ba2f213701e1c56fb3d5c51fbfcf5531298041b166a481c109b9f",
+     "raw_utf8_sha256": "170a83e49c141394ac3c3be091c2db0a930e9f93b201b9621151fdd493a68acb",
+     "raw_utf8_length": 139
+    },
+    {
+     "ref": "raw_line",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "origin_id": "S1/turn-1:2",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+     "byte_start": 6442,
+     "byte_end_exclusive": 7122,
+     "token_sha256": "32ceed699d5f1bd96ec2b78678d7d0aab6b85de107f3f7a4b47f1f47cd8486c0",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "raw_utf8_length": 606
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "INITIAL-REFERENCE rev2"
+    },
+    {
+     "policy_id": "R3",
+     "section": "Exact applicability"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": {
+    "variant": "DeclaredPayloadRawConsistency",
+    "declared": {
+     "reference_namespace": "dollar_ticket",
+     "duplicate_rule": "same_origin_only",
+     "covered_origin_refs": [
+      "S1/turn-1:1",
+      "S1/turn-1:2"
+     ]
+    },
+    "raw_consistent": true,
+    "mismatches": [],
+    "establishes_admission": false
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "declared payload consistent with raw"
+    ],
+    "negative": [
+     {
+      "mutation": "stale extent/dropped covered origin/foreign fragment",
+      "intended_predicate": "INITIAL-REFERENCE supplied-payload binding"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "V01/NS3",
+   "family": "namespace_grants",
+   "subject": {
+    "source": "S1/turn-1"
+   },
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "Per-case conditional initial_reference_scope admission absent",
+    "decision_owner": "root",
+    "unmet_premise_refs": [
+     "V01/PREM-SCOPE"
+    ]
+   },
+   "premise_refs": [
+    "V01/PREM-SCOPE"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "BASE",
+     "section": "\u00a72-\u00a73"
+    },
+    {
+     "policy_id": "FRPLAN",
+     "section": "Finite truth and applicability interfaces"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": null,
+   "consequence_if_admitted": {
+    "variant": "NamespaceApplication",
+    "initial_base": {
+     "kind": "TicketClaim",
+     "scope": "V01-usage-settlement-other-response-model/S1/turn-1",
+     "rid": "1",
+     "origins": [
+      "S1/turn-1:1",
+      "S1/turn-1:2"
+     ]
+    },
+    "atomize": false,
+    "break_copies": false,
+    "hold_units": [
+     [
+      "S1/turn-1:1",
+      "S1/turn-1:2"
+     ]
+    ]
+   },
+   "controls": {
+    "positive": [
+     "root-admitted exact conditional declaration"
+    ],
+    "negative": [
+     {
+      "mutation": "admission namespace applied to dollar origins",
+      "intended_predicate": "NAMESPACE-APPLICATION"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "V01/PM1",
+   "family": "primary_membership_validity_exact_F",
+   "subject": {
+    "origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "170a83e49c141394ac3c3be091c2db0a930e9f93b201b9621151fdd493a68acb",
+     "field": "/n",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "1"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "170a83e49c141394ac3c3be091c2db0a930e9f93b201b9621151fdd493a68acb",
+     "field": "/reserved_usd",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "0.3"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/n",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "1"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/usd/charged_usd",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "0.08"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/usd/reserved_usd",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "0.3"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/usd/charge_basis",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "usage"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/http_status",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "200"
+    },
+    "V01/PREM-RATES"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "SETTLEMENT \u00a75 conditions 3-8"
+    },
+    {
+     "policy_id": "CK",
+     "section": "TOLERANCE"
+    },
+    {
+     "policy_id": "CK",
+     "section": "VALUATION \u00a77.1 producer_price"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": {
+    "variant": "OriginLocalChecks",
+    "reservation": {
+     "S1/turn-1:1": {
+      "n": "positive_integer",
+      "reserved_nano": "300000000"
+     }
+    },
+    "settlement": {
+     "S1/turn-1:2": {
+      "n": "positive_integer",
+      "charged_nano": "80000000",
+      "claimed_reserved_nano": "300000000",
+      "basis": "usage",
+      "status": "integer_200",
+      "request_identity_equals_pinned": true,
+      "producer_price_nano": "80000000",
+      "producer_price_basis": "pinned claude-fable-5-2, standard tier",
+      "tolerance_range_ok": true,
+      "undercharge": false
+     }
+    },
+    "local_failures": []
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "all local checks pass"
+    ],
+    "negative": [
+     {
+      "mutation": "ModelMismatch from response_model",
+      "intended_predicate": "SETTLEMENT cond.8 compares request model to pinned"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "V01/PM2",
+   "family": "primary_membership_validity_exact_F",
+   "subject": {
+    "obligation": "res:S1/turn-1:rid=1"
+   },
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "grouping and F coverage require admitted scope",
+    "decision_owner": "root",
+    "unmet_premise_refs": [
+     "V01/PREM-SCOPE"
+    ]
+   },
+   "premise_refs": [
+    "V01/PREM-SCOPE"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "SETTLEMENT \u00a75"
+    },
+    {
+     "policy_id": "CK",
+     "section": "F-REPLACEMENT-5"
+    },
+    {
+     "policy_id": "CK",
+     "section": "WHOLE-COVERAGE rev3"
+    },
+    {
+     "policy_id": "CK",
+     "section": "F-PROJECTION rev2"
+    },
+    {
+     "policy_id": "BASE",
+     "section": "\u00a76; \u00a78 V01 example"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": null,
+   "consequence_if_admitted": {
+    "variant": "PrimaryCoverage",
+    "primary_membership": {
+     "obligation_id": "res:S1/turn-1:rid=1",
+     "reservation_classes": [
+      {
+       "origin_refs": [
+        "S1/turn-1:1"
+       ],
+       "representative_origin_ref": "S1/turn-1:1"
+      }
+     ],
+     "settlement_classes": [
+      {
+       "origin_refs": [
+        "S1/turn-1:2"
+       ],
+       "representative_origin_ref": "S1/turn-1:2"
+      }
+     ],
+     "usage_origin_refs": [
+      "S1/turn-1:2"
+     ]
+    },
+    "settlement_validity": {
+     "decision": "valid",
+     "basis": "usage"
+    },
+    "temporal_obligation": "closed",
+    "obligation": {
+     "state": "closed",
+     "amount_source": "settlement_amount",
+     "by": "S1/turn-1:2"
+    },
+    "replacement": {
+     "eligible": true,
+     "reason": "UsageBound"
+    },
+    "execution": "terminal",
+    "forwarding": "forwarded",
+    "accepted_coverage": [
+     {
+      "route": "budgeted",
+      "obligation_id": "res:S1/turn-1:rid=1",
+      "unit_origins": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "monetary_origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "anchor_origin_refs": [],
+      "valuation_usage_origin_refs": [
+       "S1/turn-1:2"
+      ],
+      "definite_link_refs": [],
+      "retained_components": [
+       "charge 80000000 @S1/turn-1:2"
+      ]
+     }
+    ],
+    "definite_links": []
+   },
+   "controls": {
+    "positive": [
+     "admitted-branch Valid/closed/eligible exact coverage"
+    ],
+    "negative": [
+     {
+      "mutation": "coverage valuation usage set swapped/omitted",
+      "intended_predicate": "R8-COVERAGE-01 exact application"
+     },
+     {
+      "mutation": "ineligible because of IdentityContradiction",
+      "intended_predicate": "USAGE-PRESENCE: priced multiidentity finite"
+     }
+    ]
+   },
+   "findings": [
+    {
+     "finding_id": "R8-COVERAGE-01",
+     "relation": "bears_on"
+    },
+    {
+     "finding_id": "R8-IDENTITY-01",
+     "relation": "direct"
+    }
+   ]
+  },
+  {
+   "claim_id": "V01/VA1",
+   "family": "valuation_retained_amounts",
+   "subject": {
+    "usage_origin": "S1/turn-1:2"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/usage/input_tokens",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "10000"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/usage/cache_read_input_tokens",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "0"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/usage/cache_creation_input_tokens",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "0"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/usage/output_tokens",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "0"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/usage/ephemeral_5m_input_tokens",
+     "presence": "absent"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/usage/ephemeral_1h_input_tokens",
+     "presence": "absent"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/terminal",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "message_stop"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/http_status",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "200"
+    },
+    "V01/PREM-RATES"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "VALUATION V-1..V-5"
+    },
+    {
+     "policy_id": "CK",
+     "section": "PRICE-ANTHROPIC"
+    },
+    {
+     "policy_id": "CK",
+     "section": "USAGE-PRESENCE"
+    },
+    {
+     "policy_id": "RATES-ANTHROPIC",
+     "section": "claude-fable-5-2 input 8; claude-sonnet-5 input 2"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": {
+    "variant": "ObservationValuation",
+    "origin": "S1/turn-1:2",
+    "state": "valued",
+    "identities": [
+     {
+      "family": "anthropic",
+      "model_id": "claude-fable-5-2"
+     },
+     {
+      "family": "anthropic",
+      "model_id": "claude-sonnet-5"
+     }
+    ],
+    "tier_set": [
+     "standard"
+    ],
+    "splits": {
+     "w5m": "0 (absent=zero)",
+     "w1h": "0 (absent=zero)",
+     "cache_write": "0"
+    },
+    "complete": true,
+    "low": {
+     "nano": "20000000"
+    },
+    "high": {
+     "nano": "80000000"
+    },
+    "derivation": "sonnet 10000*2000=20000000; fable 10000*8000=80000000"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "valued 20M-80M complete"
+    ],
+    "negative": [
+     {
+      "mutation": "unpriceable / low 80M / high 20M",
+      "intended_predicate": "V-2 range over identities"
+     }
+    ]
+   },
+   "findings": [
+    {
+     "finding_id": "R8-IDENTITY-01",
+     "relation": "direct"
+    }
+   ]
+  },
+  {
+   "claim_id": "V01/VA2",
+   "family": "valuation_retained_amounts",
+   "subject": {
+    "origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "170a83e49c141394ac3c3be091c2db0a930e9f93b201b9621151fdd493a68acb",
+     "field": "/reserved_usd",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "0.3"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/usd/charged_usd",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "0.08"
+    },
+    "V01/VA1"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "BASE",
+     "section": "\u00a73, \u00a76"
+    },
+    {
+     "policy_id": "CK",
+     "section": "WHOLE-COVERAGE rev3"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": {
+    "variant": "RetainedComponents",
+    "components": [
+     {
+      "kind": "reservation",
+      "origin_ref": "S1/turn-1:1",
+      "nano": "300000000",
+      "role": "high_component_until_exact_F_coverage"
+     },
+     {
+      "kind": "charge",
+      "origin_ref": "S1/turn-1:2",
+      "nano": "80000000",
+      "role": "high_component"
+     },
+     {
+      "kind": "usage_high",
+      "origin_ref": "S1/turn-1:2",
+      "nano": "80000000",
+      "role": "high_component"
+     }
+    ],
+    "invariant": "charge 80000000 and priced high 80000000 retained in every branch; reservation released only by accepted exact F coverage"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "components"
+    ],
+    "negative": [
+     {
+      "mutation": "high 20000000 (cheapest identity)",
+      "intended_predicate": "retained priced context high"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "V01/VA3",
+   "family": "valuation_retained_amounts",
+   "subject": {
+    "unit": "res:S1/turn-1:rid=1"
+   },
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "release requires admitted scope",
+    "decision_owner": "root",
+    "unmet_premise_refs": [
+     "V01/PREM-SCOPE"
+    ]
+   },
+   "premise_refs": [
+    "V01/PREM-SCOPE",
+    "V01/PM2"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "X-DECISION X-BRANCH-023"
+    },
+    {
+     "policy_id": "CK",
+     "section": "BASIS-TIE"
+    },
+    {
+     "policy_id": "CK",
+     "section": "MONEY FB-1"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": null,
+   "consequence_if_admitted": {
+    "variant": "UnitExposure",
+    "unit_origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ],
+    "pool": "pi_api",
+    "high": {
+     "kind": "exact",
+     "nano": "80000000",
+     "basis": "usage_valuation"
+    },
+    "low": {
+     "nano": "20000000",
+     "basis": "usage_valuation"
+    },
+    "billing": "established",
+    "blocking_must_include": [
+     "IdentityContradiction"
+    ]
+   },
+   "controls": {
+    "positive": [
+     "Exact80000000 usage_valuation, low 20000000"
+    ],
+    "negative": [
+     {
+      "mutation": "AtLeast300000000 retained reservation despite eligible coverage",
+      "intended_predicate": "WHOLE-COVERAGE release"
+     },
+     {
+      "mutation": "Exact20000000",
+      "intended_predicate": "max over identities"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "V01/T1",
+   "family": "T_ownership_candidates_lifecycle_placement",
+   "subject": {
+    "session": "S1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/inputs/sessions/0/lifecycle",
+     "byte_start": 6013,
+     "byte_end_exclusive": 6186,
+     "token_sha256": "701c11ca2d19052df4a323a8a41dc3c43e792a23a675b7e4a77a616b38817dd5",
+     "presence": "value",
+     "json_type": "array"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/inputs/sessions/0/lifecycle/0/at",
+     "byte_start": 6034,
+     "byte_end_exclusive": 6056,
+     "token_sha256": "b31f04a43f1b490762781c4ede3d044f008696aed570770bda5fa0857d0b7de2",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:00:10Z"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/inputs/reference_time",
+     "byte_start": 5818,
+     "byte_end_exclusive": 5840,
+     "token_sha256": "a1359231eec5e473f993cee1c7181caf272627cfbf575f464781eaee718966af",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T07:00:00Z"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/inputs/sessions/0/lifecycle/1/at",
+     "byte_start": 6126,
+     "byte_end_exclusive": 6148,
+     "token_sha256": "850ed653176f6a62af66509ba56533632926260d4cfbd8eea55f6dd2470857c4",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:50:00Z"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "170a83e49c141394ac3c3be091c2db0a930e9f93b201b9621151fdd493a68acb",
+     "field": "/at",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:00Z"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/at",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:01Z"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a710 L-1..L-6"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": {
+    "variant": "SessionLifecycle",
+    "alias": "S1",
+    "state": "retired",
+    "at": "2026-11-10T06:50:00Z",
+    "reopened": false,
+    "clock": "trusted",
+    "checks": {
+     "L1_rows_monotone": true,
+     "L2_rows_not_before_turn_start": true,
+     "L3_rows_not_after_retire": true,
+     "L6_no_row_after_reference_time": true
+    }
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "accept lifecycle retired/reopened false/clock trusted"
+    ],
+    "negative": [
+     {
+      "mutation": "supplied lifecycle state open (or reopened true) with unchanged rows",
+      "intended_predicate": "L-4/L-5 lifecycle derivation"
+     },
+     {
+      "mutation": "move a proxy row after reference_time without updating clock",
+      "intended_predicate": "L-6 clock"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "V01/T2",
+   "family": "T_ownership_candidates_lifecycle_placement",
+   "subject": {
+    "origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ],
+    "evaluations": [
+     0
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/evaluations/0/objectives/0/admissions/0/rows/1/event",
+     "byte_start": 2272,
+     "byte_end_exclusive": 2282,
+     "token_sha256": "0f6b9278e2bb51ff2d89c92f2f1d72fdf555e884a7a46e4e0528191ae2d3f46d",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "launched"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/evaluations/0/objectives/0/admissions/0/rows/1/session_id",
+     "byte_start": 2307,
+     "byte_end_exclusive": 2345,
+     "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "00000000-0000-4000-8000-0000000000c1"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/inputs/sessions/0/session_id",
+     "byte_start": 7163,
+     "byte_end_exclusive": 7201,
+     "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "00000000-0000-4000-8000-0000000000c1"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a711.1 O-1, O-3a, O-7"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": {
+    "variant": "Ownership",
+    "per_origin": {
+     "S1/turn-1:1": {
+      "ownership": "owned",
+      "objective": "o",
+      "admission": "a1 journal launched row"
+     },
+     "S1/turn-1:2": {
+      "ownership": "owned",
+      "objective": "o",
+      "admission": "a1 journal launched row"
+     }
+    },
+    "other_candidates": [],
+    "note": "other objectives (if any) have no admission naming S1 and do not contain S1 in tree_sessions"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "owned by o via a1"
+    ],
+    "negative": [
+     {
+      "mutation": "ownership uncertain or successor-owned with unchanged journal/tree",
+      "intended_predicate": "O-1/O-3a/O-7"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "V01/T3",
+   "family": "T_ownership_candidates_lifecycle_placement",
+   "subject": {
+    "origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ],
+    "objective": "o"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/evaluations/0/objectives/0/started_at",
+     "byte_start": 2587,
+     "byte_end_exclusive": 2609,
+     "token_sha256": "9b9e53bacf50073b057d6e27a753cd3daec461d599689c15898c840d302aee84",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:00:00Z"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/evaluations/0/objectives/0/closed_at",
+     "byte_start": 2485,
+     "byte_end_exclusive": 2489,
+     "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+     "presence": "null",
+     "json_type": "null",
+     "lexeme": "null"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "170a83e49c141394ac3c3be091c2db0a930e9f93b201b9621151fdd493a68acb",
+     "field": "/at",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:00Z"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2",
+     "field": "/at",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:01Z"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a711.2 P-1..P-5"
+    },
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a712.4 step 1 closure establishment"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": {
+    "variant": "Placement",
+    "window": {
+     "start": "2026-11-10T06:00:00Z",
+     "end": "open",
+     "closure": "no_claim"
+    },
+    "per_origin": {
+     "S1/turn-1:1": "inside",
+     "S1/turn-1:2": "inside"
+    }
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "placement inside"
+    ],
+    "negative": [
+     {
+      "mutation": "supplied placement inside/before with matching reasons under unchanged raw interval",
+      "intended_predicate": "R8-PLACEMENT-01 raw placement"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "V01/G1",
+   "family": "gate_commitment_provisionality",
+   "subject": {
+    "admission": "a1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/profile",
+     "byte_start": 7386,
+     "byte_end_exclusive": 7404,
+     "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "current_producer"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/inputs/gates",
+     "presence": "absent"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/trusted_fixture_inputs",
+     "presence": "absent"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a72.3; Revision6"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": {
+    "variant": "GateQualification",
+    "qualified": false,
+    "reasons": [
+     "NoGateEvidence"
+    ],
+    "provenance": "none"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "NoGateEvidence"
+    ],
+    "negative": [
+     {
+      "mutation": "qualified true",
+      "intended_predicate": "Revision6"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "V01/G2",
+   "family": "gate_commitment_provisionality",
+   "subject": {
+    "admission": "a1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/evaluations/0/objectives/0/admissions/0/rows/0/max_usd",
+     "byte_start": 2159,
+     "byte_end_exclusive": 2162,
+     "token_sha256": "d0ff5974b6aa52cf562bea5921840c032a860a91a3512f7fe8f768f6bbe005f6",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "1.0"
+    },
+    "V01/T1"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a712.3 A-3, A-5"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": {
+    "variant": "CommitmentState",
+    "admission_id": "a1",
+    "cap": {
+     "nano": "1000000000"
+    },
+    "state": "retired_resumable",
+    "kind": "at_least",
+    "blocking_must_include": [
+     "UnenforcedCommitment"
+    ]
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "retired_resumable"
+    ],
+    "negative": [
+     {
+      "mutation": "retired exact",
+      "intended_predicate": "L-7"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "V01/G3",
+   "family": "gate_commitment_provisionality",
+   "subject": {
+    "admission": "a1",
+    "field": "committed"
+   },
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "depends on owned high",
+    "decision_owner": "root",
+    "unmet_premise_refs": [
+     "V01/PREM-SCOPE"
+    ]
+   },
+   "premise_refs": [
+    "V01/PREM-SCOPE",
+    "V01/VA3"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a712.3 A-3"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": null,
+   "consequence_if_admitted": {
+    "variant": "CommitmentAmount",
+    "committed": {
+     "nano": "920000000"
+    },
+    "derivation": "max(0, 1000000000 - 80000000)",
+    "kind": "at_least"
+   },
+   "controls": {
+    "positive": [
+     "920000000"
+    ],
+    "negative": [
+     {
+      "mutation": "980000000 using 20M low",
+      "intended_predicate": "A-3 uses owned high"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "V01/G4",
+   "family": "gate_commitment_provisionality",
+   "subject": {
+    "evaluation": "default",
+    "objective": "o"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "V01/G2"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a712.1"
+    },
+    {
+     "policy_id": "CK",
+     "section": "R-FINANCIAL-PROVISIONAL rev2"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": {
+    "variant": "ObjectiveStanding",
+    "status": "not_established",
+    "reasons_must_include": [
+     "UnenforcedCommitment"
+    ],
+    "provisional": true,
+    "predecessor_obligations": {
+     "kind": "exact",
+     "nano": "0"
+    },
+    "invariant": "commitment is at_least in every branch, so provisional true and not_established"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "not_established provisional"
+    ],
+    "negative": [
+     {
+      "mutation": "established/provisional false because attempt Exact",
+      "intended_predicate": "A-5 / R-FINANCIAL-PROVISIONAL"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "V01/G5",
+   "family": "gate_commitment_provisionality",
+   "subject": {
+    "evaluation": "default",
+    "admission_request": "o"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/evaluations/0/admission_request/new",
+     "byte_start": 274,
+     "byte_end_exclusive": 285,
+     "token_sha256": "490cf7575da10dc49f2b973c322411b18ff6b65018411050f5288306f8db8207",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "100000000"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/evaluations/0/objectives/0/limit",
+     "byte_start": 2505,
+     "byte_end_exclusive": 2517,
+     "token_sha256": "bdb588ee73547b3eafede9d045805cb5a4a9e97271207895bb4c8b17968b2c78",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "1000000000"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a712.4"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": {
+    "variant": "AdmissionDecision",
+    "objective": "o",
+    "decision": "refused",
+    "step": "known_over_limit",
+    "invariant": "admitted 80+920+100=1100M; unadmitted 380+620+100=1100M"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "refused"
+    ],
+    "negative": [
+     {
+      "mutation": "admit",
+      "intended_predicate": "\u00a712.4 step 3"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "V01/CO1",
+   "family": "finite_continuity_order",
+   "subject": {
+    "case": "V01-usage-settlement-other-response-model"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/V01-usage-settlement-other-response-model.json",
+     "file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+     "pointer": "/evaluations",
+     "byte_start": 231,
+     "byte_end_exclusive": 2704,
+     "token_sha256": "52a8798addae2fc3dfeec72b79f3d35f7af33b384b375f2dad6b0577738090c0",
+     "presence": "value",
+     "json_type": "array"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "CONTINUITY rev1"
+    },
+    {
+     "policy_id": "BASE",
+     "section": "\u00a78 M1"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected": {
+    "variant": "FiniteContinuity",
+    "continuity_applicable": false,
+    "reason": "no predecessor accounting subject",
+    "cross_evaluation_equalities": [],
+    "order_invariance": "final-fact function"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "inapplicable"
+    ],
+    "negative": [
+     {
+      "mutation": "route-dependent final",
+      "intended_predicate": "final-fact"
+     }
+    ]
+   },
+   "findings": []
+  }
+ ],
+ "family_status": {
+  "raw_E_identity_cardinality": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "V01/E1",
+    "V01/E2",
+    "V01/E3"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "namespace_grants": {
+   "status": "RequiredUnmet",
+   "claim_ids": [
+    "V01/NS1",
+    "V01/NS2",
+    "V01/NS3"
+   ],
+   "unmet_claim_ids": [
+    "V01/NS3"
+   ],
+   "decision_owners": [
+    "root"
+   ]
+  },
+  "primary_membership_validity_exact_F": {
+   "status": "RequiredUnmet",
+   "claim_ids": [
+    "V01/PM1",
+    "V01/PM2"
+   ],
+   "unmet_claim_ids": [
+    "V01/PM2"
+   ],
+   "decision_owners": [
+    "root"
+   ]
+  },
+  "valuation_retained_amounts": {
+   "status": "RequiredUnmet",
+   "claim_ids": [
+    "V01/VA1",
+    "V01/VA2",
+    "V01/VA3"
+   ],
+   "unmet_claim_ids": [
+    "V01/VA3"
+   ],
+   "decision_owners": [
+    "root"
+   ]
+  },
+  "T_ownership_candidates_lifecycle_placement": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "V01/T1",
+    "V01/T2",
+    "V01/T3"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "gate_commitment_provisionality": {
+   "status": "RequiredUnmet",
+   "claim_ids": [
+    "V01/G1",
+    "V01/G2",
+    "V01/G3",
+    "V01/G4",
+    "V01/G5"
+   ],
+   "unmet_claim_ids": [
+    "V01/G3"
+   ],
+   "decision_owners": [
+    "root"
+   ]
+  },
+  "finite_continuity_order": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "V01/CO1"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  }
+ },
+ "scope_lows": [
+  {
+   "scope_id": "V01-usage-settlement-other-response-model/default/o/owned_closed",
+   "evaluation": "default",
+   "objective": "o",
+   "label": "owned_closed",
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "V01/VA1",
+    "V01/T2"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "SUPPORTED-LOW"
+    },
+    {
+     "policy_id": "BASE",
+     "section": "\u00a75"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected_low": {
+    "owned_unit_origin_sets": null,
+    "U": [
+     "S1/turn-1:2"
+    ],
+    "seed": [
+     "S1/turn-1:2"
+    ],
+    "slots": [],
+    "single_floor": {
+     "nano": "20000000"
+    },
+    "independent_floor": {
+     "nano": "0"
+    },
+    "credits": [],
+    "selected_low": {
+     "nano": "20000000"
+    },
+    "credit_mode": "single_ambiguous",
+    "basis": "usage_valuation"
+   },
+   "high": {
+    "status": {
+     "kind": "RequiredUnmet",
+     "reason": "high/owned units depend on admitted scope",
+     "decision_owner": "root",
+     "unmet_premise_refs": [
+      "V01/PREM-SCOPE"
+     ]
+    },
+    "expected": null
+   },
+   "consequence_if_admitted": {
+    "owned_unit_origin_sets": [
+     [
+      "S1/turn-1:1",
+      "S1/turn-1:2"
+     ]
+    ],
+    "high": {
+     "kind": "exact",
+     "nano": "80000000",
+     "basis_histogram": {
+      "usage_valuation": 1
+     }
+    }
+   },
+   "note": "Low invariant: the usage origin is in a closed-line unit in both branches (admitted: closed obligation; unadmitted: orphan none-obligation)."
+  },
+  {
+   "scope_id": "V01-usage-settlement-other-response-model/default/o/owned_outstanding",
+   "evaluation": "default",
+   "objective": "o",
+   "label": "owned_outstanding",
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "V01/VA1"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "SUPPORTED-LOW"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#v01",
+   "expected_low": {
+    "owned_unit_origin_sets": null,
+    "U": [],
+    "seed": [],
+    "slots": [],
+    "single_floor": {
+     "nano": "0"
+    },
+    "independent_floor": {
+     "nano": "0"
+    },
+    "credits": [],
+    "selected_low": {
+     "nano": "0"
+    },
+    "credit_mode": "none",
+    "basis": "none"
+   },
+   "high": {
+    "status": {
+     "kind": "RequiredUnmet",
+     "reason": "high depends on admitted scope (unadmitted: reservation-only AtLeast300000000)",
+     "decision_owner": "root",
+     "unmet_premise_refs": [
+      "V01/PREM-SCOPE"
+     ]
+    },
+    "expected": null
+   },
+   "consequence_if_admitted": {
+    "owned_unit_origin_sets": [],
+    "high": {
+     "kind": "exact",
+     "nano": "0",
+     "basis_histogram": {}
+    }
+   }
+  }
+ ],
+ "excluded_channels": [
+  {
+   "channel": "K attempt finding codes",
+   "reason": "Not one of the seven families; canonical vocabulary only partially present."
+  }
+ ],
+ "reuse": [
+  {
+   "source": "continuation:design/PLAN.md \u00a78 V01 statement",
+   "what": "Exact80M/low20M expectation",
+   "verified_how": "policy statement checked against independently re-derived raw arithmetic and V/F clauses"
+  }
+ ]
+}

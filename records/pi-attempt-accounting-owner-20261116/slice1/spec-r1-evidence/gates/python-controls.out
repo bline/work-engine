@@ -1,0 +1,433 @@
+test_actual_raw_extent_changed (test_r10_qualification.Pilot.test_actual_raw_extent_changed) ... ok
+test_applicability_defects (test_r10_qualification.Pilot.test_applicability_defects) ... ok
+test_financial_undercharge (test_r10_qualification.Pilot.test_financial_undercharge) ... ok
+test_omitted_reservation_and_validity (test_r10_qualification.Pilot.test_omitted_reservation_and_validity) ... ok
+test_positive (test_r10_qualification.Pilot.test_positive) ... ok
+test_required_registration_fail_closed (test_r10_qualification.Pilot.test_required_registration_fail_closed) ... ok
+test_reservation_financial_and_selected_joins (test_r10_qualification.Pilot.test_reservation_financial_and_selected_joins) ... ok
+test_route_bypass (test_r10_qualification.Pilot.test_route_bypass) ... ok
+test_selected_complete_low_witnesses (test_r10_qualification.Pilot.test_selected_complete_low_witnesses) ... ok
+test_structural_selected_and_composed (test_r10_qualification.Pilot.test_structural_selected_and_composed) ... ok
+test_unlinked_financial_anchor_erasure (test_r10_qualification.Pilot.test_unlinked_financial_anchor_erasure) ... ok
+test_wrong_copy_class_merge (test_r10_qualification.Pilot.test_wrong_copy_class_merge) ... ok
+test_finite_premise_mutants (test_r10_qualification.PremiseBoundary.test_finite_premise_mutants) ... ok
+test_gate_outputs_under_unchanged_premises (test_r10_qualification.PremiseBoundary.test_gate_outputs_under_unchanged_premises) ... ok
+test_malformed_and_duplicate_consumption (test_r10_qualification.PremiseBoundary.test_malformed_and_duplicate_consumption) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 684.808s
+
+OK
+R10 coherent wrong P9 structural pass; identical lawful raw/premises
+R10 reservation mutant high400 structural_exit 0 rust_financial_exit 101 reason raw reservation maximum/conservative high
+R10 reservation mutant high400 python_financial_exit 1 reason raw reservation maximum/conservative high
+R10 reservation mutant coherent400 structural_exit 0 rust_financial_exit 101 reason raw reservation maximum/conservative high
+R10 reservation mutant coherent400 python_financial_exit 1 reason raw reservation maximum/conservative high
+R10 reservation mutant kind structural_exit 0 rust_financial_exit 101 reason raw reservation maximum/conservative high
+R10 reservation mutant kind python_financial_exit 1 reason raw reservation maximum/conservative high
+R10 reservation mutant basis structural_exit 0 rust_financial_exit 101 reason raw reservation maximum/conservative high
+R10 reservation mutant basis python_financial_exit 1 reason raw reservation maximum/conservative high
+R10 reservation mutant pool structural_exit 0 rust_financial_exit 101 reason raw reservation maximum/conservative high
+R10 reservation mutant pool python_financial_exit 1 reason raw reservation maximum/conservative high
+R10 reservation mutant reserved structural_exit 0 rust_financial_exit 101 reason raw reservation fixed settlement reserved amount
+R10 reservation mutant reserved python_financial_exit 1 reason raw reservation fixed settlement reserved amount
+R10 reservation mutant source structural_exit 0 rust_financial_exit 101 reason raw reservation outstanding obligation/replacement
+R10 reservation mutant source python_financial_exit 1 reason raw reservation outstanding obligation/replacement
+R10 reservation mutant obligation structural_exit 0 rust_financial_exit 101 reason raw reservation outstanding obligation/replacement
+R10 reservation mutant obligation python_financial_exit 1 reason raw reservation outstanding obligation/replacement
+R10 reservation mutant replacement structural_exit 0 rust_financial_exit 101 reason raw reservation outstanding obligation/replacement
+R10 reservation mutant replacement python_financial_exit 1 reason raw reservation outstanding obligation/replacement
+R10 reservation mutant decision structural_exit 0 rust_financial_exit 101 reason raw reservation outstanding obligation/replacement
+R10 reservation mutant decision python_financial_exit 1 reason raw reservation outstanding obligation/replacement
+R10 reservation mutant stale-result structural_exit 0 rust_financial_exit 101 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant stale-result python_financial_exit 1 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant substituted-result structural_exit 0 rust_financial_exit 101 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant substituted-result python_financial_exit 1 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant unit structural_exit 1 rust_financial_exit 101 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant unit python_financial_exit 1 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant unit-origin structural_exit 1 rust_financial_exit 101 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant unit-origin python_financial_exit 1 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant unit-exposure structural_exit 0 rust_financial_exit 101 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant unit-exposure python_financial_exit 1 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant membership structural_exit 1 rust_financial_exit 101 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant membership python_financial_exit 1 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant validity structural_exit 1 rust_financial_exit 101 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant validity python_financial_exit 1 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant validity-check structural_exit 0 rust_financial_exit 101 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant validity-check python_financial_exit 1 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant input-ref structural_exit 1 rust_financial_exit 101 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant input-ref python_financial_exit 1 reason reservation selected raw/result/unit/validity join
+R10 reservation mutant low-ref structural_exit 0 rust_financial_exit 101 reason reservation selected low reference join
+R10 reservation mutant low-ref python_financial_exit 1 reason reservation selected low reference join
+R10 reservation mutant stale-bundle structural_exit 1 rust_financial_exit 101 reason applicability
+R10 reservation mutant stale-bundle python_financial_exit 1 reason applicability
+R10 selected mutant equal-reservations absent other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations absent other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations empty other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations empty other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations renamed other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations renamed other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations duplicate other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations duplicate other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations substituted other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations substituted other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations extra other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations extra other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations wrong-scope-ref other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations wrong-scope-ref other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations stale-low-ref other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations stale-low-ref other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations cross-control-low-ref other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations cross-control-low-ref other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations cross-control-result-ref other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations cross-control-result-ref other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations wrong-result other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations wrong-result other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations wrong-unit other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations wrong-unit other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations wrong-origin-owner other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations wrong-origin-owner other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations wrong-valuation other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations wrong-valuation other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations wrong-wire-ref other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations wrong-wire-ref other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations missing-evaluation other_scope False structural_exit 0 rust_exit 101 reason finite premise raw_and_input_unchanged
+R10 selected mutant equal-reservations missing-evaluation other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations duplicate-evaluation other_scope False structural_exit 0 rust_exit 101 reason finite premise raw_and_input_unchanged
+R10 selected mutant equal-reservations duplicate-evaluation other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations missing-objective other_scope False structural_exit 0 rust_exit 101 reason finite premise raw_and_input_unchanged
+R10 selected mutant equal-reservations missing-objective other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations duplicate-objective other_scope False structural_exit 0 rust_exit 101 reason finite premise raw_and_input_unchanged
+R10 selected mutant equal-reservations duplicate-objective other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations missing-expected-objective other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations missing-expected-objective other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations duplicate-expected-objective other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations duplicate-expected-objective other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations wrong-owner other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations wrong-owner other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations wrong-placement other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations wrong-placement other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations coherent-low other_scope False structural_exit 0 rust_exit 101 reason selected priceable usage minimum raw_and_input_unchanged
+R10 selected mutant equal-reservations coherent-low other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations single-floor other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations single-floor other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations independent-floor other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations independent-floor other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations basis other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations basis other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations mode other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations mode other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations credits other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations credits other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations seed other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations seed other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations alternatives other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations alternatives other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations assertion other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations assertion other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations single-floor other_scope True structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations single-floor other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations independent-floor other_scope True structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations independent-floor other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations basis other_scope True structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations basis other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations mode other_scope True structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations mode other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations credits other_scope True structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations credits other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations seed other_scope True structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations seed other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant equal-reservations alternatives other_scope True structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant equal-reservations alternatives other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement absent other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement absent other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement empty other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement empty other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement renamed other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement renamed other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement duplicate other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement duplicate other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement substituted other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement substituted other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement extra other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement extra other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement wrong-scope-ref other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement wrong-scope-ref other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement stale-low-ref other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement stale-low-ref other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement cross-control-low-ref other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement cross-control-low-ref other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement cross-control-result-ref other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement cross-control-result-ref other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement wrong-result other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement wrong-result other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement wrong-unit other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement wrong-unit other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement wrong-origin-owner other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement wrong-origin-owner other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement wrong-valuation other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement wrong-valuation other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement wrong-wire-ref other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement wrong-wire-ref other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement missing-evaluation other_scope False structural_exit 0 rust_exit 101 reason finite premise raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement missing-evaluation other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement duplicate-evaluation other_scope False structural_exit 0 rust_exit 101 reason finite premise raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement duplicate-evaluation other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement missing-objective other_scope False structural_exit 0 rust_exit 101 reason finite premise raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement missing-objective other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement duplicate-objective other_scope False structural_exit 0 rust_exit 101 reason finite premise raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement duplicate-objective other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement missing-expected-objective other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement missing-expected-objective other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement duplicate-expected-objective other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement duplicate-expected-objective other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement wrong-owner other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement wrong-owner other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement wrong-placement other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement wrong-placement other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement coherent-low other_scope False structural_exit 0 rust_exit 101 reason model7 unsupported minimum raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement coherent-low other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement single-floor other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement single-floor other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement independent-floor other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement independent-floor other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement basis other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement basis other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement mode other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement mode other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement credits other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement credits other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement seed other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement seed other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement alternatives other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement alternatives other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement assertion other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement assertion other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement old15M other_scope False structural_exit 0 rust_exit 101 reason model7 unsupported minimum raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement old15M other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement no-release other_scope False structural_exit 0 rust_exit 101 reason model7 unsupported minimum raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement no-release other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement unsupported-alternative-deletion other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement unsupported-alternative-deletion other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement single-floor other_scope True structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement single-floor other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement independent-floor other_scope True structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement independent-floor other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement basis other_scope True structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement basis other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement mode other_scope True structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement mode other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement credits other_scope True structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement credits other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement seed other_scope True structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement seed other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant model7-VC01-openai-usage-settlement alternatives other_scope True structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-VC01-openai-usage-settlement alternatives other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours absent other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours absent other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours empty other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours empty other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours renamed other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours renamed other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours duplicate other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours duplicate other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours substituted other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours substituted other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours extra other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours extra other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours wrong-scope-ref other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours wrong-scope-ref other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours stale-low-ref other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours stale-low-ref other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours cross-control-low-ref other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours cross-control-low-ref other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours cross-control-result-ref other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours cross-control-result-ref other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours wrong-result other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours wrong-result other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours wrong-unit other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours wrong-unit other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours wrong-origin-owner other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours wrong-origin-owner other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours wrong-valuation other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours wrong-valuation other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours wrong-wire-ref other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours wrong-wire-ref other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours missing-evaluation other_scope False structural_exit 0 rust_exit 101 reason finite premise raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours missing-evaluation other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours duplicate-evaluation other_scope False structural_exit 0 rust_exit 101 reason finite premise raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours duplicate-evaluation other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours missing-objective other_scope False structural_exit 0 rust_exit 101 reason finite premise raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours missing-objective other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours duplicate-objective other_scope False structural_exit 0 rust_exit 101 reason finite premise raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours duplicate-objective other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours missing-expected-objective other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours missing-expected-objective other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours duplicate-expected-objective other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours duplicate-expected-objective other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours wrong-owner other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours wrong-owner other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours wrong-placement other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours wrong-placement other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours coherent-low other_scope False structural_exit 0 rust_exit 101 reason model7 unsupported minimum raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours coherent-low other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours single-floor other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours single-floor other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours independent-floor other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours independent-floor other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours basis other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours basis other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours mode other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours mode other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours credits other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours credits other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours seed other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours seed other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours alternatives other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours alternatives other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours assertion other_scope False structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours assertion other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours old15M other_scope False structural_exit 0 rust_exit 101 reason model7 unsupported minimum raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours old15M other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours no-release other_scope False structural_exit 0 rust_exit 101 reason model7 unsupported minimum raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours no-release other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours unsupported-alternative-deletion other_scope False structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours unsupported-alternative-deletion other_scope False python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours single-floor other_scope True structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours single-floor other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours independent-floor other_scope True structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours independent-floor other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours basis other_scope True structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours basis other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours mode other_scope True structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours mode other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours credits other_scope True structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours credits other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours seed other_scope True structural_exit 1 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours seed other_scope True python_exit 1 intended predicate consumed
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours alternatives other_scope True structural_exit 0 rust_exit 101 reason selected raw_and_input_unchanged
+R10 selected mutant model7-A04-undated-settlement-between-dated-neighbours alternatives other_scope True python_exit 1 intended predicate consumed
+R10 resolved structural positive oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json exit 0
+R10 resolved structural positive oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json exit 0
+R10 resolved structural positive oracle/r8-completion-B/VC07-read-failure-paired.bundle.json exit 0
+R10 resolved structural positive oracle/r8-completion-B/VC11-multi-turn-session.bundle.json exit 0
+R10 resolved structural positive oracle/r8-controls/VC07-conditional.bundle.json exit 0
+R10 resolved structural positive oracle/r8-controls/VC07-unlinked.bundle.json exit 0
+R10 resolved structural positive oracle/r9-pilot/cases/admitted-copy.bundle.json exit 0
+R10 resolved structural positive oracle/r9-pilot/cases/equal-reservations.bundle.json exit 0
+R10 resolved structural positive oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json exit 0
+R10 resolved structural positive oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json exit 0
+R10 resolved structural positive oracle/r9-pilot/cases/same-origin.bundle.json exit 0
+R10 premise both consumers rejected start0655:corpus/cases/C3-identical-reservation-copy.json
+R10 premise both consumers rejected start0655:corpus/cases/P132-FG-VC11-gated.json
+R10 premise both consumers rejected start0655:corpus/cases/P9-claimed-charge-above-reservation.json
+R10 premise both consumers rejected start0655:corpus/cases/VC01-openai-usage-settlement.json
+R10 premise both consumers rejected start0655:corpus/cases/VC07-read-failure-paired.json
+R10 premise both consumers rejected start0655:corpus/cases/VC11-multi-turn-session.json
+R10 premise both consumers rejected start0655:oracle/r9-pilot/cases/equal-reservations.json
+R10 premise both consumers rejected start0655:oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json
+R10 premise both consumers rejected start0655:oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json
+R10 premise both consumers rejected closed_at
+R10 premise both consumers rejected predecessor
+R10 premise both consumers rejected tree_sessions
+R10 premise both consumers rejected limit
+R10 premise both consumers rejected admissions
+R10 premise both consumers rejected admission-session
+R10 premise both consumers rejected admission-source
+R10 premise both consumers rejected admission-admission_id
+R10 premise both consumers rejected journal-session_id
+R10 premise both consumers rejected journal-event
+R10 premise both consumers rejected journal-at
+R10 premise both consumers rejected journal-admission_id
+R10 premise both consumers rejected row-order
+R10 premise both consumers rejected max_usd
+R10 premise both consumers rejected number-bool
+R10 premise both consumers rejected request
+R10 premise both consumers rejected profileNone
+R10 premise both consumers rejected profileother
+R10 premise both consumers rejected profileTrue
+R10 premise both consumers rejected profile{}
+R10 premise both consumers rejected schemaNone
+R10 premise both consumers rejected schemaother
+R10 premise both consumers rejected schemaTrue
+R10 premise both consumers rejected schema{}
+R10 premise both consumers rejected case_idNone
+R10 premise both consumers rejected case_idother
+R10 premise both consumers rejected case_idTrue
+R10 premise both consumers rejected case_id{}
+R10 premise both consumers rejected roleNone
+R10 premise both consumers rejected roleother
+R10 premise both consumers rejected roleTrue
+R10 premise both consumers rejected role{}
+R10 premise both consumers rejected classNone
+R10 premise both consumers rejected classother
+R10 premise both consumers rejected classTrue
+R10 premise both consumers rejected class{}
+R10 premise both consumers rejected contractNone
+R10 premise both consumers rejected contractother
+R10 premise both consumers rejected contractTrue
+R10 premise both consumers rejected contract{}
+R10 premise both consumers rejected reachabilityNone
+R10 premise both consumers rejected reachabilityother
+R10 premise both consumers rejected reachabilityTrue
+R10 premise both consumers rejected reachability{}
+R10 premise both consumers rejected delete-inputs
+R10 premise both consumers rejected type-inputsNone
+R10 premise both consumers rejected type-inputs[]
+R10 premise both consumers rejected type-inputs{}
+R10 premise both consumers rejected type-inputs
+R10 premise both consumers rejected type-inputsFalse
+R10 premise both consumers rejected delete-evaluations
+R10 premise both consumers rejected type-evaluationsNone
+R10 premise both consumers rejected type-evaluations[]
+R10 premise both consumers rejected type-evaluations{}
+R10 premise both consumers rejected type-evaluations
+R10 premise both consumers rejected type-evaluationsFalse
+R10 premise both consumers rejected delete-profile
+R10 premise both consumers rejected type-profileNone
+R10 premise both consumers rejected type-profile[]
+R10 premise both consumers rejected type-profile{}
+R10 premise both consumers rejected type-profile
+R10 premise both consumers rejected type-profileFalse
+R10 premise both consumers rejected delete-trusted_fixture_inputs
+R10 premise both consumers rejected type-trusted_fixture_inputsNone
+R10 premise both consumers rejected type-trusted_fixture_inputs[]
+R10 premise both consumers rejected type-trusted_fixture_inputs{}
+R10 premise both consumers rejected type-trusted_fixture_inputs
+R10 premise both consumers rejected type-trusted_fixture_inputsFalse
+R10 premise both consumers rejected fixture-delete-authority_id
+R10 premise both consumers rejected fixture-change-authority_id
+R10 premise both consumers rejected fixture-delete-payload_sha256
+R10 premise both consumers rejected fixture-change-payload_sha256
+R10 premise both consumers rejected fixture-delete-policy_ref
+R10 premise both consumers rejected fixture-change-policy_ref
+R10 premise both consumers rejected fixture-delete-session
+R10 premise both consumers rejected fixture-change-session
+R10 premise both consumers rejected fixture-delete-source
+R10 premise both consumers rejected fixture-change-source
+R10 premise both consumers rejected fixture-delete-verification_evidence
+R10 premise both consumers rejected fixture-change-verification_evidence
+R10 premise both consumers rejected fixture-extra
+R10 premise both consumers rejected fixture-gate-inventory
+R10 premise both consumers rejected fixture-insertion
+R10 premise both consumers rejected evaluation-delete
+R10 premise both consumers rejected evaluation-null
+R10 premise both consumers rejected evaluation-extra
+R10 premise both consumers rejected evaluation-duplicate
+R10 premise both consumers rejected objective-delete
+R10 premise both consumers rejected objective-null
+R10 premise both consumers rejected objective-extra
+R10 premise both consumers rejected objective-duplicate
+R10 premise both consumers rejected row-delete
+R10 premise both consumers rejected row-null
+R10 premise both consumers rejected row-extra
+R10 premise both consumers rejected row-duplicate
+R10 premise both consumers rejected top-extra
+R10 premise both consumers rejected proof-inventoryNone
+R10 premise both consumers rejected proof-inventory[]
+R10 premise both consumers rejected proof-inventory{}
+R10 premise both consumers rejected proof-inventorybad
+R10 premise both consumers rejected proof-origins-null
+R10 premise both consumers rejected conditional-assumption
+R10 premise both consumers rejected conditional-original
+R10 premise both consumers rejected rate

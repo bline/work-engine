@@ -1,6 +1,6 @@
 # Generated C–K normative view
 
-Source: spec/ck.json; contract pi-accounting-contract/1.7-s1; input SHA256 422d3ef7fa014baf821e60943ccb6726b305c526ea57a0bcaac7c2973df2272e.
+Source: spec/ck.json; contract pi-accounting-contract/1.7-s1; input SHA256 0cec144860f44e106d53a8e8c12038b42aa27fdad904c24904fbd67b889634df.
 
 This rendering checks declared consistency only. It is not a reducer, financial proof, live trust qualification, freeze or S2a entry.
 

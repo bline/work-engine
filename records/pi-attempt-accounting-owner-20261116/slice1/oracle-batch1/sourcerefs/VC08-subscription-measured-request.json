@@ -1,0 +1,738 @@
+{
+ "file": "corpus/cases/VC08-subscription-measured-request.json",
+ "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+ "inputs_canonical_sha256": "161c9e12c09346a019fb9f74f214c96f1c2dd18afaa1a6820316f789a4cad1dc",
+ "lines": [
+  {
+   "byte_end_exclusive": 4188,
+   "byte_start": 4058,
+   "fields": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:00Z",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "subscription_proxy_admitted",
+     "presence": "value"
+    },
+    "/model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/rid": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    }
+   },
+   "origin_id": "S1/turn-1:1",
+   "parse_state": "object",
+   "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+   "raw_utf8_length": 112,
+   "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+   "token_sha256": "1ff755a5967970b4d6fe4827cb664a0dc022aaa9cbd3ed2b8593e58b4c575b19"
+  },
+  {
+   "byte_end_exclusive": 4993,
+   "byte_start": 4197,
+   "fields": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:02Z",
+     "presence": "value"
+    },
+    "/auth_lane": {
+     "json_type": "string",
+     "lexeme": "subscription",
+     "presence": "value"
+    },
+    "/billing": {
+     "json_type": "string",
+     "lexeme": "unknown",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "request",
+     "presence": "value"
+    },
+    "/http_status": {
+     "json_type": "number",
+     "lexeme": "200",
+     "presence": "value"
+    },
+    "/model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/observed_tier": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/provider": {
+     "json_type": "string",
+     "lexeme": "openai-codex",
+     "presence": "value"
+    },
+    "/quota": {
+     "json_type": "string",
+     "lexeme": "unknown",
+     "presence": "value"
+    },
+    "/requested_tier": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/response_id": {
+     "json_type": "string",
+     "lexeme": "resp_s1",
+     "presence": "value"
+    },
+    "/response_model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/seconds": {
+     "json_type": "number",
+     "lexeme": "1.0",
+     "presence": "value"
+    },
+    "/subscription_proxy": {
+     "json_type": "object",
+     "members": [
+      "rid",
+      "status",
+      "cost_proxy_usd",
+      "valuation_basis",
+      "reason",
+      "measurement",
+      "billing",
+      "quota"
+     ],
+     "presence": "value"
+    },
+    "/subscription_proxy/billing": {
+     "json_type": "string",
+     "lexeme": "unknown",
+     "presence": "value"
+    },
+    "/subscription_proxy/cost_proxy_usd": {
+     "json_type": "number",
+     "lexeme": "0.015",
+     "presence": "value"
+    },
+    "/subscription_proxy/measurement": {
+     "json_type": "string",
+     "lexeme": "api_equivalent_cost_proxy",
+     "presence": "value"
+    },
+    "/subscription_proxy/quota": {
+     "json_type": "string",
+     "lexeme": "unknown",
+     "presence": "value"
+    },
+    "/subscription_proxy/reason": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/subscription_proxy/rid": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/subscription_proxy/status": {
+     "json_type": "string",
+     "lexeme": "valued",
+     "presence": "value"
+    },
+    "/subscription_proxy/valuation_basis": {
+     "json_type": "string",
+     "lexeme": "reported_cache_usage",
+     "presence": "value"
+    },
+    "/terminal": {
+     "json_type": "string",
+     "lexeme": "response.completed",
+     "presence": "value"
+    },
+    "/usage": {
+     "json_type": "object",
+     "members": [
+      "input_tokens",
+      "output_tokens",
+      "cached_tokens",
+      "cache_write_tokens",
+      "reasoning_tokens"
+     ],
+     "presence": "value"
+    },
+    "/usage/cache_write_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usage/cached_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usage/input_tokens": {
+     "json_type": "number",
+     "lexeme": "1000",
+     "presence": "value"
+    },
+    "/usage/output_tokens": {
+     "json_type": "number",
+     "lexeme": "100",
+     "presence": "value"
+    },
+    "/usage/reasoning_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    }
+   },
+   "origin_id": "S1/turn-1:2",
+   "parse_state": "object",
+   "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+   "raw_utf8_length": 704,
+   "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+   "token_sha256": "57fc6ca5a9073dc928c9f03b48fe9e78b439ff6bfacdcf5b54efa9cef682b6fe"
+  }
+ ],
+ "log_final_newline": {
+  "S1/turn-1": true
+ },
+ "tokens": {
+  "/ambiguity": {
+   "byte_end_exclusive": 20,
+   "byte_start": 16,
+   "json_type": "null",
+   "lexeme": "null",
+   "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  },
+  "/case_id": {
+   "byte_end_exclusive": 70,
+   "byte_start": 34,
+   "json_type": "string",
+   "lexeme": "VC08-subscription-measured-request",
+   "token_sha256": "d94ce349929183754d58c67608f7e073e737e3436f5d94f0124a49c5734381cb"
+  },
+  "/class": {
+   "byte_end_exclusive": 98,
+   "byte_start": 82,
+   "json_type": "string",
+   "lexeme": "producer_valid",
+   "token_sha256": "df26b0b61f87cf75159b3e070d3da40f83f3833d7b3c67f064c09203b7b41e7a"
+  },
+  "/contract": {
+   "byte_end_exclusive": 144,
+   "byte_start": 113,
+   "json_type": "string",
+   "lexeme": "pi-accounting-contract/1.7-s1",
+   "token_sha256": "67f788fb6397af3ef74d42c6baea23eebce8ecf9de0e6e577e02a9c1b644402d"
+  },
+  "/controls": {
+   "byte_end_exclusive": 161,
+   "byte_start": 159,
+   "json_type": "array",
+   "members": [],
+   "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "/evaluations": {
+   "byte_end_exclusive": 1829,
+   "byte_start": 179,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "dfab62bfcd61b692ce62e0e5834d2d36582d8c0e6de55f32d2c9d6cb5f525556"
+  },
+  "/evaluations/0": {
+   "byte_end_exclusive": 1826,
+   "byte_start": 183,
+   "json_type": "object",
+   "members": [
+    "admission_request",
+    "expected",
+    "name",
+    "objectives"
+   ],
+   "token_sha256": "712fb2bcaf10353a448d37cb6043145813c9982f43553414f18857dd32ad46ce"
+  },
+  "/evaluations/0/admission_request": {
+   "byte_end_exclusive": 260,
+   "byte_start": 209,
+   "json_type": "object",
+   "members": [
+    "new",
+    "objective"
+   ],
+   "token_sha256": "a81928e466bf9b9068d7f1d7bde47ddb725e4b3437c87585708b483ae64850f6"
+  },
+  "/evaluations/0/admission_request/new": {
+   "byte_end_exclusive": 233,
+   "byte_start": 222,
+   "json_type": "string",
+   "lexeme": "100000000",
+   "token_sha256": "490cf7575da10dc49f2b973c322411b18ff6b65018411050f5288306f8db8207"
+  },
+  "/evaluations/0/admission_request/objective": {
+   "byte_end_exclusive": 255,
+   "byte_start": 252,
+   "json_type": "string",
+   "lexeme": "o",
+   "token_sha256": "f83c7a6ef728085a83084f105bd7ccd74b8a9d671a80e1a348393eb570d89441"
+  },
+  "/evaluations/0/name": {
+   "byte_end_exclusive": 1542,
+   "byte_start": 1533,
+   "json_type": "string",
+   "lexeme": "default",
+   "token_sha256": "1080a60800d9e5bddc69f51489c636a776bacaadb5368f46db4aa0947c67e3ba"
+  },
+  "/evaluations/0/objectives": {
+   "byte_end_exclusive": 1822,
+   "byte_start": 1561,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "2af502e50c33be9477cac15a29f6c78f9f4bc9369e83cddb8151a7d0e76f63ec"
+  },
+  "/evaluations/0/objectives/0": {
+   "byte_end_exclusive": 1817,
+   "byte_start": 1567,
+   "json_type": "object",
+   "members": [
+    "admissions",
+    "closed_at",
+    "limit",
+    "objective",
+    "predecessor",
+    "started_at",
+    "tree_sessions"
+   ],
+   "token_sha256": "0cf8d19197bca5bf40acf7d22e8ed9548d8d49b51a752fcb483024866a81175a"
+  },
+  "/evaluations/0/objectives/0/admissions": {
+   "byte_end_exclusive": 1590,
+   "byte_start": 1588,
+   "json_type": "array",
+   "members": [],
+   "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "/evaluations/0/objectives/0/closed_at": {
+   "byte_end_exclusive": 1614,
+   "byte_start": 1610,
+   "json_type": "null",
+   "lexeme": "null",
+   "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  },
+  "/evaluations/0/objectives/0/limit": {
+   "byte_end_exclusive": 1642,
+   "byte_start": 1630,
+   "json_type": "string",
+   "lexeme": "1000000000",
+   "token_sha256": "bdb588ee73547b3eafede9d045805cb5a4a9e97271207895bb4c8b17968b2c78"
+  },
+  "/evaluations/0/objectives/0/objective": {
+   "byte_end_exclusive": 1665,
+   "byte_start": 1662,
+   "json_type": "string",
+   "lexeme": "o",
+   "token_sha256": "f83c7a6ef728085a83084f105bd7ccd74b8a9d671a80e1a348393eb570d89441"
+  },
+  "/evaluations/0/objectives/0/predecessor": {
+   "byte_end_exclusive": 1691,
+   "byte_start": 1687,
+   "json_type": "null",
+   "lexeme": "null",
+   "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  },
+  "/evaluations/0/objectives/0/started_at": {
+   "byte_end_exclusive": 1734,
+   "byte_start": 1712,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:00:00Z",
+   "token_sha256": "9b9e53bacf50073b057d6e27a753cd3daec461d599689c15898c840d302aee84"
+  },
+  "/evaluations/0/objectives/0/tree_sessions": {
+   "byte_end_exclusive": 1811,
+   "byte_start": 1758,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "fd6451260f5ac3dde976617a74a7ad032a860009faf89166f69243a8f3da7e6f"
+  },
+  "/evaluations/0/objectives/0/tree_sessions/0": {
+   "byte_end_exclusive": 1804,
+   "byte_start": 1766,
+   "json_type": "string",
+   "lexeme": "00000000-0000-4000-8000-0000000000c1",
+   "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c"
+  },
+  "/findings": {
+   "byte_end_exclusive": 2891,
+   "byte_start": 2889,
+   "json_type": "array",
+   "members": [],
+   "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "/group": {
+   "byte_end_exclusive": 2907,
+   "byte_start": 2903,
+   "json_type": "string",
+   "lexeme": "VC",
+   "token_sha256": "0082d2f84dbf820ee07bc6edbcd8daf8988a4cb9083f4c64826cb93fb7211bc0"
+  },
+  "/inputs": {
+   "byte_end_exclusive": 5084,
+   "byte_start": 3363,
+   "json_type": "object",
+   "members": [
+    "rates",
+    "reference_time",
+    "sessions"
+   ],
+   "token_sha256": "35ba014519fb63604c75643281c86f081f836628b0a84e7a38301e3521902481"
+  },
+  "/inputs/rates": {
+   "byte_end_exclusive": 3575,
+   "byte_start": 3376,
+   "json_type": "object",
+   "members": [
+    "anthropic_api_rates.json",
+    "openai_api_rates.json"
+   ],
+   "token_sha256": "4110b84fd7cb2e328452c936287fb6f8f2fe911d905a21ab136060e10fa29dde"
+  },
+  "/inputs/rates/anthropic_api_rates.json": {
+   "byte_end_exclusive": 3475,
+   "byte_start": 3409,
+   "json_type": "string",
+   "lexeme": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "token_sha256": "afdb9fc9a73b4ff0d2440343e0645b70ba622d8f5e0762d2b5f2b9c1a08fc266"
+  },
+  "/inputs/rates/openai_api_rates.json": {
+   "byte_end_exclusive": 3571,
+   "byte_start": 3505,
+   "json_type": "string",
+   "lexeme": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58",
+   "token_sha256": "fdb98b6121ea0fe2999399f52f431f0eb22d9fb18eb143a4a880b30506250b73"
+  },
+  "/inputs/reference_time": {
+   "byte_end_exclusive": 3619,
+   "byte_start": 3597,
+   "json_type": "string",
+   "lexeme": "2026-11-10T07:00:00Z",
+   "token_sha256": "a1359231eec5e473f993cee1c7181caf272627cfbf575f464781eaee718966af"
+  },
+  "/inputs/sessions": {
+   "byte_end_exclusive": 5081,
+   "byte_start": 3635,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "b62df57610df6f68de1bd5ce14ee5050b245c8c67b922198a313f7743ea48790"
+  },
+  "/inputs/sessions/0": {
+   "byte_end_exclusive": 5077,
+   "byte_start": 3640,
+   "json_type": "object",
+   "members": [
+    "alias",
+    "launch",
+    "lifecycle",
+    "logs",
+    "session_id"
+   ],
+   "token_sha256": "821c7ae32813d8f94f1c597d6ac50efee4dec2b72bc84064021356d119625929"
+  },
+  "/inputs/sessions/0/alias": {
+   "byte_end_exclusive": 3659,
+   "byte_start": 3655,
+   "json_type": "string",
+   "lexeme": "S1",
+   "token_sha256": "b769fcb6dd480523a6d584b38fe7f280638c58e540d6af98400a1345dc2edb0c"
+  },
+  "/inputs/sessions/0/launch": {
+   "byte_end_exclusive": 3780,
+   "byte_start": 3675,
+   "json_type": "object",
+   "members": [
+    "auth_lane",
+    "model",
+    "parent"
+   ],
+   "token_sha256": "e095bd26cdfa0d6a3d88619629f57b328adc869608b0e0377899d3d6752fb8a5"
+  },
+  "/inputs/sessions/0/launch/auth_lane": {
+   "byte_end_exclusive": 3709,
+   "byte_start": 3695,
+   "json_type": "string",
+   "lexeme": "subscription",
+   "token_sha256": "a2396b85beb4af3748fd803f9690f6a2546f5f847bb28bbfa581cf38e7d23559"
+  },
+  "/inputs/sessions/0/launch/model": {
+   "byte_end_exclusive": 3751,
+   "byte_start": 3725,
+   "json_type": "string",
+   "lexeme": "openai-codex/gpt-6-astra",
+   "token_sha256": "433b48e01c90d177151760bbbf0e6b875b08d1ba30951fdfbf00eb84413ef9d1"
+  },
+  "/inputs/sessions/0/launch/parent": {
+   "byte_end_exclusive": 3774,
+   "byte_start": 3768,
+   "json_type": "string",
+   "lexeme": "root",
+   "token_sha256": "956e6e33fe8b21fbf3e7e43d41c304862c78627deb92e26a72fd2b3b57bc60f2"
+  },
+  "/inputs/sessions/0/lifecycle": {
+   "byte_end_exclusive": 3972,
+   "byte_start": 3799,
+   "json_type": "array",
+   "members": [
+    "0",
+    "1"
+   ],
+   "token_sha256": "701c11ca2d19052df4a323a8a41dc3c43e792a23a675b7e4a77a616b38817dd5"
+  },
+  "/inputs/sessions/0/lifecycle/0": {
+   "byte_end_exclusive": 3891,
+   "byte_start": 3806,
+   "json_type": "object",
+   "members": [
+    "at",
+    "event",
+    "turn"
+   ],
+   "token_sha256": "aae2395814ef08ba08a907e06cb350663dd5cf9b6dc532f887fb541402f00b3a"
+  },
+  "/inputs/sessions/0/lifecycle/0/at": {
+   "byte_end_exclusive": 3842,
+   "byte_start": 3820,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:00:10Z",
+   "token_sha256": "b31f04a43f1b490762781c4ede3d044f008696aed570770bda5fa0857d0b7de2"
+  },
+  "/inputs/sessions/0/lifecycle/0/event": {
+   "byte_end_exclusive": 3867,
+   "byte_start": 3859,
+   "json_type": "string",
+   "lexeme": "launch",
+   "token_sha256": "6164c16405ffad14780cca15e85cf8688c355069ccb5b8dfa55b25603379a449"
+  },
+  "/inputs/sessions/0/lifecycle/0/turn": {
+   "byte_end_exclusive": 3884,
+   "byte_start": 3883,
+   "json_type": "number",
+   "lexeme": "1",
+   "token_sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+  },
+  "/inputs/sessions/0/lifecycle/1": {
+   "byte_end_exclusive": 3966,
+   "byte_start": 3898,
+   "json_type": "object",
+   "members": [
+    "at",
+    "event"
+   ],
+   "token_sha256": "08743946ee41f231720c12b2771547d7c4767fc2c4ad0866d58169d4aa675c76"
+  },
+  "/inputs/sessions/0/lifecycle/1/at": {
+   "byte_end_exclusive": 3934,
+   "byte_start": 3912,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:50:00Z",
+   "token_sha256": "850ed653176f6a62af66509ba56533632926260d4cfbd8eea55f6dd2470857c4"
+  },
+  "/inputs/sessions/0/lifecycle/1/event": {
+   "byte_end_exclusive": 3959,
+   "byte_start": 3951,
+   "json_type": "string",
+   "lexeme": "retire",
+   "token_sha256": "a2a9d4ffbc4c361801bc55cbc97e993b34974d1cb94ba86138a02d7b5630ad91"
+  },
+  "/inputs/sessions/0/logs": {
+   "byte_end_exclusive": 5014,
+   "byte_start": 3986,
+   "json_type": "object",
+   "members": [
+    "turn-1"
+   ],
+   "token_sha256": "72c2d4685043fa1984788ad6bf360dfd173330ece977ee28c6d911ff42041837"
+  },
+  "/inputs/sessions/0/logs/turn-1": {
+   "byte_end_exclusive": 5008,
+   "byte_start": 4003,
+   "json_type": "object",
+   "members": [
+    "final_newline",
+    "lines"
+   ],
+   "token_sha256": "574ee2486944db7575a9381d275a0ade080e20c95cc9a7c64a455d31612bcb86"
+  },
+  "/inputs/sessions/0/logs/turn-1/final_newline": {
+   "byte_end_exclusive": 4032,
+   "byte_start": 4028,
+   "json_type": "boolean",
+   "lexeme": "true",
+   "token_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+  },
+  "/inputs/sessions/0/logs/turn-1/lines": {
+   "byte_end_exclusive": 5001,
+   "byte_start": 4049,
+   "json_type": "array",
+   "members": [
+    "0",
+    "1"
+   ],
+   "token_sha256": "9d0836bb8a9fe14e6f6c640f49ccd6a81c1ae4547b1c4bcceda0b3b08e3a4565"
+  },
+  "/inputs/sessions/0/logs/turn-1/lines/0": {
+   "byte_end_exclusive": 4188,
+   "byte_start": 4058,
+   "json_type": "string",
+   "lexeme": "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"subscription_proxy_admitted\", \"n\": 1, \"rid\": 1, \"model\": \"gpt-6-astra\"}",
+   "token_sha256": "1ff755a5967970b4d6fe4827cb664a0dc022aaa9cbd3ed2b8593e58b4c575b19"
+  },
+  "/inputs/sessions/0/logs/turn-1/lines/1": {
+   "byte_end_exclusive": 4993,
+   "byte_start": 4197,
+   "json_type": "string",
+   "lexeme": "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": null, \"terminal\": \"response.completed\", \"response_id\": \"resp_s1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"provider\": \"openai-codex\", \"auth_lane\": \"subscription\", \"billing\": \"unknown\", \"quota\": \"unknown\", \"subscription_proxy\": {\"rid\": 1, \"status\": \"valued\", \"cost_proxy_usd\": 0.015, \"valuation_basis\": \"reported_cache_usage\", \"reason\": null, \"measurement\": \"api_equivalent_cost_proxy\", \"billing\": \"unknown\", \"quota\": \"unknown\"}}",
+   "token_sha256": "57fc6ca5a9073dc928c9f03b48fe9e78b439ff6bfacdcf5b54efa9cef682b6fe"
+  },
+  "/inputs/sessions/0/session_id": {
+   "byte_end_exclusive": 5072,
+   "byte_start": 5034,
+   "json_type": "string",
+   "lexeme": "00000000-0000-4000-8000-0000000000c1",
+   "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c"
+  },
+  "/invariants": {
+   "byte_end_exclusive": 5128,
+   "byte_start": 5101,
+   "json_type": "array",
+   "members": [
+    "0",
+    "1"
+   ],
+   "token_sha256": "36ced73938e242628e2f217f11f02e67a081bfc5ca6de6072e62cbcdc007cdcc"
+  },
+  "/invariants/0": {
+   "byte_end_exclusive": 5113,
+   "byte_start": 5105,
+   "json_type": "string",
+   "lexeme": "INV-F9",
+   "token_sha256": "8344d772d5c6fe82bd99a8a84bd4609e9145dc8e5333bf1fd0ff3341a2f9876c"
+  },
+  "/invariants/1": {
+   "byte_end_exclusive": 5125,
+   "byte_start": 5117,
+   "json_type": "string",
+   "lexeme": "INV-T5",
+   "token_sha256": "e0f5d86921ae669ead444f95c6880a49cf753b0b92879fc7b5b8dbd4859f6862"
+  },
+  "/notes": {
+   "byte_end_exclusive": 5224,
+   "byte_start": 5140,
+   "json_type": "string",
+   "lexeme": "Codex-pool attempt with uncertain ownership does not block pi_api admission (O-5).",
+   "token_sha256": "f6948514aaa1549fdc3663f32ea745d2ed44bfc423b348c801a38d2861b79e46"
+  },
+  "/profile": {
+   "byte_end_exclusive": 5256,
+   "byte_start": 5238,
+   "json_type": "string",
+   "lexeme": "current_producer",
+   "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611"
+  },
+  "/provenance": {
+   "byte_end_exclusive": 5393,
+   "byte_start": 5273,
+   "json_type": "object",
+   "members": [
+    "origin"
+   ],
+   "token_sha256": "85e9b046a73ea8cb2ba296e731d0396e980a1e28620fc4490707363188e52790"
+  },
+  "/provenance/origin": {
+   "byte_end_exclusive": 5390,
+   "byte_start": 5287,
+   "json_type": "string",
+   "lexeme": "contract::subscription cost-proxy admission + measured labelled request (pi_container.py:1419, :1459)",
+   "token_sha256": "fbc00f2673fa2066c552ac75db00a8f7fb40cde28a1d98aab8dee55b67fb8f3d"
+  },
+  "/reachability": {
+   "byte_end_exclusive": 5807,
+   "byte_start": 5787,
+   "json_type": "string",
+   "lexeme": "producer_reachable",
+   "token_sha256": "79a8504e3358e1b5517e63c84bd2926385b95fa3100cd1cb117ab2c4dd8e0c4a"
+  },
+  "/role": {
+   "byte_end_exclusive": 10751,
+   "byte_start": 10736,
+   "json_type": "string",
+   "lexeme": "valid_control",
+   "token_sha256": "8eb07fb42ee3f49e42ef6ae4dd152cec0d398b4b35665783dce104fe1310a41e"
+  },
+  "/schema": {
+   "byte_end_exclusive": 10788,
+   "byte_start": 10764,
+   "json_type": "string",
+   "lexeme": "pi-accounting-corpus/1",
+   "token_sha256": "306af7cfa4a45640f62858c9928b68d0884ab7a6457e219d2186b0ea0a835e12"
+  }
+ },
+ "top_inventory": [
+  "ambiguity",
+  "case_id",
+  "class",
+  "contract",
+  "controls",
+  "evaluations",
+  "expected",
+  "findings",
+  "group",
+  "historical",
+  "inputs",
+  "invariants",
+  "notes",
+  "profile",
+  "provenance",
+  "rationale",
+  "reachability",
+  "revisions",
+  "revisions_r3",
+  "revisions_r4",
+  "revisions_r5",
+  "revisions_r6",
+  "revisions_r7",
+  "revisions_r8",
+  "role",
+  "schema"
+ ]
+}

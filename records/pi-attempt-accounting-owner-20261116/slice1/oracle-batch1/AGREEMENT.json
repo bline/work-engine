@@ -1,0 +1,1161 @@
+{
+ "standing": "Recorded only after every derivation in dossier/ was written. Disagreements are findings, not corrections. One oracle self-correction (VC08 replacement label) was made for a recorded typed-vocabulary reason.",
+ "supplied_outputs_read": [
+  "corpus/cases/<case>.json expected and evaluations[].expected",
+  "oracle/r8-completion-A|B/<case>.bundle.json documents[].low_rollups and units",
+  "bundle InputProof initial_contracts (via FRONTIERS navigation with sha256 re-verification)"
+ ],
+ "cases": {
+  "A06-reservation-usage-null-status-no-id": [
+   {
+    "claim_id": "A06/E1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.attempts[].evidence, unreadable [], non_attempt [] match the origin inventory"
+   },
+   {
+    "claim_id": "A06/E2",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no supplied field compared (bundle primary_memberships not read in this batch)"
+   },
+   {
+    "claim_id": "A06/E3",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.attempts[].valuation.identities match the canonical identity set"
+   },
+   {
+    "claim_id": "A06/NS1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle InputProof initial_contracts reference_namespace dollar_ticket matches raw namespace"
+   },
+   {
+    "claim_id": "A06/NS2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "declared payload fragment located; content matches raw inventory"
+   },
+   {
+    "claim_id": "A06/NS3",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "supplied bundle assumes the single TicketClaim unit = consequence_if_admitted (status remains RequiredUnmet: supplied agreement is not admission)"
+   },
+   {
+    "claim_id": "A06/PM1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected settlement charged/reserved/reasons consistent with origin-local checks"
+   },
+   {
+    "claim_id": "A06/PM2",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "supplied settlement decision/reasons, obligation, replacement, execution, forwarding equal consequence_if_admitted"
+   },
+   {
+    "claim_id": "A06/VA1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected valuation state/low/high/complete equal"
+   },
+   {
+    "claim_id": "A06/VA2",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "bundle component records not read; exposure high consistent with retained components"
+   },
+   {
+    "claim_id": "A06/VA3",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "expected exposure high kind/nano/basis and low equal consequence_if_admitted"
+   },
+   {
+    "claim_id": "A06/T1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.lifecycle S1 state/reopened/clock equal"
+   },
+   {
+    "claim_id": "A06/T2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "evaluation attribution ownership/objective equal"
+   },
+   {
+    "claim_id": "A06/T3",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "evaluation attribution placement equal"
+   },
+   {
+    "claim_id": "A06/G1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "commitment gate {qualified,reasons} equal"
+   },
+   {
+    "claim_id": "A06/G2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "commitment state/kind (and committed where asserted) equal"
+   },
+   {
+    "claim_id": "A06/G3",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "A06/G4",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "A06/G5",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "A06/CO1",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no supplied continuity/sequence output for this case"
+   },
+   {
+    "scope_id": "A06-reservation-usage-null-status-no-id/default/o/owned_closed",
+    "status": "RequiredUnmet",
+    "high_status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   },
+   {
+    "scope_id": "A06-reservation-usage-null-status-no-id/default/o/owned_outstanding",
+    "status": "RequiredUnmet",
+    "high_status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   }
+  ],
+  "N07-control-retired-legacy": [
+   {
+    "claim_id": "N07/E1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "no attempts, unreadable [], inventory []"
+   },
+   {
+    "claim_id": "N07/E2",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no attempts"
+   },
+   {
+    "claim_id": "N07/E3",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no attempts"
+   },
+   {
+    "claim_id": "N07/NS1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle initial_contracts []"
+   },
+   {
+    "claim_id": "N07/PM1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "no attempts"
+   },
+   {
+    "claim_id": "N07/VA1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "no attempts"
+   },
+   {
+    "claim_id": "N07/T1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.lifecycle S1 state/reopened/clock equal"
+   },
+   {
+    "claim_id": "N07/T2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "no attribution records"
+   },
+   {
+    "claim_id": "N07/G1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "commitment gate {qualified,reasons} equal"
+   },
+   {
+    "claim_id": "N07/G2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "commitment state/kind (and committed where asserted) equal"
+   },
+   {
+    "claim_id": "N07/G3",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "N07/G4",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "N07/CO1",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no supplied continuity/sequence output for this case"
+   },
+   {
+    "scope_id": "N07-control-retired-legacy/default/o/owned_closed",
+    "status": "DerivedNominal",
+    "high_status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   },
+   {
+    "scope_id": "N07-control-retired-legacy/default/o/owned_outstanding",
+    "status": "DerivedNominal",
+    "high_status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   }
+  ],
+  "P130-R07-closed-unresolved-predecessor-constrains-successor": [
+   {
+    "claim_id": "P130R07/E1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.attempts[].evidence, unreadable [], non_attempt [] match the origin inventory"
+   },
+   {
+    "claim_id": "P130R07/E2",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no supplied field compared (bundle primary_memberships not read in this batch)"
+   },
+   {
+    "claim_id": "P130R07/E3",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "valuation not_reported carries no identities"
+   },
+   {
+    "claim_id": "P130R07/NS1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle InputProof initial_contracts reference_namespace dollar_ticket matches raw namespace"
+   },
+   {
+    "claim_id": "P130R07/NS2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "declared payload fragment located; content matches raw inventory"
+   },
+   {
+    "claim_id": "P130R07/NS3",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "supplied bundle assumes the single TicketClaim unit = consequence_if_admitted (status remains RequiredUnmet: supplied agreement is not admission)"
+   },
+   {
+    "claim_id": "P130R07/PM1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected settlement charged/reserved/reasons consistent with origin-local checks"
+   },
+   {
+    "claim_id": "P130R07/PM2",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "supplied settlement decision/reasons, obligation, replacement, execution, forwarding equal consequence_if_admitted"
+   },
+   {
+    "claim_id": "P130R07/VA1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected valuation state/low/high/complete equal"
+   },
+   {
+    "claim_id": "P130R07/VA2",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "bundle component records not read; exposure high consistent with retained components"
+   },
+   {
+    "claim_id": "P130R07/VA3",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "expected exposure high kind/nano/basis and low equal consequence_if_admitted"
+   },
+   {
+    "claim_id": "P130R07/T1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.lifecycle S1 state/reopened/clock equal"
+   },
+   {
+    "claim_id": "P130R07/T2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "evaluation attribution ownership/objective equal"
+   },
+   {
+    "claim_id": "P130R07/T3",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "evaluation attribution placement equal"
+   },
+   {
+    "claim_id": "P130R07/G1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "commitment gate {qualified,reasons} equal"
+   },
+   {
+    "claim_id": "P130R07/G2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "commitment state/kind (and committed where asserted) equal"
+   },
+   {
+    "claim_id": "P130R07/G3",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "P130R07/G4",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "P130R07/G5",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "P130R07/G6",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "P130R07/G7",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "P130R07/CO1",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no supplied continuity/sequence output for this case"
+   },
+   {
+    "scope_id": "P130-R07-closed-unresolved-predecessor-constrains-successor/successor/p/owned_closed",
+    "status": "DerivedNominal",
+    "high_status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   },
+   {
+    "scope_id": "P130-R07-closed-unresolved-predecessor-constrains-successor/successor/p/owned_outstanding",
+    "status": "DerivedNominal",
+    "high_status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   },
+   {
+    "scope_id": "P130-R07-closed-unresolved-predecessor-constrains-successor/successor/s/owned_closed",
+    "status": "DerivedNominal",
+    "high_status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   },
+   {
+    "scope_id": "P130-R07-closed-unresolved-predecessor-constrains-successor/successor/s/owned_outstanding",
+    "status": "DerivedNominal",
+    "high_status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   }
+  ],
+  "P132-CP-closed-predecessor-outstanding": [
+   {
+    "claim_id": "P132CP/E1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.attempts[].evidence, unreadable [], non_attempt [] match the origin inventory"
+   },
+   {
+    "claim_id": "P132CP/E2",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no supplied field compared (bundle primary_memberships not read in this batch)"
+   },
+   {
+    "claim_id": "P132CP/E3",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no usage, no identities in output"
+   },
+   {
+    "claim_id": "P132CP/NS1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle InputProof initial_contracts reference_namespace dollar_ticket matches raw namespace"
+   },
+   {
+    "claim_id": "P132CP/NS2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "declared payload fragment located; content matches raw inventory"
+   },
+   {
+    "claim_id": "P132CP/NS3",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "single unit res:S1/turn-1:rid=1 [S1/turn-1:1] (non-decisive premise)"
+   },
+   {
+    "claim_id": "P132CP/PM1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected settlement charged/reserved/reasons consistent with origin-local checks"
+   },
+   {
+    "claim_id": "P132CP/PM2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "supplied settlement decision/reasons, obligation, replacement, execution, forwarding equal consequence_if_admitted"
+   },
+   {
+    "claim_id": "P132CP/VA1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected valuation state/low/high/complete equal"
+   },
+   {
+    "claim_id": "P132CP/VA2",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "bundle component records not read; exposure high consistent with retained components"
+   },
+   {
+    "claim_id": "P132CP/VA3",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected exposure high kind/nano/basis and low equal consequence_if_admitted"
+   },
+   {
+    "claim_id": "P132CP/T1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.lifecycle S1 state/reopened/clock equal"
+   },
+   {
+    "claim_id": "P132CP/T2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "evaluation attribution ownership/objective equal"
+   },
+   {
+    "claim_id": "P132CP/T3",
+    "status": "DerivedNominal",
+    "supplied": "disagree",
+    "detail": "Supplied attribution placement \"inside\" (both evaluations). Derived: p closure established (close.at == closed_at 06:40) => window [06:00,06:40]; outstanding interval [06:30:00, open) (no retire) => straddles_closure. Finding R8-PLACEMENT-01 (OPEN)."
+   },
+   {
+    "claim_id": "P132CP/G1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "commitment gate {qualified,reasons} equal"
+   },
+   {
+    "claim_id": "P132CP/G2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "commitment state/kind (and committed where asserted) equal"
+   },
+   {
+    "claim_id": "P132CP/G3",
+    "status": "DerivedNominal",
+    "supplied": "disagree",
+    "detail": "Supplied p reasons [UnenforcedCommitment, UnresolvedExposure] omit PlacementStraddles required by \u00a712.1 for an owned straddling attempt (both evaluations). Status/provisional agree. R8-PLACEMENT-01."
+   },
+   {
+    "claim_id": "P132CP/G4",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "P132CP/G5",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "P132CP/G6",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "P132CP/CO1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "attempt facts are case-level (shared); p/s objective outputs identical across both evaluations; only admission differs"
+   },
+   {
+    "scope_id": "P132-CP-closed-predecessor-outstanding/request-successor/p/owned_closed",
+    "status": "DerivedNominal",
+    "high_status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   },
+   {
+    "scope_id": "P132-CP-closed-predecessor-outstanding/request-successor/p/owned_outstanding",
+    "status": "DerivedNominal",
+    "high_status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal; scope low agrees even though the placement claim disagrees"
+   },
+   {
+    "scope_id": "P132-CP-closed-predecessor-outstanding/request-successor/s/owned_closed",
+    "status": "DerivedNominal",
+    "high_status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   },
+   {
+    "scope_id": "P132-CP-closed-predecessor-outstanding/request-successor/s/owned_outstanding",
+    "status": "DerivedNominal",
+    "high_status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   },
+   {
+    "scope_id": "P132-CP-closed-predecessor-outstanding/request-predecessor/p/owned_closed",
+    "status": "DerivedNominal",
+    "high_status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   },
+   {
+    "scope_id": "P132-CP-closed-predecessor-outstanding/request-predecessor/p/owned_outstanding",
+    "status": "DerivedNominal",
+    "high_status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal; scope low agrees even though the placement claim disagrees"
+   },
+   {
+    "scope_id": "P132-CP-closed-predecessor-outstanding/request-predecessor/s/owned_closed",
+    "status": "DerivedNominal",
+    "high_status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   },
+   {
+    "scope_id": "P132-CP-closed-predecessor-outstanding/request-predecessor/s/owned_outstanding",
+    "status": "DerivedNominal",
+    "high_status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   }
+  ],
+  "P132-FG-VC15-gated": [
+   {
+    "claim_id": "P132FG/E1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.attempts[].evidence, unreadable [], non_attempt [] match the origin inventory"
+   },
+   {
+    "claim_id": "P132FG/E2",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no supplied field compared (bundle primary_memberships not read in this batch)"
+   },
+   {
+    "claim_id": "P132FG/E3",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.attempts[].valuation.identities match the canonical identity set"
+   },
+   {
+    "claim_id": "P132FG/NS1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle InputProof initial_contracts reference_namespace dollar_ticket matches raw namespace"
+   },
+   {
+    "claim_id": "P132FG/NS2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "declared payload fragment located; content matches raw inventory"
+   },
+   {
+    "claim_id": "P132FG/NS3",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "supplied bundle assumes the single TicketClaim unit = consequence_if_admitted (status remains RequiredUnmet: supplied agreement is not admission)"
+   },
+   {
+    "claim_id": "P132FG/PM1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected settlement charged/reserved/reasons consistent with origin-local checks"
+   },
+   {
+    "claim_id": "P132FG/PM2",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "supplied settlement decision/reasons, obligation, replacement, execution, forwarding equal consequence_if_admitted"
+   },
+   {
+    "claim_id": "P132FG/VA1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected valuation state/low/high/complete equal"
+   },
+   {
+    "claim_id": "P132FG/VA2",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "bundle component records not read; exposure high consistent with retained components"
+   },
+   {
+    "claim_id": "P132FG/VA3",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "expected exposure high kind/nano/basis and low equal consequence_if_admitted"
+   },
+   {
+    "claim_id": "P132FG/T1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.lifecycle S1 state/reopened/clock equal"
+   },
+   {
+    "claim_id": "P132FG/T2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "evaluation attribution ownership/objective equal"
+   },
+   {
+    "claim_id": "P132FG/T3",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "evaluation attribution placement equal"
+   },
+   {
+    "claim_id": "P132FG/G1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "supplied gate qualified true, verification_source test_mock, verification_payload_sha256 b38088ca\u2026 equal"
+   },
+   {
+    "claim_id": "P132FG/G2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "supplied retired committed 0 exact equal"
+   },
+   {
+    "claim_id": "P132FG/G3",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "P132FG/G4",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "supplied p provisional false = consequence_if_admitted"
+   },
+   {
+    "claim_id": "P132FG/G5",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "supplied s established/provisional false/predecessor exact 0, decision wire label \"admitted\" = consequence_if_admitted \"admit\""
+   },
+   {
+    "claim_id": "P132FG/CO1",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no supplied continuity/sequence output for this case"
+   },
+   {
+    "scope_id": "P132-FG-VC15-gated/successor/p/owned_closed",
+    "status": "DerivedNominal",
+    "high_status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   },
+   {
+    "scope_id": "P132-FG-VC15-gated/successor/p/owned_outstanding",
+    "status": "DerivedNominal",
+    "high_status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   },
+   {
+    "scope_id": "P132-FG-VC15-gated/successor/s/owned_closed",
+    "status": "DerivedNominal",
+    "high_status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   },
+   {
+    "scope_id": "P132-FG-VC15-gated/successor/s/owned_outstanding",
+    "status": "DerivedNominal",
+    "high_status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   }
+  ],
+  "P9-claimed-charge-above-reservation": [
+   {
+    "claim_id": "P9/E1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.attempts[].evidence, unreadable [], non_attempt [] match the origin inventory"
+   },
+   {
+    "claim_id": "P9/E2",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no supplied field compared (bundle primary_memberships not read in this batch)"
+   },
+   {
+    "claim_id": "P9/E3",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.attempts[].valuation.identities match the canonical identity set"
+   },
+   {
+    "claim_id": "P9/NS1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle InputProof initial_contracts reference_namespace dollar_ticket matches raw namespace"
+   },
+   {
+    "claim_id": "P9/NS2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "declared payload fragment located; content matches raw inventory"
+   },
+   {
+    "claim_id": "P9/NS3",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "supplied bundle assumes the single TicketClaim unit = consequence_if_admitted (status remains RequiredUnmet: supplied agreement is not admission)"
+   },
+   {
+    "claim_id": "P9/PM1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected settlement charged/reserved/reasons consistent with origin-local checks"
+   },
+   {
+    "claim_id": "P9/PM2",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "supplied settlement decision/reasons, obligation, replacement, execution, forwarding equal consequence_if_admitted"
+   },
+   {
+    "claim_id": "P9/VA1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected valuation state/low/high/complete equal"
+   },
+   {
+    "claim_id": "P9/VA2",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "bundle component records not read; exposure high consistent with retained components"
+   },
+   {
+    "claim_id": "P9/VA3",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "expected exposure high kind/nano/basis and low equal consequence_if_admitted"
+   },
+   {
+    "claim_id": "P9/T1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.lifecycle S1 state/reopened/clock equal"
+   },
+   {
+    "claim_id": "P9/T2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "evaluation attribution ownership/objective equal"
+   },
+   {
+    "claim_id": "P9/T3",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "evaluation attribution placement equal"
+   },
+   {
+    "claim_id": "P9/G1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "commitment gate {qualified,reasons} equal"
+   },
+   {
+    "claim_id": "P9/G2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "commitment state/kind (and committed where asserted) equal"
+   },
+   {
+    "claim_id": "P9/G3",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "P9/G4",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "P9/G5",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "P9/CO1",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no supplied continuity/sequence output for this case"
+   },
+   {
+    "scope_id": "P9-claimed-charge-above-reservation/default/o/owned_closed",
+    "status": "RequiredUnmet",
+    "high_status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   },
+   {
+    "scope_id": "P9-claimed-charge-above-reservation/default/o/owned_outstanding",
+    "status": "RequiredUnmet",
+    "high_status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   }
+  ],
+  "V01-usage-settlement-other-response-model": [
+   {
+    "claim_id": "V01/E1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.attempts[].evidence, unreadable [], non_attempt [] match the origin inventory"
+   },
+   {
+    "claim_id": "V01/E2",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no supplied field compared (bundle primary_memberships not read in this batch)"
+   },
+   {
+    "claim_id": "V01/E3",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.attempts[].valuation.identities match the canonical identity set"
+   },
+   {
+    "claim_id": "V01/NS1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle InputProof initial_contracts reference_namespace dollar_ticket matches raw namespace"
+   },
+   {
+    "claim_id": "V01/NS2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "declared payload fragment located; content matches raw inventory"
+   },
+   {
+    "claim_id": "V01/NS3",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "supplied bundle assumes the single TicketClaim unit = consequence_if_admitted (status remains RequiredUnmet: supplied agreement is not admission)"
+   },
+   {
+    "claim_id": "V01/PM1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected settlement charged/reserved/reasons consistent with origin-local checks"
+   },
+   {
+    "claim_id": "V01/PM2",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "supplied settlement decision/reasons, obligation, replacement, execution, forwarding equal consequence_if_admitted"
+   },
+   {
+    "claim_id": "V01/VA1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected valuation state/low/high/complete equal"
+   },
+   {
+    "claim_id": "V01/VA2",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "bundle component records not read; exposure high consistent with retained components"
+   },
+   {
+    "claim_id": "V01/VA3",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "expected exposure high kind/nano/basis and low equal consequence_if_admitted"
+   },
+   {
+    "claim_id": "V01/T1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.lifecycle S1 state/reopened/clock equal"
+   },
+   {
+    "claim_id": "V01/T2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "evaluation attribution ownership/objective equal"
+   },
+   {
+    "claim_id": "V01/T3",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "evaluation attribution placement equal"
+   },
+   {
+    "claim_id": "V01/G1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "commitment gate {qualified,reasons} equal"
+   },
+   {
+    "claim_id": "V01/G2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "commitment state/kind (and committed where asserted) equal"
+   },
+   {
+    "claim_id": "V01/G3",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "V01/G4",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "V01/G5",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "equal"
+   },
+   {
+    "claim_id": "V01/CO1",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no supplied continuity/sequence output for this case"
+   },
+   {
+    "scope_id": "V01-usage-settlement-other-response-model/default/o/owned_closed",
+    "status": "DerivedNominal",
+    "high_status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   },
+   {
+    "scope_id": "V01-usage-settlement-other-response-model/default/o/owned_outstanding",
+    "status": "DerivedNominal",
+    "high_status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   }
+  ],
+  "VC08-subscription-measured-request": [
+   {
+    "claim_id": "VC08/E1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.attempts[].evidence, unreadable [], non_attempt [] match the origin inventory"
+   },
+   {
+    "claim_id": "VC08/E2",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no comparable supplied field"
+   },
+   {
+    "claim_id": "VC08/E3",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "valuation not_applicable carries no identities"
+   },
+   {
+    "claim_id": "VC08/NS1",
+    "status": "DerivedNominal",
+    "supplied": "disagree",
+    "detail": "Supplied bundle InputProof declares reference_namespace=dollar_ticket (conditional-ticket:S1/turn-1) for admission-namespace origins S1/turn-1:1 (subscription_proxy_admitted rid) and :2 (subscription_proxy.rid). Finding R8-NAMESPACE-01 (OPEN)."
+   },
+   {
+    "claim_id": "VC08/NS2",
+    "status": "DerivedNominal",
+    "supplied": "disagree",
+    "detail": "Supplied declared payload claims usable dollar rid interpretation; raw has no dollar rid. Inapplicable payload (R8-NAMESPACE-01)."
+   },
+   {
+    "claim_id": "VC08/NS3",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "Supplied single unit adm:S1/turn-1:rid=1 equals consequence_if_admitted of the (absent) admission-namespace grant; it is currently built on the inapplicable dollar_ticket declaration."
+   },
+   {
+    "claim_id": "VC08/PM1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "After typed self-correction: replacement ineligible/NoReservation, obligation none{subscription, amount_source none}, settlement not_applicable. Dossier originally said replacement not_applicable (not a lawful Replacement variant); corrected for the type reason recorded in the claim."
+   },
+   {
+    "claim_id": "VC08/PM2",
+    "status": "RequiredUnmet",
+    "supplied": "agree",
+    "detail": "supplied execution terminal, forwarding forwarded for the single unit"
+   },
+   {
+    "claim_id": "VC08/VA1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "valuation not_applicable"
+   },
+   {
+    "claim_id": "VC08/VA2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "exposure {pool codex, billing unknown}"
+   },
+   {
+    "claim_id": "VC08/T1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "expected.lifecycle S1 state/reopened/clock equal"
+   },
+   {
+    "claim_id": "VC08/T2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "attribution unadmitted, candidates [o]"
+   },
+   {
+    "claim_id": "VC08/T3",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "supplied placement label \"uncertain\" for an unowned attempt; dossier asserts no owned placement and candidate interval inside; no conflict"
+   },
+   {
+    "claim_id": "VC08/G1",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "no commitments supplied"
+   },
+   {
+    "claim_id": "VC08/G2",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "established, reasons [], provisional false, lines exact 0"
+   },
+   {
+    "claim_id": "VC08/G3",
+    "status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "supplied decision wire label \"admitted\" = dossier \"admit\" (\u00a712.4 prose); label vocabulary is corpus-envelope, not canonical"
+   },
+   {
+    "claim_id": "VC08/CO1",
+    "status": "DerivedNominal",
+    "supplied": "absent",
+    "detail": "no supplied continuity/sequence output for this case"
+   },
+   {
+    "scope_id": "VC08-subscription-measured-request/default/o/owned_closed",
+    "status": "DerivedNominal",
+    "high_status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   },
+   {
+    "scope_id": "VC08-subscription-measured-request/default/o/owned_outstanding",
+    "status": "DerivedNominal",
+    "high_status": "DerivedNominal",
+    "supplied": "agree",
+    "detail": "bundle low_rollup seed/alternatives/single_floor/independent_floor/selected_low/credit_mode/basis/credits and objective line low/high equal"
+   }
+  ]
+ },
+ "counts": {
+  "agree": 150,
+  "disagree": 4,
+  "absent": 25
+ },
+ "disagreements": [
+  {
+   "case": "P132-CP-closed-predecessor-outstanding",
+   "claim_id": "P132CP/T3",
+   "status": "DerivedNominal",
+   "supplied": "disagree",
+   "detail": "Supplied attribution placement \"inside\" (both evaluations). Derived: p closure established (close.at == closed_at 06:40) => window [06:00,06:40]; outstanding interval [06:30:00, open) (no retire) => straddles_closure. Finding R8-PLACEMENT-01 (OPEN)."
+  },
+  {
+   "case": "P132-CP-closed-predecessor-outstanding",
+   "claim_id": "P132CP/G3",
+   "status": "DerivedNominal",
+   "supplied": "disagree",
+   "detail": "Supplied p reasons [UnenforcedCommitment, UnresolvedExposure] omit PlacementStraddles required by \u00a712.1 for an owned straddling attempt (both evaluations). Status/provisional agree. R8-PLACEMENT-01."
+  },
+  {
+   "case": "VC08-subscription-measured-request",
+   "claim_id": "VC08/NS1",
+   "status": "DerivedNominal",
+   "supplied": "disagree",
+   "detail": "Supplied bundle InputProof declares reference_namespace=dollar_ticket (conditional-ticket:S1/turn-1) for admission-namespace origins S1/turn-1:1 (subscription_proxy_admitted rid) and :2 (subscription_proxy.rid). Finding R8-NAMESPACE-01 (OPEN)."
+  },
+  {
+   "case": "VC08-subscription-measured-request",
+   "claim_id": "VC08/NS2",
+   "status": "DerivedNominal",
+   "supplied": "disagree",
+   "detail": "Supplied declared payload claims usable dollar rid interpretation; raw has no dollar rid. Inapplicable payload (R8-NAMESPACE-01)."
+  }
+ ]
+}

@@ -1,0 +1,9 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.81s
+  Executable unittests src/lib.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice1/spec-r1-target/debug/deps/pi_accounting_spec_check-4a4e4ae09ee1651c)
+  Executable unittests src/main.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice1/spec-r1-target/debug/deps/pi_accounting_spec_check-12b41431c9ebe762)
+  Executable tests/c_owner_domains.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice1/spec-r1-target/debug/deps/c_owner_domains-0ceae1f91c7d1f7f)
+  Executable tests/independent_r8_controls.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice1/spec-r1-target/debug/deps/independent_r8_controls-51da13cf430c7b6d)
+  Executable tests/independent_raw_axes.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice1/spec-r1-target/debug/deps/independent_raw_axes-3ee1ad2ed02bb648)
+  Executable tests/r9_spec_applicability.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice1/spec-r1-target/debug/deps/r9_spec_applicability-7d28dcad672fbafd)
+  Executable tests/r9_spec_payloads.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice1/spec-r1-target/debug/deps/r9_spec_payloads-5c2dcd170a773e14)
+  Executable tests/structural_r8.rs (/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice1/spec-r1-target/debug/deps/structural_r8-e6bab57c54821d38)

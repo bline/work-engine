@@ -1,0 +1,1 @@
+{"status": "PASS", "corpus_cases": 175, "actual_attempt_fragments": 186, "failures": [], "qualification": "actual constructor shapes only; independent raw financial assertions and accounting refs remain separate"}

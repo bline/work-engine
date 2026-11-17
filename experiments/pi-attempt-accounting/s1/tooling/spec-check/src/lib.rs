@@ -13,7 +13,9 @@ pub use applicability::*;
 mod corpus;
 pub use corpus::*;
 mod decisions;
+mod numbers;
 pub use accounting::*;
+pub use numbers::{canonicalize_integers, exact_u32, exact_u64, parse_json};
 pub use decisions::*;
 pub type Result<T> = std::result::Result<T, String>;
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -134,7 +136,7 @@ pub fn read_spec(root: &Path) -> Result<Spec> {
         return Err("compiled fixed schema differs from runtime schema".into());
     }
     let b = fs::read(root.join("spec/ck.json")).map_err(|e| e.to_string())?;
-    let value: Value = serde_json::from_slice(&b).map_err(|e| e.to_string())?;
+    let value = parse_json(&b)?;
     validate_schema(
         &serde_json::from_slice(&schema).map_err(|e| e.to_string())?,
         &value,
@@ -333,6 +335,27 @@ fn product(dims: &BTreeMap<String, Vec<String>>) -> Result<Vec<BTreeMap<String, 
     }
     Ok(points)
 }
+const C_OWNER_STAGE: &str = "C";
+const C_OWNER_BOUNDARY: &str = "C-validity";
+const C_OWNED_OUTPUT: &str = "settlement_validity";
+/// Types whose construction belongs to stage C alone: the settlement-validity decision and
+/// any type that carries one in a variant field.
+fn c_owned_types(s: &Spec) -> BTreeSet<&str> {
+    let mut owned = BTreeSet::from(["SettlementDecision"]);
+    loop {
+        let before = owned.len();
+        for t in &s.types {
+            if t.variants.iter().flat_map(|v| v.fields.values()).any(|ty| {
+                named_type(ty, s).is_some_and(|inner| owned.contains(inner.as_str()))
+            }) {
+                owned.insert(t.id.as_str());
+            }
+        }
+        if owned.len() == before {
+            return owned;
+        }
+    }
+}
 pub fn validate(s: &Spec) -> Result<()> {
     if s.schema_version != "pi-accounting-spec/1"
         || s.contract_version != "pi-accounting-contract/1.7-s1"
@@ -380,7 +403,7 @@ pub fn validate(s: &Spec) -> Result<()> {
     unique(ids, "node ID")?;
     let bodies = body_nodes(s);
     for (id, v) in &bodies {
-        if v.get("revision").and_then(Value::as_u64) == Some(0) {
+        if v.get("revision").and_then(exact_u64) == Some(0) {
             return Err(format!("zero revision {id}"));
         }
     }
@@ -543,6 +566,23 @@ pub fn validate(s: &Spec) -> Result<()> {
             }
         }
     }
+    let c_owned = c_owned_types(s);
+    for (id, outputs, owner) in s
+        .stages
+        .iter()
+        .map(|x| (&x.id, &x.outputs, C_OWNER_STAGE))
+        .chain(
+            s.boundaries
+                .iter()
+                .map(|x| (&x.id, &x.outputs, C_OWNER_BOUNDARY)),
+        )
+    {
+        if id != owner && outputs.iter().any(|o| o == C_OWNED_OUTPUT) {
+            return Err(format!(
+                "C-validity owner violation: {id} declares C-owned output {C_OWNED_OUTPUT}; only {owner} may"
+            ));
+        }
+    }
     let mut partitions: BTreeMap<&str, Vec<&Rule>> = BTreeMap::new();
     for r in &s.rules {
         let expected = expected_partitions
@@ -561,6 +601,14 @@ pub fn validate(s: &Spec) -> Result<()> {
             .iter()
             .find(|x| x.id == r.stage)
             .ok_or_else(|| format!("unknown rule stage {}", r.stage))?;
+        for o in &r.outputs {
+            if r.stage != C_OWNER_STAGE && c_owned.contains(o.type_id.as_str()) {
+                return Err(format!(
+                    "C-validity owner violation: stage {} rule {} constructs C-owned {}; only stage {C_OWNER_STAGE} may construct it",
+                    r.stage, r.id, o.type_id
+                ));
+            }
+        }
         if r.reads.iter().any(|x| !stage.reads.contains(x)) {
             return Err(format!("illegal rule read-set {}", r.id));
         }
@@ -586,9 +634,6 @@ pub fn validate(s: &Spec) -> Result<()> {
             validate_replacement_binding(r)?;
         }
         for o in &r.outputs {
-            if r.stage == "S" && o.type_id == "SettlementDecision" {
-                return Err("S cannot construct C-validity decision".into());
-            }
             if r.partition == "S-DECISION"
                 && (o.type_id != "SettlementForward"
                     || o.bindings.get("validity_ref").and_then(Value::as_str)
@@ -718,7 +763,7 @@ fn validate_value(s: &Spec, ty: &str, v: &Value) -> Result<()> {
             "String" => v.is_string(),
             "Bool" => v.is_boolean(),
             "Json" => true,
-            "U64" => v.as_u64().is_some(),
+            "U64" => exact_u64(v).is_some(),
             "Nano" => v.as_str().is_some_and(|x| {
                 !x.is_empty()
                     && (x == "0" || !x.starts_with('0'))

@@ -1,0 +1,1385 @@
+{
+ "schema": "pi-accounting-oracle-dossier/0.1-proposal",
+ "case_id": "N07-control-retired-legacy",
+ "author": {
+  "role": "independent oracle (slice1 oracle-batch1 worker)",
+  "owner_session": "01a1e569-2805-72ff-b837-03d1577c405d"
+ },
+ "standing": "Independently authored finite derivation proposal; not consumer qualification; root binds/admits. ",
+ "subject": {
+  "manifest_sha256_prefix": "5e594cac",
+  "case_file": {
+   "path": "corpus/cases/N07-control-retired-legacy.json",
+   "sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1"
+  },
+  "inputs_canonical_sha256": "5979744d2b5035f0d5fa2290b1a9d6e95fbc3ea18503baf05c32c22e80af24e7"
+ },
+ "policy_refs": [
+  {
+   "policy_id": "BASE",
+   "path": "continuation:design/PLAN.md",
+   "sha256": "43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61"
+  },
+  {
+   "policy_id": "AMD",
+   "path": "continuation:reviews/design-r7/PLAN-AMENDMENT.md",
+   "sha256": "c8376f7a94a2ee775a8b117e6424acae457cb86e138f890cf2240fbe2190ce46"
+  },
+  {
+   "policy_id": "R3",
+   "path": "continuation:pilot-r9/PLAN-AMENDMENT-R3.md",
+   "sha256": "90b6308e9608decf026437c89b98de597cd30046f56d792aa7461061f31f4abb"
+  },
+  {
+   "policy_id": "EPR",
+   "path": "continuation:renewal-r10/design-evaluation-premise-r1/PLAN-R2.md",
+   "sha256": "3f79f910a6e87614d7ebff402f2f731f358886ab0ee74495d0a7425fc7950b70"
+  },
+  {
+   "policy_id": "LOWT",
+   "path": "continuation:renewal-r10/design-low-target-r1/PLAN-R2.md",
+   "sha256": "727ad3974d492cbd523859b68bdfc0be8664dc5448277832565d17652d082904"
+  },
+  {
+   "policy_id": "RP5",
+   "path": "continuation:reviews/implementation-r8/policies/ROOT-POLICY-R5.md",
+   "sha256": "57303fdb466c49ebe8f0d6fa095628c57c3f2018603114e12949af663f65eec5"
+  },
+  {
+   "policy_id": "RA6",
+   "path": "continuation:ROOT-ADOPTION-R6.json",
+   "sha256": "73bd74576a0f9d6a95b436c9ad7dfbf2c9c74b76d82184853e8dd25b70292097"
+  },
+  {
+   "policy_id": "RP6",
+   "path": "continuation:ROOT-POLICY-R6.md",
+   "sha256": "3dbe535668a7d625e025e16c9fa75e51a59dec109f5c842d877791b1d7332200"
+  },
+  {
+   "policy_id": "FRPLAN",
+   "path": "continuation:renewal-r10/full-realization-r1/planning/PLAN.md",
+   "sha256": "d1e93793052f2c07397654d10cca2188e0fad1f06c920c5d9dcfc139a4563741"
+  },
+  {
+   "policy_id": "CK",
+   "path": "subject:spec/ck.json",
+   "sha256": "a3a30398f289c9edcb4c3a3b0009a9dff88021378658062ed532e90226400787"
+  },
+  {
+   "policy_id": "CONTRACT",
+   "path": "subject:contract/CONTRACT.md",
+   "sha256": "96122db955a1d8b530e20cdc0a7653ae70c4bb127c7ef83b00d1c3daef7739ae"
+  },
+  {
+   "policy_id": "PAPPROVAL",
+   "path": "subject:oracle/POLICY-APPROVAL.md",
+   "sha256": "07303d5c5c36276f6038bf9368f3a5fe660e39ee9160b8b3d92049de98abb981"
+  },
+  {
+   "policy_id": "RATES-OPENAI",
+   "path": "subject:oracle/rates/openai_api_rates.json",
+   "sha256": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  },
+  {
+   "policy_id": "RATES-ANTHROPIC",
+   "path": "subject:oracle/rates/anthropic_api_rates.json",
+   "sha256": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5"
+  }
+ ],
+ "causal_admission": {
+  "top_inventory": [
+   {
+    "key": "ambiguity",
+    "classification": "noncausal_metadata",
+    "reason": "Annotation; read by no adopted policy clause for any claim here.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/ambiguity"
+    }
+   },
+   {
+    "key": "case_id",
+    "classification": "governing_premise",
+    "reason": "Opaque equality selector only; no financial meaning.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/case_id"
+    }
+   },
+   {
+    "key": "class",
+    "classification": "noncausal_metadata",
+    "reason": "Corpus coverage label; no adopted financial/attribution clause reads it. Consumer-coverage side-condition only.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/class"
+    }
+   },
+   {
+    "key": "contract",
+    "classification": "governing_premise",
+    "reason": "Exact contract selector pi-accounting-contract/1.7-s1 binds the policy version used.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/contract"
+    }
+   },
+   {
+    "key": "controls",
+    "classification": "noncausal_metadata",
+    "reason": "Cross-case control relation; selects no consequence of this case.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/controls"
+    }
+   },
+   {
+    "key": "evaluations",
+    "classification": "governing_premise",
+    "reason": "Ordered evaluation configurations minus expected: objectives, windows, closure, predecessor, tree, admissions/journal rows, limits, admission_request, authority/gate ids.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/evaluations"
+    }
+   },
+   {
+    "key": "expected",
+    "classification": "supplied_outcome",
+    "reason": "Challenged output; never nominal truth. Read only after derivation (AGREEMENT.json).",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/expected"
+    }
+   },
+   {
+    "key": "findings",
+    "classification": "supplied_outcome",
+    "reason": "Historical finding labels; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/findings"
+    }
+   },
+   {
+    "key": "group",
+    "classification": "noncausal_metadata",
+    "reason": "Grouping label.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/group"
+    }
+   },
+   {
+    "key": "historical",
+    "classification": "supplied_outcome",
+    "reason": "Historical reader outcome; comparison only.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/historical"
+    }
+   },
+   {
+    "key": "inputs",
+    "classification": "governing_premise",
+    "reason": "Complete raw sessions/launch/lifecycle/log lines, reference_time, rate digests, gates.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/inputs"
+    }
+   },
+   {
+    "key": "invariants",
+    "classification": "noncausal_metadata",
+    "reason": "Invariant coverage labels; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/invariants"
+    }
+   },
+   {
+    "key": "notes",
+    "classification": "noncausal_metadata",
+    "reason": "Free text.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/notes"
+    }
+   },
+   {
+    "key": "profile",
+    "classification": "governing_premise",
+    "reason": "Selects gate/closure semantics (CONTRACT \u00a72.3, \u00a712.4 step 1).",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/profile"
+    }
+   },
+   {
+    "key": "provenance",
+    "classification": "noncausal_metadata",
+    "reason": "Origin test label; confers no grant (base plan \u00a72: labels cannot mint admission).",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/provenance"
+    }
+   },
+   {
+    "key": "rationale",
+    "classification": "supplied_outcome",
+    "reason": "Narrative about output revisions; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/rationale"
+    }
+   },
+   {
+    "key": "reachability",
+    "classification": "noncausal_metadata",
+    "reason": "Producer reachability label; no financial clause reads it.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/reachability"
+    }
+   },
+   {
+    "key": "revisions",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions"
+    }
+   },
+   {
+    "key": "revisions_r3",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r3"
+    }
+   },
+   {
+    "key": "revisions_r4",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r4"
+    }
+   },
+   {
+    "key": "revisions_r5",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r5"
+    }
+   },
+   {
+    "key": "revisions_r6",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r6"
+    }
+   },
+   {
+    "key": "revisions_r7",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r7"
+    }
+   },
+   {
+    "key": "revisions_r8",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r8"
+    }
+   },
+   {
+    "key": "role",
+    "classification": "governing_premise",
+    "reason": "Selector (finding/control/valid_control); qualification mode only, no money.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/role"
+    }
+   },
+   {
+    "key": "schema",
+    "classification": "governing_premise",
+    "reason": "Corpus schema selector.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/schema"
+    }
+   }
+  ],
+  "trusted_fixture_inputs": {
+   "ref": "case_token",
+   "file": "corpus/cases/N07-control-retired-legacy.json",
+   "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+   "pointer": "/trusted_fixture_inputs",
+   "presence": "absent"
+  },
+  "profile": {
+   "ref": "case_token",
+   "file": "corpus/cases/N07-control-retired-legacy.json",
+   "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+   "pointer": "/profile",
+   "byte_start": 3886,
+   "byte_end_exclusive": 3904,
+   "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "current_producer"
+  },
+  "contract": {
+   "ref": "case_token",
+   "file": "corpus/cases/N07-control-retired-legacy.json",
+   "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+   "pointer": "/contract",
+   "byte_start": 105,
+   "byte_end_exclusive": 136,
+   "token_sha256": "67f788fb6397af3ef74d42c6baea23eebce8ecf9de0e6e577e02a9c1b644402d",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "pi-accounting-contract/1.7-s1"
+  },
+  "schema": {
+   "ref": "case_token",
+   "file": "corpus/cases/N07-control-retired-legacy.json",
+   "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+   "pointer": "/schema",
+   "byte_start": 7842,
+   "byte_end_exclusive": 7866,
+   "token_sha256": "306af7cfa4a45640f62858c9928b68d0884ab7a6457e219d2186b0ea0a835e12",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "pi-accounting-corpus/1"
+  },
+  "role": {
+   "ref": "case_token",
+   "file": "corpus/cases/N07-control-retired-legacy.json",
+   "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+   "pointer": "/role",
+   "byte_start": 7820,
+   "byte_end_exclusive": 7829,
+   "token_sha256": "8e1f1a0dc7a335f9cd8d474af99d3e4e003f235b3437332ce144999d2ea758e0",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "control"
+  },
+  "inputs_canonical_sha256": "5979744d2b5035f0d5fa2290b1a9d6e95fbc3ea18503baf05c32c22e80af24e7",
+  "log_final_newline": {
+   "S1/turn-1": true
+  },
+  "required_scopes": [
+   "N07-control-retired-legacy/default/o/owned_closed",
+   "N07-control-retired-legacy/default/o/owned_outstanding"
+  ],
+  "additional_channels": []
+ },
+ "origins": [],
+ "premises": [],
+ "claims": [
+  {
+   "claim_id": "N07/E1",
+   "family": "raw_E_identity_cardinality",
+   "subject": {
+    "source": "S1/turn-1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines",
+     "byte_start": 3741,
+     "byte_end_exclusive": 3743,
+     "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "presence": "value",
+     "json_type": "array"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/final_newline",
+     "byte_start": 3720,
+     "byte_end_exclusive": 3724,
+     "token_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+     "presence": "value",
+     "json_type": "boolean",
+     "lexeme": "true"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "EVIDENCE E-1, E-5"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#n07",
+   "expected": {
+    "variant": "RawOriginInventory",
+    "origin_count": 0,
+    "origins": [],
+    "unreadable": [],
+    "non_attempt": [],
+    "final_newline": true,
+    "inventory": "turn-1 log referenced and empty"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "zero origins"
+    ],
+    "negative": [
+     {
+      "mutation": "invented attempt",
+      "intended_predicate": "E-1 totality"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "N07/E2",
+   "family": "raw_E_identity_cardinality",
+   "subject": {
+    "source": "S1/turn-1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines",
+     "byte_start": 3741,
+     "byte_end_exclusive": 3743,
+     "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "presence": "value",
+     "json_type": "array"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "LOGICAL-PRIMARY rev2"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#n07",
+   "expected": {
+    "variant": "EvidenceClassCardinality",
+    "reservation_classes": [],
+    "settlement_classes": []
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "none"
+    ],
+    "negative": [
+     {
+      "mutation": "class added",
+      "intended_predicate": "cardinality"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "N07/E3",
+   "family": "raw_E_identity_cardinality",
+   "subject": {
+    "session": "S1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/inputs/sessions/0/launch/model",
+     "byte_start": 3423,
+     "byte_end_exclusive": 3443,
+     "token_sha256": "d7b73e09e6c232b56aa266c1e4d43a5aa09c3ed551381d91c3817f91295349bb",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "openai/gpt-6-astra"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "EVIDENCE MC-1"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#n07",
+   "expected": {
+    "variant": "IdentityStates",
+    "pinned": {
+     "family": "openai",
+     "model_id": "gpt-6-astra"
+    },
+    "usage_observations": []
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "no observations"
+    ],
+    "negative": [
+     {
+      "mutation": "valuation invented",
+      "intended_predicate": "E-2"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "N07/NS1",
+   "family": "namespace_grants",
+   "subject": {
+    "source": "S1/turn-1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines",
+     "byte_start": 3741,
+     "byte_end_exclusive": 3743,
+     "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "presence": "value",
+     "json_type": "array"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "BASE",
+     "section": "\u00a72-\u00a73"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#n07",
+   "expected": {
+    "variant": "NamespaceApplication",
+    "applicable": false,
+    "reason": "no raw origins, so no initial reference contract or grant is required"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "no initial contracts"
+    ],
+    "negative": [
+     {
+      "mutation": "declared scope covering nonexistent origin",
+      "intended_predicate": "INITIAL-REFERENCE origin inventory binding"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "N07/PM1",
+   "family": "primary_membership_validity_exact_F",
+   "subject": {
+    "source": "S1/turn-1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines",
+     "byte_start": 3741,
+     "byte_end_exclusive": 3743,
+     "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "presence": "value",
+     "json_type": "array"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "LOGICAL-PRIMARY"
+    },
+    {
+     "policy_id": "CK",
+     "section": "WHOLE-COVERAGE"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#n07",
+   "expected": {
+    "variant": "PrimaryCoverage",
+    "applicable": false,
+    "primary_obligations": [],
+    "accepted_coverage": []
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "none"
+    ],
+    "negative": [
+     {
+      "mutation": "attempt inferred from admission row",
+      "intended_predicate": "attempts come only from evidence lines"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "N07/VA1",
+   "family": "valuation_retained_amounts",
+   "subject": {
+    "source": "S1/turn-1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines",
+     "byte_start": 3741,
+     "byte_end_exclusive": 3743,
+     "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "presence": "value",
+     "json_type": "array"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "VALUATION"
+    },
+    {
+     "policy_id": "CK",
+     "section": "X-DECISION"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#n07",
+   "expected": {
+    "variant": "RetainedComponents",
+    "applicable": false,
+    "components": [],
+    "units": []
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "no money"
+    ],
+    "negative": [
+     {
+      "mutation": "max_usd treated as spend",
+      "intended_predicate": "FB-2: declared cap is not spend or bound"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "N07/T1",
+   "family": "T_ownership_candidates_lifecycle_placement",
+   "subject": {
+    "session": "S1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/inputs/sessions/0/lifecycle",
+     "byte_start": 3491,
+     "byte_end_exclusive": 3664,
+     "token_sha256": "924281051f0e76155096376dd990fd304a24aca24ec5dcb4738eca068ecac047",
+     "presence": "value",
+     "json_type": "array"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/inputs/sessions/0/lifecycle/0/at",
+     "byte_start": 3512,
+     "byte_end_exclusive": 3534,
+     "token_sha256": "b31f04a43f1b490762781c4ede3d044f008696aed570770bda5fa0857d0b7de2",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:00:10Z"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/inputs/reference_time",
+     "byte_start": 3304,
+     "byte_end_exclusive": 3326,
+     "token_sha256": "a1359231eec5e473f993cee1c7181caf272627cfbf575f464781eaee718966af",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T07:00:00Z"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/inputs/sessions/0/lifecycle/1/at",
+     "byte_start": 3604,
+     "byte_end_exclusive": 3626,
+     "token_sha256": "2ac2237979eecbe5b9bc0c3fe0a6d50b4e879c9ac99e408add1cfdc315c91e59",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:20:00Z"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a710 L-1..L-6"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#n07",
+   "expected": {
+    "variant": "SessionLifecycle",
+    "alias": "S1",
+    "state": "retired",
+    "at": "2026-11-10T06:20:00Z",
+    "reopened": false,
+    "clock": "trusted",
+    "checks": {
+     "L1_rows_monotone": true,
+     "L2_rows_not_before_turn_start": true,
+     "L3_rows_not_after_retire": true,
+     "L6_no_row_after_reference_time": true
+    }
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "accept lifecycle retired/reopened false/clock trusted"
+    ],
+    "negative": [
+     {
+      "mutation": "supplied lifecycle state open (or reopened true) with unchanged rows",
+      "intended_predicate": "L-4/L-5 lifecycle derivation"
+     },
+     {
+      "mutation": "move a proxy row after reference_time without updating clock",
+      "intended_predicate": "L-6 clock"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "N07/T2",
+   "family": "T_ownership_candidates_lifecycle_placement",
+   "subject": {
+    "evaluation": "default"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/evaluations/0/objectives/0/admissions/0/source",
+     "byte_start": 2079,
+     "byte_end_exclusive": 2110,
+     "token_sha256": "bfd7683e2a9b394ede21e89560d95246b7e960ff71d0c81b8a0c240cad10c3a5",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "role_host_objective_admission"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/evaluations/0/objectives/0/admissions/0/rows/0/event",
+     "byte_start": 1874,
+     "byte_end_exclusive": 1895,
+     "token_sha256": "192ceb34c18c41c155675d608fe2faed2e3641e6959b8d50d86c6b2ccb8e73f0",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "objective_admission"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/evaluations/0/objectives/0/admissions/0/rows/0/session_id",
+     "byte_start": 1945,
+     "byte_end_exclusive": 1983,
+     "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "00000000-0000-4000-8000-0000000000c1"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a711.1 O-1"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#n07",
+   "expected": {
+    "variant": "Ownership",
+    "attempts": [],
+    "admitted_sessions": {
+     "00000000-0000-4000-8000-0000000000c1": {
+      "objective": "o",
+      "admission": "legacy:00000000-0000-4000-8000-0000000000c1 objective_admission row"
+     }
+    }
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "no attempts; session admitted to o"
+    ],
+    "negative": [
+     {
+      "mutation": "placement/ownership records for nonexistent attempts",
+      "intended_predicate": "T totality"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "N07/G1",
+   "family": "gate_commitment_provisionality",
+   "subject": {
+    "admission": "legacy:00000000-0000-4000-8000-0000000000c1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/profile",
+     "byte_start": 3886,
+     "byte_end_exclusive": 3904,
+     "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "current_producer"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/inputs/gates",
+     "presence": "absent"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/trusted_fixture_inputs",
+     "presence": "absent"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a72.3; Revision6"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#n07",
+   "expected": {
+    "variant": "GateQualification",
+    "qualified": false,
+    "reasons": [
+     "NoGateEvidence"
+    ],
+    "provenance": "none"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "NoGateEvidence"
+    ],
+    "negative": [
+     {
+      "mutation": "retirement treated as gate",
+      "intended_predicate": "L-7"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "N07/G2",
+   "family": "gate_commitment_provisionality",
+   "subject": {
+    "admission": "legacy:00000000-0000-4000-8000-0000000000c1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/evaluations/0/objectives/0/admissions/0/rows/0/max_usd",
+     "byte_start": 1917,
+     "byte_end_exclusive": 1920,
+     "token_sha256": "1e9d7c27c8bbc8ddf0055c93e064a62fa995d177fee28cc8fa949bc8a4db06f4",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "0.8"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/inputs/sessions/0/lifecycle/1/at",
+     "byte_start": 3604,
+     "byte_end_exclusive": 3626,
+     "token_sha256": "2ac2237979eecbe5b9bc0c3fe0a6d50b4e879c9ac99e408add1cfdc315c91e59",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:20:00Z"
+    },
+    "N07/T1",
+    "N07/G1"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a711.1 O-1 (legacy row = admission record)"
+    },
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a72.3 producer fact; MONEY consequence Q10/OQ-1"
+    },
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a712.3 A-2, A-3, A-5"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#n07",
+   "expected": {
+    "variant": "CommitmentState",
+    "admission_id": "legacy:00000000-0000-4000-8000-0000000000c1",
+    "cap": {
+     "nano": "800000000"
+    },
+    "state": "retired_resumable",
+    "committed": {
+     "nano": "800000000"
+    },
+    "derivation": "max(0, 800000000 - 0)",
+    "kind": "at_least",
+    "blocking_must_include": [
+     "UnenforcedCommitment"
+    ],
+    "interpretation": "Legacy objective_admission row is the session admission record (O-1), so A-3 Launched applies; the alternative pending-like reading (A-2 committed in full) yields the same committed 800000000 at_least. Only the state label depends on this reading."
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "retired_resumable AtLeast800000000"
+    ],
+    "negative": [
+     {
+      "mutation": "released/retired because the session retired with no gate",
+      "intended_predicate": "L-7 / A-3"
+     },
+     {
+      "mutation": "committed 0 because no spend",
+      "intended_predicate": "A-3 ceiling minus owned high"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "N07/G3",
+   "family": "gate_commitment_provisionality",
+   "subject": {
+    "evaluation": "default",
+    "objective": "o"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "N07/G2"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a712.1"
+    },
+    {
+     "policy_id": "CK",
+     "section": "R-FINANCIAL-PROVISIONAL rev2"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#n07",
+   "expected": {
+    "variant": "ObjectiveStanding",
+    "status": "not_established",
+    "reasons_must_include": [
+     "UnenforcedCommitment"
+    ],
+    "provisional": true,
+    "owned_closed": {
+     "kind": "exact",
+     "nano": "0"
+    },
+    "owned_outstanding": {
+     "kind": "exact",
+     "nano": "0"
+    },
+    "predecessor_obligations": {
+     "kind": "exact",
+     "nano": "0"
+    }
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "not_established provisional"
+    ],
+    "negative": [
+     {
+      "mutation": "established because no spend and session retired",
+      "intended_predicate": "MONEY consequence: retired session can resume"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "N07/G4",
+   "family": "gate_commitment_provisionality",
+   "subject": {
+    "evaluation": "default",
+    "admission_request": "o"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/evaluations/0/admission_request/new",
+     "byte_start": 214,
+     "byte_end_exclusive": 225,
+     "token_sha256": "6a55d1f296f1ae250e5b9381010d0b369b2c4c2ebe66ffbbc8ee139f6259add7",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "500000000"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/evaluations/0/objectives/0/limit",
+     "byte_start": 2165,
+     "byte_end_exclusive": 2177,
+     "token_sha256": "bdb588ee73547b3eafede9d045805cb5a4a9e97271207895bb4c8b17968b2c78",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "1000000000"
+    },
+    "N07/G2"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a712.4 step 3"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#n07",
+   "expected": {
+    "variant": "AdmissionDecision",
+    "objective": "o",
+    "known": {
+     "nano": "1300000000"
+    },
+    "derivation": "0+0+0+800000000+500000000",
+    "decision": "refused",
+    "step": "known_over_limit"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "refused"
+    ],
+    "negative": [
+     {
+      "mutation": "admit ignoring retired_resumable commitment",
+      "intended_predicate": "\u00a712.4 step 3"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "N07/CO1",
+   "family": "finite_continuity_order",
+   "subject": {
+    "case": "N07-control-retired-legacy"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/N07-control-retired-legacy.json",
+     "file_sha256": "510043ae30b9d21bdf8dff026dcbe3024de8c5302c58cdcfa49794df41ca39e1",
+     "pointer": "/evaluations",
+     "byte_start": 171,
+     "byte_end_exclusive": 2364,
+     "token_sha256": "af1c34949a1986b869cdc53be88f1c1d67a6b055e333e9693f01cfd63e28a497",
+     "presence": "value",
+     "json_type": "array"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "CONTINUITY rev1"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#n07",
+   "expected": {
+    "variant": "FiniteContinuity",
+    "continuity_applicable": false,
+    "reason": "no origins, no predecessor subject, single evaluation",
+    "cross_evaluation_equalities": []
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "inapplicable"
+    ],
+    "negative": [
+     {
+      "mutation": "n/a",
+      "intended_predicate": "n/a"
+     }
+    ]
+   },
+   "findings": []
+  }
+ ],
+ "family_status": {
+  "raw_E_identity_cardinality": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "N07/E1",
+    "N07/E2",
+    "N07/E3"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "namespace_grants": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "N07/NS1"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "primary_membership_validity_exact_F": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "N07/PM1"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "valuation_retained_amounts": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "N07/VA1"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "T_ownership_candidates_lifecycle_placement": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "N07/T1",
+    "N07/T2"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "gate_commitment_provisionality": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "N07/G1",
+    "N07/G2",
+    "N07/G3",
+    "N07/G4"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "finite_continuity_order": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "N07/CO1"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  }
+ },
+ "scope_lows": [
+  {
+   "scope_id": "N07-control-retired-legacy/default/o/owned_closed",
+   "evaluation": "default",
+   "objective": "o",
+   "label": "owned_closed",
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "N07/E1"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "SUPPORTED-LOW"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#n07",
+   "expected_low": {
+    "owned_unit_origin_sets": [],
+    "U": [],
+    "seed": [],
+    "slots": [],
+    "single_floor": {
+     "nano": "0"
+    },
+    "independent_floor": {
+     "nano": "0"
+    },
+    "credits": [],
+    "selected_low": {
+     "nano": "0"
+    },
+    "credit_mode": "none",
+    "basis": "none"
+   },
+   "high": {
+    "status": {
+     "kind": "DerivedNominal"
+    },
+    "expected": {
+     "kind": "exact",
+     "nano": "0",
+     "basis_histogram": {}
+    }
+   },
+   "consequence_if_admitted": null
+  },
+  {
+   "scope_id": "N07-control-retired-legacy/default/o/owned_outstanding",
+   "evaluation": "default",
+   "objective": "o",
+   "label": "owned_outstanding",
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "N07/E1"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "SUPPORTED-LOW"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#n07",
+   "expected_low": {
+    "owned_unit_origin_sets": [],
+    "U": [],
+    "seed": [],
+    "slots": [],
+    "single_floor": {
+     "nano": "0"
+    },
+    "independent_floor": {
+     "nano": "0"
+    },
+    "credits": [],
+    "selected_low": {
+     "nano": "0"
+    },
+    "credit_mode": "none",
+    "basis": "none"
+   },
+   "high": {
+    "status": {
+     "kind": "DerivedNominal"
+    },
+    "expected": {
+     "kind": "exact",
+     "nano": "0",
+     "basis_histogram": {}
+    }
+   },
+   "consequence_if_admitted": null
+  }
+ ],
+ "excluded_channels": [
+  {
+   "channel": "K attempt finding codes",
+   "reason": "Not one of the seven families; canonical vocabulary only partially present."
+  }
+ ],
+ "reuse": []
+}

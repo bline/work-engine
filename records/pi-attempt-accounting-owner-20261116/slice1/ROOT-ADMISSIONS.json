@@ -1,0 +1,130 @@
+{
+ "schema": "pi-accounting-root-admissions/1",
+ "root": "01a1e569-2805-72ff-b837-03d1577c405d",
+ "decision": "ROOT-DECISIONS-R1.json#D-SCOPE",
+ "standing": "conditional_fixture test-harness premises only; no producer authority; consumers bind this file outside the subject",
+ "entries": [
+  {
+   "case_id": "A06-reservation-usage-null-status-no-id",
+   "case_file_sha256": "98e3ff4fda648b37b7fe034a63410112d3c1ef96aa1287a6790a9bd291ab1cab",
+   "premise_id": "A06/PREM-SCOPE",
+   "guarantee_kind": "initial_reference_scope",
+   "admission": "conditional_fixture",
+   "reference_namespace": "dollar_ticket",
+   "duplicate_rule": "same_origin_only",
+   "covered_origins": [
+    {
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "65d28ad0f9c799fcc9fd93d6dc4bc0fca171e8c02d8c0a66ad062ec737ebf458"
+    },
+    {
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "9f13ba6075a8fc829ad72d701e3f36c49a83b668a109b2b96c5577f4467a7e2e"
+    }
+   ],
+   "raw_consistency_claim": "A06/NS2",
+   "entry_id": "ADM-517658b32a59c093"
+  },
+  {
+   "case_id": "P130-R07-closed-unresolved-predecessor-constrains-successor",
+   "case_file_sha256": "727b585f9e510cca7a7bdda17a03d8e880159a58d740738de40663326243b817",
+   "premise_id": "P130R07/PREM-SCOPE",
+   "guarantee_kind": "initial_reference_scope",
+   "admission": "conditional_fixture",
+   "reference_namespace": "dollar_ticket",
+   "duplicate_rule": "same_origin_only",
+   "covered_origins": [
+    {
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "70f7e415dc1a71b54acc58117be26d6107a68ec0a7ed057982c6a8653d59549a"
+    },
+    {
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "eecfb62cd04be7e0022dedad12a42f7acbae7456acff058e55b365c1914f874a"
+    }
+   ],
+   "raw_consistency_claim": "P130R07/NS2",
+   "entry_id": "ADM-aecb42981eb14b49"
+  },
+  {
+   "case_id": "P132-CP-closed-predecessor-outstanding",
+   "case_file_sha256": "7c057e10f8b0da01d52a27468c4265a47045c16b071afae62840ad0e559521f3",
+   "premise_id": "P132CP/PREM-SCOPE",
+   "guarantee_kind": "initial_reference_scope",
+   "admission": "conditional_fixture",
+   "reference_namespace": "dollar_ticket",
+   "duplicate_rule": "same_origin_only",
+   "covered_origins": [
+    {
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "70f7e415dc1a71b54acc58117be26d6107a68ec0a7ed057982c6a8653d59549a"
+    }
+   ],
+   "raw_consistency_claim": "P132CP/NS2",
+   "entry_id": "ADM-ba3397134fb5085f"
+  },
+  {
+   "case_id": "P132-FG-VC15-gated",
+   "case_file_sha256": "c252ee80d0f4353a4897af1a1fbea33fd595f345a866fc7f8d8bd2c3a55c89db",
+   "premise_id": "P132FG/PREM-SCOPE",
+   "guarantee_kind": "initial_reference_scope",
+   "admission": "conditional_fixture",
+   "reference_namespace": "dollar_ticket",
+   "duplicate_rule": "same_origin_only",
+   "covered_origins": [
+    {
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "70f7e415dc1a71b54acc58117be26d6107a68ec0a7ed057982c6a8653d59549a"
+    },
+    {
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "5cc14fe7d2a745fa3fd69bd9a10804ffdae6ff3cb8c3c56892344a839dbbce22"
+    }
+   ],
+   "raw_consistency_claim": "P132FG/NS2",
+   "entry_id": "ADM-d1c1b40a77137179"
+  },
+  {
+   "case_id": "P9-claimed-charge-above-reservation",
+   "case_file_sha256": "5623c428ae3d946f44034b8e0cda5e28a9a185171148d3190b26735d777af04b",
+   "premise_id": "P9/PREM-SCOPE",
+   "guarantee_kind": "initial_reference_scope",
+   "admission": "conditional_fixture",
+   "reference_namespace": "dollar_ticket",
+   "duplicate_rule": "same_origin_only",
+   "covered_origins": [
+    {
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "71e1c0ecb5b321cf500dbf8e44151042511977362d566b9e9b1c1d8c40333b98"
+    },
+    {
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "58fa8807db35d0d11208a4512576fcdb42c06705f468d62bde93955c2cd8e823"
+    }
+   ],
+   "raw_consistency_claim": "P9/NS2",
+   "entry_id": "ADM-9c3b5c9f50c37dde"
+  },
+  {
+   "case_id": "V01-usage-settlement-other-response-model",
+   "case_file_sha256": "6d921ac7a9210a93b7814278261bf41a59a4abdc0cf3b96c3571b72a6e0dafe7",
+   "premise_id": "V01/PREM-SCOPE",
+   "guarantee_kind": "initial_reference_scope",
+   "admission": "conditional_fixture",
+   "reference_namespace": "dollar_ticket",
+   "duplicate_rule": "same_origin_only",
+   "covered_origins": [
+    {
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "170a83e49c141394ac3c3be091c2db0a930e9f93b201b9621151fdd493a68acb"
+    },
+    {
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "74c97e6a03b5fbf11edeb3a3974e0264ca0bcf77d768802a7ac6deb6a1147ab2"
+    }
+   ],
+   "raw_consistency_claim": "V01/NS2",
+   "entry_id": "ADM-c61720f782682af9"
+  }
+ ]
+}

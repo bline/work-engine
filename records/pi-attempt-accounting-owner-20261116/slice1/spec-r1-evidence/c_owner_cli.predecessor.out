@@ -1,0 +1,53 @@
+{
+ "status": "FAIL",
+ "results": [
+  {
+   "label": "unmodified canonical (S forwards C reference)",
+   "ok": true,
+   "rc": 0,
+   "stderr": ""
+  },
+  {
+   "label": "V-PRESENCE-1 constructs SettlementDecision.valid (report counterexample)",
+   "ok": false,
+   "rc": 0,
+   "stderr": ""
+  },
+  {
+   "label": "S-zero-zero (S) constructs C-owned decision",
+   "ok": false,
+   "rc": 1,
+   "stderr": "S cannot construct C-validity decision"
+  },
+  {
+   "label": "F-REPLACEMENT-1 (F) constructs C-owned decision",
+   "ok": false,
+   "rc": 1,
+   "stderr": "replacement result/reason disagreement"
+  },
+  {
+   "label": "V-PRESENCE-9 (V) constructs C-owned decision",
+   "ok": false,
+   "rc": 0,
+   "stderr": ""
+  },
+  {
+   "label": "S-TIME-1 (S) constructs C-owned decision",
+   "ok": false,
+   "rc": 1,
+   "stderr": "S cannot construct C-validity decision"
+  },
+  {
+   "label": "C-KEY-1 constructs SettlementDecision.valid (positive)",
+   "ok": true,
+   "rc": 0,
+   "stderr": ""
+  },
+  {
+   "label": "stage V declares settlement_validity",
+   "ok": false,
+   "rc": 0,
+   "stderr": ""
+  }
+ ]
+}

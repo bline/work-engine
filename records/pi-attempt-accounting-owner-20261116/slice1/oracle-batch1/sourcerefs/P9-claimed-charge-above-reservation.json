@@ -1,0 +1,851 @@
+{
+ "file": "corpus/cases/P9-claimed-charge-above-reservation.json",
+ "file_sha256": "5623c428ae3d946f44034b8e0cda5e28a9a185171148d3190b26735d777af04b",
+ "inputs_canonical_sha256": "a5548213e8f4d20a526466ad2862928917e353984d175573d48e0a5eeae5720c",
+ "lines": [
+  {
+   "byte_end_exclusive": 5900,
+   "byte_start": 5739,
+   "fields": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:00Z",
+     "presence": "value"
+    },
+    "/bound_basis": {
+     "json_type": "string",
+     "lexeme": "bytes",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "usd_reserved",
+     "presence": "value"
+    },
+    "/input_bound": {
+     "json_type": "number",
+     "lexeme": "6000",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/reserved_usd": {
+     "json_type": "number",
+     "lexeme": "0.4",
+     "presence": "value"
+    },
+    "/rid": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    }
+   },
+   "origin_id": "S1/turn-1:1",
+   "parse_state": "object",
+   "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+   "raw_utf8_length": 139,
+   "raw_utf8_sha256": "71e1c0ecb5b321cf500dbf8e44151042511977362d566b9e9b1c1d8c40333b98",
+   "token_sha256": "7b8f136d81bd6970c14ad388102c7fe672ce77e973b31a2b0994407415fde5ec"
+  },
+  {
+   "byte_end_exclusive": 6496,
+   "byte_start": 5909,
+   "fields": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:02Z",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "request",
+     "presence": "value"
+    },
+    "/http_status": {
+     "json_type": "number",
+     "lexeme": "200",
+     "presence": "value"
+    },
+    "/model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/observed_tier": {
+     "json_type": "string",
+     "lexeme": "default",
+     "presence": "value"
+    },
+    "/requested_tier": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/response_id": {
+     "json_type": "string",
+     "lexeme": "resp_1",
+     "presence": "value"
+    },
+    "/response_model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/seconds": {
+     "json_type": "number",
+     "lexeme": "1.0",
+     "presence": "value"
+    },
+    "/terminal": {
+     "json_type": "string",
+     "lexeme": "response.completed",
+     "presence": "value"
+    },
+    "/usage": {
+     "json_type": "object",
+     "members": [
+      "input_tokens",
+      "output_tokens",
+      "cached_tokens",
+      "cache_write_tokens",
+      "reasoning_tokens"
+     ],
+     "presence": "value"
+    },
+    "/usage/cache_write_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usage/cached_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usage/input_tokens": {
+     "json_type": "number",
+     "lexeme": "1000",
+     "presence": "value"
+    },
+    "/usage/output_tokens": {
+     "json_type": "number",
+     "lexeme": "100",
+     "presence": "value"
+    },
+    "/usage/reasoning_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usd": {
+     "json_type": "object",
+     "members": [
+      "rid",
+      "reserved_usd",
+      "charged_usd",
+      "charge_basis",
+      "session_spent_usd",
+      "multiplier_floor"
+     ],
+     "presence": "value"
+    },
+    "/usd/charge_basis": {
+     "json_type": "string",
+     "lexeme": "usage",
+     "presence": "value"
+    },
+    "/usd/charged_usd": {
+     "json_type": "number",
+     "lexeme": "0.7",
+     "presence": "value"
+    },
+    "/usd/multiplier_floor": {
+     "json_type": "number",
+     "lexeme": "0.0",
+     "presence": "value"
+    },
+    "/usd/reserved_usd": {
+     "json_type": "number",
+     "lexeme": "0.5",
+     "presence": "value"
+    },
+    "/usd/rid": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/usd/session_spent_usd": {
+     "json_type": "number",
+     "lexeme": "0.7",
+     "presence": "value"
+    }
+   },
+   "origin_id": "S1/turn-1:2",
+   "parse_state": "object",
+   "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+   "raw_utf8_length": 521,
+   "raw_utf8_sha256": "58fa8807db35d0d11208a4512576fcdb42c06705f468d62bde93955c2cd8e823",
+   "token_sha256": "7f1b189d040e4cd00112dbb11aa2033216cf009458aa947fe0b4e67503ce099b"
+  }
+ ],
+ "log_final_newline": {
+  "S1/turn-1": true
+ },
+ "tokens": {
+  "/ambiguity": {
+   "byte_end_exclusive": 20,
+   "byte_start": 16,
+   "json_type": "null",
+   "lexeme": "null",
+   "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  },
+  "/case_id": {
+   "byte_end_exclusive": 71,
+   "byte_start": 34,
+   "json_type": "string",
+   "lexeme": "P9-claimed-charge-above-reservation",
+   "token_sha256": "e12e03a8cd2b9bff2b0f983e52d2b6d2fd105c46d062d157cd1851b7a10f9e77"
+  },
+  "/class": {
+   "byte_end_exclusive": 94,
+   "byte_start": 83,
+   "json_type": "string",
+   "lexeme": "malformed",
+   "token_sha256": "b12a2a785015b5634ff97af4b8e43ef8071bed8b42c42b5bfc628d19e5100067"
+  },
+  "/contract": {
+   "byte_end_exclusive": 140,
+   "byte_start": 109,
+   "json_type": "string",
+   "lexeme": "pi-accounting-contract/1.7-s1",
+   "token_sha256": "67f788fb6397af3ef74d42c6baea23eebce8ecf9de0e6e577e02a9c1b644402d"
+  },
+  "/controls": {
+   "byte_end_exclusive": 192,
+   "byte_start": 155,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "2a2cccfa9c94512ec22cf014b13bcaa59167f2f150387f0db55aad6e5363494e"
+  },
+  "/controls/0": {
+   "byte_end_exclusive": 189,
+   "byte_start": 159,
+   "json_type": "string",
+   "lexeme": "VC01-openai-usage-settlement",
+   "token_sha256": "6876474b8e97304e14e455e810160999c480546a633c16beebcbdb0dfdfa3f59"
+  },
+  "/evaluations": {
+   "byte_end_exclusive": 2689,
+   "byte_start": 210,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "937c004993df9f8e0716525c2b92f366fae3841db669a523e74946edffccf9df"
+  },
+  "/evaluations/0": {
+   "byte_end_exclusive": 2686,
+   "byte_start": 214,
+   "json_type": "object",
+   "members": [
+    "admission_request",
+    "expected",
+    "name",
+    "objectives"
+   ],
+   "token_sha256": "db9526781280cbf5d2c3f0780930da571da7cb2b2b1954a0fe2821a8bf691919"
+  },
+  "/evaluations/0/admission_request": {
+   "byte_end_exclusive": 291,
+   "byte_start": 240,
+   "json_type": "object",
+   "members": [
+    "new",
+    "objective"
+   ],
+   "token_sha256": "a81928e466bf9b9068d7f1d7bde47ddb725e4b3437c87585708b483ae64850f6"
+  },
+  "/evaluations/0/admission_request/new": {
+   "byte_end_exclusive": 264,
+   "byte_start": 253,
+   "json_type": "string",
+   "lexeme": "100000000",
+   "token_sha256": "490cf7575da10dc49f2b973c322411b18ff6b65018411050f5288306f8db8207"
+  },
+  "/evaluations/0/admission_request/objective": {
+   "byte_end_exclusive": 286,
+   "byte_start": 283,
+   "json_type": "string",
+   "lexeme": "o",
+   "token_sha256": "f83c7a6ef728085a83084f105bd7ccd74b8a9d671a80e1a348393eb570d89441"
+  },
+  "/evaluations/0/name": {
+   "byte_end_exclusive": 1913,
+   "byte_start": 1904,
+   "json_type": "string",
+   "lexeme": "default",
+   "token_sha256": "1080a60800d9e5bddc69f51489c636a776bacaadb5368f46db4aa0947c67e3ba"
+  },
+  "/evaluations/0/objectives": {
+   "byte_end_exclusive": 2682,
+   "byte_start": 1932,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "c954b87c7c7b0eca133a7308ebb029b8c435b855e97e5900288d16d89d939b36"
+  },
+  "/evaluations/0/objectives/0": {
+   "byte_end_exclusive": 2677,
+   "byte_start": 1938,
+   "json_type": "object",
+   "members": [
+    "admissions",
+    "closed_at",
+    "limit",
+    "objective",
+    "predecessor",
+    "started_at",
+    "tree_sessions"
+   ],
+   "token_sha256": "fd8ce7924b0983c18942bbec5b9b3bad90b6e196dd00bf3efe9cbc474239910c"
+  },
+  "/evaluations/0/objectives/0/admissions": {
+   "byte_end_exclusive": 2450,
+   "byte_start": 1959,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "a892ae14e06b12f366762c93a4960fefae540a818ab4ea274d68cef372997dbb"
+  },
+  "/evaluations/0/objectives/0/admissions/0": {
+   "byte_end_exclusive": 2443,
+   "byte_start": 1967,
+   "json_type": "object",
+   "members": [
+    "admission_id",
+    "rows",
+    "session",
+    "source"
+   ],
+   "token_sha256": "08f89fd0184df35c1032d0a19a727941f45778d0f6a64fd5daadc7b29eaf103f"
+  },
+  "/evaluations/0/objectives/0/admissions/0/admission_id": {
+   "byte_end_exclusive": 1996,
+   "byte_start": 1992,
+   "json_type": "string",
+   "lexeme": "a1",
+   "token_sha256": "e4973d8f15475ab9be4cd6b122a940299335dd27de97038665f1cfa176dc2e88"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows": {
+   "byte_end_exclusive": 2349,
+   "byte_start": 2013,
+   "json_type": "array",
+   "members": [
+    "0",
+    "1"
+   ],
+   "token_sha256": "3ae4ee0adf820feb7012a6deb16ce31bb946d6d3d47587f2603ed224373f3491"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/0": {
+   "byte_end_exclusive": 2157,
+   "byte_start": 2023,
+   "json_type": "object",
+   "members": [
+    "admission_id",
+    "at",
+    "event",
+    "max_usd"
+   ],
+   "token_sha256": "5e80d5c5d0dcce27bd877b51fc863be3197c4b9a3619fa2d3f9b9b951d981a32"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/0/admission_id": {
+   "byte_end_exclusive": 2054,
+   "byte_start": 2050,
+   "json_type": "string",
+   "lexeme": "a1",
+   "token_sha256": "e4973d8f15475ab9be4cd6b122a940299335dd27de97038665f1cfa176dc2e88"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/0/at": {
+   "byte_end_exclusive": 2093,
+   "byte_start": 2071,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:00:05Z",
+   "token_sha256": "4836f63160f4021c300f83dbdca38ad838de2c5f81d131d559cb4c65e3a61d46"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/0/event": {
+   "byte_end_exclusive": 2122,
+   "byte_start": 2113,
+   "json_type": "string",
+   "lexeme": "pending",
+   "token_sha256": "12adac54ac6f7140109391b670b3cbcd51f083d8f5ee62ce26857c794ed67d36"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/0/max_usd": {
+   "byte_end_exclusive": 2147,
+   "byte_start": 2144,
+   "json_type": "number",
+   "lexeme": "1.0",
+   "token_sha256": "d0ff5974b6aa52cf562bea5921840c032a860a91a3512f7fe8f768f6bbe005f6"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/1": {
+   "byte_end_exclusive": 2340,
+   "byte_start": 2167,
+   "json_type": "object",
+   "members": [
+    "admission_id",
+    "at",
+    "event",
+    "session_id"
+   ],
+   "token_sha256": "5d5ed4468c854801c989fbda8bbd838901b3e5860a4c19b70beea1c06cca9d0f"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/1/admission_id": {
+   "byte_end_exclusive": 2198,
+   "byte_start": 2194,
+   "json_type": "string",
+   "lexeme": "a1",
+   "token_sha256": "e4973d8f15475ab9be4cd6b122a940299335dd27de97038665f1cfa176dc2e88"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/1/at": {
+   "byte_end_exclusive": 2237,
+   "byte_start": 2215,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:00:10Z",
+   "token_sha256": "b31f04a43f1b490762781c4ede3d044f008696aed570770bda5fa0857d0b7de2"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/1/event": {
+   "byte_end_exclusive": 2267,
+   "byte_start": 2257,
+   "json_type": "string",
+   "lexeme": "launched",
+   "token_sha256": "0f6b9278e2bb51ff2d89c92f2f1d72fdf555e884a7a46e4e0528191ae2d3f46d"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/1/session_id": {
+   "byte_end_exclusive": 2330,
+   "byte_start": 2292,
+   "json_type": "string",
+   "lexeme": "00000000-0000-4000-8000-0000000000c1",
+   "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c"
+  },
+  "/evaluations/0/objectives/0/admissions/0/session": {
+   "byte_end_exclusive": 2407,
+   "byte_start": 2369,
+   "json_type": "string",
+   "lexeme": "00000000-0000-4000-8000-0000000000c1",
+   "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c"
+  },
+  "/evaluations/0/objectives/0/admissions/0/source": {
+   "byte_end_exclusive": 2435,
+   "byte_start": 2426,
+   "json_type": "string",
+   "lexeme": "journal",
+   "token_sha256": "6b53b8079bacd772318e881d1b3f2d1176c5ee7809e52f74586adceafff3a27d"
+  },
+  "/evaluations/0/objectives/0/closed_at": {
+   "byte_end_exclusive": 2474,
+   "byte_start": 2470,
+   "json_type": "null",
+   "lexeme": "null",
+   "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  },
+  "/evaluations/0/objectives/0/limit": {
+   "byte_end_exclusive": 2502,
+   "byte_start": 2490,
+   "json_type": "string",
+   "lexeme": "1000000000",
+   "token_sha256": "bdb588ee73547b3eafede9d045805cb5a4a9e97271207895bb4c8b17968b2c78"
+  },
+  "/evaluations/0/objectives/0/objective": {
+   "byte_end_exclusive": 2525,
+   "byte_start": 2522,
+   "json_type": "string",
+   "lexeme": "o",
+   "token_sha256": "f83c7a6ef728085a83084f105bd7ccd74b8a9d671a80e1a348393eb570d89441"
+  },
+  "/evaluations/0/objectives/0/predecessor": {
+   "byte_end_exclusive": 2551,
+   "byte_start": 2547,
+   "json_type": "null",
+   "lexeme": "null",
+   "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  },
+  "/evaluations/0/objectives/0/started_at": {
+   "byte_end_exclusive": 2594,
+   "byte_start": 2572,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:00:00Z",
+   "token_sha256": "9b9e53bacf50073b057d6e27a753cd3daec461d599689c15898c840d302aee84"
+  },
+  "/evaluations/0/objectives/0/tree_sessions": {
+   "byte_end_exclusive": 2671,
+   "byte_start": 2618,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "fd6451260f5ac3dde976617a74a7ad032a860009faf89166f69243a8f3da7e6f"
+  },
+  "/evaluations/0/objectives/0/tree_sessions/0": {
+   "byte_end_exclusive": 2664,
+   "byte_start": 2626,
+   "json_type": "string",
+   "lexeme": "00000000-0000-4000-8000-0000000000c1",
+   "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c"
+  },
+  "/findings": {
+   "byte_end_exclusive": 4515,
+   "byte_start": 4498,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "170ef4991a06875b55516b26d0ddc7e7637dca574dee801fb385e9ba695617cb"
+  },
+  "/findings/0": {
+   "byte_end_exclusive": 4512,
+   "byte_start": 4502,
+   "json_type": "string",
+   "lexeme": "P1.26-P9",
+   "token_sha256": "fff93825d72974cf169bc730087f5eb6d41e1e53c495abfb3388f7687f283dc7"
+  },
+  "/group": {
+   "byte_end_exclusive": 4537,
+   "byte_start": 4527,
+   "json_type": "string",
+   "lexeme": "P1.26-P9",
+   "token_sha256": "fff93825d72974cf169bc730087f5eb6d41e1e53c495abfb3388f7687f283dc7"
+  },
+  "/inputs": {
+   "byte_end_exclusive": 6587,
+   "byte_start": 5059,
+   "json_type": "object",
+   "members": [
+    "rates",
+    "reference_time",
+    "sessions"
+   ],
+   "token_sha256": "3884fb693575c5f6da34c31da888b091c93c78a260e728813e225a0b47c1eae8"
+  },
+  "/inputs/rates": {
+   "byte_end_exclusive": 5271,
+   "byte_start": 5072,
+   "json_type": "object",
+   "members": [
+    "anthropic_api_rates.json",
+    "openai_api_rates.json"
+   ],
+   "token_sha256": "4110b84fd7cb2e328452c936287fb6f8f2fe911d905a21ab136060e10fa29dde"
+  },
+  "/inputs/rates/anthropic_api_rates.json": {
+   "byte_end_exclusive": 5171,
+   "byte_start": 5105,
+   "json_type": "string",
+   "lexeme": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "token_sha256": "afdb9fc9a73b4ff0d2440343e0645b70ba622d8f5e0762d2b5f2b9c1a08fc266"
+  },
+  "/inputs/rates/openai_api_rates.json": {
+   "byte_end_exclusive": 5267,
+   "byte_start": 5201,
+   "json_type": "string",
+   "lexeme": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58",
+   "token_sha256": "fdb98b6121ea0fe2999399f52f431f0eb22d9fb18eb143a4a880b30506250b73"
+  },
+  "/inputs/reference_time": {
+   "byte_end_exclusive": 5315,
+   "byte_start": 5293,
+   "json_type": "string",
+   "lexeme": "2026-11-10T07:00:00Z",
+   "token_sha256": "a1359231eec5e473f993cee1c7181caf272627cfbf575f464781eaee718966af"
+  },
+  "/inputs/sessions": {
+   "byte_end_exclusive": 6584,
+   "byte_start": 5331,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "0f663a4617734cf408b5a467f46a0e6133294f7e5f27c231792b2df4896ceb03"
+  },
+  "/inputs/sessions/0": {
+   "byte_end_exclusive": 6580,
+   "byte_start": 5336,
+   "json_type": "object",
+   "members": [
+    "alias",
+    "launch",
+    "lifecycle",
+    "logs",
+    "session_id"
+   ],
+   "token_sha256": "567d47323d626d29cebe1efc52ef7f217353be760bb3f94af06b9441159b2352"
+  },
+  "/inputs/sessions/0/alias": {
+   "byte_end_exclusive": 5355,
+   "byte_start": 5351,
+   "json_type": "string",
+   "lexeme": "S1",
+   "token_sha256": "b769fcb6dd480523a6d584b38fe7f280638c58e540d6af98400a1345dc2edb0c"
+  },
+  "/inputs/sessions/0/launch": {
+   "byte_end_exclusive": 5461,
+   "byte_start": 5371,
+   "json_type": "object",
+   "members": [
+    "auth_lane",
+    "model",
+    "parent"
+   ],
+   "token_sha256": "91eff2258cd78300ead1ff6c429ec92764b27c49341b6a48bf5dac86b2bae53f"
+  },
+  "/inputs/sessions/0/launch/auth_lane": {
+   "byte_end_exclusive": 5396,
+   "byte_start": 5391,
+   "json_type": "string",
+   "lexeme": "api",
+   "token_sha256": "63e3a42fcd0c2bc3820823b61f131b485a5d862055faad68bd11e4d7ee5ad107"
+  },
+  "/inputs/sessions/0/launch/model": {
+   "byte_end_exclusive": 5432,
+   "byte_start": 5412,
+   "json_type": "string",
+   "lexeme": "openai/gpt-6-astra",
+   "token_sha256": "d7b73e09e6c232b56aa266c1e4d43a5aa09c3ed551381d91c3817f91295349bb"
+  },
+  "/inputs/sessions/0/launch/parent": {
+   "byte_end_exclusive": 5455,
+   "byte_start": 5449,
+   "json_type": "string",
+   "lexeme": "root",
+   "token_sha256": "956e6e33fe8b21fbf3e7e43d41c304862c78627deb92e26a72fd2b3b57bc60f2"
+  },
+  "/inputs/sessions/0/lifecycle": {
+   "byte_end_exclusive": 5653,
+   "byte_start": 5480,
+   "json_type": "array",
+   "members": [
+    "0",
+    "1"
+   ],
+   "token_sha256": "701c11ca2d19052df4a323a8a41dc3c43e792a23a675b7e4a77a616b38817dd5"
+  },
+  "/inputs/sessions/0/lifecycle/0": {
+   "byte_end_exclusive": 5572,
+   "byte_start": 5487,
+   "json_type": "object",
+   "members": [
+    "at",
+    "event",
+    "turn"
+   ],
+   "token_sha256": "aae2395814ef08ba08a907e06cb350663dd5cf9b6dc532f887fb541402f00b3a"
+  },
+  "/inputs/sessions/0/lifecycle/0/at": {
+   "byte_end_exclusive": 5523,
+   "byte_start": 5501,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:00:10Z",
+   "token_sha256": "b31f04a43f1b490762781c4ede3d044f008696aed570770bda5fa0857d0b7de2"
+  },
+  "/inputs/sessions/0/lifecycle/0/event": {
+   "byte_end_exclusive": 5548,
+   "byte_start": 5540,
+   "json_type": "string",
+   "lexeme": "launch",
+   "token_sha256": "6164c16405ffad14780cca15e85cf8688c355069ccb5b8dfa55b25603379a449"
+  },
+  "/inputs/sessions/0/lifecycle/0/turn": {
+   "byte_end_exclusive": 5565,
+   "byte_start": 5564,
+   "json_type": "number",
+   "lexeme": "1",
+   "token_sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+  },
+  "/inputs/sessions/0/lifecycle/1": {
+   "byte_end_exclusive": 5647,
+   "byte_start": 5579,
+   "json_type": "object",
+   "members": [
+    "at",
+    "event"
+   ],
+   "token_sha256": "08743946ee41f231720c12b2771547d7c4767fc2c4ad0866d58169d4aa675c76"
+  },
+  "/inputs/sessions/0/lifecycle/1/at": {
+   "byte_end_exclusive": 5615,
+   "byte_start": 5593,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:50:00Z",
+   "token_sha256": "850ed653176f6a62af66509ba56533632926260d4cfbd8eea55f6dd2470857c4"
+  },
+  "/inputs/sessions/0/lifecycle/1/event": {
+   "byte_end_exclusive": 5640,
+   "byte_start": 5632,
+   "json_type": "string",
+   "lexeme": "retire",
+   "token_sha256": "a2a9d4ffbc4c361801bc55cbc97e993b34974d1cb94ba86138a02d7b5630ad91"
+  },
+  "/inputs/sessions/0/logs": {
+   "byte_end_exclusive": 6517,
+   "byte_start": 5667,
+   "json_type": "object",
+   "members": [
+    "turn-1"
+   ],
+   "token_sha256": "e34b5dc190eead591c852c3048797d2ff406366d823ec3daba3a13244b555061"
+  },
+  "/inputs/sessions/0/logs/turn-1": {
+   "byte_end_exclusive": 6511,
+   "byte_start": 5684,
+   "json_type": "object",
+   "members": [
+    "final_newline",
+    "lines"
+   ],
+   "token_sha256": "005d4ec5f0a64412109d311d576c86467554144252d8c0801db9559c5e694aaa"
+  },
+  "/inputs/sessions/0/logs/turn-1/final_newline": {
+   "byte_end_exclusive": 5713,
+   "byte_start": 5709,
+   "json_type": "boolean",
+   "lexeme": "true",
+   "token_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+  },
+  "/inputs/sessions/0/logs/turn-1/lines": {
+   "byte_end_exclusive": 6504,
+   "byte_start": 5730,
+   "json_type": "array",
+   "members": [
+    "0",
+    "1"
+   ],
+   "token_sha256": "6a2ccd6ac29c8bcb6bc151c06a60b7b195099087f0bf4aaca850372fad58c449"
+  },
+  "/inputs/sessions/0/logs/turn-1/lines/0": {
+   "byte_end_exclusive": 5900,
+   "byte_start": 5739,
+   "json_type": "string",
+   "lexeme": "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.4, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
+   "token_sha256": "7b8f136d81bd6970c14ad388102c7fe672ce77e973b31a2b0994407415fde5ec"
+  },
+  "/inputs/sessions/0/logs/turn-1/lines/1": {
+   "byte_end_exclusive": 6496,
+   "byte_start": 5909,
+   "json_type": "string",
+   "lexeme": "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.5, \"charged_usd\": 0.7, \"charge_basis\": \"usage\", \"session_spent_usd\": 0.7, \"multiplier_floor\": 0.0}}",
+   "token_sha256": "7f1b189d040e4cd00112dbb11aa2033216cf009458aa947fe0b4e67503ce099b"
+  },
+  "/inputs/sessions/0/session_id": {
+   "byte_end_exclusive": 6575,
+   "byte_start": 6537,
+   "json_type": "string",
+   "lexeme": "00000000-0000-4000-8000-0000000000c1",
+   "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c"
+  },
+  "/invariants": {
+   "byte_end_exclusive": 6619,
+   "byte_start": 6604,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "b58efa89db0f410495d31de8a2f9db6bebec205e1a1517762868ab2f288dd2a3"
+  },
+  "/invariants/0": {
+   "byte_end_exclusive": 6616,
+   "byte_start": 6608,
+   "json_type": "string",
+   "lexeme": "INV-F3",
+   "token_sha256": "6c270f740bd4d52666afca9c0a193c79c9500858c9c6068e18015a44e84ba285"
+  },
+  "/notes": {
+   "byte_end_exclusive": 6633,
+   "byte_start": 6631,
+   "json_type": "string",
+   "lexeme": "",
+   "token_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+  },
+  "/profile": {
+   "byte_end_exclusive": 6665,
+   "byte_start": 6647,
+   "json_type": "string",
+   "lexeme": "current_producer",
+   "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611"
+  },
+  "/provenance": {
+   "byte_end_exclusive": 6797,
+   "byte_start": 6682,
+   "json_type": "object",
+   "members": [
+    "origin"
+   ],
+   "token_sha256": "8e7bd1b742b6d491fc6ce470b304159628490b60641d1bca049545bf9094ff69"
+  },
+  "/provenance/origin": {
+   "byte_end_exclusive": 6794,
+   "byte_start": 6696,
+   "json_type": "string",
+   "lexeme": "test_usage_ledger_pi_a134.py::test_contradicted_settlement_never_lowers_the_retained_reservation",
+   "token_sha256": "283e5460df78f1e23bc3c925a314fdafa441d66383be8f999934a7791f31c08f"
+  },
+  "/reachability": {
+   "byte_end_exclusive": 7297,
+   "byte_start": 7275,
+   "json_type": "string",
+   "lexeme": "producer_unreachable",
+   "token_sha256": "e9e641fe9d4d21f9520c74bc8df69bd65023a04faeed992a905b2882364d8004"
+  },
+  "/role": {
+   "byte_end_exclusive": 24697,
+   "byte_start": 24688,
+   "json_type": "string",
+   "lexeme": "finding",
+   "token_sha256": "e996ee63bc2d00dfcba6388c8ddeee47d4fbce806e00f97d2e6f15e8e697e6cf"
+  },
+  "/schema": {
+   "byte_end_exclusive": 24734,
+   "byte_start": 24710,
+   "json_type": "string",
+   "lexeme": "pi-accounting-corpus/1",
+   "token_sha256": "306af7cfa4a45640f62858c9928b68d0884ab7a6457e219d2186b0ea0a835e12"
+  }
+ },
+ "top_inventory": [
+  "ambiguity",
+  "case_id",
+  "class",
+  "contract",
+  "controls",
+  "evaluations",
+  "expected",
+  "findings",
+  "group",
+  "historical",
+  "inputs",
+  "invariants",
+  "notes",
+  "profile",
+  "provenance",
+  "rationale",
+  "reachability",
+  "revisions",
+  "revisions_r3",
+  "revisions_r4",
+  "revisions_r5",
+  "revisions_r6",
+  "revisions_r7",
+  "revisions_r8",
+  "role",
+  "schema"
+ ]
+}

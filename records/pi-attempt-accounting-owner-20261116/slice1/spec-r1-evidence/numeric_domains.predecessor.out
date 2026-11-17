@@ -1,0 +1,233 @@
+{
+ "status": "FAIL",
+ "checks": 983,
+ "by_domain": {
+  "revision": 68,
+  "revision:python": 46,
+  "original_position": 68,
+  "original_position:python": 46,
+  "wire-nano": 168,
+  "wire-nano:python": 162,
+  "evidence-nano": 28,
+  "pattern-frontier": 391,
+  "continuity-position": 6
+ },
+ "failure_count": 214,
+ "failures": [
+  [
+   "revision[4294967296]",
+   {
+    "rc": 1,
+    "stderr": "invalid value: integer `4294967296`, expected u32",
+    "wanted_accept": false,
+    "fragment": "Draft2020-12"
+   }
+  ],
+  [
+   "revision[4294967296]:python",
+   {
+    "python_valid": true,
+    "wanted_accept": false
+   }
+  ],
+  [
+   "revision[4294967297]",
+   {
+    "rc": 1,
+    "stderr": "invalid value: integer `4294967297`, expected u32",
+    "wanted_accept": false,
+    "fragment": "Draft2020-12"
+   }
+  ],
+  [
+   "revision[4294967297]:python",
+   {
+    "python_valid": true,
+    "wanted_accept": false
+   }
+  ],
+  [
+   "revision[1.0]",
+   {
+    "rc": 1,
+    "stderr": "invalid type: floating point `1.0`, expected u32",
+    "wanted_accept": true,
+    "fragment": null
+   }
+  ],
+  [
+   "revision[1e0]",
+   {
+    "rc": 1,
+    "stderr": "invalid type: floating point `1.0`, expected u32",
+    "wanted_accept": true,
+    "fragment": null
+   }
+  ],
+  [
+   "revision[1E0]",
+   {
+    "rc": 1,
+    "stderr": "invalid type: floating point `1.0`, expected u32",
+    "wanted_accept": true,
+    "fragment": null
+   }
+  ],
+  [
+   "revision[1.0e0]",
+   {
+    "rc": 1,
+    "stderr": "invalid type: floating point `1.0`, expected u32",
+    "wanted_accept": true,
+    "fragment": null
+   }
+  ],
+  [
+   "revision[1E+0]",
+   {
+    "rc": 1,
+    "stderr": "invalid type: floating point `1.0`, expected u32",
+    "wanted_accept": true,
+    "fragment": null
+   }
+  ],
+  [
+   "revision[10e-1]",
+   {
+    "rc": 1,
+    "stderr": "invalid type: floating point `1.0`, expected u32",
+    "wanted_accept": true,
+    "fragment": null
+   }
+  ],
+  [
+   "revision[4294967295.0]",
+   {
+    "rc": 1,
+    "stderr": "invalid type: floating point `4294967295.0`, expected u32",
+    "wanted_accept": true,
+    "fragment": null
+   }
+  ],
+  [
+   "revision[4294967296.0]",
+   {
+    "rc": 1,
+    "stderr": "invalid type: floating point `4294967296.0`, expected u32",
+    "wanted_accept": false,
+    "fragment": "Draft2020-12"
+   }
+  ],
+  [
+   "revision[4294967296.0]:python",
+   {
+    "python_valid": true,
+    "wanted_accept": false
+   }
+  ],
+  [
+   "revision[4.294967295e9]",
+   {
+    "rc": 1,
+    "stderr": "invalid type: floating point `4294967295.0`, expected u32",
+    "wanted_accept": true,
+    "fragment": null
+   }
+  ],
+  [
+   "revision[42949672950e-1]",
+   {
+    "rc": 1,
+    "stderr": "invalid type: floating point `4294967295.0`, expected u32",
+    "wanted_accept": true,
+    "fragment": null
+   }
+  ],
+  [
+   "revision[4294967295.000000000000000000000001]",
+   {
+    "rc": 1,
+    "stderr": "invalid type: floating point `4294967295.0`, expected u32",
+    "wanted_accept": false,
+    "fragment": "Draft2020-12"
+   }
+  ],
+  [
+   "revision[4294967294.9999999999999999999999999]",
+   {
+    "rc": 1,
+    "stderr": "invalid type: floating point `4294967295.0`, expected u32",
+    "wanted_accept": false,
+    "fragment": "Draft2020-12"
+   }
+  ],
+  [
+   "revision[4294967296.000000000000000000000001]",
+   {
+    "rc": 1,
+    "stderr": "invalid type: floating point `4294967296.0`, expected u32",
+    "wanted_accept": false,
+    "fragment": "Draft2020-12"
+   }
+  ],
+  [
+   "revision[1e400]",
+   {
+    "rc": 1,
+    "stderr": "number out of range at line 5897 column 20",
+    "wanted_accept": false,
+    "fragment": "Draft2020-12"
+   }
+  ],
+  [
+   "revision[1e999999999999]",
+   {
+    "rc": 1,
+    "stderr": "number out of range at line 5897 column 27",
+    "wanted_accept": false,
+    "fragment": "Draft2020-12"
+   }
+  ],
+  [
+   "revision[-1e999999999999]",
+   {
+    "rc": 1,
+    "stderr": "number out of range at line 5897 column 28",
+    "wanted_accept": false,
+    "fragment": "Draft2020-12"
+   }
+  ],
+  [
+   "revision[9223372036854775807]",
+   {
+    "rc": 1,
+    "stderr": "invalid value: integer `9223372036854775807`, expected u32",
+    "wanted_accept": false,
+    "fragment": "Draft2020-12"
+   }
+  ],
+  [
+   "revision[9223372036854775807]:python",
+   {
+    "python_valid": true,
+    "wanted_accept": false
+   }
+  ],
+  [
+   "revision[9223372036854775808]",
+   {
+    "rc": 1,
+    "stderr": "invalid value: integer `9223372036854775808`, expected u32",
+    "wanted_accept": false,
+    "fragment": "Draft2020-12"
+   }
+  ],
+  [
+   "revision[9223372036854775808]:python",
+   {
+    "python_valid": true,
+    "wanted_accept": false
+   }
+  ]
+ ]
+}

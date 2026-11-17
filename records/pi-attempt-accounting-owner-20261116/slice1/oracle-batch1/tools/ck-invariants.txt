@@ -1,0 +1,433 @@
+### INV MONEY rev 1 refs ['POLICY-R6']
+## 2. Money (D10)
+
+- **Canonical amount:** `Nano = i128` nano-USD, with checked arithmetic. Overflow is `Err(Overflow)`, which callers
+  MUST treat as blocking `ArithmeticFailure`. Values never wrap or saturate.
+- **Rates:** parsed from the rate files' decimal literals, never via binary floats, into nano-USD per token, an exact
+  integer for every current rate and multiplier (`MONEY.md`: 163 of 163). A rate or multiplier that is not an exact
+  integer in nano-USD per token is `Err(UnsupportedPrecision)`: rejected at load, with the rate table marked
+  unusable, so every valuation is `Unpriceable{RateTableUnusable}`.
+- **Producer amounts** (`charged_usd`, `reserved_usd`) are decimal literals with at most 6 fractional digits, converted
+  exactly. More digits, exponent forms whose value is not an exact nano amount, negative values, booleans, strings,
+  NaN or infinities are `Malformed`.
+- **Rounding (R-02).** The core never rounds a current amount: valuations are exact integers, and producer amounts
+  are taken exactly as logged. The producer's own rounding (`round(x, 6)` USD, `pi_container.py:1018-1019`) moves a
+  logged amount up or down from the producer's float value. It can never lower conservative exposure:
+  - a logged **charge** enters a high only as a term of `max(charged, usage bound)` (FB-1, §8), so rounding down
+    leaves the high at the usage bound or above, and rounding up only raises it;
+  - a logged **reservation** is a known amount, never a bound (FB-2), so its rounding creates no finite bound;
+  - the supported **low** is a usage valuation, never a producer amount (F11).
+
+  If a future rate table needs rounding, every rational amount MUST be rounded once per bound, low by floor and high
+  by ceiling (`MONEY.md`).
+- **Producer-consistency tolerance.** `T_round = 501` nano. The producer's logged charge differs from its float value
+  by at most 500 nano (6-place rounding), and the float value differs from the exact price `p` by under 1.2 nano for
+  `p < 10^15` nano (10^6 USD). Both the logged charge and `p` are integers in nano, so their difference is at most 501
+  (`MONEY.md`). For `p ≥ 10^15` nano the bound is not proven, and the settlement is `Rejected[ToleranceRange]`.
+
+Typed constructors are owned by types High, Bound, Exposure and Replacement.
+
+
+**Order on `High`:**
+- `Exact(a) ≤ Exact(b)` iff a ≤ b;
+- `Exact(a) ≤ AtLeast(b)` iff a ≤ b;
+- `AtLeast(a) ≤ AtLeast(b)` iff a ≤ b;
+- `AtLeast(a) ≤ Exact(b)` is never true.
+
+**Sum:**
+- `Exact + Exact = Exact`;
+- any `AtLeast` term makes the sum `AtLeast` of the known sum.
+
+**Bases are never merged:** a sum carries a basis histogram, not one basis.
+
+**Evidentiary standard, stated rather than verified:** usage valuations price provider-reported usage at the published
+rates. Verified provider billing is unavailable, so every `Exact` high is conditional on that standard.
+
+### 2.1 Finite-bound rule (owner disposition Q2)
+
+Four amounts are kept apart and never stand in for one another:
+
+| Amount | Basis | Meaning |
+|---|---|---|
+| reserved | `ProxyReservation` | what the proxy set aside before forwarding |
+| conservatively charged | `ProxyCharge` | what the proxy kept against its own session limit |
+| provider bill | `ProviderBilling` | established only by bill evidence; **no source exists today, never produced** |
+| unknown additional billing | `High::AtLeast` | what remains unresolved |
+
+**Rule FB-1 (usage bound; revised for R-01, R-02, R-03).** A high may be `Exact` only when the attempt has a **usage
+bound**: the high of a `UsageValuation` of **complete** provider-reported usage (V-5 `complete = true`), over an
+established identity set (one identity, or several identities each priced, §8) and an established tier set (V-3).
+The stated high is `Exact(max(usage bound, the known amounts §8 adds))`. A proxy charge above the usage bound raises
+the stated high and gives it its basis (X-0, for example `ProxyCharge` after upward rounding), but the high is finite
+because the usage bound exists, not because of the charge. **Without a usage bound, no known amount makes a high
+finite.**
+
+**Rule FB-2.** Proxy reservations, proxy charges and declared session caps are known amounts, never upper bounds on
+provider billing. A high with no usage bound is `AtLeast(largest known amount)`.
+
+**Monetary measures (A-01, A-02, owner disposition P1.33).** Six facts are kept apart for every attempt. None stands in
+for another:
+
+| Fact | Where it is recorded | Measure |
+|---|---|---|
+| terminal execution | `Execution` (§6.2) | none (a time fact) |
+| structurally valid settlement | `SettlementDecision::Valid` (§5) | none (a validity fact) |
+| complete and priceable usage | `Valuation` with `complete` and established sets (§7, FB-1) | **usage valuation**: what the reported usage costs at published rates |
+| eligibility to replace the reservation | `Replacement` (below) | none (a decision fact) |
+| proxy charge and proxy reservation | `settlement.charged`, `R` | **proxy amounts**: what the proxy kept and set aside |
+| independently established provider billing | `AmountBasis::ProviderBilling` | never produced in S1 |
+
+**Reservation-backed exposure is one measure: conservative provisional exposure**, the amount the admission accounting must hold for the reservation-backed attempt. Unbudgeted/orphan cases are owned by X-TABLE. Its `low` is supported usage valuation, never a proxy amount. Its `high` is either:
+- `Exact(…)`, when the reservation is **replaced** by an eligible usage settlement (FB-1); or
+- `AtLeast(known)`, where `known` is the largest of the known components the conservative policy must hold: the
+  retained reservation `R`, the proxy charge, and the usage valuation's high or `priced_high`. Each component is a
+  lower bound of what the policy holds, with its own basis (X-0). The maximum is taken within this one measure, not
+  across measures: provider billing is never claimed, and the usage valuation keeps its own record in `Valuation`.
+
+Typed constructors are owned by types High, Bound, Exposure and Replacement.
+
+
+**A structurally valid settlement is not proof of complete billing.** Only `Eligible` replaces reservation-based
+exposure. An ineligible valid settlement closes the attempt in time and keeps the reservation in the conservative
+measure (`amount_source = ReservationBound`, §6), and its supported partial usage stays as the low.
+
+**Why the reservation is not a bound.** It is the producer's worst case, but its conditions are not all
+producer-enforced (`RESERVATION-BOUNDS.md`):
+- the output cap is enforced;
+- the input bound is a byte estimate, and the producer marks it "assumed, not verified" for inline images;
+- the served tier is not enforced: the proxy itself charges a response at whatever tier was served;
+- no long-context rule is applied to Anthropic;
+- the provider's billing of errored or aborted requests is unknown.
+
+**Consequence (Q10, P1.30; OQ-1, P1.32):** under D5, an objective is `NotEstablished` while it owns or may own (as a
+candidate) any attempt without a usage bound, or holds any commitment of kind `AtLeast` (§12.3). That covers in-flight,
+unsettled, error-status, upstream-error, reservation-basis and rejected attempts, and **every admitted session of the
+current producer, retired or not**, because a retired Pi session can be resumed without new objective admission
+(§2.3). Only a qualified `ExecutionGate` (§2.3) releases or bounds a session's commitment. No current producer evidence
+qualifies.
+
+### INV EVIDENCE rev 1 refs ['POLICY-R6', 'SOURCE-IDENTITIES']
+## 3. Evidence (stage E output, the core's input)
+
+```text
+EvidenceRef  = { source: SourceId, line: u32, sha256: Digest }          // SourceId = logical path + file sha256
+Field<T>     = Present(T) | Null | Absent | Malformed(JsonType)
+EvidenceItem = { ref, epoch: ProducerFeatures, kind: EvidenceKind }
+EvidenceKind =
+    Reservation  { n: Field<u64>, rid: Field<Rid>, reserved: Field<Nano>, at: Field<Stamp> }
+  | Settlement   { event: Request|UpstreamError, rid: Field<Rid>, n: Field<u64>, basis: Field<Basis>,
+                   charged: Field<Nano>, reserved: Field<Nano>, status: Field<u16>, usage: Field<Usage>,
+                   model: Field<String>, response_model: Field<String>, response_id: Field<String>,
+                   observed_tier: Field<String>, terminal: Field<String>, model_mismatch: Field<bool>,
+                   labels: Labels, at: Field<Stamp> }
+  | Request      { same fields as Settlement, no `usd` }                 // unbudgeted API, or subscription
+  | UpstreamError{ n, labels, at, detail }                               // no `usd`
+  | Admission    { rid: Field<u64>, n: Field<u64>, model: Field<String>, labels, at }
+  | Measurement  { attached to its row: rid: Field<u64>, status, cost_proxy }
+  | StreamError  { n: Field<u64>, shape: ReadFailure|HeaderWrite, labels, measurement: Option<Measurement>, at }
+  | IdentityRefusal { n, reason, authorized: Field<String>, served: Field<String>, response_id, labels, at }
+  | Refused      { status, reason, labels, at }
+  | Unreadable   { reason: NotJson | NotObject | PartialFinalLine | UnknownEvent(String) }
+Labels = { provider: Field<String>, auth_lane: Field<String> }
+Basis  = Usage | Reservation | ErrorStatus | Unknown(String)
+Usage  = OpenAi{ input, output, cached: Field<u64>, cache_write: Field<u64>, reasoning }
+       | Anthropic{ input, cache_read, cache_write, output, w5m: Field<u64>, w1h: Field<u64> }
+```
+
+**Adapter obligations (stage E, specified here because the core relies on them):**
+- **E-1 Totality.** Every non-blank line of every proxy log named by a turn record is exactly one `EvidenceItem`. A
+  line that is not JSON, not an object, or the final line without a newline is `Unreadable`. Nothing is skipped.
+- **E-2 Fidelity.** Fields are recorded as written (`Absent`, `Null`, `Malformed`). No defaults are applied in E.
+- **E-3 Shape.** `StreamError.shape = ReadFailure` iff the row has a `detail` key, else `HeaderWrite`
+  (`pi_container.py:1295`, `:1513`, `:1546`).
+- **E-4 Producer features.** `ProducerFeatures` are feature flags detected per session, not dates:
+  `usd_accounting`, `cache_write_field`, `anthropic_route`, `subscription_lane`, `cost_proxy`, `attempt_id`.
+- **E-5 Inventory facts.** E also emits inventory evidence:
+  - turn numbers recorded;
+  - logs found on disk but not referenced, copied (byte-identical) or misplaced;
+  - missing logs;
+  - logs shared by two turns.
+
+  These become `InventoryEvidence` with the session scopes that could own them (§9; R-03, A1-03, S-05, V-07).
+
+`LaunchFacts` per session: `pinned_model` (`provider/model` on the launch row), `auth_lane`, `parent`, `turns`.
+
+**Model canonicalisation (A-05; rule version `mc-1`).** Pricing identity is never established by fuzzy matching.
+- **MC-1 Launch model.** A launch model is `<provider>/<model_id>`, with `<provider>` one of `openai`, `openai-codex` or
+  `anthropic`, split at the **first** `/`. That is exactly how the producer derives the proxy's `model_id`
+  (`role_host.py:1280`: `opts["model"].split("/", 1)[1]`). The canonical pinned identity is `(provider family,
+  model_id)`, where `openai` and `openai-codex` are the OpenAI family. A launch model with no `/`, or with another
+  provider, has **no canonical identity**: `ModelUnresolved`.
+- **MC-2 Row models.** A proxy row's `model`, `response_model` or refusal `served` value is a bare model id in the
+  row's provider family (the `provider` label, or OpenAI when absent). It is used exactly as written. No case folding,
+  no prefix stripping, no version or date normalisation.
+- **MC-3 Equality and rates.** Two identities are equal iff their family and model id are byte-identical. Rates are
+  looked up by exact model id in the family's rate file. A missing rate is `IdentityWithoutRate` (V-6). A
+  `ModelUnresolved` pinned identity fails §5 condition 8 (`ModelMismatch`) and is an unpriceable identity (V-1).
+
+### INV CORRELATION rev 2 refs ['POLICY-R6']
+E inventories immutable origins (lineage, source origin, original position, raw bytes SHA256). Same-origin reobservation is idempotent. InitialReferenceContract fixes admitted namespace/scope/duplicate rule per origin; source revision and producer identity cannot replace it. Exact-copy equivalence is scoped raw-line-byte equivalence under its own admitted guarantee; decoded JSON or equal amounts are insufficient.
+C Atomize(B) iff any non-base admitted identity binding, independently distinct-origin fact or retained contradiction affects immutable B. BreakCopies(B) iff distinctness/contradiction separates initially equivalent copies; implies Atomize. Without Atomize one base hold; Atomize one immutable evidence-atom hold; BreakCopies one original-origin hold. Final immutable fact presence controls predicates regardless of arrival order. Matching P labels never remerge. Parent inactive and every origin has one active high owner.
+C-primary logical obligations are separate from high units. Count distinct reservation/settlement evidence under admitted exact equivalence, never distinct amounts. C-validity owns immutable witness; S forwards validity_ref exactly and has no writable SettlementDecision constructor. Auxiliary attachment never modifies primary validity. Late source-earlier R may complete missing prerequisites; malformed/order/cardinality/undercharge failures remain.
+C admits a context candidate on same logical source/usable n, exact ticket/measurement/producer link, or same source and missing n absent immutable qualified unrelatedness. Later display attachment or narrowed identities never remove a previously justified priced high. Context is read-only pricing evidence, not another bill.
+
+### INV SETTLEMENT rev 1 refs ['POLICY-R6', 'TOLERANCE', 'Basis', 'RejectReason']
+## 5. Settlement decision (primary settlement-validity boundary)
+
+Typed constructor: SettlementDecision in types.
+
+
+**`Valid` iff every condition holds, otherwise `Rejected` with every failing reason** (codes in brackets):
+1. Exactly one reservation and exactly one distinct settlement in the group [`ReservationConflict`, `NoReservation`].
+2. With UniqueReservation, the settlement is appended after the reservation [`Order`].
+3. `n` is a positive integer on both (never boolean, string, float or zero) and, with UniqueReservation, equal [`AttemptNumber`].
+4. `charged` and `reserved` are well-formed amounts [`AmountType`], and, with UniqueReservation, `reserved` equals its amount exactly [`ReservedMismatch`].
+5. `basis` is present and known [`BasisMissing`, `BasisUnknown`]. An `UpstreamError` requires `Reservation`.
+6. `Reservation` or `UpstreamError`: with UniqueReservation, charged equals the reservation exactly [`KeepAll`].
+7. **Status, by settlement path (A-06, owner disposition P1.33).** A missing status is neither an automatic failure nor
+   a universal exemption. It is accepted only where the producer writes no status:
+
+   | Path | Settlement row | Status required | Absent or null | Producer evidence |
+   |---|---|---|---|---|
+   | `Usage` | `request` | integer 200 | `StatusType` | every request row carries `http_status: resp.status` (`pi_container.py:1549`, unchanged since `385f3174`; 1,588 of 1,588 real request rows are integers) |
+   | `ErrorStatus` | `request` | integer, not 200 | `StatusType` | as above |
+   | `Reservation` | `request` | integer | `StatusType` | as above |
+   | `Reservation` (`UpstreamError`) | `upstream_error` | none | **accepted** | the producer writes no status on `upstream_error` rows (`:1497-1502`, `:1215-1217`) |
+
+   A status that is present but not an integer (string, float, boolean, object) is `StatusType` on every path. An
+   integer that contradicts the basis (non-200 with `Usage`, 200 with `ErrorStatus`) is `ErrorCharge`. `ErrorStatus`
+   also needs charged = 0 [`ErrorCharge`].
+8. `Usage`:
+   - the usage is priceable under the producer's own rule (§7.1) [`UsageUnpriceable`];
+   - the full canonical family-qualified request identity equals the pinned identity (MC-1 to MC-3) [`ModelMismatch`];
+   - `producer_price < 10^15` nano [`ToleranceRange`], and `charged ≥ producer_price − T_round` [`Undercharge`].
+
+`Conflicting` replaces `Valid` or `Rejected` when two distinct settlements name one reservation.
+
+**Permissible transitions as evidence is added (the decision is a function of the evidence set; this lists how it may
+change):**
+
+| From | Adding | To |
+|---|---|---|
+| Absent | a well-formed valid settlement | Valid |
+| Absent | an invalid settlement | Rejected |
+| Valid or Rejected | a second, distinct settlement | Conflicting |
+| Valid | a second, different reservation with the same `rid` | Rejected(`ReservationConflict`) |
+| any | a byte-identical repeat | unchanged |
+| Conflicting | anything | Conflicting |
+
+**No other transition exists.** In particular there is no `Conflicting → Valid`, no `Rejected → Valid` without
+removing evidence, and nothing makes a decision `Valid` because a numeric amount is present (`Valid` requires all eight
+conditions).
+
+
+UniqueReservation is an exactly-one distinct reservation witness. Zero/conflicting reservations make reservation-relative Order, equality and KeepAll comparisons inapplicable, without suppressing applicable local amount, n, status, basis and producer checks. Rejected carries all applicable failures; multiple distinct settlements take Conflicting precedence.
+The single-owned SETTLEMENT-WITNESS is computed after primary grouping and before auxiliary attachment. S-DECISION declarations expose that witness only; S consumes it.
+
+### INV TEMPORAL-AND-FINALIZATION rev 1 refs ['POLICY-R6', 'ERROR-EXPOSURE', 'F-PROJECTION', 'R-FINANCIAL-PROVISIONAL']
+## 6. Obligation: releasing versus replacing (stage S)
+
+TemporalObligation = Outstanding | Closed{by} | None{cause}, owned by S. External Obligation = Outstanding{amount_source} | Closed{by,amount_source} | None{cause,amount_source:none}, projected by F. Every variant is representable and carries amount_source.
+
+
+`Obligation` is an **execution-time** fact: whether a reservation is still open in time. It is not a financial
+disposition (§6.2).
+
+**`amount_source` (A-08).** Selected exclusively by the result-bearing finalization bindings owned by F-PROJECTION. All variants and legal combinations are declared by total projections.
+
+The five distinctions the owner asked for:
+
+| # | Concept | Contract term |
+|---|---|---|
+| 1 | Releasing a reservation | `Obligation::Closed`: the attempt has ended in time (its interval ends at the settlement). Only `Valid` closes. Closing never establishes billing (§6.2, R-07) |
+| 2 | Replacing provisional exposure with a validated settlement | only `Valid(Usage)` with `Replacement::Eligible` (a usage bound, FB-1) replaces the reservation (`SettlementAmount`). An ineligible usage settlement, `Valid(ErrorStatus)` and the invalid decisions keep it (`ReservationBound`, A-01, D4). `Valid(Reservation)` and `Valid(UpstreamError)` confirm it (`ReservationConfirmed`) |
+| 3 | Retaining independent usage evidence | `Valuation` (§7) is computed from usage evidence whatever the settlement decision, and supplies the supported low bound wherever §8 says so |
+| 4 | Classifying unknown additional exposure | `High::AtLeast` (§8), with a blocking `UnresolvedExposure` |
+| 5 | Deciding whether admission is established | stage R (§12), outside S to X |
+
+With a reservation, `Absent`, `Rejected` and `Conflicting` leave the obligation `Outstanding`; without one the temporal result is `None` with its explicit cause.
+
+### 6.2 Execution versus billing (R-07, owner disposition P1.30)
+
+```text
+Execution = Terminal | NotTerminal      // Terminal: a settlement, request, upstream_error, stream_error or response_model_refused row is in the attempt's evidence
+Replacement = Eligible | Ineligible{reason}   // §2.1 (A-01): decides whether the reservation may be replaced
+Billing   = Established | Unresolved | NotApplicable   // Established iff the high is Exact (FB-1); NotApplicable for the Codex pool
+```
+
+Five facts are kept apart and never stand in for one another:
+
+| Fact | Contract term |
+|---|---|
+| execution completion | `Execution::Terminal` |
+| valid proxy settlement | `SettlementDecision::Valid` (and `Obligation::Closed`) |
+| usage valuation | `Valuation` (§7); a usage bound when complete over established sets (FB-1) |
+| verified provider billing | `AmountBasis::ProviderBilling`: no source exists; never produced in S1 |
+| unresolved additional exposure | `High::AtLeast`, so `Billing::Unresolved` |
+
+`Billing::Established` means established under the usage-valuation evidentiary standard (§2), not verified billing.
+An attempt that is `Terminal` and `Closed` can still be `Unresolved` (an upstream error, an error status, a
+reservation-basis settlement, incomplete usage). Rollup, predecessor and commitment rules read `Billing`, never
+`Execution` or `Obligation`, to decide whether money is resolved.
+
+**Error-status attempts (Q2).**
+- The settlement's charge of 0 is the proxy's own accounting (`ProxyCharge` 0), never the provider's bill.
+- The reserved amount R is kept as a known amount, and the additional billing is unknown: exposure
+  the formula ERROR-EXPOSURE, diagnostic `NonBillingUnverified`.
+- `Exact(0)` is permitted only for an error class with authoritative evidence of non-billing (D4). That class is empty.
+
+### 6.1 Forwarding fact (Q6)
+
+```text
+Forwarding = Forwarded{evidence}        // a provider response exists: a request row with an upstream HTTP status, a response id or model,
+                                        // or usage; a response_model_refused row; any stream_error row (every producer stream_error
+                                        // writer runs after the upstream response arrived: pi_container.py:1295, :1513, :1546) (R-13)
+           | Unknown                     // a reservation or admission with no response row; an upstream_error row (the request may or
+                                        // may not have reached the provider)
+NotForwarded                             // only for requests that are not attempts: a refused row with a preflight reason (C-9)
+```
+
+Forwarding is derived only from the attempt's own rows (its key rows and `auxiliary` rows), never from a `refused`
+row.
+
+Forwarding is recorded on every attempt. It is a fact, not a finding, and it decides nothing about money or identity:
+- an identity refusal is `Forwarded` (the provider answered with another model);
+- an unresolved identity contradiction still blocks, whatever the forwarding fact.
+
+A request proven never to have reached the provider (a `refused` row with a preflight reason) has no exposure and no
+identity finding; it is not an attempt.
+Financial provisionality is exclusively R-FINANCIAL-PROVISIONAL; closure/retirement does not establish financial finality. Obligation amount_source is selected by F-PROJECTION, never by generic enum sampling.
+
+### INV VALUATION rev 1 refs ['POLICY-R6', 'PRICE-OPENAI', 'PRICE-ANTHROPIC', 'Usage', 'Model', 'Valuation']
+## 7. Valuation (stage V)
+
+### 7.1 Pricing primitives (leaf functions)
+
+Pricing formulas: PRICE-OPENAI and PRICE-ANTHROPIC; canonical definitions are not restated here.
+- **`producer_price(settlement, pinned)`.** The proxy's own rule:
+  - OpenAI: tier = the `observed_tier` multiplier if recognised, else the **highest** multiplier in the table; a null
+    cache count counts as 0 (`pi_container.py:1001`).
+  - Anthropic: defined only for a `standard`, null or absent tier (`service_tier in (None, "standard")`,
+    `pi_container.py:1052-1054`), an integer status, integer counts, and `w5m + w1h ≤ cache_write`.
+  - Otherwise undefined, which gives `UsageUnpriceable`.
+- **Unknown model.** A model absent from the rate files has no rate. `claude-haiku-5-5` is absent: producer-unpriceable
+  (N-08).
+
+### 7.2 Valuation result
+
+Typed constructors: Valuation in types.
+
+
+| Rule | Statement |
+|---|---|
+| V-1 Identities | the distinct canonical identities (MC-1 to MC-3) among the launch pinned model, request `model`, `response_model` and any joined `IdentityRefusal.served`. A malformed name or a `ModelUnresolved` pinned model is an unpriceable identity |
+| V-2 Range | `low` = minimum and `high` = maximum of the price over every identity × every allowed split × residual rate × the tier set. The range is a usage bound only when the tier set and the identity set are established and the usage is complete (FB-1) |
+| V-3 Tier set (OpenAI) | **recognised** `observed_tier` (a key of the rate table's `tier_multiplier`): that one multiplier; the tier set is established by the response. **Missing** (`null` or absent) **or unrecognised**: the tier set is **not established**. The rate table is not evidence that every servable tier is known (owner disposition R-03/Q5, P1.30), and the producer charging such a tier at the table's highest multiplier fixes its charge, not the set of tiers. Valuation `Unpriceable{TierUnestablished(Missing \| Unrecognised), supported: None, priced_high}`: the known valuation at the dearest table multiplier is kept as `priced_high`, no minimum is supported (an unknown tier could be cheaper), and §8 gives `AtLeast` |
+| V-3 Tier set (Anthropic) | `standard`, `null` or absent gives standard, as the producer accepts (R-14). Any other string gives `Unpriceable{NonStandardTier}`. Any other non-string gives `Unpriceable{MalformedTier}` (repairs N-02) |
+| V-4 Splits (OpenAI) (A-04) | each of `cached_tokens` and `cache_write_tokens` is in one state. **Present integer ≥ 0** (including 0): that value. **Null**: unknown (the provider omitted it; the current producer writes `null`, `pi_container.py:1563-1564`, and prices it as 0 for its own charge only). **Absent key**: unknown (written by producers before `ab2a0f84`, which did not log `cache_write_tokens`; 59 real unbudgeted rows). It is **never assumed zero**. **Malformed** (present, not an integer ≥ 0): `Unpriceable{MalformedCount}`. Unknown counts are enumerated over the feasible set `{cached, write ≥ 0, cached + write ≤ input}`, with any known count fixed. The range is the minimum and maximum price over its vertices; all vertices are priceable, so the range is a usage bound when the usage is complete (FB-1). Known counts that violate `cached + write ≤ input` are `Unpriceable{MalformedCount}` |
+| V-4 Splits (Anthropic) | `w5m + w1h ≤ cache_write`: the reported split, with the residual writes `cache_write − w5m − w1h` at min(r_5m, r_1h) for the low and max for the high (R-15). Otherwise all writes at min for the low and max for the high, with diagnostic `InconsistentCacheSplit` (repairs probe H-a); the counts contradict each other, so the usage is not complete (V-5) |
+| V-5 Completeness | `complete = true` only for usage from a terminal success (OpenAI `response.completed` or `response.done`, Anthropic `message_stop`, integer status 200) whose counts are consistent (for Anthropic, `w5m + w1h ≤ cache_write`). Otherwise the usage may understate the bill and is not a usage bound (FB-1). Completeness is computed from the usage evidence, never from a diagnostic |
+| V-6 Partial pricing | if some identity has no rate: `Unpriceable{IdentityWithoutRate, supported: None, priced_high: high over priced identities}`. No minimum is supported, because the unpriced identity could be cheaper, so §8's low is 0 |
+| V-7 Excluded sources | usage not on a proxy row (e.g. a Pi session file's `cacheWrite`) is not evidence (A1-06) |
+| V-8 Several observations (R-05, A-04) | an attempt with more than one usage observation (conflicting settlements; a settlement plus a joined refusal) has `Valued{low = min of lows, high = max of highs, complete = all complete, identities = union}`. If any observation is `Unpriceable`, the result is `Unpriceable{reasons = union}` with **`supported = None`** (the unpriceable observation could be the cheapest) and **`priced_high` = max of every valued high and every priced high** (absent when none exists). Adding an observation never lowers `high` |
+
+### INV X-TABLE rev 1 refs ['X-DECISION']
+X-DECISION is the sole monetary branch owner. Each legal typed fact tuple has one result: low selects a supported usage component, high uses max of its declared available components. Reservation retained except EligibleUsageBound. Lane contradiction does not erase dollar components. Subscription-clean outputs Codex unknown.
+
+### INV CLASSIFICATION rev 1 refs ['POLICY-R6']
+K emits attempt-local findings from C/S/V/F/X only: malformed evidence, identity/lane contradiction, settlement failures, usage valuation failures and forwarding diagnostics. L owns lifecycle/session findings; T owns objective ownership/admission/window findings; R owns aggregate/commitment/budget findings. Shared code vocabulary never grants K access to L/T/R facts.
+
+### INV USAGE-PRESENCE rev 1 refs ['POLICY-R6', 'SOURCE-IDENTITIES']
+Pinned producer 92a03789 pi_container.py writes normalized usage fields. OpenAI billing-bearing: input_tokens, output_tokens, cached_tokens, cache_write_tokens; required when reported: input_tokens/output_tokens. reasoning_tokens is auxiliary. Anthropic billing-bearing: input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens, ephemeral_5m_input_tokens, ephemeral_1h_input_tokens; required: input_tokens/output_tokens/cache_read_input_tokens/cache_creation_input_tokens. Writer mapping verified against 92a03789 pi_container.py ANTHROPIC_USAGE_KEYS and request writer lines1318-1320, budget consumer1048-1054; OpenAI writer1562-1566. Service tier is metadata, not a count; server_tool_use is auxiliary metadata. Schema comes from explicit evidenced family, never fixture shape. Absent provider follows MC-2 OpenAI default, not shape inference. Non-null fields exclusive to the other declared family imply UsageSchemaMismatch. Shared fields and absent/null fields do not.
+
+Check schema conflict, nonobject usage (UsageShape), unknown schema (UnknownUsageSchema), and malformed billing-bearing counts (MalformedCount(field)) before all-null classification. Absent/null usage and all-absent/null billing counts give NotReported; auxiliary alone does not establish reporting. Numeric zero is present. Reported usage missing required counts gives MissingCount(field), never zero. OpenAI optional cache absent/null means unknown feasible splits, Anthropic optional lifetime absent/null means zero. Malformed auxiliary adds MalformedEvidence(field) blocking but preserves independently computable primary usage and cannot select money. Raw states survive.
+
+Completeness requires all required well-formed billing counts, established priced identity/tier sets, integer HTTP200 and provider-recognized successful terminal (OpenAI response.completed/response.done, Anthropic message_stop), with consistent counts. Partial/missing/incomplete terminal or non200 can preserve supported valuation but cannot replace reservation. V-8 partial pricing remains independent. Full family/model inequality fails ModelMismatch. Independently unpriceable/unestablished identity/schema/tier sets cannot replace; established complete fully priced multiple identities retain finite bounds while downstream IdentityContradiction blocks.
+
+### INV INV-F1 rev 1 refs ['POLICY-R6']
+| **F1 Release** | `Obligation::Closed` ⇒ `SettlementDecision::Valid` with an `Exact` **key join** to the attempt's reservation (auxiliary RS-rule rows do not count, R-06). A numeric amount alone never releases | a reservation exists | VC01 (usage settlement closes); N01 (closed with `key_join` Exact and an RS-3 auxiliary row) | S01 (charge 0 against 0.8 under `reservation`) | rejected: `Outstanding`, high `AtLeast(R)`, blocking | 20 cases incl. S01×3, S02×2, U01, R02, C4, S06, V01, V02, U05, N02, R06 | for random settlements failing any §5 condition, `obligation = Outstanding` | drop one §5 condition (e.g. skip the `KeepAll` check) |
+
+### INV INV-F2 rev 1 refs ['POLICY-R6']
+| **F2 No double count** | Per attempt, exposure counts the reservation or the settlement-derived amount, never both. Totals are sums over distinct `AttemptKey`s; byte-identical rows are one item | — | VC01 (high 0.015, not 0.515) | summing the reservation and the settlement charge | Σ exposure = Σ per-attempt | VC01, VC06, VC12, R04, C3, DUP | Σ over attempts = rollup; adding an identical copy changes nothing | add the settlement charge on top of the reservation |
+
+### INV INV-F3 rev 1 refs ['POLICY-R6']
+Correlation/refinement cannot lower held high or remove unresolvedness. Complete affirmative F coverage alone may replace exactly covered holds regardless of which prerequisite arrives last. This explicitly amends former blanket transition prohibitions.
+
+### INV INV-F4 rev 1 refs ['POLICY-R6']
+| **F4 Finding inertness** | No monetary field depends on the presence, absence or order of any finding. Removing all findings from an output leaves every amount unchanged, and deleting an input row whose only effect is a diagnostic changes no amount | — | Ha (inconsistent split: low 0.018 kept, diagnostic only) | A1.3.3 N-01 (diagnostic deletes the low bound and lowers high); A1.3.4 H-a (low → 0) | amounts equal with and without the diagnostic | N01×3, Ha, V01-other-model, DUP | compute money, strip findings, recompute: equal (structural in Rust: classification is downstream) | choose the representation by `findings.is_empty()` (the A1.3.2 guard) |
+
+### INV INV-F5 rev 1 refs ['POLICY-R6']
+| **F5 Unknown stays unknown** | `AtLeast` survives every sum and projection; the only `AtLeast` → `Exact` transition is replacement by an eligible usage settlement (X-2). Reservations, proxy charges and declared caps are never a finite maximum (FB-2); unknown cache counts, tiers and identities are enumerated or left unpriceable, never assumed (V-3, V-4) | `AtLeast` present | N01-variant-reservation-above-both; U08; P133-A04 absent cache counts (bounded over vertices) | collapsing to `Exact(max(R, dearest))`; pricing a missing tier or an absent cache count as zero | `high.kind = at_least`, plus `UnresolvedExposure` | N01×4, N08, D4, U08, Q5, P130-R01 | sum or project any set containing `AtLeast`: result `AtLeast` | replace `AtLeast(x)` by `Exact(x)` when x ≥ R |
+
+### INV INV-F6 rev 1 refs ['POLICY-R6']
+| **F6 Totality** | Every evidence line lands in exactly one attempt, non-attempt or unreadable record; nothing is silently dropped or double-assigned | E-1 adapter | R05 (null and [] rows unreadable and blocking) | skipping non-object rows (A1.1 R-05) | validator totality check over all lines | 15 cases incl. R05, U02, N04×4, A1-01, C3 | line count in = Σ records out | `continue` on unparseable lines |
+
+### INV INV-F7 rev 1 refs ['POLICY-R6']
+| **F7 Window independence** | Stages C to X and L take no objective window; their outputs are identical for every objective evaluation | — | Hb (attempt facts identical for windows from 06:00 and 06:20) | A1.3.4 probe H-b (identity finding raised only when counted) | grader: per-evaluation facts equal | Hb, C1, S03, R01, N05, U03, A04 | evaluate under random windows: stage outputs byte-equal | early-return on window placement before validation (A1.3.x `if not keep: return`) |
+
+### INV INV-F8 rev 1 refs ['POLICY-R6']
+| **F8 Order independence** | Presenting sessions or logs in a different order changes nothing; append order matters only within a source | — | ORD twins | dedupe by first-seen across sessions | twin cases equal | ORD×2 | permute sessions: equal | a global `seen` set across sessions |
+
+### INV INV-F9 rev 1 refs ['POLICY-R6']
+| **F9 Pool integrity** | Dollar evidence never leaves `PiApi`; a contradicted lane is never a Codex call; Codex attempts carry no money | — | VC08 (Codex, no money) | N03 (contradicted admission as an unfinished Codex call) | pool and blocking | 10 cases (N03×6, V03, U06, VC08) | any lane-contradicting label gives `PiApi` plus `LaneContradiction` | trust the launch lane over row labels |
+
+### INV INV-F10 rev 1 refs ['POLICY-R6']
+| **F10 Determinism** | Equal inputs and rate table give byte-identical canonical output | — | ORD twins run twice | hash-map iteration order leaking into output | two runs compared byte for byte (harness requirement) | ORD×2 | run twice, compare bytes | an unordered collection serialised directly |
+
+### INV INV-F12 rev 1 refs ['POLICY-R6']
+| **F12 Execution is not billing** | `Execution::Terminal` and `Obligation::Closed` never imply `Billing::Established`; billing is established iff the high is `Exact` (§6.2, R-07) | — | VC01 (terminal, closed, established) | VC04 (terminal, closed by upstream error, unresolved) treated as settled spend | `billing` field equals `high.kind == exact` | every `pi_api` attempt | closed attempts with `AtLeast` high stay unresolved | derive billing from the obligation state |
+
+### INV INV-F13 rev 1 refs ['POLICY-R6']
+| **F13 Replacement eligibility** | `amount_source = SettlementAmount` iff `Valid(Usage)` with a usage bound; an ineligible usage settlement is `ReservationBound` and keeps `R` in the conservative measure; `ReservationConfirmed` only for `Valid(Reservation)` and `Valid(UpstreamError)` (A-01, A-08) | — | VC01 (eligible) | U08 replacing its reservation (P1.32 A-01) | `replacement` and `amount_source` follow the decision and valuation | every budgeted case | — | mark every valid usage settlement eligible |
+
+### INV INV-F11 rev 1 refs ['POLICY-R6']
+X local supported usage lows remain; R computes the separate conservative supported-credit floor per scope under SUPPORTED-LOW. A financial unit is not necessarily an independent physical bill.
+
+### INV BOUNDARY-CONSUMERS rev 2 refs ['POLICY-R6', 'COMMITMENT-RESIDUAL']
+T owns origin/unit/slot attribution and admitted/possible memberships, never money. R sums unique active highs (max per unit; AtLeast0 preserves unresolvedness), recomputes SUPPORTED-LOW within each scope, and owns commitment/provisionality. Findings do not determine money.
+
+### INV V-PRESENCE-INTERFACE rev 1 refs ['VALUATION', 'USAGE-PRESENCE']
+V-PRESENCE partitions usage presence/shape only; reported is not a valuation constructor. Reported usage proceeds through VALUATION V1-V8 identity/tier/split/completeness rules. UsagePresence not_reported maps Valuation.not_reported; unpriceable retains explicit reason; reported may yield valued or unpriceable. Guard predicates are declared semantic facts, not a raw evidence interpreter. Their correctness and applicability require independent oracle review.
+
+### INV X-COMPONENTS rev 2 refs ['RESERVATION-MAX', 'Valuation']
+Typed available components: reservation R=max distinct well-formed amounts; charge=max applicable well-formed claimed settlement charges; usage_low/high from valued; supported_low/priced_high from unpriceable (absent optional amount contributes zero); zero=0. high=max declared components with declared exact/at_least tag; low is selected component. No K input. Arithmetic and independent examples require semantic review. Error-status example: AtLeast(max(R, valued.high or priced_high or 0)).
+
+### INV SETTLEMENT-WITNESS rev 2 refs ['SettlementDecision', 'SETTLEMENT']
+C-primary logical obligations are separate from high units. Count distinct reservation/settlement evidence under admitted exact equivalence, never distinct amounts. C-validity owns immutable witness; S forwards validity_ref exactly and has no writable SettlementDecision constructor. Auxiliary attachment never modifies primary validity. Late source-earlier R may complete missing prerequisites; malformed/order/cardinality/undercharge failures remain.
+
+### INV F-PROJECTION rev 2 refs ['TemporalObligation', 'Replacement', 'Obligation', 'SETTLEMENT-WITNESS']
+Single-owned result-bearing finalization bindings select Obligation.amount_source and preserved fields. Projection records enforce legal serialized cross-field combinations. No other table selects this amount source. Accepted budgeted coverage selects exactly matching obligation membership and valid witness; all primary classes are monetary-covered, no other obligation primary occurs, and valuation usage equals selected membership usage. Genuine UnbudgetedCompletion carries complete usage_origin_refs and no dollar obligation; valuation usage equals this set. Whole-unit monetary/anchor coverage is disjoint and exact. Raw-derived qualification remains independent of supplied-set coherence.
+
+### INV R-FINANCIAL-PROVISIONAL rev 2 refs ['Obligation', 'High', 'BOUNDARY-CONSUMERS']
+R owns provisional=true iff an owned attempt has Outstanding obligation OR high AtLeast; predecessor_obligations.high is AtLeast; any current non-invalid commitment is AtLeast; OR an uncertain/unadmitted PiApi candidate for this objective has unresolved billing. Finite Exact commitments alone do not imply unresolvedness. Malformed/invalid evidence blocks Established under existing reason, independently. Temporal closure and retirement cannot clear financial unresolvedness.
+
+### INV INITIAL-REFERENCE rev 2 refs []
+E inventories immutable origins (lineage, source origin, original position, raw bytes SHA256). Same-origin reobservation is idempotent. InitialReferenceContract fixes admitted namespace/scope/duplicate rule per origin; source revision and producer identity cannot replace it. Exact-copy equivalence is scoped raw-line-byte equivalence under its own admitted guarantee; decoded JSON or equal amounts are insufficient. Resolved supplied-payload checking binds exact source fragments, covered digest and origin inventory, initial contract, namespace, scope and duplicate policy; unknown, missing or ambiguous finite payload resolution fails closed. Supplied coherence does not establish independent raw admission or raw inventory truth.
+
+### INV ATOMIZATION rev 1 refs []
+C Atomize(B) iff any non-base admitted identity binding, independently distinct-origin fact or retained contradiction affects immutable B. BreakCopies(B) iff distinctness/contradiction separates initially equivalent copies; implies Atomize. Without Atomize one base hold; Atomize one immutable evidence-atom hold; BreakCopies one original-origin hold. Final immutable fact presence controls predicates regardless of arrival order. Matching P labels never remerge. Parent inactive and every origin has one active high owner.
+
+### INV LOGICAL-PRIMARY rev 2 refs []
+C-primary logical obligations are separate from high units. Count distinct reservation/settlement evidence under admitted exact equivalence, never distinct amounts. C-validity owns immutable witness; S forwards validity_ref exactly and has no writable SettlementDecision constructor. Auxiliary attachment never modifies primary validity. Late source-earlier R may complete missing prerequisites; malformed/order/cardinality/undercharge failures remain. C-primary emits primary_memberships one-for-one with PrimaryValidity: disjoint canonical exact-evidence classes, minimum-member representatives and complete usage_origin_refs. Multi-origin classes require admitted exact-copy equivalence, identical raw-byte digest and scope_exact_line scope; amount equality supplies none. Distinct witness refs equal representatives. Independent raw qualification establishes inventory completeness.
+
+### INV FINANCIAL-CANDIDATES rev 1 refs []
+C admits a context candidate on same logical source/usable n, exact ticket/measurement/producer link, or same source and missing n absent immutable qualified unrelatedness. Later display attachment or narrowed identities never remove a previously justified priced high. Context is read-only pricing evidence, not another bill.
+
+### INV DEFINITE-LINK rev 3 refs []
+Exact row co-reference consumes only an admitted exact_row_coreference grant for the exact origins/extent. RS/n uniqueness, row adjacency, labels and writer hashes are insufficient. Independence, scope, copy, continuity and co-reference guarantees cannot substitute for one another. InputLink and DefiniteLink carry exact unique link_id; result admitted_input_link_ref names InputLink.link_id preserving directed endpoints. Exact grants carry the independently raw-qualified finite admitted_payload {from,to} or {pairs:[{from,to}]}; extent alone, self-pairs and unknown shapes fail. Coverage cites result link IDs and each released anchor links to a covered usage/primary origin of its selected obligation or genuine completion. The finite conditional supplied-payload check binds the actual endpoint records by source, original position and exact line-byte hash; preserving endpoint identifiers while substituting bytes is insufficient.
+
+### INV WHOLE-COVERAGE rev 3 refs []
+F alone releases exactly complete current hold units with complete origin coverage, C-validity and complete V witnesses and admitted exact links for all auxiliary anchors. Retain known charge/context; no partial-overlap release. Independent physical bills cannot be merged. Conflicting overlapping coverage retains original/refined holds. Disjoint/identical exact coverage composes/idempotent. Complete local unbudgeted usage cannot discharge an unlinked AtLeast0 anchor. Accepted coverage applies the selected exact primary_memberships inventory and representative witness for its own obligation, or the genuine completion usage membership; selected valuation usage equals that complete set. Every released anchor cites a DefiniteLink.link_id preserving its admitted InputLink.link_id exact endpoint pair to the selected covered request. Another witness, request, grant pair or valuation cannot substitute. AccountingResult retains typed role/origin/canonical-nano components. Units and coverage resolve exact component IDs to their owned origins or explicit read-only candidate context. Active origin owner cites every inventoried component. Raw finite claims establish exhaustive actual role/origin/amount retention; reference coherence alone cannot.
+
+### INV SUPPORTED-LOW rev 1 refs []
+X local usage lows survive rejected/conflicting settlement. R uses separate physical-credit lows, never sum(attempt lows). For scope U and positive usage seed, single_floor=V8Low(U); each admitted independently billed owned slot p has Alternatives(p)=all U not affirmatively physically distinct. independent_floor=sum(V8Low(Alternatives(p))); R.low=max(single_floor, independent_floor). V8Low is min across complete alternatives, zero if unsupported. Contradictory/unestablished frame admits no slot addition. T provides owned/possible memberships; R recomputes for each scope. Ties prefer independent_slots if nonempty. Positive basis usage_valuation, otherwise none.
+
+### INV CONTINUITY rev 1 refs []
+Successor preserves every predecessor origin, immutable initial contract, trigger fact and conflict under exact origin mapping. Omission/rewriting/unsupported many-to-one fails admission; last admitted financial subject retained. Digest rename cannot create fresh bases. Live continuity remains unestablished.
+
+### INV EXACT-WIRE rev 2 refs []
+Actual external projections: exposure.pool; high.kind/nano/basis with flattened Bound; decimal nano strings; valuation low/high as decimal strings and derivations from splits; reason strings qualified. Obligation none preserves cause/amount_source:none and closed preserves by. Per-attempt accounting_result_ref and rollup supported_low_evidence_ref refer to computed results, never input grants or expected assertions. Finite corpus refs use oracle/r8-completion-A|B/<case_id>.bundle.json#result:<case_id>, with units selected by exact attempt.key and exposure_ref case:<case_id>#attempt:<key>. Every evaluation/objective/owned_closed|owned_outstanding scope, including empty scopes, uses bundle-path#<case_id>/<evaluation>/<objective>/<label> and resolves exactly one LowRollup. Input source_revision_ref binds SHA256 of sorted compact JSON case.inputs (ensure_ascii=true). Whole corpus consumption requires175cases/374scopes and independent raw-bound owned-unit/seed/alternative memberships. Exact PiApi wire units require accepted complete F coverage and resolved C/valuation witnesses; expected literals never supply eligibility.
+
+### INV RAW-FIELD-PREDICATES rev 1 refs []
+Usage presence, JSON type, count cardinality, malformed identity/tier, exact duplicate identity, atomization, financial candidates, exact linkage, low alternatives, full origin coverage and continuity are semantic predicates. Their actual consumers must invalidate on revisions, independently of whole-file byte drift.
+

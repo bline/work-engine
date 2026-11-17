@@ -1,0 +1,53 @@
+{
+ "status": "PASS",
+ "results": [
+  {
+   "label": "unmodified canonical (S forwards C reference)",
+   "ok": true,
+   "rc": 0,
+   "stderr": ""
+  },
+  {
+   "label": "V-PRESENCE-1 constructs SettlementDecision.valid (report counterexample)",
+   "ok": true,
+   "rc": 1,
+   "stderr": "C-validity owner violation: stage V rule V-PRESENCE-1 constructs C-owned SettlementDecision; only stage C may construct it"
+  },
+  {
+   "label": "S-zero-zero (S) constructs C-owned decision",
+   "ok": true,
+   "rc": 1,
+   "stderr": "C-validity owner violation: stage S rule S-zero-zero constructs C-owned SettlementDecision; only stage C may construct it"
+  },
+  {
+   "label": "F-REPLACEMENT-1 (F) constructs C-owned decision",
+   "ok": true,
+   "rc": 1,
+   "stderr": "C-validity owner violation: stage F rule F-REPLACEMENT-1 constructs C-owned SettlementDecision; only stage C may construct it"
+  },
+  {
+   "label": "V-PRESENCE-9 (V) constructs C-owned decision",
+   "ok": true,
+   "rc": 1,
+   "stderr": "C-validity owner violation: stage V rule V-PRESENCE-9 constructs C-owned SettlementDecision; only stage C may construct it"
+  },
+  {
+   "label": "S-TIME-1 (S) constructs C-owned decision",
+   "ok": true,
+   "rc": 1,
+   "stderr": "C-validity owner violation: stage S rule S-TIME-1 constructs C-owned SettlementDecision; only stage C may construct it"
+  },
+  {
+   "label": "C-KEY-1 constructs SettlementDecision.valid (positive)",
+   "ok": true,
+   "rc": 0,
+   "stderr": ""
+  },
+  {
+   "label": "stage V declares settlement_validity",
+   "ok": true,
+   "rc": 1,
+   "stderr": "C-validity owner violation: V declares C-owned output settlement_validity; only C may"
+  }
+ ]
+}

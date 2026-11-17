@@ -1,6 +1,6 @@
 //! Schema and supplied-record structural checks. This module never reads raw producer
 //! logs, prices usage, chooses partitions, computes money, or admits external grants.
-use crate::{Result, Spec};
+use crate::{Result, Spec, canonicalize_integers, exact_u64};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -91,7 +91,7 @@ fn validate_input(input: &Value) -> Result<()> {
     for (id, o) in &origins {
         let identity = (
             name(o, "source_origin_id")?,
-            o["original_position"].as_u64().unwrap(),
+            exact_u64(&o["original_position"]).ok_or("origin position outside u64 domain")?,
             name(o, "raw_bytes_sha256")?,
         );
         if !identities.insert(identity) {
@@ -637,6 +637,7 @@ fn validate_result(input: &Value, result: &Value) -> Result<()> {
 /// Checks a closed supplied document set. Opaque external raw/valuation locators
 /// remain references only; this establishes neither their truth nor admission.
 pub fn validate_accounting_bundle(bundle: &Value) -> Result<()> {
+    let bundle = &canonicalize_integers(bundle);
     let docs = rows(bundle, "documents")?;
     let mut by_id = BTreeMap::new();
     for d in docs {
