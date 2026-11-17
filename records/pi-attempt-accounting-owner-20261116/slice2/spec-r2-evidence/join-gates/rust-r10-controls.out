@@ -1,0 +1,47 @@
+
+running 1 test
+R10 negative extent: R10 finite premise outside independent admission: R10 exact raw applicability grants
+R10 negative interchanged: R10 finite premise outside independent admission: R10 exact raw applicability grants
+R10 negative fragment: R10 finite premise outside independent admission: R10 exact raw applicability grants
+R10 negative scope: R10 finite premise outside independent admission: R10 exact raw applicability initial_contracts
+R10 negative namespace: R10 finite premise outside independent admission: R10 exact raw applicability initial_contracts
+R10 negative endpoint: R10 finite premise outside independent admission: R10 exact raw applicability origins
+R10 negative link: R10 finite premise outside independent admission: R10 exact raw applicability grants
+R10 negative copy: R10 finite premise outside independent admission: R10 exact raw applicability initial_contracts
+R10 evaluated predicate="retained_charge" subject="corpus/cases/P9-claimed-charge-above-reservation.json" bundle="oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC11-multi-turn-session.json" bundle="oracle/r8-completion-B/VC11-multi-turn-session.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/P132-FG-VC11-gated.json" bundle="oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC07-read-failure-paired.json" bundle="oracle/r8-completion-B/VC07-read-failure-paired.bundle.json" outcome=pass
+R10 negative stale-payload: R10 referenced payload fragment/scope/namespace outside independent admission
+R10 evaluated predicate="retained_charge" subject="corpus/cases/P9-claimed-charge-above-reservation.json" bundle="oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC11-multi-turn-session.json" bundle="oracle/r8-completion-B/VC11-multi-turn-session.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/P132-FG-VC11-gated.json" bundle="oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC07-read-failure-paired.json" bundle="oracle/r8-completion-B/VC07-read-failure-paired.bundle.json" outcome=pass
+R10 evaluated predicate="malformed_response_model" subject="oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json" bundle="oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json" outcome=pass
+R10 evaluated predicate="malformed_response_model" subject="oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json" bundle="oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json" outcome=pass
+R10 negative omitted-class: R10 raw reservation-class actual membership/validity inventory
+R10 evaluated predicate="retained_charge" subject="corpus/cases/P9-claimed-charge-above-reservation.json" bundle="oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC11-multi-turn-session.json" bundle="oracle/r8-completion-B/VC11-multi-turn-session.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/P132-FG-VC11-gated.json" bundle="oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC07-read-failure-paired.json" bundle="oracle/r8-completion-B/VC07-read-failure-paired.bundle.json" outcome=pass
+R10 evaluated predicate="malformed_response_model" subject="oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json" bundle="oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json" outcome=pass
+R10 evaluated predicate="malformed_response_model" subject="oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json" bundle="oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json" outcome=pass
+R10 negative copy-merge: R10 raw reservation-class actual membership/validity inventory
+R10 negative raw-extent: R10 finite premise outside independent admission: oracle/r9-pilot/cases/equal-reservations.json governing values/types/inventory
+R10 negative exact-link: R10 finite premise outside independent admission: R10 exact raw applicability exact_links
+R10 evaluated predicate="retained_charge" subject="corpus/cases/P9-claimed-charge-above-reservation.json" bundle="oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC11-multi-turn-session.json" bundle="oracle/r8-completion-B/VC11-multi-turn-session.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/P132-FG-VC11-gated.json" bundle="oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC07-read-failure-paired.json" bundle="oracle/r8-completion-B/VC07-read-failure-paired.bundle.json" outcome=pass
+R10 evaluated predicate="malformed_response_model" subject="oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json" bundle="oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json" outcome=pass
+R10 evaluated predicate="malformed_response_model" subject="oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json" bundle="oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json" outcome=pass
+R10 evaluated predicate="reservation_classes" subject="oracle/r9-pilot/cases/equal-reservations.json" bundle="oracle/r9-pilot/cases/equal-reservations.bundle.json" outcome=pass
+R10 composed reservation "same-origin" classes=1 outcome=pass
+R10 composed reservation "admitted-copy" classes=1 outcome=pass
+R10 evaluated predicate=primary_anchor_conditional subject=oracle/r8-controls/VC07-conditional.bundle.json outcome=pass
+R10 negative unlinked-erasure: R10 raw conditional anchor/usage active financial inventory
+R10 negative route: R10 inapplicable relation selector control_file
+test r10_exact_applicability_and_registration_mutants ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 4.58s
+

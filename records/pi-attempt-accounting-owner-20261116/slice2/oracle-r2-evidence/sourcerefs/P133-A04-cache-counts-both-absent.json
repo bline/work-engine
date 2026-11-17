@@ -1,0 +1,625 @@
+{
+ "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+ "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+ "inputs_canonical_sha256": "e5665202044f8176f3d8ca037ee1ee25c44b5f04209a1acf8e398c377290d18d",
+ "lines": [
+  {
+   "byte_end_exclusive": 6511,
+   "byte_start": 6125,
+   "fields": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:02Z",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "request",
+     "presence": "value"
+    },
+    "/http_status": {
+     "json_type": "number",
+     "lexeme": "200",
+     "presence": "value"
+    },
+    "/model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/observed_tier": {
+     "json_type": "string",
+     "lexeme": "default",
+     "presence": "value"
+    },
+    "/requested_tier": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/response_id": {
+     "json_type": "string",
+     "lexeme": "resp_1",
+     "presence": "value"
+    },
+    "/response_model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/seconds": {
+     "json_type": "number",
+     "lexeme": "1.0",
+     "presence": "value"
+    },
+    "/terminal": {
+     "json_type": "string",
+     "lexeme": "response.completed",
+     "presence": "value"
+    },
+    "/usage": {
+     "json_type": "object",
+     "members": [
+      "input_tokens",
+      "output_tokens",
+      "reasoning_tokens"
+     ],
+     "presence": "value"
+    },
+    "/usage/input_tokens": {
+     "json_type": "number",
+     "lexeme": "1000",
+     "presence": "value"
+    },
+    "/usage/output_tokens": {
+     "json_type": "number",
+     "lexeme": "100",
+     "presence": "value"
+    },
+    "/usage/reasoning_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    }
+   },
+   "origin_id": "S1/turn-1:1",
+   "parse_state": "object",
+   "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+   "raw_utf8_length": 340,
+   "raw_utf8_sha256": "235e44cf1dd1b3878f69a42973dd81dacc97ee8186344cf0b685408c0b9d7722",
+   "token_sha256": "2ef9492c805c5aff826b2256725420e9bf1529237da336fc34fceeadaa3d79dd"
+  }
+ ],
+ "log_final_newline": {
+  "S1/turn-1": true
+ },
+ "tokens": {
+  "/added_in": {
+   "byte_end_exclusive": 24,
+   "byte_start": 16,
+   "json_type": "string",
+   "lexeme": "1.4-s1",
+   "token_sha256": "fd709c99bcda557f1153e912da731b35c594f0ecd4e69360e184165b727756c5"
+  },
+  "/ambiguity": {
+   "byte_end_exclusive": 45,
+   "byte_start": 41,
+   "json_type": "null",
+   "lexeme": "null",
+   "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  },
+  "/case_id": {
+   "byte_end_exclusive": 95,
+   "byte_start": 60,
+   "json_type": "string",
+   "lexeme": "P133-A04-cache-counts-both-absent",
+   "token_sha256": "0cc22c5a541fa2403f36c0bc509fdb09971c40a419eade8430703e3b42c436c7"
+  },
+  "/class": {
+   "byte_end_exclusive": 131,
+   "byte_start": 108,
+   "json_type": "string",
+   "lexeme": "adversarial_synthetic",
+   "token_sha256": "28da0a642a06384906dfc69643cf0c145cbc0c6c8f3c594c0a2fe6a189a7fe61"
+  },
+  "/contract": {
+   "byte_end_exclusive": 178,
+   "byte_start": 147,
+   "json_type": "string",
+   "lexeme": "pi-accounting-contract/1.7-s1",
+   "token_sha256": "67f788fb6397af3ef74d42c6baea23eebce8ecf9de0e6e577e02a9c1b644402d"
+  },
+  "/controls": {
+   "byte_end_exclusive": 239,
+   "byte_start": 194,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "37d2149d87df8375e90b1208c99355e00241b45a2c61351dfdaab05e3d5424ab"
+  },
+  "/controls/0": {
+   "byte_end_exclusive": 235,
+   "byte_start": 200,
+   "json_type": "string",
+   "lexeme": "VC06-unbudgeted-completed-request",
+   "token_sha256": "b22b76d0b5dfd43a59cb37d2380677785e3135bf833f08a97eb4ba8a16d3350c"
+  },
+  "/evaluations": {
+   "byte_end_exclusive": 2352,
+   "byte_start": 258,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "444f15e28aaca2d141e0ee8b5f8e45a8fa8bae9e6580ccef7e905f21136fc03a"
+  },
+  "/evaluations/0": {
+   "byte_end_exclusive": 2348,
+   "byte_start": 264,
+   "json_type": "object",
+   "members": [
+    "admission_request",
+    "expected",
+    "name",
+    "objectives"
+   ],
+   "token_sha256": "26b47e8753eb165b4a91fa4af7a135cfa8de8ba11313749e8603786197522ae4"
+  },
+  "/evaluations/0/admission_request": {
+   "byte_end_exclusive": 355,
+   "byte_start": 293,
+   "json_type": "object",
+   "members": [
+    "new",
+    "objective"
+   ],
+   "token_sha256": "4ac4e6112d6df5df9f7e683f0c9d9cc466c714caa9a9f262597fda7ca7863c33"
+  },
+  "/evaluations/0/admission_request/new": {
+   "byte_end_exclusive": 321,
+   "byte_start": 310,
+   "json_type": "string",
+   "lexeme": "100000000",
+   "token_sha256": "490cf7575da10dc49f2b973c322411b18ff6b65018411050f5288306f8db8207"
+  },
+  "/evaluations/0/admission_request/objective": {
+   "byte_end_exclusive": 347,
+   "byte_start": 344,
+   "json_type": "string",
+   "lexeme": "o",
+   "token_sha256": "f83c7a6ef728085a83084f105bd7ccd74b8a9d671a80e1a348393eb570d89441"
+  },
+  "/evaluations/0/name": {
+   "byte_end_exclusive": 2002,
+   "byte_start": 1993,
+   "json_type": "string",
+   "lexeme": "default",
+   "token_sha256": "1080a60800d9e5bddc69f51489c636a776bacaadb5368f46db4aa0947c67e3ba"
+  },
+  "/evaluations/0/objectives": {
+   "byte_end_exclusive": 2342,
+   "byte_start": 2024,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "819a6496a432a3b633bd340d03de89ac852b34f88035f6a9ffc669b7ce06a754"
+  },
+  "/evaluations/0/objectives/0": {
+   "byte_end_exclusive": 2334,
+   "byte_start": 2034,
+   "json_type": "object",
+   "members": [
+    "admissions",
+    "closed_at",
+    "limit",
+    "objective",
+    "predecessor",
+    "started_at",
+    "tree_sessions"
+   ],
+   "token_sha256": "9409dc7665be2680ffcc6204f07ddaa2d280eb038394c7e0d7e7cc8716754e85"
+  },
+  "/evaluations/0/objectives/0/admissions": {
+   "byte_end_exclusive": 2062,
+   "byte_start": 2060,
+   "json_type": "array",
+   "members": [],
+   "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "/evaluations/0/objectives/0/closed_at": {
+   "byte_end_exclusive": 2091,
+   "byte_start": 2087,
+   "json_type": "null",
+   "lexeme": "null",
+   "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  },
+  "/evaluations/0/objectives/0/limit": {
+   "byte_end_exclusive": 2124,
+   "byte_start": 2112,
+   "json_type": "string",
+   "lexeme": "1000000000",
+   "token_sha256": "bdb588ee73547b3eafede9d045805cb5a4a9e97271207895bb4c8b17968b2c78"
+  },
+  "/evaluations/0/objectives/0/objective": {
+   "byte_end_exclusive": 2152,
+   "byte_start": 2149,
+   "json_type": "string",
+   "lexeme": "o",
+   "token_sha256": "f83c7a6ef728085a83084f105bd7ccd74b8a9d671a80e1a348393eb570d89441"
+  },
+  "/evaluations/0/objectives/0/predecessor": {
+   "byte_end_exclusive": 2183,
+   "byte_start": 2179,
+   "json_type": "null",
+   "lexeme": "null",
+   "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  },
+  "/evaluations/0/objectives/0/started_at": {
+   "byte_end_exclusive": 2231,
+   "byte_start": 2209,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:00:00Z",
+   "token_sha256": "9b9e53bacf50073b057d6e27a753cd3daec461d599689c15898c840d302aee84"
+  },
+  "/evaluations/0/objectives/0/tree_sessions": {
+   "byte_end_exclusive": 2324,
+   "byte_start": 2260,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "ef22f48f021e00459f341960fefe2f8f9234e4b6f582e1491aa086fbf30f5cd1"
+  },
+  "/evaluations/0/objectives/0/tree_sessions/0": {
+   "byte_end_exclusive": 2312,
+   "byte_start": 2274,
+   "json_type": "string",
+   "lexeme": "00000000-0000-4000-8000-0000000000c1",
+   "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c"
+  },
+  "/findings": {
+   "byte_end_exclusive": 4788,
+   "byte_start": 4766,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "4e45936506bbc3354bd0d93d434bcc53a37ea016e5a6123305eb694aa5a49d45"
+  },
+  "/findings/0": {
+   "byte_end_exclusive": 4784,
+   "byte_start": 4772,
+   "json_type": "string",
+   "lexeme": "P1.32-A-04",
+   "token_sha256": "c1d90e77822b363c2359f1b6209e9ef0146dea0743ebeb87e151901d56352490"
+  },
+  "/group": {
+   "byte_end_exclusive": 4808,
+   "byte_start": 4801,
+   "json_type": "string",
+   "lexeme": "P1.33",
+   "token_sha256": "628afa970d04d8825a06add18b71672384240721005a99eacaa94fbe19e608ec"
+  },
+  "/inputs": {
+   "byte_end_exclusive": 6627,
+   "byte_start": 5315,
+   "json_type": "object",
+   "members": [
+    "rates",
+    "reference_time",
+    "sessions"
+   ],
+   "token_sha256": "61ad3ec3fa4d9d9c9c051acfc6a997276cada005e07f25cff6bd24bb423ae26d"
+  },
+  "/inputs/rates": {
+   "byte_end_exclusive": 5537,
+   "byte_start": 5330,
+   "json_type": "object",
+   "members": [
+    "anthropic_api_rates.json",
+    "openai_api_rates.json"
+   ],
+   "token_sha256": "428d05b21b29b8c6c445ee3a0b197cc20c1eff50a6f95592d506cbfb74564737"
+  },
+  "/inputs/rates/anthropic_api_rates.json": {
+   "byte_end_exclusive": 5432,
+   "byte_start": 5366,
+   "json_type": "string",
+   "lexeme": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "token_sha256": "afdb9fc9a73b4ff0d2440343e0645b70ba622d8f5e0762d2b5f2b9c1a08fc266"
+  },
+  "/inputs/rates/openai_api_rates.json": {
+   "byte_end_exclusive": 5531,
+   "byte_start": 5465,
+   "json_type": "string",
+   "lexeme": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58",
+   "token_sha256": "fdb98b6121ea0fe2999399f52f431f0eb22d9fb18eb143a4a880b30506250b73"
+  },
+  "/inputs/reference_time": {
+   "byte_end_exclusive": 5583,
+   "byte_start": 5561,
+   "json_type": "string",
+   "lexeme": "2026-11-10T07:00:00Z",
+   "token_sha256": "a1359231eec5e473f993cee1c7181caf272627cfbf575f464781eaee718966af"
+  },
+  "/inputs/sessions": {
+   "byte_end_exclusive": 6623,
+   "byte_start": 5601,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "0d7807f37266249c62ffe7db64726cd30920b2567085cfad7c0640dcfd9d6a70"
+  },
+  "/inputs/sessions/0": {
+   "byte_end_exclusive": 6617,
+   "byte_start": 5609,
+   "json_type": "object",
+   "members": [
+    "alias",
+    "launch",
+    "lifecycle",
+    "logs",
+    "session_id"
+   ],
+   "token_sha256": "4753781c96be8060b4fb2bc4d29539ac8681d4ec18fefb30e6e80fbbf9e1ba63"
+  },
+  "/inputs/sessions/0/alias": {
+   "byte_end_exclusive": 5632,
+   "byte_start": 5628,
+   "json_type": "string",
+   "lexeme": "S1",
+   "token_sha256": "b769fcb6dd480523a6d584b38fe7f280638c58e540d6af98400a1345dc2edb0c"
+  },
+  "/inputs/sessions/0/launch": {
+   "byte_end_exclusive": 5761,
+   "byte_start": 5652,
+   "json_type": "object",
+   "members": [
+    "auth_lane",
+    "model",
+    "parent"
+   ],
+   "token_sha256": "879f45398e283f6e97621f9ed2230da67d73426baf9a8c22476dd58ef5173897"
+  },
+  "/inputs/sessions/0/launch/auth_lane": {
+   "byte_end_exclusive": 5682,
+   "byte_start": 5677,
+   "json_type": "string",
+   "lexeme": "api",
+   "token_sha256": "63e3a42fcd0c2bc3820823b61f131b485a5d862055faad68bd11e4d7ee5ad107"
+  },
+  "/inputs/sessions/0/launch/model": {
+   "byte_end_exclusive": 5723,
+   "byte_start": 5703,
+   "json_type": "string",
+   "lexeme": "openai/gpt-6-astra",
+   "token_sha256": "d7b73e09e6c232b56aa266c1e4d43a5aa09c3ed551381d91c3817f91295349bb"
+  },
+  "/inputs/sessions/0/launch/parent": {
+   "byte_end_exclusive": 5751,
+   "byte_start": 5745,
+   "json_type": "string",
+   "lexeme": "root",
+   "token_sha256": "956e6e33fe8b21fbf3e7e43d41c304862c78627deb92e26a72fd2b3b57bc60f2"
+  },
+  "/inputs/sessions/0/lifecycle": {
+   "byte_end_exclusive": 6011,
+   "byte_start": 5784,
+   "json_type": "array",
+   "members": [
+    "0",
+    "1"
+   ],
+   "token_sha256": "9bc42244e4dbb454632af7136c10dcdaf15adecd480eb52d31e39b55080dadd4"
+  },
+  "/inputs/sessions/0/lifecycle/0": {
+   "byte_end_exclusive": 5904,
+   "byte_start": 5796,
+   "json_type": "object",
+   "members": [
+    "at",
+    "event",
+    "turn"
+   ],
+   "token_sha256": "144ebce2244efa8deb70135a473a6c3d69877e2f19c2597f831761f54c1081d5"
+  },
+  "/inputs/sessions/0/lifecycle/0/at": {
+   "byte_end_exclusive": 5838,
+   "byte_start": 5816,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:00:10Z",
+   "token_sha256": "b31f04a43f1b490762781c4ede3d044f008696aed570770bda5fa0857d0b7de2"
+  },
+  "/inputs/sessions/0/lifecycle/0/event": {
+   "byte_end_exclusive": 5869,
+   "byte_start": 5861,
+   "json_type": "string",
+   "lexeme": "launch",
+   "token_sha256": "6164c16405ffad14780cca15e85cf8688c355069ccb5b8dfa55b25603379a449"
+  },
+  "/inputs/sessions/0/lifecycle/0/turn": {
+   "byte_end_exclusive": 5892,
+   "byte_start": 5891,
+   "json_type": "number",
+   "lexeme": "1",
+   "token_sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+  },
+  "/inputs/sessions/0/lifecycle/1": {
+   "byte_end_exclusive": 6001,
+   "byte_start": 5916,
+   "json_type": "object",
+   "members": [
+    "at",
+    "event"
+   ],
+   "token_sha256": "48c35553fd8b49bb551b700f3417fed55bd3c35c4d72c2aa0176f9654b45060b"
+  },
+  "/inputs/sessions/0/lifecycle/1/at": {
+   "byte_end_exclusive": 5958,
+   "byte_start": 5936,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:50:00Z",
+   "token_sha256": "850ed653176f6a62af66509ba56533632926260d4cfbd8eea55f6dd2470857c4"
+  },
+  "/inputs/sessions/0/lifecycle/1/event": {
+   "byte_end_exclusive": 5989,
+   "byte_start": 5981,
+   "json_type": "string",
+   "lexeme": "retire",
+   "token_sha256": "a2a9d4ffbc4c361801bc55cbc97e993b34974d1cb94ba86138a02d7b5630ad91"
+  },
+  "/inputs/sessions/0/logs": {
+   "byte_end_exclusive": 6547,
+   "byte_start": 6029,
+   "json_type": "object",
+   "members": [
+    "turn-1"
+   ],
+   "token_sha256": "5f2fcd1bc151adfe0e5344dec5b584a1fa1225202c8e59c326c52c0b958b55b9"
+  },
+  "/inputs/sessions/0/logs/turn-1": {
+   "byte_end_exclusive": 6537,
+   "byte_start": 6051,
+   "json_type": "object",
+   "members": [
+    "final_newline",
+    "lines"
+   ],
+   "token_sha256": "b2def3e5c9d88c274f3d117522f68cc1ca309389a27a8c682c42155e21a85f46"
+  },
+  "/inputs/sessions/0/logs/turn-1/final_newline": {
+   "byte_end_exclusive": 6086,
+   "byte_start": 6082,
+   "json_type": "boolean",
+   "lexeme": "true",
+   "token_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+  },
+  "/inputs/sessions/0/logs/turn-1/lines": {
+   "byte_end_exclusive": 6525,
+   "byte_start": 6109,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "8fcf31e0b0e300f03bbfef8fa94df83a9c927417d7f0a47261f2d7fa855845e3"
+  },
+  "/inputs/sessions/0/logs/turn-1/lines/0": {
+   "byte_end_exclusive": 6511,
+   "byte_start": 6125,
+   "json_type": "string",
+   "lexeme": "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": 200, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": \"response.completed\", \"response_id\": \"resp_1\", \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"reasoning_tokens\": 0}, \"seconds\": 1.0}",
+   "token_sha256": "2ef9492c805c5aff826b2256725420e9bf1529237da336fc34fceeadaa3d79dd"
+  },
+  "/inputs/sessions/0/session_id": {
+   "byte_end_exclusive": 6609,
+   "byte_start": 6571,
+   "json_type": "string",
+   "lexeme": "00000000-0000-4000-8000-0000000000c1",
+   "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c"
+  },
+  "/invariants": {
+   "byte_end_exclusive": 6663,
+   "byte_start": 6645,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "e09f6e6be0a59398609664a8126841a9965d9437b32e67b176777fa6c4198bcc"
+  },
+  "/invariants/0": {
+   "byte_end_exclusive": 6659,
+   "byte_start": 6651,
+   "json_type": "string",
+   "lexeme": "INV-F5",
+   "token_sha256": "c519abc19d16159a29dea40f98d9dbe3d822e61faf72e9fc50617f07b2089979"
+  },
+  "/notes": {
+   "byte_end_exclusive": 6812,
+   "byte_start": 6676,
+   "json_type": "string",
+   "lexeme": "Both cache-count keys absent (no OpenAI row in the real corpus has this shape): every vertex of cached + write <= input is enumerated.",
+   "token_sha256": "26b0506d41f581143fbacfdaedca06ecf7166716d80de0daabb9c8ecd663c908"
+  },
+  "/profile": {
+   "byte_end_exclusive": 6845,
+   "byte_start": 6827,
+   "json_type": "string",
+   "lexeme": "current_producer",
+   "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611"
+  },
+  "/provenance": {
+   "byte_end_exclusive": 6957,
+   "byte_start": 6863,
+   "json_type": "object",
+   "members": [
+    "origin"
+   ],
+   "token_sha256": "f8493dee00b88850e52eb51610eca96c350e4591ceb51f372d618bb31c7e97e5"
+  },
+  "/provenance/origin": {
+   "byte_end_exclusive": 6953,
+   "byte_start": 6879,
+   "json_type": "string",
+   "lexeme": "contract::P1.33 Module A repair (from VC06-unbudgeted-completed-request)",
+   "token_sha256": "09fb3044ff3eb2a3694a7aa28eb56b22b2a0ed2d8173204969a61c2dd51d2b61"
+  },
+  "/reachability": {
+   "byte_end_exclusive": 7539,
+   "byte_start": 7522,
+   "json_type": "string",
+   "lexeme": "not_established",
+   "token_sha256": "434e0a30986d284f55880579dfb506626caa5f8b11991300db324a0cc0e4838d"
+  },
+  "/role": {
+   "byte_end_exclusive": 14361,
+   "byte_start": 14352,
+   "json_type": "string",
+   "lexeme": "finding",
+   "token_sha256": "e996ee63bc2d00dfcba6388c8ddeee47d4fbce806e00f97d2e6f15e8e697e6cf"
+  },
+  "/schema": {
+   "byte_end_exclusive": 14399,
+   "byte_start": 14375,
+   "json_type": "string",
+   "lexeme": "pi-accounting-corpus/1",
+   "token_sha256": "306af7cfa4a45640f62858c9928b68d0884ab7a6457e219d2186b0ea0a835e12"
+  }
+ },
+ "top_inventory": [
+  "added_in",
+  "ambiguity",
+  "case_id",
+  "class",
+  "contract",
+  "controls",
+  "evaluations",
+  "expected",
+  "findings",
+  "group",
+  "historical",
+  "inputs",
+  "invariants",
+  "notes",
+  "profile",
+  "provenance",
+  "rationale",
+  "reachability",
+  "revisions",
+  "revisions_r3",
+  "revisions_r4",
+  "revisions_r5",
+  "revisions_r6",
+  "revisions_r7",
+  "revisions_r8",
+  "role",
+  "schema"
+ ]
+}

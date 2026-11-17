@@ -1,0 +1,22 @@
+{
+  "admission": "conditional_fixture",
+  "case_id": "R11-CTL-admission-namespace-grouped",
+  "covered_origins": [
+    {
+      "origin_id": "S1/turn-1:1",
+      "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac"
+    },
+    {
+      "origin_id": "S1/turn-1:2",
+      "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c"
+    }
+  ],
+  "duplicate_rule": "same_origin_only",
+  "guarantee_kind": "initial_reference_scope",
+  "premise_id": "R11CTL/PREM-ADMISSION-SCOPE",
+  "raw_consistency_claim": "both covered origins carry raw admission-namespace references (S1/turn-1:1 subscription_proxy_admitted rid 1; S1/turn-1:2 subscription_proxy.rid 1); extent = complete source inventory; no byte-identical origins, so same_origin_only is adequate",
+  "raw_input_sha256": "161c9e12c09346a019fb9f74f214c96f1c2dd18afaa1a6820316f789a4cad1dc",
+  "reference_namespace": "admission",
+  "source_origin_id": "S1/turn-1",
+  "standing": "proposed for ROOT-ADMISSIONS.json; private control outside the 175 historical cases; no live authority"
+}

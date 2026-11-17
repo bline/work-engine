@@ -117,7 +117,9 @@
       "lineage_id": "P130-R08-admissions-without-tree-still-block",
       "low_rollups": [
         {
-          "alternative_origin_refs": [],
+          "alternative_origin_refs": [
+            "S1/turn-1:2"
+          ],
           "basis": "none",
           "credit_mode": "none",
           "credits": [],
@@ -139,7 +141,9 @@
           "single_floor": "0"
         },
         {
-          "alternative_origin_refs": [],
+          "alternative_origin_refs": [
+            "S1/turn-1:2"
+          ],
           "basis": "none",
           "credit_mode": "none",
           "credits": [],

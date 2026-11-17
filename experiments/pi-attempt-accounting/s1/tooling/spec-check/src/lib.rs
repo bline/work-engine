@@ -12,6 +12,7 @@ mod applicability;
 pub use applicability::*;
 mod corpus;
 pub use corpus::*;
+mod namespace;
 mod decisions;
 mod numbers;
 pub use accounting::*;

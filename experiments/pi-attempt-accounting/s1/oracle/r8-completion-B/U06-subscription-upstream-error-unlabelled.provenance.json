@@ -1,29 +1,13 @@
 {
-  "admission": "conditional_fixture",
+  "admission": "none",
   "authority_ref": "ROOT-ADOPTION-R6.json",
   "case_id": "U06-subscription-upstream-error-unlabelled",
-  "grant_payloads": [
-    {
-      "auxiliary_exact_row_coreference": "unestablished",
-      "exact_copy_equivalence": false,
-      "exact_origin_refs": [
-        "S1/turn-1:1",
-        "S1/turn-1:2"
-      ],
-      "guarantee": "Usable dollar rid is interpreted only within this immutable conditional fixture source scope; same-origin-only duplicate rule except the inherited C3 exact-byte-copy control.",
-      "immutable_reference_namespace": "U06-subscription-upstream-error-unlabelled/S1/turn-1",
-      "physical_bill_independence": "unestablished",
-      "source_origin_id": "S1/turn-1"
-    }
-  ],
-  "initial_scope_contracts": [
-    {
-      "contract_id": "conditional-ticket:S1/turn-1",
-      "duplicate_rule": "same_origin_only",
-      "grant_ref": "initial-scope:S1/turn-1",
-      "reference_namespace": "dollar_ticket",
-      "scope_id": "U06-subscription-upstream-error-unlabelled/S1/turn-1"
-    }
-  ],
-  "raw_input_sha256": "588f56c22df6d905501a25ebae3a15efbd0a33df7dc8eb2f3832f8c9854ec0e6"
+  "grant_payloads": [],
+  "initial_scope_contracts": [],
+  "raw_input_sha256": "588f56c22df6d905501a25ebae3a15efbd0a33df7dc8eb2f3832f8c9854ec0e6",
+  "withdrawn": {
+    "decision": "ROOT-DECISIONS-R1.json#Q-NAMESPACE",
+    "finding": "R8-NAMESPACE-01",
+    "reason": "declared dollar_ticket scope is raw-inconsistent with admission-namespace origins"
+  }
 }

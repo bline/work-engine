@@ -1,0 +1,1081 @@
+{
+ "schema": "pi-accounting-oracle-dossier/1",
+ "case_id": "P133-A04-cache-counts-both-absent",
+ "author": {
+  "role": "independent oracle (slice 2a)",
+  "owner_session": "01a1e569-2805-72ff-b837-03d1577c405d"
+ },
+ "standing": "Independently authored finite derivation for slice-2a finding controls; not consumer qualification. Scope lows for R8-LOW-INVENTORY-01; other families not derived in slice 2a.",
+ "subject": {
+  "branch": "oracle-r2",
+  "case_file": {
+   "path": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+   "sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c"
+  },
+  "inputs_canonical_sha256": "e5665202044f8176f3d8ca037ee1ee25c44b5f04209a1acf8e398c377290d18d"
+ },
+ "policy_refs": [
+  {
+   "policy_id": "BASE",
+   "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/design/PLAN.md",
+   "sha256": "43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61"
+  },
+  {
+   "policy_id": "AMD",
+   "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/PLAN-AMENDMENT.md",
+   "sha256": "c8376f7a94a2ee775a8b117e6424acae457cb86e138f890cf2240fbe2190ce46"
+  },
+  {
+   "policy_id": "CK",
+   "path": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/oracle-r2/spec/ck.json",
+   "sha256": "6dd58aa6f0c098c4e8124723f0113017c4d3bb367d9fe709b02493ec25a661c4"
+  },
+  {
+   "policy_id": "CONTRACT",
+   "path": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/oracle-r2/contract/CONTRACT.md",
+   "sha256": "96122db955a1d8b530e20cdc0a7653ae70c4bb127c7ef83b00d1c3daef7739ae"
+  },
+  {
+   "policy_id": "RD1",
+   "path": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice1/ROOT-DECISIONS-R1.json",
+   "sha256": "d76214ac8e26dd2343e4c8b08bd3f8f66437d89a43dd0be745619896b594e76d"
+  },
+  {
+   "policy_id": "RA",
+   "path": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice1/ROOT-ADMISSIONS.json",
+   "sha256": "1a2f508123cecfd2c0dbb588b68183020f10008861e43ee8f2e99faa83c67586"
+  },
+  {
+   "policy_id": "RATES-OPENAI",
+   "path": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/oracle-r2/oracle/rates/openai_api_rates.json",
+   "sha256": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  }
+ ],
+ "causal_admission": {
+  "top_inventory": [
+   {
+    "key": "added_in",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/added_in",
+     "byte_start": 16,
+     "byte_end_exclusive": 24,
+     "token_sha256": "fd709c99bcda557f1153e912da731b35c594f0ecd4e69360e184165b727756c5",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "ambiguity",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/ambiguity",
+     "byte_start": 41,
+     "byte_end_exclusive": 45,
+     "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+     "presence": "null",
+     "json_type": "null"
+    }
+   },
+   {
+    "key": "case_id",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/case_id",
+     "byte_start": 60,
+     "byte_end_exclusive": 95,
+     "token_sha256": "0cc22c5a541fa2403f36c0bc509fdb09971c40a419eade8430703e3b42c436c7",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "class",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/class",
+     "byte_start": 108,
+     "byte_end_exclusive": 131,
+     "token_sha256": "28da0a642a06384906dfc69643cf0c145cbc0c6c8f3c594c0a2fe6a189a7fe61",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "contract",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/contract",
+     "byte_start": 147,
+     "byte_end_exclusive": 178,
+     "token_sha256": "67f788fb6397af3ef74d42c6baea23eebce8ecf9de0e6e577e02a9c1b644402d",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "controls",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/controls",
+     "byte_start": 194,
+     "byte_end_exclusive": 239,
+     "token_sha256": "37d2149d87df8375e90b1208c99355e00241b45a2c61351dfdaab05e3d5424ab",
+     "presence": "value",
+     "json_type": "array"
+    }
+   },
+   {
+    "key": "evaluations",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/evaluations",
+     "byte_start": 258,
+     "byte_end_exclusive": 2352,
+     "token_sha256": "444f15e28aaca2d141e0ee8b5f8e45a8fa8bae9e6580ccef7e905f21136fc03a",
+     "presence": "value",
+     "json_type": "array"
+    }
+   },
+   {
+    "key": "expected",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/expected"
+    }
+   },
+   {
+    "key": "findings",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/findings",
+     "byte_start": 4766,
+     "byte_end_exclusive": 4788,
+     "token_sha256": "4e45936506bbc3354bd0d93d434bcc53a37ea016e5a6123305eb694aa5a49d45",
+     "presence": "value",
+     "json_type": "array"
+    }
+   },
+   {
+    "key": "group",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/group",
+     "byte_start": 4801,
+     "byte_end_exclusive": 4808,
+     "token_sha256": "628afa970d04d8825a06add18b71672384240721005a99eacaa94fbe19e608ec",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "historical",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/historical"
+    }
+   },
+   {
+    "key": "inputs",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/inputs",
+     "byte_start": 5315,
+     "byte_end_exclusive": 6627,
+     "token_sha256": "61ad3ec3fa4d9d9c9c051acfc6a997276cada005e07f25cff6bd24bb423ae26d",
+     "presence": "value",
+     "json_type": "object"
+    }
+   },
+   {
+    "key": "invariants",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/invariants",
+     "byte_start": 6645,
+     "byte_end_exclusive": 6663,
+     "token_sha256": "e09f6e6be0a59398609664a8126841a9965d9437b32e67b176777fa6c4198bcc",
+     "presence": "value",
+     "json_type": "array"
+    }
+   },
+   {
+    "key": "notes",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/notes",
+     "byte_start": 6676,
+     "byte_end_exclusive": 6812,
+     "token_sha256": "26b0506d41f581143fbacfdaedca06ecf7166716d80de0daabb9c8ecd663c908",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "profile",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/profile",
+     "byte_start": 6827,
+     "byte_end_exclusive": 6845,
+     "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "provenance",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/provenance",
+     "byte_start": 6863,
+     "byte_end_exclusive": 6957,
+     "token_sha256": "f8493dee00b88850e52eb51610eca96c350e4591ceb51f372d618bb31c7e97e5",
+     "presence": "value",
+     "json_type": "object"
+    }
+   },
+   {
+    "key": "rationale",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/rationale"
+    }
+   },
+   {
+    "key": "reachability",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/reachability",
+     "byte_start": 7522,
+     "byte_end_exclusive": 7539,
+     "token_sha256": "434e0a30986d284f55880579dfb506626caa5f8b11991300db324a0cc0e4838d",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "revisions",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions"
+    }
+   },
+   {
+    "key": "revisions_r3",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r3"
+    }
+   },
+   {
+    "key": "revisions_r4",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r4"
+    }
+   },
+   {
+    "key": "revisions_r5",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r5"
+    }
+   },
+   {
+    "key": "revisions_r6",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r6"
+    }
+   },
+   {
+    "key": "revisions_r7",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r7"
+    }
+   },
+   {
+    "key": "revisions_r8",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r8"
+    }
+   },
+   {
+    "key": "role",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/role",
+     "byte_start": 14352,
+     "byte_end_exclusive": 14361,
+     "token_sha256": "e996ee63bc2d00dfcba6388c8ddeee47d4fbce806e00f97d2e6f15e8e697e6cf",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "schema",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/schema",
+     "byte_start": 14375,
+     "byte_end_exclusive": 14399,
+     "token_sha256": "306af7cfa4a45640f62858c9928b68d0884ab7a6457e219d2186b0ea0a835e12",
+     "presence": "value",
+     "json_type": "string"
+    }
+   }
+  ],
+  "trusted_fixture_inputs": {
+   "ref": "case_token",
+   "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+   "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+   "pointer": "/trusted_fixture_inputs",
+   "presence": "absent"
+  },
+  "profile": {
+   "ref": "case_token",
+   "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+   "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+   "pointer": "/profile",
+   "byte_start": 6827,
+   "byte_end_exclusive": 6845,
+   "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "current_producer"
+  },
+  "contract": {
+   "ref": "case_token",
+   "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+   "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+   "pointer": "/contract",
+   "byte_start": 147,
+   "byte_end_exclusive": 178,
+   "token_sha256": "67f788fb6397af3ef74d42c6baea23eebce8ecf9de0e6e577e02a9c1b644402d",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "pi-accounting-contract/1.7-s1"
+  },
+  "schema": {
+   "ref": "case_token",
+   "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+   "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+   "pointer": "/schema",
+   "byte_start": 14375,
+   "byte_end_exclusive": 14399,
+   "token_sha256": "306af7cfa4a45640f62858c9928b68d0884ab7a6457e219d2186b0ea0a835e12",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "pi-accounting-corpus/1"
+  },
+  "role": {
+   "ref": "case_token",
+   "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+   "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+   "pointer": "/role",
+   "byte_start": 14352,
+   "byte_end_exclusive": 14361,
+   "token_sha256": "e996ee63bc2d00dfcba6388c8ddeee47d4fbce806e00f97d2e6f15e8e697e6cf",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "finding"
+  },
+  "inputs_canonical_sha256": "e5665202044f8176f3d8ca037ee1ee25c44b5f04209a1acf8e398c377290d18d",
+  "log_final_newline": {
+   "S1/turn-1": true
+  },
+  "required_scopes": [
+   "P133-A04-cache-counts-both-absent/default/o/owned_closed",
+   "P133-A04-cache-counts-both-absent/default/o/owned_outstanding"
+  ],
+  "additional_channels": []
+ },
+ "origins": [
+  {
+   "origin_id": "S1/turn-1:1",
+   "source_origin_id": "S1/turn-1",
+   "original_position": 1,
+   "source_ref": {
+    "ref": "raw_line",
+    "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+    "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+    "origin_id": "S1/turn-1:1",
+    "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+    "byte_start": 6125,
+    "byte_end_exclusive": 6511,
+    "token_sha256": "2ef9492c805c5aff826b2256725420e9bf1529237da336fc34fceeadaa3d79dd",
+    "raw_utf8_sha256": "235e44cf1dd1b3878f69a42973dd81dacc97ee8186344cf0b685408c0b9d7722",
+    "raw_utf8_length": 340
+   },
+   "parse_state": "object",
+   "field_states": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:02Z",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "request",
+     "presence": "value"
+    },
+    "/http_status": {
+     "json_type": "number",
+     "lexeme": "200",
+     "presence": "value"
+    },
+    "/model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/observed_tier": {
+     "json_type": "string",
+     "lexeme": "default",
+     "presence": "value"
+    },
+    "/requested_tier": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/response_id": {
+     "json_type": "string",
+     "lexeme": "resp_1",
+     "presence": "value"
+    },
+    "/response_model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/seconds": {
+     "json_type": "number",
+     "lexeme": "1.0",
+     "presence": "value"
+    },
+    "/terminal": {
+     "json_type": "string",
+     "lexeme": "response.completed",
+     "presence": "value"
+    },
+    "/usage": {
+     "json_type": "object",
+     "members": [
+      "input_tokens",
+      "output_tokens",
+      "reasoning_tokens"
+     ],
+     "presence": "value"
+    },
+    "/usage/input_tokens": {
+     "json_type": "number",
+     "lexeme": "1000",
+     "presence": "value"
+    },
+    "/usage/output_tokens": {
+     "json_type": "number",
+     "lexeme": "100",
+     "presence": "value"
+    },
+    "/usage/reasoning_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    }
+   }
+  }
+ ],
+ "premises": [],
+ "claims": [
+  {
+   "claim_id": "A04B/T2",
+   "family": "T_ownership_candidates_lifecycle_placement",
+   "subject": {
+    "attempt_usage_origin": "S1/turn-1:1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/evaluations/0/objectives/0/admissions",
+     "byte_start": 2060,
+     "byte_end_exclusive": 2062,
+     "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "presence": "value",
+     "json_type": "array"
+    },
+    {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "pointer": "/evaluations/0/objectives/0/tree_sessions/0",
+     "byte_start": 2274,
+     "byte_end_exclusive": 2312,
+     "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "00000000-0000-4000-8000-0000000000c1"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "235e44cf1dd1b3878f69a42973dd81dacc97ee8186344cf0b685408c0b9d7722",
+     "field": "/at",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:02Z"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a711.1 O-3, O-3a, O-6, O-7; \u00a710 L-2, L-6; \u00a711.2 P-2"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "a04b"
+   },
+   "expected": {
+    "variant": "Ownership",
+    "usage_origin": "S1/turn-1:1",
+    "ownership": "unadmitted",
+    "candidates": [
+     "o"
+    ],
+    "owned_by": null,
+    "reason": "no admission names S1 (O-6); tree of o contains S1 and its window [06:00, open) contains the row (O-7)"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": [
+    {
+     "finding_id": "R8-LOW-INVENTORY-01",
+     "relation": "direct"
+    }
+   ]
+  },
+  {
+   "claim_id": "A04B/VA1",
+   "family": "valuation_retained_amounts",
+   "subject": {
+    "usage_origin": "S1/turn-1:1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_line",
+     "file": "oracle-r2/corpus/cases/P133-A04-cache-counts-both-absent.json",
+     "file_sha256": "16d97886a58f1bd56b63fba1137e33b262926fb6c918725506278298f024960c",
+     "origin_id": "S1/turn-1:1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+     "byte_start": 6125,
+     "byte_end_exclusive": 6511,
+     "token_sha256": "2ef9492c805c5aff826b2256725420e9bf1529237da336fc34fceeadaa3d79dd",
+     "raw_utf8_sha256": "235e44cf1dd1b3878f69a42973dd81dacc97ee8186344cf0b685408c0b9d7722",
+     "raw_utf8_length": 340
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "235e44cf1dd1b3878f69a42973dd81dacc97ee8186344cf0b685408c0b9d7722",
+     "field": "/usage",
+     "presence": "value",
+     "json_type": "object"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "VALUATION V-1..V-5"
+    },
+    {
+     "policy_id": "RATES-OPENAI",
+     "section": "gpt-6-astra"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "a04b"
+   },
+   "expected": {
+    "variant": "ObservationValuation",
+    "origin": "S1/turn-1:1",
+    "state": "valued",
+    "low_nano": "see supplied 6000000 (V-4 vertices; not re-derived here)",
+    "note": "U membership depends only on candidate usage presence"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "A04B/E",
+   "family": "raw_E_identity_cardinality",
+   "subject": {
+    "case": "A04B"
+   },
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "Not derived in slice 2a: outside the finding controls this case supports (full S1 out of scope per slice-2a packet).",
+    "decision_owner": "oracle (future batch)",
+    "unmet_premise_refs": []
+   },
+   "premise_refs": [],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "n/a"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "a04b"
+   },
+   "expected": null,
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": [],
+   "note": "family not derived in slice 2a"
+  },
+  {
+   "claim_id": "A04B/NS",
+   "family": "namespace_grants",
+   "subject": {
+    "case": "A04B"
+   },
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "Not derived in slice 2a: outside the finding controls this case supports (full S1 out of scope per slice-2a packet).",
+    "decision_owner": "oracle (future batch)",
+    "unmet_premise_refs": []
+   },
+   "premise_refs": [],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "n/a"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "a04b"
+   },
+   "expected": null,
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": [],
+   "note": "family not derived in slice 2a"
+  },
+  {
+   "claim_id": "A04B/PM",
+   "family": "primary_membership_validity_exact_F",
+   "subject": {
+    "case": "A04B"
+   },
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "Not derived in slice 2a: outside the finding controls this case supports (full S1 out of scope per slice-2a packet).",
+    "decision_owner": "oracle (future batch)",
+    "unmet_premise_refs": []
+   },
+   "premise_refs": [],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "n/a"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "a04b"
+   },
+   "expected": null,
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": [],
+   "note": "family not derived in slice 2a"
+  },
+  {
+   "claim_id": "A04B/G",
+   "family": "gate_commitment_provisionality",
+   "subject": {
+    "case": "A04B"
+   },
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "Not derived in slice 2a: outside the finding controls this case supports (full S1 out of scope per slice-2a packet).",
+    "decision_owner": "oracle (future batch)",
+    "unmet_premise_refs": []
+   },
+   "premise_refs": [],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "n/a"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "a04b"
+   },
+   "expected": null,
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": [],
+   "note": "family not derived in slice 2a"
+  },
+  {
+   "claim_id": "A04B/CO",
+   "family": "finite_continuity_order",
+   "subject": {
+    "case": "A04B"
+   },
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "Not derived in slice 2a: outside the finding controls this case supports (full S1 out of scope per slice-2a packet).",
+    "decision_owner": "oracle (future batch)",
+    "unmet_premise_refs": []
+   },
+   "premise_refs": [],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "n/a"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "a04b"
+   },
+   "expected": null,
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": [],
+   "note": "family not derived in slice 2a"
+  }
+ ],
+ "family_status": {
+  "raw_E_identity_cardinality": {
+   "status": "RequiredUnmet",
+   "claim_ids": [
+    "A04B/E"
+   ],
+   "unmet_claim_ids": [
+    "A04B/E"
+   ],
+   "decision_owners": [
+    "oracle (future batch)"
+   ]
+  },
+  "namespace_grants": {
+   "status": "RequiredUnmet",
+   "claim_ids": [
+    "A04B/NS"
+   ],
+   "unmet_claim_ids": [
+    "A04B/NS"
+   ],
+   "decision_owners": [
+    "oracle (future batch)"
+   ]
+  },
+  "primary_membership_validity_exact_F": {
+   "status": "RequiredUnmet",
+   "claim_ids": [
+    "A04B/PM"
+   ],
+   "unmet_claim_ids": [
+    "A04B/PM"
+   ],
+   "decision_owners": [
+    "oracle (future batch)"
+   ]
+  },
+  "valuation_retained_amounts": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "A04B/VA1"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "T_ownership_candidates_lifecycle_placement": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "A04B/T2"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "gate_commitment_provisionality": {
+   "status": "RequiredUnmet",
+   "claim_ids": [
+    "A04B/G"
+   ],
+   "unmet_claim_ids": [
+    "A04B/G"
+   ],
+   "decision_owners": [
+    "oracle (future batch)"
+   ]
+  },
+  "finite_continuity_order": {
+   "status": "RequiredUnmet",
+   "claim_ids": [
+    "A04B/CO"
+   ],
+   "unmet_claim_ids": [
+    "A04B/CO"
+   ],
+   "decision_owners": [
+    "oracle (future batch)"
+   ]
+  }
+ },
+ "scope_lows": [
+  {
+   "scope_id": "P133-A04-cache-counts-both-absent/default/o/owned_closed",
+   "evaluation": "default",
+   "objective": "o",
+   "label": "owned_closed",
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "A04B/T2",
+    "A04B/VA1"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "SUPPORTED-LOW"
+    },
+    {
+     "policy_id": "BASE",
+     "section": "\u00a75"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "p133"
+   },
+   "expected_low": {
+    "owned_unit_origin_sets": [],
+    "U": [
+     "S1/turn-1:1"
+    ],
+    "seed": [],
+    "slots": [],
+    "single_floor": {
+     "nano": "0"
+    },
+    "independent_floor": {
+     "nano": "0"
+    },
+    "credits": [],
+    "selected_low": {
+     "nano": "0"
+    },
+    "credit_mode": "none",
+    "basis": "none"
+   },
+   "high": {
+    "status": {
+     "kind": "RequiredUnmet",
+     "reason": "Not derived in slice 2a: outside the finding controls this case supports (full S1 out of scope per slice-2a packet).",
+     "decision_owner": "oracle (future batch)",
+     "unmet_premise_refs": []
+    },
+    "expected": null
+   },
+   "consequence_if_admitted": null,
+   "note": "candidate usage stays in U (possible alternative) with no owned Seed, slot or credit: single_floor=0 because Seed is empty"
+  },
+  {
+   "scope_id": "P133-A04-cache-counts-both-absent/default/o/owned_outstanding",
+   "evaluation": "default",
+   "objective": "o",
+   "label": "owned_outstanding",
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "A04B/T2"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "SUPPORTED-LOW"
+    },
+    {
+     "policy_id": "BASE",
+     "section": "\u00a75"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "p133"
+   },
+   "expected_low": {
+    "owned_unit_origin_sets": [],
+    "U": [],
+    "seed": [],
+    "slots": [],
+    "single_floor": {
+     "nano": "0"
+    },
+    "independent_floor": {
+     "nano": "0"
+    },
+    "credits": [],
+    "selected_low": {
+     "nano": "0"
+    },
+    "credit_mode": "none",
+    "basis": "none"
+   },
+   "high": {
+    "status": {
+     "kind": "RequiredUnmet",
+     "reason": "Not derived in slice 2a: outside the finding controls this case supports (full S1 out of scope per slice-2a packet).",
+     "decision_owner": "oracle (future batch)",
+     "unmet_premise_refs": []
+    },
+    "expected": null
+   },
+   "consequence_if_admitted": null
+  }
+ ],
+ "excluded_channels": [
+  {
+   "channel": "K attempt finding codes",
+   "reason": "not one of the seven families"
+  }
+ ],
+ "reuse": []
+}

@@ -6,12 +6,16 @@
 //! number literals to `f64`, which rounds `18446744073709551615.0` to 2^64, accepts a fraction
 //! that rounds to an integer, and rejects `1e400` outright. `parse_json` therefore reads the
 //! literal with exact decimal arithmetic (never via `f64`) and stores a `Value` that preserves
-//! every schema-observable fact: integral literals within `i64`/`u64` become exact integers;
-//! an integral literal beyond them becomes `±1e40` (an integral number above/below every
-//! published bound); a non-integral literal keeps its `f64` unless `f64` would collapse it to an
-//! integer or infinity, in which case it becomes `0.5` (non-integral, below every published
-//! bound). Only integer-typed locations are numerically constrained by the published schemas.
+//! every schema-observable fact. Integral literals within `i64`/`u64` become exact integers. A
+//! value `f64` cannot keep exact (an integer wider than `u64`, or any non-integer) becomes an
+//! interned stand-in (see `Interner`): equal values share one stand-in, distinct values never do,
+//! integral stand-ins lie beyond every published bound and non-integral ones are non-integral, so
+//! `type`, `minimum`, `maximum`, `uniqueItems` and `enum` decide exactly as for the true values.
+//! Only integer-typed locations are numerically constrained by the published schemas. Limits:
+//! exponents beyond 2^40 in magnitude are clamped before classification, and a diagnostic that
+//! prints a rejected non-integer shows its stand-in, not the original literal.
 use serde_json::{Map, Number, Value};
+use std::collections::BTreeMap;
 
 /// Integral values wider than this are never expanded; 40 digits cover the full `i128`/`u128`
 /// range that any published numeric domain uses.
@@ -23,10 +27,12 @@ const EXPONENT_CLAMP: i64 = 1 << 40;
 pub enum NumberForm {
     /// Integral value: canonical decimal digits without sign, leading zeros or exponent.
     Integer { negative: bool, digits: String },
-    /// Integral value with more than 40 decimal digits (not expanded).
-    LargeInteger { negative: bool },
-    /// Mathematically non-integral value.
-    NonInteger,
+    /// Integral value with more than 40 decimal digits (not expanded); `key` is its canonical
+    /// `<digits>e<scale>` spelling, equal for equal values.
+    LargeInteger { negative: bool, key: String },
+    /// Mathematically non-integral value; `key` is its canonical signed `<digits>e<scale>`
+    /// spelling, equal for equal values.
+    NonInteger { key: String },
 }
 
 fn clamp_exponent(digits: &str, negative: bool) -> i64 {
@@ -67,11 +73,14 @@ pub fn classify_literal(text: &str) -> NumberForm {
         digits.pop();
         scale += 1;
     }
+    let key = format!("{digits}e{scale}");
     if scale < 0 {
-        return NumberForm::NonInteger;
+        return NumberForm::NonInteger {
+            key: if negative { format!("-{key}") } else { key },
+        };
     }
     if digits.len() as i64 + scale > MAX_EXPANDED_DIGITS {
-        return NumberForm::LargeInteger { negative };
+        return NumberForm::LargeInteger { negative, key };
     }
     digits.extend(std::iter::repeat_n('0', scale as usize));
     NumberForm::Integer { negative, digits }
@@ -118,32 +127,63 @@ pub fn canonicalize_integers(value: &Value) -> Value {
     }
 }
 
-fn sentinel(negative: bool) -> Value {
-    Value::Number(Number::from_f64(if negative { -1e40 } else { 1e40 }).expect("finite"))
+/// Values the standard `f64` representation cannot keep exact (integers wider than `u64`,
+/// every non-integer) are replaced by interned stand-ins: equal values share one stand-in and
+/// distinct values never do, so `uniqueItems`/`enum` over them stay exact. A wide integer's
+/// stand-in is `±(k+1)·1e40` (integral, beyond every published bound); a non-integer's is
+/// `0.5 + (k+1)/2^30` (non-integral, below every published bound). Real numbers of either class
+/// never survive in the parsed `Value`, so a stand-in cannot collide with a real value.
+#[derive(Default)]
+struct Interner {
+    wide: BTreeMap<String, usize>,
+    fractions: BTreeMap<String, usize>,
 }
 
-fn number_value(text: &str) -> Value {
-    match classify_literal(text) {
+const MAX_FRACTION_STAND_INS: usize = 1 << 27;
+
+impl Interner {
+    fn wide(&mut self, negative: bool, key: String) -> Result<Value, String> {
+        let next = self.wide.len();
+        let index = *self
+            .wide
+            .entry(format!("{}{key}", if negative { "-" } else { "+" }))
+            .or_insert(next);
+        let magnitude = (index + 1) as f64 * 1e40;
+        Ok(Value::Number(
+            Number::from_f64(if negative { -magnitude } else { magnitude }).ok_or("JSON: too many distinct wide integers")?,
+        ))
+    }
+    fn fraction(&mut self, key: String) -> Result<Value, String> {
+        let next = self.fractions.len();
+        let index = *self.fractions.entry(key).or_insert(next);
+        if index >= MAX_FRACTION_STAND_INS {
+            return Err("JSON: too many distinct non-integer numbers".into());
+        }
+        Ok(Value::Number(
+            Number::from_f64(0.5 + (index + 1) as f64 / 1073741824.0).ok_or("JSON: number stand-in")?,
+        ))
+    }
+}
+
+fn number_value(text: &str, interner: &mut Interner) -> Result<Value, String> {
+    Ok(match classify_literal(text) {
         NumberForm::Integer { negative, digits } => {
             let parsed = if negative {
                 digits.parse::<i64>().ok().map(|d| Number::from(-d))
             } else {
                 digits.parse::<u64>().ok().map(Number::from)
             };
-            match (parsed, negative) {
-                (Some(n), _) => Value::Number(n),
-                (None, _) if negative && digits == "9223372036854775808" => {
+            match parsed {
+                Some(n) => Value::Number(n),
+                None if negative && digits == "9223372036854775808" => {
                     Value::Number(Number::from(i64::MIN))
                 }
-                (None, n) => sentinel(n),
+                None => interner.wide(negative, digits)?,
             }
         }
-        NumberForm::LargeInteger { negative } => sentinel(negative),
-        NumberForm::NonInteger => match text.parse::<f64>().ok().and_then(Number::from_f64) {
-            Some(n) if n.as_f64().is_some_and(|f| f.fract() != 0.0) => Value::Number(n),
-            _ => Value::Number(Number::from_f64(0.5).expect("finite")),
-        },
-    }
+        NumberForm::LargeInteger { negative, key } => interner.wide(negative, key)?,
+        NumberForm::NonInteger { key } => interner.fraction(key)?,
+    })
 }
 
 /// Recursion bound identical to `serde_json`'s, so deeply nested input is a controlled error.
@@ -152,6 +192,7 @@ const MAX_DEPTH: usize = 127;
 struct Reader<'a> {
     bytes: &'a [u8],
     at: usize,
+    interner: Interner,
 }
 
 impl Reader<'_> {
@@ -269,7 +310,7 @@ impl Reader<'_> {
             }
         }
         let text = std::str::from_utf8(&self.bytes[start..self.at]).expect("ascii number");
-        Ok(number_value(text))
+        number_value(text, &mut self.interner)
     }
     fn hex4(&mut self) -> Result<u32, String> {
         let slice = self.bytes.get(self.at..self.at + 4);
@@ -349,7 +390,11 @@ impl Reader<'_> {
 /// Parse one JSON document with exact integer semantics (see the module comment). Same grammar,
 /// duplicate-key (last wins) and nesting bound as `serde_json::from_slice`.
 pub fn parse_json(bytes: &[u8]) -> Result<Value, String> {
-    let mut reader = Reader { bytes, at: 0 };
+    let mut reader = Reader {
+        bytes,
+        at: 0,
+        interner: Interner::default(),
+    };
     let value = reader.value(0)?;
     reader.skip_space();
     if reader.at != bytes.len() {
@@ -361,6 +406,9 @@ pub fn parse_json(bytes: &[u8]) -> Result<Value, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn ni(key: &str) -> NumberForm {
+        NumberForm::NonInteger { key: key.into() }
+    }
     fn int(negative: bool, digits: &str) -> NumberForm {
         NumberForm::Integer {
             negative,
@@ -382,12 +430,13 @@ mod tests {
             ("-12e1", int(true, "120")),
             ("18446744073709551615.0", int(false, "18446744073709551615")),
             ("1.8446744073709551615e19", int(false, "18446744073709551615")),
-            ("1.5", NumberForm::NonInteger),
-            ("4294967295.0000000000000001", NumberForm::NonInteger),
-            ("1e-999999999999999999999", NumberForm::NonInteger),
+            ("1.5", ni("15e-1")),
+            ("1.50", ni("15e-1")),
+            ("4294967295.0000000000000001", ni("42949672950000000000000001e-16")),
+            ("-0.25", ni("-25e-2")),
             ("0.000000000000000000000000001e27", int(false, "1")),
-            ("1e40", NumberForm::LargeInteger { negative: false }),
-            ("-1e999999999999999999999", NumberForm::LargeInteger { negative: true }),
+            ("1e40", NumberForm::LargeInteger { negative: false, key: "1e40".into() }),
+            ("-1e999999999999999999999", NumberForm::LargeInteger { negative: true, key: "1e1099511627776".into() }),
             ("0e999999999999999999999", int(false, "0")),
         ] {
             assert_eq!(classify_literal(text), want, "{text}");
@@ -417,9 +466,34 @@ mod tests {
         assert_eq!(exact_u64(&standard[2]), None);
     }
     #[test]
+    fn stand_ins_keep_equality_and_distinctness_exact() {
+        let parse = |s: &str| parse_json(s.as_bytes()).unwrap();
+        let same = |s: &str| {
+            let v = parse(s);
+            v[0] == v[1]
+        };
+        // equal values, different spellings, share one stand-in
+        assert!(same("[1e41, 10e40]") && same("[1.5, 1.50]") && same("[0.1e1, 1e-0]"));
+        assert!(same("[-18446744073709551616, -1.8446744073709551616e19]"));
+        // distinct values never do, including ones `f64` cannot tell apart
+        assert!(!same("[18446744073709551616, 18446744073709551617]"));
+        assert!(!same("[1e41, 1e42]") && !same("[1e-400, 1e-401]"));
+        assert!(!same("[0.1, 0.1000000000000000055511151231257827]"));
+        assert!(!same("[1e999999, 2e999999]"));
+        assert!(!same("[1e41, -1e41]"));
+        // a real 0.5 is itself interned, so it cannot collide with another value's stand-in
+        let v = parse("[0.5, 1e-400, 0.5000000009313225746154785]");
+        assert!(v[0] != v[1] && v[1] != v[2] && v[0] != v[2]);
+        // stand-ins keep every published bound decision: integral beyond u64/i64, non-integral < 1
+        let v = parse("[18446744073709551616, -9223372036854775809, 4294967295.0000000000000001]");
+        assert!(v[0].as_f64().unwrap() > 18446744073709551615.0 && v[0].as_u64().is_none());
+        assert!(v[1].as_f64().unwrap() < -9223372036854775808.0 && v[1].as_i64().is_none());
+        assert!(v[2].as_f64().unwrap().fract() != 0.0);
+    }
+    #[test]
     fn exact_parser_matches_serde_json_on_every_non_numeric_construct() {
         let documents = [
-            r#"{"a":[1,2,{"b":null}],"c":"x\u00e9\ud83d\ude00\n\"\\\/","a":true,"d":-5,"e":0.25,"f":""}"#,
+            r#"{"a":[1,2,{"b":null}],"c":"x\u00e9\ud83d\ude00\n\"\\\/","a":true,"d":-5,"f":""}"#,
             " \t\n[ ] ",
             r#"{"é":"ü","k":[[],{}]}"#,
         ];

@@ -1,0 +1,1952 @@
+{
+ "schema": "pi-accounting-oracle-revisions/r11",
+ "author": "pi-accounting-oracle-author (slice 2a)",
+ "base_commit": "2729107",
+ "standing": "Every supplied-output change on branch oracle-r2 with its finding, derivation and rule. Raw inputs unchanged (case inputs canonical digests preserved).",
+ "not_changed": [
+  {
+   "file": "oracle/r8-completion-A/DERIVATIONS.json",
+   "reason": "its scope_claims also omit the five candidate U origins (R8-LOW-INVENTORY-01), but the accepted R10 admission (validator/r10_admitted.json) binds this whole file as the P132-FG-VC11 payload; changing it requires root re-admission. Superseded for these five scopes by LOW-ASSERTIONS.json, the bundles and slice2/oracle-r2-evidence/dossier."
+  }
+ ],
+ "revisions": [
+  {
+   "file": "corpus/cases/P132-CP-closed-predecessor-outstanding.json",
+   "field": "evaluations[request-successor].expected.attribution[res:S1/turn-1:rid=1].placement",
+   "from": "inside",
+   "to": "straddles_closure",
+   "finding": "R8-PLACEMENT-01",
+   "derivation": "slice1/oracle-batch1/dossier/P132-CP-closed-predecessor-outstanding.json#P132CP/T3,P132CP/G3",
+   "rule": "CONTRACT 11.2 P-1/P-4, 12.1 PlacementStraddles; closure established (close.at == closed_at 06:40); outstanding interval [06:30, open)"
+  },
+  {
+   "file": "corpus/cases/P132-CP-closed-predecessor-outstanding.json",
+   "field": "evaluations[request-successor].expected.objectives[p].reasons",
+   "from": [
+    "UnenforcedCommitment",
+    "UnresolvedExposure"
+   ],
+   "to": [
+    "PlacementStraddles",
+    "UnenforcedCommitment",
+    "UnresolvedExposure"
+   ],
+   "finding": "R8-PLACEMENT-01",
+   "derivation": "slice1/oracle-batch1/dossier/P132-CP-closed-predecessor-outstanding.json#P132CP/T3,P132CP/G3",
+   "rule": "CONTRACT 11.2 P-1/P-4, 12.1 PlacementStraddles; closure established (close.at == closed_at 06:40); outstanding interval [06:30, open)"
+  },
+  {
+   "file": "corpus/cases/P132-CP-closed-predecessor-outstanding.json",
+   "field": "evaluations[request-predecessor].expected.attribution[res:S1/turn-1:rid=1].placement",
+   "from": "inside",
+   "to": "straddles_closure",
+   "finding": "R8-PLACEMENT-01",
+   "derivation": "slice1/oracle-batch1/dossier/P132-CP-closed-predecessor-outstanding.json#P132CP/T3,P132CP/G3",
+   "rule": "CONTRACT 11.2 P-1/P-4, 12.1 PlacementStraddles; closure established (close.at == closed_at 06:40); outstanding interval [06:30, open)"
+  },
+  {
+   "file": "corpus/cases/P132-CP-closed-predecessor-outstanding.json",
+   "field": "evaluations[request-predecessor].expected.objectives[p].reasons",
+   "from": [
+    "UnenforcedCommitment",
+    "UnresolvedExposure"
+   ],
+   "to": [
+    "PlacementStraddles",
+    "UnenforcedCommitment",
+    "UnresolvedExposure"
+   ],
+   "finding": "R8-PLACEMENT-01",
+   "derivation": "slice1/oracle-batch1/dossier/P132-CP-closed-predecessor-outstanding.json#P132CP/T3,P132CP/G3",
+   "rule": "CONTRACT 11.2 P-1/P-4, 12.1 PlacementStraddles; closure established (close.at == closed_at 06:40); outstanding interval [06:30, open)"
+  },
+  {
+   "file": "oracle/r8-completion-A/LOW-ASSERTIONS.json",
+   "field": "P130-R08-admissions-without-tree-still-block/default/o/owned_closed.alternative_origin_refs",
+   "from": [],
+   "to": [
+    "S1/turn-1:2"
+   ],
+   "finding": "R8-LOW-INVENTORY-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/P130-R08-admissions-without-tree-still-block.json",
+   "rule": "BASE 5 / SUPPORTED-LOW: U = admitted-or-candidate usage inventory; candidate adds no Seed, slot or credit (seed [] and low 0 unchanged)"
+  },
+  {
+   "file": "oracle/r8-completion-A/LOW-ASSERTIONS.json",
+   "field": "P130-R08-admissions-without-tree-still-block/default/p/owned_closed.alternative_origin_refs",
+   "from": [],
+   "to": [
+    "S1/turn-1:2"
+   ],
+   "finding": "R8-LOW-INVENTORY-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/P130-R08-admissions-without-tree-still-block.json",
+   "rule": "BASE 5 / SUPPORTED-LOW: U = admitted-or-candidate usage inventory; candidate adds no Seed, slot or credit (seed [] and low 0 unchanged)"
+  },
+  {
+   "file": "oracle/r8-completion-A/LOW-ASSERTIONS.json",
+   "field": "P130-R12-untrusted-clock-keeps-candidate/default/o/owned_closed.alternative_origin_refs",
+   "from": [],
+   "to": [
+    "S1/turn-1:1"
+   ],
+   "finding": "R8-LOW-INVENTORY-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/P130-R12-untrusted-clock-keeps-candidate.json",
+   "rule": "BASE 5 / SUPPORTED-LOW: U = admitted-or-candidate usage inventory; candidate adds no Seed, slot or credit (seed [] and low 0 unchanged)"
+  },
+  {
+   "file": "oracle/r8-completion-A/LOW-ASSERTIONS.json",
+   "field": "P133-A04-cache-counts-both-absent/default/o/owned_closed.alternative_origin_refs",
+   "from": [],
+   "to": [
+    "S1/turn-1:1"
+   ],
+   "finding": "R8-LOW-INVENTORY-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/P133-A04-cache-counts-both-absent.json",
+   "rule": "BASE 5 / SUPPORTED-LOW: U = admitted-or-candidate usage inventory; candidate adds no Seed, slot or credit (seed [] and low 0 unchanged)"
+  },
+  {
+   "file": "oracle/r8-completion-A/LOW-ASSERTIONS.json",
+   "field": "P133-A04-cache-write-absent-legacy/default/o/owned_closed.alternative_origin_refs",
+   "from": [],
+   "to": [
+    "S1/turn-1:1"
+   ],
+   "finding": "R8-LOW-INVENTORY-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/P133-A04-cache-write-absent-legacy.json",
+   "rule": "BASE 5 / SUPPORTED-LOW: U = admitted-or-candidate usage inventory; candidate adds no Seed, slot or credit (seed [] and low 0 unchanged)"
+  },
+  {
+   "file": "oracle/r8-completion-A/P130-R08-admissions-without-tree-still-block.bundle.json",
+   "field": "P130-R08-admissions-without-tree-still-block/default/o/owned_closed.alternative_origin_refs",
+   "from": [],
+   "to": [
+    "S1/turn-1:2"
+   ],
+   "finding": "R8-LOW-INVENTORY-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/P130-R08-admissions-without-tree-still-block.json",
+   "rule": "BASE 5 / SUPPORTED-LOW: U = admitted-or-candidate usage inventory; candidate adds no Seed, slot or credit (seed [] and low 0 unchanged)"
+  },
+  {
+   "file": "oracle/r8-completion-A/P130-R08-admissions-without-tree-still-block.bundle.json",
+   "field": "P130-R08-admissions-without-tree-still-block/default/p/owned_closed.alternative_origin_refs",
+   "from": [],
+   "to": [
+    "S1/turn-1:2"
+   ],
+   "finding": "R8-LOW-INVENTORY-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/P130-R08-admissions-without-tree-still-block.json",
+   "rule": "BASE 5 / SUPPORTED-LOW: U = admitted-or-candidate usage inventory; candidate adds no Seed, slot or credit (seed [] and low 0 unchanged)"
+  },
+  {
+   "file": "oracle/r8-completion-A/P130-R12-untrusted-clock-keeps-candidate.bundle.json",
+   "field": "P130-R12-untrusted-clock-keeps-candidate/default/o/owned_closed.alternative_origin_refs",
+   "from": [],
+   "to": [
+    "S1/turn-1:1"
+   ],
+   "finding": "R8-LOW-INVENTORY-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/P130-R12-untrusted-clock-keeps-candidate.json",
+   "rule": "BASE 5 / SUPPORTED-LOW: U = admitted-or-candidate usage inventory; candidate adds no Seed, slot or credit (seed [] and low 0 unchanged)"
+  },
+  {
+   "file": "oracle/r8-completion-A/P133-A04-cache-counts-both-absent.bundle.json",
+   "field": "P133-A04-cache-counts-both-absent/default/o/owned_closed.alternative_origin_refs",
+   "from": [],
+   "to": [
+    "S1/turn-1:1"
+   ],
+   "finding": "R8-LOW-INVENTORY-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/P133-A04-cache-counts-both-absent.json",
+   "rule": "BASE 5 / SUPPORTED-LOW: U = admitted-or-candidate usage inventory; candidate adds no Seed, slot or credit (seed [] and low 0 unchanged)"
+  },
+  {
+   "file": "oracle/r8-completion-A/P133-A04-cache-write-absent-legacy.bundle.json",
+   "field": "P133-A04-cache-write-absent-legacy/default/o/owned_closed.alternative_origin_refs",
+   "from": [],
+   "to": [
+    "S1/turn-1:1"
+   ],
+   "finding": "R8-LOW-INVENTORY-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/P133-A04-cache-write-absent-legacy.json",
+   "rule": "BASE 5 / SUPPORTED-LOW: U = admitted-or-candidate usage inventory; candidate adds no Seed, slot or credit (seed [] and low 0 unchanged)"
+  },
+  {
+   "file": "corpus/cases/VC08-subscription-measured-request.json",
+   "field": "expected.attempts",
+   "from": [
+    {
+     "accounting_result_ref": "oracle/r8-completion-B/VC08-subscription-measured-request.bundle.json#result:VC08-subscription-measured-request",
+     "billing": "not_applicable",
+     "blocking": [],
+     "correlation": {
+      "kind": "exact"
+     },
+     "diagnostics": [],
+     "evidence": [
+      "S1/turn-1:1",
+      "S1/turn-1:2"
+     ],
+     "execution": "terminal",
+     "exposure": {
+      "billing": "unknown",
+      "pool": "codex"
+     },
+     "forwarding": "forwarded",
+     "key": "adm:S1/turn-1:rid=1",
+     "obligation": {
+      "amount_source": "none",
+      "cause": "subscription",
+      "state": "none"
+     },
+     "replacement": {
+      "eligible": false,
+      "reason": "NoReservation"
+     },
+     "settlement": {
+      "decision": "not_applicable",
+      "reasons": []
+     },
+     "valuation": {
+      "state": "not_applicable"
+     }
+    }
+   ],
+   "to": [
+    {
+     "accounting_result_ref": "oracle/r8-completion-B/VC08-subscription-measured-request.bundle.json#result:VC08-subscription-measured-request",
+     "billing": "not_applicable",
+     "blocking": [],
+     "correlation": {
+      "kind": "exact"
+     },
+     "diagnostics": [],
+     "evidence": [
+      "S1/turn-1:1"
+     ],
+     "execution": "not_terminal",
+     "exposure": {
+      "billing": "unknown",
+      "pool": "codex"
+     },
+     "forwarding": "unknown",
+     "key": "adm:S1/turn-1:rid=1",
+     "obligation": {
+      "amount_source": "none",
+      "cause": "subscription",
+      "state": "none"
+     },
+     "replacement": {
+      "eligible": false,
+      "reason": "NoReservation"
+     },
+     "settlement": {
+      "decision": "not_applicable",
+      "reasons": []
+     },
+     "valuation": {
+      "state": "not_applicable"
+     }
+    },
+    {
+     "accounting_result_ref": "oracle/r8-completion-B/VC08-subscription-measured-request.bundle.json#result:VC08-subscription-measured-request",
+     "billing": "not_applicable",
+     "blocking": [],
+     "correlation": {
+      "kind": "exact"
+     },
+     "diagnostics": [],
+     "evidence": [
+      "S1/turn-1:2"
+     ],
+     "execution": "terminal",
+     "exposure": {
+      "billing": "unknown",
+      "pool": "codex"
+     },
+     "forwarding": "forwarded",
+     "key": "row:S1/turn-1:line=2",
+     "obligation": {
+      "amount_source": "none",
+      "cause": "subscription",
+      "state": "none"
+     },
+     "replacement": {
+      "eligible": false,
+      "reason": "NoReservation"
+     },
+     "settlement": {
+      "decision": "not_applicable",
+      "reasons": []
+     },
+     "valuation": {
+      "state": "not_applicable"
+     }
+    }
+   ],
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/VC08-subscription-measured-request.json#PM2,VA2",
+   "rule": "BASE 3: no admitted scope and no admitted exact link => OriginBase per origin (ROOT-DECISIONS-R1 Q-NAMESPACE NOT ADMITTED; root reply 2026-11-16 option B)"
+  },
+  {
+   "file": "corpus/cases/VC08-subscription-measured-request.json",
+   "field": "evaluations[default].expected.attribution",
+   "from": [
+    {
+     "attempt": "adm:S1/turn-1:rid=1",
+     "candidates": [
+      "o"
+     ],
+     "objective": null,
+     "ownership": "unadmitted",
+     "placement": "uncertain"
+    }
+   ],
+   "to": [
+    {
+     "attempt": "adm:S1/turn-1:rid=1",
+     "candidates": [
+      "o"
+     ],
+     "objective": null,
+     "ownership": "unadmitted",
+     "placement": "uncertain"
+    },
+    {
+     "attempt": "row:S1/turn-1:line=2",
+     "candidates": [
+      "o"
+     ],
+     "objective": null,
+     "ownership": "unadmitted",
+     "placement": "uncertain"
+    }
+   ],
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/VC08-subscription-measured-request.json#T2",
+   "rule": "O-6/O-7 per OriginBase unit"
+  },
+  {
+   "file": "oracle/r8-completion-B/VC08-subscription-measured-request.bundle.json",
+   "field": "documents[input:VC08-subscription-measured-request].initial_contracts/grants/origins[].initial_contract_ref",
+   "from": {
+    "initial_contracts": [
+     {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "VC08-subscription-measured-request/S1/turn-1"
+     }
+    ],
+    "grants": [
+     {
+      "admission": "conditional_fixture",
+      "assumption_refs": [
+       "Inherited immutable ticket namespace only; no exact auxiliary link or physical-bill independence."
+      ],
+      "authority_ref": "ROOT-ADOPTION-R6.json",
+      "covered_extent_ref": "sha256:161c9e12c09346a019fb9f74f214c96f1c2dd18afaa1a6820316f789a4cad1dc",
+      "covered_origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "exact_payload_ref": "oracle/r8-completion-B/VC08-subscription-measured-request.provenance.json#S1/turn-1",
+      "grant_id": "initial-scope:S1/turn-1",
+      "guarantee_kind": "initial_reference_scope",
+      "observer_or_harness_ref": "inherited-corpus-conditional-fixture"
+     }
+    ]
+   },
+   "to": {
+    "initial_contracts": [
+     {
+      "contract_id": "raw-admission-namespace:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "reference_namespace": "admission"
+     }
+    ],
+    "grants": []
+   },
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/VC08-subscription-measured-request.json#NS1,NS2,NS3",
+   "rule": "BASE 3 admission references use a separate namespace; c8376f7a NAMESPACE-APPLICATION; ROOT-DECISIONS-R1 Q-NAMESPACE NOT ADMITTED: raw admission namespace recorded, no scope grant"
+  },
+  {
+   "file": "oracle/r8-completion-B/VC08-subscription-measured-request.provenance.json",
+   "field": "grant_payloads/initial_scope_contracts",
+   "from": {
+    "grant_payloads": [
+     {
+      "auxiliary_exact_row_coreference": "unestablished",
+      "exact_copy_equivalence": false,
+      "exact_origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "guarantee": "Usable dollar rid is interpreted only within this immutable conditional fixture source scope; same-origin-only duplicate rule except the inherited C3 exact-byte-copy control.",
+      "immutable_reference_namespace": "VC08-subscription-measured-request/S1/turn-1",
+      "physical_bill_independence": "unestablished",
+      "source_origin_id": "S1/turn-1"
+     }
+    ],
+    "initial_scope_contracts": [
+     {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "VC08-subscription-measured-request/S1/turn-1"
+     }
+    ]
+   },
+   "to": "withdrawn",
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/VC08-subscription-measured-request.json#NS2",
+   "rule": "raw-inconsistent dollar_ticket declaration withdrawn; no admission-namespace grant admitted (Q-NAMESPACE)"
+  },
+  {
+   "file": "oracle/r8-completion-B/VC08-subscription-measured-request.bundle.json",
+   "field": "documents[result:VC08-subscription-measured-request].bases/units/origins/valuation_records",
+   "from": {
+    "bases": [
+     {
+      "atomize": false,
+      "atomize_fact_refs": [],
+      "base_id": "base:adm:S1/turn-1:rid=1",
+      "break_copies": false,
+      "break_copies_fact_refs": [],
+      "origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ]
+     }
+    ],
+    "units": [
+     {
+      "exposure_ref": "case:VC08-subscription-measured-request#attempt:adm:S1/turn-1:rid=1",
+      "origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "state": "active",
+      "unit_id": "adm:S1/turn-1:rid=1"
+     }
+    ],
+    "origins": [
+     {
+      "active_high_unit_id": "adm:S1/turn-1:rid=1",
+      "base_id": "base:adm:S1/turn-1:rid=1",
+      "evidence_atom_id": "atom:S1/turn-1:1",
+      "origin_ref": "S1/turn-1:1"
+     },
+     {
+      "active_high_unit_id": "adm:S1/turn-1:rid=1",
+      "base_id": "base:adm:S1/turn-1:rid=1",
+      "evidence_atom_id": "atom:S1/turn-1:2",
+      "origin_ref": "S1/turn-1:2"
+     }
+    ],
+    "valuation_records": [
+     {
+      "complete": false,
+      "usage_origin_refs": [
+       "S1/turn-1:2"
+      ],
+      "valuation_id": "valuation:adm:S1/turn-1:rid=1",
+      "wire_ref": "case:VC08-subscription-measured-request#attempt:adm:S1/turn-1:rid=1/valuation"
+     }
+    ]
+   },
+   "to": {
+    "bases": [
+     {
+      "atomize": false,
+      "atomize_fact_refs": [],
+      "base_id": "base:origin:S1/turn-1:1",
+      "break_copies": false,
+      "break_copies_fact_refs": [],
+      "origin_refs": [
+       "S1/turn-1:1"
+      ]
+     },
+     {
+      "atomize": false,
+      "atomize_fact_refs": [],
+      "base_id": "base:origin:S1/turn-1:2",
+      "break_copies": false,
+      "break_copies_fact_refs": [],
+      "origin_refs": [
+       "S1/turn-1:2"
+      ]
+     }
+    ],
+    "units": [
+     {
+      "exposure_ref": "case:VC08-subscription-measured-request#attempt:adm:S1/turn-1:rid=1",
+      "origin_refs": [
+       "S1/turn-1:1"
+      ],
+      "state": "active",
+      "unit_id": "adm:S1/turn-1:rid=1"
+     },
+     {
+      "exposure_ref": "case:VC08-subscription-measured-request#attempt:row:S1/turn-1:line=2",
+      "origin_refs": [
+       "S1/turn-1:2"
+      ],
+      "state": "active",
+      "unit_id": "row:S1/turn-1:line=2"
+     }
+    ],
+    "origins": [
+     {
+      "active_high_unit_id": "adm:S1/turn-1:rid=1",
+      "base_id": "base:origin:S1/turn-1:1",
+      "evidence_atom_id": "atom:S1/turn-1:1",
+      "origin_ref": "S1/turn-1:1"
+     },
+     {
+      "active_high_unit_id": "row:S1/turn-1:line=2",
+      "base_id": "base:origin:S1/turn-1:2",
+      "evidence_atom_id": "atom:S1/turn-1:2",
+      "origin_ref": "S1/turn-1:2"
+     }
+    ],
+    "valuation_records": [
+     {
+      "complete": false,
+      "usage_origin_refs": [
+       "S1/turn-1:2"
+      ],
+      "valuation_id": "valuation:row:S1/turn-1:line=2",
+      "wire_ref": "case:VC08-subscription-measured-request#attempt:row:S1/turn-1:line=2/valuation"
+     }
+    ]
+   },
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/VC08-subscription-measured-request.json#PM2",
+   "rule": "OriginBase per origin; one active high owner per origin"
+  },
+  {
+   "file": "corpus/cases/V03-control-labelled-upstream-error.json",
+   "field": "expected.attempts",
+   "from": [
+    {
+     "accounting_result_ref": "oracle/r8-completion-B/V03-control-labelled-upstream-error.bundle.json#result:V03-control-labelled-upstream-error",
+     "billing": "not_applicable",
+     "blocking": [],
+     "correlation": {
+      "kind": "exact"
+     },
+     "diagnostics": [
+      "UncertainCodexCall"
+     ],
+     "evidence": [
+      "S1/turn-1:1",
+      "S1/turn-1:2"
+     ],
+     "execution": "terminal",
+     "exposure": {
+      "billing": "unknown",
+      "pool": "codex"
+     },
+     "forwarding": "unknown",
+     "key": "adm:S1/turn-1:rid=1",
+     "obligation": {
+      "amount_source": "none",
+      "cause": "subscription",
+      "state": "none"
+     },
+     "replacement": {
+      "eligible": false,
+      "reason": "NoReservation"
+     },
+     "settlement": {
+      "decision": "not_applicable",
+      "reasons": []
+     },
+     "valuation": {
+      "state": "not_applicable"
+     }
+    }
+   ],
+   "to": [
+    {
+     "accounting_result_ref": "oracle/r8-completion-B/V03-control-labelled-upstream-error.bundle.json#result:V03-control-labelled-upstream-error",
+     "billing": "not_applicable",
+     "blocking": [],
+     "correlation": {
+      "kind": "exact"
+     },
+     "diagnostics": [],
+     "evidence": [
+      "S1/turn-1:1"
+     ],
+     "execution": "not_terminal",
+     "exposure": {
+      "billing": "unknown",
+      "pool": "codex"
+     },
+     "forwarding": "unknown",
+     "key": "adm:S1/turn-1:rid=1",
+     "obligation": {
+      "amount_source": "none",
+      "cause": "subscription",
+      "state": "none"
+     },
+     "replacement": {
+      "eligible": false,
+      "reason": "NoReservation"
+     },
+     "settlement": {
+      "decision": "not_applicable",
+      "reasons": []
+     },
+     "valuation": {
+      "state": "not_applicable"
+     }
+    },
+    {
+     "accounting_result_ref": "oracle/r8-completion-B/V03-control-labelled-upstream-error.bundle.json#result:V03-control-labelled-upstream-error",
+     "billing": "not_applicable",
+     "blocking": [],
+     "correlation": {
+      "kind": "exact"
+     },
+     "diagnostics": [
+      "UncertainCodexCall"
+     ],
+     "evidence": [
+      "S1/turn-1:2"
+     ],
+     "execution": "terminal",
+     "exposure": {
+      "billing": "unknown",
+      "pool": "codex"
+     },
+     "forwarding": "unknown",
+     "key": "row:S1/turn-1:line=2",
+     "obligation": {
+      "amount_source": "none",
+      "cause": "subscription",
+      "state": "none"
+     },
+     "replacement": {
+      "eligible": false,
+      "reason": "NoReservation"
+     },
+     "settlement": {
+      "decision": "not_applicable",
+      "reasons": []
+     },
+     "valuation": {
+      "state": "not_applicable"
+     }
+    }
+   ],
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/V03-control-labelled-upstream-error.json#PM2,VA2",
+   "rule": "BASE 3: no admitted scope and no admitted exact link => OriginBase per origin (ROOT-DECISIONS-R1 Q-NAMESPACE NOT ADMITTED; root reply 2026-11-16 option B)"
+  },
+  {
+   "file": "corpus/cases/V03-control-labelled-upstream-error.json",
+   "field": "evaluations[default].expected.attribution",
+   "from": [
+    {
+     "attempt": "adm:S1/turn-1:rid=1",
+     "candidates": [
+      "o"
+     ],
+     "objective": null,
+     "ownership": "unadmitted",
+     "placement": "uncertain"
+    }
+   ],
+   "to": [
+    {
+     "attempt": "adm:S1/turn-1:rid=1",
+     "candidates": [
+      "o"
+     ],
+     "objective": null,
+     "ownership": "unadmitted",
+     "placement": "uncertain"
+    },
+    {
+     "attempt": "row:S1/turn-1:line=2",
+     "candidates": [
+      "o"
+     ],
+     "objective": null,
+     "ownership": "unadmitted",
+     "placement": "uncertain"
+    }
+   ],
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/V03-control-labelled-upstream-error.json#T2",
+   "rule": "O-6/O-7 per OriginBase unit"
+  },
+  {
+   "file": "oracle/r8-completion-B/V03-control-labelled-upstream-error.bundle.json",
+   "field": "documents[input:V03-control-labelled-upstream-error].initial_contracts/grants/origins[].initial_contract_ref",
+   "from": {
+    "initial_contracts": [
+     {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "V03-control-labelled-upstream-error/S1/turn-1"
+     }
+    ],
+    "grants": [
+     {
+      "admission": "conditional_fixture",
+      "assumption_refs": [
+       "Inherited immutable ticket namespace only; no exact auxiliary link or physical-bill independence."
+      ],
+      "authority_ref": "ROOT-ADOPTION-R6.json",
+      "covered_extent_ref": "sha256:e182f90590923853c0078c8292b2fa7b84ac84a23aae24b5995396d3fe2719a5",
+      "covered_origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "exact_payload_ref": "oracle/r8-completion-B/V03-control-labelled-upstream-error.provenance.json#S1/turn-1",
+      "grant_id": "initial-scope:S1/turn-1",
+      "guarantee_kind": "initial_reference_scope",
+      "observer_or_harness_ref": "inherited-corpus-conditional-fixture"
+     }
+    ]
+   },
+   "to": {
+    "initial_contracts": [
+     {
+      "contract_id": "raw-admission-namespace:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "reference_namespace": "admission"
+     }
+    ],
+    "grants": []
+   },
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/V03-control-labelled-upstream-error.json#NS1,NS2,NS3",
+   "rule": "BASE 3 admission references use a separate namespace; c8376f7a NAMESPACE-APPLICATION; ROOT-DECISIONS-R1 Q-NAMESPACE NOT ADMITTED: raw admission namespace recorded, no scope grant"
+  },
+  {
+   "file": "oracle/r8-completion-B/V03-control-labelled-upstream-error.provenance.json",
+   "field": "grant_payloads/initial_scope_contracts",
+   "from": {
+    "grant_payloads": [
+     {
+      "auxiliary_exact_row_coreference": "unestablished",
+      "exact_copy_equivalence": false,
+      "exact_origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "guarantee": "Usable dollar rid is interpreted only within this immutable conditional fixture source scope; same-origin-only duplicate rule except the inherited C3 exact-byte-copy control.",
+      "immutable_reference_namespace": "V03-control-labelled-upstream-error/S1/turn-1",
+      "physical_bill_independence": "unestablished",
+      "source_origin_id": "S1/turn-1"
+     }
+    ],
+    "initial_scope_contracts": [
+     {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "V03-control-labelled-upstream-error/S1/turn-1"
+     }
+    ]
+   },
+   "to": "withdrawn",
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/V03-control-labelled-upstream-error.json#NS2",
+   "rule": "raw-inconsistent dollar_ticket declaration withdrawn; no admission-namespace grant admitted (Q-NAMESPACE)"
+  },
+  {
+   "file": "oracle/r8-completion-B/V03-control-labelled-upstream-error.bundle.json",
+   "field": "documents[result:V03-control-labelled-upstream-error].bases/units/origins/valuation_records",
+   "from": {
+    "bases": [
+     {
+      "atomize": false,
+      "atomize_fact_refs": [],
+      "base_id": "base:adm:S1/turn-1:rid=1",
+      "break_copies": false,
+      "break_copies_fact_refs": [],
+      "origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ]
+     }
+    ],
+    "units": [
+     {
+      "exposure_ref": "case:V03-control-labelled-upstream-error#attempt:adm:S1/turn-1:rid=1",
+      "origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "state": "active",
+      "unit_id": "adm:S1/turn-1:rid=1"
+     }
+    ],
+    "origins": [
+     {
+      "active_high_unit_id": "adm:S1/turn-1:rid=1",
+      "base_id": "base:adm:S1/turn-1:rid=1",
+      "evidence_atom_id": "atom:S1/turn-1:1",
+      "origin_ref": "S1/turn-1:1"
+     },
+     {
+      "active_high_unit_id": "adm:S1/turn-1:rid=1",
+      "base_id": "base:adm:S1/turn-1:rid=1",
+      "evidence_atom_id": "atom:S1/turn-1:2",
+      "origin_ref": "S1/turn-1:2"
+     }
+    ],
+    "valuation_records": []
+   },
+   "to": {
+    "bases": [
+     {
+      "atomize": false,
+      "atomize_fact_refs": [],
+      "base_id": "base:origin:S1/turn-1:1",
+      "break_copies": false,
+      "break_copies_fact_refs": [],
+      "origin_refs": [
+       "S1/turn-1:1"
+      ]
+     },
+     {
+      "atomize": false,
+      "atomize_fact_refs": [],
+      "base_id": "base:origin:S1/turn-1:2",
+      "break_copies": false,
+      "break_copies_fact_refs": [],
+      "origin_refs": [
+       "S1/turn-1:2"
+      ]
+     }
+    ],
+    "units": [
+     {
+      "exposure_ref": "case:V03-control-labelled-upstream-error#attempt:adm:S1/turn-1:rid=1",
+      "origin_refs": [
+       "S1/turn-1:1"
+      ],
+      "state": "active",
+      "unit_id": "adm:S1/turn-1:rid=1"
+     },
+     {
+      "exposure_ref": "case:V03-control-labelled-upstream-error#attempt:row:S1/turn-1:line=2",
+      "origin_refs": [
+       "S1/turn-1:2"
+      ],
+      "state": "active",
+      "unit_id": "row:S1/turn-1:line=2"
+     }
+    ],
+    "origins": [
+     {
+      "active_high_unit_id": "adm:S1/turn-1:rid=1",
+      "base_id": "base:origin:S1/turn-1:1",
+      "evidence_atom_id": "atom:S1/turn-1:1",
+      "origin_ref": "S1/turn-1:1"
+     },
+     {
+      "active_high_unit_id": "row:S1/turn-1:line=2",
+      "base_id": "base:origin:S1/turn-1:2",
+      "evidence_atom_id": "atom:S1/turn-1:2",
+      "origin_ref": "S1/turn-1:2"
+     }
+    ],
+    "valuation_records": []
+   },
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/V03-control-labelled-upstream-error.json#PM2",
+   "rule": "OriginBase per origin; one active high owner per origin"
+  },
+  {
+   "file": "corpus/cases/U06-subscription-upstream-error-unlabelled.json",
+   "field": "expected.attempts",
+   "from": [
+    {
+     "accounting_result_ref": "oracle/r8-completion-B/U06-subscription-upstream-error-unlabelled.bundle.json#result:U06-subscription-upstream-error-unlabelled",
+     "billing": "unresolved",
+     "blocking": [
+      "LaneContradiction",
+      "UnaccountedAttempt",
+      "UnresolvedExposure"
+     ],
+     "correlation": {
+      "kind": "exact"
+     },
+     "diagnostics": [],
+     "evidence": [
+      "S1/turn-1:1",
+      "S1/turn-1:2"
+     ],
+     "execution": "terminal",
+     "exposure": {
+      "high": {
+       "basis": "none",
+       "kind": "at_least",
+       "nano": "0"
+      },
+      "low": {
+       "basis": "none",
+       "nano": "0"
+      },
+      "pool": "pi_api"
+     },
+     "forwarding": "unknown",
+     "key": "adm:S1/turn-1:rid=1",
+     "obligation": {
+      "amount_source": "none",
+      "cause": "no_reservation",
+      "state": "none"
+     },
+     "replacement": {
+      "eligible": false,
+      "reason": "NoReservation"
+     },
+     "settlement": {
+      "decision": "not_applicable",
+      "reasons": []
+     },
+     "valuation": {
+      "state": "not_reported"
+     }
+    }
+   ],
+   "to": [
+    {
+     "accounting_result_ref": "oracle/r8-completion-B/U06-subscription-upstream-error-unlabelled.bundle.json#result:U06-subscription-upstream-error-unlabelled",
+     "billing": "not_applicable",
+     "blocking": [],
+     "correlation": {
+      "kind": "exact"
+     },
+     "diagnostics": [],
+     "evidence": [
+      "S1/turn-1:1"
+     ],
+     "execution": "not_terminal",
+     "exposure": {
+      "billing": "unknown",
+      "pool": "codex"
+     },
+     "forwarding": "unknown",
+     "key": "adm:S1/turn-1:rid=1",
+     "obligation": {
+      "amount_source": "none",
+      "cause": "subscription",
+      "state": "none"
+     },
+     "replacement": {
+      "eligible": false,
+      "reason": "NoReservation"
+     },
+     "settlement": {
+      "decision": "not_applicable",
+      "reasons": []
+     },
+     "valuation": {
+      "state": "not_applicable"
+     }
+    },
+    {
+     "accounting_result_ref": "oracle/r8-completion-B/U06-subscription-upstream-error-unlabelled.bundle.json#result:U06-subscription-upstream-error-unlabelled",
+     "billing": "unresolved",
+     "blocking": [
+      "LaneContradiction",
+      "UnaccountedAttempt",
+      "UnresolvedExposure"
+     ],
+     "correlation": {
+      "kind": "exact"
+     },
+     "diagnostics": [],
+     "evidence": [
+      "S1/turn-1:2"
+     ],
+     "execution": "terminal",
+     "exposure": {
+      "high": {
+       "basis": "none",
+       "kind": "at_least",
+       "nano": "0"
+      },
+      "low": {
+       "basis": "none",
+       "nano": "0"
+      },
+      "pool": "pi_api"
+     },
+     "forwarding": "unknown",
+     "key": "row:S1/turn-1:line=2",
+     "obligation": {
+      "amount_source": "none",
+      "cause": "no_reservation",
+      "state": "none"
+     },
+     "replacement": {
+      "eligible": false,
+      "reason": "NoReservation"
+     },
+     "settlement": {
+      "decision": "not_applicable",
+      "reasons": []
+     },
+     "valuation": {
+      "state": "not_reported"
+     }
+    }
+   ],
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/U06-subscription-upstream-error-unlabelled.json#PM2,VA2",
+   "rule": "BASE 3: no admitted scope and no admitted exact link => OriginBase per origin (ROOT-DECISIONS-R1 Q-NAMESPACE NOT ADMITTED; root reply 2026-11-16 option B)"
+  },
+  {
+   "file": "corpus/cases/U06-subscription-upstream-error-unlabelled.json",
+   "field": "evaluations[default].expected.attribution",
+   "from": [
+    {
+     "attempt": "adm:S1/turn-1:rid=1",
+     "candidates": [
+      "o"
+     ],
+     "objective": null,
+     "ownership": "unadmitted",
+     "placement": "uncertain"
+    }
+   ],
+   "to": [
+    {
+     "attempt": "adm:S1/turn-1:rid=1",
+     "candidates": [
+      "o"
+     ],
+     "objective": null,
+     "ownership": "unadmitted",
+     "placement": "uncertain"
+    },
+    {
+     "attempt": "row:S1/turn-1:line=2",
+     "candidates": [
+      "o"
+     ],
+     "objective": null,
+     "ownership": "unadmitted",
+     "placement": "uncertain"
+    }
+   ],
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/U06-subscription-upstream-error-unlabelled.json#T2",
+   "rule": "O-6/O-7 per OriginBase unit"
+  },
+  {
+   "file": "oracle/r8-completion-B/U06-subscription-upstream-error-unlabelled.bundle.json",
+   "field": "documents[input:U06-subscription-upstream-error-unlabelled].initial_contracts/grants/origins[].initial_contract_ref",
+   "from": {
+    "initial_contracts": [
+     {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "U06-subscription-upstream-error-unlabelled/S1/turn-1"
+     }
+    ],
+    "grants": [
+     {
+      "admission": "conditional_fixture",
+      "assumption_refs": [
+       "Inherited immutable ticket namespace only; no exact auxiliary link or physical-bill independence."
+      ],
+      "authority_ref": "ROOT-ADOPTION-R6.json",
+      "covered_extent_ref": "sha256:588f56c22df6d905501a25ebae3a15efbd0a33df7dc8eb2f3832f8c9854ec0e6",
+      "covered_origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "exact_payload_ref": "oracle/r8-completion-B/U06-subscription-upstream-error-unlabelled.provenance.json#S1/turn-1",
+      "grant_id": "initial-scope:S1/turn-1",
+      "guarantee_kind": "initial_reference_scope",
+      "observer_or_harness_ref": "inherited-corpus-conditional-fixture"
+     }
+    ]
+   },
+   "to": {
+    "initial_contracts": [
+     {
+      "contract_id": "raw-admission-namespace:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "reference_namespace": "admission"
+     }
+    ],
+    "grants": []
+   },
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/U06-subscription-upstream-error-unlabelled.json#NS1,NS2,NS3",
+   "rule": "BASE 3 admission references use a separate namespace; c8376f7a NAMESPACE-APPLICATION; ROOT-DECISIONS-R1 Q-NAMESPACE NOT ADMITTED: raw admission namespace recorded, no scope grant"
+  },
+  {
+   "file": "oracle/r8-completion-B/U06-subscription-upstream-error-unlabelled.provenance.json",
+   "field": "grant_payloads/initial_scope_contracts",
+   "from": {
+    "grant_payloads": [
+     {
+      "auxiliary_exact_row_coreference": "unestablished",
+      "exact_copy_equivalence": false,
+      "exact_origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "guarantee": "Usable dollar rid is interpreted only within this immutable conditional fixture source scope; same-origin-only duplicate rule except the inherited C3 exact-byte-copy control.",
+      "immutable_reference_namespace": "U06-subscription-upstream-error-unlabelled/S1/turn-1",
+      "physical_bill_independence": "unestablished",
+      "source_origin_id": "S1/turn-1"
+     }
+    ],
+    "initial_scope_contracts": [
+     {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "U06-subscription-upstream-error-unlabelled/S1/turn-1"
+     }
+    ]
+   },
+   "to": "withdrawn",
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/U06-subscription-upstream-error-unlabelled.json#NS2",
+   "rule": "raw-inconsistent dollar_ticket declaration withdrawn; no admission-namespace grant admitted (Q-NAMESPACE)"
+  },
+  {
+   "file": "oracle/r8-completion-B/U06-subscription-upstream-error-unlabelled.bundle.json",
+   "field": "documents[result:U06-subscription-upstream-error-unlabelled].bases/units/origins/valuation_records",
+   "from": {
+    "bases": [
+     {
+      "atomize": false,
+      "atomize_fact_refs": [],
+      "base_id": "base:adm:S1/turn-1:rid=1",
+      "break_copies": false,
+      "break_copies_fact_refs": [],
+      "origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ]
+     }
+    ],
+    "units": [
+     {
+      "exposure_ref": "case:U06-subscription-upstream-error-unlabelled#attempt:adm:S1/turn-1:rid=1",
+      "origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "state": "active",
+      "unit_id": "adm:S1/turn-1:rid=1"
+     }
+    ],
+    "origins": [
+     {
+      "active_high_unit_id": "adm:S1/turn-1:rid=1",
+      "base_id": "base:adm:S1/turn-1:rid=1",
+      "evidence_atom_id": "atom:S1/turn-1:1",
+      "origin_ref": "S1/turn-1:1"
+     },
+     {
+      "active_high_unit_id": "adm:S1/turn-1:rid=1",
+      "base_id": "base:adm:S1/turn-1:rid=1",
+      "evidence_atom_id": "atom:S1/turn-1:2",
+      "origin_ref": "S1/turn-1:2"
+     }
+    ],
+    "valuation_records": []
+   },
+   "to": {
+    "bases": [
+     {
+      "atomize": false,
+      "atomize_fact_refs": [],
+      "base_id": "base:origin:S1/turn-1:1",
+      "break_copies": false,
+      "break_copies_fact_refs": [],
+      "origin_refs": [
+       "S1/turn-1:1"
+      ]
+     },
+     {
+      "atomize": false,
+      "atomize_fact_refs": [],
+      "base_id": "base:origin:S1/turn-1:2",
+      "break_copies": false,
+      "break_copies_fact_refs": [],
+      "origin_refs": [
+       "S1/turn-1:2"
+      ]
+     }
+    ],
+    "units": [
+     {
+      "exposure_ref": "case:U06-subscription-upstream-error-unlabelled#attempt:adm:S1/turn-1:rid=1",
+      "origin_refs": [
+       "S1/turn-1:1"
+      ],
+      "state": "active",
+      "unit_id": "adm:S1/turn-1:rid=1"
+     },
+     {
+      "exposure_ref": "case:U06-subscription-upstream-error-unlabelled#attempt:row:S1/turn-1:line=2",
+      "origin_refs": [
+       "S1/turn-1:2"
+      ],
+      "state": "active",
+      "unit_id": "row:S1/turn-1:line=2"
+     }
+    ],
+    "origins": [
+     {
+      "active_high_unit_id": "adm:S1/turn-1:rid=1",
+      "base_id": "base:origin:S1/turn-1:1",
+      "evidence_atom_id": "atom:S1/turn-1:1",
+      "origin_ref": "S1/turn-1:1"
+     },
+     {
+      "active_high_unit_id": "row:S1/turn-1:line=2",
+      "base_id": "base:origin:S1/turn-1:2",
+      "evidence_atom_id": "atom:S1/turn-1:2",
+      "origin_ref": "S1/turn-1:2"
+     }
+    ],
+    "valuation_records": []
+   },
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/U06-subscription-upstream-error-unlabelled.json#PM2",
+   "rule": "OriginBase per origin; one active high owner per origin"
+  },
+  {
+   "file": "corpus/cases/V03-subscription-upstream-error-labelled-api.json",
+   "field": "expected.attempts",
+   "from": [
+    {
+     "accounting_result_ref": "oracle/r8-completion-B/V03-subscription-upstream-error-labelled-api.bundle.json#result:V03-subscription-upstream-error-labelled-api",
+     "billing": "unresolved",
+     "blocking": [
+      "LaneContradiction",
+      "UnaccountedAttempt",
+      "UnresolvedExposure"
+     ],
+     "correlation": {
+      "kind": "exact"
+     },
+     "diagnostics": [],
+     "evidence": [
+      "S1/turn-1:1",
+      "S1/turn-1:2"
+     ],
+     "execution": "terminal",
+     "exposure": {
+      "high": {
+       "basis": "none",
+       "kind": "at_least",
+       "nano": "0"
+      },
+      "low": {
+       "basis": "none",
+       "nano": "0"
+      },
+      "pool": "pi_api"
+     },
+     "forwarding": "unknown",
+     "key": "adm:S1/turn-1:rid=1",
+     "obligation": {
+      "amount_source": "none",
+      "cause": "no_reservation",
+      "state": "none"
+     },
+     "replacement": {
+      "eligible": false,
+      "reason": "NoReservation"
+     },
+     "settlement": {
+      "decision": "not_applicable",
+      "reasons": []
+     },
+     "valuation": {
+      "state": "not_reported"
+     }
+    }
+   ],
+   "to": [
+    {
+     "accounting_result_ref": "oracle/r8-completion-B/V03-subscription-upstream-error-labelled-api.bundle.json#result:V03-subscription-upstream-error-labelled-api",
+     "billing": "not_applicable",
+     "blocking": [],
+     "correlation": {
+      "kind": "exact"
+     },
+     "diagnostics": [],
+     "evidence": [
+      "S1/turn-1:1"
+     ],
+     "execution": "not_terminal",
+     "exposure": {
+      "billing": "unknown",
+      "pool": "codex"
+     },
+     "forwarding": "unknown",
+     "key": "adm:S1/turn-1:rid=1",
+     "obligation": {
+      "amount_source": "none",
+      "cause": "subscription",
+      "state": "none"
+     },
+     "replacement": {
+      "eligible": false,
+      "reason": "NoReservation"
+     },
+     "settlement": {
+      "decision": "not_applicable",
+      "reasons": []
+     },
+     "valuation": {
+      "state": "not_applicable"
+     }
+    },
+    {
+     "accounting_result_ref": "oracle/r8-completion-B/V03-subscription-upstream-error-labelled-api.bundle.json#result:V03-subscription-upstream-error-labelled-api",
+     "billing": "unresolved",
+     "blocking": [
+      "LaneContradiction",
+      "UnaccountedAttempt",
+      "UnresolvedExposure"
+     ],
+     "correlation": {
+      "kind": "exact"
+     },
+     "diagnostics": [],
+     "evidence": [
+      "S1/turn-1:2"
+     ],
+     "execution": "terminal",
+     "exposure": {
+      "high": {
+       "basis": "none",
+       "kind": "at_least",
+       "nano": "0"
+      },
+      "low": {
+       "basis": "none",
+       "nano": "0"
+      },
+      "pool": "pi_api"
+     },
+     "forwarding": "unknown",
+     "key": "row:S1/turn-1:line=2",
+     "obligation": {
+      "amount_source": "none",
+      "cause": "no_reservation",
+      "state": "none"
+     },
+     "replacement": {
+      "eligible": false,
+      "reason": "NoReservation"
+     },
+     "settlement": {
+      "decision": "not_applicable",
+      "reasons": []
+     },
+     "valuation": {
+      "state": "not_reported"
+     }
+    }
+   ],
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/V03-subscription-upstream-error-labelled-api.json#PM2,VA2",
+   "rule": "BASE 3: no admitted scope and no admitted exact link => OriginBase per origin (ROOT-DECISIONS-R1 Q-NAMESPACE NOT ADMITTED; root reply 2026-11-16 option B)"
+  },
+  {
+   "file": "corpus/cases/V03-subscription-upstream-error-labelled-api.json",
+   "field": "evaluations[default].expected.attribution",
+   "from": [
+    {
+     "attempt": "adm:S1/turn-1:rid=1",
+     "candidates": [
+      "o"
+     ],
+     "objective": null,
+     "ownership": "unadmitted",
+     "placement": "uncertain"
+    }
+   ],
+   "to": [
+    {
+     "attempt": "adm:S1/turn-1:rid=1",
+     "candidates": [
+      "o"
+     ],
+     "objective": null,
+     "ownership": "unadmitted",
+     "placement": "uncertain"
+    },
+    {
+     "attempt": "row:S1/turn-1:line=2",
+     "candidates": [
+      "o"
+     ],
+     "objective": null,
+     "ownership": "unadmitted",
+     "placement": "uncertain"
+    }
+   ],
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/V03-subscription-upstream-error-labelled-api.json#T2",
+   "rule": "O-6/O-7 per OriginBase unit"
+  },
+  {
+   "file": "oracle/r8-completion-B/V03-subscription-upstream-error-labelled-api.bundle.json",
+   "field": "documents[input:V03-subscription-upstream-error-labelled-api].initial_contracts/grants/origins[].initial_contract_ref",
+   "from": {
+    "initial_contracts": [
+     {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "V03-subscription-upstream-error-labelled-api/S1/turn-1"
+     }
+    ],
+    "grants": [
+     {
+      "admission": "conditional_fixture",
+      "assumption_refs": [
+       "Inherited immutable ticket namespace only; no exact auxiliary link or physical-bill independence."
+      ],
+      "authority_ref": "ROOT-ADOPTION-R6.json",
+      "covered_extent_ref": "sha256:53f650b182116462d7fd9180e0536db77e361eb48953fc402a1fe41a86e92735",
+      "covered_origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "exact_payload_ref": "oracle/r8-completion-B/V03-subscription-upstream-error-labelled-api.provenance.json#S1/turn-1",
+      "grant_id": "initial-scope:S1/turn-1",
+      "guarantee_kind": "initial_reference_scope",
+      "observer_or_harness_ref": "inherited-corpus-conditional-fixture"
+     }
+    ]
+   },
+   "to": {
+    "initial_contracts": [
+     {
+      "contract_id": "raw-admission-namespace:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "reference_namespace": "admission"
+     }
+    ],
+    "grants": []
+   },
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/V03-subscription-upstream-error-labelled-api.json#NS1,NS2,NS3",
+   "rule": "BASE 3 admission references use a separate namespace; c8376f7a NAMESPACE-APPLICATION; ROOT-DECISIONS-R1 Q-NAMESPACE NOT ADMITTED: raw admission namespace recorded, no scope grant"
+  },
+  {
+   "file": "oracle/r8-completion-B/V03-subscription-upstream-error-labelled-api.provenance.json",
+   "field": "grant_payloads/initial_scope_contracts",
+   "from": {
+    "grant_payloads": [
+     {
+      "auxiliary_exact_row_coreference": "unestablished",
+      "exact_copy_equivalence": false,
+      "exact_origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "guarantee": "Usable dollar rid is interpreted only within this immutable conditional fixture source scope; same-origin-only duplicate rule except the inherited C3 exact-byte-copy control.",
+      "immutable_reference_namespace": "V03-subscription-upstream-error-labelled-api/S1/turn-1",
+      "physical_bill_independence": "unestablished",
+      "source_origin_id": "S1/turn-1"
+     }
+    ],
+    "initial_scope_contracts": [
+     {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "V03-subscription-upstream-error-labelled-api/S1/turn-1"
+     }
+    ]
+   },
+   "to": "withdrawn",
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/V03-subscription-upstream-error-labelled-api.json#NS2",
+   "rule": "raw-inconsistent dollar_ticket declaration withdrawn; no admission-namespace grant admitted (Q-NAMESPACE)"
+  },
+  {
+   "file": "oracle/r8-completion-B/V03-subscription-upstream-error-labelled-api.bundle.json",
+   "field": "documents[result:V03-subscription-upstream-error-labelled-api].bases/units/origins/valuation_records",
+   "from": {
+    "bases": [
+     {
+      "atomize": false,
+      "atomize_fact_refs": [],
+      "base_id": "base:adm:S1/turn-1:rid=1",
+      "break_copies": false,
+      "break_copies_fact_refs": [],
+      "origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ]
+     }
+    ],
+    "units": [
+     {
+      "exposure_ref": "case:V03-subscription-upstream-error-labelled-api#attempt:adm:S1/turn-1:rid=1",
+      "origin_refs": [
+       "S1/turn-1:1",
+       "S1/turn-1:2"
+      ],
+      "state": "active",
+      "unit_id": "adm:S1/turn-1:rid=1"
+     }
+    ],
+    "origins": [
+     {
+      "active_high_unit_id": "adm:S1/turn-1:rid=1",
+      "base_id": "base:adm:S1/turn-1:rid=1",
+      "evidence_atom_id": "atom:S1/turn-1:1",
+      "origin_ref": "S1/turn-1:1"
+     },
+     {
+      "active_high_unit_id": "adm:S1/turn-1:rid=1",
+      "base_id": "base:adm:S1/turn-1:rid=1",
+      "evidence_atom_id": "atom:S1/turn-1:2",
+      "origin_ref": "S1/turn-1:2"
+     }
+    ],
+    "valuation_records": []
+   },
+   "to": {
+    "bases": [
+     {
+      "atomize": false,
+      "atomize_fact_refs": [],
+      "base_id": "base:origin:S1/turn-1:1",
+      "break_copies": false,
+      "break_copies_fact_refs": [],
+      "origin_refs": [
+       "S1/turn-1:1"
+      ]
+     },
+     {
+      "atomize": false,
+      "atomize_fact_refs": [],
+      "base_id": "base:origin:S1/turn-1:2",
+      "break_copies": false,
+      "break_copies_fact_refs": [],
+      "origin_refs": [
+       "S1/turn-1:2"
+      ]
+     }
+    ],
+    "units": [
+     {
+      "exposure_ref": "case:V03-subscription-upstream-error-labelled-api#attempt:adm:S1/turn-1:rid=1",
+      "origin_refs": [
+       "S1/turn-1:1"
+      ],
+      "state": "active",
+      "unit_id": "adm:S1/turn-1:rid=1"
+     },
+     {
+      "exposure_ref": "case:V03-subscription-upstream-error-labelled-api#attempt:row:S1/turn-1:line=2",
+      "origin_refs": [
+       "S1/turn-1:2"
+      ],
+      "state": "active",
+      "unit_id": "row:S1/turn-1:line=2"
+     }
+    ],
+    "origins": [
+     {
+      "active_high_unit_id": "adm:S1/turn-1:rid=1",
+      "base_id": "base:origin:S1/turn-1:1",
+      "evidence_atom_id": "atom:S1/turn-1:1",
+      "origin_ref": "S1/turn-1:1"
+     },
+     {
+      "active_high_unit_id": "row:S1/turn-1:line=2",
+      "base_id": "base:origin:S1/turn-1:2",
+      "evidence_atom_id": "atom:S1/turn-1:2",
+      "origin_ref": "S1/turn-1:2"
+     }
+    ],
+    "valuation_records": []
+   },
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/V03-subscription-upstream-error-labelled-api.json#PM2",
+   "rule": "OriginBase per origin; one active high owner per origin"
+  },
+  {
+   "file": "oracle/r8-completion-B/N03-contradicted-admission.bundle.json",
+   "field": "documents[input:N03-contradicted-admission].initial_contracts/grants/origins[].initial_contract_ref",
+   "from": {
+    "initial_contracts": [
+     {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "N03-contradicted-admission/S1/turn-1"
+     }
+    ],
+    "grants": [
+     {
+      "admission": "conditional_fixture",
+      "assumption_refs": [
+       "Inherited immutable ticket namespace only; no exact auxiliary link or physical-bill independence."
+      ],
+      "authority_ref": "ROOT-ADOPTION-R6.json",
+      "covered_extent_ref": "sha256:4b89e66d7e9b7744407d22cd7356cafdf7b78f1cdfdd520884e9ae37184a3b42",
+      "covered_origin_refs": [
+       "S1/turn-1:1"
+      ],
+      "exact_payload_ref": "oracle/r8-completion-B/N03-contradicted-admission.provenance.json#S1/turn-1",
+      "grant_id": "initial-scope:S1/turn-1",
+      "guarantee_kind": "initial_reference_scope",
+      "observer_or_harness_ref": "inherited-corpus-conditional-fixture"
+     }
+    ]
+   },
+   "to": {
+    "initial_contracts": [
+     {
+      "contract_id": "raw-admission-namespace:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "reference_namespace": "admission"
+     }
+    ],
+    "grants": []
+   },
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/N03-contradicted-admission.json#NS1,NS2,NS3",
+   "rule": "BASE 3 admission references use a separate namespace; c8376f7a NAMESPACE-APPLICATION; ROOT-DECISIONS-R1 Q-NAMESPACE NOT ADMITTED: raw admission namespace recorded, no scope grant"
+  },
+  {
+   "file": "oracle/r8-completion-B/N03-contradicted-admission.provenance.json",
+   "field": "grant_payloads/initial_scope_contracts",
+   "from": {
+    "grant_payloads": [
+     {
+      "auxiliary_exact_row_coreference": "unestablished",
+      "exact_copy_equivalence": false,
+      "exact_origin_refs": [
+       "S1/turn-1:1"
+      ],
+      "guarantee": "Usable dollar rid is interpreted only within this immutable conditional fixture source scope; same-origin-only duplicate rule except the inherited C3 exact-byte-copy control.",
+      "immutable_reference_namespace": "N03-contradicted-admission/S1/turn-1",
+      "physical_bill_independence": "unestablished",
+      "source_origin_id": "S1/turn-1"
+     }
+    ],
+    "initial_scope_contracts": [
+     {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "N03-contradicted-admission/S1/turn-1"
+     }
+    ]
+   },
+   "to": "withdrawn",
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/N03-contradicted-admission.json#NS2",
+   "rule": "raw-inconsistent dollar_ticket declaration withdrawn; no admission-namespace grant admitted (Q-NAMESPACE)"
+  },
+  {
+   "file": "oracle/r8-completion-B/N03-control-unlabelled-admission.bundle.json",
+   "field": "documents[input:N03-control-unlabelled-admission].initial_contracts/grants/origins[].initial_contract_ref",
+   "from": {
+    "initial_contracts": [
+     {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "N03-control-unlabelled-admission/S1/turn-1"
+     }
+    ],
+    "grants": [
+     {
+      "admission": "conditional_fixture",
+      "assumption_refs": [
+       "Inherited immutable ticket namespace only; no exact auxiliary link or physical-bill independence."
+      ],
+      "authority_ref": "ROOT-ADOPTION-R6.json",
+      "covered_extent_ref": "sha256:77ab9b4ba6f32c79d31d26f1c42ce5e0d53345b17ca160b4635bc0805ff45757",
+      "covered_origin_refs": [
+       "S1/turn-1:1"
+      ],
+      "exact_payload_ref": "oracle/r8-completion-B/N03-control-unlabelled-admission.provenance.json#S1/turn-1",
+      "grant_id": "initial-scope:S1/turn-1",
+      "guarantee_kind": "initial_reference_scope",
+      "observer_or_harness_ref": "inherited-corpus-conditional-fixture"
+     }
+    ]
+   },
+   "to": {
+    "initial_contracts": [
+     {
+      "contract_id": "raw-admission-namespace:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "reference_namespace": "admission"
+     }
+    ],
+    "grants": []
+   },
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/N03-control-unlabelled-admission.json#NS1,NS2,NS3",
+   "rule": "BASE 3 admission references use a separate namespace; c8376f7a NAMESPACE-APPLICATION; ROOT-DECISIONS-R1 Q-NAMESPACE NOT ADMITTED: raw admission namespace recorded, no scope grant"
+  },
+  {
+   "file": "oracle/r8-completion-B/N03-control-unlabelled-admission.provenance.json",
+   "field": "grant_payloads/initial_scope_contracts",
+   "from": {
+    "grant_payloads": [
+     {
+      "auxiliary_exact_row_coreference": "unestablished",
+      "exact_copy_equivalence": false,
+      "exact_origin_refs": [
+       "S1/turn-1:1"
+      ],
+      "guarantee": "Usable dollar rid is interpreted only within this immutable conditional fixture source scope; same-origin-only duplicate rule except the inherited C3 exact-byte-copy control.",
+      "immutable_reference_namespace": "N03-control-unlabelled-admission/S1/turn-1",
+      "physical_bill_independence": "unestablished",
+      "source_origin_id": "S1/turn-1"
+     }
+    ],
+    "initial_scope_contracts": [
+     {
+      "contract_id": "conditional-ticket:S1/turn-1",
+      "duplicate_rule": "same_origin_only",
+      "grant_ref": "initial-scope:S1/turn-1",
+      "reference_namespace": "dollar_ticket",
+      "scope_id": "N03-control-unlabelled-admission/S1/turn-1"
+     }
+    ]
+   },
+   "to": "withdrawn",
+   "finding": "R8-NAMESPACE-01",
+   "derivation": "slice2/oracle-r2-evidence/dossier/N03-control-unlabelled-admission.json#NS2",
+   "rule": "raw-inconsistent dollar_ticket declaration withdrawn; no admission-namespace grant admitted (Q-NAMESPACE)"
+  },
+  {
+   "file": "oracle/r8-controls/VC07-missing-completion.wrong.json",
+   "field": "whole negative fixture",
+   "from": "sha256:c329d4b024432d740a201227a6337a4cb2434b1e028096123237b074c6ac1d0f",
+   "to": "sha256:9af307471667282c07a7d0eb4aa261e9aecd5e030c4bca6c7672adee0e7781ef",
+   "finding": "slice-1b review P3-4",
+   "derivation": "rebuilt from the current positive VC07 bundle with only the named mutation, so the negative reaches its intended predicate rather than Draft2020-12 shape",
+   "rule": "evidence_controls intended-reason negatives"
+  },
+  {
+   "file": "oracle/r8-controls/VC07-relabel-dollar.wrong.json",
+   "field": "whole negative fixture",
+   "from": "sha256:9ba4dd2e3d3a13cd488e4176074d74670b24eceb5d9b89763b8b21ec5e647150",
+   "to": "sha256:8c4b5a53f7b89c109c1e32c4770053bdeaa843c632ad9475ba00836b8e698deb",
+   "finding": "slice-1b review P3-4",
+   "derivation": "rebuilt from the current positive VC07 bundle with only the named mutation, so the negative reaches its intended predicate rather than Draft2020-12 shape",
+   "rule": "evidence_controls intended-reason negatives"
+  },
+  {
+   "file": "oracle/r8-controls/VC07-relabel-dollar-hidden.wrong.json",
+   "field": "whole negative fixture",
+   "from": "sha256:d5229a59505fd63f6713aceddd18ce8520284e8014a598f681e1327848fad1d5",
+   "to": "sha256:b42da9a874f6d0dd2bcec7ad9304ab4b0f90d09f602507b8d224cc2b037ed5f0",
+   "finding": "slice-1b review P3-4",
+   "derivation": "rebuilt from the current positive VC07 bundle with only the named mutation, so the negative reaches its intended predicate rather than Draft2020-12 shape",
+   "rule": "evidence_controls intended-reason negatives"
+  },
+  {
+   "file": "oracle/r8-controls/VC07-unlinked-release.wrong.json",
+   "field": "whole negative fixture",
+   "from": "sha256:c06048c632b01819516f0b43a1dd913037446ef186e7793d1dd3fe8d79bd8e20",
+   "to": "sha256:0635afe556cca0c11a63b7471d01e2a2d44d21d69115a3d60c3d3ebdd4337c06",
+   "finding": "slice-1b review P3-4",
+   "derivation": "rebuilt from the current positive VC07 bundle with only the named mutation, so the negative reaches its intended predicate rather than Draft2020-12 shape",
+   "rule": "evidence_controls intended-reason negatives"
+  },
+  {
+   "file": "oracle/README.md",
+   "field": "qualification standing text",
+   "from": "overclaim (malformed identity axis supported; 24/350 or joined-2 pass)",
+   "to": "exact r11 counts and standing",
+   "finding": "R8-DOC-01",
+   "derivation": "slice2/oracle-r2-evidence/final-full-check.txt; test outputs",
+   "rule": "PLAN R8-DOC-01"
+  },
+  {
+   "file": "validator/README.md",
+   "field": "qualification standing text",
+   "from": "overclaim (malformed identity axis supported; 24/350 or joined-2 pass)",
+   "to": "exact r11 counts and standing",
+   "finding": "R8-DOC-01",
+   "derivation": "slice2/oracle-r2-evidence/final-full-check.txt; test outputs",
+   "rule": "PLAN R8-DOC-01"
+  },
+  {
+   "file": "oracle/r8-completion-B/VC08-subscription-measured-request.bundle.json",
+   "field": "documents[input:VC08-subscription-measured-request].initial_contracts/origins[].initial_contract_ref/continuity.preserved_initial_contract_refs",
+   "from": [
+    {
+     "contract_id": "raw-admission-namespace:S1/turn-1",
+     "duplicate_rule": "same_origin_only",
+     "reference_namespace": "admission"
+    }
+   ],
+   "to": [
+    {
+     "contract_id": "unestablished-scope:S1/turn-1",
+     "duplicate_rule": "same_origin_only",
+     "reference_namespace": "unestablished"
+    }
+   ],
+   "finding": "R8-NAMESPACE-01 (join remediation step 1)",
+   "derivation": "slice2/oracle-r2-evidence/dossier/VC08-subscription-measured-request.json#NS3",
+   "rule": "InitialReferenceContract: any namespace other than unestablished asserts an admitted scope (grant_ref, scope_id); Q-NAMESPACE not admitted (ROOT-DECISIONS-R1, ROOT-DECISION-R2) => unestablished with OriginBase per origin. Raw namespace stays admission (dossier NS1)."
+  },
+  {
+   "file": "oracle/r8-completion-B/U06-subscription-upstream-error-unlabelled.bundle.json",
+   "field": "documents[input:U06-subscription-upstream-error-unlabelled].initial_contracts/origins[].initial_contract_ref/continuity.preserved_initial_contract_refs",
+   "from": [
+    {
+     "contract_id": "raw-admission-namespace:S1/turn-1",
+     "duplicate_rule": "same_origin_only",
+     "reference_namespace": "admission"
+    }
+   ],
+   "to": [
+    {
+     "contract_id": "unestablished-scope:S1/turn-1",
+     "duplicate_rule": "same_origin_only",
+     "reference_namespace": "unestablished"
+    }
+   ],
+   "finding": "R8-NAMESPACE-01 (join remediation step 1)",
+   "derivation": "slice2/oracle-r2-evidence/dossier/U06-subscription-upstream-error-unlabelled.json#NS3",
+   "rule": "InitialReferenceContract: any namespace other than unestablished asserts an admitted scope (grant_ref, scope_id); Q-NAMESPACE not admitted (ROOT-DECISIONS-R1, ROOT-DECISION-R2) => unestablished with OriginBase per origin. Raw namespace stays admission (dossier NS1)."
+  },
+  {
+   "file": "oracle/r8-completion-B/V03-control-labelled-upstream-error.bundle.json",
+   "field": "documents[input:V03-control-labelled-upstream-error].initial_contracts/origins[].initial_contract_ref/continuity.preserved_initial_contract_refs",
+   "from": [
+    {
+     "contract_id": "raw-admission-namespace:S1/turn-1",
+     "duplicate_rule": "same_origin_only",
+     "reference_namespace": "admission"
+    }
+   ],
+   "to": [
+    {
+     "contract_id": "unestablished-scope:S1/turn-1",
+     "duplicate_rule": "same_origin_only",
+     "reference_namespace": "unestablished"
+    }
+   ],
+   "finding": "R8-NAMESPACE-01 (join remediation step 1)",
+   "derivation": "slice2/oracle-r2-evidence/dossier/V03-control-labelled-upstream-error.json#NS3",
+   "rule": "InitialReferenceContract: any namespace other than unestablished asserts an admitted scope (grant_ref, scope_id); Q-NAMESPACE not admitted (ROOT-DECISIONS-R1, ROOT-DECISION-R2) => unestablished with OriginBase per origin. Raw namespace stays admission (dossier NS1)."
+  },
+  {
+   "file": "oracle/r8-completion-B/V03-subscription-upstream-error-labelled-api.bundle.json",
+   "field": "documents[input:V03-subscription-upstream-error-labelled-api].initial_contracts/origins[].initial_contract_ref/continuity.preserved_initial_contract_refs",
+   "from": [
+    {
+     "contract_id": "raw-admission-namespace:S1/turn-1",
+     "duplicate_rule": "same_origin_only",
+     "reference_namespace": "admission"
+    }
+   ],
+   "to": [
+    {
+     "contract_id": "unestablished-scope:S1/turn-1",
+     "duplicate_rule": "same_origin_only",
+     "reference_namespace": "unestablished"
+    }
+   ],
+   "finding": "R8-NAMESPACE-01 (join remediation step 1)",
+   "derivation": "slice2/oracle-r2-evidence/dossier/V03-subscription-upstream-error-labelled-api.json#NS3",
+   "rule": "InitialReferenceContract: any namespace other than unestablished asserts an admitted scope (grant_ref, scope_id); Q-NAMESPACE not admitted (ROOT-DECISIONS-R1, ROOT-DECISION-R2) => unestablished with OriginBase per origin. Raw namespace stays admission (dossier NS1)."
+  },
+  {
+   "file": "oracle/r8-completion-B/N03-contradicted-admission.bundle.json",
+   "field": "documents[input:N03-contradicted-admission].initial_contracts/origins[].initial_contract_ref/continuity.preserved_initial_contract_refs",
+   "from": [
+    {
+     "contract_id": "raw-admission-namespace:S1/turn-1",
+     "duplicate_rule": "same_origin_only",
+     "reference_namespace": "admission"
+    }
+   ],
+   "to": [
+    {
+     "contract_id": "unestablished-scope:S1/turn-1",
+     "duplicate_rule": "same_origin_only",
+     "reference_namespace": "unestablished"
+    }
+   ],
+   "finding": "R8-NAMESPACE-01 (join remediation step 1)",
+   "derivation": "slice2/oracle-r2-evidence/dossier/N03-contradicted-admission.json#NS3",
+   "rule": "InitialReferenceContract: any namespace other than unestablished asserts an admitted scope (grant_ref, scope_id); Q-NAMESPACE not admitted (ROOT-DECISIONS-R1, ROOT-DECISION-R2) => unestablished with OriginBase per origin. Raw namespace stays admission (dossier NS1)."
+  },
+  {
+   "file": "oracle/r8-completion-B/N03-control-unlabelled-admission.bundle.json",
+   "field": "documents[input:N03-control-unlabelled-admission].initial_contracts/origins[].initial_contract_ref/continuity.preserved_initial_contract_refs",
+   "from": [
+    {
+     "contract_id": "raw-admission-namespace:S1/turn-1",
+     "duplicate_rule": "same_origin_only",
+     "reference_namespace": "admission"
+    }
+   ],
+   "to": [
+    {
+     "contract_id": "unestablished-scope:S1/turn-1",
+     "duplicate_rule": "same_origin_only",
+     "reference_namespace": "unestablished"
+    }
+   ],
+   "finding": "R8-NAMESPACE-01 (join remediation step 1)",
+   "derivation": "slice2/oracle-r2-evidence/dossier/N03-control-unlabelled-admission.json#NS3",
+   "rule": "InitialReferenceContract: any namespace other than unestablished asserts an admitted scope (grant_ref, scope_id); Q-NAMESPACE not admitted (ROOT-DECISIONS-R1, ROOT-DECISION-R2) => unestablished with OriginBase per origin. Raw namespace stays admission (dossier NS1)."
+  },
+  {
+   "file": "oracle/r11-controls/admission-namespace/bundle.json",
+   "field": "private control grant payload/authority",
+   "from": "sha256:3c4fcd8b8a8ca1021a5e06f2841bf4e39377e9e2f9ecc010a3dafdb5ea52afc4",
+   "to": "sha256:66223beaf076180e4cc282f324183ea034c08bb6db546fd5103001fef1739038",
+   "finding": "R8-NAMESPACE-01 (join remediation step 1)",
+   "derivation": "ROOT-ADMISSIONS.json v2 entry ADM-bd1c5011d2a2c4d9 (R11-CTL-admission-namespace-grouped)",
+   "rule": "positive control must pass joined Rust evidence payload applicability (grant_payloads/initial_scope_contracts) and the Python root-admission route"
+  },
+  {
+   "file": "oracle/r11-controls/admission-namespace/provenance.json",
+   "field": "new resolvable admitted payload",
+   "from": "__absent__",
+   "to": "sha256:a7fca0008d1a76ba605762ec821fe614af4681368e0fd24305020d93d5bf6492",
+   "finding": "R8-NAMESPACE-01 (join remediation step 1)",
+   "derivation": "ROOT-ADMISSIONS.json v2 entry ADM-bd1c5011d2a2c4d9 (R11-CTL-admission-namespace-grouped)",
+   "rule": "positive control must pass joined Rust evidence payload applicability (grant_payloads/initial_scope_contracts) and the Python root-admission route"
+  }
+ ]
+}

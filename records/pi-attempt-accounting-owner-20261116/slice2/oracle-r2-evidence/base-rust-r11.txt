@@ -1,0 +1,12 @@
+test r11_identity_malformed_cannot_be_favourable ... FAILED
+test r11_gate_identity_triple_nonempty ... FAILED
+test r11_low_inventory_keeps_candidates ... FAILED
+test r11_placement_from_raw_interval ... FAILED
+test r11_namespace_application ... FAILED
+test r11_fin_retained_raw_charge ... ok
+thread 'r11_identity_malformed_cannot_be_favourable' (1199311) panicked at tests/independent_raw_axes.rs:2027:9:
+thread 'r11_gate_identity_triple_nonempty' (1199310) panicked at tests/independent_raw_axes.rs:2071:9:
+thread 'r11_low_inventory_keeps_candidates' (1199312) panicked at tests/independent_raw_axes.rs:2157:9:
+thread 'r11_placement_from_raw_interval' (1199314) panicked at tests/independent_raw_axes.rs:2226:9:
+thread 'r11_namespace_application' (1199313) panicked at tests/independent_raw_axes.rs:2105:9:
+test result: FAILED. 1 passed; 5 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.31s

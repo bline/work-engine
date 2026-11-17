@@ -1,0 +1,13 @@
+{
+  "schema": "pi-accounting-root-decisions/1",
+  "root": "01a1e569-2805-72ff-b837-03d1577c405d",
+  "considered": "slice2/oracle-r2-evidence/RESULT.md, PROPOSED-ADMISSIONS.json; slice2/spec-r2-evidence/RESULT.md",
+  "decisions": [
+    {"id": "ADMISSIONS-V2", "decision": "Replace slice1/ROOT-ADMISSIONS.json with slice2/ROOT-ADMISSIONS.json (schema /2)", "basis": "v1 bound whole case-file digests, which lawful output corrections change (P132-CP 7c057e10 -> e6c129e7). v2 binds the canonical inputs digest (raw_input_sha256, as the consumer checks) and every covered origin's raw-line digest; root recomputed both from the joined subject and independently re-checked raw namespace, complete extent and byte-distinctness for every entry."},
+    {"id": "D-SCOPE-extension", "decision": "ADMIT P130-T-owned-before-window-summed, P130-R08-admissions-without-tree-still-block, P130-R02-rounded-up-charge-admitted under the D-SCOPE rule", "basis": "Same rule as ROOT-DECISIONS-R1 D-SCOPE; raw-consistent dollar_ticket declarations; P130-T's placement claim depends on it, the other two are invariant either way."},
+    {"id": "admission-namespace-control", "decision": "ADMIT R11-CTL-admission-namespace-grouped (private control outside the 175) as conditional_fixture admission-namespace scope", "basis": "PLAN-AMENDMENT c8376f7a NAMESPACE-APPLICATION requires a correct separate conditional admission scope as a positive; raw rows carry admission references, complete extent, distinct bytes. Not a live guarantee; does not change ROOT-DECISIONS-R1 Q-NAMESPACE for historical VC08."},
+    {"id": "R8-COMPLETION-A-DERIVATIONS", "decision": "LEAVE oracle/r8-completion-A/DERIVATIONS.json unchanged in this narrowed campaign", "basis": "The accepted R10 pilot admission embeds the whole file; editing it requires re-admitting the pilot (full-S1 scale). LOW-INVENTORY-01 is addressed through the new actual-path predicate, corrected bundles and LOW-ASSERTIONS; the stale derivations record is a disclosed limitation for review and full S1."},
+    {"id": "INITIAL-REFERENCE-canonical-text", "decision": "LEAVE canonical text unchanged; the raw-row namespace comparison stays checker-side applicability", "basis": "Digest-changing canonical edit not needed for finding closure; carried to full S1."},
+    {"id": "STALE-BUNDLES", "decision": "Record as inherited", "basis": "149/182 oracle bundles fail the accounting schema on both 5e594cac and 2729107 (root-verified); full check's 476 accounting-reference failures are unchanged in count/kind; full-S1 obligation, not a slice regression."}
+  ]
+}

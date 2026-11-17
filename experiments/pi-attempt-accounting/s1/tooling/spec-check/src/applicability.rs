@@ -69,6 +69,7 @@ pub fn resolve_accounting_payloads(
             out.insert(reference.to_owned(), value);
         }
     }
+    crate::namespace::resolve_raw_subjects(root, bundle, &mut out)?;
     Ok(out)
 }
 /// Checks supplied records against resolved payloads. Coherent supplied records do
@@ -313,5 +314,6 @@ pub fn validate_accounting_bundle_with_payloads(
             }
         }
     }
-    Ok(())
+    // After the payload-specific predicates so their diagnostics keep priority.
+    crate::namespace::check_namespace_application(bundle, payloads)
 }

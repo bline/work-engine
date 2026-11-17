@@ -25,7 +25,7 @@
             "attempt": "res:S1/turn-1:rid=1",
             "objective": "p",
             "ownership": "owned",
-            "placement": "inside",
+            "placement": "straddles_closure",
             "provisional_retained": true
           }
         ],
@@ -71,6 +71,7 @@
             },
             "provisional": true,
             "reasons": [
+              "PlacementStraddles",
               "UnenforcedCommitment",
               "UnresolvedExposure"
             ],
@@ -177,7 +178,7 @@
             "attempt": "res:S1/turn-1:rid=1",
             "objective": "p",
             "ownership": "owned",
-            "placement": "inside",
+            "placement": "straddles_closure",
             "provisional_retained": true
           }
         ],
@@ -223,6 +224,7 @@
             },
             "provisional": true,
             "reasons": [
+              "PlacementStraddles",
               "UnenforcedCommitment",
               "UnresolvedExposure"
             ],

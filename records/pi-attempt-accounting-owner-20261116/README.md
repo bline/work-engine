@@ -36,8 +36,23 @@ Nothing here qualifies production use, S2a or integration beyond this repository
   [experiments/pi-attempt-accounting/s1](../../experiments/pi-attempt-accounting/s1), which now
   equals private successor commit `2729107` (base: accepted manifest `5e594cac`).
 
-All eleven historical findings remain OPEN until reviewed closure; the two spec findings are
-resolved only within their bounded acceptance. The architecture guard as of this record is
+## Slice 2 (eleven historical findings)
+
+The oracle and spec authors fixed the remaining nine findings on separate branches; root joined
+them, found and had remediated a join defect, then verified 18/18 gates with root admissions
+bound from outside the subject and all 175 cases' raw inputs unchanged. Fable xhigh review
+(same-provider, executed probes) returned ACCEPT_WITH_CHANGES (one P2 admission-authority gap,
+four P3); after one bounded repair round the retained re-check returned ACCEPT (bounded).
+[Acceptance](slice2/ROOT-ACCEPTANCE-SLICE2.json), [review](slice2/review-r2/REVIEW.md),
+[root decisions](slice2/ROOT-DECISION-R3.json), [admissions](slice2/ROOT-ADMISSIONS.json).
+The change is applied to `experiments/pi-attempt-accounting/s1`, which now equals private
+successor commit `3883d04`.
+
+All eleven historical findings are closed within that reviewed private subject. Explicit limits:
+dollar_ticket scope admissions are not consumed by the actual check path; Rust `evidence` has
+no admission input; 149 oracle bundles remain schema-stale; R8-COVERAGE-01's independent raw
+membership derivation is not done. Full S1 (175 cases, all applicable 374 scopes, complete
+exact-current A/B/C review) remains OPEN. Owner-tree spend 109.57 plus predecessor 68.53. The architecture guard as of this record is
 [ARCHITECTURE-GUARD-20261116.md](ARCHITECTURE-GUARD-20261116.md); its history carries over
 unchanged. Private working paths cited in these files are historical locations, not
 repository paths.

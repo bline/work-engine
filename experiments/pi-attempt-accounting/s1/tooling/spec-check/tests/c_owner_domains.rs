@@ -311,7 +311,15 @@ fn json_files(dir: &std::path::Path, out: &mut Vec<PathBuf>) {
 }
 fn same_modulo_integral_spelling(a: &Value, b: &Value) -> bool {
     match (a, b) {
-        (Value::Number(x), Value::Number(y)) => x == y || x.as_f64() == y.as_f64(),
+        // integers are compared exactly; a value `f64` cannot keep (wide integer, non-integer)
+        // is an interned stand-in in `parse_json`, so only its class (integral or not) is compared
+        (Value::Number(x), Value::Number(y)) => {
+            x == y
+                || x.as_f64() == y.as_f64()
+                || (x.is_f64()
+                    && y.is_f64()
+                    && x.as_f64().map(|f| f.fract() == 0.0) == y.as_f64().map(|f| f.fract() == 0.0))
+        }
         (Value::Array(x), Value::Array(y)) => {
             x.len() == y.len() && x.iter().zip(y).all(|(p, q)| same_modulo_integral_spelling(p, q))
         }
@@ -353,5 +361,37 @@ fn values_from_the_standard_parser_are_read_at_face_value_and_never_panic() {
     for lit in ["18446744073709551616", "18446744073709551616.0", "18446744073709551615.0", "1e300", "1.5", "-1"] {
         let error = validate_accounting_bundle(&doc(lit)).unwrap_err();
         assert!(error.contains("Draft2020-12"), "{lit}: {error}");
+    }
+}
+
+fn assertion_document(first: &str, second: &str) -> Value {
+    parse(&format!(
+        r#"{{"kind":"accounting_expected_assertion","id":"x","version":"1.7-s1","raw_subject_ref":"r","policy_refs":[],"authored_by":"a","exact_subject_refs":[],"assertions":[
+        {{"claim_id":"c","raw_derivation_refs":[],"negative_control_refs":[],"expected_fields_or_relations":{{"n":{first}}}}},
+        {{"claim_id":"c","raw_derivation_refs":[],"negative_control_refs":[],"expected_fields_or_relations":{{"n":{second}}}}}]}}"#
+    ))
+}
+
+#[test]
+fn free_form_unique_items_decide_on_exact_values_not_collapsed_stand_ins() {
+    // `Assertion.expected_fields_or_relations` is the one free-form location under `uniqueItems`.
+    for (first, second) in [
+        ("1e41", "1e42"),
+        ("18446744073709551616", "18446744073709551617"),
+        ("1e-400", "1e-401"),
+        ("0.1", "0.1000000000000000055511151231257827"),
+        ("1e41", "-1e41"),
+        ("0.5", "1e-400"),
+    ] {
+        let verdict = validate_accounting_document(&assertion_document(first, second));
+        assert!(verdict.is_ok(), "{first} vs {second} are distinct: {verdict:?}");
+    }
+    for (first, second) in [("1e41", "10e40"), ("1.5", "1.50"), ("1e-400", "1e-400"), ("18446744073709551616", "1.8446744073709551616e19")] {
+        let document = assertion_document(first, second);
+        assert!(validate_accounting_document(&document).is_err(), "{first} vs {second}");
+        let full: Value = parse(include_str!("../../../spec/accounting.schema.json"));
+        let branch = json!({"$ref":"#/$defs/AccountingExpectedAssertion","$defs":full["$defs"]});
+        let error = validate_schema(&branch, &document).unwrap_err();
+        assert!(error.contains("non-unique"), "{first} vs {second}: {}", &error[error.len().saturating_sub(120)..]);
     }
 }

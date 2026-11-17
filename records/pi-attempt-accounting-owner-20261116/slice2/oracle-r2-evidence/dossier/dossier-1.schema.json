@@ -1,0 +1,1347 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "pi-accounting-oracle-dossier/1",
+ "title": "Independent oracle dossier record (ROOT-DECISIONS-R1 DOSSIER-SCHEMA binding)",
+ "type": "object",
+ "required": [
+  "schema",
+  "case_id",
+  "author",
+  "standing",
+  "subject",
+  "policy_refs",
+  "causal_admission",
+  "origins",
+  "premises",
+  "claims",
+  "family_status",
+  "scope_lows",
+  "excluded_channels",
+  "reuse"
+ ],
+ "properties": {
+  "schema": {
+   "const": "pi-accounting-oracle-dossier/1"
+  },
+  "case_id": {
+   "type": "string",
+   "minLength": 1
+  },
+  "author": {
+   "type": "object"
+  },
+  "standing": {
+   "type": "string"
+  },
+  "subject": {
+   "type": "object",
+   "required": [
+    "case_file",
+    "inputs_canonical_sha256"
+   ]
+  },
+  "policy_refs": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "policy_id",
+     "path",
+     "sha256"
+    ],
+    "properties": {
+     "policy_id": {
+      "type": "string"
+     },
+     "path": {
+      "type": "string"
+     },
+     "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+     }
+    },
+    "additionalProperties": false
+   }
+  },
+  "causal_admission": {
+   "type": "object",
+   "required": [
+    "top_inventory",
+    "trusted_fixture_inputs",
+    "profile",
+    "inputs_canonical_sha256",
+    "required_scopes"
+   ]
+  },
+  "origins": {
+   "type": "array"
+  },
+  "premises": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "premise_id",
+     "kind",
+     "statement",
+     "status",
+     "source_refs",
+     "policy_clauses"
+    ],
+    "properties": {
+     "premise_id": {
+      "type": "string"
+     },
+     "kind": {
+      "enum": [
+       "raw_observation",
+       "policy_clause",
+       "payload_premise",
+       "trusted_fixture"
+      ]
+     },
+     "statement": {
+      "type": "string"
+     },
+     "status": {
+      "oneOf": [
+       {
+        "type": "object",
+        "required": [
+         "kind"
+        ],
+        "properties": {
+         "kind": {
+          "const": "DerivedNominal"
+         }
+        },
+        "additionalProperties": false
+       },
+       {
+        "type": "object",
+        "required": [
+         "kind",
+         "reason",
+         "decision_owner",
+         "unmet_premise_refs"
+        ],
+        "properties": {
+         "kind": {
+          "const": "RequiredUnmet"
+         },
+         "reason": {
+          "type": "string",
+          "minLength": 1
+         },
+         "decision_owner": {
+          "type": "string",
+          "minLength": 1
+         },
+         "unmet_premise_refs": {
+          "type": "array",
+          "items": {
+           "type": "string"
+          }
+         }
+        },
+        "additionalProperties": false
+       }
+      ]
+     },
+     "source_refs": {
+      "type": "array",
+      "items": {
+       "oneOf": [
+        {
+         "type": "string",
+         "minLength": 1
+        },
+        {
+         "type": "object",
+         "required": [
+          "ref",
+          "file",
+          "file_sha256",
+          "pointer",
+          "presence"
+         ],
+         "properties": {
+          "ref": {
+           "const": "case_token"
+          },
+          "file": {
+           "type": "string"
+          },
+          "file_sha256": {
+           "type": "string",
+           "pattern": "^[0-9a-f]{64}$"
+          },
+          "pointer": {
+           "type": "string"
+          },
+          "byte_start": {
+           "type": "integer",
+           "minimum": 0
+          },
+          "byte_end_exclusive": {
+           "type": "integer",
+           "minimum": 0
+          },
+          "token_sha256": {
+           "type": "string",
+           "pattern": "^[0-9a-f]{64}$"
+          },
+          "presence": {
+           "enum": [
+            "value",
+            "null",
+            "absent"
+           ]
+          },
+          "json_type": {
+           "enum": [
+            "string",
+            "number",
+            "boolean",
+            "null",
+            "object",
+            "array"
+           ]
+          },
+          "lexeme": {}
+         },
+         "additionalProperties": false
+        },
+        {
+         "type": "object",
+         "required": [
+          "ref",
+          "file",
+          "file_sha256",
+          "origin_id",
+          "pointer",
+          "byte_start",
+          "byte_end_exclusive",
+          "token_sha256",
+          "raw_utf8_sha256",
+          "raw_utf8_length"
+         ],
+         "properties": {
+          "ref": {
+           "const": "raw_line"
+          },
+          "file": {
+           "type": "string"
+          },
+          "file_sha256": {
+           "type": "string"
+          },
+          "origin_id": {
+           "type": "string"
+          },
+          "pointer": {
+           "type": "string"
+          },
+          "byte_start": {
+           "type": "integer"
+          },
+          "byte_end_exclusive": {
+           "type": "integer"
+          },
+          "token_sha256": {
+           "type": "string"
+          },
+          "raw_utf8_sha256": {
+           "type": "string",
+           "pattern": "^[0-9a-f]{64}$"
+          },
+          "raw_utf8_length": {
+           "type": "integer"
+          }
+         },
+         "additionalProperties": false
+        },
+        {
+         "type": "object",
+         "required": [
+          "ref",
+          "origin_id",
+          "raw_utf8_sha256",
+          "field",
+          "presence"
+         ],
+         "properties": {
+          "ref": {
+           "const": "raw_field"
+          },
+          "origin_id": {
+           "type": "string"
+          },
+          "raw_utf8_sha256": {
+           "type": "string"
+          },
+          "field": {
+           "type": "string",
+           "pattern": "^/"
+          },
+          "presence": {
+           "enum": [
+            "value",
+            "null",
+            "absent"
+           ]
+          },
+          "json_type": {
+           "type": "string"
+          },
+          "lexeme": {}
+         },
+         "additionalProperties": false
+        },
+        {
+         "type": "object",
+         "required": [
+          "ref",
+          "record",
+          "entry_id"
+         ],
+         "properties": {
+          "ref": {
+           "const": "root_admission"
+          },
+          "record": {
+           "type": "string"
+          },
+          "entry_id": {
+           "type": "string"
+          }
+         },
+         "additionalProperties": false
+        }
+       ]
+      }
+     },
+     "policy_clauses": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "required": [
+        "policy_id",
+        "section"
+       ],
+       "properties": {
+        "policy_id": {
+         "type": "string"
+        },
+        "section": {
+         "type": "string"
+        }
+       },
+       "additionalProperties": false
+      }
+     }
+    },
+    "additionalProperties": false
+   }
+  },
+  "claims": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "claim_id",
+     "family",
+     "subject",
+     "status",
+     "premise_refs",
+     "policy_clauses",
+     "argument_ref",
+     "expected",
+     "consequence_if_admitted",
+     "controls",
+     "findings"
+    ],
+    "properties": {
+     "claim_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9]+/[A-Za-z0-9]+$"
+     },
+     "family": {
+      "enum": [
+       "raw_E_identity_cardinality",
+       "namespace_grants",
+       "primary_membership_validity_exact_F",
+       "valuation_retained_amounts",
+       "T_ownership_candidates_lifecycle_placement",
+       "gate_commitment_provisionality",
+       "finite_continuity_order"
+      ]
+     },
+     "subject": {
+      "type": "object"
+     },
+     "status": {
+      "oneOf": [
+       {
+        "type": "object",
+        "required": [
+         "kind"
+        ],
+        "properties": {
+         "kind": {
+          "const": "DerivedNominal"
+         }
+        },
+        "additionalProperties": false
+       },
+       {
+        "type": "object",
+        "required": [
+         "kind",
+         "reason",
+         "decision_owner",
+         "unmet_premise_refs"
+        ],
+        "properties": {
+         "kind": {
+          "const": "RequiredUnmet"
+         },
+         "reason": {
+          "type": "string",
+          "minLength": 1
+         },
+         "decision_owner": {
+          "type": "string",
+          "minLength": 1
+         },
+         "unmet_premise_refs": {
+          "type": "array",
+          "items": {
+           "type": "string"
+          }
+         }
+        },
+        "additionalProperties": false
+       }
+      ]
+     },
+     "premise_refs": {
+      "type": "array",
+      "items": {
+       "oneOf": [
+        {
+         "type": "string",
+         "minLength": 1
+        },
+        {
+         "type": "object",
+         "required": [
+          "ref",
+          "file",
+          "file_sha256",
+          "pointer",
+          "presence"
+         ],
+         "properties": {
+          "ref": {
+           "const": "case_token"
+          },
+          "file": {
+           "type": "string"
+          },
+          "file_sha256": {
+           "type": "string",
+           "pattern": "^[0-9a-f]{64}$"
+          },
+          "pointer": {
+           "type": "string"
+          },
+          "byte_start": {
+           "type": "integer",
+           "minimum": 0
+          },
+          "byte_end_exclusive": {
+           "type": "integer",
+           "minimum": 0
+          },
+          "token_sha256": {
+           "type": "string",
+           "pattern": "^[0-9a-f]{64}$"
+          },
+          "presence": {
+           "enum": [
+            "value",
+            "null",
+            "absent"
+           ]
+          },
+          "json_type": {
+           "enum": [
+            "string",
+            "number",
+            "boolean",
+            "null",
+            "object",
+            "array"
+           ]
+          },
+          "lexeme": {}
+         },
+         "additionalProperties": false
+        },
+        {
+         "type": "object",
+         "required": [
+          "ref",
+          "file",
+          "file_sha256",
+          "origin_id",
+          "pointer",
+          "byte_start",
+          "byte_end_exclusive",
+          "token_sha256",
+          "raw_utf8_sha256",
+          "raw_utf8_length"
+         ],
+         "properties": {
+          "ref": {
+           "const": "raw_line"
+          },
+          "file": {
+           "type": "string"
+          },
+          "file_sha256": {
+           "type": "string"
+          },
+          "origin_id": {
+           "type": "string"
+          },
+          "pointer": {
+           "type": "string"
+          },
+          "byte_start": {
+           "type": "integer"
+          },
+          "byte_end_exclusive": {
+           "type": "integer"
+          },
+          "token_sha256": {
+           "type": "string"
+          },
+          "raw_utf8_sha256": {
+           "type": "string",
+           "pattern": "^[0-9a-f]{64}$"
+          },
+          "raw_utf8_length": {
+           "type": "integer"
+          }
+         },
+         "additionalProperties": false
+        },
+        {
+         "type": "object",
+         "required": [
+          "ref",
+          "origin_id",
+          "raw_utf8_sha256",
+          "field",
+          "presence"
+         ],
+         "properties": {
+          "ref": {
+           "const": "raw_field"
+          },
+          "origin_id": {
+           "type": "string"
+          },
+          "raw_utf8_sha256": {
+           "type": "string"
+          },
+          "field": {
+           "type": "string",
+           "pattern": "^/"
+          },
+          "presence": {
+           "enum": [
+            "value",
+            "null",
+            "absent"
+           ]
+          },
+          "json_type": {
+           "type": "string"
+          },
+          "lexeme": {}
+         },
+         "additionalProperties": false
+        },
+        {
+         "type": "object",
+         "required": [
+          "ref",
+          "record",
+          "entry_id"
+         ],
+         "properties": {
+          "ref": {
+           "const": "root_admission"
+          },
+          "record": {
+           "type": "string"
+          },
+          "entry_id": {
+           "type": "string"
+          }
+         },
+         "additionalProperties": false
+        }
+       ]
+      }
+     },
+     "policy_clauses": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "required": [
+        "policy_id",
+        "section"
+       ],
+       "properties": {
+        "policy_id": {
+         "type": "string"
+        },
+        "section": {
+         "type": "string"
+        }
+       },
+       "additionalProperties": false
+      }
+     },
+     "argument_ref": {
+      "type": "object",
+      "required": [
+       "file",
+       "anchor"
+      ],
+      "properties": {
+       "file": {
+        "type": "string"
+       },
+       "anchor": {
+        "type": "string"
+       }
+      },
+      "additionalProperties": false
+     },
+     "expected": {
+      "oneOf": [
+       {
+        "type": "null"
+       },
+       {
+        "type": "object",
+        "required": [
+         "variant"
+        ],
+        "properties": {
+         "variant": {
+          "enum": [
+           "RawOriginInventory",
+           "EvidenceClassCardinality",
+           "IdentityStates",
+           "RawReferenceNamespace",
+           "DeclaredPayloadRawConsistency",
+           "NamespaceApplication",
+           "OriginLocalChecks",
+           "PrimaryCoverage",
+           "ObservationValuation",
+           "RetainedComponents",
+           "UnitExposure",
+           "SessionLifecycle",
+           "Ownership",
+           "Placement",
+           "GateQualification",
+           "CommitmentState",
+           "CommitmentAmount",
+           "ObjectiveStanding",
+           "Provisionality",
+           "PredecessorObligations",
+           "AdmissionDecision",
+           "ObjectiveStandingAndAdmission",
+           "FiniteContinuity"
+          ]
+         }
+        }
+       }
+      ]
+     },
+     "consequence_if_admitted": {
+      "oneOf": [
+       {
+        "type": "null"
+       },
+       {
+        "type": "object",
+        "required": [
+         "variant"
+        ],
+        "properties": {
+         "variant": {
+          "enum": [
+           "RawOriginInventory",
+           "EvidenceClassCardinality",
+           "IdentityStates",
+           "RawReferenceNamespace",
+           "DeclaredPayloadRawConsistency",
+           "NamespaceApplication",
+           "OriginLocalChecks",
+           "PrimaryCoverage",
+           "ObservationValuation",
+           "RetainedComponents",
+           "UnitExposure",
+           "SessionLifecycle",
+           "Ownership",
+           "Placement",
+           "GateQualification",
+           "CommitmentState",
+           "CommitmentAmount",
+           "ObjectiveStanding",
+           "Provisionality",
+           "PredecessorObligations",
+           "AdmissionDecision",
+           "ObjectiveStandingAndAdmission",
+           "FiniteContinuity"
+          ]
+         }
+        }
+       }
+      ]
+     },
+     "controls": {
+      "type": "object",
+      "required": [
+       "positive",
+       "negative"
+      ],
+      "properties": {
+       "positive": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "negative": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "required": [
+          "mutation",
+          "intended_predicate"
+         ],
+         "additionalProperties": false,
+         "properties": {
+          "mutation": {
+           "type": "string"
+          },
+          "intended_predicate": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "additionalProperties": false
+     },
+     "findings": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "required": [
+        "finding_id",
+        "relation"
+       ],
+       "properties": {
+        "finding_id": {
+         "pattern": "^R8-[A-Z-]+01$"
+        },
+        "relation": {
+         "enum": [
+          "direct",
+          "bears_on"
+         ]
+        }
+       },
+       "additionalProperties": false
+      }
+     },
+     "note": {
+      "type": "string"
+     }
+    },
+    "additionalProperties": false,
+    "allOf": [
+     {
+      "if": {
+       "properties": {
+        "status": {
+         "properties": {
+          "kind": {
+           "const": "DerivedNominal"
+          }
+         }
+        }
+       }
+      },
+      "then": {
+       "properties": {
+        "expected": {
+         "type": "object"
+        }
+       }
+      },
+      "else": {
+       "properties": {
+        "expected": {
+         "type": "null"
+        }
+       }
+      }
+     }
+    ]
+   },
+   "minItems": 7
+  },
+  "family_status": {
+   "type": "object",
+   "required": [
+    "raw_E_identity_cardinality",
+    "namespace_grants",
+    "primary_membership_validity_exact_F",
+    "valuation_retained_amounts",
+    "T_ownership_candidates_lifecycle_placement",
+    "gate_commitment_provisionality",
+    "finite_continuity_order"
+   ],
+   "additionalProperties": false,
+   "patternProperties": {
+    ".*": {
+     "type": "object",
+     "required": [
+      "status",
+      "claim_ids",
+      "unmet_claim_ids",
+      "decision_owners"
+     ],
+     "properties": {
+      "status": {
+       "enum": [
+        "DerivedNominal",
+        "RequiredUnmet"
+       ]
+      }
+     }
+    }
+   }
+  },
+  "scope_lows": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "scope_id",
+     "evaluation",
+     "objective",
+     "label",
+     "status",
+     "premise_refs",
+     "policy_clauses",
+     "argument_ref",
+     "expected_low",
+     "high",
+     "consequence_if_admitted"
+    ],
+    "properties": {
+     "scope_id": {
+      "type": "string"
+     },
+     "evaluation": {
+      "type": "string"
+     },
+     "objective": {
+      "type": "string"
+     },
+     "label": {
+      "enum": [
+       "owned_closed",
+       "owned_outstanding"
+      ]
+     },
+     "status": {
+      "oneOf": [
+       {
+        "type": "object",
+        "required": [
+         "kind"
+        ],
+        "properties": {
+         "kind": {
+          "const": "DerivedNominal"
+         }
+        },
+        "additionalProperties": false
+       },
+       {
+        "type": "object",
+        "required": [
+         "kind",
+         "reason",
+         "decision_owner",
+         "unmet_premise_refs"
+        ],
+        "properties": {
+         "kind": {
+          "const": "RequiredUnmet"
+         },
+         "reason": {
+          "type": "string",
+          "minLength": 1
+         },
+         "decision_owner": {
+          "type": "string",
+          "minLength": 1
+         },
+         "unmet_premise_refs": {
+          "type": "array",
+          "items": {
+           "type": "string"
+          }
+         }
+        },
+        "additionalProperties": false
+       }
+      ]
+     },
+     "premise_refs": {
+      "type": "array",
+      "items": {
+       "oneOf": [
+        {
+         "type": "string",
+         "minLength": 1
+        },
+        {
+         "type": "object",
+         "required": [
+          "ref",
+          "file",
+          "file_sha256",
+          "pointer",
+          "presence"
+         ],
+         "properties": {
+          "ref": {
+           "const": "case_token"
+          },
+          "file": {
+           "type": "string"
+          },
+          "file_sha256": {
+           "type": "string",
+           "pattern": "^[0-9a-f]{64}$"
+          },
+          "pointer": {
+           "type": "string"
+          },
+          "byte_start": {
+           "type": "integer",
+           "minimum": 0
+          },
+          "byte_end_exclusive": {
+           "type": "integer",
+           "minimum": 0
+          },
+          "token_sha256": {
+           "type": "string",
+           "pattern": "^[0-9a-f]{64}$"
+          },
+          "presence": {
+           "enum": [
+            "value",
+            "null",
+            "absent"
+           ]
+          },
+          "json_type": {
+           "enum": [
+            "string",
+            "number",
+            "boolean",
+            "null",
+            "object",
+            "array"
+           ]
+          },
+          "lexeme": {}
+         },
+         "additionalProperties": false
+        },
+        {
+         "type": "object",
+         "required": [
+          "ref",
+          "file",
+          "file_sha256",
+          "origin_id",
+          "pointer",
+          "byte_start",
+          "byte_end_exclusive",
+          "token_sha256",
+          "raw_utf8_sha256",
+          "raw_utf8_length"
+         ],
+         "properties": {
+          "ref": {
+           "const": "raw_line"
+          },
+          "file": {
+           "type": "string"
+          },
+          "file_sha256": {
+           "type": "string"
+          },
+          "origin_id": {
+           "type": "string"
+          },
+          "pointer": {
+           "type": "string"
+          },
+          "byte_start": {
+           "type": "integer"
+          },
+          "byte_end_exclusive": {
+           "type": "integer"
+          },
+          "token_sha256": {
+           "type": "string"
+          },
+          "raw_utf8_sha256": {
+           "type": "string",
+           "pattern": "^[0-9a-f]{64}$"
+          },
+          "raw_utf8_length": {
+           "type": "integer"
+          }
+         },
+         "additionalProperties": false
+        },
+        {
+         "type": "object",
+         "required": [
+          "ref",
+          "origin_id",
+          "raw_utf8_sha256",
+          "field",
+          "presence"
+         ],
+         "properties": {
+          "ref": {
+           "const": "raw_field"
+          },
+          "origin_id": {
+           "type": "string"
+          },
+          "raw_utf8_sha256": {
+           "type": "string"
+          },
+          "field": {
+           "type": "string",
+           "pattern": "^/"
+          },
+          "presence": {
+           "enum": [
+            "value",
+            "null",
+            "absent"
+           ]
+          },
+          "json_type": {
+           "type": "string"
+          },
+          "lexeme": {}
+         },
+         "additionalProperties": false
+        },
+        {
+         "type": "object",
+         "required": [
+          "ref",
+          "record",
+          "entry_id"
+         ],
+         "properties": {
+          "ref": {
+           "const": "root_admission"
+          },
+          "record": {
+           "type": "string"
+          },
+          "entry_id": {
+           "type": "string"
+          }
+         },
+         "additionalProperties": false
+        }
+       ]
+      }
+     },
+     "policy_clauses": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "required": [
+        "policy_id",
+        "section"
+       ],
+       "properties": {
+        "policy_id": {
+         "type": "string"
+        },
+        "section": {
+         "type": "string"
+        }
+       },
+       "additionalProperties": false
+      }
+     },
+     "argument_ref": {
+      "type": "object",
+      "required": [
+       "file",
+       "anchor"
+      ],
+      "properties": {
+       "file": {
+        "type": "string"
+       },
+       "anchor": {
+        "type": "string"
+       }
+      },
+      "additionalProperties": false
+     },
+     "expected_low": {
+      "oneOf": [
+       {
+        "type": "null"
+       },
+       {
+        "type": "object",
+        "required": [
+         "owned_unit_origin_sets",
+         "U",
+         "seed",
+         "slots",
+         "single_floor",
+         "independent_floor",
+         "credits",
+         "selected_low",
+         "credit_mode",
+         "basis"
+        ],
+        "properties": {
+         "owned_unit_origin_sets": {
+          "type": [
+           "array",
+           "null"
+          ]
+         },
+         "U": {
+          "type": "array",
+          "items": {
+           "type": "string"
+          },
+          "uniqueItems": true
+         },
+         "seed": {
+          "type": "array",
+          "items": {
+           "type": "string"
+          },
+          "uniqueItems": true
+         },
+         "slots": {
+          "type": "array"
+         },
+         "single_floor": {
+          "type": "object",
+          "required": [
+           "nano"
+          ],
+          "properties": {
+           "nano": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+           }
+          },
+          "additionalProperties": false
+         },
+         "independent_floor": {
+          "type": "object",
+          "required": [
+           "nano"
+          ],
+          "properties": {
+           "nano": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+           }
+          },
+          "additionalProperties": false
+         },
+         "credits": {
+          "type": "array"
+         },
+         "selected_low": {
+          "type": "object",
+          "required": [
+           "nano"
+          ],
+          "properties": {
+           "nano": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+           }
+          },
+          "additionalProperties": false
+         },
+         "credit_mode": {
+          "enum": [
+           "independent_slots",
+           "single_ambiguous",
+           "none"
+          ]
+         },
+         "basis": {
+          "enum": [
+           "usage_valuation",
+           "none"
+          ]
+         }
+        },
+        "additionalProperties": false
+       }
+      ]
+     },
+     "high": {
+      "type": "object",
+      "required": [
+       "status",
+       "expected"
+      ],
+      "properties": {
+       "status": {
+        "oneOf": [
+         {
+          "type": "object",
+          "required": [
+           "kind"
+          ],
+          "properties": {
+           "kind": {
+            "const": "DerivedNominal"
+           }
+          },
+          "additionalProperties": false
+         },
+         {
+          "type": "object",
+          "required": [
+           "kind",
+           "reason",
+           "decision_owner",
+           "unmet_premise_refs"
+          ],
+          "properties": {
+           "kind": {
+            "const": "RequiredUnmet"
+           },
+           "reason": {
+            "type": "string",
+            "minLength": 1
+           },
+           "decision_owner": {
+            "type": "string",
+            "minLength": 1
+           },
+           "unmet_premise_refs": {
+            "type": "array",
+            "items": {
+             "type": "string"
+            }
+           }
+          },
+          "additionalProperties": false
+         }
+        ]
+       },
+       "expected": {
+        "oneOf": [
+         {
+          "type": "null"
+         },
+         {
+          "type": "object",
+          "required": [
+           "kind",
+           "nano",
+           "basis_histogram"
+          ],
+          "properties": {
+           "kind": {
+            "enum": [
+             "exact",
+             "at_least"
+            ]
+           },
+           "nano": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+           },
+           "basis_histogram": {
+            "type": "object",
+            "additionalProperties": {
+             "type": "integer",
+             "minimum": 1
+            }
+           }
+          },
+          "additionalProperties": false
+         }
+        ]
+       }
+      },
+      "additionalProperties": false
+     },
+     "consequence_if_admitted": {
+      "type": [
+       "object",
+       "null"
+      ]
+     },
+     "note": {
+      "type": "string"
+     }
+    },
+    "additionalProperties": false
+   }
+  },
+  "excluded_channels": {
+   "type": "array"
+  },
+  "reuse": {
+   "type": "array"
+  }
+ },
+ "additionalProperties": false
+}

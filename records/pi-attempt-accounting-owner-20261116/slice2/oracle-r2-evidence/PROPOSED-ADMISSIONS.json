@@ -1,0 +1,89 @@
+{
+ "standing": "PROPOSED for root; not admitted by the oracle",
+ "entries": [
+  {
+   "case_id": "P130-T-owned-before-window-summed",
+   "case_file_sha256": "15c099500d5b1efbff372642ecdc9a1e882e001808defa8e29cafb4dc40cd0cb",
+   "guarantee_kind": "initial_reference_scope",
+   "admission": "conditional_fixture",
+   "reference_namespace": "dollar_ticket",
+   "duplicate_rule": "same_origin_only",
+   "declared_contract": "initial:S1/turn-1 (grant scope:S1/turn-1; oracle/r8-completion-A/P130-T-owned-before-window-summed.bundle.json)",
+   "covered_origins": [
+    {
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "70f7e415dc1a71b54acc58117be26d6107a68ec0a7ed057982c6a8653d59549a"
+    },
+    {
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "5cc14fe7d2a745fa3fd69bd9a10804ffdae6ff3cb8c3c56892344a839dbbce22"
+    }
+   ],
+   "raw_consistency_claim": "S1/turn-1:1 usd_reserved rid 1 and S1/turn-1:2 usd.rid 1 on an API-lane launch => dollar_ticket on every covered origin; extent = complete source inventory (2 lines); no byte-identical origins => same_origin_only adequate"
+  },
+  {
+   "case_id": "P130-R08-admissions-without-tree-still-block",
+   "case_file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+   "guarantee_kind": "initial_reference_scope",
+   "admission": "conditional_fixture",
+   "reference_namespace": "dollar_ticket",
+   "duplicate_rule": "same_origin_only",
+   "declared_contract": "initial:S1/turn-1 (grant scope:S1/turn-1; oracle/r8-completion-A/P130-R08-admissions-without-tree-still-block.bundle.json)",
+   "covered_origins": [
+    {
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "70f7e415dc1a71b54acc58117be26d6107a68ec0a7ed057982c6a8653d59549a"
+    },
+    {
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "5cc14fe7d2a745fa3fd69bd9a10804ffdae6ff3cb8c3c56892344a839dbbce22"
+    }
+   ],
+   "raw_consistency_claim": "S1/turn-1:1 usd_reserved rid 1 and S1/turn-1:2 usd.rid 1 on an API-lane launch => dollar_ticket on every covered origin; extent = complete source inventory (2 lines); no byte-identical origins => same_origin_only adequate"
+  },
+  {
+   "case_id": "P130-R02-rounded-up-charge-admitted",
+   "case_file_sha256": "2923751f185114fd436e5d9dd86e803a861eac318450b9290c6ded960d0d0dff",
+   "guarantee_kind": "initial_reference_scope",
+   "admission": "conditional_fixture",
+   "reference_namespace": "dollar_ticket",
+   "duplicate_rule": "same_origin_only",
+   "declared_contract": "initial:S1/turn-1 (grant scope:S1/turn-1; oracle/r8-completion-A/P130-R02-rounded-up-charge-admitted.bundle.json)",
+   "covered_origins": [
+    {
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "70f7e415dc1a71b54acc58117be26d6107a68ec0a7ed057982c6a8653d59549a"
+    },
+    {
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "2d468bd10ce1262445e186077a399fc9c9ca26fd180aeb9e9e2e091ecbe96365"
+    }
+   ],
+   "raw_consistency_claim": "S1/turn-1:1 usd_reserved rid 1 and S1/turn-1:2 usd.rid 1 on an API-lane launch => dollar_ticket on every covered origin; extent = complete source inventory (2 lines); no byte-identical origins => same_origin_only adequate"
+  },
+  {
+   "admission": "conditional_fixture",
+   "case_id": "R11-CTL-admission-namespace-grouped",
+   "covered_origins": [
+    {
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac"
+    },
+    {
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c"
+    }
+   ],
+   "duplicate_rule": "same_origin_only",
+   "guarantee_kind": "initial_reference_scope",
+   "premise_id": "R11CTL/PREM-ADMISSION-SCOPE",
+   "raw_consistency_claim": "both covered origins carry raw admission-namespace references (S1/turn-1:1 subscription_proxy_admitted rid 1; S1/turn-1:2 subscription_proxy.rid 1); extent = complete source inventory; no byte-identical origins, so same_origin_only is adequate",
+   "raw_input_sha256": "161c9e12c09346a019fb9f74f214c96f1c2dd18afaa1a6820316f789a4cad1dc",
+   "reference_namespace": "admission",
+   "source_origin_id": "S1/turn-1",
+   "standing": "proposed for ROOT-ADMISSIONS.json; private control outside the 175 historical cases; no live authority",
+   "declaration_file_sha256": "d37993b65a8e341a57dffeb84a6c48042e8b0230e1b17b345a313359799628f4",
+   "case_file_sha256": "956529ebdf933dfe749270b737bc5d86df66fed7776d258e708aef6b788a476a"
+  }
+ ]
+}

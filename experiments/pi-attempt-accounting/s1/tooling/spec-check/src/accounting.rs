@@ -304,6 +304,57 @@ fn validate_result(input: &Value, result: &Value) -> Result<()> {
     if base_owned != os {
         return Err("base inventory is incomplete".into());
     }
+    // BASE §3 OriginBase: without an admitted scope each origin is its own base. A base grouping
+    // several origins needs every member under an established (scope-granted) contract, or its
+    // members joined into one component by admitted exact links or shared identity bindings.
+    {
+        let contracts = keyed(input, "initial_contracts", "contract_id")?;
+        let bindings = rows(input, "identity_bindings")?;
+        let links = rows(input, "exact_links")?;
+        for (bid, b) in &bases {
+            let members: Vec<String> = refs(b, "origin_refs")?.into_iter().collect();
+            if members.len() < 2 {
+                continue;
+            }
+            let mut scoped = true;
+            for o in &members {
+                let contract = contracts
+                    .get(name(inv[o], "initial_contract_ref")?)
+                    .ok_or("dangling initial contract")?;
+                scoped &= contract["reference_namespace"] != "unestablished";
+            }
+            if scoped {
+                continue;
+            }
+            let mut component: BTreeMap<&str, usize> =
+                members.iter().enumerate().map(|(i, o)| (o.as_str(), i)).collect();
+            let mut join = |a: &str, b: &str| {
+                if let (Some(&x), Some(&y)) = (component.get(a), component.get(b)) {
+                    for v in component.values_mut() {
+                        if *v == y {
+                            *v = x;
+                        }
+                    }
+                }
+            };
+            for l in links {
+                join(name(l, "from_origin_ref")?, name(l, "to_origin_ref")?);
+            }
+            for x in bindings {
+                for y in bindings {
+                    if x["producer_attempt_id"] == y["producer_attempt_id"] {
+                        join(name(x, "origin_ref")?, name(y, "origin_ref")?);
+                    }
+                }
+            }
+            if component.values().collect::<BTreeSet<_>>().len() != 1 {
+                return Err(format!(
+                    "base {bid} groups {} origins under an unestablished contract (or without an admitted scope) with no admitted exact link or identity binding joining them",
+                    members.len()
+                ));
+            }
+        }
+    }
     let mut active_owned = BTreeSet::new();
     for (uid, u) in &units {
         let members = refs(u, "origin_refs")?;
@@ -442,6 +493,7 @@ fn validate_result(input: &Value, result: &Value) -> Result<()> {
     }
     let _ = keyed(result, "coverage_decisions", "coverage_id")?;
     let mut covered = BTreeSet::new();
+    let mut retired_by = BTreeMap::new();
     for c in rows(result, "coverage_decisions")? {
         let mut unit_origins = BTreeSet::new();
         for id in refs(c, "unit_refs")? {
@@ -551,6 +603,20 @@ fn validate_result(input: &Value, result: &Value) -> Result<()> {
                     }
                 }
             }
+            let selected_inventory: BTreeSet<String> = if c["route"] == "budgeted" {
+                primary_sets[name(c, "obligation_id")?]
+                    .union(&expected_usage)
+                    .cloned()
+                    .collect()
+            } else {
+                expected_usage.clone()
+            };
+            if monetary != selected_inventory {
+                return Err(
+                    "coverage monetary origins differ from the selected primary/usage inventory"
+                        .into(),
+                );
+            }
             let valuations = keyed(result, "valuation_records", "valuation_id")?;
             let valuation = valuations
                 .get(name(c, "valuation_ref")?)
@@ -566,6 +632,9 @@ fn validate_result(input: &Value, result: &Value) -> Result<()> {
             let resolved = units
                 .get(name(c, "result_unit_ref")?)
                 .ok_or("dangling result unit")?;
+            for id in refs(c, "unit_refs")? {
+                retired_by.insert(id, name(c, "result_unit_ref")?.to_owned());
+            }
             if refs(resolved, "origin_refs")? != origins || resolved["state"] != "active" {
                 return Err("replacement origin coverage mismatch".into());
             }
@@ -576,21 +645,34 @@ fn validate_result(input: &Value, result: &Value) -> Result<()> {
             }
             let cited = refs(c, "definite_link_refs")?;
             for link_ref in &cited {
-                if !links.contains_key(link_ref) {
-                    return Err("dangling coverage definite-link identity".into());
+                let l = links
+                    .get(link_ref)
+                    .ok_or("dangling coverage definite-link identity")?;
+                let source = name(l, "from_origin_ref")?;
+                let target = name(l, "to_origin_ref")?;
+                let joins = |anchor: &str, request: &str| {
+                    anchors.contains(anchor)
+                        && request != anchor
+                        && request_origins.contains(request)
+                        && origins.contains(request)
+                };
+                if !(joins(source, target) || joins(target, source)) {
+                    return Err(format!(
+                        "cited definite link {link_ref} does not join a covered anchor to the covered request"
+                    ));
                 }
             }
-            for a in anchors {
+            for a in &anchors {
                 if !cited.iter().any(|id| {
                     let l = links[id];
                     let source = l["from_origin_ref"].as_str().unwrap();
                     let target = l["to_origin_ref"].as_str().unwrap();
-                    (source == a
-                        && target != a
+                    (source == a.as_str()
+                        && target != a.as_str()
                         && request_origins.contains(target)
                         && origins.contains(target))
-                        || (target == a
-                            && source != a
+                        || (target == a.as_str()
+                            && source != a.as_str()
                             && request_origins.contains(source)
                             && origins.contains(source))
                 }) {
@@ -599,6 +681,17 @@ fn validate_result(input: &Value, result: &Value) -> Result<()> {
                     );
                 }
             }
+        }
+    }
+    for (id, u) in &units {
+        if u["state"] == "inactive"
+            && !retired_by
+                .get(id)
+                .is_some_and(|s| u.get("successor_ref").and_then(Value::as_str) == Some(s))
+        {
+            return Err(format!(
+                "inactive unit {id} is not retired into its successor by an accepted coverage"
+            ));
         }
     }
     for l in rows(result, "low_rollups")? {

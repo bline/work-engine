@@ -537,7 +537,9 @@
       "seed_origin_refs": []
     },
     {
-      "alternative_origin_refs": [],
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
       "assumptions": [
         "conditional inherited initial scope; no physical independence frame",
         "finite raw T admission/closure membership; no live provenance qualification"
@@ -581,7 +583,9 @@
       "seed_origin_refs": []
     },
     {
-      "alternative_origin_refs": [],
+      "alternative_origin_refs": [
+        "S1/turn-1:2"
+      ],
       "assumptions": [
         "conditional inherited initial scope; no physical independence frame",
         "finite raw T admission/closure membership; no live provenance qualification"
@@ -757,7 +761,9 @@
       "seed_origin_refs": []
     },
     {
-      "alternative_origin_refs": [],
+      "alternative_origin_refs": [
+        "S1/turn-1:1"
+      ],
       "assumptions": [
         "conditional inherited initial scope; no physical independence frame",
         "finite raw T admission/closure membership; no live provenance qualification"
@@ -2959,7 +2965,9 @@
       "seed_origin_refs": []
     },
     {
-      "alternative_origin_refs": [],
+      "alternative_origin_refs": [
+        "S1/turn-1:1"
+      ],
       "assumptions": [
         "conditional inherited initial scope; no physical independence frame",
         "finite raw T admission/closure membership; no live provenance qualification"
@@ -3003,7 +3011,9 @@
       "seed_origin_refs": []
     },
     {
-      "alternative_origin_refs": [],
+      "alternative_origin_refs": [
+        "S1/turn-1:1"
+      ],
       "assumptions": [
         "conditional inherited initial scope; no physical independence frame",
         "finite raw T admission/closure membership; no live provenance qualification"

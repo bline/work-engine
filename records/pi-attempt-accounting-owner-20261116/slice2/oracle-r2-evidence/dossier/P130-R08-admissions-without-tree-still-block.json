@@ -1,0 +1,1325 @@
+{
+ "schema": "pi-accounting-oracle-dossier/1",
+ "case_id": "P130-R08-admissions-without-tree-still-block",
+ "author": {
+  "role": "independent oracle (slice 2a)",
+  "owner_session": "01a1e569-2805-72ff-b837-03d1577c405d"
+ },
+ "standing": "Independently authored finite derivation for slice-2a finding controls; not consumer qualification. Scope lows for R8-LOW-INVENTORY-01; other families not derived in slice 2a.",
+ "subject": {
+  "branch": "oracle-r2",
+  "case_file": {
+   "path": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+   "sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137"
+  },
+  "inputs_canonical_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98"
+ },
+ "policy_refs": [
+  {
+   "policy_id": "BASE",
+   "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/design/PLAN.md",
+   "sha256": "43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61"
+  },
+  {
+   "policy_id": "AMD",
+   "path": "/home/bline/cbm-work/pi-accounting-continuation-20261114/reviews/design-r7/PLAN-AMENDMENT.md",
+   "sha256": "c8376f7a94a2ee775a8b117e6424acae457cb86e138f890cf2240fbe2190ce46"
+  },
+  {
+   "policy_id": "CK",
+   "path": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/oracle-r2/spec/ck.json",
+   "sha256": "6dd58aa6f0c098c4e8124723f0113017c4d3bb367d9fe709b02493ec25a661c4"
+  },
+  {
+   "policy_id": "CONTRACT",
+   "path": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/oracle-r2/contract/CONTRACT.md",
+   "sha256": "96122db955a1d8b530e20cdc0a7653ae70c4bb127c7ef83b00d1c3daef7739ae"
+  },
+  {
+   "policy_id": "RD1",
+   "path": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice1/ROOT-DECISIONS-R1.json",
+   "sha256": "d76214ac8e26dd2343e4c8b08bd3f8f66437d89a43dd0be745619896b594e76d"
+  },
+  {
+   "policy_id": "RA",
+   "path": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice1/ROOT-ADMISSIONS.json",
+   "sha256": "1a2f508123cecfd2c0dbb588b68183020f10008861e43ee8f2e99faa83c67586"
+  },
+  {
+   "policy_id": "RATES-OPENAI",
+   "path": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/oracle-r2/oracle/rates/openai_api_rates.json",
+   "sha256": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  }
+ ],
+ "causal_admission": {
+  "top_inventory": [
+   {
+    "key": "added_in",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/added_in",
+     "byte_start": 16,
+     "byte_end_exclusive": 24,
+     "token_sha256": "9f785f22998394dfd12229984cb8eb3f065ddc89a3db350d39a96352395980f9",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "ambiguity",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/ambiguity",
+     "byte_start": 41,
+     "byte_end_exclusive": 45,
+     "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+     "presence": "null",
+     "json_type": "null"
+    }
+   },
+   {
+    "key": "case_id",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/case_id",
+     "byte_start": 60,
+     "byte_end_exclusive": 106,
+     "token_sha256": "fed8c25a0638d703269c6c71d939fc1f2abc3ed426e5f1bb93a6bb54c90ed0ac",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "class",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/class",
+     "byte_start": 119,
+     "byte_end_exclusive": 142,
+     "token_sha256": "c1db8686268af97bd36c35c6829c91194efe1ac6d50a099f9680d7f6c4a90501",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "contract",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/contract",
+     "byte_start": 158,
+     "byte_end_exclusive": 189,
+     "token_sha256": "67f788fb6397af3ef74d42c6baea23eebce8ecf9de0e6e577e02a9c1b644402d",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "controls",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/controls",
+     "byte_start": 205,
+     "byte_end_exclusive": 245,
+     "token_sha256": "fe424c940fa5305b2df41f97285f84f12187d5609f0b3531061ec27b1ecfd668",
+     "presence": "value",
+     "json_type": "array"
+    }
+   },
+   {
+    "key": "evaluations",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/evaluations",
+     "byte_start": 264,
+     "byte_end_exclusive": 5919,
+     "token_sha256": "b4f54bfe5b948813cad906e1acef515b14dccbfd6ecf9ce7b8f17b64f45eb73f",
+     "presence": "value",
+     "json_type": "array"
+    }
+   },
+   {
+    "key": "expected",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/expected"
+    }
+   },
+   {
+    "key": "findings",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/findings",
+     "byte_start": 8072,
+     "byte_end_exclusive": 8094,
+     "token_sha256": "be56b31c4136e2c6a0285db580a4728dec8a21e615d4000fe5f5638f08775e62",
+     "presence": "value",
+     "json_type": "array"
+    }
+   },
+   {
+    "key": "group",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/group",
+     "byte_start": 8107,
+     "byte_end_exclusive": 8114,
+     "token_sha256": "729515b582010368508804966fd536b7ecd448617e3c98b1f42e92974f50a07d",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "historical",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/historical"
+    }
+   },
+   {
+    "key": "inputs",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/inputs",
+     "byte_start": 8622,
+     "byte_end_exclusive": 10316,
+     "token_sha256": "2f39f40969f49957d404b2d2e446fa7d47c984444af9396ca92633a858748c4d",
+     "presence": "value",
+     "json_type": "object"
+    }
+   },
+   {
+    "key": "invariants",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/invariants",
+     "byte_start": 10334,
+     "byte_end_exclusive": 10352,
+     "token_sha256": "ec5528cc51faae81e6af31df2b181368c0c5dde675376c27df60c68b1fa6b2ce",
+     "presence": "value",
+     "json_type": "array"
+    }
+   },
+   {
+    "key": "notes",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/notes",
+     "byte_start": 10365,
+     "byte_end_exclusive": 10469,
+     "token_sha256": "cc874c2deef6aef7b889361d70bc4b1a2700ce12cf8e27e21bdfd08a2ee3f724",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "profile",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/profile",
+     "byte_start": 10484,
+     "byte_end_exclusive": 10502,
+     "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "provenance",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/provenance",
+     "byte_start": 10520,
+     "byte_end_exclusive": 10574,
+     "token_sha256": "96a275ca34c5c39c086215a180f6c6fa529ba7623ac76df87a92e4b4a1f28a15",
+     "presence": "value",
+     "json_type": "object"
+    }
+   },
+   {
+    "key": "rationale",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/rationale"
+    }
+   },
+   {
+    "key": "reachability",
+    "classification": "noncausal_metadata",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/reachability",
+     "byte_start": 11196,
+     "byte_end_exclusive": 11216,
+     "token_sha256": "79a8504e3358e1b5517e63c84bd2926385b95fa3100cd1cb117ab2c4dd8e0c4a",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "revisions",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions"
+    }
+   },
+   {
+    "key": "revisions_r3",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r3"
+    }
+   },
+   {
+    "key": "revisions_r4",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r4"
+    }
+   },
+   {
+    "key": "revisions_r5",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r5"
+    }
+   },
+   {
+    "key": "revisions_r6",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r6"
+    }
+   },
+   {
+    "key": "revisions_r7",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r7"
+    }
+   },
+   {
+    "key": "revisions_r8",
+    "classification": "supplied_outcome",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r8"
+    }
+   },
+   {
+    "key": "role",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/role",
+     "byte_start": 22016,
+     "byte_end_exclusive": 22025,
+     "token_sha256": "e996ee63bc2d00dfcba6388c8ddeee47d4fbce806e00f97d2e6f15e8e697e6cf",
+     "presence": "value",
+     "json_type": "string"
+    }
+   },
+   {
+    "key": "schema",
+    "classification": "governing_premise",
+    "reason": "see batch-1 DOSSIER-SCHEMA classification table (same rules)",
+    "source_ref": {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/schema",
+     "byte_start": 22039,
+     "byte_end_exclusive": 22063,
+     "token_sha256": "306af7cfa4a45640f62858c9928b68d0884ab7a6457e219d2186b0ea0a835e12",
+     "presence": "value",
+     "json_type": "string"
+    }
+   }
+  ],
+  "trusted_fixture_inputs": {
+   "ref": "case_token",
+   "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+   "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+   "pointer": "/trusted_fixture_inputs",
+   "presence": "absent"
+  },
+  "profile": {
+   "ref": "case_token",
+   "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+   "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+   "pointer": "/profile",
+   "byte_start": 10484,
+   "byte_end_exclusive": 10502,
+   "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "current_producer"
+  },
+  "contract": {
+   "ref": "case_token",
+   "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+   "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+   "pointer": "/contract",
+   "byte_start": 158,
+   "byte_end_exclusive": 189,
+   "token_sha256": "67f788fb6397af3ef74d42c6baea23eebce8ecf9de0e6e577e02a9c1b644402d",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "pi-accounting-contract/1.7-s1"
+  },
+  "schema": {
+   "ref": "case_token",
+   "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+   "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+   "pointer": "/schema",
+   "byte_start": 22039,
+   "byte_end_exclusive": 22063,
+   "token_sha256": "306af7cfa4a45640f62858c9928b68d0884ab7a6457e219d2186b0ea0a835e12",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "pi-accounting-corpus/1"
+  },
+  "role": {
+   "ref": "case_token",
+   "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+   "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+   "pointer": "/role",
+   "byte_start": 22016,
+   "byte_end_exclusive": 22025,
+   "token_sha256": "e996ee63bc2d00dfcba6388c8ddeee47d4fbce806e00f97d2e6f15e8e697e6cf",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "finding"
+  },
+  "inputs_canonical_sha256": "08500d9da392ca88e052c6bbfbdcb63dffad026514f3c0936022548144d24b98",
+  "log_final_newline": {
+   "S1/turn-1": true
+  },
+  "required_scopes": [
+   "P130-R08-admissions-without-tree-still-block/default/o/owned_closed",
+   "P130-R08-admissions-without-tree-still-block/default/o/owned_outstanding",
+   "P130-R08-admissions-without-tree-still-block/default/p/owned_closed",
+   "P130-R08-admissions-without-tree-still-block/default/p/owned_outstanding"
+  ],
+  "additional_channels": []
+ },
+ "origins": [
+  {
+   "origin_id": "S1/turn-1:1",
+   "source_origin_id": "S1/turn-1",
+   "original_position": 1,
+   "source_ref": {
+    "ref": "raw_line",
+    "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+    "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+    "origin_id": "S1/turn-1:1",
+    "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+    "byte_start": 9432,
+    "byte_end_exclusive": 9593,
+    "token_sha256": "6c69ac49bec769b9a4a30d286aa98f60fef9755870471cc3b55bc3bf8afad58b",
+    "raw_utf8_sha256": "70f7e415dc1a71b54acc58117be26d6107a68ec0a7ed057982c6a8653d59549a",
+    "raw_utf8_length": 139
+   },
+   "parse_state": "object",
+   "field_states": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:00Z",
+     "presence": "value"
+    },
+    "/bound_basis": {
+     "json_type": "string",
+     "lexeme": "bytes",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "usd_reserved",
+     "presence": "value"
+    },
+    "/input_bound": {
+     "json_type": "number",
+     "lexeme": "6000",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/reserved_usd": {
+     "json_type": "number",
+     "lexeme": "0.5",
+     "presence": "value"
+    },
+    "/rid": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    }
+   }
+  },
+  {
+   "origin_id": "S1/turn-1:2",
+   "source_origin_id": "S1/turn-1",
+   "original_position": 2,
+   "source_ref": {
+    "ref": "raw_line",
+    "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+    "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+    "origin_id": "S1/turn-1:2",
+    "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+    "byte_start": 9609,
+    "byte_end_exclusive": 10200,
+    "token_sha256": "b260313d4a9196ac3c95df8a06693b890247af577f126bd2bae6674631560b89",
+    "raw_utf8_sha256": "5cc14fe7d2a745fa3fd69bd9a10804ffdae6ff3cb8c3c56892344a839dbbce22",
+    "raw_utf8_length": 525
+   },
+   "parse_state": "object",
+   "field_states": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:02Z",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "request",
+     "presence": "value"
+    },
+    "/http_status": {
+     "json_type": "number",
+     "lexeme": "200",
+     "presence": "value"
+    },
+    "/model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/observed_tier": {
+     "json_type": "string",
+     "lexeme": "default",
+     "presence": "value"
+    },
+    "/requested_tier": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/response_id": {
+     "json_type": "string",
+     "lexeme": "resp_1",
+     "presence": "value"
+    },
+    "/response_model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/seconds": {
+     "json_type": "number",
+     "lexeme": "1.0",
+     "presence": "value"
+    },
+    "/terminal": {
+     "json_type": "string",
+     "lexeme": "response.completed",
+     "presence": "value"
+    },
+    "/usage": {
+     "json_type": "object",
+     "members": [
+      "input_tokens",
+      "output_tokens",
+      "cached_tokens",
+      "cache_write_tokens",
+      "reasoning_tokens"
+     ],
+     "presence": "value"
+    },
+    "/usage/cache_write_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usage/cached_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usage/input_tokens": {
+     "json_type": "number",
+     "lexeme": "1000",
+     "presence": "value"
+    },
+    "/usage/output_tokens": {
+     "json_type": "number",
+     "lexeme": "100",
+     "presence": "value"
+    },
+    "/usage/reasoning_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usd": {
+     "json_type": "object",
+     "members": [
+      "rid",
+      "reserved_usd",
+      "charged_usd",
+      "charge_basis",
+      "session_spent_usd",
+      "multiplier_floor"
+     ],
+     "presence": "value"
+    },
+    "/usd/charge_basis": {
+     "json_type": "string",
+     "lexeme": "usage",
+     "presence": "value"
+    },
+    "/usd/charged_usd": {
+     "json_type": "number",
+     "lexeme": "0.015",
+     "presence": "value"
+    },
+    "/usd/multiplier_floor": {
+     "json_type": "number",
+     "lexeme": "0.0",
+     "presence": "value"
+    },
+    "/usd/reserved_usd": {
+     "json_type": "number",
+     "lexeme": "0.5",
+     "presence": "value"
+    },
+    "/usd/rid": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/usd/session_spent_usd": {
+     "json_type": "number",
+     "lexeme": "0.015",
+     "presence": "value"
+    }
+   }
+  }
+ ],
+ "premises": [],
+ "claims": [
+  {
+   "claim_id": "R08/T2",
+   "family": "T_ownership_candidates_lifecycle_placement",
+   "subject": {
+    "attempt_usage_origin": "S1/turn-1:2"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/evaluations/0/objectives/0/admissions/0/rows/1/event",
+     "byte_start": 4556,
+     "byte_end_exclusive": 4566,
+     "token_sha256": "0f6b9278e2bb51ff2d89c92f2f1d72fdf555e884a7a46e4e0528191ae2d3f46d",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "launched"
+    },
+    {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/evaluations/0/objectives/1/admissions/0/rows/1/event",
+     "byte_start": 5449,
+     "byte_end_exclusive": 5459,
+     "token_sha256": "0f6b9278e2bb51ff2d89c92f2f1d72fdf555e884a7a46e4e0528191ae2d3f46d",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "launched"
+    },
+    {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/evaluations/0/objectives/0/tree_sessions",
+     "byte_start": 4996,
+     "byte_end_exclusive": 4998,
+     "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "presence": "value",
+     "json_type": "array"
+    },
+    {
+     "ref": "case_token",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "pointer": "/evaluations/0/objectives/1/tree_sessions",
+     "byte_start": 5889,
+     "byte_end_exclusive": 5891,
+     "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "presence": "value",
+     "json_type": "array"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a711.1 O-3, O-3a, O-6, O-7; \u00a710 L-2, L-6; \u00a711.2 P-2"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "r08"
+   },
+   "expected": {
+    "variant": "Ownership",
+    "usage_origin": "S1/turn-1:2",
+    "ownership": "uncertain",
+    "candidates": [
+     "o",
+     "p"
+    ],
+    "owned_by": null,
+    "reason": "two admitting objectives (o a1, p b1) both launched session c1: O-3 Uncertain; O-3a keeps every admitting objective as candidate though neither tree contains S1"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": [
+    {
+     "finding_id": "R8-LOW-INVENTORY-01",
+     "relation": "direct"
+    }
+   ]
+  },
+  {
+   "claim_id": "R08/VA1",
+   "family": "valuation_retained_amounts",
+   "subject": {
+    "usage_origin": "S1/turn-1:2"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_line",
+     "file": "oracle-r2/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+     "file_sha256": "dbc678240075cdc013234a54a8adf3c7403cc767072c8a7bdd267ed66a65c137",
+     "origin_id": "S1/turn-1:2",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+     "byte_start": 9609,
+     "byte_end_exclusive": 10200,
+     "token_sha256": "b260313d4a9196ac3c95df8a06693b890247af577f126bd2bae6674631560b89",
+     "raw_utf8_sha256": "5cc14fe7d2a745fa3fd69bd9a10804ffdae6ff3cb8c3c56892344a839dbbce22",
+     "raw_utf8_length": 525
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "5cc14fe7d2a745fa3fd69bd9a10804ffdae6ff3cb8c3c56892344a839dbbce22",
+     "field": "/usage",
+     "presence": "value",
+     "json_type": "object"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "VALUATION V-1..V-5"
+    },
+    {
+     "policy_id": "RATES-OPENAI",
+     "section": "gpt-6-astra"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "r08"
+   },
+   "expected": {
+    "variant": "ObservationValuation",
+    "origin": "S1/turn-1:2",
+    "state": "valued",
+    "complete": true,
+    "low": {
+     "nano": "15000000"
+    },
+    "high": {
+     "nano": "15000000"
+    },
+    "derivation": "1000*10000+100*50000"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "R08/E",
+   "family": "raw_E_identity_cardinality",
+   "subject": {
+    "case": "R08"
+   },
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "Not derived in slice 2a: outside the finding controls this case supports (full S1 out of scope per slice-2a packet).",
+    "decision_owner": "oracle (future batch)",
+    "unmet_premise_refs": []
+   },
+   "premise_refs": [],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "n/a"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "r08"
+   },
+   "expected": null,
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": [],
+   "note": "family not derived in slice 2a"
+  },
+  {
+   "claim_id": "R08/NS",
+   "family": "namespace_grants",
+   "subject": {
+    "case": "R08"
+   },
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "Not derived in slice 2a: outside the finding controls this case supports (full S1 out of scope per slice-2a packet).",
+    "decision_owner": "oracle (future batch)",
+    "unmet_premise_refs": []
+   },
+   "premise_refs": [],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "n/a"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "r08"
+   },
+   "expected": null,
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": [],
+   "note": "family not derived in slice 2a"
+  },
+  {
+   "claim_id": "R08/PM",
+   "family": "primary_membership_validity_exact_F",
+   "subject": {
+    "case": "R08"
+   },
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "Not derived in slice 2a: outside the finding controls this case supports (full S1 out of scope per slice-2a packet).",
+    "decision_owner": "oracle (future batch)",
+    "unmet_premise_refs": []
+   },
+   "premise_refs": [],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "n/a"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "r08"
+   },
+   "expected": null,
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": [],
+   "note": "family not derived in slice 2a"
+  },
+  {
+   "claim_id": "R08/G",
+   "family": "gate_commitment_provisionality",
+   "subject": {
+    "case": "R08"
+   },
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "Not derived in slice 2a: outside the finding controls this case supports (full S1 out of scope per slice-2a packet).",
+    "decision_owner": "oracle (future batch)",
+    "unmet_premise_refs": []
+   },
+   "premise_refs": [],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "n/a"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "r08"
+   },
+   "expected": null,
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": [],
+   "note": "family not derived in slice 2a"
+  },
+  {
+   "claim_id": "R08/CO",
+   "family": "finite_continuity_order",
+   "subject": {
+    "case": "R08"
+   },
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "Not derived in slice 2a: outside the finding controls this case supports (full S1 out of scope per slice-2a packet).",
+    "decision_owner": "oracle (future batch)",
+    "unmet_premise_refs": []
+   },
+   "premise_refs": [],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "n/a"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "r08"
+   },
+   "expected": null,
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [],
+    "negative": []
+   },
+   "findings": [],
+   "note": "family not derived in slice 2a"
+  }
+ ],
+ "family_status": {
+  "raw_E_identity_cardinality": {
+   "status": "RequiredUnmet",
+   "claim_ids": [
+    "R08/E"
+   ],
+   "unmet_claim_ids": [
+    "R08/E"
+   ],
+   "decision_owners": [
+    "oracle (future batch)"
+   ]
+  },
+  "namespace_grants": {
+   "status": "RequiredUnmet",
+   "claim_ids": [
+    "R08/NS"
+   ],
+   "unmet_claim_ids": [
+    "R08/NS"
+   ],
+   "decision_owners": [
+    "oracle (future batch)"
+   ]
+  },
+  "primary_membership_validity_exact_F": {
+   "status": "RequiredUnmet",
+   "claim_ids": [
+    "R08/PM"
+   ],
+   "unmet_claim_ids": [
+    "R08/PM"
+   ],
+   "decision_owners": [
+    "oracle (future batch)"
+   ]
+  },
+  "valuation_retained_amounts": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "R08/VA1"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "T_ownership_candidates_lifecycle_placement": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "R08/T2"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "gate_commitment_provisionality": {
+   "status": "RequiredUnmet",
+   "claim_ids": [
+    "R08/G"
+   ],
+   "unmet_claim_ids": [
+    "R08/G"
+   ],
+   "decision_owners": [
+    "oracle (future batch)"
+   ]
+  },
+  "finite_continuity_order": {
+   "status": "RequiredUnmet",
+   "claim_ids": [
+    "R08/CO"
+   ],
+   "unmet_claim_ids": [
+    "R08/CO"
+   ],
+   "decision_owners": [
+    "oracle (future batch)"
+   ]
+  }
+ },
+ "scope_lows": [
+  {
+   "scope_id": "P130-R08-admissions-without-tree-still-block/default/o/owned_closed",
+   "evaluation": "default",
+   "objective": "o",
+   "label": "owned_closed",
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "R08/T2",
+    "R08/VA1"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "SUPPORTED-LOW"
+    },
+    {
+     "policy_id": "BASE",
+     "section": "\u00a75"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "p130"
+   },
+   "expected_low": {
+    "owned_unit_origin_sets": [],
+    "U": [
+     "S1/turn-1:2"
+    ],
+    "seed": [],
+    "slots": [],
+    "single_floor": {
+     "nano": "0"
+    },
+    "independent_floor": {
+     "nano": "0"
+    },
+    "credits": [],
+    "selected_low": {
+     "nano": "0"
+    },
+    "credit_mode": "none",
+    "basis": "none"
+   },
+   "high": {
+    "status": {
+     "kind": "RequiredUnmet",
+     "reason": "Not derived in slice 2a: outside the finding controls this case supports (full S1 out of scope per slice-2a packet).",
+     "decision_owner": "oracle (future batch)",
+     "unmet_premise_refs": []
+    },
+    "expected": null
+   },
+   "consequence_if_admitted": null,
+   "note": "candidate usage stays in U (possible alternative) with no owned Seed, slot or credit: single_floor=0 because Seed is empty"
+  },
+  {
+   "scope_id": "P130-R08-admissions-without-tree-still-block/default/o/owned_outstanding",
+   "evaluation": "default",
+   "objective": "o",
+   "label": "owned_outstanding",
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "R08/T2"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "SUPPORTED-LOW"
+    },
+    {
+     "policy_id": "BASE",
+     "section": "\u00a75"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "p130"
+   },
+   "expected_low": {
+    "owned_unit_origin_sets": [],
+    "U": [],
+    "seed": [],
+    "slots": [],
+    "single_floor": {
+     "nano": "0"
+    },
+    "independent_floor": {
+     "nano": "0"
+    },
+    "credits": [],
+    "selected_low": {
+     "nano": "0"
+    },
+    "credit_mode": "none",
+    "basis": "none"
+   },
+   "high": {
+    "status": {
+     "kind": "RequiredUnmet",
+     "reason": "Not derived in slice 2a: outside the finding controls this case supports (full S1 out of scope per slice-2a packet).",
+     "decision_owner": "oracle (future batch)",
+     "unmet_premise_refs": []
+    },
+    "expected": null
+   },
+   "consequence_if_admitted": null
+  },
+  {
+   "scope_id": "P130-R08-admissions-without-tree-still-block/default/p/owned_closed",
+   "evaluation": "default",
+   "objective": "p",
+   "label": "owned_closed",
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "R08/T2",
+    "R08/VA1"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "SUPPORTED-LOW"
+    },
+    {
+     "policy_id": "BASE",
+     "section": "\u00a75"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "p130"
+   },
+   "expected_low": {
+    "owned_unit_origin_sets": [],
+    "U": [
+     "S1/turn-1:2"
+    ],
+    "seed": [],
+    "slots": [],
+    "single_floor": {
+     "nano": "0"
+    },
+    "independent_floor": {
+     "nano": "0"
+    },
+    "credits": [],
+    "selected_low": {
+     "nano": "0"
+    },
+    "credit_mode": "none",
+    "basis": "none"
+   },
+   "high": {
+    "status": {
+     "kind": "RequiredUnmet",
+     "reason": "Not derived in slice 2a: outside the finding controls this case supports (full S1 out of scope per slice-2a packet).",
+     "decision_owner": "oracle (future batch)",
+     "unmet_premise_refs": []
+    },
+    "expected": null
+   },
+   "consequence_if_admitted": null,
+   "note": "candidate usage stays in U (possible alternative) with no owned Seed, slot or credit: single_floor=0 because Seed is empty"
+  },
+  {
+   "scope_id": "P130-R08-admissions-without-tree-still-block/default/p/owned_outstanding",
+   "evaluation": "default",
+   "objective": "p",
+   "label": "owned_outstanding",
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "R08/T2"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "SUPPORTED-LOW"
+    },
+    {
+     "policy_id": "BASE",
+     "section": "\u00a75"
+    }
+   ],
+   "argument_ref": {
+    "file": "slice2/oracle-r2-evidence/DERIVATIONS-S2A.md",
+    "anchor": "p130"
+   },
+   "expected_low": {
+    "owned_unit_origin_sets": [],
+    "U": [],
+    "seed": [],
+    "slots": [],
+    "single_floor": {
+     "nano": "0"
+    },
+    "independent_floor": {
+     "nano": "0"
+    },
+    "credits": [],
+    "selected_low": {
+     "nano": "0"
+    },
+    "credit_mode": "none",
+    "basis": "none"
+   },
+   "high": {
+    "status": {
+     "kind": "RequiredUnmet",
+     "reason": "Not derived in slice 2a: outside the finding controls this case supports (full S1 out of scope per slice-2a packet).",
+     "decision_owner": "oracle (future batch)",
+     "unmet_premise_refs": []
+    },
+    "expected": null
+   },
+   "consequence_if_admitted": null
+  }
+ ],
+ "excluded_channels": [
+  {
+   "channel": "K attempt finding codes",
+   "reason": "not one of the seven families"
+  }
+ ],
+ "reuse": []
+}
