@@ -173,7 +173,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let scenario = std::env::var("HOSTED_OBSERVER_SCENARIO").unwrap_or_else(|_| "ok".into());
     // `fault@N`: the secondary fault applies to the N-th served response.
     let (scenario, fault_at) = match scenario.split_once('@') {
-        Some((f, n)) => (f.to_string(), n.parse::<usize>().map_err(|_| "fault index")?),
+        Some((f, n)) => (
+            f.to_string(),
+            n.parse::<usize>().map_err(|_| "fault index")?,
+        ),
         None => (scenario.clone(), 1),
     };
     const SCENARIOS: [&str; 15] = [
