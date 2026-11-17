@@ -1,0 +1,16 @@
+{
+ "reviewer": "anthropic/claude-fable-5-2",
+ "thinking": "high",
+ "launch": "direct pi --mode json --api-key via skills/durable-state/scripts/chatboard_job.py (operator: API during Anthropic 5-hour limit)",
+ "tools": "read,grep,find,ls,bash (read-only by instruction)",
+ "subject": "acb80187",
+ "assistant_turns": 27,
+ "tokens": {
+  "input": 56,
+  "output": 49355,
+  "cacheRead": 2333906,
+  "cacheWrite": 162746
+ },
+ "cost_usd": 4.0689,
+ "stop": "stop"
+}
