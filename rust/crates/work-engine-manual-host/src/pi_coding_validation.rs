@@ -147,6 +147,8 @@ impl Host {
                 .as_ref()
                 .unwrap()
                 .acceptance
+                .as_ref()
+                .ok_or_else(|| Error::Refused("coding acceptance absent".into()))?
                 .sha256
                 .clone(),
             workspace_manifest_sha256: tree.manifest.sha256.clone(),
@@ -294,8 +296,6 @@ impl Host {
             || !state.validation_removed
             || state.validation_exit != Some(0)
             || state.validation_id.as_deref() != Some(&proof.validator_id)
-            || proof.acceptance_sha256
-                != self.journal.job.coding.as_ref().unwrap().acceptance.sha256
             || self
                 .journal
                 .job
@@ -303,8 +303,8 @@ impl Host {
                 .as_ref()
                 .unwrap()
                 .acceptance
-                .verify()
-                .is_err()
+                .as_ref()
+                .is_none_or(|a| proof.acceptance_sha256 != a.sha256 || a.verify().is_err())
             || proof.workspace_manifest_sha256 != tree.manifest.sha256
             || tree.verify().is_err()
             || process.status != Some(0)

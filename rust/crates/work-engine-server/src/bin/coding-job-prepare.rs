@@ -406,13 +406,13 @@ fn run() -> Result<Value> {
             }
             .into(),
             shim,
-            toolchain: prepared_tree(
+            toolchain: Some(prepared_tree(
                 &spec.toolchain,
                 out,
                 "toolchain-manifest.json",
                 &inputs.toolchain,
-            )?,
-            acceptance: inputs.validator,
+            )?),
+            acceptance: Some(inputs.validator),
             fixture_command: spec.fixture_command,
             max_tool_calls: 1,
             workspace_write_boundary: WorkspaceWriteBoundary::SrcLibRs,

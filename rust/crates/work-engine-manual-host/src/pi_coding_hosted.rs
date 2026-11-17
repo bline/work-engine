@@ -25,6 +25,24 @@ pub const HEAD_TIMEOUT_MS: u64 = 60_000;
 /// deadline.
 pub const READ_IDLE_MS: u64 = 30_000;
 const MAX_REQUEST_BODY: usize = 45_000;
+/// Every tool a request body declares: the top-level `tools` array and the
+/// tools of each `additional_tools` input item, in order. `None` when either
+/// is malformed.
+fn declared_tools(body: &Value) -> Option<Vec<Value>> {
+    let mut out = match &body["tools"] {
+        Value::Null => vec![],
+        Value::Array(tools) => tools.clone(),
+        _ => return None,
+    };
+    if let Some(input) = body["input"].as_array() {
+        for item in input.iter().filter(|i| i["type"] == "additional_tools") {
+            out.extend(item["tools"].as_array()?.iter().cloned());
+        }
+    } else if !body["input"].is_null() {
+        return None;
+    }
+    Some(out)
+}
 const MAX_HEADERS: usize = 64;
 /// Credential-bearing request headers. The container's values are markers;
 /// the transport applies real access itself.
@@ -500,6 +518,26 @@ impl Host {
         let kind = frame["type"].as_str().unwrap_or("");
         if kind == "provider_fetch" {
             let fetch = self.hosted_fetch(frame)?;
+            // The exact body, retained create-only before the request's first
+            // attempt; every attempt records its digest before dispatch.
+            let request = self.hosted.stream.as_ref().unwrap().request;
+            let path = self
+                .journal
+                .job
+                .state_dir
+                .join(format!("coding-hosted-{request}.body.json"));
+            let mut file = OpenOptions::new()
+                .create_new(true)
+                .write(true)
+                .open(&path)?;
+            file.write_all(&fetch.body)?;
+            file.sync_all()?;
+            File::open(&self.journal.job.state_dir)?.sync_all()?;
+            self.journal.artifacts.push(Artifact {
+                path,
+                sha256: digest(&fetch.body),
+            });
+            self.save()?;
             self.hosted.stream.as_mut().unwrap().phase = StreamPhase::Fetched(fetch);
             return Ok(());
         }
@@ -563,7 +601,13 @@ impl Host {
             .map_err(|_| Error::Refused("provider fetch body encoding".into()))?;
         let parsed: Value = serde_json::from_slice(&body)
             .map_err(|_| Error::Refused("provider fetch body JSON".into()))?;
-        if body.len() > MAX_REQUEST_BODY
+        let analysis = self.analysis_profile();
+        if body.len()
+            > if analysis {
+                super::analysis::MAX_REQUEST_BODY
+            } else {
+                MAX_REQUEST_BODY
+            }
             || parsed["model"] != plan.model
             || parsed["stream"] != true
         {
@@ -574,11 +618,12 @@ impl Host {
         // and only the container's own function tools (no provider-hosted
         // tools: the container stays networkless and tool spend stays inside
         // token settlement).
-        let tools_ok = match &parsed["tools"] {
-            Value::Null => true,
-            Value::Array(tools) => tools.iter().all(|t| t["type"] == "function"),
-            _ => false,
-        };
+        // Tools are declared at the top level or, for the Codex API, as
+        // `additional_tools` input items; both count.
+        let declared = declared_tools(&parsed);
+        let tools_ok = declared
+            .as_ref()
+            .is_some_and(|tools| tools.iter().all(|t| t["type"] == "function"));
         if parsed["store"] != false
             || !matches!(&parsed["background"], Value::Null | Value::Bool(false))
             || !(parsed["service_tier"].is_null()
@@ -586,6 +631,9 @@ impl Host {
             || !tools_ok
         {
             return refuse("provider fetch body policy: store/background/service_tier/tools");
+        }
+        if analysis {
+            super::analysis::check_request_tools(&json!(declared.unwrap_or_default()))?;
         }
         Ok(Fetch { headers, body })
     }
@@ -746,6 +794,18 @@ impl Host {
                 return self.hosted_unavailable(s, "ledger_refused");
             }
         };
+        if let Some(a) = self
+            .journal
+            .coding
+            .as_mut()
+            .unwrap()
+            .provider_requests
+            .get_mut(&s.request)
+            .and_then(|r| r.attempts.last_mut())
+            .filter(|a| a.attempt == attempt)
+        {
+            a.request_body_sha256 = Some(digest(&fetch.body));
+        }
         self.save()?; // Durable attempt reservation before any upstream byte.
         if self.expired() || self.cancelled() {
             self.hosted_uncertain(
@@ -1669,6 +1729,27 @@ mod tests {
         h.journal.coding.as_ref().unwrap().provider_requests[&1].clone()
     }
 
+    /// Tools count wherever the body declares them: the top-level array and
+    /// every Codex `additional_tools` input item.
+    #[test]
+    fn declared_tools_include_additional_tools_items() {
+        let f = |name: &str, kind: &str| json!({"type":kind,"name":name});
+        let body = json!({"tools":[f("a","function")],"input":[
+            {"type":"additional_tools","role":"developer","tools":[f("b","function"),f("c","web_search")]},
+            {"type":"message","role":"user","content":"x"}]});
+        let names: Vec<_> = declared_tools(&body)
+            .unwrap()
+            .iter()
+            .map(|t| t["name"].clone())
+            .collect();
+        assert_eq!(names, vec![json!("a"), json!("b"), json!("c")]);
+        assert!(declared_tools(&json!({"tools":{}})).is_none());
+        assert!(
+            declared_tools(&json!({"input":[{"type":"additional_tools","tools":{}}]})).is_none()
+        );
+        assert!(declared_tools(&json!({"input":"text"})).is_none());
+        assert_eq!(declared_tools(&json!({})).unwrap(), Vec::<Value>::new());
+    }
     #[test]
     fn refusal_fails_over_within_the_grant_and_host_evidence_settles_completion() {
         let (dir, mut h, mut w) = host(vec![refusal(429), completed()], None);

@@ -2492,6 +2492,12 @@ impl SqliteLifecycleStore {
                     // the observation block; the fixture's 2 KiB cap does not fit.
                     16_384
                 } else if request.purpose == NativeInvocationPurpose::DomainWork
+                    && session.profile_digest == crate::pi_analysis_profile_digest()
+                {
+                    // An analysis request is exact operator-admitted text (for
+                    // H2, an audit request with its evidence references).
+                    32_768
+                } else if request.purpose == NativeInvocationPurpose::DomainWork
                     && request
                         .attempt
                         .as_str()
@@ -3025,6 +3031,8 @@ impl SqliteLifecycleStore {
             || profile == crate::pi_coding::pi_coding_live_profile_digest()
             || protocol == crate::pi_coding::pi_coding_sol_high_protocol_digest()
             || profile == crate::pi_coding::pi_coding_sol_high_profile_digest()
+            || protocol == crate::pi_coding::pi_analysis_protocol_digest()
+            || profile == crate::pi_coding::pi_analysis_profile_digest()
         {
             return Err(StoreError::Rejected);
         }

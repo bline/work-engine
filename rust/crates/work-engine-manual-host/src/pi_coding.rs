@@ -1,6 +1,8 @@
 //! Provider-disabled coding-path qualification in the existing Pi custody owner.
 //! This profile intentionally cannot authorize provider or credential effects.
 use super::*;
+#[path = "pi_coding_analysis.rs"]
+pub mod analysis;
 #[path = "pi_coding_claims.rs"]
 pub mod claims;
 #[path = "pi_coding_export.rs"]
@@ -29,11 +31,22 @@ pub const RETIRED_LIVE_PROFILES: [&str; 4] = [
 /// Live lifecycle composition with Host-held access and Host dispatch: the
 /// inference container has no network and no credential mount.
 pub const HOSTED_BRIDGE_PROFILE: &str = "work-engine.pi-coding-hosted.v1";
-/// The only live profile: Host-held access, Host dispatch, lifecycle gate.
+/// Hosted analysis: the same Host-held access, dispatch and lifecycle gate,
+/// no shell, tool container or workspace effect; the Host serves read-only
+/// tools over the job's manifest-pinned workspace (`analysis`).
+pub const ANALYSIS_PROFILE: &str = "work-engine.pi-analysis-hosted.v1";
+/// The live profiles: Host-held access, Host dispatch, lifecycle gate.
 pub fn is_live_bridge(schema: &str) -> bool {
     is_hosted(schema)
 }
 pub fn is_hosted(schema: &str) -> bool {
+    schema == HOSTED_BRIDGE_PROFILE || schema == ANALYSIS_PROFILE
+}
+pub fn is_analysis(schema: &str) -> bool {
+    schema == ANALYSIS_PROFILE
+}
+/// The live coding continuity profile (one shell call, one reset).
+fn is_continuity(schema: &str) -> bool {
     schema == HOSTED_BRIDGE_PROFILE
 }
 /// Opt-in, versioned fixture composition that additionally admits the four
@@ -62,14 +75,16 @@ fn tools_match(advertised: &Value, schema: &str) -> bool {
         Some(names)
     };
     let expected = ready_tools(schema);
-    if schema == CLAIMS_BRIDGE_PROFILE {
+    if schema == CLAIMS_BRIDGE_PROFILE || is_analysis(schema) {
         sorted(advertised).is_some() && sorted(advertised) == sorted(&expected)
     } else {
         *advertised == expected
     }
 }
 fn ready_tools(schema: &str) -> Value {
-    if schema == CLAIMS_BRIDGE_PROFILE {
+    if is_analysis(schema) {
+        json!(analysis::TOOLS)
+    } else if schema == CLAIMS_BRIDGE_PROFILE {
         json!(
             ["workspace_exec"]
                 .into_iter()
@@ -140,6 +155,18 @@ pub trait CodingEffectGate {
         _dispatch: &mut dyn FnMut(i64) -> Result<()>,
     ) -> Result<()> {
         refuse("hosted provider attempts unavailable")
+    }
+    /// Analysis profile only: record one Host snapshot delivery (already
+    /// persisted create-only) before its reply is dispatched.
+    fn snapshot_delivered(
+        &mut self,
+        _id: &str,
+        _tool: &str,
+        _arguments: &Value,
+        _result: &Value,
+        _artifact: &Artifact,
+    ) -> Result<()> {
+        refuse("analysis snapshot deliveries unavailable")
     }
     /// Called only after the exact result artifact is persisted in the journal.
     fn observed(
@@ -254,8 +281,12 @@ impl WorkspaceWriteBoundary {
 pub struct Profile {
     pub schema: String,
     pub shim: Artifact,
-    pub toolchain: Tree,
-    pub acceptance: Artifact,
+    /// Coding profiles only (the tool and validator containers); the analysis
+    /// profile has neither.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub toolchain: Option<Tree>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub acceptance: Option<Artifact>,
     /// Pinned fixture input, never represented as provider-generated work.
     #[serde(default)]
     pub fixture_command: String,
@@ -320,6 +351,17 @@ pub struct State {
     /// In-band export collection (signed fixture only); absent for every other profile.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub export: Option<export::ExportState>,
+    /// Analysis profile: Host snapshot deliveries per call id (`None` while
+    /// the read's outcome is unknown), the tool each call named, the calls
+    /// whose native completion matched, and SDK-refused calls (never at the Host).
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub snapshot_requests: BTreeMap<String, Option<Artifact>>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub snapshot_tools: BTreeMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+    pub native_snapshot_ids: BTreeSet<String>,
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+    pub sdk_refused_ids: BTreeSet<String>,
 }
 fn is_zero(v: &u32) -> bool {
     *v == 0
@@ -333,7 +375,11 @@ impl Profile {
         }
         if self.schema
             != if self.provider.is_some() {
-                HOSTED_BRIDGE_PROFILE
+                if is_analysis(&self.schema) {
+                    ANALYSIS_PROFILE
+                } else {
+                    HOSTED_BRIDGE_PROFILE
+                }
             } else if self.schema == BRIDGE_PROFILE {
                 BRIDGE_PROFILE
             } else if self.schema == CLAIMS_BRIDGE_PROFILE {
@@ -352,16 +398,29 @@ impl Profile {
             } else {
                 !self.fixture_command.is_empty()
             }
-            || !(1..=8).contains(&self.max_tool_calls)
+            // Analysis: `max_tool_calls` bounds the Host snapshot deliveries.
+            || !(1..=if is_analysis(&self.schema) {
+                analysis::MAX_READS
+            } else {
+                8
+            })
+                .contains(&self.max_tool_calls)
             || (is_bridge(&self.schema)
+                && !is_analysis(&self.schema)
                 && self.max_tool_calls
                     != if self.schema == CLAIMS_BRIDGE_PROFILE {
                         2
                     } else {
                         1
                     })
-            || (is_live_bridge(&self.schema)
+            || (is_continuity(&self.schema)
                 && self.workspace_write_boundary != WorkspaceWriteBoundary::SrcLibRs)
+            || (is_analysis(&self.schema)
+                && (self.workspace_write_boundary != WorkspaceWriteBoundary::LegacyWorkspace
+                    || self.toolchain.is_some()
+                    || self.acceptance.is_some()))
+            || (!is_analysis(&self.schema)
+                && (self.toolchain.is_none() || self.acceptance.is_none()))
             || job.idle_seconds != 0
         {
             return refuse("coding fixture profile/pins/limits conflict");
@@ -371,7 +430,7 @@ impl Profile {
             // One tool turn, final text, recovery and one continued turn.
             // Each coding_provider_request frame carries the context twice and must
             // fit the receiver's 64 KiB frame bound.
-            if is_live_bridge(&self.schema)
+            if is_continuity(&self.schema)
                 && (plan.max_requests != 4 || plan.max_context_bytes > 24_000)
             {
                 return refuse(
@@ -382,9 +441,13 @@ impl Profile {
         if self.workspace_write_boundary == WorkspaceWriteBoundary::SrcLibRs {
             strict_source_file(&job.workspace.root)?;
         }
-        self.toolchain.verify()?;
-        self.acceptance.verify()?;
-        for path in [&self.toolchain.root, &self.acceptance.path] {
+        let (Some(toolchain), Some(acceptance)) = (&self.toolchain, &self.acceptance) else {
+            // Analysis: the workspace is the read-only snapshot the Host serves.
+            return analysis::validate_snapshot(job);
+        };
+        toolchain.verify()?;
+        acceptance.verify()?;
+        for path in [&toolchain.root, &acceptance.path] {
             if !path.is_absolute()
                 || fs::canonicalize(path)? != *path
                 || path.to_string_lossy().contains([',', ':'])
@@ -396,7 +459,7 @@ impl Profile {
                 return refuse("coding toolchain/acceptance isolation conflict");
             }
         }
-        if !self.toolchain.root.join("bin/rustc").is_file() {
+        if !toolchain.root.join("bin/rustc").is_file() {
             return refuse("offline rustc absent");
         }
         Ok(())
@@ -488,8 +551,26 @@ fn expected_mounts(
     let profile = j.job.coding.as_ref().expect("coding profile");
     if tool {
         let mut mounts = vec![
-            (profile.toolchain.root.clone(), "/toolchain", false),
-            (profile.acceptance.path.clone(), "/acceptance.rs", false),
+            (
+                profile
+                    .toolchain
+                    .as_ref()
+                    .expect("coding toolchain")
+                    .root
+                    .clone(),
+                "/toolchain",
+                false,
+            ),
+            (
+                profile
+                    .acceptance
+                    .as_ref()
+                    .expect("coding acceptance")
+                    .path
+                    .clone(),
+                "/acceptance.rs",
+                false,
+            ),
             (
                 if validation {
                     j.coding
@@ -684,7 +765,10 @@ impl Host {
     }
     pub(super) fn coding_bridge_frame(&mut self, frame: &Value) -> Result<Vec<Vec<u8>>> {
         let mut frame = frame.clone();
-        if frame["type"] == "coding_provider_request" && frame["id"] == 2 {
+        if frame["type"] == "coding_provider_request"
+            && frame["id"] == 2
+            && !self.analysis_profile()
+        {
             self.coding_collect_tool()?;
             if !self.journal.coding.as_ref().unwrap().tool_removed {
                 return refuse("coding checkpoint writers not excluded");
@@ -844,6 +928,11 @@ impl Host {
     }
     pub(super) fn coding_prepare_tool(&mut self) -> Result<()> {
         self.coding_prepare_provider()?;
+        if self.analysis_profile() {
+            // No tool container and no workspace copy: the Host serves the
+            // pinned snapshot itself.
+            return Ok(());
+        }
         let j = &self.journal;
         let workspace = j.job.state_dir.join("coding-workspace");
         fs::create_dir(&workspace)?;
@@ -922,8 +1011,13 @@ impl Host {
     }
     fn coding_advance_lines(&mut self, lines: Vec<&[u8]>) -> Result<Vec<Vec<u8>>> {
         let mut replies = vec![];
+        let frame_limit = if self.analysis_profile() {
+            analysis::FRAME_BYTES
+        } else {
+            65536
+        };
         for line in lines {
-            if line.len() > 65536 {
+            if line.len() > frame_limit {
                 return refuse("coding frame exceeded bound");
             }
             let frame: Value = serde_json::from_slice(line)?;
@@ -1417,8 +1511,14 @@ impl Host {
                         );
                     }
                 }
+                "snapshot_request" => {
+                    let reply = self.coding_snapshot_frame(&frame)?;
+                    replies.push(reply);
+                }
                 "native_event" => {
-                    if frame["event"]["type"] == "tool_execution_end"
+                    if frame["event"]["type"] == "tool_execution_end" && self.analysis_profile() {
+                        self.analysis_native_end(&frame["event"])?;
+                    } else if frame["event"]["type"] == "tool_execution_end"
                         && self.journal.job.coding.as_ref().unwrap().schema == CLAIMS_BRIDGE_PROFILE
                         && frame["event"]["toolName"]
                             .as_str()
@@ -1482,6 +1582,10 @@ impl Host {
                 "export_part" | "export_final" => {
                     self.coding_export_frame(&frame, kind)?;
                 }
+                "complete" if self.analysis_profile() => {
+                    self.analysis_complete(&frame)?;
+                    self.journal.coding.as_mut().unwrap().completed = true;
+                }
                 "complete" => {
                     if self.is_signed_fixture() && !self.export_finalized() {
                         return refuse("coding completion before export finalization");
@@ -1503,7 +1607,7 @@ impl Host {
                         || self.journal.job.coding.as_ref().unwrap().schema == SIGNED_PROFILE)
                         && (state.provider_failed
                             || state.provider_requests.is_empty()
-                            || (is_live_bridge(&self.journal.job.coding.as_ref().unwrap().schema)
+                            || (is_continuity(&self.journal.job.coding.as_ref().unwrap().schema)
                                 && state.provider_requests.len() != 4)
                             || state
                                 .provider_requests
@@ -1627,8 +1731,12 @@ impl Host {
         self.journal.coding.as_mut().unwrap().tool_removed = true;
         self.save()?;
         let profile = self.journal.job.coding.as_ref().unwrap();
-        profile.toolchain.verify()?;
-        profile.acceptance.verify()?;
+        if let Some(toolchain) = &profile.toolchain {
+            toolchain.verify()?;
+        }
+        if let Some(acceptance) = &profile.acceptance {
+            acceptance.verify()?;
+        }
         if let Some(plan) = &profile.provider {
             let expected: BTreeMap<String, Entry> =
                 serde_json::from_slice(&plan.lane.pi_config.manifest.verify()?)?;
@@ -1775,8 +1883,8 @@ mod tests {
             coding: Some(Profile {
                 schema: PROFILE.into(),
                 shim: pin.clone(),
-                toolchain: tree,
-                acceptance: pin,
+                toolchain: Some(tree),
+                acceptance: Some(pin),
                 fixture_command: "unused".into(),
                 max_tool_calls: 1,
                 workspace_write_boundary: WorkspaceWriteBoundary::LegacyWorkspace,

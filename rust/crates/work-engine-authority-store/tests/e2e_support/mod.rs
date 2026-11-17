@@ -143,8 +143,8 @@ pub fn rig(run: &Path, signed: bool, deadline: u64) -> Rig {
     let coding = Profile {
         schema: if signed { SIGNED_PROFILE } else { PROFILE }.into(),
         shim: art(&meta.join("pi-coding.mjs"), SHIM),
-        toolchain: pinned_tree("toolchain", TOOLCHAIN_MANIFEST_SHA),
-        acceptance: art(&meta.join("acceptance.rs"), ACCEPTANCE.as_bytes()),
+        toolchain: Some(pinned_tree("toolchain", TOOLCHAIN_MANIFEST_SHA)),
+        acceptance: Some(art(&meta.join("acceptance.rs"), ACCEPTANCE.as_bytes())),
         fixture_command: COMMAND.into(),
         max_tool_calls: 1,
         workspace_write_boundary: WorkspaceWriteBoundary::SrcLibRs,

@@ -35,6 +35,15 @@ pub fn pi_coding_sol_high_profile_digest() -> String {
 pub fn pi_coding_sol_high_protocol_digest() -> String {
     digest(b"pi-1.5.0:raw-agent-events+host-intent-result+thinking-history+owner-derived-checkpoint:v5")
 }
+/// Hosted analysis: one turn of Host-served read-only snapshot tools and a
+/// final text answer; no shell, workspace effect, checkpoint or reset
+/// (`pi_analysis_proof`).
+pub fn pi_analysis_profile_digest() -> String {
+    digest(b"pi-1.5.0-analysis-hosted-v1:real-provider:host-snapshot-tools:no-shell:final-text")
+}
+pub fn pi_analysis_protocol_digest() -> String {
+    digest(b"pi-1.5.0:raw-agent-events-except-message-update+host-snapshot-deliveries+session-branch:analysis-v1")
+}
 /// Profile and protocol must come from the same version; mixed bindings are
 /// refused rather than interpreted.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -42,6 +51,7 @@ pub(crate) enum PiCodingKind {
     Fixture,
     Live,
     SolHigh,
+    Analysis,
 }
 pub(crate) fn pi_coding_kind(profile: &str, protocol: &str) -> Option<PiCodingKind> {
     if profile == pi_coding_profile_digest() && protocol == pi_coding_protocol_digest() {
@@ -54,6 +64,8 @@ pub(crate) fn pi_coding_kind(profile: &str, protocol: &str) -> Option<PiCodingKi
         && protocol == pi_coding_sol_high_protocol_digest()
     {
         Some(PiCodingKind::SolHigh)
+    } else if profile == pi_analysis_profile_digest() && protocol == pi_analysis_protocol_digest() {
+        Some(PiCodingKind::Analysis)
     } else {
         None
     }
@@ -98,8 +110,12 @@ impl SqliteLifecycleStore {
             params![parent.invocation_id(),turn.as_str(),&self.trusted_issuer,clock.wall.get()],
             |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?,r.get(6)?,r.get(7)?)))
             .map_err(|_| StoreError::ClaimConflict)?;
+        // Analysis turns have no workspace effect to enter.
         if thread != parent.thread().as_str()
-            || pi_coding_kind(&profile, &protocol).is_none()
+            || !matches!(
+                pi_coding_kind(&profile, &protocol),
+                Some(PiCodingKind::Fixture | PiCodingKind::Live | PiCodingKind::SolHigh)
+            )
             || profile != parent.profile_digest()
             || binary != crate::PI_SDK_INDEX_SHA256
             || clock.wall.get() < last_wall
@@ -295,7 +311,7 @@ impl SqliteLifecycleStore {
         self.verify_identity()?;
         if proof.first_sequence == 0
             || proof.history_sequence < proof.first_sequence
-            || proof.history_sequence - proof.first_sequence > 1024
+            || proof.history_sequence - proof.first_sequence > 4096
         {
             return Err(StoreError::Rejected);
         }
@@ -348,6 +364,33 @@ impl SqliteLifecycleStore {
         }
         if values.len() as u64 != proof.history_sequence - proof.first_sequence + 1 {
             return Err(StoreError::ClaimConflict);
+        }
+        if b.kind == PiCodingKind::Analysis {
+            // One domain turn on a fresh session: no anchor, no checkpoint.
+            if b.purpose != "domain_work" || proof.first_sequence != 1 {
+                return Err(StoreError::ClaimConflict);
+            }
+            let answer = crate::pi_analysis_proof::validate(
+                &values,
+                parent.invocation_id(),
+                parent.turn().unwrap().as_str(),
+                &b.thread,
+                &b.prompt,
+                &b.prompt_hash,
+            )?;
+            drop(stmt);
+            crate::native::commit_native_settlement(
+                &tx,
+                parent,
+                &answer,
+                "observed_complete",
+                &proof.transport,
+                proof.history_sequence,
+                wall,
+                &b.purpose,
+                clock,
+            )?;
+            return tx.commit().map_err(|_| StoreError::Unavailable);
         }
         let profile_digest = if b.kind == PiCodingKind::SolHigh {
             pi_coding_sol_high_profile_digest()

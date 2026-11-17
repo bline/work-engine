@@ -876,7 +876,7 @@ mod tests {
         fs::write(src.path().join("empty"), b"").unwrap();
         let script = format!(
             "import {{createHash}} from 'node:crypto';import {{readdirSync,lstatSync,readFileSync}} from 'node:fs';\n\
-             const fixtureSigned=true,schema='{SIGNED_PROFILE}';let session;const manager={{getSessionId:()=>'{SESSION}'}};\n{emit}\n{}\nexportBundle();\n",
+             const fixtureSigned=true,schema='{SIGNED_PROFILE}',FRAME_BYTES=65536;let session;const manager={{getSessionId:()=>'{SESSION}'}};\n{emit}\n{}\nexportBundle();\n",
             bundle.replace(
                 "walk('/export'",
                 &format!("walk('{}'", src.path().display())

@@ -17,7 +17,14 @@ if(claimsTools&&(!process.argv.includes('--lifecycle-bridge')||existsSync('/prof
 const config=live?JSON.parse(readFileSync('/profile/job.json','utf8')):null;
 // Hosted transport: no network or access material here; the Host dispatches
 // each request and relays the response stream (pull/cancel/ack).
-const hosted=live&&config.schema==='work-engine.pi-coding-hosted.v1';
+// Hosted analysis: same transport and lifecycle bridge; no shell, only the
+// Host-served read-only snapshot tools.
+const analysis=live&&config.schema==='work-engine.pi-analysis-hosted.v1';
+const hosted=live&&(config.schema==='work-engine.pi-coding-hosted.v1'||analysis);
+const SNAPSHOT_NAMES=['snapshot_list','snapshot_read'];
+const FRAME_BYTES=analysis?config.frameBytes:65536;
+const MAX_BODY=analysis?config.maxBodyBytes:45000;
+const MAX_REQUESTS=analysis?config.maxRequests:4;
 // The hosted profile is the only live profile; credential-mounted live
 // profiles are retired. It always runs on the lifecycle bridge.
 if(live&&(!hosted||!bridge))throw Error('only the hosted live profile on the lifecycle bridge is supported');
@@ -47,7 +54,7 @@ let initializeResolve;
 const initialization=new Promise(resolve=>{initializeResolve=resolve;});
 const emit=value=>{
  const bytes=JSON.stringify({schema,sessionId:session?.sessionId??manager?.getSessionId(),...(fixtureSigned?{classification:'fixture provider/signing/identity; actual SDK runtime'}:{}),...value})+'\n';
- if(Buffer.byteLength(bytes)>65536)throw Error('output frame bound');
+ if(Buffer.byteLength(bytes)>FRAME_BYTES)throw Error('output frame bound');
  process.stdout.write(bytes);
 };
 // Signed fixture only: /export is a size-limited tmpfs the Host cannot read, so its regular files are
@@ -108,6 +115,7 @@ input.on('line',line=>{
   else if(hosted&&RESPONSE_FRAMES.includes(value.type))hostedFrames.push(value);
   else if(bridge&&value.type==='bridge_provider'&&grants.has(value.id)&&value.sessionId===session?.sessionId){grants.get(value.id)(value);grants.delete(value.id);}
   else if(value.type==='claims_result'&&claimsTools&&pending.has(value.id)&&value.sessionId===undefined){pending.get(value.id)(value);pending.delete(value.id);}
+  else if(value.type==='snapshot_result'&&analysis&&pending.has(value.id)&&value.sessionId===undefined){pending.get(value.id)(value);pending.delete(value.id);}
   else if(value.type==='tool_result'&&pending.has(value.id)&&(!signed||value.sessionId===manager?.getSessionId())){pending.get(value.id)(value);pending.delete(value.id);}
   else if(value.type==='provider_grant'&&grants.has(value.id)&&(!signed||(value.sessionId===manager?.getSessionId()&&(!fixtureSigned||value.classification==='fake_fixture')))){grants.get(value.id)(value);grants.delete(value.id);}
   else throw Error('unexpected host frame');
@@ -177,8 +185,22 @@ try {
    });
    return {content:[{type:'text',text:JSON.stringify(result.ok?result.result:{error:result.error})}],details:{hostReportedSuccess:result.ok}};
   }})):[];
- const activeNames=['workspace_exec',...(claimsTools?CLAIMS_NAMES:[])];
- const baseOptions={cwd:'/workspace',agentDir,settingsManager,resourceLoader,modelRuntime,model,...providerOptions,noTools:'builtin',tools:activeNames,customTools:[tool,...claimsCustom]};
+ // Analysis tools: the Host reads the manifest-pinned snapshot and validates
+ // every request; nothing here can name another path, server or scope.
+ const snapshotExecute=name=>async(id,args,signal)=>{
+  const result=await new Promise((resolve,reject)=>{
+   pending.set(id,resolve);
+   signal?.addEventListener('abort',()=>{pending.delete(id);reject(Error('snapshot read cancelled'));},{once:true});
+   emit({type:'snapshot_request',id,tool:name,arguments:args});
+  });
+  return {content:[{type:'text',text:JSON.stringify(result.ok?result.result:{error:result.error})}],details:{hostReportedSuccess:result.ok}};
+ };
+ const snapshotCustom=analysis?[
+  {name:'snapshot_list',label:'snapshot_list',description:'List the members of the read-only analysis snapshot (path, size in bytes, SHA-256). The snapshot is the only material available.',promptSnippet:'List the snapshot members',parameters:Type.Object({}),executionMode:'sequential',execute:snapshotExecute('snapshot_list')},
+  {name:'snapshot_read',label:'snapshot_read',description:`Read one snapshot member as UTF-8 text, one page at a time: at most ${config.pageBytes} bytes from offset (default 0); next_offset is null at the end of the member.`,promptSnippet:'Read a page of a snapshot member',parameters:Type.Object({path:Type.String({minLength:1,maxLength:256}),offset:Type.Optional(Type.Integer({minimum:0})),max_bytes:Type.Optional(Type.Integer({minimum:1,maximum:config.pageBytes}))}),executionMode:'sequential',execute:snapshotExecute('snapshot_read')},
+ ]:[];
+ const activeNames=analysis?SNAPSHOT_NAMES:['workspace_exec',...(claimsTools?CLAIMS_NAMES:[])];
+ const baseOptions={cwd:'/workspace',agentDir,settingsManager,resourceLoader,modelRuntime,model,...providerOptions,noTools:'builtin',tools:activeNames,customTools:analysis?snapshotCustom:[tool,...claimsCustom]};
  function bindBridge(selected,services){
   session=selected;
   session.setAutoCompactionEnabled(false);session.setAutoRetryEnabled(false);
@@ -204,7 +226,7 @@ try {
     try{
      const id=++bridgeCalls;
      const contextBytes=Buffer.byteLength(JSON.stringify(context));
-     if(!bridgeActive||id>config.maxRequests||id>4||contextBytes>config.maxContextBytes||Date.now()>=config.deadline*1000||requestModel.id!==model.id||requestModel.provider!==model.provider)return failure('outside host admission unavailable');
+     if(!bridgeActive||id>config.maxRequests||id>MAX_REQUESTS||contextBytes>config.maxContextBytes||Date.now()>=config.deadline*1000||requestModel.id!==model.id||requestModel.provider!==model.provider)return failure('outside host admission unavailable');
      const grant=await new Promise((resolve,reject)=>{
       grants.set(id,resolve);
       options?.signal?.addEventListener('abort',()=>{grants.delete(id);reject(Error('provider grant cancelled'));},{once:true});
@@ -229,9 +251,9 @@ try {
        // The SDK zstd-compresses Codex SSE bodies. The Host validates and
        // forwards plain JSON (the SDK's own uncompressed fallback), so the
        // bounded decompression happens here, never on the Host.
-       if(headers['content-encoding']==='zstd'){body=zstdDecompressSync(body,{maxOutputLength:45001});delete headers['content-encoding'];}
+       if(headers['content-encoding']==='zstd'){body=zstdDecompressSync(body,{maxOutputLength:MAX_BODY+1});delete headers['content-encoding'];}
        else if(headers['content-encoding']!==undefined)throw Error('hosted request encoding');
-       if(body.length>45000)throw Error('hosted request bound');
+       if(body.length>MAX_BODY)throw Error('hosted request bound');
        hostedFrames.open=true;
        emit({type:'provider_fetch',id,binding:sid.binding,sequence:sid.sequence,stream:sid.stream,url:String(url),method:init.method,headers,body:body.toString('base64')});
        const handle=openResponse({id:sid,sendRaw:async v=>emit(v),read:()=>hostedFrames.read(),signal:init.signal,onSettled:()=>{hostedFrames.open=false;hostedFrames.queue=[];}});

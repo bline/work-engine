@@ -9,13 +9,14 @@ mod native_causal;
 pub use native_causal::NativeCausalRecord;
 mod native_input;
 pub use native_input::{NativeInputApply, NativeInputPayload, NativeInputRecord};
+mod pi_analysis_proof;
 mod pi_coding;
 mod pi_coding_proof;
 mod pi_settlement;
 pub use pi_coding::{
-    pi_coding_live_profile_digest, pi_coding_live_protocol_digest, pi_coding_profile_digest,
-    pi_coding_protocol_digest, pi_coding_sol_high_profile_digest,
-    pi_coding_sol_high_protocol_digest,
+    pi_analysis_profile_digest, pi_analysis_protocol_digest, pi_coding_live_profile_digest,
+    pi_coding_live_protocol_digest, pi_coding_profile_digest, pi_coding_protocol_digest,
+    pi_coding_sol_high_profile_digest, pi_coding_sol_high_protocol_digest,
 };
 pub use pi_settlement::{
     PI_SDK_INDEX_SHA256, PiSettlementProof, pi_multiturn_profile_digest,

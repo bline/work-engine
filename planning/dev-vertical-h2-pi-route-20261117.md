@@ -89,6 +89,35 @@ ledger, gate entry, transport and containment:
 The model for an H2 arm is not chosen here (R6); the profile pins the model
 named in the job packet, from a closed set.
 
+Design decisions for slice 3 (revision 2):
+
+- The snapshot is the job's workspace tree, pinned by its manifest and
+  verified at admission and collection as today. It is not mounted in the
+  inference container; the Host reads members and checks each against the
+  manifest before returning bytes.
+- Tool frames follow the claims-tools pattern: `snapshot_request` from the
+  container, a create-only retained result artifact, `snapshot_result` back,
+  and a check that the native `tool_execution_end` equals what the Host
+  delivered. The lifecycle gate records each delivery as Host ingress
+  (`pi.analysis_read`), and the store's analysis grammar checks every tool
+  result in the settled turn against it. A tool call the SDK refuses before
+  execution (unknown tool, invalid arguments) is an error result with no Host
+  delivery, and the grammar admits it only in that form.
+- One turn: prompt, up to `max_requests` provider requests, sequential tool
+  calls, a final text answer. No reset, tool container or validator.
+- Initial bounds: context 400 000 bytes, request body 600 000 bytes,
+  container frame 1 MiB, job output 64 MiB, 32 requests, 64 reads, read page
+  24 KiB, snapshot 1 MiB in at most 256 files, answer 64 KiB.
+- Request body retention applies to both hosted profiles: the body is written
+  create-only once per request before its first attempt, and each attempt
+  records `request_body_sha256`.
+- The tools check: the request's `tools` array names exactly the profile's
+  tools, all `type: function`, and its canonical digest equals a constant
+  pinned in the Host (a function of the pinned receiver and SDK).
+- The producer is a separate binary, `analysis-qualification`, beside
+  `coding-qualification`. A server admission class and job preparation wait
+  for slice 4 to settle which entry the task host uses.
+
 ### 4. Task-host connection
 
 Start with the read-only sizing the route comparison calls P0, done with the

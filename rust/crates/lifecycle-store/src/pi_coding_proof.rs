@@ -18,7 +18,7 @@ fn hash(b: &[u8]) -> String {
         .expect("binary codec")
         .hex()
 }
-fn text(m: &Value) -> Result<String, StoreError> {
+pub(crate) fn text(m: &Value) -> Result<String, StoreError> {
     if let Some(s) = m["content"].as_str() {
         return Ok(s.into());
     }
@@ -32,12 +32,12 @@ fn text(m: &Value) -> Result<String, StoreError> {
     }
     Ok(out)
 }
-struct Parser<'a> {
-    v: Vec<&'a Value>,
-    i: usize,
+pub(crate) struct Parser<'a> {
+    pub(crate) v: Vec<&'a Value>,
+    pub(crate) i: usize,
 }
 impl<'a> Parser<'a> {
-    fn take(&mut self, k: &str) -> Result<&'a Value, StoreError> {
+    pub(crate) fn take(&mut self, k: &str) -> Result<&'a Value, StoreError> {
         let v = *self.v.get(self.i).ok_or(StoreError::ClaimConflict)?;
         if v["type"] != k {
             return bad();
@@ -45,7 +45,7 @@ impl<'a> Parser<'a> {
         self.i += 1;
         Ok(v)
     }
-    fn pair(&mut self, role: &str) -> Result<Value, StoreError> {
+    pub(crate) fn pair(&mut self, role: &str) -> Result<Value, StoreError> {
         let a = self.take("message_start")?;
         let b = self.take("message_end")?;
         if a["message"] != b["message"] || b["message"]["role"] != role {
@@ -53,7 +53,7 @@ impl<'a> Parser<'a> {
         }
         Ok(b["message"].clone())
     }
-    fn assistant(&mut self) -> Result<Value, StoreError> {
+    pub(crate) fn assistant(&mut self) -> Result<Value, StoreError> {
         let a = self.take("message_start")?;
         if a["message"]["role"] != "assistant" {
             return bad();
@@ -73,7 +73,7 @@ impl<'a> Parser<'a> {
     }
 }
 #[allow(clippy::too_many_arguments)]
-fn request(
+pub(crate) fn request(
     v: &Value,
     inv: &str,
     correlation: &str,
@@ -107,7 +107,7 @@ fn request(
     }
     Ok(())
 }
-fn history(
+pub(crate) fn history(
     v: &Value,
     thread: &str,
     full: &[Value],

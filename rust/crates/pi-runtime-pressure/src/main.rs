@@ -53,8 +53,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let packet=PressurePacket{schema:PRESSURE_PROFILE.into(),source:"s10:pi-sdk".into(),generation:format!("{}:g1",job.job_id),budget,max_age_ms:30000};
   job.packet=artifact(&out.join("packet.json"),&serde_json::to_vec(&packet)?);
   let p=job.coding.as_mut().ok_or("coding profile required")?;p.shim=artifact(&out.join("pi-coding.mjs"),SHIM);
-  let toolchain=Instant::now();p.toolchain=tree(p.toolchain.root.clone(),&out.join("toolchain.json"));let toolchain_ms=toolchain.elapsed().as_millis();
-  p.acceptance=artifact(&out.join("acceptance.rs"),b"#[path=\"/workspace/src/lib.rs\"]mod x;#[test]fn checkpoint(){assert!(x::checkpoint());}\n");
+  let toolchain=Instant::now();p.toolchain=Some(tree(p.toolchain.as_ref().ok_or("coding toolchain required")?.root.clone(),&out.join("toolchain.json")));let toolchain_ms=toolchain.elapsed().as_millis();
+  p.acceptance=Some(artifact(&out.join("acceptance.rs"),b"#[path=\"/workspace/src/lib.rs\"]mod x;#[test]fn checkpoint(){assert!(x::checkpoint());}\n"));
   p.fixture_command="printf 'pub fn checkpoint()->bool{true}\\n' > src/lib.rs".into();
   if prepare_case==Some("cancel")||prepare_case==Some("deadline"){p.fixture_command="printf 'PRESSURE_STOP_TOOL_ACTIVE\\n'; sleep 29; printf 'pub fn checkpoint()->bool{true}\\n' > src/lib.rs".into();}
   job.deadline_unix_seconds=SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs()+if prepare_case==Some("deadline"){50}else{240};job.command_timeout_seconds=30;

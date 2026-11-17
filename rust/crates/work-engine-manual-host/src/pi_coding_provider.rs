@@ -102,6 +102,11 @@ pub struct AttemptRecord {
     /// completion settled on the terminal event alone records `false`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub framed_end_observed: Option<bool>,
+    /// Hosted: SHA-256 of the exact request body this attempt dispatched,
+    /// retained create-only (`coding-hosted-{request}.body.json`) before the
+    /// request's first attempt and persisted here before any upstream byte.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub request_body_sha256: Option<String>,
 }
 /// Observed facts about one attempt, from which the ledger derives the
 /// disposition. Callers report evidence; they never choose a release.
@@ -376,6 +381,7 @@ pub fn reserve_attempt(
         deadline_ms: None,
         routes_sha256: None,
         framed_end_observed: None,
+        request_body_sha256: None,
     });
     Ok(next)
 }
@@ -426,16 +432,27 @@ impl ProviderPlan {
                 && fs::canonicalize(&a.path)? == a.path
                 && !a.path.to_string_lossy().contains([',', ':', '\n', '\r']))
         };
+        let analysis = job
+            .coding
+            .as_ref()
+            .is_some_and(|p| super::is_analysis(&p.schema));
         if job
             .coding
             .as_ref()
             .is_none_or(|p| !super::is_hosted(&p.schema))
             || self.model != "gpt-6-luna"
-            || !(1..=6).contains(&self.max_requests)
-            || !(1..=1_000_000).contains(&self.budget_microusd)
+            || !(1..=if analysis { super::analysis::MAX_REQUESTS } else { 6 })
+                .contains(&self.max_requests)
+            || !(1..=if analysis { 10_000_000 } else { 1_000_000 })
+                .contains(&self.budget_microusd)
             // K-d: a turn admitted by context bytes must fit the hosted request
             // body bound (instructions and tools need the remaining room).
-            || !(1024..=32768).contains(&self.max_context_bytes)
+            || !(1024..=if analysis {
+                super::analysis::MAX_CONTEXT_BYTES
+            } else {
+                32768
+            })
+                .contains(&self.max_context_bytes)
             || self.catalog.path != job.runtime.root.join(CATALOG)
             || self.stream_adapter.verify()? != STREAM_ADAPTER
             || !canonical(&self.stream_adapter)?
@@ -565,10 +582,17 @@ impl Host {
         fs::create_dir(&public)?;
         let task = String::from_utf8(plan.task.verify()?)
             .map_err(|_| Error::Refused("task is not UTF8".into()))?;
-        atomic(
-            &public.join("job.json"),
-            &json!({"schema":super::HOSTED_BRIDGE_PROFILE,"provider":"openai-codex","model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes}),
-        )?;
+        let mut job = json!({"schema":super::HOSTED_BRIDGE_PROFILE,"provider":"openai-codex","model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes});
+        if super::is_analysis(&profile.schema) {
+            // The receiver's own bounds for this profile; the Host checks
+            // every one of them again where it reads.
+            job["schema"] = json!(super::ANALYSIS_PROFILE);
+            job["maxBodyBytes"] = json!(super::analysis::MAX_REQUEST_BODY);
+            job["frameBytes"] = json!(super::analysis::FRAME_BYTES);
+            job["maxReads"] = json!(profile.max_tool_calls);
+            job["pageBytes"] = json!(super::analysis::PAGE_BYTES);
+        }
+        atomic(&public.join("job.json"), &job)?;
         Ok(())
     }
     pub(super) fn coding_provider_frame(&mut self, frame: &Value) -> Result<Option<Value>> {

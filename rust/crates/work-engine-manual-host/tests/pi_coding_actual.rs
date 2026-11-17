@@ -142,8 +142,8 @@ printf 'STRICT_PERSISTENT_WRITE_BOUNDARY_PASSED\n'"#,
         coding: Some(Profile {
             schema: PROFILE.into(),
             shim,
-            toolchain,
-            acceptance,
+            toolchain: Some(toolchain),
+            acceptance: Some(acceptance),
             fixture_command: command,
             max_tool_calls: 1,
             workspace_write_boundary: if strict {

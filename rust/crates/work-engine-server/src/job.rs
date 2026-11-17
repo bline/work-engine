@@ -198,14 +198,16 @@ fn host_input_digest(job: &Value) -> Option<String> {
 fn verify_live_job(value: &Value, binary: &str) -> Result<(), &'static str> {
     use work_engine_manual_host::pi_docker::{
         Job,
-        coding::{WorkspaceWriteBoundary, is_hosted},
+        coding::{HOSTED_BRIDGE_PROFILE, WorkspaceWriteBoundary},
     };
     let job: Job = serde_json::from_value(value.clone()).map_err(|_| "host_identity_mismatch")?;
     let coding = job.coding.as_ref().ok_or("capability_mismatch")?;
     let provider = coding.provider.as_ref().ok_or("capability_mismatch")?;
     // The hosted profile is the only live class: provider access stays in the
     // Host process; the inference container has no network or credential.
-    if !is_hosted(&coding.schema)
+    // The coding continuity class only; the hosted analysis profile has no
+    // server class yet.
+    if coding.schema != HOSTED_BRIDGE_PROFILE
         || coding.max_tool_calls != 1
         || coding.workspace_write_boundary != WorkspaceWriteBoundary::SrcLibRs
         || !coding.fixture_command.is_empty()
@@ -270,9 +272,13 @@ fn verify_live_job(value: &Value, binary: &str) -> Result<(), &'static str> {
         &provider.catalog,
         &provider.stream_adapter,
         &coding.shim,
-        &coding.acceptance,
+        coding.acceptance.as_ref().ok_or("capability_mismatch")?,
         &job.workspace.manifest,
-        &coding.toolchain.manifest,
+        &coding
+            .toolchain
+            .as_ref()
+            .ok_or("capability_mismatch")?
+            .manifest,
         &job.runtime.manifest,
         &provider.lane.pi_config.manifest,
     ] {

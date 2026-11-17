@@ -183,6 +183,38 @@ impl<R: Read> Upstream<R> {
         }
         Ok(Some(b))
     }
+    /// Like `next`, but only when every byte it would consume (body and chunk
+    /// framing) is already buffered, so it never blocks. `None`: it would
+    /// block (or the body has ended); the caller uses `next`.
+    pub fn next_buffered(&mut self, max: usize) -> Option<Result<Option<Vec<u8>>>> {
+        if self.done || max == 0 {
+            return None;
+        }
+        let buf = self.reader.buffer();
+        let ready = match self.framing {
+            Framing::Length(_) | Framing::Close => !buf.is_empty(),
+            Framing::Chunked => {
+                let (header, left) = if self.chunk_left > 0 {
+                    (0, self.chunk_left)
+                } else {
+                    let i = buf.windows(2).position(|w| w == b"\r\n")?;
+                    let size = std::str::from_utf8(&buf[..i])
+                        .ok()?
+                        .split(';')
+                        .next()?
+                        .trim();
+                    let n = usize::from_str_radix(size, 16).ok()?;
+                    if n == 0 || n > MAX_RESPONSE {
+                        return None;
+                    }
+                    (i + 2, n)
+                };
+                let take = left.min(max);
+                buf.len() >= header + take + if take == left { 2 } else { 0 }
+            }
+        };
+        ready.then(|| self.next(max))
+    }
     fn line(&mut self) -> Result<String> {
         let mut l = Vec::new();
         let n = (&mut self.reader)
@@ -437,8 +469,25 @@ impl Reader {
                     return;
                 }
             };
+            // A result found while coalescing, delivered at the next request.
+            let mut held: Option<Result<Option<Vec<u8>>>> = None;
             while rx.recv().is_ok() {
-                let r = up.next(CHUNK);
+                let mut r = held.take().unwrap_or_else(|| up.next(CHUNK));
+                // Coalesce body bytes already received (never blocks): one
+                // relayed chunk per HTTP chunk would cost a round trip and a
+                // durable append per provider event.
+                if let Ok(Some(bytes)) = &mut r {
+                    while bytes.len() < CHUNK {
+                        match up.next_buffered(CHUNK - bytes.len()) {
+                            Some(Ok(Some(more))) => bytes.extend(more),
+                            Some(other) => {
+                                held = Some(other);
+                                break;
+                            }
+                            None => break,
+                        }
+                    }
+                }
                 let last = !matches!(r, Ok(Some(_)));
                 if tx.send(Msg::Data(r)).is_err() || last {
                     break;
@@ -1038,4 +1087,61 @@ pub fn pre_dispatch<C: Channel>(
         json!({"ordinal":1}),
     ))?;
     Ok(true)
+}
+
+#[cfg(test)]
+mod coalescing_tests {
+    use super::*;
+    /// A reader that returns its scripted pieces one `read` at a time, so a
+    /// later piece is not buffered until the earlier ones are consumed.
+    struct Pieces(Vec<Vec<u8>>);
+    impl Read for Pieces {
+        fn read(&mut self, out: &mut [u8]) -> std::io::Result<usize> {
+            if self.0.is_empty() {
+                return Ok(0);
+            }
+            let mut p = self.0.remove(0);
+            let n = p.len().min(out.len());
+            out[..n].copy_from_slice(&p[..n]);
+            if n < p.len() {
+                self.0.insert(0, p.split_off(n));
+            }
+            Ok(n)
+        }
+    }
+    #[test]
+    fn buffered_chunks_coalesce_without_blocking_and_bytes_are_unchanged() {
+        let head = b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n".to_vec();
+        let mut body = vec![];
+        for e in ["data: a\n\n", "data: b\n\n", "data: c\n\n"] {
+            body.extend(format!("{:x}\r\n{e}\r\n", e.len()).into_bytes());
+        }
+        let mut wire = head.clone();
+        wire.extend(&body);
+        // Head and three chunks arrive together; a fourth chunk later.
+        let later = b"9\r\ndata: d\n\n\r\n0\r\n\r\n".to_vec();
+        let mut up = Upstream::open(Pieces(vec![wire, later])).unwrap();
+        let mut got = up.next(CHUNK).unwrap().unwrap();
+        while let Some(more) = up.next_buffered(CHUNK - got.len()) {
+            got.extend(more.unwrap().unwrap());
+        }
+        assert_eq!(got, b"data: a\n\ndata: b\n\ndata: c\n\n");
+        // Nothing buffered now: coalescing stops instead of blocking.
+        assert!(up.next_buffered(CHUNK).is_none());
+        assert_eq!(up.next(CHUNK).unwrap().unwrap(), b"data: d\n\n");
+        assert!(up.next(CHUNK).unwrap().is_none());
+    }
+    #[test]
+    fn a_partially_buffered_chunk_is_not_coalesced() {
+        let wire =
+            b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n9\r\ndata: a\n\n\r\n9\r\ndata"
+                .to_vec();
+        let mut up = Upstream::open(Pieces(vec![wire, b": b\n\n\r\n0\r\n\r\n".to_vec()])).unwrap();
+        assert_eq!(up.next(CHUNK).unwrap().unwrap(), b"data: a\n\n");
+        // Four of the next chunk's nine bytes are buffered: not coalesced.
+        assert!(up.next_buffered(CHUNK).is_none());
+        // `next` itself still returns what is available (unchanged).
+        assert_eq!(up.next(CHUNK).unwrap().unwrap(), b"data");
+        assert_eq!(up.next(CHUNK).unwrap().unwrap(), b": b\n\n");
+    }
 }

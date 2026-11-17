@@ -388,10 +388,13 @@ impl Host {
         }
         if let Some(profile) = &job.coding {
             for input in [
-                &profile.shim,
-                &profile.toolchain.manifest,
-                &profile.acceptance,
-            ] {
+                Some(&profile.shim),
+                profile.toolchain.as_ref().map(|t| &t.manifest),
+                profile.acceptance.as_ref(),
+            ]
+            .into_iter()
+            .flatten()
+            {
                 input_pins.push(Artifact {
                     path: input.snapshot(&job.state_dir.join("snapshots"))?,
                     sha256: input.sha256.clone(),
@@ -639,16 +642,29 @@ impl Host {
         let mut verified = false;
         let mut verified_at = None;
         let mut aborted = false;
+        // A tick that applied container output or wrote stream frames runs
+        // the next one at once: a relayed response is one pull per chunk, so
+        // a fixed sleep per tick would bound the relay at ~50 chunks a second.
+        let mut busy;
+        let output_limit = if rpc && self.analysis_profile() {
+            coding::analysis::OUTPUT_BYTES
+        } else {
+            LIMIT
+        };
         loop {
+            busy = false;
             let output_size = fs::metadata(&stdout_path)?.len();
             let error_size = fs::metadata(&stderr_path)?.len();
-            if output_size > LIMIT || error_size > LIMIT {
+            if output_size > output_limit || error_size > LIMIT {
                 self.failure("process output exceeded bound");
                 aborted = true;
             }
-            if rpc && !verified && output_size <= LIMIT {
+            if rpc && !verified && output_size <= output_limit {
                 if self.journal.job.coding.is_some() {
-                    match self.coding_advance_from(&stdout_path) {
+                    let before = self.coding_out_offset;
+                    let advanced = self.coding_advance_from(&stdout_path);
+                    busy |= self.coding_out_offset != before;
+                    match advanced {
                         Ok(commands) => {
                             let leases = std::mem::take(&mut self.reply_leases);
                             // Hold all owner ordering leases through the actual IPC grant write.
@@ -703,6 +719,7 @@ impl Host {
                             if write_result.is_ok() {
                                 match self.coding_hosted_tick(&stdout_path) {
                                     Ok(frames) => {
+                                        busy |= !frames.is_empty();
                                         for frame in frames {
                                             write_result = stdin
                                                 .as_mut()
@@ -806,7 +823,9 @@ impl Host {
                 self.journal.processes[number].status = status.code();
                 break;
             }
-            std::thread::sleep(Duration::from_millis(20));
+            if !busy {
+                std::thread::sleep(Duration::from_millis(20));
+            }
         }
         if rpc && let Err(e) = self.coding_hosted_abort("run loop ended with the stream open") {
             self.failure(e);
@@ -827,7 +846,10 @@ impl Host {
             && !aborted
             && write_result.is_ok();
         self.save()?;
-        let bytes = crate::bytes(&stdout_path)?;
+        if fs::metadata(&stdout_path)?.len() > output_limit {
+            return refuse("process output exceeded bound");
+        }
+        let bytes = fs::read(&stdout_path)?;
         if rpc && success {
             let session = if self.journal.job.coding.is_some() {
                 self.coding_complete(&bytes)?;
@@ -1045,7 +1067,7 @@ impl Host {
             if !ok {
                 return refuse("Pi attach/start failed or uncertain");
             }
-            if self.journal.job.coding.is_some() {
+            if self.journal.job.coding.is_some() && !self.analysis_profile() {
                 self.coding_validate_task()?;
             }
             self.journal.phase = Phase::Running;
@@ -1077,6 +1099,11 @@ impl Host {
         if self.journal.phase == Phase::Collected {
             return self.receipt();
         }
+        let output_limit = if self.analysis_profile() {
+            coding::analysis::OUTPUT_BYTES
+        } else {
+            LIMIT
+        };
         for process in &mut self.journal.processes {
             if process.status.is_none()
                 && let (Some(pid), Some(expected)) = (process.pid, &process.start)
@@ -1098,7 +1125,7 @@ impl Host {
             if process.status.is_none() {
                 // Lost exit status stays unknown. Retain any bounded raw bytes
                 // after the old CLI has stopped, without inventing its exit.
-                if process.stdout.exists() && fs::metadata(&process.stdout)?.len() <= LIMIT {
+                if process.stdout.exists() && fs::metadata(&process.stdout)?.len() <= output_limit {
                     process.stdout_sha256 = Some(file_digest(&process.stdout, None)?);
                 }
                 if process.stderr.exists() && fs::metadata(&process.stderr)?.len() <= LIMIT {
@@ -1277,12 +1304,15 @@ impl Host {
         for artifact in &self.journal.artifacts {
             artifact.verify()?;
         }
+        // Analysis: no tool container or validator; completion already
+        // required every delivery matched and every request settled.
+        let analysis = self.analysis_profile();
         let pass = self.journal.coding.as_ref().is_none_or(|c| {
-            c.tool_removed
+            (c.tool_removed || (analysis && !c.tool_create_intent))
                 && c.completed
                 && (!self.is_signed_fixture()
                     || (self.export_finalized() && self.export_collection_consistent()))
-                && self.coding_final_proof_valid()
+                && (analysis || self.coding_final_proof_valid())
                 && (self.journal.job.coding.as_ref().unwrap().provider.is_none()
                     || c.access_removed)
         }) && self.journal.rpc_verified
@@ -1434,11 +1464,12 @@ fn complete_lines(raw: &[u8]) -> impl Iterator<Item = &[u8]> {
 /// whole output.
 fn read_from(path: &Path, offset: u64) -> Result<Vec<u8>> {
     use std::io::{Read, Seek, SeekFrom};
+    let bound = coding::analysis::OUTPUT_BYTES.max(LIMIT);
     let mut file = File::open(path)?;
     file.seek(SeekFrom::Start(offset))?;
     let mut tail = vec![];
-    Read::take(file, LIMIT + 1).read_to_end(&mut tail)?;
-    if tail.len() as u64 > LIMIT {
+    Read::take(file, bound + 1).read_to_end(&mut tail)?;
+    if tail.len() as u64 > bound {
         return refuse("process output exceeded bound");
     }
     Ok(tail)
