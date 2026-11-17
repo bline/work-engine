@@ -493,6 +493,11 @@ impl ProviderPlan {
             _ => return refuse("stream adapter is exactly for the hosted profile"),
         }
         match &self.hosted {
+            // K-d: a turn admitted by context bytes must fit the hosted request
+            // body bound (instructions and tools need the remaining room).
+            Some(_) if hosted && self.max_context_bytes > 32768 => {
+                return refuse("hosted max_context_bytes exceeds the request body bound");
+            }
             Some(routes) if hosted => routes.validate()?,
             None if !hosted => {}
             _ => return refuse("route table is exactly for the hosted profile"),
@@ -855,7 +860,13 @@ impl Host {
                     return refuse("duplicate provider completion");
                 }
                 let usage = &frame["usage"];
-                r.usage = Some(usage.clone());
+                // Hosted: settlement uses the Host's relayed raw terminal; the
+                // container's own usage is kept only as labelled context.
+                r.usage = Some(if r.attempts.is_empty() {
+                    usage.clone()
+                } else {
+                    json!({"source":"container-reported","evidence":false,"value":usage})
+                });
                 // Hosted: the container's completion settles only an attempt the
                 // Host itself classified as a completed relay.
                 if let Some(a) = r

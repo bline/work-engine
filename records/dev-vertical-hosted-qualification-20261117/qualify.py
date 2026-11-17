@@ -35,6 +35,8 @@ def write(p, data, mode=0o644):
 
 
 SCENARIO = 'ok'
+PI_AUTH = Path('/home/bline/.pi/agent/auth.json')
+LIVE = False  # set for scenarios named live*
 
 def prepare(base):
 
@@ -44,8 +46,14 @@ def prepare(base):
     private = base / 'private'; private.mkdir(mode=0o700)
 
     obs_out = open(base / 'observer.jsonl', 'w')
-    obs = subprocess.Popen([str(OBSERVER)], env={**os.environ, 'HOSTED_OBSERVER_SCENARIO': SCENARIO}, stdout=subprocess.PIPE, stderr=open(base / 'observer.stderr', 'w'), text=True)
-    ready = json.loads(obs.stdout.readline()); obs_out.write(json.dumps(ready) + '\n'); obs_out.flush()
+    if LIVE:
+        # Live routes: no observer. The Host's credentials file names each
+        # payer's access source (nonsecret); access stays in the Host process.
+        obs = subprocess.Popen(['sleep', '900'], stdout=subprocess.PIPE, text=True)
+        ready = None
+    else:
+        obs = subprocess.Popen([str(OBSERVER)], env={**os.environ, 'HOSTED_OBSERVER_SCENARIO': SCENARIO}, stdout=subprocess.PIPE, stderr=open(base / 'observer.stderr', 'w'), text=True)
+        ready = json.loads(obs.stdout.readline()); obs_out.write(json.dumps(ready) + '\n'); obs_out.flush()
 
     workspace = inputs / 'workspace'; (workspace / 'src').mkdir(parents=True)
     write(workspace / 'src/lib.rs', '// hosted offline fixture\n')
@@ -61,10 +69,21 @@ def prepare(base):
     shutil.copy(PRIOR / 'runtime-manifest.json', inputs / 'runtime-manifest.json')
     shutil.copy(PRIOR / 'toolchain-manifest.json', inputs / 'toolchain-manifest.json')
 
-    routes = {'routes': [
-        {'id': 'primary', 'payer': 'synthetic-subscription', 'endpoint': f"loopback:{ready['primary']}"},
-        {'id': 'secondary', 'payer': 'synthetic-api', 'endpoint': f"loopback:{ready['secondary']}"}],
-        'max_attempts_per_request': 2}
+    if LIVE:
+        primary_payer = 'chatgpt-revoked' if SCENARIO == 'live-revoked-primary' else 'chatgpt-subscription'
+        routes = {'routes': [
+            {'id': 'primary', 'payer': primary_payer, 'endpoint': 'https:chatgpt-codex'},
+            {'id': 'secondary', 'payer': 'openai-api', 'endpoint': 'https:openai-responses'}],
+            'max_attempts_per_request': 2}
+        write(private / 'hosted-credentials.json', canon({'schema': 'work-engine.pi-hosted-credentials.v1', 'payers': {
+            'chatgpt-subscription': {'kind': 'chatgpt-pi-auth', 'path': str(PI_AUTH)},
+            'chatgpt-revoked': {'kind': 'chatgpt-invalid-for-qualification', 'path': str(PI_AUTH)},
+            'openai-api': {'kind': 'api-key-env', 'variable': 'OPENAI_API_KEY'}}}), 0o600)
+    else:
+        routes = {'routes': [
+            {'id': 'primary', 'payer': 'synthetic-subscription', 'endpoint': f"loopback:{ready['primary']}"},
+            {'id': 'secondary', 'payer': 'synthetic-api', 'endpoint': f"loopback:{ready['secondary']}"}],
+            'max_attempts_per_request': 2}
     routes_digest = sha(canon({'schema': 'work-engine.pi-hosted-routes.v1', 'routes': routes['routes'], 'max_attempts_per_request': 2}).encode())
 
     now = int(time.time())
@@ -128,14 +147,20 @@ def docker_names(prefix):
     return sorted(n for n in out if n.startswith(prefix))
 
 def main():
-    global SCENARIO
+    global SCENARIO, LIVE
     root, name, SCENARIO = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+    LIVE = SCENARIO.startswith('live')
     action = sys.argv[4] if len(sys.argv) > 4 else 'none'
     root.mkdir(exist_ok=True)
     base, job_path, obs, obs_out = prepare(root / name)
     started = time.time()
+    env = {**os.environ}
+    if LIVE:
+        env['WORK_ENGINE_HOSTED_CREDENTIALS'] = str(base / 'private' / 'hosted-credentials.json')
+    else:
+        env.pop('WORK_ENGINE_HOSTED_CREDENTIALS', None)
     q = subprocess.Popen([str(QUAL), '--execute', str(job_path)], stdout=open(base / 'qualification.stdout', 'w'),
-                         stderr=open(base / 'qualification.stderr', 'w'), start_new_session=False)
+                         stderr=open(base / 'qualification.stderr', 'w'), start_new_session=False, env=env)
     events, acted = [], None
     fd = obs.stdout.fileno()
     os.set_blocking(fd, False)

@@ -4381,6 +4381,8 @@ dependencies = [
  "repository-claims-handoff",
  "review-episode-core",
  "review-execution-evidence",
+ "rustls",
+ "rustls-platform-verifier",
  "schemars",
  "serde",
  "serde_json",

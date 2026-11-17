@@ -41,9 +41,10 @@ const ACCESS_HEADERS: [&str; 4] = [
 pub struct HostedRoute {
     pub id: String,
     pub payer: String,
-    /// Nonsecret endpoint identity, never a credential. Only
-    /// `loopback:<port>` (offline qualification) is supported; public HTTPS
-    /// dispatch is a later phase.
+    /// Nonsecret endpoint identity, never a credential: `loopback:<port>`
+    /// (offline qualification), `https:chatgpt-codex` (the ChatGPT Codex
+    /// backend, subscription funding) or `https:openai-responses` (the public
+    /// Responses API, API-key funding). Origins are fixed by this code.
     pub endpoint: String,
 }
 /// Route table for the hosted profile. Its `(route, payer)` pairs and attempt
@@ -69,10 +70,9 @@ impl HostedRoutes {
         if self.routes.is_empty()
             || self.routes.len() > 8
             || ids.len() != self.routes.len()
-            || !self
-                .routes
-                .iter()
-                .all(|r| bounded(&r.id) && bounded(&r.payer) && loopback(&r.endpoint).is_some())
+            || !self.routes.iter().all(|r| {
+                bounded(&r.id) && bounded(&r.payer) && Endpoint::parse(&r.endpoint).is_some()
+            })
             || !(1..=8).contains(&self.max_attempts_per_request)
         {
             return refuse("hosted route table invalid");
@@ -117,9 +117,54 @@ impl HostedRoutes {
         })
     }
 }
-fn loopback(endpoint: &str) -> Option<std::net::SocketAddr> {
-    let port: u16 = endpoint.strip_prefix("loopback:")?.parse().ok()?;
-    (port != 0).then(|| std::net::SocketAddr::from(([127, 0, 0, 1], port)))
+/// A route's fixed endpoint.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Endpoint {
+    Loopback(std::net::SocketAddr),
+    ChatGptCodex,
+    OpenAiResponses,
+}
+impl Endpoint {
+    pub fn parse(endpoint: &str) -> Option<Self> {
+        match endpoint {
+            "https:chatgpt-codex" => Some(Self::ChatGptCodex),
+            "https:openai-responses" => Some(Self::OpenAiResponses),
+            _ => {
+                let port: u16 = endpoint.strip_prefix("loopback:")?.parse().ok()?;
+                (port != 0)
+                    .then(|| Self::Loopback(std::net::SocketAddr::from(([127, 0, 0, 1], port))))
+            }
+        }
+    }
+    /// `(host, request path)` of the endpoint.
+    pub fn target(self) -> (&'static str, &'static str) {
+        match self {
+            Self::Loopback(_) => ("localhost", "/backend-api/codex/responses"),
+            Self::ChatGptCodex => ("chatgpt.com", "/backend-api/codex/responses"),
+            Self::OpenAiResponses => ("api.openai.com", "/v1/responses"),
+        }
+    }
+    /// Container request headers forwarded to this endpoint (an allowlist;
+    /// everything else, including billing-context headers such as
+    /// `openai-organization` or `openai-project`, is dropped).
+    pub fn forwarded(self, name: &str) -> bool {
+        match self {
+            Self::Loopback(_) | Self::ChatGptCodex => matches!(
+                name,
+                "accept"
+                    | "content-type"
+                    | "originator"
+                    | "openai-beta"
+                    | "session-id"
+                    | "x-client-request-id"
+                    | "user-agent"
+            ),
+            Self::OpenAiResponses => matches!(
+                name,
+                "accept" | "content-type" | "x-client-request-id" | "user-agent"
+            ),
+        }
+    }
 }
 
 /// The provider request to dispatch, as validated from the container's
@@ -133,88 +178,161 @@ pub struct HostedRequest {
 }
 /// Upstream response reader and its abort.
 pub type Upstream = (Box<dyn Read + Send>, Box<dyn FnOnce() + Send>);
+/// A byte stream to a provider.
+pub trait Duplex: Read + Write + Send {}
+impl<T: Read + Write + Send> Duplex for T {}
+/// An established connection (TCP, and TLS where used) on which no request
+/// byte has been written yet, and its abort.
+pub struct Connection {
+    pub stream: Box<dyn Duplex>,
+    pub abort: Box<dyn FnOnce() + Send>,
+}
 /// Trusted composition bound by the embedder. It holds provider access, which
-/// never enters the container or the journal, and applies it only in `open`.
+/// never enters the container or the journal, and applies it only in `send`.
 pub trait HostedProviderTransport {
-    /// Write one attempt's request to `route` and return its response. Called
-    /// only inside a gate-admitted dispatch, before `deadline_ms`.
-    fn open(
+    /// Refuse a route table this transport cannot serve: an endpoint it does
+    /// not support, or a payer it holds no access for.
+    fn check(&self, routes: &HostedRoutes) -> Result<()>;
+    /// Connect to `route` before gate admission. Writes no request byte, so
+    /// it is never provider entry; it runs outside the lifecycle store's
+    /// transaction.
+    fn connect(&mut self, route: &HostedRoute, deadline_ms: i64) -> Result<Connection>;
+    /// Write one attempt's request on `connection` and return its response.
+    /// Called only inside a gate-admitted dispatch, before `deadline_ms`.
+    fn send(
         &mut self,
+        connection: Connection,
         route: &HostedRoute,
         request: &HostedRequest,
-        deadline_ms: i64,
     ) -> Result<Upstream>;
     /// Exclusion screen over bytes relayed to the container: an error if they
     /// contain access material, otherwise how many trailing bytes to hold
     /// back because they may begin it.
     fn hold(&self, pending: &[u8]) -> std::result::Result<usize, &'static str>;
 }
+/// Milliseconds left before `deadline_ms`, at most `cap`.
+pub fn left_ms(deadline_ms: i64, cap: u64) -> Result<Duration> {
+    u64::try_from(deadline_ms.saturating_sub(now_ms()?))
+        .ok()
+        .filter(|v| *v > 0)
+        .map(|v| Duration::from_millis(v.min(cap)))
+        .ok_or_else(|| Error::Refused("provider attempt deadline passed".into()))
+}
+/// The HTTP/1.1 request head for `request` to `endpoint`: fixed host and
+/// path, the given access headers, the allowlisted container headers.
+pub fn request_head(
+    endpoint: Endpoint,
+    access: &[(&str, &str)],
+    request: &HostedRequest,
+) -> String {
+    let (host, path) = endpoint.target();
+    let mut head = format!(
+        "POST {path} HTTP/1.1\r\nHost: {host}\r\nX-Request-Id: {}-{}\r\nContent-Length: {}\r\nConnection: close\r\n",
+        request.request,
+        request.attempt,
+        request.body.len()
+    );
+    for (k, v) in access {
+        head.push_str(&format!("{k}: {v}\r\n"));
+    }
+    for (k, v) in &request.headers {
+        if endpoint.forwarded(k) {
+            head.push_str(&format!("{k}: {v}\r\n"));
+        }
+    }
+    head.push_str("\r\n");
+    head
+}
+/// Screen `pending` against every access secret.
+pub fn hold_secrets(secrets: &[&[u8]], pending: &[u8]) -> std::result::Result<usize, &'static str> {
+    let mut hold = 0;
+    for secret in secrets {
+        if secret.is_empty() {
+            continue;
+        }
+        if pending.windows(secret.len()).any(|w| w == *secret) {
+            return Err("hosted_access_exclusion");
+        }
+        hold = hold.max(review_execution_evidence::pi::prefix_suffix(
+            pending, secret,
+        ));
+    }
+    Ok(hold)
+}
 /// Offline-only transport to synthetic loopback routes with a synthetic,
-/// Host-generated access token.
+/// Host-generated access token per payer.
 pub struct LoopbackTransport {
-    access: Vec<u8>,
+    access: BTreeMap<String, Vec<u8>>,
+    payers: Vec<String>,
 }
 impl LoopbackTransport {
     pub fn new() -> Result<Self> {
-        let mut random = [0u8; 32];
-        File::open("/dev/urandom")?.read_exact(&mut random)?;
         Ok(Self {
-            access: format!("synthetic-A-{}-host-only", B64.encode(random)).into_bytes(),
+            access: BTreeMap::new(),
+            payers: Vec::new(),
         })
+    }
+    fn token(&mut self, payer: &str) -> Result<String> {
+        if !self.access.contains_key(payer) {
+            let mut random = [0u8; 32];
+            File::open("/dev/urandom")?.read_exact(&mut random)?;
+            self.access.insert(
+                payer.to_string(),
+                format!("synthetic-A-{}-host-only", B64.encode(random)).into_bytes(),
+            );
+            self.payers.push(payer.to_string());
+        }
+        String::from_utf8(self.access[payer].clone()).map_err(|_| Error::Refused("access".into()))
     }
 }
 impl HostedProviderTransport for LoopbackTransport {
-    fn open(
-        &mut self,
-        route: &HostedRoute,
-        request: &HostedRequest,
-        deadline_ms: i64,
-    ) -> Result<Upstream> {
-        use std::net::{Shutdown, TcpStream};
-        let address =
-            loopback(&route.endpoint).ok_or_else(|| Error::Refused("route endpoint".into()))?;
-        let left = u64::try_from(deadline_ms.saturating_sub(now_ms()?))
-            .ok()
-            .filter(|v| *v > 0)
-            .ok_or_else(|| Error::Refused("provider attempt deadline passed".into()))?;
-        let mut s = TcpStream::connect_timeout(&address, Duration::from_millis(left.min(5000)))?;
-        s.set_write_timeout(Some(Duration::from_millis(left.min(5000))))?;
-        s.set_read_timeout(Some(Duration::from_millis(left.min(READ_IDLE_MS))))?;
-        let access =
-            std::str::from_utf8(&self.access).map_err(|_| Error::Refused("access".into()))?;
-        let mut head = format!(
-            "POST /backend-api/codex/responses HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer {access}\r\nX-Request-Id: {}-{}\r\nContent-Length: {}\r\nConnection: close\r\n",
-            request.request,
-            request.attempt,
-            request.body.len()
-        );
-        for (k, v) in &request.headers {
-            if !matches!(
-                k.as_str(),
-                "host" | "content-length" | "connection" | "transfer-encoding"
-            ) {
-                head.push_str(&format!("{k}: {v}\r\n"));
-            }
+    fn check(&self, routes: &HostedRoutes) -> Result<()> {
+        if routes
+            .routes
+            .iter()
+            .all(|r| matches!(Endpoint::parse(&r.endpoint), Some(Endpoint::Loopback(_))))
+        {
+            Ok(())
+        } else {
+            refuse("loopback transport serves loopback routes only")
         }
-        head.push_str("\r\n");
-        s.write_all(head.as_bytes())?;
-        s.write_all(&request.body)?;
+    }
+    fn connect(&mut self, route: &HostedRoute, deadline_ms: i64) -> Result<Connection> {
+        use std::net::{Shutdown, TcpStream};
+        let Some(Endpoint::Loopback(address)) = Endpoint::parse(&route.endpoint) else {
+            return refuse("route endpoint");
+        };
+        self.token(&route.payer)?;
+        let s = TcpStream::connect_timeout(&address, left_ms(deadline_ms, 5000)?)?;
+        s.set_write_timeout(Some(left_ms(deadline_ms, 5000)?))?;
+        s.set_read_timeout(Some(left_ms(deadline_ms, READ_IDLE_MS)?))?;
         let killer = s.try_clone()?;
-        Ok((
-            Box::new(s),
-            Box::new(move || {
+        Ok(Connection {
+            stream: Box::new(s),
+            abort: Box::new(move || {
                 let _ = killer.shutdown(Shutdown::Both);
             }),
-        ))
+        })
+    }
+    fn send(
+        &mut self,
+        connection: Connection,
+        route: &HostedRoute,
+        request: &HostedRequest,
+    ) -> Result<Upstream> {
+        let endpoint = Endpoint::parse(&route.endpoint)
+            .ok_or_else(|| Error::Refused("route endpoint".into()))?;
+        let bearer = format!("Bearer {}", self.token(&route.payer)?);
+        let head = request_head(endpoint, &[("Authorization", &bearer)], request);
+        let Connection { mut stream, abort } = connection;
+        stream.write_all(head.as_bytes())?;
+        stream.write_all(&request.body)?;
+        stream.flush()?;
+        Ok((Box::new(stream), abort))
     }
     fn hold(&self, pending: &[u8]) -> std::result::Result<usize, &'static str> {
-        if pending.windows(self.access.len()).any(|w| w == self.access) {
-            return Err("hosted_access_exclusion");
-        }
-        Ok(review_execution_evidence::pi::prefix_suffix(
-            pending,
-            &self.access,
-        ))
+        let secrets: Vec<&[u8]> = self.access.values().map(Vec::as_slice).collect();
+        hold_secrets(&secrets, pending)
     }
 }
 fn now_ms() -> Result<i64> {
@@ -291,6 +409,8 @@ impl Host {
         {
             return refuse("hosted transport binding conflict");
         }
+        let (_, routes) = self.hosted_plan()?;
+        transport.check(&routes)?;
         self.hosted_transport = Some(transport);
         Ok(())
     }
@@ -642,6 +762,45 @@ impl Host {
             self.hosted_uncertain(s.request, attempt, routed, "coding lifecycle gate missing")?;
             return refuse("coding lifecycle gate missing");
         };
+        // Connect (TCP, TLS) before gate admission and outside the lifecycle
+        // store's transaction. No request byte is written, so a failure here
+        // is a confirmed non-dispatch.
+        let mut connection =
+            match transport.connect(&route, deadline.try_into().unwrap_or(i64::MAX)) {
+                Ok(c) => Some(c),
+                Err(e) => {
+                    self.coding_gate = Some(gate);
+                    self.hosted_transport = Some(transport);
+                    let r = self
+                        .journal
+                        .coding
+                        .as_mut()
+                        .unwrap()
+                        .provider_requests
+                        .get_mut(&s.request)
+                        .unwrap();
+                    r.settle_attempt(
+                        attempt,
+                        AttemptEvidence::NotDispatched {
+                            confirmed_before_write: true,
+                        },
+                    )?;
+                    if let Some(a) = r.attempts.last_mut() {
+                        a.reason = Some(format!(
+                            "route connection failed before any request byte: {e}"
+                        ));
+                    }
+                    self.hosted
+                        .router
+                        .as_mut()
+                        .unwrap()
+                        .settle(routed, Disposition::NotDispatched, Value::Null)
+                        .map_err(|c| Error::Refused(c.into()))?;
+                    self.journal.coding.as_mut().unwrap().provider_failed = true;
+                    self.save()?;
+                    return self.hosted_unavailable(s, "route_unreachable");
+                }
+            };
         let mut cancelled = false;
         let mut opened = None;
         let mut entered = false;
@@ -686,7 +845,10 @@ impl Host {
             a.deadline_ms = Some(until);
             a.routes_sha256 = Some(routes_sha256.clone());
             host.save()?;
-            opened = Some(transport.open(&route, &request, until)?);
+            let connection = connection
+                .take()
+                .ok_or_else(|| Error::Refused("hosted connection consumed".into()))?;
+            opened = Some(transport.send(connection, &route, &request)?);
             Ok(())
         });
         self.coding_gate = Some(gate);
@@ -1266,7 +1428,21 @@ mod tests {
         opened: Opened,
     }
     impl HostedProviderTransport for FakeTransport {
-        fn open(&mut self, route: &HostedRoute, r: &HostedRequest, _: i64) -> Result<Upstream> {
+        fn check(&self, _: &HostedRoutes) -> Result<()> {
+            Ok(())
+        }
+        fn connect(&mut self, _: &HostedRoute, _: i64) -> Result<Connection> {
+            Ok(Connection {
+                stream: Box::new(std::io::Cursor::new(Vec::new())),
+                abort: Box::new(|| {}),
+            })
+        }
+        fn send(
+            &mut self,
+            _: Connection,
+            route: &HostedRoute,
+            r: &HostedRequest,
+        ) -> Result<Upstream> {
             self.opened
                 .lock()
                 .unwrap()

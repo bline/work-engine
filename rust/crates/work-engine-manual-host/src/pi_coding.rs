@@ -9,6 +9,8 @@ pub mod claims;
 pub mod export;
 #[path = "pi_coding_hosted.rs"]
 pub mod hosted;
+#[path = "pi_coding_https.rs"]
+pub mod https;
 #[path = "pi_coding_provider.rs"]
 pub mod provider;
 #[path = "pi_coding_validation.rs"]

@@ -169,7 +169,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let deadline = Instant::now() + Duration::from_secs(600);
     let mut served = 0usize;
     let mut refused = 0usize;
-    let mut authority: Option<String> = None;
+    // Each route (payer) has its own Host-held access; it must not change.
+    let mut authority: std::collections::BTreeMap<&str, String> = Default::default();
     let scenario = std::env::var("HOSTED_OBSERVER_SCENARIO").unwrap_or_else(|_| "ok".into());
     // `fault@N`: the secondary fault applies to the N-th served response.
     let (scenario, fault_at) = match scenario.split_once('@') {
@@ -226,10 +227,13 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         };
         s.set_nonblocking(false)?;
         let r = read(&mut s)?;
-        if authority.as_ref().is_some_and(|a| a != &r.auth) {
+        if authority.get(route).is_some_and(|a| a != &r.auth) {
             return Err("authority changed".into());
         }
-        authority = Some(r.auth.clone());
+        if authority.iter().any(|(k, a)| *k != route && a == &r.auth) {
+            return Err("one access served two payers".into());
+        }
+        authority.insert(route, r.auth.clone());
         let v: Value = serde_json::from_slice(&r.body)?;
         if v["model"] != "gpt-6-luna" || v["stream"] != true {
             return Err("projection".into());

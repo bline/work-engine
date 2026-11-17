@@ -240,9 +240,19 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
     let continuity = CodingContinuity::new(store, session, config, clock)?;
     host.bind_coding_effect_gate(Box::new(continuity.clone()))?;
     if hosted {
-        // Offline qualification only: synthetic loopback routes and a
-        // synthetic Host-held access token.
-        host.bind_hosted_transport(Box::new(LoopbackTransport::new()?))?;
+        // Live routes: the embedder's credentials file (named by
+        // `WORK_ENGINE_HOSTED_CREDENTIALS`, never part of the job) gives each
+        // payer's access, held in this process only. Without it, offline
+        // qualification: synthetic loopback routes and synthetic per-payer
+        // Host-held access.
+        match std::env::var_os("WORK_ENGINE_HOSTED_CREDENTIALS") {
+            Some(path) => host.bind_hosted_transport(Box::new(
+                work_engine_manual_host::pi_docker::coding::https::HttpsTransport::from_file(
+                    std::path::Path::new(&path),
+                )?,
+            ))?,
+            None => host.bind_hosted_transport(Box::new(LoopbackTransport::new()?))?,
+        }
     }
     let result = host.run();
     if hosted {
