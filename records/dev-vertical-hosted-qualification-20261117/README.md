@@ -8,18 +8,21 @@ and phase 6 of the [completion plan](../../planning/dev-vertical-completion-2026
 It is not owner acceptance. Live provider use was authorized by the operator
 on 2026-11-17 ("I authorize anything we need to finish, including live tests
 and budget"). Nothing was pushed or deployed by this work. The changes after
-review 2 have not yet been independently reviewed.
+review 2 were reviewed by Fable and by Opus xhigh (section "Review 3"); the
+remediation of that review (`7c103ad2`) has not been re-reviewed.
 
 Subjects:
-- Offline matrix: `8fa71188`, run set r7
-  (`~/.local/state/work-engine/dev-vertical-hosted-qual-20261117-r7`, driven by
-  [matrix-r7.sh](matrix-r7.sh)); 19 of 19 scenarios pass. Earlier sets: r6 on
+- Offline matrix: run set r8 on `20bb335c` (code `7c103ad2`)
+  (`~/.local/state/work-engine/dev-vertical-hosted-qual-20261117-r8`, driven by
+  [matrix-r8.sh](matrix-r8.sh)); 19 of 19 scenarios pass. r7 on `8fa71188`
+  passed the same scenarios before the review 3 remediation. Earlier sets: r6 on
   `96fe54de` and r5 on `30d0fc1c` passed the same scenarios; r4 on `bd8478ed`
   (14 scenarios) was the subject of review 2.
 - Live runs (section "Live qualification"): `38803cff` and `8fa71188`.
-- Code after the matrix: `cab80a3a` adds two crash-cut unit tests only.
+- Review 3 remediation `7c103ad2`: offline matrix r8 and live cutover `c3`
+  (section "Review 3").
 
-[matrix.json](matrix.json) is the output of `check.py <r7> 8fa71188`; rerunning
+[matrix.json](matrix.json) is the output of `check.py <r8> 20bb335c`; rerunning
 that command over the run set reproduces it. It records the SHA-256 of the
 release `coding-qualification` binary and the observer binary (copies kept in
 the run set's `bin/`), and checks that every run used them. Nothing binds those
@@ -76,7 +79,7 @@ framed end not observed" (K-a). Everything else is Uncertain. A backend that
 sends a `data: [DONE]` sentinel would make every turn Uncertain, so phase 6
 must check the live backend for one before live use.
 
-## Offline results: all 19 scenarios pass (run set r7)
+## Offline results: all 19 scenarios pass (run set r8)
 
 Every attempt's reason below is as the Host recorded it.
 
@@ -110,9 +113,10 @@ an uncertain or pending attempt.
 
 Real routes, Host-held access, `gpt-6-luna`, the four-request coding
 continuity task (tool call, answer, reset with rehydration, continued turn),
-the real tool and validator containers. Secrets were searched for in every
-file of every run directory (access token, refresh token, API key): none
-found. The inference container had `NetworkMode=none` and no `/auth` mount in
+the real tool and validator containers. [live_check.py](live_check.py)
+searched every file of every live run directory for the subscription access
+token, its refresh token and the API key, and retained its result as
+`live-check.json` in each run directory: none found. The inference container had `NetworkMode=none` and no `/auth` mount in
 every run.
 
 **Backend stream end** ([probe](../../metrics/probes/codex_stream_end_probe.py),
@@ -135,13 +139,19 @@ credential kind must match its route; every payer's secret is screened.
 | `live-transition-1` (`38803cff`) | qualify.py | Primary payer `chatgpt-revoked` (access the backend must refuse): real 401, definitive refusal, released; failover to the API route, which completed requests 1–4. |
 | `c1` (`8fa71188`) | **operational entrypoint**: `coding-job-prepare` → `work-engine-server` (local-live class) → `work-engine-command` → producing Host | Operation `collected`, Host `component_passed`, acceptance `owner_pending`; 4 requests on the subscription route; the model's edit passed the validator. |
 | `c2-transition` (`8fa71188`) | operational entrypoint | Real 401 on the primary, failover to the API route; collected, `component_passed`. |
+| `c3` (`7c103ad2`) | operational entrypoint | After review 3: the real Pi request passes the Host body policy; 4 requests on the subscription route; the receipt names route, payer and endpoint per attempt; the journal records the credentials-file digest and each payer's source kind. Collected, `component_passed`. |
 
 Runs: `~/.local/state/work-engine/dev-vertical-hosted-live-20261117` and
 `~/.local/state/work-engine/dev-vertical-cutover-20261117`.
 [live_check.py](live_check.py) checks secrets and results; [cutover.py](cutover.py)
-drives the entrypoint runs. API spend: about 8 Luna requests of about 1 000
-tokens each, well under one cent. The transition exercised is a revoked
-credential (401); a quota refusal (429) on a real route was not produced.
+drives the entrypoint runs; it persists the operator's API key once to an
+owner-only file (`~/.local/state/work-engine/credentials/openai-api-key`) so
+the server-launched Host, whose environment is cleared, can load it. API
+spend: about 8 Luna requests of about 1 000 tokens each, well under one cent.
+The transition exercised a **synthetic invalid** access token on the real
+backend (401 "Could not parse your authentication token"); no genuinely
+revoked or expired credential, and no quota refusal (429/402), was produced.
+The largest relayed live response was about 31 KB (`live-1` request 1).
 
 ## Cutover and retirement
 
@@ -160,6 +170,43 @@ credential (401); a quota refusal (429) on a real route was not produced.
 - `cab80a3a`: crash cuts before gate entry (charged, nothing relayed, never
   dispatched) and between relay settlement and the container's completion (the
   full hold stays; nothing is released or relabelled).
+
+## Review 3
+
+Subject `b50017ab`. Reviewers ran as pi subagents; both were launched on the
+API-billed `anthropic/` model namespace by mistake ($7.36 and $7.92); the
+operator's Claude quota is the `claude-sdk/` namespace.
+
+- [Fable](../../reviews/dev-vertical-phase6-transport-fable-20261117/REVIEW.md)
+  (complex review: transport, ledger, evidence): accept with required changes,
+  no P1. N1–N6 and Q-a confirmed fixed; K-b, K-d, K-e, K-f, K-g closed.
+- [Opus xhigh](../../reviews/dev-vertical-phase6-retirement-opus-20261117/REVIEW.md)
+  (normal code review: retirement and cutover): OK with notes, no P1.
+
+Remediation `7c103ad2`:
+
+| Item | Change |
+| --- | --- |
+| M1 | Receipt: `provider: hosted-routes` with per-attempt route, payer, endpoint and disposition; the cost label says catalog proxy on every route; the transport identity is included. |
+| M2 | Connect-failure non-dispatch unit test (release, no gate intent, no write, request ended); `check.py` exempts `not_dispatched` from the gate-admitted invariant. |
+| M3 | An unfinished drain's unscreened bytes and held-back bytes are dropped and counted (`heldDropped`), never digested. |
+| M4 | A drain that ends on a read or framing error is never a clean terminal (Uncertain). |
+| M5, F6 | The live class admits only the fixed HTTPS endpoints, requires `WORK_ENGINE_HOSTED_CREDENTIALS` in the live job profile, and requires exactly the eleven admission fields (server and preparation). |
+| M6 | This record corrected (transition, response size, secret scan retained, API key file). |
+| R-a | Host body policy on real routes: `store:false`, no `background`, default `service_tier`, function tools only. |
+| R-b | The journal and receipt record the credentials file's digest and each payer's access-source kind. |
+| R-d | Response bound raised from 1 MiB to 32 MiB (the catalog's 128k output tokens at about 250 bytes per delta). |
+| R-f | Credentials file and Pi auth store must be owner-only regular files; account id charset checked. |
+| F1, F8 | Host, server and lifecycle docs describe the hosted profile; retired lanes marked. |
+| F3 | Provider-disabled receiver VM test (pressure observation and checkpoint insertion) ported. |
+| F4 | The lifecycle gate refuses live mode without a hosted policy. |
+| F5 | Coding containers are always network-none (no bridge branch); a retired subscription submit is refused before the owner opens; stale Sol fields dropped. |
+| F7 | Every retired schema refused by name (with and without a provider); the Sol-high gate test checks construction. |
+| F2 | Coding-switch test restored; the switch itself is left (digest-pinned owner). |
+
+Not changed: R-c (price parity), R-e (DNS deadline, head bound, CDN refusals;
+none observed), R-g (the job deadline bounds the socket; grants expire with
+the job).
 
 ## Review 2 required changes
 
@@ -227,8 +274,18 @@ workspace regression is recorded separately.
 
 ## Open
 
-- Independent review of the changes since review 2 (`81c68b3b`..`cab80a3a`).
-- K-c (self-issued qualification grants), K-h, and Q-c/Q-d notes as review 2
-  lists them; the D4 response bound is unchanged at 1 MiB (largest live
-  response here about 8 KiB).
+- Re-review of the review 3 remediation `7c103ad2` (optional).
+- K-c: grants are self-issued by the producing binary (`coding-qualification`),
+  now for real funding; an external grant issuer is not part of this vertical.
+- Price parity of the API route with the pinned catalog (R-c): settlement and
+  the budget use the catalog's rates on both routes, as a proxy.
+- A real quota refusal and a genuinely revoked or expired credential; one live
+  fault (cancel or crash) against a real route; pre-dispatch cancel and a gate
+  refusal between attempts in the Docker flow.
+- Registration and permission checks for the subscription route (completion
+  plan, phase 6): the Host reuses Pi's Codex OAuth access; no separate
+  registration or permission qualification was performed.
+- Lifecycle-store Sol-high grammar removal (F4 follow-up); session-events
+  subscription switch removal (F2: `session_events.py` is digest-pinned by
+  `session-query`, so it was left unchanged).
 - Owner acceptance of the exported results (`owner_pending`).
