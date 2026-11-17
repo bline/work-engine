@@ -1,0 +1,1312 @@
+{
+ "schema": "work-engine.dev-vertical-hosted-qualification.v1",
+ "subject": "28b321a7",
+ "all_pass": true,
+ "scenarios": {
+  "ok": {
+   "pass": true,
+   "checks": {
+    "no containers left": true,
+    "retained artifacts verify": true,
+    "every attempt gate-admitted before dispatch": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container network none, no /auth": true,
+    "observer dispatches equal ledger attempts": true,
+    "only refused/not-dispatched attempts released": true,
+    "attempt 2 relay bytes match digest": true,
+    "attempt 1 relay bytes match digest": true,
+    "exit 0": true,
+    "four requests settled": true,
+    "request 1 refused then completed": true,
+    "exactly one tool effect": true,
+    "gate log lists 5 attempts": true
+   },
+   "elapsed_s": 13.2,
+   "exit": 0,
+   "ledger": {
+    "1": {
+     "settled_microusd": 266,
+     "charged_microusd": 266,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "primary",
+       "disposition": "refused",
+       "http_status": 429,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": null,
+       "refusal_body_sha256": "a02bb0a4371acb98b4df55387e55872b2be5a5c844e188cfaca724ba74d9bdfe",
+       "settled_microusd": null
+      },
+      {
+       "attempt": 2,
+       "route": "secondary",
+       "disposition": "completed",
+       "http_status": 200,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+       "refusal_body_sha256": null,
+       "settled_microusd": 266
+      }
+     ]
+    },
+    "2": {
+     "settled_microusd": 266,
+     "charged_microusd": 266,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "secondary",
+       "disposition": "completed",
+       "http_status": 200,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": "69c8ee1ff7f8061cb4b7ef36346b41673ec038a59d1198dce7442cdac3a7d849",
+       "refusal_body_sha256": null,
+       "settled_microusd": 266
+      }
+     ]
+    },
+    "3": {
+     "settled_microusd": 266,
+     "charged_microusd": 266,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "secondary",
+       "disposition": "completed",
+       "http_status": 200,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": "3d67b43cff79cd3cc1a78372755e6a362cd8c95407059f6c9e37c48708c7f541",
+       "refusal_body_sha256": null,
+       "settled_microusd": 266
+      }
+     ]
+    },
+    "4": {
+     "settled_microusd": 266,
+     "charged_microusd": 266,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "secondary",
+       "disposition": "completed",
+       "http_status": 200,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": "bb7ff09c5fd9667bde2255abf362192d6bf118014527b49830ddf368766f6344",
+       "refusal_body_sha256": null,
+       "settled_microusd": 266
+      }
+     ]
+    }
+   },
+   "observer": [
+    {
+     "receipt": {
+      "bodySha256": "3a7f6b39dbae5f91caf920b36879126e75453cadecac81a9b5579aa0e1abada5",
+      "requestId": "1-1",
+      "route": "primary"
+     },
+     "status": 429,
+     "type": "refused"
+    },
+    {
+     "effect": 1,
+     "receipt": {
+      "bodySha256": "3a7f6b39dbae5f91caf920b36879126e75453cadecac81a9b5579aa0e1abada5",
+      "requestId": "1-2",
+      "route": "secondary"
+     },
+     "responseSha256": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+     "type": "served"
+    },
+    {
+     "effect": 2,
+     "receipt": {
+      "bodySha256": "de3f2dee5b4f5149673f877541675083c76042cf40588f3576f1b856e5fb0a96",
+      "requestId": "2-1",
+      "route": "secondary"
+     },
+     "responseSha256": "69c8ee1ff7f8061cb4b7ef36346b41673ec038a59d1198dce7442cdac3a7d849",
+     "type": "served"
+    },
+    {
+     "effect": 3,
+     "receipt": {
+      "bodySha256": "6a34d09e35ba486e91c3de1621edb7b45f8bb8208ef37f8fe8d07c47d345a590",
+      "requestId": "3-1",
+      "route": "secondary"
+     },
+     "responseSha256": "3d67b43cff79cd3cc1a78372755e6a362cd8c95407059f6c9e37c48708c7f541",
+     "type": "served"
+    },
+    {
+     "effect": 4,
+     "receipt": {
+      "bodySha256": "0a4a599ad34e331f26e0f197b62eecdbaced5ac4a60752fb0244c57e22adb51d",
+      "requestId": "4-1",
+      "route": "secondary"
+     },
+     "responseSha256": "bb7ff09c5fd9667bde2255abf362192d6bf118014527b49830ddf368766f6344",
+     "type": "served"
+    },
+    {
+     "rawAuthOrBodyRetained": false,
+     "refused": 1,
+     "served": 4,
+     "type": "complete"
+    }
+   ],
+   "reconcile": null,
+   "failures": []
+  },
+  "late-close-short": {
+   "pass": true,
+   "checks": {
+    "no containers left": true,
+    "retained artifacts verify": true,
+    "every attempt gate-admitted before dispatch": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container network none, no /auth": true,
+    "observer dispatches equal ledger attempts": true,
+    "only refused/not-dispatched attempts released": true,
+    "attempt 2 relay bytes match digest": true,
+    "attempt 1 relay bytes match digest": true,
+    "exit 0": true,
+    "four requests settled": true,
+    "request 1 refused then completed": true,
+    "exactly one tool effect": true,
+    "gate log lists 5 attempts": true
+   },
+   "elapsed_s": 8.7,
+   "exit": 0,
+   "ledger": {
+    "1": {
+     "settled_microusd": 266,
+     "charged_microusd": 266,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "primary",
+       "disposition": "refused",
+       "http_status": 429,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": null,
+       "refusal_body_sha256": "a02bb0a4371acb98b4df55387e55872b2be5a5c844e188cfaca724ba74d9bdfe",
+       "settled_microusd": null
+      },
+      {
+       "attempt": 2,
+       "route": "secondary",
+       "disposition": "completed",
+       "http_status": 200,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+       "refusal_body_sha256": null,
+       "settled_microusd": 266
+      }
+     ]
+    },
+    "2": {
+     "settled_microusd": 266,
+     "charged_microusd": 266,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "secondary",
+       "disposition": "completed",
+       "http_status": 200,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": "69c8ee1ff7f8061cb4b7ef36346b41673ec038a59d1198dce7442cdac3a7d849",
+       "refusal_body_sha256": null,
+       "settled_microusd": 266
+      }
+     ]
+    },
+    "3": {
+     "settled_microusd": 266,
+     "charged_microusd": 266,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "secondary",
+       "disposition": "completed",
+       "http_status": 200,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": "3d67b43cff79cd3cc1a78372755e6a362cd8c95407059f6c9e37c48708c7f541",
+       "refusal_body_sha256": null,
+       "settled_microusd": 266
+      }
+     ]
+    },
+    "4": {
+     "settled_microusd": 266,
+     "charged_microusd": 266,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "secondary",
+       "disposition": "completed",
+       "http_status": 200,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": "bb7ff09c5fd9667bde2255abf362192d6bf118014527b49830ddf368766f6344",
+       "refusal_body_sha256": null,
+       "settled_microusd": 266
+      }
+     ]
+    }
+   },
+   "observer": [
+    {
+     "receipt": {
+      "bodySha256": "50656204c8dc9217bde1e64fb2c370925ff4c788ad6669db20f179bf677d9695",
+      "requestId": "1-1",
+      "route": "primary"
+     },
+     "status": 429,
+     "type": "refused"
+    },
+    {
+     "effect": 1,
+     "receipt": {
+      "bodySha256": "50656204c8dc9217bde1e64fb2c370925ff4c788ad6669db20f179bf677d9695",
+      "requestId": "1-2",
+      "route": "secondary"
+     },
+     "responseSha256": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+     "type": "served"
+    },
+    {
+     "fault": "late-close-short",
+     "requestId": "1-2",
+     "type": "fault"
+    },
+    {
+     "effect": 2,
+     "receipt": {
+      "bodySha256": "730d0e7c2e3d03ac8106396f98773d829e56e687c02e130c36c6efc6e77ea302",
+      "requestId": "2-1",
+      "route": "secondary"
+     },
+     "responseSha256": "69c8ee1ff7f8061cb4b7ef36346b41673ec038a59d1198dce7442cdac3a7d849",
+     "type": "served"
+    },
+    {
+     "effect": 3,
+     "receipt": {
+      "bodySha256": "8037f5879b8779d095075ded7d7a521d65f8be256ee6f4096e6c925cf86e75da",
+      "requestId": "3-1",
+      "route": "secondary"
+     },
+     "responseSha256": "3d67b43cff79cd3cc1a78372755e6a362cd8c95407059f6c9e37c48708c7f541",
+     "type": "served"
+    },
+    {
+     "effect": 4,
+     "receipt": {
+      "bodySha256": "e14c10373e03371adb3a12e39770dfd2c85b9860a5925cbb8fbaf48e0f2314c0",
+      "requestId": "4-1",
+      "route": "secondary"
+     },
+     "responseSha256": "bb7ff09c5fd9667bde2255abf362192d6bf118014527b49830ddf368766f6344",
+     "type": "served"
+    },
+    {
+     "rawAuthOrBodyRetained": false,
+     "refused": 1,
+     "served": 4,
+     "type": "complete"
+    }
+   ],
+   "reconcile": null,
+   "failures": []
+  },
+  "refuse-all": {
+   "pass": true,
+   "checks": {
+    "no containers left": true,
+    "retained artifacts verify": true,
+    "every attempt gate-admitted before dispatch": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container network none, no /auth": true,
+    "observer dispatches equal ledger attempts": true,
+    "only refused/not-dispatched attempts released": true,
+    "job failed closed": true,
+    "no tool effect after an unsettled request": true,
+    "only request 1 exists": true,
+    "both routes refused definitively": true,
+    "nothing charged": true,
+    "attempt limit respected": true
+   },
+   "elapsed_s": 5.8,
+   "exit": 1,
+   "ledger": {
+    "1": {
+     "settled_microusd": null,
+     "charged_microusd": 0,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "primary",
+       "disposition": "refused",
+       "http_status": 429,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": null,
+       "refusal_body_sha256": "a02bb0a4371acb98b4df55387e55872b2be5a5c844e188cfaca724ba74d9bdfe",
+       "settled_microusd": null
+      },
+      {
+       "attempt": 2,
+       "route": "secondary",
+       "disposition": "refused",
+       "http_status": 402,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": null,
+       "refusal_body_sha256": "332904d85459f5d494f8f1ab65d489186a48c23de021bf703d2579b0e1053d48",
+       "settled_microusd": null
+      }
+     ]
+    }
+   },
+   "observer": [
+    {
+     "receipt": {
+      "bodySha256": "9fca36375051fd4ce067b7e251c8f3edbfb66e28cbb28f015d2c081a48ccb377",
+      "requestId": "1-1",
+      "route": "primary"
+     },
+     "status": 429,
+     "type": "refused"
+    },
+    {
+     "receipt": {
+      "bodySha256": "9fca36375051fd4ce067b7e251c8f3edbfb66e28cbb28f015d2c081a48ccb377",
+      "requestId": "1-2",
+      "route": "secondary"
+     },
+     "status": 402,
+     "type": "refused"
+    }
+   ],
+   "reconcile": null,
+   "failures": [
+    "hosted attempt 2 is Refused (no reason recorded); container completion cannot settle it; reservation retained",
+    "process deadline/output/input failure",
+    "hosted attempt 2 is Refused (no reason recorded); container completion cannot settle it; reservation retained"
+   ]
+  },
+  "primary-500": {
+   "pass": true,
+   "checks": {
+    "no containers left": true,
+    "retained artifacts verify": true,
+    "every attempt gate-admitted before dispatch": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container network none, no /auth": true,
+    "observer dispatches equal ledger attempts": true,
+    "only refused/not-dispatched attempts released": true,
+    "attempt 1 relay bytes match digest": true,
+    "job failed closed": true,
+    "no tool effect after an unsettled request": true,
+    "only request 1 exists": true,
+    "5xx is uncertain, no failover": true,
+    "secondary never served": true,
+    "full reservation retained": true
+   },
+   "elapsed_s": 11.5,
+   "exit": 1,
+   "ledger": {
+    "1": {
+     "settled_microusd": null,
+     "charged_microusd": 164001,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "primary",
+       "disposition": "uncertain",
+       "http_status": 500,
+       "gate_entered": true,
+       "reason": "relay incomplete or not successful",
+       "relay_sha256": "460819ee9ec43533e19ede90390116b3f81b28da8224258501ac3548e9d6af67",
+       "refusal_body_sha256": null,
+       "settled_microusd": null
+      }
+     ]
+    }
+   },
+   "observer": [
+    {
+     "receipt": {
+      "bodySha256": "64ae45264132ce7f73492a66fe2c6959b89899efbfa678c0818c655f72504e76",
+      "requestId": "1-1",
+      "route": "primary"
+     },
+     "status": 500,
+     "type": "failed"
+    }
+   ],
+   "reconcile": null,
+   "failures": [
+    "hosted attempt 1 is Uncertain (relay incomplete or not successful); container completion cannot settle it; reservation retained",
+    "process deadline/output/input failure",
+    "hosted attempt 1 is Uncertain (relay incomplete or not successful); container completion cannot settle it; reservation retained"
+   ]
+  },
+  "truncate": {
+   "pass": true,
+   "checks": {
+    "no containers left": true,
+    "retained artifacts verify": true,
+    "every attempt gate-admitted before dispatch": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container network none, no /auth": true,
+    "observer dispatches equal ledger attempts": true,
+    "only refused/not-dispatched attempts released": true,
+    "attempt 2 relay bytes match digest": true,
+    "job failed closed": true,
+    "no tool effect after an unsettled request": true,
+    "only request 1 exists": true,
+    "refusal then exactly one further attempt": true,
+    "second attempt uncertain": true,
+    "full reservation retained": true,
+    "no second served effect": true,
+    "relayed bytes retained": true
+   },
+   "elapsed_s": 11.2,
+   "exit": 1,
+   "ledger": {
+    "1": {
+     "settled_microusd": null,
+     "charged_microusd": 164001,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "primary",
+       "disposition": "refused",
+       "http_status": 429,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": null,
+       "refusal_body_sha256": "a02bb0a4371acb98b4df55387e55872b2be5a5c844e188cfaca724ba74d9bdfe",
+       "settled_microusd": null
+      },
+      {
+       "attempt": 2,
+       "route": "secondary",
+       "disposition": "uncertain",
+       "http_status": 200,
+       "gate_entered": true,
+       "reason": "relay incomplete or not successful",
+       "relay_sha256": "562d83af0775076e5e37e746558ea38aeacaa960b6805e734954ab97932f992f",
+       "refusal_body_sha256": null,
+       "settled_microusd": null
+      }
+     ]
+    }
+   },
+   "observer": [
+    {
+     "receipt": {
+      "bodySha256": "af003e84c45d40d98c07656dcc04b7f80368caa738eac99472f47d37803be48b",
+      "requestId": "1-1",
+      "route": "primary"
+     },
+     "status": 429,
+     "type": "refused"
+    },
+    {
+     "effect": 1,
+     "receipt": {
+      "bodySha256": "af003e84c45d40d98c07656dcc04b7f80368caa738eac99472f47d37803be48b",
+      "requestId": "1-2",
+      "route": "secondary"
+     },
+     "responseSha256": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+     "type": "served"
+    },
+    {
+     "fault": "truncate",
+     "requestId": "1-2",
+     "type": "fault"
+    }
+   ],
+   "reconcile": null,
+   "failures": [
+    "hosted attempt 2 is Uncertain (relay incomplete or not successful); container completion cannot settle it; reservation retained",
+    "process deadline/output/input failure",
+    "hosted attempt 2 is Uncertain (relay incomplete or not successful); container completion cannot settle it; reservation retained"
+   ]
+  },
+  "midstream-failed": {
+   "pass": true,
+   "checks": {
+    "no containers left": true,
+    "retained artifacts verify": true,
+    "every attempt gate-admitted before dispatch": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container network none, no /auth": true,
+    "observer dispatches equal ledger attempts": true,
+    "only refused/not-dispatched attempts released": true,
+    "attempt 2 relay bytes match digest": true,
+    "job failed closed": true,
+    "no tool effect after an unsettled request": true,
+    "only request 1 exists": true,
+    "refusal then exactly one further attempt": true,
+    "second attempt uncertain": true,
+    "full reservation retained": true,
+    "no second served effect": true,
+    "relayed bytes retained": true,
+    "reason names the provider failure": true
+   },
+   "elapsed_s": 10.7,
+   "exit": 1,
+   "ledger": {
+    "1": {
+     "settled_microusd": null,
+     "charged_microusd": 164001,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "primary",
+       "disposition": "refused",
+       "http_status": 429,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": null,
+       "refusal_body_sha256": "a02bb0a4371acb98b4df55387e55872b2be5a5c844e188cfaca724ba74d9bdfe",
+       "settled_microusd": null
+      },
+      {
+       "attempt": 2,
+       "route": "secondary",
+       "disposition": "uncertain",
+       "http_status": 200,
+       "gate_entered": true,
+       "reason": "provider failure event in relayed stream: insufficient_quota",
+       "relay_sha256": "6ff37b6984baed20d4c36e0803e82afb1143d0923335abc4c45eeb070dae1eca",
+       "refusal_body_sha256": null,
+       "settled_microusd": null
+      }
+     ]
+    }
+   },
+   "observer": [
+    {
+     "receipt": {
+      "bodySha256": "5b8435f3d54b280325bcc8fdace8fbb6d9a0340ad5f1aa95731ae3563cd67641",
+      "requestId": "1-1",
+      "route": "primary"
+     },
+     "status": 429,
+     "type": "refused"
+    },
+    {
+     "effect": 1,
+     "receipt": {
+      "bodySha256": "5b8435f3d54b280325bcc8fdace8fbb6d9a0340ad5f1aa95731ae3563cd67641",
+      "requestId": "1-2",
+      "route": "secondary"
+     },
+     "responseSha256": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+     "type": "served"
+    },
+    {
+     "fault": "midstream-failed",
+     "requestId": "1-2",
+     "type": "fault"
+    }
+   ],
+   "reconcile": null,
+   "failures": [
+    "hosted attempt 2 is Uncertain (provider failure event in relayed stream: insufficient_quota); container completion cannot settle it; reservation retained",
+    "process deadline/output/input failure",
+    "hosted attempt 2 is Uncertain (provider failure event in relayed stream: insufficient_quota); container completion cannot settle it; reservation retained"
+   ]
+  },
+  "late-close-long": {
+   "pass": true,
+   "checks": {
+    "no containers left": true,
+    "retained artifacts verify": true,
+    "every attempt gate-admitted before dispatch": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container network none, no /auth": true,
+    "observer dispatches equal ledger attempts": true,
+    "only refused/not-dispatched attempts released": true,
+    "attempt 2 relay bytes match digest": true,
+    "job failed closed": true,
+    "no tool effect after an unsettled request": true,
+    "only request 1 exists": true,
+    "refusal then exactly one further attempt": true,
+    "second attempt uncertain": true,
+    "full reservation retained": true,
+    "no second served effect": true,
+    "relayed bytes retained": true,
+    "completion refusal names the uncertain attempt": true
+   },
+   "elapsed_s": 12.9,
+   "exit": 1,
+   "ledger": {
+    "1": {
+     "settled_microusd": null,
+     "charged_microusd": 164001,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "primary",
+       "disposition": "refused",
+       "http_status": 429,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": null,
+       "refusal_body_sha256": "a02bb0a4371acb98b4df55387e55872b2be5a5c844e188cfaca724ba74d9bdfe",
+       "settled_microusd": null
+      },
+      {
+       "attempt": 2,
+       "route": "secondary",
+       "disposition": "uncertain",
+       "http_status": 200,
+       "gate_entered": true,
+       "reason": "relay incomplete or not successful",
+       "relay_sha256": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+       "refusal_body_sha256": null,
+       "settled_microusd": null
+      }
+     ]
+    }
+   },
+   "observer": [
+    {
+     "receipt": {
+      "bodySha256": "e94ed3361575080e2039ffef5297bbfad8888ae4ebff617763aa1735e1f12844",
+      "requestId": "1-1",
+      "route": "primary"
+     },
+     "status": 429,
+     "type": "refused"
+    },
+    {
+     "effect": 1,
+     "receipt": {
+      "bodySha256": "e94ed3361575080e2039ffef5297bbfad8888ae4ebff617763aa1735e1f12844",
+      "requestId": "1-2",
+      "route": "secondary"
+     },
+     "responseSha256": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+     "type": "served"
+    },
+    {
+     "fault": "late-close-long",
+     "requestId": "1-2",
+     "type": "fault"
+    }
+   ],
+   "reconcile": null,
+   "failures": [
+    "hosted attempt 2 is Uncertain (relay incomplete or not successful); container completion cannot settle it; reservation retained",
+    "process deadline/output/input failure",
+    "hosted attempt 2 is Uncertain (relay incomplete or not successful); container completion cannot settle it; reservation retained"
+   ]
+  },
+  "trailing": {
+   "pass": true,
+   "checks": {
+    "no containers left": true,
+    "retained artifacts verify": true,
+    "every attempt gate-admitted before dispatch": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container network none, no /auth": true,
+    "observer dispatches equal ledger attempts": true,
+    "only refused/not-dispatched attempts released": true,
+    "attempt 2 relay bytes match digest": true,
+    "job failed closed": true,
+    "no tool effect after an unsettled request": true,
+    "only request 1 exists": true,
+    "refusal then exactly one further attempt": true,
+    "second attempt uncertain": true,
+    "full reservation retained": true,
+    "no second served effect": true,
+    "relayed bytes retained": true,
+    "completion refusal names the uncertain attempt": true,
+    "unforwarded trailing bytes retained": true
+   },
+   "elapsed_s": 8.6,
+   "exit": 1,
+   "ledger": {
+    "1": {
+     "settled_microusd": null,
+     "charged_microusd": 164001,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "primary",
+       "disposition": "refused",
+       "http_status": 429,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": null,
+       "refusal_body_sha256": "a02bb0a4371acb98b4df55387e55872b2be5a5c844e188cfaca724ba74d9bdfe",
+       "settled_microusd": null
+      },
+      {
+       "attempt": 2,
+       "route": "secondary",
+       "disposition": "uncertain",
+       "http_status": 200,
+       "gate_entered": true,
+       "reason": "relay incomplete or not successful",
+       "relay_sha256": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+       "refusal_body_sha256": null,
+       "settled_microusd": null
+      }
+     ]
+    }
+   },
+   "observer": [
+    {
+     "receipt": {
+      "bodySha256": "8cd0874d8e3ba4a70e2c5b0d6922cf84b55bf380a09f25cfd330dd644146bf8e",
+      "requestId": "1-1",
+      "route": "primary"
+     },
+     "status": 429,
+     "type": "refused"
+    },
+    {
+     "effect": 1,
+     "receipt": {
+      "bodySha256": "8cd0874d8e3ba4a70e2c5b0d6922cf84b55bf380a09f25cfd330dd644146bf8e",
+      "requestId": "1-2",
+      "route": "secondary"
+     },
+     "responseSha256": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+     "type": "served"
+    },
+    {
+     "fault": "trailing",
+     "requestId": "1-2",
+     "type": "fault"
+    }
+   ],
+   "reconcile": null,
+   "failures": [
+    "hosted attempt 2 is Uncertain (relay incomplete or not successful); container completion cannot settle it; reservation retained",
+    "process deadline/output/input failure",
+    "hosted attempt 2 is Uncertain (relay incomplete or not successful); container completion cannot settle it; reservation retained"
+   ]
+  },
+  "stall-head": {
+   "pass": true,
+   "checks": {
+    "no containers left": true,
+    "retained artifacts verify": true,
+    "every attempt gate-admitted before dispatch": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container network none, no /auth": true,
+    "observer dispatches equal ledger attempts": true,
+    "only refused/not-dispatched attempts released": true,
+    "attempt 2 relay bytes match digest": true,
+    "job failed closed": true,
+    "no tool effect after an unsettled request": true,
+    "only request 1 exists": true,
+    "refusal then exactly one further attempt": true,
+    "second attempt uncertain": true,
+    "full reservation retained": true,
+    "no second served effect": true,
+    "relayed bytes retained": true,
+    "upstream connection closed by the Host": true
+   },
+   "elapsed_s": 51.0,
+   "exit": 1,
+   "ledger": {
+    "1": {
+     "settled_microusd": null,
+     "charged_microusd": 164001,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "primary",
+       "disposition": "refused",
+       "http_status": 429,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": null,
+       "refusal_body_sha256": "a02bb0a4371acb98b4df55387e55872b2be5a5c844e188cfaca724ba74d9bdfe",
+       "settled_microusd": null
+      },
+      {
+       "attempt": 2,
+       "route": "secondary",
+       "disposition": "uncertain",
+       "http_status": 0,
+       "gate_entered": true,
+       "reason": "relay incomplete or not successful",
+       "relay_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "refusal_body_sha256": null,
+       "settled_microusd": null
+      }
+     ]
+    }
+   },
+   "observer": [
+    {
+     "receipt": {
+      "bodySha256": "d58864a1c4d4f466bdc492719565a077675ccbe7e1e8674a23652f9df740dc2a",
+      "requestId": "1-1",
+      "route": "primary"
+     },
+     "status": 429,
+     "type": "refused"
+    },
+    {
+     "effect": 1,
+     "receipt": {
+      "bodySha256": "d58864a1c4d4f466bdc492719565a077675ccbe7e1e8674a23652f9df740dc2a",
+      "requestId": "1-2",
+      "route": "secondary"
+     },
+     "responseSha256": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+     "type": "served"
+    },
+    {
+     "fault": "stall-head",
+     "phase": "holding",
+     "requestId": "1-2",
+     "type": "fault"
+    },
+    {
+     "fault": "stall-head",
+     "heldMs": 30516,
+     "peerClosed": true,
+     "phase": "released",
+     "requestId": "1-2",
+     "type": "fault"
+    }
+   ],
+   "reconcile": null,
+   "failures": [
+    "hosted attempt 2 is Uncertain (relay incomplete or not successful); container completion cannot settle it; reservation retained",
+    "process deadline/output/input failure",
+    "hosted attempt 2 is Uncertain (relay incomplete or not successful); container completion cannot settle it; reservation retained"
+   ]
+  },
+  "stall-body": {
+   "pass": true,
+   "checks": {
+    "no containers left": true,
+    "retained artifacts verify": true,
+    "every attempt gate-admitted before dispatch": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container network none, no /auth": true,
+    "observer dispatches equal ledger attempts": true,
+    "only refused/not-dispatched attempts released": true,
+    "attempt 2 relay bytes match digest": true,
+    "job failed closed": true,
+    "no tool effect after an unsettled request": true,
+    "only request 1 exists": true,
+    "refusal then exactly one further attempt": true,
+    "second attempt uncertain": true,
+    "full reservation retained": true,
+    "no second served effect": true,
+    "relayed bytes retained": true,
+    "upstream connection closed by the Host": true
+   },
+   "elapsed_s": 53.7,
+   "exit": 1,
+   "ledger": {
+    "1": {
+     "settled_microusd": null,
+     "charged_microusd": 164001,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "primary",
+       "disposition": "refused",
+       "http_status": 429,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": null,
+       "refusal_body_sha256": "a02bb0a4371acb98b4df55387e55872b2be5a5c844e188cfaca724ba74d9bdfe",
+       "settled_microusd": null
+      },
+      {
+       "attempt": 2,
+       "route": "secondary",
+       "disposition": "uncertain",
+       "http_status": 200,
+       "gate_entered": true,
+       "reason": "relay incomplete or not successful",
+       "relay_sha256": "562d83af0775076e5e37e746558ea38aeacaa960b6805e734954ab97932f992f",
+       "refusal_body_sha256": null,
+       "settled_microusd": null
+      }
+     ]
+    }
+   },
+   "observer": [
+    {
+     "receipt": {
+      "bodySha256": "af5e47733c1e35068dcde89a86bd9dbfc4b01ecefac7d461a7889f3d2833b566",
+      "requestId": "1-1",
+      "route": "primary"
+     },
+     "status": 429,
+     "type": "refused"
+    },
+    {
+     "effect": 1,
+     "receipt": {
+      "bodySha256": "af5e47733c1e35068dcde89a86bd9dbfc4b01ecefac7d461a7889f3d2833b566",
+      "requestId": "1-2",
+      "route": "secondary"
+     },
+     "responseSha256": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+     "type": "served"
+    },
+    {
+     "fault": "stall-body",
+     "phase": "holding",
+     "requestId": "1-2",
+     "type": "fault"
+    },
+    {
+     "fault": "stall-body",
+     "heldMs": 30297,
+     "peerClosed": true,
+     "phase": "released",
+     "requestId": "1-2",
+     "type": "fault"
+    }
+   ],
+   "reconcile": null,
+   "failures": [
+    "hosted attempt 2 is Uncertain (relay incomplete or not successful); container completion cannot settle it; reservation retained",
+    "process deadline/output/input failure",
+    "hosted attempt 2 is Uncertain (relay incomplete or not successful); container completion cannot settle it; reservation retained"
+   ]
+  },
+  "crash": {
+   "pass": true,
+   "checks": {
+    "no containers left": true,
+    "retained artifacts verify": true,
+    "every attempt gate-admitted before dispatch": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container network none, no /auth": true,
+    "observer dispatches equal ledger attempts": true,
+    "only refused/not-dispatched attempts released": true,
+    "job failed closed": true,
+    "no tool effect after an unsettled request": true,
+    "only request 1 exists": true,
+    "refusal then exactly one further attempt": true,
+    "second attempt uncertain": true,
+    "full reservation retained": true,
+    "no second served effect": true,
+    "process killed before cleanup": true,
+    "containers present before reconcile": true,
+    "reconcile succeeded": true,
+    "replay refused": true,
+    "unsettled attempt relabelled at restart": true
+   },
+   "elapsed_s": 8.2,
+   "exit": -9,
+   "ledger": {
+    "1": {
+     "settled_microusd": null,
+     "charged_microusd": 164001,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "primary",
+       "disposition": "refused",
+       "http_status": 429,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": null,
+       "refusal_body_sha256": "a02bb0a4371acb98b4df55387e55872b2be5a5c844e188cfaca724ba74d9bdfe",
+       "settled_microusd": null
+      },
+      {
+       "attempt": 2,
+       "route": "secondary",
+       "disposition": "uncertain",
+       "http_status": null,
+       "gate_entered": true,
+       "reason": "unsettled at restart; producing process gone",
+       "relay_sha256": null,
+       "refusal_body_sha256": null,
+       "settled_microusd": null
+      }
+     ]
+    }
+   },
+   "observer": [
+    {
+     "receipt": {
+      "bodySha256": "7cff5916053cc7039cbb28812b84f91f9aaf535713da21f44181e5b6584d2e0e",
+      "requestId": "1-1",
+      "route": "primary"
+     },
+     "status": 429,
+     "type": "refused"
+    },
+    {
+     "effect": 1,
+     "receipt": {
+      "bodySha256": "7cff5916053cc7039cbb28812b84f91f9aaf535713da21f44181e5b6584d2e0e",
+      "requestId": "1-2",
+      "route": "secondary"
+     },
+     "responseSha256": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+     "type": "served"
+    },
+    {
+     "fault": "stall-body",
+     "phase": "holding",
+     "requestId": "1-2",
+     "type": "fault"
+    },
+    {
+     "fault": "stall-body",
+     "heldMs": 1052,
+     "peerClosed": true,
+     "phase": "released",
+     "requestId": "1-2",
+     "type": "fault"
+    }
+   ],
+   "reconcile": {
+    "exit": 0,
+    "stdout_tail": "-hosted.v1\",\"provider\":\"openai-codex\",\"removed\":true,\"rpc_completion\":null,\"rpc_verified\":false,\"schema\":\"work-engine.pi-docker-custody.v1\",\"session_id\":\"01a1e706-d034-7216-aceb-ce5bd32ba4ae\",\"status\":\"not_established\"},\"receipt_id\":\"4b3f121b4d6cf64c7ee5e982be5c50fa62be612308d5d6f380c6155f78e0e4b0\"}",
+    "stderr_tail": "",
+    "replay_exit": 1,
+    "replay_stderr": "Error: Refused(\"existing job: reconcile instead of launch replay\")"
+   },
+   "failures": [
+    "running container required recovery/cancel stop"
+   ]
+  },
+  "cancel": {
+   "pass": true,
+   "checks": {
+    "no containers left": true,
+    "retained artifacts verify": true,
+    "every attempt gate-admitted before dispatch": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container network none, no /auth": true,
+    "observer dispatches equal ledger attempts": true,
+    "only refused/not-dispatched attempts released": true,
+    "attempt 2 relay bytes match digest": true,
+    "job failed closed": true,
+    "no tool effect after an unsettled request": true,
+    "only request 1 exists": true,
+    "refusal then exactly one further attempt": true,
+    "second attempt uncertain": true,
+    "full reservation retained": true,
+    "no second served effect": true,
+    "relay evidence reads interrupted, not completed": true,
+    "upstream connection closed by the Host": true,
+    "cancellation recorded": true,
+    "relayed bytes retained": true
+   },
+   "elapsed_s": 22.7,
+   "exit": 1,
+   "ledger": {
+    "1": {
+     "settled_microusd": null,
+     "charged_microusd": 164001,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "primary",
+       "disposition": "refused",
+       "http_status": 429,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": null,
+       "refusal_body_sha256": "a02bb0a4371acb98b4df55387e55872b2be5a5c844e188cfaca724ba74d9bdfe",
+       "settled_microusd": null
+      },
+      {
+       "attempt": 2,
+       "route": "secondary",
+       "disposition": "uncertain",
+       "http_status": 200,
+       "gate_entered": true,
+       "reason": "closed uncertain: run loop ended with the stream open",
+       "relay_sha256": "562d83af0775076e5e37e746558ea38aeacaa960b6805e734954ab97932f992f",
+       "refusal_body_sha256": null,
+       "settled_microusd": null
+      }
+     ]
+    }
+   },
+   "observer": [
+    {
+     "receipt": {
+      "bodySha256": "1e6dd1b0ecc8e86f757a32e1c2b580c5895eab51ff6764073ac41479ffa7ef5c",
+      "requestId": "1-1",
+      "route": "primary"
+     },
+     "status": 429,
+     "type": "refused"
+    },
+    {
+     "effect": 1,
+     "receipt": {
+      "bodySha256": "1e6dd1b0ecc8e86f757a32e1c2b580c5895eab51ff6764073ac41479ffa7ef5c",
+      "requestId": "1-2",
+      "route": "secondary"
+     },
+     "responseSha256": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+     "type": "served"
+    },
+    {
+     "fault": "stall-body",
+     "phase": "holding",
+     "requestId": "1-2",
+     "type": "fault"
+    },
+    {
+     "fault": "stall-body",
+     "heldMs": 1100,
+     "peerClosed": true,
+     "phase": "released",
+     "requestId": "1-2",
+     "type": "fault"
+    }
+   ],
+   "reconcile": null,
+   "failures": [
+    "cancellation requested",
+    "cancellation requested",
+    "cancellation requested"
+   ]
+  },
+  "cancel-head": {
+   "pass": true,
+   "checks": {
+    "no containers left": true,
+    "retained artifacts verify": true,
+    "every attempt gate-admitted before dispatch": true,
+    "Host access token appears in no run file": true,
+    "private-access empty": true,
+    "inference container network none, no /auth": true,
+    "observer dispatches equal ledger attempts": true,
+    "only refused/not-dispatched attempts released": true,
+    "attempt 2 relay bytes match digest": true,
+    "job failed closed": true,
+    "no tool effect after an unsettled request": true,
+    "only request 1 exists": true,
+    "refusal then exactly one further attempt": true,
+    "second attempt uncertain": true,
+    "full reservation retained": true,
+    "no second served effect": true,
+    "relay evidence reads interrupted, not completed": true,
+    "upstream connection closed by the Host": true,
+    "cancellation recorded": true,
+    "relayed bytes retained": true
+   },
+   "elapsed_s": 23.3,
+   "exit": 1,
+   "ledger": {
+    "1": {
+     "settled_microusd": null,
+     "charged_microusd": 164001,
+     "attempts": [
+      {
+       "attempt": 1,
+       "route": "primary",
+       "disposition": "refused",
+       "http_status": 429,
+       "gate_entered": true,
+       "reason": null,
+       "relay_sha256": null,
+       "refusal_body_sha256": "a02bb0a4371acb98b4df55387e55872b2be5a5c844e188cfaca724ba74d9bdfe",
+       "settled_microusd": null
+      },
+      {
+       "attempt": 2,
+       "route": "secondary",
+       "disposition": "uncertain",
+       "http_status": 0,
+       "gate_entered": true,
+       "reason": "closed uncertain: run loop ended with the stream open",
+       "relay_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "refusal_body_sha256": null,
+       "settled_microusd": null
+      }
+     ]
+    }
+   },
+   "observer": [
+    {
+     "receipt": {
+      "bodySha256": "ea8ed37a2d0dc1997be89b6051724cec64eca403466c6a18e9ac26fc83345ad9",
+      "requestId": "1-1",
+      "route": "primary"
+     },
+     "status": 429,
+     "type": "refused"
+    },
+    {
+     "effect": 1,
+     "receipt": {
+      "bodySha256": "ea8ed37a2d0dc1997be89b6051724cec64eca403466c6a18e9ac26fc83345ad9",
+      "requestId": "1-2",
+      "route": "secondary"
+     },
+     "responseSha256": "02bd29ce6fc1c25a2363f933f3bab2980a4e70747e5f5534e72952456f3791c9",
+     "type": "served"
+    },
+    {
+     "fault": "stall-head",
+     "phase": "holding",
+     "requestId": "1-2",
+     "type": "fault"
+    },
+    {
+     "fault": "stall-head",
+     "heldMs": 1185,
+     "peerClosed": true,
+     "phase": "released",
+     "requestId": "1-2",
+     "type": "fault"
+    }
+   ],
+   "reconcile": null,
+   "failures": [
+    "cancellation requested",
+    "cancellation requested",
+    "cancellation requested"
+   ]
+  }
+ },
+ "coding_qualification_sha256": "590bb1addf8f1e9af8c433a05ea7cbc369cd2e281a6dbec94eaeb0ca4cb22a5f",
+ "observer_sha256": "c16c1d7b094c2b4cff2c8f9f8842ca522a600c71f11ca55b196409b41a0fc40d",
+ "runs_root": "/home/bline/.local/state/work-engine/dev-vertical-hosted-qual-20261117-r3"
+}
