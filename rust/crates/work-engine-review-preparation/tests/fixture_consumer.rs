@@ -666,6 +666,47 @@ fn an_unsupported_result_contract_is_refused_before_the_gate_or_the_transition()
 }
 
 #[test]
+fn a_result_with_another_contract_version_is_refused_by_the_episode_owner() {
+    let w = world();
+    let state = begun();
+    let before = canonical(&state);
+    // The acceptable sample, otherwise unchanged, claiming schemaVersion 2.
+    let other_version = result_json(|v| v["schemaVersion"] = json!(2));
+    let error = try_consume(
+        &w,
+        &w.declaration,
+        &state,
+        &authority(),
+        state.revision().clone(),
+        &other_version,
+        &w.admissions,
+    )
+    .expect_err("another result contract version");
+    assert!(
+        matches!(&error, ConsumeRefusal::Episode(e) if e.kind == ErrorKind::ResultContract),
+        "{error:?}"
+    );
+    assert_eq!(
+        canonical(&state),
+        before,
+        "a refusal leaves the input state unchanged"
+    );
+    // The same bytes with the version restored are consumed, so the version is what differed.
+    assert!(
+        try_consume(
+            &w,
+            &w.declaration,
+            &state,
+            &authority(),
+            state.revision().clone(),
+            &result_json(|_| {}),
+            &w.admissions,
+        )
+        .is_ok()
+    );
+}
+
+#[test]
 fn a_declaration_cannot_change_the_production_preparation() {
     let w = world();
     let before = serde_json::to_string(&prepare(&w.candidate, &request(None)).unwrap()).unwrap();

@@ -1,0 +1,78 @@
+{
+ "schema": "org-pi-design-decision/v1",
+ "at": "2026-11-16T19:54:02.208714+00:00",
+ "decision_owner": "01a1e56e-be12-7424-977b-c7c7983887d0 (Pi root; took over 01a1d364 by operator direction 2026-11-16)",
+ "authority": "Operator 2026-11-16 grant: slices under $100 overall; Fable xhigh replaces Astra; root retains design disposition per ARCHITECTURE-GUARD (advisory review, root decides within authority).",
+ "decision": "revise_acceptance_model_for_R1",
+ "review": {
+  "path": "/home/bline/cbm-work/org-pi-slices-20261116/s1/design-recheck/REVIEW.md",
+  "sha256": "7d3812e4abca4e1981e4de601b07c916cbca613efb3720eaa8b5ee8dfe261cab",
+  "session_id": "4be2fcf8-c471-4c25-a454-c3807433ed51",
+  "model_observed": "claude-fable-5-2",
+  "effort_requested": "xhigh",
+  "verdict": "revise_acceptance_model"
+ },
+ "reviewed_history": {
+  "revision": 37,
+  "sha256": "1db97a119744f2a3d5e7452096e3a97c250bc95426afea5fd27d2851df58bfb2"
+ },
+ "supersedes_plan": "PLAN-R10.md 8b168cf1 (R10 local correction) is not pursued; ROOT-R10 decision remains historical.",
+ "basis": "The owner-approved R1 acceptance basis is PLAN.md R1 (Exit + discriminating checks). Four production-path claims (complete material build-input inventory; executable custody joins; qualifier re-appraisal of every emitted artifact; cold/common build reconciliation) were root-authored in R6-R10 plans; no other owner requiring them was found; their only consumer is the private qualifier gate; two are unrealizable under standing holds (no tracing/hermeticity/protected-config). Per core.md s10 and evidence-and-claims s3.9 this is a route revision by the authoring root, not narrowing of an owner's claim, provided the record states they are unestablished.",
+ "withdrawn_claims_unestablished": [
+  "complete material build-input inventory/closure",
+  "executable custody joins between built/retained/directly-run binaries",
+  "complete qualifier re-appraisal of every retained artifact",
+  "cold/common verifier build reconciliation"
+ ],
+ "retained_required_claim": "Tests and review are about the exact revision accepted: actor-recorded custody.py test runs from a clean export at a private checkpoint commit/tree.",
+ "acceptance_model": [
+  "private checkpoint commit/tree of P1 incl. Cargo.lock, crates on path, adapter, fixtures; external inputs named (Pi SDK handoff manifest/entry digests; rustc/cargo/node versions)",
+  "custody.py-recorded cargo test --locked for organization/preparation/delivery/review-episode-core (fixture feature) from clean export; native suite x3",
+  "discriminating-check matrix mapping R1 checks + cross-module requirement to tests with one recorded mutant per check",
+  "one fresh Fable xhigh semantic review of product seam (custody/qualifier out of scope) with retained remediation recheck",
+  "explicit unclaimed list per REVIEW.md s3"
+ ],
+ "findings": {
+  "superseded_claim_withdrawn": [
+   "ORG-PV-IR-004",
+   "ORG-PV-R6A-002",
+   "ORG-PV-R6A-003",
+   "ORG-PV-WR7-002",
+   "ORG-PV-QR8-001",
+   "ORG-PV-QR8-002",
+   "CR9-001",
+   "CR9-002",
+   "ORG-PV-R8N-001",
+   "ORG-PV-RLA-005",
+   "ORG-PV-RL-003",
+   "ORG-PV-R9D-001"
+  ],
+  "product_repair_visible_confirm_by_test_and_review": [
+   "ORG-PV-IR-005",
+   "ORG-PV-WR7-001",
+   "ORG-PV-R6A-001",
+   "ORG-PV-RLA-002",
+   "ORG-PV-RLA-003"
+  ],
+  "open_controls_timing": [
+   "ORG-PV-RL-001",
+   "ORG-PV-RLA-001",
+   "ORG-PV-RLA-004",
+   "ORG-PV-RL-002"
+  ],
+  "closed": []
+ },
+ "prerequisites_lapsed": {
+  "AR10-004": "lapses with withdrawn build-input claim",
+  "D-native-node-correspondence": "lapses as qualifier prerequisite; actual node invocation remains a reviewer question in product scope"
+ },
+ "operator_visibility": "Explained to operator with veto opportunity; operator approved the original S1 item text which named the R10 route.",
+ "frozen_history_only": [
+  "N/realization-r9/evidence-gate",
+  "N/implementation-r6/preparation-03",
+  "verifier_bootstrap.py"
+ ],
+ "bounded_next_scope": "S1 builder: P-1 (native tests runnable without WE_* pipeline env), P-2 (explicit SDK root input + truthful pin coverage), remove bundle production from acceptance path, P-3 optional strict decode, matrix+mutants; then root checkpoint+custody test runs x3; fresh Fable xhigh review; remediation; private readiness decision.",
+ "ordinary_repair_authorized": true,
+ "implementation_acceptance": false
+}

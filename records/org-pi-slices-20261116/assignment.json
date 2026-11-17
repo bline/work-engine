@@ -1,0 +1,105 @@
+{
+  "scope_budget": {
+    "schema": "manual-orchestration.scope-budget.v2",
+    "objective_id": "65496fe2-7852-4509-8754-adcaec224413",
+    "sessions": [],
+    "bindings": [
+      {
+        "session_id": "4be2fcf8-c471-4c25-a454-c3807433ed51",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-16T17:53:58Z",
+        "bound_by": "supervisor",
+        "reason": "S1 Fable xhigh design recheck (role_host claude --bg, Claude Max subscription verified in logs; observed claude-fable-5-2)"
+      },
+      {
+        "session_id": "5d1da583-69ce-4f4f-be83-d17d59d2d2ec",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-16T19:55:36Z",
+        "bound_by": "supervisor",
+        "reason": "S1 builder Opus high"
+      },
+      {
+        "session_id": "7f68ddc9-4ecc-4c1c-be94-b8dfbded1306",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-16T21:21:36Z",
+        "bound_by": "supervisor",
+        "reason": "S1 semantic review Fable xhigh"
+      },
+      {
+        "session_id": "7cc0d168-867d-4573-8248-41b21f80ba1f",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-16T21:41:18Z",
+        "bound_by": "supervisor",
+        "reason": "S1 remediation-1 Sonnet high"
+      },
+      {
+        "session_id": "27debc2b-869e-44db-9dab-58da8ec4e1ac",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T00:04:35Z",
+        "bound_by": "supervisor",
+        "reason": "S1 reviewer recheck: Claude copy-on-resume of 7f68ddc9 (same retained context, new SID)"
+      },
+      {
+        "session_id": "5c2376c2-a330-4697-bba8-62df30f8eca0",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T00:09:33Z",
+        "bound_by": "supervisor",
+        "reason": "S2 R2 admission design Opus xhigh"
+      },
+      {
+        "session_id": "95888f14-c12d-4afd-adf3-9beacd820479",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T00:22:46Z",
+        "bound_by": "supervisor",
+        "reason": "S2 design review Fable xhigh"
+      }
+    ],
+    "cost_limits": [
+      {
+        "pool": "claude_all_models",
+        "node": null,
+        "max_usd": 100.0,
+        "marks_usd": [],
+        "set_by": "user",
+        "set_at": "2026-11-16T17:47:46Z",
+        "reason": "Operator 2026-11-16: 'run slices on an overall budget of $100... When you finish a slice, move to the next one.' Units: API-equivalent proxy; covers Pi root (claude-sdk, measured from Pi session file per-call cost) and all children. Fable xhigh replaces Astra. Accepted slices remain private; no commit/merge without asking.",
+        "basis": "speed_adjusted_api_usd"
+      }
+    ],
+    "objective": "Rust organizational compilation/execution: run bounded slices to private readiness under $100 overall; slice1 = R10 repair-to-readiness; then next authorized slices",
+    "original_items": [
+      "S1: R10 realization prerequisites (task-owned build-input/config route avoiding protected config incl Cargo ancestor discovery; native-node correspondence) + Fable xhigh design recheck",
+      "S1: R10 coherent repair of candidate 2617a6c6 findings (21 open, history r37) + fresh root qualification",
+      "S1: complete independent Fable xhigh review (A/B/C/D coverage, 20 whole-review obligations) with retained remediation to private readiness",
+      "Subsequent authorized Rust org compilation/execution slices from existing plan, each to private readiness, while budget fits"
+    ],
+    "started_at": "2026-11-16T17:47:46Z",
+    "weekly_at_start": null,
+    "limits": {},
+    "limits_set_by": "user",
+    "limits_reason": "Operator 2026-11-16: 'run slices on an overall budget of $100... When you finish a slice, move to the next one.' Units: API-equivalent proxy; covers Pi root (claude-sdk, measured from Pi session file per-call cost) and all children. Fable xhigh replaces Astra. Accepted slices remain private; no commit/merge without asking.",
+    "limit_history": [
+      {
+        "cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 100.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-16T17:47:46Z",
+          "reason": "Operator 2026-11-16: 'run slices on an overall budget of $100... When you finish a slice, move to the next one.' Units: API-equivalent proxy; covers Pi root (claude-sdk, measured from Pi session file per-call cost) and all children. Fable xhigh replaces Astra. Accepted slices remain private; no commit/merge without asking.",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      }
+    ],
+    "additions": []
+  }
+}

@@ -1,18 +1,18 @@
 //! The native vertical (feature `fixture`): one checked `ExperimentBinding` -> actual Pi SDK 1.5.0
 //! session (real prompt/auth/agent-loop/history, deterministic provider-disabled stream) ->
 //! observed context and native history -> exact synthetic result -> the existing
-//! `consume_fixture_result`. These tests REQUIRE the pinned runtime and the custody-supplied run
-//! environment and fail (never skip) without them. Every declaration/admission is a synthetic
-//! test assumption; nothing here is evidence of a model review, an independent observer, or
+//! `consume_fixture_result`. These tests REQUIRE the explicitly selected Pi SDK
+//! (`WE_PI_SDK_ROOT`, `WE_PI_SDK_MANIFEST`; see `common::native_inputs`) and a `node` on `PATH`,
+//! and fail (never skip) without them. Every declaration/admission is a synthetic test
+//! assumption; nothing here is evidence of a model review, an independent observer, or
 //! production admission.
 //!
-//! Capture and verdict have separate lifetimes (PLAN-R4): inputs are persisted before the native
-//! path, every returned observation is persisted before any assertion, the `passed` outcome is
-//! finalized only after all assertions, and scratch is removed only after that finalization.
+//! Every verdict is asserted in-process. When an assertion fails after a native run, the raw
+//! frames and stderr of that run are printed as ordinary failure diagnostics and its scratch
+//! root is kept; nothing is written as retained evidence.
 mod common;
 
-use common::capture::{self, TRANSITION_ID};
-use common::run_evidence::{Evidence, RunEnv, Scratch, run_env, scratch_root};
+use common::native_inputs::{Scratch, sdk_root};
 use common::world::{World, world};
 use common::*;
 use review_episode_core::ErrorKind;
@@ -21,23 +21,21 @@ use review_episode_core::identity::{Authority, Revision};
 use review_episode_core::state::{Phase, ReviewEpisodeState};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use work_engine_review_delivery::binding::{EpisodeInputs, ExperimentBinding};
 use work_engine_review_delivery::native::{
     AttemptDriver, AttemptFacts, AttemptPolicy, CANARY_MARKER, Control, DeliverError, Delivered,
-    DriverStep, KillFact, KillReason, Limits, NativeConfig, ProcessFacts, ReapFact, SendCancel,
-    SendOutcome, SendRecord, StreamCollector, StreamEnd, StreamRecord, TimingFacts, Trailing,
-    WaitObserver, WriteShape, check_attempt_evidence, deliver_and_consume, run_attempt,
+    DriverStep, KillFact, KillReason, Limits, NativeConfig, NativeRun, ProcessFacts, ReapFact,
+    SendCancel, SendOutcome, SendRecord, StreamCollector, StreamEnd, StreamRecord, TimingFacts,
+    Trailing, WaitObserver, WriteShape, check_attempt_evidence, deliver_and_consume, run_attempt,
     run_attempt_observed, run_native,
 };
 use work_engine_review_delivery::{DeliveryRefusal, Transport};
 use work_engine_review_preparation::fixture::{ConsumeRefusal, FixtureDeclaration};
 use work_engine_review_preparation::prepare;
 
-const SDK_ROOT: &str = "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi";
-const SDK_ENTRY_SHA256: &str = "4569157e6038be9840fa514db4b00a27fd0be9e3622cc7b49a281de6c027d7ff";
+const TRANSITION_ID: &str = "result-1";
 
 fn node() -> PathBuf {
     std::env::var_os("PATH")
@@ -50,19 +48,10 @@ fn node() -> PathBuf {
 }
 
 fn native_config(root: PathBuf, control: Control) -> NativeConfig {
-    let entry =
-        Path::new(SDK_ROOT).join("node_modules/@earendil-works/pi-coding-agent/dist/index.js");
-    let bytes = std::fs::read(&entry)
-        .expect("pinned Pi SDK 1.5.0 entry must exist; this test does not skip");
-    assert_eq!(
-        format!("{:x}", Sha256::digest(&bytes)),
-        SDK_ENTRY_SHA256,
-        "pinned SDK entry bytes"
-    );
     NativeConfig {
         node: node(),
         adapter: NativeConfig::default_adapter(),
-        sdk_root: PathBuf::from(SDK_ROOT),
+        sdk_root: sdk_root(),
         fixture_root: root,
         timeout: Duration::from_secs(60),
         cleanup: Duration::from_secs(5),
@@ -71,10 +60,10 @@ fn native_config(root: PathBuf, control: Control) -> NativeConfig {
     }
 }
 
-/// A refusal control: its outcome is asserted directly; scratch is removed on drop.
-fn config(env: &RunEnv, name: &str, control: Control) -> (NativeConfig, Scratch) {
-    let root = scratch_root(env, name);
-    (native_config(root.clone(), control), Scratch::cleanup(root))
+/// A fresh scratch root (kept on failure) and the native configuration that uses it.
+fn config(name: &str, control: Control) -> (NativeConfig, Scratch) {
+    let scratch = Scratch::new(name);
+    (native_config(scratch.path.clone(), control), scratch)
 }
 
 struct Case<'a> {
@@ -123,91 +112,62 @@ fn binding_for(case: &Case<'_>, result: &str) -> ExperimentBinding {
     .expect("the joined fixture world is canonical")
 }
 
-/// Owns inputs, invocation, returned evidence, verdict/finalization and scratch eligibility.
-/// The guard remains in the caller's assertion scope, including controls returning owned results.
-struct DeliveryCapture {
-    evidence: Option<Evidence>,
-    scratch: Scratch,
-    retain_success: bool,
+/// Failure diagnostics for one native run: held in the caller's assertion scope; if that scope
+/// unwinds, the run's raw frames, stderr and facts are printed and its scratch root is kept.
+struct Diagnostics {
+    text: String,
+    _scratch: Scratch,
 }
-impl DeliveryCapture {
-    fn invoke(
-        mut ev: Evidence,
-        cfg: &NativeConfig,
-        binding: &ExperimentBinding,
-        retain_success: bool,
-        authority_text: &str,
-    ) -> (Result<Delivered, DeliverError>, Self) {
-        capture::persist_inputs(&mut ev, binding, authority_text, &[]);
-        let mut owner = Self {
-            evidence: Some(ev),
-            scratch: Scratch::retained(cfg.fixture_root.clone()),
-            retain_success,
-        };
-        let outcome = deliver_and_consume(cfg, binding);
-        capture::capture_returned(
-            owner.evidence.as_mut().unwrap(),
-            binding,
-            &outcome,
-            binding.consumer_invocations(),
-        );
-        (outcome, owner)
-    }
-    fn finalize(&mut self, failure: Option<&str>) -> Result<(), String> {
-        let Some(mut ev) = self.evidence.take() else {
-            return Ok(());
-        };
-        let writes_failed = !ev.write_failures().is_empty();
-        if failure.is_some() || writes_failed {
-            ev.put_json("failure.json", &json!({
-                "stage": if failure.is_some() { "assertion_after_capture" } else { "evidence_write_after_capture" },
-                "message": failure.unwrap_or("evidence write failed after returned facts were captured"),
-                "scratch": self.scratch.path,
-                "scratch_listing_before_cleanup": tree_listing(&self.scratch.path),
-                "scratch_retained": true,
-            }));
-        }
-        let requested = if failure.is_some() {
-            "failed"
-        } else {
-            "passed"
-        };
-        match ev.finish(requested) {
-            Ok(recorded) if recorded == requested && !writes_failed => {
-                if failure.is_none() && !self.retain_success {
-                    self.scratch.release();
-                }
-                Ok(())
-            }
-            Ok(recorded) => Err(format!(
-                "evidence bundle recorded `{recorded}`; scratch retained at {}",
-                self.scratch.path.display()
-            )),
-            Err(error) => Err(format!(
-                "incomplete/unestablished finalization: {error}; available evidence and scratch retained at {}",
-                self.scratch.path.display()
-            )),
-        }
-    }
-}
-impl Drop for DeliveryCapture {
+impl Drop for Diagnostics {
     fn drop(&mut self) {
-        let unwinding = std::thread::panicking();
-        let result = self.finalize(
-            unwinding.then_some("control assertion unwound after returned evidence capture"),
-        );
-        if let Err(error) = result {
-            if unwinding {
-                eprintln!("{error}");
-            } else {
-                panic!("{error}");
-            }
+        if std::thread::panicking() {
+            eprintln!("{}", self.text);
         }
     }
 }
 
+fn run_of(outcome: &Result<Delivered, DeliverError>) -> Option<&NativeRun> {
+    match outcome {
+        Ok(d) => Some(&d.run),
+        Err(DeliverError::Delivery { run, .. }) | Err(DeliverError::Consumer { run, .. }) => {
+            Some(run)
+        }
+        Err(DeliverError::Native(_)) => None,
+    }
+}
+
+/// Runs the vertical once and returns its outcome with the diagnostics guard.
+fn deliver(
+    cfg: &NativeConfig,
+    scratch: Scratch,
+    binding: &ExperimentBinding,
+) -> (Result<Delivered, DeliverError>, Diagnostics) {
+    let outcome = deliver_and_consume(cfg, binding);
+    let text = match run_of(&outcome) {
+        Some(run) => format!(
+            "native diagnostics ({:?}): consumer invocations {}\nstdout frames:\n{}\nstderr:\n{}\nfacts: {:?}",
+            cfg.control,
+            binding.consumer_invocations(),
+            String::from_utf8_lossy(&run.raw_stdout),
+            run.stderr_lossy(),
+            run.facts
+        ),
+        None => format!(
+            "native diagnostics ({:?}): no native run: {:?}",
+            cfg.control,
+            outcome.as_ref().err().map(ToString::to_string)
+        ),
+    };
+    (
+        outcome,
+        Diagnostics {
+            text,
+            _scratch: scratch,
+        },
+    )
+}
+
 fn run_case(
-    env: &RunEnv,
     name: &str,
     control: Control,
     case: &Case<'_>,
@@ -215,22 +175,12 @@ fn run_case(
 ) -> (
     Result<Delivered, DeliverError>,
     ExperimentBinding,
-    DeliveryCapture,
+    Diagnostics,
 ) {
-    let root = scratch_root(env, name);
-    let cfg = native_config(root, control);
+    let (cfg, scratch) = config(name, control);
     let binding = binding_for(case, result);
-    let ev = Evidence::create_at(env, env.run_dir.join("controls").join(name)).unwrap();
-    let actual_authority = json_value(case.authority.value()).to_string();
-    let authority_text = if json_value(case.authority.value())
-        == serde_json::from_str::<Value>(AUTHORITY).unwrap()
-    {
-        AUTHORITY
-    } else {
-        &actual_authority
-    };
-    let (outcome, owner) = DeliveryCapture::invoke(ev, &cfg, &binding, true, authority_text);
-    (outcome, binding, owner)
+    let (outcome, diagnostics) = deliver(&cfg, scratch, &binding);
+    (outcome, binding, diagnostics)
 }
 
 fn assert_reaped(d: &ProcessFacts) {
@@ -249,44 +199,7 @@ fn assert_reaped(d: &ProcessFacts) {
     assert!(!d.timed_out, "{d:?}");
 }
 
-fn tree_listing(root: &Path) -> Vec<Value> {
-    fn walk(dir: &Path, base: &Path, out: &mut Vec<Value>) {
-        if let Ok(entries) = std::fs::read_dir(dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                let rel = path
-                    .strip_prefix(base)
-                    .map(|p| p.display().to_string())
-                    .unwrap_or_default();
-                if path.is_dir() {
-                    walk(&path, base, out);
-                } else if let Ok(meta) = std::fs::metadata(&path) {
-                    out.push(json!({"path": rel, "length": meta.len()}));
-                }
-            }
-        }
-    }
-    let mut out = Vec::new();
-    walk(root, root, &mut out);
-    out
-}
-
-fn panic_text(payload: &(dyn std::any::Any + Send)) -> String {
-    payload
-        .downcast_ref::<&str>()
-        .map(|s| (*s).to_owned())
-        .or_else(|| payload.downcast_ref::<String>().cloned())
-        .unwrap_or_else(|| "non-text panic payload".to_owned())
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Inject {
-    None,
-    /// A failing assertion after `Delivered` is available.
-    PanicAfterDelivered,
-}
-
-/// The positive verdict. Runs only after capture; any failure unwinds to `run_vertical`.
+/// The positive verdict over one returned `Delivered`.
 fn positive_assertions(
     w: &World,
     state: &ReviewEpisodeState,
@@ -376,163 +289,26 @@ fn positive_assertions(
     assert_eq!(binding.consumer_invocations(), 1);
 }
 
-/// One joined vertical run into `ev`. Order is causal: inputs, native path, capture, assertions,
-/// then the outcome. A refusal, an assertion unwind or a write failure leaves a `failed` or
-/// `incomplete` bundle and retains scratch; only a fully written `passed` bundle releases it.
-fn run_vertical(env: &RunEnv, ev: Evidence, scratch_name: &str, inject: Inject) {
+#[test]
+fn canonical_preparation_reaches_the_real_sdk_and_the_existing_consumer() {
     let w = world();
     let state = begun();
     let before = canonical(&state);
     let blockers_before = prepare(&w.candidate, &request(None)).unwrap().blockers;
     assert!(!blockers_before.is_empty());
     let writer = authority();
-    let binding = binding_for(&base(&w, &state, &writer), &result_json(|_| {}));
-    let root = scratch_root(env, scratch_name);
-    let cfg = native_config(root, Control::Positive);
-    let (outcome, mut owner) = DeliveryCapture::invoke(ev, &cfg, &binding, false, AUTHORITY);
-
-    let verdict = catch_unwind(AssertUnwindSafe(|| {
-        if inject == Inject::PanicAfterDelivered {
-            assert!(
-                outcome.is_ok(),
-                "the injected failure must follow an available Delivered"
-            );
-            panic!("injected assertion failure after Delivered was available");
+    let (outcome, binding, _diagnostics) = run_case(
+        "positive",
+        Control::Positive,
+        &base(&w, &state, &writer),
+        &result_json(|_| {}),
+    );
+    match &outcome {
+        Ok(delivered) => {
+            positive_assertions(&w, &state, &before, &blockers_before, &binding, delivered)
         }
-        match &outcome {
-            Ok(delivered) => {
-                positive_assertions(&w, &state, &before, &blockers_before, &binding, delivered)
-            }
-            Err(error) => panic!("positive path refused: {error}"),
-        }
-    }));
-    match verdict {
-        Ok(()) => owner.finalize(None).unwrap_or_else(|e| panic!("{e}")),
-        Err(payload) => {
-            if let Err(error) = owner.finalize(Some(&panic_text(payload.as_ref()))) {
-                eprintln!("{error}");
-            }
-            resume_unwind(payload)
-        }
+        Err(error) => panic!("positive path refused: {error}"),
     }
-}
-
-#[test]
-fn canonical_preparation_reaches_the_real_sdk_and_the_existing_consumer() {
-    let env = run_env();
-    let ev = Evidence::create(&env).expect("the positive evidence directory is new");
-    run_vertical(&env, ev, "positive", Inject::None);
-}
-
-fn read_json(path: &Path) -> Value {
-    serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap()
-}
-
-fn listed(manifest: &Value) -> Vec<String> {
-    manifest["files"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|f| f["name"].as_str().unwrap().to_owned())
-        .collect()
-}
-
-/// R4 capture lifetime: a failure after `Delivered` is available, or a failed evidence write,
-/// leaves every available native observation and actual state in a non-passed bundle, retains
-/// scratch, and never overwrites an existing bundle.
-#[test]
-fn post_delivery_failures_keep_native_evidence_states_and_scratch() {
-    let env = run_env();
-    let controls = env.run_dir.join("controls");
-    let pid = std::process::id();
-
-    let dir = controls.join("assertion-unwind");
-    let ev = Evidence::create_at(&env, dir.clone()).unwrap();
-    let unwound = catch_unwind(AssertUnwindSafe(|| {
-        run_vertical(
-            &env,
-            ev,
-            "control-assertion-unwind",
-            Inject::PanicAfterDelivered,
-        )
-    }));
-    assert!(unwound.is_err(), "the injected assertion must fail the run");
-    let manifest = read_json(&dir.join("output-manifest.json"));
-    assert_eq!(manifest["outcome"], "failed");
-    let names = listed(&manifest);
-    for name in [
-        "episode-before.json",
-        "contract.bytes",
-        "native-frames-received.jsonl",
-        "native-frames-sent.jsonl",
-        "observation.json",
-        "request-context.json",
-        "native-history.json",
-        "episode-after.json",
-        "consumption.json",
-        "revisions.json",
-        "process.json",
-        "capture.json",
-        "failure.json",
-    ] {
-        assert!(names.iter().any(|n| n == name), "{name} preserved");
-        assert!(dir.join(name).is_file(), "{name} on disk");
-    }
-    let failure = read_json(&dir.join("failure.json"));
-    assert!(
-        failure["message"]
-            .as_str()
-            .unwrap()
-            .contains("injected assertion failure")
-    );
-    let scratch = env
-        .run_dir
-        .join(format!("scratch/control-assertion-unwind-{pid}"));
-    assert!(scratch.is_dir(), "scratch retained after the unwind");
-    assert!(
-        !failure["scratch_listing_before_cleanup"]
-            .as_array()
-            .unwrap()
-            .is_empty()
-    );
-
-    let dir = controls.join("write-failure");
-    let ev = Evidence::create_at(&env, dir.clone()).unwrap();
-    // A real OS-level create_new failure: the name is already taken by a directory.
-    std::fs::create_dir(dir.join("episode-after.json")).unwrap();
-    let failed = catch_unwind(AssertUnwindSafe(|| {
-        run_vertical(&env, ev, "control-write-failure", Inject::None)
-    }));
-    assert!(failed.is_err(), "an incomplete bundle cannot pass");
-    let manifest = read_json(&dir.join("output-manifest.json"));
-    assert_eq!(manifest["outcome"], "incomplete");
-    assert_eq!(manifest["write_failures"][0]["name"], "episode-after.json");
-    let names = listed(&manifest);
-    for name in [
-        "observation.json",
-        "native-frames-received.jsonl",
-        "consumption.json",
-        "capture.json",
-    ] {
-        assert!(
-            names.iter().any(|n| n == name),
-            "{name} partial evidence kept"
-        );
-    }
-    let scratch = env
-        .run_dir
-        .join(format!("scratch/control-write-failure-{pid}"));
-    assert!(scratch.is_dir(), "scratch retained after a write failure");
-
-    let prior = std::fs::read(dir.join("output-manifest.json")).unwrap();
-    assert!(
-        Evidence::create_at(&env, dir.clone()).is_err(),
-        "an existing bundle is never reused"
-    );
-    assert_eq!(
-        std::fs::read(dir.join("output-manifest.json")).unwrap(),
-        prior
-    );
 }
 
 fn refused(outcome: Result<Delivered, DeliverError>) -> DeliverError {
@@ -544,13 +320,11 @@ fn refused(outcome: Result<Delivered, DeliverError>) -> DeliverError {
 
 #[test]
 fn missing_runtime_key_fails_the_genuine_sdk_auth_preflight_before_any_fixture_stream() {
-    let env = run_env();
     let w = world();
     let state = begun();
     let before = canonical(&state);
     let writer = authority();
-    let (outcome, _, _capture) = run_case(
-        &env,
+    let (outcome, _, _diagnostics) = run_case(
         "missing-key",
         Control::MissingKey,
         &base(&w, &state, &writer),
@@ -576,13 +350,11 @@ fn missing_runtime_key_fails_the_genuine_sdk_auth_preflight_before_any_fixture_s
 
 #[test]
 fn the_ordinary_sdk_stream_hits_the_provider_entry_refusal_and_yields_no_usable_result() {
-    let env = run_env();
     let w = world();
     let state = begun();
     let before = canonical(&state);
     let writer = authority();
-    let (outcome, _, _capture) = run_case(
-        &env,
+    let (outcome, _, _diagnostics) = run_case(
         "ordinary-stream",
         Control::OrdinaryStream,
         &base(&w, &state, &writer),
@@ -609,13 +381,11 @@ fn the_ordinary_sdk_stream_hits_the_provider_entry_refusal_and_yields_no_usable_
 
 #[test]
 fn a_possible_send_without_observation_stays_uncertain_and_advances_nothing() {
-    let env = run_env();
     let w = world();
     let state = begun();
     let before = canonical(&state);
     let writer = authority();
-    let (outcome, _, _capture) = run_case(
-        &env,
+    let (outcome, _, _diagnostics) = run_case(
         "die-during-prompt",
         Control::DieDuringPrompt,
         &base(&w, &state, &writer),
@@ -633,7 +403,6 @@ fn a_possible_send_without_observation_stays_uncertain_and_advances_nothing() {
 
 #[test]
 fn the_adapter_refuses_a_wrong_session_and_a_duplicate_start() {
-    let env = run_env();
     let w = world();
     let state = begun();
     let writer = authority();
@@ -658,7 +427,7 @@ fn the_adapter_refuses_a_wrong_session_and_a_duplicate_start() {
             "duplicate start refused (host frame 2,",
         ),
     ] {
-        let (cfg, _root) = config(&env, &format!("{name}-raw"), control);
+        let (cfg, _root) = config(&format!("{name}-raw"), control);
         let binding = binding_for(&base(&w, &state, &writer), &result_json(|_| {}));
         let run = run_native(&cfg, &binding).unwrap();
         let error = run.error_frame.as_deref().unwrap_or_default();
@@ -688,8 +457,7 @@ fn the_adapter_refuses_a_wrong_session_and_a_duplicate_start() {
             );
             assert_eq!(s[0].frame_sha256, s[1].frame_sha256, "{name}");
         }
-        let (outcome, _, _capture) = run_case(
-            &env,
+        let (outcome, _, _diagnostics) = run_case(
             name,
             control,
             &base(&w, &state, &writer),
@@ -707,14 +475,13 @@ fn the_adapter_refuses_a_wrong_session_and_a_duplicate_start() {
 /// mismatches are refused earlier, by the binding, before any child: see tests/binding.rs.)
 #[test]
 fn consumer_and_episode_owners_keep_their_checks_after_a_correct_native_delivery() {
-    let env = run_env();
     let w = world();
     let state = begun();
     let before = canonical(&state);
     let good = result_json(|_| {});
     let writer = authority();
-    let check = |name: &str, case: Case<'_>, result: &str| -> (ConsumeRefusal, DeliveryCapture) {
-        let (outcome, _, _capture) = run_case(&env, name, Control::Positive, &case, result);
+    let check = |name: &str, case: Case<'_>, result: &str| -> (ConsumeRefusal, Diagnostics) {
+        let (outcome, _, _capture) = run_case(name, Control::Positive, &case, result);
         let refusal = match refused(outcome) {
             DeliverError::Consumer { refusal, run, .. } => {
                 assert!(
@@ -814,25 +581,18 @@ struct Refusal {
     refusal: DeliveryRefusal,
     consumer_invocations: u64,
     state_unchanged: bool,
-    _capture: DeliveryCapture,
+    _diagnostics: Diagnostics,
 }
 
-fn refused_attempt(
-    env: &RunEnv,
-    name: &str,
-    control: Control,
-    tweak: impl FnOnce(&mut NativeConfig),
-) -> Refusal {
+fn refused_attempt(name: &str, control: Control, tweak: impl FnOnce(&mut NativeConfig)) -> Refusal {
     let w = world();
     let state = begun();
     let before = canonical(&state);
     let writer = authority();
-    let root = scratch_root(env, name);
-    let mut cfg = native_config(root, control);
+    let (mut cfg, scratch) = config(name, control);
     tweak(&mut cfg);
     let binding = binding_for(&base(&w, &state, &writer), &result_json(|_| {}));
-    let ev = Evidence::create_at(env, env.run_dir.join("controls").join(name)).unwrap();
-    let (outcome, owner) = DeliveryCapture::invoke(ev, &cfg, &binding, true, AUTHORITY);
+    let (outcome, diagnostics) = deliver(&cfg, scratch, &binding);
     let DeliverError::Delivery { refusal, run } = refused(outcome) else {
         panic!("{name}: expected an incomplete-attempt delivery refusal")
     };
@@ -841,38 +601,21 @@ fn refused_attempt(
         refusal,
         consumer_invocations: binding.consumer_invocations(),
         state_unchanged: canonical(&state) == before,
-        _capture: owner,
+        _diagnostics: diagnostics,
     }
 }
 
-/// Bounded completion on the recorded spawn-to-return duration (which includes post-loop digests,
-/// pipe release and finalization): cleanup starts at the deadline at the latest and ends at its own
-/// bound; the 1 000 ms tolerance covers work run between deadline checks on this host.
-fn assert_bounded(name: &str, t: &TimingFacts) {
-    assert!(
-        t.elapsed_ms <= t.attempt_ms + t.cleanup_ms + 1_000,
-        "{name}: attempt took {} ms, bound {} + {} ms",
-        t.elapsed_ms,
-        t.attempt_ms,
-        t.cleanup_ms
-    );
-}
-
-/// The same bound observed independently by the caller around the whole `run_attempt` call; the
-/// recorded duration is a sub-interval of the caller's and can never exceed it.
-fn assert_caller_bounded(name: &str, caller: Duration, t: &TimingFacts) {
-    assert_bounded(name, t);
+/// The recorded duration is the caller-visible operation: a sub-interval of the caller's own
+/// observation around `run_attempt`, so it can never exceed it. No wall-clock ceiling is asserted:
+/// the deadline is checked, not preemptive (see `run_attempt`), and no owning requirement sets a
+/// timing bound (ORG-PV-RL-002 disposition). Termination by deadline is asserted causally instead
+/// (`timed_out`, the deadline kill, the signalled reap).
+fn assert_within_caller(name: &str, caller: Duration, t: &TimingFacts) {
     let c = caller.as_millis() as u64;
     assert!(
         t.elapsed_ms <= c,
         "{name}: recorded {} ms exceeds the caller-observed {c} ms",
         t.elapsed_ms
-    );
-    assert!(
-        c <= t.attempt_ms + t.cleanup_ms + 1_000,
-        "{name}: caller observed {c} ms, bound {} + {} ms",
-        t.attempt_ms,
-        t.cleanup_ms
     );
 }
 
@@ -905,12 +648,10 @@ fn assert_incomplete(name: &str, r: &Refusal) {
         "{name}: child pid still present"
     );
     assert!(p.descendants_seen.is_empty(), "{name}");
-    assert_bounded(name, &r.run.facts.timing);
 }
 
 #[test]
 fn trailing_data_after_a_valid_observation_refuses_before_consumption_prompt_and_delayed() {
-    let env = run_env();
     for (kind, label, defect) in [
         (Trailing::DuplicateObservation, "duplicate", None),
         (Trailing::Malformed, "malformed", Some("not JSON")),
@@ -927,7 +668,7 @@ fn trailing_data_after_a_valid_observation_refuses_before_consumption_prompt_and
                 "trail-{label}-{}",
                 if delayed { "delayed" } else { "prompt" }
             );
-            let r = refused_attempt(&env, &name, Control::Trail(kind, delayed), |_| {});
+            let r = refused_attempt(&name, Control::Trail(kind, delayed), |_| {});
             assert_incomplete(&name, &r);
             assert!(r.run.observation.is_some(), "{name}");
             let interp = r.run.interpretation();
@@ -964,14 +705,7 @@ fn trailing_data_after_a_valid_observation_refuses_before_consumption_prompt_and
 
 #[test]
 fn nonzero_exit_timeout_early_eof_and_limits_refuse_with_retained_evidence() {
-    let env = run_env();
-
-    let r = refused_attempt(
-        &env,
-        "exit-nonzero",
-        Control::ExitNonzeroAfterObservation,
-        |_| {},
-    );
+    let r = refused_attempt("exit-nonzero", Control::ExitNonzeroAfterObservation, |_| {});
     assert_incomplete("exit-nonzero", &r);
     assert_eq!(r.run.facts.process.reap, ReapFact::Exited { code: 5 });
     assert!(
@@ -979,10 +713,10 @@ fn nonzero_exit_timeout_early_eof_and_limits_refuse_with_retained_evidence() {
         "the stream alone was a valid protocol"
     );
 
-    let r = refused_attempt(&env, "hang", Control::HangAfterObservation, |c| {
-        c.timeout = Duration::from_secs(20);
-        c.cleanup = Duration::from_secs(3);
-    });
+    // The same bounds as every other SDK control: the real SDK must allocate and observe before
+    // the deadline for this case to be the one it names, and a tighter deadline made that depend
+    // on host load (two of three runs at load ~30 on 12 CPUs produced no frame within 20 s).
+    let r = refused_attempt("hang", Control::HangAfterObservation, |_| {});
     assert_incomplete("hang", &r);
     let p = &r.run.facts.process;
     assert!(p.timed_out);
@@ -998,18 +732,13 @@ fn nonzero_exit_timeout_early_eof_and_limits_refuse_with_retained_evidence() {
         "the observation was received before the timeout"
     );
 
-    let r = refused_attempt(&env, "early-eof", Control::CleanExitNoObservation, |_| {});
+    let r = refused_attempt("early-eof", Control::CleanExitNoObservation, |_| {});
     assert_incomplete("early-eof", &r);
     assert_eq!(r.run.facts.stdout.end, StreamEnd::Eof);
     assert_eq!(r.run.interpretation().kinds, ["allocated"]);
     assert!(r.run.observation.is_none());
 
-    let r = refused_attempt(
-        &env,
-        "die-after-allocation",
-        Control::DieAfterAllocation,
-        |_| {},
-    );
+    let r = refused_attempt("die-after-allocation", Control::DieAfterAllocation, |_| {});
     assert_incomplete("die-after-allocation", &r);
     assert!(r.run.observation.is_none());
     // A frame is recorded from its first write on; completed, failed or never attempted are all
@@ -1017,7 +746,6 @@ fn nonzero_exit_timeout_early_eof_and_limits_refuse_with_retained_evidence() {
     assert!(r.run.facts.sent.len() <= 1);
 
     let r = refused_attempt(
-        &env,
         "frame-limit",
         Control::OversizeFrameAfterObservation,
         |_| {},
@@ -1040,7 +768,7 @@ fn nonzero_exit_timeout_early_eof_and_limits_refuse_with_retained_evidence() {
         "frame bound + 1 byte of the oversize frame retained"
     );
 
-    let r = refused_attempt(&env, "total-limit", Control::FloodAfterObservation, |c| {
+    let r = refused_attempt("total-limit", Control::FloodAfterObservation, |c| {
         c.limits.total_bytes = 2 << 20
     });
     assert_incomplete("total-limit", &r);
@@ -1095,7 +823,7 @@ fn sh(
     };
     let called = std::time::Instant::now();
     let rec = run_attempt(c, &mut d, &policy).expect("spawn /bin/sh");
-    assert_caller_bounded(script, called.elapsed(), &rec.facts.timing);
+    assert_within_caller(script, called.elapsed(), &rec.facts.timing);
     // A child that reports its pipe identities on stderr (`L <fd0> <fd1> <fd2>`) gets the
     // independent resource-release observation.
     if let Some(line) = rec.raw_stderr.split(|b| *b == b'\n').next()
@@ -1556,7 +1284,7 @@ fn probe(
     let called = std::time::Instant::now();
     let rec = run_attempt(c, &mut d, &policy).expect("spawn /bin/sh");
     let caller = called.elapsed();
-    assert_caller_bounded(script, caller, &rec.facts.timing);
+    assert_within_caller(script, caller, &rec.facts.timing);
     let (pid, links) = d.pipe.clone().expect("the child reported its pipes");
     assert_eq!(pid, rec.facts.process.pid);
     assert_released(script, &links, &rec);
@@ -1777,8 +1505,54 @@ fn with_wait(
     };
     let called = std::time::Instant::now();
     let rec = run_attempt_observed(c, &mut d, &policy, waiter).expect("spawn /bin/sh");
-    assert_caller_bounded(script, called.elapsed(), &rec.facts.timing);
+    assert_within_caller(script, called.elapsed(), &rec.facts.timing);
     rec
+}
+
+/// ORG-PV-RLA-003: `elapsed_ms` is the complete caller-visible operation, so it includes the
+/// post-loop work (frame digests, pipe release, finalization). A large completed send makes the
+/// post-loop digest measurable: the test times the same digest itself, and the gap between the
+/// caller's observation and the recorded duration must be small against it. A measurement taken
+/// at loop exit instead leaves a gap of about one digest. The digest-size precondition is
+/// asserted so that a host fast enough to hide the difference fails loudly rather than passing
+/// vacuously.
+#[test]
+fn recorded_elapsed_covers_the_post_loop_digest_and_finalization() {
+    let frame = vec![b'a'; 32 << 20];
+    let mut c = std::process::Command::new("/bin/sh");
+    c.args(["-c", "printf 'ready\\n'; cat >/dev/null; exit 0"])
+        .env_clear();
+    let mut d = Script {
+        send: Some(frame),
+        sent: false,
+    };
+    let policy = AttemptPolicy {
+        timeout: Duration::from_secs(60),
+        cleanup: Duration::from_secs(5),
+        limits: Limits::default(),
+        write_shape: WriteShape::default(),
+    };
+    let called = std::time::Instant::now();
+    let rec = run_attempt(c, &mut d, &policy).expect("spawn /bin/sh");
+    let caller = called.elapsed();
+    assert_eq!(rec.facts.sent.len(), 1);
+    assert_eq!(rec.facts.sent[0].outcome, SendOutcome::Completed);
+    assert_eq!(rec.facts.process.reap, ReapFact::Exited { code: 0 });
+    let digest_started = std::time::Instant::now();
+    let digest = format!("{:x}", Sha256::digest(&rec.sent_bytes));
+    let digest_ms = digest_started.elapsed().as_millis() as u64;
+    assert_eq!(digest, rec.facts.sent[0].frame_sha256);
+    assert!(
+        digest_ms >= 20,
+        "precondition: the post-loop digest ({digest_ms} ms) must be measurable on this host"
+    );
+    let gap = (caller.as_millis() as u64).saturating_sub(rec.facts.timing.elapsed_ms);
+    assert!(
+        gap * 2 < digest_ms,
+        "recorded {} ms vs caller {} ms: a {gap} ms gap against a {digest_ms} ms post-loop digest",
+        rec.facts.timing.elapsed_ms,
+        caller.as_millis()
+    );
 }
 
 #[test]
@@ -1808,11 +1582,6 @@ fn an_injected_wait_failure_is_not_termination_and_the_child_is_still_stopped() 
     assert_eq!(p.wait_errors, injected);
     assert_eq!(p.pid_present_after_reap, None);
     assert!(!p.timed_out);
-    assert!(
-        rec.facts.timing.elapsed_ms < 20_000,
-        "bounded by cleanup, not the deadline: {:?}",
-        rec.facts.timing
-    );
     assert!(w.calls > 1, "waiting continued after the first failure");
     let why = verdict(&rec);
     assert!(
@@ -2061,13 +1830,12 @@ fn deterministic_seams_distinguish_bounds_uncertainty_and_contradiction() {
     );
 }
 
-/// Real captured refusal bundles for the qualifier's approved refusal scenarios: a delivery
-/// refusal from the real SDK (valid observation, then nonzero exit), a setup/spawn refusal (real
-/// spawn failure) and a consumer refusal (correct native delivery, stale expected revision).
+/// Each refusal stage reports the consumer invocations it actually made: a delivery refusal from
+/// the real SDK (valid observation, then nonzero exit) and a setup/spawn refusal (real spawn
+/// failure) invoke the consumer zero times; a consumer refusal (correct native delivery, stale
+/// expected revision) invokes it once.
 #[test]
-fn refusal_controls_are_captured_for_the_qualifier() {
-    let env = run_env();
-    let controls = env.run_dir.join("controls");
+fn each_refusal_stage_reports_its_actual_consumer_invocations() {
     let w = world();
     let state = begun();
     let writer = authority();
@@ -2087,18 +1855,16 @@ fn refusal_controls_are_captured_for_the_qualifier() {
         ),
     ];
     for (name, control, revision, spawn_fails) in cases {
-        let ev = Evidence::create_at(&env, controls.join(name)).unwrap();
         let mut case = base(&w, &state, &writer);
         if let Some(r) = revision {
             case.revision = r;
         }
         let binding = binding_for(&case, &result_json(|_| {}));
-        let root = scratch_root(&env, &format!("control-{name}"));
-        let mut cfg = native_config(root, control);
+        let (mut cfg, scratch) = config(&format!("control-{name}"), control);
         if spawn_fails {
-            cfg.node = env.run_dir.join("no-such-node-executable");
+            cfg.node = scratch.path.join("no-such-node-executable");
         }
-        let (outcome, _capture) = DeliveryCapture::invoke(ev, &cfg, &binding, true, AUTHORITY);
+        let (outcome, _diagnostics) = deliver(&cfg, scratch, &binding);
         match (name, &outcome) {
             ("delivery-refusal", Err(DeliverError::Delivery { .. })) => {
                 assert_eq!(binding.consumer_invocations(), 0)
@@ -2117,12 +1883,11 @@ fn refusal_controls_are_captured_for_the_qualifier() {
     }
 }
 
-/// Every duplicate family reaches the actual native stdout/capture boundary and must refuse
-/// with zero actual consumer invocations. Raw frames remain byte-identical in capture.
+/// Every duplicate family reaches the actual native stdout boundary and must refuse with zero
+/// actual consumer invocations (ORG-PV-WR7-001).
 #[test]
-fn recursive_wire_duplicates_refuse_before_consumption_and_retain_exact_bytes() {
+fn recursive_wire_duplicates_refuse_before_consumption() {
     use work_engine_review_delivery::native::WireObject;
-    let env = run_env();
     let w = world();
     let state = begun();
     let writer = authority();
@@ -2136,12 +1901,9 @@ fn recursive_wire_duplicates_refuse_before_consumption_and_retain_exact_bytes() 
             for reversed in [false, true] {
                 let name = format!("wire-{object:?}-{conflict}-{reversed}");
                 let binding = binding_for(&base(&w, &state, &writer), &result_json(|_| {}));
-                let root = scratch_root(&env, &name);
-                let cfg = native_config(root, Control::DuplicateMember(object, conflict, reversed));
-                let dir = env.run_dir.join("controls").join(&name);
-                let ev = Evidence::create_at(&env, dir.clone()).unwrap();
-                let (outcome, _capture) =
-                    DeliveryCapture::invoke(ev, &cfg, &binding, true, AUTHORITY);
+                let (cfg, scratch) =
+                    config(&name, Control::DuplicateMember(object, conflict, reversed));
+                let (outcome, _diagnostics) = deliver(&cfg, scratch, &binding);
                 assert_eq!(binding.consumer_invocations(), 0, "{name}");
                 let Err(DeliverError::Delivery { run, .. }) = &outcome else {
                     panic!("{name}: expected delivery refusal: {outcome:?}")
@@ -2155,91 +1917,8 @@ fn recursive_wire_duplicates_refuse_before_consumption_and_retain_exact_bytes() 
                     "{name}: {:?}",
                     run.interpretation()
                 );
-                assert_eq!(
-                    std::fs::read(dir.join("native-frames-received.jsonl")).unwrap(),
-                    run.raw_stdout
-                );
-                let cap = read_json(&dir.join("capture.json"));
-                assert_eq!(cap["outcome"]["native_started"], true);
-                assert_eq!(cap["consumer_invocations"], 0);
                 assert_reaped(&run.facts.process);
             }
         }
     }
-}
-
-/// Each supported underlying stage survives a later wrong-verdict assertion. Positive delivery
-/// is also the nonzero duplicate-consumption counterexample: assertions cannot discard count=1.
-#[test]
-fn wrong_control_verdicts_and_manifest_failure_retain_returned_facts() {
-    let env = run_env();
-    let w = world();
-    let state = begun();
-    let writer = authority();
-    for name in [
-        "wrong-delivered",
-        "wrong-delivery-refusal",
-        "wrong-setup-refusal",
-        "wrong-consumer-refusal",
-    ] {
-        let mut case = base(&w, &state, &writer);
-        if name == "wrong-consumer-refusal" {
-            case.revision = Revision("f".repeat(64));
-        }
-        let binding = binding_for(&case, &result_json(|_| {}));
-        let dir = env.run_dir.join("controls").join(name);
-        let ev = Evidence::create_at(&env, dir.clone()).unwrap();
-        let root = scratch_root(&env, name);
-        let mut cfg = native_config(
-            root.clone(),
-            if name == "wrong-delivery-refusal" {
-                Control::ExitNonzeroAfterObservation
-            } else {
-                Control::Positive
-            },
-        );
-        if name == "wrong-setup-refusal" {
-            cfg.node = env.run_dir.join("no-node");
-        }
-        let unwound = catch_unwind(AssertUnwindSafe(|| {
-            let (outcome, _capture) = DeliveryCapture::invoke(ev, &cfg, &binding, true, AUTHORITY);
-            if name == "wrong-delivered" {
-                assert_eq!(
-                    binding.consumer_invocations(),
-                    0,
-                    "duplicate control unexpectedly consumed"
-                );
-            }
-            panic!("injected wrong control outcome: {outcome:?}");
-        }));
-        assert!(unwound.is_err());
-        let manifest = read_json(&dir.join("output-manifest.json"));
-        assert_eq!(manifest["outcome"], "failed");
-        assert!(dir.join("capture.json").is_file());
-        assert!(dir.join("failure.json").is_file());
-        assert!(root.is_dir());
-        if name == "wrong-delivered" {
-            assert_eq!(
-                read_json(&dir.join("capture.json"))["consumer_invocations"],
-                1
-            );
-            assert!(dir.join("episode-after.json").is_file());
-        }
-    }
-    // This test's successful verdict establishes preservation under failed finalization,
-    // never a successful underlying bundle. It is deliberately outside complete controls.
-    let dir = env.run_dir.join("unfinalized-manifest-control");
-    let ev = Evidence::create_at(&env, dir.clone()).unwrap();
-    std::fs::create_dir(dir.join("output-manifest.json")).unwrap();
-    let root = scratch_root(&env, "manifest-write-failure");
-    let cfg = native_config(root.clone(), Control::Positive);
-    let binding = binding_for(&base(&w, &state, &writer), &result_json(|_| {}));
-    let failed = catch_unwind(AssertUnwindSafe(|| {
-        let (_outcome, _capture) = DeliveryCapture::invoke(ev, &cfg, &binding, false, AUTHORITY);
-    }));
-    assert!(failed.is_err(), "manifest failure cannot authorize success");
-    assert!(dir.join("output-manifest.json").is_dir());
-    assert!(dir.join("native-frames-received.jsonl").is_file());
-    assert!(dir.join("episode-after.json").is_file());
-    assert!(root.is_dir(), "manifest failure cannot authorize cleanup");
 }

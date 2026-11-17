@@ -1,0 +1,34 @@
+{
+ "schema": "org-s1-root-gate/v1",
+ "at": "2026-11-16T21:20:33.773287+00:00",
+ "owner": "01a1e56e-be12-7424-977b-c7c7983887d0",
+ "subject": {
+  "checkpoint_commit_oid": "1ac0bff4190cf757b5d79b5e69f04fbdcbed2124",
+  "checkpoint_tree_oid": "a6a51e2e191f2762fd9023590c3f357bda4122b5",
+  "task_patch_digest": "767bd949003604880a07b52fc2ea2d2f1b421c05558facf1c8b98afb49393d2d"
+ },
+ "export": {
+  "path": "/home/bline/cbm-work/org-pi-slices-20261116/s1/export-1ac0bff4",
+  "method": "git archive 1ac0bff4 | tar -x (full tree)"
+ },
+ "plan": {
+  "path": "/home/bline/cbm-work/org-pi-slices-20261116/s1/root-gate-plan.json",
+  "sha256": "bab3a11661a9cbfb40c3f98e7b21a2eec366e0753e2c318bc2d563cece233045"
+ },
+ "records": "/home/bline/cbm-work/org-pi-slices-20261116/s1/root-gate-2",
+ "summary_sha256": "4f129ee5daec45cf77d026cffb3bf90a357e6da777f9a911ea14ad737b8fb16b",
+ "status": "passed",
+ "results": {
+  "fmt": "pass",
+  "clippy_delivery_fixture_all_targets_-D_warnings": "pass",
+  "test_four_crates": "239 passed/0 failed/20 binaries",
+  "authority_store_store_test": "37 passed",
+  "native_vertical_x3": "20/20 each"
+ },
+ "prior_attempt": {
+  "records": "/home/bline/cbm-work/org-pi-slices-20261116/s1/root-gate-1-failed-rust-only-export",
+  "cause": "rust/-only export lacked app-server/tests/fixtures used by include_str!; infrastructure, not candidate defect"
+ },
+ "toolchain": "cargo 1.92.0, rustc 1.92.0, node v22.23.2 (builder-observed; ambient)",
+ "unclaimed": "actor-recorded custody only; no hermetic build, no build-input closure, no tamper evidence; fixture standing only"
+}

@@ -1,0 +1,103 @@
+{
+ "schema": "org-slice-acceptance/v1",
+ "at": "2026-11-17T00:08:13.354782+00:00",
+ "slice": "S1 (R1: one compiled contract -> genuine provider-disabled Pi 1.5 SDK session -> implementation-review/v1 validation -> fixture consumer)",
+ "decision": "accepted_bounded_private_readiness",
+ "decision_owner": "Pi root 01a1e56e-be12-7424-977b-c7c7983887d0",
+ "authority": "Operator 2026-11-16 grant (00 slices; Fable xhigh reviewer; accepted slices remain private; no commit/merge/push without asking)",
+ "subject": {
+  "repository": "/home/bline/cbm-work/wt-p1-vertical-20261113",
+  "checkpoint_commit_oid": "1cc771146c72ff7d23b371b730aa5e73ce79db61",
+  "checkpoint_tree_oid": "be29bec5a48560682e0a9894ef2ff83a864dbe14",
+  "task_patch_digest": "d023d937a67b44a0f8db3e8c9519785d75fc0c0d3263d9f4a447e1796bac3160",
+  "baseline": "e20a9221a80544c81ea789148a02c0f3aad9c84c",
+  "ref": "refs/work-engine/checkpoints/org-pi-slices-20261116/slice-1/candidate-2",
+  "plan_version": "sha256:efcdc01d74cc0c2b1d48c043a16040c70d618f3583985fbb4d02920fcf1983d5",
+  "scope_revision": "s1-r1-revised-acceptance-model"
+ },
+ "acceptance_model": {
+  "path": "/home/bline/cbm-work/org-pi-slices-20261116/s1/ROOT-S1-DESIGN-DECISION.json",
+  "sha256": "efcdc01d74cc0c2b1d48c043a16040c70d618f3583985fbb4d02920fcf1983d5"
+ },
+ "evidence": {
+  "root_gate": {
+   "path": "/home/bline/cbm-work/org-pi-slices-20261116/s1/ROOT-GATE-3.json",
+   "sha256": "63566e82e9f400eeeea81b53057ae3885d0679986c2e7caff999f643c22cfffa"
+  },
+  "matrix": {
+   "path": "/home/bline/cbm-work/org-pi-slices-20261116/s1/build/MATRIX.md",
+   "sha256": "efc241b242a41fa4875e532defd3c6d47e461300176b27a750542bc583fedf9b"
+  },
+  "f1_mutant": "/home/bline/cbm-work/org-pi-slices-20261116/s1/remediation-1/mutant-F1/",
+  "review": {
+   "path": "/home/bline/cbm-work/org-pi-slices-20261116/s1/review/REVIEW-1.md",
+   "sha256": "ef51988f54484e745746d7a64acfe243681ba1fca255a099c1c0cd0d04e7ca88",
+   "session": "7f68ddc9-4ecc-4c1c-be94-b8dfbded1306",
+   "model": "claude-fable-5-2",
+   "verdict": "accept_private_readiness"
+  },
+  "recheck": {
+   "path": "/home/bline/cbm-work/org-pi-slices-20261116/s1/review/RECHECK-1.md",
+   "sha256": "8c98fedd6bf217ec33176f0207be4cc850a12cd4320802968bba8336432bca50",
+   "session": "27debc2b-869e-44db-9dab-58da8ec4e1ac (Claude copy-on-resume of 7f68ddc9; same retained context)",
+   "verdict": "accept_private_readiness"
+  }
+ },
+ "findings": {
+  "product_confirmed_repaired_by_test_mutant_review": [
+   "ORG-PV-IR-005",
+   "ORG-PV-WR7-001",
+   "ORG-PV-R6A-001",
+   "ORG-PV-RLA-002",
+   "ORG-PV-RLA-003"
+  ],
+  "controls_dispositioned": {
+   "ORG-PV-RL-001": "kept; passed all runs",
+   "ORG-PV-RLA-001": "kept",
+   "ORG-PV-RLA-004": "kept",
+   "ORG-PV-RL-002": "wall-clock assertion removed (no owning timing requirement)"
+  },
+  "superseded_claim_withdrawn": [
+   "ORG-PV-IR-004",
+   "ORG-PV-R6A-002",
+   "ORG-PV-R6A-003",
+   "ORG-PV-WR7-002",
+   "ORG-PV-QR8-001",
+   "ORG-PV-QR8-002",
+   "CR9-001",
+   "CR9-002",
+   "ORG-PV-R8N-001",
+   "ORG-PV-RLA-005",
+   "ORG-PV-RL-003",
+   "ORG-PV-R9D-001"
+  ],
+  "review_p3_closed": [
+   "F-1",
+   "F-3",
+   "F-5 (two wording residuals carried)",
+   "F-6(b)"
+  ],
+  "review_p3_open_carried": [
+   "F-2 mutants in place, pre-checkpoint, n=1/row; candidate-side result-contract guard has tests but no mutant",
+   "F-4 verify constrains only system-context preamble vs adapter report; canary positive test only",
+   "F-6(a) elapsed-coverage digest_ms>=20 is dev-profile evidence; F-6(c) SDK controls need allocation/observation within 60s",
+   "F-7 complete-attempt-before-consumption enforced by deliver_and_consume not types; Control enum in product config; no-auto-replay is caller obligation only",
+   "F-8 view hosting/episode_access/terminalization not projected nor named as gaps; realization-admission blocker text omits continuity/integrity/evidence custody; frames omitting prompt_error/context still decode",
+   "F-9 per-condition normative/constraint values not asserted against view"
+  ]
+ },
+ "semantic_limit": "Fixture vertical never consults blockers or realization_evaluation: a realization mismatch is carried as text with unchanged blockers and never refuses delivery/consumption. Exercised with one world (n=1 candidate/obligation/subject).",
+ "unclaimed": [
+  "fixture standing only: synthetic declaration/admissions/result; no live provider, model quality or real review",
+  "no AdmittedOrganization or DispatchAuthorization; preparation blockers and realization mismatch remain",
+  "no hermetic/reproducible build; no complete build-input closure; no executable custody joins; no qualifier re-appraisal (withdrawn claims, unestablished)",
+  "no tamper evidence; actor-recorded custody only",
+  "no confinement of SDK child; no exhaustive SDK audit (provider-disabled = adapter stream replacement + zero counters + empty tools + one request); node http/net not trapped",
+  "SDK pin covers handoff manifest digest and entry module bytes only",
+  "no timing guarantee; pipe acceptance only",
+  "independence = separate session/context only, same provider family (Claude) as builders",
+  "private readiness only: no commit to a user branch, integration, merge, push or deployment"
+ ],
+ "frozen_history": "Private qualifier (realization-r9/evidence-gate, records/.../qualifier-source) no longer compiles against delivery crate by reading; unmaintained history.",
+ "not_accepted": "Not integration. Operator asked to be consulted before any commit/merge."
+}

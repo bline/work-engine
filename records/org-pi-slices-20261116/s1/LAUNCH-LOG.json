@@ -1,0 +1,6 @@
+{"events":[
+{"at":"2026-11-16T17:50Z","session":"192799aa-d218-4221-8d90-a0dba2cf391f","outcome":"infrastructure_failure","detail":"Inherited ANTHROPIC_API_KEY => Claude Code reported 'API Usage Billing'; prompt also not submitted because variadic --allowedTools consumed the positional prompt. No transcript created (no model call observed). Retired --force."},
+{"at":"2026-11-16T17:52Z","session":"77d84ccf-1267-4984-ad28-9487b5ac5380","outcome":"billing_probe","detail":"env -u ANTHROPIC_API_KEY haiku one-word probe: logs show Claude Max subscription; stopped. Trivial cost attributed to this objective."},
+{"at":"2026-11-16T17:53Z","session":"9165242d-845e-4436-982d-144e7bad678b","outcome":"infrastructure_failure","detail":"Claude Max verified, but prompt swallowed by variadic --allowedTools; no transcript; retired --force."},
+{"at":"2026-11-16T17:55Z","session":"4be2fcf8-c471-4c25-a454-c3807433ed51","outcome":"running","detail":"Fable xhigh design recheck; flags reordered (--permission-mode last); observed model claude-fable-5-2; Claude Max. Launch rule: always env -u ANTHROPIC_API_KEY and never end host args with a variadic flag."}
+]}
