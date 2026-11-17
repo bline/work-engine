@@ -4312,6 +4312,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "work-engine-claude-host"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "rustls",
+ "rustls-platform-verifier",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
 name = "work-engine-command"
 version = "0.1.0"
 dependencies = [

@@ -43,6 +43,7 @@ members = [
   "crates/work-engine-completion-host",
   "crates/work-engine-context-status",
   "crates/work-engine-manual-host",
+  "crates/work-engine-claude-host",
   "crates/experiment-control",
   "crates/bounded-inference",
   "crates/lifecycle-semantic-replay",
