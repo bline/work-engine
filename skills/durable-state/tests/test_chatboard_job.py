@@ -60,12 +60,14 @@ class ChatboardJobTest(unittest.TestCase):
         self.assertLess(time.monotonic() - started, 2, "run must not block on the command")
         self.assertEqual(job["topic"], f"job:{self.session}")
         self.assertIn(f"--session-id {self.session}", job["wait"])
+        self.assertIn("--timeout-seconds 3720", job["wait"])
         result = self.wait(job)
         [message] = result["messages"]
         self.assertIn("exit 3", message["body"])
         self.assertNotIn("secret-output", message["body"], "output is not posted by default")
         record = self.record(message)
         self.assertEqual(record["exit"], 3)
+        self.assertIsInstance(record["supervisor_pid"], int)
         self.assertTrue(record["posted"])
         self.assertEqual(Path(record["stdout"]).read_text(), "secret-output\n")
 
@@ -77,6 +79,12 @@ class ChatboardJobTest(unittest.TestCase):
         missing = self.start("/nonexistent/command")
         record = self.record(self.wait(missing)["messages"][0])
         self.assertEqual(record["exit"], 127)
+
+    def test_max_seconds_kills_the_command(self) -> None:
+        job = self.start("sleep", "60", extra=("--max-seconds", "1"))
+        message = self.wait(job)["messages"][0]
+        self.assertIn("exit 124 (killed at --max-seconds)", message["body"])
+        self.assertTrue(self.record(message)["timed_out"])
 
 
 if __name__ == "__main__":

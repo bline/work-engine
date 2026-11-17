@@ -58,8 +58,11 @@ python3 skills/durable-state/scripts/chatboard_job.py --repository . run \
 (default `job:<session-id>`) and the board cursor `since`. Add
 `--topic job:<session-id>` and that `--since` to the blocking wait your role
 already uses, with its context-pressure and budget binding. Run that wait as a
-tool call with no timeout. It returns when the job finishes, and also on
-context or budget events and on any other topic you selected. The completion
+tool call bounded by the printed `--timeout-seconds` (the job's
+`--max-seconds`, default 3600, plus 120 s). It returns when the job finishes,
+and also on context or budget events and on any other topic you selected. If
+it times out (exit 2), read the job's `job.json`: the notification was lost,
+and the record shows whether the job is still running. The completion
 message gives the exit code, duration and log paths. Use `--tail-lines N` to
 include stdout lines; board messages are shared and durable, so only include
 output that is safe to share. The post uses `--wake`, so it also reaches a

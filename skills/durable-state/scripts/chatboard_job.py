@@ -6,7 +6,10 @@
         [--tail-lines N] -- COMMAND [ARGS...]
 
 `run` returns at once and prints JSON with the job's log paths, its `topic`,
-the board cursor `since`, and a base `wait` command. Use your role's usual
+the board cursor `since`, and a base `wait` command. `--max-seconds` (default
+3600) kills the command when it runs longer, and the printed wait carries
+`--timeout-seconds` of that limit plus 120 s, so a lost notification cannot
+block a waiter forever; if the wait times out (exit 2), read `job.json`. Use your role's usual
 blocking wait (no timeout), with its context-pressure and budget binding, and
 add `--topic <topic>` and the printed `--since`: the wait then returns on the
 job's completion as well as on context or budget events and other selected
@@ -56,19 +59,19 @@ def run(a):
         "job": job, "name": name, "command": a.command, "cwd": os.getcwd(),
         "topic": topic, "since": since, "stdout": str(directory / "stdout.log"),
         "stderr": str(directory / "stderr.log"), "started": time.time(),
+        "max_seconds": a.max_seconds,
     }
     (directory / "job.json").write_text(json.dumps(record, indent=1))
-    supervisor = subprocess.Popen(
+    subprocess.Popen(
         [sys.executable, __file__, "--repository", a.repository, "_supervise",
          "--author", a.author, "--session-id", a.session_id,
          "--tail-lines", str(a.tail_lines), str(directory)],
         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         start_new_session=True,
     )
-    record["supervisor_pid"] = supervisor.pid
     record["wait"] = (f"python3 {BOARD.relative_to(Path(a.repository).resolve()) if BOARD.is_relative_to(Path(a.repository).resolve()) else BOARD}"
                       f" --repository {a.repository} wait --since {since} --topic {topic}"
-                      f" --session-id {a.session_id}")
+                      f" --session-id {a.session_id} --timeout-seconds {a.max_seconds + 120}")
     record["note"] = "add your role's context/budget binding flags to this wait"
     print(json.dumps(record, indent=1))
 
@@ -76,20 +79,33 @@ def run(a):
 def supervise(a):
     directory = Path(a.directory)
     record = json.loads((directory / "job.json").read_text())
+    record["supervisor_pid"] = os.getpid()
+    (directory / "job.json").write_text(json.dumps(record, indent=1))
     with open(record["stdout"], "wb") as out, open(record["stderr"], "wb") as err:
         try:
             child = subprocess.Popen(record["command"], cwd=record["cwd"], stdin=subprocess.DEVNULL,
                                      stdout=out, stderr=err, start_new_session=True)
             record["pid"] = child.pid
             (directory / "job.json").write_text(json.dumps(record, indent=1))
-            code = child.wait()
+            try:
+                code = child.wait(timeout=record["max_seconds"])
+            except subprocess.TimeoutExpired:
+                os.killpg(child.pid, 15)
+                try:
+                    child.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    os.killpg(child.pid, 9)
+                    child.wait()
+                record["timed_out"] = True
+                code = 124
         except OSError as e:
             err.write(f"chatboard_job: could not start: {e}\n".encode())
             code = 127
     record["exit"] = code
     record["seconds"] = round(time.time() - record["started"], 1)
     (directory / "job.json").write_text(json.dumps(record, indent=1))
-    body = (f"Background job {record['name']} ({record['job']}) finished: exit {code} "
+    body = (f"Background job {record['name']} ({record['job']}) finished: exit {code}"
+            f"{' (killed at --max-seconds)' if record.get('timed_out') else ''} "
             f"after {record['seconds']} s. stdout {record['stdout']}; stderr {record['stderr']}.")
     if a.tail_lines > 0:
         tail = Path(record["stdout"]).read_text(errors="replace").splitlines()[-a.tail_lines:]
@@ -114,6 +130,7 @@ def main():
     r.add_argument("--name")
     r.add_argument("--topic", help="default: job:<session-id>")
     r.add_argument("--tail-lines", type=int, default=0, help="post the last N stdout lines (default 0)")
+    r.add_argument("--max-seconds", type=int, default=3600, help="kill the command after this (default 3600)")
     r.add_argument("command", nargs=argparse.REMAINDER)
     s = sub.add_parser("_supervise")
     s.add_argument("--author", required=True)
