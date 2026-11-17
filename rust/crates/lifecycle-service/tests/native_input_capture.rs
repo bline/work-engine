@@ -302,6 +302,10 @@ async fn owned_native_join() {
                         bytes: p.bytes.clone(),
                     })
                     .collect::<Vec<_>>(),
+                observation
+                    .tool_registry()
+                    .map(|r| r.bytes().to_vec())
+                    .unwrap_or_default(),
                 observation.eligible(),
                 observation.outcome().to_owned(),
             ))
@@ -310,14 +314,14 @@ async fn owned_native_join() {
         };
         let is_capture = capture.is_some();
         actor.handle_native_message(message).await;
-        if let Some((metadata, terminal, payloads, eligible, outcome)) = capture {
+        if let Some((metadata, terminal, payloads, registry, eligible, outcome)) = capture {
             checks.push(std::panic::catch_unwind(std::panic::AssertUnwindSafe(
                 || {
                     let session = actor.native_session.as_ref().unwrap();
                     let turn = actor.native_turn.as_ref().unwrap();
                     let replay = actor
                         .store
-                        .retain_native_input(
+                        .retain_native_input_with_registry(
                             session,
                             turn,
                             &terminal.transport_session,
@@ -325,6 +329,7 @@ async fn owned_native_join() {
                             &terminal.raw,
                             &metadata,
                             payloads.clone(),
+                            &registry,
                             eligible,
                             &outcome,
                             clock_sample(),
@@ -614,13 +619,24 @@ INSERT INTO attempts(attempt_id,effect_id,incarnation_id,state,entered_wall_ms) 
                 .unwrap()
                 .unwrap();
             assert_eq!(record.eligible, mode == "http");
+            // The checked native router rows are retained beside every eligible input.
+            assert_eq!(
+                !record.tool_registry.is_empty(),
+                record.eligible,
+                "eligible input retains the checked tool-registry rows"
+            );
+            if record.eligible {
+                let rows = String::from_utf8(record.tool_registry.clone()).unwrap();
+                assert!(rows.contains("\"kind\":\"strict_router_snapshot\""));
+                assert!(rows.contains("\"kind\":\"strict_tool_dispatch\""));
+            }
             let delivery = record.delivery.as_ref().unwrap();
             assert_eq!(delivery.input_id, "input:input");
             assert_eq!(delivery.delivery_id, "delivery:input");
             assert_eq!(delivery.segment_no, 0);
             assert_eq!(
                 record.binary_sha256,
-                "0d79af323b3448f4ff2dc75feff233054ae6c4d490cefbac7952c0d219b95699"
+                "77fbfa4bfd4d62f095b182a6606025345f84c126653a5713ec47388275734d39"
             );
             assert!(record.payloads.iter().any(|p| p.original_codec == "zstd"));
             let wire = record
