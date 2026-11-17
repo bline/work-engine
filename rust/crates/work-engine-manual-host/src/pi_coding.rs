@@ -1276,6 +1276,11 @@ impl Host {
                     atomic(&destination, &frame)?;
                 }
                 "tool_request" => {
+                    // Policy, not a Docker failure, refuses a shell call
+                    // outside the coding profiles.
+                    if self.analysis_profile() {
+                        return refuse("workspace tool outside a coding profile");
+                    }
                     if self.expired() || self.cancelled() {
                         return refuse("coding tool admission expired/cancelled");
                     }
@@ -1516,6 +1521,9 @@ impl Host {
                     replies.push(reply);
                 }
                 "native_event" => {
+                    if self.analysis_profile() {
+                        analysis::check_answer_bound(&frame["event"])?;
+                    }
                     if frame["event"]["type"] == "tool_execution_end" && self.analysis_profile() {
                         self.analysis_native_end(&frame["event"])?;
                     } else if frame["event"]["type"] == "tool_execution_end"
@@ -2045,6 +2053,33 @@ mod tests {
             .is_err()
         );
         assert!(h.journal.processes.is_empty());
+    }
+    /// The analysis profile refuses a shell call by policy, before any
+    /// intent is journaled or Docker is consulted.
+    #[test]
+    fn analysis_profile_refuses_workspace_tool_requests_by_policy() {
+        let (_dir, mut h) = fixture();
+        h.journal.job.coding.as_mut().unwrap().schema = ANALYSIS_PROFILE.into();
+        h.journal.session_id = Some("native".into());
+        let request = frame(
+            json!({"schema":ANALYSIS_PROFILE,"sessionId":"native","type":"tool_request","id":"t1","command":"id"}),
+        );
+        match h.coding_advance(&request) {
+            Err(Error::Refused(m)) => assert_eq!(m, "workspace tool outside a coding profile"),
+            other => panic!("{other:?}"),
+        }
+        assert!(h.journal.coding.as_ref().unwrap().tool_requests.is_empty());
+        assert!(h.journal.processes.is_empty());
+    }
+    #[test]
+    fn analysis_answer_bound_is_checked_when_the_answer_is_observed() {
+        let answer = |n: usize| json!({"type":"message_end","message":{"role":"assistant","stopReason":"stop","content":[{"type":"text","text":"x".repeat(n)}]}});
+        assert!(analysis::check_answer_bound(&answer(analysis::MAX_ANSWER_BYTES)).is_ok());
+        assert!(analysis::check_answer_bound(&answer(analysis::MAX_ANSWER_BYTES + 1)).is_err());
+        // Tool-use messages and other events are not answers.
+        let mut tool_use = answer(analysis::MAX_ANSWER_BYTES + 1);
+        tool_use["message"]["stopReason"] = json!("toolUse");
+        assert!(analysis::check_answer_bound(&tool_use).is_ok());
     }
     #[test]
     fn readiness_refuses_extra_builtin_tools_and_duplicate_session() {

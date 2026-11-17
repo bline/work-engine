@@ -24,6 +24,8 @@ const SNAPSHOT_BYTES: u64 = 1 << 20;
 const SNAPSHOT_FILES: usize = 256;
 const MAX_ARGUMENT_BYTES: usize = 1024;
 const MAX_RESULT_BYTES: usize = 100_000;
+/// The settled answer bound (the store's analysis grammar refuses longer).
+pub const MAX_ANSWER_BYTES: usize = 65_536;
 /// SHA-256 of the canonical (`serde_json`, sorted keys) `tools` array the
 /// pinned receiver and SDK send. Any other tool surface is refused before a
 /// provider byte is written.
@@ -46,6 +48,24 @@ pub(super) fn validate_snapshot(job: &Job) -> Result<()> {
     Ok(())
 }
 
+/// A final assistant answer beyond the settlement bound fails the job when
+/// it is observed, not after the history round trip.
+pub(super) fn check_answer_bound(event: &Value) -> Result<()> {
+    let m = &event["message"];
+    if event["type"] == "message_end" && m["role"] == "assistant" && m["stopReason"] == "stop" {
+        let text: usize = m["content"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|c| c["text"].as_str())
+            .map(str::len)
+            .sum();
+        if text > MAX_ANSWER_BYTES {
+            return refuse("analysis answer exceeds the settlement bound");
+        }
+    }
+    Ok(())
+}
 /// The request's tool surface: exactly the profile's function tools, with the
 /// pinned specification digest.
 pub(super) fn check_request_tools(tools: &Value) -> Result<()> {
@@ -186,13 +206,17 @@ impl Host {
         state.snapshot_requests.insert(id.clone(), None);
         state.snapshot_tools.insert(id.clone(), tool.clone());
         self.save()?; // intent precedes the read; None stays unknown
-        let result = match serve(&self.journal.job.workspace, &tool, &arguments) {
+        let mut result = match serve(&self.journal.job.workspace, &tool, &arguments) {
             Ok(v) => json!({"type":"snapshot_result","id":id,"ok":true,"result":v}),
             Err(e) => json!({"type":"snapshot_result","id":id,"ok":false,"error":e}),
         };
-        let bytes = serde_json::to_vec(&result)?;
+        let mut bytes = serde_json::to_vec(&result)?;
         if bytes.len() > MAX_RESULT_BYTES {
-            return refuse("snapshot result exceeded frame bound");
+            // A page whose encoding outgrows the frame is answered with an
+            // error the model can act on (a smaller max_bytes).
+            result = json!({"type":"snapshot_result","id":id,"ok":false,
+                "error":"the encoded page exceeds the result bound; request fewer bytes"});
+            bytes = serde_json::to_vec(&result)?;
         }
         let path = self
             .journal

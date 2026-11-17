@@ -493,7 +493,7 @@ impl Host {
                 .ok_or_else(|| Error::Refused("hosted native session absent".into()))?,
             attempt: self.journal.job.job_id.clone(),
             generation: request,
-            profile: HOSTED_BRIDGE_PROFILE.into(),
+            profile: self.journal.job.coding.as_ref().unwrap().schema.clone(),
             admission: String::new(),
             owner_profile: String::new(),
         };

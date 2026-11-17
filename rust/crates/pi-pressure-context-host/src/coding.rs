@@ -205,7 +205,7 @@ pub struct HostedProviderPolicy {
     pub max_attempts_per_request: u32,
 }
 impl HostedProviderPolicy {
-    fn validate(&self) -> Result<()> {
+    pub(crate) fn validate(&self) -> Result<()> {
         let bounded = |v: &str| {
             !v.is_empty()
                 && v.len() <= 128

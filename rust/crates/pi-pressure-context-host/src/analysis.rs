@@ -15,7 +15,7 @@ use serde_json::{Value, json};
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 use work_engine_manual_host::{
     Artifact, Error, ProcessRecord, Result,
-    pi_docker::coding::{CodingEffectGate, CodingToolIntent, ProviderAttemptIntent},
+    pi_docker::coding::{CodingEffectGate, CodingToolIntent, ProviderAttemptIntent, analysis},
 };
 
 fn refused(message: impl ToString) -> Error {
@@ -73,7 +73,8 @@ impl AnalysisSession {
     ) -> Result<Self> {
         if config.task.is_empty()
             || config.prompt().len() > MAX_PROMPT_BYTES
-            || !(1..=64).contains(&config.max_requests)
+            || !(1..=u64::from(analysis::MAX_REQUESTS)).contains(&config.max_requests)
+            || config.hosted.validate().is_err()
             || config.expires_ms <= clock().wall.get()
             || session.profile_digest() != lifecycle_store::pi_analysis_profile_digest()
         {
