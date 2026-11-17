@@ -1,5 +1,5 @@
 //! Finite supplied-record consumer. No raw financial evaluator or grant admission.
-use crate::{Result, validate_accounting_bundle};
+use crate::{Result, exact_u64, validate_accounting_bundle};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::{
@@ -127,7 +127,11 @@ pub fn validate_corpus_case(
                 };
                 raw.insert(
                     format!("{source}:{}", i + 1),
-                    (source, (i + 1) as u64, hash(line_bytes.as_bytes())),
+                    (
+                        source,
+                        u64::try_from(i + 1).map_err(|e| e.to_string())?,
+                        hash(line_bytes.as_bytes()),
+                    ),
                 );
             }
         }
@@ -135,7 +139,7 @@ pub fn validate_corpus_case(
     for (oid, o) in &origins {
         let a = raw.get(oid).ok_or("origin not in actual raw subject")?;
         if txt(o, "source_origin_id")? != a.0
-            || o["original_position"].as_u64() != Some(a.1)
+            || exact_u64(&o["original_position"]) != Some(a.1)
             || txt(o, "raw_bytes_sha256")? != a.2
             || txt(o, "source_revision_ref")? != format!("sha256:{digest}")
         {

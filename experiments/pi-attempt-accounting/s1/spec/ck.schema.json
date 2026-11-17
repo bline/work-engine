@@ -19,6 +19,7 @@
           "type": "array"
         },
         "revision": {
+          "maximum": 4294967295,
           "minimum": 1,
           "type": "integer"
         }
@@ -77,6 +78,7 @@
           ]
         },
         "revision": {
+          "maximum": 4294967295,
           "minimum": 1,
           "type": "integer"
         }
@@ -146,6 +148,7 @@
           "type": "array"
         },
         "revision": {
+          "maximum": 4294967295,
           "minimum": 1,
           "type": "integer"
         },
@@ -232,6 +235,7 @@
           "type": "array"
         },
         "revision": {
+          "maximum": 4294967295,
           "minimum": 1,
           "type": "integer"
         },
@@ -268,6 +272,7 @@
           "type": "array"
         },
         "revision": {
+          "maximum": 4294967295,
           "minimum": 1,
           "type": "integer"
         },
@@ -333,6 +338,7 @@
           "type": "array"
         },
         "revision": {
+          "maximum": 4294967295,
           "minimum": 1,
           "type": "integer"
         },
@@ -454,6 +460,7 @@
           "type": "array"
         },
         "revision": {
+          "maximum": 4294967295,
           "minimum": 1,
           "type": "integer"
         },
@@ -506,6 +513,7 @@
           "type": "array"
         },
         "revision": {
+          "maximum": 4294967295,
           "minimum": 1,
           "type": "integer"
         }
@@ -536,6 +544,7 @@
           "type": "string"
         },
         "revision": {
+          "maximum": 4294967295,
           "minimum": 1,
           "type": "integer"
         },

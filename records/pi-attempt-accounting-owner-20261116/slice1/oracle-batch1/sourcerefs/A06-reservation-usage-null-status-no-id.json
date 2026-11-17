@@ -1,0 +1,900 @@
+{
+ "file": "corpus/cases/A06-reservation-usage-null-status-no-id.json",
+ "file_sha256": "98e3ff4fda648b37b7fe034a63410112d3c1ef96aa1287a6790a9bd291ab1cab",
+ "inputs_canonical_sha256": "6a7cf12aa13bdb47820c88c426f2be679677c18143ce83b07945314976790327",
+ "lines": [
+  {
+   "byte_end_exclusive": 5961,
+   "byte_start": 5799,
+   "fields": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:00Z",
+     "presence": "value"
+    },
+    "/bound_basis": {
+     "json_type": "string",
+     "lexeme": "bytes",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "usd_reserved",
+     "presence": "value"
+    },
+    "/input_bound": {
+     "json_type": "number",
+     "lexeme": "6000",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/reserved_usd": {
+     "json_type": "number",
+     "lexeme": "0.25",
+     "presence": "value"
+    },
+    "/rid": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    }
+   },
+   "origin_id": "S1/turn-1:1",
+   "parse_state": "object",
+   "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+   "raw_utf8_length": 140,
+   "raw_utf8_sha256": "65d28ad0f9c799fcc9fd93d6dc4bc0fca171e8c02d8c0a66ad062ec737ebf458",
+   "token_sha256": "011b623d35608a5cfaf96cb7d0742e7e4afdcff92cccff9da7dbf2f255e2416d"
+  },
+  {
+   "byte_end_exclusive": 6543,
+   "byte_start": 5970,
+   "fields": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:02Z",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "request",
+     "presence": "value"
+    },
+    "/http_status": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/observed_tier": {
+     "json_type": "string",
+     "lexeme": "default",
+     "presence": "value"
+    },
+    "/requested_tier": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/response_id": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/response_model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/seconds": {
+     "json_type": "number",
+     "lexeme": "1.0",
+     "presence": "value"
+    },
+    "/terminal": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/usage": {
+     "json_type": "object",
+     "members": [
+      "input_tokens",
+      "output_tokens",
+      "cached_tokens",
+      "cache_write_tokens",
+      "reasoning_tokens"
+     ],
+     "presence": "value"
+    },
+    "/usage/cache_write_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usage/cached_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usage/input_tokens": {
+     "json_type": "number",
+     "lexeme": "1000",
+     "presence": "value"
+    },
+    "/usage/output_tokens": {
+     "json_type": "number",
+     "lexeme": "100",
+     "presence": "value"
+    },
+    "/usage/reasoning_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usd": {
+     "json_type": "object",
+     "members": [
+      "rid",
+      "reserved_usd",
+      "charged_usd",
+      "charge_basis",
+      "session_spent_usd",
+      "multiplier_floor"
+     ],
+     "presence": "value"
+    },
+    "/usd/charge_basis": {
+     "json_type": "string",
+     "lexeme": "reservation",
+     "presence": "value"
+    },
+    "/usd/charged_usd": {
+     "json_type": "number",
+     "lexeme": "0.25",
+     "presence": "value"
+    },
+    "/usd/multiplier_floor": {
+     "json_type": "number",
+     "lexeme": "0.0",
+     "presence": "value"
+    },
+    "/usd/reserved_usd": {
+     "json_type": "number",
+     "lexeme": "0.25",
+     "presence": "value"
+    },
+    "/usd/rid": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/usd/session_spent_usd": {
+     "json_type": "number",
+     "lexeme": "0.25",
+     "presence": "value"
+    }
+   },
+   "origin_id": "S1/turn-1:2",
+   "parse_state": "object",
+   "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+   "raw_utf8_length": 511,
+   "raw_utf8_sha256": "9f13ba6075a8fc829ad72d701e3f36c49a83b668a109b2b96c5577f4467a7e2e",
+   "token_sha256": "aa3d6d769ea8c9067f38bd499792e8b57804c7410be4f3b72a30c3cf2b2501be"
+  }
+ ],
+ "log_final_newline": {
+  "S1/turn-1": true
+ },
+ "tokens": {
+  "/ambiguity": {
+   "byte_end_exclusive": 20,
+   "byte_start": 16,
+   "json_type": "null",
+   "lexeme": "null",
+   "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  },
+  "/case_id": {
+   "byte_end_exclusive": 75,
+   "byte_start": 34,
+   "json_type": "string",
+   "lexeme": "A06-reservation-usage-null-status-no-id",
+   "token_sha256": "ee48593b23656ff26ea3bec4e9730e4a77d577738f172fb69e083e1cb0405cb8"
+  },
+  "/class": {
+   "byte_end_exclusive": 110,
+   "byte_start": 87,
+   "json_type": "string",
+   "lexeme": "adversarial_synthetic",
+   "token_sha256": "28da0a642a06384906dfc69643cf0c145cbc0c6c8f3c594c0a2fe6a189a7fe61"
+  },
+  "/contract": {
+   "byte_end_exclusive": 156,
+   "byte_start": 125,
+   "json_type": "string",
+   "lexeme": "pi-accounting-contract/1.7-s1",
+   "token_sha256": "67f788fb6397af3ef74d42c6baea23eebce8ecf9de0e6e577e02a9c1b644402d"
+  },
+  "/controls": {
+   "byte_end_exclusive": 218,
+   "byte_start": 171,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "eda33bacf680938073a82a2987b61dfa217911664dbba1d9c092798e4f6ac301"
+  },
+  "/controls/0": {
+   "byte_end_exclusive": 215,
+   "byte_start": 175,
+   "json_type": "string",
+   "lexeme": "VC03-reservation-settlement-with-usage",
+   "token_sha256": "43bc88dad5760b44d3e7d8aab2eb84dfd9177e4d9cc964fee61e4150c1db4832"
+  },
+  "/evaluations": {
+   "byte_end_exclusive": 2731,
+   "byte_start": 236,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "a4545345b53b74edf7cdccedd59c4277d7cf6b2da0f60e5b0018f408bf721dd6"
+  },
+  "/evaluations/0": {
+   "byte_end_exclusive": 2728,
+   "byte_start": 240,
+   "json_type": "object",
+   "members": [
+    "admission_request",
+    "expected",
+    "name",
+    "objectives"
+   ],
+   "token_sha256": "d6df598553e4587b64e800779c057210cc2c8e7e8387da28587efc91999b979c"
+  },
+  "/evaluations/0/admission_request": {
+   "byte_end_exclusive": 317,
+   "byte_start": 266,
+   "json_type": "object",
+   "members": [
+    "new",
+    "objective"
+   ],
+   "token_sha256": "a81928e466bf9b9068d7f1d7bde47ddb725e4b3437c87585708b483ae64850f6"
+  },
+  "/evaluations/0/admission_request/new": {
+   "byte_end_exclusive": 290,
+   "byte_start": 279,
+   "json_type": "string",
+   "lexeme": "100000000",
+   "token_sha256": "490cf7575da10dc49f2b973c322411b18ff6b65018411050f5288306f8db8207"
+  },
+  "/evaluations/0/admission_request/objective": {
+   "byte_end_exclusive": 312,
+   "byte_start": 309,
+   "json_type": "string",
+   "lexeme": "o",
+   "token_sha256": "f83c7a6ef728085a83084f105bd7ccd74b8a9d671a80e1a348393eb570d89441"
+  },
+  "/evaluations/0/name": {
+   "byte_end_exclusive": 1955,
+   "byte_start": 1946,
+   "json_type": "string",
+   "lexeme": "default",
+   "token_sha256": "1080a60800d9e5bddc69f51489c636a776bacaadb5368f46db4aa0947c67e3ba"
+  },
+  "/evaluations/0/objectives": {
+   "byte_end_exclusive": 2724,
+   "byte_start": 1974,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "c954b87c7c7b0eca133a7308ebb029b8c435b855e97e5900288d16d89d939b36"
+  },
+  "/evaluations/0/objectives/0": {
+   "byte_end_exclusive": 2719,
+   "byte_start": 1980,
+   "json_type": "object",
+   "members": [
+    "admissions",
+    "closed_at",
+    "limit",
+    "objective",
+    "predecessor",
+    "started_at",
+    "tree_sessions"
+   ],
+   "token_sha256": "fd8ce7924b0983c18942bbec5b9b3bad90b6e196dd00bf3efe9cbc474239910c"
+  },
+  "/evaluations/0/objectives/0/admissions": {
+   "byte_end_exclusive": 2492,
+   "byte_start": 2001,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "a892ae14e06b12f366762c93a4960fefae540a818ab4ea274d68cef372997dbb"
+  },
+  "/evaluations/0/objectives/0/admissions/0": {
+   "byte_end_exclusive": 2485,
+   "byte_start": 2009,
+   "json_type": "object",
+   "members": [
+    "admission_id",
+    "rows",
+    "session",
+    "source"
+   ],
+   "token_sha256": "08f89fd0184df35c1032d0a19a727941f45778d0f6a64fd5daadc7b29eaf103f"
+  },
+  "/evaluations/0/objectives/0/admissions/0/admission_id": {
+   "byte_end_exclusive": 2038,
+   "byte_start": 2034,
+   "json_type": "string",
+   "lexeme": "a1",
+   "token_sha256": "e4973d8f15475ab9be4cd6b122a940299335dd27de97038665f1cfa176dc2e88"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows": {
+   "byte_end_exclusive": 2391,
+   "byte_start": 2055,
+   "json_type": "array",
+   "members": [
+    "0",
+    "1"
+   ],
+   "token_sha256": "3ae4ee0adf820feb7012a6deb16ce31bb946d6d3d47587f2603ed224373f3491"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/0": {
+   "byte_end_exclusive": 2199,
+   "byte_start": 2065,
+   "json_type": "object",
+   "members": [
+    "admission_id",
+    "at",
+    "event",
+    "max_usd"
+   ],
+   "token_sha256": "5e80d5c5d0dcce27bd877b51fc863be3197c4b9a3619fa2d3f9b9b951d981a32"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/0/admission_id": {
+   "byte_end_exclusive": 2096,
+   "byte_start": 2092,
+   "json_type": "string",
+   "lexeme": "a1",
+   "token_sha256": "e4973d8f15475ab9be4cd6b122a940299335dd27de97038665f1cfa176dc2e88"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/0/at": {
+   "byte_end_exclusive": 2135,
+   "byte_start": 2113,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:00:05Z",
+   "token_sha256": "4836f63160f4021c300f83dbdca38ad838de2c5f81d131d559cb4c65e3a61d46"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/0/event": {
+   "byte_end_exclusive": 2164,
+   "byte_start": 2155,
+   "json_type": "string",
+   "lexeme": "pending",
+   "token_sha256": "12adac54ac6f7140109391b670b3cbcd51f083d8f5ee62ce26857c794ed67d36"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/0/max_usd": {
+   "byte_end_exclusive": 2189,
+   "byte_start": 2186,
+   "json_type": "number",
+   "lexeme": "1.0",
+   "token_sha256": "d0ff5974b6aa52cf562bea5921840c032a860a91a3512f7fe8f768f6bbe005f6"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/1": {
+   "byte_end_exclusive": 2382,
+   "byte_start": 2209,
+   "json_type": "object",
+   "members": [
+    "admission_id",
+    "at",
+    "event",
+    "session_id"
+   ],
+   "token_sha256": "5d5ed4468c854801c989fbda8bbd838901b3e5860a4c19b70beea1c06cca9d0f"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/1/admission_id": {
+   "byte_end_exclusive": 2240,
+   "byte_start": 2236,
+   "json_type": "string",
+   "lexeme": "a1",
+   "token_sha256": "e4973d8f15475ab9be4cd6b122a940299335dd27de97038665f1cfa176dc2e88"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/1/at": {
+   "byte_end_exclusive": 2279,
+   "byte_start": 2257,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:00:10Z",
+   "token_sha256": "b31f04a43f1b490762781c4ede3d044f008696aed570770bda5fa0857d0b7de2"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/1/event": {
+   "byte_end_exclusive": 2309,
+   "byte_start": 2299,
+   "json_type": "string",
+   "lexeme": "launched",
+   "token_sha256": "0f6b9278e2bb51ff2d89c92f2f1d72fdf555e884a7a46e4e0528191ae2d3f46d"
+  },
+  "/evaluations/0/objectives/0/admissions/0/rows/1/session_id": {
+   "byte_end_exclusive": 2372,
+   "byte_start": 2334,
+   "json_type": "string",
+   "lexeme": "00000000-0000-4000-8000-0000000000c1",
+   "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c"
+  },
+  "/evaluations/0/objectives/0/admissions/0/session": {
+   "byte_end_exclusive": 2449,
+   "byte_start": 2411,
+   "json_type": "string",
+   "lexeme": "00000000-0000-4000-8000-0000000000c1",
+   "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c"
+  },
+  "/evaluations/0/objectives/0/admissions/0/source": {
+   "byte_end_exclusive": 2477,
+   "byte_start": 2468,
+   "json_type": "string",
+   "lexeme": "journal",
+   "token_sha256": "6b53b8079bacd772318e881d1b3f2d1176c5ee7809e52f74586adceafff3a27d"
+  },
+  "/evaluations/0/objectives/0/closed_at": {
+   "byte_end_exclusive": 2516,
+   "byte_start": 2512,
+   "json_type": "null",
+   "lexeme": "null",
+   "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  },
+  "/evaluations/0/objectives/0/limit": {
+   "byte_end_exclusive": 2544,
+   "byte_start": 2532,
+   "json_type": "string",
+   "lexeme": "1000000000",
+   "token_sha256": "bdb588ee73547b3eafede9d045805cb5a4a9e97271207895bb4c8b17968b2c78"
+  },
+  "/evaluations/0/objectives/0/objective": {
+   "byte_end_exclusive": 2567,
+   "byte_start": 2564,
+   "json_type": "string",
+   "lexeme": "o",
+   "token_sha256": "f83c7a6ef728085a83084f105bd7ccd74b8a9d671a80e1a348393eb570d89441"
+  },
+  "/evaluations/0/objectives/0/predecessor": {
+   "byte_end_exclusive": 2593,
+   "byte_start": 2589,
+   "json_type": "null",
+   "lexeme": "null",
+   "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  },
+  "/evaluations/0/objectives/0/started_at": {
+   "byte_end_exclusive": 2636,
+   "byte_start": 2614,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:00:00Z",
+   "token_sha256": "9b9e53bacf50073b057d6e27a753cd3daec461d599689c15898c840d302aee84"
+  },
+  "/evaluations/0/objectives/0/tree_sessions": {
+   "byte_end_exclusive": 2713,
+   "byte_start": 2660,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "fd6451260f5ac3dde976617a74a7ad032a860009faf89166f69243a8f3da7e6f"
+  },
+  "/evaluations/0/objectives/0/tree_sessions/0": {
+   "byte_end_exclusive": 2706,
+   "byte_start": 2668,
+   "json_type": "string",
+   "lexeme": "00000000-0000-4000-8000-0000000000c1",
+   "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c"
+  },
+  "/findings": {
+   "byte_end_exclusive": 4630,
+   "byte_start": 4596,
+   "json_type": "array",
+   "members": [
+    "0",
+    "1",
+    "2"
+   ],
+   "token_sha256": "5ea7305fc43f72053b17a1182838d8b3f1707a3cca66c008302d51799253f279"
+  },
+  "/findings/0": {
+   "byte_end_exclusive": 4606,
+   "byte_start": 4600,
+   "json_type": "string",
+   "lexeme": "A-06",
+   "token_sha256": "0a1469f2f9520ab2a55197a358c967fcba359c0511542e1dd9727613efba70c6"
+  },
+  "/findings/1": {
+   "byte_end_exclusive": 4617,
+   "byte_start": 4610,
+   "json_type": "string",
+   "lexeme": "A1-05",
+   "token_sha256": "9d27c577905395200abc36d3a6a8329c0aa774a455f2615001c1664acc87d368"
+  },
+  "/findings/2": {
+   "byte_end_exclusive": 4627,
+   "byte_start": 4621,
+   "json_type": "string",
+   "lexeme": "V-05",
+   "token_sha256": "43e9479fc313fbd1e1e20549bae3a5064ac04f4c680070267c38ebd55ad62880"
+  },
+  "/group": {
+   "byte_end_exclusive": 4648,
+   "byte_start": 4642,
+   "json_type": "string",
+   "lexeme": "A-06",
+   "token_sha256": "0a1469f2f9520ab2a55197a358c967fcba359c0511542e1dd9727613efba70c6"
+  },
+  "/inputs": {
+   "byte_end_exclusive": 6634,
+   "byte_start": 5119,
+   "json_type": "object",
+   "members": [
+    "rates",
+    "reference_time",
+    "sessions"
+   ],
+   "token_sha256": "13ca8a872bd0aba33e53c6d0f8cf8e81d3ddcab269ab68abe69983b773389986"
+  },
+  "/inputs/rates": {
+   "byte_end_exclusive": 5331,
+   "byte_start": 5132,
+   "json_type": "object",
+   "members": [
+    "anthropic_api_rates.json",
+    "openai_api_rates.json"
+   ],
+   "token_sha256": "4110b84fd7cb2e328452c936287fb6f8f2fe911d905a21ab136060e10fa29dde"
+  },
+  "/inputs/rates/anthropic_api_rates.json": {
+   "byte_end_exclusive": 5231,
+   "byte_start": 5165,
+   "json_type": "string",
+   "lexeme": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "token_sha256": "afdb9fc9a73b4ff0d2440343e0645b70ba622d8f5e0762d2b5f2b9c1a08fc266"
+  },
+  "/inputs/rates/openai_api_rates.json": {
+   "byte_end_exclusive": 5327,
+   "byte_start": 5261,
+   "json_type": "string",
+   "lexeme": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58",
+   "token_sha256": "fdb98b6121ea0fe2999399f52f431f0eb22d9fb18eb143a4a880b30506250b73"
+  },
+  "/inputs/reference_time": {
+   "byte_end_exclusive": 5375,
+   "byte_start": 5353,
+   "json_type": "string",
+   "lexeme": "2026-11-10T07:00:00Z",
+   "token_sha256": "a1359231eec5e473f993cee1c7181caf272627cfbf575f464781eaee718966af"
+  },
+  "/inputs/sessions": {
+   "byte_end_exclusive": 6631,
+   "byte_start": 5391,
+   "json_type": "array",
+   "members": [
+    "0"
+   ],
+   "token_sha256": "a7af7d01e09c034116cb1e40f6a0eb9e29d1e10e144fd34922aa612aff86a6d8"
+  },
+  "/inputs/sessions/0": {
+   "byte_end_exclusive": 6627,
+   "byte_start": 5396,
+   "json_type": "object",
+   "members": [
+    "alias",
+    "launch",
+    "lifecycle",
+    "logs",
+    "session_id"
+   ],
+   "token_sha256": "4d8fa511a7264b1cb048bdfeeb7cbae766d373ef0a4104447f6f8510c6cdbb72"
+  },
+  "/inputs/sessions/0/alias": {
+   "byte_end_exclusive": 5415,
+   "byte_start": 5411,
+   "json_type": "string",
+   "lexeme": "S1",
+   "token_sha256": "b769fcb6dd480523a6d584b38fe7f280638c58e540d6af98400a1345dc2edb0c"
+  },
+  "/inputs/sessions/0/launch": {
+   "byte_end_exclusive": 5521,
+   "byte_start": 5431,
+   "json_type": "object",
+   "members": [
+    "auth_lane",
+    "model",
+    "parent"
+   ],
+   "token_sha256": "91eff2258cd78300ead1ff6c429ec92764b27c49341b6a48bf5dac86b2bae53f"
+  },
+  "/inputs/sessions/0/launch/auth_lane": {
+   "byte_end_exclusive": 5456,
+   "byte_start": 5451,
+   "json_type": "string",
+   "lexeme": "api",
+   "token_sha256": "63e3a42fcd0c2bc3820823b61f131b485a5d862055faad68bd11e4d7ee5ad107"
+  },
+  "/inputs/sessions/0/launch/model": {
+   "byte_end_exclusive": 5492,
+   "byte_start": 5472,
+   "json_type": "string",
+   "lexeme": "openai/gpt-6-astra",
+   "token_sha256": "d7b73e09e6c232b56aa266c1e4d43a5aa09c3ed551381d91c3817f91295349bb"
+  },
+  "/inputs/sessions/0/launch/parent": {
+   "byte_end_exclusive": 5515,
+   "byte_start": 5509,
+   "json_type": "string",
+   "lexeme": "root",
+   "token_sha256": "956e6e33fe8b21fbf3e7e43d41c304862c78627deb92e26a72fd2b3b57bc60f2"
+  },
+  "/inputs/sessions/0/lifecycle": {
+   "byte_end_exclusive": 5713,
+   "byte_start": 5540,
+   "json_type": "array",
+   "members": [
+    "0",
+    "1"
+   ],
+   "token_sha256": "701c11ca2d19052df4a323a8a41dc3c43e792a23a675b7e4a77a616b38817dd5"
+  },
+  "/inputs/sessions/0/lifecycle/0": {
+   "byte_end_exclusive": 5632,
+   "byte_start": 5547,
+   "json_type": "object",
+   "members": [
+    "at",
+    "event",
+    "turn"
+   ],
+   "token_sha256": "aae2395814ef08ba08a907e06cb350663dd5cf9b6dc532f887fb541402f00b3a"
+  },
+  "/inputs/sessions/0/lifecycle/0/at": {
+   "byte_end_exclusive": 5583,
+   "byte_start": 5561,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:00:10Z",
+   "token_sha256": "b31f04a43f1b490762781c4ede3d044f008696aed570770bda5fa0857d0b7de2"
+  },
+  "/inputs/sessions/0/lifecycle/0/event": {
+   "byte_end_exclusive": 5608,
+   "byte_start": 5600,
+   "json_type": "string",
+   "lexeme": "launch",
+   "token_sha256": "6164c16405ffad14780cca15e85cf8688c355069ccb5b8dfa55b25603379a449"
+  },
+  "/inputs/sessions/0/lifecycle/0/turn": {
+   "byte_end_exclusive": 5625,
+   "byte_start": 5624,
+   "json_type": "number",
+   "lexeme": "1",
+   "token_sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+  },
+  "/inputs/sessions/0/lifecycle/1": {
+   "byte_end_exclusive": 5707,
+   "byte_start": 5639,
+   "json_type": "object",
+   "members": [
+    "at",
+    "event"
+   ],
+   "token_sha256": "08743946ee41f231720c12b2771547d7c4767fc2c4ad0866d58169d4aa675c76"
+  },
+  "/inputs/sessions/0/lifecycle/1/at": {
+   "byte_end_exclusive": 5675,
+   "byte_start": 5653,
+   "json_type": "string",
+   "lexeme": "2026-11-10T06:50:00Z",
+   "token_sha256": "850ed653176f6a62af66509ba56533632926260d4cfbd8eea55f6dd2470857c4"
+  },
+  "/inputs/sessions/0/lifecycle/1/event": {
+   "byte_end_exclusive": 5700,
+   "byte_start": 5692,
+   "json_type": "string",
+   "lexeme": "retire",
+   "token_sha256": "a2a9d4ffbc4c361801bc55cbc97e993b34974d1cb94ba86138a02d7b5630ad91"
+  },
+  "/inputs/sessions/0/logs": {
+   "byte_end_exclusive": 6564,
+   "byte_start": 5727,
+   "json_type": "object",
+   "members": [
+    "turn-1"
+   ],
+   "token_sha256": "75ec407bada72fbe8f6e14bb32956a227e423b00ed55c65a64238318aa6ff41c"
+  },
+  "/inputs/sessions/0/logs/turn-1": {
+   "byte_end_exclusive": 6558,
+   "byte_start": 5744,
+   "json_type": "object",
+   "members": [
+    "final_newline",
+    "lines"
+   ],
+   "token_sha256": "2cddddb0ea6acbe55fdc9bb0f3194cb41cf2e35df681406e8441f9e4e77062b1"
+  },
+  "/inputs/sessions/0/logs/turn-1/final_newline": {
+   "byte_end_exclusive": 5773,
+   "byte_start": 5769,
+   "json_type": "boolean",
+   "lexeme": "true",
+   "token_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+  },
+  "/inputs/sessions/0/logs/turn-1/lines": {
+   "byte_end_exclusive": 6551,
+   "byte_start": 5790,
+   "json_type": "array",
+   "members": [
+    "0",
+    "1"
+   ],
+   "token_sha256": "0b17f95cc7cfe7be68c098185c7060b33f641bf16db500398664dd313687e41f"
+  },
+  "/inputs/sessions/0/logs/turn-1/lines/0": {
+   "byte_end_exclusive": 5961,
+   "byte_start": 5799,
+   "json_type": "string",
+   "lexeme": "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.25, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}",
+   "token_sha256": "011b623d35608a5cfaf96cb7d0742e7e4afdcff92cccff9da7dbf2f255e2416d"
+  },
+  "/inputs/sessions/0/logs/turn-1/lines/1": {
+   "byte_end_exclusive": 6543,
+   "byte_start": 5970,
+   "json_type": "string",
+   "lexeme": "{\"at\": \"2026-11-10T06:30:02Z\", \"event\": \"request\", \"n\": 1, \"http_status\": null, \"model\": \"gpt-6-astra\", \"requested_tier\": null, \"observed_tier\": \"default\", \"terminal\": null, \"response_id\": null, \"response_model\": \"gpt-6-astra\", \"usage\": {\"input_tokens\": 1000, \"output_tokens\": 100, \"cached_tokens\": 0, \"cache_write_tokens\": 0, \"reasoning_tokens\": 0}, \"seconds\": 1.0, \"usd\": {\"rid\": 1, \"reserved_usd\": 0.25, \"charged_usd\": 0.25, \"charge_basis\": \"reservation\", \"session_spent_usd\": 0.25, \"multiplier_floor\": 0.0}}",
+   "token_sha256": "aa3d6d769ea8c9067f38bd499792e8b57804c7410be4f3b72a30c3cf2b2501be"
+  },
+  "/inputs/sessions/0/session_id": {
+   "byte_end_exclusive": 6622,
+   "byte_start": 6584,
+   "json_type": "string",
+   "lexeme": "00000000-0000-4000-8000-0000000000c1",
+   "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c"
+  },
+  "/invariants": {
+   "byte_end_exclusive": 6679,
+   "byte_start": 6651,
+   "json_type": "array",
+   "members": [
+    "0",
+    "1"
+   ],
+   "token_sha256": "84cacb7c397da4d2733c16768811c94f529cf7179009880768295944fbad49af"
+  },
+  "/invariants/0": {
+   "byte_end_exclusive": 6664,
+   "byte_start": 6655,
+   "json_type": "string",
+   "lexeme": "INV-F11",
+   "token_sha256": "afaf451843e5dcd0fd72a34b7b02704e27c0701b25f4e53250d740b822a5fcc6"
+  },
+  "/invariants/1": {
+   "byte_end_exclusive": 6676,
+   "byte_start": 6668,
+   "json_type": "string",
+   "lexeme": "INV-F3",
+   "token_sha256": "6c270f740bd4d52666afca9c0a193c79c9500858c9c6068e18015a44e84ba285"
+  },
+  "/notes": {
+   "byte_end_exclusive": 6693,
+   "byte_start": 6691,
+   "json_type": "string",
+   "lexeme": "",
+   "token_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+  },
+  "/profile": {
+   "byte_end_exclusive": 6725,
+   "byte_start": 6707,
+   "json_type": "string",
+   "lexeme": "current_producer",
+   "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611"
+  },
+  "/provenance": {
+   "byte_end_exclusive": 6850,
+   "byte_start": 6742,
+   "json_type": "object",
+   "members": [
+    "also",
+    "origin"
+   ],
+   "token_sha256": "2f1c0bc0af327d31ed42636fb6a7806879314bfb0f6dd0de2f231425540d16b8"
+  },
+  "/provenance/also": {
+   "byte_end_exclusive": 6810,
+   "byte_start": 6754,
+   "json_type": "array",
+   "members": [
+    "0",
+    "1"
+   ],
+   "token_sha256": "aecd352da697add000a73e0d6b1468168416b32fdd43f758f809f61cc6cd095b"
+  },
+  "/provenance/also/0": {
+   "byte_end_exclusive": 6781,
+   "byte_start": 6759,
+   "json_type": "string",
+   "lexeme": "repro_p111.py::A1-05",
+   "token_sha256": "a6b9951c42773ac5017430e7e24db10f1bc49c45c26aa6dfddd7f4fcc3cc3863"
+  },
+  "/provenance/also/1": {
+   "byte_end_exclusive": 6806,
+   "byte_start": 6786,
+   "json_type": "string",
+   "lexeme": "repro_p123.py::V05",
+   "token_sha256": "dbb34c29fc7d1b47f5d864a6a760a854d1773518216a91ffb26b904e1343c870"
+  },
+  "/provenance/origin": {
+   "byte_end_exclusive": 6847,
+   "byte_start": 6824,
+   "json_type": "string",
+   "lexeme": "repro_unit_a.py::A-06",
+   "token_sha256": "147c3d69126e478d7213839c6a45e9376bf08096fb0dc75ae04787a2c46707f9"
+  },
+  "/reachability": {
+   "byte_end_exclusive": 7623,
+   "byte_start": 7601,
+   "json_type": "string",
+   "lexeme": "producer_unreachable",
+   "token_sha256": "e9e641fe9d4d21f9520c74bc8df69bd65023a04faeed992a905b2882364d8004"
+  },
+  "/role": {
+   "byte_end_exclusive": 28333,
+   "byte_start": 28324,
+   "json_type": "string",
+   "lexeme": "finding",
+   "token_sha256": "e996ee63bc2d00dfcba6388c8ddeee47d4fbce806e00f97d2e6f15e8e697e6cf"
+  },
+  "/schema": {
+   "byte_end_exclusive": 28370,
+   "byte_start": 28346,
+   "json_type": "string",
+   "lexeme": "pi-accounting-corpus/1",
+   "token_sha256": "306af7cfa4a45640f62858c9928b68d0884ab7a6457e219d2186b0ea0a835e12"
+  }
+ },
+ "top_inventory": [
+  "ambiguity",
+  "case_id",
+  "class",
+  "contract",
+  "controls",
+  "evaluations",
+  "expected",
+  "findings",
+  "group",
+  "historical",
+  "inputs",
+  "invariants",
+  "notes",
+  "profile",
+  "provenance",
+  "rationale",
+  "reachability",
+  "revisions",
+  "revisions_r3",
+  "revisions_r4",
+  "revisions_r5",
+  "revisions_r6",
+  "revisions_r7",
+  "revisions_r8",
+  "role",
+  "schema"
+ ]
+}

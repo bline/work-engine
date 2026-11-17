@@ -1,5 +1,5 @@
 //! Finite supplied-payload coherence, distinct from independent raw admission.
-use crate::{Result, validate_accounting_bundle};
+use crate::{Result, exact_u64, validate_accounting_bundle};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::{
@@ -155,7 +155,8 @@ pub fn validate_accounting_bundle_with_payloads(
                                 .ok_or("payload applicability: invalid derivation origin")?;
                             require(
                                 o["source_origin_id"] == source
-                                    && o["original_position"].as_u64() == pos.parse::<u64>().ok(),
+                                    && exact_u64(&o["original_position"])
+                                        .is_some_and(|p| pos == p.to_string()),
                                 "derivation origin position mismatch",
                             )?;
                             require(
@@ -290,8 +291,7 @@ pub fn validate_accounting_bundle_with_payloads(
                             sessions.iter().filter(|s| s["alias"] == alias).collect();
                         require(sessions.len() == 1, "missing or ambiguous endpoint source")?;
                         let lines = list(&sessions[0]["logs"][turn], "lines")?;
-                        let pos = o["original_position"]
-                            .as_u64()
+                        let pos = exact_u64(&o["original_position"])
                             .and_then(|n| usize::try_from(n).ok())
                             .ok_or("payload applicability: invalid endpoint position")?;
                         require(lines.len() == 2 && pos == if endpoint == from {1} else {2}, "conditional endpoint position/extent mismatch")?;

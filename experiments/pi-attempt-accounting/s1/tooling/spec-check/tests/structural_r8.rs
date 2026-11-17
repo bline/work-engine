@@ -74,7 +74,7 @@ fn s_cannot_construct_or_replace_validity() {
         ],
         bindings: Default::default(),
     };
-    assert!(validate(&s).unwrap_err().contains("S cannot construct"));
+    assert!(validate(&s).unwrap_err().contains("C-validity owner violation"));
     let mut s = spec();
     s.rules
         .iter_mut()
@@ -185,6 +185,13 @@ fn two_origin_bundle() -> Value {
     b
 }
 fn grant_record(id: &str, kind: &str, origins: Value) -> Value {
+    let mut grant = grant_record_fields(id, kind, origins);
+    if kind == "exact_row_coreference" {
+        grant["admitted_payload"] = json!({"from":"o","to":"s"});
+    }
+    grant
+}
+fn grant_record_fields(id: &str, kind: &str, origins: Value) -> Value {
     json!({"grant_id":id,"guarantee_kind":kind,"admission":"conditional_fixture","exact_payload_ref":"fixture:exact-payload","covered_origin_refs":origins,"covered_extent_ref":"fixture:extent","authority_ref":"fixture:authority","observer_or_harness_ref":"fixture:harness","assumption_refs":["fixture:assumptions"]})
 }
 #[test]
@@ -196,7 +203,7 @@ fn exact_grant_kinds_and_scopes_are_not_interchangeable() {
         json!(["o", "s"])
     )]);
     b["documents"][0]["exact_links"] =
-        json!([{"from_origin_ref":"o","to_origin_ref":"s","grant_ref":"g"}]);
+        json!([{"link_id":"l","from_origin_ref":"o","to_origin_ref":"s","grant_ref":"g"}]);
     validate_accounting_bundle(&b).unwrap();
     let mut bad = b.clone();
     bad["documents"][0]["grants"][0]["guarantee_kind"] = json!("physical_bill_independence");
@@ -213,6 +220,7 @@ fn exact_grant_kinds_and_scopes_are_not_interchangeable() {
 fn whole_coverage_rejects_partial_ownership_and_invalid_witness() {
     let mut b = two_origin_bundle();
     b["documents"][1]["primary_validities"] = json!([{"obligation_id":"v","distinct_reservation_refs":["o"],"distinct_settlement_refs":["s"],"validity_result":"valid","applicable_check_refs":["computed:checks"]}]);
+    b["documents"][1]["primary_memberships"] = json!([{"obligation_id":"v","reservation_classes":[{"origin_refs":["o"],"representative_origin_ref":"o"}],"settlement_classes":[{"origin_refs":["s"],"representative_origin_ref":"s"}],"usage_origin_refs":["s"]}]);
     b["documents"][1]["units"][0]["state"] = json!("inactive");
     b["documents"][1]["units"][0]["successor_ref"] = json!("resolved");
     b["documents"][1]["units"].as_array_mut().unwrap().push(json!({"unit_id":"resolved","state":"active","origin_refs":["o","s"],"exposure_ref":"computed:resolved"}));
@@ -221,6 +229,8 @@ fn whole_coverage_rejects_partial_ownership_and_invalid_witness() {
     }
     b["documents"][1]["coverage_decisions"] = json!([{"coverage_id":"cover","route":"budgeted","obligation_id":"v","status":"accepted","unit_refs":["u"],"monetary_origin_refs":["o","s"],"anchor_origin_refs":[],"validity_ref":"v","valuation_ref":"computed:valuation","definite_link_refs":[],"retained_component_refs":["computed:charge"],"result_unit_ref":"resolved","reason_refs":["computed:eligible"]}]);
     b["documents"][1]["valuation_records"] = json!([{"valuation_id":"computed:valuation","usage_origin_refs":["s"],"complete":true,"wire_ref":"computed:wire"}]);
+    b["documents"][1]["retained_components"] = json!([{"component_id":"computed:charge","origin_ref":"s","role":"charge","nano_usd":"5"}]);
+    b["documents"][1]["units"][1]["retained_component_refs"] = json!(["computed:charge"]);
     validate_accounting_bundle(&b).unwrap();
     let mut incomplete = b.clone();
     incomplete["documents"][1]["valuation_records"][0]["complete"] = json!(false);
@@ -303,12 +313,12 @@ fn unbudgeted_completion_uses_computed_applicability_not_expected_authority() {
         json!(["o", "s"])
     )]);
     b["documents"][0]["exact_links"] =
-        json!([{"from_origin_ref":"o","to_origin_ref":"s","grant_ref":"link"}]);
+        json!([{"link_id":"l","from_origin_ref":"o","to_origin_ref":"s","grant_ref":"link"}]);
     let r = &mut b["documents"][1];
     r["definite_links"] =
-        json!([{"from_origin_ref":"o","to_origin_ref":"s","admitted_input_link_ref":"link"}]);
+        json!([{"link_id":"d","from_origin_ref":"o","to_origin_ref":"s","admitted_input_link_ref":"l"}]);
     r["unbudgeted_applicabilities"] = json!([{"applicability_id":"app","usage_origin_ref":"o","raw_subject_ref":"raw:usage-scope","classification":"genuine_unbudgeted","dollar_origin_refs":[]}]);
-    r["unbudgeted_completions"] = json!([{"completion_id":"done","usage_origin_ref":"o","applicability_ref":"app","valuation_ref":"computed:valuation","complete":true}]);
+    r["unbudgeted_completions"] = json!([{"completion_id":"done","usage_origin_ref":"o","applicability_ref":"app","valuation_ref":"computed:valuation","complete":true,"usage_origin_refs":["o"]}]);
     r["units"][0]["state"] = json!("inactive");
     r["units"][0]["successor_ref"] = json!("resolved");
     r["units"].as_array_mut().unwrap().push(json!({"unit_id":"resolved","state":"active","origin_refs":["o","s"],"exposure_ref":"computed:exposure"}));
@@ -316,7 +326,9 @@ fn unbudgeted_completion_uses_computed_applicability_not_expected_authority() {
         o["active_high_unit_id"] = json!("resolved");
     }
     r["valuation_records"] = json!([{"valuation_id":"computed:valuation","usage_origin_refs":["o"],"complete":true,"wire_ref":"computed:wire"}]);
-    r["coverage_decisions"] = json!([{"coverage_id":"cover","route":"unbudgeted_completion","completion_ref":"done","status":"accepted","unit_refs":["u"],"monetary_origin_refs":["o"],"anchor_origin_refs":["s"],"valuation_ref":"computed:valuation","definite_link_refs":["link"],"retained_component_refs":["computed:context"],"result_unit_ref":"resolved","reason_refs":["computed:complete"]}]);
+    r["retained_components"] = json!([{"component_id":"computed:context","origin_ref":"s","role":"usage","nano_usd":"5"}]);
+    r["units"][1]["retained_component_refs"] = json!(["computed:context"]);
+    r["coverage_decisions"] = json!([{"coverage_id":"cover","route":"unbudgeted_completion","completion_ref":"done","status":"accepted","unit_refs":["u"],"monetary_origin_refs":["o"],"anchor_origin_refs":["s"],"valuation_ref":"computed:valuation","definite_link_refs":["d"],"retained_component_refs":["computed:context"],"result_unit_ref":"resolved","reason_refs":["computed:complete"]}]);
     validate_accounting_bundle(&b).unwrap();
     let mut bad = b.clone();
     bad["documents"][1]["unbudgeted_completions"][0]["applicability_ref"] = json!("expected");
@@ -326,6 +338,7 @@ fn unbudgeted_completion_uses_computed_applicability_not_expected_authority() {
             .contains("computed unbudgeted applicability")
     );
     let mut bad = b;
+    bad["documents"][1]["primary_memberships"] = json!([{"obligation_id":"rejected-dollar","reservation_classes":[],"settlement_classes":[{"origin_refs":["s"],"representative_origin_ref":"s"}],"usage_origin_refs":["o"]}]);
     bad["documents"][1]["primary_validities"] = json!([{"obligation_id":"rejected-dollar","distinct_reservation_refs":[],"distinct_settlement_refs":["s"],"validity_result":"rejected","applicable_check_refs":["NoReservation"]}]);
     assert!(
         validate_accounting_bundle(&bad)

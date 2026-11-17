@@ -1,0 +1,46 @@
+
+running 3 tests
+test r9_priced_multiidentity_and_reservation_evidence_controls ... ok
+R10 evaluated predicate="retained_charge" subject="corpus/cases/P9-claimed-charge-above-reservation.json" bundle="oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC11-multi-turn-session.json" bundle="oracle/r8-completion-B/VC11-multi-turn-session.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/P132-FG-VC11-gated.json" bundle="oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC07-read-failure-paired.json" bundle="oracle/r8-completion-B/VC07-read-failure-paired.bundle.json" outcome=pass
+R10 evaluated predicate="malformed_response_model" subject="oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json" bundle="oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json" outcome=pass
+R10 evaluated predicate="malformed_response_model" subject="oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json" bundle="oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json" outcome=pass
+R10 evaluated predicate="reservation_classes" subject="oracle/r9-pilot/cases/equal-reservations.json" bundle="oracle/r9-pilot/cases/equal-reservations.bundle.json" outcome=pass
+R10 composed reservation "same-origin" classes=1 outcome=pass
+R10 composed reservation "admitted-copy" classes=1 outcome=pass
+R10 evaluated predicate=primary_anchor_conditional subject=oracle/r8-controls/VC07-conditional.bundle.json outcome=pass
+R10 evaluated predicate=primary_anchor_conditional subject=oracle/r8-controls/VC07-unlinked.bundle.json outcome=pass
+R9 consumed4 claims: ["EQUAL-AMOUNT-DISTINCT-RESERVATIONS", "P9-RETAINED-CHARGE", "PRIMARY/ANCHOR-APPLICATION", "RESPONSE-MODEL7-ACTUAL"]; finite pilot only
+test r9_registered_actual_subject_qualification ... ok
+R10 evaluated predicate="retained_charge" subject="corpus/cases/P9-claimed-charge-above-reservation.json" bundle="oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json" outcome=pass
+R10 evaluated predicate="retained_charge" subject="corpus/cases/P9-claimed-charge-above-reservation.json" bundle="oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC11-multi-turn-session.json" bundle="oracle/r8-completion-B/VC11-multi-turn-session.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/P132-FG-VC11-gated.json" bundle="oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC07-read-failure-paired.json" bundle="oracle/r8-completion-B/VC07-read-failure-paired.bundle.json" outcome=pass
+R10 evaluated predicate="retained_charge" subject="corpus/cases/P9-claimed-charge-above-reservation.json" bundle="oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC11-multi-turn-session.json" bundle="oracle/r8-completion-B/VC11-multi-turn-session.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/P132-FG-VC11-gated.json" bundle="oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC07-read-failure-paired.json" bundle="oracle/r8-completion-B/VC07-read-failure-paired.bundle.json" outcome=pass
+R10 evaluated predicate="malformed_response_model" subject="oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json" bundle="oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json" outcome=pass
+R10 evaluated predicate="malformed_response_model" subject="oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json" bundle="oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json" outcome=pass
+R10 evaluated predicate="retained_charge" subject="corpus/cases/P9-claimed-charge-above-reservation.json" bundle="oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC11-multi-turn-session.json" bundle="oracle/r8-completion-B/VC11-multi-turn-session.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/P132-FG-VC11-gated.json" bundle="oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC07-read-failure-paired.json" bundle="oracle/r8-completion-B/VC07-read-failure-paired.bundle.json" outcome=pass
+R10 evaluated predicate="malformed_response_model" subject="oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.json" bundle="oracle/r9-pilot/cases/model7-VC01-openai-usage-settlement.bundle.json" outcome=pass
+R10 evaluated predicate="malformed_response_model" subject="oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.json" bundle="oracle/r9-pilot/cases/model7-A04-undated-settlement-between-dated-neighbours.bundle.json" outcome=pass
+R10 composed reservation "same-origin" classes=1 outcome=pass
+R10 composed reservation "admitted-copy" classes=1 outcome=pass
+R10 evaluated predicate=primary_anchor_conditional subject=oracle/r8-controls/VC07-conditional.bundle.json outcome=pass
+R10 evaluated predicate=primary_anchor_conditional subject=oracle/r8-controls/VC07-unlinked.bundle.json outcome=pass
+R10 evaluated predicate="retained_charge" subject="corpus/cases/P9-claimed-charge-above-reservation.json" bundle="oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json" outcome=pass
+R10 evaluated predicate="retained_charge" subject="corpus/cases/P9-claimed-charge-above-reservation.json" bundle="oracle/r8-completion-B/P9-claimed-charge-above-reservation.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC11-multi-turn-session.json" bundle="oracle/r8-completion-B/VC11-multi-turn-session.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/P132-FG-VC11-gated.json" bundle="oracle/r8-completion-A/P132-FG-VC11-gated.bundle.json" outcome=pass
+R10 evaluated predicate="primary_anchor" subject="corpus/cases/VC07-read-failure-paired.json" bundle="oracle/r8-completion-B/VC07-read-failure-paired.bundle.json" outcome=pass
+test r9_consistent_wrong_actual_subjects_rejected ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 2.94s
+

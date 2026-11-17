@@ -1,0 +1,34 @@
+{
+  "objective": "Pi attempt accounting full S1 (175 cases / applicable 374 scopes / all 11 historical R8 findings / exact-current complete A/B/C review), continuing Codex root 01a1d6e2",
+  "owner_session": "01a1e569-2805-72ff-b837-03d1577c405d",
+  "grant": {
+    "ceiling_usd": 200,
+    "source": "operator direct message 2026-11-16 to 01a1e569; board seq 5778",
+    "reading": "total ceiling including predecessor spend, pending operator correction",
+    "stop_rule": "continue slices until budget exhausted or an operator decision is needed"
+  },
+  "predecessor": {
+    "session": "01a1d6e2-32ba-7701-9115-740dcb41af11",
+    "basis": "speed_adjusted_api_usd",
+    "reader": "metrics/scripts/usage_ledger.py sha256 230441560e750345d7a9d9f10d8ee00b9b4f6d81a2bf0204567b7e9c04ed4235 tree --record renewal-r10/assignment.json",
+    "final_usd": 68.5305,
+    "through": "2026-11-15T05:41:20Z",
+    "snapshot": "control/predecessor-final-tree.json",
+    "note": "includes the operator-requested commit/merge tail"
+  },
+  "owner_tree": {
+    "basis": "Pi-recorded usage.cost.total (API-equivalent, Pi model price table); not the usage_ledger frozen scenario, which does not read host Pi turns",
+    "reader": "tools/pi_tree_cost.py sha256 b6c5893541baa5f8da96d96776f8e653d80de2abe3808d70ed908eb311b2bf76",
+    "root_file": "/home/bline/.pi/agent/sessions/--home-bline-code-work-engine--/2026-11-16T17-30-36-421Z_01a1e569-2805-72ff-b837-03d1577c405d.jsonl"
+  },
+  "remaining_before_owner_spend_usd": 131.4695,
+  "reserves_prospective": {
+    "note": "predecessor holds (full review 20, qualification 2, closure 6, materialization 3) to be re-derived in the slice plan, not inherited blindly"
+  },
+  "route_policy": {
+    "recorded": "2026-11-16",
+    "operator_fact": "Pi using Claude via OAuth (provider 'anthropic') bills separately from the Claude subscription quota; the claude-sdk provider uses the actual Claude subscription quota.",
+    "rule": "All campaign children, including Fable reviews, use the claude-sdk provider ('claude-sdk/<model>'), never 'anthropic/<model>'. Verified: root, oracle and spec sessions all record provider claude-sdk.",
+    "budget_meaning": "Pi usage.cost on claude-sdk is an API-equivalent proxy for the operator's dollar ceiling, not an invoice; subscription 5-hour/weekly limits are a separate capacity constraint (infrastructure interruptions)."
+  }
+}

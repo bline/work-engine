@@ -1,0 +1,19 @@
+{
+  "status": "ACCEPTED_BOUNDED_PRIVATE",
+  "at": "2026-11-16",
+  "root": "01a1e569-2805-72ff-b837-03d1577c405d",
+  "subject": {"repo": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/successor/subject", "commit": "2729107", "base": "d2551b9 (s1-base, manifest 5e594cac)", "joined_as": "branch s1-successor"},
+  "scope": "R8-OWNER-01 and R8-SCHEMA-DOMAIN-01 spec/structural consequences only",
+  "root_verification": "clean checkout /tmp/rootv-spec, fresh target: 9/9 predecessor gates PASS, all cargo test targets PASS, c_owner_cli/nano_domain/numeric_domains PASS; predecessor subject+binary accept V-PRESENCE-1 and V-PRESENCE-9 C-owned construction (rc 0), commit rejects; ownership boundary: 20 files, all spec-owned",
+  "review": {"reviewer": "claude-sdk/claude-fable-5-1 xhigh (operator substitute for Astra xhigh), fresh read-only", "standing": "same-provider review; reviewer had read/grep/ls only and executed nothing; execution evidence is root's", "report": "slice1/review-spec-r1/REVIEW.md sha256 d0bfb9bd191d8a237a0dd3195b9b4304fe09127351a5fbf955ca497db6ffcc62", "verdict": "ACCEPT", "architecture_assessment": "bounded_repair_credible"},
+  "finding_dispositions": {
+    "R8-OWNER-01": "RESOLVED_BOUNDED (typed construction of C-owned types; opaque Json fields remain an inherited design boundary, review P3-6); final closure needs complete exact-current A/B/C review of the full successor",
+    "R8-SCHEMA-DOMAIN-01": "RESOLVED_BOUNDED; review P3-1 (sentinel collapse at one free-form uniqueItems location) and P3-3 (doc inaccuracies) owed to next spec slice; P3-2 (Python re '$' trailing newline) inherited, reference-validator only, carried"
+  },
+  "other_review_items": {
+    "P3-4": "inherited non-discriminating evidence_controls negatives (schema-shape rejection, not named predicate) -> oracle/C2 sabotage intended-reason audit obligation",
+    "P3-5": "done: tools/replay_gates.sh now runs cargo test and slice-1b controls (sha 0e7b1cbc)"
+  },
+  "escalation": "no rejection; spec/structural subsystem count unchanged",
+  "not_established": "full S1 (175/374/all11/exact-current ABC) remains OPEN; no integration, production or S2a"
+}

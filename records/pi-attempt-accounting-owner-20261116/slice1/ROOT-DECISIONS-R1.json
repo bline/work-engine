@@ -1,0 +1,36 @@
+{
+  "schema": "pi-accounting-root-decisions/1",
+  "at": "2026-11-16",
+  "root": "01a1e569-2805-72ff-b837-03d1577c405d",
+  "authority": "operator-directed owner of the S1 campaign (board 5773/5778); PLAN.md full-realization-r1 'Missing truth/grant decisions return to root'; BASE 43d0e7c8 lines 28-32, 60",
+  "considered": "/home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice1/oracle-batch1/RESULT.md and DERIVATIONS-BATCH1.md#PREM-SCOPE",
+  "decisions": [
+    {
+      "id": "D-SCOPE",
+      "decision": "ADMIT, per exact declaration, as conditional_fixture only",
+      "basis": "BASE line 30: a conditional fixture declaration is a test-harness input establishing behaviour conditional on that declaration only; line 32: current corpus scope declarations remain conditional as root selected; lines 28/60: admission comes from an external channel, never the payload row. The predecessor never wrote that channel; this record is it.",
+      "admission_rule": "A declared initial_reference_scope is admitted only when the oracle's raw-consistency claim for that exact declaration (namespace matches the raw rid namespace on every covered origin, extent equals the complete source inventory, duplicate rule adequate for the raw bytes) is DerivedNominal, and the declaration digest equals the one listed here. A raw-inconsistent declaration is never admitted.",
+      "standing": "Test-harness premise for the finite corpus. Grants no producer authority, live trust, namespace guarantee beyond the declaration, DefiniteLink, physical independence or copy equivalence. Does not close any finding.",
+      "admitted": "see ROOT-ADMISSIONS.json (root-owned, outside the subject; consumers bind it separately and a subject cannot supply or extend it)",
+      "not_admitted": [{"case": "VC08-subscription-measured-request", "reason": "declared dollar_ticket contract is raw-inconsistent with admission-namespace origins (R8-NAMESPACE-01)"}]
+    },
+    {
+      "id": "Q-NAMESPACE",
+      "decision": "NOT ADMITTED for historical VC08",
+      "basis": "PLAN-AMENDMENT c8376f7a NAMESPACE-APPLICATION: a correct separate conditional admission scope is a positive control, not a live guarantee; the historical case must keep demonstrating that a dollar_ticket declaration cannot establish admission-namespace scope. A separate private conditional admission-namespace positive control remains owed (spec/oracle controls) and is counted outside the 175 historical cases.",
+      "consequence": "VC08/NS3 and VC08/PM2 stay RequiredUnmet(root) with both branches recorded; money is identical in both branches."
+    },
+    {
+      "id": "DOSSIER-SCHEMA",
+      "decision": "BIND oracle batch1 DOSSIER-SCHEMA.md as pi-accounting-oracle-dossier/1 with these amendments",
+      "amendments": [
+        "schema const becomes 'pi-accounting-oracle-dossier/1'",
+        "argument_ref is {file, anchor}, not tied to DERIVATIONS-BATCH1.md",
+        "TypedConsequence variants are the closed set listed in the schema doc; a new variant needs root binding (append to the doc with justification) before use",
+        "an admitted payload premise has status DerivedNominal with a source ref {ref:'root_admission', record:'ROOT-ADMISSIONS.json', entry_id}; dependent claims then carry expected (the former consequence_if_admitted) and keep the non-admitted branch only as a note",
+        "the oracle publishes a machine-checkable JSON Schema for dossier/1 with the next batch; consumers validate against it",
+        "AGREEMENT is published per batch after derivation, as in batch1"
+      ]
+    }
+  ]
+}

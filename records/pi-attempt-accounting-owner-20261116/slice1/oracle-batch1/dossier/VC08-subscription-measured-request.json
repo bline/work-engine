@@ -1,0 +1,2255 @@
+{
+ "schema": "pi-accounting-oracle-dossier/0.1-proposal",
+ "case_id": "VC08-subscription-measured-request",
+ "author": {
+  "role": "independent oracle (slice1 oracle-batch1 worker)",
+  "owner_session": "01a1e569-2805-72ff-b837-03d1577c405d"
+ },
+ "standing": "Independently authored finite derivation proposal; not consumer qualification; root binds/admits. ",
+ "subject": {
+  "manifest_sha256_prefix": "5e594cac",
+  "case_file": {
+   "path": "corpus/cases/VC08-subscription-measured-request.json",
+   "sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65"
+  },
+  "inputs_canonical_sha256": "161c9e12c09346a019fb9f74f214c96f1c2dd18afaa1a6820316f789a4cad1dc"
+ },
+ "policy_refs": [
+  {
+   "policy_id": "BASE",
+   "path": "continuation:design/PLAN.md",
+   "sha256": "43d0e7c8df270eb77d9aff32c87e03f5000bc89163da676c8a50daf7affdbe61"
+  },
+  {
+   "policy_id": "AMD",
+   "path": "continuation:reviews/design-r7/PLAN-AMENDMENT.md",
+   "sha256": "c8376f7a94a2ee775a8b117e6424acae457cb86e138f890cf2240fbe2190ce46"
+  },
+  {
+   "policy_id": "R3",
+   "path": "continuation:pilot-r9/PLAN-AMENDMENT-R3.md",
+   "sha256": "90b6308e9608decf026437c89b98de597cd30046f56d792aa7461061f31f4abb"
+  },
+  {
+   "policy_id": "EPR",
+   "path": "continuation:renewal-r10/design-evaluation-premise-r1/PLAN-R2.md",
+   "sha256": "3f79f910a6e87614d7ebff402f2f731f358886ab0ee74495d0a7425fc7950b70"
+  },
+  {
+   "policy_id": "LOWT",
+   "path": "continuation:renewal-r10/design-low-target-r1/PLAN-R2.md",
+   "sha256": "727ad3974d492cbd523859b68bdfc0be8664dc5448277832565d17652d082904"
+  },
+  {
+   "policy_id": "RP5",
+   "path": "continuation:reviews/implementation-r8/policies/ROOT-POLICY-R5.md",
+   "sha256": "57303fdb466c49ebe8f0d6fa095628c57c3f2018603114e12949af663f65eec5"
+  },
+  {
+   "policy_id": "RA6",
+   "path": "continuation:ROOT-ADOPTION-R6.json",
+   "sha256": "73bd74576a0f9d6a95b436c9ad7dfbf2c9c74b76d82184853e8dd25b70292097"
+  },
+  {
+   "policy_id": "RP6",
+   "path": "continuation:ROOT-POLICY-R6.md",
+   "sha256": "3dbe535668a7d625e025e16c9fa75e51a59dec109f5c842d877791b1d7332200"
+  },
+  {
+   "policy_id": "FRPLAN",
+   "path": "continuation:renewal-r10/full-realization-r1/planning/PLAN.md",
+   "sha256": "d1e93793052f2c07397654d10cca2188e0fad1f06c920c5d9dcfc139a4563741"
+  },
+  {
+   "policy_id": "CK",
+   "path": "subject:spec/ck.json",
+   "sha256": "a3a30398f289c9edcb4c3a3b0009a9dff88021378658062ed532e90226400787"
+  },
+  {
+   "policy_id": "CONTRACT",
+   "path": "subject:contract/CONTRACT.md",
+   "sha256": "96122db955a1d8b530e20cdc0a7653ae70c4bb127c7ef83b00d1c3daef7739ae"
+  },
+  {
+   "policy_id": "PAPPROVAL",
+   "path": "subject:oracle/POLICY-APPROVAL.md",
+   "sha256": "07303d5c5c36276f6038bf9368f3a5fe660e39ee9160b8b3d92049de98abb981"
+  },
+  {
+   "policy_id": "RATES-OPENAI",
+   "path": "subject:oracle/rates/openai_api_rates.json",
+   "sha256": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  },
+  {
+   "policy_id": "RATES-ANTHROPIC",
+   "path": "subject:oracle/rates/anthropic_api_rates.json",
+   "sha256": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5"
+  }
+ ],
+ "causal_admission": {
+  "top_inventory": [
+   {
+    "key": "ambiguity",
+    "classification": "noncausal_metadata",
+    "reason": "Annotation; read by no adopted policy clause for any claim here.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/ambiguity"
+    }
+   },
+   {
+    "key": "case_id",
+    "classification": "governing_premise",
+    "reason": "Opaque equality selector only; no financial meaning.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/case_id"
+    }
+   },
+   {
+    "key": "class",
+    "classification": "noncausal_metadata",
+    "reason": "Corpus coverage label; no adopted financial/attribution clause reads it. Consumer-coverage side-condition only.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/class"
+    }
+   },
+   {
+    "key": "contract",
+    "classification": "governing_premise",
+    "reason": "Exact contract selector pi-accounting-contract/1.7-s1 binds the policy version used.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/contract"
+    }
+   },
+   {
+    "key": "controls",
+    "classification": "noncausal_metadata",
+    "reason": "Cross-case control relation; selects no consequence of this case.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/controls"
+    }
+   },
+   {
+    "key": "evaluations",
+    "classification": "governing_premise",
+    "reason": "Ordered evaluation configurations minus expected: objectives, windows, closure, predecessor, tree, admissions/journal rows, limits, admission_request, authority/gate ids.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/evaluations"
+    }
+   },
+   {
+    "key": "expected",
+    "classification": "supplied_outcome",
+    "reason": "Challenged output; never nominal truth. Read only after derivation (AGREEMENT.json).",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/expected"
+    }
+   },
+   {
+    "key": "findings",
+    "classification": "supplied_outcome",
+    "reason": "Historical finding labels; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/findings"
+    }
+   },
+   {
+    "key": "group",
+    "classification": "noncausal_metadata",
+    "reason": "Grouping label.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/group"
+    }
+   },
+   {
+    "key": "historical",
+    "classification": "supplied_outcome",
+    "reason": "Historical reader outcome; comparison only.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/historical"
+    }
+   },
+   {
+    "key": "inputs",
+    "classification": "governing_premise",
+    "reason": "Complete raw sessions/launch/lifecycle/log lines, reference_time, rate digests, gates.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/inputs"
+    }
+   },
+   {
+    "key": "invariants",
+    "classification": "noncausal_metadata",
+    "reason": "Invariant coverage labels; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/invariants"
+    }
+   },
+   {
+    "key": "notes",
+    "classification": "noncausal_metadata",
+    "reason": "Free text.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/notes"
+    }
+   },
+   {
+    "key": "profile",
+    "classification": "governing_premise",
+    "reason": "Selects gate/closure semantics (CONTRACT \u00a72.3, \u00a712.4 step 1).",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/profile"
+    }
+   },
+   {
+    "key": "provenance",
+    "classification": "noncausal_metadata",
+    "reason": "Origin test label; confers no grant (base plan \u00a72: labels cannot mint admission).",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/provenance"
+    }
+   },
+   {
+    "key": "rationale",
+    "classification": "supplied_outcome",
+    "reason": "Narrative about output revisions; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/rationale"
+    }
+   },
+   {
+    "key": "reachability",
+    "classification": "noncausal_metadata",
+    "reason": "Producer reachability label; no financial clause reads it.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/reachability"
+    }
+   },
+   {
+    "key": "revisions",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions"
+    }
+   },
+   {
+    "key": "revisions_r3",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r3"
+    }
+   },
+   {
+    "key": "revisions_r4",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r4"
+    }
+   },
+   {
+    "key": "revisions_r5",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r5"
+    }
+   },
+   {
+    "key": "revisions_r6",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r6"
+    }
+   },
+   {
+    "key": "revisions_r7",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r7"
+    }
+   },
+   {
+    "key": "revisions_r8",
+    "classification": "supplied_outcome",
+    "reason": "Output revision annotation; no truth.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/revisions_r8"
+    }
+   },
+   {
+    "key": "role",
+    "classification": "governing_premise",
+    "reason": "Selector (finding/control/valid_control); qualification mode only, no money.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/role"
+    }
+   },
+   {
+    "key": "schema",
+    "classification": "governing_premise",
+    "reason": "Corpus schema selector.",
+    "source_ref": {
+     "ref": "excluded_output_member",
+     "pointer": "/schema"
+    }
+   }
+  ],
+  "trusted_fixture_inputs": {
+   "ref": "case_token",
+   "file": "corpus/cases/VC08-subscription-measured-request.json",
+   "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+   "pointer": "/trusted_fixture_inputs",
+   "presence": "absent"
+  },
+  "profile": {
+   "ref": "case_token",
+   "file": "corpus/cases/VC08-subscription-measured-request.json",
+   "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+   "pointer": "/profile",
+   "byte_start": 5238,
+   "byte_end_exclusive": 5256,
+   "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "current_producer"
+  },
+  "contract": {
+   "ref": "case_token",
+   "file": "corpus/cases/VC08-subscription-measured-request.json",
+   "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+   "pointer": "/contract",
+   "byte_start": 113,
+   "byte_end_exclusive": 144,
+   "token_sha256": "67f788fb6397af3ef74d42c6baea23eebce8ecf9de0e6e577e02a9c1b644402d",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "pi-accounting-contract/1.7-s1"
+  },
+  "schema": {
+   "ref": "case_token",
+   "file": "corpus/cases/VC08-subscription-measured-request.json",
+   "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+   "pointer": "/schema",
+   "byte_start": 10764,
+   "byte_end_exclusive": 10788,
+   "token_sha256": "306af7cfa4a45640f62858c9928b68d0884ab7a6457e219d2186b0ea0a835e12",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "pi-accounting-corpus/1"
+  },
+  "role": {
+   "ref": "case_token",
+   "file": "corpus/cases/VC08-subscription-measured-request.json",
+   "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+   "pointer": "/role",
+   "byte_start": 10736,
+   "byte_end_exclusive": 10751,
+   "token_sha256": "8eb07fb42ee3f49e42ef6ae4dd152cec0d398b4b35665783dce104fe1310a41e",
+   "presence": "value",
+   "json_type": "string",
+   "lexeme": "valid_control"
+  },
+  "inputs_canonical_sha256": "161c9e12c09346a019fb9f74f214c96f1c2dd18afaa1a6820316f789a4cad1dc",
+  "log_final_newline": {
+   "S1/turn-1": true
+  },
+  "required_scopes": [
+   "VC08-subscription-measured-request/default/o/owned_closed",
+   "VC08-subscription-measured-request/default/o/owned_outstanding"
+  ],
+  "additional_channels": []
+ },
+ "origins": [
+  {
+   "origin_id": "S1/turn-1:1",
+   "source_origin_id": "S1/turn-1",
+   "original_position": 1,
+   "source_ref": {
+    "ref": "raw_line",
+    "file": "corpus/cases/VC08-subscription-measured-request.json",
+    "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+    "origin_id": "S1/turn-1:1",
+    "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+    "byte_start": 4058,
+    "byte_end_exclusive": 4188,
+    "token_sha256": "1ff755a5967970b4d6fe4827cb664a0dc022aaa9cbd3ed2b8593e58b4c575b19",
+    "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+    "raw_utf8_length": 112
+   },
+   "parse_state": "object",
+   "evidence_kind": "Admission",
+   "field_states": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:00Z",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "subscription_proxy_admitted",
+     "presence": "value"
+    },
+    "/model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/rid": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    }
+   }
+  },
+  {
+   "origin_id": "S1/turn-1:2",
+   "source_origin_id": "S1/turn-1",
+   "original_position": 2,
+   "source_ref": {
+    "ref": "raw_line",
+    "file": "corpus/cases/VC08-subscription-measured-request.json",
+    "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+    "origin_id": "S1/turn-1:2",
+    "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+    "byte_start": 4197,
+    "byte_end_exclusive": 4993,
+    "token_sha256": "57fc6ca5a9073dc928c9f03b48fe9e78b439ff6bfacdcf5b54efa9cef682b6fe",
+    "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+    "raw_utf8_length": 704
+   },
+   "parse_state": "object",
+   "evidence_kind": "Request(subscription) with Measurement",
+   "field_states": {
+    "/at": {
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:02Z",
+     "presence": "value"
+    },
+    "/auth_lane": {
+     "json_type": "string",
+     "lexeme": "subscription",
+     "presence": "value"
+    },
+    "/billing": {
+     "json_type": "string",
+     "lexeme": "unknown",
+     "presence": "value"
+    },
+    "/event": {
+     "json_type": "string",
+     "lexeme": "request",
+     "presence": "value"
+    },
+    "/http_status": {
+     "json_type": "number",
+     "lexeme": "200",
+     "presence": "value"
+    },
+    "/model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/n": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/observed_tier": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/provider": {
+     "json_type": "string",
+     "lexeme": "openai-codex",
+     "presence": "value"
+    },
+    "/quota": {
+     "json_type": "string",
+     "lexeme": "unknown",
+     "presence": "value"
+    },
+    "/requested_tier": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/response_id": {
+     "json_type": "string",
+     "lexeme": "resp_s1",
+     "presence": "value"
+    },
+    "/response_model": {
+     "json_type": "string",
+     "lexeme": "gpt-6-astra",
+     "presence": "value"
+    },
+    "/seconds": {
+     "json_type": "number",
+     "lexeme": "1.0",
+     "presence": "value"
+    },
+    "/subscription_proxy": {
+     "json_type": "object",
+     "members": [
+      "rid",
+      "status",
+      "cost_proxy_usd",
+      "valuation_basis",
+      "reason",
+      "measurement",
+      "billing",
+      "quota"
+     ],
+     "presence": "value"
+    },
+    "/subscription_proxy/billing": {
+     "json_type": "string",
+     "lexeme": "unknown",
+     "presence": "value"
+    },
+    "/subscription_proxy/cost_proxy_usd": {
+     "json_type": "number",
+     "lexeme": "0.015",
+     "presence": "value"
+    },
+    "/subscription_proxy/measurement": {
+     "json_type": "string",
+     "lexeme": "api_equivalent_cost_proxy",
+     "presence": "value"
+    },
+    "/subscription_proxy/quota": {
+     "json_type": "string",
+     "lexeme": "unknown",
+     "presence": "value"
+    },
+    "/subscription_proxy/reason": {
+     "json_type": "null",
+     "lexeme": "null",
+     "presence": "null"
+    },
+    "/subscription_proxy/rid": {
+     "json_type": "number",
+     "lexeme": "1",
+     "presence": "value"
+    },
+    "/subscription_proxy/status": {
+     "json_type": "string",
+     "lexeme": "valued",
+     "presence": "value"
+    },
+    "/subscription_proxy/valuation_basis": {
+     "json_type": "string",
+     "lexeme": "reported_cache_usage",
+     "presence": "value"
+    },
+    "/terminal": {
+     "json_type": "string",
+     "lexeme": "response.completed",
+     "presence": "value"
+    },
+    "/usage": {
+     "json_type": "object",
+     "members": [
+      "input_tokens",
+      "output_tokens",
+      "cached_tokens",
+      "cache_write_tokens",
+      "reasoning_tokens"
+     ],
+     "presence": "value"
+    },
+    "/usage/cache_write_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usage/cached_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    },
+    "/usage/input_tokens": {
+     "json_type": "number",
+     "lexeme": "1000",
+     "presence": "value"
+    },
+    "/usage/output_tokens": {
+     "json_type": "number",
+     "lexeme": "100",
+     "presence": "value"
+    },
+    "/usage/reasoning_tokens": {
+     "json_type": "number",
+     "lexeme": "0",
+     "presence": "value"
+    }
+   }
+  }
+ ],
+ "premises": [
+  {
+   "premise_id": "VC08/PREM-ADMISSION-NAMESPACE",
+   "kind": "payload_premise",
+   "statement": "A conditional admission-namespace initial reference contract for S1/turn-1 (admission rid 1 on origins S1/turn-1:1 and S1/turn-1:2).",
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "No admission-namespace declaration exists; the only declared contract (conditional-ticket:S1/turn-1) is dollar_ticket and is inapplicable (VC08/NS2). Root owns whether an exact separate conditional admission declaration is authorized (Q-NAMESPACE).",
+    "decision_owner": "root",
+    "unmet_premise_refs": []
+   },
+   "source_refs": [
+    {
+     "ref": "raw_line",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "origin_id": "S1/turn-1:1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+     "byte_start": 4058,
+     "byte_end_exclusive": 4188,
+     "token_sha256": "1ff755a5967970b4d6fe4827cb664a0dc022aaa9cbd3ed2b8593e58b4c575b19",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "raw_utf8_length": 112
+    },
+    {
+     "ref": "raw_line",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "origin_id": "S1/turn-1:2",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+     "byte_start": 4197,
+     "byte_end_exclusive": 4993,
+     "token_sha256": "57fc6ca5a9073dc928c9f03b48fe9e78b439ff6bfacdcf5b54efa9cef682b6fe",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "raw_utf8_length": 704
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "BASE",
+     "section": "\u00a73 admission references use a separate namespace"
+    },
+    {
+     "policy_id": "AMD",
+     "section": "\u00a73 NAMESPACE-APPLICATION"
+    },
+    {
+     "policy_id": "FRPLAN",
+     "section": "Finding matrix R8-NAMESPACE-01"
+    }
+   ]
+  }
+ ],
+ "claims": [
+  {
+   "claim_id": "VC08/E1",
+   "family": "raw_E_identity_cardinality",
+   "subject": {
+    "origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_line",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "origin_id": "S1/turn-1:1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+     "byte_start": 4058,
+     "byte_end_exclusive": 4188,
+     "token_sha256": "1ff755a5967970b4d6fe4827cb664a0dc022aaa9cbd3ed2b8593e58b4c575b19",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "raw_utf8_length": 112
+    },
+    {
+     "ref": "raw_line",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "origin_id": "S1/turn-1:2",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+     "byte_start": 4197,
+     "byte_end_exclusive": 4993,
+     "token_sha256": "57fc6ca5a9073dc928c9f03b48fe9e78b439ff6bfacdcf5b54efa9cef682b6fe",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "raw_utf8_length": 704
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "field": "/event",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "subscription_proxy_admitted"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/event",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "request"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/usd",
+     "presence": "absent"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "EVIDENCE E-1, E-2"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": {
+    "variant": "RawOriginInventory",
+    "origin_count": 2,
+    "origins": [
+     {
+      "origin_id": "S1/turn-1:1",
+      "original_position": 1,
+      "evidence_kind": "Admission",
+      "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac"
+     },
+     {
+      "origin_id": "S1/turn-1:2",
+      "original_position": 2,
+      "evidence_kind": "Request(subscription) with Measurement",
+      "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c"
+     }
+    ],
+    "unreadable": [],
+    "non_attempt": [],
+    "final_newline": true
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "exact inventory"
+    ],
+    "negative": [
+     {
+      "mutation": "delete an origin from the RawOriginInventory while outputs stay coherent",
+      "intended_predicate": "E-1 totality / RawOriginInventory equality"
+     },
+     {
+      "mutation": "re-encode a raw line (key order/whitespace) keeping decoded JSON equal",
+      "intended_predicate": "raw_utf8_sha256 / exact-byte origin identity"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "VC08/E2",
+   "family": "raw_E_identity_cardinality",
+   "subject": {
+    "origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_line",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "origin_id": "S1/turn-1:1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+     "byte_start": 4058,
+     "byte_end_exclusive": 4188,
+     "token_sha256": "1ff755a5967970b4d6fe4827cb664a0dc022aaa9cbd3ed2b8593e58b4c575b19",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "raw_utf8_length": 112
+    },
+    {
+     "ref": "raw_line",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "origin_id": "S1/turn-1:2",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+     "byte_start": 4197,
+     "byte_end_exclusive": 4993,
+     "token_sha256": "57fc6ca5a9073dc928c9f03b48fe9e78b439ff6bfacdcf5b54efa9cef682b6fe",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "raw_utf8_length": 704
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "LOGICAL-PRIMARY rev2"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": {
+    "variant": "EvidenceClassCardinality",
+    "reservation_classes": [],
+    "settlement_classes": [],
+    "admission_origins": [
+     "S1/turn-1:1"
+    ],
+    "subscription_request_origins": [
+     "S1/turn-1:2"
+    ],
+    "exact_copy_classes": []
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "no dollar primary classes"
+    ],
+    "negative": [
+     {
+      "mutation": "admission row counted as a dollar reservation class",
+      "intended_predicate": "NAMESPACE-APPLICATION / LOGICAL-PRIMARY"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "VC08/E3",
+   "family": "raw_E_identity_cardinality",
+   "subject": {
+    "origin": "S1/turn-1:2"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/inputs/sessions/0/launch/model",
+     "byte_start": 3725,
+     "byte_end_exclusive": 3751,
+     "token_sha256": "433b48e01c90d177151760bbbf0e6b875b08d1ba30951fdfbf00eb84413ef9d1",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "openai-codex/gpt-6-astra"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/inputs/sessions/0/launch/auth_lane",
+     "byte_start": 3695,
+     "byte_end_exclusive": 3709,
+     "token_sha256": "a2396b85beb4af3748fd803f9690f6a2546f5f847bb28bbfa581cf38e7d23559",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "subscription"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/provider",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "openai-codex"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/auth_lane",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "subscription"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/model",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "gpt-6-astra"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/response_model",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "gpt-6-astra"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/observed_tier",
+     "presence": "null",
+     "json_type": "null",
+     "lexeme": "null"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "field": "/model",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "gpt-6-astra"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "EVIDENCE MC-1..MC-3"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": {
+    "variant": "IdentityStates",
+    "pinned": {
+     "family": "openai",
+     "model_id": "gpt-6-astra"
+    },
+    "canonical_identity_set": [
+     {
+      "family": "openai",
+      "model_id": "gpt-6-astra"
+     }
+    ],
+    "lane_labels": {
+     "launch": "subscription",
+     "row": "subscription",
+     "provider": "openai-codex"
+    },
+    "lane_contradiction": false
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "clean subscription lane"
+    ],
+    "negative": [
+     {
+      "mutation": "lane contradiction claimed",
+      "intended_predicate": "INV-F9 pool integrity"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "VC08/NS1",
+   "family": "namespace_grants",
+   "subject": {
+    "origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "field": "/rid",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "1"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/subscription_proxy/rid",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "1"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/usd",
+     "presence": "absent"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/inputs/sessions/0/launch/auth_lane",
+     "byte_start": 3695,
+     "byte_end_exclusive": 3709,
+     "token_sha256": "a2396b85beb4af3748fd803f9690f6a2546f5f847bb28bbfa581cf38e7d23559",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "subscription"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "BASE",
+     "section": "\u00a73"
+    },
+    {
+     "policy_id": "AMD",
+     "section": "\u00a73 NAMESPACE-APPLICATION"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": {
+    "variant": "RawReferenceNamespace",
+    "per_origin": {
+     "S1/turn-1:1": {
+      "namespace": "admission",
+      "rid": "1"
+     },
+     "S1/turn-1:2": {
+      "namespace": "admission",
+      "rid": "1",
+      "via": "subscription_proxy.rid"
+     }
+    },
+    "dollar_ticket_origins": []
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "admission namespace"
+    ],
+    "negative": [
+     {
+      "mutation": "dollar_ticket applied",
+      "intended_predicate": "R8-NAMESPACE-01"
+     }
+    ]
+   },
+   "findings": [
+    {
+     "finding_id": "R8-NAMESPACE-01",
+     "relation": "direct"
+    }
+   ]
+  },
+  {
+   "claim_id": "VC08/NS2",
+   "family": "namespace_grants",
+   "subject": {
+    "declared_contract": "conditional-ticket:S1/turn-1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_line",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "origin_id": "S1/turn-1:1",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/0",
+     "byte_start": 4058,
+     "byte_end_exclusive": 4188,
+     "token_sha256": "1ff755a5967970b4d6fe4827cb664a0dc022aaa9cbd3ed2b8593e58b4c575b19",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "raw_utf8_length": 112
+    },
+    {
+     "ref": "raw_line",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "origin_id": "S1/turn-1:2",
+     "pointer": "/inputs/sessions/0/logs/turn-1/lines/1",
+     "byte_start": 4197,
+     "byte_end_exclusive": 4993,
+     "token_sha256": "57fc6ca5a9073dc928c9f03b48fe9e78b439ff6bfacdcf5b54efa9cef682b6fe",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "raw_utf8_length": 704
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "INITIAL-REFERENCE rev2"
+    },
+    {
+     "policy_id": "AMD",
+     "section": "\u00a73 NAMESPACE-APPLICATION"
+    },
+    {
+     "policy_id": "FRPLAN",
+     "section": "Finding matrix R8-NAMESPACE-01"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": {
+    "variant": "DeclaredPayloadRawConsistency",
+    "declared": {
+     "reference_namespace": "dollar_ticket",
+     "duplicate_rule": "same_origin_only",
+     "covered_origin_refs": [
+      "S1/turn-1:1",
+      "S1/turn-1:2"
+     ],
+     "payload_guarantee_text": "Usable dollar rid is interpreted only within this immutable conditional fixture source scope"
+    },
+    "raw_consistent": false,
+    "mismatches": [
+     "declared dollar_ticket namespace vs raw admission-namespace references on both origins; no usable dollar rid exists"
+    ],
+    "applicable": false,
+    "establishes_admission": false
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "separately admitted exact conditional admission-namespace declaration (future positive)"
+    ],
+    "negative": [
+     {
+      "mutation": "accept dollar_ticket payload for admission origins even when bundle/refs agree",
+      "intended_predicate": "R8-NAMESPACE-01 namespace/payload application"
+     }
+    ]
+   },
+   "findings": [
+    {
+     "finding_id": "R8-NAMESPACE-01",
+     "relation": "direct"
+    }
+   ]
+  },
+  {
+   "claim_id": "VC08/NS3",
+   "family": "namespace_grants",
+   "subject": {
+    "source": "S1/turn-1"
+   },
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "No admission-namespace grant",
+    "decision_owner": "root",
+    "unmet_premise_refs": [
+     "VC08/PREM-ADMISSION-NAMESPACE"
+    ]
+   },
+   "premise_refs": [
+    "VC08/PREM-ADMISSION-NAMESPACE"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "BASE",
+     "section": "\u00a72-\u00a73"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": null,
+   "consequence_if_admitted": {
+    "variant": "NamespaceApplication",
+    "initial_base": {
+     "kind": "AdmissionClaim",
+     "scope": "VC08-subscription-measured-request/S1/turn-1",
+     "admission_rid": "1",
+     "origins": [
+      "S1/turn-1:1",
+      "S1/turn-1:2"
+     ]
+    },
+    "hold_units": [
+     [
+      "S1/turn-1:1",
+      "S1/turn-1:2"
+     ]
+    ],
+    "if_not_admitted": "OriginBase per origin (two codex units); money identical (none) in both branches"
+   },
+   "controls": {
+    "positive": [
+     "exact conditional admission declaration"
+    ],
+    "negative": [
+     {
+      "mutation": "label change dollar_ticket->admission without root admission",
+      "intended_predicate": "no guarantee from relabelling"
+     }
+    ]
+   },
+   "findings": [
+    {
+     "finding_id": "R8-NAMESPACE-01",
+     "relation": "direct"
+    }
+   ]
+  },
+  {
+   "claim_id": "VC08/PM1",
+   "family": "primary_membership_validity_exact_F",
+   "subject": {
+    "origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/inputs/sessions/0/launch/auth_lane",
+     "byte_start": 3695,
+     "byte_end_exclusive": 3709,
+     "token_sha256": "a2396b85beb4af3748fd803f9690f6a2546f5f847bb28bbfa581cf38e7d23559",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "subscription"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/auth_lane",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "subscription"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/billing",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "unknown"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/usd",
+     "presence": "absent"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "field": "/reserved_usd",
+     "presence": "absent"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "C-KEY-5"
+    },
+    {
+     "policy_id": "CK",
+     "section": "X-DECISION X-BRANCH-017"
+    },
+    {
+     "policy_id": "CK",
+     "section": "INV-F9"
+    },
+    {
+     "policy_id": "CK",
+     "section": "F-REPLACEMENT-1; types.Replacement"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": {
+    "variant": "PrimaryCoverage",
+    "key_fact": "subscription",
+    "dollar_primary_obligations": [],
+    "settlement_validity": "not_applicable",
+    "obligation": {
+     "state": "none",
+     "cause": "subscription",
+     "amount_source": "none"
+    },
+    "replacement": {
+     "eligible": false,
+     "reason": "NoReservation"
+    },
+    "replacement_note": "Post-derivation self-correction (typed vocabulary, not output-matching): ck.json type Replacement has only eligible/ineligible and F-REPLACEMENT-1 maps the no_reservation fact to NoReservation; the original label not_applicable was not a lawful variant.",
+    "accepted_coverage": [],
+    "definite_links": [],
+    "invariant": "holds for every unit in both namespace branches"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "no dollar obligation"
+    ],
+    "negative": [
+     {
+      "mutation": "NoReservation orphan dollar settlement invented",
+      "intended_predicate": "X-BRANCH-016/018 exclusions"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "VC08/PM2",
+   "family": "primary_membership_validity_exact_F",
+   "subject": {
+    "units": "S1/turn-1"
+   },
+   "status": {
+    "kind": "RequiredUnmet",
+    "reason": "unit grouping (and so per-unit execution/forwarding) depends on admission-namespace grant",
+    "decision_owner": "root",
+    "unmet_premise_refs": [
+     "VC08/PREM-ADMISSION-NAMESPACE"
+    ]
+   },
+   "premise_refs": [
+    "VC08/PREM-ADMISSION-NAMESPACE"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "TEMPORAL-AND-FINALIZATION \u00a76.1-6.2"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": null,
+   "consequence_if_admitted": {
+    "variant": "UnitFacts",
+    "unit_origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ],
+    "execution": "terminal",
+    "forwarding": "forwarded",
+    "pool": "codex",
+    "billing": "not_applicable(unknown)"
+   },
+   "controls": {
+    "positive": [
+     "one codex unit terminal/forwarded"
+    ],
+    "negative": [
+     {
+      "mutation": "two units with dollar money",
+      "intended_predicate": "INV-F9"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "VC08/VA1",
+   "family": "valuation_retained_amounts",
+   "subject": {
+    "origin": "S1/turn-1:2"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/subscription_proxy/cost_proxy_usd",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "0.015"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/subscription_proxy/measurement",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "api_equivalent_cost_proxy"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/usage/input_tokens",
+     "presence": "value",
+     "json_type": "number",
+     "lexeme": "1000"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "X-DECISION X-BRANCH-017"
+    },
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a72.2 mechanism 2 cost-proxy"
+    },
+    {
+     "policy_id": "CK",
+     "section": "INV-F9"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": {
+    "variant": "ObservationValuation",
+    "origin": "S1/turn-1:2",
+    "state": "not_applicable",
+    "reason": "clean subscription lane: Codex pool, billing unknown; cost_proxy_usd is an API-equivalent cost proxy, not dollar evidence"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "not_applicable"
+    ],
+    "negative": [
+     {
+      "mutation": "valued 15000000 PiApi exposure",
+      "intended_predicate": "INV-F9 Codex attempts carry no money"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "VC08/VA2",
+   "family": "valuation_retained_amounts",
+   "subject": {
+    "origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/usd",
+     "presence": "absent"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "field": "/reserved_usd",
+     "presence": "absent"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "X-DECISION X-BRANCH-017"
+    },
+    {
+     "policy_id": "CK",
+     "section": "EXACT-WIRE"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": {
+    "variant": "RetainedComponents",
+    "components": [],
+    "exposure_every_unit": {
+     "pool": "codex",
+     "billing": "unknown"
+    },
+    "invariant": "both namespace branches"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "codex/unknown"
+    ],
+    "negative": [
+     {
+      "mutation": "pi_api exposure with nano",
+      "intended_predicate": "INV-F9"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "VC08/T1",
+   "family": "T_ownership_candidates_lifecycle_placement",
+   "subject": {
+    "session": "S1"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/inputs/sessions/0/lifecycle",
+     "byte_start": 3799,
+     "byte_end_exclusive": 3972,
+     "token_sha256": "701c11ca2d19052df4a323a8a41dc3c43e792a23a675b7e4a77a616b38817dd5",
+     "presence": "value",
+     "json_type": "array"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/inputs/sessions/0/lifecycle/0/at",
+     "byte_start": 3820,
+     "byte_end_exclusive": 3842,
+     "token_sha256": "b31f04a43f1b490762781c4ede3d044f008696aed570770bda5fa0857d0b7de2",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:00:10Z"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/inputs/reference_time",
+     "byte_start": 3597,
+     "byte_end_exclusive": 3619,
+     "token_sha256": "a1359231eec5e473f993cee1c7181caf272627cfbf575f464781eaee718966af",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T07:00:00Z"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/inputs/sessions/0/lifecycle/1/at",
+     "byte_start": 3912,
+     "byte_end_exclusive": 3934,
+     "token_sha256": "850ed653176f6a62af66509ba56533632926260d4cfbd8eea55f6dd2470857c4",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:50:00Z"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "field": "/at",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:00Z"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/at",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:02Z"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a710 L-1..L-6"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": {
+    "variant": "SessionLifecycle",
+    "alias": "S1",
+    "state": "retired",
+    "at": "2026-11-10T06:50:00Z",
+    "reopened": false,
+    "clock": "trusted",
+    "checks": {
+     "L1_rows_monotone": true,
+     "L2_rows_not_before_turn_start": true,
+     "L3_rows_not_after_retire": true,
+     "L6_no_row_after_reference_time": true
+    }
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "accept lifecycle retired/reopened false/clock trusted"
+    ],
+    "negative": [
+     {
+      "mutation": "supplied lifecycle state open (or reopened true) with unchanged rows",
+      "intended_predicate": "L-4/L-5 lifecycle derivation"
+     },
+     {
+      "mutation": "move a proxy row after reference_time without updating clock",
+      "intended_predicate": "L-6 clock"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "VC08/T2",
+   "family": "T_ownership_candidates_lifecycle_placement",
+   "subject": {
+    "origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ],
+    "evaluation": "default"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/evaluations/0/objectives/0/admissions",
+     "byte_start": 1588,
+     "byte_end_exclusive": 1590,
+     "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "presence": "value",
+     "json_type": "array"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/evaluations/0/objectives/0/tree_sessions/0",
+     "byte_start": 1766,
+     "byte_end_exclusive": 1804,
+     "token_sha256": "7dd6c93d8edb4bd7537698c854f3b8cc660cb8997df18756229d585764dba61c",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "00000000-0000-4000-8000-0000000000c1"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/evaluations/0/objectives/0/started_at",
+     "byte_start": 1712,
+     "byte_end_exclusive": 1734,
+     "token_sha256": "9b9e53bacf50073b057d6e27a753cd3daec461d599689c15898c840d302aee84",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:00:00Z"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/evaluations/0/objectives/0/closed_at",
+     "byte_start": 1610,
+     "byte_end_exclusive": 1614,
+     "token_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+     "presence": "null",
+     "json_type": "null",
+     "lexeme": "null"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a711.1 O-5, O-6, O-7"
+    },
+    {
+     "policy_id": "CONTRACT",
+     "section": "INVARIANTS T5"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": {
+    "variant": "Ownership",
+    "per_origin": {
+     "S1/turn-1:1": {
+      "ownership": "unadmitted",
+      "candidates": [
+       "o"
+      ],
+      "pool": "codex"
+     },
+     "S1/turn-1:2": {
+      "ownership": "unadmitted",
+      "candidates": [
+       "o"
+      ],
+      "pool": "codex"
+     }
+    },
+    "blocks_pi_api_admission": false
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "unadmitted candidate o, codex only"
+    ],
+    "negative": [
+     {
+      "mutation": "HistoricalUnadmitted blocking for codex attempt",
+      "intended_predicate": "O-5 / T5"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "VC08/T3",
+   "family": "T_ownership_candidates_lifecycle_placement",
+   "subject": {
+    "origins": [
+     "S1/turn-1:1",
+     "S1/turn-1:2"
+    ]
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:1",
+     "raw_utf8_sha256": "052bdde40ad6270b5698ef216cce2e57a36763aa2384991ad2fb6bbae42085ac",
+     "field": "/at",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:00Z"
+    },
+    {
+     "ref": "raw_field",
+     "origin_id": "S1/turn-1:2",
+     "raw_utf8_sha256": "1f03afd862e0263a578084625b9dcccfecd53b1be1721ce8af4e20f037d1c60c",
+     "field": "/at",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "2026-11-10T06:30:02Z"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a711.1 O-7; \u00a711.2"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": {
+    "variant": "Placement",
+    "window": {
+     "start": "2026-11-10T06:00:00Z",
+     "end": "open",
+     "closure": "no_claim"
+    },
+    "owned_placements": {},
+    "candidate_interval_relation": {
+     "S1/turn-1:1": "inside",
+     "S1/turn-1:2": "inside"
+    }
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "candidate inside"
+    ],
+    "negative": [
+     {
+      "mutation": "candidate dropped as before/after",
+      "intended_predicate": "O-7"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "VC08/G1",
+   "family": "gate_commitment_provisionality",
+   "subject": {
+    "objective": "o"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/evaluations/0/objectives/0/admissions",
+     "byte_start": 1588,
+     "byte_end_exclusive": 1590,
+     "token_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "presence": "value",
+     "json_type": "array"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/profile",
+     "byte_start": 5238,
+     "byte_end_exclusive": 5256,
+     "token_sha256": "d8b43b9bedfe68122a5f3360913dc300c3452238a1d13467775cb60b81aee611",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "current_producer"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/trusted_fixture_inputs",
+     "presence": "absent"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a712.3"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": {
+    "variant": "CommitmentState",
+    "commitments": [],
+    "gate": "no admissions, so no gate decision"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "no commitments"
+    ],
+    "negative": [
+     {
+      "mutation": "commitment invented from proxy admission row",
+      "intended_predicate": "subscription_proxy_admitted is evidence, not objective admission"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "VC08/G2",
+   "family": "gate_commitment_provisionality",
+   "subject": {
+    "evaluation": "default",
+    "objective": "o"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "VC08/T2",
+    "VC08/VA2"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a712.1"
+    },
+    {
+     "policy_id": "CK",
+     "section": "R-FINANCIAL-PROVISIONAL rev2"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": {
+    "variant": "ObjectiveStanding",
+    "status": "established",
+    "reasons": [],
+    "provisional": false,
+    "owned_closed": {
+     "kind": "exact",
+     "nano": "0"
+    },
+    "owned_outstanding": {
+     "kind": "exact",
+     "nano": "0"
+    },
+    "predecessor_obligations": {
+     "kind": "exact",
+     "nano": "0"
+    }
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "established"
+    ],
+    "negative": [
+     {
+      "mutation": "not_established due to codex candidate",
+      "intended_predicate": "O-5"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "VC08/G3",
+   "family": "gate_commitment_provisionality",
+   "subject": {
+    "evaluation": "default",
+    "admission_request": "o"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/evaluations/0/admission_request/new",
+     "byte_start": 222,
+     "byte_end_exclusive": 233,
+     "token_sha256": "490cf7575da10dc49f2b973c322411b18ff6b65018411050f5288306f8db8207",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "100000000"
+    },
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/evaluations/0/objectives/0/limit",
+     "byte_start": 1630,
+     "byte_end_exclusive": 1642,
+     "token_sha256": "bdb588ee73547b3eafede9d045805cb5a4a9e97271207895bb4c8b17968b2c78",
+     "presence": "value",
+     "json_type": "string",
+     "lexeme": "1000000000"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a712.4 step 5"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": {
+    "variant": "AdmissionDecision",
+    "objective": "o",
+    "known": {
+     "nano": "100000000"
+    },
+    "decision": "admit",
+    "step": "headroom"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "admit"
+    ],
+    "negative": [
+     {
+      "mutation": "refused/not_established",
+      "intended_predicate": "\u00a712.4"
+     }
+    ]
+   },
+   "findings": []
+  },
+  {
+   "claim_id": "VC08/CO1",
+   "family": "finite_continuity_order",
+   "subject": {
+    "case": "VC08-subscription-measured-request"
+   },
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    {
+     "ref": "case_token",
+     "file": "corpus/cases/VC08-subscription-measured-request.json",
+     "file_sha256": "7ebd1990e4f116f02bdb10b23bdb8aaf80df2c26a85ca6fc561fb36736544a65",
+     "pointer": "/evaluations",
+     "byte_start": 179,
+     "byte_end_exclusive": 1829,
+     "token_sha256": "dfab62bfcd61b692ce62e0e5834d2d36582d8c0e6de55f32d2c9d6cb5f525556",
+     "presence": "value",
+     "json_type": "array"
+    }
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "CONTINUITY rev1"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected": {
+    "variant": "FiniteContinuity",
+    "continuity_applicable": false,
+    "reason": "no predecessor accounting subject; single evaluation",
+    "cross_evaluation_equalities": [],
+    "order_invariance": "final-fact function"
+   },
+   "consequence_if_admitted": null,
+   "controls": {
+    "positive": [
+     "inapplicable"
+    ],
+    "negative": [
+     {
+      "mutation": "route-dependent",
+      "intended_predicate": "final-fact"
+     }
+    ]
+   },
+   "findings": []
+  }
+ ],
+ "family_status": {
+  "raw_E_identity_cardinality": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "VC08/E1",
+    "VC08/E2",
+    "VC08/E3"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "namespace_grants": {
+   "status": "RequiredUnmet",
+   "claim_ids": [
+    "VC08/NS1",
+    "VC08/NS2",
+    "VC08/NS3"
+   ],
+   "unmet_claim_ids": [
+    "VC08/NS3"
+   ],
+   "decision_owners": [
+    "root"
+   ]
+  },
+  "primary_membership_validity_exact_F": {
+   "status": "RequiredUnmet",
+   "claim_ids": [
+    "VC08/PM1",
+    "VC08/PM2"
+   ],
+   "unmet_claim_ids": [
+    "VC08/PM2"
+   ],
+   "decision_owners": [
+    "root"
+   ]
+  },
+  "valuation_retained_amounts": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "VC08/VA1",
+    "VC08/VA2"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "T_ownership_candidates_lifecycle_placement": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "VC08/T1",
+    "VC08/T2",
+    "VC08/T3"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "gate_commitment_provisionality": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "VC08/G1",
+    "VC08/G2",
+    "VC08/G3"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  },
+  "finite_continuity_order": {
+   "status": "DerivedNominal",
+   "claim_ids": [
+    "VC08/CO1"
+   ],
+   "unmet_claim_ids": [],
+   "decision_owners": []
+  }
+ },
+ "scope_lows": [
+  {
+   "scope_id": "VC08-subscription-measured-request/default/o/owned_closed",
+   "evaluation": "default",
+   "objective": "o",
+   "label": "owned_closed",
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "VC08/T2",
+    "VC08/VA1"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "SUPPORTED-LOW"
+    },
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a711.1 O-5"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected_low": {
+    "owned_unit_origin_sets": [],
+    "U": [],
+    "seed": [],
+    "slots": [],
+    "single_floor": {
+     "nano": "0"
+    },
+    "independent_floor": {
+     "nano": "0"
+    },
+    "credits": [],
+    "selected_low": {
+     "nano": "0"
+    },
+    "credit_mode": "none",
+    "basis": "none"
+   },
+   "high": {
+    "status": {
+     "kind": "DerivedNominal"
+    },
+    "expected": {
+     "kind": "exact",
+     "nano": "0",
+     "basis_histogram": {}
+    }
+   },
+   "consequence_if_admitted": null,
+   "note": "U empty: codex usage is not a PiApi financial observation (X-BRANCH-017 valuation not_applicable); nothing is owned."
+  },
+  {
+   "scope_id": "VC08-subscription-measured-request/default/o/owned_outstanding",
+   "evaluation": "default",
+   "objective": "o",
+   "label": "owned_outstanding",
+   "status": {
+    "kind": "DerivedNominal"
+   },
+   "premise_refs": [
+    "VC08/T2",
+    "VC08/VA1"
+   ],
+   "policy_clauses": [
+    {
+     "policy_id": "CK",
+     "section": "SUPPORTED-LOW"
+    },
+    {
+     "policy_id": "CONTRACT",
+     "section": "\u00a711.1 O-5"
+    }
+   ],
+   "argument_ref": "DERIVATIONS-BATCH1.md#vc08",
+   "expected_low": {
+    "owned_unit_origin_sets": [],
+    "U": [],
+    "seed": [],
+    "slots": [],
+    "single_floor": {
+     "nano": "0"
+    },
+    "independent_floor": {
+     "nano": "0"
+    },
+    "credits": [],
+    "selected_low": {
+     "nano": "0"
+    },
+    "credit_mode": "none",
+    "basis": "none"
+   },
+   "high": {
+    "status": {
+     "kind": "DerivedNominal"
+    },
+    "expected": {
+     "kind": "exact",
+     "nano": "0",
+     "basis_histogram": {}
+    }
+   },
+   "consequence_if_admitted": null,
+   "note": "U empty: codex usage is not a PiApi financial observation (X-BRANCH-017 valuation not_applicable); nothing is owned."
+  }
+ ],
+ "excluded_channels": [
+  {
+   "channel": "K attempt finding codes",
+   "reason": "Not one of the seven families; canonical vocabulary only partially present."
+  }
+ ],
+ "reuse": [
+  {
+   "source": "derivation-stage DERIVATIONS.md#N5",
+   "what": "namespace mismatch argument",
+   "verified_how": "raw fields and declared payload re-read"
+  }
+ ]
+}

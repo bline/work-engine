@@ -55,9 +55,7 @@ fn run() -> Result<(), String> {
         }
         "canonical" => {
             let path = args.next().ok_or("missing canonical path")?;
-            let value: serde_json::Value =
-                serde_json::from_slice(&fs::read(&path).map_err(|e| e.to_string())?)
-                    .map_err(|e| e.to_string())?;
+            let value = spec::parse_json(&fs::read(&path).map_err(|e| e.to_string())?)?;
             let schema: serde_json::Value = serde_json::from_slice(
                 &fs::read(root.join("spec/ck.schema.json")).map_err(|e| e.to_string())?,
             )
@@ -76,9 +74,7 @@ fn run() -> Result<(), String> {
         }
         "evidence" | "wire" => {
             let path = args.next().ok_or("missing document path")?;
-            let value: serde_json::Value =
-                serde_json::from_slice(&fs::read(&path).map_err(|e| e.to_string())?)
-                    .map_err(|e| e.to_string())?;
+            let value = spec::parse_json(&fs::read(&path).map_err(|e| e.to_string())?)?;
             if command == "wire" {
                 spec::validate_wire_document(&s, &value)?;
             } else if value.get("documents").is_some() {

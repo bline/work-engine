@@ -1,0 +1,153 @@
+{
+ "added_in": "1.3-s1",
+ "case_id": "P132-CP-closed-predecessor-outstanding",
+ "contract": "pi-accounting-contract/1.7-s1",
+ "evaluations": [
+  {
+   "admission_request": {
+    "new": "100000000",
+    "objective": "s"
+   },
+   "name": "request-successor",
+   "objectives": [
+    {
+     "admissions": [
+      {
+       "admission_id": "a1",
+       "rows": [
+        {
+         "admission_id": "a1",
+         "at": "2026-11-10T06:00:05Z",
+         "event": "pending",
+         "max_usd": 1.0
+        },
+        {
+         "admission_id": "a1",
+         "at": "2026-11-10T06:00:10Z",
+         "event": "launched",
+         "session_id": "00000000-0000-4000-8000-0000000000c1"
+        }
+       ],
+       "session": "00000000-0000-4000-8000-0000000000c1",
+       "source": "journal"
+      }
+     ],
+     "close": {
+      "at": "2026-11-10T06:40:00Z",
+      "disposition": "complete",
+      "reason": "objective finished",
+      "set_by": "user"
+     },
+     "closed_at": "2026-11-10T06:40:00Z",
+     "limit": "1000000000",
+     "objective": "p",
+     "predecessor": null,
+     "started_at": "2026-11-10T06:00:00Z",
+     "tree_sessions": [
+      "00000000-0000-4000-8000-0000000000c1"
+     ]
+    },
+    {
+     "admissions": [],
+     "closed_at": null,
+     "limit": "2000000000",
+     "objective": "s",
+     "predecessor": "p",
+     "started_at": "2026-11-10T06:45:00Z",
+     "tree_sessions": []
+    }
+   ]
+  },
+  {
+   "admission_request": {
+    "new": "100000000",
+    "objective": "p"
+   },
+   "name": "request-predecessor",
+   "objectives": [
+    {
+     "admissions": [
+      {
+       "admission_id": "a1",
+       "rows": [
+        {
+         "admission_id": "a1",
+         "at": "2026-11-10T06:00:05Z",
+         "event": "pending",
+         "max_usd": 1.0
+        },
+        {
+         "admission_id": "a1",
+         "at": "2026-11-10T06:00:10Z",
+         "event": "launched",
+         "session_id": "00000000-0000-4000-8000-0000000000c1"
+        }
+       ],
+       "session": "00000000-0000-4000-8000-0000000000c1",
+       "source": "journal"
+      }
+     ],
+     "close": {
+      "at": "2026-11-10T06:40:00Z",
+      "disposition": "complete",
+      "reason": "objective finished",
+      "set_by": "user"
+     },
+     "closed_at": "2026-11-10T06:40:00Z",
+     "limit": "1000000000",
+     "objective": "p",
+     "predecessor": null,
+     "started_at": "2026-11-10T06:00:00Z",
+     "tree_sessions": [
+      "00000000-0000-4000-8000-0000000000c1"
+     ]
+    },
+    {
+     "admissions": [],
+     "closed_at": null,
+     "limit": "2000000000",
+     "objective": "s",
+     "predecessor": "p",
+     "started_at": "2026-11-10T06:45:00Z",
+     "tree_sessions": []
+    }
+   ]
+  }
+ ],
+ "inputs": {
+  "rates": {
+   "anthropic_api_rates.json": "8a286433d9e08b37533f2f908f2db60c4357e1a566018c9ca8364937652bdef5",
+   "openai_api_rates.json": "c0bdfd66ee69f1644eaf188f87f6af5e47beacc0739d20aac5846c923d66fd58"
+  },
+  "reference_time": "2026-11-10T07:00:00Z",
+  "sessions": [
+   {
+    "alias": "S1",
+    "launch": {
+     "auth_lane": "api",
+     "model": "openai/gpt-6-astra",
+     "parent": "root"
+    },
+    "lifecycle": [
+     {
+      "at": "2026-11-10T06:00:10Z",
+      "event": "launch",
+      "turn": 1
+     }
+    ],
+    "logs": {
+     "turn-1": {
+      "final_newline": true,
+      "lines": [
+       "{\"at\": \"2026-11-10T06:30:00Z\", \"event\": \"usd_reserved\", \"n\": 1, \"rid\": 1, \"reserved_usd\": 0.5, \"input_bound\": 6000, \"bound_basis\": \"bytes\"}"
+      ]
+     }
+    },
+    "session_id": "00000000-0000-4000-8000-0000000000c1"
+   }
+  ]
+ },
+ "profile": "current_producer",
+ "role": "finding",
+ "schema": "pi-accounting-corpus/1"
+}
