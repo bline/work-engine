@@ -1,0 +1,36 @@
+{
+ "schema": "org-owner-decision/v1",
+ "at": "2026-11-17T06:07:18.680110+00:00",
+ "operator_text": "approve the design",
+ "recorded_by": "Pi root 01a1e56e-be12-7424-977b-c7c7983887d0",
+ "subject": {
+  "proposal": {
+   "path": "/home/bline/cbm-work/org-pi-slices-20261116/s2/design/PROPOSAL.md",
+   "sha256": "4f0c9de08395adcacf9ee111641ecffef003fdb9d8cb7ac65a7f21ddaf8fa1f9"
+  },
+  "addendum": {
+   "path": "/home/bline/cbm-work/org-pi-slices-20261116/s2/ROOT-S2-ADDENDUM.md",
+   "sha256": "6502fe04bcf619e3f2bfd68554eb54d8868231bb313242b24fc91dcaec6ff850"
+  },
+  "review": {
+   "path": "/home/bline/cbm-work/org-pi-slices-20261116/s2/review/REVIEW.md",
+   "sha256": "82b6b32e991803fbfd5786e1f575a23927ee49fe13c8f2b7dcb2191d49fe51c8"
+  }
+ },
+ "approved": {
+  "O1": "yes",
+  "O2": "yes, accepting same-account vantages never separate",
+  "O3": "yes",
+  "O4": "yes",
+  "O5": "defer",
+  "O6": "yes (observation-source obligations are acceptance criteria for later storage)",
+  "O7": "accept; mapping-rule owners named later",
+  "O8": "yes",
+  "O9": "yes (adopted parts of Amendment 6.1 accepted knowingly)",
+  "O10": "yes",
+  "O11": "yes: operator 'build R2-S' (2026-11-16)"
+ },
+ "not_decided": {},
+ "effect": "R2 admission contract approved as design (proposal as revised by root addendum), and R2-S implementation approved (O11, operator 'build R2-S'). Storage/publication, grant issuance, R2-A' core and production admission remain unauthorized.",
+ "interpretation_note": "First answer 'approve the design' approved O1-O10 only; the later answer 'build R2-S' (2026-11-16/17) approved O11. Superseded text said O11 not approved."
+}

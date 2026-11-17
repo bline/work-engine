@@ -34,11 +34,11 @@ mod select;
 pub mod fixture;
 
 pub use prepare::{
-    AuthorityContext, Blocker, BlockerClass, CandidateIdentity, ComponentBindingContext,
-    ConditionContext, ConstraintContext, EnforcementRow, HostEnforcement, ModelContext,
-    NormativeContext, ObligationContext, PreparationRequest, PreparationStatus, Provenance,
-    ReviewPreparation, RowEvidenceClass, RowStatus, SeparationContext, Subject, TraceEndpoint,
-    VantageContext, prepare,
+    AuthorityContext, Blocker, BlockerClass, BlockerKind, CandidateIdentity,
+    ComponentBindingContext, ConditionContext, ConstraintContext, EnforcementRow, HostEnforcement,
+    ModelContext, NormativeContext, ObligationContext, PreparationRequest, PreparationStatus,
+    Provenance, ReviewPreparation, RowEvidenceClass, RowStatus, SeparationContext, Subject,
+    TraceEndpoint, VantageContext, prepare,
 };
 pub use realization::{
     ConditionRealization, Disposition, MutationClaim, RealizationCheck, RealizationClaim,

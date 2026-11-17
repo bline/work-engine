@@ -1,0 +1,72 @@
+{
+ "schema": "org-slice-acceptance/v1",
+ "at": "2026-11-17T07:29:36.287972+00:00",
+ "slice": "S3 = R2-S refusal seam with assumed discharges (approved R2 design, O11)",
+ "decision": "accepted_bounded_private_readiness",
+ "decision_owner": "Pi root 01a1e56e-be12-7424-977b-c7c7983887d0",
+ "authority": {
+  "path": "/home/bline/cbm-work/org-pi-slices-20261116/s2/OWNER-DECISION-S2.json",
+  "sha256": "b04d749a79b80568bb8d25d60e3cf6cedc406f6ba33b473b1471a0c8e37fb7f5"
+ },
+ "subject": {
+  "repository": "/home/bline/cbm-work/wt-p1-vertical-20261113",
+  "checkpoint_commit_oid": "1ed99580b9bc765ca23749445239cea9f8f0460a",
+  "checkpoint_tree_oid": "a5ffe708794f976d7f893917af93aed624fd78dc",
+  "task_patch_digest": "de161500db967a03cb67f3c668fea48ad89aa24609244724acc02a3a57025ecf",
+  "baseline": "e6a57e7cdce4fc5f7e9a1d6710bfe116812d1e2f",
+  "ref": "refs/work-engine/checkpoints/org-pi-slices-20261116/slice-3/candidate-2"
+ },
+ "root_ruling": "F-1 option 1: host description keeps ReadOnlyClaimed as a scoped host-backed claim (no granted tool; refused at allocation and request); process-level writes not established; evidence gap is the realization-admission blocker passed only by labelled assumed discharge; realization check blockers never assumable.",
+ "evidence": {
+  "root_gate": {
+   "path": "/home/bline/cbm-work/org-pi-slices-20261116/s3/ROOT-GATE-2.json",
+   "sha256": "b8f73dc76aa87d3ca57f520987c37617787914c3c562db971ff31c0f7699c101"
+  },
+  "matrix": "/home/bline/cbm-work/org-pi-slices-20261116/s3/build/MATRIX.md",
+  "mutants": [
+   "/home/bline/cbm-work/org-pi-slices-20261116/s3/build/mutants/",
+   "/home/bline/cbm-work/org-pi-slices-20261116/s3/remediation-1/mutant-F2/"
+  ],
+  "review": {
+   "path": "/home/bline/cbm-work/org-pi-slices-20261116/s3/review/REVIEW-1.md",
+   "sha256": "33a84f4d207a16465b69dd1f5ead97f0381245f15d9cc6f63c07ead61f72cf81",
+   "session": "2ee4b077-700b-4ea1-8362-b00718e62af0",
+   "verdict": "changes_required (0 P1, 3 P2)"
+  },
+  "recheck": {
+   "path": "/home/bline/cbm-work/org-pi-slices-20261116/s3/review/RECHECK-1.md",
+   "sha256": "f55fe9676028b9333da64a2149c0ef9e91553b5110731e74b250b772fe41372d",
+   "session": "dee954ad-b8ab-4885-9f47-448d471d0294 (copy-on-resume of 2ee4b077)",
+   "verdict": "accept_private_readiness"
+  }
+ },
+ "outcome": [
+  "closed BlockerKind (9) on every blocker",
+  "host-derived realization description; caller-supplied realization refused; non-default adapter refused before spawn",
+  "gate before spawn and before consumption; run_native private; refusal => spawn 0, consumer 0",
+  "host-owned total discharge function; labelled AssumedDischarges (not admissions) carried in Delivered; realization check blockers never assumable",
+  "second labelled assumption world (frozen requirements minus realizationConstraints) carries the native suite; frozen world refused before spawn by known realization incompatibility",
+  "S1 semantic_limit closed for the fixture path"
+ ],
+ "p3_carried": [
+  "default adapter path is name-level correspondence; node/sdk_root/control presumed",
+  "run_attempt/run_attempt_observed ungated generic spawn routes; consume_fixture_result callable without gate",
+  "AssumedDischarges not bound to a binding; publicly mintable via gate::assess",
+  "contract bytes changed vs S1: kind per blocker and non-null realization_evaluation",
+  "PreparationChanged, GateRefusal::Preparation, run_native boundary check untested; pre-spawn Undischarged not produced via host path",
+  "mutants hand-applied pre-checkpoint, n=1/row; S1/S3 mutants not re-run at 1ed99580",
+  "DeliverError::Consumer carries no assumed discharges",
+  "no native positive run carries non-empty constraint contexts",
+  "cargo fmt --all --check reports unrelated workspace diff (four-crate fmt passes)"
+ ],
+ "unclaimed": [
+  "fixture standing only",
+  "assumed discharges are not admissions and establish nothing",
+  "no Gate O/Gate R, authority records, stale/revoked/unknown, epochs or storage",
+  "R2 exit not met (needs R2-A' admission core)",
+  "no confinement; process-level writes not established",
+  "production admission still refuses; no runner without fixture feature",
+  "independence = separate session/context, same provider family",
+  "private readiness only: not committed/integrated"
+ ]
+}

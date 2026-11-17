@@ -1,6 +1,6 @@
 {
  "schema": "org-architecture-risk-history/v1",
- "revision": 39,
+ "revision": 41,
  "events": [
   {
    "id": "prior-c1-r1",
@@ -870,10 +870,40 @@
     "ORG-PV-RLA-004 kept control"
    ],
    "note": "Recurrence of strict-wire, single-consumption-route or refusal-before-consumption invariants in later slices escalates."
+  },
+  {
+   "id": "S2-R2-design-owner-approved",
+   "at": "2026-11-17T06:07:18.680110+00:00",
+   "kind": "owner_design_approval",
+   "decision": {
+    "path": "/home/bline/cbm-work/org-pi-slices-20261116/s2/OWNER-DECISION-S2.json",
+    "sha256": "1b9e717dc5e512bac7425318c68fa7cf19cc393d939af1c8ad37d51e21d84c43"
+   },
+   "independent_rejection_count_increment": 0,
+   "ordinary_repair_authorized": false,
+   "note": "R2 design approved; R2-S implementation not yet authorized"
+  },
+  {
+   "id": "S3-R2S-accepted-private-readiness",
+   "at": "2026-11-17T07:29:36.287972+00:00",
+   "kind": "root_bounded_acceptance",
+   "acceptance": {
+    "path": "/home/bline/cbm-work/org-pi-slices-20261116/s3/S3-ACCEPTANCE.json",
+    "sha256": "f5ce39fb886b914f18e603204666a479e21783ac1155f06b564f2f2e1b5159e5"
+   },
+   "rejections": [
+    {
+     "review": "/home/bline/cbm-work/org-pi-slices-20261116/s3/review/REVIEW-1.md",
+     "subject": "24597fef",
+     "serious": "3 P2 (invariant 2 truthfulness/derivation, absence wording)",
+     "architectural_risk_warning": "first independent rejection in subsystem delivery-gate: warning recorded; bounded repair admitted"
+    }
+   ],
+   "independent_rejection_count_increment": 1
   }
  ],
  "gate": {
-  "state": "S1_accepted_private_readiness",
+  "state": "S3_accepted_private_readiness; delivery-gate subsystem has 1 rejection warning",
   "ordinary_repair_authorized": true
  },
  "triggers": [

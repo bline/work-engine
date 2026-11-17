@@ -83,6 +83,12 @@ pub enum BindingRefusal {
         declared: String,
         prepared: String,
     },
+    /// The request carries a realization claim. The description is derived by the host from what
+    /// it will run (`native::realization_description`); a caller cannot supply or override it.
+    #[error(
+        "the request supplies a realization claim; the host derives the realization description"
+    )]
+    CallerRealization,
     #[error(transparent)]
     Delivery(DeliveryRefusal),
 }
@@ -136,6 +142,8 @@ pub struct ExperimentBinding {
     /// Deterministic observation seam: how many times the existing consumer was actually
     /// invoked through this binding (and its clones). Not an authority; evidence for tests.
     consumer_invocations: std::sync::Arc<std::sync::atomic::AtomicU64>,
+    /// Deterministic observation seam: native spawn attempts through this binding.
+    spawn_attempts: std::sync::Arc<std::sync::atomic::AtomicU64>,
 }
 
 impl ExperimentBinding {
@@ -193,6 +201,15 @@ impl ExperimentBinding {
         transport: Transport,
         supplied: Option<&ReviewPreparation>,
     ) -> Result<Self, BindingRefusal> {
+        if request.realization.is_some() {
+            return Err(BindingRefusal::CallerRealization);
+        }
+        // The preparation is derived with the host's own description of what it will run, so the
+        // delivered path always carries a realization evaluation.
+        let request = &PreparationRequest {
+            realization: Some(crate::native::runner_realization()),
+            ..request.clone()
+        };
         let preparation = prepare(candidate, request).map_err(BindingRefusal::Preparation)?;
         if let Some(part) = supplied.and_then(|s| first_difference(&preparation, s)) {
             return Err(BindingRefusal::PreparationMismatch { part });
@@ -307,13 +324,32 @@ impl ExperimentBinding {
         Ok(Self {
             candidate: candidate.clone(),
             request: request.clone(),
+            // `request` is the host-derived request, not the caller's.
             declaration: declaration.clone(),
             preparation,
             frozen,
             episode,
             synthetic_result: synthetic_result.to_owned(),
             consumer_invocations: Default::default(),
+            spawn_attempts: Default::default(),
         })
+    }
+
+    pub(crate) fn candidate(&self) -> &OrganizationCandidate {
+        &self.candidate
+    }
+
+    /// Runtime count of native child spawn attempts through this binding (and its clones),
+    /// incremented by the private runner immediately before it starts the child. A gate refusal
+    /// before the spawn must show 0. Evidence for tests, not an authority.
+    pub fn spawn_attempts(&self) -> u64 {
+        self.spawn_attempts
+            .load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    pub(crate) fn record_spawn_attempt(&self) {
+        self.spawn_attempts
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     }
 
     /// The canonical preparation the binding derived.
@@ -323,6 +359,8 @@ impl ExperimentBinding {
     pub fn frozen(&self) -> &FrozenDelivery {
         &self.frozen
     }
+    /// The request the preparation was derived from: the caller's obligation and subject with the
+    /// host-derived realization description.
     pub fn request(&self) -> &PreparationRequest {
         &self.request
     }

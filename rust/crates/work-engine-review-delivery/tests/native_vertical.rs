@@ -7,13 +7,20 @@
 //! assumption; nothing here is evidence of a model review, an independent observer, or
 //! production admission.
 //!
+//! R2-S: the suite's positive and failure-path controls run on the labelled **assumption world**
+//! (`tests/fixtures/assumption-world/`, the frozen requirements without realization constraints;
+//! the child is not confined; the host's read-only claim is scoped to "no granted tool" and is
+//! backed by construction and refusal, not by confinement). Every blocker on it passes
+//! only as a labelled fixture `AssumedDischarge`. The frozen world is the negative: refused before
+//! spawn by a known realization incompatibility (spawn attempts 0, consumer invocations 0).
+//!
 //! Every verdict is asserted in-process. When an assertion fails after a native run, the raw
 //! frames and stderr of that run are printed as ordinary failure diagnostics and its scratch
 //! root is kept; nothing is written as retained evidence.
 mod common;
 
 use common::native_inputs::{Scratch, sdk_root};
-use common::world::{World, world};
+use common::world::{World, frozen_world, host_request, world};
 use common::*;
 use review_episode_core::ErrorKind;
 use review_episode_core::codec::parse_json;
@@ -24,16 +31,17 @@ use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use work_engine_review_delivery::binding::{EpisodeInputs, ExperimentBinding};
+use work_engine_review_delivery::gate::{ASSUMED_DISCHARGE_LABEL, Boundary, GateRefusal};
 use work_engine_review_delivery::native::{
-    AttemptDriver, AttemptFacts, AttemptPolicy, CANARY_MARKER, Control, DeliverError, Delivered,
-    DriverStep, KillFact, KillReason, Limits, NativeConfig, NativeRun, ProcessFacts, ReapFact,
-    SendCancel, SendOutcome, SendRecord, StreamCollector, StreamEnd, StreamRecord, TimingFacts,
-    Trailing, WaitObserver, WriteShape, check_attempt_evidence, deliver_and_consume, run_attempt,
-    run_attempt_observed, run_native,
+    AttemptDriver, AttemptFacts, AttemptPolicy, BetweenBoundaries, CANARY_MARKER, Control,
+    DeliverError, Delivered, DriverStep, KillFact, KillReason, Limits, NativeConfig, NativeRun,
+    ProcessFacts, ReapFact, SendCancel, SendOutcome, SendRecord, StreamCollector, StreamEnd,
+    StreamRecord, TimingFacts, Trailing, WaitObserver, WriteShape, check_attempt_evidence,
+    deliver_and_consume, deliver_and_consume_observed, run_attempt, run_attempt_observed,
 };
 use work_engine_review_delivery::{DeliveryRefusal, Transport};
 use work_engine_review_preparation::fixture::{ConsumeRefusal, FixtureDeclaration};
-use work_engine_review_preparation::prepare;
+use work_engine_review_preparation::{Blocker, BlockerClass, BlockerKind, prepare};
 
 const TRANSITION_ID: &str = "result-1";
 
@@ -132,6 +140,7 @@ fn run_of(outcome: &Result<Delivered, DeliverError>) -> Option<&NativeRun> {
         Err(DeliverError::Delivery { run, .. }) | Err(DeliverError::Consumer { run, .. }) => {
             Some(run)
         }
+        Err(DeliverError::Refused { run, .. }) => run.as_deref(),
         Err(DeliverError::Native(_)) => None,
     }
 }
@@ -213,11 +222,46 @@ fn positive_assertions(
     let bound = run.bound.as_ref().expect("bound allocation");
     let frozen = binding.frozen();
 
-    // The preparation delivered is the canonical recomputation (full equality), blockers included.
+    // The preparation delivered is the canonical recomputation (full equality), blockers included,
+    // derived with the host's realization description: the evaluation exists on the delivered path.
     assert_eq!(
         binding.preparation(),
-        &prepare(&w.candidate, &request(None)).unwrap()
+        &prepare(&w.candidate, &host_request()).unwrap()
     );
+    assert!(binding.preparation().realization_evaluation.is_some());
+    assert!(
+        binding
+            .preparation()
+            .blockers
+            .iter()
+            .all(|b| b.class == BlockerClass::Unestablished
+                && b.kind != BlockerKind::RealizationCheck),
+        "only assumable kinds remain on the assumption world"
+    );
+    // F-4: the success output shows that it passed only by labelled assumed discharges, at both
+    // boundaries, covering exactly the blockers of the delivered preparation.
+    let blocker_ids: Vec<(String, BlockerKind)> = binding
+        .preparation()
+        .blockers
+        .iter()
+        .map(|b| (b.id.clone(), b.kind))
+        .collect();
+    assert!(
+        !blocker_ids.is_empty(),
+        "the assumption world carries blockers"
+    );
+    for (assumed, boundary) in [
+        (&delivered.assumed_before_spawn, Boundary::BeforeSpawn),
+        (
+            &delivered.assumed_before_consumption,
+            Boundary::BeforeConsumption,
+        ),
+    ] {
+        assert_eq!(assumed.boundary(), boundary);
+        assert_eq!(assumed.label(), ASSUMED_DISCHARGE_LABEL);
+        assert_eq!(assumed.assumed(), blocker_ids.as_slice());
+    }
+    assert_eq!(binding.spawn_attempts(), 1);
     // SDK-observed: actual SDK identity, one request, exact bytes, empty toolset, idle, no provider/network.
     assert_eq!(bound.allocation().sdk_version, "1.5.0");
     assert!(bound.allocation().node_version.starts_with('v'));
@@ -271,7 +315,7 @@ fn positive_assertions(
         work_engine_review_preparation::fixture::ProductionConsequence::Unestablished
     );
     assert_eq!(
-        prepare(&w.candidate, &request(None)).unwrap().blockers,
+        prepare(&w.candidate, &host_request()).unwrap().blockers,
         blockers_before
     );
     assert_eq!(binding.preparation().blockers, blockers_before);
@@ -294,7 +338,7 @@ fn canonical_preparation_reaches_the_real_sdk_and_the_existing_consumer() {
     let w = world();
     let state = begun();
     let before = canonical(&state);
-    let blockers_before = prepare(&w.candidate, &request(None)).unwrap().blockers;
+    let blockers_before = prepare(&w.candidate, &host_request()).unwrap().blockers;
     assert!(!blockers_before.is_empty());
     let writer = authority();
     let (outcome, binding, _diagnostics) = run_case(
@@ -427,9 +471,20 @@ fn the_adapter_refuses_a_wrong_session_and_a_duplicate_start() {
             "duplicate start refused (host frame 2,",
         ),
     ] {
-        let (cfg, _root) = config(&format!("{name}-raw"), control);
-        let binding = binding_for(&base(&w, &state, &writer), &result_json(|_| {}));
-        let run = run_native(&cfg, &binding).unwrap();
+        // R2-S: the runner is reachable only through the gated entrypoint, whose refusal carries
+        // the whole run.
+        let (outcome, binding, _diagnostics) = run_case(
+            name,
+            control,
+            &base(&w, &state, &writer),
+            &result_json(|_| {}),
+        );
+        let DeliverError::Delivery { refusal, run } = refused(outcome) else {
+            panic!("expected a delivery refusal")
+        };
+        assert!(refusal.is_uncertain(), "{name}: {refusal:?}");
+        assert_eq!(binding.consumer_invocations(), 0, "{name}");
+        assert_eq!(binding.spawn_attempts(), 1, "{name}");
         let error = run.error_frame.as_deref().unwrap_or_default();
         assert!(
             error.contains(needle),
@@ -457,16 +512,217 @@ fn the_adapter_refuses_a_wrong_session_and_a_duplicate_start() {
             );
             assert_eq!(s[0].frame_sha256, s[1].frame_sha256, "{name}");
         }
-        let (outcome, _, _diagnostics) = run_case(
-            name,
-            control,
-            &base(&w, &state, &writer),
-            &result_json(|_| {}),
+    }
+}
+
+// ---- R2-S: refusal seam with assumed discharges --------------------------------------------
+
+/// The assumption world is the frozen requirements without `realizationConstraints`, compiled by
+/// the unchanged v1 compiler (DERIVATION.md). Semantic JSON equality with the derivation.
+#[test]
+fn assumption_world_is_the_frozen_world_without_realization_constraints() {
+    let mut derived: Value = serde_json::from_slice(REQ).unwrap();
+    for_each_condition(&mut derived, |c| {
+        assert!(
+            c.as_object_mut()
+                .unwrap()
+                .remove("realizationConstraints")
+                .is_some()
         );
-        let DeliverError::Delivery { refusal, .. } = refused(outcome) else {
-            panic!("expected a delivery refusal")
+    });
+    let stored: Value = serde_json::from_slice(ASSUMPTION_REQ).unwrap();
+    assert_eq!(stored, derived);
+    let candidate = assumption_candidate();
+    assert_ne!(
+        candidate.content_digest().to_hex(),
+        frozen_world().candidate.content_digest().to_hex()
+    );
+    let prep = prepare(&candidate, &host_request()).unwrap();
+    assert!(
+        prep.model_context
+            .conditions
+            .iter()
+            .all(|c| c.constraints.is_empty())
+    );
+    assert!(
+        prep.model_context
+            .conditions
+            .iter()
+            .all(|c| c.normative.mutation == "none"),
+        "mutation: none stays a requirement; the host claims only that no tool is granted \
+         (process-level writes are not established, and the realization-admission blocker \
+         passes only by the labelled assumed discharge)"
+    );
+}
+
+/// Invariant 3/5: the frozen world through the real host path. The host's truthful description
+/// (provider-disabled, unconfined) is a known incompatibility with the frozen constraints, so the
+/// gate refuses before any child is spawned or any fixture directory is written.
+#[test]
+fn the_frozen_world_is_refused_before_spawn_by_known_realization_incompatibility() {
+    let w = frozen_world();
+    let state = begun();
+    let before = canonical(&state);
+    let writer = authority();
+    let (cfg, scratch) = config("frozen-negative", Control::Positive);
+    let binding = binding_for(&base(&w, &state, &writer), &result_json(|_| {}));
+    let outcome = deliver_and_consume(&cfg, &binding);
+    let DeliverError::Refused {
+        boundary,
+        refusal,
+        run,
+    } = refused(outcome)
+    else {
+        panic!("expected a gate refusal")
+    };
+    assert_eq!(boundary, Boundary::BeforeSpawn);
+    assert!(run.is_none(), "no native run exists");
+    match refusal {
+        GateRefusal::KnownIncompatibility { ids } => assert_eq!(
+            ids,
+            [
+                format!("realization:{COND_BUILDER}:realization:execution_confinement"),
+                format!("realization:{COND_BUILDER}:realization:provider_family"),
+                format!("realization:{COND_CAMPAIGN}:realization:execution_confinement"),
+                format!("realization:{COND_CAMPAIGN}:realization:provider_family"),
+            ]
+        ),
+        other => panic!("expected a known incompatibility, got {other:?}"),
+    }
+    assert_eq!(binding.spawn_attempts(), 0, "no child was spawned");
+    assert_eq!(
+        binding.consumer_invocations(),
+        0,
+        "the consumer was not called"
+    );
+    assert!(
+        std::fs::read_dir(&scratch.path).unwrap().next().is_none(),
+        "the fixture root was never set up"
+    );
+    assert_eq!(canonical(&state), before);
+}
+
+/// F-2: the host's description depends on `cfg.adapter`. A non-default adapter is a program the
+/// host cannot describe (`mutation: NotEstablished`, provider/confinement/continuity unstated), so
+/// it differs from the description the binding prepared with and the gate refuses before any spawn,
+/// on the world that otherwise passes.
+#[test]
+fn a_non_default_adapter_is_refused_before_spawn_because_the_description_differs() {
+    let w = world();
+    let state = begun();
+    let before = canonical(&state);
+    let writer = authority();
+    let (mut cfg, scratch) = config("non-default-adapter", Control::Positive);
+    cfg.adapter = scratch.path.join("another-adapter.mjs");
+    let binding = binding_for(&base(&w, &state, &writer), &result_json(|_| {}));
+    let outcome = deliver_and_consume(&cfg, &binding);
+    let DeliverError::Refused {
+        boundary,
+        refusal,
+        run,
+    } = refused(outcome)
+    else {
+        panic!("expected a gate refusal")
+    };
+    assert_eq!(boundary, Boundary::BeforeSpawn);
+    assert_eq!(refusal, GateRefusal::RealizationDiffers);
+    assert!(run.is_none(), "no native run exists");
+    assert_eq!(binding.spawn_attempts(), 0, "no child was spawned");
+    assert_eq!(
+        binding.consumer_invocations(),
+        0,
+        "the consumer was not called"
+    );
+    assert!(
+        std::fs::read_dir(&scratch.path).unwrap().next().is_none(),
+        "the fixture root was never set up"
+    );
+    assert_eq!(canonical(&state), before);
+}
+
+/// Adds the given blockers at the consumption boundary (the fixture seam can only add).
+struct Observe(Vec<Blocker>);
+impl BetweenBoundaries for Observe {
+    fn observed_before_consumption(&mut self, binding: &ExperimentBinding) -> Vec<Blocker> {
+        assert_eq!(binding.spawn_attempts(), 1, "called after the spawn");
+        assert_eq!(
+            binding.consumer_invocations(),
+            0,
+            "called before consumption"
+        );
+        std::mem::take(&mut self.0)
+    }
+}
+
+fn realization_blocker(property: &str, class: BlockerClass) -> Blocker {
+    Blocker {
+        id: format!("realization:{COND_BUILDER}:{property}"),
+        kind: BlockerKind::RealizationCheck,
+        class,
+        scope: COND_BUILDER.to_owned(),
+        requirement: format!("{property} (observed between boundaries)"),
+        basis: "fixture seam: observed after a verified attempt".to_owned(),
+    }
+}
+
+/// Invariant 3: the same evaluation runs again immediately before consumption and refuses on
+/// failure, after a complete verified native attempt: the consumer is never invoked.
+#[test]
+fn the_pre_consumption_recheck_refuses_after_a_verified_attempt() {
+    let w = world();
+    let state = begun();
+    let before = canonical(&state);
+    let writer = authority();
+    for (name, observed, expected) in [
+        (
+            "recheck-incompatible",
+            realization_blocker(
+                "realization:execution_confinement",
+                BlockerClass::KnownIncompatibility,
+            ),
+            "known",
+        ),
+        (
+            "recheck-undischarged",
+            realization_blocker("mutation", BlockerClass::Unestablished),
+            "undischarged",
+        ),
+    ] {
+        let (cfg, scratch) = config(name, Control::Positive);
+        let binding = binding_for(&base(&w, &state, &writer), &result_json(|_| {}));
+        let id = observed.id.clone();
+        let outcome = deliver_and_consume_observed(&cfg, &binding, &mut Observe(vec![observed]));
+        let _scratch = scratch;
+        let DeliverError::Refused {
+            boundary,
+            refusal,
+            run,
+        } = refused(outcome)
+        else {
+            panic!("{name}: expected a gate refusal")
         };
-        assert!(refusal.is_uncertain(), "{name}: {refusal:?}");
+        assert_eq!(boundary, Boundary::BeforeConsumption, "{name}");
+        match (expected, &refusal) {
+            ("known", GateRefusal::KnownIncompatibility { ids })
+            | ("undischarged", GateRefusal::Undischarged { ids }) => {
+                assert_eq!(ids, std::slice::from_ref(&id), "{name}")
+            }
+            _ => panic!("{name}: unexpected refusal {refusal:?}"),
+        }
+        let run = run.expect("the verified run is retained");
+        assert_eq!(
+            run.incompleteness(),
+            Vec::<String>::new(),
+            "{name}: complete attempt"
+        );
+        assert!(run.observation.is_some(), "{name}");
+        assert_eq!(binding.spawn_attempts(), 1, "{name}");
+        assert_eq!(
+            binding.consumer_invocations(),
+            0,
+            "{name}: consumer never ran"
+        );
+        assert_eq!(canonical(&state), before, "{name}");
     }
 }
 

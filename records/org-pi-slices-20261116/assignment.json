@@ -59,6 +59,46 @@
         "bound_at": "2026-11-17T00:22:46Z",
         "bound_by": "supervisor",
         "reason": "S2 design review Fable xhigh"
+      },
+      {
+        "session_id": "d55070cd-cd4b-400b-b921-74637552423e",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T06:29:32Z",
+        "bound_by": "supervisor",
+        "reason": "S3 R2-S builder Opus high"
+      },
+      {
+        "session_id": "2ee4b077-700b-4ea1-8362-b00718e62af0",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T07:00:05Z",
+        "bound_by": "supervisor",
+        "reason": "S3 review Fable xhigh"
+      },
+      {
+        "session_id": "88daf4c6-5524-4b70-b3bb-6d0a3007493c",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T07:12:09Z",
+        "bound_by": "supervisor",
+        "reason": "S3 remediation-1 Sonnet high"
+      },
+      {
+        "session_id": "8818c115-f7ae-428d-b46b-a08d4d68dca9",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T07:14:31Z",
+        "bound_by": "supervisor",
+        "reason": "S3 remediation-1 copy-on-resume of 88daf4c6"
+      },
+      {
+        "session_id": "dee954ad-b8ab-4885-9f47-448d471d0294",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T07:26:38Z",
+        "bound_by": "supervisor",
+        "reason": "S3 review recheck copy-on-resume of 2ee4b077"
       }
     ],
     "cost_limits": [
@@ -100,6 +140,12 @@
         "previous_cost_limit": null
       }
     ],
-    "additions": []
+    "additions": [
+      {
+        "at": "2026-11-17T06:28:40Z",
+        "item": "S3: R2-S refusal seam with assumed discharges (approved R2 design, O11)",
+        "reason": "Operator approved R2 design and 'build R2-S'; covered by original item 'subsequent authorized slices' — recorded for visibility"
+      }
+    ]
   }
 }

@@ -1,0 +1,6 @@
+{"schema":"org-s3-root-gate/v1","at":"2026-11-17T06:59:56Z","owner":"01a1e56e-be12-7424-977b-c7c7983887d0",
+"subject":{"checkpoint_commit_oid":"24597fef102fd7e98b5c172d6d55aa1cf4fa4d8b","checkpoint_tree_oid":"bf615d590e959c06b0bce4c72ae488679ad26a77","task_patch_digest":"5d3e25afd77bf10f29a5f30daa8580a94a8881eeed8e986994f6d1187f52bbaf","baseline":"e6a57e7c"},
+"export":"/home/bline/cbm-work/org-pi-slices-20261116/s3/export-24597fef (git archive full tree)","plan":"/home/bline/cbm-work/org-pi-slices-20261116/s3/root-gate-plan.json","records":"/home/bline/cbm-work/org-pi-slices-20261116/s3/root-gate-1",
+"summary_sha256":"2b4d5330178ff81e0cedd3e0c2144c764a770861582f45c501172db0a2859d40","status":"passed",
+"results":{"toolchain":"see root-gate-1/toolchain.stdout","fmt":"pass","clippy_delivery_preparation_fixture_all_targets":"pass","test_four":"251 passed/0 failed","default_features":"33 passed","authority_store":"37 passed","native_vertical_x3":"23/23 each"},
+"unclaimed":"actor-recorded custody; fixture standing only"}
