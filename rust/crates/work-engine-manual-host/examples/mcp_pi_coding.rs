@@ -85,12 +85,12 @@ fn call(c: Config, r: Request) -> Result<Value, String> {
     if owner.is_subscription() != (c.schema == SUBSCRIPTION_PROTOCOL) {
         return Err("pi_protocol_profile".into());
     }
-    let mut host = if c.schema == SUBSCRIPTION_PROTOCOL {
-        Host::admit_signed_subscription(job, owner)
-    } else {
-        Host::admit_signed_fixture(job, owner)
+    if c.schema == SUBSCRIPTION_PROTOCOL {
+        // The signed subscription profile (provider access mounted in the
+        // container) is retired; the hosted profile replaces it.
+        return Err("pi_subscription_profile_retired".into());
     }
-    .map_err(|e| e.to_string())?;
+    let mut host = Host::admit_signed_fixture(job, owner).map_err(|e| e.to_string())?;
     let _native = host.run().map_err(|e| e.to_string())?;
     pi_pilot::read(&c.descriptor).map_err(str::to_owned)
 }

@@ -15,23 +15,20 @@ const CLAIMS_SCHEMA='work-engine.pi-coding-lifecycle-claims.v1';
 const CLAIMS_NAMES=['claims_discover','claims_resolve','claims_evidence','claims_currency'];
 if(claimsTools&&(!process.argv.includes('--lifecycle-bridge')||existsSync('/profile/job.json')||existsSync('/auth/signed-fixture.json')))throw Error('claims tools require the provider-disabled lifecycle fixture bridge');
 const config=live?JSON.parse(readFileSync('/profile/job.json','utf8')):null;
-const LIVE_BRIDGE_SCHEMA='work-engine.pi-coding-lifecycle-live.v1';
 // Hosted transport: no network or access material here; the Host dispatches
 // each request and relays the response stream (pull/cancel/ack).
 const hosted=live&&config.schema==='work-engine.pi-coding-hosted.v1';
-// Only the separately versioned continuity schema may combine the lifecycle
-// bridge with the live provider route; every other profile keeps its old rule.
-const solHigh=live&&config.schema==='work-engine.pi-coding-lifecycle-sol-high.v1';
-const liveBridge=bridge&&live&&(config.schema===LIVE_BRIDGE_SCHEMA||solHigh||hosted);
-if(bridge&&(fixtureSigned||(live&&!liveBridge)))throw Error('bridge is provider-disabled only');
-if(live&&!bridge&&(config.schema===LIVE_BRIDGE_SCHEMA||solHigh||hosted))throw Error('live continuity schema requires lifecycle bridge');
+// The hosted profile is the only live profile; credential-mounted live
+// profiles are retired. It always runs on the lifecycle bridge.
+if(live&&(!hosted||!bridge))throw Error('only the hosted live profile on the lifecycle bridge is supported');
+const liveBridge=bridge&&live&&hosted;
+if(bridge&&fixtureSigned)throw Error('bridge is provider-disabled only');
 if(hosted)globalThis.fetch=async()=>{throw Error('network forbidden in hosted profile');};
 if(bridge&&!liveBridge)globalThis.fetch=async()=>{throw Error('network forbidden in coding bridge');};
 if(fixtureSigned&&live)throw Error('fixture/live conflict');
-const signedSubscription=live&&config.schema==='work-engine.pi-coding-signed-subscription.v1';
-const signed=fixtureSigned||signedSubscription;
+const signed=fixtureSigned;
 if(fixtureSigned)globalThis.fetch=async()=>{throw Error('network forbidden in signed fixture');};
-const schema=bridge?(liveBridge?config.schema:(claimsTools?CLAIMS_SCHEMA:'work-engine.pi-coding-lifecycle-fixture.v1')):fixtureSigned?'work-engine.pi-coding-signed-fixture.v1':signedSubscription?config.schema:live?'work-engine.pi-coding-sdk.v1':'work-engine.pi-coding-fixture.v1';
+const schema=bridge?(liveBridge?config.schema:(claimsTools?CLAIMS_SCHEMA:'work-engine.pi-coding-lifecycle-fixture.v1')):fixtureSigned?'work-engine.pi-coding-signed-fixture.v1':'work-engine.pi-coding-fixture.v1';
 let runtime,operation,bridgeCalls=0,bridgeResets=0,bridgeActive=false,bridgeWake,liveBridgeFailed=false;
 const bridgeQueue=[];
 const bridgeNext=()=>bridgeQueue.length?Promise.resolve(bridgeQueue.shift()):new Promise(resolve=>{bridgeWake=resolve;});
@@ -136,23 +133,13 @@ try {
  const agentDir=live?'/config':'/tmp/pi-empty';
  const resourceLoader=new DefaultResourceLoader({cwd:'/workspace',agentDir,settingsManager,noExtensions:true,disabledBuiltinExtensions:['mcp'],noSkills:true,noPromptTemplates:true,noThemes:true,noContextFiles:true});
  await resourceLoader.reload();
- let modelRuntime,rawTerminalEvidence,providerOptions={thinkingLevel:'off'};
+ let modelRuntime,providerOptions={thinkingLevel:'off'};
  if(live){
-  if(config.schema!==schema||config.provider!=='openai-codex'||(solHigh?(config.model!=='gpt-6.1-sol'||config.solHigh?.schema!=='work-engine.sol-high.v1'||config.solHigh?.reasoning_effort!=='high'||typeof config.solHigh?.payer_account_id!=='string'||!config.solHigh.payer_account_id):config.model!=='gpt-6-luna'))throw Error('provider configuration rejected');
-  let credentials;
-  if(hosted){
-   // Nonauthenticating marker only; the Host holds and applies real access.
-   const marker='syntactic.'+Buffer.from(JSON.stringify({'https://api.openai.com/auth':{chatgpt_account_id:'nonsecret-marker'}})).toString('base64')+'.nonsecret';
-   const reject=async()=>{throw Error('credential_mutation');};
-   credentials={read:async p=>p==='openai-codex'?{type:'oauth',access:marker,refresh:'',expires:4102444800000,accountId:'nonsecret-marker'}:undefined,list:async()=>[{providerId:'openai-codex',type:'oauth'}],modify:reject,delete:reject};
-  }else{
-  const nativeAccess=await import('/receiver/pi-native-access.mjs');
-  if(signed)checkConsumption(signedDeadline);
-  const {createNativeAccessStore}=nativeAccess;rawTerminalEvidence=nativeAccess.rawTerminalEvidence;
-  const grant=JSON.parse(readFileSync('/auth/access.json','utf8'));
-  providerOptions=nativeAccess.codingSessionOptions(config,grant);
-  credentials=createNativeAccessStore(grant);
-  }
+  if(config.schema!==schema||config.provider!=='openai-codex'||config.model!=='gpt-6-luna')throw Error('provider configuration rejected');
+  // Nonauthenticating marker only; the Host holds and applies real access.
+  const marker='syntactic.'+Buffer.from(JSON.stringify({'https://api.openai.com/auth':{chatgpt_account_id:'nonsecret-marker'}})).toString('base64')+'.nonsecret';
+  const reject=async()=>{throw Error('credential_mutation');};
+  const credentials={read:async p=>p==='openai-codex'?{type:'oauth',access:marker,refresh:'',expires:4102444800000,accountId:'nonsecret-marker'}:undefined,list:async()=>[{providerId:'openai-codex',type:'oauth'}],modify:reject,delete:reject};
   modelRuntime=await ModelRuntime.create({credentials,modelsPath:null,allowModelNetwork:false,refreshOnCreate:false});
   if(signed)checkConsumption(signedDeadline);
   model=modelRuntime.getModel('openai-codex',config.model);
@@ -217,7 +204,7 @@ try {
      const grant=await new Promise((resolve,reject)=>{
       grants.set(id,resolve);
       options?.signal?.addEventListener('abort',()=>{grants.delete(id);reject(Error('provider grant cancelled'));},{once:true});
-      emit({type:'coding_provider_request',id,...(solHigh?{reasoningEffort:'high',payerAccountId:config.solHigh.payer_account_id}:{}),producer:'pi-1.5.0',invocationId:operation.invocationId,turnCorrelation:operation.turnCorrelation,prompt_sha256:createHash('sha256').update(operation.prompt).digest('hex'),messages:context.messages,agentMessages:session.messages,requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},usage:session.getContextUsage()??null,contextBytes});
+      emit({type:'coding_provider_request',id,producer:'pi-1.5.0',invocationId:operation.invocationId,turnCorrelation:operation.turnCorrelation,prompt_sha256:createHash('sha256').update(operation.prompt).digest('hex'),messages:context.messages,agentMessages:session.messages,requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},usage:session.getContextUsage()??null,contextBytes});
      });
      if(grant.mode!=='live')throw Error('bridge grant mode');
      const until=consumptionDeadline(grant,config.deadline*1000);
@@ -261,24 +248,7 @@ try {
       })();
       return relay;
      }
-     const inner=await original(requestModel,context,{...options,transport:'sse',maxRetries:0,cacheRetention:'none',fetch:(url,init)=>{checkConsumption(until);return globalThis.fetch(url,{...init,redirect:'error'});},timeoutMs:Math.max(1,Math.min(30000,until-Date.now())),
-      onResponse:response=>emit({type:'provider_observation',id,httpStatus:response.status}),
-      onProviderStreamEvent:data=>{const backendModel=data?.response?.model;const rawTerminal=rawTerminalEvidence(data);if(typeof backendModel==='string'||rawTerminal)emit({type:'provider_observation',id,...(typeof backendModel==='string'?{backendModel}:{}),...(rawTerminal?{rawTerminal}:{})});},
-     });
-     const relay=createAssistantMessageEventStream();
-     (async()=>{
-      try{
-       for await(const event of inner){
-        if(event.type==='done'||event.type==='error'){
-         const message=event.type==='done'?event.message:event.error;
-         emit({type:'provider_complete',id,stopReason:message.stopReason,usage:message.usage});
-        }
-        relay.push(event);
-       }
-       relay.end();
-      }catch{const aborted=failure('provider stream failed');for await(const event of aborted)relay.push(event);relay.end();}
-     })();
-     return relay;
+     throw Error('only the hosted transport is supported');
     }catch{return failure('provider entry failed');}
    };
    return;
@@ -300,7 +270,7 @@ try {
   };
   const stream=async(requestModel,context)=>{
    const id=++bridgeCalls;if(id>4)throw Error('bridge request budget');
-   const grant=await new Promise(resolve=>{grants.set(id,resolve);emit({type:'coding_provider_request',id,...(solHigh?{reasoningEffort:'high',payerAccountId:config.solHigh.payer_account_id}:{}),producer:'pi-1.5.0',invocationId:operation.invocationId,turnCorrelation:operation.turnCorrelation,prompt_sha256:createHash('sha256').update(operation.prompt).digest('hex'),messages:context.messages,agentMessages:session.messages,requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},usage:session.getContextUsage()??null});});
+   const grant=await new Promise(resolve=>{grants.set(id,resolve);emit({type:'coding_provider_request',id,producer:'pi-1.5.0',invocationId:operation.invocationId,turnCorrelation:operation.turnCorrelation,prompt_sha256:createHash('sha256').update(operation.prompt).digest('hex'),messages:context.messages,agentMessages:session.messages,requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},usage:session.getContextUsage()??null});});
    checkConsumption(consumptionDeadline(grant,Number.MAX_SAFE_INTEGER));
    let scripted=null;
    if(claimsTools){
@@ -327,48 +297,7 @@ try {
  session.setAutoCompactionEnabled(false);session.setAutoRetryEnabled(false);
  if(!bridge)session.subscribe(event=>emit({type:'native_event',event}));
  let command,turn=0;
- if(live&&!bridge){
-  const original=session.agent.streamFunction;
-  let request=0;
-  session.agent.streamFunction=async(requestModel,context,options)=>{
-   const id=++request;
-   const failure=()=>{
-    const stream=createAssistantMessageEventStream();
-    const error={role:'assistant',content:[],api:model.api,provider:model.provider,model:model.id,usage:{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}},stopReason:'aborted',errorMessage:'outside host admission unavailable',timestamp:Date.now()};
-    stream.push({type:'error',reason:'aborted',error});stream.end();return stream;
-   };
-   try{
-    const contextBytes=Buffer.byteLength(JSON.stringify(context));
-    if(id>config.maxRequests||contextBytes>config.maxContextBytes||Date.now()>=config.deadline*1000)return failure();
-    const grant=await new Promise((resolve,reject)=>{
-     grants.set(id,resolve);
-     options?.signal?.addEventListener('abort',()=>{grants.delete(id);reject(Error('provider grant cancelled'));},{once:true});
-     emit({type:'provider_request',id,provider:requestModel.provider,model:requestModel.id,contextBytes});
-    });
-    const until=consumptionDeadline(grant,config.deadline*1000);
-    checkConsumption(until);
-    const inner=await original(requestModel,context,{...options,transport:'sse',maxRetries:0,cacheRetention:'none',fetch:(url,init)=>{checkConsumption(until);return globalThis.fetch(url,{...init,redirect:'error'});},timeoutMs:Math.max(1,Math.min(30000,until-Date.now())),
-     onResponse:response=>emit({type:'provider_observation',id,httpStatus:response.status}),
-     onProviderStreamEvent:data=>{const backendModel=data?.response?.model;const rawTerminal=rawTerminalEvidence(data);if(typeof backendModel==='string'||rawTerminal)emit({type:'provider_observation',id,...(typeof backendModel==='string'?{backendModel}:{}),...(rawTerminal?{rawTerminal}:{})});},
-    });
-    const relay=createAssistantMessageEventStream();
-    (async()=>{
-     try{
-      for await(const event of inner){
-       if(event.type==='done'||event.type==='error'){
-        const message=event.type==='done'?event.message:event.error;
-        emit({type:'provider_complete',id,stopReason:message.stopReason,usage:message.usage});
-       }
-       relay.push(event);
-      }
-      relay.end();
-     }catch{const aborted=failure();for await(const event of aborted)relay.push(event);relay.end();}
-    })();
-    return relay;
-   }catch{return failure();}
-  };
-  deadline=setTimeout(()=>{process.exitCode=2;session.abort();input.close();process.stdin.destroy();},Math.max(1,config.deadline*1000-Date.now()));
- }else if(!bridge){
+ if(!bridge){
   session.agent.streamFunction=async(requestModel,context)=>{
    if(pressureCheckpoint){
     emit({type:'pressure_request',classification:'actual SDK request; fake provider stream',generation:pressureCheckpoint.generation,input_digest:pressureCheckpoint.input_digest,requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},context});

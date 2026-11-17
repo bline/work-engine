@@ -60,11 +60,9 @@ def prepare(base):
     write(inputs / 'workspace-manifest.json', canon(inventory(workspace)))
     config = inputs / 'pi-config'; config.mkdir()
     write(inputs / 'pi-config-manifest.json', canon(inventory(config)))
-    native = write(private / 'native-never-read.json', b'{"never":"read"}', 0o600)
     task = write(inputs / 'task.txt', 'Add pub fn answer() -> u32 returning 42 to src/lib.rs using one workspace_exec command, then report briefly.')
     acceptance = write(inputs / 'acceptance.rs', '#[path="/workspace/src/lib.rs"] mod task; #[test] fn answer(){assert_eq!(task::answer(),42);}')
     shim = write(inputs / 'pi-coding.mjs', (HOST_SRC / 'receiver/pi-coding.mjs').read_bytes())
-    access_adapter = write(inputs / 'pi-native-access.mjs', (HOST_SRC / 'receiver/pi-native-access.mjs').read_bytes())
     stream_adapter = write(inputs / 'pi-native-tools.mjs', (HOST_SRC / 'receiver/pi-native-tools.mjs').read_bytes())
     shutil.copy(PRIOR / 'runtime-manifest.json', inputs / 'runtime-manifest.json')
     shutil.copy(PRIOR / 'toolchain-manifest.json', inputs / 'toolchain-manifest.json')
@@ -93,10 +91,10 @@ def prepare(base):
     budget = 1_000_000
     authority = write(inputs / 'authority.json', canon({
         'schema': 'work-engine.pi-coding-runtime-admission.v1', 'job_id': job_id,
-        'binary_sha256': fsha(QUAL), 'model': 'gpt-6-luna', 'native_auth_source': str(native),
+        'binary_sha256': fsha(QUAL), 'model': 'gpt-6-luna',
         'pi_config_manifest_sha256': fsha(inputs / 'pi-config-manifest.json'),
         'task_sha256': fsha(task), 'catalog_sha256': fsha(catalog), 'max_requests': 4,
-        'budget_microusd': budget, 'allow_native_access_projection': True, 'allow_provider': True,
+        'budget_microusd': budget, 'allow_provider': True,
         'hosted_routes_sha256': routes_digest}))
     bounds = {'inference_containers': 1, 'tool_containers': 1, 'validator_containers': 1, 'sdk_sessions': 2,
               'workspace_exec_calls': 1, 'fake_provider_requests': 0, 'physical_resets': 1, 'live_provider_requests': 4}
@@ -118,9 +116,8 @@ def prepare(base):
             'toolchain': {'root': str(TOOLCHAIN), 'manifest': art(inputs / 'toolchain-manifest.json')},
             'acceptance': art(acceptance), 'max_tool_calls': 1, 'workspace_write_boundary': 'src_lib_rs',
             'provider': {
-                'lane': {'pi_config': {'root': str(config), 'manifest': art(inputs / 'pi-config-manifest.json')},
-                         'native_auth_source': str(native)},
-                'task': art(task), 'catalog': art(catalog), 'access_adapter': art(access_adapter),
+                'lane': {'pi_config': {'root': str(config), 'manifest': art(inputs / 'pi-config-manifest.json')}},
+                'task': art(task), 'catalog': art(catalog),
                 'stream_adapter': art(stream_adapter), 'hosted': routes, 'model': 'gpt-6-luna',
                 'max_requests': 4, 'budget_microusd': budget, 'max_context_bytes': 24000}}}
     job_path = write(base / 'job.json', json.dumps(job, indent=1))

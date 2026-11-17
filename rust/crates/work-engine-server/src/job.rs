@@ -198,27 +198,24 @@ fn host_input_digest(job: &Value) -> Option<String> {
 fn verify_live_job(value: &Value, binary: &str) -> Result<(), &'static str> {
     use work_engine_manual_host::pi_docker::{
         Job,
-        coding::{SOL_HIGH_BRIDGE_PROFILE, WorkspaceWriteBoundary, is_live_bridge},
+        coding::{WorkspaceWriteBoundary, is_hosted},
     };
     let job: Job = serde_json::from_value(value.clone()).map_err(|_| "host_identity_mismatch")?;
     let coding = job.coding.as_ref().ok_or("capability_mismatch")?;
     let provider = coding.provider.as_ref().ok_or("capability_mismatch")?;
-    let sol = coding.schema == SOL_HIGH_BRIDGE_PROFILE;
-    if !is_live_bridge(&coding.schema)
+    // The hosted profile is the only live class: provider access stays in the
+    // Host process; the inference container has no network or credential.
+    if !is_hosted(&coding.schema)
         || coding.max_tool_calls != 1
         || coding.workspace_write_boundary != WorkspaceWriteBoundary::SrcLibRs
         || !coding.fixture_command.is_empty()
         || job.receiver.is_some()
-        || if sol {
-            provider.model != "gpt-6.1-sol" || provider.sol_high.as_ref().is_none_or(|t| !t.valid())
-        } else {
-            provider.model != "gpt-6-luna" || provider.sol_high.is_some()
-        }
+        || provider.model != "gpt-6-luna"
         || provider.max_requests != 4
         || provider.budget_microusd == 0
-        || provider.budget_microusd > if sol { 17_680_004 } else { 700_000 }
-        || (sol && provider.budget_microusd != 17_680_004)
+        || provider.budget_microusd > 700_000
         || !(1024..=24_000).contains(&provider.max_context_bytes)
+        || provider.hosted.validate().is_err()
         || !(1..=30).contains(&job.command_timeout_seconds)
         || job.idle_seconds != 0
     {
@@ -227,28 +224,17 @@ fn verify_live_job(value: &Value, binary: &str) -> Result<(), &'static str> {
     let authority: Value =
         serde_json::from_slice(&job.authority.verify().map_err(|_| "job_mismatch")?)
             .map_err(|_| "job_mismatch")?;
-    if authority["schema"]
-        != if sol {
-            "work-engine.pi-coding-runtime-admission.v2"
-        } else {
-            "work-engine.pi-coding-runtime-admission.v1"
-        }
-        || (sol
-            && authority["sol_high"]
-                != serde_json::to_value(&provider.sol_high).map_err(|_| "job_mismatch")?)
+    if authority["schema"] != "work-engine.pi-coding-runtime-admission.v1"
         || authority["binary_sha256"] != binary
         || authority["job_id"] != job.job_id
         || authority["model"] != provider.model
         || authority["task_sha256"] != provider.task.sha256
         || authority["catalog_sha256"] != provider.catalog.sha256
-        || authority["native_auth_source"]
-            != serde_json::to_value(&provider.lane.native_auth_source)
-                .map_err(|_| "job_mismatch")?
         || authority["pi_config_manifest_sha256"] != provider.lane.pi_config.manifest.sha256
         || authority["max_requests"] != provider.max_requests
         || authority["budget_microusd"] != provider.budget_microusd
         || authority["allow_provider"] != true
-        || authority["allow_native_access_projection"] != true
+        || authority["hosted_routes_sha256"] != provider.hosted.digest()
     {
         return Err("job_mismatch");
     }
@@ -257,7 +243,7 @@ fn verify_live_job(value: &Value, binary: &str) -> Result<(), &'static str> {
     }
     for artifact in [
         &provider.catalog,
-        &provider.access_adapter,
+        &provider.stream_adapter,
         &coding.shim,
         &coding.acceptance,
         &job.workspace.manifest,

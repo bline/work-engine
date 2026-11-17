@@ -1,8 +1,6 @@
 //! Provider-disabled coding-path qualification in the existing Pi custody owner.
 //! This profile intentionally cannot authorize provider or credential effects.
 use super::*;
-#[path = "pi_coding_auth.rs"]
-pub mod auth;
 #[path = "pi_coding_claims.rs"]
 pub mod claims;
 #[path = "pi_coding_export.rs"]
@@ -16,21 +14,24 @@ pub mod provider;
 #[path = "pi_coding_validation.rs"]
 pub mod validation;
 use std::os::unix::fs::PermissionsExt;
-pub const SIGNED_SUBSCRIPTION_PROFILE: &str = "work-engine.pi-coding-signed-subscription.v1";
 pub const SIGNED_PROFILE: &str = "work-engine.pi-coding-signed-fixture.v1";
 pub const PROFILE: &str = "work-engine.pi-coding-fixture.v1";
 /// Opt-in composition: Host owns effects; an installed lifecycle gate owns entry.
 pub const BRIDGE_PROFILE: &str = "work-engine.pi-coding-lifecycle-fixture.v1";
-/// Separately versioned composition of the direct live Host provider route with
-/// the lifecycle gate. Real inference; v1/v2/v3 fixture and signed profiles are
-/// unchanged and cannot be selected by this schema.
-pub const LIVE_BRIDGE_PROFILE: &str = "work-engine.pi-coding-lifecycle-live.v1";
-pub const SOL_HIGH_BRIDGE_PROFILE: &str = "work-engine.pi-coding-lifecycle-sol-high.v1";
+/// Retired credential-mounted live schemas (the container held provider
+/// access). Named only so admission can refuse them explicitly.
+pub const RETIRED_LIVE_PROFILES: [&str; 4] = [
+    "work-engine.pi-coding-sdk.v1",
+    "work-engine.pi-coding-lifecycle-live.v1",
+    "work-engine.pi-coding-lifecycle-sol-high.v1",
+    "work-engine.pi-coding-signed-subscription.v1",
+];
 /// Live lifecycle composition with Host-held access and Host dispatch: the
 /// inference container has no network and no credential mount.
 pub const HOSTED_BRIDGE_PROFILE: &str = "work-engine.pi-coding-hosted.v1";
+/// The only live profile: Host-held access, Host dispatch, lifecycle gate.
 pub fn is_live_bridge(schema: &str) -> bool {
-    schema == LIVE_BRIDGE_PROFILE || schema == SOL_HIGH_BRIDGE_PROFILE || is_hosted(schema)
+    is_hosted(schema)
 }
 pub fn is_hosted(schema: &str) -> bool {
     schema == HOSTED_BRIDGE_PROFILE
@@ -321,15 +322,14 @@ fn is_zero(v: &u32) -> bool {
 }
 impl Profile {
     pub(super) fn validate(&self, job: &Job) -> Result<()> {
+        if RETIRED_LIVE_PROFILES.contains(&self.schema.as_str()) {
+            return refuse(
+                "credential-mounted live profiles are retired; use work-engine.pi-coding-hosted.v1",
+            );
+        }
         if self.schema
             != if self.provider.is_some() {
-                if self.schema == SIGNED_SUBSCRIPTION_PROFILE {
-                    SIGNED_SUBSCRIPTION_PROFILE
-                } else if is_live_bridge(&self.schema) {
-                    self.schema.as_str()
-                } else {
-                    provider::LIVE_PROFILE
-                }
+                HOSTED_BRIDGE_PROFILE
             } else if self.schema == BRIDGE_PROFILE {
                 BRIDGE_PROFILE
             } else if self.schema == CLAIMS_BRIDGE_PROFILE {
@@ -533,11 +533,7 @@ fn expected_mounts(
     {
         mounts.extend([
             (
-                plan.stream_adapter
-                    .as_ref()
-                    .expect("validated hosted stream adapter")
-                    .path
-                    .clone(),
+                plan.stream_adapter.path.clone(),
                 "/receiver/pi-native-tools.mjs",
                 false,
             ),
@@ -547,35 +543,6 @@ fn expected_mounts(
                 false,
             ),
             (j.job.state_dir.join("coding-public"), "/profile", false),
-        ]);
-    } else if let Some(plan) = &profile.provider {
-        mounts.extend([
-            (
-                plan.access_adapter.path.clone(),
-                "/receiver/pi-native-access.mjs",
-                false,
-            ),
-            (
-                j.job.state_dir.join("coding-public-config"),
-                "/config",
-                false,
-            ),
-            (j.job.state_dir.join("coding-public"), "/profile", false),
-            (
-                j.job
-                    .state_dir
-                    .join(if profile.schema == SIGNED_SUBSCRIPTION_PROFILE {
-                        "private-access"
-                    } else {
-                        "private-access/access.json"
-                    }),
-                if profile.schema == SIGNED_SUBSCRIPTION_PROFILE {
-                    "/auth"
-                } else {
-                    "/auth/access.json"
-                },
-                false,
-            ),
         ]);
     } else {
         mounts.push((j.job.state_dir.join("coding-canary"), "/auth", false));
@@ -824,19 +791,11 @@ impl Host {
         })
     }
     pub(super) fn signed_pi(&self) -> bool {
-        self.journal.job.coding.as_ref().is_some_and(|p| {
-            matches!(
-                p.schema.as_str(),
-                SIGNED_PROFILE | SIGNED_SUBSCRIPTION_PROFILE
-            )
-        })
-    }
-    pub(super) fn signed_subscription(&self) -> bool {
         self.journal
             .job
             .coding
             .as_ref()
-            .is_some_and(|p| p.schema == SIGNED_SUBSCRIPTION_PROFILE)
+            .is_some_and(|p| p.schema == SIGNED_PROFILE)
     }
     fn pi_lease(
         &self,
@@ -1012,15 +971,7 @@ impl Host {
                     let consumption_deadline = lease
                         .consumption_deadline_millis(self.journal.job.deadline_unix_seconds)
                         .map_err(|e| Error::Refused(e.into()))?;
-                    let reply = if self.signed_subscription() {
-                        // Access content is first opened only after the exact allocation is
-                        // sealed and current signed initialization authority is held.
-                        lease
-                            .check_current()
-                            .map_err(|e| Error::Refused(e.into()))?;
-                        self.coding_project_provider_access(Some(&lease))?;
-                        json!({"type":"initialize","sessionId":native,"deadline":self.journal.job.deadline_unix_seconds,"consumptionDeadlineMs":consumption_deadline})
-                    } else {
+                    let reply = {
                         let access = self.journal.job.state_dir.join("coding-canary/access.json");
                         let mut access_file = OpenOptions::new()
                             .create_new(true)
@@ -1675,10 +1626,7 @@ impl Host {
             }
             plan.catalog.verify()?;
             plan.task.verify()?;
-            plan.access_adapter.verify()?;
-            if let Some(adapter) = &plan.stream_adapter {
-                adapter.verify()?;
-            }
+            plan.stream_adapter.verify()?;
         }
         self.save()
     }
@@ -1703,7 +1651,7 @@ impl Host {
         if !self.journal.removed {
             return Ok(());
         }
-        if self.signed_pi() && !self.signed_subscription() {
+        if self.signed_pi() {
             let private = self.journal.job.state_dir.join("coding-canary");
             for name in ["access.json", "signed-fixture.json"] {
                 let p = private.join(name);
@@ -2005,27 +1953,6 @@ mod tests {
         assert!(h.coding_advance(&frame(json!({"schema":SIGNED_PROFILE,"type":"allocated","sessionId":"00000000-0000-4000-8000-000000000002","accessPresent":false}))).is_err());
         assert!(h.coding_advance(&frame(json!({"schema":SIGNED_PROFILE,"type":"ready","sessionId":"00000000-0000-4000-8000-000000000002","tools":["workspace_exec"]}))).is_err());
         assert!(h.journal.processes.iter().all(|p| p.pid.is_none()));
-    }
-    #[test]
-    fn signed_subscription_cannot_allocate_or_spawn_without_owner_or_after_deadline() {
-        let (_dir, mut h) = fixture();
-        h.journal.job.coding.as_mut().unwrap().schema = SIGNED_SUBSCRIPTION_PROFILE.into();
-        assert!(Host::admit(h.journal.job.clone()).is_err());
-        assert!(h.coding_advance(&frame(json!({"schema":SIGNED_SUBSCRIPTION_PROFILE,"type":"allocated","sessionId":"00000000-0000-4000-8000-000000000001","accessPresent":false}))).is_err());
-        assert!(h.journal.session_id.is_none());
-        h.journal.job.deadline_unix_seconds = now().saturating_sub(1);
-        assert!(
-            h.command("coding-tool-exec", vec!["must-never-execute".into()], false)
-                .is_err()
-        );
-        assert!(h.journal.processes.iter().all(|p| p.pid.is_none()));
-        assert!(
-            !h.journal
-                .job
-                .state_dir
-                .join("private-access/access.json")
-                .exists()
-        );
     }
     #[test]
     #[ignore = "explicit signed authority generator required; no Docker or provider"]
@@ -2437,6 +2364,6 @@ mod tests {
             CLAIMS_BRIDGE_PROFILE
         ));
         assert!(is_bridge(CLAIMS_BRIDGE_PROFILE) && is_fixture_bridge(CLAIMS_BRIDGE_PROFILE));
-        assert!(!is_fixture_bridge(LIVE_BRIDGE_PROFILE));
+        assert!(!is_fixture_bridge(HOSTED_BRIDGE_PROFILE));
     }
 }

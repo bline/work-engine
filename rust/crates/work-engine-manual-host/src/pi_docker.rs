@@ -314,12 +314,11 @@ impl Host {
         &self.journal
     }
     pub fn admit(job: Job) -> Result<Self> {
-        if job.coding.as_ref().is_some_and(|p| {
-            matches!(
-                p.schema.as_str(),
-                coding::SIGNED_PROFILE | coding::SIGNED_SUBSCRIPTION_PROFILE
-            )
-        }) {
+        if job
+            .coding
+            .as_ref()
+            .is_some_and(|p| p.schema == coding::SIGNED_PROFILE)
+        {
             return refuse("signed fixture requires Pi owner");
         }
         Self::admit_inner(job, None)
@@ -336,28 +335,6 @@ impl Host {
             })
         {
             return refuse("signed fixture profile required");
-        }
-        owner
-            .admit(
-                &digest(&serde_json::to_vec(&job)?),
-                &digest(&fs::read(std::env::current_exe()?)?),
-            )
-            .map_err(|e| Error::Refused(e.into()))?;
-        Self::admit_inner(job, Some(owner))
-    }
-    /// Exact signed subscription candidate. Ordinary admission cannot create it.
-    pub fn admit_signed_subscription(
-        job: Job,
-        owner: session_task_admission::pi_pilot::PiOwner,
-    ) -> Result<Self> {
-        if !owner.is_subscription()
-            || !job.coding.as_ref().is_some_and(|p| {
-                p.schema == coding::SIGNED_SUBSCRIPTION_PROFILE
-                    && p.provider.is_some()
-                    && p.workspace_write_boundary == coding::WorkspaceWriteBoundary::SrcLibRs
-            })
-        {
-            return refuse("signed subscription profile required");
         }
         owner
             .admit(
@@ -421,7 +398,7 @@ impl Host {
             for input in [
                 &plan.task,
                 &plan.catalog,
-                &plan.access_adapter,
+                &plan.stream_adapter,
                 &plan.lane.pi_config.manifest,
             ] {
                 input_pins.push(Artifact {
@@ -1340,7 +1317,7 @@ impl Host {
         if let Some(coding) = &self.journal.coding {
             value["coding"] = serde_json::to_value(coding)?;
             value["profile"] = json!(self.journal.job.coding.as_ref().unwrap().schema);
-            if self.signed_pi() && !self.signed_subscription() {
+            if self.signed_pi() {
                 value["provider"] = json!("fake_fixture");
                 value["model"] = json!("fake-pi-model");
                 value["cost_evidence"] = json!("synthetic zero-cost fixture usage; not billing");

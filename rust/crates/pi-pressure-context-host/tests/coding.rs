@@ -377,7 +377,6 @@ fn continuity_build(
         )
         .unwrap();
     let config = CodingConfig {
-        sol_high: sol,
         task: live.then(|| "Fix the disposable crate so the acceptance tests pass.".to_string()),
         budget: json!({"schema":"work-engine.coding-budget-control.v1","classification":class.unwrap_or(if live {"live_provider_observation"} else {"provider_disabled_fixture"}),"available":true,"max_provider_requests":4,"max_tool_calls":1,"authority":"observation_only","sequence":1,"expires_ms":1000,"source":"synthetic-root-budget","generation":"fixture:1","observed_ms":100,"max_age_ms":300000}),
         expires_ms: 1000,
@@ -916,30 +915,10 @@ fn live_and_fixture_budget_labels_and_mixed_identities_cannot_substitute() {
 }
 
 #[test]
-fn sol_high_thinking_profile_resets_rehydrates_and_continues_exactly_once() {
-    let (root, c) = run_complete_mode(true, true, true).unwrap();
-    let report = c.report().unwrap();
-    assert_eq!(report["provider_requests"], 4);
-    assert_eq!(report["physical_resets"], 1);
-    assert_eq!(report["continued_parent"], "CompletedSettled");
-    let checkpoint: serde_json::Value =
-        serde_json::from_str(report["checkpoint"].as_str().unwrap()).unwrap();
-    assert_eq!(
-        checkpoint["profile"],
-        "work-engine.pi-coding-sol-high-continuity.v1"
-    );
-    drop(c);
-    let reopened = SqliteLifecycleStore::open(&root, "fixture-root".into()).unwrap();
-    assert_eq!(
-        reopened
-            .native_recovery("continued")
-            .unwrap()
-            .unwrap()
-            .class,
-        "CompletedSettled"
-    );
-    drop(reopened);
-    fs::remove_dir_all(root).unwrap();
+fn retired_sol_high_profile_cannot_start_continuity() {
+    // The credential-mounted Sol-high profile is retired; a session reserved
+    // under its digest is refused by the gate.
+    assert!(run_complete_mode(true, true, true).is_err());
 }
 fn hosted_policy() -> HostedProviderPolicy {
     HostedProviderPolicy {

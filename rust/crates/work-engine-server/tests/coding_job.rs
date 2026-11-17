@@ -214,9 +214,6 @@ impl Fx {
     }
     /// Live-class collector fixture. No provider, credentials or Docker are entered.
     fn enable_live_fixture(&mut self) {
-        self.enable_live_fixture_with(false);
-    }
-    fn enable_live_fixture_with(&mut self, sol: bool) {
         self.stop();
         let mut job: Value =
             serde_json::from_slice(&std::fs::read(self.root.join("job.json")).unwrap()).unwrap();
@@ -227,17 +224,9 @@ impl Fx {
         let public = self.root.join("public");
         private(&public, b"public fixture", 0o600);
         let artifact = json!({"path":public,"sha256":hex(b"public fixture")});
-        let mut provider = json!({"lane":{"pi_config":{"root":self.root.join("config"),"manifest":artifact},"native_auth_source":self.root.join("unopened-native-source")},"task":artifact,"catalog":artifact,"access_adapter":artifact,"model":"gpt-6-luna","max_requests":4,"budget_microusd":700000,"max_context_bytes":24000});
-        if sol {
-            provider["model"] = json!("gpt-6.1-sol");
-            provider["budget_microusd"] = json!(17_680_004u64);
-            provider["sol_high"] = json!({"schema":"work-engine.sol-high.v1","reasoning_effort":"high","payer_account_id":"fixture-payer"});
-        }
-        job["coding"]["schema"] = json!(if sol {
-            work_engine_manual_host::pi_docker::coding::SOL_HIGH_BRIDGE_PROFILE
-        } else {
-            work_engine_manual_host::pi_docker::coding::LIVE_BRIDGE_PROFILE
-        });
+        let provider = json!({"lane":{"pi_config":{"root":self.root.join("config"),"manifest":artifact}},"task":artifact,"catalog":artifact,"stream_adapter":artifact,"hosted":{"routes":[{"id":"primary","payer":"subscription","endpoint":"https:chatgpt-codex"}],"max_attempts_per_request":1},"model":"gpt-6-luna","max_requests":4,"budget_microusd":700000,"max_context_bytes":24000});
+        job["coding"]["schema"] =
+            json!(work_engine_manual_host::pi_docker::coding::HOSTED_BRIDGE_PROFILE);
         job["coding"]["workspace_write_boundary"] = json!("src_lib_rs");
         job["coding"]["fixture_command"] = json!("");
         job["coding"]["provider"] = provider.clone();
@@ -250,13 +239,7 @@ impl Fx {
         let mut profile: Value =
             serde_json::from_slice(&std::fs::read(self.root.join("job-profile.json")).unwrap())
                 .unwrap();
-        let mut auth = json!({"schema":"work-engine.pi-coding-runtime-admission.v1","binary_sha256":profile["host_binary_sha256"],"job_id":"job-1","model":"gpt-6-luna","task_sha256":artifact["sha256"],"catalog_sha256":artifact["sha256"],"native_auth_source":provider["lane"]["native_auth_source"],"pi_config_manifest_sha256":artifact["sha256"],"max_requests":4,"budget_microusd":700000,"allow_provider":true,"allow_native_access_projection":true});
-        if sol {
-            auth["schema"] = json!("work-engine.pi-coding-runtime-admission.v2");
-            auth["model"] = provider["model"].clone();
-            auth["budget_microusd"] = provider["budget_microusd"].clone();
-            auth["sol_high"] = provider["sol_high"].clone();
-        }
+        let auth = json!({"schema":"work-engine.pi-coding-runtime-admission.v1","binary_sha256":profile["host_binary_sha256"],"job_id":"job-1","model":"gpt-6-luna","task_sha256":artifact["sha256"],"catalog_sha256":artifact["sha256"],"pi_config_manifest_sha256":artifact["sha256"],"max_requests":4,"budget_microusd":700000,"allow_provider":true,"hosted_routes_sha256":serde_json::from_value::<work_engine_manual_host::pi_docker::coding::hosted::HostedRoutes>(provider["hosted"].clone()).unwrap().digest()});
         let auth = auth.to_string();
         private(&self.root.join("authority.json"), auth.as_bytes(), 0o600);
         job["authority"] =
@@ -1480,30 +1463,4 @@ fn prepared_workspace_hang_deadline_retains_partial_output_and_closes_exact_cont
     fx.start();
     assert_eq!(fx.submit(REQ)["owner_result"]["operation_id"], id);
     assert_eq!(std::fs::read_to_string(source).unwrap(), counter);
-}
-
-#[test]
-fn sol_high_frontend_preserves_exact_profile_identity_and_original_receipt() {
-    let mut fx = Fx::new();
-    fx.enable_live_fixture_with(true);
-    let id = fx.submit(REQ)["owner_result"]["operation_id"].clone();
-    assert!(id.is_string());
-    fx.wait_collected();
-    let result = fx.read("read_coding_job_result", REQ);
-    assert_eq!(
-        result["owner_result"]["receipt"]["job"]["coding"]["schema"],
-        work_engine_manual_host::pi_docker::coding::SOL_HIGH_BRIDGE_PROFILE
-    );
-    assert_eq!(
-        result["owner_result"]["receipt"]["job"]["coding"]["provider"]["sol_high"]["reasoning_effort"],
-        "high"
-    );
-    assert_eq!(
-        result["owner_result"]["receipt"]["job"]["coding"]["provider"]["budget_microusd"],
-        17_680_004u64
-    );
-    assert_eq!(result["owner_result"]["acceptance"], "owner_pending");
-    assert!(fx.stop().success());
-    fx.start();
-    assert_eq!(fx.submit(REQ)["owner_result"]["operation_id"], id);
 }

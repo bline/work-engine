@@ -30,6 +30,8 @@ pub enum CredentialSource {
     ChatgptPiAuth { path: PathBuf },
     /// API key from an environment variable of the embedder.
     ApiKeyEnv { variable: String },
+    /// API key from an owner-only file (one line).
+    ApiKeyFile { path: PathBuf },
     /// Qualification only: the account of a Pi auth store with access that
     /// the backend must refuse, to exercise a real definitive refusal.
     ChatgptInvalidForQualification { path: PathBuf },
@@ -104,6 +106,25 @@ impl HttpsTransport {
                     let key = std::env::var(&variable).unwrap_or_default();
                     if !valid_token(&key) {
                         return refuse(format!("API key variable {variable} unusable"));
+                    }
+                    Credential::ApiKey(key)
+                }
+                CredentialSource::ApiKeyFile { path } => {
+                    use std::os::unix::fs::{MetadataExt, PermissionsExt};
+                    let m = std::fs::symlink_metadata(&path)?;
+                    if !m.is_file()
+                        || m.len() > 4096
+                        || m.permissions().mode() & 0o077 != 0
+                        || m.uid() != unsafe { libc::geteuid() }
+                    {
+                        return refuse("API key file must be a small owner-only regular file");
+                    }
+                    let key = String::from_utf8(std::fs::read(&path)?)
+                        .map_err(|_| Error::Refused("API key file encoding".into()))?
+                        .trim()
+                        .to_string();
+                    if !valid_token(&key) {
+                        return refuse("API key file unusable");
                     }
                     Credential::ApiKey(key)
                 }

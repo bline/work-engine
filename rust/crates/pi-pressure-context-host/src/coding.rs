@@ -182,12 +182,10 @@ use lifecycle_store::{
     NativeSessionEntry, NativeTurnRequest, PI_SDK_INDEX_SHA256, PiSettlementProof,
     pi_coding_live_profile_digest, pi_coding_live_protocol_digest, pi_coding_profile_digest,
     pi_coding_protocol_digest, pi_coding_sol_high_profile_digest,
-    pi_coding_sol_high_protocol_digest,
 };
 /// Pinned outside controls. These fixture controls never authorize live access.
 #[derive(Clone)]
 pub struct CodingConfig {
-    pub sol_high: bool,
     pub budget: Value,
     /// `Some` selects the separately versioned live-provider continuity mode: the
     /// exact task bytes admitted by the Host plan. `None` is the provider-disabled
@@ -354,10 +352,8 @@ impl CodingContinuity {
         config: CodingConfig,
         clock: fn() -> ClockSample,
     ) -> Result<Self> {
-        if (config.sol_high
-            && (config.task.is_none()
-                || initial.profile_digest() != pi_coding_sol_high_profile_digest()))
-            || (!config.sol_high && initial.profile_digest() == pi_coding_sol_high_profile_digest())
+        // The retired credential-mounted Sol-high profile cannot be resumed.
+        if initial.profile_digest() == pi_coding_sol_high_profile_digest()
             || config.budget["schema"] != "work-engine.coding-budget-control.v1"
             || config.budget["classification"]
                 != if config.task.is_some() {
@@ -851,17 +847,13 @@ impl ContinuityState {
                 subject,
                 ContextGeneration::parse("context:new").map_err(refused)?,
                 RuntimeIncarnation::parse("incarnation:pi:coding").map_err(refused)?,
-                &if self.config.sol_high {
-                    pi_coding_sol_high_profile_digest()
-                } else if self.live() {
+                &if self.live() {
                     pi_coding_live_profile_digest()
                 } else {
                     pi_coding_profile_digest()
                 },
                 PI_SDK_INDEX_SHA256,
-                &if self.config.sol_high {
-                    pi_coding_sol_high_protocol_digest()
-                } else if self.live() {
+                &if self.live() {
                     pi_coding_live_protocol_digest()
                 } else {
                     pi_coding_protocol_digest()
@@ -1185,7 +1177,6 @@ mod control_tests {
         };
         for case in 0..7 {
             let mut config = CodingConfig {
-                sol_high: false,
                 task: None,
                 budget: json!({"authority":"observation_only","sequence":1,"expires_ms":1000000,"source":"root-canonical-fixture","generation":"bound:1","observed_ms":500000,"max_age_ms":300000,"available":true}),
                 expires_ms: 1000000,

@@ -16,7 +16,7 @@ fn call(args: &[&str]) -> std::process::Output {
 }
 #[test]
 fn exact_preparation_preserves_inputs_and_cannot_create_provider_permission() {
-    for sol in [false, true] {
+    for live in [false, true] {
         let root = tempfile::tempdir().unwrap();
         let r = root.path();
         for d in [
@@ -33,19 +33,30 @@ fn exact_preparation_preserves_inputs_and_cannot_create_provider_permission() {
         let catalog = r.join(
             "runtime/node_modules/@earendil-works/pi-ai/dist/providers/data/openai-codex.json",
         );
-        fs::write(&catalog,json!({"openai-codex-responses":{"chat:gpt-6.1-sol":{"id":"gpt-6.1-sol","provider":"openai-codex","api":"openai-codex-responses","baseUrl":"https://chatgpt.com/backend-api","contextWindow":500000,"maxTokens":128000,"cost":{"input":2,"output":10,"cacheRead":0.1,"cacheWrite":2.5,"tiers":[{"input":4,"output":15,"cacheRead":0.2,"cacheWrite":5}]}}}}).to_string()).unwrap();
-        let tuple = json!({"schema":"work-engine.sol-high.v1","reasoning_effort":"high","payer_account_id":"fixture-payer"});
-        let native = r.join("unopened-and-nonexistent-native-reference");
+        fs::write(&catalog,json!({"openai-codex-responses":{"chat:gpt-6-luna":{"id":"gpt-6-luna","provider":"openai-codex","api":"openai-codex-responses","baseUrl":"https://chatgpt.com/backend-api","contextWindow":272000,"maxTokens":128000,"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,"tiers":[{"input":0.2,"output":0.75,"cacheRead":0.02,"cacheWrite":0.25}]}}}}).to_string()).unwrap();
+        let routes = json!({"routes":[{"id":"primary","payer":"subscription","endpoint":"https:chatgpt-codex"},{"id":"secondary","payer":"api","endpoint":"https:openai-responses"}],"max_attempts_per_request":2});
+        let routes_sha = serde_json::from_value::<
+            work_engine_manual_host::pi_docker::coding::hosted::HostedRoutes,
+        >(routes.clone())
+        .unwrap()
+        .digest();
+        // Names access sources only; never read by preparation.
+        let credentials = r.join("hosted-credentials.json");
+        fs::write(&credentials, b"{}").unwrap();
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&credentials, fs::Permissions::from_mode(0o600)).unwrap();
+        }
         let admission = r.join("existing-runtime-admission.json");
-        fs::write(&admission,json!({"schema":"work-engine.pi-coding-runtime-admission.v2","job_id":"new-job","binary_sha256":digest(&fs::read("/usr/bin/gnutrue").unwrap()),"model":"gpt-6.1-sol","sol_high":tuple,"task_sha256":digest(b"Explicit operator task"),"catalog_sha256":digest(&fs::read(&catalog).unwrap()),"pi_config_manifest_sha256":digest(&serde_json::to_vec(&inventory(&r.join("config")).unwrap()).unwrap()),"native_auth_source":native,"max_requests":4,"budget_microusd":17_680_004u64,"allow_provider":true,"allow_native_access_projection":true}).to_string()).unwrap();
-        let mut spec = json!({"schema":"work-engine.coding-preparation.v1","job_id":"new-job","output_dir":r.join("bundle"),"state_dir":r.join("state"),"operation_root":r.join("ops"),"host_binary":"/usr/bin/gnutrue","task":r.join("task"),"workspace":r.join("workspace"),"validator":r.join("acceptance.rs"),"runtime":r.join("runtime"),"toolchain":r.join("toolchain"),"docker":"/usr/bin/gnutrue","image":format!("node@sha256:{}","a".repeat(64)),"deadline_unix_seconds":123456,"command_timeout_seconds":10,"collector_deadline_seconds":60,"cancel_grace_seconds":3,"fixture_command":if sol{""}else{"true"}});
-        if sol {
+        fs::write(&admission,json!({"schema":"work-engine.pi-coding-runtime-admission.v1","job_id":"new-job","binary_sha256":digest(&fs::read("/usr/bin/gnutrue").unwrap()),"model":"gpt-6-luna","task_sha256":digest(b"Explicit operator task"),"catalog_sha256":digest(&fs::read(&catalog).unwrap()),"pi_config_manifest_sha256":digest(&serde_json::to_vec(&inventory(&r.join("config")).unwrap()).unwrap()),"max_requests":4,"budget_microusd":700_000u64,"allow_provider":true,"hosted_routes_sha256":routes_sha}).to_string()).unwrap();
+        let mut spec = json!({"schema":"work-engine.coding-preparation.v1","job_id":"new-job","output_dir":r.join("bundle"),"state_dir":r.join("state"),"operation_root":r.join("ops"),"host_binary":"/usr/bin/gnutrue","task":r.join("task"),"workspace":r.join("workspace"),"validator":r.join("acceptance.rs"),"runtime":r.join("runtime"),"toolchain":r.join("toolchain"),"docker":"/usr/bin/gnutrue","image":format!("node@sha256:{}","a".repeat(64)),"deadline_unix_seconds":123456,"command_timeout_seconds":10,"collector_deadline_seconds":60,"cancel_grace_seconds":3,"fixture_command":if live{""}else{"true"}});
+        if live {
             let now_ms = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_millis() as i64;
             spec["deadline_unix_seconds"] = json!(now_ms / 1000 + 180);
-            spec["sol_high"] = json!({"pi_config":r.join("config"),"native_auth_source":native,"payer_account_id":"fixture-payer","runtime_admission":pin(&admission),"budget_control":{"schema":"work-engine.coding-budget-control.v1","authority":"observation_only","classification":"live_provider_observation","source":"trusted-test-observation","generation":"test:1","sequence":1,"observed_ms":now_ms,"max_age_ms":300000,"expires_ms":spec["deadline_unix_seconds"].as_i64().unwrap()*1000,"available":true,"max_provider_requests":4,"max_tool_calls":1}});
+            spec["hosted"] = json!({"pi_config":r.join("config"),"routes":routes,"credentials":credentials,"runtime_admission":pin(&admission),"budget_control":{"schema":"work-engine.coding-budget-control.v1","authority":"observation_only","classification":"live_provider_observation","source":"trusted-test-observation","generation":"test:1","sequence":1,"observed_ms":now_ms,"max_age_ms":300000,"expires_ms":spec["deadline_unix_seconds"].as_i64().unwrap()*1000,"available":true,"max_provider_requests":4,"max_tool_calls":1}});
         }
         let sp = r.join("spec.json");
         fs::write(&sp, serde_json::to_vec(&spec).unwrap()).unwrap();
@@ -70,20 +81,20 @@ fn exact_preparation_preserves_inputs_and_cannot_create_provider_permission() {
         for name in ["bundle", "state", "ops"] {
             assert!(!r.join(name).exists(), "inspect created {name}");
         }
-        if sol {
+        if live {
             let mut cases = Vec::new();
             let mut bad = spec.clone();
-            bad["sol_high"]["budget_control"]["sequence"] = json!(2);
+            bad["hosted"]["budget_control"]["sequence"] = json!(2);
             cases.push(("original-sequence2", bad));
             let mut bad = spec.clone();
             bad["deadline_unix_seconds"] =
                 json!(spec["deadline_unix_seconds"].as_i64().unwrap() + 100);
-            bad["sol_high"]["budget_control"]["expires_ms"] =
+            bad["hosted"]["budget_control"]["expires_ms"] =
                 json!(bad["deadline_unix_seconds"].as_i64().unwrap() * 1000);
             cases.push(("overlong-deadline", bad));
             let mut bad = spec.clone();
             bad["deadline_unix_seconds"] = json!(1);
-            bad["sol_high"]["budget_control"]["expires_ms"] = json!(1000);
+            bad["hosted"]["budget_control"]["expires_ms"] = json!(1000);
             cases.push(("expired-deadline", bad));
             for (field, value) in [
                 ("authority", json!("execution_grant")),
@@ -98,12 +109,12 @@ fn exact_preparation_preserves_inputs_and_cannot_create_provider_permission() {
                 ("observed_ms", json!(0)),
             ] {
                 let mut bad = spec.clone();
-                bad["sol_high"]["budget_control"][field] = value;
+                bad["hosted"]["budget_control"][field] = value;
                 cases.push((field, bad));
             }
             let mut bad = spec.clone();
-            bad["sol_high"]["budget_control"]["observed_ms"] = json!(
-                spec["sol_high"]["budget_control"]["observed_ms"]
+            bad["hosted"]["budget_control"]["observed_ms"] = json!(
+                spec["hosted"]["budget_control"]["observed_ms"]
                     .as_i64()
                     .unwrap()
                     + 60000
@@ -147,19 +158,19 @@ fn exact_preparation_preserves_inputs_and_cannot_create_provider_permission() {
             result["host_input_digest"],
             digest(&serde_json::to_vec(&job).unwrap())
         );
-        assert_eq!(job.coding.as_ref().unwrap().provider.is_some(), sol);
-        assert!(!native.exists());
-        if sol {
+        assert_eq!(job.coding.as_ref().unwrap().provider.is_some(), live);
+        if live {
+            let coding = job.coding.as_ref().unwrap();
+            assert_eq!(coding.schema, "work-engine.pi-coding-hosted.v1");
+            let plan = coding.provider.as_ref().unwrap();
+            assert_eq!(plan.reservation_microusd().unwrap(), 656_004);
+            assert_eq!(plan.hosted.digest(), routes_sha);
+            let profile: Value =
+                serde_json::from_slice(&fs::read(r.join("bundle/job-profile.json")).unwrap())
+                    .unwrap();
             assert_eq!(
-                job.coding
-                    .as_ref()
-                    .unwrap()
-                    .provider
-                    .as_ref()
-                    .unwrap()
-                    .reservation_microusd()
-                    .unwrap(),
-                17_680_004
+                profile["env"]["WORK_ENGINE_HOSTED_CREDENTIALS"],
+                json!(credentials)
             );
         }
         let duplicate = call(&["prepare", sp.to_str().unwrap(), ap.to_str().unwrap()]);

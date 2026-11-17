@@ -13,8 +13,8 @@ use work_engine_manual_host::{
         Job, Tree,
         coding::{
             self, WorkspaceWriteBoundary,
-            auth::LaneInputs,
-            provider::{ProviderPlan, SolHighContract},
+            hosted::HostedRoutes,
+            provider::{LaneInputs, ProviderPlan},
         },
         inventory,
     },
@@ -42,14 +42,18 @@ struct Spec {
     cancel_grace_seconds: u64,
     fixture_command: String,
     #[serde(default)]
-    sol_high: Option<SolInputs>,
+    hosted: Option<HostedInputs>,
 }
+/// Live hosted inputs. Provider access is never an input: the Host's embedder
+/// loads it from the credentials file, which names access sources only.
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct SolInputs {
+struct HostedInputs {
     pi_config: PathBuf,
-    native_auth_source: PathBuf,
-    payer_account_id: String,
+    routes: HostedRoutes,
+    /// The Host embedder's credentials file (owner-only), passed to the Host
+    /// as `WORK_ENGINE_HOSTED_CREDENTIALS` through the job profile.
+    credentials: PathBuf,
     runtime_admission: Artifact,
     budget_control: Value,
 }
@@ -127,11 +131,11 @@ fn inputs(s: &Spec) -> Result<Inputs> {
         || !(1..=900).contains(&s.collector_deadline_seconds)
         || !(1..=30).contains(&s.cancel_grace_seconds)
         || !s.image.contains("@sha256:")
-        || (s.sol_high.is_some() != s.fixture_command.is_empty())
+        || (s.hosted.is_some() != s.fixture_command.is_empty())
     {
         return Err("preparation schema/mode/limits conflict".into());
     }
-    if let Some(sol) = &s.sol_high {
+    if let Some(live) = &s.hosted {
         // Mirror the current server admission window and continuity owner's
         // observation contract. This checks preparation, never grants entry.
         let now_ms: i64 = std::time::SystemTime::now()
@@ -141,16 +145,16 @@ fn inputs(s: &Spec) -> Result<Inputs> {
         let deadline_ms: i64 = s
             .deadline_unix_seconds
             .checked_mul(1000)
-            .ok_or("Sol deadline overflow")?
+            .ok_or("live deadline overflow")?
             .try_into()?;
-        let b = &sol.budget_control;
+        let b = &live.budget_control;
         let observed = b["observed_ms"]
             .as_i64()
-            .ok_or("Sol budget observation missing")?;
+            .ok_or("live budget observation missing")?;
         let age = b["max_age_ms"]
             .as_i64()
             .filter(|n| *n > 0 && *n <= 300000)
-            .ok_or("Sol budget age invalid")?;
+            .ok_or("live budget age invalid")?;
         if s.deadline_unix_seconds <= (now_ms / 1000) as u64 + 5
             || s.deadline_unix_seconds > (now_ms / 1000) as u64 + 240
             || b["schema"] != "work-engine.coding-budget-control.v1"
@@ -167,7 +171,18 @@ fn inputs(s: &Spec) -> Result<Inputs> {
             || now_ms.saturating_sub(observed) > age
             || now_ms >= deadline_ms
         {
-            return Err("Sol live deadline/canonical budget not current".into());
+            return Err("live deadline/canonical budget not current".into());
+        }
+        live.routes.validate()?;
+        let m = fs::symlink_metadata(&live.credentials)?;
+        if !live.credentials.is_absolute()
+            || fs::canonicalize(&live.credentials)? != live.credentials
+            || !m.is_file()
+            || m.permissions().mode() & 0o077 != 0
+            || m.uid() != unsafe { libc::geteuid() }
+            || live.credentials.to_string_lossy().contains(['\0', '\n'])
+        {
+            return Err("owner-only canonical credentials file required".into());
         }
     }
     read(&s.task, 8192)?;
@@ -179,11 +194,7 @@ fn inputs(s: &Spec) -> Result<Inputs> {
         toolchain: tree(&s.toolchain)?,
         docker: pin(&s.docker)?,
         host_binary: pin(&s.host_binary)?,
-        pi_config: s
-            .sol_high
-            .as_ref()
-            .map(|p| tree(&p.pi_config))
-            .transpose()?,
+        pi_config: s.hosted.as_ref().map(|p| tree(&p.pi_config)).transpose()?,
     })
 }
 fn write(path: &Path, bytes: &[u8]) -> Result<Artifact> {
@@ -278,35 +289,28 @@ fn run() -> Result<Value> {
             return Err("private canonical operation root required".into());
         }
     }
-    // Validate a supplied future runtime admission, without opening native access references.
-    if let Some(sol) = &spec.sol_high {
-        let admission: Value = serde_json::from_slice(&sol.runtime_admission.verify()?)?;
-        let tuple = SolHighContract {
-            schema: "work-engine.sol-high.v1".into(),
-            reasoning_effort: "high".into(),
-            payer_account_id: sol.payer_account_id.clone(),
-        };
+    // Validate the supplied runtime admission against the exact live inputs.
+    if let Some(live) = &spec.hosted {
+        let admission: Value = serde_json::from_slice(&live.runtime_admission.verify()?)?;
         let config_sha = digest(&serde_json::to_vec(inputs.pi_config.as_ref().unwrap())?);
         let catalog = pin(&spec
             .runtime
             .join("node_modules/@earendil-works/pi-ai/dist/providers/data/openai-codex.json"))?;
-        if !tuple.valid()
-            || !sol.native_auth_source.is_absolute()
-            || admission["schema"] != "work-engine.pi-coding-runtime-admission.v2"
+        if admission["schema"] != "work-engine.pi-coding-runtime-admission.v1"
             || admission["job_id"] != spec.job_id
             || admission["binary_sha256"] != inputs.host_binary.sha256
-            || admission["model"] != "gpt-6.1-sol"
-            || admission["sol_high"] != serde_json::to_value(tuple)?
+            || admission["model"] != "gpt-6-luna"
             || admission["task_sha256"] != inputs.task.sha256
             || admission["catalog_sha256"] != catalog.sha256
             || admission["pi_config_manifest_sha256"] != config_sha
-            || admission["native_auth_source"] != serde_json::to_value(&sol.native_auth_source)?
             || admission["max_requests"] != 4
-            || admission["budget_microusd"] != 17_680_004u64
+            || admission["budget_microusd"]
+                .as_u64()
+                .is_none_or(|b| !(1..=700_000).contains(&b))
             || admission["allow_provider"] != true
-            || admission["allow_native_access_projection"] != true
+            || admission["hosted_routes_sha256"] != live.routes.digest()
         {
-            return Err("supplied future Sol runtime admission mismatch".into());
+            return Err("supplied live runtime admission mismatch".into());
         }
     }
     if !spec.operation_root.exists() {
@@ -319,48 +323,42 @@ fn run() -> Result<Value> {
     fs::set_permissions(&spec.state_dir, fs::Permissions::from_mode(0o700))?;
     let out = &spec.output_dir;
     let shim = write(&out.join("pi-coding.mjs"), coding::SHIM)?;
-    let provider = if let Some(sol) = &spec.sol_high {
+    let provider = if let Some(live) = &spec.hosted {
+        let admission: Value = serde_json::from_slice(&live.runtime_admission.verify()?)?;
         Some(ProviderPlan {
             lane: LaneInputs {
                 pi_config: prepared_tree(
-                    &sol.pi_config,
+                    &live.pi_config,
                     out,
                     "config-manifest.json",
                     inputs.pi_config.as_ref().unwrap(),
                 )?,
-                native_auth_source: sol.native_auth_source.clone(),
             },
             task: inputs.task.clone(),
             catalog: pin(&spec
                 .runtime
                 .join("node_modules/@earendil-works/pi-ai/dist/providers/data/openai-codex.json"))?,
-            access_adapter: write(
-                &out.join("pi-native-access.mjs"),
-                coding::provider::ACCESS_ADAPTER,
+            stream_adapter: write(
+                &out.join("pi-native-tools.mjs"),
+                coding::provider::STREAM_ADAPTER,
             )?,
-            stream_adapter: None,
-            hosted: None,
-            model: "gpt-6.1-sol".into(),
-            sol_high: Some(SolHighContract {
-                schema: "work-engine.sol-high.v1".into(),
-                reasoning_effort: "high".into(),
-                payer_account_id: sol.payer_account_id.clone(),
-            }),
+            hosted: live.routes.clone(),
+            model: "gpt-6-luna".into(),
             max_requests: 4,
-            budget_microusd: 17_680_004,
+            budget_microusd: admission["budget_microusd"].as_u64().unwrap_or(0),
             max_context_bytes: 24_000,
         })
     } else {
         None
     };
     if let Some(plan) = &provider
-        && plan.reservation_microusd()? != 17_680_004
+        && plan.reservation_microusd()? > plan.budget_microusd
     {
-        return Err("exact Sol conservative reservation mismatch".into());
+        return Err("conservative reservation exceeds the admitted budget".into());
     }
     let bounds = json!({"inference_containers":1,"tool_containers":1,"validator_containers":1,"sdk_sessions":2,"workspace_exec_calls":1,"fake_provider_requests":0,"physical_resets":1,"live_provider_requests":4});
-    let packet = if let Some(sol) = &spec.sol_high {
-        json!({"schema":"work-engine.coding-live-continuity-packet.v1","bounds":bounds,"budget":sol.budget_control,"pressure_basis_points":9500})
+    let packet = if let Some(live) = &spec.hosted {
+        json!({"schema":"work-engine.coding-live-continuity-packet.v1","bounds":bounds,"budget":live.budget_control,"pressure_basis_points":9500})
     } else {
         json!({"schema":"work-engine.coding-prepared-task.v1","task_sha256":inputs.task.sha256,"task":String::from_utf8(read(&spec.task,8192)?)?,"classification":"provider_disabled_fixture"})
     };
@@ -369,7 +367,7 @@ fn run() -> Result<Value> {
         job_id: spec.job_id.clone(),
         state_dir: spec.state_dir.clone(),
         authority: spec
-            .sol_high
+            .hosted
             .as_ref()
             .map(|p| p.runtime_admission.clone())
             .unwrap_or(Artifact {
@@ -392,7 +390,7 @@ fn run() -> Result<Value> {
         receiver: None,
         coding: Some(coding::Profile {
             schema: if provider.is_some() {
-                coding::SOL_HIGH_BRIDGE_PROFILE
+                coding::HOSTED_BRIDGE_PROFILE
             } else {
                 coding::PROFILE
             }
@@ -413,9 +411,13 @@ fn run() -> Result<Value> {
     };
     let input_digest = digest(&serde_json::to_vec(&job)?);
     let job_artifact = write_json(&out.join("job.json"), &job)?;
-    let sol = spec.sol_high.is_some();
+    let sol = spec.hosted.is_some();
+    let env = match &spec.hosted {
+        Some(live) => json!({"WORK_ENGINE_HOSTED_CREDENTIALS": live.credentials}),
+        None => json!({}),
+    };
     let auth = json!({"authorization_id":authority.authorization_id,"caller":authority.caller,"credential_sha256":authority.credential_sha256,"job_file":job_artifact.path,"job_sha256":job_artifact.sha256,"packet_sha256":job.packet.sha256,"job_id":job.job_id,"state_dir":job.state_dir,"host_input_digest":input_digest});
-    let profile = json!({"version":if sol{2}else{1},"kind":"coding-job-profile","capability":if sol{"coding-job-local-live-v1"}else{"coding-job-offline-fixture-v1"},"class":if sol{"local-live"}else{"offline-fixture"},"host_binary":inputs.host_binary.path,"host_binary_sha256":inputs.host_binary.sha256,"operation_root":spec.operation_root,"env":{},"collector_deadline_seconds":spec.collector_deadline_seconds,"cancel_grace_seconds":spec.cancel_grace_seconds,"authorizations":[auth]});
+    let profile = json!({"version":if sol{2}else{1},"kind":"coding-job-profile","capability":if sol{"coding-job-local-live-v1"}else{"coding-job-offline-fixture-v1"},"class":if sol{"local-live"}else{"offline-fixture"},"host_binary":inputs.host_binary.path,"host_binary_sha256":inputs.host_binary.sha256,"operation_root":spec.operation_root,"env":env,"collector_deadline_seconds":spec.collector_deadline_seconds,"cancel_grace_seconds":spec.cancel_grace_seconds,"authorizations":[auth]});
     let profile = write_json(&out.join("job-profile.json"), &profile)?;
     Ok(
         json!({"schema":"work-engine.coding-preparation-result.v1","job":job_artifact,"job_profile":profile,"host_input_digest":input_digest,"packet_sha256":job.packet.sha256,"provider_execution":false,"runtime_admission":"separate_existing_authority_required","acceptance":"owner_pending"}),

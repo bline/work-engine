@@ -429,10 +429,7 @@ impl Host {
             .as_ref()
             .and_then(|p| p.provider.clone())
             .ok_or_else(|| Error::Refused("provider plan absent".into()))?;
-        let routes = plan
-            .hosted
-            .clone()
-            .ok_or_else(|| Error::Refused("hosted route table absent".into()))?;
+        let routes = plan.hosted.clone();
         Ok((plan, routes))
     }
     /// Stream identity and head timeout the Host adds to a hosted live grant
@@ -1560,7 +1557,7 @@ mod tests {
             profile.schema = HOSTED_BRIDGE_PROFILE.into();
             let plan = profile.provider.as_mut().unwrap();
             plan.max_requests = 4;
-            plan.hosted = Some(HostedRoutes {
+            plan.hosted = HostedRoutes {
                 routes: vec![
                     HostedRoute {
                         id: "primary".into(),
@@ -1574,7 +1571,7 @@ mod tests {
                     },
                 ],
                 max_attempts_per_request: 2,
-            });
+            };
         }
         h.journal.session_id = Some("native".into());
         let path = dir.path().join("stdout");

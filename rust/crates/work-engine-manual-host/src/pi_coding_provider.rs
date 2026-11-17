@@ -1,44 +1,26 @@
-//! One bounded subscription-provider lane. Rust owns admission and reservations.
+//! The hosted provider lane: Rust owns admission, reservations and the
+//! attempt ledger. Provider access never enters the container.
 use super::*;
-use std::os::unix::fs::OpenOptionsExt;
-pub const LIVE_PROFILE: &str = "work-engine.pi-coding-sdk.v1";
-pub const ACCESS_ADAPTER: &[u8] = include_bytes!("../receiver/pi-native-access.mjs");
 /// Host-relayed response stream (`openResponse`) imported by the hosted receiver.
 pub const STREAM_ADAPTER: &[u8] = include_bytes!("../receiver/pi-native-tools.mjs");
 const CATALOG: &str = "node_modules/@earendil-works/pi-ai/dist/providers/data/openai-codex.json";
-/// Explicit opt-in tuple. Absence retains the historical Luna contract and bytes.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+/// Public Pi configuration staged read-only for the container. Provider
+/// access is not a lane input: the Host's transport holds it.
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct SolHighContract {
-    pub schema: String,
-    pub reasoning_effort: String,
-    pub payer_account_id: String,
-}
-impl SolHighContract {
-    pub fn valid(&self) -> bool {
-        self.schema == "work-engine.sol-high.v1"
-            && self.reasoning_effort == "high"
-            && !self.payer_account_id.is_empty()
-            && self.payer_account_id.len() <= 512
-            && !self.payer_account_id.chars().any(char::is_control)
-    }
+pub struct LaneInputs {
+    pub pi_config: Tree,
 }
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ProviderPlan {
-    pub lane: auth::LaneInputs,
+    pub lane: LaneInputs,
     pub task: Artifact,
     pub catalog: Artifact,
-    pub access_adapter: Artifact,
-    /// Required exactly for the hosted profile.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub stream_adapter: Option<Artifact>,
-    /// Route table, required exactly for the hosted profile.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub hosted: Option<super::hosted::HostedRoutes>,
+    pub stream_adapter: Artifact,
+    /// Route table; its digest is bound by the runtime admission.
+    pub hosted: super::hosted::HostedRoutes,
     pub model: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sol_high: Option<SolHighContract>,
     pub max_requests: u32,
     pub budget_microusd: u64,
     pub max_context_bytes: u64,
@@ -401,19 +383,14 @@ struct Admission {
     job_id: String,
     binary_sha256: String,
     model: String,
-    #[serde(default)]
-    sol_high: Option<SolHighContract>,
-    native_auth_source: PathBuf,
     pi_config_manifest_sha256: String,
     task_sha256: String,
     catalog_sha256: String,
     max_requests: u32,
     budget_microusd: u64,
-    allow_native_access_projection: bool,
     allow_provider: bool,
-    /// Digest of the hosted route table; present exactly for the hosted profile.
-    #[serde(default)]
-    hosted_routes_sha256: Option<String>,
+    /// Digest of the hosted route table.
+    hosted_routes_sha256: String,
 }
 impl ProviderPlan {
     pub(super) fn selected(&self) -> Result<Value> {
@@ -441,79 +418,31 @@ impl ProviderPlan {
         Ok(total)
     }
     pub(super) fn validate(&self, job: &Job) -> Result<()> {
-        let sol = self.sol_high.is_some();
-        if if let Some(tuple) = &self.sol_high {
-            !tuple.valid()
-                || self.model != "gpt-6.1-sol"
-                || job
-                    .coding
-                    .as_ref()
-                    .is_none_or(|p| p.schema != super::SOL_HIGH_BRIDGE_PROFILE)
-                || self.max_requests != 4
-                || self.budget_microusd != 17_680_004
-        } else {
-            self.model != "gpt-6-luna"
-                || !(1..=6).contains(&self.max_requests)
-                || !(1..=1_000_000).contains(&self.budget_microusd)
-                || job
-                    .coding
-                    .as_ref()
-                    .is_some_and(|p| p.schema == super::SOL_HIGH_BRIDGE_PROFILE)
-        } || !(1024..=65536).contains(&self.max_context_bytes)
+        let canonical = |a: &Artifact| -> Result<bool> {
+            Ok(a.path.is_absolute()
+                && fs::canonicalize(&a.path)? == a.path
+                && !a.path.to_string_lossy().contains([',', ':', '\n', '\r']))
+        };
+        if job
+            .coding
+            .as_ref()
+            .is_none_or(|p| !super::is_hosted(&p.schema))
+            || self.model != "gpt-6-luna"
+            || !(1..=6).contains(&self.max_requests)
+            || !(1..=1_000_000).contains(&self.budget_microusd)
+            // K-d: a turn admitted by context bytes must fit the hosted request
+            // body bound (instructions and tools need the remaining room).
+            || !(1024..=32768).contains(&self.max_context_bytes)
             || self.catalog.path != job.runtime.root.join(CATALOG)
-            || self.access_adapter.verify()? != ACCESS_ADAPTER
-            || !self.access_adapter.path.is_absolute()
-            || fs::canonicalize(&self.access_adapter.path)? != self.access_adapter.path
-            || self
-                .access_adapter
-                .path
-                .to_string_lossy()
-                .contains([',', ':', '\n', '\r'])
+            || self.stream_adapter.verify()? != STREAM_ADAPTER
+            || !canonical(&self.stream_adapter)?
         {
             return refuse("provider lane/catalog/limits conflict");
         }
-        let hosted = job
-            .coding
-            .as_ref()
-            .is_some_and(|p| super::is_hosted(&p.schema));
-        match &self.stream_adapter {
-            Some(adapter) if hosted => {
-                if adapter.verify()? != STREAM_ADAPTER
-                    || !adapter.path.is_absolute()
-                    || fs::canonicalize(&adapter.path)? != adapter.path
-                    || adapter
-                        .path
-                        .to_string_lossy()
-                        .contains([',', ':', '\n', '\r'])
-                {
-                    return refuse("hosted stream adapter pin conflict");
-                }
-            }
-            None if !hosted => {}
-            _ => return refuse("stream adapter is exactly for the hosted profile"),
-        }
-        match &self.hosted {
-            // K-d: a turn admitted by context bytes must fit the hosted request
-            // body bound (instructions and tools need the remaining room).
-            Some(_) if hosted && self.max_context_bytes > 32768 => {
-                return refuse("hosted max_context_bytes exceeds the request body bound");
-            }
-            Some(routes) if hosted => routes.validate()?,
-            None if !hosted => {}
-            _ => return refuse("route table is exactly for the hosted profile"),
-        }
-        self.lane.validate_references()?;
-        if self.lane.native_auth_source.starts_with(&job.state_dir)
-            || self.lane.native_auth_source.starts_with(&job.runtime.root)
-            || self
-                .lane
-                .native_auth_source
-                .starts_with(&job.workspace.root)
-            || job
-                .coding
-                .as_ref()
-                .is_some_and(|p| self.lane.native_auth_source.starts_with(&p.toolchain.root))
-            || self.lane.pi_config.root.starts_with(&job.state_dir)
+        self.hosted.validate()?;
+        self.lane.pi_config.verify()?;
+        canonical_directory(&self.lane.pi_config.root)?;
+        if self.lane.pi_config.root.starts_with(&job.state_dir)
             || job.state_dir.starts_with(&self.lane.pi_config.root)
         {
             return refuse("provider private/public mount references overlap");
@@ -543,25 +472,17 @@ impl ProviderPlan {
         self.reservation_microusd()?;
         let admission: Admission = serde_json::from_slice(&job.authority.verify()?)
             .map_err(|_| Error::Refused("exact provider runtime admission required".into()))?;
-        if admission.schema
-            != if sol {
-                "work-engine.pi-coding-runtime-admission.v2"
-            } else {
-                "work-engine.pi-coding-runtime-admission.v1"
-            }
-            || admission.sol_high != self.sol_high
+        if admission.schema != "work-engine.pi-coding-runtime-admission.v1"
             || admission.job_id != job.job_id
             || admission.binary_sha256 != file_digest(&std::env::current_exe()?, None)?
             || admission.model != self.model
-            || admission.native_auth_source != self.lane.native_auth_source
             || admission.pi_config_manifest_sha256 != self.lane.pi_config.manifest.sha256
             || admission.task_sha256 != self.task.sha256
             || admission.catalog_sha256 != self.catalog.sha256
             || admission.max_requests != self.max_requests
             || admission.budget_microusd != self.budget_microusd
-            || !admission.allow_native_access_projection
             || !admission.allow_provider
-            || admission.hosted_routes_sha256 != self.hosted.as_ref().map(|r| r.digest())
+            || admission.hosted_routes_sha256 != self.hosted.digest()
         {
             return refuse("provider admission does not bind this exact realization");
         }
@@ -623,17 +544,8 @@ impl Host {
         let private = self.journal.job.state_dir.join("private-access");
         fs::create_dir(&private)?;
         fs::set_permissions(&private, fs::Permissions::from_mode(0o700))?;
-        // Hosted access stays on the Host and is applied only at dispatch.
-        if !self.signed_subscription()
-            && !self
-                .journal
-                .job
-                .coding
-                .as_ref()
-                .is_some_and(|p| super::is_hosted(&p.schema))
-        {
-            self.coding_project_provider_access(None)?;
-        }
+        // Provider access stays on the Host and is applied only at dispatch;
+        // `private-access` stays empty.
         let config = self.journal.job.state_dir.join("coding-public-config");
         fs::create_dir(&config)?;
         for (path, entry) in inventory(&plan.lane.pi_config.root)? {
@@ -652,90 +564,12 @@ impl Host {
             .map_err(|_| Error::Refused("task is not UTF8".into()))?;
         atomic(
             &public.join("job.json"),
-            &json!({"schema":if self.signed_subscription() {super::SIGNED_SUBSCRIPTION_PROFILE} else if self.journal.job.coding.as_ref().is_some_and(|p| super::is_live_bridge(&p.schema)) {self.journal.job.coding.as_ref().unwrap().schema.as_str()} else {LIVE_PROFILE},"provider":"openai-codex","model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes}),
+            &json!({"schema":super::HOSTED_BRIDGE_PROFILE,"provider":"openai-codex","model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes}),
         )?;
-        if let Some(tuple) = &plan.sol_high {
-            let path = public.join("job.json");
-            let mut value: Value = serde_json::from_slice(&fs::read(&path)?)?;
-            value["solHigh"] = serde_json::to_value(tuple)?;
-            atomic(&path, &value)?;
-        }
-        Ok(())
-    }
-    // Caller must hold current Initialization lease for signed jobs. This
-    // private operation is never exposed as a request-selected callback.
-    pub(super) fn coding_project_provider_access(
-        &self,
-        lease: Option<&session_task_admission::pi_pilot::EffectLease>,
-    ) -> Result<()> {
-        if self.signed_subscription() && lease.is_none() {
-            return refuse("signed access requires initialization lease");
-        }
-        let plan = self
-            .journal
-            .job
-            .coding
-            .as_ref()
-            .and_then(|p| p.provider.as_ref())
-            .ok_or_else(|| Error::Refused("provider plan absent".into()))?;
-        plan.validate(&self.journal.job)?;
-        let private = self.journal.job.state_dir.join("private-access");
-        // Only this explicit runtime-admitted branch reads the original native
-        // source. It never writes it or copies refresh/id tokens. No digest/log.
-        if let Some(lease) = lease {
-            lease
-                .check_current()
-                .map_err(|e| Error::Refused(e.into()))?;
-        }
-        let metadata = fs::symlink_metadata(&plan.lane.native_auth_source)?;
-        if !metadata.is_file()
-            || metadata.len() > 65536
-            || metadata.permissions().mode() & 0o077 != 0
-        {
-            return refuse("native credential source metadata invalid");
-        }
-        use std::io::Read;
-        use std::os::unix::fs::MetadataExt;
-        if let Some(lease) = lease {
-            lease
-                .check_current()
-                .map_err(|e| Error::Refused(e.into()))?;
-        }
-        let source = OpenOptions::new()
-            .read(true)
-            .custom_flags(libc::O_NOFOLLOW)
-            .open(&plan.lane.native_auth_source)?;
-        let before = source.metadata()?;
-        let mut raw = Vec::new();
-        (&source).take(65537).read_to_end(&mut raw)?;
-        let after = source.metadata()?;
-        if raw.len() > 65536
-            || before.len() != after.len()
-            || before.mtime() != after.mtime()
-            || before.mtime_nsec() != after.mtime_nsec()
-            || before.ino() != metadata.ino()
-        {
-            return refuse("native source changed during bounded read");
-        }
-        let grant =
-            auth::project_native_access(&raw, now(), self.journal.job.deadline_unix_seconds)?;
-        if let Some(lease) = lease {
-            lease
-                .check_current()
-                .map_err(|e| Error::Refused(e.into()))?;
-        }
-        if plan
-            .sol_high
-            .as_ref()
-            .is_some_and(|tuple| !grant.matches_account(&tuple.payer_account_id))
-        {
-            return refuse("admitted payer account mismatch");
-        }
-        grant.stage(&private)?;
         Ok(())
     }
     pub(super) fn coding_provider_frame(&mut self, frame: &Value) -> Result<Option<Value>> {
-        if self.signed_pi() && !self.signed_subscription() {
+        if self.signed_pi() {
             return self.coding_fake_provider_frame(frame);
         }
         let plan = self
@@ -763,10 +597,6 @@ impl Host {
                     || state.provider_requests.contains_key(&id)
                     || id != state.provider_requests.len() as u64 + 1
                     || state.provider_requests.values().any(Reservation::unsettled)
-                    || plan.sol_high.as_ref().is_some_and(|tuple| {
-                        frame["reasoningEffort"] != tuple.reasoning_effort
-                            || frame["payerAccountId"] != tuple.payer_account_id
-                    })
                     || frame["model"] != plan.model
                     || frame["provider"] != "openai-codex"
                     || frame["contextBytes"]
@@ -795,27 +625,8 @@ impl Host {
                     },
                 );
                 self.save()?; // Durable unknown reservation BEFORE granting possible network entry.
-                let mut consumption_deadline =
+                let consumption_deadline =
                     self.journal.job.deadline_unix_seconds.saturating_mul(1000);
-                if self.signed_subscription() {
-                    let owner = self
-                        .pi_owner
-                        .as_ref()
-                        .ok_or_else(|| Error::Refused("Pi owner absent".into()))?;
-                    let lease = owner
-                        .enter(session_task_admission::pi_pilot::Effect::Provider(id))
-                        .map_err(|e| Error::Refused(e.into()))?;
-                    lease
-                        .check_current()
-                        .map_err(|e| Error::Refused(e.into()))?;
-                    consumption_deadline = u64::try_from(
-                        lease
-                            .consumption_deadline_millis(self.journal.job.deadline_unix_seconds)
-                            .map_err(|e| Error::Refused(e.into()))?,
-                    )
-                    .map_err(|_| Error::Refused("provider consumption deadline invalid".into()))?;
-                    self.reply_leases.push(lease);
-                }
                 Ok(Some(
                     json!({"type":"provider_grant","id":id,"reservedMicrousd":reserve,"consumptionDeadlineMs":consumption_deadline}),
                 ))
@@ -976,20 +787,22 @@ pub(super) mod ledger_tests {
             manifest: pin.clone(),
         };
         h.journal.job.coding.as_mut().unwrap().provider = Some(ProviderPlan {
-            lane: auth::LaneInputs {
-                pi_config: tree,
-                native_auth_source: dir.path().join("not-read"),
-            },
+            lane: LaneInputs { pi_config: tree },
             task: pin.clone(),
             catalog: pin.clone(),
-            access_adapter: pin,
-            stream_adapter: None,
-            hosted: None,
+            stream_adapter: pin,
+            hosted: super::super::hosted::HostedRoutes {
+                routes: vec![super::super::hosted::HostedRoute {
+                    id: "primary".into(),
+                    payer: "payer".into(),
+                    endpoint: "loopback:9".into(),
+                }],
+                max_attempts_per_request: 1,
+            },
             model: "gpt-6-luna".into(),
-            sol_high: None,
             max_requests: 6,
             budget_microusd: 1_000_000,
-            max_context_bytes: 65536,
+            max_context_bytes: 32768,
         });
         (dir, h)
     }
@@ -1075,9 +888,9 @@ pub(super) mod ledger_tests {
 mod admission_tests {
     use super::*;
     #[test]
-    fn missing_runtime_admission_refuses_before_loading_even_fake_native_cache() {
+    fn missing_runtime_admission_refuses_before_staging() {
         let (dir, mut h) = super::super::tests::fixture();
-        let root = dir.path();
+        let root = dir.path().canonicalize().unwrap();
         let runtime = root.join("runtime");
         let catalog_path = runtime.join(CATALOG);
         fs::create_dir_all(catalog_path.parent().unwrap()).unwrap();
@@ -1088,11 +901,8 @@ mod admission_tests {
         let manifest = root.join("config.json");
         let bytes = serde_json::to_vec(&inventory(&config).unwrap()).unwrap();
         fs::write(&manifest, &bytes).unwrap();
-        let native = root.join("native.json");
-        fs::write(&native, b"NOT_A_NATIVE_CACHE_MUST_NOT_LOAD").unwrap();
-        fs::set_permissions(&native, fs::Permissions::from_mode(0o600)).unwrap();
         let adapter = root.join("adapter.mjs");
-        fs::write(&adapter, ACCESS_ADAPTER).unwrap();
+        fs::write(&adapter, STREAM_ADAPTER).unwrap();
         let task = root.join("task");
         fs::write(&task, b"fixture task").unwrap();
         let authority = root.join("authority");
@@ -1104,8 +914,10 @@ mod admission_tests {
             path: authority,
             sha256: digest(b"no provider admission"),
         };
-        h.journal.job.coding.as_mut().unwrap().provider = Some(ProviderPlan {
-            lane: auth::LaneInputs {
+        let profile = h.journal.job.coding.as_mut().unwrap();
+        profile.schema = super::super::HOSTED_BRIDGE_PROFILE.into();
+        profile.provider = Some(ProviderPlan {
+            lane: LaneInputs {
                 pi_config: Tree {
                     root: config,
                     manifest: Artifact {
@@ -1113,7 +925,6 @@ mod admission_tests {
                         sha256: digest(&bytes),
                     },
                 },
-                native_auth_source: native.clone(),
             },
             task: Artifact {
                 path: task,
@@ -1123,26 +934,33 @@ mod admission_tests {
                 path: catalog_path,
                 sha256: digest(&catalog),
             },
-            access_adapter: Artifact {
+            stream_adapter: Artifact {
                 path: adapter,
-                sha256: digest(ACCESS_ADAPTER),
+                sha256: digest(STREAM_ADAPTER),
             },
-            stream_adapter: None,
-            hosted: None,
+            hosted: super::super::hosted::HostedRoutes {
+                routes: vec![super::super::hosted::HostedRoute {
+                    id: "primary".into(),
+                    payer: "payer".into(),
+                    endpoint: "loopback:9".into(),
+                }],
+                max_attempts_per_request: 1,
+            },
             model: "gpt-6-luna".into(),
-            sol_high: None,
             max_requests: 6,
             budget_microusd: 1000000,
-            max_context_bytes: 65536,
+            max_context_bytes: 32768,
         });
         let error = h.coding_prepare_provider().unwrap_err();
-        assert!(error.to_string().contains("runtime admission"));
+        assert!(error.to_string().contains("runtime admission"), "{error}");
         assert!(!h.journal.job.state_dir.join("private-access").exists());
         assert!(h.journal.processes.is_empty());
-        assert_eq!(
-            fs::read(native).unwrap(),
-            b"NOT_A_NATIVE_CACHE_MUST_NOT_LOAD"
-        );
+        // A retired credential-mounted schema is refused by name.
+        let schema = &mut h.journal.job.coding.as_mut().unwrap().schema;
+        *schema = super::super::RETIRED_LIVE_PROFILES[1].into();
+        let job = h.journal.job.clone();
+        let error = job.coding.as_ref().unwrap().validate(&job).unwrap_err();
+        assert!(error.to_string().contains("retired"), "{error}");
     }
 }
 
@@ -1305,411 +1123,6 @@ mod signed_fake_tests {
                 .is_none()
         );
         assert!(h.journal.processes.is_empty());
-    }
-}
-
-#[cfg(test)]
-mod signed_subscription_tests {
-    use super::*;
-    #[test]
-    fn signed_subscription_uses_full_reservation_and_requires_owner_before_grant() {
-        let (_dir, mut h) = super::ledger_tests::fixture();
-        h.journal.job.coding.as_mut().unwrap().schema =
-            super::super::SIGNED_SUBSCRIPTION_PROFILE.into();
-        let frame = json!({"type":"provider_request","id":1,"provider":"openai-codex","model":"gpt-6-luna","contextBytes":12});
-        assert!(h.coding_provider_frame(&frame).is_err());
-        let r = &h.journal.coding.as_ref().unwrap().provider_requests[&1];
-        assert_eq!(r.reserved_microusd, 164001);
-        assert!(r.settled_microusd.is_none());
-        assert!(h.reply_leases.is_empty());
-        assert!(h.coding_provider_frame(&frame).is_err());
-    }
-    #[test]
-    fn signed_subscription_unknown_completion_cannot_settle_or_regrant() {
-        let (_dir, mut h) = super::ledger_tests::fixture();
-        h.journal.job.coding.as_mut().unwrap().schema =
-            super::super::SIGNED_SUBSCRIPTION_PROFILE.into();
-        let request = json!({"type":"provider_request","id":1,"provider":"openai-codex","model":"gpt-6-luna","contextBytes":12});
-        assert!(h.coding_provider_frame(&request).is_err());
-        // Even SDK normalized zeros plus a success-looking stop are not raw evidence.
-        assert!(h.coding_provider_frame(&json!({"type":"provider_complete","id":1,"stopReason":"stop","usage":{"input":0,"output":0}})).is_err());
-        assert!(
-            h.journal.coding.as_ref().unwrap().provider_requests[&1]
-                .settled_microusd
-                .is_none()
-        );
-        assert!(h.coding_provider_frame(&request).is_err());
-    }
-
-    struct RefusingGate;
-    impl super::super::CodingEffectGate for RefusingGate {
-        fn execute(
-            &mut self,
-            _: &super::super::CodingToolIntent,
-            _: &mut dyn FnMut(i64) -> Result<(bool, Vec<u8>)>,
-        ) -> Result<(bool, Vec<u8>)> {
-            refuse("test gate: no tool")
-        }
-        fn observed(
-            &mut self,
-            _: &super::super::CodingToolIntent,
-            _: &Artifact,
-            _: &ProcessRecord,
-            _: &str,
-        ) -> Result<()> {
-            Ok(())
-        }
-        fn frame(&mut self, _: &Value) -> Result<Vec<Value>> {
-            refuse("test gate refuses entry")
-        }
-        fn dispatch(&mut self, _: &Value, _: &mut dyn FnMut(i64) -> Result<()>) -> Result<()> {
-            refuse("test gate refuses dispatch")
-        }
-    }
-    fn live_bridge_host() -> (tempfile::TempDir, Host) {
-        let (dir, mut h) = super::ledger_tests::fixture();
-        {
-            let profile = h.journal.job.coding.as_mut().unwrap();
-            profile.schema = super::super::LIVE_BRIDGE_PROFILE.into();
-            profile.provider.as_mut().unwrap().max_requests = 4;
-        }
-        h.journal.session_id = Some("native".into());
-        h.coding_gate = Some(Box::new(RefusingGate));
-        (dir, h)
-    }
-    fn request(id: u64) -> Value {
-        json!({"type":"provider_request","id":id,"provider":"openai-codex","model":"gpt-6-luna","contextBytes":1000})
-    }
-    fn line(v: Value) -> Vec<u8> {
-        let mut v = v;
-        v["schema"] = json!(super::super::LIVE_BRIDGE_PROFILE);
-        v["sessionId"] = json!("native");
-        let mut b = serde_json::to_vec(&v).unwrap();
-        b.push(b'\n');
-        b
-    }
-    #[test]
-    fn live_bridge_reserves_durably_before_lifecycle_gate_and_unknown_never_regrants() {
-        let (dir, mut h) = live_bridge_host();
-        let frame = json!({"type":"coding_provider_request","id":1,"requestModel":{"id":"gpt-6-luna","provider":"openai-codex","contextWindow":272000},"contextBytes":1000});
-        // The gate refuses, yet the unknown reservation is already durable.
-        assert!(h.coding_advance(&line(frame.clone())).is_err());
-        let record: Value =
-            serde_json::from_slice(&fs::read(dir.path().join("pi-state.json")).unwrap()).unwrap();
-        assert_eq!(
-            record["coding"]["provider_requests"]["1"]["reserved_microusd"],
-            164001
-        );
-        assert!(record["coding"]["provider_requests"]["1"]["settled_microusd"].is_null());
-        // No regrant: request 1 again or request 2 while 1 is unresolved.
-        assert!(h.coding_advance(&line(frame.clone())).is_err());
-        let mut second = frame;
-        second["id"] = json!(2);
-        assert!(h.coding_advance(&line(second)).is_err());
-        assert_eq!(
-            h.journal.coding.as_ref().unwrap().provider_requests.len(),
-            1
-        );
-    }
-    #[test]
-    fn live_bridge_refuses_bare_provider_grants_wrong_model_and_over_context() {
-        let (_dir, mut h) = live_bridge_host();
-        // A bare provider_request would bypass the lifecycle gate.
-        assert!(h.coding_advance(&line(request(1))).is_err());
-        assert!(
-            h.journal
-                .coding
-                .as_ref()
-                .unwrap()
-                .provider_requests
-                .is_empty()
-        );
-        for (model, bytes) in [("gpt-6-other", 1000), ("gpt-6-luna", 70000)] {
-            let (_d, mut h) = live_bridge_host();
-            let frame = json!({"type":"coding_provider_request","id":1,"requestModel":{"id":model,"provider":"openai-codex","contextWindow":272000},"contextBytes":bytes});
-            assert!(h.coding_advance(&line(frame)).is_err());
-            assert!(
-                h.journal
-                    .coding
-                    .as_ref()
-                    .unwrap()
-                    .provider_requests
-                    .is_empty()
-            );
-        }
-    }
-    #[test]
-    fn live_bridge_profile_requires_exact_four_requests_and_bounded_context() {
-        // Actual Profile::validate over otherwise-valid pinned inputs. Only the
-        // request count / context bound varies, and a refusal must name that
-        // exact admission rule (not any other profile/pin conflict).
-        const RULE: &str = "live continuity profile admits exactly 4 requests";
-        let admit = |requests: u32, context: u64, sol_case: u8| -> Result<()> {
-            use std::os::unix::fs::PermissionsExt;
-            let (dir, mut h) = super::super::tests::fixture();
-            let root = dir.path().canonicalize().unwrap();
-            let runtime = root.join("runtime");
-            let catalog_path = runtime.join(CATALOG);
-            fs::create_dir_all(catalog_path.parent().unwrap()).unwrap();
-            let catalog = serde_json::to_vec(&json!({"openai-codex-responses":{"chat:gpt-6-luna":{"id":"gpt-6-luna","provider":"openai-codex","api":"openai-codex-responses","baseUrl":"https://chatgpt.com/backend-api","contextWindow":272000,"maxTokens":128000,"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125}}}})).unwrap();
-            fs::write(&catalog_path, &catalog).unwrap();
-            let config = root.join("config");
-            fs::create_dir(&config).unwrap();
-            let config_bytes = serde_json::to_vec(&inventory(&config).unwrap()).unwrap();
-            fs::write(root.join("config.json"), &config_bytes).unwrap();
-            let native = root.join("native.json");
-            fs::write(&native, b"never read").unwrap();
-            fs::set_permissions(&native, fs::Permissions::from_mode(0o600)).unwrap();
-            fs::write(root.join("adapter.mjs"), ACCESS_ADAPTER).unwrap();
-            fs::write(root.join("task"), b"fixture task").unwrap();
-            fs::write(root.join("shim.mjs"), super::super::SHIM).unwrap();
-            let state = root.join("state");
-            fs::create_dir(&state).unwrap();
-            let admission = serde_json::to_vec(&json!({
-                "schema":"work-engine.pi-coding-runtime-admission.v1",
-                "job_id":h.journal.job.job_id,
-                "binary_sha256":file_digest(&std::env::current_exe().unwrap(), None).unwrap(),
-                "model":"gpt-6-luna",
-                "native_auth_source":native,
-                "pi_config_manifest_sha256":digest(&config_bytes),
-                "task_sha256":digest(b"fixture task"),
-                "catalog_sha256":digest(&catalog),
-                "max_requests":requests,
-                "budget_microusd":1_000_000u64,
-                "allow_native_access_projection":true,
-                "allow_provider":true,
-            }))
-            .unwrap();
-            fs::write(root.join("authority"), &admission).unwrap();
-            let workspace = root.join("workspace");
-            fs::create_dir_all(workspace.join("src")).unwrap();
-            fs::write(workspace.join("src/lib.rs"), b"pub fn f() {}\n").unwrap();
-            let toolchain = root.join("toolchain");
-            fs::create_dir_all(toolchain.join("bin")).unwrap();
-            fs::write(toolchain.join("bin/rustc"), b"#!/bin/sh\n").unwrap();
-            let toolchain_bytes = serde_json::to_vec(&inventory(&toolchain).unwrap()).unwrap();
-            fs::write(root.join("toolchain.json"), &toolchain_bytes).unwrap();
-            fs::write(root.join("acceptance.rs"), b"// acceptance\n").unwrap();
-            let job = &mut h.journal.job;
-            job.workspace.root = workspace;
-            job.runtime.root = runtime;
-            job.state_dir = state;
-            job.authority = Artifact {
-                path: root.join("authority"),
-                sha256: digest(&admission),
-            };
-            let profile = job.coding.as_mut().unwrap();
-            profile.schema = super::super::LIVE_BRIDGE_PROFILE.into();
-            profile.fixture_command = String::new();
-            profile.max_tool_calls = 1;
-            profile.workspace_write_boundary = super::super::WorkspaceWriteBoundary::SrcLibRs;
-            profile.shim = Artifact {
-                path: root.join("shim.mjs"),
-                sha256: digest(super::super::SHIM),
-            };
-            profile.toolchain = Tree {
-                root: toolchain,
-                manifest: Artifact {
-                    path: root.join("toolchain.json"),
-                    sha256: digest(&toolchain_bytes),
-                },
-            };
-            profile.acceptance = Artifact {
-                path: root.join("acceptance.rs"),
-                sha256: digest(b"// acceptance\n"),
-            };
-            profile.provider = Some(ProviderPlan {
-                lane: auth::LaneInputs {
-                    pi_config: Tree {
-                        root: config,
-                        manifest: Artifact {
-                            path: root.join("config.json"),
-                            sha256: digest(&config_bytes),
-                        },
-                    },
-                    native_auth_source: native,
-                },
-                task: Artifact {
-                    path: root.join("task"),
-                    sha256: digest(b"fixture task"),
-                },
-                catalog: Artifact {
-                    path: catalog_path,
-                    sha256: digest(&catalog),
-                },
-                access_adapter: Artifact {
-                    path: root.join("adapter.mjs"),
-                    sha256: digest(ACCESS_ADAPTER),
-                },
-                stream_adapter: None,
-                hosted: None,
-                model: "gpt-6-luna".into(),
-                sol_high: None,
-                max_requests: requests,
-                budget_microusd: 1_000_000,
-                max_context_bytes: context,
-            });
-            if (1..10).contains(&sol_case) {
-                let tuple = SolHighContract {
-                    schema: "work-engine.sol-high.v1".into(),
-                    reasoning_effort: "high".into(),
-                    payer_account_id: "fixture-payer".into(),
-                };
-                let model = json!({"id":"gpt-6.1-sol","provider":"openai-codex","api":"openai-codex-responses","baseUrl":"https://chatgpt.com/backend-api","contextWindow":500000,"maxTokens":128000,"cost":{"input":2,"output":10,"cacheRead":0.1,"cacheWrite":2.5,"tiers":[{"input":4,"output":15,"cacheRead":0.2,"cacheWrite":5}]}});
-                assert_eq!(full_reservation(&model).unwrap(), 4_420_001);
-                let catalog = serde_json::to_vec(
-                    &json!({"openai-codex-responses":{"chat:gpt-6.1-sol":model}}),
-                )
-                .unwrap();
-                let profile = h.journal.job.coding.as_mut().unwrap();
-                profile.schema = super::super::SOL_HIGH_BRIDGE_PROFILE.into();
-                let plan = profile.provider.as_mut().unwrap();
-                assert!(
-                    serde_json::to_value(&*plan)
-                        .unwrap()
-                        .get("sol_high")
-                        .is_none()
-                );
-                fs::write(&plan.catalog.path, &catalog).unwrap();
-                plan.catalog.sha256 = digest(&catalog);
-                plan.model = "gpt-6.1-sol".into();
-                plan.sol_high = Some(tuple.clone());
-                plan.budget_microusd = 17_680_004;
-                let mut authority: Value = serde_json::from_slice(&admission).unwrap();
-                authority["schema"] = json!("work-engine.pi-coding-runtime-admission.v2");
-                authority["model"] = json!(plan.model);
-                authority["sol_high"] = serde_json::to_value(tuple).unwrap();
-                authority["budget_microusd"] = json!(plan.budget_microusd);
-                authority["catalog_sha256"] = json!(plan.catalog.sha256);
-                match sol_case {
-                    2 => plan.model = "gpt-6-luna".into(),
-                    3 => plan.sol_high.as_mut().unwrap().reasoning_effort = "medium".into(),
-                    4 => authority["sol_high"]["payer_account_id"] = json!("other-payer"),
-                    5 => authority["schema"] = json!("work-engine.pi-coding-runtime-admission.v1"),
-                    6 => plan.budget_microusd -= 1,
-                    7 => profile.schema = super::super::LIVE_BRIDGE_PROFILE.into(),
-                    _ => {}
-                }
-                let bytes = serde_json::to_vec(&authority).unwrap();
-                fs::write(&h.journal.job.authority.path, &bytes).unwrap();
-                h.journal.job.authority.sha256 = digest(&bytes);
-            }
-            if sol_case >= 10 {
-                let adapter = root.join("pi-native-tools.mjs");
-                fs::write(&adapter, STREAM_ADAPTER).unwrap();
-                let profile = h.journal.job.coding.as_mut().unwrap();
-                profile.schema = super::super::HOSTED_BRIDGE_PROFILE.into();
-                let plan = profile.provider.as_mut().unwrap();
-                plan.stream_adapter = Some(Artifact {
-                    path: adapter.clone(),
-                    sha256: digest(STREAM_ADAPTER),
-                });
-                let routes = super::super::hosted::HostedRoutes {
-                    routes: vec![super::super::hosted::HostedRoute {
-                        id: "primary".into(),
-                        payer: "payer-a".into(),
-                        endpoint: "loopback:9".into(),
-                    }],
-                    max_attempts_per_request: 2,
-                };
-                let mut authority: Value = serde_json::from_slice(&admission).unwrap();
-                authority["hosted_routes_sha256"] = json!(routes.digest());
-                plan.hosted = Some(routes);
-                match sol_case {
-                    11 => plan.stream_adapter = None,
-                    12 => profile.schema = super::super::LIVE_BRIDGE_PROFILE.into(),
-                    13 => fs::write(&adapter, b"// other\n").unwrap(),
-                    14 => plan.hosted = None,
-                    15 => authority["hosted_routes_sha256"] = json!(digest(b"other routes")),
-                    16 => plan.hosted.as_mut().unwrap().routes[0].payer = "payer-b".into(),
-                    _ => {}
-                }
-                let bytes = serde_json::to_vec(&authority).unwrap();
-                fs::write(&h.journal.job.authority.path, &bytes).unwrap();
-                h.journal.job.authority.sha256 = digest(&bytes);
-            }
-            let job = h.journal.job.clone();
-            let result = h.journal.job.coding.as_ref().unwrap().validate(&job);
-            if result.is_ok() && matches!(sol_case, 0 | 10) {
-                let hosted = sol_case == 10;
-                let args = super::super::base(&h.journal, &h.journal.container_name);
-                let network = args.windows(2).find(|w| w[0] == "--network").unwrap()[1].clone();
-                assert_eq!(network, if hosted { "none" } else { "bridge" });
-                let targets: Vec<&str> = super::super::expected_mounts(&h.journal, false, false)
-                    .into_iter()
-                    .map(|(_, target, _)| target)
-                    .collect();
-                for target in [
-                    "/auth",
-                    "/auth/access.json",
-                    "/receiver/pi-native-access.mjs",
-                ] {
-                    assert_eq!(
-                        targets.contains(&target),
-                        !hosted && target != "/auth",
-                        "{target}"
-                    );
-                }
-                assert_eq!(targets.contains(&"/receiver/pi-native-tools.mjs"), hosted);
-                if hosted {
-                    // Access stays on the Host: the unreadable native source is
-                    // never opened and nothing is staged for the container.
-                    h.coding_prepare_provider().unwrap();
-                    let private = h.journal.job.state_dir.join("private-access");
-                    assert_eq!(fs::read_dir(private).unwrap().count(), 0);
-                    let job: Value = serde_json::from_slice(
-                        &fs::read(h.journal.job.state_dir.join("coding-public/job.json")).unwrap(),
-                    )
-                    .unwrap();
-                    assert_eq!(job["schema"], super::super::HOSTED_BRIDGE_PROFILE);
-                }
-            }
-            result
-        };
-        match admit(4, 24_000, 0) {
-            Ok(()) => {}
-            Err(e) => panic!("valid live bridge profile at the boundary was refused: {e}"),
-        }
-        for (requests, context) in [
-            (3, 24_000),
-            (5, 24_000),
-            (1, 24_000),
-            (4, 24_001),
-            (4, 65_536),
-        ] {
-            let error = admit(requests, context, 0).expect_err(&format!(
-                "{requests} requests / {context} bytes must be refused"
-            ));
-            assert!(
-                error.to_string().contains(RULE),
-                "{requests}/{context} refused for another reason: {error}"
-            );
-        }
-        admit(4, 24_000, 1).expect("Sol/high exact versioned tuple");
-        admit(4, 24_000, 10).expect("hosted profile with its pinned stream adapter");
-        for case in 11..=16 {
-            assert!(
-                admit(4, 24_000, case).is_err(),
-                "hosted adapter case {case}"
-            );
-        }
-        assert!(super::super::is_live_bridge(
-            super::super::HOSTED_BRIDGE_PROFILE
-        ));
-        for case in 2..=7 {
-            assert!(
-                admit(4, 24_000, case).is_err(),
-                "mutated Sol contract {case}"
-            );
-        }
-        // Controls: the fixture bridge and direct live profiles are not bound by
-        // the live-bridge rule, and the classification helpers are unchanged.
-        assert!(super::super::is_bridge(super::super::LIVE_BRIDGE_PROFILE));
-        assert!(super::super::is_bridge(super::super::BRIDGE_PROFILE));
-        assert!(!super::super::is_bridge(super::LIVE_PROFILE));
-        assert!(!super::super::is_bridge(
-            super::super::SIGNED_SUBSCRIPTION_PROFILE
-        ));
     }
 }
 

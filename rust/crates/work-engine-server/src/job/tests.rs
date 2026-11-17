@@ -1083,9 +1083,9 @@ fn live_fixture(deadline: u64) -> Fx {
     let public = fx.root.join("public");
     std::fs::write(&public, b"public fixture").unwrap();
     let artifact = json!({"path":public,"sha256":hex(b"public fixture")});
-    let provider = json!({"lane":{"pi_config":{"root":fx.root.join("config"),"manifest":artifact},"native_auth_source":fx.root.join("unopened-native-source")},"task":artifact,"catalog":artifact,"access_adapter":artifact,"model":"gpt-6-luna","max_requests":4,"budget_microusd":700000,"max_context_bytes":24000});
+    let provider = json!({"lane":{"pi_config":{"root":fx.root.join("config"),"manifest":artifact}},"task":artifact,"catalog":artifact,"stream_adapter":artifact,"hosted":{"routes":[{"id":"primary","payer":"subscription","endpoint":"https:chatgpt-codex"}],"max_attempts_per_request":1},"model":"gpt-6-luna","max_requests":4,"budget_microusd":700000,"max_context_bytes":24000});
     job["coding"]["schema"] =
-        json!(work_engine_manual_host::pi_docker::coding::LIVE_BRIDGE_PROFILE);
+        json!(work_engine_manual_host::pi_docker::coding::HOSTED_BRIDGE_PROFILE);
     job["coding"]["workspace_write_boundary"] = json!("src_lib_rs");
     job["coding"]["fixture_command"] = json!("");
     job["coding"]["provider"] = provider.clone();
@@ -1096,7 +1096,7 @@ fn live_fixture(deadline: u64) -> Fx {
     job["runtime"]["manifest"] = artifact.clone();
     job["workspace"]["manifest"] = artifact.clone();
     let authority = fx.root.join("authority.json");
-    let auth = json!({"schema":"work-engine.pi-coding-runtime-admission.v1","binary_sha256":fx.jobs.profile.host_binary_sha256,"job_id":"job-1","model":"gpt-6-luna","task_sha256":artifact["sha256"],"catalog_sha256":artifact["sha256"],"native_auth_source":provider["lane"]["native_auth_source"],"pi_config_manifest_sha256":artifact["sha256"],"max_requests":4,"budget_microusd":700000,"allow_provider":true,"allow_native_access_projection":true}).to_string();
+    let auth = json!({"schema":"work-engine.pi-coding-runtime-admission.v1","binary_sha256":fx.jobs.profile.host_binary_sha256,"job_id":"job-1","model":"gpt-6-luna","task_sha256":artifact["sha256"],"catalog_sha256":artifact["sha256"],"pi_config_manifest_sha256":artifact["sha256"],"max_requests":4,"budget_microusd":700000,"allow_provider":true,"hosted_routes_sha256":serde_json::from_value::<work_engine_manual_host::pi_docker::coding::hosted::HostedRoutes>(provider["hosted"].clone()).unwrap().digest()}).to_string();
     std::fs::write(&authority, &auth).unwrap();
     job["authority"] = json!({"path":authority,"sha256":hex(auth.as_bytes())});
     let packet = json!({"schema":"work-engine.coding-live-continuity-packet.v1","bounds":{"inference_containers":1,"tool_containers":1,"validator_containers":1,"sdk_sessions":2,"workspace_exec_calls":1,"fake_provider_requests":0,"physical_resets":1,"live_provider_requests":4}}).to_string();
