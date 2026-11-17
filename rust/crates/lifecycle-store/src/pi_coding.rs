@@ -19,9 +19,13 @@ pub fn pi_coding_protocol_digest() -> String {
 pub fn pi_coding_live_profile_digest() -> String {
     digest(b"pi-1.5.0-coding-host-live-continuity-v4:real-provider:one-workspace-exec:host-journal:owner-derived-checkpoint")
 }
+/// The live wire forwards raw agent events except `message_update` (each
+/// carried the whole message so far; the final message is in `message_end`
+/// and the Host retains the exact provider stream). The v4 grammar is
+/// unchanged: it already admits a turn without updates.
 pub fn pi_coding_live_protocol_digest() -> String {
     digest(
-        b"pi-1.5.0:raw-agent-events+host-intent-result+session-branch+owner-derived-checkpoint:v4",
+        b"pi-1.5.0:raw-agent-events-except-message-update+host-intent-result+session-branch+owner-derived-checkpoint:v4",
     )
 }
 /// Sol/high v5 preserves native thinking blocks under a distinct grammar.

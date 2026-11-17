@@ -667,7 +667,7 @@ impl Host {
     fn hosted_step(&mut self, s: &mut Stream, stdout: &Path) -> Result<()> {
         match &mut s.phase {
             StreamPhase::Fetched(_) => {
-                if self.unprocessed(stdout)?.is_empty() {
+                if self.coding_unprocessed(stdout)?.is_empty() {
                     let StreamPhase::Fetched(fetch) =
                         std::mem::replace(&mut s.phase, StreamPhase::Closed)
                     else {
@@ -709,16 +709,6 @@ impl Host {
             }
             _ => Ok(()),
         }
-    }
-    /// Complete container lines not yet processed by `coding_advance`.
-    fn unprocessed(&self, stdout: &Path) -> Result<Vec<Value>> {
-        let raw = fs::read(stdout)?;
-        let done = self.journal.coding.as_ref().unwrap().frames;
-        raw.split_inclusive(|b| *b == b'\n')
-            .filter(|l| l.ends_with(b"\n"))
-            .skip(done)
-            .map(|l| Ok(serde_json::from_slice(l)?))
-            .collect()
     }
     /// Admit, reserve and dispatch the next attempt of the stream's request,
     /// or answer that no attempt is permitted.
@@ -844,7 +834,7 @@ impl Host {
             }
             // Last check before any upstream byte: a head-phase cancel that
             // arrived meanwhile means this attempt is not dispatched.
-            if host.unprocessed(stdout)?.iter().any(|f| {
+            if host.coding_unprocessed(stdout)?.iter().any(|f| {
                 f["type"] == "cancel"
                     && f["ordinal"] == 1
                     && f["binding"] == bind

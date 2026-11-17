@@ -900,14 +900,29 @@ impl Host {
         }
         Ok(())
     }
+    /// Process the container's frames given its whole output so far: the
+    /// first `frames` complete lines were already applied and are skipped.
     pub(super) fn coding_advance(&mut self, raw: &[u8]) -> Result<Vec<Vec<u8>>> {
-        let mut replies = vec![];
         let count = self.journal.coding.as_ref().unwrap().frames;
-        let lines: Vec<_> = raw
-            .split_inclusive(|b| *b == b'\n')
-            .filter(|line| line.ends_with(b"\n"))
-            .collect();
-        for line in lines.into_iter().skip(count) {
+        let replies = self.coding_advance_lines(complete_lines(raw).skip(count).collect())?;
+        let done = self.journal.coding.as_ref().unwrap().frames;
+        self.coding_out_offset = complete_lines(raw).take(done).map(|l| l.len() as u64).sum();
+        Ok(replies)
+    }
+    /// The Host loop's path: read only the output written after the last
+    /// applied frame (`coding_out_offset`) and process its complete lines, so
+    /// each tick costs the new output, not the whole output so far.
+    pub(super) fn coding_advance_from(&mut self, stdout: &Path) -> Result<Vec<Vec<u8>>> {
+        let tail = read_from(stdout, self.coding_out_offset)?;
+        let lines: Vec<&[u8]> = complete_lines(&tail).collect();
+        let consumed: u64 = lines.iter().map(|l| l.len() as u64).sum();
+        let replies = self.coding_advance_lines(lines)?;
+        self.coding_out_offset += consumed;
+        Ok(replies)
+    }
+    fn coding_advance_lines(&mut self, lines: Vec<&[u8]>) -> Result<Vec<Vec<u8>>> {
+        let mut replies = vec![];
+        for line in lines {
             if line.len() > 65536 {
                 return refuse("coding frame exceeded bound");
             }
@@ -1525,6 +1540,13 @@ impl Host {
         }
         Ok(replies)
     }
+    /// Complete container lines not yet applied, from `coding_out_offset`.
+    pub(super) fn coding_unprocessed(&self, stdout: &Path) -> Result<Vec<Value>> {
+        let tail = read_from(stdout, self.coding_out_offset)?;
+        complete_lines(&tail)
+            .map(|l| Ok(serde_json::from_slice(l)?))
+            .collect()
+    }
     pub(super) fn coding_complete(&mut self, raw: &[u8]) -> Result<()> {
         if !raw.ends_with(b"\n")
             || !self.coding_advance(raw)?.is_empty()
@@ -1792,6 +1814,7 @@ mod tests {
             pi_owner: None,
             allocation_lease: None,
             reply_leases: vec![],
+            coding_out_offset: 0,
             _lock: File::create(root.join("lock")).unwrap(),
         };
         (dir, host)
@@ -1927,6 +1950,36 @@ mod tests {
         duplicate.extend(&ready);
         assert!(h.coding_advance(&duplicate).is_err());
         assert!(h.journal.processes.is_empty());
+    }
+    /// The Host loop reads only output after the last applied frame: a partial
+    /// line waits, and a later frame is applied exactly once.
+    #[test]
+    fn incremental_output_applies_each_complete_frame_once() {
+        let (dir, mut h) = fixture();
+        let out = dir.path().join("rpc.stdout");
+        let ready = frame(
+            json!({"schema":PROFILE,"sessionId":"native","type":"ready","tools":["workspace_exec"]}),
+        );
+        let (head, rest) = ready.split_at(ready.len() / 2);
+        fs::write(&out, head).unwrap();
+        assert!(h.coding_advance_from(&out).unwrap().is_empty());
+        assert_eq!(h.coding_out_offset, 0);
+        assert!(h.coding_unprocessed(&out).unwrap().is_empty());
+        let mut file = OpenOptions::new().append(true).open(&out).unwrap();
+        file.write_all(rest).unwrap();
+        assert_eq!(h.coding_unprocessed(&out).unwrap().len(), 1);
+        assert_eq!(h.coding_advance_from(&out).unwrap().len(), 1);
+        assert_eq!(h.coding_out_offset, ready.len() as u64);
+        assert_eq!(h.journal.coding.as_ref().unwrap().frames, 1);
+        // Nothing new: nothing applied again.
+        assert!(h.coding_advance_from(&out).unwrap().is_empty());
+        // A second ready frame is new output and is refused as a duplicate.
+        file.write_all(&ready).unwrap();
+        assert!(h.coding_advance_from(&out).is_err());
+        // The whole-output path agrees with the offset it leaves behind.
+        let (_dir2, mut g) = fixture();
+        g.coding_advance(&ready).unwrap();
+        assert_eq!(g.coding_out_offset, ready.len() as u64);
     }
     #[test]
     fn signed_fixture_dispatch_and_replacement_fail_before_effects() {

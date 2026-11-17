@@ -188,6 +188,10 @@ pub struct Host {
     pi_owner: Option<session_task_admission::pi_pilot::PiOwner>,
     allocation_lease: Option<session_task_admission::pi_pilot::EffectLease>,
     reply_leases: Vec<session_task_admission::pi_pilot::EffectLease>,
+    /// Byte offset just past the last coding frame applied from the running
+    /// inference process's stdout (in memory: a restarted Host reconciles
+    /// instead of resuming the process).
+    coding_out_offset: u64,
     _lock: File,
 }
 
@@ -445,6 +449,7 @@ impl Host {
             pi_owner: owner,
             allocation_lease: None,
             reply_leases: vec![],
+            coding_out_offset: 0,
         };
         host.save()?;
         Ok(host)
@@ -485,6 +490,7 @@ impl Host {
             pi_owner: None,
             allocation_lease: None,
             reply_leases: vec![],
+            coding_out_offset: 0,
         })
     }
     fn save(&self) -> Result<()> {
@@ -641,9 +647,8 @@ impl Host {
                 aborted = true;
             }
             if rpc && !verified && output_size <= LIMIT {
-                let raw = fs::read(&stdout_path)?;
                 if self.journal.job.coding.is_some() {
-                    match self.coding_advance(&raw) {
+                    match self.coding_advance_from(&stdout_path) {
                         Ok(commands) => {
                             let leases = std::mem::take(&mut self.reply_leases);
                             // Hold all owner ordering leases through the actual IPC grant write.
@@ -724,6 +729,7 @@ impl Host {
                         }
                     }
                 } else if self.journal.job.receiver.is_some() {
+                    let raw = fs::read(&stdout_path)?;
                     match self.receiver_advance(&raw, number) {
                         Ok(Some(command)) => {
                             write_result = stdin
@@ -743,6 +749,7 @@ impl Host {
                         }
                     }
                 } else {
+                    let raw = fs::read(&stdout_path)?;
                     match verify_rpc(&raw, false) {
                         Ok(Some(session)) => {
                             self.journal.session_id = Some(session);
@@ -1416,6 +1423,25 @@ pub fn request_cancel(dir: &Path) -> Result<Value> {
     Ok(
         json!({"status":"cancellation_requested","job_id":journal.job.job_id,"settlement":"not_claimed"}),
     )
+}
+
+/// Newline-terminated lines of `raw`; a trailing partial line is not yet a frame.
+fn complete_lines(raw: &[u8]) -> impl Iterator<Item = &[u8]> {
+    raw.split_inclusive(|b| *b == b'\n')
+        .filter(|line| line.ends_with(b"\n"))
+}
+/// The bytes of `path` from `offset` to its current end, bounded like the
+/// whole output.
+fn read_from(path: &Path, offset: u64) -> Result<Vec<u8>> {
+    use std::io::{Read, Seek, SeekFrom};
+    let mut file = File::open(path)?;
+    file.seek(SeekFrom::Start(offset))?;
+    let mut tail = vec![];
+    Read::take(file, LIMIT + 1).read_to_end(&mut tail)?;
+    if tail.len() as u64 > LIMIT {
+        return refuse("process output exceeded bound");
+    }
+    Ok(tail)
 }
 
 fn rpc_input() -> Vec<u8> {

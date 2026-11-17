@@ -183,7 +183,11 @@ try {
   session=selected;
   session.setAutoCompactionEnabled(false);session.setAutoRetryEnabled(false);
   if(bridgeResets)session.setActiveToolsByName(claimsTools?activeNames:[]);
-  session.subscribe(event=>{if(bridgeActive)emit({type:'native_event',event});});
+  // Live bridge: message_update events are not forwarded. Each carries the
+  // whole message so far (twice), so forwarding them grows the output
+  // quadratically with answer length (open item D4). message_end carries the
+  // final message, and the Host retains the provider's exact stream bytes.
+  session.subscribe(event=>{if(bridgeActive&&!(liveBridge&&event.type==='message_update'))emit({type:'native_event',event});});
   if(liveBridge){
    // Real inference through the same SDK stream the direct live profile wraps.
    // Re-bound for every SDK session (the factory runs again on newSession()); one

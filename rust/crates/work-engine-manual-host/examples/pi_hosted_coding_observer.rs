@@ -17,6 +17,8 @@
 //! - `echo-body` (a text delta carrying the request's bearer before the
 //!   terminal event) and `echo-trailing` (an SSE comment carrying it after
 //!   the terminal event): the Host's access screen must stop both.
+//! - `long-answer`: the served response is one long text answer streamed as
+//!   many small deltas (the response-size ceiling, open item D4); it completes.
 //! - A secondary fault may name the served response it applies to:
 //!   `truncate@3` truncates the third (the first turn after the reset).
 //! - `primary-429-echo` (a 429 whose body carries the bearer) and
@@ -69,6 +71,26 @@ fn text(n: usize, t: &str) -> Vec<u8> {
         n,
         json!({"type":"message","id":format!("msg_{n}"),"role":"assistant","status":"completed","content":[{"type":"output_text","text":t,"annotations":[]}]}),
     )
+}
+/// One text answer of `LONG_DELTAS` small deltas: the response-size case.
+const LONG_DELTAS: usize = 3000;
+fn long_text(n: usize) -> Vec<u8> {
+    let piece = "w ";
+    let full = piece.repeat(LONG_DELTAS);
+    let item = json!({"type":"message","id":format!("msg_{n}"),"role":"assistant","status":"completed","content":[{"type":"output_text","text":full,"annotations":[]}]});
+    let mut out = vec![
+        json!({"type":"response.created","response":{"id":format!("resp_{n}"),"status":"in_progress"}}),
+        json!({"type":"response.output_item.added","output_index":0,"item":{"type":"message","id":item["id"],"role":"assistant","status":"in_progress","content":[]}}),
+    ];
+    for _ in 0..LONG_DELTAS {
+        out.push(json!({"type":"response.output_text.delta","output_index":0,"content_index":0,"delta":piece}));
+    }
+    out.push(json!({"type":"response.output_item.done","output_index":0,"item":item}));
+    out.push(json!({"type":"response.completed","response":{"id":format!("resp_{n}"),"model":"gpt-6-luna","status":"completed","output":[item],"usage":{"input_tokens":1000,"output_tokens":LONG_DELTAS,"total_tokens":1000 + LONG_DELTAS}}}));
+    out.iter()
+        .map(|v| format!("data: {v}\n\n"))
+        .collect::<String>()
+        .into_bytes()
 }
 fn response(n: usize) -> Vec<u8> {
     match n {
@@ -180,7 +202,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         ),
         None => (scenario.clone(), 1),
     };
-    const SCENARIOS: [&str; 15] = [
+    const SCENARIOS: [&str; 16] = [
+        "long-answer",
         "echo-body",
         "echo-trailing",
         "primary-429-echo",
@@ -204,7 +227,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     // accepting until killed, so later dispatches are visible.
     let completes = matches!(
         scenario.as_str(),
-        "ok" | "late-close-short" | "late-close-long" | "trailing"
+        "ok" | "late-close-short" | "late-close-long" | "trailing" | "long-answer"
     );
     while !(completes && served >= 4) {
         if Instant::now() > deadline {
@@ -318,17 +341,21 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             continue;
         }
         served += 1;
-        let reply = response(served);
-        println!(
-            "{}",
-            json!({"type":"served","effect":served,"receipt":receipt,"responseSha256":hash(&reply)})
-        );
-        std::io::stdout().flush()?;
         let fault = if served == fault_at {
             scenario.as_str()
         } else {
             "ok"
         };
+        let reply = if fault == "long-answer" {
+            long_text(served)
+        } else {
+            response(served)
+        };
+        println!(
+            "{}",
+            json!({"type":"served","effect":served,"receipt":receipt,"responseSha256":hash(&reply)})
+        );
+        std::io::stdout().flush()?;
         if fault == "stall-head" {
             hold(&mut s, "stall-head", &r.id)?;
             continue;
@@ -372,7 +399,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
             write!(s, "{:x}\r\n{event}\r\n", event.len())?;
             s.flush()?;
-            std::thread::sleep(Duration::from_millis(20));
+            // Long answers stream without pacing (thousands of events).
+            if fault != "long-answer" {
+                std::thread::sleep(Duration::from_millis(20));
+            }
         }
         if !ended {
             continue;
@@ -398,7 +428,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             _ => {}
         }
         let _ = write!(s, "0\r\n\r\n").and_then(|_| s.flush());
-        if fault != "ok" {
+        if fault != "ok" && fault != "long-answer" {
             println!("{}", json!({"type":"fault","fault":fault,"requestId":r.id}));
             std::io::stdout().flush()?;
         }
