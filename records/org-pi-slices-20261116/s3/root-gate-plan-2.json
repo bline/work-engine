@@ -1,0 +1,159 @@
+{
+ "cwd": "/home/bline/cbm-work/org-pi-slices-20261116/s3/export-1ed99580/rust",
+ "env": {
+  "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-pi-slices-20261116/s3/target-export",
+  "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+  "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+ },
+ "steps": [
+  {
+   "name": "toolchain",
+   "argv": [
+    "sh",
+    "-c",
+    "cargo --version; rustc --version; node --version"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "fmt",
+   "argv": [
+    "cargo",
+    "fmt",
+    "--check",
+    "-p",
+    "work-engine-review-delivery",
+    "-p",
+    "work-engine-review-preparation",
+    "-p",
+    "work-engine-organization",
+    "-p",
+    "review-episode-core"
+   ],
+   "timeout": 600
+  },
+  {
+   "name": "clippy",
+   "argv": [
+    "cargo",
+    "clippy",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "-p",
+    "work-engine-review-preparation",
+    "--features",
+    "work-engine-review-delivery/fixture",
+    "--all-targets",
+    "--",
+    "-D",
+    "warnings"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "test-four",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization",
+    "-p",
+    "work-engine-review-preparation",
+    "-p",
+    "review-episode-core",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "work-engine-review-delivery/fixture"
+   ],
+   "timeout": 2400,
+   "kill_leftovers": true
+  },
+  {
+   "name": "test-default-features",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "-p",
+    "work-engine-review-preparation"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "test-authority-store",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-authority-store",
+    "--features",
+    "fixture",
+    "--test",
+    "store"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "native-1",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--test",
+    "native_vertical"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "native-2",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--test",
+    "native_vertical"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "native-3",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--test",
+    "native_vertical"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  }
+ ]
+}

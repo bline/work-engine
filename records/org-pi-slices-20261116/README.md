@@ -27,3 +27,13 @@ implementation.** Committing these files records the proposal; it is not owner a
 
 `architectural-risk-history.json` is revision 39 of the campaign's escalation history (predecessor r37 at
 `records/organizational-compiler-pi-wip-20261114/campaign-records/` or the original campaign root).
+
+## Update 2026-11-17: S2 approved, S3 accepted
+
+The operator approved the R2 design (`s2/OWNER-DECISION-S2.json`: O1–O10 "approve the design", O11 "build R2-S").
+**S3 (R2-S refusal seam with assumed discharges)** is accepted at bounded private readiness
+(`s3/S3-ACCEPTANCE.json`): checkpoint `1ed99580b9bc765ca23749445239cea9f8f0460a`, Fable review
+`s3/review/REVIEW-1.md` (`changes_required`, 3 P2) remediated and rechecked (`s3/review/RECHECK-1.md`,
+`accept_private_readiness`), root gate `s3/ROOT-GATE-2.json`. Assumed discharges are labelled fixture
+assumptions, never admissions. R2's exit is not met: it needs the R2-A' admission core. Committed and merged at the
+operator's request ("Yes to both please.", 2026-11-17). About $87 of the $100 objective was used.

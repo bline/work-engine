@@ -1,0 +1,85 @@
+{
+ "schema_version": 1,
+ "repository": "/home/bline/cbm-work/wt-p1-vertical-20261113",
+ "run_id": "org-pi-slices-20261116",
+ "slice_number": 3,
+ "candidate_attempt": 2,
+ "baseline_commit_oid": "e6a57e7cdce4fc5f7e9a1d6710bfe116812d1e2f",
+ "parent_checkpoint_commit_oid": "24597fef102fd7e98b5c172d6d55aa1cf4fa4d8b",
+ "plan_version": "sha256:0a91f21b7ddb10b9a110cc93cf49379b5c73ea1cd4794c83823afc7b1c4c754d",
+ "scope_revision": "s3-r2s-refusal-seam-assumed-discharges",
+ "gate_receipt_digest": "2b4d5330178ff81e0cedd3e0c2144c764a770861582f45c501172db0a2859d40",
+ "created_at": "2026-11-17T07:19:47.696563+00:00",
+ "paths": [
+  {
+   "path": "rust/crates/work-engine-review-delivery/Cargo.toml",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/src/binding.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/src/lib.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/src/native.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/tests/binding.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/tests/common/mod.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/tests/native_vertical.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-preparation/src/lib.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-preparation/src/prepare.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-preparation/tests/preparation.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/src/gate.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/tests/fixtures/assumption-world/DERIVATION.md",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/tests/fixtures/assumption-world/requirements.json",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/tests/gate.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  }
+ ]
+}

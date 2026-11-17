@@ -1,0 +1,5 @@
+{"schema":"org-s3-root-gate/v1","at":"2026-11-17T07:26:10Z","owner":"01a1e56e-be12-7424-977b-c7c7983887d0",
+"subject":{"checkpoint_commit_oid":"1ed99580b9bc765ca23749445239cea9f8f0460a","checkpoint_tree_oid":"a5ffe708794f976d7f893917af93aed624fd78dc","task_patch_digest":"de161500db967a03cb67f3c668fea48ad89aa24609244724acc02a3a57025ecf","parent_checkpoint":"24597fef","baseline":"e6a57e7c"},
+"export":"/home/bline/cbm-work/org-pi-slices-20261116/s3/export-1ed99580 (git archive full tree)","plan":"/home/bline/cbm-work/org-pi-slices-20261116/s3/root-gate-plan-2.json","records":"/home/bline/cbm-work/org-pi-slices-20261116/s3/root-gate-2",
+"summary_sha256":"d7466f26b2a8fde5cd1888c7888babf3f0c61659482c887c220552886aa2e915","status":"passed",
+"results":{"fmt":"pass (four crates)","clippy":"pass","test_four":"252 passed/0 failed","default_features":"33 passed","authority_store":"37 passed","native_vertical_x3":"24/24 each"}}

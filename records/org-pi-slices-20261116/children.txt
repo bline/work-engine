@@ -6,3 +6,8 @@
 27debc2b-869e-44db-9dab-58da8ec4e1ac S1 review recheck (copy-on-resume of 7f68ddc9; deduped by message id)
 5c2376c2-a330-4697-bba8-62df30f8eca0 S2 R2 design Opus xhigh
 95888f14-c12d-4afd-adf3-9beacd820479 S2 design review Fable
+d55070cd-cd4b-400b-b921-74637552423e S3 R2-S builder Opus
+2ee4b077-700b-4ea1-8362-b00718e62af0 S3 review Fable
+88daf4c6-5524-4b70-b3bb-6d0a3007493c S3 remediation-1 Sonnet
+8818c115-f7ae-428d-b46b-a08d4d68dca9 S3 remediation-1 resumed copy of 88daf4c6
+dee954ad-b8ab-4885-9f47-448d471d0294 S3 review recheck (copy-on-resume of 2ee4b077)

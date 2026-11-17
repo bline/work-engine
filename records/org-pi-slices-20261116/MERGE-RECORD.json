@@ -1,0 +1,5 @@
+{"at":"2026-11-17T00:59:12Z","operator_request":"Commit and merge.","scope":"org slices S1 code + S1/S2 records",
+"commits":{"code":"6286aa79 (tree == checkpoint 1cc77114 tree be29bec5)","records":"e6a57e7c"},"branch":"p1-pub-vertical-20261113 (worktree /home/bline/cbm-work/wt-p1-vertical-20261113)",
+"merge":{"commit":"8ec9cf92","into":"rescue-detached-20260911","parent_before":"a702a2d7e107643d4a86ffd423c205c933d55dbb","no_conflicts":true,"unrelated_dirty_status_unchanged":true},
+"post_merge_gate":{"records":"/home/bline/cbm-work/org-pi-slices-20261116/s1/merge-gate","export":"git archive 8ec9cf92","result":"passed: fmt, clippy, four crates 248 passed, default features 32, authority-store 37, native_vertical 20/20 x1"},
+"not_done":["no push","no deployment","S2 not approved/implemented"]}
