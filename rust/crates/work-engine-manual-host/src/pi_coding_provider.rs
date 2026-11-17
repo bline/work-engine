@@ -143,9 +143,14 @@ pub enum AttemptEvidence {
         /// Provider failure event (`response.failed`/`error`) in the relayed
         /// bytes; such a stream is never a completion.
         provider_failure: Option<String>,
-        /// A screened `response.completed` was relayed and nothing but SSE
-        /// comments or blank lines followed it (`pi_stream::terminal_is_last`).
+        /// A screened `response.completed` was relayed, nothing but SSE
+        /// comments or blank lines followed it (`pi_stream::terminal_is_last`),
+        /// and every provider byte after it was read and kept: the framed end
+        /// was observed or the release drain ran, and no held-back byte was
+        /// dropped.
         terminal_last: bool,
+        /// Read or framing error that ended the release drain.
+        drain_error: Option<String>,
     },
     /// No trustworthy observation.
     Unknown { reason: String },
@@ -165,7 +170,14 @@ impl AttemptEvidence {
                 .as_str()
                 .map(String::from),
             terminal_last: crate::pi_stream::usage(&relay.forwarded)["completed"] == true
-                && crate::pi_stream::terminal_is_last(&relay.forwarded, &relay.unforwarded),
+                && crate::pi_stream::terminal_is_last(&relay.forwarded, &relay.unforwarded)
+                && relay.held_dropped == 0
+                && (relay.drained
+                    || matches!(
+                        relay.outcome,
+                        Outcome::Completed | Outcome::Cancelled { upstream_end: true }
+                    )),
+            drain_error: relay.drain_error.map(String::from),
         }
     }
 }
@@ -245,6 +257,7 @@ impl Reservation {
                 relay_sha256,
                 provider_failure,
                 terminal_last,
+                drain_error,
             } => {
                 a.http_status = Some(status);
                 a.relay_sha256 = Some(relay_sha256);
@@ -254,14 +267,28 @@ impl Reservation {
                         AttemptDisposition::Uncertain,
                         Some(format!("provider failure event in relayed stream: {code}")),
                     )
-                } else if status == 200 && !interrupted && upstream_end {
+                } else if status == 200 && !interrupted && terminal_last && upstream_end {
                     (AttemptDisposition::Completed, None)
                 } else if status == 200 && !interrupted && terminal_last {
                     // K-a: settle on the provider's terminal event; the
                     // missing framed end is an evidence limitation only.
                     (
                         AttemptDisposition::Completed,
-                        Some("completed on terminal event; framed end not observed".to_string()),
+                        Some(match drain_error {
+                            Some(code) => format!(
+                                "completed on terminal event; framed end not observed (drain ended: {code})"
+                            ),
+                            None => "completed on terminal event; framed end not observed".into(),
+                        }),
+                    )
+                } else if status == 200 && !interrupted {
+                    // Q-a: the tail rule applies with or without the framed end.
+                    (
+                        AttemptDisposition::Uncertain,
+                        Some(
+                            "no clean terminal event: no response.completed, provider bytes after it, or bytes after it not all read and kept"
+                                .to_string(),
+                        ),
                     )
                 } else {
                     (
@@ -836,10 +863,15 @@ impl Host {
                     .filter(|a| a.disposition != AttemptDisposition::Completed)
                 {
                     let detail = format!(
-                        "hosted attempt {} is {:?} ({}); container completion cannot settle it; reservation retained",
+                        "hosted attempt {} is {:?} ({}); container completion cannot settle it; {}",
                         a.attempt,
                         a.disposition,
-                        a.reason.as_deref().unwrap_or("no reason recorded")
+                        a.reason.as_deref().unwrap_or("no reason recorded"),
+                        match a.disposition {
+                            AttemptDisposition::Refused | AttemptDisposition::NotDispatched =>
+                                "that attempt's reservation was released and no later attempt was made",
+                            _ => "reservation retained",
+                        }
                     );
                     state.provider_failed = true;
                     self.save()?;
@@ -1697,6 +1729,8 @@ mod attempt_tests {
             body_sha256: "c".repeat(64),
         }
     }
+    /// A relay whose terminal event was clean (`terminal_last`) when the
+    /// framed end was observed.
     fn relayed(status: u16, upstream_end: bool, interrupted: bool) -> AttemptEvidence {
         AttemptEvidence::Relayed {
             status,
@@ -1704,7 +1738,8 @@ mod attempt_tests {
             interrupted,
             relay_sha256: "d".repeat(64),
             provider_failure: None,
-            terminal_last: false,
+            terminal_last: upstream_end,
+            drain_error: None,
         }
     }
     #[test]
@@ -1812,6 +1847,19 @@ mod attempt_tests {
             (relayed(200, false, false), AttemptDisposition::Uncertain),
             (relayed(200, false, true), AttemptDisposition::Uncertain),
             (relayed(500, true, false), AttemptDisposition::Uncertain),
+            // Q-a: the framed end does not excuse bytes after the terminal.
+            (
+                AttemptEvidence::Relayed {
+                    status: 200,
+                    upstream_end: true,
+                    interrupted: false,
+                    relay_sha256: "d".repeat(64),
+                    provider_failure: None,
+                    terminal_last: false,
+                    drain_error: None,
+                },
+                AttemptDisposition::Uncertain,
+            ),
             (
                 AttemptEvidence::Relayed {
                     status: 200,
@@ -1820,6 +1868,7 @@ mod attempt_tests {
                     relay_sha256: "d".repeat(64),
                     provider_failure: Some("insufficient_quota".into()),
                     terminal_last: true,
+                    drain_error: None,
                 },
                 AttemptDisposition::Uncertain,
             ),
@@ -1831,6 +1880,7 @@ mod attempt_tests {
                     relay_sha256: "d".repeat(64),
                     provider_failure: None,
                     terminal_last: true,
+                    drain_error: None,
                 },
                 AttemptDisposition::Completed,
             ),
@@ -1842,6 +1892,7 @@ mod attempt_tests {
                     relay_sha256: "d".repeat(64),
                     provider_failure: None,
                     terminal_last: true,
+                    drain_error: None,
                 },
                 AttemptDisposition::Uncertain,
             ),
@@ -1853,6 +1904,7 @@ mod attempt_tests {
                     relay_sha256: "d".repeat(64),
                     provider_failure: None,
                     terminal_last: true,
+                    drain_error: None,
                 },
                 AttemptDisposition::Uncertain,
             ),
@@ -1930,5 +1982,40 @@ mod attempt_tests {
         let back: Reservation =
             serde_json::from_value(serde_json::to_value(&rs[&2]).unwrap()).unwrap();
         assert_eq!(back.attempts, rs[&2].attempts);
+    }
+    #[test]
+    fn relay_evidence_is_clean_only_when_every_byte_after_the_terminal_was_kept() {
+        use crate::pi_stream::{Outcome, Relay};
+        let done = "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"r\"}}\n\n";
+        let relay = |outcome, unforwarded: &str, drained, held_dropped| Relay {
+            status: 200,
+            outcome,
+            forwarded: done.as_bytes().to_vec(),
+            chunks: vec![],
+            upstream_end_ms: None,
+            opened_ms: 0,
+            unforwarded_after_release: unforwarded.len(),
+            unforwarded: unforwarded.as_bytes().to_vec(),
+            drained,
+            held_dropped,
+            drain_error: None,
+            cancel_wait_ms: None,
+            closing: None,
+        };
+        let clean = |r: &Relay| match AttemptEvidence::from_relay(r) {
+            AttemptEvidence::Relayed { terminal_last, .. } => terminal_last,
+            _ => unreachable!(),
+        };
+        let released = Outcome::Cancelled {
+            upstream_end: false,
+        };
+        assert!(clean(&relay(released.clone(), ": c\n\n", true, 0)));
+        assert!(clean(&relay(Outcome::Completed, "", false, 0)));
+        // N2: released without a drain, or with held-back bytes dropped.
+        assert!(!clean(&relay(released.clone(), "", false, 0)));
+        assert!(!clean(&relay(released.clone(), ": c\n\n", true, 1)));
+        // Q-a: bytes after the terminal fail with or without the framed end.
+        assert!(!clean(&relay(Outcome::Completed, "data: {}\n\n", false, 0)));
+        assert!(!clean(&relay(released, done, true, 0)));
     }
 }

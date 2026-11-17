@@ -269,6 +269,9 @@ pub struct Hosted {
     router: Option<Router>,
     stream: Option<Stream>,
     out: Vec<Value>,
+    /// This Host ran the launch: attempts still pending at its end were left
+    /// by this process, not by one that is gone.
+    ran: bool,
 }
 
 impl Host {
@@ -448,7 +451,10 @@ impl Host {
             return refuse("foreign hosted stream frame");
         }
         match &mut s.phase {
-            StreamPhase::Active { session, .. } if session.accepts_native() => {
+            StreamPhase::Active {
+                session, attempt, ..
+            } if session.accepts_native() => {
+                let attempt = *attempt;
                 let transport = self
                     .hosted_transport
                     .take()
@@ -456,7 +462,7 @@ impl Host {
                 let sent = session.on_native(frame, &Screen(transport.as_ref()));
                 self.hosted_transport = Some(transport);
                 match sent {
-                    Ok(frames) => self.hosted.out.extend(frames),
+                    Ok(frames) => self.hosted_emit(s, attempt, frames)?,
                     Err(code) => {
                         // Never a bare protocol error: the attempt is uncertain,
                         // keeps its reservation, and its relayed bytes are kept.
@@ -526,7 +532,10 @@ impl Host {
                 }
                 Ok(())
             }
-            StreamPhase::Active { session, .. } => {
+            StreamPhase::Active {
+                session, attempt, ..
+            } => {
+                let attempt = *attempt;
                 let transport = self
                     .hosted_transport
                     .take()
@@ -534,7 +543,7 @@ impl Host {
                 let polled = session.poll(&Screen(transport.as_ref()), Duration::ZERO);
                 self.hosted_transport = Some(transport);
                 match polled {
-                    Ok(frames) => self.hosted.out.extend(frames),
+                    Ok(frames) => self.hosted_emit(s, attempt, frames)?,
                     Err(code) => {
                         self.hosted_close_uncertain(s, code)?;
                         return refuse(format!("hosted stream: {code}"));
@@ -735,6 +744,13 @@ impl Host {
             self.hosted_uncertain(s.request, attempt, routed, "gate returned without dispatch")?;
             return refuse("hosted gate returned without dispatch evidence");
         };
+        // The attempt's create-only stream file exists before any byte is
+        // relayed; every relayed chunk is appended to it first (N3).
+        if let Err(e) = self.hosted_stream_create(s.request, attempt) {
+            abort();
+            self.hosted_uncertain(s.request, attempt, routed, "stream retention unavailable")?;
+            return Err(e);
+        }
         let session = match Session::start(
             reader,
             abort,
@@ -852,9 +868,19 @@ impl Host {
         relay: stream::Relay,
     ) -> Result<()> {
         let (plan, _) = self.hosted_plan()?;
-        let sha = self.hosted_retain(request, attempt, "stream.sse", &relay.forwarded)?;
+        let (sha, retained) = self.hosted_stream_register(request, attempt)?;
+        if retained != relay.forwarded {
+            self.hosted_uncertain(
+                request,
+                attempt,
+                routed,
+                "retained stream differs from the relayed bytes",
+            )?;
+            return refuse("hosted retained stream differs from the relayed bytes");
+        }
         if !relay.unforwarded.is_empty() {
-            // Read while draining after the consumer released; never relayed.
+            // Read and screened while draining after the consumer released;
+            // never relayed.
             self.hosted_retain(request, attempt, "unforwarded.bin", &relay.unforwarded)?;
         }
         self.hosted_retain(
@@ -866,7 +892,7 @@ impl Host {
         let terminal = stream::sse_data(&relay.forwarded)
             .iter()
             .filter_map(|d| serde_json::from_str::<Value>(d).ok())
-            .rfind(|v| v["type"] == "response.completed");
+            .find(|v| v["type"] == "response.completed");
         let usage = stream::usage(&relay.forwarded);
         let r = self
             .journal
@@ -947,36 +973,135 @@ impl Host {
         }
         self.save()
     }
-    /// Reconcile after the producing process is gone: every still-pending
-    /// attempt becomes `Uncertain` (unsettled at restart). Nothing is
-    /// released; the reservation stays charged and blocks new grants.
+    /// Reconcile after the producing process is gone (or, within a run, after
+    /// its loop ended): every still-pending attempt becomes `Uncertain`.
+    /// Nothing is released; the reservation stays charged and blocks new
+    /// grants. Bytes already relayed to the container were appended to the
+    /// attempt's stream file before each was relayed; they are registered.
     pub(crate) fn coding_hosted_reconcile_unsettled(&mut self) -> Result<()> {
         if !self.hosted_profile() {
             return Ok(());
         }
-        let Some(state) = self.journal.coding.as_mut() else {
+        let Some(state) = self.journal.coding.as_ref() else {
             return Ok(());
         };
-        let mut changed = false;
-        for r in state.provider_requests.values_mut() {
-            if let Some(a) = r
-                .attempts
-                .last()
-                .filter(|a| a.disposition == AttemptDisposition::Pending)
-                .map(|a| a.attempt)
-            {
-                r.settle_attempt(
-                    a,
-                    AttemptEvidence::Unknown {
-                        reason: "unsettled at restart; producing process gone".into(),
-                    },
-                )?;
-                changed = true;
+        let pending: Vec<(u64, u64)> = state
+            .provider_requests
+            .iter()
+            .filter_map(|(request, r)| {
+                r.attempts
+                    .last()
+                    .filter(|a| a.disposition == AttemptDisposition::Pending)
+                    .map(|a| (*request, a.attempt))
+            })
+            .collect();
+        for (request, attempt) in pending {
+            let path = self.hosted_stream_path(request, attempt);
+            let retained = if !path.exists() {
+                None
+            } else if let Some(a) = self.journal.artifacts.iter().find(|a| a.path == path) {
+                Some((a.sha256.clone(), fs::metadata(&path)?.len()))
+            } else {
+                let (sha, bytes) = self.hosted_stream_register(request, attempt)?;
+                Some((sha, bytes.len() as u64))
+            };
+            let mut reason = if self.hosted.ran {
+                "unsettled when the run ended".to_string()
+            } else {
+                "unsettled at restart; producing process gone".to_string()
+            };
+            reason.push_str(&match &retained {
+                Some((_, n)) => format!("; {n} relayed bytes retained up to the end"),
+                None => "; nothing was relayed".into(),
+            });
+            let r = self
+                .journal
+                .coding
+                .as_mut()
+                .unwrap()
+                .provider_requests
+                .get_mut(&request)
+                .unwrap();
+            r.settle_attempt(attempt, AttemptEvidence::Unknown { reason })?;
+            if let (Some((sha, _)), Some(a)) = (retained, r.attempts.last_mut()) {
+                a.relay_sha256 = Some(sha);
             }
-        }
-        if changed {
-            state.provider_failed = true;
+            self.journal.coding.as_mut().unwrap().provider_failed = true;
             self.save()?;
+        }
+        Ok(())
+    }
+    fn hosted_stream_path(&self, request: u64, attempt: u64) -> PathBuf {
+        self.journal
+            .job
+            .state_dir
+            .join(format!("coding-hosted-{request}-{attempt}.stream.sse"))
+    }
+    /// Create the attempt's empty stream file, create-only and durable.
+    fn hosted_stream_create(&self, request: u64, attempt: u64) -> Result<()> {
+        let f = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(self.hosted_stream_path(request, attempt))?;
+        f.sync_all()?;
+        File::open(&self.journal.job.state_dir)?.sync_all()?;
+        Ok(())
+    }
+    /// Register the attempt's retained stream as a journal artifact.
+    fn hosted_stream_register(&mut self, request: u64, attempt: u64) -> Result<(String, Vec<u8>)> {
+        let path = self.hosted_stream_path(request, attempt);
+        let bytes = fs::read(&path)?;
+        let sha = digest(&bytes);
+        self.journal.artifacts.push(Artifact {
+            path,
+            sha256: sha.clone(),
+        });
+        self.save()?;
+        Ok((sha, bytes))
+    }
+    /// Queue session frames for the container. Each relayed chunk is durably
+    /// appended to the attempt's stream file before it is queued, and the
+    /// relayed head status is persisted on the attempt record, so a Host
+    /// crash loses neither. A retention failure closes the attempt uncertain
+    /// without relaying the chunk.
+    fn hosted_emit(&mut self, s: &mut Stream, attempt: u64, frames: Vec<Value>) -> Result<()> {
+        for f in frames {
+            let kept = (|| -> Result<()> {
+                match f["type"].as_str() {
+                    Some("response-chunk") => {
+                        let body = B64
+                            .decode(f["body"].as_str().unwrap_or(""))
+                            .map_err(|_| Error::Refused("hosted chunk encoding".into()))?;
+                        let mut file = OpenOptions::new()
+                            .append(true)
+                            .open(self.hosted_stream_path(s.request, attempt))?;
+                        file.write_all(&body)?;
+                        file.sync_data()?;
+                    }
+                    Some("response-head") => {
+                        if let Some(a) = self
+                            .journal
+                            .coding
+                            .as_mut()
+                            .unwrap()
+                            .provider_requests
+                            .get_mut(&s.request)
+                            .and_then(|r| r.attempts.last_mut())
+                            .filter(|a| a.attempt == attempt)
+                        {
+                            a.http_status = f["status"].as_u64().and_then(|v| v.try_into().ok());
+                        }
+                        self.save()?;
+                    }
+                    _ => {}
+                }
+                Ok(())
+            })();
+            if let Err(e) = kept {
+                self.hosted_close_uncertain(s, "hosted_retention")?;
+                return Err(e);
+            }
+            self.hosted.out.push(f);
         }
         Ok(())
     }
@@ -1021,12 +1146,14 @@ impl Host {
         };
         let unfinished = *session.progress() == Progress::Pending;
         let mut relay = session.into_relay();
-        if unfinished {
+        if unfinished && !matches!(relay.outcome, stream::Outcome::Interrupted(_)) {
             // The Host closed a stream that had not ended; its evidence must
-            // not read as a completed relay.
+            // not read as a completed relay. An existing interruption code is
+            // kept.
             relay.outcome = stream::Outcome::Interrupted("closed_by_host");
         }
-        let sha = self.hosted_retain(s.request, attempt, "stream.sse", &relay.forwarded)?;
+        let (sha, retained) = self.hosted_stream_register(s.request, attempt)?;
+        let differs = retained != relay.forwarded;
         self.hosted_retain(
             s.request,
             attempt,
@@ -1044,10 +1171,19 @@ impl Host {
                     relay_sha256: sha,
                     provider_failure: None,
                     terminal_last: false,
+                    drain_error: None,
                 },
             );
             if let Some(a) = r.attempts.last_mut().filter(|a| a.attempt == attempt) {
-                a.reason = Some(format!("closed uncertain: {reason}"));
+                a.reason = Some(if differs {
+                    format!(
+                        "closed uncertain: {reason}; retained {} of {} relay bytes (a chunk that could not be retained was not relayed)",
+                        retained.len(),
+                        relay.forwarded.len()
+                    )
+                } else {
+                    format!("closed uncertain: {reason}")
+                });
             }
         }
         state.provider_failed = true;
@@ -1069,6 +1205,7 @@ impl Host {
         if !self.hosted_profile() {
             return Ok(());
         }
+        self.hosted.ran = true;
         let Some(mut s) = self.hosted.stream.take() else {
             return Ok(());
         };
@@ -1651,15 +1788,38 @@ mod tests {
     #[test]
     fn reconcile_marks_a_pending_attempt_uncertain_and_keeps_it_charged() {
         // Crash after durable gate admission: the attempt is pending.
-        let (_dir, mut h, mut w) = host(vec![chunked_head()], None);
+        let (dir, mut h, mut w) = host(vec![chunked_head()], None);
         mid_body(&mut h, &mut w);
         h.hosted = Hosted::default(); // the producing process is gone
         let before = request(&h);
         assert_eq!(before.attempts[0].disposition, AttemptDisposition::Pending);
+        // N3: the relayed head status and bytes were durable before relay.
+        assert_eq!(before.attempts[0].http_status, Some(200));
+        let path = dir.path().join("coding-hosted-1-1.stream.sse");
+        let relayed = fs::read(&path).unwrap();
+        assert!(!relayed.is_empty());
         h.coding_hosted_reconcile_unsettled().unwrap();
         let after = request(&h);
         assert_eq!(after.attempts[0].disposition, AttemptDisposition::Uncertain);
         assert!(after.attempts[0].gate_entered);
+        let reason = after.attempts[0].reason.clone().unwrap();
+        assert!(
+            reason.starts_with("unsettled at restart; producing process gone")
+                && reason.contains(&format!("{} relayed bytes retained", relayed.len())),
+            "{reason}"
+        );
+        assert_eq!(
+            after.attempts[0].relay_sha256.as_deref(),
+            Some(digest(&relayed).as_str())
+        );
+        assert_eq!(
+            h.journal
+                .artifacts
+                .iter()
+                .filter(|a| a.path == path)
+                .count(),
+            1
+        );
         assert_eq!(after.charged_microusd(), before.charged_microusd());
         assert!(after.unsettled());
         // Idempotent.

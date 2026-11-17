@@ -841,3 +841,147 @@ fn terminal_is_last_allows_only_comments_and_blank_lines_after_the_terminal_even
         b""
     ));
 }
+
+/// One pull, then a release right after the terminal event. The server sends
+/// `first` as one chunk, then each `later` chunk after its delay, and keeps
+/// the connection open past the drain bound unless `end` is set.
+fn released_after(first: String, later: Vec<(u64, String)>, end: bool) -> ps::Relay {
+    let t = tempfile::tempdir().unwrap();
+    let s = store(&t);
+    let l = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = l.local_addr().unwrap();
+    let server = std::thread::spawn(move || {
+        let (mut c, _) = l.accept().unwrap();
+        write!(
+            c,
+            "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n{:x}\r\n{first}\r\n",
+            first.len()
+        )
+        .unwrap();
+        c.flush().unwrap();
+        for (delay, b) in later {
+            std::thread::sleep(Duration::from_millis(delay));
+            write!(c, "{:x}\r\n{b}\r\n", b.len()).unwrap();
+            c.flush().unwrap();
+        }
+        if end {
+            write!(c, "0\r\n\r\n").unwrap();
+            c.flush().unwrap();
+        }
+        std::thread::sleep(Duration::from_secs(2));
+    });
+    let mut sess = ps::Session::start(
+        TcpStream::connect(addr).unwrap(),
+        || (),
+        &binding(),
+        1,
+        1,
+        |_| false,
+    )
+    .unwrap();
+    let op = |kind: &str, o: u64| json!({"type":kind,"binding":binding(),"sequence":1,"stream":1,"ordinal":o});
+    while sess.poll(&s, Duration::from_millis(50)).unwrap().is_empty() {}
+    let mut f = sess.on_native(&op("pull", 1), &s).unwrap();
+    while f.is_empty() {
+        f = sess.poll(&s, Duration::from_millis(50)).unwrap();
+    }
+    assert_eq!(f[0]["type"], "response-chunk");
+    sess.on_native(&op("cancel", 2), &s).unwrap();
+    while sess.progress() == &ps::Progress::Pending {
+        sess.poll(&s, Duration::from_millis(50)).unwrap();
+    }
+    let r = sess.into_relay();
+    server.join().unwrap();
+    r
+}
+const DONE: &str =
+    r#"{"type":"response.completed","response":{"id":"r","usage":{"input_tokens":1}}}"#;
+
+#[test]
+fn release_drain_reads_until_its_bound_not_just_one_chunk() {
+    // N4: a comment followed by a data event inside the drain is not clean.
+    let data = "data: {\"type\":\"response.output_text.delta\"}\n\n";
+    let r = released_after(
+        sse(&[DONE]),
+        vec![(100, ": keep-alive\n\n".into()), (200, data.into())],
+        false,
+    );
+    assert!(r.drained);
+    assert_eq!(r.drain_error, None);
+    assert_eq!(r.unforwarded, format!(": keep-alive\n\n{data}").as_bytes());
+    assert_eq!(r.unforwarded_after_release, r.unforwarded.len());
+    assert!(!ps::terminal_is_last(&r.forwarded, &r.unforwarded));
+    // Only comments within the bound: clean, framed end not observed.
+    let r = released_after(
+        sse(&[DONE]),
+        vec![(100, ": a\n\n".into()), (100, ": b\n\n".into())],
+        false,
+    );
+    assert!(r.drained && r.held_dropped == 0);
+    assert_eq!(
+        r.outcome,
+        Outcome::Cancelled {
+            upstream_end: false
+        }
+    );
+    assert!(ps::terminal_is_last(&r.forwarded, &r.unforwarded));
+    // A framed end ends the drain early.
+    let r = released_after(sse(&[DONE]), vec![(50, ": a\n\n".into())], true);
+    assert!(r.drained);
+    assert_eq!(r.outcome, Outcome::Cancelled { upstream_end: true });
+}
+
+#[test]
+fn release_drain_screens_what_it_reads() {
+    // N1: access material after the terminal event is neither retained nor
+    // treated as a clean tail.
+    let r = released_after(sse(&[DONE]), vec![(50, format!(": {A}\n\n"))], false);
+    assert!(
+        matches!(r.outcome, Outcome::Interrupted(_)),
+        "{:?}",
+        r.outcome
+    );
+    assert!(r.unforwarded.is_empty());
+    assert!(r.held_dropped > 0);
+    assert!(r.drained);
+    let ev = r.evidence().to_string();
+    assert!(!ev.contains(A));
+}
+
+#[test]
+fn bytes_held_back_at_release_are_screened_by_the_drain_or_dropped_and_counted() {
+    // N2: the screen held back a possible access-material prefix after the
+    // terminal event when the consumer released.
+    let first = format!("{}{}", sse(&[DONE]), &A[..3]);
+    // Completed by the following bytes: access material, interrupted.
+    let r = released_after(first.clone(), vec![(50, format!("{}\n\n", &A[3..]))], false);
+    assert!(!String::from_utf8_lossy(&r.forwarded).contains(&A[..3]));
+    assert!(
+        matches!(r.outcome, Outcome::Interrupted(_)),
+        "{:?}",
+        r.outcome
+    );
+    assert!(r.unforwarded.is_empty() && r.held_dropped > 0);
+    // Nothing follows: still held at the drain bound, dropped and counted.
+    let r = released_after(first, vec![], false);
+    assert!(r.drained);
+    assert_eq!(r.held_dropped, 3);
+    assert!(r.unforwarded.is_empty());
+    assert_eq!(r.evidence()["heldDropped"], 3);
+}
+
+#[test]
+fn the_first_response_completed_is_the_terminal_event() {
+    // N5: a second terminal event is a data event after the terminal.
+    let second =
+        r#"{"type":"response.completed","response":{"id":"r2","usage":{"input_tokens":9}}}"#;
+    let one = sse(&[DONE]);
+    let two = sse(&[DONE, second]);
+    assert!(!ps::terminal_is_last(two.as_bytes(), b""));
+    assert!(!ps::terminal_is_last(
+        one.as_bytes(),
+        sse(&[second]).as_bytes()
+    ));
+    assert_eq!(ps::usage(two.as_bytes())["responseId"], "r");
+    assert_eq!(ps::usage(two.as_bytes())["inputTokens"], 1);
+}

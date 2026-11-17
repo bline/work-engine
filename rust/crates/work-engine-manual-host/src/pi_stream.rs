@@ -231,9 +231,19 @@ pub struct Relay {
     pub upstream_end_ms: Option<u64>,
     pub opened_ms: u64,
     pub unforwarded_after_release: usize,
-    /// Those bytes (one bounded chunk read while draining), kept as evidence.
-    /// Never forwarded to the consumer.
+    /// Those bytes (read while draining, up to the framed end, the drain's
+    /// time bound or [`DRAIN_MAX`]), screened like forwarded bytes, kept as
+    /// evidence. Never forwarded to the consumer. A suffix the screen held
+    /// back (a possible access-material prefix) is dropped, not kept.
     pub unforwarded: Vec<u8>,
+    /// The release drain ran to its end (framed end, time bound, size bound
+    /// or read error).
+    pub drained: bool,
+    /// Provider bytes read but neither forwarded nor retained: held back by
+    /// the screen when the stream was released.
+    pub held_dropped: usize,
+    /// Read or framing error that ended the release drain.
+    pub drain_error: Option<&'static str>,
     /// Time a native cancel waited behind an outstanding pull, if any.
     pub cancel_wait_ms: Option<u64>,
     /// How the consumer closed after a host terminal frame: `ack`, or a
@@ -263,6 +273,9 @@ impl Relay {
             "pullsBeforeUpstreamEnd": self.pulls_before_upstream_end(),
             "unforwardedAfterRelease": self.unforwarded_after_release,
             "unforwardedSha256": (!self.unforwarded.is_empty()).then(|| format!("{:x}", Sha256::digest(&self.unforwarded))),
+            "drained": self.drained,
+            "heldDropped": self.held_dropped,
+            "drainError": self.drain_error,
             "cancelDuringPendingPullMs": self.cancel_wait_ms,
             "closing": self.closing,
             "usage": usage(&self.forwarded),
@@ -302,11 +315,12 @@ pub fn sse_data(sse: &[u8]) -> Vec<String> {
     }
     out
 }
-/// Whether `response.completed` is the final event of the bytes the provider
-/// sent (`forwarded` then `unforwarded`): after its event block only SSE
-/// comment lines and blank lines may follow. Any other line, including a
-/// partial one, is not clean. Used to settle on the terminal event when the
-/// framed end is not observed (operator decision K-a, 2026-11-17).
+/// Whether the first `response.completed` is the final event of the bytes
+/// the provider sent (`forwarded` then `unforwarded`): after its event block
+/// only SSE comment lines and blank lines may follow. Any other line,
+/// including a partial one or a second terminal event, is not clean. A hosted
+/// attempt completes only on such a clean terminal event (operator decisions
+/// K-a and Q-a, 2026-11-17).
 pub fn terminal_is_last(forwarded: &[u8], unforwarded: &[u8]) -> bool {
     let mut all = forwarded.to_vec();
     all.extend_from_slice(unforwarded);
@@ -322,7 +336,8 @@ pub fn terminal_is_last(forwarded: &[u8], unforwarded: &[u8]) -> bool {
             .map(|d| d.strip_prefix(' ').unwrap_or(d))
             .collect();
         offset += block.len();
-        if block.ends_with("\n\n")
+        if terminal_end.is_none()
+            && block.ends_with("\n\n")
             && serde_json::from_str::<Value>(&data.join("\n"))
                 .is_ok_and(|v| v["type"] == "response.completed")
         {
@@ -362,7 +377,9 @@ pub fn usage(sse: &[u8]) -> Value {
         ),
         _ => None,
     });
-    let completed = events.iter().rfind(|v| v["type"] == "response.completed");
+    // The first terminal event is the terminal; anything after it is judged
+    // by `terminal_is_last`.
+    let completed = events.iter().find(|v| v["type"] == "response.completed");
     let Some(v) = completed.filter(|_| failed.is_none()) else {
         return json!({"completed": false, "observed": false, "failed": failed});
     };
@@ -463,6 +480,8 @@ impl Reader {
 }
 const POLL: Duration = Duration::from_millis(10);
 const DRAIN: Duration = Duration::from_secs(1);
+/// Bytes the release drain reads before it stops.
+pub const DRAIN_MAX: usize = 64 * 1024;
 const MAX_REFUSAL: usize = 64 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -568,6 +587,9 @@ impl Session {
                 opened_ms: now_millis(),
                 unforwarded_after_release: 0,
                 unforwarded: Vec::new(),
+                drained: false,
+                held_dropped: 0,
+                drain_error: None,
                 cancel_wait_ms: None,
                 closing: None,
             },
@@ -599,6 +621,25 @@ impl Session {
         };
         self.finish();
     }
+    /// End the release drain: screen what it read like relayed bytes. Access
+    /// material drops the bytes and leaves the stream interrupted; a held-back
+    /// suffix (a possible access-material prefix) is dropped and counted.
+    fn drain_done<S: Screen>(&mut self, screen: &S) {
+        self.r.drained = true;
+        match screen.hold(&self.r.unforwarded) {
+            Ok(h) => {
+                let keep = self.r.unforwarded.len() - h.min(self.r.unforwarded.len());
+                self.r.held_dropped += self.r.unforwarded.len() - keep;
+                self.r.unforwarded.truncate(keep);
+                self.release_done();
+            }
+            Err(code) => {
+                self.r.held_dropped += std::mem::take(&mut self.r.unforwarded).len();
+                self.r.outcome = Outcome::Interrupted(code);
+                self.finish();
+            }
+        }
+    }
     pub fn into_relay(mut self) -> Relay {
         std::mem::replace(
             &mut self.r,
@@ -611,6 +652,9 @@ impl Session {
                 opened_ms: 0,
                 unforwarded_after_release: 0,
                 unforwarded: Vec::new(),
+                drained: false,
+                held_dropped: 0,
+                drain_error: None,
                 cancel_wait_ms: None,
                 closing: None,
             },
@@ -620,6 +664,8 @@ impl Session {
         frame(kind, &self.binding, self.seq, self.stream, data)
     }
     fn finish(&mut self) {
+        // Bytes still held back by the screen are never retained.
+        self.r.held_dropped += std::mem::take(&mut self.held).len();
         self.state = State::Done;
         if self.progress == Progress::Pending {
             self.progress = Progress::Finished;
@@ -666,11 +712,13 @@ impl Session {
                 // Common release right after a terminal provider event: observe,
                 // without blocking, whether the framed end follows within a
                 // short bound. The stream is already over for the consumer.
+                // Bytes the screen held back are provider bytes after the
+                // forwarded ones: the drain screens them with what follows.
                 let u = usage(&self.r.forwarded);
                 if self.r.upstream_end_ms.is_none()
-                    && self.held.is_empty()
                     && (u["completed"] == true || !u["failed"].is_null())
                 {
+                    self.r.unforwarded = std::mem::take(&mut self.held);
                     self.state = State::Draining {
                         until: Instant::now() + DRAIN,
                     };
@@ -761,19 +809,28 @@ impl Session {
             }
             State::Upstream { .. } => self.advance(screen, wait),
             State::Draining { until } => {
-                let left = until.saturating_duration_since(Instant::now()).min(wait);
+                // Accumulate until the framed end, the time bound or the size
+                // bound. At the time bound one last non-blocking read takes a
+                // chunk that is already waiting.
+                let now = Instant::now();
+                let left = until.saturating_duration_since(now).min(wait);
                 match self.reader.data(left) {
                     Some(Ok(None)) => {
                         self.r.upstream_end_ms = Some(now_millis());
-                        self.release_done();
+                        self.drain_done(screen);
                     }
                     Some(Ok(Some(b))) => {
-                        self.r.unforwarded_after_release = b.len();
-                        self.r.unforwarded = b;
-                        self.release_done();
+                        self.r.unforwarded_after_release += b.len();
+                        self.r.unforwarded.extend(b);
+                        if self.r.unforwarded.len() >= DRAIN_MAX || Instant::now() >= until {
+                            self.drain_done(screen);
+                        }
                     }
-                    Some(Err(_)) => self.release_done(),
-                    None if Instant::now() >= until => self.release_done(),
+                    Some(Err(code)) => {
+                        self.r.drain_error = Some(code);
+                        self.drain_done(screen);
+                    }
+                    None if now >= until => self.drain_done(screen),
                     None => {}
                 }
                 Ok(vec![])
