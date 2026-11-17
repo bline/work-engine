@@ -43,6 +43,30 @@ it through all observed messages, including nonmatching topics. When changing
 filters, choose the earlier cursor needed for that new scope. Waiting does not
 write a shared cursor or consume messages for other readers.
 
+### Wait for a background job
+
+Rather than sleeping or polling while a long command runs, start it with
+`chatboard_job.py`, which runs it detached and posts to the board when it
+exits:
+
+```sh
+python3 skills/durable-state/scripts/chatboard_job.py --repository . run \
+  --author AUTHOR --session-id SESSION_ID --name matrix -- ./long-command args
+```
+
+`run` returns at once and prints JSON with the job's log paths, its topic
+(default `job:<session-id>`) and the board cursor `since`. Add
+`--topic job:<session-id>` and that `--since` to the blocking wait your role
+already uses, with its context-pressure and budget binding. Run that wait as a
+tool call with no timeout. It returns when the job finishes, and also on
+context or budget events and on any other topic you selected. The completion
+message gives the exit code, duration and log paths. Use `--tail-lines N` to
+include stdout lines; board messages are shared and durable, so only include
+output that is safe to share. The post uses `--wake`, so it also reaches a
+waiter with `--exclude-session-id`. Job records are kept under
+`$XDG_STATE_HOME/chatboard-jobs/<session-id>/` (default
+`~/.local/state/chatboard-jobs/`).
+
 ### Delivery by `to`
 
 A waiter also receives a row whose `to` list contains any selected topic, whatever

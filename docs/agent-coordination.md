@@ -48,6 +48,11 @@ Claims coordinate actors but do not create workflow or human authority. The
 board is CAS-published through private Git refs and does not modify a branch,
 index, or working tree.
 
+To wait for a long command instead of sleeping or polling, run it with
+`skills/durable-state/scripts/chatboard_job.py` and add its job topic to your
+blocking board wait; see
+[Wait for a background job](codex-chatboard.md#wait-for-a-background-job).
+
 Command lines (generated from `--help`):
 
 <!-- cli-synopsis script=skills/durable-state/scripts/codex_chatboard.py subs="post claim release read" display="python3 skills/durable-state/scripts/codex_chatboard.py --repository ." -->
