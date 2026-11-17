@@ -13,20 +13,33 @@ Close an item here when it is resolved, with the commit or record that resolves 
 | **API route price parity (R-c).** Settlement and the budget apply the pinned `openai-codex` catalog rates on every route, so the 700000 µUSD cap bounds a proxy, not actual API spend. | Fine as is; tune later. | When API spend matters or the catalog and API prices diverge. |
 | **Unexercised live failures.** A real quota refusal (429/402), a genuinely revoked or expired credential, and a live cancel or crash against a real route. | Monitor and log; revisit with more evidence. | When the observation log below has real occurrences. |
 
-## Known limit: response size (D4, open)
+## Resolved: response size (D4)
 
-The relay bound is 32 MiB, but the inference container's stdout to the Host is
-bounded at 8 MiB for the whole job (`pi_docker.rs` `LIMIT`), and the receiver
-forwards every SDK event during a turn; each `message_update` carries the
-accumulated message, so those bytes grow quadratically with output length.
-Measured in live run `c3`: about 1.3 KB per update plus about 5 bytes per
-earlier delta. Estimated ceiling: on the order of 1 500 output tokens in one
-response; beyond that the job fails closed (process-output failure,
-Uncertain, full hold). The lifecycle store's settlement proof consumes these
-`message_update` events (`lifecycle-store` `pi_settlement.rs`,
-`pi_coding_proof.rs`), so the fix needs that owner: send deltas instead of the
-accumulated message, or bound the stream per turn rather than per job. Required
-before real coding turns longer than the qualification task.
+Resolved by `da0a54f8` ([record](../records/dev-vertical-h2-route-20261117/README.md)):
+the receiver no longer forwards `message_update` on the live bridge, so the
+container's output grows linearly with answer length. A 3 000-delta answer
+that failed closed on the closed-milestone binary now settles. Remaining
+answer limit for the coding profile: the 64 KiB container frame (the history
+frame carries the conversation twice). Relay throughput for long answers was
+raised by coalescing already-received bytes (`1051e660`).
+
+## Hosted analysis profile (`work-engine.pi-analysis-hosted.v1`)
+
+Built for the research-lifecycle H2 run (plan
+[dev-vertical-h2-pi-route](../planning/dev-vertical-h2-pi-route-20261117.md)).
+Open:
+
+- **Job deadline.** The Host admits at most 300 s for a fresh job; a slower
+  model or many more requests may need a profile-specific bound.
+- **Model.** Admission pins `gpt-6-luna`; the H2 arm's model is the
+  operator's choice (route comparison R6).
+- **No server class or job preparation.** Runs use the
+  `analysis-qualification` producer directly; the entry the task host uses is
+  slice 4's question.
+- **Not exercised offline for this profile:** crash and cancel (the transport
+  and ledger are shared with the coding profile, whose matrix covers them).
+- **Not connected to the research lifecycle** (task host, delivery record,
+  install predicate): slice 4.
 
 ## Monitoring log
 
