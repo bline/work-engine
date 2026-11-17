@@ -223,16 +223,31 @@ owner basis table (OwnerBasisCoherence), summary closure, and the existing DTO
 bounds (owner revision syntax, owner scope keys, timestamps, scope digest,
 activity coverage, row and size limits). It does not claim producer reachability
 in general, authenticity, historical continuity, or anchor coherence of the four
-non-owner components. A validator acceptance of an envelope the producer cannot
+non-owner components. In particular it does not claim that linked sessions,
+activity or `exact_task_input…` linkage occur only with a present, fresh
+owner and native component: a stale or non-present owner/native component with
+linked activity is an explicit non-claim (the producer establishes linkage only
+from a successful read; the validator does not enforce it). With an identity
+present Rust does check that `linkage` is one of the two values the producer
+writes (`unestablished` or `exact_task_input_native_session;
+session_wide_not_per_turn`) and that the host identity satisfies the value checks
+`task::decode` applies (`HostIdentity::values_valid`). A validator acceptance of an envelope the producer cannot
 emit is a defect only inside these claims.
 
-JavaScript (browser and mailbox) verifies version, closed shape, types and
-bounds (including owner revision syntax and owner scope keys), envelope
-identity (scope digest, selection match, and an owner `task_id` equal to the
-request), and totality of the fields its renderer dereferences. It makes no
-coherence claim. Against the Rust producer it can only agree or block. A
-mailbox-token holder can post a coherent but false envelope; authenticity is not
-claimed.
+JavaScript (browser and mailbox) verifies exactly: the version; the top-level key
+set, types and bounds; for a non-null `host_identity`, only that
+`incarnation` is text of at most 256 characters and `executable_sha256` is 64
+lowercase hex digits (other identity fields and unknown identity keys are not
+checked); per component, the closed key set, `state`, object `scope`, times,
+boolean `stale`, `reason` and row bounds; for the owner only, canonical
+decimal-string revisions and scope keys; for non-owner components `revision`,
+`completeness` and `last_known_*` are not type-checked; any owner `task_id`
+present equals the request (an envelope with basis `none` may omit it); the
+recomputed scope digest; and totality of the fields its renderer dereferences.
+The exact endpoint and task selection match is made in the browser's
+`selected-task.jsx`, not by the mailbox. JavaScript makes no coherence claim.
+Against the Rust producer it can only agree or block. A mailbox-token holder can
+post a coherent but false envelope; authenticity is not claimed.
 
 ## Consumer fixture set
 

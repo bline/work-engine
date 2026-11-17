@@ -139,6 +139,25 @@ pub struct HostIdentity {
     pub features: Vec<String>,
     pub provider_identity: String,
 }
+impl HostIdentity {
+    /// The value domains a host identity must satisfy. `decode` and the selected-task
+    /// envelope validator both use this one check.
+    pub fn values_valid(&self) -> bool {
+        self.pid != 0
+            && !self.incarnation.is_empty()
+            && self.linux_starttime_ticks.parse::<u64>().is_ok()
+            && !self.build_id.is_empty()
+            && self.profile == "retained-repository-analysis-v1"
+            && [
+                &self.executable_sha256,
+                &self.source_sha256,
+                &self.lock_sha256,
+                &self.toolchain_sha256,
+            ]
+            .into_iter()
+            .all(|h| h.len() == 64 && h.bytes().all(|b| b.is_ascii_hexdigit()))
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Observation {
@@ -226,21 +245,7 @@ pub fn decode(bytes: &[u8], request: &Request) -> Result<Observation, ReadError>
     {
         return Err(ReadError::InvalidObservation);
     }
-    let identity = &observation.host_identity;
-    if identity.pid == 0
-        || identity.incarnation.is_empty()
-        || identity.linux_starttime_ticks.parse::<u64>().is_err()
-        || identity.build_id.is_empty()
-        || identity.profile != "retained-repository-analysis-v1"
-        || [
-            &identity.executable_sha256,
-            &identity.source_sha256,
-            &identity.lock_sha256,
-            &identity.toolchain_sha256,
-        ]
-        .into_iter()
-        .any(|h| h.len() != 64 || !h.bytes().all(|b| b.is_ascii_hexdigit()))
-    {
+    if !observation.host_identity.values_valid() {
         return Err(ReadError::InvalidObservation);
     }
     let owner = &observation.components["owner"];

@@ -384,10 +384,28 @@ fn fixture_set_semantics_and_cli_human_facts() {
             "not_published" => assert!(overview.contains("No result published"), "{name}"),
             _ => assert!(overview.contains("Compact summary unavailable"), "{name}"),
         }
-        for part in digits.split('/').filter(|d| *d != "none") {
-            assert!(owner.contains(&format!("\"{part}\"")), "{name}");
+        // Labelled JSON fields: the quotes bound a revision token, and
+        // `"read_at_ms": N,` cannot match a longer or embedded number.
+        for (key, part) in ["owner_revision", "cursor_revision"]
+            .into_iter()
+            .zip(digits.split('/').filter(|d| *d != "none"))
+        {
+            assert!(
+                owner.contains(&format!("\"{key}\": \"{part}\"")),
+                "{name}\n{owner}"
+            );
         }
-        assert!(owner.contains(&read.to_string()), "{name}");
+        let c = &p.components["owner"];
+        assert!(
+            owner.contains(&format!("\"read_at_ms\": {},", c.read_at_ms)),
+            "{name}\n{owner}"
+        );
+        if let Some(t) = c.last_known_at_ms {
+            assert!(
+                owner.contains(&format!("\"last_known_at_ms\": {t},")),
+                "{name}\n{owner}"
+            );
+        }
         println!("FACTS {name} | {basis} | {state} | {digits} | read {read} | {counts} | {result}");
     }
 }
@@ -537,4 +555,49 @@ fn rc2_unobserved_equality_counterexamples() {
     let mut bad = p1.clone();
     bad.components.get_mut("owner").unwrap().read_at_ms = 1;
     rejects("unobserved component read time", &bad);
+}
+
+/// Review F5: with an identity present, `linkage` is one of the two producer values and
+/// the host identity satisfies the value checks `task::decode` applies.
+#[test]
+fn identity_present_envelopes_refuse_unproduced_linkage_and_invalid_identity_values() {
+    let set = generate();
+    for (name, p) in &set {
+        if p.host_identity.is_some() {
+            SelectedTask::parse(&encode(p)).unwrap_or_else(|e| panic!("{name}: {e}"));
+        }
+    }
+    let base = set["joined-fresh"].clone();
+    for linkage in [
+        "owner_verified_success",
+        "",
+        "exact_task_input_native_session",
+        "Unestablished",
+    ] {
+        let mut p = base.clone();
+        p.linkage = linkage.into();
+        assert_eq!(
+            rejects(&format!("linkage {linkage:?}"), &p),
+            "invalid_projection"
+        );
+    }
+    type Mutation = fn(&mut operator_observation::task::HostIdentity);
+    let identity_cases: [(&str, Mutation); 8] = [
+        ("pid 0", |i| i.pid = 0),
+        ("empty incarnation", |i| i.incarnation.clear()),
+        ("non-numeric starttime", |i| {
+            i.linux_starttime_ticks = "x".into()
+        }),
+        ("empty build id", |i| i.build_id.clear()),
+        ("other profile", |i| i.profile = "other".into()),
+        ("short digest", |i| i.executable_sha256 = "a".repeat(63)),
+        ("non-hex digest", |i| i.source_sha256 = "g".repeat(64)),
+        ("long digest", |i| i.toolchain_sha256 = "a".repeat(65)),
+    ];
+    for (label, mutate) in identity_cases {
+        let mut p = base.clone();
+        mutate(p.host_identity.as_mut().unwrap());
+        redigest(&mut p);
+        assert_eq!(rejects(label, &p), "invalid_projection", "{label}");
+    }
 }

@@ -281,13 +281,24 @@ mod tests {
                 );
                 for key in ["owner_revision", "cursor_revision"] {
                     if let Some(digits) = revision[key].as_str() {
-                        assert!(text.contains(digits), "{name} {width}: {digits}");
+                        // The labelled field; the closing quote bounds the digits.
+                        assert!(
+                            text.contains(&format!("\"{key}\": \"{digits}\"")),
+                            "{name} {width}: {key} {digits}"
+                        );
                     }
                 }
                 assert!(
-                    text.contains(&read.to_string()),
-                    "{name} {width}: read {read}"
+                    text.contains(&format!("\"read_at_ms\": {},", c.read_at_ms)),
+                    "{name} {width}: read_at_ms {}",
+                    c.read_at_ms
                 );
+                if let Some(t) = c.last_known_at_ms {
+                    assert!(
+                        text.contains(&format!("\"last_known_at_ms\": {t},")),
+                        "{name} {width}: last_known_at_ms {t}"
+                    );
+                }
                 match &s.summary.value {
                     Some(v) => {
                         let counts = format!(

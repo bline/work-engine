@@ -687,6 +687,19 @@ impl SelectedTask {
             }
             return Ok(());
         }
+        // With an identity present: its values are the ones `task::decode` accepts and
+        // `linkage` is one of the two values the producer writes.
+        if !self
+            .host_identity
+            .as_ref()
+            .is_some_and(task::HostIdentity::values_valid)
+            || !matches!(
+                self.linkage.as_str(),
+                "unestablished" | "exact_task_input_native_session; session_wide_not_per_turn"
+            )
+        {
+            return Err("invalid_projection");
+        }
         if self
             .components
             .values()
