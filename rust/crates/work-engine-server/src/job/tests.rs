@@ -1250,6 +1250,12 @@ fn live_fresh_admission_rejects_missing_authority_model_budget_and_expiry_before
         |v: &mut Value| v["authority"]["path"] = json!("/missing/authority.json"),
         |v: &mut Value| v["deadline_unix_seconds"] = json!(1),
         |v: &mut Value| v["deadline_unix_seconds"] = json!(now() + 241),
+        // N3: live routes are the fixed HTTPS endpoints only.
+        |v: &mut Value| {
+            v["coding"]["provider"]["hosted"]["routes"][0]["endpoint"] = json!("loopback:9")
+        },
+        // N3: a retired credential-mounted schema has no live digest.
+        |v: &mut Value| v["coding"]["schema"] = json!("work-engine.pi-coding-lifecycle-live.v1"),
     ] {
         let mut value = original.clone();
         mutate(&mut value);
@@ -1257,9 +1263,56 @@ fn live_fresh_admission_rejects_missing_authority_model_budget_and_expiry_before
         std::fs::write(&fx.auth.job_file, &bytes).unwrap();
         let mut profile = fx.jobs.profile.clone();
         profile.authorizations[0].job_sha256 = hex(&bytes);
+        // A retired schema has no live digest at all: refused there.
+        let Some(digest) = host_input_digest(&value) else {
+            continue;
+        };
+        profile.authorizations[0].host_input_digest = digest;
+        assert!(Jobs::new(profile).is_err());
+        assert_eq!(runs(&fx), 0);
+    }
+}
+
+#[test]
+fn live_class_requires_exact_admission_fields_and_the_credentials_env() {
+    // N3: the Host admission rejects unknown fields; the server precheck
+    // refuses an authority with one key more or one key less before entry.
+    let fx = live_fixture(30);
+    let original: Value =
+        serde_json::from_slice(&std::fs::read(&fx.auth.job_file).unwrap()).unwrap();
+    let authority_path = std::path::PathBuf::from(original["authority"]["path"].as_str().unwrap());
+    let authority: Value =
+        serde_json::from_slice(&std::fs::read(&authority_path).unwrap()).unwrap();
+    for edit in [
+        |a: &mut Value| a["native_auth_source"] = json!("/retired/native-source"),
+        |a: &mut Value| {
+            a.as_object_mut().unwrap().remove("hosted_routes_sha256");
+        },
+    ] {
+        let mut a = authority.clone();
+        edit(&mut a);
+        let bytes = a.to_string();
+        std::fs::write(&authority_path, &bytes).unwrap();
+        let mut value = original.clone();
+        value["authority"]["sha256"] = json!(hex(bytes.as_bytes()));
+        let job = serde_json::to_vec(&value).unwrap();
+        std::fs::write(&fx.auth.job_file, &job).unwrap();
+        let mut profile = fx.jobs.profile.clone();
+        profile.authorizations[0].job_sha256 = hex(&job);
         profile.authorizations[0].host_input_digest = host_input_digest(&value).unwrap();
         assert!(Jobs::new(profile).is_err());
         assert_eq!(runs(&fx), 0);
+    }
+    // The live profile must name the Host's credentials file by absolute path.
+    for env in [None, Some("relative/credentials.json")] {
+        let mut profile = fx.jobs.profile.clone();
+        profile.env.remove("WORK_ENGINE_HOSTED_CREDENTIALS");
+        if let Some(v) = env {
+            profile
+                .env
+                .insert("WORK_ENGINE_HOSTED_CREDENTIALS".into(), v.into());
+        }
+        assert_eq!(profile.validate(), Err("invalid_job_profile"));
     }
 }
 

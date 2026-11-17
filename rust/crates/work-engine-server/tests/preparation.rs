@@ -120,6 +120,17 @@ fn exact_preparation_preserves_inputs_and_cannot_create_provider_permission() {
                     + 60000
             );
             cases.push(("future-observation", bad));
+            // N3: live routes are the fixed HTTPS endpoints only.
+            let mut bad = spec.clone();
+            bad["hosted"]["routes"]["routes"][0]["endpoint"] = json!("loopback:9");
+            cases.push(("loopback-route", bad));
+            // N3: the credentials file must be owner-only.
+            {
+                use std::os::unix::fs::PermissionsExt;
+                fs::set_permissions(&credentials, fs::Permissions::from_mode(0o640)).unwrap();
+                assert!(!call(&["inspect", sp.to_str().unwrap()]).status.success());
+                fs::set_permissions(&credentials, fs::Permissions::from_mode(0o600)).unwrap();
+            }
             for (label, bad) in cases {
                 let bad_raw = serde_json::to_vec(&bad).unwrap();
                 fs::write(&sp, &bad_raw).unwrap();
