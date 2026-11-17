@@ -896,6 +896,13 @@ impl Host {
             .get_mut(&request)
             .unwrap();
         let disposition = r.settle_attempt(attempt, AttemptEvidence::from_relay(&relay))?;
+        if let (stream::Outcome::Interrupted(code), Some(a)) =
+            (&relay.outcome, r.attempts.last_mut())
+            && disposition == AttemptDisposition::Uncertain
+        {
+            let reason = a.reason.take().unwrap_or_default();
+            a.reason = Some(format!("{reason} (interrupted: {code})"));
+        }
         debug_assert_eq!(
             r.attempts.last().unwrap().relay_sha256.as_deref(),
             Some(sha.as_str())
@@ -1780,7 +1787,8 @@ mod tests {
         .unwrap_err()
         .to_string();
         assert!(
-            err.contains("hosted attempt 1 is Uncertain") && err.contains("provider failure event"),
+            err.contains("hosted request 1 attempt 1 is Uncertain")
+                && err.contains("provider failure event"),
             "{err}"
         );
         assert!(request(&h).unsettled());

@@ -150,7 +150,8 @@ def check(name, s, st):
     expect('no second served effect', len(served) == 1)
     if name in FAULTS:
         if name in ('stall-head', 'cancel-head'):
-            expect('relay digest recorded (no head, zero bytes)', len(a) == 2 and a[1]['relay_sha256'] == hashlib.sha256(b'').hexdigest())
+            expect('relay digest recorded (no head: zero bytes, no status)',
+                   len(a) == 2 and a[1]['relay_sha256'] == hashlib.sha256(b'').hexdigest() and a[1]['http_status'] is None)
         else:
             expect('relayed bytes retained', len(a) == 2 and a[1]['relay_sha256'] not in (None, hashlib.sha256(b'').hexdigest()))
     if name == 'midstream-failed':
@@ -163,12 +164,14 @@ def check(name, s, st):
     if name == 'echo-body':
         rel = relay_json(run, 1, 2)
         expect('access screen interrupted the relay before the echoed chunk',
-               rel.get('interruption') == 'hosted_access_exclusion' and rel.get('forwardedBytes', 0) > 0)
+               rel.get('interruption') == 'hosted_access_exclusion' and rel.get('forwardedBytes', 0) > 0
+               and '(interrupted: hosted_access_exclusion)' in (a[-1]['reason'] or ''))
     if name == 'echo-trailing':
         rel = relay_json(run, 1, 2)
         expect('drain screened the echoed trailing bytes and dropped them',
                rel.get('interruption') == 'hosted_access_exclusion' and rel.get('drained') is True
                and rel.get('heldDropped', 0) > 0
+               and '(interrupted: hosted_access_exclusion)' in (a[-1]['reason'] or '')
                and not (run / 'state' / 'coding-hosted-1-2.unforwarded.bin').exists())
     if name in ('cancel', 'cancel-head'):
         rel = relay_json(run, 1, 2)

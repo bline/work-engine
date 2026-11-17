@@ -259,7 +259,8 @@ impl Reservation {
                 terminal_last,
                 drain_error,
             } => {
-                a.http_status = Some(status);
+                // Status 0: no response head was read.
+                a.http_status = (status != 0).then_some(status);
                 a.relay_sha256 = Some(relay_sha256);
                 a.framed_end_observed = Some(upstream_end);
                 if let Some(code) = provider_failure {
@@ -863,7 +864,7 @@ impl Host {
                     .filter(|a| a.disposition != AttemptDisposition::Completed)
                 {
                     let detail = format!(
-                        "hosted attempt {} is {:?} ({}); container completion cannot settle it; {}",
+                        "hosted request {id} attempt {} is {:?} ({}); container completion cannot settle it; {}",
                         a.attempt,
                         a.disposition,
                         a.reason.as_deref().unwrap_or("no reason recorded"),
