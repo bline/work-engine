@@ -1,0 +1,8 @@
+4be2fcf8-c471-4c25-a454-c3807433ed51 S1 design recheck Fable
+77d84ccf-1267-4984-ad28-9487b5ac5380 billing probe haiku
+5d1da583-69ce-4f4f-be83-d17d59d2d2ec S1 builder Opus
+7f68ddc9-4ecc-4c1c-be94-b8dfbded1306 S1 semantic review Fable
+7cc0d168-867d-4573-8248-41b21f80ba1f S1 remediation-1 Sonnet
+27debc2b-869e-44db-9dab-58da8ec4e1ac S1 review recheck (copy-on-resume of 7f68ddc9; deduped by message id)
+5c2376c2-a330-4697-bba8-62df30f8eca0 S2 R2 design Opus xhigh
+95888f14-c12d-4afd-adf3-9beacd820479 S2 design review Fable

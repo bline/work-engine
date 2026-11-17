@@ -1,0 +1,40 @@
+{
+ "schema_version": 1,
+ "repository": "/home/bline/cbm-work/wt-p1-vertical-20261113",
+ "run_id": "org-pi-slices-20261116",
+ "slice_number": 1,
+ "candidate_attempt": 1,
+ "baseline_commit_oid": "e20a9221a80544c81ea789148a02c0f3aad9c84c",
+ "parent_checkpoint_commit_oid": null,
+ "plan_version": "sha256:efcdc01d74cc0c2b1d48c043a16040c70d618f3583985fbb4d02920fcf1983d5",
+ "scope_revision": "s1-r1-revised-acceptance-model",
+ "gate_receipt_digest": "86296208522483a3189fd4cfa84566103e1b1ea60b1c6c9bc897641a4f951dfb",
+ "created_at": "2026-11-16T20:59:18.361649+00:00",
+ "paths": [
+  {
+   "path": "rust/crates/work-engine-review-delivery/src/lib.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/src/native.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/tests/common/mod.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/tests/native_vertical.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/tests/pure.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  }
+ ]
+}

@@ -1,0 +1,32 @@
+{
+ "schema": "org-s1-root-gate/v1",
+ "at": "2026-11-17T00:03:14.573901+00:00",
+ "owner": "01a1e56e-be12-7424-977b-c7c7983887d0",
+ "subject": {
+  "checkpoint_commit_oid": "1cc771146c72ff7d23b371b730aa5e73ce79db61",
+  "checkpoint_tree_oid": "be29bec5a48560682e0a9894ef2ff83a864dbe14",
+  "task_patch_digest": "d023d937a67b44a0f8db3e8c9519785d75fc0c0d3263d9f4a447e1796bac3160",
+  "parent_checkpoint": "1ac0bff4190cf757b5d79b5e69f04fbdcbed2124"
+ },
+ "export": {
+  "path": "/home/bline/cbm-work/org-pi-slices-20261116/s1/export-1cc77114",
+  "method": "git archive 1cc77114 | tar -x (full tree)"
+ },
+ "plan": {
+  "path": "/home/bline/cbm-work/org-pi-slices-20261116/s1/root-gate-plan-2.json",
+  "sha256": "9673f859b8c6cd260688594a65cbe0fa874eb4fffe7b4b7bc836d4616c2ff4c2"
+ },
+ "records": "/home/bline/cbm-work/org-pi-slices-20261116/s1/root-gate-3",
+ "summary_sha256": "daba518e45c7766cb62d7594eaea008deb781182eae7faf132dbf22916ff1b7c",
+ "status": "passed",
+ "results": {
+  "toolchain": "cargo 1.92.0 (344c4567c 2025-10-21); rustc 1.92.0 (ded5c06cf 2025-12-08); node v22.23.2 (observed in gate)",
+  "fmt": "pass",
+  "clippy": "pass",
+  "test_four_crates_fixture": "240 passed/0 failed/20 binaries",
+  "default_features_delivery_preparation": "32 passed/6 binaries incl feature-absence compile_fail doctests",
+  "authority_store": "37 passed",
+  "native_vertical_x3": "20/20 each"
+ },
+ "unclaimed": "actor-recorded custody only; no hermetic build, no build-input closure, no tamper evidence; fixture standing only"
+}
