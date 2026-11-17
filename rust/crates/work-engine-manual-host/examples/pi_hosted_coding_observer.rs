@@ -3,20 +3,19 @@
 //! 429 (exercising Host failover), the secondary serves the four-request
 //! coding continuity flow. No auth or body is retained; only digests.
 //!
-//! `--fault <mode>:<n>` perturbs the secondary's n-th served request (piece (c)
-//! qualification): `refuse`, `truncate`, `stall`, `failed`, `late-close-<ms>`,
-//! `trailing`, `hold-head`, `hold-mid`. With a fault the observer keeps
-//! accepting after the fault, so any later dispatch is recorded, until killed.
-//!
 //! `HOSTED_OBSERVER_SCENARIO` selects a fault (default `ok`):
 //! - `refuse-all`: primary 429, secondary 402, for every request.
 //! - `primary-500`: the primary answers 500 (not a refusal).
 //! - on the secondary's first served response: `truncate` (closes mid-body),
-//!   `midstream-failed` (`response.failed` after output), `delayed-close`
-//!   (framed end 3 s after `response.completed`), `trailing` (an extra SSE
-//!   comment after `response.completed`), `stall-head` (no head) and
-//!   `stall-body` (two events, then silence). Stalls hold the connection
-//!   until the peer closes it and report when that happened.
+//!   `midstream-failed` (`response.failed` after output), `late-close-short`
+//!   and `late-close-long` (framed end 0.5 s or 3 s after
+//!   `response.completed`), `trailing` (an extra SSE comment after
+//!   `response.completed`), `stall-head` (no head) and `stall-body` (two
+//!   events, then silence). Stalls hold the connection until the peer closes
+//!   it and report when that happened.
+//!
+//! After a fault the observer keeps accepting, so any later dispatch (a
+//! forbidden failover or replay) is recorded as a receipt.
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{
@@ -154,28 +153,19 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         json!({"type":"ready","primary":primary.local_addr()?.port(),"secondary":secondary.local_addr()?.port(),"protocol":"offline-hosted-coding-observer-v1"})
     );
     std::io::stdout().flush()?;
-    let args: Vec<String> = std::env::args().collect();
-    let fault: Option<(String, usize)> = match args.get(1).map(String::as_str) {
-        None => None,
-        Some("--fault") => {
-            let spec = args.get(2).ok_or("fault spec")?;
-            let (mode, n) = spec.rsplit_once(':').ok_or("fault spec")?;
-            Some((mode.to_string(), n.parse()?))
-        }
-        Some(_) => return Err("usage: [--fault <mode>:<n>]".into()),
-    };
     let deadline = Instant::now() + Duration::from_secs(600);
     let mut served = 0usize;
     let mut refused = 0usize;
     let mut authority: Option<String> = None;
     let scenario = std::env::var("HOSTED_OBSERVER_SCENARIO").unwrap_or_else(|_| "ok".into());
-    const SCENARIOS: [&str; 9] = [
+    const SCENARIOS: [&str; 10] = [
         "ok",
         "refuse-all",
         "primary-500",
         "truncate",
         "midstream-failed",
-        "delayed-close",
+        "late-close-short",
+        "late-close-long",
         "trailing",
         "stall-head",
         "stall-body",
@@ -183,7 +173,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     if !SCENARIOS.contains(&scenario.as_str()) {
         return Err("unknown scenario".into());
     }
-    while fault.is_some() || served < 4 {
+    // A clean run ends after four served responses; a faulted run keeps
+    // accepting until killed, so later dispatches are visible.
+    let completes = matches!(scenario.as_str(), "ok" | "late-close-short");
+    while !(completes && served >= 4) {
         if Instant::now() > deadline {
             return Err("observer deadline".into());
         }
@@ -260,29 +253,6 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             continue;
         }
         served += 1;
-        let mode = fault
-            .as_ref()
-            .filter(|(_, n)| *n == served)
-            .map(|(m, _)| m.as_str());
-        if mode == Some("refuse") {
-            refused += 1;
-            println!(
-                "{}",
-                json!({"type":"refused","status":429,"receipt":receipt,"fault":"refuse"})
-            );
-            std::io::stdout().flush()?;
-            let body = json!({"error":{"code":"insufficient_quota","message":"synthetic secondary route quota exhausted"}}).to_string();
-            write!(
-                s,
-                "HTTP/1.1 429 Too Many Requests\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                body.len()
-            )?;
-            continue;
-        }
-        if let Some(mode) = mode {
-            fault_serve(s, mode, served, receipt)?;
-            continue;
-        }
         let reply = response(served);
         println!(
             "{}",
@@ -335,8 +305,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             write!(s, "{:x}\r\n{extra}\r\n", extra.len())?;
             s.flush()?;
         }
-        if fault == "delayed-close" {
-            std::thread::sleep(Duration::from_secs(3));
+        match fault {
+            "late-close-short" => std::thread::sleep(Duration::from_millis(500)),
+            "late-close-long" => std::thread::sleep(Duration::from_secs(3)),
+            _ => {}
         }
         let _ = write!(s, "0\r\n\r\n").and_then(|_| s.flush());
         if fault != "ok" {
@@ -349,98 +321,6 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         json!({"type":"complete","served":served,"refused":refused,"rawAuthOrBodyRetained":false})
     );
     Ok(())
-}
-fn chunk(s: &mut TcpStream, event: &str) -> std::io::Result<()> {
-    write!(s, "{:x}\r\n{event}\r\n", event.len())?;
-    s.flush()?;
-    std::thread::sleep(Duration::from_millis(20));
-    Ok(())
-}
-/// One faulted response. Holding modes keep the connection on a thread so
-/// the accept loop keeps recording any later dispatch.
-fn fault_serve(
-    mut s: TcpStream,
-    mode: &str,
-    n: usize,
-    receipt: Value,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut reply = response(n);
-    if mode == "failed" {
-        let failed = json!({"type":"response.failed","response":{"id":format!("resp_{n}"),"model":"gpt-6-luna","status":"failed","error":{"code":"server_error","message":"synthetic mid-stream failure"}}});
-        let text = String::from_utf8(reply)?;
-        let mut events: Vec<&str> = text.split_inclusive("\n\n").collect();
-        events.pop();
-        reply = format!("{}data: {failed}\n\n", events.concat()).into_bytes();
-    }
-    println!(
-        "{}",
-        json!({"type":"served","effect":n,"receipt":receipt,"responseSha256":hash(&reply),"fault":mode})
-    );
-    std::io::stdout().flush()?;
-    if mode == "hold-head" {
-        println!("{}", json!({"type":"holding","effect":n,"phase":"head"}));
-        std::io::stdout().flush()?;
-        std::thread::spawn(move || {
-            std::thread::sleep(Duration::from_secs(120));
-            drop(s);
-        });
-        return Ok(());
-    }
-    write!(
-        s,
-        "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n"
-    )?;
-    let text = String::from_utf8(reply)?;
-    let events: Vec<&str> = text.split_inclusive("\n\n").collect();
-    match mode {
-        "truncate" | "stall" | "hold-mid" => {
-            for e in &events[..2] {
-                chunk(&mut s, e)?;
-            }
-            if mode == "truncate" {
-                return Ok(()); // dropped: no terminal chunk
-            }
-            if mode == "hold-mid" {
-                println!("{}", json!({"type":"holding","effect":n,"phase":"mid"}));
-                std::io::stdout().flush()?;
-            }
-            let secs = if mode == "stall" { 40 } else { 120 };
-            std::thread::spawn(move || {
-                std::thread::sleep(Duration::from_secs(secs));
-                drop(s);
-            });
-            Ok(())
-        }
-        "failed" => {
-            for e in &events {
-                chunk(&mut s, e)?;
-            }
-            write!(s, "0\r\n\r\n")?;
-            Ok(s.flush()?)
-        }
-        "trailing" => {
-            for e in &events {
-                chunk(&mut s, e)?;
-            }
-            let extra = json!({"type":"response.output_text.delta","output_index":0,"content_index":0,"delta":" trailing"});
-            chunk(&mut s, &format!("data: {extra}\n\n"))?;
-            write!(s, "0\r\n\r\n")?;
-            Ok(s.flush()?)
-        }
-        m if m.starts_with("late-close-") => {
-            let ms: u64 = m["late-close-".len()..].parse()?;
-            for e in &events {
-                chunk(&mut s, e)?;
-            }
-            std::thread::spawn(move || {
-                std::thread::sleep(Duration::from_millis(ms));
-                let _ = write!(s, "0\r\n\r\n");
-                let _ = s.flush();
-            });
-            Ok(())
-        }
-        _ => Err(format!("unknown fault {mode}").into()),
-    }
 }
 fn main() {
     if let Err(e) = run() {

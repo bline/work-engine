@@ -752,3 +752,63 @@ fn pre_dispatch_confirms_a_crossed_head_cancel_only() {
         Some("stream_interleaved_frame")
     );
 }
+
+#[test]
+fn bytes_read_while_draining_after_release_are_kept_as_unforwarded_evidence() {
+    // Piece (c) `trailing`: counted before, now also retained.
+    let t = tempfile::tempdir().unwrap();
+    let s = store(&t);
+    let l = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = l.local_addr().unwrap();
+    let trailing = ": synthetic trailing bytes\n\n";
+    let server = std::thread::spawn(move || {
+        let (mut c, _) = l.accept().unwrap();
+        let e = sse(&[
+            r#"{"type":"response.completed","response":{"id":"r","usage":{"input_tokens":1}}}"#,
+        ]);
+        write!(
+            c,
+            "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n{:x}\r\n{e}\r\n",
+            e.len()
+        )
+        .unwrap();
+        c.flush().unwrap();
+        std::thread::sleep(Duration::from_millis(300));
+        write!(c, "{:x}\r\n{trailing}\r\n", trailing.len()).unwrap();
+        c.flush().unwrap();
+        std::thread::sleep(Duration::from_secs(2));
+    });
+    let mut sess = ps::Session::start(
+        TcpStream::connect(addr).unwrap(),
+        || (),
+        &binding(),
+        1,
+        1,
+        |_| false,
+    )
+    .unwrap();
+    let op = |kind: &str, o: u64| json!({"type":kind,"binding":binding(),"sequence":1,"stream":1,"ordinal":o});
+    while sess.poll(&s, Duration::from_millis(50)).unwrap().is_empty() {}
+    let mut f = sess.on_native(&op("pull", 1), &s).unwrap();
+    while f.is_empty() {
+        f = sess.poll(&s, Duration::from_millis(50)).unwrap();
+    }
+    assert_eq!(f[0]["type"], "response-chunk");
+    sess.on_native(&op("cancel", 2), &s).unwrap();
+    while sess.progress() == &ps::Progress::Pending {
+        sess.poll(&s, Duration::from_millis(50)).unwrap();
+    }
+    let r = sess.relay();
+    assert_eq!(
+        r.outcome,
+        Outcome::Cancelled {
+            upstream_end: false
+        }
+    );
+    assert_eq!(r.unforwarded, trailing.as_bytes());
+    assert_eq!(r.unforwarded_after_release, trailing.len());
+    assert!(r.evidence()["unforwardedSha256"].is_string());
+    assert!(!String::from_utf8_lossy(&r.forwarded).contains("trailing"));
+    drop(sess);
+    server.join().unwrap();
+}

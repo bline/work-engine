@@ -853,6 +853,10 @@ impl Host {
     ) -> Result<()> {
         let (plan, _) = self.hosted_plan()?;
         let sha = self.hosted_retain(request, attempt, "stream.sse", &relay.forwarded)?;
+        if !relay.unforwarded.is_empty() {
+            // Read while draining after the consumer released; never relayed.
+            self.hosted_retain(request, attempt, "unforwarded.bin", &relay.unforwarded)?;
+        }
         self.hosted_retain(
             request,
             attempt,
@@ -1015,7 +1019,13 @@ impl Host {
         else {
             return Ok(());
         };
-        let relay = session.into_relay();
+        let unfinished = *session.progress() == Progress::Pending;
+        let mut relay = session.into_relay();
+        if unfinished {
+            // The Host closed a stream that had not ended; its evidence must
+            // not read as a completed relay.
+            relay.outcome = stream::Outcome::Interrupted("closed_by_host");
+        }
         let sha = self.hosted_retain(s.request, attempt, "stream.sse", &relay.forwarded)?;
         self.hosted_retain(
             s.request,
@@ -1579,6 +1589,13 @@ mod tests {
         assert!(!bytes.is_empty(), "relayed bytes are retained");
         assert_eq!(a.relay_sha256.as_deref(), Some(digest(&bytes).as_str()));
         assert!(h.journal.artifacts.iter().any(|x| x.path == path));
+        // The relay evidence of a closed attempt never reads as completed.
+        let evidence: Value = serde_json::from_slice(
+            &fs::read(dir.path().join("coding-hosted-1-1.relay.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(evidence["outcome"], "interrupted-uncertain");
+        assert_ne!(evidence["interruption"], Value::Null);
     }
 
     #[test]
@@ -1615,6 +1632,19 @@ mod tests {
         assert!(a.reason.as_deref().unwrap().contains("insufficient_quota"));
         assert!(request(&h).unsettled());
         assert!(h.journal.coding.as_ref().unwrap().provider_failed);
+        // The container's completion cannot settle it, and says why.
+        let err = push(
+            &mut h,
+            &mut w,
+            json!({"type":"provider_complete","id":1,"stopReason":"stop","usage":{}}),
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(
+            err.contains("hosted attempt 1 is Uncertain") && err.contains("provider failure event"),
+            "{err}"
+        );
+        assert!(request(&h).unsettled());
     }
 
     #[test]

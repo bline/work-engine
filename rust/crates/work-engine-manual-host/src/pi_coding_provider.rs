@@ -809,6 +809,23 @@ impl Host {
                 }
                 let usage = &frame["usage"];
                 r.usage = Some(usage.clone());
+                // Hosted: the container's completion settles only an attempt the
+                // Host itself classified as a completed relay.
+                if let Some(a) = r
+                    .attempts
+                    .last()
+                    .filter(|a| a.disposition != AttemptDisposition::Completed)
+                {
+                    let detail = format!(
+                        "hosted attempt {} is {:?} ({}); container completion cannot settle it; reservation retained",
+                        a.attempt,
+                        a.disposition,
+                        a.reason.as_deref().unwrap_or("no reason recorded")
+                    );
+                    state.provider_failed = true;
+                    self.save()?;
+                    return refuse(detail);
+                }
                 if !matches!(frame["stopReason"].as_str(), Some("stop" | "toolUse"))
                     || r.http_status != Some(200)
                     || r.backend_model.as_deref() != Some(&plan.model)

@@ -231,6 +231,9 @@ pub struct Relay {
     pub upstream_end_ms: Option<u64>,
     pub opened_ms: u64,
     pub unforwarded_after_release: usize,
+    /// Those bytes (one bounded chunk read while draining), kept as evidence.
+    /// Never forwarded to the consumer.
+    pub unforwarded: Vec<u8>,
     /// Time a native cancel waited behind an outstanding pull, if any.
     pub cancel_wait_ms: Option<u64>,
     /// How the consumer closed after a host terminal frame: `ack`, or a
@@ -259,6 +262,7 @@ impl Relay {
             "upstreamEndMs": self.upstream_end_ms,
             "pullsBeforeUpstreamEnd": self.pulls_before_upstream_end(),
             "unforwardedAfterRelease": self.unforwarded_after_release,
+            "unforwardedSha256": (!self.unforwarded.is_empty()).then(|| format!("{:x}", Sha256::digest(&self.unforwarded))),
             "cancelDuringPendingPullMs": self.cancel_wait_ms,
             "closing": self.closing,
             "usage": usage(&self.forwarded),
@@ -528,6 +532,7 @@ impl Session {
                 upstream_end_ms: None,
                 opened_ms: now_millis(),
                 unforwarded_after_release: 0,
+                unforwarded: Vec::new(),
                 cancel_wait_ms: None,
                 closing: None,
             },
@@ -570,6 +575,7 @@ impl Session {
                 upstream_end_ms: None,
                 opened_ms: 0,
                 unforwarded_after_release: 0,
+                unforwarded: Vec::new(),
                 cancel_wait_ms: None,
                 closing: None,
             },
@@ -728,6 +734,7 @@ impl Session {
                     }
                     Some(Ok(Some(b))) => {
                         self.r.unforwarded_after_release = b.len();
+                        self.r.unforwarded = b;
                         self.release_done();
                     }
                     Some(Err(_)) => self.release_done(),
