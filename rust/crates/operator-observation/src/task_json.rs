@@ -88,8 +88,8 @@ impl<'de> Visitor<'de> for StrictVisitor {
 
 pub(super) fn parse_task_json(input: &[u8]) -> Result<Value, ReadError> {
     let mut deserializer = serde_json::Deserializer::from_slice(input);
-    let StrictValue(value) = StrictValue::deserialize(&mut deserializer)
-        .map_err(|_| ReadError::InvalidObservation)?;
+    let StrictValue(value) =
+        StrictValue::deserialize(&mut deserializer).map_err(|_| ReadError::InvalidObservation)?;
     deserializer
         .end()
         .map_err(|_| ReadError::InvalidObservation)?;
@@ -101,10 +101,22 @@ mod tests {
     use super::*;
     #[test]
     fn exact_numbers_and_strict_names_before_owner_validation() {
-        let valid=br#"{"ignored":{"x":18446744073709551615}}"#;
-        assert_eq!(parse_task_json(valid).unwrap()["ignored"]["x"].as_u64(),Some(u64::MAX));
-        for bad in [br#"{"ignored":{"x":1,"x":2}}"#.as_slice(),br#"{"ignored":{"x":1,"\u0078":2}}"#,br#"{"ignored":{"x":1}} {}"#,br#"{"ignored":{"x":18446744073709551616}}"#] {
-            assert!(parse_task_json(bad).is_err(),"{}",String::from_utf8_lossy(bad));
+        let valid = br#"{"ignored":{"x":18446744073709551615}}"#;
+        assert_eq!(
+            parse_task_json(valid).unwrap()["ignored"]["x"].as_u64(),
+            Some(u64::MAX)
+        );
+        for bad in [
+            br#"{"ignored":{"x":1,"x":2}}"#.as_slice(),
+            br#"{"ignored":{"x":1,"\u0078":2}}"#,
+            br#"{"ignored":{"x":1}} {}"#,
+            br#"{"ignored":{"x":18446744073709551616}}"#,
+        ] {
+            assert!(
+                parse_task_json(bad).is_err(),
+                "{}",
+                String::from_utf8_lossy(bad)
+            );
         }
     }
 }

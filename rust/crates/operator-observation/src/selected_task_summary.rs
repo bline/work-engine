@@ -162,6 +162,15 @@ fn decode(v: &Value) -> Result<OwnerSummary, &'static str> {
     })
 }
 impl Summary {
+    /// No owner value: the unobserved envelope's summary, also used without an owner value.
+    pub fn unobserved() -> Self {
+        Self {
+            state: "unavailable".into(),
+            basis: "none".into(),
+            reason: Some("no_owner_value".into()),
+            value: None,
+        }
+    }
     pub(super) fn project(selection: &Selection) -> Self {
         let chosen = selection.components.get("owner").and_then(|c| {
             if c.stale {
@@ -174,12 +183,7 @@ impl Summary {
             }
         });
         let Some((basis, v)) = chosen else {
-            return Self {
-                state: "unavailable".into(),
-                basis: "none".into(),
-                reason: Some("no_owner_value".into()),
-                value: None,
-            };
+            return Self::unobserved();
         };
         match decode(v) {
             Ok(value) => Self {
@@ -203,15 +207,11 @@ impl Summary {
         task_id: &str,
         transport: &str,
     ) -> Result<(), &'static str> {
-        let sentinel = owner.scope.as_object().is_some_and(|o| o.is_empty())
-            && owner.state == "unavailable" && owner.stale
-            && owner.reason == "transport_unavailable" && owner.read_at_ms == 0
-            && owner.revision.is_null() && owner.completeness.is_null()
-            && transport == "unavailable";
-        if !(owner_scope_valid(&owner.scope, task_id) || sentinel)
+        if !owner_scope_valid(&owner.scope, task_id)
             || !owner.completeness.is_null()
             || (owner.state == "present" && !owner_revision_valid(&owner.revision))
-            || (owner.state != "present" && !owner.revision.is_null()) {
+            || (owner.state != "present" && !owner.revision.is_null())
+        {
             return Err("unsupported_owner_metadata");
         }
         let empty_anchor = owner.last_known_at_ms.is_none()
@@ -228,7 +228,7 @@ impl Summary {
             && owner.completeness == owner.last_known_completeness
             && owner.last_known_at_ms == Some(owner.read_at_ms);
         let no_value = || empty_anchor && owner.rows.is_empty() && self.basis == "none";
-        let coherent = !(transport == "unavailable" && !owner.stale)
+        let coherent = (transport != "unavailable" || owner.stale)
             && match owner.state.as_str() {
                 "present" => {
                     qualified_anchor

@@ -9,7 +9,7 @@
   "scope_id": "3112186b787fc4ca3c5d98d6167e1fa0c511234dd35bd1980be32ca238cadf68",
   "standing": "fixture_replay",
   "confidentiality": "private_operator_data",
-  "assembled_at_ms": 1794628998134,
+  "assembled_at_ms": 1794600061000,
   "host_identity": {
     "pid": 1,
     "linux_starttime_ticks": "1",
@@ -34,7 +34,7 @@
       },
       "revision": null,
       "completeness": null,
-      "read_at_ms": 1794628998132,
+      "read_at_ms": 1794600060000,
       "last_known_at_ms": null,
       "stale": false,
       "reason": "",
@@ -52,7 +52,7 @@
       },
       "revision": null,
       "completeness": null,
-      "read_at_ms": 1794628998132,
+      "read_at_ms": 1794600060000,
       "last_known_at_ms": null,
       "stale": false,
       "reason": "",
@@ -62,24 +62,17 @@
       "last_known_completeness": null
     },
     "lifecycle": {
-      "state": "present",
+      "state": "unavailable",
       "scope": {
         "delivery_id": "delivery:u2",
-        "subject_id": "subject:u2"
+        "subject_id": null
       },
-      "revision": {
-        "cursor": {
-          "commit_sequence": "1",
-          "store_id": "store:u2",
-          "stream_id": "stream:u2"
-        },
-        "kind": "lifecycle"
-      },
+      "revision": null,
       "completeness": null,
-      "read_at_ms": 1794628998132,
-      "last_known_at_ms": 1794628998132,
-      "stale": false,
-      "reason": "",
+      "read_at_ms": 1794600060000,
+      "last_known_at_ms": 1794600000000,
+      "stale": true,
+      "reason": "task_dependency_unavailable",
       "rows": [
         "{\"authority_refs\":[],\"blocking_reason\":{\"state\":\"unknown\"},\"context_generation\":\"context:u2\",\"current_admission\":{\"kind\":\"unknown\"},\"cursor\":{\"commit_sequence\":\"1\",\"store_id\":\"store:u2\",\"stream_id\":\"stream:u2\"},\"delivery\":{\"state\":\"unknown\"},\"evidence_refs\":[],\"measurement\":{\"state\":\"unknown\"},\"protocol_version\":1,\"runtime_availability\":\"unknown\",\"runtime_provenance\":{\"state\":\"unknown\"},\"subject_id\":\"subject:u2\",\"transition\":{\"state\":\"unknown\"}}"
       ],
@@ -98,23 +91,18 @@
       "last_known_completeness": null
     },
     "native_delivery_status": {
-      "state": "present",
+      "state": "unavailable",
       "scope": {
         "collection": "native_delivery_segments",
         "filter": "subject",
-        "subject_id": "subject:u2"
+        "subject_id": null
       },
-      "revision": {
-        "kind": "not_provided"
-      },
-      "completeness": {
-        "kind": "complete_for_scope",
-        "limit": 64
-      },
-      "read_at_ms": 1794628998132,
-      "last_known_at_ms": 1794628998132,
-      "stale": false,
-      "reason": "",
+      "revision": null,
+      "completeness": null,
+      "read_at_ms": 1794600060000,
+      "last_known_at_ms": 1794600000000,
+      "stale": true,
+      "reason": "task_dependency_unavailable",
       "rows": [
         "1 native segments (complete subject scope; limit 64)",
         "{\"context_generation\":\"context:u2\",\"delivery_id\":\"delivery:u2\",\"delivery_state\":\"active\",\"effect_id\":\"effect:u2\",\"final_sha256\":null,\"history_status\":\"complete\",\"input_id\":\"input:u2\",\"invocation_id\":\"invocation:u2\",\"native_attempt_id\":\"native:u2\",\"native_state\":\"completed\",\"predecessor_invocation_id\":null,\"queue_attempt_id\":\"attempt:u2\",\"segment_no\":1,\"segment_state\":\"completed\",\"send_intent\":true,\"sequence\":1,\"thread_id\":\"01a142ba-b70b-7eb0-9900-b53bece80f30\",\"transition_id\":null,\"turn_id\":\"01a142ba-b722-7272-affc-928d3a20aeed\"}"
@@ -133,26 +121,21 @@
       }
     },
     "owner": {
-      "state": "present",
+      "state": "refused",
       "scope": {
-        "subject_id": "subject:u2",
         "task_id": "task:u2"
       },
-      "revision": {
-        "cursor_revision": "2",
-        "kind": "task",
-        "owner_revision": "2"
-      },
+      "revision": null,
       "completeness": null,
-      "read_at_ms": 1794628998132,
-      "last_known_at_ms": 1794628998132,
-      "stale": false,
-      "reason": "",
+      "read_at_ms": 1794600060000,
+      "last_known_at_ms": 1794600000000,
+      "stale": true,
+      "reason": "capacity_exceeded",
       "rows": [
         "objective: Verify selected task across clients",
         "engineering_question: What remains pending?",
-        "Question question:u2: Publish the private synthetic result? \u00b7 {\"answered\":{\"answer\":\"Yes, publish\",\"authority_ref\":\"operator:u2\"}}",
-        "Result: {\"attribution\":\"operator:u2\",\"body\":\"Independent synthetic result\",\"operation_id\":\"operation:u2\",\"password\":\"[REDACTED]\",\"result_id\":\"result:u2\",\"source_refs\":[]}"
+        "Question question:u2: Publish the private synthetic result? · \"pending\"",
+        "Question question:u2:scope: Keep the review scope? · {\"answered\":{\"answer\":\"Yes, publish\",\"authority_ref\":\"operator:u2\"}}"
       ],
       "last_known_scope": {
         "subject_id": "subject:u2",
@@ -161,24 +144,22 @@
       "last_known_revision": {
         "cursor_revision": "2",
         "kind": "task",
-        "owner_revision": "2"
+        "owner_revision": "4"
       },
       "last_known_completeness": null
     }
   },
   "activity": [],
   "activity_coverage": {
-    "state": "not_requested",
-    "linked_session_ids": [
-      "01a142ba-b70b-7eb0-9900-b53bece80f30"
-    ],
+    "state": "unlinked",
+    "linked_session_ids": [],
     "limit": 20
   },
   "activity_source_id": null,
-  "linkage": "exact_task_input_native_session; session_wide_not_per_turn",
+  "linkage": "unestablished",
   "summary": {
     "state": "available",
-    "basis": "latest_owner",
+    "basis": "last_known_owner",
     "reason": null,
     "value": {
       "objective": {
@@ -208,6 +189,27 @@
             "truncated": false
           },
           "state": {
+            "state": "pending"
+          }
+        },
+        {
+          "id": {
+            "text": "question:u2:scope",
+            "truncated": false
+          },
+          "recipient_ref": {
+            "text": "operator:u2",
+            "truncated": false
+          },
+          "scope_ref": {
+            "text": "task:u2",
+            "truncated": false
+          },
+          "text": {
+            "text": "Keep the review scope?",
+            "truncated": false
+          },
+          "state": {
             "state": "answered",
             "answer": {
               "text": "Yes, publish",
@@ -220,27 +222,10 @@
           }
         }
       ],
-      "pending_count": 0,
+      "pending_count": 1,
       "answered_count": 1,
       "result": {
-        "state": "published",
-        "result_id": {
-          "text": "result:u2",
-          "truncated": false
-        },
-        "operation_id": {
-          "text": "operation:u2",
-          "truncated": false
-        },
-        "body": {
-          "text": "Independent synthetic result",
-          "truncated": false
-        },
-        "attribution": {
-          "text": "operator:u2",
-          "truncated": false
-        },
-        "source_ref_count": 0
+        "state": "not_published"
       }
     }
   }

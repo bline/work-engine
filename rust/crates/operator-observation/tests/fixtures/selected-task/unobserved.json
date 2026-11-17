@@ -1,0 +1,101 @@
+{
+  "schema": "work-engine.selected-task.v2",
+  "endpoint": "/private/u2/host.sock",
+  "request": {
+    "task_id": "task:u2",
+    "delivery_id": "delivery:u2"
+  },
+  "source_id": "b3cc0475bb78a5026098858e9889acf666d31062d513d303314eca31d36e72f2",
+  "scope_id": "34fccf905b40017c76d485cc865200f03180e4c444855cdec5220335af4d5f2f",
+  "standing": "fixture_replay",
+  "confidentiality": "private_operator_data",
+  "assembled_at_ms": 1794600001000,
+  "host_identity": null,
+  "transport": "unavailable",
+  "components": {
+    "command_result": {
+      "state": "unavailable",
+      "scope": {},
+      "revision": null,
+      "completeness": null,
+      "read_at_ms": 0,
+      "last_known_at_ms": null,
+      "stale": true,
+      "reason": "transport_unavailable",
+      "rows": [],
+      "last_known_scope": null,
+      "last_known_revision": null,
+      "last_known_completeness": null
+    },
+    "control_result": {
+      "state": "unavailable",
+      "scope": {},
+      "revision": null,
+      "completeness": null,
+      "read_at_ms": 0,
+      "last_known_at_ms": null,
+      "stale": true,
+      "reason": "transport_unavailable",
+      "rows": [],
+      "last_known_scope": null,
+      "last_known_revision": null,
+      "last_known_completeness": null
+    },
+    "lifecycle": {
+      "state": "unavailable",
+      "scope": {},
+      "revision": null,
+      "completeness": null,
+      "read_at_ms": 0,
+      "last_known_at_ms": null,
+      "stale": true,
+      "reason": "transport_unavailable",
+      "rows": [],
+      "last_known_scope": null,
+      "last_known_revision": null,
+      "last_known_completeness": null
+    },
+    "native_delivery_status": {
+      "state": "unavailable",
+      "scope": {},
+      "revision": null,
+      "completeness": null,
+      "read_at_ms": 0,
+      "last_known_at_ms": null,
+      "stale": true,
+      "reason": "transport_unavailable",
+      "rows": [],
+      "last_known_scope": null,
+      "last_known_revision": null,
+      "last_known_completeness": null
+    },
+    "owner": {
+      "state": "unavailable",
+      "scope": {},
+      "revision": null,
+      "completeness": null,
+      "read_at_ms": 0,
+      "last_known_at_ms": null,
+      "stale": true,
+      "reason": "transport_unavailable",
+      "rows": [],
+      "last_known_scope": null,
+      "last_known_revision": null,
+      "last_known_completeness": null
+    }
+  },
+  "activity": [],
+  "activity_coverage": {
+    "state": "unlinked",
+    "linked_session_ids": [],
+    "limit": 20
+  },
+  "activity_source_id": null,
+  "linkage": "unestablished",
+  "summary": {
+    "state": "unavailable",
+    "basis": "none",
+    "reason": "no_owner_value",
+    "value": null
+  }
+}
