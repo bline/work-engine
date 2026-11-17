@@ -2010,6 +2010,80 @@ mod tests {
     }
 
     #[test]
+    fn crash_between_reservation_and_gate_entry_stays_charged_with_nothing_relayed() {
+        // Phase 5 cut: the attempt is durably reserved, the process dies before
+        // the gate admits it.
+        let (dir, mut h, mut w) = host(vec![completed()], None);
+        let g = grant(&mut h, &mut w);
+        push(&mut h, &mut w, fetch(&g)).unwrap();
+        let (plan, routes) = h.hosted_plan().unwrap();
+        let reserve = provider::full_reservation(&plan.selected().unwrap()).unwrap();
+        let state = h.journal.coding.as_mut().unwrap();
+        provider::reserve_attempt(
+            &mut state.provider_requests,
+            1,
+            &routes.routes[0].id,
+            &routes.routes[0].payer,
+            reserve,
+            plan.budget_microusd,
+            routes.max_attempts_per_request,
+        )
+        .unwrap();
+        h.save().unwrap();
+        h.hosted = Hosted::default(); // the producing process is gone
+        h.coding_hosted_reconcile_unsettled().unwrap();
+        let r = request(&h);
+        let a = &r.attempts[0];
+        assert_eq!(a.disposition, AttemptDisposition::Uncertain);
+        assert!(!a.gate_entered);
+        assert!(a.reason.as_deref().unwrap().contains("nothing was relayed"));
+        assert_eq!(r.charged_microusd(), reserve);
+        assert!(r.unsettled());
+        assert!(!dir.path().join("coding-hosted-1-1.stream.sse").exists());
+        assert!(
+            w.intents.lock().unwrap().is_empty(),
+            "never admitted, never dispatched"
+        );
+    }
+    #[test]
+    fn crash_between_relay_settlement_and_container_completion_keeps_the_hold() {
+        // Phase 5 cut: the Host classified a completed relay; the process dies
+        // before the container's provider_complete settles raw usage.
+        let (dir, mut h, mut w) = host(vec![completed()], None);
+        let g = grant(&mut h, &mut w);
+        push(&mut h, &mut w, fetch(&g)).unwrap();
+        tick_until(&mut h, &w, has("response-head"));
+        let mut ordinal = 1;
+        loop {
+            push(&mut h, &mut w, op(&g, "pull", ordinal)).unwrap();
+            let f = tick_until(&mut h, &w, |a| !a.is_empty());
+            ordinal += 1;
+            if f[0]["type"] == "response-end" {
+                break;
+            }
+        }
+        push(&mut h, &mut w, op(&g, "ack", ordinal)).unwrap();
+        let before = request(&h);
+        assert_eq!(
+            before.attempts[0].disposition,
+            AttemptDisposition::Completed
+        );
+        assert!(before.attempts[0].settled_microusd.is_none());
+        h.hosted = Hosted::default();
+        h.coding_hosted_reconcile_unsettled().unwrap();
+        let after = request(&h);
+        // Nothing is released or re-labelled: the full reservation stays held
+        // and blocks later grants until an owner settles it.
+        assert_eq!(after.attempts, before.attempts);
+        assert_eq!(
+            after.charged_microusd(),
+            after.attempts[0].reserved_microusd
+        );
+        assert!(after.unsettled());
+        let path = dir.path().join("coding-hosted-1-1.stream.sse");
+        assert!(h.journal.artifacts.iter().any(|a| a.path == path));
+    }
+    #[test]
     fn protocol_errors_and_run_exit_keep_relayed_bytes_and_leave_the_attempt_uncertain() {
         // Out-of-order pull mid-body.
         let (dir, mut h, mut w) = host(vec![chunked_head()], None);
