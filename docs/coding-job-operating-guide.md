@@ -63,6 +63,11 @@ omitted defaults serialize exactly as the Host serializes them. The pinned job
 includes the authority, task, workspace, validator, runtime, toolchain,
 catalog, stream adapter, route table, model, budget and deadline.
 
+The producing Host loads each payer's access when it starts and refuses the
+whole credentials file if any source is not an owner-only regular file
+(`must be a small owner-only regular file`), including Pi's auth store; check
+the file modes if a live job refuses before entry with that text.
+
 For fresh admission the server verifies those public artifact pins and the
 runtime admission's job/binary/model/config/task/catalog/request/budget and
 route-table (`hosted_routes_sha256`) bindings. The packet must be

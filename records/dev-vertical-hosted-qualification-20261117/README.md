@@ -12,7 +12,9 @@ review 2 were reviewed by Fable and by Opus xhigh (section "Review 3"); the
 remediation of that review (`7c103ad2`) has not been re-reviewed.
 
 Subjects:
-- Offline matrix: run set r8 on `20bb335c` (code `7c103ad2`)
+- Offline matrix: run set r8 on `20bb335c`, which is `7c103ad2` plus the two
+  review 3 `REVIEW.md` files only (no code change); r8 and live `c3` ran the
+  same Host binary (`cb73a44a…`)
   (`~/.local/state/work-engine/dev-vertical-hosted-qual-20261117-r8`, driven by
   [matrix-r8.sh](matrix-r8.sh)); 19 of 19 scenarios pass. r7 on `8fa71188`
   passed the same scenarios before the review 3 remediation. Earlier sets: r6 on
@@ -195,7 +197,7 @@ Remediation `7c103ad2`:
 | M6 | This record corrected (transition, response size, secret scan retained, API key file). |
 | R-a | Host body policy on real routes: `store:false`, no `background`, default `service_tier`, function tools only. |
 | R-b | The journal and receipt record the credentials file's digest and each payer's access-source kind. |
-| R-d | Response bound raised from 1 MiB to 32 MiB (the catalog's 128k output tokens at about 250 bytes per delta). |
+| R-d | Relay bound raised from 1 MiB to 32 MiB. **Not the effective ceiling** (closure review N1): the inference container's stdout to the Host is bounded at 8 MiB for the whole job, and the receiver forwards every SDK event while a turn runs; each `message_update` carries the accumulated message, so those bytes grow quadratically with output length. Measured in `c3`: 160 `native_event` frames, 210 KB, for 138 output tokens over four turns (about 1.3 KB per update plus about 5 bytes per earlier delta). Estimated ceiling: on the order of 1 500 output tokens in one response before the job fails closed with a process-output failure (Uncertain, full hold). D4 stays open. |
 | R-f | Credentials file and Pi auth store must be owner-only regular files; account id charset checked. |
 | F1, F8 | Host, server and lifecycle docs describe the hosted profile; retired lanes marked. |
 | F3 | Provider-disabled receiver VM test (pressure observation and checkpoint insertion) ported. |
@@ -207,6 +209,21 @@ Remediation `7c103ad2`:
 Not changed: R-c (price parity), R-e (DNS deadline, head bound, CDN refusals;
 none observed), R-g (the job deadline bounds the socket; grants expire with
 the job).
+
+## Closure review
+
+[Fable on Claude quota](../../reviews/dev-vertical-phase6-closure-fable-20261117/REVIEW.md)
+(subject `b50017ab`..`9b289171`): the milestone can close with residuals; no
+P0 and no code P1. Every review 3 finding is closed, closed as decided, or
+partly closed with the remainder listed as residual (F3 deadline case, F5 dead
+code in unreachable branches, F7 receiver guard test). Its required record
+actions are done: the unit suites were run and recorded at the closure commit
+(above), and the R-d claim corrected (the effective response ceiling is the
+8 MiB job-wide RPC stdout bound, about 1 500 output tokens in one response;
+D4 stays open). Also done: negative tests for the new fail-closed checks (N3,
+`a0c75a22`), the r8 binding explained (N5), and the owner-only refusal text
+documented in the operating guide (N6). `c1` has no harness summary file; its
+row rests on its run directory.
 
 ## Review 2 required changes
 
@@ -251,12 +268,20 @@ never committed and are superseded by this record.
 
 ## Tests
 
-At `8fa71188`/`cab80a3a`: manual-host lib (all pass, 6 ignored), all
-manual-host integration tests including `tests/lifecycle.rs` (50) and
-`tests/pi_stream.rs` (25), the hosted receiver test under
-`--experimental-vm-modules`, `pi-pressure-context-host` tests, and
-`work-engine-server` `preparation`, `coding_job` and `job::` tests. The broad
-workspace regression is recorded separately.
+At `a0c75a22` (closure; log
+`~/.local/state/work-engine/dev-vertical-regression-20261117/closure-a0c75a22.log`):
+- `cargo test -p work-engine-manual-host -p work-engine-server`: all pass
+  (manual-host lib 75, `pi_stream` 25, server `job::` 30 including the new
+  negative tests, `preparation`, `coding_job` 5) except `tests/lifecycle.rs`
+  `mutation_during_snapshot_collection_is_a_conflict`, the known
+  load-sensitive timing control, which passes alone (appended to the log).
+- `pi-pressure-context-host` `cargo test --release`: all pass.
+- Receiver VM tests: `pi-coding-fixture` 1/1, `pi-coding-hosted` 3/3,
+  `pi-native-stream` 9/9. `pi-memory-guard` and `pi-session-allocation` fail
+  identically before this work (they need a `/pi` runtime tree).
+- `skills/session-events` unit tests: 186 run, 13 errors, all in
+  `test_pi_observation` ("unsafe delivery pin"), identical with this work's
+  changes stashed; the restored coding-switch test passes.
 
 ## Broad regression
 
@@ -290,7 +315,9 @@ their own owners' fixtures or dispositions.
 ## Not exercised
 
 - Pre-dispatch cancel ending `NotDispatched` (unit-tested only).
-- The 1 MiB response bound (D4), 403 refusals, an expired or revoked grant
+- The response bounds (D4): the 32 MiB relay bound and the effective 8 MiB
+  job-wide RPC stdout bound (about 1 500 output tokens in one response, see
+  R-d); 403 refusals, an expired or revoked grant
   between attempts in the Docker flow, job-deadline expiry mid-stream, and
   framings other than chunked.
 - A crash during the release drain (covered in kind by the mid-body crash:

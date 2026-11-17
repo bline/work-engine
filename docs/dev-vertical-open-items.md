@@ -13,6 +13,21 @@ Close an item here when it is resolved, with the commit or record that resolves 
 | **API route price parity (R-c).** Settlement and the budget apply the pinned `openai-codex` catalog rates on every route, so the 700000 µUSD cap bounds a proxy, not actual API spend. | Fine as is; tune later. | When API spend matters or the catalog and API prices diverge. |
 | **Unexercised live failures.** A real quota refusal (429/402), a genuinely revoked or expired credential, and a live cancel or crash against a real route. | Monitor and log; revisit with more evidence. | When the observation log below has real occurrences. |
 
+## Known limit: response size (D4, open)
+
+The relay bound is 32 MiB, but the inference container's stdout to the Host is
+bounded at 8 MiB for the whole job (`pi_docker.rs` `LIMIT`), and the receiver
+forwards every SDK event during a turn; each `message_update` carries the
+accumulated message, so those bytes grow quadratically with output length.
+Measured in live run `c3`: about 1.3 KB per update plus about 5 bytes per
+earlier delta. Estimated ceiling: on the order of 1 500 output tokens in one
+response; beyond that the job fails closed (process-output failure,
+Uncertain, full hold). The lifecycle store's settlement proof consumes these
+`message_update` events (`lifecycle-store` `pi_settlement.rs`,
+`pi_coding_proof.rs`), so the fix needs that owner: send deltas instead of the
+accumulated message, or bound the stream per turn rather than per job. Required
+before real coding turns longer than the qualification task.
+
 ## Monitoring log
 
 Run after live hosted jobs (it appends only new events):
