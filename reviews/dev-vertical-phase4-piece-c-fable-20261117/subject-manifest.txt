@@ -1,0 +1,17 @@
+bb6c5ebade9c252f1952088efd6290025435617c rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs
+2d6a1fdefab44e67a667f0a5b2fafbf25a84a8af rust/crates/work-engine-manual-host/src/pi_coding_provider.rs
+08e8bd3bde4c29a92d9a21be79a722da6b032042 rust/crates/work-engine-manual-host/src/pi_stream.rs
+893d636fcda5629ce44045f390c7000e272793f8 rust/crates/work-engine-manual-host/src/pi_docker.rs
+962e311d81028aca23972042c0be8a3bae6c5c92 rust/crates/work-engine-manual-host/tests/pi_stream.rs
+f1cd4696a3474525861f1ed5d3911bbca61d5883 rust/crates/work-engine-manual-host/examples/pi_hosted_coding_observer.rs
+051a036def7602695df3b1dfdab7317b0eccfd6d rust/crates/pi-pressure-context-host/src/coding.rs
+a94c5f9ede9265784d871b97ea60127e0f9b400a rust/crates/pi-pressure-context-host/src/bin/coding-qualification.rs
+e0e2206320b25237285ca8fcc05783f999db0cc1 rust/crates/pi-pressure-context-host/tests/coding.rs
+7f790e5cc1a837249f7949c705247e434d27ac81 records/dev-vertical-hosted-review-fixes-20261116/README.md
+730c892e484984d04fcb0e0282bfc3fc5f7b3f6d records/dev-vertical-hosted-review-fixes-20261116/run.py
+b4e7d8c96c0e65f51232289aa28eefd31e0596de records/dev-vertical-hosted-review-fixes-20261116/evidence.py
+492282dd9158025e124ce4a2e2558100f8be7f71 records/dev-vertical-hosted-qualification-20261117/README.md
+88978706f9aa5af0f07b6e7c13a158bd8a4c4533 records/dev-vertical-hosted-qualification-20261117/qualify.py
+9e631d727c1b3b0edb771d5613e8ab123397efdb records/dev-vertical-hosted-qualification-20261117/check.py
+c59ede7073e1056e9a383d4594b0b7d33e225537 records/dev-vertical-hosted-qualification-20261117/matrix.json
+328d23e69f8af594f67458dfacdb580b6413259c planning/dev-vertical-hosted-gate-contract-20261116.md
