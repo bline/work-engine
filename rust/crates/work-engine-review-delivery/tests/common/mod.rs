@@ -236,441 +236,95 @@ pub mod world {
     }
 }
 
-/// Unique run-owned evidence (RA003). The custody plan supplies a fresh `WE_RUN_DIR` and the
-/// identities the output manifest must bind. These tests REQUIRE them and fail, never default.
+/// Explicit external inputs of the native vertical, and per-control scratch roots.
 #[cfg(feature = "fixture")]
-pub mod run_evidence {
+pub mod native_inputs {
     use super::sha256_hex;
-    use serde_json::{Value, json};
-    use std::fs::{self, OpenOptions};
-    use std::io::Write;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
 
-    #[derive(Debug, Clone)]
-    pub struct RunEnv {
-        pub run_dir: PathBuf,
-        pub invocation_id: String,
-        pub subject_manifest_sha256: String,
-        pub map_sha256: String,
-    }
+    /// SHA-256 of the handoff's `pi.manifest.json` for the selected read-only Pi SDK 1.5.0.
+    pub const SDK_MANIFEST_SHA256: &str =
+        "cf9d096e61d8ffd2c35df238ff74e1f8d7dacfb9bc5813333beef6cc73010985";
+    /// SHA-256 of the SDK entry module, as recorded in that manifest.
+    pub const SDK_ENTRY_SHA256: &str =
+        "4569157e6038be9840fa514db4b00a27fd0be9e3622cc7b49a281de6c027d7ff";
+    pub const SDK_ENTRY: &str = "node_modules/@earendil-works/pi-coding-agent/dist/index.js";
 
-    fn required(name: &str) -> String {
-        std::env::var(name).unwrap_or_else(|_| {
-            panic!("{name} is required: qualified native runs get a fresh run directory and identities from the custody plan")
-        })
-    }
-
-    pub fn run_env() -> RunEnv {
-        let run_dir = PathBuf::from(required("WE_RUN_DIR"));
-        assert!(run_dir.is_absolute(), "WE_RUN_DIR must be absolute");
-        RunEnv {
-            run_dir,
-            invocation_id: required("WE_INVOCATION_ID"),
-            subject_manifest_sha256: required("WE_SOURCE_MANIFEST_SHA256"),
-            map_sha256: required("WE_MAP_SHA256"),
-        }
-    }
-
-    /// A fresh scratch root for one native control; fails if it already exists.
-    pub fn scratch_root(env: &RunEnv, name: &str) -> PathBuf {
-        let parent = env.run_dir.join("scratch");
-        fs::create_dir_all(&parent).expect("run directory is writable");
-        let root = parent.join(format!("{name}-{}", std::process::id()));
-        fs::create_dir(&root).expect("scratch root must be new (fail on existing)");
+    /// The selected Pi SDK root, given explicitly by `WE_PI_SDK_ROOT` together with its handoff
+    /// manifest `WE_PI_SDK_MANIFEST`. Checked on every call: the manifest bytes have the pinned
+    /// digest; the manifest records the pinned entry digest; the entry module under the root has
+    /// those bytes. The pin covers exactly that: the manifest's identity and the entry module's
+    /// bytes. The rest of the SDK tree is NOT re-verified against the manifest here (no tree
+    /// walk), so a changed file elsewhere under the root would not be detected by this check.
+    /// A missing or mismatched input refuses (panics with the reason); these tests never skip.
+    pub fn sdk_root() -> PathBuf {
+        let var = |name: &str| {
+            std::env::var_os(name).map(PathBuf::from).unwrap_or_else(|| {
+                panic!(
+                    "{name} is required: the native vertical runs against an explicitly selected \
+                     read-only Pi SDK (WE_PI_SDK_ROOT=<handoff>/pi, \
+                     WE_PI_SDK_MANIFEST=<handoff>/pi.manifest.json); this test does not skip"
+                )
+            })
+        };
+        let root = var("WE_PI_SDK_ROOT");
+        let manifest_path = var("WE_PI_SDK_MANIFEST");
+        let manifest = std::fs::read(&manifest_path)
+            .unwrap_or_else(|e| panic!("WE_PI_SDK_MANIFEST {}: {e}", manifest_path.display()));
+        assert_eq!(
+            sha256_hex(&manifest),
+            SDK_MANIFEST_SHA256,
+            "WE_PI_SDK_MANIFEST {} is not the selected handoff manifest",
+            manifest_path.display()
+        );
+        let recorded: serde_json::Value =
+            serde_json::from_slice(&manifest).expect("the handoff manifest is JSON");
+        assert_eq!(
+            recorded[SDK_ENTRY]["sha256"], SDK_ENTRY_SHA256,
+            "the handoff manifest records the pinned entry digest"
+        );
+        let entry = root.join(SDK_ENTRY);
+        let bytes = std::fs::read(&entry).unwrap_or_else(|e| {
+            panic!(
+                "WE_PI_SDK_ROOT {}: SDK entry {}: {e}",
+                root.display(),
+                entry.display()
+            )
+        });
+        assert_eq!(
+            sha256_hex(&bytes),
+            SDK_ENTRY_SHA256,
+            "WE_PI_SDK_ROOT {} does not hold the selected SDK entry bytes",
+            root.display()
+        );
         root
     }
 
-    /// A scratch root whose removal depends on preservation (R4 capture lifetime). `cleanup`
-    /// roots are removed on drop; `retained` roots are removed only after [`Scratch::release`],
-    /// which a caller invokes once the evidence bundle has been finalized `passed`. Removal never
-    /// panics, so unwinding through a failed assertion cannot delete the only recoverable copy.
+    /// A fresh scratch root for one native control under Cargo's per-target test temp directory.
+    /// Removed on drop; kept, with its path printed, when the test is unwinding (an ordinary
+    /// diagnostic, not retained evidence).
     pub struct Scratch {
         pub path: PathBuf,
-        release: bool,
     }
 
     impl Scratch {
-        pub fn cleanup(path: PathBuf) -> Self {
-            Self {
-                path,
-                release: true,
-            }
-        }
-        pub fn retained(path: PathBuf) -> Self {
-            Self {
-                path,
-                release: false,
-            }
-        }
-        pub fn release(&mut self) {
-            self.release = true;
+        pub fn new(name: &str) -> Self {
+            let path = Path::new(env!("CARGO_TARGET_TMPDIR"))
+                .join("native-vertical")
+                .join(format!("{name}-{}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&path);
+            std::fs::create_dir_all(&path).expect("scratch root is creatable");
+            Self { path }
         }
     }
 
     impl Drop for Scratch {
         fn drop(&mut self) {
-            if self.release {
-                let _ = fs::remove_dir_all(&self.path);
-            }
-        }
-    }
-
-    /// One invocation-owned evidence bundle. The directory is created with `create_dir`, so a
-    /// second run into the same directory fails instead of replacing earlier evidence, and every
-    /// file is written `create_new`. Writes never panic: a failed write is recorded and makes the
-    /// bundle `incomplete`, whatever outcome the caller asks for. The manifest is written last.
-    pub struct Evidence {
-        dir: PathBuf,
-        env: RunEnv,
-        files: Vec<(String, usize, String)>,
-        write_failures: Vec<Value>,
-    }
-
-    pub const OUTPUT_SCHEMA: &str = "org-run-output-manifest/v2";
-
-    impl Evidence {
-        /// The positive run's bundle: `<run>/evidence`.
-        pub fn create(env: &RunEnv) -> Result<Self, String> {
-            Self::create_at(env, env.run_dir.join("evidence"))
-        }
-        /// A bundle at an explicit new directory (controls live under `<run>/controls/<name>`).
-        pub fn create_at(env: &RunEnv, dir: PathBuf) -> Result<Self, String> {
-            if let Some(parent) = dir.parent() {
-                fs::create_dir_all(parent).map_err(|e| format!("{}: {e}", parent.display()))?;
-            }
-            fs::create_dir(&dir).map_err(|e| {
-                format!(
-                    "{}: {e} (evidence directories are new; refusing to reuse)",
-                    dir.display()
-                )
-            })?;
-            Ok(Self {
-                dir,
-                env: env.clone(),
-                files: Vec::new(),
-                write_failures: Vec::new(),
-            })
-        }
-        pub fn dir(&self) -> &std::path::Path {
-            &self.dir
-        }
-        pub fn env(&self) -> &RunEnv {
-            &self.env
-        }
-        pub fn write_failures(&self) -> &[Value] {
-            &self.write_failures
-        }
-        /// Writes one file create-new. A failure is recorded, not raised.
-        pub fn put(&mut self, name: &str, bytes: &[u8]) -> bool {
-            let outcome = if name.contains('/') || name == "output-manifest.json" {
-                Err(format!("reserved or nested evidence name `{name}`"))
+            if std::thread::panicking() {
+                eprintln!("scratch retained for diagnosis: {}", self.path.display());
             } else {
-                OpenOptions::new()
-                    .write(true)
-                    .create_new(true)
-                    .open(self.dir.join(name))
-                    .and_then(|mut file| file.write_all(bytes).and_then(|_| file.sync_all()))
-                    .map_err(|e| e.to_string())
-            };
-            match outcome {
-                Ok(()) => {
-                    self.files
-                        .push((name.to_owned(), bytes.len(), sha256_hex(bytes)));
-                    true
-                }
-                Err(error) => {
-                    self.write_failures
-                        .push(json!({"name": name, "error": error}));
-                    false
-                }
+                let _ = std::fs::remove_dir_all(&self.path);
             }
         }
-        pub fn put_json(&mut self, name: &str, value: &Value) -> bool {
-            match serde_json::to_vec_pretty(value) {
-                Ok(bytes) => self.put(name, &bytes),
-                Err(e) => {
-                    self.write_failures
-                        .push(json!({"name": name, "error": e.to_string()}));
-                    false
-                }
-            }
-        }
-        /// Writes the output manifest (last) and returns the outcome actually recorded:
-        /// `requested` only when every write succeeded, otherwise `incomplete`. `Err` means the
-        /// manifest itself could not be written; the partial files stay where they are.
-        pub fn finish(self, requested: &str) -> Result<String, String> {
-            let outcome = if self.write_failures.is_empty() {
-                requested.to_owned()
-            } else {
-                "incomplete".to_owned()
-            };
-            let files: Vec<Value> = self
-                .files
-                .iter()
-                .map(|(n, l, h)| json!({"name": n, "length": l, "sha256": h}))
-                .collect();
-            let manifest = json!({
-                "schema": OUTPUT_SCHEMA,
-                "outcome": outcome,
-                "invocation_id": self.env.invocation_id,
-                "source_manifest_sha256": self.env.subject_manifest_sha256,
-                "map_sha256": self.env.map_sha256,
-                "files": files,
-                "write_failures": self.write_failures,
-            });
-            let bytes = serde_json::to_vec_pretty(&manifest).map_err(|e| e.to_string())?;
-            OpenOptions::new()
-                .write(true)
-                .create_new(true)
-                .open(self.dir.join("output-manifest.json"))
-                .and_then(|mut file| file.write_all(&bytes).and_then(|_| file.sync_all()))
-                .map_err(|e| format!("output manifest: {e}"))?;
-            Ok(outcome)
-        }
-    }
-}
-
-/// The fixture evidence writer (R4 capture lifetime). Inputs are persisted before the native path
-/// starts; whatever `deliver_and_consume` returns, every available raw frame, native
-/// context/history, process disposition, result and actual state is persisted before any
-/// assertion or cleanup can run. Absence is described per observation and failure stage. Nothing
-/// is reconstructed. The campaign qualifier re-reads exactly these files.
-#[cfg(feature = "fixture")]
-pub mod capture {
-    use super::run_evidence::Evidence;
-    use super::{AUTHORITY, REQ, canonical};
-    use serde_json::{Value, json};
-    use work_engine_organization::Profile;
-    use work_engine_review_delivery::binding::ExperimentBinding;
-    use work_engine_review_delivery::native::{DeliverError, Delivered, NativeRun};
-    use work_engine_review_preparation::fixture::FixtureConsumption;
-
-    pub const TRANSITION_ID: &str = "result-1";
-
-    /// The delivery-owned process facts, serialized exactly (kill, reap, timeout, descendants).
-    pub fn process_json(run: &NativeRun) -> Value {
-        serde_json::to_value(&run.facts.process).unwrap_or(Value::Null)
-    }
-
-    /// The delivery-owned send/stream/timing facts, the delivery-owned interpretation of the whole
-    /// stream, the delivery-owned incompleteness verdict and the consumer invocation count the
-    /// caller supplies (the binding's runtime counter for a real run). Written before any
-    /// assertion; nothing here is reconstructed.
-    pub fn collection_json(run: &NativeRun, consumer_invocations: u64) -> Value {
-        let interp = run.interpretation();
-        json!({
-            "sent": run.facts.sent,
-            "stdout": run.facts.stdout,
-            "stderr": run.facts.stderr,
-            "timing": run.facts.timing,
-            "frame_kinds": interp.kinds,
-            "frame_defects": interp.defects,
-            "incompleteness": run.incompleteness(),
-            "consumer_invocations": consumer_invocations,
-        })
-    }
-
-    /// The consumer's outcome and full condition coverage, as retained for comparison with the
-    /// qualifier's pure recomputation.
-    pub fn consumption_json(c: &FixtureConsumption) -> Value {
-        let outcome = match c.outcome() {
-            review_episode_core::reducer::TransitionOutcome::Applied(_) => "applied",
-            review_episode_core::reducer::TransitionOutcome::Replay(_) => "replay",
-        };
-        json!({
-            "label": format!("{:?}", c.label),
-            "evidence": format!("{:?}", c.evidence),
-            "production_consequence": format!("{:?}", c.production_consequence),
-            "outcome": outcome,
-            "phase": format!("{:?}", c.state().phase()),
-            "revision": c.state().revision().0,
-            "conditions": c.conditions.iter().map(|k| json!({
-                "condition": k.condition, "acceptor": k.acceptor,
-                "unestablished_route": k.unestablished_route, "acceptance": format!("{:?}", k.acceptance),
-            })).collect::<Vec<_>>(),
-        })
-    }
-
-    /// Stage 1, before any native child exists: the exact consumer inputs, preparation, contract
-    /// and before-state. `authority_text` and `questions` are the values the binding was built from.
-    pub fn persist_inputs(
-        ev: &mut Evidence,
-        binding: &ExperimentBinding,
-        authority_text: &str,
-        questions: &[String],
-    ) {
-        let frozen = binding.frozen();
-        let request = binding.request();
-        ev.put("candidate-requirements.json", REQ);
-        ev.put("authority.json", authority_text.as_bytes());
-        ev.put_json("consumer-inputs.json", &json!({
-            "profile": Profile::FixedSliceReviewV1.as_str(),
-            "request": {"obligation_id": request.obligation_id, "subject": request.subject, "realization": request.realization},
-            "transition_id": binding.transition_id(),
-            "unresolved_questions": questions,
-            "expected_revision": binding.expected_revision().0,
-            "transport": frozen.transport(),
-            "authority_is_frozen_fixture": authority_text == AUTHORITY,
-        }));
-        ev.put(
-            "preparation.json",
-            &serde_json::to_vec(binding.preparation()).unwrap_or_default(),
-        );
-        ev.put("contract.bytes", frozen.contract().as_bytes());
-        ev.put_json(
-            "declaration.json",
-            &serde_json::to_value(binding.declaration()).unwrap_or(Value::Null),
-        );
-        ev.put("admissions.json", binding.admissions_json().as_bytes());
-        ev.put(
-            "synthetic-result.json",
-            binding.synthetic_result().as_bytes(),
-        );
-        ev.put(
-            "episode-before.json",
-            canonical(binding.episode_state()).as_bytes(),
-        );
-    }
-
-    fn run_of(outcome: &Result<Delivered, DeliverError>) -> Option<&NativeRun> {
-        match outcome {
-            Ok(d) => Some(&d.run),
-            Err(DeliverError::Delivery { run, .. }) | Err(DeliverError::Consumer { run, .. }) => {
-                Some(run)
-            }
-            Err(DeliverError::Native(_)) => None,
-        }
-    }
-
-    /// Stage 2, immediately after `deliver_and_consume` returns, before any assertion: every
-    /// available observation, plus `capture.json` naming each absent one and why.
-    /// `consumer_invocations` is the binding's runtime counter for a real run; a test-local
-    /// synthetic bundle supplies its modelled count here and is labelled synthetic by its test.
-    pub fn capture_returned(
-        ev: &mut Evidence,
-        binding: &ExperimentBinding,
-        outcome: &Result<Delivered, DeliverError>,
-        consumer_invocations: u64,
-    ) {
-        let env_ids = (
-            ev_invocation(ev),
-            binding.frozen().transport().clone(),
-            binding.frozen().contract_sha256().to_owned(),
-        );
-        let mut absent: Vec<Value> = Vec::new();
-        let projection = work_engine_review_delivery::native::OutcomeProjection::of(outcome);
-        let (stage, error) = match outcome {
-            Ok(_) => ("delivered_and_consumed", None),
-            Err(e @ DeliverError::Native(_)) => ("native_error", Some(e.to_string())),
-            Err(e @ DeliverError::Delivery { .. }) => ("delivery_refused", Some(e.to_string())),
-            Err(e @ DeliverError::Consumer { .. }) => ("consumer_refused", Some(e.to_string())),
-        };
-        let run = run_of(outcome);
-        match run {
-            Some(run) => {
-                // Raw bytes exactly as received/sent/collected: no joining, trimming or decoding.
-                ev.put("native-frames-received.jsonl", &run.raw_stdout);
-                // Exact bytes of every frame whose send began (text plus newline each).
-                ev.put("native-frames-sent.jsonl", &run.sent_bytes);
-                ev.put("stderr.txt", &run.raw_stderr);
-                ev.put_json("process.json", &process_json(run));
-                ev.put_json(
-                    "collection.json",
-                    &collection_json(run, consumer_invocations),
-                );
-                if let Some(e) = &run.error_frame {
-                    ev.put("native-error-frame.txt", e.as_bytes());
-                }
-                match &run.observation {
-                    Some(obs) => {
-                        ev.put_json(
-                            "observation.json",
-                            &serde_json::to_value(obs).unwrap_or(Value::Null),
-                        );
-                        match &obs.context {
-                            Some(ctx) => {
-                                ev.put_json("request-context.json", ctx);
-                            }
-                            None => absent.push(json!({"name": "request-context.json", "reason": "the native observation carries no request context"})),
-                        }
-                        ev.put_json("native-history.json", &json!(obs.history));
-                    }
-                    None => {
-                        for name in [
-                            "observation.json",
-                            "request-context.json",
-                            "native-history.json",
-                        ] {
-                            absent.push(json!({"name": name, "reason": "the native run returned no observation frame"}));
-                        }
-                    }
-                }
-            }
-            None => {
-                for name in [
-                    "native-frames-received.jsonl",
-                    "native-frames-sent.jsonl",
-                    "stderr.txt",
-                    "process.json",
-                    "collection.json",
-                    "observation.json",
-                    "request-context.json",
-                    "native-history.json",
-                ] {
-                    absent.push(json!({"name": name, "reason": "the native child was not started (setup/spawn error carries no run)"}));
-                }
-            }
-        }
-        let bound = run.and_then(|r| r.bound.as_ref());
-        let verified = match outcome {
-            Ok(d) => Some(&d.verified),
-            Err(DeliverError::Consumer { verified, .. }) => Some(verified.as_ref()),
-            _ => None,
-        };
-        ev.put_json("identities.json", &json!({
-            "invocation_id": env_ids.0.0, "source_manifest_sha256": env_ids.0.1, "map_sha256": env_ids.0.2,
-            "attempt_id": env_ids.1.attempt_id, "generation": env_ids.1.generation,
-            "contract_sha256": env_ids.2,
-            "session_id": bound.map(|b| b.session_id().to_owned()),
-            "sdk_version": bound.map(|b| b.allocation().sdk_version.clone()),
-            "node_version": bound.map(|b| b.allocation().node_version.clone()),
-            "effective_system_context_sha256": verified.map(|v| v.effective_system_context_sha256.clone()),
-            "verified_result_text_sha256": verified.map(|v| super::sha256_hex(v.result_text.as_bytes())),
-        }));
-        match outcome {
-            Ok(d) => {
-                let after = d.consumption.state();
-                ev.put("episode-after.json", canonical(after).as_bytes());
-                ev.put_json("consumption.json", &consumption_json(&d.consumption));
-                ev.put_json(
-                    "revisions.json",
-                    &json!({
-                        "before": binding.episode_state().revision().0,
-                        "expected": binding.expected_revision().0,
-                        "after": after.revision().0,
-                    }),
-                );
-            }
-            Err(_) => {
-                for name in ["episode-after.json", "consumption.json", "revisions.json"] {
-                    absent
-                        .push(json!({"name": name, "reason": format!("no consumption: {stage}")}));
-                }
-            }
-        }
-        ev.put_json(
-            "capture.json",
-            &json!({"stage": stage, "outcome": projection, "error": error, "absent": absent,
-                "consumer_invocations": consumer_invocations}),
-        );
-    }
-
-    fn ev_invocation(ev: &Evidence) -> (String, String, String) {
-        let env = ev.env();
-        (
-            env.invocation_id.clone(),
-            env.subject_manifest_sha256.clone(),
-            env.map_sha256.clone(),
-        )
     }
 }

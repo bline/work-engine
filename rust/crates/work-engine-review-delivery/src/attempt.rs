@@ -1,7 +1,7 @@
 //! Delivery-owned meaning of one native attempt's retained evidence. Compiled in every build (no
-//! process code): the fixture runner produces these facts, the capture writes them, and the
-//! campaign qualifier strictly decodes them and asks this module, not a second definition,
-//! whether they are consistent with the retained bytes and what they establish.
+//! process code): the fixture runner produces these facts, and a consumer strictly decodes them
+//! and asks this module, not a second definition, whether they are consistent with the retained
+//! bytes and what they establish.
 //!
 //! Two results are deliberately distinct. [`check_attempt_evidence`] returns `Err` when the
 //! evidence is malformed or contradicts itself or the retained bytes: such evidence establishes

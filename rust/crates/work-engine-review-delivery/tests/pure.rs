@@ -318,3 +318,39 @@ fn strict_wire_representation_keeps_json_like_strings_and_rejects_recursive_dupl
         assert!(parse(raw).unwrap_err().contains("duplicate key"));
     }
 }
+
+/// P-3: an allocation or observation frame with a member the adapter does not emit is not the
+/// pinned producer's frame. It is invalid, so the stream is not a permitted success.
+#[test]
+fn frames_with_unknown_members_are_invalid_and_never_a_permitted_success() {
+    use work_engine_review_delivery::interpret_stream;
+    let f = frozen();
+    let mut allocation = serde_json::to_value(allocation()).unwrap();
+    allocation["type"] = json!("allocated");
+    let mut observation = serde_json::to_value(good(&f)).unwrap();
+    observation["type"] = json!("observation");
+    let stream = |a: &Value, o: &Value| format!("{a}\n{o}\n").into_bytes();
+    let clean = interpret_stream(&stream(&allocation, &observation));
+    assert!(clean.permitted_success(), "{:?}", clean.defects);
+
+    type FrameEdit = Box<dyn Fn(&mut Value, &mut Value)>;
+    let edits: [(&str, FrameEdit); 3] = [
+        ("allocation", Box::new(|a, _| a["extra"] = json!(1))),
+        ("observation", Box::new(|_, o| o["extra"] = json!(1))),
+        (
+            "observation counters",
+            Box::new(|_, o| o["counters"]["extra"] = json!(0)),
+        ),
+    ];
+    for (name, edit) in edits {
+        let (mut a, mut o) = (allocation.clone(), observation.clone());
+        edit(&mut a, &mut o);
+        let interp = interpret_stream(&stream(&a, &o));
+        assert!(!interp.permitted_success(), "{name}");
+        assert!(
+            interp.defects.iter().any(|d| d.contains("unknown field")),
+            "{name}: {:?}",
+            interp.defects
+        );
+    }
+}

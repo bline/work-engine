@@ -134,7 +134,7 @@ pub struct ExperimentBinding {
     episode: EpisodeInputs,
     synthetic_result: String,
     /// Deterministic observation seam: how many times the existing consumer was actually
-    /// invoked through this binding (and its clones). Not an authority; evidence for tests and capture.
+    /// invoked through this binding (and its clones). Not an authority; evidence for tests.
     consumer_invocations: std::sync::Arc<std::sync::atomic::AtomicU64>,
 }
 
@@ -348,7 +348,7 @@ impl ExperimentBinding {
     }
     /// Runtime count of actual consumer invocations through this binding (incremented only by
     /// `consume`, immediately before the existing consumer runs). A refused attempt must show 0.
-    /// There is no modelled increment: synthetic test bundles supply their own count.
+    /// There is no modelled increment: the count is only what the consumer actually did.
     pub fn consumer_invocations(&self) -> u64 {
         self.consumer_invocations
             .load(std::sync::atomic::Ordering::SeqCst)

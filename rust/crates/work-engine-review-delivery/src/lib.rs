@@ -172,8 +172,11 @@ impl FrozenDelivery {
     }
 }
 
-/// What the SDK manager actually allocated before any prompt.
+/// What the SDK manager actually allocated before any prompt. The adapter emits exactly these
+/// members (plus `type`, removed before decoding); like duplicate members (ORG-PV-WR7-001), an
+/// unknown member means the frame is not the pinned producer's and the frame is invalid.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Allocation {
     pub session_id: String,
     pub sdk_version: String,
@@ -186,13 +189,16 @@ pub struct Allocation {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(deny_unknown_fields)]
 pub struct Counters {
     pub ordinary_stream: u64,
     pub fetch: u64,
 }
 
-/// The SDK's own report, after the single prompt.
+/// The SDK's own report, after the single prompt. Exactly the adapter's members; an unknown
+/// member makes the frame invalid (see [`Allocation`]).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct NativeObservation {
     pub session_id: String,
     pub attempt_id: String,

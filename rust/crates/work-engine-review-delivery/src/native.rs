@@ -163,14 +163,16 @@ impl Control {
 pub struct NativeConfig {
     pub node: PathBuf,
     pub adapter: PathBuf,
-    /// Read-only pinned Pi SDK artifact root (contains `node_modules`).
+    /// Pi SDK artifact root (contains `node_modules`), read-only to the child. Product code does
+    /// not verify a pin; a caller that needs a pinned SDK checks that itself.
     pub sdk_root: PathBuf,
     /// Owned fixture directory; HOME/XDG/agent/canary/tmp are created beneath it.
     pub fixture_root: PathBuf,
     /// The attempt deadline: sends, reads and the child's own completion.
     pub timeout: Duration,
     /// Cleanup bound after the deadline (or after an earlier stop): kill, reap and draining the
-    /// pipes for evidence. The whole attempt ends within `timeout + cleanup` (plus one poll quantum).
+    /// pipes for evidence. Both bounds are checked by the owner loop, not preemptive; they are not
+    /// a wall-clock guarantee for the whole attempt (see [`run_attempt`]).
     pub cleanup: Duration,
     pub control: Control,
     pub limits: Limits,
@@ -1173,66 +1175,6 @@ pub enum DeliverError {
         verified: Box<VerifiedDelivery>,
         run: Box<NativeRun>,
     },
-}
-
-/// A projection of the actual delivery result, independent of subsequent assertion or capture
-/// failures. It neither reconstructs consumption nor defines any campaign policy.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum DeliveryStage {
-    NativeError,
-    DeliveryRefused,
-    ConsumerRefused,
-    DeliveredAndConsumed,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct OutcomeProjection {
-    pub stage: DeliveryStage,
-    pub native_started: bool,
-    /// Only setup/spawn errors have no NativeRun; the exact attributed error is retained.
-    pub native_error: Option<NativeFailure>,
-}
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-#[serde(
-    tag = "kind",
-    content = "message",
-    rename_all = "snake_case",
-    deny_unknown_fields
-)]
-pub enum NativeFailure {
-    Setup(String),
-    Spawn(String),
-}
-impl NativeFailure {
-    pub fn error_text(&self) -> String {
-        match self {
-            Self::Setup(s) => NativeError::Setup(s.clone()).to_string(),
-            Self::Spawn(s) => NativeError::Spawn(s.clone()).to_string(),
-        }
-    }
-}
-impl OutcomeProjection {
-    pub fn of(outcome: &Result<Delivered, DeliverError>) -> Self {
-        let (stage, native_error) = match outcome {
-            Ok(_) => (DeliveryStage::DeliveredAndConsumed, None),
-            Err(DeliverError::Delivery { .. }) => (DeliveryStage::DeliveryRefused, None),
-            Err(DeliverError::Consumer { .. }) => (DeliveryStage::ConsumerRefused, None),
-            Err(DeliverError::Native(e)) => (
-                DeliveryStage::NativeError,
-                Some(match e {
-                    NativeError::Setup(s) => NativeFailure::Setup(s.clone()),
-                    NativeError::Spawn(s) => NativeFailure::Spawn(s.clone()),
-                }),
-            ),
-        };
-        Self {
-            stage,
-            native_started: native_error.is_none(),
-            native_error,
-        }
-    }
 }
 
 /// Proof that an attempt was complete, constructible only here, only from a run that passed
