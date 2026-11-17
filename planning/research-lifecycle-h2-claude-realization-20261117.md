@@ -1,6 +1,6 @@
 # H2 on a Claude model: transport probe and placement
 
-2026-11-17, revision 1. **Probe record and sizing. It accepts no
+2026-11-17, revision 2 (headless prototype added). **Probe record and sizing. It accepts no
 architecture and changes no other owner's code.** It follows the
 [P0 sizing](research-lifecycle-h2-pi-realization-sizing-20261117.md) after the
 operator's decisions of 2026-11-17 (relayed on the board, `aspect:research-lifecycle`
@@ -62,8 +62,30 @@ Findings:
    client-app/pi-claude-subscription/…`) and a Claude Code session id.
 
 Not probed: traffic Claude Code may send to hosts other than the base URL
-(only `/v1/messages` passed through the proxy); behaviour with a loopback
-fixture as upstream; suppressing the email reminder.
+(only `/v1/messages` passed through the proxy); suppressing the email reminder.
+
+### Headless prototype (shape 2)
+
+Prototype scripts: [mcp_relay.py](../records/dev-vertical-h2-route-20261117/claude-probe/mcp_relay.py),
+[fixture_upstream.py](../records/dev-vertical-h2-route-20261117/claude-probe/fixture_upstream.py),
+the proxy above with a selectable upstream. Claude Code 2.1.326 ran as
+`claude -p --input-format stream-json --output-format stream-json --verbose
+--tools "" --strict-mcp-config --mcp-config <one stdio server> --allowedTools
+mcp__we__snapshot_read --setting-sources "" --no-session-persistence
+--system-prompt <text>`, with `ANTHROPIC_BASE_URL` at the proxy and API keys
+cleared.
+
+- **Live** (`claude-haiku-5-5`, subscription): the init event listed exactly
+  one tool, `mcp__we__snapshot_read`; the model issued two parallel reads, the
+  relay served both, and the answer followed. Two `/v1/messages` requests, both
+  retained; `tools` was `DeferredToolPlaceholder` plus the relay tool; the user
+  agent was `claude-cli/2.1.326 (external, sdk-cli)`; the stream's rate-limit
+  event reported `allowed`, `isUsingOverage: false`. Cost reported by Claude
+  Code: about $0.001 API-equivalent.
+- **Offline**: with the proxy's upstream set to a scripted SSE fixture on
+  loopback, the same Claude Code ran the full turn (tool call, relay result,
+  final text) with no inference. Composed qualification can therefore run
+  without quota.
 
 ## Placement for a Claude model
 
