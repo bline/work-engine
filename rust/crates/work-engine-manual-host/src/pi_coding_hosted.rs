@@ -1043,6 +1043,7 @@ impl Host {
                     interrupted: true,
                     relay_sha256: sha,
                     provider_failure: None,
+                    terminal_last: false,
                 },
             );
             if let Some(a) = r.attempts.last_mut().filter(|a| a.attempt == attempt) {

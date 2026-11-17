@@ -812,3 +812,32 @@ fn bytes_read_while_draining_after_release_are_kept_as_unforwarded_evidence() {
     drop(sess);
     server.join().unwrap();
 }
+
+#[test]
+fn terminal_is_last_allows_only_comments_and_blank_lines_after_the_terminal_event() {
+    let done = r#"data: {"type":"response.completed","response":{"id":"r"}}"#;
+    let created = r#"data: {"type":"response.created","response":{"id":"r"}}"#;
+    let f = format!("{created}\n\n{done}\n\n");
+    assert!(ps::terminal_is_last(f.as_bytes(), b""));
+    assert!(ps::terminal_is_last(f.as_bytes(), b": keep-alive\n\n"));
+    assert!(ps::terminal_is_last(
+        format!("{created}\r\n\r\n{done}\r\n\r\n").as_bytes(),
+        b"\r\n"
+    ));
+    // A data event, a partial line, or no terminal at all is not clean.
+    assert!(!ps::terminal_is_last(
+        f.as_bytes(),
+        format!("{created}\n\n").as_bytes()
+    ));
+    assert!(!ps::terminal_is_last(f.as_bytes(), b": partial"));
+    assert!(!ps::terminal_is_last(f.as_bytes(), b"event: x\n\n"));
+    assert!(!ps::terminal_is_last(
+        format!("{created}\n\n").as_bytes(),
+        b""
+    ));
+    // The terminal event's own block must be complete.
+    assert!(!ps::terminal_is_last(
+        format!("{created}\n\n{done}\n").as_bytes(),
+        b""
+    ));
+}

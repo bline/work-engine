@@ -116,6 +116,10 @@ pub struct AttemptRecord {
     /// Hosted: digest of the admitted route table the gate policy mirrors.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub routes_sha256: Option<String>,
+    /// Hosted relays: whether the provider's framed end was observed. A
+    /// completion settled on the terminal event alone records `false`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub framed_end_observed: Option<bool>,
 }
 /// Observed facts about one attempt, from which the ledger derives the
 /// disposition. Callers report evidence; they never choose a release.
@@ -139,6 +143,9 @@ pub enum AttemptEvidence {
         /// Provider failure event (`response.failed`/`error`) in the relayed
         /// bytes; such a stream is never a completion.
         provider_failure: Option<String>,
+        /// A screened `response.completed` was relayed and nothing but SSE
+        /// comments or blank lines followed it (`pi_stream::terminal_is_last`).
+        terminal_last: bool,
     },
     /// No trustworthy observation.
     Unknown { reason: String },
@@ -157,6 +164,8 @@ impl AttemptEvidence {
             provider_failure: crate::pi_stream::usage(&relay.forwarded)["failed"]
                 .as_str()
                 .map(String::from),
+            terminal_last: crate::pi_stream::usage(&relay.forwarded)["completed"] == true
+                && crate::pi_stream::terminal_is_last(&relay.forwarded, &relay.unforwarded),
         }
     }
 }
@@ -235,16 +244,25 @@ impl Reservation {
                 interrupted,
                 relay_sha256,
                 provider_failure,
+                terminal_last,
             } => {
                 a.http_status = Some(status);
                 a.relay_sha256 = Some(relay_sha256);
+                a.framed_end_observed = Some(upstream_end);
                 if let Some(code) = provider_failure {
                     (
                         AttemptDisposition::Uncertain,
                         Some(format!("provider failure event in relayed stream: {code}")),
                     )
-                } else if status == 200 && upstream_end && !interrupted {
+                } else if status == 200 && !interrupted && upstream_end {
                     (AttemptDisposition::Completed, None)
+                } else if status == 200 && !interrupted && terminal_last {
+                    // K-a: settle on the provider's terminal event; the
+                    // missing framed end is an evidence limitation only.
+                    (
+                        AttemptDisposition::Completed,
+                        Some("completed on terminal event; framed end not observed".to_string()),
+                    )
                 } else {
                     (
                         AttemptDisposition::Uncertain,
@@ -344,6 +362,7 @@ pub fn reserve_attempt(
         gate_entered: false,
         deadline_ms: None,
         routes_sha256: None,
+        framed_end_observed: None,
     });
     Ok(next)
 }
@@ -1685,6 +1704,7 @@ mod attempt_tests {
             interrupted,
             relay_sha256: "d".repeat(64),
             provider_failure: None,
+            terminal_last: false,
         }
     }
     #[test]
@@ -1799,6 +1819,40 @@ mod attempt_tests {
                     interrupted: false,
                     relay_sha256: "d".repeat(64),
                     provider_failure: Some("insufficient_quota".into()),
+                    terminal_last: true,
+                },
+                AttemptDisposition::Uncertain,
+            ),
+            (
+                AttemptEvidence::Relayed {
+                    status: 200,
+                    upstream_end: false,
+                    interrupted: false,
+                    relay_sha256: "d".repeat(64),
+                    provider_failure: None,
+                    terminal_last: true,
+                },
+                AttemptDisposition::Completed,
+            ),
+            (
+                AttemptEvidence::Relayed {
+                    status: 200,
+                    upstream_end: false,
+                    interrupted: true,
+                    relay_sha256: "d".repeat(64),
+                    provider_failure: None,
+                    terminal_last: true,
+                },
+                AttemptDisposition::Uncertain,
+            ),
+            (
+                AttemptEvidence::Relayed {
+                    status: 500,
+                    upstream_end: false,
+                    interrupted: false,
+                    relay_sha256: "d".repeat(64),
+                    provider_failure: None,
+                    terminal_last: true,
                 },
                 AttemptDisposition::Uncertain,
             ),

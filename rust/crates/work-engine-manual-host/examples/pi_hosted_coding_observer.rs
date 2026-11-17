@@ -10,8 +10,9 @@
 //!   `midstream-failed` (`response.failed` after output), `late-close-short`
 //!   and `late-close-long` (framed end 0.5 s or 3 s after
 //!   `response.completed`), `trailing` (an extra SSE comment after
-//!   `response.completed`), `stall-head` (no head) and `stall-body` (two
-//!   events, then silence). Stalls hold the connection until the peer closes
+//!   `response.completed`), `trailing-data` (an extra `data:` event after
+//!   it), `stall-head` (no head) and `stall-body` (two events, then
+//!   silence). Stalls hold the connection until the peer closes
 //!   it and report when that happened.
 //!
 //! After a fault the observer keeps accepting, so any later dispatch (a
@@ -158,7 +159,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut refused = 0usize;
     let mut authority: Option<String> = None;
     let scenario = std::env::var("HOSTED_OBSERVER_SCENARIO").unwrap_or_else(|_| "ok".into());
-    const SCENARIOS: [&str; 10] = [
+    const SCENARIOS: [&str; 11] = [
+        "trailing-data",
         "ok",
         "refuse-all",
         "primary-500",
@@ -175,7 +177,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
     // A clean run ends after four served responses; a faulted run keeps
     // accepting until killed, so later dispatches are visible.
-    let completes = matches!(scenario.as_str(), "ok" | "late-close-short");
+    let completes = matches!(
+        scenario.as_str(),
+        "ok" | "late-close-short" | "late-close-long" | "trailing"
+    );
     while !(completes && served >= 4) {
         if Instant::now() > deadline {
             return Err("observer deadline".into());
@@ -299,9 +304,16 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         if !ended {
             continue;
         }
-        if fault == "trailing" {
+        if matches!(fault, "trailing" | "trailing-data") {
             std::thread::sleep(Duration::from_millis(200));
-            let extra = ": synthetic trailing bytes\n\n";
+            let extra = if fault == "trailing" {
+                ": synthetic trailing bytes\n\n".to_string()
+            } else {
+                format!(
+                    "data: {}\n\n",
+                    json!({"type":"response.output_text.delta","delta":"synthetic data after the terminal event"})
+                )
+            };
             write!(s, "{:x}\r\n{extra}\r\n", extra.len())?;
             s.flush()?;
         }

@@ -302,6 +302,41 @@ pub fn sse_data(sse: &[u8]) -> Vec<String> {
     }
     out
 }
+/// Whether `response.completed` is the final event of the bytes the provider
+/// sent (`forwarded` then `unforwarded`): after its event block only SSE
+/// comment lines and blank lines may follow. Any other line, including a
+/// partial one, is not clean. Used to settle on the terminal event when the
+/// framed end is not observed (operator decision K-a, 2026-11-17).
+pub fn terminal_is_last(forwarded: &[u8], unforwarded: &[u8]) -> bool {
+    let mut all = forwarded.to_vec();
+    all.extend_from_slice(unforwarded);
+    let text = String::from_utf8_lossy(&all)
+        .replace("\r\n", "\n")
+        .replace('\r', "\n");
+    let mut terminal_end = None;
+    let mut offset = 0;
+    for block in text.split_inclusive("\n\n") {
+        let data: Vec<&str> = block
+            .lines()
+            .filter_map(|l| l.strip_prefix("data:"))
+            .map(|d| d.strip_prefix(' ').unwrap_or(d))
+            .collect();
+        offset += block.len();
+        if block.ends_with("\n\n")
+            && serde_json::from_str::<Value>(&data.join("\n"))
+                .is_ok_and(|v| v["type"] == "response.completed")
+        {
+            terminal_end = Some(offset);
+        }
+    }
+    let Some(end) = terminal_end else {
+        return false;
+    };
+    let tail = &text[end..];
+    // Every tail line is complete and is a comment or blank.
+    (tail.is_empty() || tail.ends_with('\n'))
+        && tail.lines().all(|l| l.is_empty() || l.starts_with(':'))
+}
 /// Normalized usage from a Responses SSE `response.completed` event. Missing
 /// values remain null; nothing is inferred from HTTP completion.
 pub fn usage(sse: &[u8]) -> Value {
