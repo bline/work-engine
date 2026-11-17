@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Check the hosted qualification matrix against its expected outcomes.
 
-Usage: check.py <root-dir> <subject-commit>. Reads <root>/<scenario>.summary.json
-and each run's state, and prints matrix.json: the binaries' digests, the runs
-root, and per-scenario checks and verdicts. Rerunning it over the same run set
+Usage: check.py <root-dir> <subject-commit>. Reads <root>/<scenario>.summary.json,
+each run's state and the binaries retained in <root>/bin, and prints
+matrix.json: the binaries' digests, the runs root, and per-scenario checks and
+verdicts. Rerunning it over the same run set
 reproduces matrix.json exactly.
 
 Charges: the Host does not export its charge. Checks about money compare the
@@ -15,9 +16,10 @@ import hashlib, json, sys
 from pathlib import Path
 
 root, subject = Path(sys.argv[1]), sys.argv[2]
-REPO = Path('/home/bline/code/work-engine')
-QUAL = REPO / 'rust/crates/pi-pressure-context-host/target/release/coding-qualification'
-OBSERVER = REPO / 'rust/target/debug/examples/pi_hosted_coding_observer'
+# Copies of the binaries the runs used, retained in the run set so the check
+# does not depend on later rebuilds of the checkout.
+QUAL = root / 'bin' / 'coding-qualification'
+OBSERVER = root / 'bin' / 'pi_hosted_coding_observer'
 RESERVE = 164001
 COMPLETES = ['ok', 'late-close-short', 'late-close-long', 'trailing']
 PRIMARY_FAULTS = ['primary-500', 'primary-429-echo', 'primary-429-truncated']
