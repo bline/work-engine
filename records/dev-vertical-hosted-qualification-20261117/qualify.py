@@ -108,6 +108,21 @@ def prepare(base):
 
     return base, job_path, obs, obs_out
 
+def ledger_of(j):
+    """Ledger facts as the Host recorded them. `charged_microusd_derived` is
+    this harness's own application of the ledger rule to the dispositions; the
+    Host does not export its charge."""
+    ledger = {}
+    for k, r in j['coding']['provider_requests'].items():
+        att = r.get('attempts', [])
+        charged = 0
+        for a in att:
+            d = a['disposition']
+            charged += 0 if d in ('refused', 'not_dispatched') else (a['settled_microusd'] if d == 'completed' and a['settled_microusd'] is not None else a['reserved_microusd'])
+        ledger[k] = {'settled_microusd': r['settled_microusd'], 'charged_microusd_derived': charged if att else (r['settled_microusd'] if r['settled_microusd'] is not None else r['reserved_microusd']),
+                     'attempts': [{x: a.get(x) for x in ('attempt', 'route', 'payer', 'disposition', 'http_status', 'gate_entered', 'deadline_ms', 'framed_end_observed', 'reason', 'relay_sha256', 'refusal_body_sha256', 'settled_microusd')} for a in att]}
+    return ledger
+
 def docker_names(prefix):
     out = subprocess.run(['docker', 'ps', '-a', '--format', '{{.Names}}'], capture_output=True, text=True).stdout.split()
     return sorted(n for n in out if n.startswith(prefix))
@@ -152,36 +167,44 @@ def main():
     q.wait()
     elapsed = round(time.time() - started, 1)
     time.sleep(1)
-    rest = drain()
-    obs.kill(); obs.wait()
-    for line in (buf + rest).splitlines():
-        obs_out.write(line + '\n')
-        try: events.append(json.loads(line))
-        except ValueError: pass
-    obs_out.close()
+    def collect():
+        nonlocal_buf = buf + drain()
+        lines = nonlocal_buf.split('\n')
+        for line in lines[:-1]:
+            obs_out.write(line + '\n'); obs_out.flush()
+            try: events.append(json.loads(line))
+            except ValueError: pass
+        return lines[-1]
+    buf = collect()
+    dispatches = lambda: [e for e in events if e.get('type') in ('served', 'refused', 'failed')]
+    dispatched_at_exit = len(dispatches())
     state = base / 'state'
     j = json.loads((state / 'pi-state.json').read_text())
     prefix = j['container_name']
     before = docker_names(prefix)
     recon = None
+    ledger_after_reconcile = None
     if action == 'crash':
+        # The observer stays up through reconcile and the replay attempt, so
+        # any dispatch they made would be recorded as a receipt.
         rc = subprocess.run([str(QUAL), 'pi-docker', 'reconcile', '--state', str(state)], capture_output=True, text=True)
         recon = {'exit': rc.returncode, 'stdout_tail': rc.stdout.strip()[-300:], 'stderr_tail': rc.stderr.strip()[-300:]}
-        j = json.loads((state / 'pi-state.json').read_text())
+        ledger_after_reconcile = ledger_of(json.loads((state / 'pi-state.json').read_text()))
         replay = subprocess.run([str(QUAL), '--execute', str(job_path)], capture_output=True, text=True)
         recon['replay_exit'] = replay.returncode
         recon['replay_stderr'] = replay.stderr.strip()[-200:]
+        time.sleep(2)
+        buf = collect()
+        recon['observer_alive_after_replay'] = obs.poll() is None
+        j = json.loads((state / 'pi-state.json').read_text())
+    recon_dispatches = len(dispatches()) - dispatched_at_exit
+    obs.kill(); obs.wait()
+    if buf:
+        obs_out.write(buf + '\n')
+    obs_out.close()
     after = docker_names(prefix)
     c = j['coding']
-    ledger = {}
-    for k, r in c['provider_requests'].items():
-        att = r.get('attempts', [])
-        charged = 0
-        for a in att:
-            d = a['disposition']
-            charged += 0 if d in ('refused', 'not_dispatched') else (a['settled_microusd'] if d == 'completed' and a['settled_microusd'] is not None else a['reserved_microusd'])
-        ledger[k] = {'settled_microusd': r['settled_microusd'], 'charged_microusd': charged if att else (r['settled_microusd'] if r['settled_microusd'] is not None else r['reserved_microusd']),
-                     'attempts': [{x: a.get(x) for x in ('attempt', 'route', 'disposition', 'http_status', 'gate_entered', 'reason', 'relay_sha256', 'refusal_body_sha256', 'settled_microusd')} for a in att]}
+    ledger = ledger_of(j)
     arts = [a for a in j['artifacts'] if '/coding-hosted-' in a['path']]
     def fsha(p):
         try: return hashlib.sha256(Path(p).read_bytes()).hexdigest()
@@ -196,6 +219,8 @@ def main():
         'gate_log': json.loads(gate_log.read_text()) if gate_log.exists() else None,
         'observer': [e for e in events if e.get('type') in ('served', 'refused', 'failed', 'fault', 'complete')],
         'containers_before_reconcile': before, 'containers_after': after, 'reconcile': recon,
+        'ledger_after_reconcile': ledger_after_reconcile, 'dispatches_after_exit': recon_dispatches,
+        'coding_qualification_sha256': fsha(QUAL), 'observer_sha256': fsha(OBSERVER),
     }
     (base / 'summary.json').write_text(json.dumps(summary, indent=1))
     print(json.dumps(summary, indent=1))

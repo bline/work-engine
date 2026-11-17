@@ -14,6 +14,14 @@
 //!   it), `stall-head` (no head) and `stall-body` (two events, then
 //!   silence). Stalls hold the connection until the peer closes
 //!   it and report when that happened.
+//! - `echo-body` (a text delta carrying the request's bearer before the
+//!   terminal event) and `echo-trailing` (an SSE comment carrying it after
+//!   the terminal event): the Host's access screen must stop both.
+//! - A secondary fault may name the served response it applies to:
+//!   `truncate@3` truncates the third (the first turn after the reset).
+//! - `primary-429-echo` (a 429 whose body carries the bearer) and
+//!   `primary-429-truncated` (a 429 whose body ends before its length): neither
+//!   is a definitive refusal.
 //!
 //! After a fault the observer keeps accepting, so any later dispatch (a
 //! forbidden failover or replay) is recorded as a receipt.
@@ -80,6 +88,9 @@ fn response(n: usize) -> Vec<u8> {
 struct Request {
     id: String,
     auth: String,
+    /// Raw bearer, held only to echo it in the `echo-*` scenarios; never
+    /// printed.
+    bearer: String,
     body: Vec<u8>,
 }
 fn read(s: &mut TcpStream) -> Result<Request, Box<dyn std::error::Error>> {
@@ -121,6 +132,7 @@ fn read(s: &mut TcpStream) -> Result<Request, Box<dyn std::error::Error>> {
     Ok(Request {
         id: field("x-request-id")?,
         auth: hash(auth.as_bytes()),
+        bearer: auth.to_string(),
         body,
     })
 }
@@ -159,7 +171,16 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut refused = 0usize;
     let mut authority: Option<String> = None;
     let scenario = std::env::var("HOSTED_OBSERVER_SCENARIO").unwrap_or_else(|_| "ok".into());
-    const SCENARIOS: [&str; 11] = [
+    // `fault@N`: the secondary fault applies to the N-th served response.
+    let (scenario, fault_at) = match scenario.split_once('@') {
+        Some((f, n)) => (f.to_string(), n.parse::<usize>().map_err(|_| "fault index")?),
+        None => (scenario.clone(), 1),
+    };
+    const SCENARIOS: [&str; 15] = [
+        "echo-body",
+        "echo-trailing",
+        "primary-429-echo",
+        "primary-429-truncated",
         "trailing-data",
         "ok",
         "refuse-all",
@@ -242,6 +263,38 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             )?;
             continue;
         }
+        if route == "primary" && scenario == "primary-429-echo" {
+            refused += 1;
+            println!(
+                "{}",
+                json!({"type":"refused","status":429,"receipt":receipt,"fault":"echo"})
+            );
+            std::io::stdout().flush()?;
+            let body = json!({"error":{"code":"insufficient_quota","message":format!("synthetic echo {}", r.bearer)}}).to_string();
+            write!(
+                s,
+                "HTTP/1.1 429 Too Many Requests\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            )?;
+            continue;
+        }
+        if route == "primary" && scenario == "primary-429-truncated" {
+            refused += 1;
+            println!(
+                "{}",
+                json!({"type":"refused","status":429,"receipt":receipt,"fault":"truncated"})
+            );
+            std::io::stdout().flush()?;
+            let body = json!({"error":{"code":"insufficient_quota","message":"synthetic primary route quota exhausted"}}).to_string();
+            write!(
+                s,
+                "HTTP/1.1 429 Too Many Requests\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len() + 64,
+                &body[..body.len() / 2]
+            )?;
+            s.flush()?;
+            continue;
+        }
         if route == "primary" {
             refused += 1;
             println!(
@@ -264,7 +317,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             json!({"type":"served","effect":served,"receipt":receipt,"responseSha256":hash(&reply)})
         );
         std::io::stdout().flush()?;
-        let fault = if served == 1 { scenario.as_str() } else { "ok" };
+        let fault = if served == fault_at {
+            scenario.as_str()
+        } else {
+            "ok"
+        };
         if fault == "stall-head" {
             hold(&mut s, "stall-head", &r.id)?;
             continue;
@@ -275,6 +332,15 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         )?;
         let text = std::str::from_utf8(&reply)?;
         let mut events: Vec<String> = text.split_inclusive("\n\n").map(String::from).collect();
+        if fault == "echo-body" {
+            events.insert(
+                2,
+                format!(
+                    "data: {}\n\n",
+                    json!({"type":"response.output_text.delta","output_index":0,"content_index":0,"delta":format!("echo {}", r.bearer)})
+                ),
+            );
+        }
         if fault == "midstream-failed" {
             events.truncate(2);
             events.push(format!(
@@ -304,10 +370,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         if !ended {
             continue;
         }
-        if matches!(fault, "trailing" | "trailing-data") {
+        if matches!(fault, "trailing" | "trailing-data" | "echo-trailing") {
             std::thread::sleep(Duration::from_millis(200));
             let extra = if fault == "trailing" {
                 ": synthetic trailing bytes\n\n".to_string()
+            } else if fault == "echo-trailing" {
+                format!(": echo {}\n\n", r.bearer)
             } else {
                 format!(
                     "data: {}\n\n",

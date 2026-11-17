@@ -744,13 +744,6 @@ impl Host {
             self.hosted_uncertain(s.request, attempt, routed, "gate returned without dispatch")?;
             return refuse("hosted gate returned without dispatch evidence");
         };
-        // The attempt's create-only stream file exists before any byte is
-        // relayed; every relayed chunk is appended to it first (N3).
-        if let Err(e) = self.hosted_stream_create(s.request, attempt) {
-            abort();
-            self.hosted_uncertain(s.request, attempt, routed, "stream retention unavailable")?;
-            return Err(e);
-        }
         let session = match Session::start(
             reader,
             abort,
@@ -1037,7 +1030,8 @@ impl Host {
             .state_dir
             .join(format!("coding-hosted-{request}-{attempt}.stream.sse"))
     }
-    /// Create the attempt's empty stream file, create-only and durable.
+    /// Create the attempt's empty stream file, create-only and durable. Done
+    /// when the response head is relayed, so a refused head leaves none.
     fn hosted_stream_create(&self, request: u64, attempt: u64) -> Result<()> {
         let f = OpenOptions::new()
             .create_new(true)
@@ -1047,9 +1041,13 @@ impl Host {
         File::open(&self.journal.job.state_dir)?.sync_all()?;
         Ok(())
     }
-    /// Register the attempt's retained stream as a journal artifact.
+    /// Register the attempt's retained stream as a journal artifact. Without
+    /// a relayed head nothing was relayed: the file is created empty.
     fn hosted_stream_register(&mut self, request: u64, attempt: u64) -> Result<(String, Vec<u8>)> {
         let path = self.hosted_stream_path(request, attempt);
+        if !path.exists() {
+            self.hosted_stream_create(request, attempt)?;
+        }
         let bytes = fs::read(&path)?;
         let sha = digest(&bytes);
         self.journal.artifacts.push(Artifact {
@@ -1059,10 +1057,10 @@ impl Host {
         self.save()?;
         Ok((sha, bytes))
     }
-    /// Queue session frames for the container. Each relayed chunk is durably
-    /// appended to the attempt's stream file before it is queued, and the
-    /// relayed head status is persisted on the attempt record, so a Host
-    /// crash loses neither. A retention failure closes the attempt uncertain
+    /// Queue session frames for the container. Before the head is queued its
+    /// status is persisted on the attempt record and the attempt's stream
+    /// file is created; each relayed chunk is durably appended to that file
+    /// before it is queued. A Host crash loses neither. A retention failure closes the attempt uncertain
     /// without relaying the chunk.
     fn hosted_emit(&mut self, s: &mut Stream, attempt: u64, frames: Vec<Value>) -> Result<()> {
         for f in frames {
@@ -1079,6 +1077,7 @@ impl Host {
                         file.sync_data()?;
                     }
                     Some("response-head") => {
+                        self.hosted_stream_create(s.request, attempt)?;
                         if let Some(a) = self
                             .journal
                             .coding
@@ -1522,6 +1521,8 @@ mod tests {
             let a = h.journal.artifacts.iter().find(|a| a.path == path).unwrap();
             a.verify().unwrap();
         }
+        // A refused head relayed nothing: no stream file.
+        assert!(!dir.path().join("coding-hosted-1-1.stream.sse").exists());
         assert_eq!(r.attempts[0].disposition, AttemptDisposition::Refused);
         assert_eq!(r.attempts[0].http_status, Some(429));
         assert_eq!(r.attempts[1].disposition, AttemptDisposition::Completed);
