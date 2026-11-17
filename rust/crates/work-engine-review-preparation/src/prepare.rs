@@ -206,9 +206,80 @@ pub enum BlockerClass {
     Unestablished,
 }
 
+/// The closed family of a blocker: one variant per id family that [`prepare`] emits. Every
+/// emitted blocker carries exactly one kind, and its `id` has that kind's form (see
+/// [`BlockerKind::of_id`]). The kind names what is missing; it is not a disposition and states
+/// nothing about how, or whether, the blocker can be discharged.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BlockerKind {
+    /// `scope-digest-to-subject:<obligation>`
+    ScopeDigestToSubject,
+    /// `problem-scope-to-episode-identity`
+    ProblemScopeToEpisodeIdentity,
+    /// `consumption-evidence-mapping:<condition>`
+    ConsumptionEvidenceMapping,
+    /// `separation:<condition>`
+    Separation,
+    /// `observer-identity:<condition>`
+    ObserverIdentity,
+    /// `realization-admission:<condition>`
+    RealizationAdmission,
+    /// `component-binding:<component>`
+    ComponentBinding,
+    /// `authority-requirement:<authority>`
+    AuthorityRequirement,
+    /// `realization:<condition>:<property>`: one non-compatible check of a realization
+    /// evaluation, of either class.
+    RealizationCheck,
+}
+
+impl BlockerKind {
+    /// Every kind, in declaration order.
+    pub const ALL: [BlockerKind; 9] = [
+        BlockerKind::ScopeDigestToSubject,
+        BlockerKind::ProblemScopeToEpisodeIdentity,
+        BlockerKind::ConsumptionEvidenceMapping,
+        BlockerKind::Separation,
+        BlockerKind::ObserverIdentity,
+        BlockerKind::RealizationAdmission,
+        BlockerKind::ComponentBinding,
+        BlockerKind::AuthorityRequirement,
+        BlockerKind::RealizationCheck,
+    ];
+
+    /// The kind whose id form `id` has, or `None` for an id no family of [`prepare`] produces.
+    pub fn of_id(id: &str) -> Option<BlockerKind> {
+        let tail = |prefix: &str| id.strip_prefix(prefix).is_some_and(|rest| !rest.is_empty());
+        if id == "problem-scope-to-episode-identity" {
+            return Some(BlockerKind::ProblemScopeToEpisodeIdentity);
+        }
+        [
+            (
+                "scope-digest-to-subject:",
+                BlockerKind::ScopeDigestToSubject,
+            ),
+            (
+                "consumption-evidence-mapping:",
+                BlockerKind::ConsumptionEvidenceMapping,
+            ),
+            ("separation:", BlockerKind::Separation),
+            ("observer-identity:", BlockerKind::ObserverIdentity),
+            ("realization-admission:", BlockerKind::RealizationAdmission),
+            ("component-binding:", BlockerKind::ComponentBinding),
+            ("authority-requirement:", BlockerKind::AuthorityRequirement),
+            ("realization:", BlockerKind::RealizationCheck),
+        ]
+        .into_iter()
+        .find(|(prefix, _)| tail(prefix))
+        .map(|(_, kind)| kind)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Blocker {
     pub id: String,
+    pub kind: BlockerKind,
     pub class: BlockerClass,
     pub scope: String,
     pub requirement: String,
@@ -283,9 +354,16 @@ fn row_class(class: EvidenceClass) -> RowEvidenceClass {
     }
 }
 
-fn unestablished(id: String, scope: &str, requirement: &str, basis: &str) -> Blocker {
+fn unestablished(
+    kind: BlockerKind,
+    id: String,
+    scope: &str,
+    requirement: &str,
+    basis: &str,
+) -> Blocker {
     Blocker {
         id,
+        kind,
         class: BlockerClass::Unestablished,
         scope: scope.to_owned(),
         requirement: requirement.to_owned(),
@@ -449,12 +527,14 @@ pub fn prepare(
     let mut blockers = Vec::new();
     let obligation_id = obligation.id.as_str();
     blockers.push(unestablished(
+        BlockerKind::ScopeDigestToSubject,
         format!("scope-digest-to-subject:{obligation_id}"),
         obligation_id,
         "the obligation's scope.digest identifies the supplied exact subject",
         "no owner states the rule that relates scope.digest to the review subject; the supplied subject is carried as a claim",
     ));
     blockers.push(unestablished(
+        BlockerKind::ProblemScopeToEpisodeIdentity,
         "problem-scope-to-episode-identity".to_owned(),
         obligation_id,
         "the problem scope (run, plan lineage, slice) corresponds to a review episode identity",
@@ -462,6 +542,7 @@ pub fn prepare(
     ));
     for separation in &host_enforcement.separation {
         blockers.push(unestablished(
+            BlockerKind::Separation,
             format!("separation:{}", separation.condition),
             &separation.condition,
             &format!(
@@ -475,6 +556,7 @@ pub fn prepare(
     for condition in &selection.conditions {
         let scope = condition.id.as_str();
         blockers.push(unestablished(
+            BlockerKind::ConsumptionEvidenceMapping,
             format!("consumption-evidence-mapping:{scope}"),
             scope,
             &format!(
@@ -490,6 +572,7 @@ pub fn prepare(
         });
         if let Some(row) = observer {
             blockers.push(unestablished(
+                BlockerKind::ObserverIdentity,
                 format!("observer-identity:{scope}"),
                 scope,
                 &row.requirement,
@@ -497,6 +580,7 @@ pub fn prepare(
             ));
         }
         blockers.push(unestablished(
+            BlockerKind::RealizationAdmission,
             format!("realization-admission:{scope}"),
             scope,
             "the realization is admitted with evidence of the required capabilities, mutation, provider family and confinement",
@@ -505,6 +589,7 @@ pub fn prepare(
     }
     for component in &host_enforcement.component_binding {
         blockers.push(unestablished(
+            BlockerKind::ComponentBinding,
             format!("component-binding:{}", component.component),
             &component.component,
             &format!(
@@ -516,6 +601,7 @@ pub fn prepare(
     }
     for authority in &host_enforcement.authority {
         blockers.push(unestablished(
+            BlockerKind::AuthorityRequirement,
             format!("authority-requirement:{}", authority.id),
             &authority.id,
             &format!("{} holds {}", authority.principal, authority.permission),
@@ -532,6 +618,7 @@ pub fn prepare(
                 };
                 blockers.push(Blocker {
                     id: format!("realization:{}:{}", condition.condition, check.property),
+                    kind: BlockerKind::RealizationCheck,
                     class,
                     scope: condition.condition.clone(),
                     requirement: format!("{} = {}", check.property, check.required),

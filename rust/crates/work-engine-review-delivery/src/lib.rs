@@ -17,6 +17,11 @@
 //! same checked binding. [`FrozenDelivery`] is a transport byte type; freezing never establishes
 //! canonical derivation.
 //!
+//! With `fixture`, the R2-S gate ([`gate`]) refuses delivery before any child is spawned, and
+//! again immediately before consumption, on a known realization incompatibility or a blocker kind
+//! without a discharge. The host derives the realization description from what it runs; the only
+//! discharges are labelled fixture **assumptions** (`AssumedDischarge`), not admissions.
+//!
 //! Nothing here clears a preparation blocker, creates an admission, grants capability or accepts
 //! anything. Session/attempt bindings are transport correspondences, never grants. The fixture
 //! child is behaviour-constrained fixture code, not an OS sandbox.
@@ -36,6 +41,8 @@ use work_engine_review_preparation::ReviewPreparation;
 pub mod attempt;
 #[cfg(feature = "fixture")]
 pub mod binding;
+#[cfg(feature = "fixture")]
+pub mod gate;
 #[cfg(feature = "fixture")]
 pub mod native;
 pub mod wire;

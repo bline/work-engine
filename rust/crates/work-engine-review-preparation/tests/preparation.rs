@@ -10,7 +10,7 @@ use work_engine_organization::{
     EnforceStatus, OrganizationalRequirements, Profile, enforceability, view,
 };
 use work_engine_review_preparation::{
-    BlockerClass, Disposition, MutationClaim, PreparationRefusal, PreparationStatus,
+    BlockerClass, BlockerKind, Disposition, MutationClaim, PreparationRefusal, PreparationStatus,
     RealizationClaim, ReviewPreparation, RowStatus, Subject, prepare,
 };
 
@@ -374,6 +374,50 @@ fn a_matching_descriptor_is_a_claim_and_clears_no_blocker() {
             .iter()
             .all(|b| b.class == BlockerClass::Unestablished)
     );
+}
+
+/// R2-S invariant 1: every emitted blocker has exactly one closed kind, and the kind is the one
+/// its id family names. Adding the kind changes no id, class, scope, requirement or basis.
+#[test]
+fn every_emitted_blocker_has_exactly_the_kind_its_id_family_names() {
+    let unstated = RealizationClaim {
+        provider_family: None,
+        execution_confinement: Some("none".to_owned()),
+        mutation: MutationClaim::NotEstablished,
+        granted_tools: vec!["read".to_owned()],
+        continuity: None,
+    };
+    let mut seen = BTreeSet::new();
+    for claim in [None, Some(matching_claim()), Some(unstated)] {
+        let prep = prepare(&candidate(), &request(claim)).unwrap();
+        for blocker in &prep.blockers {
+            assert_eq!(
+                BlockerKind::of_id(&blocker.id),
+                Some(blocker.kind),
+                "{blocker:?}"
+            );
+            seen.insert(format!("{:?}", blocker.kind));
+        }
+        let json = serde_json::to_value(&prep.blockers).unwrap();
+        for blocker in json.as_array().unwrap() {
+            assert!(blocker["kind"].is_string(), "{blocker}");
+        }
+    }
+    let all: BTreeSet<String> = BlockerKind::ALL.iter().map(|k| format!("{k:?}")).collect();
+    assert_eq!(
+        seen, all,
+        "the frozen world emits every kind across these claims"
+    );
+    // Ids outside every family have no kind.
+    for id in [
+        "",
+        "separation:",
+        "problem-scope-to-episode-identity:x",
+        "novel:x",
+        "realization",
+    ] {
+        assert_eq!(BlockerKind::of_id(id), None, "{id}");
+    }
 }
 
 #[test]

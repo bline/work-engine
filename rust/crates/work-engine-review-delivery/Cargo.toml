@@ -33,6 +33,11 @@ path = "tests/native_vertical.rs"
 required-features = ["fixture"]
 
 [[test]]
+name = "gate"
+path = "tests/gate.rs"
+required-features = ["fixture"]
+
+[[test]]
 name = "binding"
 path = "tests/binding.rs"
 required-features = ["fixture"]

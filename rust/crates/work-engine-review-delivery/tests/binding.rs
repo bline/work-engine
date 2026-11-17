@@ -5,7 +5,9 @@
 //! and are exercised in native_vertical.rs.
 mod common;
 
-use common::world::{World, world};
+// The join checks run on the frozen world: they test the binding, which refuses nothing about
+// realization; the R2-S gate runs at delivery (native_vertical.rs).
+use common::world::{World, frozen_world as world, host_request};
 use common::*;
 use review_episode_core::codec::{digest, parse_json};
 use review_episode_core::command::BeginCommand;
@@ -17,7 +19,7 @@ use work_engine_review_delivery::Transport;
 use work_engine_review_delivery::binding::{BindingRefusal, EpisodeInputs, ExperimentBinding};
 use work_engine_review_preparation::fixture::{ConsumeRefusal, FixtureDeclaration};
 use work_engine_review_preparation::{
-    PreparationRefusal, PreparationRequest, ReviewPreparation, Subject, prepare,
+    BlockerClass, PreparationRefusal, PreparationRequest, ReviewPreparation, Subject, prepare,
 };
 
 fn transport() -> Transport {
@@ -103,8 +105,9 @@ fn the_canonical_world_binds_and_delivers_the_recomputed_preparation() {
     let w = world();
     let state = begun();
     let binding = bind(&w, &request(None), &w.declaration, &state).expect("canonical join");
-    let canonical = prepare(&w.candidate, &request(None)).unwrap();
+    let canonical = prepare(&w.candidate, &host_request()).unwrap();
     assert_eq!(binding.preparation(), &canonical);
+    assert_eq!(binding.request(), &host_request());
     let envelope: Value = serde_json::from_str(binding.frozen().contract()).unwrap();
     assert_eq!(
         envelope["preparation"],
@@ -253,7 +256,7 @@ fn a_different_candidate_or_obligation_is_refused_before_any_child() {
 fn altered_conditions_blockers_or_provenance_with_unchanged_identity_are_refused() {
     let w = world();
     let state = begun();
-    let canonical = prepare(&w.candidate, &request(None)).unwrap();
+    let canonical = prepare(&w.candidate, &host_request()).unwrap();
     let identity_before = (
         canonical.model_context.identity.clone(),
         canonical.model_context.obligation.id.clone(),
@@ -317,6 +320,68 @@ fn altered_conditions_blockers_or_provenance_with_unchanged_identity_are_refused
             other => panic!("{expected_part}: expected a mismatch, got {other:?}"),
         }
     }
+}
+
+/// R2-S invariant 2: the realization description on the delivered path is the host's, derived from
+/// what it runs. A caller can neither supply one nor bypass it with a supplied preparation.
+#[test]
+fn the_host_derives_the_realization_description_and_a_caller_cannot_supply_or_bypass_it() {
+    let w = world();
+    let state = begun();
+    let binding = bind(&w, &request(None), &w.declaration, &state).expect("canonical join");
+    let evaluation = binding
+        .preparation()
+        .realization_evaluation
+        .as_ref()
+        .expect("the delivered path carries a realization evaluation");
+    assert_eq!(evaluation.conditions.len(), 2);
+    // The frozen world's constraints meet the host's truthful description: known incompatibilities.
+    let incompatible: Vec<&str> = binding
+        .preparation()
+        .blockers
+        .iter()
+        .filter(|b| b.class == BlockerClass::KnownIncompatibility)
+        .map(|b| b.id.as_str())
+        .collect();
+    assert_eq!(
+        incompatible,
+        [
+            format!("realization:{COND_BUILDER}:realization:execution_confinement"),
+            format!("realization:{COND_BUILDER}:realization:provider_family"),
+            format!("realization:{COND_CAMPAIGN}:realization:execution_confinement"),
+            format!("realization:{COND_CAMPAIGN}:realization:provider_family"),
+        ]
+    );
+
+    // A caller-supplied claim, even one matching every requirement, is refused before any child.
+    for claim in [matching_claim(), host_request().realization.unwrap()] {
+        let e = bind(&w, &request(Some(claim)), &w.declaration, &state).unwrap_err();
+        assert!(matches!(e, BindingRefusal::CallerRealization), "{e:?}");
+    }
+    // A supplied preparation derived without the host's description is not the canonical one.
+    let without = prepare(&w.candidate, &request(None)).unwrap();
+    let e = supplied(&w, &request(None), &state, &without).unwrap_err();
+    assert!(
+        matches!(
+            e,
+            BindingRefusal::PreparationMismatch {
+                part: "realization_evaluation"
+            }
+        ),
+        "{e:?}"
+    );
+    // Nor is one derived with a caller's matching claim.
+    let matching = prepare(&w.candidate, &request(Some(matching_claim()))).unwrap();
+    let e = supplied(&w, &request(None), &state, &matching).unwrap_err();
+    assert!(
+        matches!(
+            e,
+            BindingRefusal::PreparationMismatch {
+                part: "realization_evaluation"
+            }
+        ),
+        "{e:?}"
+    );
 }
 
 #[test]

@@ -27,6 +27,10 @@ pub const ACCEPTABLE: &str = include_str!(
     "../../../../../app-server/tests/fixtures/implementation-review/acceptable-as-is.json"
 );
 
+/// The R2-S assumption world: the frozen requirements without `realizationConstraints` (see
+/// `tests/fixtures/assumption-world/DERIVATION.md`). A labelled synthetic fixture.
+pub const ASSUMPTION_REQ: &[u8] = include_bytes!("../fixtures/assumption-world/requirements.json");
+
 pub const OBLIGATION: &str = "rp3-initial-implementation-review";
 pub const COND_BUILDER: &str = "cond-builder-projection";
 pub const COND_CAMPAIGN: &str = "cond-campaign-terminalization";
@@ -45,6 +49,11 @@ pub fn candidate_from(bytes: &[u8]) -> OrganizationCandidate {
 
 pub fn candidate() -> OrganizationCandidate {
     candidate_from(REQ)
+}
+
+/// The assumption world's candidate, compiled by the unchanged v1 compiler.
+pub fn assumption_candidate() -> OrganizationCandidate {
+    candidate_from(ASSUMPTION_REQ)
 }
 
 /// The frozen requirements with `edit` applied, as authored JSON bytes.
@@ -143,9 +152,37 @@ pub mod world {
         authority["identity"][key].clone()
     }
 
-    /// A synthetic world: the declaration and the admissions that agree with it.
+    /// The request the host prepares with: the frozen obligation and subject with the host's own
+    /// realization description (what the binding derives internally).
+    pub fn host_request() -> PreparationRequest {
+        let cfg = work_engine_review_delivery::native::NativeConfig {
+            node: "node".into(),
+            adapter: work_engine_review_delivery::native::NativeConfig::default_adapter(),
+            sdk_root: "unused".into(),
+            fixture_root: "unused".into(),
+            timeout: std::time::Duration::from_secs(1),
+            cleanup: std::time::Duration::from_secs(1),
+            control: work_engine_review_delivery::native::Control::Positive,
+            limits: Default::default(),
+        };
+        request(Some(
+            work_engine_review_delivery::native::realization_description(&cfg),
+        ))
+    }
+
+    /// The R2-S synthetic world the native suite runs on: the assumption world (no realization
+    /// constraints), its declaration and the admissions that agree with it.
     pub fn world() -> World {
-        let candidate = candidate();
+        world_from(assumption_candidate())
+    }
+
+    /// The frozen world: the R2-S negative (known realization incompatibility before spawn).
+    pub fn frozen_world() -> World {
+        world_from(candidate())
+    }
+
+    /// A synthetic world over `candidate`: the declaration and the admissions that agree with it.
+    pub fn world_from(candidate: OrganizationCandidate) -> World {
         let selection: Value = serde_json::from_slice(SELECTION).unwrap();
         let authority: Value = serde_json::from_str(AUTHORITY).unwrap();
         let mut bindings = Vec::new();
