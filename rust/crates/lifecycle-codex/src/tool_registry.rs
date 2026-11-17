@@ -12,6 +12,79 @@ const ROW_LIMIT: usize = 512 * 1024;
 const ROW_COUNT_LIMIT: usize = 2048;
 const CODE_MODE_NAMES: [&str; 2] = ["exec", "wait"];
 
+/// Native-core utilities the private native build registers under the selected launch
+/// profile although Work Engine did not request them. Root approved them by exact name,
+/// exposure and spec digest (decision recorded in 003-build/CONTINUATION.md, 2026-11-17).
+/// Digests are pinned from the strict snapshot of native binary
+/// `77fbfa4bfd4d62f095b182a6606025345f84c126653a5713ec47388275734d39` and reproduced by
+/// `testdata/native_utilities_77fbfa4b.json`. Tuple: namespace, name, exposure, nested
+/// code-mode name (present only when code mode is hosted), SHA-256 of the serialized spec.
+/// Any other extra tool, a missing one, another exposure or another digest is refused.
+type ApprovedNativeUtility = (
+    Option<&'static str>,
+    &'static str,
+    &'static str,
+    Option<&'static str>,
+    &'static str,
+);
+const APPROVED_NATIVE_UTILITIES: [ApprovedNativeUtility; 7] = [
+    (
+        None,
+        "list_mcp_resources",
+        "direct",
+        Some("list_mcp_resources"),
+        "5aef64ff99b28c2c096ea2dc4e5673502a4c291736d64132dc9e4e939f509f6e",
+    ),
+    (
+        None,
+        "list_mcp_resource_templates",
+        "direct",
+        Some("list_mcp_resource_templates"),
+        "7f87264594875ab2a6f833c1b92164f6a75641ea1dcb2d2fab4facb35c3f7dfe",
+    ),
+    (
+        None,
+        "read_mcp_resource",
+        "direct",
+        Some("read_mcp_resource"),
+        "23f2d43fece9ce15ecf4d9b3e283cd56d1f9dd14b5ee54455e9aca97a7accd9f",
+    ),
+    (
+        None,
+        "request_user_input",
+        "direct_model_only",
+        None,
+        "d966b55e964da3155fb6956528a375b7cea02b3fc189086b7d9225f4d025fa6c",
+    ),
+    (
+        None,
+        "request_user_input_async",
+        "direct_model_only",
+        None,
+        "1758e0ef7a3d190edbdad3fe9dadda9bd000d896a3eb2bd82f8dec5ff7cbef0a",
+    ),
+    (
+        Some("clock"),
+        "curr_time",
+        "direct",
+        Some("clock__curr_time"),
+        "b556f2120a2088545bd8017ac712122cd877288d6b9403602829947228a1a14b",
+    ),
+    (
+        Some("clock"),
+        "sleep",
+        "direct_model_only",
+        None,
+        "b91c24597c3acf3a1a35d85a764f631374f17c327ede58ce518808aff1e5c24d",
+    ),
+];
+
+fn approved_utility(key: &ToolKey) -> Option<&'static ApprovedNativeUtility> {
+    APPROVED_NATIVE_UTILITIES
+        .iter()
+        .find(|u| u.0 == key.0.as_deref() && u.1 == key.1)
+}
+
 type ToolKey = (Option<String>, String);
 
 #[derive(Debug, Clone)]
@@ -61,6 +134,11 @@ impl ExpectedToolSet {
         if self.code_mode_host {
             keys.extend(CODE_MODE_NAMES.map(|name| (None, name.to_owned())));
         }
+        keys.extend(
+            APPROVED_NATIVE_UTILITIES
+                .iter()
+                .map(|u| (u.0.map(str::to_owned), u.1.to_owned())),
+        );
         keys
     }
 }
@@ -344,6 +422,15 @@ fn check_snapshot(
         } else if !tool["code_mode_name"].is_null() {
             return Err(UNAVAILABLE);
         }
+        if let Some(approved) = approved_utility(&key) {
+            let nested_name = expected.code_mode_host.then_some(approved.3).flatten();
+            if tool["exposure"] != approved.2
+                || tool["code_mode_name"].as_str() != nested_name
+                || tool["spec_sha256"] != approved.4
+            {
+                return Err(SPEC);
+            }
+        }
         if let Some(requested) = expected.tools.iter().find(|t| t.key == key) {
             let exposure = if requested.deferred {
                 "deferred"
@@ -374,11 +461,18 @@ fn check_snapshot(
         .collect::<Option<BTreeSet<_>>>()
         .ok_or(UNAVAILABLE)?;
     let nested_expected = if expected.code_mode_host {
-        &requested
+        let mut all = requested;
+        all.extend(
+            APPROVED_NATIVE_UTILITIES
+                .iter()
+                .filter(|u| u.3.is_some())
+                .map(|u| (u.0.map(str::to_owned), u.1.to_owned())),
+        );
+        all
     } else {
-        &BTreeSet::new()
+        BTreeSet::new()
     };
-    if &reported_keys != nested_expected || reported.len() != nested.len() {
+    if reported_keys != nested_expected || reported.len() != nested.len() {
         return Err(EXTRA_OR_MISSING);
     }
     let specs = row["model_visible_specs"].clone();
@@ -419,7 +513,65 @@ fn spec_matches(spec: &Value, requested: &ExpectedTool) -> bool {
     function["type"] == "function"
         && function["name"] == requested.key.1.as_str()
         && function["description"] == requested.description.as_str()
-        && function["parameters"] == requested.input_schema
+        && function["parameters"] == native_sanitized(&requested.input_schema)
+}
+
+/// Keywords of native's `JsonSchema` struct (`codex-rs/tools/src/json_schema/types.rs`).
+/// `parse_tool_input_schema` (`json_schema.rs`, used by `parse_dynamic_tool`) deserializes
+/// every dynamic tool schema into that struct, so serde drops every other keyword
+/// (`minimum`, `maximum`, `format`, `pattern`, `default`, ...). That closed set is the only
+/// difference this check tolerates between sent and finalized schemas. The sanitizer also
+/// rewrites some shapes (boolean schemas, `const`, missing `items`/`properties`) and
+/// compacts schemas above 5000 bytes; those are deliberately not modeled, so a tool needing
+/// them does not match and is refused.
+const NATIVE_SCHEMA_KEYWORDS: [&str; 15] = [
+    "$ref",
+    "type",
+    "description",
+    "encrypted",
+    "enum",
+    "items",
+    "minItems",
+    "properties",
+    "required",
+    "additionalProperties",
+    "anyOf",
+    "oneOf",
+    "allOf",
+    "$defs",
+    "definitions",
+];
+
+fn native_sanitized(schema: &Value) -> Value {
+    let Some(map) = schema.as_object() else {
+        return schema.clone();
+    };
+    let schema_child = |key: &str, value: &Value| -> Value {
+        match key {
+            "items" => native_sanitized(value),
+            "additionalProperties" if value.is_object() => native_sanitized(value),
+            "properties" | "$defs" | "definitions" => match value.as_object() {
+                Some(named) => Value::Object(
+                    named
+                        .iter()
+                        .map(|(name, child)| (name.clone(), native_sanitized(child)))
+                        .collect(),
+                ),
+                None => value.clone(),
+            },
+            "anyOf" | "oneOf" | "allOf" => match value.as_array() {
+                Some(list) => Value::Array(list.iter().map(native_sanitized).collect()),
+                None => value.clone(),
+            },
+            _ => value.clone(),
+        }
+    };
+    Value::Object(
+        map.iter()
+            .filter(|(key, _)| NATIVE_SCHEMA_KEYWORDS.contains(&key.as_str()))
+            .map(|(key, value)| (key.clone(), schema_child(key, value)))
+            .collect(),
+    )
 }
 
 /// Every model-visible spec must belong to the expected set: hosted, search and other
@@ -450,11 +602,19 @@ pub(crate) mod fixtures {
     use super::*;
     use serde_json::json;
 
+    /// The seven approved native utilities exactly as the native snapshot of binary
+    /// 77fbfa4b recorded them.
+    pub(crate) fn approved_utilities() -> Vec<Value> {
+        serde_json::from_str::<Vec<Value>>(include_str!(
+            "../testdata/native_utilities_77fbfa4b.json"
+        ))
+        .unwrap()
+    }
     pub(crate) fn dynamic_tools() -> Value {
         json!([
             {"type":"namespace","name":"workspace","description":"read","tools":[
                 {"type":"function","name":"snapshot_read","description":"Read one member",
-                 "inputSchema":{"type":"object","properties":{"member_id":{"type":"string"}},"additionalProperties":false}}]},
+                 "inputSchema":{"type":"object","properties":{"member_id":{"type":"string"},"length":{"type":"integer","minimum":1,"maximum":65536}},"additionalProperties":false}}]},
             {"type":"namespace","name":"task","description":"task","tools":[
                 {"type":"function","name":"result_publish","description":"Publish a result",
                  "inputSchema":{"type":"object","properties":{"body":{"type":"string"}},"additionalProperties":false}}]}
@@ -467,7 +627,7 @@ pub(crate) mod fixtures {
         let tool = &entry["tools"][0];
         json!({"type":"namespace","name":entry["name"],"description":entry["description"],
             "tools":[{"type":"function","name":tool["name"],"description":tool["description"],
-                "strict":false,"parameters":tool["inputSchema"]}]})
+                "strict":false,"parameters":native_sanitized(&tool["inputSchema"])}]})
     }
     pub(crate) fn seal(snapshot: &mut Value) {
         for tool in snapshot["registered_tools"].as_array_mut().unwrap() {
@@ -502,6 +662,16 @@ pub(crate) mod fixtures {
             "model_visible_specs":[workspace,task,exec,wait],
             "model_visible_specs_sha256":"","model_visible_specs_responses_lite":[],
             "model_visible_specs_responses_lite_sha256":""});
+        for utility in approved_utilities() {
+            if let Some(nested) = utility["code_mode_name"].as_str() {
+                row["code_mode_tools"][nested] =
+                    json!({"namespace":utility["namespace"],"name":utility["name"]});
+            }
+            row["registered_tools"]
+                .as_array_mut()
+                .unwrap()
+                .push(utility);
+        }
         row["model_visible_specs_responses_lite"] = json!([{"type":"namespace","name":"functions",
             "description":"functions","tools":[row["model_visible_specs"][2].clone(), row["model_visible_specs"][3].clone()]}]);
         seal(&mut row);
@@ -570,6 +740,94 @@ mod tests {
     }
     fn refused(rows: &[Value], sends: &[SendCitation], reason: Refused) {
         assert_eq!(run(rows, sends).unwrap_err(), reason);
+    }
+
+    #[test]
+    fn approved_native_utilities_are_pinned_to_the_observed_snapshot() {
+        let observed = approved_utilities();
+        assert_eq!(observed.len(), APPROVED_NATIVE_UTILITIES.len());
+        for approved in APPROVED_NATIVE_UTILITIES {
+            let tool = observed
+                .iter()
+                .find(|t| t["name"] == approved.1 && t["namespace"].as_str() == approved.0)
+                .unwrap();
+            assert_eq!(tool["exposure"], approved.2);
+            assert_eq!(tool["code_mode_name"].as_str(), approved.3);
+            assert_eq!(sha(&tool["spec"]).unwrap(), approved.4);
+            assert_eq!(tool["spec_sha256"], approved.4);
+        }
+    }
+
+    #[test]
+    fn unapproved_native_utility_or_changed_approved_utility_is_refused() {
+        let (rows, sends) = positive();
+        // An extra native utility outside the approved list.
+        let mut extra = rows.clone();
+        let mut view_image = approved_utilities().remove(0);
+        view_image["name"] = json!("view_image");
+        view_image["code_mode_name"] = json!("view_image");
+        extra[0]["registered_tools"]
+            .as_array_mut()
+            .unwrap()
+            .push(view_image);
+        extra[0]["code_mode_tools"]["view_image"] = json!({"namespace":null,"name":"view_image"});
+        seal(&mut extra[0]);
+        refused(&extra, &sends, EXTRA_OR_MISSING);
+        // A changed spec for an approved utility changes the pinned digest.
+        let mut changed = rows.clone();
+        for tool in changed[0]["registered_tools"].as_array_mut().unwrap() {
+            if tool["name"] == "read_mcp_resource" {
+                tool["spec"]["description"] = json!("changed after approval");
+            }
+        }
+        seal(&mut changed[0]);
+        refused(&changed, &sends, SPEC);
+        // A changed exposure of an approved utility.
+        let mut exposure = rows.clone();
+        for tool in exposure[0]["registered_tools"].as_array_mut().unwrap() {
+            if tool["name"] == "sleep" {
+                tool["exposure"] = json!("direct");
+            }
+        }
+        refused(&exposure, &sends, SPEC);
+        // A missing approved utility.
+        let mut missing = rows.clone();
+        missing[0]["registered_tools"]
+            .as_array_mut()
+            .unwrap()
+            .retain(|t| t["name"] != "curr_time");
+        refused(&missing, &sends, EXTRA_OR_MISSING);
+    }
+
+    #[test]
+    fn native_schema_sanitizer_keywords_are_tolerated_and_others_are_refused() {
+        let requested = json!({"type":"object","properties":{
+            "length":{"type":"integer","minimum":1,"maximum":65536,"format":"int64"},
+            "minimum":{"type":"string","pattern":"^a"}},"required":["length"],
+            "additionalProperties":false});
+        // Native drops exactly the keywords outside its JsonSchema struct; property names
+        // that spell a dropped keyword are kept.
+        assert_eq!(
+            native_sanitized(&requested),
+            json!({"type":"object","properties":{
+                "length":{"type":"integer"},"minimum":{"type":"string"}},
+                "required":["length"],"additionalProperties":false})
+        );
+        let mut rows = positive().0;
+        let sends = positive().1;
+        for tool in rows[0]["registered_tools"].as_array_mut().unwrap() {
+            if tool["name"] == "result_publish" {
+                tool["spec"]["tools"][0]["parameters"]["properties"]["body"]["type"] =
+                    json!("integer");
+            }
+        }
+        for spec in rows[0]["model_visible_specs"].as_array_mut().unwrap() {
+            if spec["name"] == "task" {
+                spec["tools"][0]["parameters"]["properties"]["body"]["type"] = json!("integer");
+            }
+        }
+        seal(&mut rows[0]);
+        refused(&rows, &sends, SPEC);
     }
 
     #[test]
@@ -829,7 +1087,7 @@ mod tests {
         duplicate.as_array_mut().unwrap().push(first);
         assert!(ExpectedToolSet::from_dynamic_tools(&duplicate, true).is_none());
         let direct = ExpectedToolSet::from_dynamic_tools(&dynamic_tools(), false).unwrap();
-        assert_eq!(direct.keys().len(), 2);
-        assert_eq!(expected().keys().len(), 4);
+        assert_eq!(direct.keys().len(), 9);
+        assert_eq!(expected().keys().len(), 11);
     }
 }

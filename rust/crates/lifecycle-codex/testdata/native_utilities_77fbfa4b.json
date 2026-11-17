@@ -1,0 +1,272 @@
+[
+ {
+  "cached_runtime": false,
+  "code_mode_name": "list_mcp_resources",
+  "exposure": "direct",
+  "name": "list_mcp_resources",
+  "namespace": null,
+  "spec": {
+   "description": "Lists resources provided by MCP servers. Resources allow servers to share data that provides context to language models, such as files, database schemas, or application-specific information. Prefer resources over web search when possible.",
+   "name": "list_mcp_resources",
+   "parameters": {
+    "additionalProperties": false,
+    "properties": {
+     "cursor": {
+      "description": "Opaque cursor from a previous list_mcp_resources call; omit for the first page.",
+      "type": "string"
+     },
+     "server": {
+      "description": "MCP server name. Omit to list resources from every configured server.",
+      "type": "string"
+     }
+    },
+    "type": "object"
+   },
+   "strict": false,
+   "type": "function"
+  },
+  "spec_sha256": "5aef64ff99b28c2c096ea2dc4e5673502a4c291736d64132dc9e4e939f509f6e"
+ },
+ {
+  "cached_runtime": false,
+  "code_mode_name": "list_mcp_resource_templates",
+  "exposure": "direct",
+  "name": "list_mcp_resource_templates",
+  "namespace": null,
+  "spec": {
+   "description": "Lists resource templates provided by MCP servers. Parameterized resource templates allow servers to share data that takes parameters and provides context to language models, such as files, database schemas, or application-specific information. Prefer resource templates over web search when possible.",
+   "name": "list_mcp_resource_templates",
+   "parameters": {
+    "additionalProperties": false,
+    "properties": {
+     "cursor": {
+      "description": "Opaque cursor from a previous list_mcp_resource_templates call; omit for the first page.",
+      "type": "string"
+     },
+     "server": {
+      "description": "MCP server name. Omit to list resource templates from every configured server.",
+      "type": "string"
+     }
+    },
+    "type": "object"
+   },
+   "strict": false,
+   "type": "function"
+  },
+  "spec_sha256": "7f87264594875ab2a6f833c1b92164f6a75641ea1dcb2d2fab4facb35c3f7dfe"
+ },
+ {
+  "cached_runtime": false,
+  "code_mode_name": "read_mcp_resource",
+  "exposure": "direct",
+  "name": "read_mcp_resource",
+  "namespace": null,
+  "spec": {
+   "description": "Read a specific resource from an MCP server given the server name and resource URI.",
+   "name": "read_mcp_resource",
+   "parameters": {
+    "additionalProperties": false,
+    "properties": {
+     "server": {
+      "description": "MCP server name exactly as configured. Must match the 'server' field returned by list_mcp_resources.",
+      "type": "string"
+     },
+     "uri": {
+      "description": "Resource URI to read. Must be one of the URIs returned by list_mcp_resources.",
+      "type": "string"
+     }
+    },
+    "required": [
+     "server",
+     "uri"
+    ],
+    "type": "object"
+   },
+   "strict": false,
+   "type": "function"
+  },
+  "spec_sha256": "23f2d43fece9ce15ecf4d9b3e283cd56d1f9dd14b5ee54455e9aca97a7accd9f"
+ },
+ {
+  "cached_runtime": false,
+  "code_mode_name": null,
+  "exposure": "direct_model_only",
+  "name": "request_user_input",
+  "namespace": null,
+  "spec": {
+   "description": "Request user input for one to three short questions and wait for the response. This tool is only available in Plan mode.",
+   "name": "request_user_input",
+   "parameters": {
+    "additionalProperties": false,
+    "properties": {
+     "questions": {
+      "description": "Questions to show the user. Prefer 1 and do not exceed 3",
+      "items": {
+       "additionalProperties": false,
+       "properties": {
+        "header": {
+         "description": "Short header label shown in the UI (12 or fewer chars).",
+         "type": "string"
+        },
+        "id": {
+         "description": "Stable identifier for mapping answers (snake_case).",
+         "type": "string"
+        },
+        "options": {
+         "description": "Provide 2-3 mutually exclusive choices. Put the recommended option first and suffix its label with \"(Recommended)\". Do not include an \"Other\" option in this list; the client will add a free-form \"Other\" option automatically.",
+         "items": {
+          "additionalProperties": false,
+          "properties": {
+           "description": {
+            "description": "One short sentence explaining impact/tradeoff if selected.",
+            "type": "string"
+           },
+           "label": {
+            "description": "User-facing label (1-5 words).",
+            "type": "string"
+           }
+          },
+          "required": [
+           "label",
+           "description"
+          ],
+          "type": "object"
+         },
+         "type": "array"
+        },
+        "question": {
+         "description": "Single-sentence prompt shown to the user.",
+         "type": "string"
+        }
+       },
+       "required": [
+        "id",
+        "header",
+        "question",
+        "options"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "questions"
+    ],
+    "type": "object"
+   },
+   "strict": false,
+   "type": "function"
+  },
+  "spec_sha256": "d966b55e964da3155fb6956528a375b7cea02b3fc189086b7d9225f4d025fa6c"
+ },
+ {
+  "cached_runtime": false,
+  "code_mode_name": null,
+  "exposure": "direct_model_only",
+  "name": "request_user_input_async",
+  "namespace": null,
+  "spec": {
+   "description": "Ask the user one or more questions during ongoing work. Use this tool only to request missing information, preferences, constraints, clarification, or approval. The tool returns immediately without ending the turn or waiting for a reply; any reply arrives asynchronously as a new user message. Keep questions concise, self-contained, and easy to understand, using a level of detail appropriate to the user and task. The UI always allows a free-text answer, including when suggested options are provided. A preselected option is not submitted automatically.",
+   "name": "request_user_input_async",
+   "parameters": {
+    "additionalProperties": false,
+    "properties": {
+     "questions": {
+      "description": "One or more self-contained questions to present together, in display order.",
+      "items": {
+       "additionalProperties": false,
+       "properties": {
+        "options": {
+         "description": "Suggested answers, in display order. Put the recommended answer first; the first option is preselected by default. The user can select one option or enter a free-text answer. Do not include an Other option or a free-text placeholder; the UI provides free-text input automatically. Omit options for a free-text-only question.",
+         "items": {
+          "type": "string"
+         },
+         "minItems": 1,
+         "type": "array"
+        },
+        "title": {
+         "description": "The complete question shown to the user, including any context needed to answer it.",
+         "type": "string"
+        }
+       },
+       "required": [
+        "title"
+       ],
+       "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+     }
+    },
+    "required": [
+     "questions"
+    ],
+    "type": "object"
+   },
+   "strict": false,
+   "type": "function"
+  },
+  "spec_sha256": "1758e0ef7a3d190edbdad3fe9dadda9bd000d896a3eb2bd82f8dec5ff7cbef0a"
+ },
+ {
+  "cached_runtime": false,
+  "code_mode_name": "clock__curr_time",
+  "exposure": "direct",
+  "name": "curr_time",
+  "namespace": "clock",
+  "spec": {
+   "description": "Tools for reading and waiting on time.",
+   "name": "clock",
+   "tools": [
+    {
+     "description": "Return the current time in UTC.",
+     "name": "curr_time",
+     "parameters": {
+      "additionalProperties": false,
+      "properties": {},
+      "type": "object"
+     },
+     "strict": false,
+     "type": "function"
+    }
+   ],
+   "type": "namespace"
+  },
+  "spec_sha256": "b556f2120a2088545bd8017ac712122cd877288d6b9403602829947228a1a14b"
+ },
+ {
+  "cached_runtime": false,
+  "code_mode_name": null,
+  "exposure": "direct_model_only",
+  "name": "sleep",
+  "namespace": "clock",
+  "spec": {
+   "description": "Tools for reading and waiting on time.",
+   "name": "clock",
+   "tools": [
+    {
+     "description": "Pause execution for a specified duration. The sleep ends early when new input arrives for the active turn. Returns the elapsed wall-clock time.",
+     "name": "sleep",
+     "parameters": {
+      "additionalProperties": false,
+      "properties": {
+       "duration_ms": {
+        "description": "How long to sleep in milliseconds. Must be between 1 and 43200000.",
+        "type": "number"
+       }
+      },
+      "required": [
+       "duration_ms"
+      ],
+      "type": "object"
+     },
+     "strict": false,
+     "type": "function"
+    }
+   ],
+   "type": "namespace"
+  },
+  "spec_sha256": "b91c24597c3acf3a1a35d85a764f631374f17c327ede58ce518808aff1e5c24d"
+ }
+]
