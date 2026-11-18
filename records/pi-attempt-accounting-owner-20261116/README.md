@@ -52,7 +52,24 @@ All eleven historical findings are closed within that reviewed private subject. 
 dollar_ticket scope admissions are not consumed by the actual check path; Rust `evidence` has
 no admission input; 149 oracle bundles remain schema-stale; R8-COVERAGE-01's independent raw
 membership derivation is not done. Full S1 (175 cases, all applicable 374 scopes, complete
-exact-current A/B/C review) remains OPEN. Owner-tree spend 109.57 plus predecessor 68.53. The architecture guard as of this record is
+exact-current A/B/C review) remains OPEN. Owner-tree spend 109.57 plus predecessor 68.53.
+
+## Scope closure (2026-11-17)
+
+Operator decisions: the legacy `role_host.py`/`pi_container.py` provider-execution route is
+intended for retirement in favour of the hosted architecture, so full S1 and S2a are not built
+for it; S1's future-profile contract is dropped as an implementation target. The S1 plan was
+revised into a scope-closure and requirements-transfer document,
+[PLAN-R2.1](plan-revision/PLAN-R2-SCOPE-CLOSURE.md), with a deterministic
+[case/scope map](plan-revision/CASE-DISPOSITION.json) and an independent Fable xhigh
+[plan review](plan-revision/REVIEW.md) (ACCEPT_WITH_CHANGES, all findings addressed). Full S1 is
+**superseded, not completed**. 73 cases transfer to the dev vertical as invariant regression
+scenarios and 12 as legacy-retirement evidence; the dev vertical owns the retirement and the
+production-ledger gap G1 found by the read-only
+[ledger cross-check](ledger-crosscheck/REVIEW.md). The plan's note that the process-deviation
+record awaited repository sync is resolved by this commit: `slice2/ROOT-ACCEPTANCE-SLICE2.json`
+now carries `process_deviation`. Final spend: owner tree 131.39 plus predecessor 68.53, under an
+operator ceiling raised to 205 for the plan review. The architecture guard as of this record is
 [ARCHITECTURE-GUARD-20261116.md](ARCHITECTURE-GUARD-20261116.md); its history carries over
 unchanged. Private working paths cited in these files are historical locations, not
 repository paths.
