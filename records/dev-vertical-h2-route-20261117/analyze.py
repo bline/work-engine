@@ -38,8 +38,9 @@ if CLAUDE:
     RUNTIME = RUNTIME_DIR / 'root'
     CATALOG = 'node_modules/@earendil-works/pi-ai/dist/providers/data/anthropic.json'
     OBSERVER = REPO / 'rust/target/debug/examples/pi_hosted_messages_observer'
-    # Full catalog reservation of the 1M-context model: 945 001 per request.
-    BUDGET = 945_001 * MAX_REQUESTS
+    # Full catalog reservation of the 1M-context model (one-hour cache writes
+    # at the upper tier): 1 320 001 per request.
+    BUDGET = 1_320_001 * MAX_REQUESTS
 CLAUDE_AUTH = Path.home() / '.claude/.credentials.json'
 
 def sha(b): return hashlib.sha256(b).hexdigest()

@@ -1,0 +1,2845 @@
+diff --git a/records/dev-vertical-h2-route-20261117/README.md b/records/dev-vertical-h2-route-20261117/README.md
+index a775eed7..3208810a 100644
+--- a/records/dev-vertical-h2-route-20261117/README.md
++++ b/records/dev-vertical-h2-route-20261117/README.md
+@@ -183,3 +183,109 @@ was relayed separately. The check now accepts either order of events and
+ still requires the exclusion interruption, an Uncertain attempt with its
+ reservation retained, and no access token in any run file. s3 passes under
+ the corrected check as well.
++
++## W1-W4: Anthropic Messages family for the `claude-sdk` provider (`c4a8ecfc`)
++
++Plan: [Pi Host realization](../../planning/dev-vertical-pi-host-realization-20261117.md)
++W1-W4 (operator authorization 2026-11-18, model `claude-haiku-5-5`). Standing:
++qualification record; not owner acceptance, not an H2 arm.
++
++Changes (`work-engine-manual-host`, its receiver, harness):
++
++- **Plan and admission.** `ProviderPlan.provider` (`openai-codex` by default,
++  or `claude-sdk`), bound by the runtime admission. `claude-sdk` only on the
++  analysis profile, model `claude-haiku-5-5`, priced from Pi's
++  `anthropic.json`. Full reservation 945 001 µUSD per request (1M context,
++  128k output, upper tier); Messages analysis budget ceiling 32 000 000 µUSD.
++  Pi's own `anthropic` provider is not offered yet. Its client does accept a
++  fetch override (`pi-ai` `api/anthropic-messages.js` passes `options.fetch`
++  to the Anthropic SDK), so the receiver's existing fetch interception could
++  serve it; it was left out because its API-key route bills API credits and
++  its OAuth route would make Pi a third-party client (correction: an earlier
++  revision of this record said the client takes no fetch override, which was
++  checked in the wrong file). A `claude-sdk` plan may instead route to the
++  API-key endpoint, because both endpoints receive the same body.
++- **Endpoints.** `https:anthropic-oauth` (Claude Code's credentials file,
++  read again before every connection; every token seen is screened) and
++  `https:anthropic-api` (`x-api-key`). Loopback routes serve either family.
++- **Body policy.** Strict JSON (duplicate keys refuse), top-level key
++  allowlist (no `mcp_servers`, `container`, `service_tier`), `tool_choice`
++  auto only, custom tools only, the analysis tool surface pinned by digest
++  (`CLAUDE_SDK_TOOLS_SHA256`, from the first offline run's refusal message),
++  and every request must extend the previous request's `messages` under the
++  two canonical rules. That rule is copied from `native-realization`
++  (branch `claude-realization-20261117`); it must become one implementation
++  when that crate reaches the base.
++- **Relay and settlement.** `message_stop` terminal under the same tail rule;
++  usage from `message_start` and the last `message_delta`; settlement per
++  token class at the catalog tier of all input tokens; the raw stop reason
++  must agree with the container's.
++- **Subscription billing guard.** On `https:anthropic-oauth`, a 200 head is
++  relayed only with `anthropic-ratelimit-unified-status` `allowed` or
++  `allowed_warning` and `...-overage-status` `rejected` or absent; anything
++  else closes the attempt as uncertain and fails the job. Kept rate-limit,
++  overage and `request-id` headers are retained in `relay.json`
++  (`headHeaders`).
++- **Receiver (W2).** Loads the pinned extension; a loopback forwarder is
++  Claude Code's `ANTHROPIC_BASE_URL`, and each request becomes one
++  `provider_fetch` under the current grant. At most one request per grant;
++  anything outside an open grant is answered locally. A dummy credential
++  sits in the tmpfs `HOME`. Completion is reported only after the relay has
++  settled (Claude Code ends its turn at `message_stop`, before the stream's
++  end). The process exits after close.
++- **Retries (W3).** Claude Code's retries and fallbacks are off
++  (`CLAUDE_CODE_MAX_RETRIES=0`, `..._DISABLE_NONSTREAMING_FALLBACK`,
++  `..._NO_MODEL_FALLBACK`, `..._DISABLE_MODEL_ACCESS_FALLBACK`,
++  `..._DISABLE_REFUSAL_FALLBACK`, `..._DISABLE_REFUSAL_RETRY`; switches
++  present in the bundled binary). The forwarder refuses a second request per
++  grant, and the Host refuses `x-stainless-retry-count` other than `0`.
++- **Harness (W4).** [claude_runtime.py](claude_runtime.py) builds the runtime
++  root: Pi's pinned runtime plus the extension (0.2.4), the Agent SDK, its
++  linux-x64 `claude` binary and the MCP SDK; 19 014 entries, manifest
++  `52ace834…`. `examples/pi_hosted_messages_observer.rs` is the offline
++  Messages upstream; `analyze.py` runs it with `ANALYSIS_PROVIDER=claude-sdk`.
++
++Unit tests: `work-engine-manual-host` passes (94 lib tests, 8 new Messages and
++guard tests), except the known inherited timing failure in `tests/lifecycle.rs`
++(`mutation_during_snapshot_collection_is_a_conflict`), which passed in two of
++three runs. The receiver's node tests pass with `--experimental-vm-modules`
++(their module sandbox gained `node:http` and `mkdirSync`).
++
++Found during development and fixed before the commit: the receiver kept the
++container alive after `complete` (forwarder listening); and `provider_complete`
++raced the relay's end (Claude Code reports the turn before the forwarder
++pulled `response-end`), which the Host refuses.
++
++**Offline run set w4a** (`~/.local/state/work-engine/dev-vertical-h2-route-20261117/w4a`,
++`analysis-qualification` `555ac071…`, observer `f34e1cc5…`), Pi Host container
++with the real Claude Code against the synthetic upstream:
++
++| Run | Result |
++| --- | --- |
++| `ok` | exit 0, 10 s, `CompletedSettled`. Request 1 refused (429) on the primary, then dispatched with the same retained body on the secondary; three requests, each settled at 450 µUSD (40 + 3 000 cache-write + 1 000 cache-read input, 120 output at base-tier rates); two Host deliveries; retry count 0 on every request; no container left. |
++| `retry-head` | The secondary answers 500 (not a definitive refusal): attempt `Uncertain`, reservation retained, job failed closed; no further request reached upstream. |
++
++**Live run `live-c1`** (`…/live/live-c1`, same binary): route
++`https:anthropic-oauth` only (no API-key failover), the draft H2 treatment
++snapshot (12 members, 158 961 bytes) and the qualification task
++[live-task-1.txt](live-task-1.txt). This is not an H2 arm. Inference and
++transport worked. Three requests, all HTTP 200 on the subscription, each head
++`unified-status: allowed` and `overage-status: rejected`. They settled at
++227, 603 and 7 960 µUSD at catalog rates (request 3: 58 868 cache-write input
++tokens). There were 12 `snapshot_read` calls in one response, every Host
++delivery was made, and the answer was produced. A scan of 91 run files found
++neither the subscription access token nor the refresh token;
++`private-access` is empty.
++
++**The job failed at the lifecycle gate**: "entry claim conflicted with durable
++state". The model's assistant messages carry `thinking` blocks (requests 2
++and 3), and the analysis grammar (`lifecycle-store`
++`pi_analysis_proof.rs`) accepts only `text` and `toolCall` content. The
++receiver pins `thinkingLevel: off`, but Pi's catalog has no `off` level for
++`claude-haiku-5-5` and marks the model `forceAdaptiveThinking`, so Pi sends
++adaptive thinking at effort `low`. As far as these catalogs show, thinking
++cannot be turned off for this model. Running Claude on this profile, for
++qualification or H2, therefore needs the analysis grammar to accept
++`thinking` blocks. That is a `lifecycle-store` change for the
++research-lifecycle owner, not part of W1-W4. The offline runs pass because
++the synthetic upstream sends no thinking.
+diff --git a/records/dev-vertical-h2-route-20261117/analyze.py b/records/dev-vertical-h2-route-20261117/analyze.py
+index 52601389..2b2beea5 100644
+--- a/records/dev-vertical-h2-route-20261117/analyze.py
++++ b/records/dev-vertical-h2-route-20261117/analyze.py
+@@ -7,6 +7,13 @@ access; `live` uses the real HTTPS routes with access named in a credentials
+ file (operator-authorized). The inference container never has network,
+ credentials or the snapshot; the Host serves the snapshot.
+ Writes <root-dir>/<run-name>/ and prints a JSON summary (also summary.json).
++
++ANALYSIS_PROVIDER=claude-sdk (W4): Pi's claude-sdk provider (Claude Code in
++the container, Messages family) on the runtime root built by
++claude_runtime.py (ANALYSIS_RUNTIME_DIR, holding root/ and
++runtime-manifest.json); offline scenarios use pi_hosted_messages_observer,
++`live` the Claude subscription route only (Host-held access from Claude
++Code's credentials file).
+ """
+ import hashlib, json, os, shutil, subprocess, sys, time
+ from pathlib import Path
+@@ -23,6 +30,17 @@ PI_AUTH = Path('/home/bline/.pi/agent/auth.json')
+ MAX_REQUESTS = int(os.environ.get('ANALYSIS_MAX_REQUESTS', 8))
+ MAX_READS = int(os.environ.get('ANALYSIS_MAX_READS', 16))
+ BUDGET, CONTEXT = 5_000_000, 400_000
++PROVIDER = os.environ.get('ANALYSIS_PROVIDER', 'openai-codex')
++CLAUDE = PROVIDER == 'claude-sdk'
++MODEL = 'claude-haiku-5-5' if CLAUDE else 'gpt-6-luna'
++if CLAUDE:
++    RUNTIME_DIR = Path(os.environ['ANALYSIS_RUNTIME_DIR'])
++    RUNTIME = RUNTIME_DIR / 'root'
++    CATALOG = 'node_modules/@earendil-works/pi-ai/dist/providers/data/anthropic.json'
++    OBSERVER = REPO / 'rust/target/debug/examples/pi_hosted_messages_observer'
++    # Full catalog reservation of the 1M-context model: 945 001 per request.
++    BUDGET = 945_001 * MAX_REQUESTS
++CLAUDE_AUTH = Path.home() / '.claude/.credentials.json'
+ 
+ def sha(b): return hashlib.sha256(b).hexdigest()
+ def fsha(p): return sha(Path(p).read_bytes())
+@@ -68,8 +86,15 @@ def prepare(base, scenario, snapshot_src, task_src):
+                  'Audit whether the claim in docs/claim.md is supported by docs/evidence.md. Report supported, unsupported and unknown parts with exact citations.')
+     shim = write(inputs / 'pi-coding.mjs', (HOST_SRC / 'receiver/pi-coding.mjs').read_bytes())
+     stream_adapter = write(inputs / 'pi-native-tools.mjs', (HOST_SRC / 'receiver/pi-native-tools.mjs').read_bytes())
+-    shutil.copy(PRIOR / 'runtime-manifest.json', inputs / 'runtime-manifest.json')
+-    if live:
++    shutil.copy((RUNTIME_DIR if CLAUDE else PRIOR) / 'runtime-manifest.json', inputs / 'runtime-manifest.json')
++    if live and CLAUDE:
++        # Subscription only: no API-key failover route.
++        routes = {'routes': [
++            {'id': 'primary', 'payer': 'claude-subscription', 'endpoint': 'https:anthropic-oauth'}],
++            'max_attempts_per_request': 1}
++        write(private / 'hosted-credentials.json', canon({'schema': 'work-engine.pi-hosted-credentials.v1', 'payers': {
++            'claude-subscription': {'kind': 'claude-code-auth', 'path': str(CLAUDE_AUTH)}}}), 0o600)
++    elif live:
+         routes = {'routes': [
+             {'id': 'primary', 'payer': 'chatgpt-subscription', 'endpoint': 'https:chatgpt-codex'},
+             {'id': 'secondary', 'payer': 'openai-api', 'endpoint': 'https:openai-responses'}],
+@@ -82,14 +107,14 @@ def prepare(base, scenario, snapshot_src, task_src):
+             {'id': 'primary', 'payer': 'synthetic-subscription', 'endpoint': f"loopback:{ready['primary']}"},
+             {'id': 'secondary', 'payer': 'synthetic-api', 'endpoint': f"loopback:{ready['secondary']}"}],
+             'max_attempts_per_request': 2}
+-    routes_digest = sha(canon({'schema': 'work-engine.pi-hosted-routes.v1', 'routes': routes['routes'], 'max_attempts_per_request': 2}).encode())
++    routes_digest = sha(canon({'schema': 'work-engine.pi-hosted-routes.v1', 'routes': routes['routes'], 'max_attempts_per_request': routes['max_attempts_per_request']}).encode())
+     now = int(time.time())
+     deadline = now + int(os.environ.get('ANALYSIS_DEADLINE_S', 290))
+     job_id = 'dev-vertical-hosted-analysis-' + base.name
+     catalog = RUNTIME / CATALOG
+     authority = write(inputs / 'authority.json', canon({
+         'schema': 'work-engine.pi-coding-runtime-admission.v1', 'job_id': job_id,
+-        'binary_sha256': fsha(QUAL), 'model': 'gpt-6-luna',
++        'binary_sha256': fsha(QUAL), 'model': MODEL, 'provider': PROVIDER,
+         'pi_config_manifest_sha256': fsha(inputs / 'pi-config-manifest.json'),
+         'task_sha256': fsha(task), 'catalog_sha256': fsha(catalog), 'max_requests': MAX_REQUESTS,
+         'budget_microusd': BUDGET, 'allow_provider': True, 'hosted_routes_sha256': routes_digest}))
+@@ -106,7 +131,7 @@ def prepare(base, scenario, snapshot_src, task_src):
+             'provider': {
+                 'lane': {'pi_config': {'root': str(config), 'manifest': art(inputs / 'pi-config-manifest.json')}},
+                 'task': art(task), 'catalog': art(catalog), 'stream_adapter': art(stream_adapter), 'hosted': routes,
+-                'model': 'gpt-6-luna', 'max_requests': MAX_REQUESTS, 'budget_microusd': BUDGET,
++                'provider': PROVIDER, 'model': MODEL, 'max_requests': MAX_REQUESTS, 'budget_microusd': BUDGET,
+                 'max_context_bytes': CONTEXT}}}
+     job_path = write(base / 'job.json', json.dumps(job, indent=1))
+     return job_path, obs, obs_out
+diff --git a/records/dev-vertical-h2-route-20261117/claude_runtime.py b/records/dev-vertical-h2-route-20261117/claude_runtime.py
+new file mode 100644
+index 00000000..734ab35a
+--- /dev/null
++++ b/records/dev-vertical-h2-route-20261117/claude_runtime.py
+@@ -0,0 +1,94 @@
++#!/usr/bin/env python3
++"""Build the Pi Host runtime root for the claude-sdk provider (W2/W4).
++
++Usage: claude_runtime.py <out-dir>
++The root is the pinned Pi runtime (hard links) plus, under node_modules, the
++pi-claude-subscription extension and its dependency closure from the
++operator's Pi package directory (the Claude Agent SDK, its linux-x64 `claude`
++binary and the MCP SDK). Packages the Pi runtime already has are not
++replaced. Writes <out-dir>/root and <out-dir>/runtime-manifest.json (the Host's
++inventory format) and prints a JSON summary.
++"""
++import hashlib, json, os, shutil, subprocess, sys
++from pathlib import Path
++
++BASE = Path('/home/bline/.local/state/work-engine/s10-supervision-20261103/pi-docker-base/builder/pi')
++EXT = Path.home() / '.pi/agent/npm/node_modules'
++PLATFORM = '@anthropic-ai/claude-agent-sdk-linux-x64'
++
++def closure():
++    seen, todo = {}, ['pi-claude-subscription']
++    while todo:
++        name = todo.pop()
++        if name in seen:
++            continue
++        pj = EXT / name / 'package.json'
++        if not pj.exists():
++            seen[name] = None  # optional platform packages of other systems
++            continue
++        p = json.loads(pj.read_text())
++        seen[name] = p['version']
++        deps = dict(p.get('dependencies', {}))
++        deps.update(p.get('optionalDependencies', {}))
++        todo.extend(deps)
++    return {k: v for k, v in seen.items() if v is not None}
++
++def sha(p):
++    h = hashlib.sha256()
++    with open(p, 'rb') as f:
++        for b in iter(lambda: f.read(1 << 20), b''):
++            h.update(b)
++    return h.hexdigest()
++
++def inventory(root):
++    out = {}
++    for dp, dns, fns in os.walk(root):
++        for n in list(dns):
++            p = Path(dp) / n
++            if p.is_symlink():
++                dns.remove(n)
++                fns.append(n)
++        for n in fns:
++            p = Path(dp) / n
++            rel = str(p.relative_to(root))
++            if p.is_symlink():
++                if not str(p.resolve()).startswith(str(root)):
++                    sys.exit(f'symlink escapes root: {rel}')
++                out[rel] = {'kind': 'symlink', 'target': os.readlink(p)}
++            elif p.is_file():
++                out[rel] = {'kind': 'file', 'sha256': sha(p)}
++            else:
++                sys.exit(f'special file: {rel}')
++    return dict(sorted(out.items()))
++
++def main():
++    out = Path(sys.argv[1]).resolve()
++    root = out / 'root'
++    if root.exists():
++        sys.exit(f'{root} exists')
++    out.mkdir(parents=True, exist_ok=True)
++    subprocess.run(['cp', '-al', str(BASE), str(root)], check=True)
++    packages = closure()
++    added, kept = [], []
++    for name, version in sorted(packages.items()):
++        dst = root / 'node_modules' / name
++        if dst.exists():
++            kept.append(name)
++            continue
++        dst.parent.mkdir(parents=True, exist_ok=True)
++        subprocess.run(['cp', '-al', str(EXT / name), str(dst)], check=True)
++        added.append(f'{name}@{version}')
++    if PLATFORM not in packages or not (root / 'node_modules' / PLATFORM / 'claude').is_file():
++        sys.exit('claude binary absent')
++    inv = inventory(root)
++    manifest = json.dumps(inv, separators=(',', ':'), sort_keys=True)
++    (out / 'runtime-manifest.json').write_text(manifest)
++    summary = {'root': str(root), 'entries': len(inv), 'added': added, 'kept_from_pi_runtime': kept,
++               'manifest_sha256': hashlib.sha256(manifest.encode()).hexdigest(),
++               'claude_sha256': inv[f'node_modules/{PLATFORM}/claude']['sha256'],
++               'extension_version': packages['pi-claude-subscription']}
++    (out / 'summary.json').write_text(json.dumps(summary, indent=1))
++    print(json.dumps(summary, indent=1))
++
++if __name__ == '__main__':
++    main()
+diff --git a/rust/crates/work-engine-manual-host/Cargo.toml b/rust/crates/work-engine-manual-host/Cargo.toml
+index 769b8e65..ca90c23d 100644
+--- a/rust/crates/work-engine-manual-host/Cargo.toml
++++ b/rust/crates/work-engine-manual-host/Cargo.toml
+@@ -19,6 +19,7 @@ rustls-platform-verifier = "=0.7.1"
+ review-episode-core = { path = "../review-episode-core" }
+ review-execution-evidence = { path = "../review-execution-evidence" }
+ repository-claims-handoff = { path = "../repository-claims-handoff" }
++lifecycle-wire = { path = "../lifecycle-wire" }
+ 
+ [dev-dependencies]
+ tempfile = "=3.27.0"
+diff --git a/rust/crates/work-engine-manual-host/examples/pi_hosted_messages_observer.rs b/rust/crates/work-engine-manual-host/examples/pi_hosted_messages_observer.rs
+new file mode 100644
+index 00000000..4284d594
+--- /dev/null
++++ b/rust/crates/work-engine-manual-host/examples/pi_hosted_messages_observer.rs
+@@ -0,0 +1,294 @@
++//! Offline synthetic Anthropic Messages endpoint for the hosted analysis
++//! profile on the `claude-sdk` provider (W4). Two loopback routes: the
++//! primary refuses its first request with a definitive 429 (Host failover;
++//! the second attempt must dispatch the same retained body), the secondary
++//! serves a three-request analysis as Claude Code expects it: an
++//! `mcp__pi__snapshot_list` call; an `mcp__pi__snapshot_read` of the first
++//! listed member; then the final text answer. Each request must carry the
++//! Host's synthetic access, never the container's dummy credential, and
++//! `x-stainless-retry-count: 0`. No auth or body is retained; only digests
++//! and the canonical digest of the declared `tools`.
++//!
++//! `HOSTED_OBSERVER_SCENARIO`: `ok` (default) or `retry-head` (the
++//! secondary's first response is a 500, which is not a definitive refusal:
++//! the attempt is uncertain and no further request may arrive).
++use serde_json::{Value, json};
++use sha2::{Digest, Sha256};
++use std::{
++    io::{Read, Write},
++    net::{TcpListener, TcpStream},
++    time::{Duration, Instant},
++};
++const MODEL: &str = "claude-haiku-5-5";
++fn hash(b: &[u8]) -> String {
++    format!("{:x}", Sha256::digest(b))
++}
++enum Block {
++    Tool(String, Value),
++    Text(String),
++}
++/// One Messages SSE response with `blocks`; text streams as a few deltas.
++fn sse(n: usize, blocks: &[Block]) -> Vec<u8> {
++    let mut events = vec![
++        json!({"type":"message_start","message":{"id":format!("msg_{n}"),"type":"message","role":"assistant",
++        "model":MODEL,"content":[],"stop_reason":null,"stop_sequence":null,
++        "usage":{"input_tokens":40,"cache_creation_input_tokens":3000,"cache_read_input_tokens":1000,"output_tokens":1}}}),
++    ];
++    let mut tool = false;
++    for (i, b) in blocks.iter().enumerate() {
++        match b {
++            Block::Tool(name, input) => {
++                tool = true;
++                events.push(json!({"type":"content_block_start","index":i,"content_block":{"type":"tool_use","id":format!("toolu_{n}_{i}"),"name":name,"input":{}}}));
++                events.push(json!({"type":"content_block_delta","index":i,"delta":{"type":"input_json_delta","partial_json":input.to_string()}}));
++            }
++            Block::Text(text) => {
++                events.push(json!({"type":"content_block_start","index":i,"content_block":{"type":"text","text":""}}));
++                for chunk in text.as_bytes().chunks(text.len().div_ceil(4).max(1)) {
++                    events.push(json!({"type":"content_block_delta","index":i,"delta":{"type":"text_delta","text":std::str::from_utf8(chunk).unwrap()}}));
++                }
++            }
++        }
++        events.push(json!({"type":"content_block_stop","index":i}));
++    }
++    events.push(json!({"type":"message_delta","delta":{"stop_reason":if tool {"tool_use"} else {"end_turn"},"stop_sequence":null},
++        "usage":{"input_tokens":40,"cache_creation_input_tokens":3000,"cache_read_input_tokens":1000,"output_tokens":120}}));
++    events.push(json!({"type":"message_stop"}));
++    events
++        .iter()
++        .map(|e| format!("event: {}\ndata: {e}\n\n", e["type"].as_str().unwrap()))
++        .collect::<String>()
++        .into_bytes()
++}
++struct Request {
++    id: String,
++    auth: String,
++    retry: String,
++    body: Vec<u8>,
++}
++fn read(s: &mut TcpStream) -> Result<Request, Box<dyn std::error::Error>> {
++    s.set_read_timeout(Some(Duration::from_secs(10)))?;
++    s.set_write_timeout(Some(Duration::from_secs(10)))?;
++    let mut header = vec![];
++    let mut byte = [0];
++    while !header.ends_with(b"\r\n\r\n") {
++        if header.len() > 16384 {
++            return Err("header bound".into());
++        }
++        s.read_exact(&mut byte)?;
++        header.push(byte[0]);
++    }
++    let header = std::str::from_utf8(&header)?;
++    if !header.starts_with("POST /v1/messages?beta=true HTTP/1.1\r\n")
++        && !header.starts_with("POST /v1/messages HTTP/1.1\r\n")
++    {
++        return Err("route".into());
++    }
++    let field = |name: &str| {
++        header
++            .lines()
++            .find_map(|l| {
++                let (k, v) = l.split_once(':')?;
++                k.eq_ignore_ascii_case(name).then(|| v.trim().to_string())
++            })
++            .ok_or(format!("header {name}"))
++    };
++    let auth = field("authorization")?;
++    let auth = auth.strip_prefix("Bearer ").ok_or("auth scheme")?;
++    // The container's dummy credential never reaches a provider.
++    if !auth.starts_with("synthetic-A-") || header.contains("DDDDDDDD") {
++        return Err("auth profile".into());
++    }
++    let n: usize = field("content-length")?.parse()?;
++    if n > 700_000 {
++        return Err("body bound".into());
++    }
++    let mut body = vec![0; n];
++    s.read_exact(&mut body)?;
++    Ok(Request {
++        id: field("x-request-id")?,
++        auth: hash(auth.as_bytes()),
++        retry: field("x-stainless-retry-count").unwrap_or_default(),
++        body,
++    })
++}
++/// The first member path of the `snapshot_list` result in the request's
++/// tool results (Claude Code sends MCP results as text blocks).
++fn first_member(v: &Value) -> Option<String> {
++    for m in v["messages"].as_array()? {
++        for c in m["content"].as_array().into_iter().flatten() {
++            if c["type"] != "tool_result" {
++                continue;
++            }
++            let texts: Vec<&str> = match &c["content"] {
++                Value::String(s) => vec![s.as_str()],
++                Value::Array(a) => a.iter().filter_map(|b| b["text"].as_str()).collect(),
++                _ => vec![],
++            };
++            for t in texts {
++                if let Ok(list) = serde_json::from_str::<Value>(t)
++                    && let Some(p) = list["members"][0]["path"].as_str()
++                {
++                    return Some(p.into());
++                }
++            }
++        }
++    }
++    None
++}
++fn run() -> Result<(), Box<dyn std::error::Error>> {
++    let primary = TcpListener::bind("127.0.0.1:0")?;
++    let secondary = TcpListener::bind("127.0.0.1:0")?;
++    primary.set_nonblocking(true)?;
++    secondary.set_nonblocking(true)?;
++    println!(
++        "{}",
++        json!({"type":"ready","primary":primary.local_addr()?.port(),"secondary":secondary.local_addr()?.port(),"protocol":"offline-hosted-messages-observer-v1"})
++    );
++    std::io::stdout().flush()?;
++    let scenario = std::env::var("HOSTED_OBSERVER_SCENARIO").unwrap_or_else(|_| "ok".into());
++    if !matches!(scenario.as_str(), "ok" | "retry-head") {
++        return Err("unknown scenario".into());
++    }
++    let deadline = Instant::now() + Duration::from_secs(600);
++    let (mut served, mut refused) = (0usize, 0usize);
++    let mut authority: std::collections::BTreeMap<&str, String> = Default::default();
++    while served < 3 {
++        if Instant::now() > deadline {
++            return Err("observer deadline".into());
++        }
++        let mut accepted = None;
++        for (route, l) in [("primary", &primary), ("secondary", &secondary)] {
++            match l.accept() {
++                Ok((s, _)) => {
++                    accepted = Some((route, s));
++                    break;
++                }
++                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {}
++                Err(e) => return Err(e.into()),
++            }
++        }
++        let Some((route, mut s)) = accepted else {
++            std::thread::sleep(Duration::from_millis(10));
++            continue;
++        };
++        s.set_nonblocking(false)?;
++        let r = read(&mut s)?;
++        if authority.get(route).is_some_and(|a| a != &r.auth) {
++            return Err("authority changed".into());
++        }
++        authority.insert(route, r.auth.clone());
++        let v: Value = serde_json::from_slice(&r.body)?;
++        let mut names: Vec<&str> = v["tools"]
++            .as_array()
++            .into_iter()
++            .flatten()
++            .filter_map(|t| t["name"].as_str())
++            .collect();
++        names.sort_unstable();
++        if v["model"] != MODEL
++            || v["stream"] != true
++            || names
++                != [
++                    "DeferredToolPlaceholder",
++                    "mcp__pi__snapshot_list",
++                    "mcp__pi__snapshot_read",
++                ]
++        {
++            return Err(format!("projection: {names:?}").into());
++        }
++        let receipt = json!({"route":route,"requestId":r.id,"bodySha256":hash(&r.body),
++            "toolsSha256":hash(&serde_json::to_vec(&v["tools"])?),"retryCount":r.retry,"messages":v["messages"].as_array().map(Vec::len)});
++        if route == "primary" {
++            refused += 1;
++            println!(
++                "{}",
++                json!({"type":"refused","status":429,"receipt":receipt})
++            );
++            std::io::stdout().flush()?;
++            let body = json!({"type":"error","error":{"type":"rate_limit_error","message":"synthetic primary route limit"}}).to_string();
++            write!(
++                s,
++                "HTTP/1.1 429 Too Many Requests\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
++                body.len()
++            )?;
++            continue;
++        }
++        served += 1;
++        if scenario == "retry-head" {
++            println!(
++                "{}",
++                json!({"type":"failed","status":500,"receipt":receipt})
++            );
++            std::io::stdout().flush()?;
++            let body = json!({"type":"error","error":{"type":"api_error","message":"synthetic"}})
++                .to_string();
++            write!(
++                s,
++                "HTTP/1.1 500 Internal Server Error\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
++                body.len()
++            )?;
++            // Any later request would be a client retry reaching upstream.
++            let until = Instant::now() + Duration::from_secs(20);
++            while Instant::now() < until {
++                for l in [&primary, &secondary] {
++                    if l.accept().is_ok() {
++                        println!("{}", json!({"type":"retry_reached_upstream"}));
++                        return Err("retry reached upstream".into());
++                    }
++                }
++                std::thread::sleep(Duration::from_millis(50));
++            }
++            println!(
++                "{}",
++                json!({"type":"complete","served":served,"refused":refused,"retries":0})
++            );
++            return Ok(());
++        }
++        let reply = match served {
++            1 => sse(
++                1,
++                &[Block::Tool("mcp__pi__snapshot_list".into(), json!({}))],
++            ),
++            2 => sse(
++                2,
++                &[Block::Tool(
++                    "mcp__pi__snapshot_read".into(),
++                    json!({"path":first_member(&v).ok_or("member list absent")?}),
++                )],
++            ),
++            n => sse(
++                n,
++                &[Block::Text(
++                    "Supported: the snapshot member was read. Unsupported: none. Unknown: none."
++                        .into(),
++                )],
++            ),
++        };
++        println!(
++            "{}",
++            json!({"type":"served","effect":served,"receipt":receipt,"responseSha256":hash(&reply)})
++        );
++        std::io::stdout().flush()?;
++        write!(
++            s,
++            "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nanthropic-ratelimit-unified-status: allowed\r\nanthropic-ratelimit-unified-overage-status: rejected\r\nrequest-id: req_{served}\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n"
++        )?;
++        for event in std::str::from_utf8(&reply)?.split_inclusive("\n\n") {
++            write!(s, "{:x}\r\n{event}\r\n", event.len())?;
++        }
++        write!(s, "0\r\n\r\n")?;
++        s.flush()?;
++    }
++    println!(
++        "{}",
++        json!({"type":"complete","served":served,"refused":refused,"rawAuthOrBodyRetained":false})
++    );
++    Ok(())
++}
++fn main() {
++    if let Err(e) = run() {
++        eprintln!("hosted_messages_observer: {e}");
++        std::process::exit(1);
++    }
++}
+diff --git a/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs b/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs
+index 12644b31..80824d96 100644
+--- a/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs
++++ b/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs
+@@ -6,7 +6,8 @@ import {createHash} from 'node:crypto';
+ import {Type} from '/pi/node_modules/typebox/build/index.mjs';
+ import {createInterface} from 'node:readline';
+ import {zstdDecompressSync} from 'node:zlib';
+-import {openSync,writeFileSync,fsyncSync,closeSync,existsSync,readFileSync,readdirSync,lstatSync} from 'node:fs';
++import {openSync,writeFileSync,fsyncSync,closeSync,existsSync,readFileSync,readdirSync,lstatSync,mkdirSync} from 'node:fs';
++import http from 'node:http';
+ const bridge=process.argv.includes('--lifecycle-bridge');
+ const fixtureSigned=existsSync('/auth/signed-fixture.json');
+ const live=existsSync('/profile/job.json');
+@@ -25,6 +26,20 @@ const SNAPSHOT_NAMES=['snapshot_list','snapshot_read'];
+ const FRAME_BYTES=analysis?config.frameBytes:65536;
+ const MAX_BODY=analysis?config.maxBodyBytes:45000;
+ const MAX_REQUESTS=analysis?config.maxRequests:4;
++// claude-sdk: Pi's provider is the pinned pi-claude-subscription extension,
++// whose Claude Code child process sends its Messages requests to a loopback
++// forwarder here. Each request becomes one provider_fetch under the current
++// grant's stream identity; the Host dispatches it with real access. The
++// container holds only a dummy credential.
++const claudeSdk=hosted&&config.provider==='claude-sdk';
++const CLAUDE_MODELS=['claude-haiku-5-5'];
++const EXTENSION='/pi/node_modules/pi-claude-subscription';
++const ANTHROPIC_BASE='https://api.anthropic.com';
++// Claude Code's own retries and fallbacks stay off: every upstream request is
++// one Host-admitted attempt (a second request under one grant is refused here).
++const CLAUDE_CODE_ENV={CLAUDE_CODE_MAX_RETRIES:'0',CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK:'1',CLAUDE_CODE_NO_MODEL_FALLBACK:'1',CLAUDE_CODE_DISABLE_MODEL_ACCESS_FALLBACK:'1',CLAUDE_CODE_DISABLE_REFUSAL_FALLBACK:'1',CLAUDE_CODE_DISABLE_REFUSAL_RETRY:'1',CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC:'1',NO_PROXY:'127.0.0.1,localhost',TMPDIR:'/tmp'};
++const DUMMY_TOKEN=kind=>`sk-ant-${kind}01-${'D'.repeat(95)}`;
++const DUMMY_CREDENTIALS={claudeAiOauth:{accessToken:DUMMY_TOKEN('oat'),refreshToken:DUMMY_TOKEN('ort'),expiresAt:4102444800000,refreshTokenExpiresAt:4102444800000,scopes:['user:file_upload','user:inference','user:mcp_servers','user:plugins','user:privacy_consents:write','user:profile','user:sessions:claude_code'],subscriptionType:'max',subscriptionTypeSource:'sign_in',rateLimitTier:'default_claude_max_5x'}};
+ // The hosted profile is the only live profile; credential-mounted live
+ // profiles are retired. It always runs on the lifecycle bridge.
+ if(live&&(!hosted||!bridge))throw Error('only the hosted live profile on the lifecycle bridge is supported');
+@@ -99,6 +114,37 @@ const RESPONSE_FRAMES=['response-head','response-chunk','response-end','response
+ const hostedFrames={open:false,queue:[],waiting:null,
+  push(f){if(!this.open)throw Error('response frame without stream');if(this.waiting){const w=this.waiting;this.waiting=null;w(f);}else this.queue.push(f);},
+  read(){if(this.waiting)throw Error('concurrent_read');return this.queue.length?Promise.resolve(this.queue.shift()):new Promise(r=>{this.waiting=r;});}};
++// claude-sdk forwarder: at most one request per grant, only while the grant is
++// open and no stream is; anything else is answered here and never leaves.
++let forwardSlot=null,openForwarded=null;
++const forwardRefuse=(res,status,message)=>{const b=JSON.stringify({type:'error',error:{type:'forwarder_refused',message}});res.writeHead(status,{'content-type':'application/json','content-length':Buffer.byteLength(b)});res.end(b);};
++const HOP=['host','connection','keep-alive','content-length','accept-encoding','transfer-encoding','proxy-connection','te','upgrade','expect'];
++const forwarder=claudeSdk?http.createServer((req,res)=>{
++ const chunks=[];let size=0,over=false;
++ req.on('data',c=>{size+=c.length;if(size>MAX_BODY){if(!over){over=true;forwardRefuse(res,413,'request bound');}}else chunks.push(c);});
++ req.on('end',async()=>{
++  if(over)return;
++  const slot=forwardSlot;
++  if(req.method!=='POST'||!/^\/v1\/messages(\?beta=true)?$/.test(req.url))return forwardRefuse(res,404,'only POST /v1/messages');
++  if(!slot||slot.used||hostedFrames.open||Date.now()>=slot.until)return forwardRefuse(res,503,'no open provider grant');
++  const headers={};
++  for(const [k,v] of Object.entries(req.headers))if(!HOP.includes(k))headers[k]=Array.isArray(v)?v.join(', '):v;
++  if(headers['content-encoding']!==undefined)return forwardRefuse(res,415,'encoded request body');
++  slot.used=true;
++  const abort=new AbortController();
++  res.on('close',()=>{if(!res.writableFinished)abort.abort();});
++  const headTimer=setTimeout(()=>abort.abort(),Math.max(1,Math.min(slot.headTimeoutMs,slot.until-Date.now())));
++  hostedFrames.open=true;
++  emit({type:'provider_fetch',id:slot.id,binding:slot.sid.binding,sequence:slot.sid.sequence,stream:slot.sid.stream,url:ANTHROPIC_BASE+req.url,method:'POST',headers,body:Buffer.concat(chunks).toString('base64')});
++  const handle=openForwarded({id:slot.sid,sendRaw:async v=>emit(v),read:()=>hostedFrames.read(),signal:abort.signal,onSettled:()=>{hostedFrames.open=false;hostedFrames.queue=[];slot.settle();}});
++  try{
++   const response=await handle.response;clearTimeout(headTimer);
++   res.writeHead(response.status,{'content-type':response.status===200?'text/event-stream':'application/json'});
++   for await(const chunk of response.body)res.write(chunk);
++   res.end();
++  }catch{clearTimeout(headTimer);if(!res.headersSent)forwardRefuse(res,502,'host relay failed');else res.destroy();}
++ });
++}):null;
+ const input=createInterface({input:process.stdin,crlfDelay:Infinity});
+ input.on('line',line=>{
+  try {
+@@ -143,6 +189,17 @@ try {
+  await resourceLoader.reload();
+  let modelRuntime,providerOptions={thinkingLevel:'off'};
+  if(live){
++  if(claudeSdk){
++   if(config.schema!==schema||!analysis||!CLAUDE_MODELS.includes(config.model))throw Error('provider configuration rejected');
++   const reject=async()=>{throw Error('credential_mutation');};
++   modelRuntime=await ModelRuntime.create({credentials:{read:async()=>undefined,list:async()=>[],modify:reject,delete:reject},modelsPath:null,allowModelNetwork:false,refreshOnCreate:false});
++   ({openResponse:openForwarded}=await import('/receiver/pi-native-tools.mjs'));
++   await new Promise((resolve,reject)=>{forwarder.once('error',reject);forwarder.listen(0,'127.0.0.1',resolve);});
++   mkdirSync(`${process.env.HOME}/.claude`,{recursive:true,mode:0o700});
++   writeFileSync(`${process.env.HOME}/.claude/.credentials.json`,JSON.stringify(DUMMY_CREDENTIALS),{mode:0o600,flag:'wx'});
++   Object.assign(process.env,CLAUDE_CODE_ENV,{ANTHROPIC_BASE_URL:`http://127.0.0.1:${forwarder.address().port}`});
++   // The extension registers its provider while the session services load.
++  }else{
+   if(config.schema!==schema||config.provider!=='openai-codex'||config.model!=='gpt-6-luna')throw Error('provider configuration rejected');
+   // Nonauthenticating marker only; the Host holds and applies real access.
+   const marker='syntactic.'+Buffer.from(JSON.stringify({'https://api.openai.com/auth':{chatgpt_account_id:'nonsecret-marker'}})).toString('base64')+'.nonsecret';
+@@ -152,6 +209,7 @@ try {
+   if(signed)checkConsumption(signedDeadline);
+   model=modelRuntime.getModel('openai-codex',config.model);
+   if(!model||model.api!=='openai-codex-responses'||model.baseUrl!=='https://chatgpt.com/backend-api')throw Error('exact subscription model absent');
++  }
+  }else{
+   if(signed)checkConsumption(signedDeadline);
+   modelRuntime=await ModelRuntime.create({authPath:'/tmp/fixture-auth.json',modelsPath:null,allowModelNetwork:false,refreshOnCreate:false});
+@@ -242,7 +300,9 @@ try {
+       if(!sid||typeof sid.binding!=='object'||!Number.isSafeInteger(sid.sequence)||!Number.isSafeInteger(sid.stream)||!Number.isSafeInteger(grant.headTimeoutMs)||grant.headTimeoutMs<=0)throw Error('hosted stream identity');
+       const {openResponse}=await import('/receiver/pi-native-tools.mjs');
+       let fetched=false;
+-      const inner=await original(requestModel,context,{...options,transport:'sse',maxRetries:0,cacheRetention:'none',timeoutMs:Math.max(1,Math.min(grant.headTimeoutMs,until-Date.now())),fetch:async(url,init)=>{
++      if(claudeSdk){forwardSlot={id,sid,until,headTimeoutMs:grant.headTimeoutMs,used:false};forwardSlot.settled=new Promise(r=>{forwardSlot.settle=r;});}
++      const slot=forwardSlot;
++      const inner=claudeSdk?await original(requestModel,context,options):await original(requestModel,context,{...options,transport:'sse',maxRetries:0,cacheRetention:'none',timeoutMs:Math.max(1,Math.min(grant.headTimeoutMs,until-Date.now())),fetch:async(url,init)=>{
+        checkConsumption(until);
+        if(fetched||hostedFrames.open)throw Error('hosted fetch already used');
+        fetched=true;
+@@ -265,12 +325,16 @@ try {
+         for await(const event of inner){
+          if(event.type==='done'||event.type==='error'){
+           const message=event.type==='done'?event.message:event.error;
++          // Claude Code ends its turn at message_stop, before the forwarder
++          // has relayed the stream's end; the Host settles only a closed relay.
++          if(claudeSdk&&slot.used)await slot.settled;
+           emit({type:'provider_complete',id,stopReason:message.stopReason,usage:message.usage});
+          }
+          relay.push(event);
+         }
+         relay.end();
+        }catch{const aborted=failure('provider stream failed');for await(const event of aborted)relay.push(event);relay.end();}
++       finally{forwardSlot=null;}
+       })();
+       return relay;
+      }
+@@ -316,7 +380,13 @@ try {
+   markRuntimeStreamFunction(stream,services.modelRuntime);session.agent.streamFunction=stream;
+  }
+  if(bridge){
+-  const factory=async options=>{const services=await createAgentSessionServices({...baseOptions,...options,resourceLoaderOptions:{noExtensions:true,disabledBuiltinExtensions:['mcp'],noSkills:true,noPromptTemplates:true,noThemes:true,noContextFiles:true}});const result=await createAgentSessionFromServices({...baseOptions,...options,services});bindBridge(result.session,services);return {...result,services,diagnostics:services.diagnostics};};
++  const factory=async options=>{const services=await createAgentSessionServices({...baseOptions,...options,resourceLoaderOptions:{noExtensions:true,disabledBuiltinExtensions:['mcp'],noSkills:true,noPromptTemplates:true,noThemes:true,noContextFiles:true,...(claudeSdk?{additionalExtensionPaths:[EXTENSION]}:{})}});
++   if(claudeSdk){
++    // The pinned extension's provider and model; the Host checks the ready frame's model against the catalog.
++    model=services.modelRuntime.getModel('claude-sdk',config.model);
++    if(!model||model.api!=='claude-agent-sdk'||model.provider!=='claude-sdk')throw Error('exact claude-sdk model absent');
++   }
++   const result=await createAgentSessionFromServices({...baseOptions,...options,model,services});bindBridge(result.session,services);return {...result,services,diagnostics:services.diagnostics};};
+   runtime=await createAgentSessionRuntime(factory,{cwd:'/workspace',agentDir,sessionManager:SessionManager.create('/workspace','/export/sessions')});
+  }else{({session}=await createAgentSession({...baseOptions,sessionManager:manager??SessionManager.create('/workspace','/export/sessions')}));}
+  if(signed)checkConsumption(signedDeadline);
+@@ -365,7 +435,7 @@ try {
+    const history={type:'coding_history',producer:'pi-1.5.0',sessionId:session.sessionId,invocationId:op.invocationId,messages:session.messages,branch:session.sessionManager.getBranch(),header:session.sessionManager.getHeader(),leafId:session.sessionManager.getLeafId(),snapshot:snapshot()};
+    writeFileSync(`/export/coding-history-${op.invocationId}.json`,JSON.stringify(history)+'\n',{flag:'wx',mode:0o600});emit(history);
+   }
+-  const history={schema,provider:liveBridge?'openai-codex':'disabled_fixture',model:liveBridge?model.id:null,sessionId:session.sessionId,messages:session.messages,entries:session.sessionManager.getEntries(),header:session.sessionManager.getHeader(),counts:{providerRequests:bridgeCalls,resets:bridgeResets}};
++  const history={schema,provider:liveBridge?config.provider:'disabled_fixture',model:liveBridge?model.id:null,sessionId:session.sessionId,messages:session.messages,entries:session.sessionManager.getEntries(),header:session.sessionManager.getHeader(),counts:{providerRequests:bridgeCalls,resets:bridgeResets}};
+   writeFileSync('/export/coding-native-history.json',JSON.stringify(history)+'\n',{flag:'wx',mode:0o600});emit({type:'complete',provider:history.provider,counts:history.counts});
+  }else{
+  emit({type:'ready',tools:session.getActiveToolNames(),...(live?{model:{id:model.id,provider:model.provider,api:model.api,contextWindow:model.contextWindow,maxTokens:model.maxTokens,cost:model.cost}}:{})});
+@@ -386,4 +456,7 @@ try {
+  emit({type:'complete',provider:history.provider});
+  }
+ }catch{emit({type:'error',message:'Pi coding profile failed'});process.exitCode=2;}
+-finally{clearTimeout(deadline);if(runtime)await runtime.dispose();else session?.dispose();input.close();process.stdin.destroy();}
++finally{clearTimeout(deadline);if(runtime)await runtime.dispose();else session?.dispose();input.close();process.stdin.destroy();
++ // claude-sdk: the forwarder and Claude Code's child process would keep the
++ // process alive; exit runs the extension's shutdown of Claude Code.
++ if(forwarder){forwarder.close();forwarder.closeAllConnections();setTimeout(()=>process.exit(),2000).unref();}}
+diff --git a/rust/crates/work-engine-manual-host/src/pi_coding.rs b/rust/crates/work-engine-manual-host/src/pi_coding.rs
+index 22621d1e..b45e5f86 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_coding.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_coding.rs
+@@ -1137,18 +1137,8 @@ impl Host {
+                     if is_bridge(&self.journal.job.coding.as_ref().unwrap().schema) {
+                         if let Some(plan) = &self.journal.job.coding.as_ref().unwrap().provider {
+                             // Live: the native catalog model must be the pinned one.
+-                            let selected = plan.selected()?;
+-                            for key in [
+-                                "id",
+-                                "provider",
+-                                "api",
+-                                "contextWindow",
+-                                "maxTokens",
+-                                "cost",
+-                            ] {
+-                                if frame["model"][key] != selected[key] {
+-                                    return refuse("native selected catalog model differs");
+-                                }
++                            if !plan.native_model_matches(&frame["model"])? {
++                                return refuse("native selected catalog model differs");
+                             }
+                         }
+                         replies.extend(self.coding_bridge_frame(&frame)?);
+@@ -1158,18 +1148,8 @@ impl Host {
+                     }
+                     let profile = self.journal.job.coding.as_ref().unwrap();
+                     let reply = if let Some(plan) = &profile.provider {
+-                        let selected = plan.selected()?;
+-                        for key in [
+-                            "id",
+-                            "provider",
+-                            "api",
+-                            "contextWindow",
+-                            "maxTokens",
+-                            "cost",
+-                        ] {
+-                            if frame["model"][key] != selected[key] {
+-                                return refuse("native selected catalog model differs");
+-                            }
++                        if !plan.native_model_matches(&frame["model"])? {
++                            return refuse("native selected catalog model differs");
+                         }
+                         json!({"type":"task_start","sessionId":session})
+                     } else {
+diff --git a/rust/crates/work-engine-manual-host/src/pi_coding_analysis.rs b/rust/crates/work-engine-manual-host/src/pi_coding_analysis.rs
+index 6046ca78..29d20fd9 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_coding_analysis.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_coding_analysis.rs
+@@ -88,6 +88,49 @@ pub(super) fn check_request_tools(tools: &Value) -> Result<()> {
+     Ok(())
+ }
+ 
++/// SHA-256 of the canonical Messages `tools` array the pinned receiver,
++/// extension and Claude Code send on the `claude-sdk` provider: Claude Code's
++/// `DeferredToolPlaceholder` and the profile's tools as `mcp__pi__<name>`
++/// (taken from the first offline run's refusal message, W4).
++pub const CLAUDE_SDK_TOOLS_SHA256: &str =
++    "4dc958d99fc79a7cc2736c0216fc83e592c8fce53e6dc5e302116f195fa0e503";
++/// The Messages request's tool surface: exactly the profile's tools as the
++/// plan's Pi provider names them, with the pinned specification digest.
++pub(super) fn check_messages_tools(provider: &str, tools: &Value) -> Result<()> {
++    let Some(list) = tools.as_array() else {
++        return refuse("analysis request tools absent");
++    };
++    let (prefix, extra, pinned): (&str, &[&str], &str) = match provider {
++        "claude-sdk" => (
++            "mcp__pi__",
++            &["DeferredToolPlaceholder"],
++            CLAUDE_SDK_TOOLS_SHA256,
++        ),
++        _ => return refuse("analysis request provider unknown"),
++    };
++    let mut names: Vec<String> = list
++        .iter()
++        .filter_map(|t| t["name"].as_str().map(str::to_owned))
++        .collect();
++    names.sort_unstable();
++    let mut expected: Vec<String> = TOOLS
++        .iter()
++        .map(|t| format!("{prefix}{t}"))
++        .chain(extra.iter().map(|t| (*t).to_owned()))
++        .collect();
++    expected.sort_unstable();
++    if names != expected || names.len() != list.len() {
++        return refuse("analysis request tool set differs from the profile");
++    }
++    let actual = digest(&serde_json::to_vec(tools)?);
++    if actual != pinned {
++        return refuse(format!(
++            "analysis request tool specification differs from the pinned digest (got {actual})"
++        ));
++    }
++    Ok(())
++}
++
+ /// One read-only tool call over the snapshot, or the error text returned to
+ /// the model.
+ fn serve(snapshot: &Tree, tool: &str, arguments: &Value) -> std::result::Result<Value, String> {
+diff --git a/rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs b/rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs
+index d8a55c26..66e7ac1b 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs
+@@ -11,7 +11,7 @@
+ //! the relayed bytes; the container's own observations are not evidence.
+ use super::*;
+ use crate::pi_route::{self as route, Decision, Disposition, Router};
+-use crate::pi_stream::{self as stream, Progress, Session, Unavailable};
++use crate::pi_stream::{self as stream, Progress, Session, Unavailable, Wire};
+ use base64::{Engine, engine::general_purpose::STANDARD as B64};
+ use provider::{AttemptDisposition, AttemptEvidence};
+ use review_execution_evidence::pi::Binding;
+@@ -46,11 +46,30 @@ fn declared_tools(body: &Value) -> Option<Vec<Value>> {
+ const MAX_HEADERS: usize = 64;
+ /// Credential-bearing request headers. The container's values are markers;
+ /// the transport applies real access itself.
+-const ACCESS_HEADERS: [&str; 4] = [
++const ACCESS_HEADERS: [&str; 5] = [
+     "authorization",
+     "chatgpt-account-id",
+     "cookie",
+     "proxy-authorization",
++    "x-api-key",
++];
++/// Top-level Messages request keys Claude Code was observed to send, plus
++/// inert sampling keys. Anything else (for example `mcp_servers`,
++/// `container`, `service_tier`) refuses.
++const MESSAGES_KEYS: [&str; 13] = [
++    "model",
++    "messages",
++    "system",
++    "tools",
++    "tool_choice",
++    "metadata",
++    "max_tokens",
++    "thinking",
++    "context_management",
++    "output_config",
++    "stream",
++    "temperature",
++    "stop_sequences",
+ ];
+ 
+ /// One permitted provider route. The order of routes is preference order.
+@@ -61,8 +80,11 @@ pub struct HostedRoute {
+     pub payer: String,
+     /// Nonsecret endpoint identity, never a credential: `loopback:<port>`
+     /// (offline qualification), `https:chatgpt-codex` (the ChatGPT Codex
+-    /// backend, subscription funding) or `https:openai-responses` (the public
+-    /// Responses API, API-key funding). Origins are fixed by this code.
++    /// backend, subscription funding), `https:openai-responses` (the public
++    /// Responses API, API-key funding), `https:anthropic-oauth` (Anthropic
++    /// Messages with a Claude subscription OAuth bearer) or
++    /// `https:anthropic-api` (Anthropic Messages, API key). Origins are fixed
++    /// by this code.
+     pub endpoint: String,
+ }
+ /// Route table for the hosted profile. Its `(route, payer)` pairs and attempt
+@@ -141,12 +163,16 @@ pub enum Endpoint {
+     Loopback(std::net::SocketAddr),
+     ChatGptCodex,
+     OpenAiResponses,
++    AnthropicOauth,
++    AnthropicApi,
+ }
+ impl Endpoint {
+     pub fn parse(endpoint: &str) -> Option<Self> {
+         match endpoint {
+             "https:chatgpt-codex" => Some(Self::ChatGptCodex),
+             "https:openai-responses" => Some(Self::OpenAiResponses),
++            "https:anthropic-oauth" => Some(Self::AnthropicOauth),
++            "https:anthropic-api" => Some(Self::AnthropicApi),
+             _ => {
+                 let port: u16 = endpoint.strip_prefix("loopback:")?.parse().ok()?;
+                 (port != 0)
+@@ -154,18 +180,63 @@ impl Endpoint {
+             }
+         }
+     }
+-    /// `(host, request path)` of the endpoint.
+-    pub fn target(self) -> (&'static str, &'static str) {
++    /// Whether the endpoint speaks `wire`. Loopback routes serve either.
++    pub fn serves(self, wire: Wire) -> bool {
+         match self {
+-            Self::Loopback(_) => ("localhost", "/backend-api/codex/responses"),
+-            Self::ChatGptCodex => ("chatgpt.com", "/backend-api/codex/responses"),
+-            Self::OpenAiResponses => ("api.openai.com", "/v1/responses"),
++            Self::Loopback(_) => true,
++            Self::ChatGptCodex | Self::OpenAiResponses => wire == Wire::Responses,
++            Self::AnthropicOauth | Self::AnthropicApi => wire == Wire::Messages,
+         }
+     }
+-    /// Container request headers forwarded to this endpoint (an allowlist;
+-    /// everything else, including billing-context headers such as
+-    /// `openai-organization` or `openai-project`, is dropped).
+-    pub fn forwarded(self, name: &str) -> bool {
++    /// Host name of the endpoint.
++    pub fn host(self) -> &'static str {
++        match self {
++            Self::Loopback(_) => "localhost",
++            Self::ChatGptCodex => "chatgpt.com",
++            Self::OpenAiResponses => "api.openai.com",
++            Self::AnthropicOauth | Self::AnthropicApi => "api.anthropic.com",
++        }
++    }
++    /// `(host, request path)` for `request`: fixed per endpoint and wire;
++    /// Messages requests keep the validated `?beta=true` query.
++    pub fn target(self, request: &HostedRequest) -> (&'static str, &'static str) {
++        let path = match (self, request.wire) {
++            (_, Wire::Messages) if request.beta => "/v1/messages?beta=true",
++            (_, Wire::Messages) => "/v1/messages",
++            (Self::OpenAiResponses, Wire::Responses) => "/v1/responses",
++            (_, Wire::Responses) => "/backend-api/codex/responses",
++        };
++        (self.host(), path)
++    }
++    /// Container request headers forwarded to this endpoint for `wire` (an
++    /// allowlist; everything else, including billing-context headers such as
++    /// `openai-organization` or `openai-project`, is dropped). Messages
++    /// requests keep the headers Claude Code sends besides access and
++    /// transport headers (as forwarded by the in-container probe, whose
++    /// requests stayed in the subscription plan).
++    pub fn forwarded(self, wire: Wire, name: &str) -> bool {
++        if wire == Wire::Messages {
++            return matches!(
++                name,
++                "accept"
++                    | "content-type"
++                    | "anthropic-version"
++                    | "anthropic-beta"
++                    | "anthropic-dangerous-direct-browser-access"
++                    | "user-agent"
++                    | "x-app"
++                    | "x-client-app"
++                    | "x-claude-code-session-id"
++                    | "x-stainless-arch"
++                    | "x-stainless-lang"
++                    | "x-stainless-os"
++                    | "x-stainless-package-version"
++                    | "x-stainless-retry-count"
++                    | "x-stainless-runtime"
++                    | "x-stainless-runtime-version"
++                    | "x-stainless-timeout"
++            );
++        }
+         match self {
+             Self::Loopback(_) | Self::ChatGptCodex => matches!(
+                 name,
+@@ -181,6 +252,7 @@ impl Endpoint {
+                 name,
+                 "accept" | "content-type" | "x-client-request-id" | "user-agent"
+             ),
++            Self::AnthropicOauth | Self::AnthropicApi => false,
+         }
+     }
+ }
+@@ -193,6 +265,9 @@ pub struct HostedRequest {
+     pub attempt: u64,
+     pub headers: BTreeMap<String, String>,
+     pub body: Vec<u8>,
++    pub wire: Wire,
++    /// Messages: the container's request carried `?beta=true`.
++    pub beta: bool,
+ }
+ /// Upstream response reader and its abort.
+ pub type Upstream = (Box<dyn Read + Send>, Box<dyn FnOnce() + Send>);
+@@ -246,7 +321,7 @@ pub fn request_head(
+     access: &[(&str, &str)],
+     request: &HostedRequest,
+ ) -> String {
+-    let (host, path) = endpoint.target();
++    let (host, path) = endpoint.target(request);
+     let mut head = format!(
+         "POST {path} HTTP/1.1\r\nHost: {host}\r\nX-Request-Id: {}-{}\r\nContent-Length: {}\r\nConnection: close\r\n",
+         request.request,
+@@ -257,7 +332,7 @@ pub fn request_head(
+         head.push_str(&format!("{k}: {v}\r\n"));
+     }
+     for (k, v) in &request.headers {
+-        if endpoint.forwarded(k) {
++        if endpoint.forwarded(request.wire, k) {
+             head.push_str(&format!("{k}: {v}\r\n"));
+         }
+     }
+@@ -379,6 +454,61 @@ impl stream::Screen for Screen<'_> {
+ struct Fetch {
+     headers: BTreeMap<String, String>,
+     body: Vec<u8>,
++    wire: Wire,
++    beta: bool,
++    /// Messages: the request's `messages`, which the next request must extend.
++    messages: Option<Value>,
++}
++/// Continuity of successive Messages requests of one job. A copy of
++/// `native-realization`'s `claude_host::canonical` rule (branch
++/// `claude-realization-20261117`, research-lifecycle owner conditions 5854):
++/// when that crate reaches the shared base, this must become that one
++/// implementation.
++///
++/// The closed set of differences Claude Code introduces between successive
++/// requests: (1) `cache_control` keys move, and (2) a message whose `content`
++/// is a string equals the same message whose `content` is one text block with
++/// that text. Nothing else is equal. Used only to compare continuity; never
++/// stored as evidence (the exact bodies are retained).
++pub mod canonical {
++    use serde_json::{Map, Value, json};
++    fn strip_cache_control(v: &Value) -> Value {
++        match v {
++            Value::Object(m) => Value::Object(
++                m.iter()
++                    .filter(|(k, _)| k.as_str() != "cache_control")
++                    .map(|(k, x)| (k.clone(), strip_cache_control(x)))
++                    .collect::<Map<_, _>>(),
++            ),
++            Value::Array(a) => Value::Array(a.iter().map(strip_cache_control).collect()),
++            other => other.clone(),
++        }
++    }
++    fn message(v: &Value) -> Value {
++        let mut m = strip_cache_control(v);
++        if let Some(Value::String(text)) = m.get("content").cloned() {
++            m["content"] = json!([{"type":"text","text":text}]);
++        }
++        m
++    }
++    /// `next` is `previous` extended by at least one message, under the two
++    /// rules above. Both must be arrays of message objects.
++    pub fn is_prefix_extension(previous: &Value, next: &Value) -> bool {
++        let (Some(prev), Some(next)) = (previous.as_array(), next.as_array()) else {
++            return false;
++        };
++        if next.len() <= prev.len()
++            || !prev
++                .iter()
++                .chain(next.iter())
++                .all(|m| m.get("role").is_some())
++        {
++            return false;
++        }
++        prev.iter()
++            .zip(next.iter())
++            .all(|(a, b)| message(a) == message(b))
++    }
+ }
+ enum StreamPhase {
+     /// Grant written with the stream identity; awaiting `provider_fetch`.
+@@ -411,6 +541,8 @@ pub struct Hosted {
+     router: Option<Router>,
+     stream: Option<Stream>,
+     out: Vec<Value>,
++    /// Messages: the last accepted request's `messages`.
++    last_messages: Option<Value>,
+     /// This Host ran the launch: attempts still pending at its end were left
+     /// by this process, not by one that is gone.
+     ran: bool,
+@@ -538,6 +670,9 @@ impl Host {
+                 sha256: digest(&fetch.body),
+             });
+             self.save()?;
++            if let Some(messages) = &fetch.messages {
++                self.hosted.last_messages = Some(messages.clone());
++            }
+             self.hosted.stream.as_mut().unwrap().phase = StreamPhase::Fetched(fetch);
+             return Ok(());
+         }
+@@ -563,10 +698,15 @@ impl Host {
+             .unwrap_or("")
+             .trim_end_matches('/')
+             .to_string();
+-        if !Self::own_stream_frame(s, frame)
+-            || frame["method"] != "POST"
+-            || frame["url"] != format!("{base}/codex/responses")
+-        {
++        let wire = plan.wire_checked()?;
++        let url = frame["url"].as_str().unwrap_or("");
++        let beta = match wire {
++            Wire::Responses if url == format!("{base}/codex/responses") => false,
++            Wire::Messages if url == format!("{base}/v1/messages") => false,
++            Wire::Messages if url == format!("{base}/v1/messages?beta=true") => true,
++            _ => return refuse("provider fetch identity/method/url conflict"),
++        };
++        if !Self::own_stream_frame(s, frame) || frame["method"] != "POST" {
+             return refuse("provider fetch identity/method/url conflict");
+         }
+         let mut headers = BTreeMap::new();
+@@ -599,8 +739,13 @@ impl Host {
+         let body = B64
+             .decode(frame["body"].as_str().unwrap_or(""))
+             .map_err(|_| Error::Refused("provider fetch body encoding".into()))?;
+-        let parsed: Value = serde_json::from_slice(&body)
+-            .map_err(|_| Error::Refused("provider fetch body JSON".into()))?;
++        // Messages bodies are parsed strictly: a duplicate key could mean one
++        // thing here and another upstream.
++        let parsed: Value = match wire {
++            Wire::Responses => serde_json::from_slice(&body).ok(),
++            Wire::Messages => lifecycle_wire::parse_strict_json(&body).ok(),
++        }
++        .ok_or_else(|| Error::Refused("provider fetch body JSON".into()))?;
+         let analysis = self.analysis_profile();
+         if body.len()
+             > if analysis {
+@@ -613,6 +758,25 @@ impl Host {
+         {
+             return refuse("provider fetch body bound/model/stream conflict");
+         }
++        if wire == Wire::Messages {
++            // W3: a client-side retry is never dispatched; every upstream
++            // request is one Host attempt (the receiver also disables Claude
++            // Code's retries and admits one request per grant).
++            if headers
++                .get("x-stainless-retry-count")
++                .is_some_and(|v| v != "0")
++            {
++                return refuse("provider fetch is a client retry");
++            }
++            self.messages_policy(&plan, &parsed, analysis)?;
++            return Ok(Fetch {
++                headers,
++                body,
++                wire,
++                beta,
++                messages: Some(parsed["messages"].clone()),
++            });
++        }
+         // R-a: body fields the Host pins on real routes. Nothing stored at the
+         // provider, no background processing, no non-default service tier,
+         // and only the container's own function tools (no provider-hosted
+@@ -635,7 +799,66 @@ impl Host {
+         if analysis {
+             super::analysis::check_request_tools(&json!(declared.unwrap_or_default()))?;
+         }
+-        Ok(Fetch { headers, body })
++        Ok(Fetch {
++            headers,
++            body,
++            wire,
++            beta,
++            messages: None,
++        })
++    }
++    /// Messages body policy: only the known top-level keys (so no
++    /// `mcp_servers`, `container` or service tier), `tool_choice` auto, only
++    /// the container's own custom tools (no provider-hosted tools; on the
++    /// analysis profile exactly the pinned tool surface), and every request
++    /// extends the previous one's messages under the two canonical rules.
++    fn messages_policy(
++        &self,
++        plan: &provider::ProviderPlan,
++        body: &Value,
++        analysis: bool,
++    ) -> Result<()> {
++        let object = body
++            .as_object()
++            .ok_or_else(|| Error::Refused("provider fetch body is not an object".into()))?;
++        if let Some(key) = object.keys().find(|k| !MESSAGES_KEYS.contains(&k.as_str())) {
++            return refuse(format!(
++                "provider fetch body policy: field {key} is not allowed"
++            ));
++        }
++        if object
++            .get("tool_choice")
++            .is_some_and(|c| c != &json!({"type":"auto"}))
++        {
++            return refuse("provider fetch body policy: only tool_choice auto");
++        }
++        if body["messages"].as_array().is_none_or(|m| m.is_empty()) {
++            return refuse("provider fetch body policy: no messages");
++        }
++        let tools = match &body["tools"] {
++            Value::Null => vec![],
++            Value::Array(tools) => tools.clone(),
++            _ => return refuse("provider fetch body policy: tools"),
++        };
++        // Provider-hosted (server) tools carry a `type`; custom tools do not
++        // (or name `custom`).
++        if tools
++            .iter()
++            .any(|t| !t.is_object() || t.get("type").is_some_and(|ty| ty != "custom"))
++        {
++            return refuse("provider fetch body policy: provider-hosted tool");
++        }
++        if analysis {
++            super::analysis::check_messages_tools(&plan.provider, &body["tools"])?;
++        }
++        if let Some(previous) = &self.hosted.last_messages
++            && !canonical::is_prefix_extension(previous, &body["messages"])
++        {
++            return refuse(
++                "provider fetch body policy: messages do not extend the previous request",
++            );
++        }
++        Ok(())
+     }
+     fn hosted_native(&mut self, s: &mut Stream, frame: &Value) -> Result<()> {
+         if !Self::own_stream_frame(s, frame) {
+@@ -827,6 +1050,8 @@ impl Host {
+             attempt,
+             headers: fetch.headers.clone(),
+             body: fetch.body.clone(),
++            wire: fetch.wire,
++            beta: fetch.beta,
+         };
+         let Some(mut transport) = self.hosted_transport.take() else {
+             self.hosted_uncertain(s.request, attempt, routed, "hosted transport absent")?;
+@@ -1048,9 +1273,15 @@ impl Host {
+                         body_sha256: sha,
+                     },
+                 )?;
++                // Responses errors name a `code`, Messages errors a `type`.
+                 let code = serde_json::from_slice::<Value>(&body)
+                     .ok()
+-                    .and_then(|v| v["error"]["code"].as_str().map(str::to_owned))
++                    .and_then(|v| {
++                        v["error"]["code"]
++                            .as_str()
++                            .or(v["error"]["type"].as_str())
++                            .map(str::to_owned)
++                    })
+                     .unwrap_or_else(|| "unspecified".into());
+                 let router = self.hosted.router.as_mut().unwrap();
+                 if disposition == AttemptDisposition::Refused {
+@@ -1098,6 +1329,7 @@ impl Host {
+         relay: stream::Relay,
+     ) -> Result<()> {
+         let (plan, _) = self.hosted_plan()?;
++        let wire = plan.wire_checked()?;
+         let (sha, retained) = self.hosted_stream_register(request, attempt)?;
+         if retained != relay.forwarded {
+             self.hosted_uncertain(
+@@ -1117,13 +1349,13 @@ impl Host {
+             request,
+             attempt,
+             "relay.json",
+-            &serde_json::to_vec(&relay.evidence())?,
++            &serde_json::to_vec(&relay.evidence_for(wire))?,
+         )?;
+         let terminal = stream::sse_data(&relay.forwarded)
+             .iter()
+             .filter_map(|d| serde_json::from_str::<Value>(d).ok())
+-            .find(|v| v["type"] == "response.completed");
+-        let usage = stream::usage(&relay.forwarded);
++            .find(|v| v["type"] == wire.terminal_event());
++        let usage = stream::usage_for(wire, &relay.forwarded);
+         let r = self
+             .journal
+             .coding
+@@ -1132,7 +1364,8 @@ impl Host {
+             .provider_requests
+             .get_mut(&request)
+             .unwrap();
+-        let disposition = r.settle_attempt(attempt, AttemptEvidence::from_relay(&relay))?;
++        let disposition =
++            r.settle_attempt(attempt, AttemptEvidence::from_relay_for(wire, &relay))?;
+         if let (stream::Outcome::Interrupted(code), Some(a)) =
+             (&relay.outcome, r.attempts.last_mut())
+             && disposition == AttemptDisposition::Uncertain
+@@ -1146,19 +1379,33 @@ impl Host {
+         );
+         r.http_status = Some(relay.status.into());
+         if let Some(v) = terminal.as_ref().filter(|_| usage["failed"].is_null()) {
+-            let response = &v["response"];
+-            if let Some(model) = response["model"].as_str() {
++            let (model, raw) = match wire {
++                Wire::Responses => {
++                    let response = &v["response"];
++                    (
++                        response["model"].as_str().map(str::to_owned),
++                        json!({"eventType":"response.completed","status":response["status"],
++                        "usage":{"input_tokens":response["usage"]["input_tokens"],"output_tokens":response["usage"]["output_tokens"],"total_tokens":response["usage"]["total_tokens"]}}),
++                    )
++                }
++                // Model and input-side usage from `message_start`, stop
++                // reason and final usage from the last `message_delta`.
++                Wire::Messages => (
++                    usage["model"].as_str().map(str::to_owned),
++                    json!({"eventType":"message_stop","stopReason":usage["stopReason"],
++                    "usage":{"input_tokens":usage["inputTokens"],"cache_creation_input_tokens":usage["cacheCreationInputTokens"],
++                    "cache_read_input_tokens":usage["cacheReadInputTokens"],"output_tokens":usage["outputTokens"]}}),
++                ),
++            };
++            if let Some(model) = model {
+                 if model != plan.model {
+                     self.journal.coding.as_mut().unwrap().provider_failed = true;
+                     self.save()?;
+                     return refuse("backend model identity conflict");
+                 }
+-                r.backend_model = Some(model.into());
++                r.backend_model = Some(model);
+             }
+-            r.raw_terminal = Some(
+-                json!({"eventType":"response.completed","status":response["status"],
+-                "usage":{"input_tokens":response["usage"]["input_tokens"],"output_tokens":response["usage"]["output_tokens"],"total_tokens":response["usage"]["total_tokens"]}}),
+-            );
++            r.raw_terminal = Some(raw);
+         }
+         let completed = disposition == AttemptDisposition::Completed && usage["completed"] == true;
+         self.hosted
+@@ -1308,6 +1555,12 @@ impl Host {
+     /// without relaying the chunk.
+     fn hosted_emit(&mut self, s: &mut Stream, attempt: u64, frames: Vec<Value>) -> Result<()> {
+         for f in frames {
++            if f["type"] == "response-head"
++                && let Err(reason) = self.subscription_guard(s, attempt)
++            {
++                self.hosted_close_uncertain(s, &reason)?;
++                return refuse(reason);
++            }
+             let kept = (|| -> Result<()> {
+                 match f["type"].as_str() {
+                     Some("response-chunk") => {
+@@ -1348,6 +1601,54 @@ impl Host {
+         }
+         Ok(())
+     }
++    /// Claude subscription routes: a successful response is relayed only if
++    /// its head shows the request inside the plan's limits
++    /// (`anthropic-ratelimit-unified-status` `allowed` or `allowed_warning`)
++    /// with extra usage unavailable (`...-overage-status` `rejected` or
++    /// absent). Anything else (including headers that are missing) stops the
++    /// job before more requests are made: such a request may draw on extra
++    /// usage. The headers are retained in the attempt's `relay.json`.
++    fn subscription_guard(&self, s: &Stream, attempt: u64) -> std::result::Result<(), String> {
++        let StreamPhase::Active { session, .. } = &s.phase else {
++            return Ok(());
++        };
++        let relay = session.relay();
++        let route = self
++            .journal
++            .coding
++            .as_ref()
++            .and_then(|c| c.provider_requests.get(&s.request))
++            .and_then(|r| r.attempts.iter().find(|a| a.attempt == attempt))
++            .map(|a| a.route.clone());
++        let endpoint = self.hosted_plan().ok().and_then(|(_, routes)| {
++            routes
++                .routes
++                .iter()
++                .find(|r| Some(&r.id) == route.as_ref())
++                .and_then(|r| Endpoint::parse(&r.endpoint))
++        });
++        if endpoint != Some(Endpoint::AnthropicOauth) || relay.status != 200 {
++            return Ok(());
++        }
++        let header = |name: &str| {
++            relay
++                .head_headers
++                .iter()
++                .find(|(k, _)| k == name)
++                .map(|(_, v)| v.as_str())
++        };
++        let status = header("anthropic-ratelimit-unified-status");
++        let overage = header("anthropic-ratelimit-unified-overage-status");
++        if matches!(status, Some("allowed" | "allowed_warning"))
++            && matches!(overage, None | Some("rejected"))
++        {
++            Ok(())
++        } else {
++            Err(format!(
++                "subscription_billing_guard: unified-status {status:?}, overage-status {overage:?}"
++            ))
++        }
++    }
+     /// Create-only retention of exact screened bytes, registered as a journal
+     /// artifact so collection verifies it; returns the digest.
+     fn hosted_retain(
+@@ -1397,11 +1698,16 @@ impl Host {
+         }
+         let (sha, retained) = self.hosted_stream_register(s.request, attempt)?;
+         let differs = retained != relay.forwarded;
++        let wire = self
++            .hosted_plan()
++            .ok()
++            .and_then(|(plan, _)| plan.wire())
++            .unwrap_or(Wire::Responses);
+         self.hosted_retain(
+             s.request,
+             attempt,
+             "relay.json",
+-            &serde_json::to_vec(&relay.evidence())?,
++            &serde_json::to_vec(&relay.evidence_for(wire))?,
+         )?;
+         let state = self.journal.coding.as_mut().unwrap();
+         if let Some(r) = state.provider_requests.get_mut(&s.request) {
+@@ -2317,4 +2623,380 @@ mod tests {
+         assert_eq!(a.disposition, AttemptDisposition::Uncertain);
+         assert_eq!(a.reason.as_deref(), Some("hosted transport absent"));
+     }
++
++    // Anthropic Messages family (W1).
++    const HAIKU: &str = "claude-haiku-5-5";
++    /// The offline host switched to the `claude-sdk` provider with Pi's
++    /// Anthropic catalog entry of the model.
++    fn messages_host(responses: Vec<Vec<u8>>) -> (tempfile::TempDir, Host, Wire) {
++        let (dir, mut h, w) = host(responses, None);
++        let path = dir.path().join("anthropic.json");
++        let bytes = serde_json::to_vec(&json!({"anthropic-messages":{"chat:claude-haiku-5-5":{
++            "id":HAIKU,"provider":"anthropic","api":"anthropic-messages","baseUrl":"https://api.anthropic.com",
++            "cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,
++                "tiers":[{"inputTokensAbove":100000,"input":0.5,"output":2.5,"cacheRead":0.05,"cacheWrite":0.625}]},
++            "contextWindow":1000000,"maxTokens":128000}}}))
++        .unwrap();
++        fs::write(&path, &bytes).unwrap();
++        let plan = h
++            .journal
++            .job
++            .coding
++            .as_mut()
++            .unwrap()
++            .provider
++            .as_mut()
++            .unwrap();
++        plan.provider = "claude-sdk".into();
++        plan.model = HAIKU.into();
++        plan.budget_microusd = 10_000_000;
++        plan.catalog = Artifact {
++            path,
++            sha256: digest(&bytes),
++        };
++        (dir, h, w)
++    }
++    fn messages_grant(h: &mut Host, w: &mut Wire) -> Value {
++        let replies = push(h, w, json!({"type":"coding_provider_request","id":1,"requestModel":{"id":HAIKU,"provider":"claude-sdk","contextWindow":1000000},"contextBytes":1000})).unwrap();
++        assert_eq!(replies.len(), 1);
++        let mut written = vec![];
++        h.coding_bridge_dispatch(&replies[0], &mut |b| {
++            written = b.to_vec();
++            Ok(())
++        })
++        .unwrap();
++        serde_json::from_slice(&written).unwrap()
++    }
++    fn messages_body(messages: Value) -> Value {
++        json!({"model":HAIKU,"stream":true,"max_tokens":128000,"messages":messages,
++            "system":[{"type":"text","text":"s","cache_control":{"type":"ephemeral","ttl":"1h"}}],
++            "tools":[{"name":"DeferredToolPlaceholder","description":"d","input_schema":{"type":"object"},"defer_loading":true},
++                {"name":"mcp__pi__snapshot_read","description":"r","input_schema":{"type":"object"}}],
++            "metadata":{"user_id":"{}"},"thinking":{"type":"disabled"}})
++    }
++    fn messages_fetch(grant: &Value, body: &[u8]) -> Value {
++        let s = &grant["stream"];
++        json!({"type":"provider_fetch","id":1,"binding":s["binding"],"sequence":s["sequence"],"stream":s["stream"],
++            "url":"https://api.anthropic.com/v1/messages?beta=true","method":"POST",
++            "headers":{"authorization":"Bearer sk-ant-oat01-DUMMY","x-api-key":"marker","content-type":"application/json",
++                "anthropic-version":"2023-06-01","x-stainless-retry-count":"0"},
++            "body":B64.encode(body)})
++    }
++    fn messages_completed() -> Vec<u8> {
++        messages_completed_with("")
++    }
++    fn messages_completed_with(headers: &str) -> Vec<u8> {
++        let events = [
++            (
++                "message_start",
++                json!({"type":"message_start","message":{"id":"msg_1","model":HAIKU,"usage":
++                {"input_tokens":10,"cache_creation_input_tokens":1000,"cache_read_input_tokens":2000,"output_tokens":1}}}),
++            ),
++            (
++                "content_block_start",
++                json!({"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}),
++            ),
++            ("ping", json!({"type":"ping"})),
++            (
++                "content_block_delta",
++                json!({"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ok"}}),
++            ),
++            (
++                "content_block_stop",
++                json!({"type":"content_block_stop","index":0}),
++            ),
++            (
++                "message_delta",
++                json!({"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":
++                {"input_tokens":10,"cache_creation_input_tokens":1000,"cache_read_input_tokens":2000,"output_tokens":50}}),
++            ),
++            ("message_stop", json!({"type":"message_stop"})),
++        ];
++        let body = events
++            .iter()
++            .map(|(name, e)| format!("event: {name}\ndata: {e}\n\n"))
++            .collect::<String>();
++        format!(
++            "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\n{headers}Content-Length: {}\r\n\r\n{body}",
++            body.len()
++        )
++        .into_bytes()
++    }
++    fn relay_to_end(h: &mut Host, w: &mut Wire, g: &Value) {
++        tick_until(h, w, has("response-head"));
++        let mut ordinal = 1;
++        loop {
++            push(h, w, op(g, "pull", ordinal)).unwrap();
++            let f = tick_until(h, w, |a| !a.is_empty());
++            ordinal += 1;
++            if f[0]["type"] == "response-end" {
++                break;
++            }
++        }
++        push(h, w, op(g, "ack", ordinal)).unwrap();
++    }
++    #[test]
++    fn messages_relay_settles_per_token_class_from_host_evidence() {
++        let (dir, mut h, mut w) = messages_host(vec![refusal(429), messages_completed()]);
++        let g = messages_grant(&mut h, &mut w);
++        let body =
++            serde_json::to_vec(&messages_body(json!([{"role":"user","content":"q"}]))).unwrap();
++        assert!(
++            push(&mut h, &mut w, messages_fetch(&g, &body))
++                .unwrap()
++                .is_empty()
++        );
++        relay_to_end(&mut h, &mut w, &g);
++        // Access markers never reach the transport; Claude Code headers do.
++        for (_, headers) in w.opened.lock().unwrap().iter() {
++            assert!(!headers.contains_key("authorization") && !headers.contains_key("x-api-key"));
++            assert_eq!(headers["anthropic-version"], "2023-06-01");
++        }
++        let r = request(&h);
++        assert_eq!(r.attempts[0].disposition, AttemptDisposition::Refused);
++        assert_eq!(r.attempts[1].disposition, AttemptDisposition::Completed);
++        assert_eq!(r.backend_model.as_deref(), Some(HAIKU));
++        assert_eq!(
++            r.raw_terminal.as_ref().unwrap(),
++            &json!({"eventType":"message_stop","stopReason":"end_turn","usage":{"input_tokens":10,
++                "cache_creation_input_tokens":1000,"cache_read_input_tokens":2000,"output_tokens":50}})
++        );
++        let relay: Value = serde_json::from_slice(
++            &fs::read(dir.path().join("coding-hosted-1-2.relay.json")).unwrap(),
++        )
++        .unwrap();
++        assert_eq!(relay["usage"]["cacheReadInputTokens"], 2000);
++        // The container's stop reason must agree with the raw one.
++        assert!(
++            push(
++                &mut h,
++                &mut w,
++                json!({"type":"provider_complete","id":1,"stopReason":"toolUse","usage":{}})
++            )
++            .is_err()
++        );
++        let (_dir, mut h, mut w) = messages_host(vec![messages_completed()]);
++        let g = messages_grant(&mut h, &mut w);
++        push(&mut h, &mut w, messages_fetch(&g, &body)).unwrap();
++        relay_to_end(&mut h, &mut w, &g);
++        push(
++            &mut h,
++            &mut w,
++            json!({"type":"provider_complete","id":1,"stopReason":"stop","usage":{}}),
++        )
++        .unwrap();
++        // 10 x 0.1 + 1000 x 0.125 + 2000 x 0.01 + 50 x 0.5 = 171, plus one.
++        assert_eq!(request(&h).settled_microusd, Some(172));
++    }
++    #[test]
++    fn messages_cost_uses_the_tier_of_all_input_tokens() {
++        let model = json!({"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,
++            "tiers":[{"inputTokensAbove":100000,"input":0.5,"output":2.5,"cacheRead":0.05,"cacheWrite":0.625}]}});
++        assert_eq!(
++            provider::messages_cost_for_tests(&model, 0, 0, 100_000, 0),
++            1001
++        );
++        // Cache reads push the request over the threshold: every class at tier rates.
++        assert_eq!(
++            provider::messages_cost_for_tests(&model, 0, 0, 100_001, 10),
++            5001 + 25 + 1
++        );
++    }
++    #[test]
++    fn messages_body_policy_and_url_are_enforced() {
++        let ok = messages_body(json!([{"role":"user","content":"q"}]));
++        let mut cases = vec![];
++        for (key, value) in [
++            ("mcp_servers", json!([{"type":"url","url":"https://x"}])),
++            ("container", json!("c")),
++            ("service_tier", json!("auto")),
++            ("tool_choice", json!({"type":"any"})),
++            (
++                "tools",
++                json!([{"type":"web_search_20250305","name":"web_search"}]),
++            ),
++            ("tools", json!({"name":"x"})),
++            ("messages", json!([])),
++            ("stream", json!(false)),
++            ("model", json!("claude-opus-5-5")),
++        ] {
++            let mut b = ok.clone();
++            b[key] = value;
++            cases.push((serde_json::to_vec(&b).unwrap(), "messages-bound"));
++        }
++        // A duplicate key could be read differently upstream.
++        let text = String::from_utf8(serde_json::to_vec(&ok).unwrap()).unwrap();
++        cases.push((
++            text.replacen("{", &format!("{{\"model\":\"{HAIKU}\","), 1)
++                .into_bytes(),
++            "duplicate",
++        ));
++        for (body, label) in cases {
++            let (_dir, mut h, mut w) = messages_host(vec![]);
++            let g = messages_grant(&mut h, &mut w);
++            assert!(
++                push(&mut h, &mut w, messages_fetch(&g, &body)).is_err(),
++                "{label}: {}",
++                String::from_utf8_lossy(&body)
++            );
++            assert!(w.opened.lock().unwrap().is_empty());
++        }
++        let (_dir, mut h, mut w) = messages_host(vec![]);
++        let g = messages_grant(&mut h, &mut w);
++        let mut f = messages_fetch(&g, &serde_json::to_vec(&ok).unwrap());
++        f["headers"]["x-stainless-retry-count"] = json!("1");
++        assert!(push(&mut h, &mut w, f).is_err(), "client retry");
++        for url in [
++            "https://api.anthropic.com/v1/messages?beta=false",
++            "https://api.anthropic.com/v1/complete",
++            "https://chatgpt.com/backend-api/codex/responses",
++        ] {
++            let (_dir, mut h, mut w) = messages_host(vec![]);
++            let g = messages_grant(&mut h, &mut w);
++            let mut f = messages_fetch(&g, &serde_json::to_vec(&ok).unwrap());
++            f["url"] = json!(url);
++            assert!(push(&mut h, &mut w, f).is_err(), "{url}");
++        }
++        let (_dir, mut h, mut w) = messages_host(vec![]);
++        let g = messages_grant(&mut h, &mut w);
++        let mut f = messages_fetch(&g, &serde_json::to_vec(&ok).unwrap());
++        f["url"] = json!("https://api.anthropic.com/v1/messages");
++        assert!(push(&mut h, &mut w, f).is_ok());
++    }
++    #[test]
++    fn messages_requests_must_extend_the_previous_messages() {
++        let (_dir, mut h, _w) = messages_host(vec![]);
++        let (plan, _) = h.hosted_plan().unwrap();
++        let first = json!([{"role":"user","content":[{"type":"text","text":"q"}]},
++            {"role":"system","content":[{"type":"text","text":"env"}]}]);
++        h.hosted.last_messages = Some(first.clone());
++        let next = |m: Value| messages_body(m);
++        // Claude Code's observed rewrites: string content and moved cache_control.
++        let extended = json!([{"role":"user","content":[{"type":"text","text":"q","cache_control":{"type":"ephemeral"}}]},
++            {"role":"system","content":"env"},
++            {"role":"assistant","content":[{"type":"text","text":"a"}]}]);
++        h.messages_policy(&plan, &next(extended), false).unwrap();
++        for bad in [
++            first.clone(),
++            json!([{"role":"user","content":[{"type":"text","text":"altered"}]},
++                {"role":"system","content":"env"},{"role":"assistant","content":"a"}]),
++            json!([{"role":"system","content":"env"},{"role":"user","content":"q"},{"role":"assistant","content":"a"}]),
++        ] {
++            assert!(
++                h.messages_policy(&plan, &next(bad.clone()), false).is_err(),
++                "{bad}"
++            );
++        }
++    }
++    #[test]
++    fn messages_stream_terminal_and_failure_rules() {
++        let sse = |events: &[Value]| {
++            events
++                .iter()
++                .map(|e| format!("event: {}\ndata: {e}\n\n", e["type"].as_str().unwrap()))
++                .collect::<String>()
++        };
++        let start = json!({"type":"message_start","message":{"id":"m","model":HAIKU,"usage":{"input_tokens":1,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":1}}});
++        let delta = json!({"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":7}});
++        let stop = json!({"type":"message_stop"});
++        let clean = sse(&[start.clone(), delta.clone(), stop.clone()]);
++        let u = stream::usage_for(stream::Wire::Messages, clean.as_bytes());
++        assert_eq!(
++            (u["completed"].clone(), u["observed"].clone()),
++            (json!(true), json!(true))
++        );
++        assert_eq!(
++            (u["inputTokens"].clone(), u["outputTokens"].clone()),
++            (json!(1), json!(7))
++        );
++        assert!(stream::terminal_is_last_for(
++            stream::Wire::Messages,
++            clean.as_bytes(),
++            b": keepalive\n\n"
++        ));
++        assert!(!stream::terminal_is_last_for(
++            stream::Wire::Messages,
++            clean.as_bytes(),
++            b"event: ping\n\n"
++        ));
++        assert!(!stream::terminal_is_last_for(
++            stream::Wire::Responses,
++            clean.as_bytes(),
++            b""
++        ));
++        let failed = sse(&[
++            start.clone(),
++            json!({"type":"error","error":{"type":"overloaded_error"}}),
++            stop,
++        ]);
++        let u = stream::usage_for(stream::Wire::Messages, failed.as_bytes());
++        assert_eq!(
++            (u["completed"].clone(), u["failed"].clone()),
++            (json!(false), json!("overloaded_error"))
++        );
++        let unterminated = sse(&[start, delta]);
++        assert_eq!(
++            stream::usage_for(stream::Wire::Messages, unterminated.as_bytes())["completed"],
++            false
++        );
++    }
++    #[test]
++    fn subscription_route_relays_only_in_plan_responses() {
++        let allowed = "anthropic-ratelimit-unified-status: allowed\r\nanthropic-ratelimit-unified-overage-status: rejected\r\nanthropic-ratelimit-unified-overage-disabled-reason: org_level_disabled\r\nrequest-id: req_1\r\n";
++        for (headers, ok) in [
++            (allowed, true),
++            (
++                "anthropic-ratelimit-unified-status: allowed_warning\r\n",
++                true,
++            ),
++            (
++                "anthropic-ratelimit-unified-status: allowed\r\nanthropic-ratelimit-unified-overage-status: allowed\r\n",
++                false,
++            ),
++            ("anthropic-ratelimit-unified-status: rejected\r\n", false),
++            ("", false),
++        ] {
++            let (dir, mut h, mut w) = messages_host(vec![messages_completed_with(headers)]);
++            h.journal
++                .job
++                .coding
++                .as_mut()
++                .unwrap()
++                .provider
++                .as_mut()
++                .unwrap()
++                .hosted
++                .routes[0]
++                .endpoint = "https:anthropic-oauth".into();
++            let g = messages_grant(&mut h, &mut w);
++            let body =
++                serde_json::to_vec(&messages_body(json!([{"role":"user","content":"q"}]))).unwrap();
++            push(&mut h, &mut w, messages_fetch(&g, &body)).unwrap();
++            let mut seen = vec![];
++            for _ in 0..1000 {
++                match h.coding_hosted_tick(&w.path) {
++                    Ok(frames) => seen.extend(frames),
++                    Err(_) => break,
++                }
++                if !seen.is_empty() {
++                    break;
++                }
++                std::thread::sleep(Duration::from_millis(2));
++            }
++            let a = request(&h).attempts[0].clone();
++            if ok {
++                assert_eq!(seen.len(), 1, "{headers}");
++                assert_eq!(a.disposition, AttemptDisposition::Pending);
++            } else {
++                assert!(seen.is_empty(), "head relayed: {headers}");
++                assert_eq!(a.disposition, AttemptDisposition::Uncertain);
++                assert!(a.reason.unwrap().contains("subscription_billing_guard"));
++                let relay: Value = serde_json::from_slice(
++                    &fs::read(dir.path().join("coding-hosted-1-1.relay.json")).unwrap(),
++                )
++                .unwrap();
++                assert!(relay["headHeaders"].is_array());
++            }
++        }
++    }
+ }
+diff --git a/rust/crates/work-engine-manual-host/src/pi_coding_https.rs b/rust/crates/work-engine-manual-host/src/pi_coding_https.rs
+index b20948c3..c8528005 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_coding_https.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_coding_https.rs
+@@ -35,6 +35,15 @@ pub enum CredentialSource {
+     /// Qualification only: the account of a Pi auth store with access that
+     /// the backend must refuse, to exercise a real definitive refusal.
+     ChatgptInvalidForQualification { path: PathBuf },
++    /// Claude subscription access from Claude Code's credentials file
++    /// (`claudeAiOauth.accessToken`, `expiresAt`). The Host's own Claude Code
++    /// keeps it fresh; it is read again before every connection and never
++    /// refreshed here.
++    ClaudeCodeAuth { path: PathBuf },
++    /// Anthropic API key from an environment variable of the embedder.
++    AnthropicApiKeyEnv { variable: String },
++    /// Anthropic API key from an owner-only file (one line).
++    AnthropicApiKeyFile { path: PathBuf },
+ }
+ #[derive(Deserialize)]
+ #[serde(deny_unknown_fields)]
+@@ -44,20 +53,39 @@ struct CredentialsFile {
+ }
+ 
+ enum Credential {
+-    ChatGpt { access: String, account: String },
++    ChatGpt {
++        access: String,
++        account: String,
++    },
+     ApiKey(String),
++    /// The current access and every earlier one this process read (all are
++    /// screened).
++    ClaudeOauth {
++        path: PathBuf,
++        access: String,
++        earlier: Vec<String>,
++    },
++    AnthropicApiKey(String),
+ }
+ impl Credential {
+     fn endpoint(&self) -> Endpoint {
+         match self {
+             Self::ChatGpt { .. } => Endpoint::ChatGptCodex,
+             Self::ApiKey(_) => Endpoint::OpenAiResponses,
++            Self::ClaudeOauth { .. } => Endpoint::AnthropicOauth,
++            Self::AnthropicApiKey(_) => Endpoint::AnthropicApi,
+         }
+     }
+-    fn secret(&self) -> &[u8] {
++    fn secrets(&self) -> Vec<&[u8]> {
+         match self {
+-            Self::ChatGpt { access, .. } => access.as_bytes(),
+-            Self::ApiKey(key) => key.as_bytes(),
++            Self::ChatGpt { access, .. } => vec![access.as_bytes()],
++            Self::ApiKey(key) | Self::AnthropicApiKey(key) => vec![key.as_bytes()],
++            Self::ClaudeOauth {
++                access, earlier, ..
++            } => std::iter::once(access)
++                .chain(earlier)
++                .map(String::as_bytes)
++                .collect(),
+         }
+     }
+ }
+@@ -105,6 +133,42 @@ fn pi_auth(path: &Path) -> Result<(String, String)> {
+     Ok((access, account))
+ }
+ 
++/// Claude Code's subscription access, valid for at least `margin_ms`.
++fn claude_auth(path: &Path, margin_ms: i64) -> Result<String> {
++    let v: serde_json::Value = serde_json::from_slice(&owner_only(path, 1 << 20)?)?;
++    let e = &v["claudeAiOauth"];
++    let access = e["accessToken"].as_str().unwrap_or("").to_string();
++    let expires = e["expiresAt"].as_i64().unwrap_or(0);
++    let now = std::time::SystemTime::now()
++        .duration_since(std::time::UNIX_EPOCH)
++        .map_err(|_| Error::Refused("clock".into()))?
++        .as_millis() as i64;
++    if !valid_token(&access) || !access.starts_with("sk-ant-oat") {
++        return refuse("Claude Code credentials have no usable subscription access");
++    }
++    if expires <= now + margin_ms {
++        return refuse("Claude subscription access expires too soon; refresh it first");
++    }
++    Ok(access)
++}
++fn key_from_env(variable: &str) -> Result<String> {
++    let key = std::env::var(variable).unwrap_or_default();
++    if !valid_token(&key) {
++        return refuse(format!("API key variable {variable} unusable"));
++    }
++    Ok(key)
++}
++fn key_from_file(path: &Path) -> Result<String> {
++    let key = String::from_utf8(owner_only(path, 4096)?)
++        .map_err(|_| Error::Refused("API key file encoding".into()))?
++        .trim()
++        .to_string();
++    if !valid_token(&key) {
++        return refuse("API key file unusable");
++    }
++    Ok(key)
++}
++
+ /// Host-held HTTPS transport to the fixed public endpoints.
+ pub struct HttpsTransport {
+     credentials: BTreeMap<String, Credential>,
+@@ -133,6 +197,9 @@ impl HttpsTransport {
+                         CredentialSource::ChatgptInvalidForQualification { .. } => {
+                             "chatgpt-invalid-for-qualification"
+                         }
++                        CredentialSource::ClaudeCodeAuth { .. } => "claude-code-auth",
++                        CredentialSource::AnthropicApiKeyEnv { .. } => "anthropic-api-key-env",
++                        CredentialSource::AnthropicApiKeyFile { .. } => "anthropic-api-key-file",
+                     },
+                 )
+             })
+@@ -149,21 +216,19 @@ impl HttpsTransport {
+                     Credential::ChatGpt { access, account }
+                 }
+                 CredentialSource::ApiKeyEnv { variable } => {
+-                    let key = std::env::var(&variable).unwrap_or_default();
+-                    if !valid_token(&key) {
+-                        return refuse(format!("API key variable {variable} unusable"));
+-                    }
+-                    Credential::ApiKey(key)
++                    Credential::ApiKey(key_from_env(&variable)?)
++                }
++                CredentialSource::ApiKeyFile { path } => Credential::ApiKey(key_from_file(&path)?),
++                CredentialSource::ClaudeCodeAuth { path } => Credential::ClaudeOauth {
++                    access: claude_auth(&path, 600_000)?,
++                    path,
++                    earlier: Vec::new(),
++                },
++                CredentialSource::AnthropicApiKeyEnv { variable } => {
++                    Credential::AnthropicApiKey(key_from_env(&variable)?)
+                 }
+-                CredentialSource::ApiKeyFile { path } => {
+-                    let key = String::from_utf8(owner_only(&path, 4096)?)
+-                        .map_err(|_| Error::Refused("API key file encoding".into()))?
+-                        .trim()
+-                        .to_string();
+-                    if !valid_token(&key) {
+-                        return refuse("API key file unusable");
+-                    }
+-                    Credential::ApiKey(key)
++                CredentialSource::AnthropicApiKeyFile { path } => {
++                    Credential::AnthropicApiKey(key_from_file(&path)?)
+                 }
+                 CredentialSource::ChatgptInvalidForQualification { path } => {
+                     let (_, account) = pi_auth(&path)?;
+@@ -218,7 +283,20 @@ impl HostedProviderTransport for HttpsTransport {
+     }
+     fn connect(&mut self, route: &HostedRoute, deadline_ms: i64) -> Result<Connection> {
+         let (endpoint, _) = self.credential(route)?;
+-        let (host, _) = endpoint.target();
++        // Subscription access is read again (it may have been refreshed since)
++        // and must outlive this attempt's deadline window by its margin.
++        if let Some(Credential::ClaudeOauth {
++            path,
++            access,
++            earlier,
++        }) = self.credentials.get_mut(&route.payer)
++        {
++            let current = claude_auth(path, 300_000)?;
++            if current != *access {
++                earlier.push(std::mem::replace(access, current));
++            }
++        }
++        let host = endpoint.host();
+         let address = (host, 443)
+             .to_socket_addrs()?
+             .next()
+@@ -263,6 +341,14 @@ impl HostedProviderTransport for HttpsTransport {
+                 &[("Authorization", &format!("Bearer {key}"))],
+                 request,
+             ),
++            Credential::ClaudeOauth { access, .. } => request_head(
++                endpoint,
++                &[("Authorization", &format!("Bearer {access}"))],
++                request,
++            ),
++            Credential::AnthropicApiKey(key) => {
++                request_head(endpoint, &[("x-api-key", key)], request)
++            }
+         };
+         let Connection { mut stream, abort } = connection;
+         stream.write_all(head.as_bytes())?;
+@@ -271,7 +357,11 @@ impl HostedProviderTransport for HttpsTransport {
+         Ok((Box::new(stream), abort))
+     }
+     fn hold(&self, pending: &[u8]) -> std::result::Result<usize, &'static str> {
+-        let secrets: Vec<&[u8]> = self.credentials.values().map(Credential::secret).collect();
++        let secrets: Vec<&[u8]> = self
++            .credentials
++            .values()
++            .flat_map(Credential::secrets)
++            .collect();
+         hold_secrets(&secrets, pending)
+     }
+ }
+@@ -295,6 +385,18 @@ mod tests {
+                     "api".to_string(),
+                     Credential::ApiKey("sk-test-0123456789abcdef".into()),
+                 ),
++                (
++                    "claude".to_string(),
++                    Credential::ClaudeOauth {
++                        path: PathBuf::from("/nonexistent"),
++                        access: "sk-ant-oat01-current-0123456789".into(),
++                        earlier: vec!["sk-ant-oat01-earlier-0123456789".into()],
++                    },
++                ),
++                (
++                    "anthropic-api".to_string(),
++                    Credential::AnthropicApiKey("sk-ant-api03-0123456789abcdef".into()),
++                ),
+             ]),
+             serde_json::json!({}),
+         )
+@@ -332,6 +434,80 @@ mod tests {
+         }
+     }
+     #[test]
++    fn messages_routes_need_their_anthropic_access() {
++        let t = transport();
++        let ok = HostedRoutes {
++            routes: vec![
++                route("primary", "claude", "https:anthropic-oauth"),
++                route("secondary", "anthropic-api", "https:anthropic-api"),
++            ],
++            max_attempts_per_request: 2,
++        };
++        t.check(&ok).unwrap();
++        for bad in [
++            route("primary", "claude", "https:anthropic-api"),
++            route("primary", "anthropic-api", "https:anthropic-oauth"),
++            route("primary", "subscription", "https:anthropic-oauth"),
++            route("primary", "claude", "https:chatgpt-codex"),
++        ] {
++            let routes = HostedRoutes {
++                routes: vec![bad],
++                max_attempts_per_request: 1,
++            };
++            assert!(t.check(&routes).is_err());
++        }
++        // Current and earlier subscription access and the API key are screened.
++        assert!(t.hold(b"x sk-ant-oat01-current-0123456789").is_err());
++        assert!(t.hold(b"x sk-ant-oat01-earlier-0123456789").is_err());
++        assert!(t.hold(b"x sk-ant-api03-0123456789abcdef").is_err());
++    }
++    #[test]
++    fn messages_heads_keep_the_beta_query_and_claude_code_headers_only() {
++        let mut request = HostedRequest {
++            request: 1,
++            attempt: 1,
++            headers: BTreeMap::from([
++                ("anthropic-version".to_string(), "2023-06-01".to_string()),
++                ("anthropic-beta".to_string(), "x".to_string()),
++                ("x-app".to_string(), "cli".to_string()),
++                ("x-stainless-retry-count".to_string(), "0".to_string()),
++                ("originator".to_string(), "pi".to_string()),
++                ("x-unknown".to_string(), "u".to_string()),
++            ]),
++            body: b"{}".to_vec(),
++            wire: crate::pi_stream::Wire::Messages,
++            beta: true,
++        };
++        let oauth = request_head(
++            Endpoint::AnthropicOauth,
++            &[("Authorization", "Bearer t")],
++            &request,
++        );
++        assert!(
++            oauth
++                .starts_with("POST /v1/messages?beta=true HTTP/1.1\r\nHost: api.anthropic.com\r\n")
++        );
++        for kept in [
++            "anthropic-version: 2023-06-01\r\n",
++            "anthropic-beta: x\r\n",
++            "x-app: cli\r\n",
++            "x-stainless-retry-count: 0\r\n",
++        ] {
++            assert!(oauth.contains(kept), "{kept}");
++        }
++        assert!(!oauth.contains("originator") && !oauth.contains("x-unknown"));
++        request.beta = false;
++        let api = request_head(Endpoint::AnthropicApi, &[("x-api-key", "k")], &request);
++        assert!(api.starts_with("POST /v1/messages HTTP/1.1\r\nHost: api.anthropic.com\r\n"));
++        assert!(api.contains("x-api-key: k\r\n"));
++        let looped = request_head(
++            Endpoint::Loopback(std::net::SocketAddr::from(([127, 0, 0, 1], 9))),
++            &[],
++            &request,
++        );
++        assert!(looped.starts_with("POST /v1/messages HTTP/1.1\r\nHost: localhost\r\n"));
++    }
++    #[test]
+     fn every_payers_access_is_screened() {
+         let t = transport();
+         assert!(t.hold(b"x chatgpt-access-0123456789 y").is_err());
+@@ -353,6 +529,8 @@ mod tests {
+                 ("accept".to_string(), "text/event-stream".to_string()),
+             ]),
+             body: b"{}".to_vec(),
++            wire: crate::pi_stream::Wire::Responses,
++            beta: false,
+         };
+         let codex = request_head(
+             Endpoint::ChatGptCodex,
+diff --git a/rust/crates/work-engine-manual-host/src/pi_coding_provider.rs b/rust/crates/work-engine-manual-host/src/pi_coding_provider.rs
+index b163cf18..b32b79cb 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_coding_provider.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_coding_provider.rs
+@@ -4,6 +4,20 @@ use super::*;
+ /// Host-relayed response stream (`openResponse`) imported by the hosted receiver.
+ pub const STREAM_ADAPTER: &[u8] = include_bytes!("../receiver/pi-native-tools.mjs");
+ const CATALOG: &str = "node_modules/@earendil-works/pi-ai/dist/providers/data/openai-codex.json";
++/// Pi's Anthropic catalog: the prices and limits of the Claude models, which
++/// the `claude-sdk` extension takes from it too.
++const ANTHROPIC_CATALOG: &str =
++    "node_modules/@earendil-works/pi-ai/dist/providers/data/anthropic.json";
++/// Claude models admitted on the Messages routes (operator, 2026-11-18).
++pub const CLAUDE_MODELS: [&str; 1] = ["claude-haiku-5-5"];
++/// The Pi provider a plan runs when it names none.
++pub const DEFAULT_PROVIDER: &str = "openai-codex";
++fn default_provider() -> String {
++    DEFAULT_PROVIDER.into()
++}
++/// Analysis budget ceiling for the Messages family: full catalog reservations
++/// of a 1M-context Claude model for the profile's request maximum.
++const MESSAGES_ANALYSIS_BUDGET: u64 = 32_000_000;
+ /// Public Pi configuration staged read-only for the container. Provider
+ /// access is not a lane input: the Host's transport holds it.
+ #[derive(Clone, Serialize, Deserialize)]
+@@ -20,6 +34,13 @@ pub struct ProviderPlan {
+     pub stream_adapter: Artifact,
+     /// Route table; its digest is bound by the runtime admission.
+     pub hosted: super::hosted::HostedRoutes,
++    /// The Pi provider the receiver runs: `openai-codex` (Responses family)
++    /// or `claude-sdk` (Claude Code in the container; Messages family, only
++    /// on the analysis profile). A `claude-sdk` plan may route to the
++    /// subscription and to the API-key Messages endpoint: both receive the
++    /// same request body.
++    #[serde(default = "default_provider")]
++    pub provider: String,
+     pub model: String,
+     pub max_requests: u32,
+     pub budget_microusd: u64,
+@@ -28,6 +49,7 @@ pub struct ProviderPlan {
+ impl std::fmt::Debug for ProviderPlan {
+     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+         f.debug_struct("ProviderPlan")
++            .field("provider", &self.provider)
+             .field("model", &self.model)
+             .field("max_requests", &self.max_requests)
+             .finish_non_exhaustive()
+@@ -154,7 +176,11 @@ pub enum AttemptEvidence {
+ }
+ impl AttemptEvidence {
+     pub fn from_relay(relay: &crate::pi_stream::Relay) -> Self {
++        Self::from_relay_for(crate::pi_stream::Wire::Responses, relay)
++    }
++    pub fn from_relay_for(wire: crate::pi_stream::Wire, relay: &crate::pi_stream::Relay) -> Self {
+         use crate::pi_stream::Outcome;
++        let usage = crate::pi_stream::usage_for(wire, &relay.forwarded);
+         Self::Relayed {
+             status: relay.status,
+             upstream_end: matches!(
+@@ -163,11 +189,9 @@ impl AttemptEvidence {
+             ),
+             interrupted: matches!(relay.outcome, Outcome::Interrupted(_)),
+             relay_sha256: relay.sha256(),
+-            provider_failure: crate::pi_stream::usage(&relay.forwarded)["failed"]
+-                .as_str()
+-                .map(String::from),
+-            terminal_last: crate::pi_stream::usage(&relay.forwarded)["completed"] == true
+-                && crate::pi_stream::terminal_is_last(&relay.forwarded, &relay.unforwarded)
++            provider_failure: usage["failed"].as_str().map(String::from),
++            terminal_last: usage["completed"] == true
++                && crate::pi_stream::terminal_is_last_for(wire, &relay.forwarded, &relay.unforwarded)
+                 && relay.held_dropped == 0
+                 // A drain that ended on a read or framing error may have
+                 // dropped provider bytes (M4): never clean.
+@@ -185,10 +209,9 @@ impl Reservation {
+     /// Money this request currently holds against the budget.
+     pub fn charged_microusd(&self) -> u64 {
+         if self.attempts.is_empty() {
+-            return self.settled_microusd.unwrap_or(
+-                self.reserved_microusd
+-                    .max(self.raw_microusd.unwrap_or(0)),
+-            );
++            return self
++                .settled_microusd
++                .unwrap_or(self.reserved_microusd.max(self.raw_microusd.unwrap_or(0)));
+         }
+         self.attempts
+             .iter()
+@@ -416,20 +439,64 @@ struct Admission {
+     allow_provider: bool,
+     /// Digest of the hosted route table.
+     hosted_routes_sha256: String,
++    #[serde(default = "default_provider")]
++    provider: String,
+ }
+ impl ProviderPlan {
++    /// Wire family of the plan's provider; `None` for an unknown provider.
++    pub fn wire(&self) -> Option<crate::pi_stream::Wire> {
++        match self.provider.as_str() {
++            "openai-codex" => Some(crate::pi_stream::Wire::Responses),
++            "claude-sdk" => Some(crate::pi_stream::Wire::Messages),
++            _ => None,
++        }
++    }
++    pub(super) fn wire_checked(&self) -> Result<crate::pi_stream::Wire> {
++        self.wire()
++            .ok_or_else(|| Error::Refused("provider family unknown".into()))
++    }
++    /// The pinned catalog entry of the plan's model.
+     pub(super) fn selected(&self) -> Result<Value> {
+         let data: Value = serde_json::from_slice(&self.catalog.verify()?)?;
+-        let selected = data["openai-codex-responses"][format!("chat:{}", self.model)].clone();
++        let (key, provider, api, base) = match self.wire_checked()? {
++            crate::pi_stream::Wire::Responses => (
++                "openai-codex-responses",
++                "openai-codex",
++                "openai-codex-responses",
++                "https://chatgpt.com/backend-api",
++            ),
++            crate::pi_stream::Wire::Messages => (
++                "anthropic-messages",
++                "anthropic",
++                "anthropic-messages",
++                "https://api.anthropic.com",
++            ),
++        };
++        let selected = data[key][format!("chat:{}", self.model)].clone();
+         if selected["id"] != self.model
+-            || selected["provider"] != "openai-codex"
+-            || selected["api"] != "openai-codex-responses"
+-            || selected["baseUrl"] != "https://chatgpt.com/backend-api"
++            || selected["provider"] != provider
++            || selected["api"] != api
++            || selected["baseUrl"] != base
+         {
+-            return refuse("exact subscription catalog model absent");
++            return refuse("exact catalog model absent");
+         }
+         Ok(selected)
+     }
++    /// Whether the receiver's native model is the pinned catalog model: same
++    /// id, limits and prices; provider and API as the plan's Pi provider
++    /// registers them.
++    pub(super) fn native_model_matches(&self, native: &Value) -> Result<bool> {
++        let selected = self.selected()?;
++        let (provider, api) = match self.provider.as_str() {
++            "claude-sdk" => (json!("claude-sdk"), json!("claude-agent-sdk")),
++            _ => (selected["provider"].clone(), selected["api"].clone()),
++        };
++        Ok(native["provider"] == provider
++            && native["api"] == api
++            && ["id", "contextWindow", "maxTokens", "cost"]
++                .iter()
++                .all(|k| native[*k] == selected[*k]))
++    }
+     /// Pure preparation check over the pinned public catalog; grants no entry
+     /// and neither inspects nor opens native credential references.
+     pub fn reservation_microusd(&self) -> Result<u64> {
+@@ -452,14 +519,25 @@ impl ProviderPlan {
+             .coding
+             .as_ref()
+             .is_some_and(|p| super::is_analysis(&p.schema));
++        let wire = self.wire_checked()?;
++        let messages = wire == crate::pi_stream::Wire::Messages;
+         if job
+             .coding
+             .as_ref()
+             .is_none_or(|p| !super::is_hosted(&p.schema))
+-            || self.model != "gpt-6-luna"
++            || (messages && !analysis)
++            || !if messages {
++                CLAUDE_MODELS.contains(&self.model.as_str())
++            } else {
++                self.model == "gpt-6-luna"
++            }
+             || !(1..=if analysis { super::analysis::MAX_REQUESTS } else { 6 })
+                 .contains(&self.max_requests)
+-            || !(1..=if analysis { 10_000_000 } else { 1_000_000 })
++            || !(1..=match (analysis, messages) {
++                (true, true) => MESSAGES_ANALYSIS_BUDGET,
++                (true, false) => 10_000_000,
++                _ => 1_000_000,
++            })
+                 .contains(&self.budget_microusd)
+             // K-d: a turn admitted by context bytes must fit the hosted request
+             // body bound (instructions and tools need the remaining room).
+@@ -469,13 +547,26 @@ impl ProviderPlan {
+                 32768
+             })
+                 .contains(&self.max_context_bytes)
+-            || self.catalog.path != job.runtime.root.join(CATALOG)
++            || self.catalog.path
++                != job
++                    .runtime
++                    .root
++                    .join(if messages { ANTHROPIC_CATALOG } else { CATALOG })
+             || self.stream_adapter.verify()? != STREAM_ADAPTER
+             || !canonical(&self.stream_adapter)?
+         {
+             return refuse("provider lane/catalog/limits conflict");
+         }
+         self.hosted.validate()?;
++        // Every route speaks the plan's wire family.
++        if self
++            .hosted
++            .routes
++            .iter()
++            .any(|r| super::hosted::Endpoint::parse(&r.endpoint).is_none_or(|e| !e.serves(wire)))
++        {
++            return refuse("route endpoint does not serve the provider's wire family");
++        }
+         self.lane.pi_config.verify()?;
+         canonical_directory(&self.lane.pi_config.root)?;
+         if self.lane.pi_config.root.starts_with(&job.state_dir)
+@@ -512,6 +603,7 @@ impl ProviderPlan {
+             || admission.job_id != job.job_id
+             || admission.binary_sha256 != file_digest(&std::env::current_exe()?, None)?
+             || admission.model != self.model
++            || admission.provider != self.provider
+             || admission.pi_config_manifest_sha256 != self.lane.pi_config.manifest.sha256
+             || admission.task_sha256 != self.task.sha256
+             || admission.catalog_sha256 != self.catalog.sha256
+@@ -565,6 +657,57 @@ const RAW_COST_SATURATED: u64 = 1_000_000_001;
+ fn raw_cost(model: &Value, input: u64, output: u64) -> u64 {
+     cost(model, input, output).unwrap_or(RAW_COST_SATURATED)
+ }
++/// Messages usage priced per token class at the catalog rates of the tier
++/// the request falls in. The tier is chosen by all input tokens (uncached,
++/// cache writes and cache reads), so a request is never priced below its
++/// tier. Rounded up, plus one microUSD, like [`cost`].
++fn messages_cost(
++    model: &Value,
++    input: u64,
++    cache_write: u64,
++    cache_read: u64,
++    output: u64,
++) -> Result<u64> {
++    let rate = |cost: &Value, key: &str| {
++        cost[key]
++            .as_f64()
++            .filter(|v| v.is_finite() && *v >= 0.0 && *v <= 1000.0)
++            .ok_or_else(|| Error::Refused("catalog rate absent/invalid".into()))
++    };
++    let all_input = input.saturating_add(cache_write).saturating_add(cache_read);
++    let mut tier = &model["cost"];
++    let mut above = 0u64;
++    if let Some(tiers) = model["cost"]["tiers"].as_array() {
++        for t in tiers {
++            let threshold = t["inputTokensAbove"]
++                .as_u64()
++                .ok_or_else(|| Error::Refused("catalog tier threshold absent".into()))?;
++            if all_input > threshold && threshold >= above {
++                tier = t;
++                above = threshold;
++            }
++        }
++    }
++    let value = (input as f64 * rate(tier, "input")?
++        + cache_write as f64 * rate(tier, "cacheWrite")?
++        + cache_read as f64 * rate(tier, "cacheRead")?
++        + output as f64 * rate(tier, "output")?)
++    .ceil();
++    if !value.is_finite() || !(0.0..=1_000_000_000.0).contains(&value) {
++        return refuse("catalog cost overflow");
++    }
++    Ok(value as u64 + 1)
++}
++#[cfg(test)]
++pub(super) fn messages_cost_for_tests(
++    model: &Value,
++    input: u64,
++    cache_write: u64,
++    cache_read: u64,
++    output: u64,
++) -> u64 {
++    messages_cost(model, input, cache_write, cache_read, output).unwrap()
++}
+ pub(super) fn full_reservation(model: &Value) -> Result<u64> {
+     let input = model["contextWindow"]
+         .as_u64()
+@@ -604,7 +747,7 @@ impl Host {
+         fs::create_dir(&public)?;
+         let task = String::from_utf8(plan.task.verify()?)
+             .map_err(|_| Error::Refused("task is not UTF8".into()))?;
+-        let mut job = json!({"schema":super::HOSTED_BRIDGE_PROFILE,"provider":"openai-codex","model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes});
++        let mut job = json!({"schema":super::HOSTED_BRIDGE_PROFILE,"provider":plan.provider,"model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes});
+         if super::is_analysis(&profile.schema) {
+             // The receiver's own bounds for this profile; the Host checks
+             // every one of them again where it reads.
+@@ -647,7 +790,7 @@ impl Host {
+                     || id != state.provider_requests.len() as u64 + 1
+                     || state.provider_requests.values().any(Reservation::unsettled)
+                     || frame["model"] != plan.model
+-                    || frame["provider"] != "openai-codex"
++                    || frame["provider"] != plan.provider
+                     || frame["contextBytes"]
+                         .as_u64()
+                         .is_none_or(|v| v > plan.max_context_bytes)
+@@ -757,31 +900,75 @@ impl Host {
+                     self.save()?;
+                     return refuse("provider result unknown/error; reservation retained");
+                 }
+-                let raw = r.raw_terminal.as_ref().filter(|raw| {
+-                    raw["eventType"] == "response.completed" && raw["status"] == "completed"
+-                });
+-                let measured = raw.and_then(|raw| {
+-                    Some((
+-                        raw["usage"]["input_tokens"].as_u64()?,
+-                        raw["usage"]["output_tokens"].as_u64()?,
+-                        raw["usage"]["total_tokens"].as_u64()?,
+-                    ))
+-                });
+-                let Some((input, output, total)) = measured else {
+-                    state.provider_failed = true;
+-                    self.save()?;
+-                    return refuse(
+-                        "raw completed status/usage unavailable; full reservation retained",
+-                    );
++                // Raw-usage cost and all input tokens, per wire family.
++                let measured = match plan.wire_checked()? {
++                    crate::pi_stream::Wire::Responses => {
++                        let raw = r.raw_terminal.as_ref().filter(|raw| {
++                            raw["eventType"] == "response.completed" && raw["status"] == "completed"
++                        });
++                        let measured = raw.and_then(|raw| {
++                            Some((
++                                raw["usage"]["input_tokens"].as_u64()?,
++                                raw["usage"]["output_tokens"].as_u64()?,
++                                raw["usage"]["total_tokens"].as_u64()?,
++                            ))
++                        });
++                        match measured {
++                            None => Err("raw completed status/usage unavailable"),
++                            Some((input, output, total))
++                                if input.checked_add(output) != Some(total) =>
++                            {
++                                Err("raw usage inconsistent")
++                            }
++                            Some((input, output, _)) => {
++                                Ok((raw_cost(&model, input, output), input, output))
++                            }
++                        }
++                    }
++                    crate::pi_stream::Wire::Messages => {
++                        // The raw stop reason must be the one the container
++                        // reports: `stop` is an ended turn, `toolUse` a tool call.
++                        let raw = r.raw_terminal.as_ref().filter(|raw| {
++                            raw["eventType"] == "message_stop"
++                                && match frame["stopReason"].as_str() {
++                                    Some("stop") => matches!(
++                                        raw["stopReason"].as_str(),
++                                        Some("end_turn" | "stop_sequence")
++                                    ),
++                                    Some("toolUse") => raw["stopReason"] == "tool_use",
++                                    _ => false,
++                                }
++                        });
++                        let measured = raw.and_then(|raw| {
++                            let u = &raw["usage"];
++                            Some((
++                                u["input_tokens"].as_u64()?,
++                                u["cache_creation_input_tokens"].as_u64()?,
++                                u["cache_read_input_tokens"].as_u64()?,
++                                u["output_tokens"].as_u64()?,
++                            ))
++                        });
++                        match measured {
++                            None => Err("raw completed stop reason/usage unavailable"),
++                            Some((input, cache_write, cache_read, output)) => Ok((
++                                messages_cost(&model, input, cache_write, cache_read, output)
++                                    .unwrap_or(RAW_COST_SATURATED),
++                                input.saturating_add(cache_write).saturating_add(cache_read),
++                                output,
++                            )),
++                        }
++                    }
++                };
++                let (actual, input, output) = match measured {
++                    Ok(m) => m,
++                    Err(reason) => {
++                        state.provider_failed = true;
++                        self.save()?;
++                        return refuse(format!("{reason}; full reservation retained"));
++                    }
+                 };
+-                if input.checked_add(output) != Some(total) {
+-                    state.provider_failed = true;
+-                    self.save()?;
+-                    return refuse("raw usage inconsistent; full reservation retained");
+-                }
+                 // An overrun (or catalog cost overflow) still fails the job,
+                 // but its raw-usage cost is recorded and held (G1).
+-                let actual = raw_cost(&model, input, output);
+                 if input > model["contextWindow"].as_u64().unwrap_or(0)
+                     || output > model["maxTokens"].as_u64().unwrap_or(0)
+                     || actual > r.reserved_microusd
+@@ -861,6 +1048,7 @@ pub(super) mod ledger_tests {
+                 }],
+                 max_attempts_per_request: 1,
+             },
++            provider: DEFAULT_PROVIDER.into(),
+             model: "gpt-6-luna".into(),
+             max_requests: 6,
+             budget_microusd: 1_000_000,
+@@ -1063,6 +1251,7 @@ mod admission_tests {
+                 }],
+                 max_attempts_per_request: 1,
+             },
++            provider: DEFAULT_PROVIDER.into(),
+             model: "gpt-6-luna".into(),
+             max_requests: 6,
+             budget_microusd: 1000000,
+@@ -1551,6 +1740,7 @@ mod attempt_tests {
+             drain_error: None,
+             cancel_wait_ms: None,
+             closing: None,
++            head_headers: vec![],
+         };
+         let clean = |r: &Relay| match AttemptEvidence::from_relay(r) {
+             AttemptEvidence::Relayed { terminal_last, .. } => terminal_last,
+diff --git a/rust/crates/work-engine-manual-host/src/pi_stream.rs b/rust/crates/work-engine-manual-host/src/pi_stream.rs
+index 953bf666..0a575023 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_stream.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_stream.rs
+@@ -54,6 +54,13 @@ pub struct Upstream<R: Read> {
+     chunk_left: usize,
+     done: bool,
+     pub status: u16,
++    /// Response headers kept as evidence: provider rate-limit, overage and
++    /// request identity headers (lowercased names), in order.
++    pub kept: Vec<(String, String)>,
++}
++/// Whether a response header is kept as evidence.
++pub fn kept_header(name: &str) -> bool {
++    name == "request-id" || name.starts_with("anthropic-ratelimit-") || name.contains("overage")
+ }
+ impl<R: Read> Upstream<R> {
+     pub fn open(r: R) -> Result<Self> {
+@@ -87,10 +94,15 @@ impl<R: Read> Upstream<R> {
+             .ok_or("upstream_status")?;
+         let mut length = None;
+         let mut chunked = false;
++        let mut kept = Vec::new();
+         for line in lines.filter(|l| !l.is_empty()) {
+             let (k, v) = line.split_once(':').ok_or("upstream_header")?;
+             let v = v.trim();
+-            match k.to_ascii_lowercase().as_str() {
++            let name = k.to_ascii_lowercase();
++            if kept_header(&name) {
++                kept.push((name.clone(), v.to_owned()));
++            }
++            match name.as_str() {
+                 "content-length" => {
+                     let n: usize = v.parse().map_err(|_| "upstream_length")?;
+                     if length.replace(n).is_some_and(|p| p != n) || n > MAX_RESPONSE {
+@@ -121,6 +133,7 @@ impl<R: Read> Upstream<R> {
+             chunk_left: 0,
+             done: matches!(framing, Framing::Length(0)),
+             status,
++            kept,
+         })
+     }
+     /// Next body bytes (at most `max`), or `None` at a correctly framed end.
+@@ -284,6 +297,8 @@ pub struct Relay {
+     /// `cancel` that raced the terminal frame (then confirmed). `None` when
+     /// the stream ended by cancellation.
+     pub closing: Option<&'static str>,
++    /// The response head's kept headers ([`kept_header`]).
++    pub head_headers: Vec<(String, String)>,
+ }
+ impl Relay {
+     pub fn sha256(&self) -> String {
+@@ -295,6 +310,9 @@ impl Relay {
+         self.chunks.iter().skip(1).filter(|c| !c.4).count()
+     }
+     pub fn evidence(&self) -> Value {
++        self.evidence_for(Wire::Responses)
++    }
++    pub fn evidence_for(&self, wire: Wire) -> Value {
+         json!({
+             "status": self.status,
+             "outcome": self.outcome.label(),
+@@ -312,7 +330,8 @@ impl Relay {
+             "drainError": self.drain_error,
+             "cancelDuringPendingPullMs": self.cancel_wait_ms,
+             "closing": self.closing,
+-            "usage": usage(&self.forwarded),
++            "headHeaders": self.head_headers.iter().map(|(k, v)| json!([k, v])).collect::<Vec<_>>(),
++            "usage": usage_for(wire, &self.forwarded),
+         })
+     }
+ }
+@@ -349,6 +368,23 @@ pub fn sse_data(sse: &[u8]) -> Vec<String> {
+     }
+     out
+ }
++/// Provider wire family of a relayed stream. Each has its own terminal event,
++/// failure events and usage fields.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum Wire {
++    /// OpenAI Responses SSE (`response.completed`).
++    Responses,
++    /// Anthropic Messages SSE (`message_stop`).
++    Messages,
++}
++impl Wire {
++    pub fn terminal_event(self) -> &'static str {
++        match self {
++            Wire::Responses => "response.completed",
++            Wire::Messages => "message_stop",
++        }
++    }
++}
+ /// Whether the first `response.completed` is the final event of the bytes
+ /// the provider sent (`forwarded` then `unforwarded`): after its event block
+ /// only SSE comment lines and blank lines may follow. Any other line,
+@@ -356,6 +392,12 @@ pub fn sse_data(sse: &[u8]) -> Vec<String> {
+ /// attempt completes only on such a clean terminal event (operator decisions
+ /// K-a and Q-a, 2026-11-17).
+ pub fn terminal_is_last(forwarded: &[u8], unforwarded: &[u8]) -> bool {
++    terminal_is_last_for(Wire::Responses, forwarded, unforwarded)
++}
++/// [`terminal_is_last`] for the wire's terminal event. An `event:` line inside
++/// the terminal block (Messages names every event) is part of that block;
++/// after it the same tail rule applies.
++pub fn terminal_is_last_for(wire: Wire, forwarded: &[u8], unforwarded: &[u8]) -> bool {
+     let mut all = forwarded.to_vec();
+     all.extend_from_slice(unforwarded);
+     let text = String::from_utf8_lossy(&all)
+@@ -373,7 +415,7 @@ pub fn terminal_is_last(forwarded: &[u8], unforwarded: &[u8]) -> bool {
+         if terminal_end.is_none()
+             && block.ends_with("\n\n")
+             && serde_json::from_str::<Value>(&data.join("\n"))
+-                .is_ok_and(|v| v["type"] == "response.completed")
++                .is_ok_and(|v| v["type"] == wire.terminal_event())
+         {
+             terminal_end = Some(offset);
+         }
+@@ -389,10 +431,17 @@ pub fn terminal_is_last(forwarded: &[u8], unforwarded: &[u8]) -> bool {
+ /// Normalized usage from a Responses SSE `response.completed` event. Missing
+ /// values remain null; nothing is inferred from HTTP completion.
+ pub fn usage(sse: &[u8]) -> Value {
++    usage_for(Wire::Responses, sse)
++}
++/// Normalized usage of the wire's stream.
++pub fn usage_for(wire: Wire, sse: &[u8]) -> Value {
+     let events: Vec<Value> = sse_data(sse)
+         .iter()
+         .filter_map(|d| serde_json::from_str::<Value>(d).ok())
+         .collect();
++    if wire == Wire::Messages {
++        return messages_usage(&events);
++    }
+     // A provider failure event inside a relayed stream (e.g. quota after
+     // output began) is reported, never treated as completion.
+     let failed = events.iter().find_map(|v| match v["type"].as_str() {
+@@ -431,6 +480,56 @@ pub fn usage(sse: &[u8]) -> Value {
+     })
+ }
+ 
++/// Messages usage: `message_start` carries the input-side counts, the last
++/// `message_delta` before `message_stop` the final output count (and, when
++/// present, final input-side counts, which take precedence). An `error` event
++/// is a provider failure, never a completion.
++fn messages_usage(events: &[Value]) -> Value {
++    let failed = events.iter().find_map(|v| {
++        (v["type"] == "error").then(|| v["error"]["type"].as_str().unwrap_or("error").to_owned())
++    });
++    let stop = events.iter().position(|v| v["type"] == "message_stop");
++    let (Some(stop), None) = (stop, &failed) else {
++        return json!({"completed": false, "observed": false, "failed": failed});
++    };
++    let start = events[..stop].iter().find(|v| v["type"] == "message_start");
++    let delta = events[..stop]
++        .iter()
++        .rev()
++        .find(|v| v["type"] == "message_delta");
++    let (Some(start), Some(delta)) = (start, delta) else {
++        return json!({"completed": true, "failed": null, "observed": false});
++    };
++    let first = &start["message"]["usage"];
++    let last = &delta["usage"];
++    let pick = |key: &str| {
++        if last[key].is_u64() {
++            last[key].clone()
++        } else {
++            first[key].clone()
++        }
++    };
++    let input = pick("input_tokens");
++    let cache_write = pick("cache_creation_input_tokens");
++    let cache_read = pick("cache_read_input_tokens");
++    let output = last["output_tokens"].clone();
++    let observed = [&input, &cache_write, &cache_read, &output]
++        .iter()
++        .all(|v| v.is_u64());
++    json!({
++        "completed": true,
++        "failed": null,
++        "observed": observed,
++        "responseId": start["message"]["id"],
++        "model": start["message"]["model"],
++        "stopReason": delta["delta"]["stop_reason"],
++        "inputTokens": input,
++        "cacheCreationInputTokens": cache_write,
++        "cacheReadInputTokens": cache_read,
++        "outputTokens": output,
++    })
++}
++
+ fn frame(kind: &str, b: &Binding, seq: u64, stream: u64, data: Value) -> Value {
+     let mut v = json!({"type":kind,"binding":b,"sequence":seq,"stream":stream});
+     if let (Some(o), Value::Object(d)) = (v.as_object_mut(), data) {
+@@ -439,9 +538,11 @@ fn frame(kind: &str, b: &Binding, seq: u64, stream: u64, data: Value) -> Value {
+     v
+ }
+ 
++/// Response status and kept headers.
++type Head = (u16, Vec<(String, String)>);
+ /// Messages from the upstream reader thread.
+ enum Msg {
+-    Head(Result<u16>),
++    Head(Result<Head>),
+     Data(Result<Option<Vec<u8>>>),
+ }
+ /// The upstream connection is owned by a dedicated thread: it reads the
+@@ -459,7 +560,10 @@ impl Reader {
+         std::thread::spawn(move || {
+             let mut up = match Upstream::open(r) {
+                 Ok(up) => {
+-                    if tx.send(Msg::Head(Ok(up.status))).is_err() {
++                    if tx
++                        .send(Msg::Head(Ok((up.status, up.kept.clone()))))
++                        .is_err()
++                    {
+                         return;
+                     }
+                     up
+@@ -501,7 +605,7 @@ impl Reader {
+         }
+     }
+     /// Head message, if it arrives within `wait`.
+-    fn head(&mut self, wait: Duration) -> Option<Result<u16>> {
++    fn head(&mut self, wait: Duration) -> Option<Result<Head>> {
+         match self.result.recv_timeout(wait) {
+             Ok(Msg::Head(h)) => Some(h),
+             Ok(Msg::Data(_)) => Some(Err("upstream_reader_order")),
+@@ -643,6 +747,7 @@ impl Session {
+                 drain_error: None,
+                 cancel_wait_ms: None,
+                 closing: None,
++                head_headers: Vec::new(),
+             },
+             abort: Some(Box::new(abort)),
+             refuse,
+@@ -714,6 +819,7 @@ impl Session {
+                 drain_error: None,
+                 cancel_wait_ms: None,
+                 closing: None,
++                head_headers: Vec::new(),
+             },
+         )
+     }
+@@ -813,8 +919,9 @@ impl Session {
+                 let mut frames = vec![];
+                 match self.reader.head(wait) {
+                     None => {}
+-                    Some(Ok(status)) => {
++                    Some(Ok((status, kept))) => {
+                         self.r.status = status;
++                        self.r.head_headers = kept;
+                         if (self.refuse)(status) {
+                             self.refusal.0 = status;
+                             self.state = State::Refusal;
+diff --git a/rust/crates/work-engine-manual-host/tests/pi-coding-hosted.test.mjs b/rust/crates/work-engine-manual-host/tests/pi-coding-hosted.test.mjs
+index d53196e1..72668037 100644
+--- a/rust/crates/work-engine-manual-host/tests/pi-coding-hosted.test.mjs
++++ b/rust/crates/work-engine-manual-host/tests/pi-coding-hosted.test.mjs
+@@ -99,10 +99,12 @@ async function runHosted({grantStream = {binding, sequence: 1, stream: 1}, zstd
+     'node:readline': {createInterface: () => input},
+     'node:crypto': {createHash},
+     'node:zlib': {zstdDecompressSync},
++    // The claude-sdk forwarder only; never created on this provider.
++    'node:http': {default: {createServer() { throw Error('no forwarder on openai-codex'); }}},
+     'node:fs': {
+       existsSync: p => p === '/profile/job.json',
+       readFileSync: p => { if (p.startsWith('/auth')) seen.accessReads++; return JSON.stringify(p === '/profile/job.json' ? config : {}); },
+-      writeFileSync() {}, openSync: () => 1, fsyncSync() {}, closeSync() {}, readdirSync: () => [], lstatSync: () => ({}),
++      writeFileSync() {}, openSync: () => 1, fsyncSync() {}, closeSync() {}, readdirSync: () => [], lstatSync: () => ({}), mkdirSync() {},
+     },
+     '/pi/node_modules/typebox/build/index.mjs': {Type: new Proxy({}, {get: () => () => ({})})},
+     '/pi/node_modules/@earendil-works/pi-ai/dist/utils/event-stream.js': {createAssistantMessageEventStream: queueStream},
+diff --git a/rust/crates/work-engine-server/src/bin/coding-job-prepare.rs b/rust/crates/work-engine-server/src/bin/coding-job-prepare.rs
+index 84a98042..f0685026 100644
+--- a/rust/crates/work-engine-server/src/bin/coding-job-prepare.rs
++++ b/rust/crates/work-engine-server/src/bin/coding-job-prepare.rs
+@@ -353,6 +353,7 @@ fn run() -> Result<Value> {
+                 coding::provider::STREAM_ADAPTER,
+             )?,
+             hosted: live.routes.clone(),
++            provider: coding::provider::DEFAULT_PROVIDER.into(),
+             model: "gpt-6-luna".into(),
+             max_requests: 4,
+             budget_microusd: admission["budget_microusd"].as_u64().unwrap_or(0),

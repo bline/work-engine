@@ -762,10 +762,7 @@ impl Host {
             // W3: a client-side retry is never dispatched; every upstream
             // request is one Host attempt (the receiver also disables Claude
             // Code's retries and admits one request per grant).
-            if headers
-                .get("x-stainless-retry-count")
-                .is_some_and(|v| v != "0")
-            {
+            if headers.get("x-stainless-retry-count").map(String::as_str) != Some("0") {
                 return refuse("provider fetch is a client retry");
             }
             self.messages_policy(&plan, &parsed, analysis)?;
@@ -995,7 +992,7 @@ impl Host {
             Decision::Unavailable(reason) => return self.hosted_unavailable(s, reason),
         };
         let route = routes.routes[index].clone();
-        let reserve = provider::full_reservation(&plan.selected()?)?;
+        let reserve = plan.request_reservation()?;
         let state = self.journal.coding.as_mut().unwrap();
         let attempt = match provider::reserve_attempt(
             &mut state.provider_requests,
@@ -1394,7 +1391,8 @@ impl Host {
                     usage["model"].as_str().map(str::to_owned),
                     json!({"eventType":"message_stop","stopReason":usage["stopReason"],
                     "usage":{"input_tokens":usage["inputTokens"],"cache_creation_input_tokens":usage["cacheCreationInputTokens"],
-                    "cache_read_input_tokens":usage["cacheReadInputTokens"],"output_tokens":usage["outputTokens"]}}),
+                    "cache_read_input_tokens":usage["cacheReadInputTokens"],"output_tokens":usage["outputTokens"],
+                    "cache_creation_5m_input_tokens":usage["cacheCreation5mInputTokens"],"cache_creation_1h_input_tokens":usage["cacheCreation1hInputTokens"]}}),
                 ),
             };
             if let Some(model) = model {
@@ -1604,10 +1602,13 @@ impl Host {
     /// Claude subscription routes: a successful response is relayed only if
     /// its head shows the request inside the plan's limits
     /// (`anthropic-ratelimit-unified-status` `allowed` or `allowed_warning`)
-    /// with extra usage unavailable (`...-overage-status` `rejected` or
-    /// absent). Anything else (including headers that are missing) stops the
-    /// job before more requests are made: such a request may draw on extra
-    /// usage. The headers are retained in the attempt's `relay.json`.
+    /// with extra usage unavailable (`...-overage-status` `rejected`).
+    /// Anything else, including a missing header, stops the job before more
+    /// requests are made. Assumed semantics: `overage-status` other than
+    /// `rejected` means extra usage could be drawn, whether or not this
+    /// request drew it, so an organization with extra usage enabled is
+    /// refused even inside its limits. The headers are retained in the
+    /// attempt's `relay.json`.
     fn subscription_guard(&self, s: &Stream, attempt: u64) -> std::result::Result<(), String> {
         let StreamPhase::Active { session, .. } = &s.phase else {
             return Ok(());
@@ -1639,9 +1640,7 @@ impl Host {
         };
         let status = header("anthropic-ratelimit-unified-status");
         let overage = header("anthropic-ratelimit-unified-overage-status");
-        if matches!(status, Some("allowed" | "allowed_warning"))
-            && matches!(overage, None | Some("rejected"))
-        {
+        if matches!(status, Some("allowed" | "allowed_warning")) && overage == Some("rejected") {
             Ok(())
         } else {
             Err(format!(
@@ -2690,7 +2689,8 @@ mod tests {
             (
                 "message_start",
                 json!({"type":"message_start","message":{"id":"msg_1","model":HAIKU,"usage":
-                {"input_tokens":10,"cache_creation_input_tokens":1000,"cache_read_input_tokens":2000,"output_tokens":1}}}),
+                {"input_tokens":10,"cache_creation_input_tokens":1000,"cache_read_input_tokens":2000,"output_tokens":1,
+                "cache_creation":{"ephemeral_5m_input_tokens":400,"ephemeral_1h_input_tokens":600}}}}),
             ),
             (
                 "content_block_start",
@@ -2759,7 +2759,8 @@ mod tests {
         assert_eq!(
             r.raw_terminal.as_ref().unwrap(),
             &json!({"eventType":"message_stop","stopReason":"end_turn","usage":{"input_tokens":10,
-                "cache_creation_input_tokens":1000,"cache_read_input_tokens":2000,"output_tokens":50}})
+                "cache_creation_input_tokens":1000,"cache_read_input_tokens":2000,"output_tokens":50,
+                "cache_creation_5m_input_tokens":400,"cache_creation_1h_input_tokens":600}})
         );
         let relay: Value = serde_json::from_slice(
             &fs::read(dir.path().join("coding-hosted-1-2.relay.json")).unwrap(),
@@ -2785,21 +2786,50 @@ mod tests {
             json!({"type":"provider_complete","id":1,"stopReason":"stop","usage":{}}),
         )
         .unwrap();
-        // 10 x 0.1 + 1000 x 0.125 + 2000 x 0.01 + 50 x 0.5 = 171, plus one.
-        assert_eq!(request(&h).settled_microusd, Some(172));
+        // 10 x 0.1 + 400 x 0.125 (5-minute writes) + 600 x 0.2 (one-hour
+        // writes, twice the input rate) + 2000 x 0.01 + 50 x 0.5 = 216, plus one.
+        assert_eq!(request(&h).settled_microusd, Some(217));
     }
     #[test]
     fn messages_cost_uses_the_tier_of_all_input_tokens() {
         let model = json!({"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,
             "tiers":[{"inputTokensAbove":100000,"input":0.5,"output":2.5,"cacheRead":0.05,"cacheWrite":0.625}]}});
+        let t = |write_5m, write_1h, read, output| provider::MessagesTokens {
+            input: 0,
+            write_5m,
+            write_1h,
+            read,
+            output,
+        };
         assert_eq!(
-            provider::messages_cost_for_tests(&model, 0, 0, 100_000, 0),
+            provider::messages_cost_for_tests(&model, t(0, 0, 100_000, 0)),
             1001
         );
         // Cache reads push the request over the threshold: every class at tier rates.
         assert_eq!(
-            provider::messages_cost_for_tests(&model, 0, 0, 100_001, 10),
+            provider::messages_cost_for_tests(&model, t(0, 0, 100_001, 10)),
             5001 + 25 + 1
+        );
+        // One-hour writes cost twice the tier's input rate; five-minute writes
+        // the catalog cacheWrite rate.
+        assert_eq!(
+            provider::messages_cost_for_tests(&model, t(0, 1000, 0, 0)),
+            201
+        );
+        assert_eq!(
+            provider::messages_cost_for_tests(&model, t(1000, 0, 0, 0)),
+            126
+        );
+        assert_eq!(
+            provider::messages_cost_for_tests(&model, t(0, 100_001, 0, 0)),
+            100_002
+        );
+        // Worst case: the whole window at the dearest input-side rate (one-hour
+        // writes at the upper tier) and the output bound at the upper tier.
+        let full = json!({"contextWindow":1000000,"maxTokens":128000,"cost":model["cost"]});
+        assert_eq!(
+            provider::messages_full_reservation_for_tests(&full),
+            1_320_001
         );
     }
     #[test]
@@ -2846,6 +2876,14 @@ mod tests {
         let mut f = messages_fetch(&g, &serde_json::to_vec(&ok).unwrap());
         f["headers"]["x-stainless-retry-count"] = json!("1");
         assert!(push(&mut h, &mut w, f).is_err(), "client retry");
+        let (_dir, mut h, mut w) = messages_host(vec![]);
+        let g = messages_grant(&mut h, &mut w);
+        let mut f = messages_fetch(&g, &serde_json::to_vec(&ok).unwrap());
+        f["headers"]
+            .as_object_mut()
+            .unwrap()
+            .remove("x-stainless-retry-count");
+        assert!(push(&mut h, &mut w, f).is_err(), "retry count absent");
         for url in [
             "https://api.anthropic.com/v1/messages?beta=false",
             "https://api.anthropic.com/v1/complete",
@@ -2934,6 +2972,36 @@ mod tests {
             (u["completed"].clone(), u["failed"].clone()),
             (json!(false), json!("overloaded_error"))
         );
+        // Writes split by lifetime only when the breakdown adds up; otherwise
+        // all writes count as one-hour.
+        let with = |breakdown: Value| {
+            let mut s = start.clone();
+            s["message"]["usage"]["cache_creation_input_tokens"] = json!(10);
+            s["message"]["usage"]["cache_creation"] = breakdown;
+            stream::usage_for(
+                stream::Wire::Messages,
+                sse(&[s, delta.clone(), json!({"type":"message_stop"})]).as_bytes(),
+            )
+        };
+        let split = |u: Value| {
+            (
+                u["cacheCreation5mInputTokens"].clone(),
+                u["cacheCreation1hInputTokens"].clone(),
+            )
+        };
+        assert_eq!(
+            split(with(
+                json!({"ephemeral_5m_input_tokens":4,"ephemeral_1h_input_tokens":6})
+            )),
+            (json!(4), json!(6))
+        );
+        assert_eq!(
+            split(with(
+                json!({"ephemeral_5m_input_tokens":9,"ephemeral_1h_input_tokens":6})
+            )),
+            (json!(0), json!(10))
+        );
+        assert_eq!(split(with(Value::Null)), (json!(0), json!(10)));
         let unterminated = sse(&[start, delta]);
         assert_eq!(
             stream::usage_for(stream::Wire::Messages, unterminated.as_bytes())["completed"],
@@ -2946,9 +3014,10 @@ mod tests {
         for (headers, ok) in [
             (allowed, true),
             (
-                "anthropic-ratelimit-unified-status: allowed_warning\r\n",
+                "anthropic-ratelimit-unified-status: allowed_warning\r\nanthropic-ratelimit-unified-overage-status: rejected\r\n",
                 true,
             ),
+            ("anthropic-ratelimit-unified-status: allowed\r\n", false),
             (
                 "anthropic-ratelimit-unified-status: allowed\r\nanthropic-ratelimit-unified-overage-status: allowed\r\n",
                 false,

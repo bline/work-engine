@@ -16,8 +16,9 @@ fn default_provider() -> String {
     DEFAULT_PROVIDER.into()
 }
 /// Analysis budget ceiling for the Messages family: full catalog reservations
-/// of a 1M-context Claude model for the profile's request maximum.
-const MESSAGES_ANALYSIS_BUDGET: u64 = 32_000_000;
+/// of a 1M-context Claude model (1 320 001 µUSD each, one-hour cache writes at
+/// the upper tier) for the profile's 32-request maximum.
+const MESSAGES_ANALYSIS_BUDGET: u64 = 43_000_000;
 /// Public Pi configuration staged read-only for the container. Provider
 /// access is not a lane input: the Host's transport holds it.
 #[derive(Clone, Serialize, Deserialize)]
@@ -482,6 +483,14 @@ impl ProviderPlan {
         }
         Ok(selected)
     }
+    /// Full catalog reservation of one request of the plan's model.
+    pub(super) fn request_reservation(&self) -> Result<u64> {
+        let model = self.selected()?;
+        match self.wire_checked()? {
+            crate::pi_stream::Wire::Responses => full_reservation(&model),
+            crate::pi_stream::Wire::Messages => messages_full_reservation(&model),
+        }
+    }
     /// Whether the receiver's native model is the pinned catalog model: same
     /// id, limits and prices; provider and API as the plan's Pi provider
     /// registers them.
@@ -500,7 +509,7 @@ impl ProviderPlan {
     /// Pure preparation check over the pinned public catalog; grants no entry
     /// and neither inspects nor opens native credential references.
     pub fn reservation_microusd(&self) -> Result<u64> {
-        let reserve = full_reservation(&self.selected()?)?;
+        let reserve = self.request_reservation()?;
         let total = reserve
             .checked_mul(self.max_requests.into())
             .ok_or_else(|| Error::Refused("catalog reservation overflow".into()))?;
@@ -657,41 +666,55 @@ const RAW_COST_SATURATED: u64 = 1_000_000_001;
 fn raw_cost(model: &Value, input: u64, output: u64) -> u64 {
     cost(model, input, output).unwrap_or(RAW_COST_SATURATED)
 }
+/// Token counts of one Messages response, by price class.
+#[derive(Clone, Copy, Debug, Default)]
+pub(super) struct MessagesTokens {
+    pub input: u64,
+    /// Cache writes with the five-minute lifetime.
+    pub write_5m: u64,
+    /// Cache writes with the one-hour lifetime (Claude Code's default).
+    pub write_1h: u64,
+    pub read: u64,
+    pub output: u64,
+}
+fn catalog_rate(cost: &Value, key: &str) -> Result<f64> {
+    cost[key]
+        .as_f64()
+        .filter(|v| v.is_finite() && *v >= 0.0 && *v <= 1000.0)
+        .ok_or_else(|| Error::Refused("catalog rate absent/invalid".into()))
+}
+/// Anthropic prices one-hour cache writes at twice the input rate; Pi's
+/// catalog `cacheWrite` is the five-minute rate.
+const ONE_HOUR_WRITE_FACTOR: f64 = 2.0;
 /// Messages usage priced per token class at the catalog rates of the tier
 /// the request falls in. The tier is chosen by all input tokens (uncached,
 /// cache writes and cache reads), so a request is never priced below its
 /// tier. Rounded up, plus one microUSD, like [`cost`].
-fn messages_cost(
-    model: &Value,
-    input: u64,
-    cache_write: u64,
-    cache_read: u64,
-    output: u64,
-) -> Result<u64> {
-    let rate = |cost: &Value, key: &str| {
-        cost[key]
-            .as_f64()
-            .filter(|v| v.is_finite() && *v >= 0.0 && *v <= 1000.0)
-            .ok_or_else(|| Error::Refused("catalog rate absent/invalid".into()))
-    };
-    let all_input = input.saturating_add(cache_write).saturating_add(cache_read);
+fn messages_cost(model: &Value, t: MessagesTokens) -> Result<u64> {
+    let all_input = t
+        .input
+        .saturating_add(t.write_5m)
+        .saturating_add(t.write_1h)
+        .saturating_add(t.read);
     let mut tier = &model["cost"];
     let mut above = 0u64;
     if let Some(tiers) = model["cost"]["tiers"].as_array() {
-        for t in tiers {
-            let threshold = t["inputTokensAbove"]
+        for candidate in tiers {
+            let threshold = candidate["inputTokensAbove"]
                 .as_u64()
                 .ok_or_else(|| Error::Refused("catalog tier threshold absent".into()))?;
             if all_input > threshold && threshold >= above {
-                tier = t;
+                tier = candidate;
                 above = threshold;
             }
         }
     }
-    let value = (input as f64 * rate(tier, "input")?
-        + cache_write as f64 * rate(tier, "cacheWrite")?
-        + cache_read as f64 * rate(tier, "cacheRead")?
-        + output as f64 * rate(tier, "output")?)
+    let input = catalog_rate(tier, "input")?;
+    let value = (t.input as f64 * input
+        + t.write_5m as f64 * catalog_rate(tier, "cacheWrite")?
+        + t.write_1h as f64 * input * ONE_HOUR_WRITE_FACTOR
+        + t.read as f64 * catalog_rate(tier, "cacheRead")?
+        + t.output as f64 * catalog_rate(tier, "output")?)
     .ceil();
     if !value.is_finite() || !(0.0..=1_000_000_000.0).contains(&value) {
         return refuse("catalog cost overflow");
@@ -699,16 +722,43 @@ fn messages_cost(
     Ok(value as u64 + 1)
 }
 #[cfg(test)]
-pub(super) fn messages_cost_for_tests(
-    model: &Value,
-    input: u64,
-    cache_write: u64,
-    cache_read: u64,
-    output: u64,
-) -> u64 {
-    messages_cost(model, input, cache_write, cache_read, output).unwrap()
+pub(super) fn messages_cost_for_tests(model: &Value, t: MessagesTokens) -> u64 {
+    messages_cost(model, t).unwrap()
 }
-pub(super) fn full_reservation(model: &Value) -> Result<u64> {
+#[cfg(test)]
+pub(super) fn messages_full_reservation_for_tests(model: &Value) -> u64 {
+    messages_full_reservation(model).unwrap()
+}
+/// Worst-case Messages request: the whole context window at the highest
+/// input-side rate of any tier (including one-hour cache writes) and the
+/// output bound at the highest output rate.
+fn messages_full_reservation(model: &Value) -> Result<u64> {
+    let (window, out) = catalog_bounds(model)?;
+    let mut input = 0.0_f64;
+    let mut output = 0.0_f64;
+    let mut entries = vec![&model["cost"]];
+    if let Some(tiers) = model["cost"]["tiers"].as_array() {
+        entries.extend(tiers);
+    }
+    for cost in entries {
+        let base = catalog_rate(cost, "input")?;
+        for v in [
+            base,
+            base * ONE_HOUR_WRITE_FACTOR,
+            catalog_rate(cost, "cacheRead")?,
+            catalog_rate(cost, "cacheWrite")?,
+        ] {
+            input = input.max(v);
+        }
+        output = output.max(catalog_rate(cost, "output")?);
+    }
+    let value = (window as f64 * input + out as f64 * output).ceil();
+    if !value.is_finite() || !(0.0..=1_000_000_000.0).contains(&value) {
+        return refuse("catalog cost overflow");
+    }
+    Ok(value as u64 + 1)
+}
+fn catalog_bounds(model: &Value) -> Result<(u64, u64)> {
     let input = model["contextWindow"]
         .as_u64()
         .filter(|v| *v > 0 && *v <= 2_000_000)
@@ -717,6 +767,10 @@ pub(super) fn full_reservation(model: &Value) -> Result<u64> {
         .as_u64()
         .filter(|v| *v > 0 && *v <= input)
         .ok_or_else(|| Error::Refused("catalog output bound absent".into()))?;
+    Ok((input, output))
+}
+pub(super) fn full_reservation(model: &Value) -> Result<u64> {
+    let (input, output) = catalog_bounds(model)?;
     cost(model, input, output)
 }
 impl Host {
@@ -797,7 +851,7 @@ impl Host {
                 {
                     return refuse("provider identity/context/unknown reservation conflict");
                 }
-                let reserve = full_reservation(&model)?;
+                let reserve = plan.request_reservation()?;
                 let spent: u64 = state
                     .provider_requests
                     .values()
@@ -939,22 +993,29 @@ impl Host {
                                     _ => false,
                                 }
                         });
+                        // Cache writes split by lifetime must add up to the total.
                         let measured = raw.and_then(|raw| {
                             let u = &raw["usage"];
-                            Some((
-                                u["input_tokens"].as_u64()?,
-                                u["cache_creation_input_tokens"].as_u64()?,
-                                u["cache_read_input_tokens"].as_u64()?,
-                                u["output_tokens"].as_u64()?,
-                            ))
+                            let t = MessagesTokens {
+                                input: u["input_tokens"].as_u64()?,
+                                write_5m: u["cache_creation_5m_input_tokens"].as_u64()?,
+                                write_1h: u["cache_creation_1h_input_tokens"].as_u64()?,
+                                read: u["cache_read_input_tokens"].as_u64()?,
+                                output: u["output_tokens"].as_u64()?,
+                            };
+                            (t.write_5m.checked_add(t.write_1h)?
+                                == u["cache_creation_input_tokens"].as_u64()?)
+                            .then_some(t)
                         });
                         match measured {
                             None => Err("raw completed stop reason/usage unavailable"),
-                            Some((input, cache_write, cache_read, output)) => Ok((
-                                messages_cost(&model, input, cache_write, cache_read, output)
-                                    .unwrap_or(RAW_COST_SATURATED),
-                                input.saturating_add(cache_write).saturating_add(cache_read),
-                                output,
+                            Some(t) => Ok((
+                                messages_cost(&model, t).unwrap_or(RAW_COST_SATURATED),
+                                t.input
+                                    .saturating_add(t.write_5m)
+                                    .saturating_add(t.write_1h)
+                                    .saturating_add(t.read),
+                                t.output,
                             )),
                         }
                     }

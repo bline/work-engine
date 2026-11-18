@@ -1379,11 +1379,16 @@ impl Host {
                     .collect();
                 value["provider"] = json!("hosted-routes");
                 value["provider_attempts"] = json!(attempts);
-                value["container_provider_identity"] = json!("openai-codex");
+                value["container_provider_identity"] = json!(plan.provider);
                 value["model"] = json!(plan.model);
-                value["cost_evidence"] = json!(
-                    "pinned openai-codex catalog rates applied to Host-observed raw usage on every route; a proxy, not provider billing"
-                );
+                value["cost_evidence"] = json!(match plan.wire() {
+                    Some(crate::pi_stream::Wire::Messages) => {
+                        "pinned Pi anthropic catalog rates (one-hour cache writes at twice the input rate) applied per token class to Host-observed raw usage on every route; a proxy, not provider billing"
+                    }
+                    _ => {
+                        "pinned openai-codex catalog rates applied to Host-observed raw usage on every route; a proxy, not provider billing"
+                    }
+                });
                 value["hosted_transport"] = json!(coding.hosted_transport);
             }
         }

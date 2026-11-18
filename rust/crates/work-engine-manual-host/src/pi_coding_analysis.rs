@@ -329,6 +329,26 @@ impl Host {
         }
         Ok(())
     }
+    /// The counts an analysis completion must report. On `claude-sdk` the
+    /// receiver also reports requests its forwarder answered locally (outside
+    /// a grant, a second request per grant, another path): none may occur in
+    /// a completed job, since each is a request Claude Code made that no Host
+    /// attempt accounts for.
+    fn analysis_counts(&self) -> Value {
+        let state = self.journal.coding.as_ref().unwrap();
+        let claude = self
+            .journal
+            .job
+            .coding
+            .as_ref()
+            .and_then(|p| p.provider.as_ref())
+            .is_some_and(|p| p.provider == "claude-sdk");
+        if claude {
+            json!({"providerRequests":state.provider_requests.len(),"resets":0,"forwarderRefused":0})
+        } else {
+            json!({"providerRequests":state.provider_requests.len(),"resets":0})
+        }
+    }
     /// Completion of an analysis job: every Host delivery resolved and matched
     /// natively, every provider request settled, counts as reported.
     pub(super) fn analysis_complete(&self, frame: &Value) -> Result<()> {
@@ -343,8 +363,7 @@ impl Host {
                 .provider_requests
                 .values()
                 .any(|r| r.settled_microusd.is_none())
-            || frame["counts"]
-                != json!({"providerRequests":state.provider_requests.len(),"resets":0})
+            || frame["counts"] != self.analysis_counts()
         {
             return refuse("analysis completion lacks settled requests or native tool evidence");
         }

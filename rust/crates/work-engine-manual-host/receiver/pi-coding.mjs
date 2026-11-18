@@ -116,8 +116,10 @@ const hostedFrames={open:false,queue:[],waiting:null,
  read(){if(this.waiting)throw Error('concurrent_read');return this.queue.length?Promise.resolve(this.queue.shift()):new Promise(r=>{this.waiting=r;});}};
 // claude-sdk forwarder: at most one request per grant, only while the grant is
 // open and no stream is; anything else is answered here and never leaves.
-let forwardSlot=null,openForwarded=null;
-const forwardRefuse=(res,status,message)=>{const b=JSON.stringify({type:'error',error:{type:'forwarder_refused',message}});res.writeHead(status,{'content-type':'application/json','content-length':Buffer.byteLength(b)});res.end(b);};
+let forwardSlot=null,openForwarded=null,forwarderRefused=0;
+// Every locally answered request is counted and reported at completion; the
+// Host completes a job only if there were none.
+const forwardRefuse=(res,status,message)=>{forwarderRefused++;const b=JSON.stringify({type:'error',error:{type:'forwarder_refused',message}});res.writeHead(status,{'content-type':'application/json','content-length':Buffer.byteLength(b)});res.end(b);};
 const HOP=['host','connection','keep-alive','content-length','accept-encoding','transfer-encoding','proxy-connection','te','upgrade','expect'];
 const forwarder=claudeSdk?http.createServer((req,res)=>{
  const chunks=[];let size=0,over=false;
@@ -435,7 +437,7 @@ try {
    const history={type:'coding_history',producer:'pi-1.5.0',sessionId:session.sessionId,invocationId:op.invocationId,messages:session.messages,branch:session.sessionManager.getBranch(),header:session.sessionManager.getHeader(),leafId:session.sessionManager.getLeafId(),snapshot:snapshot()};
    writeFileSync(`/export/coding-history-${op.invocationId}.json`,JSON.stringify(history)+'\n',{flag:'wx',mode:0o600});emit(history);
   }
-  const history={schema,provider:liveBridge?config.provider:'disabled_fixture',model:liveBridge?model.id:null,sessionId:session.sessionId,messages:session.messages,entries:session.sessionManager.getEntries(),header:session.sessionManager.getHeader(),counts:{providerRequests:bridgeCalls,resets:bridgeResets}};
+  const history={schema,provider:liveBridge?config.provider:'disabled_fixture',model:liveBridge?model.id:null,sessionId:session.sessionId,messages:session.messages,entries:session.sessionManager.getEntries(),header:session.sessionManager.getHeader(),counts:{providerRequests:bridgeCalls,resets:bridgeResets,...(claudeSdk?{forwarderRefused}:{})}};
   writeFileSync('/export/coding-native-history.json',JSON.stringify(history)+'\n',{flag:'wx',mode:0o600});emit({type:'complete',provider:history.provider,counts:history.counts});
  }else{
  emit({type:'ready',tools:session.getActiveToolNames(),...(live?{model:{id:model.id,provider:model.provider,api:model.api,contextWindow:model.contextWindow,maxTokens:model.maxTokens,cost:model.cost}}:{})});

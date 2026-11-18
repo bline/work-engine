@@ -513,6 +513,24 @@ fn messages_usage(events: &[Value]) -> Value {
     let cache_write = pick("cache_creation_input_tokens");
     let cache_read = pick("cache_read_input_tokens");
     let output = last["output_tokens"].clone();
+    // Cache writes by lifetime: the breakdown is used only when it adds up to
+    // the total; otherwise every write counts as one-hour (the dearer class).
+    let breakdown = if last["cache_creation"].is_object() {
+        &last["cache_creation"]
+    } else {
+        &first["cache_creation"]
+    };
+    let (write_5m, write_1h) = match cache_write.as_u64() {
+        Some(total) => {
+            let five = breakdown["ephemeral_5m_input_tokens"].as_u64();
+            let hour = breakdown["ephemeral_1h_input_tokens"].as_u64();
+            match (five, hour) {
+                (Some(f), Some(h)) if f.checked_add(h) == Some(total) => (json!(f), json!(h)),
+                _ => (json!(0), json!(total)),
+            }
+        }
+        None => (Value::Null, Value::Null),
+    };
     let observed = [&input, &cache_write, &cache_read, &output]
         .iter()
         .all(|v| v.is_u64());
@@ -525,6 +543,8 @@ fn messages_usage(events: &[Value]) -> Value {
         "stopReason": delta["delta"]["stop_reason"],
         "inputTokens": input,
         "cacheCreationInputTokens": cache_write,
+        "cacheCreation5mInputTokens": write_5m,
+        "cacheCreation1hInputTokens": write_1h,
         "cacheReadInputTokens": cache_read,
         "outputTokens": output,
     })

@@ -195,8 +195,12 @@ Changes (`work-engine-manual-host`, its receiver, harness):
 - **Plan and admission.** `ProviderPlan.provider` (`openai-codex` by default,
   or `claude-sdk`), bound by the runtime admission. `claude-sdk` only on the
   analysis profile, model `claude-haiku-5-5`, priced from Pi's
-  `anthropic.json`. Full reservation 945 001 µUSD per request (1M context,
-  128k output, upper tier); Messages analysis budget ceiling 32 000 000 µUSD.
+  `anthropic.json`. Full reservation 1 320 001 µUSD per request (1M context
+  at the dearest input-side rate, which is one-hour cache writes at the upper
+  tier; 128k output at the upper tier); Messages analysis budget ceiling
+  43 000 000 µUSD (32 requests). Revised in the review remediation: the
+  first revision reserved 945 001 and priced every cache write at the
+  catalog's five-minute rate.
   Pi's own `anthropic` provider is not offered yet. Its client does accept a
   fetch override (`pi-ai` `api/anthropic-messages.js` passes `options.fetch`
   to the Anthropic SDK), so the receiver's existing fetch interception could
@@ -218,18 +222,29 @@ Changes (`work-engine-manual-host`, its receiver, harness):
   when that crate reaches the base.
 - **Relay and settlement.** `message_stop` terminal under the same tail rule;
   usage from `message_start` and the last `message_delta`; settlement per
-  token class at the catalog tier of all input tokens; the raw stop reason
-  must agree with the container's.
+  token class at the catalog tier of all input tokens, with cache writes
+  split by lifetime (`cache_creation.ephemeral_5m/1h_input_tokens`; when the
+  split is absent or does not add up, every write counts as one-hour).
+  Five-minute writes are priced at the catalog `cacheWrite` rate and one-hour
+  writes at twice the tier's input rate (Anthropic's price; Claude Code writes
+  one-hour entries). The raw stop reason must agree with the container's.
+  The receipt names the plan's provider (`claude-sdk`) and the Anthropic
+  cost basis.
 - **Subscription billing guard.** On `https:anthropic-oauth`, a 200 head is
   relayed only with `anthropic-ratelimit-unified-status` `allowed` or
-  `allowed_warning` and `...-overage-status` `rejected` or absent; anything
-  else closes the attempt as uncertain and fails the job. Kept rate-limit,
+  `allowed_warning` and `...-overage-status` `rejected` (a missing header
+  refuses); anything else closes the attempt as uncertain and fails the job.
+  Assumed semantics: an overage status other than `rejected` means extra
+  usage could be drawn, so an organization with extra usage enabled is refused
+  even inside its limits. Kept rate-limit,
   overage and `request-id` headers are retained in `relay.json`
   (`headHeaders`).
 - **Receiver (W2).** Loads the pinned extension; a loopback forwarder is
   Claude Code's `ANTHROPIC_BASE_URL`, and each request becomes one
   `provider_fetch` under the current grant. At most one request per grant;
-  anything outside an open grant is answered locally. A dummy credential
+  anything outside an open grant is answered locally, and those local
+  answers are counted (`counts.forwarderRefused` in the completion frame). The
+  Host completes an analysis job only if the count is 0. A dummy credential
   sits in the tmpfs `HOME`. Completion is reported only after the relay has
   settled (Claude Code ends its turn at `message_stop`, before the stream's
   end). The process exits after close.
@@ -238,7 +253,10 @@ Changes (`work-engine-manual-host`, its receiver, harness):
   `..._NO_MODEL_FALLBACK`, `..._DISABLE_MODEL_ACCESS_FALLBACK`,
   `..._DISABLE_REFUSAL_FALLBACK`, `..._DISABLE_REFUSAL_RETRY`; switches
   present in the bundled binary). The forwarder refuses a second request per
-  grant, and the Host refuses `x-stainless-retry-count` other than `0`.
+  grant, and the Host requires `x-stainless-retry-count: 0`. A `max_tokens`
+  stop would make Claude Code continue with a second request in the same
+  turn; the forwarder refuses it and the Host refuses the `length` stop, so
+  such a job fails closed (unlikely at 128k output).
 - **Harness (W4).** [claude_runtime.py](claude_runtime.py) builds the runtime
   root: Pi's pinned runtime plus the extension (0.2.4), the Agent SDK, its
   linux-x64 `claude` binary and the MCP SDK; 19 014 entries, manifest
@@ -277,6 +295,11 @@ delivery was made, and the answer was produced. A scan of 91 run files found
 neither the subscription access token nor the refresh token;
 `private-access` is empty.
 
+Under the corrected pricing (review P1-1), the same usage settles at 351, 682
+and 12 375 µUSD. Request 3 alone made 58 868 one-hour cache writes, which
+were understated before; Pi's own reckoning in the same run gives 12 373. The
+live run was not repeated, because the job would still stop at the grammar.
+
 **The job failed at the lifecycle gate**: "entry claim conflicted with durable
 state". The model's assistant messages carry `thinking` blocks (requests 2
 and 3), and the analysis grammar (`lifecycle-store`
@@ -284,8 +307,30 @@ and 3), and the analysis grammar (`lifecycle-store`
 receiver pins `thinkingLevel: off`, but Pi's catalog has no `off` level for
 `claude-haiku-5-5` and marks the model `forceAdaptiveThinking`, so Pi sends
 adaptive thinking at effort `low`. As far as these catalogs show, thinking
-cannot be turned off for this model. Running Claude on this profile, for
+cannot be turned off for this model. On this path the operative fact is the
+catalog's `thinkingLevelMap`, which has no `off` entry, so Pi resolves `off`
+to `low` before the provider. Whether the API would accept `thinking:
+disabled` for this model was not tried. Running Claude on this profile, for
 qualification or H2, therefore needs the analysis grammar to accept
 `thinking` blocks. That is a `lifecycle-store` change for the
 research-lifecycle owner, not part of W1-W4. The offline runs pass because
 the synthetic upstream sends no thinking.
+
+The `https:anthropic-api` failover route for a `claude-sdk` body (an OAuth-shaped
+request: Claude Code's betas, billing system block, `?beta=true`) is untested,
+both offline and live; do not enable it live before one check. The forwarder
+has no receiver unit test; its coverage is the offline sets with the real
+binary.
+
+**Review** ([Fable](../../reviews/dev-vertical-w1-w4-fable-20261118/REVIEW.md)):
+containment and custody accepted, changes required. The remediation addresses
+P1-1 (one-hour cache-write pricing, lifetime split, reservation, ceiling), P1-2
+(receipt provider identity), P2-1 (forwarder refusals counted, completion
+requires none), P2-2 (the guard requires `overage-status: rejected`), P2-3 (the
+retry header must be present and `0`), and the P3 record wording; see the
+[disposition](../../reviews/dev-vertical-w1-w4-fable-20261118/DISPOSITION.md).
+**Run set w4b** on the remediation (`analysis-qualification` `cb64b517…`):
+`ok` passes (each request settled at 675 µUSD; the synthetic upstream sends no
+lifetime split, so writes are priced as one-hour; reserved 1 320 001 per
+attempt; receipt `container_provider_identity: claude-sdk`); `retry-head`
+fails closed as before.
