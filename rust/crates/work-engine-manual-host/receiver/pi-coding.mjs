@@ -200,6 +200,9 @@ try {
    mkdirSync(`${process.env.HOME}/.claude`,{recursive:true,mode:0o700});
    writeFileSync(`${process.env.HOME}/.claude/.credentials.json`,JSON.stringify(DUMMY_CREDENTIALS),{mode:0o600,flag:'wx'});
    Object.assign(process.env,CLAUDE_CODE_ENV,{ANTHROPIC_BASE_URL:`http://127.0.0.1:${forwarder.address().port}`});
+   // The extension's Claude prompt mode only: Pi's prompt mode has drawn
+   // Anthropic's third-party (extra usage) answer.
+   delete process.env.PI_CLAUDE_SDK_PROMPT;
    // The extension registers its provider while the session services load.
   }else{
   if(config.schema!==schema||config.provider!=='openai-codex'||config.model!=='gpt-6-luna')throw Error('provider configuration rejected');

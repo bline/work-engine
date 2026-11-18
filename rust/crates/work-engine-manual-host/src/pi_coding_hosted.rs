@@ -449,6 +449,22 @@ impl stream::Screen for Screen<'_> {
     }
 }
 
+/// Claude Code's Agent SDK request shape on the subscription: the first two
+/// system blocks are its billing header (`cc_entrypoint=sdk-ts`) and the Agent
+/// SDK identity, as on every observed request. Necessary, not sufficient:
+/// Anthropic's classification is checked again on the response head.
+fn claude_code_request(body: &[u8]) -> bool {
+    let Ok(v) = serde_json::from_slice::<Value>(body) else {
+        return false;
+    };
+    let block = |i: usize| {
+        let b = &v["system"][i];
+        (b["type"] == "text").then(|| b["text"].as_str()).flatten()
+    };
+    block(0).is_some_and(|t| {
+        t.starts_with("x-anthropic-billing-header: ") && t.contains("cc_entrypoint=sdk-ts;")
+    }) && block(1) == Some("You are a Claude agent, built on Anthropic's Claude Agent SDK.")
+}
 /// Validated container request, kept for every attempt of the request.
 #[derive(Clone)]
 struct Fetch {
@@ -992,6 +1008,23 @@ impl Host {
             Decision::Unavailable(reason) => return self.hosted_unavailable(s, reason),
         };
         let route = routes.routes[index].clone();
+        // Subscription routes carry only Claude Code's own requests: anything
+        // else is never dispatched (operator constraint: a third-party request
+        // on the subscription may draw extra usage). The response-side
+        // billing guard remains the second layer.
+        if Endpoint::parse(&route.endpoint) == Some(Endpoint::AnthropicOauth)
+            && !claude_code_request(&fetch.body)
+        {
+            self.hosted
+                .router
+                .as_mut()
+                .unwrap()
+                .settle(routed, Disposition::NotDispatched, Value::Null)
+                .map_err(|c| Error::Refused(c.into()))?;
+            self.journal.coding.as_mut().unwrap().provider_failed = true;
+            self.save()?;
+            return self.hosted_unavailable(s, "subscription_request_not_claude_code");
+        }
         let reserve = plan.request_reservation()?;
         let state = self.journal.coding.as_mut().unwrap();
         let attempt = match provider::reserve_attempt(
@@ -2668,7 +2701,9 @@ mod tests {
     }
     fn messages_body(messages: Value) -> Value {
         json!({"model":HAIKU,"stream":true,"max_tokens":128000,"messages":messages,
-            "system":[{"type":"text","text":"s","cache_control":{"type":"ephemeral","ttl":"1h"}}],
+            "system":[{"type":"text","text":"x-anthropic-billing-header: cc_version=2.1.325.fba; cc_entrypoint=sdk-ts;"},
+                {"type":"text","text":"You are a Claude agent, built on Anthropic's Claude Agent SDK.","cache_control":{"type":"ephemeral","ttl":"1h"}},
+                {"type":"text","text":"s","cache_control":{"type":"ephemeral","ttl":"1h"}}],
             "tools":[{"name":"DeferredToolPlaceholder","description":"d","input_schema":{"type":"object"},"defer_loading":true},
                 {"name":"mcp__pi__snapshot_read","description":"r","input_schema":{"type":"object"}}],
             "metadata":{"user_id":"{}"},"thinking":{"type":"disabled"}})
@@ -3065,6 +3100,56 @@ mod tests {
                 )
                 .unwrap();
                 assert!(relay["headHeaders"].is_array());
+            }
+        }
+    }
+    #[test]
+    fn subscription_routes_dispatch_only_claude_code_requests() {
+        let claude = messages_body(json!([{"role":"user","content":"q"}]));
+        let mut pi_prompt = claude.clone();
+        pi_prompt["system"] = json!([{"type":"text","text":"You are an expert coding assistant."}]);
+        let mut other_entry = claude.clone();
+        other_entry["system"][0]["text"] =
+            json!("x-anthropic-billing-header: cc_version=1; cc_entrypoint=cli;");
+        let mut no_identity = claude.clone();
+        no_identity["system"][1]["text"] = json!("You are Claude.");
+        for (body, ok) in [
+            (claude, true),
+            (pi_prompt, false),
+            (other_entry, false),
+            (no_identity, false),
+        ] {
+            let (_dir, mut h, mut w) = messages_host(vec![messages_completed_with(
+                "anthropic-ratelimit-unified-status: allowed\r\nanthropic-ratelimit-unified-overage-status: rejected\r\n",
+            )]);
+            h.journal
+                .job
+                .coding
+                .as_mut()
+                .unwrap()
+                .provider
+                .as_mut()
+                .unwrap()
+                .hosted
+                .routes[0]
+                .endpoint = "https:anthropic-oauth".into();
+            let g = messages_grant(&mut h, &mut w);
+            push(
+                &mut h,
+                &mut w,
+                messages_fetch(&g, &serde_json::to_vec(&body).unwrap()),
+            )
+            .unwrap();
+            let frames = tick_until(&mut h, &w, |a| !a.is_empty());
+            if ok {
+                assert_eq!(frames[0]["type"], "response-head", "{body}");
+                assert_eq!(w.opened.lock().unwrap().len(), 1);
+            } else {
+                assert_eq!(frames[0]["type"], "response-unavailable", "{body}");
+                assert_eq!(frames[0]["code"], "subscription_request_not_claude_code");
+                assert!(w.opened.lock().unwrap().is_empty(), "nothing dispatched");
+                assert!(request(&h).attempts.is_empty(), "nothing reserved");
+                assert!(h.journal.coding.as_ref().unwrap().provider_failed);
             }
         }
     }

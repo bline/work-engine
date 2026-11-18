@@ -341,3 +341,14 @@ the following commit.
 lifetime split, so writes are priced as one-hour; reserved 1 320 001 per
 attempt; receipt `container_provider_identity: claude-sdk`); `retry-head`
 fails closed as before.
+
+**Pre-dispatch subscription check** (operator decision 2026-11-18, the commit
+after `ed30ad1f`). On `https:anthropic-oauth`, the Host dispatches a request
+only if its first two system blocks are Claude Code's billing header
+(`x-anthropic-billing-header: … cc_entrypoint=sdk-ts;`) and the Agent SDK
+identity. Anything else is neither reserved nor sent: the request is answered
+`response-unavailable` (`subscription_request_not_claude_code`) and the job
+fails. The receiver also clears `PI_CLAUDE_SDK_PROMPT`, so the extension
+stays in its Claude prompt mode. The check is necessary, not sufficient; the
+response-side billing guard stays. All three live-c1 bodies satisfy it.
+Offline `w4c/ok` (`analysis-qualification` `0b8fff28…`) passes.
