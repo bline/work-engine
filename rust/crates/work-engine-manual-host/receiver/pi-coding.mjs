@@ -121,7 +121,10 @@ const hostedFrames={open:false,queue:[],waiting:null,
 // open and no stream is; anything else is answered here and never leaves.
 let forwardSlot=null,openForwarded=null,forwarderRefused=0;
 // Every locally answered request is counted and reported at completion; the
-// Host completes a job only if there were none.
+// Host completes a job only if there were none. A relay job also reports the
+// count with each provider request and at each turn's end, so a turn with a
+// refused request is not eligible.
+const reportRefused=claudeSdk&&relay;
 const forwardRefuse=(res,status,message)=>{forwarderRefused++;const b=JSON.stringify({type:'error',error:{type:'forwarder_refused',message}});res.writeHead(status,{'content-type':'application/json','content-length':Buffer.byteLength(b)});res.end(b);};
 const HOP=['host','connection','keep-alive','content-length','accept-encoding','transfer-encoding','proxy-connection','te','upgrade','expect'];
 const forwarder=claudeSdk?http.createServer((req,res)=>{
@@ -306,7 +309,7 @@ try {
      const grant=await new Promise((resolve,reject)=>{
       grants.set(id,resolve);
       options?.signal?.addEventListener('abort',()=>{grants.delete(id);reject(Error('provider grant cancelled'));},{once:true});
-      emit({type:'coding_provider_request',id,producer:'pi-1.5.0',invocationId:operation.invocationId,turnCorrelation:operation.turnCorrelation,prompt_sha256:createHash('sha256').update(operation.prompt).digest('hex'),messages:context.messages,agentMessages:session.messages,requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},usage:session.getContextUsage()??null,contextBytes});
+      emit({type:'coding_provider_request',id,producer:'pi-1.5.0',invocationId:operation.invocationId,turnCorrelation:operation.turnCorrelation,prompt_sha256:createHash('sha256').update(operation.prompt).digest('hex'),messages:context.messages,agentMessages:session.messages,requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},usage:session.getContextUsage()??null,contextBytes,...(reportRefused?{forwarderRefused}:{})});
      });
      if(grant.mode!=='live')throw Error('bridge grant mode');
      const until=consumptionDeadline(grant,config.deadline*1000);
@@ -450,7 +453,7 @@ try {
    await session.prompt(op.prompt,{expandPromptTemplates:false});bridgeActive=false;
    if(liveBridgeFailed)throw Error('live bridge provider failure');
    if(session.isStreaming||session.isCompacting||session.pendingMessageCount!==0||pending.size||grants.size)throw Error('bridge turn unsettled');
-   const history={type:'coding_history',producer:'pi-1.5.0',sessionId:session.sessionId,invocationId:op.invocationId,messages:session.messages,branch:session.sessionManager.getBranch(),header:session.sessionManager.getHeader(),leafId:session.sessionManager.getLeafId(),snapshot:snapshot()};
+   const history={type:'coding_history',producer:'pi-1.5.0',sessionId:session.sessionId,invocationId:op.invocationId,messages:session.messages,branch:session.sessionManager.getBranch(),header:session.sessionManager.getHeader(),leafId:session.sessionManager.getLeafId(),snapshot:snapshot(),...(reportRefused?{forwarderRefused}:{})};
    writeFileSync(`/export/coding-history-${op.invocationId}.json`,JSON.stringify(history)+'\n',{flag:'wx',mode:0o600});emit(history);
   }
   const history={schema,provider:liveBridge?config.provider:'disabled_fixture',model:liveBridge?model.id:null,sessionId:session.sessionId,messages:session.messages,entries:session.sessionManager.getEntries(),header:session.sessionManager.getHeader(),counts:{providerRequests:bridgeCalls,resets:bridgeResets,...(claudeSdk?{forwarderRefused}:{})}};

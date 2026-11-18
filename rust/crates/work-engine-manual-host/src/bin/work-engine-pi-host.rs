@@ -1,7 +1,8 @@
 //! Pi Host controller mode (`native-realization` `PI_HOST_PROTOCOL.md`):
 //! `work-engine-pi-host serve --config <serve-config.json>` (or
 //! `dynamic-tools`, which prints the pinned tool set). Stdout carries
-//! only the protocol; the run record goes to stderr. Live routes take the
+//! only the protocol; the run record goes to stderr and, once the job's
+//! state directory exists, to `pi-host-serve-record.json` in it. Live routes take the
 //! embedder's credentials file (`WORK_ENGINE_HOSTED_CREDENTIALS`, never part
 //! of the job); without it only the job's loopback routes can be reached.
 use std::io::BufReader;

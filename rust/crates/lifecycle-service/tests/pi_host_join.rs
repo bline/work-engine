@@ -48,8 +48,15 @@ fn write_json(path: &Path, value: &Value) -> PathBuf {
     path.to_path_buf()
 }
 
-fn config(root: &Path, host: &Path, prompt: &str, member: (&str, &[u8])) -> ServiceConfig {
-    let now = clock_sample().wall.get();
+/// The service configuration for one thread: composition-issued grants
+/// expiring at `expires_wall_ms`, and the trusted snapshot.
+fn config(
+    root: &Path,
+    host: &Path,
+    prompt: &str,
+    snapshot: workspace_snapshot_read::TrustedSnapshot,
+    expires_wall_ms: i64,
+) -> ServiceConfig {
     let grants = [
         ("grant:turn", "native_turn"),
         ("grant:snapshot", "snapshot_read"),
@@ -60,7 +67,7 @@ fn config(root: &Path, host: &Path, prompt: &str, member: (&str, &[u8])) -> Serv
         grant_ref: id.into(),
         context_generation: "context:input".into(),
         scope: scope.into(),
-        expires_wall_ms: now + 900_000,
+        expires_wall_ms,
         revision: 1,
     })
     .to_vec();
@@ -107,28 +114,48 @@ fn config(root: &Path, host: &Path, prompt: &str, member: (&str, &[u8])) -> Serv
             snapshot_grant_revision: 1,
             same_native_session_required: false,
             followup_turns: Vec::new(),
-            snapshot: workspace_snapshot_read::TrustedSnapshot {
-                id: "snapshot:input".into(),
-                source_revision: "synthetic:input".into(),
-                members: vec![workspace_snapshot_read::TrustedMember {
-                    id: member.0.into(),
-                    sha256: CodecContract::BinaryArtifactV1
-                        .digest_binary(member.1)
-                        .unwrap()
-                        .hex(),
-                    bytes: member.1.to_vec(),
-                }],
-            },
+            snapshot,
             semantic: Some(serde_json::from_value(json!({"capture_id":"capture:input","compile_session_id":"session:compile","verify_session_id":"session:verify","successor_verify_session_id":"session:successor","compile_invocation_id":"invocation:compile","compile_attempt_id":"attempt:compile","candidate_verify_invocation_id":"invocation:verify","candidate_verify_attempt_id":"attempt:verify","successor_verify_invocation_id":"invocation:successor","successor_verify_attempt_id":"attempt:successor","challenge_id":"challenge:input","challenge_text":"synthetic","control_grant_ref":"grant:control","control_grant_revision":1,"successor_control_grant_ref":"grant:next","successor_control_grant_revision":1})).unwrap()),
             semantic_contexts: Vec::new(),
         }),
     }
 }
 
-/// The admitted Host job for one relay thread over the observer's loopback
-/// routes (as `records/dev-vertical-pi-host-realization-20261118/serve.py`
-/// prepares it), its serve configuration and `pi-host.json`.
-fn prepare_host_job(native: &Path, host: &Path, ports: (u64, u64)) {
+/// The Host job parameters of one relay thread (identical across the arms
+/// of one comparison).
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct JobParams {
+    routes: Value,
+    max_attempts_per_request: u64,
+    deadline_secs: u64,
+    max_requests: u64,
+    budget_microusd: u64,
+    max_context_bytes: u64,
+    max_tool_calls: u64,
+    turn_deadline_secs: u64,
+}
+impl JobParams {
+    /// The offline fixture's parameters; the routes are the observer's.
+    fn offline() -> Self {
+        Self {
+            routes: json!([]),
+            max_attempts_per_request: 2,
+            deadline_secs: 900,
+            max_requests: 8,
+            budget_microusd: 8 * 1_320_001,
+            max_context_bytes: 400_000,
+            max_tool_calls: 16,
+            turn_deadline_secs: 300,
+        }
+    }
+}
+
+/// The admitted Host job for one relay thread (as
+/// `records/dev-vertical-pi-host-realization-20261118/serve.py` prepares
+/// it), its serve configuration and `pi-host.json`; `deadline` in unix
+/// seconds.
+fn prepare_host_job(native: &Path, host: &Path, job: &JobParams, snapshot: &str, deadline: u64) {
     let env = |k: &str| PathBuf::from(std::env::var(k).unwrap());
     let runtime_dir = env("WE_PI_HOST_RUNTIME_DIR");
     let receiver = env("WE_PI_HOST_RECEIVER_DIR");
@@ -144,7 +171,7 @@ fn prepare_host_job(native: &Path, host: &Path, ports: (u64, u64)) {
     }
     write_json(
         &inputs.join("workspace/snapshot-identity.json"),
-        &json!({"snapshot_id":"snapshot:input"}),
+        &json!({"snapshot_id":snapshot}),
     );
     let ws_manifest = write_json(
         &inputs.join("workspace-manifest.json"),
@@ -169,16 +196,14 @@ fn prepare_host_job(native: &Path, host: &Path, ports: (u64, u64)) {
     let runtime = runtime_dir.join("root");
     let catalog =
         runtime.join("node_modules/@earendil-works/pi-ai/dist/providers/data/anthropic.json");
-    let routes = json!([
-        {"id":"primary","payer":"synthetic-subscription","endpoint":format!("loopback:{}",ports.0)},
-        {"id":"secondary","payer":"synthetic-api","endpoint":format!("loopback:{}",ports.1)}]);
+    let (routes, attempts) = (&job.routes, job.max_attempts_per_request);
     let routes_digest = sha(
         json!({"schema":"work-engine.pi-hosted-routes.v1","routes":routes,
-        "max_attempts_per_request":2})
+        "max_attempts_per_request":attempts})
         .to_string()
         .as_bytes(),
     );
-    let (max_requests, budget) = (8u64, 8 * 1_320_001u64);
+    let (max_requests, budget) = (job.max_requests, job.budget_microusd);
     let job_id = "lifecycle-service-pi-host-join";
     let authority = write_json(
         &inputs.join("authority.json"),
@@ -193,11 +218,11 @@ fn prepare_host_job(native: &Path, host: &Path, ports: (u64, u64)) {
         &inputs.join("packet.json"),
         &json!({"schema":"work-engine.pi-host-serve-packet.v1"}),
     );
-    let deadline = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-        + 900;
+    let (tool_calls, context, turn) = (
+        job.max_tool_calls,
+        job.max_context_bytes,
+        job.turn_deadline_secs,
+    );
     let job = write_json(
         &native.join("job.json"),
         &json!({
@@ -207,24 +232,24 @@ fn prepare_host_job(native: &Path, host: &Path, ports: (u64, u64)) {
         "runtime":{"root":runtime,"manifest":art(&runtime_manifest)},
         "workspace":{"root":inputs.join("workspace"),"manifest":art(&ws_manifest)},
         "deadline_unix_seconds":deadline,"command_timeout_seconds":30,"idle_seconds":0,
-        "coding":{"schema":"work-engine.pi-lifecycle-hosted.v1","shim":art(&shim),"max_tool_calls":16,
+        "coding":{"schema":"work-engine.pi-lifecycle-hosted.v1","shim":art(&shim),"max_tool_calls":tool_calls,
             "provider":{"lane":{"pi_config":{"root":inputs.join("pi-config"),"manifest":art(&cfg_manifest)}},
                 "task":art(&task),"catalog":art(&catalog),"stream_adapter":art(&adapter),
-                "hosted":{"routes":routes,"max_attempts_per_request":2},"provider":"claude-sdk",
+                "hosted":{"routes":routes,"max_attempts_per_request":attempts},"provider":"claude-sdk",
                 "model":"claude-haiku-5-5","max_requests":max_requests,"budget_microusd":budget,
-                "max_context_bytes":400000}}}),
+                "max_context_bytes":context}}}),
     );
     let serve = write_json(
         &native.join("serve-config.json"),
         &json!({
-        "schema":"work-engine.pi-host-serve.v1","job":art(&job),"turn_deadline_secs":300}),
+        "schema":"work-engine.pi-host-serve.v1","job":art(&job),"turn_deadline_secs":turn}),
     );
     write_json(
         &native.join("pi-host.json"),
         &json!({
         "host_sha256":sha_file(host),"serve_config":serve,"serve_config_sha256":sha_file(&serve),
         "job_sha256":sha_file(&job),"state_dir":state,"provider":"claude-sdk",
-        "model":"claude-haiku-5-5","turn_deadline_secs":300}),
+        "model":"claude-haiku-5-5","turn_deadline_secs":turn}),
     );
 }
 
@@ -246,8 +271,172 @@ async fn pi_host_research_delivery() {
     join(Some(PathBuf::from(std::env::var("WE_A4_FIXTURE").unwrap()))).await;
 }
 
+const TASK: &str = "task:input";
+const SUBJECT: &str = "subject:input";
+const ARM_SCHEMA: &str = "work-engine.pi-host-arm.v1";
+
+/// One live arm (`WE_PI_HOST_ARM`): the task's fields, the snapshot members
+/// by path (each pinned by SHA-256) and the job parameters. `mapping` names,
+/// for the advisory arm, the fact behind each recommendation dependency.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Arm {
+    schema: String,
+    name: String,
+    snapshot_id: String,
+    source_revision: String,
+    members: Vec<ArmMember>,
+    kind: retained_task_workflow::SubjectKind,
+    objective: String,
+    engineering_question: String,
+    facts: Vec<retained_task_workflow::FactInput>,
+    #[serde(default)]
+    mapping: BTreeMap<String, String>,
+    job: JobParams,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ArmMember {
+    id: String,
+    path: PathBuf,
+    sha256: String,
+}
+
+/// H2 step 3f: one live arm on its own routes, with no observer. Refuses
+/// to start unless `WORK_ENGINE_HOSTED_CREDENTIALS` names the credentials
+/// file the Host inherits, and unless every route is `https:`. Keeps the
+/// offline assertions except the scripted read count (recorded instead).
+/// Writes `summary.json`, `grants.json` and, for an arm with a `mapping`,
+/// `retained.json` and `mapping.json`.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "live inference (operator-authorized arms only): requires WE_PI_HOST_ARM, WORK_ENGINE_HOSTED_CREDENTIALS, Docker, the Pi Host binary and its claude-sdk runtime"]
+async fn pi_host_live_arm() {
+    let credentials = std::env::var_os("WORK_ENGINE_HOSTED_CREDENTIALS")
+        .expect("refused: WORK_ENGINE_HOSTED_CREDENTIALS is not set");
+    assert!(
+        Path::new(&credentials).is_file(),
+        "refused: the credentials file is absent"
+    );
+    let arm_path = PathBuf::from(std::env::var("WE_PI_HOST_ARM").unwrap());
+    let arm_bytes = std::fs::read(&arm_path).unwrap();
+    let arm: Arm = serde_json::from_slice(&arm_bytes).unwrap();
+    assert_eq!(arm.schema, ARM_SCHEMA);
+    let routes = arm.job.routes.as_array().cloned().unwrap_or_default();
+    assert!(
+        !routes.is_empty()
+            && routes.iter().all(|r| r["endpoint"]
+                .as_str()
+                .is_some_and(|e| e.starts_with("https:"))),
+        "refused: a live arm routes only to https endpoints"
+    );
+    let mut members = arm
+        .members
+        .iter()
+        .map(|m| {
+            let bytes = std::fs::read(&m.path).unwrap();
+            assert_eq!(sha(&bytes), m.sha256, "member {} changed", m.id);
+            (m.id.clone(), bytes)
+        })
+        .collect::<Vec<_>>();
+    members.sort();
+    let root = out_root();
+    let owner = owner(
+        &root,
+        arm.kind,
+        &arm.objective,
+        &arm.engineering_question,
+        &arm.snapshot_id,
+        arm.facts.clone(),
+    );
+    let text = owner.input_text("input").unwrap().unwrap();
+    let snapshot = snapshot(&arm.snapshot_id, &arm.source_revision, &members);
+    let run = drive(&root, &owner, &text, snapshot, arm.job.clone(), None).await;
+    let reads = run.kinds.iter().filter(|k| **k == "tool").count();
+    let mut summary = json!({"arm":arm.name,"arm_sha256":sha(&arm_bytes),"task_id":TASK,
+        "subject_id":SUBJECT,"relayed_calls":reads,"messages":run.kinds,
+        "grants_sha256":sha_file(&root.join("grants.json")),"job":arm.job,
+        "failures":run.failures,"container_left":run.container_left});
+    // The observed outcome is retained before the assertions decide it.
+    write_json(&root.join("summary.json"), &summary);
+    run.assert_closed();
+    let settled = settled(&run.actor, &owner);
+    if !arm.mapping.is_empty() {
+        let record = owner.observe(TASK).unwrap().unwrap();
+        let mapping: BTreeMap<String, (String, _)> = arm
+            .mapping
+            .iter()
+            .map(|(key, fact)| {
+                let source = record.sources.iter().find(|s| &s.id == fact).unwrap();
+                (key.clone(), (TASK.to_string(), source.reference()))
+            })
+            .collect();
+        write_retained(&run.actor, &root, &mapping);
+    }
+    summary["settled"] = settled;
+    write_json(&root.join("summary.json"), &summary);
+}
+
+fn out_root() -> PathBuf {
+    let root = PathBuf::from(std::env::var("WE_PI_HOST_OUT").unwrap());
+    for d in ["", "store", "native"] {
+        std::fs::create_dir_all(root.join(d)).unwrap();
+    }
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(root.join("native"), std::fs::Permissions::from_mode(0o700)).unwrap();
+    root
+}
+
+/// The task owner's store with the submitted task (`input`).
+fn owner(
+    root: &Path,
+    kind: retained_task_workflow::SubjectKind,
+    objective: &str,
+    question: &str,
+    snapshot: &str,
+    facts: Vec<retained_task_workflow::FactInput>,
+) -> Arc<retained_task_workflow::TaskStore> {
+    use retained_task_workflow::{SubmitTask, TaskStore};
+    let owner =
+        Arc::new(TaskStore::open(&root.join("tasks.sqlite"), "human:fixture".into()).unwrap());
+    owner
+        .submit(&SubmitTask {
+            command_id: "input".into(),
+            task_id: TASK.into(),
+            subject_id: SUBJECT.into(),
+            kind,
+            objective: objective.into(),
+            engineering_question: question.into(),
+            snapshot_ref: snapshot.into(),
+            facts,
+        })
+        .unwrap();
+    owner
+}
+
+fn snapshot(
+    id: &str,
+    source_revision: &str,
+    members: &[(String, Vec<u8>)],
+) -> workspace_snapshot_read::TrustedSnapshot {
+    workspace_snapshot_read::TrustedSnapshot {
+        id: id.into(),
+        source_revision: source_revision.into(),
+        members: members
+            .iter()
+            .map(|(id, bytes)| workspace_snapshot_read::TrustedMember {
+                id: id.clone(),
+                sha256: CodecContract::BinaryArtifactV1
+                    .digest_binary(bytes)
+                    .unwrap()
+                    .hex(),
+                bytes: bytes.clone(),
+            })
+            .collect(),
+    }
+}
+
 async fn join(research: Option<PathBuf>) {
-    use retained_task_workflow::{FactInput, FactKind, SubjectKind, SubmitTask, TaskStore};
+    use retained_task_workflow::{FactInput, FactKind, SubjectKind};
     let research = research.map(|a4| {
         let read = |n: &str| std::fs::read(a4.join(n)).unwrap();
         let material = [
@@ -260,43 +449,28 @@ async fn join(research: Option<PathBuf>) {
         .concat();
         (material, read("target.txt"))
     });
-    let root = PathBuf::from(std::env::var("WE_PI_HOST_OUT").unwrap());
-    let host = PathBuf::from(std::env::var("WE_PI_HOST_BIN").unwrap());
-    let observer = PathBuf::from(std::env::var("WE_PI_HOST_OBSERVER").unwrap());
-    for d in ["", "store", "native"] {
-        std::fs::create_dir_all(root.join(d)).unwrap();
-    }
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(root.join("native"), std::fs::Permissions::from_mode(0o700))
-            .unwrap();
-    }
-    let owner =
-        Arc::new(TaskStore::open(&root.join("tasks.sqlite"), "human:fixture".into()).unwrap());
+    let root = out_root();
     let question =
         "Which synthetic option matches basis-1? Publish the answer with result_publish.";
-    owner
-        .submit(&SubmitTask {
-            command_id: "input".into(),
-            task_id: "task:input".into(),
-            subject_id: "subject:input".into(),
-            kind: SubjectKind::RepositoryAnalysis,
-            objective: question.into(),
-            engineering_question: question.into(),
-            snapshot_ref: "snapshot:input".into(),
-            facts: research
-                .iter()
-                .map(|(_, target)| FactInput {
-                    id: "target".into(),
-                    kind: FactKind::Decision,
-                    text: String::from_utf8(target.clone()).unwrap(),
-                    current: true,
-                })
-                .collect(),
+    let facts = research
+        .iter()
+        .map(|(_, target)| FactInput {
+            id: "target".into(),
+            kind: FactKind::Decision,
+            text: String::from_utf8(target.clone()).unwrap(),
+            current: true,
         })
-        .unwrap();
+        .collect();
+    let owner = owner(
+        &root,
+        SubjectKind::RepositoryAnalysis,
+        question,
+        question,
+        "snapshot:input",
+        facts,
+    );
     let text = owner.input_text("input").unwrap().unwrap();
-    let record = owner.observe("task:input").unwrap().unwrap();
+    let record = owner.observe(TASK).unwrap().unwrap();
     let refs = record
         .sources
         .iter()
@@ -327,31 +501,111 @@ async fn join(research: Option<PathBuf>) {
                 .collect::<Vec<_>>();
             steps.push(json!({"tool":"mcp__pi__result_publish","input":args}));
             steps.push(json!({"text":"published"}));
-            let mapping = BTreeMap::from([(
-                "decision.target".to_string(),
-                ("task:input".to_string(), source),
-            )]);
+            let mapping =
+                BTreeMap::from([("decision.target".to_string(), (TASK.to_string(), source))]);
             ("research", material.clone(), json!(steps), Some(mapping))
         }
     };
-    std::fs::write(root.join("steps.json"), steps.to_string()).unwrap();
-    let mut fixture = std::process::Command::new(&observer)
-        .env("HOSTED_OBSERVER_SCENARIO", "steps")
-        .env("HOSTED_OBSERVER_STEPS", root.join("steps.json"))
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::fs::File::create(root.join("observer.stderr")).unwrap())
-        .spawn()
-        .unwrap();
-    let mut line = String::new();
-    let mut observer_out = std::io::BufReader::new(fixture.stdout.take().unwrap());
-    observer_out.read_line(&mut line).unwrap();
-    let ready: Value = serde_json::from_str(&line).unwrap();
-    let ports = (
-        ready["primary"].as_u64().unwrap(),
-        ready["secondary"].as_u64().unwrap(),
+    let snapshot = snapshot(
+        "snapshot:input",
+        "synthetic:input",
+        &[(member.to_string(), material.clone())],
     );
-    prepare_host_job(&root.join("native"), &host, ports);
-    let config = config(&root, &host, &text, (member, &material));
+    let run = drive(
+        &root,
+        &owner,
+        &text,
+        snapshot,
+        JobParams::offline(),
+        Some(&steps),
+    )
+    .await;
+    run.assert_closed();
+    let settled = settled(&run.actor, &owner);
+    if let Some(mapping) = &mapping {
+        write_retained(&run.actor, &root, mapping);
+        let reads = run.kinds.iter().filter(|k| **k == "tool").count();
+        assert_eq!(reads, material.len().div_ceil(32768) + 1);
+    }
+    let mut summary = settled;
+    summary["messages"] = json!(run.kinds);
+    summary["task_id"] = json!(TASK);
+    summary["subject_id"] = json!(SUBJECT);
+    std::fs::write(root.join("summary.json"), summary.to_string()).unwrap();
+}
+
+/// One thread driven to its end.
+struct Run {
+    actor: Actor,
+    kinds: Vec<&'static str>,
+    failures: Value,
+    container_left: bool,
+}
+impl Run {
+    /// The Host closed its thread in order: no container is left behind and
+    /// it recorded no failure.
+    fn assert_closed(&self) {
+        assert!(
+            self.kinds.contains(&"capture_host") && !self.kinds.contains(&"capture_codex"),
+            "{:?}",
+            self.kinds
+        );
+        assert!(!self.container_left, "container left behind");
+        assert!(
+            self.failures.as_array().is_some_and(Vec::is_empty),
+            "{}",
+            self.failures
+        );
+    }
+}
+
+/// Composes one relay thread over the actual actor, runner and Host and
+/// drives it until the runner is done: offline with the scripted observer
+/// (`steps`, which supplies the routes), live on the job's own routes.
+async fn drive(
+    root: &Path,
+    owner: &Arc<retained_task_workflow::TaskStore>,
+    text: &str,
+    snapshot: workspace_snapshot_read::TrustedSnapshot,
+    mut job: JobParams,
+    steps: Option<&Value>,
+) -> Run {
+    let host = PathBuf::from(std::env::var("WE_PI_HOST_BIN").unwrap());
+    // The observer and its stdout reader: the reader stays open for the
+    // run, since the observer writes a line per request.
+    let mut fixture = steps.map(|steps| {
+        std::fs::write(root.join("steps.json"), steps.to_string()).unwrap();
+        let observer = PathBuf::from(std::env::var("WE_PI_HOST_OBSERVER").unwrap());
+        let mut fixture = std::process::Command::new(&observer)
+            .env("HOSTED_OBSERVER_SCENARIO", "steps")
+            .env("HOSTED_OBSERVER_STEPS", root.join("steps.json"))
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::fs::File::create(root.join("observer.stderr")).unwrap())
+            .spawn()
+            .unwrap();
+        let mut line = String::new();
+        let mut observer_out = std::io::BufReader::new(fixture.stdout.take().unwrap());
+        observer_out.read_line(&mut line).unwrap();
+        let ready: Value = serde_json::from_str(&line).unwrap();
+        job.routes = json!([
+            {"id":"primary","payer":"synthetic-subscription","endpoint":format!("loopback:{}",ready["primary"])},
+            {"id":"secondary","payer":"synthetic-api","endpoint":format!("loopback:{}",ready["secondary"])}]);
+        (fixture, observer_out)
+    });
+    let deadline = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+        + job.deadline_secs;
+    prepare_host_job(&root.join("native"), &host, &job, &snapshot.id, deadline);
+    // Composition-issued grants (O1), retained exactly with the run; they
+    // expire with the job.
+    let config = config(root, &host, text, snapshot, deadline as i64 * 1000);
+    std::fs::write(
+        root.join("grants.json"),
+        serde_json::to_vec(&config.grants).unwrap(),
+    )
+    .unwrap();
     let native = config.native.as_ref().unwrap();
     operations::pi_host::validate(native, &operations::pi_host::load(native).expect("load"))
         .expect("validate");
@@ -378,10 +632,10 @@ async fn join(research: Option<PathBuf>) {
         Some(pending),
         None,
     ));
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(600);
+    let until = tokio::time::Instant::now() + Duration::from_secs(job.deadline_secs + 60);
     let mut kinds = Vec::new();
     loop {
-        let message = tokio::time::timeout_at(deadline, actor.native_messages.recv())
+        let message = tokio::time::timeout_at(until, actor.native_messages.recv())
             .await
             .unwrap()
             .unwrap();
@@ -407,7 +661,6 @@ async fn join(research: Option<PathBuf>) {
         }
     }
     run.await.unwrap();
-    // The Host closed its thread in order: no container is left behind.
     let containers = std::process::Command::new("docker")
         .args(["ps", "-a", "--format", "{{.Names}}"])
         .output()
@@ -417,24 +670,28 @@ async fn join(research: Option<PathBuf>) {
     )
     .unwrap();
     let name = job["container_name"].as_str().unwrap();
-    assert!(
-        !String::from_utf8_lossy(&containers.stdout).contains(name),
-        "container {name} left behind"
-    );
-    assert!(
-        job["failures"].as_array().unwrap().is_empty(),
-        "{}",
-        job["failures"]
-    );
-    let _ = fixture.kill();
-    let _ = fixture.wait();
+    if let Some((fixture, _)) = fixture.as_mut() {
+        let _ = fixture.kill();
+        let _ = fixture.wait();
+    }
     std::fs::write(
         root.join("messages.json"),
         serde_json::to_vec(&kinds).unwrap(),
     )
     .unwrap();
+    Run {
+        actor,
+        kinds,
+        failures: job["failures"].clone(),
+        container_left: String::from_utf8_lossy(&containers.stdout).contains(name),
+    }
+}
+
+/// The published result's causal record, eligible checked input under this
+/// protocol and settled recovery; returns them for the summary.
+fn settled(actor: &Actor, owner: &retained_task_workflow::TaskStore) -> Value {
     let result = owner
-        .observe("task:input")
+        .observe(TASK)
         .unwrap()
         .unwrap()
         .result
@@ -456,7 +713,7 @@ async fn join(research: Option<PathBuf>) {
         native_realization::pi_host::PROTOCOL_DIGEST
     );
     assert!(input.payloads.iter().all(|p| p.representation == "wire"));
-    let page = actor.native_causal_read("task:input", "subject:input", 0, None);
+    let page = actor.native_causal_read(TASK, SUBJECT, 0, None);
     assert_eq!(page["operation_id"], result.operation_id, "{page}");
     let recovery = actor
         .store
@@ -464,45 +721,34 @@ async fn join(research: Option<PathBuf>) {
         .unwrap()
         .unwrap();
     assert_eq!(recovery.class, "CompletedSettled");
-    assert!(kinds.contains(&"capture_host") && !kinds.contains(&"capture_codex"));
-    if let Some(mapping) = &mapping {
-        // The actor's scoped causal read, paged as the task host's `acquire`
-        // pages it over the service socket.
-        use base64::Engine;
-        let (mut bytes, mut digest) = (Vec::new(), None::<String>);
-        loop {
-            let chunk = actor.native_causal_read(
-                "task:input",
-                "subject:input",
-                bytes.len(),
-                digest.as_deref(),
-            );
-            let data = base64::engine::general_purpose::STANDARD
-                .decode(chunk["bytes_base64"].as_str().expect(&chunk.to_string()))
-                .unwrap();
-            assert_eq!(chunk["offset"], bytes.len());
-            digest = Some(chunk["content_sha256"].as_str().unwrap().into());
-            bytes.extend(data);
-            if bytes.len() == chunk["length"].as_u64().unwrap() as usize {
-                break;
-            }
+    json!({"operation":result.operation_id,"scope":causal.scope,"eligible":input.eligible,
+        "protocol":input.protocol_digest,"binary":input.binary_sha256,"payloads":input.payloads.len(),
+        "recovery":recovery.class,"first_page_operation":page["operation_id"]})
+}
+
+/// The actor's scoped causal read, paged as the task host's `acquire` pages
+/// it over the service socket, and the owner selector map, for
+/// `verify_delivery`.
+fn write_retained(actor: &Actor, root: &Path, mapping: &impl Serialize) {
+    use base64::Engine;
+    let (mut bytes, mut digest) = (Vec::new(), None::<String>);
+    loop {
+        let chunk = actor.native_causal_read(TASK, SUBJECT, bytes.len(), digest.as_deref());
+        let data = base64::engine::general_purpose::STANDARD
+            .decode(chunk["bytes_base64"].as_str().expect(&chunk.to_string()))
+            .unwrap();
+        assert_eq!(chunk["offset"], bytes.len());
+        digest = Some(chunk["content_sha256"].as_str().unwrap().into());
+        bytes.extend(data);
+        if bytes.len() == chunk["length"].as_u64().unwrap() as usize {
+            break;
         }
-        assert_eq!(Some(sha(&bytes)), digest);
-        std::fs::write(root.join("retained.json"), &bytes).unwrap();
-        std::fs::write(
-            root.join("mapping.json"),
-            serde_json::to_vec(mapping).unwrap(),
-        )
-        .unwrap();
-        let reads = kinds.iter().filter(|k| **k == "tool").count();
-        assert_eq!(reads, material.len().div_ceil(32768) + 1);
     }
+    assert_eq!(Some(sha(&bytes)), digest);
+    std::fs::write(root.join("retained.json"), &bytes).unwrap();
     std::fs::write(
-        root.join("summary.json"),
-        json!({"operation":result.operation_id,"scope":causal.scope,"eligible":input.eligible,
-            "protocol":input.protocol_digest,"binary":input.binary_sha256,"payloads":input.payloads.len(),
-            "recovery":recovery.class,"first_page_operation":page["operation_id"],"messages":kinds})
-        .to_string(),
+        root.join("mapping.json"),
+        serde_json::to_vec(mapping).unwrap(),
     )
     .unwrap();
 }

@@ -365,6 +365,143 @@ passed (6 ignored), `lifecycle-service` lib with `controlled-proof` 97 passed
 `work-engine-task-host` `research_delivery` with `controlled-proof` 6 passed
 (2 ignored). `cargo fmt --check` is clean for the two changed crates.
 
+## H2 live preparation (owner 5923)
+
+Branch `pi-host-h2-live-prep-20261118`, cut from the shared branch at
+`bf64a1e3`. Scope is the owner's authorization 5923 of the sizing 5922/5924.
+No live inference was used.
+
+| Item | Change |
+| --- | --- |
+| M1 per-turn forwarder count | On a relay job with `claude-sdk`, the receiver adds `forwarderRefused` (its count of Claude Code requests the loopback forwarder answered locally) to every `coding_provider_request` and `coding_history` frame. The analysis profile's frames are unchanged. The Host's relay gate requires the count on `claude-sdk` frames and refuses a decrease, or the field on another provider. A count above zero is an eligibility reason in the turn's capture, so the turn fails before the controller settles it. The job-completion check is kept. |
+| R1 serve record | `serve` retains its record (status, run receipt or error, attempt log) as `pi-host-serve-record.json` in the job's state directory, create-only, once that directory exists (admission can fail before it does). A refused finish is recorded as `refused` with its error. stderr still carries the record. |
+| R2/F4 attempts | The capture lists every attempt of the turn's provider requests as `attempts` (`request`, `attempt`, `disposition`, `route`, `payer`), including one that was never dispatched. The runner copies `attempts` into the input metadata. |
+| C1(vii) | On `claude-sdk`, admission refuses unless the runtime manifest has `node_modules/@anthropic-ai/claude-agent-sdk-linux-x64/claude` as a file with SHA-256 `0dc4f4a9…` (`CLAUDE_CODE_SHA256`). Admission already verifies the runtime tree against that manifest. |
+| Comment | `ProviderPlan::provider`: `claude-sdk` is admitted on the analysis or the lifecycle relay profile. |
+| Protocol (owner side) | Capture: the `attempts` list. Eligibility: on `claude-sdk`, the forwarder answered no request, by the count reported with each provider request and at the turn's end. `PROTOCOL_DIGEST` `56c00a88…`; Codex unchanged. |
+| Live variants (owner side, test-only) | `lifecycle-service` `tests/pi_host_join.rs`: `prepare_host_job` and `config` take the job parameters (`JobParams`: routes, attempts, deadline, requests, budget, context bytes, tool calls, turn deadline), the snapshot and the grant expiry (the job deadline). One `drive` composes and runs a thread for the offline and the live tests. The grants are written as `grants.json`, and the task and subject go into `summary.json`. New `pi_host_live_arm` (ignored): an arm file `WE_PI_HOST_ARM` (`work-engine.pi-host-arm.v1`: name, snapshot id and source revision, members by path pinned by SHA-256, the task's kind, objective, question and facts, an optional dependency-to-fact `mapping`, and `JobParams`). It has no observer and refuses to start unless `WORK_ENGINE_HOSTED_CREDENTIALS` names a file and every route is `https:`. It writes the observed outcome before the closed-thread, eligibility and settlement assertions, records the relayed call count instead of asserting it, and writes `retained.json` and `mapping.json` for an arm with a mapping. `work-engine-task-host` `research_delivery.rs`: `pi_host_live_delivery_verifies` (ignored). Both delivery tests take the task and subject from the run's summary. The live one records whether the spans follow the 32 KiB plan (`spans_follow_plan`) instead of asserting it. The changed-byte control takes its 16-byte marker from the decoded projection: bytes JSON leaves unescaped, once in the projection and once in some wire body. |
+| R3 (offline) | `serve.py` scenario `treatment` and observer `steps` entries with several tool calls in one response; see below. |
+
+### R3: treatment-size relay check
+
+`r10-treatment` ran with the H2 job parameters (`max_requests` 32, budget
+42,240,032 µUSD, `max_context_bytes` 400,000, `max_tool_calls` 32, turn 900 s,
+job 1,800 s). The snapshot was the treatment arm: the 13 members of the S2 r2
+manifest at their pinned commits, with the ledger as its line range (5,753 B,
+`e3b452a8…`), plus the fixture A4 material (112,497 B). That is 14 members and
+238,593 bytes. Real Claude Code ran in the container against the offline
+observer. Its first response asked for 12 `snapshot_read` calls, its second for
+the other 5 (32 KiB pages, actor answer shape), then `result_publish`, then the
+answer. Result:
+
+- The turn completed and was eligible, with no reasons. 18 relayed calls.
+  The capture has 5 payloads and 5 `attempts` (request 1 failed over from
+  the 429 primary). No container was left and the serve record is `served`.
+- `contextBytes` per request: 5,048, 226,634, 279,362, 280,483. The
+  `max_context_bytes` margin at the last request is 119,517.
+- `forwarderRefused` was 0 in all four request frames and the history frame.
+- Container frames: `coding_provider_request` carries the context twice
+  (`messages` and `agentMessages`). The largest was 561,468 bytes against the
+  1 MiB frame bound, and the history frame 565,564. At `max_context_bytes`
+  400,000 the request frame would be about 800 KB.
+- Retained request bodies: 6,891, 226,714, 278,498, 279,142, total 791,245.
+  The bound is 600,000 per body and 8 MiB per turn.
+- `thread/read` reply: 272,539 bytes against the 1,000,000 bound.
+- Container memory (cgroup v2, sampled every 0.25 s): `memory.peak`
+  348,635,136 B (332 MiB) against `memory.max` 536,870,912. 39 samples, no
+  `oom_kill`.
+- Elapsed 68.9 s.
+
+Not covered offline: thinking blocks and their signatures, which the live
+bodies add (about 1.2 KB each, in both frame copies), and Claude Code's live
+system-prompt size.
+
+### Runs (offline)
+
+State directory `~/.local/state/work-engine/dev-vertical-pi-host-h2-live-prep-20261118/`.
+
+- `q17` (`pi_host_research_delivery` plus `pi_host_q_delivery_verifies`,
+  before the test refactor): protocol `56c00a88…`, eligible,
+  `CompletedSettled`, 7 payloads and 7 attempts, account flag `false`,
+  serve record `served`; `verify_delivery` `complete`.
+- `r9-relay` (`serve.py relay`): both turns completed and eligible;
+  `forwarderRefused` 0 in every frame; no container left.
+- `r10-treatment`: above.
+- `q21` (after the test refactor: `pi_host_research_delivery`, then
+  `pi_host_q_delivery_verifies` and `pi_host_live_delivery_verifies` over
+  the same run): eligible, `CompletedSettled`, 7 payloads and 7 attempts,
+  account flag `false`, serve record `served`, 4 grants retained.
+  `verify_delivery` is `complete` (`request-5`, 4 spans, which follow the plan)
+  with the same four refusals. The projection-picked marker is at offset
+  58,444. Both delivery checks wrote the same `verify-delivery.json`
+  (`93da5d4c…`). sha256: `summary.json` `f2250cf0…`, `retained.json`
+  `3c49a8ea…`, `grants.json` `c7603120…`.
+- `q22` (`pi_host_causal_join`): eligible, `CompletedSettled`, 3 payloads;
+  `summary.json` `d9a85f80…`.
+- `pi_host_live_arm` refusals, before any composition: no
+  `WORK_ENGINE_HOSTED_CREDENTIALS` gives "refused: WORK_ENGINE_HOSTED_CREDENTIALS
+  is not set"; an arm with a `loopback:` route gives "refused: a live arm
+  routes only to https endpoints"; nothing was written.
+- An earlier attempt at the refactored Q runs (`q19`, `q20`) failed with
+  `upstream_head_eof`. The new `drive` dropped the observer's stdout reader,
+  and the observer died on its next write. Fixed before `q21`/`q22`.
+
+Unit tests on this build: `native-realization` 6/6; `work-engine-manual-host`
+lib 108 passed (6 ignored); `lifecycle-service` lib with `controlled-proof` 97
+passed; `lifecycle-store` all targets passed; `work-engine-task-host`
+`research_delivery` with `controlled-proof` 6 passed. Among
+`work-engine-manual-host`'s integration tests, `lifecycle.rs`
+`mutation_during_snapshot_collection_is_a_conflict` failed twice under
+parallel load on its 10 s wall-clock bound, and passed alone (9.14 s). It
+exercises `collect`, which this unit does not change. The full
+`work-engine-task-host` lib (`controlled-proof`) does not finish:
+`selected_startup::tests::malformed_rehashed_installed_approval_refuses_before_every_startup_effect`
+spins at full CPU. Run alone, it hits a 240 s timeout both on this branch and
+at the base `bf64a1e3`, so it predates this unit. The other 17
+`selected_startup` tests pass alone.
+
+### Review (Fable) and remediation
+
+Fable (`claude-sdk/claude-fable-5-1`), read-only, over `bf64a1e3..546a24a9`
+(`reviews/pi-host-h2-live-prep-fable-20261118/REVIEW.md`): accept with
+changes. It found nothing that makes the first live run unsafe.
+
+| Finding | Disposition |
+| --- | --- |
+| P2-1: the delivery check's changed-byte marker could come from the prompt. A window that also occurs in the task text satisfies "once in some body" through request 1. The flip then changes only the prompt copy and the control fails for the wrong reason. | Fixed: the marker must not occur in the first body (the shared prefix, which holds no read result), must occur at most once in any body, and once in some body. |
+| P2-2: the refactor dropped `capture_host` present / `capture_codex` absent. | Fixed: restored in `Run::assert_closed`, so offline and live both check it. |
+| P3-1: a request the Host refuses before reserving any attempt (`not_dispatched`, for example not a Claude Code request on the subscription) has no `attempts` entry, and its reason said only "has no attempt". | Fixed: the reason names the `not_dispatched` cause; test added. `attempts` still lists only real attempts, and the protocol sentence (attempts, including a reserved one never dispatched) is unchanged. |
+| P3-2: the forwarder count is job-wide and sampled at frame times. A refusal after a turn's history frame lands on the next provider request or the job completion, not on the turn already settled, whose answer preceded it. The job still cannot complete. | Recorded here; no change. |
+| P3-3: a failed serve-record write replaced the run's error and the stderr record. | Fixed: the failure becomes `record_error` in the returned record; an existing record file is kept; test added. |
+| P3-4: `cargo fmt --check -p work-engine-task-host` reports `observation.rs`. | Predates this unit, and this unit does not touch the file. |
+
+Runs after the remediation (offline):
+
+- `q23` (`pi_host_research_delivery`, then both delivery checks): eligible,
+  `CompletedSettled`, 7 payloads and 7 attempts, `capture_host` asserted,
+  account flag `false`, serve record `served`. `verify_delivery` is `complete`
+  (`request-5`, 4 spans, which follow the plan) with the same four refusals;
+  under the stricter rule the marker is still at offset 58,444. sha256:
+  `summary.json` `98ad052f…`, `retained.json` `bb62e248…`,
+  `verify-delivery.json` `7429c7cb…`, `grants.json` `ab150216…`.
+- `q24` (`pi_host_causal_join`): eligible, `CompletedSettled`, 3 payloads;
+  `summary.json` `e4ca0d5d…`.
+- Unit tests: `native-realization` 6, `work-engine-manual-host` lib 108,
+  `lifecycle-service` lib 97, `lifecycle-store` lib 33,
+  `work-engine-task-host` `research_delivery` 6. Formatting is clean for the
+  changed files.
+
+Incident (validation only): the base comparison of the hanging task-host test
+was built in this worktree's target directory. Cargo records workspace
+source paths relative to the workspace root, and this branch's sources were
+older than that build, so cargo kept base artifacts it should have rebuilt,
+including `native-realization` with the old digest `9a33912a`. The first
+remediation run failed as a result: the runner refused the Host's
+`pi-host/initialize` digest, and the Host never started its thread. The
+files that differ from base were touched and rebuilt. Every binary was
+checked to carry `56c00a88…` and not `9a33912a…` before `q23`/`q24`. `q21`,
+`q22`, `r9` and `r10` ran before the base build.
+
 ## Open
 
 - The Q fixture's owner adapter answers `original_result_operation` without
@@ -380,4 +517,9 @@ passed (6 ignored), `lifecycle-service` lib with `controlled-proof` 97 passed
   the controlled startup fixture (`checked_fixture_basis`) and basis mint.
 - Startup hold (L4) for the Pi Host is refused, as for the Claude Host: it
   needs the protection owner's contract (R9′).
+- The hosted analysis profile on `claude-sdk`
+  (`pi-pressure-context-host` `analysis.rs`) settles its turn at the history
+  frame, before the job-completion forwarder check, so it has the gap M1
+  closes for relay turns. Its frames do not carry the per-turn count. This
+  was outside 5923's scope.
 - No live run.

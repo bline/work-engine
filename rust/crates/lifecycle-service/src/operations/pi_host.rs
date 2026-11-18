@@ -531,7 +531,7 @@ pub(crate) fn check_capture(
         "protocol_digest":capture["protocol_digest"],"wire":capture["wire"],
         "contains_account_identifier":capture["contains_account_identifier"],
         "capture_sha256":sha(bytes),"identities":capture["identities"],"turn":capture["turn"],
-        "responses":capture["responses"],"results":capture["results"],"history":capture["history"],
+        "attempts":capture["attempts"],"responses":capture["responses"],"results":capture["results"],"history":capture["history"],
         "observation":capture["observation"],"eligibility":capture["eligibility"]});
     let metadata = serde_json::to_vec(&metadata).map_err(|_| StoreError::Rejected)?;
     if metadata.len() > 128 * 1024 {
@@ -954,6 +954,8 @@ mod tests {
             "turn":{"id":"u","prompt_sha256":sha(b"prompt")},
             "payloads":[{"inference_call_id":"request-1","physical_send":1,"representation":"wire",
                 "original_codec":"identity","sha256":sha(body),"path":body_path}],
+            "attempts":[{"request":1,"attempt":1,"disposition":"completed","route":"primary",
+                "payer":"claude-subscription"}],
             "calls":[],"observation":{"containment_verified":true},
             "eligibility":{"eligible":eligible,"reasons":[]}});
         let terminal = parse_event(
@@ -975,6 +977,10 @@ mod tests {
         let ok = check(&expected, "u", "prompt", "completed").unwrap();
         assert!(ok.eligible);
         assert_eq!(ok.payloads.len(), 1);
+        // F4: the per-request attempts reach the input metadata.
+        let metadata: Value = serde_json::from_slice(&ok.metadata).unwrap();
+        assert_eq!(metadata["attempts"][0]["disposition"], "completed");
+        assert_eq!(metadata["attempts"][0]["payer"], "claude-subscription");
         assert!(ok.causal_bundle.is_some());
         for change in [
             |e: &mut Expected| e.model = "other".into(),

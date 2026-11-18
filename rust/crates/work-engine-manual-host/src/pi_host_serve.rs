@@ -24,6 +24,9 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 pub const SERVE_SCHEMA: &str = "work-engine.pi-host-serve.v1";
+/// The serve record (status, run receipt or error, attempt log) in the state
+/// directory.
+pub const SERVE_RECORD: &str = "pi-host-serve-record.json";
 /// Controller frames are bounded like the Host's own input frames.
 pub const MAX_CONTROLLER_LINE: usize = 1 << 20;
 const MAX_TURNS: usize = 16;
@@ -195,6 +198,9 @@ struct State {
     next_rpc: u64,
     closing: bool,
     thread_failed: bool,
+    /// `claude-sdk`: the receiver's latest count of requests its forwarder
+    /// answered locally (reported with each provider request and turn end).
+    forwarder_refused: u64,
 }
 
 /// The controller-mode gate. Cloned handles share one state: the Host holds
@@ -229,6 +235,7 @@ impl Controller {
             next_rpc: 1_000_000,
             closing: false,
             thread_failed: false,
+            forwarder_refused: 0,
         })))
     }
 
@@ -527,11 +534,31 @@ impl State {
         Ok(self.wait_controller()?.into_iter().collect())
     }
 
+    /// The forwarder count a `claude-sdk` frame carries: present, never
+    /// decreasing; absent on any other provider.
+    fn forwarder_count(&mut self, frame: &Value) -> Result<()> {
+        let reported = frame.get("forwarderRefused");
+        if self.id.provider != "claude-sdk" {
+            return match reported {
+                None => Ok(()),
+                Some(_) => refused("forwarder count outside claude-sdk"),
+            };
+        }
+        match reported.and_then(Value::as_u64) {
+            Some(n) if n >= self.forwarder_refused => {
+                self.forwarder_refused = n;
+                Ok(())
+            }
+            _ => refused("forwarder count absent or decreased"),
+        }
+    }
+
     fn provider(&mut self, frame: &Value) -> Result<Vec<Value>> {
         self.correlated(frame)?;
         if self.pending.is_some() || frame["id"] != self.provider_calls + 1 {
             return refused("provider request outside its admitted order");
         }
+        self.forwarder_count(frame)?;
         self.provider_calls += 1;
         let command = json!({"type":"bridge_provider","sessionId":self.session,
             "id":self.provider_calls,"mode":"live"});
@@ -559,6 +586,7 @@ impl State {
         {
             return refused("history outside the active turn");
         }
+        self.forwarder_count(frame)?;
         self.finish_turn(Some(frame), None)?;
         Ok(self.wait_controller()?.into_iter().collect())
     }
@@ -600,8 +628,14 @@ impl State {
                 failure = Some("final answer exceeds its bound".into());
             }
         }
-        let mut capture =
-            build_capture(&self.id, &a, self.provider_calls, history.as_ref(), &items);
+        let mut capture = build_capture(
+            &self.id,
+            &a,
+            self.provider_calls,
+            self.forwarder_refused,
+            history.as_ref(),
+            &items,
+        );
         // H5: the protected surface as observed when the turn ended.
         if let (Ok(v), Some(_)) = (capture.as_mut(), &history) {
             match (self.id.observe)(&self.id.state_dir) {
@@ -878,6 +912,7 @@ fn build_capture(
     id: &Identity,
     a: &Active,
     last_request: u64,
+    forwarder_refused: u64,
     history: Option<&Artifact>,
     items: &[Value],
 ) -> Result<Value> {
@@ -887,6 +922,7 @@ fn build_capture(
     let mut reasons: Vec<String> = vec![];
     let mut payloads = vec![];
     let mut responses = vec![];
+    let mut attempt_records = vec![];
     let mut total = 0u64;
     // `contains_account_identifier` is false only when the shared absence
     // check verified every request body of the turn (Messages wire only).
@@ -895,6 +931,11 @@ fn build_capture(
     let mut produced: BTreeMap<String, Vec<(u64, u64, Option<String>)>> = BTreeMap::new();
     if last_request < a.first_request {
         reasons.push("the turn made no provider request".into());
+    }
+    if forwarder_refused > 0 {
+        reasons.push(format!(
+            "the receiver's forwarder answered {forwarder_refused} request(s) locally"
+        ));
     }
     for n in a.first_request..=last_request {
         let r = &requests[n.to_string()];
@@ -918,11 +959,19 @@ fn build_capture(
         }
         let attempts = r["attempts"].as_array().cloned().unwrap_or_default();
         if attempts.is_empty() {
-            reasons.push(format!("request {n} has no attempt"));
+            // A request the Host refused before reserving any attempt
+            // (e.g. not a Claude Code request on the subscription) names why.
+            let why = r["not_dispatched"]
+                .as_str()
+                .map(|s| format!(" (not dispatched: {s})"))
+                .unwrap_or_default();
+            reasons.push(format!("request {n} has no attempt{why}"));
         }
         for (i, at) in attempts.iter().enumerate() {
             let k = at["attempt"].as_u64().unwrap_or(0);
             let disposition = at["disposition"].as_str().unwrap_or("");
+            attempt_records.push(json!({"request":n,"attempt":k,"disposition":disposition,
+                "route":at["route"],"payer":at["payer"]}));
             if matches!(disposition, "pending" | "uncertain") || disposition.is_empty() {
                 reasons.push(format!("request {n} attempt {k} is {disposition}"));
             }
@@ -1008,6 +1057,7 @@ fn build_capture(
             "requests":[a.first_request,last_request],"items":items.len()},
         "contains_account_identifier":account,
         "payloads":payloads,
+        "attempts":attempt_records,
         "responses":responses,
         "calls":calls,
         "results":results,
@@ -1162,6 +1212,7 @@ pub fn serve(
         turn_deadline: Duration::from_secs(config.turn_deadline_secs),
         observe: crate::pi_docker::coding::observe_relay_container,
     };
+    let state_dir = identity.state_dir.clone();
     let controller = Controller::new(out, inbox, identity);
     if !controller.handshake()? {
         return Ok(json!({"status":"controller_ended_before_thread"}));
@@ -1179,11 +1230,38 @@ pub fn serve(
         }
         result
     })();
-    controller.finish(&run)?;
-    Ok(
-        json!({"status":"served","run":match &run {Ok(v) => v.clone(), Err(e) => json!({"error":e.to_string()})},
-        "attempts":controller.attempts()}),
-    )
+    let finished = controller.finish(&run);
+    let record = serve_record(&state_dir, &run, controller.attempts(), &finished)?;
+    finished?;
+    Ok(record)
+}
+
+/// The serve record, also retained beside the Host's journal since the
+/// embedder may discard stderr. Admission can fail before the state
+/// directory exists; then it is only returned.
+fn serve_record(
+    state_dir: &Path,
+    run: &Result<Value>,
+    attempts: Vec<Value>,
+    finished: &Result<()>,
+) -> Result<Value> {
+    let mut record = json!({"status":"served","run":match run {Ok(v) => v.clone(), Err(e) => json!({"error":e.to_string()})},
+        "attempts":attempts});
+    if let Err(e) = finished {
+        record["status"] = json!("refused");
+        record["error"] = json!(e.to_string());
+    }
+    // A failed write is recorded in the returned record (stderr) rather than
+    // replacing the run's own error.
+    if state_dir.is_dir()
+        && let Err(e) = create_only(
+            &state_dir.join(SERVE_RECORD),
+            &serde_json::to_vec_pretty(&record)?,
+        )
+    {
+        record["record_error"] = json!(e.to_string());
+    }
+    Ok(record)
 }
 
 #[cfg(test)]
@@ -1313,6 +1391,43 @@ mod tests {
     /// then the controller ends and the gate closes the bridge.
     #[test]
     fn one_turn_relays_settles_and_captures() {
+        let (f, capture) = turn(0);
+        let completed = f.iter().find(|v| v["method"] == "turn/completed").unwrap();
+        assert_eq!(completed["params"]["turn"]["status"], "completed", "{f:?}");
+        assert!(completed["params"]["turn"]["error"].is_null());
+        let read = f.iter().find(|v| v["id"] == 4).unwrap();
+        let items = &read["result"]["thread"]["turns"][0]["items"];
+        assert_eq!(items[0]["type"], "dynamicToolCall");
+        assert_eq!(items[1]["text"], "answer");
+        assert_eq!(capture["eligibility"]["eligible"], true, "{capture}");
+        assert_eq!(capture["calls"][0]["response_id"], "msg_1");
+        assert_eq!(capture["calls"][0]["inference_call_id"], "request-1");
+        assert_eq!(capture["payloads"].as_array().unwrap().len(), 2);
+        assert_eq!(capture["contains_account_identifier"], false);
+        assert_eq!(
+            capture["attempts"],
+            json!([{"request":1,"attempt":1,"disposition":"completed","route":"primary","payer":"synthetic"},
+                {"request":2,"attempt":1,"disposition":"completed","route":"primary","payer":"synthetic"}])
+        );
+    }
+
+    /// M1: a request the receiver's forwarder answered locally during the
+    /// turn (count reported at turn end) makes the turn ineligible, before
+    /// any settlement.
+    #[test]
+    fn forwarder_refusal_in_the_turn_fails_it() {
+        let (f, capture) = turn(1);
+        let completed = f.iter().find(|v| v["method"] == "turn/completed").unwrap();
+        let reason = "the receiver's forwarder answered 1 request(s) locally";
+        assert_eq!(completed["params"]["turn"]["status"], "failed");
+        assert_eq!(completed["params"]["turn"]["error"]["message"], reason);
+        assert_eq!(capture["eligibility"]["eligible"], false);
+        assert_eq!(capture["eligibility"]["reasons"], json!([reason]));
+    }
+
+    /// The frames and the capture of one relayed turn whose history reports
+    /// `refused` forwarder refusals.
+    fn turn(refused: u64) -> (Vec<Value>, Value) {
         let mut r = rig();
         let dir = r.gate.0.borrow().id.state_dir.clone();
         r.tx.send(rpc(1, "pi-host/initialize", json!({}))).unwrap();
@@ -1350,6 +1465,7 @@ mod tests {
         let mut req = corr.clone();
         req["type"] = json!("coding_provider_request");
         req["id"] = json!(1);
+        req["forwarderRefused"] = json!(0);
         let grant = r.gate.frame(&req).unwrap();
         assert_eq!(grant[0]["type"], "bridge_provider");
         r.gate.dispatch(&grant[0], &mut |_| Ok(())).unwrap();
@@ -1426,6 +1542,7 @@ mod tests {
         let mut hist = corr.clone();
         hist["type"] = json!("coding_history");
         hist["snapshot"] = json!({"idle":true});
+        hist["forwarderRefused"] = json!(refused);
         let close = r.gate.frame(&hist).unwrap();
         assert_eq!(close[0]["type"], "bridge_close");
         let f = r.out.frames();
@@ -1441,22 +1558,146 @@ mod tests {
                 "turn/completed"
             ]
         );
-        let completed = f.iter().find(|v| v["method"] == "turn/completed").unwrap();
-        assert_eq!(completed["params"]["turn"]["status"], "completed", "{f:?}");
-        assert!(completed["params"]["turn"]["error"].is_null());
-        let read = f.iter().find(|v| v["id"] == 4).unwrap();
-        let items = &read["result"]["thread"]["turns"][0]["items"];
-        assert_eq!(items[0]["type"], "dynamicToolCall");
-        assert_eq!(items[1]["text"], "answer");
         let cap = f.iter().find(|v| v["id"] == 5).unwrap();
         let path = cap["result"]["path"].as_str().unwrap();
         let capture: Value = serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
-        assert_eq!(capture["eligibility"]["eligible"], true, "{capture}");
-        assert_eq!(capture["calls"][0]["response_id"], "msg_1");
-        assert_eq!(capture["calls"][0]["inference_call_id"], "request-1");
-        assert_eq!(capture["payloads"].as_array().unwrap().len(), 2);
-        assert_eq!(capture["contains_account_identifier"], false);
         let _ = &mut r;
+        (f, capture)
+    }
+
+    /// The forwarder count: required on `claude-sdk`, never decreasing,
+    /// absent on any other provider.
+    #[test]
+    fn forwarder_count_is_required_and_monotonic_on_claude_sdk() {
+        let r = rig();
+        let mut s = r.gate.0.borrow_mut();
+        assert!(s.forwarder_count(&json!({})).is_err(), "absent");
+        assert!(s.forwarder_count(&json!({"forwarderRefused":"0"})).is_err());
+        s.forwarder_count(&json!({"forwarderRefused":2})).unwrap();
+        assert_eq!(s.forwarder_refused, 2);
+        assert!(
+            s.forwarder_count(&json!({"forwarderRefused":1})).is_err(),
+            "decreased"
+        );
+        s.id.provider = "openai-codex".into();
+        s.forwarder_count(&json!({})).unwrap();
+        assert!(s.forwarder_count(&json!({"forwarderRefused":0})).is_err());
+    }
+
+    /// R2: every attempt of the turn's requests is listed, including one
+    /// never dispatched; a forwarder count above zero is a reason.
+    #[test]
+    fn capture_lists_every_attempt_and_forwarder_refusals() {
+        let dir = tempfile::tempdir().unwrap();
+        let id = identity(dir.path());
+        journal(dir.path(), &[vec![]]);
+        let path = dir.path().join("pi-state.json");
+        let mut state: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        let attempts = state["coding"]["provider_requests"]["1"]["attempts"]
+            .as_array_mut()
+            .unwrap();
+        attempts[0]["attempt"] = json!(2);
+        attempts[0]["route"] = json!("secondary");
+        attempts.insert(
+            0,
+            json!({"attempt":1,"route":"primary","payer":"synthetic","disposition":"not_dispatched"}),
+        );
+        fs::write(&path, state.to_string()).unwrap();
+        fs::rename(
+            dir.path().join("coding-hosted-1-1.stream.sse"),
+            dir.path().join("coding-hosted-1-2.stream.sse"),
+        )
+        .unwrap();
+        let capture = build_capture(&id, &active(), 1, 3, None, &[]).unwrap();
+        assert_eq!(
+            capture["attempts"],
+            json!([{"request":1,"attempt":1,"disposition":"not_dispatched","route":"primary","payer":"synthetic"},
+                {"request":1,"attempt":2,"disposition":"completed","route":"secondary","payer":"synthetic"}])
+        );
+        assert_eq!(capture["payloads"].as_array().unwrap().len(), 1);
+        assert_eq!(
+            capture["eligibility"]["reasons"],
+            json!([
+                "the receiver's forwarder answered 3 request(s) locally",
+                "Pi's history for the turn is absent"
+            ])
+        );
+        // A request refused before any attempt was reserved: no attempt to
+        // list; the reason names why.
+        let request = &mut state["coding"]["provider_requests"]["1"];
+        request["attempts"] = json!([]);
+        request["not_dispatched"] = json!("subscription_request_not_claude_code");
+        fs::write(&path, state.to_string()).unwrap();
+        let capture = build_capture(&id, &active(), 1, 0, None, &[]).unwrap();
+        assert_eq!(capture["attempts"], json!([]));
+        assert!(
+            capture["eligibility"]["reasons"]
+                .as_array()
+                .unwrap()
+                .contains(&json!(
+                    "request 1 has no attempt (not dispatched: subscription_request_not_claude_code)"
+                )),
+            "{capture}"
+        );
+    }
+
+    /// R1: the serve record is retained in an existing state directory,
+    /// including a refused finish; without the directory it is only returned.
+    #[test]
+    fn serve_record_is_retained_in_the_state_directory() {
+        let dir = tempfile::tempdir().unwrap();
+        let run: Result<Value> = Err(Error::Refused("admission".into()));
+        let attempts = vec![json!({"turn":"pi-host-turn-1"})];
+        let record = serve_record(dir.path(), &run, attempts.clone(), &Ok(())).unwrap();
+        assert_eq!(record["status"], "served");
+        let retained: Value =
+            serde_json::from_slice(&fs::read(dir.path().join(SERVE_RECORD)).unwrap()).unwrap();
+        assert_eq!(retained, record);
+        assert!(
+            retained["run"]["error"]
+                .as_str()
+                .unwrap()
+                .contains("admission")
+        );
+        assert_eq!(retained["attempts"], json!(attempts));
+        let other = dir.path().join("other");
+        fs::create_dir(&other).unwrap();
+        let refused = Err(Error::Refused("finish".into()));
+        let record = serve_record(&other, &Ok(json!({})), vec![], &refused).unwrap();
+        assert_eq!(record["status"], "refused");
+        assert!(record["error"].as_str().unwrap().contains("finish"));
+        assert!(other.join(SERVE_RECORD).is_file());
+        let absent = dir.path().join("absent");
+        serve_record(&absent, &Ok(json!({})), vec![], &Ok(())).unwrap();
+        assert!(!absent.exists());
+        // An existing record is kept; the failed write is reported, and the
+        // run's own error is not replaced.
+        let again = serve_record(dir.path(), &run, vec![], &refused).unwrap();
+        assert_eq!(again["status"], "refused");
+        assert!(again["record_error"].is_string());
+        assert_eq!(
+            serde_json::from_slice::<Value>(&fs::read(dir.path().join(SERVE_RECORD)).unwrap())
+                .unwrap(),
+            retained
+        );
+    }
+
+    fn active() -> Active {
+        Active {
+            number: 1,
+            id: "t".into(),
+            invocation: "turn-1".into(),
+            first_request: 1,
+            deadline: Instant::now(),
+            deadline_ms: 0,
+            order: vec![],
+            items: BTreeMap::new(),
+            answers: BTreeMap::new(),
+            sent: BTreeSet::new(),
+            messages: vec![],
+            sends: 0,
+            prompt_sha256: String::new(),
+        }
     }
 
     /// End of controller input during a turn ends the Host job (the next
@@ -1548,23 +1789,9 @@ mod tests {
     fn capture_account_flag_is_the_verified_absence_check() {
         let dir = tempfile::tempdir().unwrap();
         let id = identity(dir.path());
-        let a = Active {
-            number: 1,
-            id: "t".into(),
-            invocation: "turn-1".into(),
-            first_request: 1,
-            deadline: Instant::now(),
-            deadline_ms: 0,
-            order: vec![],
-            items: BTreeMap::new(),
-            answers: BTreeMap::new(),
-            sent: BTreeSet::new(),
-            messages: vec![],
-            sends: 0,
-            prompt_sha256: String::new(),
-        };
+        let a = active();
         let flag = |n: u64| {
-            build_capture(&id, &a, n, None, &[]).unwrap()["contains_account_identifier"].clone()
+            build_capture(&id, &a, n, 0, None, &[]).unwrap()["contains_account_identifier"].clone()
         };
         journal(dir.path(), &[vec![], vec![]]);
         assert_eq!(flag(2), false);

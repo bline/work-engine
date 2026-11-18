@@ -107,7 +107,9 @@ Schema `work-engine.pi-host-capture.v1`, one per turn: for every physical
 send of the turn (each Host attempt of each Pi provider request) the retained
 request body's path and digest as a payload (`inference_call_id`
 `request-<n>`, `physical_send` the attempt number, `representation` `wire`,
-`original_codec` `identity`); the retained response stream of each attempt by
+`original_codec` `identity`); every attempt of each of the turn's provider
+requests, including one never dispatched, as `attempts` (`request`,
+`attempt`, `disposition`, `route`, `payer`); the retained response stream of each attempt by
 path and digest; a calls bundle (`call_id`, `inference_call_id`,
 `physical_send`, `response_id`, `namespace`, `tool`, `arguments`) where each
 relayed call is joined to exactly one model tool call in the retained
@@ -122,7 +124,9 @@ Eligible means: the turn ended with a final answer; every relayed call was
 answered with `success: true` and joined; every physical send's body is retained with a matching
 digest and passed the Host's request policy (model, pinned tools, body
 bounds, no account identifier); every attempt relayed to Pi has its response stream retained; every
-attempt is settled and none is uncertain; the observation
+attempt is settled and none is uncertain; on `claude-sdk`, the receiver's
+forwarder answered no Claude Code request locally, by the count the receiver
+reports with each provider request and at the turn's end; the observation
 succeeded; and the turn is within the bounds below.
 
 ## Account identifier
