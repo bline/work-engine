@@ -19,6 +19,11 @@ fixture = [
   "work-engine-organization-authority/fixture",
   "dep:libc",
 ]
+# Test-only and not implied by `fixture`: exposes `native::test_support`, the generic owned-attempt
+# runner over a caller-built command, outside the delivery gate. A feature states build intent; it
+# is not access control. Without it, a `fixture` build has the gated delivery path as its only
+# spawn route.
+test-support = ["fixture"]
 
 [dependencies]
 serde.workspace = true
@@ -37,7 +42,8 @@ work-engine-organization-authority = { path = "../work-engine-organization-autho
 [[test]]
 name = "native_vertical"
 path = "tests/native_vertical.rs"
-required-features = ["fixture"]
+# The lifecycle tests in this file drive the generic runner through `native::test_support`.
+required-features = ["fixture", "test-support"]
 
 [[test]]
 name = "gate"

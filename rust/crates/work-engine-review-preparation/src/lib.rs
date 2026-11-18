@@ -15,7 +15,13 @@
 //!   appear in it). That is a code-level property, not runtime confinement.
 //! * With the non-default `fixture` feature, [`fixture`] adds a consumer that accepts explicit
 //!   synthetic declarations and calls the existing episode transition. Its declarations are test
-//!   assumptions: they never satisfy or change [`prepare`].
+//!   assumptions: they never satisfy or change [`prepare`]. It advances an episode only with a
+//!   consumption proof that organizational admission (`work-engine-organization-authority`, its
+//!   one fixture-only dependency) issued for this candidate, subject and vantage and that its own
+//!   point check finds current. Production admission refuses everything, so without that crate's
+//!   own `fixture` feature no proof exists and no episode can advance; with it, any caller can
+//!   mint a fixture admission and consume (the consumer checks that an admission is current for
+//!   its candidate, subject and vantage, not whose it is nor how fresh the observation is).
 //!
 //! Source-written fixtures and synthetic declarations establish no mapping. A matching string
 //! (a boundary, a consumer, an identifier) is not a mapping, and a supplied realization

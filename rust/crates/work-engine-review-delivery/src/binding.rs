@@ -30,8 +30,8 @@ use review_episode_core::identity::{Authority, Revision};
 use review_episode_core::state::ReviewEpisodeState;
 use work_engine_organization::OrganizationCandidate;
 use work_engine_review_preparation::fixture::{
-    ConsumeRefusal, FixtureConsumption, FixtureDeclaration, consume_fixture_result,
-    fixture_coverage,
+    ConsumeRefusal, ConsumptionProof, FixtureConsumption, FixtureDeclaration,
+    consume_fixture_result, fixture_coverage,
 };
 use work_engine_review_preparation::{
     PreparationRefusal, PreparationRequest, ReviewPreparation, prepare,
@@ -392,8 +392,13 @@ impl ExperimentBinding {
             .load(std::sync::atomic::Ordering::SeqCst)
     }
 
-    /// Consumption through the existing consumer, exclusively from this binding's own inputs.
-    pub(crate) fn consume(&self, result_text: &str) -> Result<FixtureConsumption, ConsumeRefusal> {
+    /// Consumption through the existing consumer, exclusively from this binding's own inputs and
+    /// the consumption gate's proof (which the consumer checks against those inputs itself).
+    pub(crate) fn consume(
+        &self,
+        result_text: &str,
+        proof: &ConsumptionProof<'_>,
+    ) -> Result<FixtureConsumption, ConsumeRefusal> {
         self.consumer_invocations
             .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         let questions: Vec<&str> = self
@@ -412,6 +417,7 @@ impl ExperimentBinding {
             result_text,
             &questions,
             &self.episode.admissions_json,
+            proof,
         )
     }
 }

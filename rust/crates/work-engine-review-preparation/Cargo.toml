@@ -14,8 +14,11 @@ path = "src/lib.rs"
 default = []
 # Fixture-only boundary: the consumer composition that can reach a successful episode
 # transition exists only with this non-default feature. Its inputs are synthetic test
-# assumptions, never establishment evidence.
-fixture = []
+# assumptions, never establishment evidence. The consumer requires an S-A (organization-authority)
+# admission for the consumption boundary and an observation of it that the caller asserts is the
+# host's fresh one (S-A's point check finds it current; its freshness is not checked here); this
+# feature does not enable S-A's own `fixture` feature, so without it no admission can exist.
+fixture = ["dep:work-engine-organization-authority"]
 
 [dependencies]
 serde.workspace = true
@@ -23,9 +26,13 @@ serde_json.workspace = true
 thiserror.workspace = true
 work-engine-organization = { path = "../work-engine-organization" }
 review-episode-core = { path = "../review-episode-core" }
+# Fixture-only: the consumption-boundary admission the consumer checks (S-A depends only on
+# work-engine-organization, so this adds one edge and no cycle).
+work-engine-organization-authority = { path = "../work-engine-organization-authority", optional = true }
 
 [dev-dependencies]
 sha2.workspace = true
+work-engine-organization-authority = { path = "../work-engine-organization-authority", features = ["fixture"] }
 
 [[test]]
 name = "fixture_consumer"

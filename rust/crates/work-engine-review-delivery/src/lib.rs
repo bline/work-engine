@@ -22,7 +22,17 @@
 //! without a discharge, or a refused, mismatched or non-current fixture-domain organizational
 //! admission (S-A) that the host obtains itself. The host derives the realization description from
 //! what it runs. Admitted kinds are discharged by named S-A check ids; the mapping kinds remain
-//! labelled fixture **assumptions** (`AssumedDischarge`), never admissions.
+//! labelled fixture **assumptions** (`AssumedDischarge`), never admissions. The consumer itself
+//! refuses unless S-A finds *a* consumption admission current for its own candidate, subject and
+//! vantage over the observation it is handed; with S-A's `fixture` feature on, any caller can mint
+//! such an admission and consume outside this crate's gate, and the consumer cannot tell whose
+//! admission it is or how fresh the observation is (the host's regate is where freshness is
+//! obtained; the consumer's success output labels it a caller assertion).
+//!
+//! Spawn routes by feature: with `fixture` alone the gated delivery path is the only one, by
+//! `cfg`. The separate, non-default `test-support` feature (not implied by `fixture`) adds
+//! `native::test_support`, the generic owned-attempt runner over a caller-built command, outside
+//! the gate. A feature states build intent; it is not access control.
 //!
 //! Nothing here clears a preparation blocker outside the fixture runner, creates a production
 //! admission, grants capability or accepts anything. Session/attempt bindings are transport correspondences, never grants. The fixture

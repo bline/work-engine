@@ -119,6 +119,279 @@ pub fn result_json(edit: impl FnOnce(&mut Value)) -> String {
     serde_json::to_string(&value).unwrap()
 }
 
+/// A synthetic S-A authority world (fixture records) that admits the frozen candidate for the
+/// frozen subject and the obligation's reviewer vantage, and the consumption proof built from it.
+/// A labelled test assumption: the records, the source and the time are synthetic, like the
+/// declaration.
+pub mod gate {
+    use super::*;
+    use work_engine_organization::{
+        Continuity, EvidenceCustody, ExecutionConfinement, Integrity, Mutation, ObserverClass,
+        ProviderFamily, RealizationClass,
+    };
+    use work_engine_organization_authority::fixture::FixtureSource;
+    use work_engine_organization_authority::records::{
+        ActorAnchor, AnchorKind, PrincipalKind, ProblemScopeRef, RealizationProperties, Record,
+    };
+    use work_engine_organization_authority::{
+        Boundary, BoundaryKind, DeclaredRealization, EffectAdmission, ExecutableDigest, Fixture,
+        IssuanceId, OperationRequest, RealizationDigest, Reservation, SealedObservation,
+        SubjectRef, Unobserved, admit, observe_for, reserve,
+    };
+
+    pub const ORG: &str = "org-fixture-consumer";
+    /// The reviewer vantage the v1 compiler derives for the obligation.
+    pub const VANTAGE: &str = "vantage:rp3-initial-implementation-review";
+    const ACCEPTOR: &str = "operator-production-qualification-20261107";
+    const ACTOR: &str = "uid:fixture-reviewer";
+    pub const OPERATION: &str = "fixture-consumer-op-1";
+    pub const NOW: u64 = 1_000;
+    const DS: (&str, u64) = ("ds-1", 1);
+
+    fn digest() -> RealizationDigest {
+        RealizationDigest::new("fixture-consumer-realization")
+    }
+
+    fn scope() -> ProblemScopeRef {
+        ProblemScopeRef::fixture(
+            "production-qualification-20261107",
+            "timestamp-projection-v1",
+            1,
+        )
+    }
+
+    fn principal(
+        src: &FixtureSource,
+        id: &str,
+        kind: PrincipalKind,
+        anchor: (AnchorKind, &str),
+    ) -> IssuanceId {
+        src.issue(Record::fixture_principal(
+            id,
+            kind,
+            ActorAnchor::fixture(anchor.0, anchor.1),
+        ))
+    }
+
+    /// Issues the world; returns the owner's grant (the one a test revokes).
+    fn issue(src: &FixtureSource, extra_vantages: &[String]) -> IssuanceId {
+        let owner = principal(
+            src,
+            ACCEPTOR,
+            PrincipalKind::Human,
+            (AnchorKind::OwnerAccount, "operator"),
+        );
+        let reviewer = principal(
+            src,
+            "reviewer-fixture",
+            PrincipalKind::Service,
+            (AnchorKind::ServiceAccount, "svc-reviewer"),
+        );
+        let builder = principal(
+            src,
+            "builder-1",
+            PrincipalKind::Service,
+            (AnchorKind::ServiceAccount, "svc-builder"),
+        );
+        let campaign = principal(
+            src,
+            "campaign-svc",
+            PrincipalKind::Service,
+            (AnchorKind::ServiceAccount, "svc-campaign"),
+        );
+        let episode = principal(
+            src,
+            "episode-svc",
+            PrincipalKind::Service,
+            (AnchorKind::ServiceAccount, "svc-episode"),
+        );
+        src.issue(Record::fixture_decision_scope(
+            DS.0,
+            DS.1,
+            scope(),
+            &[
+                "accept_claim",
+                "terminalize_campaign",
+                "read_episode",
+                "write_episode",
+            ],
+            None,
+        ));
+        src.issue(Record::fixture_grant(
+            "g-campaign",
+            campaign,
+            &["terminalize_campaign"],
+            scope(),
+            DS,
+            None,
+        ));
+        src.issue(Record::fixture_grant(
+            "g-episode",
+            episode,
+            &["read_episode", "write_episode"],
+            scope(),
+            DS,
+            None,
+        ));
+        src.issue(Record::fixture_component_binding(
+            "component:campaign",
+            campaign,
+            ExecutableDigest::new("exe-campaign"),
+            scope(),
+        ));
+        src.issue(Record::fixture_component_binding(
+            "component:episode_host",
+            episode,
+            ExecutableDigest::new("exe-episode"),
+            scope(),
+        ));
+        src.issue(Record::fixture_vantage_binding(
+            ORG,
+            VANTAGE,
+            reviewer,
+            digest(),
+            ACTOR,
+        ));
+        // Further reviewer vantages (a second obligation's), bound like the first: same principal,
+        // realization digest and actor, so the same acceptance covers them.
+        for vantage in extra_vantages {
+            src.issue(Record::fixture_vantage_binding(
+                ORG,
+                vantage,
+                reviewer,
+                digest(),
+                ACTOR,
+            ));
+        }
+        src.issue(Record::fixture_vantage_binding(
+            ORG,
+            "vantage-builder",
+            builder,
+            RealizationDigest::new("real-builder"),
+            "uid:svc-builder",
+        ));
+        src.issue(Record::fixture_realization_acceptance(
+            digest(),
+            "fixed-slice-review-v1",
+            RealizationProperties::fixture(
+                &[
+                    RealizationClass::ProviderFamily(ProviderFamily::Anthropic),
+                    RealizationClass::ExecutionConfinement(ExecutionConfinement::GuardedSandbox),
+                ],
+                Some(Continuity::FreshInitial),
+                Some(Mutation::None),
+                Some(Integrity::VerifiedArtifacts),
+                Some(EvidenceCustody::ExecutionEvidenceCustody),
+                Some(ObserverClass::IndependentExecutionEvidence),
+            ),
+        ));
+        src.issue(Record::fixture_grant(
+            "g-owner",
+            owner,
+            &["accept_claim"],
+            scope(),
+            DS,
+            None,
+        ))
+    }
+
+    /// What an admission is requested for: the frozen requirements, candidate, subject and
+    /// reviewer vantage by default, and a consumption boundary.
+    pub struct Ask {
+        pub requirements: Vec<u8>,
+        pub subject: Subject,
+        pub vantage: String,
+        pub kind: BoundaryKind,
+        /// Vantages the world binds and accepts besides [`VANTAGE`]; empty by default.
+        pub bound_vantages: Vec<String>,
+    }
+
+    impl Default for Ask {
+        fn default() -> Self {
+            Ask {
+                requirements: REQ.to_vec(),
+                subject: subject(),
+                vantage: VANTAGE.to_owned(),
+                kind: BoundaryKind::Consumption,
+                bound_vantages: Vec::new(),
+            }
+        }
+    }
+
+    /// One admitted world: the source, the owner grant, the admission and a fresh regate
+    /// observation for the admission's reservation.
+    pub struct Admitted {
+        pub src: FixtureSource,
+        pub owner_grant: IssuanceId,
+        reservation: Reservation,
+        pub admission: EffectAdmission,
+        pub observation: Result<SealedObservation, Unobserved>,
+        pub now: u64,
+    }
+
+    impl Admitted {
+        /// A fresh observation of the source for the admission's reservation.
+        pub fn reobserve(&mut self) {
+            self.observation = observe_for(&self.src, &self.reservation);
+        }
+
+        #[cfg(feature = "fixture")]
+        pub fn proof(&self) -> work_engine_review_preparation::fixture::ConsumptionProof<'_> {
+            work_engine_review_preparation::fixture::ConsumptionProof {
+                admission: &self.admission,
+                regate_observation: &self.observation,
+                regate_now_millis: self.now,
+            }
+        }
+    }
+
+    pub fn admitted(ask: Ask) -> Admitted {
+        let src = FixtureSource::new();
+        let owner_grant = issue(&src, &ask.bound_vantages);
+        let requirements = OrganizationalRequirements::from_json_bytes(&ask.requirements).unwrap();
+        let candidate_digest =
+            derive(&requirements, Profile::FixedSliceReviewV1).candidates[0].content_digest();
+        let request = OperationRequest::new(
+            ORG,
+            requirements,
+            candidate_digest,
+            ask.vantage,
+            SubjectRef {
+                commit: ask.subject.commit,
+                tree: ask.subject.tree,
+                patch_identity: ask.subject.patch_identity,
+            },
+        );
+        let declared = DeclaredRealization::declared(
+            digest(),
+            ACTOR,
+            [
+                (
+                    "component:campaign".to_owned(),
+                    ExecutableDigest::new("exe-campaign"),
+                ),
+                (
+                    "component:episode_host".to_owned(),
+                    ExecutableDigest::new("exe-episode"),
+                ),
+            ],
+        );
+        let reservation = reserve(Boundary::new(OPERATION, ask.kind, 1));
+        let first = observe_for(&src, &reservation).expect("observable");
+        let admission = admit::<Fixture>(&reservation, first, &request, &declared, NOW)
+            .unwrap_or_else(|refusal| panic!("the fixture world admits: {refusal:?}"));
+        let observation = observe_for(&src, &reservation);
+        Admitted {
+            src,
+            owner_grant,
+            reservation,
+            admission,
+            observation,
+            now: NOW,
+        }
+    }
+}
+
 pub fn reference(owner: &str, name: &str, revision: &str) -> Value {
     json!({
         "owner": owner,

@@ -51,7 +51,7 @@ use work_engine_organization::Digest;
 use work_engine_organization_authority::{
     AdmissionRefusal, AdmissionState, AuthorityObservation, Boundary as AuthorityBoundary, CheckId,
     DeclaredRealization, Domain, EffectAdmission, Fixture, ObservationRevision, OperationRequest,
-    Outcomes, Reservation, SubjectRef, admit, observe_for, reserve,
+    Outcomes, Reservation, SealedObservation, SubjectRef, Unobserved, admit, observe_for, reserve,
 };
 use work_engine_review_preparation::{Blocker, BlockerClass, BlockerKind};
 
@@ -216,8 +216,9 @@ impl CallerAsserted {
 
 /// What the host's admission at one boundary decided: domain (always `Domain::Fixture` here),
 /// reserved boundary, observation revision, every check outcome by id, the request identity the
-/// host constructed, the caller-asserted inputs it was decided over, and for the consumption
-/// boundary the revision of the fresh regate observation that found it current.
+/// host constructed, the caller-asserted inputs it was decided over, and the revision of the
+/// fresh regate observation that found it current (the delivery regate immediately before the
+/// spawn; the consumption regate immediately before the consumer).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AdmissionSummary {
     domain: Domain,
@@ -253,7 +254,8 @@ impl AdmissionSummary {
     pub fn outcomes(&self) -> &Outcomes {
         &self.outcomes
     }
-    /// The revision of the fresh observation the regate found current (consumption only).
+    /// The revision of the fresh observation the boundary's regate found current. `Some` on every
+    /// summary a [`crate::native::Delivered`] carries; `None` only before that regate ran.
     pub fn regate_revision(&self) -> Option<ObservationRevision> {
         self.regate_revision
     }
@@ -450,19 +452,37 @@ impl<'a> HeldAdmission<'a> {
     /// Point check against a fresh observation of the held source for this admission's
     /// reservation, at a freshly sampled time.
     pub fn regate(&mut self) -> AdmissionState {
+        self.regate_observed().0
+    }
+
+    /// [`HeldAdmission::regate`], also returning the fresh observation and the time sample it was
+    /// decided over (none once the state is settled: no observation is taken then). The consumer
+    /// re-runs S-A's point check over exactly these inputs before it advances an episode.
+    pub(crate) fn regate_observed(&mut self) -> (AdmissionState, Option<RegateInputs>) {
         if let Some(settled) = &self.settled {
-            return settled.clone();
+            return (settled.clone(), None);
         }
         let fresh = observe_for(self.source, &self.reservation);
-        let state = self
-            .admission
-            .admission_state(&fresh, self.clock.now_millis());
+        let now_millis = self.clock.now_millis();
+        let state = self.admission.admission_state(&fresh, now_millis);
         if !matches!(
             state,
             AdmissionState::Current { .. } | AdmissionState::Unknown(_)
         ) {
             self.settled = Some(state.clone());
         }
-        state
+        (
+            state,
+            Some(RegateInputs {
+                observation: fresh,
+                now_millis,
+            }),
+        )
     }
+}
+
+/// The inputs of one regate that took a fresh observation.
+pub(crate) struct RegateInputs {
+    pub(crate) observation: Result<SealedObservation, Unobserved>,
+    pub(crate) now_millis: u64,
 }

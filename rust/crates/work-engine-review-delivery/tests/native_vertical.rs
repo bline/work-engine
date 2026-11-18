@@ -347,21 +347,26 @@ fn positive_assertions(
         assert_eq!(assumed.bound_to(), frozen.contract_sha256());
         assert_eq!(assumed.assumed(), assumed_ids.as_slice());
     }
-    assert_eq!(
-        delivered
-            .admitted_before_spawn
-            .admission()
-            .regate_revision(),
-        None
-    );
-    assert!(
-        delivered
-            .admitted_before_consumption
-            .admission()
-            .regate_revision()
-            .is_some(),
-        "the consumption admission was regated against a fresh observation"
-    );
+    // S1 invariant 3: both summaries carry the revision of their own fresh regate. Nothing changes
+    // the source on this path, so each equals its admission revision (the ticking-source test
+    // shows them following it).
+    for admitted in [
+        &delivered.admitted_before_spawn,
+        &delivered.admitted_before_consumption,
+    ] {
+        assert_eq!(
+            admitted.admission().regate_revision(),
+            Some(admitted.admission().revision()),
+            "{:?} was regated against a fresh observation",
+            admitted.boundary()
+        );
+    }
+    // S1 invariant 1: the consumer checked the same consumption admission and regate itself.
+    let gate = &delivered.consumption.gate;
+    let consumption = delivered.admitted_before_consumption.admission();
+    assert_eq!(&gate.boundary, consumption.boundary());
+    assert_eq!(gate.admission_revision, consumption.revision());
+    assert_eq!(Some(gate.regate_revision), consumption.regate_revision());
     assert_eq!(binding.spawn_attempts(), 1);
     // SDK-observed: actual SDK identity, one request, exact bytes, empty toolset, idle, no provider/network.
     assert_eq!(bound.allocation().sdk_version, "1.5.0");
@@ -1163,10 +1168,91 @@ fn sb_a_grant_that_expires_between_boundaries_refuses_consumption() {
     });
     let clock = ScriptedClock::new(&[1_000, 1_000, 1_000, 3_000]);
     match sb_regate_refusal_clocked("sb-between-expired", &w.src, &clock, || {}) {
-        AdmissionState::Refused(outcomes) => assert_eq!(outcomes.refused(), [CheckId::O4]),
+        AdmissionState::Refused(outcomes) => {
+            assert_eq!(outcomes.refused(), [CheckId::O4]);
+            // The refusal is the expiry, not another O4 reason (S-B p3_carried).
+            match outcomes.get(CheckId::O4) {
+                CheckOutcome::Refused(reasons) => assert!(
+                    !reasons.is_empty()
+                        && reasons
+                            .iter()
+                            .all(|r| r.code == ReasonCode::AuthorityExpired),
+                    "{reasons:?}"
+                ),
+                CheckOutcome::Passed => panic!("O4 is refused"),
+            }
+        }
         other => panic!("expected a refused regate, got {other:?}"),
     }
     assert_eq!(clock.samples(), 4);
+}
+
+/// A fixture source that issues one unrelated principal before every observation, so each
+/// observation (two admissions, two regates) is at a later revision than the one before.
+struct Ticking {
+    world: common::authority::AuthorityWorld,
+    ticks: std::cell::Cell<u64>,
+}
+
+impl AuthorityObservation for Ticking {
+    fn observe(&self) -> Result<AuthorityState, Unobserved> {
+        let n = self.ticks.get() + 1;
+        self.ticks.set(n);
+        self.world.src.issue(
+            work_engine_organization_authority::records::Record::fixture_principal(
+                &format!("tick-{n}"),
+                work_engine_organization_authority::records::PrincipalKind::Human,
+                work_engine_organization_authority::records::ActorAnchor::fixture(
+                    work_engine_organization_authority::records::AnchorKind::OwnerAccount,
+                    &format!("tick-{n}"),
+                ),
+            ),
+        );
+        self.world.src.observe()
+    }
+}
+
+/// S1 invariant 3: `Delivered` carries the delivery regate's revision (taken immediately before
+/// the spawn) and the consumption regate's, and each follows its own admission's revision when the
+/// source moves between them; the consumer's proof check saw the consumption regate's revision.
+#[test]
+fn s1_both_regate_revisions_are_carried_and_follow_their_admissions() {
+    let w = world();
+    let state = begun();
+    let writer = authority();
+    let (cfg, scratch) = config("s1-ticking", Control::Positive);
+    let binding = binding_for(&base(&w, &state, &writer), &result_json(|_| {}));
+    let ticking = Ticking {
+        world: authority_world(),
+        ticks: std::cell::Cell::new(0),
+    };
+    let (outcome, _diagnostics) = {
+        let outcome = deliver_and_consume(&cfg, &binding, &fixture_authority(&ticking));
+        (outcome, scratch)
+    };
+    let delivered = match outcome {
+        Ok(d) => d,
+        Err(e) => panic!("ticking source refused: {e}"),
+    };
+    assert_eq!(ticking.ticks.get(), 4, "two admissions, two regates");
+    let spawn = delivered.admitted_before_spawn.admission();
+    let consumption = delivered.admitted_before_consumption.admission();
+    // Observation order: delivery admission, consumption admission, delivery regate, consumption
+    // regate.
+    let delivery_regate = spawn.regate_revision().expect("delivery regate carried");
+    let consumption_regate = consumption
+        .regate_revision()
+        .expect("consumption regate carried");
+    assert!(spawn.revision().sequence() < consumption.revision().sequence());
+    assert!(consumption.revision().sequence() < delivery_regate.sequence());
+    assert!(delivery_regate.sequence() < consumption_regate.sequence());
+    assert_ne!(delivery_regate, spawn.revision());
+    assert_ne!(consumption_regate, consumption.revision());
+    assert_eq!(
+        delivered.consumption.gate.regate_revision,
+        consumption_regate
+    );
+    assert_eq!(binding.consumer_invocations(), 1);
 }
 
 /// Native correspondence holds in each case below; the refusal comes from the existing consumer

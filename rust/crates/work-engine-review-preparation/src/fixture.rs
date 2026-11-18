@@ -12,6 +12,37 @@
 //! unchanged, so revision, writer authority, phase, exact subject and lineage remain the episode
 //! owner's checks. A successful result is a fixture observation only.
 //!
+//! No consumption without a gate-issued proof: immediately before the transition the consumer
+//! requires a [`ConsumptionProof`], an organizational admission (S-A,
+//! `work-engine-organization-authority`) for a consumption boundary plus the consuming host's
+//! fresh observation for it. It compares the admission's request identity with its own inputs
+//! (candidate content digest, the declaration's subject, the obligation's serving vantage) and
+//! the boundary kind, and runs S-A's point check itself; only `Current` lets the episode advance.
+//! Only S-A can produce either value, and the S-A production policy admits nothing, so in a build
+//! without S-A's `fixture` feature this consumer cannot advance an episode at all.
+//!
+//! What the proof does not establish (fixture standing): with S-A's `fixture` feature on, any caller
+//! can mint an admission and an observation and consume outside review-delivery's gate; the
+//! consumer checks that S-A found *an* admission current for this candidate, subject and vantage,
+//! not whose admission it is. Only the boundary **kind** is compared: the boundary's operation
+//! and epoch are not (class O10; a consumption admission for another operation passes), and the
+//! proof is reusable (the episode owner refuses a second use through its revision check). The
+//! observation's freshness is a caller assertion ([`GATE_OBSERVATION_FRESHNESS_ASSERTED_LABEL`]). The
+//! consumer takes no proof argument it could skip:
+//!
+//! ```compile_fail,E0061
+//! use work_engine_review_preparation::fixture::consume_fixture_result;
+//! fn skip(
+//!     c: &work_engine_organization::OrganizationCandidate,
+//!     d: &work_engine_review_preparation::fixture::FixtureDeclaration,
+//!     s: &review_episode_core::state::ReviewEpisodeState,
+//!     a: &review_episode_core::identity::Authority,
+//!     r: review_episode_core::identity::Revision,
+//! ) {
+//!     let _ = consume_fixture_result(c, d, s, a, r, "t", "{}", &[], "[]");
+//! }
+//! ```
+//!
 //! (Without the feature none of this exists; the crate-level documentation checks that.)
 //!
 //! The production preparation takes no declaration, and the fixture coverage converts into
@@ -33,6 +64,10 @@ use review_episode_core::reducer::{TransitionOutcome, transition};
 use review_episode_core::state::{ReviewEpisodeState, validate_admission};
 use serde::{Deserialize, Serialize};
 use work_engine_organization::{EnforceStatus, EvidenceClass, OrganizationCandidate};
+use work_engine_organization_authority::{
+    AdmissionState, Boundary, BoundaryKind, EffectAdmission, ObservationRevision,
+    SealedObservation, Unobserved,
+};
 
 use crate::prepare::Subject;
 use crate::select::{PreparationRefusal, Selection};
@@ -152,8 +187,122 @@ pub enum ConsumeRefusal {
     EvidenceNotEstablished { condition: String, status: String },
     #[error("admission for `{condition}` carries no observation reference where one is required")]
     ObservationMissing { condition: String },
+    /// The consumption proof's admission was issued for another boundary kind, candidate,
+    /// subject or vantage than this consumption's; `field` is the first differing one.
+    #[error("the consumption proof's {field} differs from this consumption's")]
+    GateProofMismatch { field: &'static str },
+    /// S-A's point check of the proof's admission against the host's regate observation did not
+    /// find it current (Unknown, including no observation, fails closed).
+    #[error("the consumption proof's admission is not current: {0:?}")]
+    GateProofNotCurrent(AdmissionState),
     #[error("episode transition refused: {0}")]
     Episode(EpisodeError),
+}
+
+/// The label on the regate time a [`ConsumptionProof`] carries: the consuming host sampled it, and
+/// the consumer cannot check it (fixture standing: a synthetic stand-in for a host clock).
+pub const GATE_TIME_ASSERTED_LABEL: &str = "caller_asserted_regate_time";
+
+/// The label on the freshness of the regate observation a [`ConsumptionProof`] carries: the
+/// consumer cannot tell a fresh observation from an earlier one for the same reservation, so that
+/// it is fresh is the caller's assertion, not something this crate checked.
+pub const GATE_OBSERVATION_FRESHNESS_ASSERTED_LABEL: &str =
+    "caller_asserted_regate_observation_freshness";
+
+/// What the consumer requires before it advances an episode: a proof that the consumption-boundary
+/// gate finds an organizational admission current for this candidate, subject and vantage.
+///
+/// - `admission` (S-A-issued): an [`EffectAdmission`] for a [`BoundaryKind::Consumption`]
+///   boundary. Only S-A's `admit` produces one (no public constructor, not `Clone`), and S-A's
+///   production policy admits nothing. The consumer compares its request identity with its own
+///   inputs, so an admission issued for another candidate, subject, vantage or boundary **kind**
+///   is refused ([`ConsumeRefusal::GateProofMismatch`]). The boundary's operation and epoch are
+///   not compared (O10 class): a consumption admission for another operation passes. Nor can the
+///   consumer tell whose admission it is; with S-A's `fixture` feature on, any caller can mint one.
+/// - `regate_observation` (S-A-sealed): the consuming host's observation for the admission's
+///   reservation. Only S-A's `observe_for` seals one (not `Clone`); S-A refuses one sealed to
+///   another boundary. The consumer runs S-A's point check over it itself. It cannot tell a fresh
+///   observation from an earlier one for the same reservation: freshness is a caller assertion
+///   ([`GATE_OBSERVATION_FRESHNESS_ASSERTED_LABEL`], on [`GateCheck`]) and the host's obligation
+///   (review-delivery's `HeldAdmission::regate` observes on every call).
+/// - `regate_now_millis` (labelled caller assertion, [`GATE_TIME_ASSERTED_LABEL`]): the time the
+///   host sampled for that regate; it decides expiry (O4) in the point check.
+///
+/// The wrapper is a parameter bundle of borrowed values: the unforgeable parts are the two S-A
+/// values. It does not carry review-delivery's finality of a settled regate (S-A F-3); a holder of
+/// an admission can regate it again.
+#[derive(Debug, Clone, Copy)]
+pub struct ConsumptionProof<'a> {
+    pub admission: &'a EffectAdmission,
+    pub regate_observation: &'a Result<SealedObservation, Unobserved>,
+    pub regate_now_millis: u64,
+}
+
+/// What the consumer's proof check found, carried on success.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct GateCheck {
+    /// The admission's reserved consumption boundary.
+    pub boundary: Boundary,
+    /// The revision the admission was decided at.
+    pub admission_revision: ObservationRevision,
+    /// The revision of the regate observation the point check found current. That the
+    /// observation is fresh is a caller assertion, labelled by
+    /// [`GateCheck::caller_asserted_regate_observation_freshness`].
+    pub regate_revision: ObservationRevision,
+    /// The host-sampled regate time, under [`GATE_TIME_ASSERTED_LABEL`].
+    pub regate_now_millis: u64,
+}
+
+impl GateCheck {
+    pub fn time_label(&self) -> &'static str {
+        GATE_TIME_ASSERTED_LABEL
+    }
+
+    /// The standing of [`GateCheck::regate_revision`]'s observation: a point check found it
+    /// current, but that it is the host's *fresh* regate observation is the caller's assertion.
+    pub fn caller_asserted_regate_observation_freshness(&self) -> &'static str {
+        GATE_OBSERVATION_FRESHNESS_ASSERTED_LABEL
+    }
+}
+
+/// The consumer's own check of a proof against its inputs, then S-A's point check.
+fn check_proof(
+    candidate: &OrganizationCandidate,
+    declaration: &FixtureDeclaration,
+    proof: &ConsumptionProof<'_>,
+) -> Result<GateCheck, ConsumeRefusal> {
+    let admission = proof.admission;
+    let mismatch = |field| Err(ConsumeRefusal::GateProofMismatch { field });
+    if admission.boundary().kind() != BoundaryKind::Consumption {
+        return mismatch("boundary kind");
+    }
+    let request = admission.request();
+    // S-A O3 decided that the request's requirements derive its candidate digest, so equal
+    // candidate digests also bind the requirements.
+    if request.candidate_digest() != candidate.content_digest() {
+        return mismatch("candidate digest");
+    }
+    let (subject, declared) = (request.subject(), &declaration.subject);
+    if subject.commit != declared.commit
+        || subject.tree != declared.tree
+        || subject.patch_identity != declared.patch_identity
+    {
+        return mismatch("subject");
+    }
+    let selection = Selection::new(candidate, &declaration.obligation_id)?;
+    if request.vantage() != selection.served_by {
+        return mismatch("vantage");
+    }
+    match admission.admission_state(proof.regate_observation, proof.regate_now_millis) {
+        AdmissionState::Current { revision } => Ok(GateCheck {
+            boundary: admission.boundary().clone(),
+            admission_revision: admission.revision(),
+            regate_revision: revision,
+            regate_now_millis: proof.regate_now_millis,
+        }),
+        other => Err(ConsumeRefusal::GateProofNotCurrent(other)),
+    }
 }
 
 /// A condition whose evidence the fixture must see covered, derived from the obligation's
@@ -359,6 +508,8 @@ pub struct FixtureConsumption {
     pub evidence: EvidenceStanding,
     pub production_consequence: ProductionConsequence,
     pub conditions: Vec<FixtureCondition>,
+    /// What the consumer's check of its [`ConsumptionProof`] found.
+    pub gate: GateCheck,
     outcome: TransitionOutcome,
 }
 
@@ -399,6 +550,11 @@ fn declared_digest(
 /// the transition, so an incomplete or inconsistent evidence set cannot advance the episode
 /// through this entry point. Revision, writer authority, phase, exact subject and finding
 /// lineage are checked only by the episode core, and its error is returned unchanged.
+///
+/// The last check before the transition is the [`ConsumptionProof`]: its admission must be for a
+/// consumption boundary and for this candidate, the declaration's subject and the obligation's
+/// serving vantage, and S-A's point check over the host's regate observation must find it
+/// `Current`. Otherwise the episode does not advance.
 #[allow(clippy::too_many_arguments)]
 pub fn consume_fixture_result(
     candidate: &OrganizationCandidate,
@@ -410,6 +566,7 @@ pub fn consume_fixture_result(
     result_json: &str,
     unresolved_questions: &[&str],
     admissions_json: &str,
+    proof: &ConsumptionProof<'_>,
 ) -> Result<FixtureConsumption, ConsumeRefusal> {
     let coverage = fixture_coverage(candidate, declaration)?;
 
@@ -604,6 +761,8 @@ pub fn consume_fixture_result(
     if !admissions.is_empty() {
         payload.push(("evidenceAdmissions", JsValue::Array(admissions)));
     }
+    // No consumption without a gate-issued proof, checked against this consumption's own inputs.
+    let gate = check_proof(candidate, declaration, proof)?;
     let command = TransitionCommand::new(
         authority.clone(),
         expected_revision,
@@ -619,6 +778,7 @@ pub fn consume_fixture_result(
         evidence: EvidenceStanding::ConsistentWithFixtureAssumptionsOnly,
         production_consequence: ProductionConsequence::Unestablished,
         conditions: selection_dispositions(candidate, &declaration.obligation_id, &coverage)?,
+        gate,
         outcome,
     })
 }
