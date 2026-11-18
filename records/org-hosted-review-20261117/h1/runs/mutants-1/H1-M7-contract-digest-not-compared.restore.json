@@ -1,0 +1,41 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "H1-M7-contract-digest-not-compared.restore",
+  "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/mutants/mutate.py",
+    "restore",
+    "H1-M7-contract-digest-not-compared"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 60473,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 70577,
+  "pgid": 70577,
+  "started_at": "2026-11-18T00:32:31.813647Z",
+  "ended_at": "2026-11-18T00:32:31.855170Z",
+  "duration_s": 0.042,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M7-contract-digest-not-compared.restore.stdout",
+    "length": 58,
+    "sha256": "a4b254dc5e9bb1b466aae364e57b316ca73df3faa1c373a5e1d755e0685d5a82"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M7-contract-digest-not-compared.restore.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

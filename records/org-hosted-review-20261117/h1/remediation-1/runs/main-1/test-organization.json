@@ -1,0 +1,41 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "test-organization",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-organization"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 130807,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 131495,
+  "pgid": 131495,
+  "started_at": "2026-11-18T00:54:39.843063Z",
+  "ended_at": "2026-11-18T00:54:43.116750Z",
+  "duration_s": 3.274,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/runs/main-1/test-organization.stdout",
+    "length": 12873,
+    "sha256": "0e99be3332955d392ad7535a6890f8ad8c85145c42975c79e94a4e47e41f4a0c"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/runs/main-1/test-organization.stderr",
+    "length": 717,
+    "sha256": "9b8972c62c8d3d9965d1a64dc498e3f8fa508d0e7889bdc9765fb22caef9d1ae"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

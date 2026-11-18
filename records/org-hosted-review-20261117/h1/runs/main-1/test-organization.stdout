@@ -1,0 +1,186 @@
+
+running 97 tests
+test codec_rules_tests::a_digit_run_that_does_not_parse_is_an_internal_error_not_zero ... ok
+test codec_rules_tests::an_integer_outside_the_canonical_range_is_refused_when_serialized ... ok
+test codec_rules_tests::duplicate_object_keys_are_refused_including_escaped_spellings ... ok
+test codec_rules_tests::bytes_from_serde_json_values_canonicalize_identically_under_both_number_features ... ok
+test codec_rules_tests::digest_framing_matches_an_independent_computation ... ok
+test codec_rules_tests::identifier_syntax_follows_section_17_3 ... ok
+test codec_rules_tests::floats_and_exponents_are_refused ... ok
+test codec_rules_tests::explicit_null_is_refused_with_its_path ... ok
+test codec_rules_tests::identifiers_deserialize_validated_and_sort_by_byte ... ok
+test codec_rules_tests::invalid_utf8_is_refused ... ok
+test codec_rules_tests::integers_are_accepted_only_within_the_safe_range ... ok
+test codec_rules_tests::keys_sort_by_utf16_code_unit_and_whitespace_is_dropped ... ok
+test codec_rules_tests::malformed_json_is_refused_with_a_syntax_error ... ok
+test codec_rules_tests::key_and_set_order_of_authored_bytes_does_not_change_the_digest ... ok
+test codec_rules_tests::strings_use_minimal_escaping_and_no_normalization ... ok
+test codec_rules_tests::nesting_is_bounded ... ok
+test codec_rules_tests::unknown_codec_declarations_are_refused ... ok
+test codec_rules_tests::unpaired_surrogate_escapes_are_refused ... ok
+test derive::injection_tests::a_consumer_that_slipped_past_the_early_check_is_an_internal_error_not_the_campaign ... ok
+test derive::injection_tests::a_duplicate_key_is_detected_and_named_as_an_internal_error ... ok
+test derive::injection_tests::f4_reports_a_disjoint_dimension_as_a_condition_conflict ... ok
+test derive::injection_tests::f4_reports_differing_observer_classes_as_a_condition_conflict ... ok
+test rfc_vectors_tests::authored_example_vector_matches_byte_for_byte ... ok
+test rfc_vectors_tests::authored_sorting_vector_orders_keys_by_utf16_code_unit ... ok
+test rfc_vectors_tests::null_is_canonicalized_but_refused_under_the_v0_rules ... ok
+test rfc_vectors_tests::testdata_vectors_in_the_data_model_match_byte_for_byte ... ok
+test enforce::injection_tests::independence_is_none_even_for_the_only_recognized_source ... ok
+test rfc_vectors_tests::vectors_with_non_integer_numbers_are_refused ... ok
+test rfc_vectors_tests::fixtures_match_their_recorded_sha256 ... ok
+test derive::injection_tests::f4_unions_capabilities_when_conditions_state_them ... ok
+test enforce::injection_tests::a_non_empty_capability_list_that_bypassed_validation_is_none_with_no_evidence_class ... ok
+test derive::injection_tests::a_view_obligation_without_a_serves_row_is_shown_unestablished_not_dropped_or_filled ... ok
+test derive::injection_tests::a_broken_trace_link_is_reported_as_a_broken_internal_reference_naming_the_condition ... ok
+test derive::injection_tests::a_validated_integer_outside_the_canonical_range_fails_closed_in_candidate_and_json ... ok
+test derive::injection_tests::the_view_and_report_field_lists_are_the_matrix_lists ... ok
+test view::tests::a_derived_candidate_projects ... ok
+test derive::injection_tests::an_unbroken_trace_records_no_fault ... ok
+test derive::injection_tests::a_vantage_requirement_naming_an_absent_condition_is_an_internal_error_naming_both ... ok
+test view::tests::a_duplicate_hosts_execution_row_is_refused ... ok
+test view::tests::a_duplicate_reads_episode_row_is_refused ... ok
+test view::tests::a_serves_row_for_an_obligation_the_candidate_lacks_is_refused ... ok
+test view::tests::a_derived_two_obligation_candidate_with_a_builder_consumer_projects ... ok
+test view::tests::a_hosts_execution_row_with_no_target_is_refused ... ok
+test view::tests::a_vantage_requirement_for_no_vantage_participant_is_refused ... ok
+test view::tests::a_stated_absence_is_shown_not_refused ... ok
+test view::tests::a_reads_episode_row_for_a_vantage_nobody_writes_is_refused ... ok
+test view::tests::a_reads_episode_row_with_no_target_is_refused ... ok
+test view::tests::a_writes_episode_row_with_no_target_is_refused ... ok
+test view::tests::a_serves_row_whose_source_is_another_obligations_vantage_is_refused ... ok
+test view::tests::a_reads_episode_row_for_the_builder_vantage_is_refused ... ok
+test view::tests::a_serves_row_with_no_target_is_refused ... ok
+test view::tests::a_writes_episode_row_for_the_builder_vantage_is_refused ... ok
+test view::tests::accepts_claim_from_a_component_is_refused ... ok
+test view::tests::accepts_claim_to_a_non_vantage_is_refused ... ok
+test view::tests::accepts_claim_for_a_condition_the_candidate_lacks_is_refused ... ok
+test derive::injection_tests::a_relationship_with_an_unresolved_link_is_an_internal_error_not_a_skipped_row ... ok
+test view::tests::consumes_at_from_a_principal_is_refused ... ok
+test view::tests::accepts_claim_targeting_another_conditions_vantage_is_refused ... ok
+test view::tests::accepts_claim_from_a_principal_that_is_not_the_conditions_acceptor_is_refused ... ok
+test view::tests::consumes_at_with_no_condition_is_refused ... ok
+test view::tests::consumes_at_from_a_participant_that_is_not_the_conditions_consumer_is_refused ... ok
+test view::tests::hosts_execution_from_a_non_component_is_refused ... ok
+test view::tests::accepts_claim_with_no_condition_is_refused ... ok
+test view::tests::hosts_execution_from_the_episode_host_is_refused ... ok
+test view::tests::consumes_at_for_a_condition_the_candidate_lacks_is_refused ... ok
+test view::tests::consumes_at_to_a_non_vantage_is_refused ... ok
+test view::tests::an_absent_condition_row_is_not_refused_here ... ok
+test view::tests::episode_rows_moved_to_the_builder_vantage_are_refused ... ok
+test view::tests::hosts_execution_for_the_builder_vantage_is_accepted ... ok
+test view::tests::consumes_at_targeting_another_conditions_vantage_is_refused ... ok
+test view::tests::probe_an_accepts_claim_row_with_no_target_and_no_condition_is_refused ... ok
+test view::tests::probe_a_consumes_at_row_with_no_target_and_no_condition_is_refused ... ok
+test view::tests::hosts_execution_with_a_condition_is_refused ... ok
+test view::tests::probe_an_extra_consumes_at_row_with_ghost_references_is_refused ... ok
+test view::tests::hosts_execution_to_a_non_vantage_is_refused ... ok
+test view::tests::reads_episode_from_the_campaign_is_refused ... ok
+test view::tests::probe_an_extra_accepts_claim_row_with_ghost_references_is_refused ... ok
+test view::tests::reads_episode_with_a_condition_is_refused ... ok
+test view::tests::reads_episode_from_a_non_component_is_refused ... ok
+test view::tests::serves_from_a_non_vantage_is_refused ... ok
+test view::tests::serves_with_a_condition_is_refused ... ok
+test view::tests::terminalizes_with_a_condition_is_refused ... ok
+test view::tests::terminalizes_from_a_non_component_is_refused ... ok
+test view::tests::swapped_serves_sources_are_refused ... ok
+test view::tests::two_accepts_claim_rows_for_one_condition_are_refused ... ok
+test view::tests::terminalizes_from_the_episode_host_is_refused ... ok
+test view::tests::two_consumes_at_rows_for_one_condition_are_refused ... ok
+test view::tests::two_vantage_requirements_for_one_vantage_are_refused ... ok
+test view::tests::terminalizes_with_a_target_is_refused ... ok
+test view::tests::serves_from_the_builder_vantage_is_refused ... ok
+test view::tests::two_writes_episode_rows_for_one_vantage_are_refused ... ok
+test view::tests::two_serves_rows_for_one_obligation_are_refused ... ok
+test view::tests::two_terminalizes_rows_are_refused ... ok
+test view::tests::writes_episode_from_a_non_component_is_refused ... ok
+test view::tests::writes_episode_from_the_campaign_is_refused ... ok
+test view::tests::writes_episode_with_a_condition_is_refused ... ok
+test view::tests::writes_episode_to_a_non_vantage_is_refused ... ok
+
+test result: ok. 97 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+
+running 4 tests
+test normal_dependencies_are_exactly_the_four_pure_crates_and_there_are_no_others ... ok
+test no_public_item_is_named_as_an_admission_acknowledgment_grant_gate_dispatch_or_capability ... ok
+test nothing_in_the_public_api_can_mark_separation_established_or_attach_a_principal_to_a_binding ... ok
+test the_crate_has_no_io_clock_environment_process_or_unsafe_code ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+
+running 4 tests
+test fixtures_match_their_recorded_sha256 ... ok
+test n2_probe_identities_in_allowed_are_refused_on_the_frozen_requirements ... ok
+test n1_probe_the_frozen_rows_have_the_revision_4_evidence_classes ... ok
+test frozen_vertical_diagnostic_report ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 45 tests
+test an_unknown_consumer_class_is_unresolved ... ok
+test a_non_string_in_a_governed_field_is_a_wrong_type_not_a_class ... ok
+test a_class_of_one_dimension_is_not_a_class_of_another_or_of_the_observer_field ... ok
+test an_acceptor_that_names_a_dependent_vantage_is_refused ... ok
+test authored_bytes_with_null_floats_and_ambiguity_are_refused ... ok
+test builder_and_campaign_conditions_on_one_obligation_give_the_amended_counts ... ok
+test contradictory_conditions_give_no_candidate_and_a_condition_conflict ... ok
+test closure_failures_give_no_candidate_and_name_the_uncovered_conditions ... ok
+test an_unsupported_result_contract_is_not_masked_by_other_none_rows ... ok
+test every_candidate_member_is_traced_to_an_existing_input_item ... ok
+test enforceability_rows_cover_every_property_and_dimension ... ok
+test distinct_identifiers_give_a_separation_requirement_that_nothing_can_mark_satisfied ... ok
+test closure_successes_give_a_candidate ... ok
+test every_recognized_class_is_accepted_and_the_vocabulary_is_the_profile_table ... ok
+test enforceability_none_rows_for_unsupported_requirements ... ok
+test heterogeneous_conditions_are_preserved_and_combined_by_the_f4_table ... ok
+test every_supported_mechanism_row_has_its_exact_revision_4_evidence_class ... ok
+test canonical_normalization_refusals_are_typed ... ok
+test component_named_principals_bind_nothing ... ok
+test identity_c_changing_the_only_satisfying_permission_gives_no_candidate ... ok
+test heterogeneous_result_contracts_stay_distinct_in_candidate_view_and_report ... ok
+test concrete_identities_and_arbitrary_strings_are_not_classes_in_any_governed_field ... ok
+test identical_conditions_under_distinct_ids_are_both_kept ... ok
+test every_candidate_has_exactly_the_two_component_binding_requirements ... ok
+test referential_integrity_and_non_empty_collections_are_enforced ... ok
+test identity_a_unneeded_authority_entry_changes_digests_but_not_rule_derived_sets ... ok
+test identity_b_adding_an_authority_entry_changes_both_digests_and_no_relationship ... ok
+test literals_dimensions_and_missing_members_are_refused ... ok
+test separation_rows_are_none_in_v1_so_no_candidate_is_executable ... ok
+test problem_scope_and_obligations_are_copied_unchanged_into_the_candidate ... ok
+test the_builder_vantage_is_dependent_for_every_condition_of_a_candidate_that_has_one ... ok
+test identity_d_a_changed_rule_input_changes_the_content_digest ... ok
+test single_value_class_leaves_reach_their_destinations ... ok
+test the_view_projects_hosting_episode_access_and_terminalization ... ok
+test recognized_but_unsupported_cases_and_unsupported_result_contracts_are_none ... ok
+test unknown_fields_standing_fields_and_realization_identities_are_refused ... ok
+test trace_rows_cite_the_sources_the_amendment_names ... ok
+test two_obligations_give_one_reviewer_vantage_each_and_one_terminalizes ... ok
+test the_relationship_set_equals_the_set_written_from_the_amendment_table ... ok
+test the_candidate_has_exactly_the_members_the_matrix_lists ... ok
+test the_report_has_exactly_the_rows_the_input_requires ... ok
+test identity_changes_on_every_listed_input_class ... ok
+test every_required_source_member_is_refused_when_absent_and_never_filled ... ok
+test identity_covers_problem_scope_and_every_obligation_member ... ok
+test every_requirements_leaf_reaches_the_candidate_and_its_documented_projections ... ok
+
+test result: ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.53s
+
+
+running 6 tests
+test views_of_the_fixture_candidates_are_unchanged_by_relationship_validation ... ok
+test golden_vectors_fix_canonical_bytes_and_digests ... ok
+test authored_whitespace_and_escapes_do_not_change_identity ... ok
+test repeated_derivation_gives_identical_bytes_and_digests ... ok
+test permuting_any_one_set_gives_identical_digests_and_trace ... ok
+test seeded_shuffles_of_every_array_and_object_key_order_give_identical_digests ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.20s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

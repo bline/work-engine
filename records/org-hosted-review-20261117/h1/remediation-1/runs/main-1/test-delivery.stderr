@@ -1,0 +1,4 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/work_engine_review_delivery-626ee646a32e09ca)
+     Running tests/pure.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/pure-37e0b0a0ec126f1a)
+   Doc-tests work_engine_review_delivery

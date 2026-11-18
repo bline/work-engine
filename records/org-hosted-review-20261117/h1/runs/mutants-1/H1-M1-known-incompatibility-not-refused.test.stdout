@@ -1,0 +1,188 @@
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 12 tests
+test fenced_answer_is_refused_without_repair ... FAILED
+test delivery_refuses_attempt_digest_mismatch_extra_user_text_and_missing_body ... FAILED
+test schema_violation_is_refused ... FAILED
+test acceptable_fixture_is_accepted_and_ungrounded_evidence_is_flagged ... FAILED
+test delivery_prefix_mismatch_is_refused ... FAILED
+test grounded_evidence_is_counted ... FAILED
+test contract_digest_mismatch_is_refused ... FAILED
+test answer_sha_mismatch_is_refused ... FAILED
+test remediation_fixture_is_accepted ... FAILED
+test subject_mismatch_is_refused ... FAILED
+test state_directory_loads_result_ledger_and_bodies ... FAILED
+test result_check_binary_writes_the_envelope_and_exits_by_outcome ... FAILED
+
+failures:
+
+---- fenced_answer_is_refused_without_repair stdout ----
+
+thread 'fenced_answer_is_refused_without_repair' (61299) panicked at crates/work-engine-review-hosted/tests/check.rs:48:37:
+called `Result::unwrap()` on an `Err` value: Requirements("the frozen world prepared without a known incompatibility")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- delivery_refuses_attempt_digest_mismatch_extra_user_text_and_missing_body stdout ----
+
+thread 'delivery_refuses_attempt_digest_mismatch_extra_user_text_and_missing_body' (61298) panicked at crates/work-engine-review-hosted/tests/check.rs:48:37:
+called `Result::unwrap()` on an `Err` value: Requirements("the frozen world prepared without a known incompatibility")
+
+---- schema_violation_is_refused stdout ----
+
+thread 'schema_violation_is_refused' (61303) panicked at crates/work-engine-review-hosted/tests/check.rs:48:37:
+called `Result::unwrap()` on an `Err` value: Requirements("the frozen world prepared without a known incompatibility")
+
+---- acceptable_fixture_is_accepted_and_ungrounded_evidence_is_flagged stdout ----
+
+thread 'acceptable_fixture_is_accepted_and_ungrounded_evidence_is_flagged' (61294) panicked at crates/work-engine-review-hosted/tests/check.rs:48:37:
+called `Result::unwrap()` on an `Err` value: Requirements("the frozen world prepared without a known incompatibility")
+
+---- delivery_prefix_mismatch_is_refused stdout ----
+
+thread 'delivery_prefix_mismatch_is_refused' (61297) panicked at crates/work-engine-review-hosted/tests/check.rs:48:37:
+called `Result::unwrap()` on an `Err` value: Requirements("the frozen world prepared without a known incompatibility")
+
+---- grounded_evidence_is_counted stdout ----
+
+thread 'grounded_evidence_is_counted' (61300) panicked at crates/work-engine-review-hosted/tests/check.rs:48:37:
+called `Result::unwrap()` on an `Err` value: Requirements("the frozen world prepared without a known incompatibility")
+
+---- contract_digest_mismatch_is_refused stdout ----
+
+thread 'contract_digest_mismatch_is_refused' (61296) panicked at crates/work-engine-review-hosted/tests/check.rs:48:37:
+called `Result::unwrap()` on an `Err` value: Requirements("the frozen world prepared without a known incompatibility")
+
+---- answer_sha_mismatch_is_refused stdout ----
+
+thread 'answer_sha_mismatch_is_refused' (61295) panicked at crates/work-engine-review-hosted/tests/check.rs:48:37:
+called `Result::unwrap()` on an `Err` value: Requirements("the frozen world prepared without a known incompatibility")
+
+---- remediation_fixture_is_accepted stdout ----
+
+thread 'remediation_fixture_is_accepted' (61301) panicked at crates/work-engine-review-hosted/tests/check.rs:48:37:
+called `Result::unwrap()` on an `Err` value: Requirements("the frozen world prepared without a known incompatibility")
+
+---- subject_mismatch_is_refused stdout ----
+
+thread 'subject_mismatch_is_refused' (61305) panicked at crates/work-engine-review-hosted/tests/check.rs:48:37:
+called `Result::unwrap()` on an `Err` value: Requirements("the frozen world prepared without a known incompatibility")
+
+---- state_directory_loads_result_ledger_and_bodies stdout ----
+
+thread 'state_directory_loads_result_ledger_and_bodies' (61304) panicked at crates/work-engine-review-hosted/tests/check.rs:48:37:
+called `Result::unwrap()` on an `Err` value: Requirements("the frozen world prepared without a known incompatibility")
+
+---- result_check_binary_writes_the_envelope_and_exits_by_outcome stdout ----
+
+thread 'result_check_binary_writes_the_envelope_and_exits_by_outcome' (61302) panicked at crates/work-engine-review-hosted/tests/check.rs:48:37:
+called `Result::unwrap()` on an `Err` value: Requirements("the frozen world prepared without a known incompatibility")
+
+
+failures:
+    acceptable_fixture_is_accepted_and_ungrounded_evidence_is_flagged
+    answer_sha_mismatch_is_refused
+    contract_digest_mismatch_is_refused
+    delivery_prefix_mismatch_is_refused
+    delivery_refuses_attempt_digest_mismatch_extra_user_text_and_missing_body
+    fenced_answer_is_refused_without_repair
+    grounded_evidence_is_counted
+    remediation_fixture_is_accepted
+    result_check_binary_writes_the_envelope_and_exits_by_outcome
+    schema_violation_is_refused
+    state_directory_loads_result_ledger_and_bodies
+    subject_mismatch_is_refused
+
+test result: FAILED. 0 passed; 12 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+
+running 6 tests
+test hosted_claim_states_what_the_host_enforces ... ok
+test revision_is_the_frozen_requirements_with_exactly_the_authorized_changes ... ok
+test revision_compiles_with_the_unchanged_compiler ... ok
+test frozen_candidate_with_the_hosted_claim_is_refused ... FAILED
+test revision_world_prepares_and_freezes_with_every_blocker_kept ... ok
+test frozen_candidate_writes_no_job_inputs ... FAILED
+
+failures:
+
+---- frozen_candidate_with_the_hosted_claim_is_refused stdout ----
+
+thread 'frozen_candidate_with_the_hosted_claim_is_refused' (61307) panicked at crates/work-engine-review-hosted/tests/revision.rs:143:9:
+the frozen world must be refused
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- frozen_candidate_writes_no_job_inputs stdout ----
+
+thread 'frozen_candidate_writes_no_job_inputs' (61308) panicked at crates/work-engine-review-hosted/tests/revision.rs:173:5:
+Err(Requirements("the frozen world prepared without a known incompatibility"))
+
+
+failures:
+    frozen_candidate_with_the_hosted_claim_is_refused
+    frozen_candidate_writes_no_job_inputs
+
+test result: FAILED. 4 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+
+running 12 tests
+test request_context_bound_is_snapshot_times_one_and_a_quarter_plus_task ... ok
+test rule_negatives_stay_quiet ... ok
+test job_inputs_bind_the_revision_scope_digest_to_the_subject ... FAILED
+test patch_identity_mismatch_is_refused ... ok
+test job_inputs_binary_refuses_and_writes_nothing ... FAILED
+test tree_mismatch_is_refused ... ok
+test identity_ok_snapshot_is_changed_files_patch_and_subject ... ok
+test scope_digest_not_the_patch_identity_is_refused ... ok
+test merge_and_root_commits_are_refused ... ok
+test binary_and_non_utf8_members_are_refused ... ok
+test each_secret_rule_refuses_with_rule_and_path_and_no_content ... ok
+test oversize_snapshot_is_refused ... ok
+
+failures:
+
+---- job_inputs_bind_the_revision_scope_digest_to_the_subject stdout ----
+
+thread 'job_inputs_bind_the_revision_scope_digest_to_the_subject' (61403) panicked at crates/work-engine-review-hosted/tests/subject.rs:120:18:
+expected the scope binding refusal, got Err(Requirements("the frozen world prepared without a known incompatibility"))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- job_inputs_binary_refuses_and_writes_nothing stdout ----
+
+thread 'job_inputs_binary_refuses_and_writes_nothing' (61402) panicked at crates/work-engine-review-hosted/tests/subject.rs:299:5:
+assertion failed: String::from_utf8_lossy(&run.stderr).contains("scope.digest")
+
+
+failures:
+    job_inputs_binary_refuses_and_writes_nothing
+    job_inputs_bind_the_revision_scope_digest_to_the_subject
+
+test result: FAILED. 10 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.76s
+
+
+running 4 tests
+test template_is_digest_pinned ... ok
+test limits_outside_the_host_bounds_are_refused ... ok
+test task_over_the_prompt_bound_is_refused ... ok
+test task_is_template_then_contract_verbatim_and_fits_the_prompt_bound ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

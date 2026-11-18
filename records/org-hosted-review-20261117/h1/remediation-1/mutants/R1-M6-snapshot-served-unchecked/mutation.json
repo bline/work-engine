@@ -1,0 +1,18 @@
+{
+ "mutant": "R1-M6-snapshot-served-unchecked",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/check.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "dccf7a25cd7d109d8b5cdfff5af3f62ea6d8d7958cb794d69ae31fff162306b4",
+   "mutated_sha256": "eaebeda53b2611ba56590095a95cc8aef4230e008d24d8b9dd8f7ffd5e6c7494"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/check.rs",
+   "old": "        pinned && served.as_ref() == Some(&record.snapshot_manifest),",
+   "new": "        pinned || served.as_ref() == Some(&record.snapshot_manifest),"
+  }
+ ]
+}

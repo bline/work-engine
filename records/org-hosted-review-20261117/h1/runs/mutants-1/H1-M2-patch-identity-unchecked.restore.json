@@ -1,0 +1,41 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "H1-M2-patch-identity-unchecked.restore",
+  "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/mutants/mutate.py",
+    "restore",
+    "H1-M2-patch-identity-unchecked"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 60473,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 63414,
+  "pgid": 63414,
+  "started_at": "2026-11-18T00:32:07.652284Z",
+  "ended_at": "2026-11-18T00:32:07.705875Z",
+  "duration_s": 0.054,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M2-patch-identity-unchecked.restore.stdout",
+    "length": 54,
+    "sha256": "dbcdadee7d45310192f5337f327af6bb3d39d82a7e40a89790e7377e33eecde6"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M2-patch-identity-unchecked.restore.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

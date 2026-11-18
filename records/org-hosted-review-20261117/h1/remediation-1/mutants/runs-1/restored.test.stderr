@@ -1,0 +1,10 @@
+   Compiling work-engine-review-hosted v0.1.0 (/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.40s
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/work_engine_review_hosted-e6b28e47a8ea8842)
+     Running unittests src/bin/review-job-inputs.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/review_job_inputs-9bb6d80ab4f8034a)
+     Running unittests src/bin/review-result-check.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/review_result_check-28f011b34f39dcc4)
+     Running tests/check.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/check-fa358ff9c25a80dd)
+     Running tests/revision.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/revision-3d677d34cbe6f010)
+     Running tests/subject.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/subject-aba2f5f3a5559b00)
+     Running tests/task.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/task-34dc793396a5ec1f)
+   Doc-tests work_engine_review_hosted

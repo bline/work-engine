@@ -1,0 +1,5 @@
+   Compiling work-engine-review-delivery v0.1.0 (/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-delivery)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.04s
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/work_engine_review_delivery-626ee646a32e09ca)
+     Running tests/pure.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/pure-37e0b0a0ec126f1a)
+   Doc-tests work_engine_review_delivery

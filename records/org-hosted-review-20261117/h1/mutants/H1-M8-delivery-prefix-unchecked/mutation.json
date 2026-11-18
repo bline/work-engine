@@ -1,0 +1,18 @@
+{
+ "mutant": "H1-M8-delivery-prefix-unchecked",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/check.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "95ddf0fad98b92449be15d956e237df298ce6ac73f4b86866f92b19e2739dc78",
+   "mutated_sha256": "7119b3f8808c3ef1a594472eba4eb9d592891207cc3aea295027946738914676"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/check.rs",
+   "old": "        if !texts[0].starts_with(task) {",
+   "new": "        if false && !texts[0].starts_with(task) {"
+  }
+ ]
+}

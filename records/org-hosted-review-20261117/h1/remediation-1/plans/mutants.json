@@ -1,0 +1,510 @@
+{
+ "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+ "env": {
+  "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+ },
+ "steps": [
+  {
+   "name": "R1-M1-context-fit-slack.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M1-context-fit-slack"
+   ]
+  },
+  {
+   "name": "R1-M1-context-fit-slack.test",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "R1-M1-context-fit-slack.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "restore",
+    "R1-M1-context-fit-slack"
+   ]
+  },
+  {
+   "name": "R1-M2-prompt-bound-slack.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M2-prompt-bound-slack"
+   ]
+  },
+  {
+   "name": "R1-M2-prompt-bound-slack.test",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "R1-M2-prompt-bound-slack.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "restore",
+    "R1-M2-prompt-bound-slack"
+   ]
+  },
+  {
+   "name": "R1-M3-tree-unchecked.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M3-tree-unchecked"
+   ]
+  },
+  {
+   "name": "R1-M3-tree-unchecked.test",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "R1-M3-tree-unchecked.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "restore",
+    "R1-M3-tree-unchecked"
+   ]
+  },
+  {
+   "name": "R1-M4-subject-equality-unchecked.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M4-subject-equality-unchecked"
+   ]
+  },
+  {
+   "name": "R1-M4-subject-equality-unchecked.test",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "R1-M4-subject-equality-unchecked.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "restore",
+    "R1-M4-subject-equality-unchecked"
+   ]
+  },
+  {
+   "name": "R1-M5-jwt-rule-never-matches.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M5-jwt-rule-never-matches"
+   ]
+  },
+  {
+   "name": "R1-M5-jwt-rule-never-matches.test",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "R1-M5-jwt-rule-never-matches.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "restore",
+    "R1-M5-jwt-rule-never-matches"
+   ]
+  },
+  {
+   "name": "R1-M6-snapshot-served-unchecked.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M6-snapshot-served-unchecked"
+   ]
+  },
+  {
+   "name": "R1-M6-snapshot-served-unchecked.test",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "R1-M6-snapshot-served-unchecked.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "restore",
+    "R1-M6-snapshot-served-unchecked"
+   ]
+  },
+  {
+   "name": "R1-M7-body-model-unchecked.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M7-body-model-unchecked"
+   ]
+  },
+  {
+   "name": "R1-M7-body-model-unchecked.test",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "R1-M7-body-model-unchecked.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "restore",
+    "R1-M7-body-model-unchecked"
+   ]
+  },
+  {
+   "name": "R1-M8-user-text-length-unchecked.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M8-user-text-length-unchecked"
+   ]
+  },
+  {
+   "name": "R1-M8-user-text-length-unchecked.test",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "R1-M8-user-text-length-unchecked.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "restore",
+    "R1-M8-user-text-length-unchecked"
+   ]
+  },
+  {
+   "name": "R1-M9-read-budget-slack.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M9-read-budget-slack"
+   ]
+  },
+  {
+   "name": "R1-M9-read-budget-slack.test",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "R1-M9-read-budget-slack.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "restore",
+    "R1-M9-read-budget-slack"
+   ]
+  },
+  {
+   "name": "R1-M10-env-member-path-missed.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M10-env-member-path-missed"
+   ]
+  },
+  {
+   "name": "R1-M10-env-member-path-missed.test",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "R1-M10-env-member-path-missed.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "restore",
+    "R1-M10-env-member-path-missed"
+   ]
+  },
+  {
+   "name": "R1-M11-binary-patch-rule-never-matches.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M11-binary-patch-rule-never-matches"
+   ]
+  },
+  {
+   "name": "R1-M11-binary-patch-rule-never-matches.test",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "R1-M11-binary-patch-rule-never-matches.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "restore",
+    "R1-M11-binary-patch-rule-never-matches"
+   ]
+  },
+  {
+   "name": "R1-M12-dotdot-component-allowed.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M12-dotdot-component-allowed"
+   ]
+  },
+  {
+   "name": "R1-M12-dotdot-component-allowed.test",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "R1-M12-dotdot-component-allowed.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "restore",
+    "R1-M12-dotdot-component-allowed"
+   ]
+  },
+  {
+   "name": "R1-M13-job-id-unchecked.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M13-job-id-unchecked"
+   ]
+  },
+  {
+   "name": "R1-M13-job-id-unchecked.test",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "R1-M13-job-id-unchecked.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "restore",
+    "R1-M13-job-id-unchecked"
+   ]
+  },
+  {
+   "name": "R1-M14-attempt-digest-unchecked.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M14-attempt-digest-unchecked"
+   ]
+  },
+  {
+   "name": "R1-M14-attempt-digest-unchecked.test",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "R1-M14-attempt-digest-unchecked.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "restore",
+    "R1-M14-attempt-digest-unchecked"
+   ]
+  },
+  {
+   "name": "R1-M15-staging-not-removed.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M15-staging-not-removed"
+   ]
+  },
+  {
+   "name": "R1-M15-staging-not-removed.test",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "R1-M15-staging-not-removed.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "restore",
+    "R1-M15-staging-not-removed"
+   ]
+  },
+  {
+   "name": "restored.test",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "restored.hashes",
+   "argv": [
+    "sha256sum",
+    "crates/work-engine-review-hosted/src/check.rs",
+    "crates/work-engine-review-hosted/src/subject.rs",
+    "crates/work-engine-review-hosted/src/secrets.rs",
+    "crates/work-engine-review-hosted/src/task.rs",
+    "crates/work-engine-review-hosted/src/inputs.rs"
+   ]
+  }
+ ]
+}

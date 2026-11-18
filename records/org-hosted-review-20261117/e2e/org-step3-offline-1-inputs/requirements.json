@@ -1,0 +1,101 @@
+{
+  "problemScope": {
+    "runId": "hosted-route-qualification-r2-20261118",
+    "planLineage": "timestamp-projection-v1",
+    "sliceNumber": 1
+  },
+  "obligations": [
+    {
+      "id": "rp3-initial-implementation-review",
+      "kind": "candidate_review",
+      "subject": "campaign_candidate",
+      "resultContract": {
+        "id": "implementation-review",
+        "version": 1
+      },
+      "scope": {
+        "digest": "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51"
+      }
+    }
+  ],
+  "acceptanceConditions": [
+    {
+      "id": "cond-builder-projection",
+      "obligation": "rp3-initial-implementation-review",
+      "consumptionBoundary": "builder_projection",
+      "consumerClass": "builder",
+      "proposition": "Route qualification only (requirements revision hosted-route-qualification-r2): the initial RP3 implementation review answer for the pinned candidate was produced on the hosted Pi analysis profile work-engine.pi-analysis-hosted.v1 by the requested model claude-haiku-5-5 via Pi provider claude-sdk (Claude Code in the inference container, Anthropic Messages family, provider family anthropic), reading the subject only through the Host-served read-only snapshot tools snapshot_list and snapshot_read, which Claude Code presents as mcp__pi__snapshot_list and mcp__pi__snapshot_read. It is not the guarded Claude reviewer the frozen requirements name: execution confinement is not established. No qualification outcome establishes this condition for builder projection or makes the result consumable.",
+      "coveredState": "review-result",
+      "normative": {
+        "continuity": "fresh_initial",
+        "mutation": "none",
+        "capabilities": [],
+        "integrity": "verified_artifacts",
+        "evidenceCustody": "execution_evidence_custody",
+        "observerClass": "independent_execution_evidence"
+      },
+      "realizationConstraints": [
+        {
+          "dimension": "provider_family",
+          "allowed": [
+            "anthropic"
+          ]
+        }
+      ],
+      "acceptor": "operator-production-qualification-20261107",
+      "unestablishedRoute": "hold-consumption-for-owner-disposition"
+    },
+    {
+      "id": "cond-campaign-terminalization",
+      "obligation": "rp3-initial-implementation-review",
+      "consumptionBoundary": "campaign_terminalization",
+      "consumerClass": "campaign",
+      "proposition": "Route qualification only (requirements revision hosted-route-qualification-r2): the initial RP3 implementation review answer for the pinned candidate was produced on the hosted Pi analysis profile work-engine.pi-analysis-hosted.v1 by the requested model claude-haiku-5-5 via Pi provider claude-sdk (Claude Code in the inference container, Anthropic Messages family, provider family anthropic), reading the subject only through the Host-served read-only snapshot tools snapshot_list and snapshot_read, which Claude Code presents as mcp__pi__snapshot_list and mcp__pi__snapshot_read. It is not the guarded Claude reviewer the frozen requirements name: execution confinement is not established. No qualification outcome establishes this condition for campaign terminalization or makes the result consumable.",
+      "coveredState": "review-result",
+      "normative": {
+        "continuity": "fresh_initial",
+        "mutation": "none",
+        "capabilities": [],
+        "integrity": "verified_artifacts",
+        "evidenceCustody": "execution_evidence_custody",
+        "observerClass": "independent_execution_evidence"
+      },
+      "realizationConstraints": [
+        {
+          "dimension": "provider_family",
+          "allowed": [
+            "anthropic"
+          ]
+        }
+      ],
+      "acceptor": "operator-production-qualification-20261107",
+      "unestablishedRoute": "hold-consumption-for-owner-disposition"
+    }
+  ],
+  "requiredAuthorities": [
+    {
+      "id": "auth-accept-builder-projection",
+      "principal": "operator-production-qualification-20261107",
+      "permission": "accept_claim",
+      "scope": {
+        "boundaries": [
+          "builder_projection"
+        ]
+      }
+    },
+    {
+      "id": "auth-accept-campaign-terminalization",
+      "principal": "operator-production-qualification-20261107",
+      "permission": "accept_claim",
+      "scope": {
+        "boundaries": [
+          "campaign_terminalization"
+        ]
+      }
+    }
+  ],
+  "organizationPolicy": {
+    "mode": "fixed",
+    "profile": "fixed-slice-review-v1"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "R1-M4-subject-equality-unchecked.test",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 131804,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 135635,
+  "pgid": 135635,
+  "started_at": "2026-11-18T00:54:58.682356Z",
+  "ended_at": "2026-11-18T00:55:06.362271Z",
+  "duration_s": 7.68,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M4-subject-equality-unchecked.test.stdout",
+    "length": 3912,
+    "sha256": "fd2a03a6a6b19f89c71ba7d1e96985b33e5794e7cc7ada8efb33c5c8dd1fbd03"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M4-subject-equality-unchecked.test.stderr",
+    "length": 1300,
+    "sha256": "c2f36c3a8991a0ce80e104d709c4802d87df077e3463c3d26c880cb7e5d353bb"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

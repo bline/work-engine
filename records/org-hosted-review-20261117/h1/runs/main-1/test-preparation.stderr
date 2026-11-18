@@ -1,0 +1,5 @@
+   Compiling work-engine-review-preparation v0.1.0 (/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-preparation)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.70s
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/work_engine_review_preparation-b25c8f5c10032d6e)
+     Running tests/preparation.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/preparation-c6284eef2b7b332b)
+   Doc-tests work_engine_review_preparation

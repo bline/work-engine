@@ -1,0 +1,112 @@
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 12 tests
+test acceptable_fixture_is_accepted_and_ungrounded_evidence_is_flagged ... FAILED
+test answer_sha_mismatch_is_refused ... ok
+test grounded_evidence_is_counted ... ok
+test state_directory_loads_result_ledger_and_bodies ... ok
+test subject_mismatch_is_refused ... ok
+test fenced_answer_is_refused_without_repair ... FAILED
+test delivery_prefix_mismatch_is_refused ... ok
+test schema_violation_is_refused ... ok
+test remediation_fixture_is_accepted ... FAILED
+test result_check_binary_writes_the_envelope_and_exits_by_outcome ... FAILED
+test contract_digest_mismatch_is_refused ... ok
+test delivery_refuses_attempt_digest_mismatch_extra_user_text_and_missing_body ... ok
+
+failures:
+
+---- acceptable_fixture_is_accepted_and_ungrounded_evidence_is_flagged stdout ----
+
+thread 'acceptable_fixture_is_accepted_and_ungrounded_evidence_is_flagged' (72708) panicked at crates/work-engine-review-hosted/tests/check.rs:112:5:
+assertion `left == right` failed
+  left: Bool(true)
+ right: false
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- fenced_answer_is_refused_without_repair stdout ----
+
+thread 'fenced_answer_is_refused_without_repair' (72713) panicked at crates/work-engine-review-hosted/tests/check.rs:112:5:
+assertion `left == right` failed
+  left: Bool(true)
+ right: false
+
+---- remediation_fixture_is_accepted stdout ----
+
+thread 'remediation_fixture_is_accepted' (72715) panicked at crates/work-engine-review-hosted/tests/check.rs:112:5:
+assertion `left == right` failed
+  left: Bool(true)
+ right: false
+
+---- result_check_binary_writes_the_envelope_and_exits_by_outcome stdout ----
+
+thread 'result_check_binary_writes_the_envelope_and_exits_by_outcome' (72716) panicked at crates/work-engine-review-hosted/tests/check.rs:112:5:
+assertion `left == right` failed
+  left: Bool(true)
+ right: false
+
+
+failures:
+    acceptable_fixture_is_accepted_and_ungrounded_evidence_is_flagged
+    fenced_answer_is_refused_without_repair
+    remediation_fixture_is_accepted
+    result_check_binary_writes_the_envelope_and_exits_by_outcome
+
+test result: FAILED. 8 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.08s
+
+
+running 6 tests
+test hosted_claim_states_what_the_host_enforces ... ok
+test revision_is_the_frozen_requirements_with_exactly_the_authorized_changes ... ok
+test revision_compiles_with_the_unchanged_compiler ... ok
+test frozen_candidate_with_the_hosted_claim_is_refused ... ok
+test revision_world_prepares_and_freezes_with_every_blocker_kept ... ok
+test frozen_candidate_writes_no_job_inputs ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s
+
+
+running 12 tests
+test request_context_bound_is_snapshot_times_one_and_a_quarter_plus_task ... ok
+test rule_negatives_stay_quiet ... ok
+test tree_mismatch_is_refused ... ok
+test job_inputs_binary_refuses_and_writes_nothing ... ok
+test identity_ok_snapshot_is_changed_files_patch_and_subject ... ok
+test scope_digest_not_the_patch_identity_is_refused ... ok
+test patch_identity_mismatch_is_refused ... ok
+test job_inputs_bind_the_revision_scope_digest_to_the_subject ... ok
+test merge_and_root_commits_are_refused ... ok
+test binary_and_non_utf8_members_are_refused ... ok
+test each_secret_rule_refuses_with_rule_and_path_and_no_content ... ok
+test oversize_snapshot_is_refused ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.11s
+
+
+running 4 tests
+test template_is_digest_pinned ... ok
+test limits_outside_the_host_bounds_are_refused ... ok
+test task_over_the_prompt_bound_is_refused ... ok
+test task_is_template_then_contract_verbatim_and_fits_the_prompt_bound ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

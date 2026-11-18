@@ -1,0 +1,41 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "R1-M10-env-member-path-missed.apply",
+  "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M10-env-member-path-missed"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 131804,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 144775,
+  "pgid": 144775,
+  "started_at": "2026-11-18T00:55:45.190464Z",
+  "ended_at": "2026-11-18T00:55:45.268158Z",
+  "duration_s": 0.078,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M10-env-member-path-missed.apply.stdout",
+    "length": 52,
+    "sha256": "9a989da0ad8f2aec2a40d424f4ce121bcb74d872f534d525814634d3eae01132"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M10-env-member-path-missed.apply.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

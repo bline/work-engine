@@ -1,0 +1,15 @@
+cargo test --manifest-path /home/bline/cbm-work/wt-org-hosted-review-20261117/rust/Cargo.toml -p work-engine-review-hosted --offline
+(final run, after the mutant was restored; check.rs sha256 af1e66ed... equals the pre-mutant hash)
+
+tests/check.rs:    29 passed; 0 failed   (includes claude_sdk_tolerates_total_tokens_system_messages_and_records_digests,
+                                          claude_sdk_refuses_system_messages_outside_the_observed_positions)
+tests/revision.rs: 10 passed; 0 failed
+tests/subject.rs:  17 passed; 0 failed
+tests/task.rs:      4 passed; 0 failed
+unit tests (lib, 2 bins), doc-tests: 0 tests
+total: 60 passed, 0 failed (58 before this remediation + 2 new)
+
+Mutant run (condition `if false && i != 1 && !is_tool_results_only_user(..)` = accept a system message at any position),
+`cargo test ... --test check`: 27 passed, 2 FAILED
+  claude_sdk_refuses_system_messages_outside_the_observed_positions   ("system message after an assistant message was not refused")
+  claude_sdk_refuses_extra_user_text_and_stray_roles                  ("system message after messages[1] was not refused")

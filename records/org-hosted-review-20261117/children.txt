@@ -1,0 +1,12 @@
+81fa1fde-0ad7-466d-af63-8069311ff143 D3 hosted review design Opus high
+a80934d1-fea2-41a1-8df9-b9fcfcd82e11 D3 design review Fable xhigh
+f0edc2b1-cbde-4f3b-9b7c-5567654491ad H1 builder Opus high
+dffe32f2-7ac3-4cdb-a48b-8ee9d9e8f463 H1 review Fable high
+3d624767-b82f-418e-bbf8-6a96ac685cb6 failed resume (empty prompt; stopped)
+be365537-dcf7-4413-b2c2-a13130b2e33c H1 remediation-1 copy-on-resume of f0edc2b1 Opus high
+df1b3602-1823-42b2-9a86-b29d48f915ba H1 remediation-2 retarget claude-sdk (resume of be365537) Opus high
+bc99178d-6f2e-465d-8974-720a29b738d7 H1 remediation-2 retarget fresh Opus high
+70a3eb94-c9d0-46b9-996a-fd88cdf77ee3 H1 remediation-3 retarget finish Opus high
+ff0c979e-f24e-483b-a31b-b340039d3a18 H1 remediation-4 Sonnet high
+9c5201d6-36d4-4fd7-b9d7-abd82ddbc78b H1 remediation-5 Sonnet high
+a35990e4-9eda-4542-8de2-82cc551f078f H1 recheck Fable high

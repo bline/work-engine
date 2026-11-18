@@ -1,0 +1,231 @@
+{
+  "scope_budget": {
+    "schema": "manual-orchestration.scope-budget.v2",
+    "objective_id": "df3e0560-3da8-4899-a267-2937dfe13173",
+    "sessions": [],
+    "bindings": [
+      {
+        "session_id": "81fa1fde-0ad7-466d-af63-8069311ff143",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T20:58:29Z",
+        "bound_by": "supervisor",
+        "reason": "D3 hosted review design Opus high"
+      },
+      {
+        "session_id": "a80934d1-fea2-41a1-8df9-b9fcfcd82e11",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T21:09:03Z",
+        "bound_by": "supervisor",
+        "reason": "D3 design review Fable xhigh"
+      },
+      {
+        "session_id": "f0edc2b1-cbde-4f3b-9b7c-5567654491ad",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-18T00:14:14Z",
+        "bound_by": "supervisor",
+        "reason": "H1 builder Opus high"
+      },
+      {
+        "session_id": "dffe32f2-7ac3-4cdb-a48b-8ee9d9e8f463",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-18T00:36:39Z",
+        "bound_by": "supervisor",
+        "reason": "H1 review Fable high"
+      },
+      {
+        "session_id": "be365537-dcf7-4413-b2c2-a13130b2e33c",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-18T00:47:02Z",
+        "bound_by": "supervisor",
+        "reason": "H1 remediation-1 (resume of f0edc2b1)"
+      },
+      {
+        "session_id": "df1b3602-1823-42b2-9a86-b29d48f915ba",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-18T05:57:57Z",
+        "bound_by": "supervisor",
+        "reason": "H1 remediation-2 retarget (resume of be365537)"
+      },
+      {
+        "session_id": "bc99178d-6f2e-465d-8974-720a29b738d7",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-18T16:23:37Z",
+        "bound_by": "supervisor",
+        "reason": "H1 remediation-2 retarget fresh"
+      },
+      {
+        "session_id": "70a3eb94-c9d0-46b9-996a-fd88cdf77ee3",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-18T16:38:47Z",
+        "bound_by": "supervisor",
+        "reason": "H1 remediation-3 retarget finish"
+      },
+      {
+        "session_id": "ff0c979e-f24e-483b-a31b-b340039d3a18",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-18T16:48:08Z",
+        "bound_by": "supervisor",
+        "reason": "H1 remediation-4 tests/mutants/record"
+      },
+      {
+        "session_id": "9c5201d6-36d4-4fd7-b9d7-abd82ddbc78b",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-18T17:00:26Z",
+        "bound_by": "supervisor",
+        "reason": "H1 remediation-5 total_tokens system messages"
+      },
+      {
+        "session_id": "a35990e4-9eda-4542-8de2-82cc551f078f",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-18T17:04:36Z",
+        "bound_by": "supervisor",
+        "reason": "H1 Fable recheck rem 1-5"
+      },
+      {
+        "session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "provider": "pi",
+        "parent_session_id": null,
+        "bound_at": "2026-11-18T19:20:01Z",
+        "bound_by": "supervisor",
+        "reason": "Root Pi session (claude-sdk) bound so Pi subagent children join the cost tree (operator 2026-11-18 Pi-native accounting)"
+      }
+    ],
+    "cost_limits": [
+      {
+        "pool": "claude_all_models",
+        "node": null,
+        "max_usd": 75.0,
+        "marks_usd": [],
+        "set_by": "user",
+        "set_at": "2026-11-18T19:19:55Z",
+        "reason": "Operator 2026-11-18 'do 1 and 2 now': step-3 closeout (P3-1/P3-2/CLAIMS fixes + checker reruns, est $1-2) and commit/merge of S1 + step-3 crate; ceiling $73 -> $75",
+        "basis": "speed_adjusted_api_usd"
+      }
+    ],
+    "objective": "Step 3: real read-only review on the dev-vertical hosted path producing implementation-review/v1 validated by review-episode-core (no consumption)",
+    "original_items": [
+      "D3 read-only design/sizing on the hosted analysis profile (1051e660) + Fable review + dev-vertical coordination",
+      "Implementation slice(s) per accepted design, offline qualification, then live hosted review run(s)"
+    ],
+    "started_at": "2026-11-17T20:57:43Z",
+    "weekly_at_start": null,
+    "limits": {},
+    "limits_set_by": "user",
+    "limits_reason": "Operator 2026-11-17 ~20:50Z 'Yes, step 3 and budget authorized' on root estimate ~$30-45 + a few dollars live inference; recorded as $50 incl. live; all reviews Fable high/xhigh",
+    "limit_history": [
+      {
+        "cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 50.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-17T20:57:43Z",
+          "reason": "Operator 2026-11-17 ~20:50Z 'Yes, step 3 and budget authorized' on root estimate ~$30-45 + a few dollars live inference; recorded as $50 incl. live; all reviews Fable high/xhigh",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 65.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-18T16:22:31Z",
+          "reason": "Operator 2026-11-18 'yes to all': step-3 ceiling $50 -> $65 (retarget, Fable recheck, offline e2e, live reserve); per-job reserved exposure up to $5.30 for a 4-request claude-haiku-5-5 review; live-start threshold $53",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 50.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-17T20:57:43Z",
+          "reason": "Operator 2026-11-17 ~20:50Z 'Yes, step 3 and budget authorized' on root estimate ~$30-45 + a few dollars live inference; recorded as $50 incl. live; all reviews Fable high/xhigh",
+          "basis": "speed_adjusted_api_usd"
+        }
+      },
+      {
+        "cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 70.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-18T16:38:40Z",
+          "reason": "Operator 2026-11-18 Option A: step-3 ceiling $65 -> $70 to finish retarget, Fable recheck, offline e2e and live",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 65.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-18T16:22:31Z",
+          "reason": "Operator 2026-11-18 'yes to all': step-3 ceiling $50 -> $65 (retarget, Fable recheck, offline e2e, live reserve); per-job reserved exposure up to $5.30 for a 4-request claude-haiku-5-5 review; live-start threshold $53",
+          "basis": "speed_adjusted_api_usd"
+        }
+      },
+      {
+        "cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 73.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-18T17:12:15Z",
+          "reason": "Operator 2026-11-18 'do it': ceiling $70 -> $73 to resume cap-stopped Fable recheck a35990e4 on warm 1h cache, then live",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 70.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-18T16:38:40Z",
+          "reason": "Operator 2026-11-18 Option A: step-3 ceiling $65 -> $70 to finish retarget, Fable recheck, offline e2e and live",
+          "basis": "speed_adjusted_api_usd"
+        }
+      },
+      {
+        "cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 75.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-18T19:19:55Z",
+          "reason": "Operator 2026-11-18 'do 1 and 2 now': step-3 closeout (P3-1/P3-2/CLAIMS fixes + checker reruns, est $1-2) and commit/merge of S1 + step-3 crate; ceiling $73 -> $75",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 73.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-18T17:12:15Z",
+          "reason": "Operator 2026-11-18 'do it': ceiling $70 -> $73 to resume cap-stopped Fable recheck a35990e4 on warm 1h cache, then live",
+          "basis": "speed_adjusted_api_usd"
+        }
+      }
+    ],
+    "additions": []
+  }
+}

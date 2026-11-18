@@ -1,0 +1,13 @@
+{
+  "revision": "aec8408056c56a711cdc544c99b1e883fadb3353",
+  "claim": {
+    "resource": "worktree:/home/bline/cbm-work/wt-org-hosted-review-20261117",
+    "claim_id": "22a60c23-b407-4a77-be46-7725cd90f822",
+    "author": "pi-claude-org-compilation-root",
+    "session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+    "claimed_at": "2026-11-18T00:13:02.663487Z",
+    "expires_at": "2026-11-18T12:13:02.663487Z",
+    "note": "Org step 3 H1: new crate work-engine-review-hosted (+ workspace member, lockfile) and a versioned requirements revision fixture; no edits to dev-vertical crates",
+    "authority": "advisory_coordination_only"
+  }
+}

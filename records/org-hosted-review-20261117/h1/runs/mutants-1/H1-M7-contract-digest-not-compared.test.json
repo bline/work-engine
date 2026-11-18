@@ -1,0 +1,42 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "H1-M7-contract-digest-not-compared.test",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 60473,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 69397,
+  "pgid": 69397,
+  "started_at": "2026-11-18T00:32:27.636674Z",
+  "ended_at": "2026-11-18T00:32:31.781286Z",
+  "duration_s": 4.145,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M7-contract-digest-not-compared.test.stdout",
+    "length": 3233,
+    "sha256": "e01b89f08f8bb4bd186990970cee0a07ea110bff0d8787b25b1a9559518f2803"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M7-contract-digest-not-compared.test.stderr",
+    "length": 1300,
+    "sha256": "b851bf2d665a623adb901de0381e62297b0b60b64b6b9c0e7390238c2187fc09"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

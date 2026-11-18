@@ -1,0 +1,18 @@
+{
+ "mutant": "H1-M9-envelope-consumable",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/check.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "95ddf0fad98b92449be15d956e237df298ce6ac73f4b86866f92b19e2739dc78",
+   "mutated_sha256": "3b9036e559e8834b08dd771972a147eadf5fbc80bf2614a25948cbb3ce1d3fbc"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/check.rs",
+   "old": "        consumable: false,",
+   "new": "        consumable: true,"
+  }
+ ]
+}

@@ -1,0 +1,72 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/plans/main.json",
+  "plan_sha256": "e89aeb19fc897e5a16ce5bc987b461c4f8fa50cb5d1f6af52e55ecc9ac1f5353",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "fmt",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/runs/main-1/fmt.json",
+      "record_sha256": "d93719c1c88cfe5f15b0fcbd71f30da6f8768253bc95e8e29b7a9b16b1305b4b",
+      "leftovers": 0
+    },
+    {
+      "name": "clippy",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/runs/main-1/clippy.json",
+      "record_sha256": "17424b7760661068aad2d535e0ff7a7ac1ea7f2407d4dd575201507af271aa51",
+      "leftovers": 0
+    },
+    {
+      "name": "test-hosted",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/runs/main-1/test-hosted.json",
+      "record_sha256": "ba9b04b75e48218c95fc5017ea18a0e88a49ddb80754059e83c06b9f534e86f2",
+      "leftovers": 0
+    },
+    {
+      "name": "test-preparation",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/runs/main-1/test-preparation.json",
+      "record_sha256": "a4b3701933ee55d15e8f9d30e412d2e1e5d60e8df73ca397434d5345d31ca731",
+      "leftovers": 0
+    },
+    {
+      "name": "test-delivery",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/runs/main-1/test-delivery.json",
+      "record_sha256": "9a3fbdcabd713fbcd8a93063ad8f4685b6485831a96fe6fc8eca2099fcebba28",
+      "leftovers": 0
+    },
+    {
+      "name": "test-organization",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/runs/main-1/test-organization.json",
+      "record_sha256": "3f16674b368483caf24eed3d24a9fb9d8c869d02a00b60d86b3d6b0be93f6f80",
+      "leftovers": 0
+    },
+    {
+      "name": "hashes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/runs/main-1/hashes.json",
+      "record_sha256": "18680c53c51c81dbcfd14d94166a5d998b0653d3cb6be9f8671a466b9ae427e5",
+      "leftovers": 0
+    },
+    {
+      "name": "diffstat",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/runs/main-1/diffstat.json",
+      "record_sha256": "7d3d36ff75ad746f381e1a283f73034148e02b1eab5ceca9d9189cb02a53d16c",
+      "leftovers": 0
+    },
+    {
+      "name": "status",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/runs/main-1/status.json",
+      "record_sha256": "ab627c460edcec89adb39b20d8fa6e6026a37e06f7120a9772b02837e5a84ff7",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

@@ -1,0 +1,99 @@
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 18 tests
+test remediation_fixture_is_accepted ... ok
+test answer_sha_mismatch_is_refused ... ok
+test acceptable_fixture_is_accepted_and_ungrounded_evidence_is_flagged ... ok
+test grounded_evidence_is_counted_against_the_served_manifest ... ok
+test fenced_answer_is_refused_without_repair ... ok
+test contract_digest_mismatch_is_refused ... ok
+test delivery_prefix_mismatch_is_refused ... ok
+test host_reported_fields_are_carried_and_unknowns_are_null ... ok
+test delivery_refuses_extra_text_after_the_task_and_suffix ... FAILED
+test subject_must_be_bound_to_scope_and_served_patch ... ok
+test result_check_binary_writes_the_envelope_and_exits_by_outcome ... ok
+test subject_mismatch_is_refused ... ok
+test run_directory_loads_result_ledger_bodies_and_job_artifacts ... ok
+test schema_violation_is_refused ... ok
+test served_snapshot_must_be_the_vetted_one_and_pinned_by_the_job ... ok
+test job_id_and_limits_must_be_the_runs ... ok
+test delivery_refuses_attempt_digest_mismatch_extra_user_text_and_missing_body ... ok
+test delivery_refuses_another_model_or_tool_set ... ok
+
+failures:
+
+---- delivery_refuses_extra_text_after_the_task_and_suffix stdout ----
+
+thread 'delivery_refuses_extra_text_after_the_task_and_suffix' (143038) panicked at crates/work-engine-review-hosted/tests/check.rs:174:5:
+assertion `left == right` failed
+  left: "checks_passed"
+ right: "checks_failed"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    delivery_refuses_extra_text_after_the_task_and_suffix
+
+test result: FAILED. 17 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s
+
+
+running 6 tests
+test revision_is_the_frozen_requirements_with_exactly_the_authorized_changes ... ok
+test hosted_claim_states_what_the_host_enforces ... ok
+test revision_compiles_with_the_unchanged_compiler ... ok
+test frozen_candidate_with_the_hosted_claim_is_refused ... ok
+test revision_world_prepares_and_freezes_with_every_blocker_kept ... ok
+test frozen_candidate_writes_no_job_inputs ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+
+running 17 tests
+test request_context_bound_is_snapshot_times_one_and_a_quarter_plus_task ... ok
+test read_budget_counts_snapshot_list_and_patch_pages ... ok
+test bundle_writes_atomically_and_leaves_nothing_on_failure ... ok
+test rule_negatives_stay_quiet ... ok
+test unsafe_member_path_components_are_refused ... ok
+test patch_identity_mismatch_is_refused ... ok
+test v2_alternatives_each_hit ... ok
+test identity_ok_snapshot_is_changed_files_patch_and_subject ... ok
+test job_inputs_binary_refuses_and_writes_nothing ... ok
+test scope_digest_not_the_patch_identity_is_refused ... ok
+test job_inputs_bind_the_revision_scope_digest_to_the_subject ... ok
+test tree_mismatch_is_refused ... ok
+test merge_and_root_commits_are_refused ... ok
+test sensitive_member_and_deleted_binary_are_refused_by_materialize ... ok
+test binary_and_non_utf8_members_are_refused ... ok
+test each_secret_rule_refuses_with_rule_and_path_and_no_content ... ok
+test oversize_snapshot_is_refused ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.74s
+
+
+running 4 tests
+test limits_outside_the_host_bounds_are_refused ... ok
+test template_is_digest_pinned ... ok
+test task_over_the_prompt_bound_is_refused ... ok
+test task_is_template_then_contract_verbatim_and_fits_the_prompt_bound ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

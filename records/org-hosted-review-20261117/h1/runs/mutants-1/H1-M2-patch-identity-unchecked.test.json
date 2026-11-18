@@ -1,0 +1,42 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "H1-M2-patch-identity-unchecked.test",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 60473,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 62245,
+  "pgid": 62245,
+  "started_at": "2026-11-18T00:32:05.088899Z",
+  "ended_at": "2026-11-18T00:32:07.624547Z",
+  "duration_s": 2.536,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M2-patch-identity-unchecked.test.stdout",
+    "length": 3284,
+    "sha256": "616d1b1d1fc3e8f7eefed3c10d862911c7a0f103ac50029fbe958448640827d0"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M2-patch-identity-unchecked.test.stderr",
+    "length": 1304,
+    "sha256": "1c20bdab889a9fa41792677e52befbedf9d8b49d576474d4070607775ea0b682"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

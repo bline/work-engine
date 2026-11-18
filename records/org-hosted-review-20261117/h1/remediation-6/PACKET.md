@@ -1,0 +1,14 @@
+# H1 remediation 6 packet: close review-2's recommended P3 findings
+
+You are a bounded builder. Parent: Pi root `01a1e56e-be12-7424-977b-c7c7983887d0`. No children.
+
+Entry: worktree `/home/bline/cbm-work/wt-org-hosted-review-20261117/rust`, crate `crates/work-engine-review-hosted` (uncommitted on `700f45e3`), files equal `/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-5/final-hashes.txt` (`sha256sum -c` from the worktree root); 60 tests pass. Review: `/home/bline/cbm-work/org-hosted-review-20261117/h1/review-2/REVIEW.md` (Fable, accept_with_changes, seven P3). Read its P3-1, P3-2, P3-4, P3-7 text and do exactly what it proposes:
+
+1. **P3-1**: the Host suffix is checked by length only. Add `HOST_SUFFIX_SHA256` in `src/task.rs` (sha256 of the exact suffix bytes, computed from the Host source `/home/bline/code/work-engine/rust/crates/pi-pressure-context-host/src/analysis.rs:42-47`; cite it; do not copy the suffix text into the crate) and require `sha256(text[task.len()..]) == HOST_SUFFIX_SHA256` in `task_with_suffix`, on both wires. Test: same-length different suffix refuses `delivery`. Mutant: skip the digest comparison; the test must kill it.
+2. **P3-2**: add a failing check `job_profile_bound`: `job.json` `coding.provider.provider` and `coding.provider.model` must equal the profile's provider and model. Tests: positive, wrong provider, wrong model. Mutant: skip the check; killed.
+3. **P3-4**: fix the stale `CLAIMS.md` lines (~94-96): the real Claude Code body shape is now observed in one offline and one live run (`/home/bline/cbm-work/org-hosted-review-20261117/e2e/org-step3-offline-1`, `.../org-step3-live-1`); say what was observed (positions of role-system insertions, string/text content), n = 2 runs, and that other live shapes remain not established.
+4. **P3-7**: print the number (or `not established`) instead of Rust `Some(0)` in the `frozen_world_unmet` detail.
+
+Do not change anything else. Then: full crate tests green (`cargo test --manifest-path /home/bline/cbm-work/wt-org-hosted-review-20261117/rust/Cargo.toml -p work-engine-review-hosted --offline`), `cargo fmt -p work-engine-review-hosted`, no warnings. Write `/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-6/RESULT.md` (per item: change, file:line, tests, mutant command + killing test + restore hash), `final-hashes.txt` (same form as remediation 5: every crate file + `rust/Cargo.toml` + `rust/Cargo.lock`, paths relative to the worktree root), `test-output.txt`; append one line to `h1/MATRIX.md`.
+
+Limits: no commit, stage, branch or other mutating git; never read `/etc/work-engine`, `/var/lib/work-engine`, `~/.local/state/work-engine`, `~/.pi`, `~/.codex`, `~/.claude`, credentials, or the run directories' `private/` folders; no network, Docker or live providers. Write RESULT.md early and keep it current. Budget about $1; stop and report if the work grows beyond these four items.

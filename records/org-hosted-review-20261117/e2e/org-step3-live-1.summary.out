@@ -1,0 +1,157 @@
+{
+ "scenario": "live",
+ "exit": 0,
+ "elapsed_s": 24.5,
+ "stdout": "{\"acceptance\":\"owner_pending\",\"domain_effect_settlement\":\"not_claimed\",\"receipt_id\":\"646ddef664575acf10fbc041378f93fa1503bf7222bfb84acb4490429a87ebd6\",\"result\":\"/home/bline/cbm-work/org-hosted-review-20261117/e2e/org-step3-live-1/state/analysis-result.json\",\"status\":\"bounded_live_analysis_completed\"}",
+ "stderr": "",
+ "phase": "collected",
+ "failures": [],
+ "completed": true,
+ "ledger": {
+  "1": {
+   "settled_microusd": 2535,
+   "attempts": [
+    {
+     "attempt": 1,
+     "route": "primary",
+     "payer": "claude-subscription",
+     "reserved_microusd": 1320001,
+     "disposition": "completed",
+     "http_status": 200,
+     "relay_sha256": "4821195ef1ec15139431ce940e95fa38a6a8b2caf887f82cb52242667ad17300",
+     "refusal_body_sha256": null,
+     "settled_microusd": 2535,
+     "reason": null,
+     "gate_entered": true,
+     "deadline_ms": 1795024751000,
+     "routes_sha256": "4c8de7b01abdc9729dd254c38b5f55825d60d3892de368b73be0e26f3f8c6d6d",
+     "framed_end_observed": true,
+     "request_body_sha256": "c8467f2e56d8b115c015fa7a55571fd39f32392e12c78abb8a4a9d0e4bbbb37f"
+    }
+   ]
+  },
+  "2": {
+   "settled_microusd": 322,
+   "attempts": [
+    {
+     "attempt": 1,
+     "route": "primary",
+     "payer": "claude-subscription",
+     "reserved_microusd": 1320001,
+     "disposition": "completed",
+     "http_status": 200,
+     "relay_sha256": "d7c3ee2f33285db11baa167109fc3f1becae3083c6a022eee5ea0746ff997e2a",
+     "refusal_body_sha256": null,
+     "settled_microusd": 322,
+     "reason": null,
+     "gate_entered": true,
+     "deadline_ms": 1795024751000,
+     "routes_sha256": "4c8de7b01abdc9729dd254c38b5f55825d60d3892de368b73be0e26f3f8c6d6d",
+     "framed_end_observed": true,
+     "request_body_sha256": "5099399e4b3fc170a2397bf6135e3f28ce9bf30839e9504787da444001c921f2"
+    }
+   ]
+  },
+  "3": {
+   "settled_microusd": 2354,
+   "attempts": [
+    {
+     "attempt": 1,
+     "route": "primary",
+     "payer": "claude-subscription",
+     "reserved_microusd": 1320001,
+     "disposition": "completed",
+     "http_status": 200,
+     "relay_sha256": "1de09dc5097ef9a9752cf6f4d0649d44dabac4c5e474187f9b2b5ca6dcae7c93",
+     "refusal_body_sha256": null,
+     "settled_microusd": 2354,
+     "reason": null,
+     "gate_entered": true,
+     "deadline_ms": 1795024751000,
+     "routes_sha256": "4c8de7b01abdc9729dd254c38b5f55825d60d3892de368b73be0e26f3f8c6d6d",
+     "framed_end_observed": true,
+     "request_body_sha256": "9cdbcabbb0c93cd67ae9082a58d5f9bea8d2a8ce71b9f1b34363a7f32dc36732"
+    }
+   ]
+  }
+ },
+ "snapshot_requests": {
+  "toolu_014j5BNLyy5MN9D4L8fG72Y4": {
+   "path": "/home/bline/cbm-work/org-hosted-review-20261117/e2e/org-step3-live-1/state/coding-snapshot-a41a790beac9862f4b49d7eb3664a9135de48de64be6c974c1774d8504a85454.json",
+   "sha256": "122e3938b1732b06f48273709386d4fcb04b0346932695ab4ff6a955422bb71d"
+  },
+  "toolu_017ntCVZeYsRAcK4a3xtnSeW": {
+   "path": "/home/bline/cbm-work/org-hosted-review-20261117/e2e/org-step3-live-1/state/coding-snapshot-44e5598b8381b2e5d7ddae87ab9c509e0db8d3d21571948d24ab66f529c81682.json",
+   "sha256": "ee8c95148d858b1f08a5e43165e066b15ffdaa57c95f4a074925dc14a09d4492"
+  },
+  "toolu_01KMCE77WLGBzYWpZtuktoA6": {
+   "path": "/home/bline/cbm-work/org-hosted-review-20261117/e2e/org-step3-live-1/state/coding-snapshot-30d465b4f4e9225514f4eee0c38288f4874c77a82572bece097b60244a83735e.json",
+   "sha256": "64feee17aff35d7be5928b978c898ff5e2f7ae69c32ce1e513997a44044a1a81"
+  },
+  "toolu_01YSq5WifdqxbeAtjQHrv8Hg": {
+   "path": "/home/bline/cbm-work/org-hosted-review-20261117/e2e/org-step3-live-1/state/coding-snapshot-8ca1a92077b5fc85d0a2b968a09a281f90403fad52e1e204df9b12f7024f86b0.json",
+   "sha256": "97755dd1ac0adff6cc2d16c03b52b896f106c4587d5e4989215f1ebc5f497fd3"
+  }
+ },
+ "snapshot_tools": {
+  "toolu_014j5BNLyy5MN9D4L8fG72Y4": "snapshot_read",
+  "toolu_017ntCVZeYsRAcK4a3xtnSeW": "snapshot_list",
+  "toolu_01KMCE77WLGBzYWpZtuktoA6": "snapshot_read",
+  "toolu_01YSq5WifdqxbeAtjQHrv8Hg": "snapshot_read"
+ },
+ "native_snapshot_ids": [
+  "toolu_014j5BNLyy5MN9D4L8fG72Y4",
+  "toolu_017ntCVZeYsRAcK4a3xtnSeW",
+  "toolu_01KMCE77WLGBzYWpZtuktoA6",
+  "toolu_01YSq5WifdqxbeAtjQHrv8Hg"
+ ],
+ "sdk_refused_ids": [],
+ "observer": [],
+ "result": {
+  "answer": "{\"schemaVersion\":1,\"subject\":{\"commit\":\"96808de3d565a6c4b0211e8dc263cb7343514d74\",\"tree\":\"9c5d94ba059ea5b4ff497a0540f6b8a7476e4474\",\"patchIdentity\":\"5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51\"},\"verdict\":\"acceptable_as_is\",\"findings\":[],\"decisiveEvidence\":[{\"path\":\".review/patch.diff\",\"startLine\":1,\"endLine\":34,\"sha256\":\"5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51\"},{\"path\":\"rust/crates/context-pressure/src/timestamp.rs\",\"startLine\":171,\"endLine\":199,\"sha256\":\"589ecffa40f3667189f0ba7c8f5413f24e3f0b2285f401803b77364383291684\"}],\"limitations\":[\"The review was read-only: the snapshot holds no shell, so the Rust crate was not compiled and the tests were not run. The verdict rests on manual tracing of the new assertions against the existing parser logic.\",\"The change adds only test code (an offset_regressions test module) to timestamp.rs. The four unestablished blockers in the contract (scope digest to subject, problem scope to episode identity, separation, realization admission) concern the review's delivery and authority, not the code, and are not addressed by this verdict.\",\"Only the two snapshot members and the subject's post-change file were examined; the parent-tree content of the rest of timestamp.rs was taken from the diff context lines, not read separately.\"]}",
+  "answer_sha256": "338a533fd58ce973cf36176d75e6004ef3ea073c04dcb231bb2d6db5c1375d91",
+  "hosted_attempts": [
+   {
+    "deadlineMs": 1795024751000,
+    "intent": {
+     "attempt": 1,
+     "payer": "claude-subscription",
+     "request": 1,
+     "route": "primary"
+    },
+    "invocationId": "analysis",
+    "policy": "071bd7ab7a988c64b3e507c6fae7db1f5d5950836a0db563c18ca7267718899a"
+   },
+   {
+    "deadlineMs": 1795024751000,
+    "intent": {
+     "attempt": 1,
+     "payer": "claude-subscription",
+     "request": 2,
+     "route": "primary"
+    },
+    "invocationId": "analysis",
+    "policy": "071bd7ab7a988c64b3e507c6fae7db1f5d5950836a0db563c18ca7267718899a"
+   },
+   {
+    "deadlineMs": 1795024751000,
+    "intent": {
+     "attempt": 1,
+     "payer": "claude-subscription",
+     "request": 3,
+     "route": "primary"
+    },
+    "invocationId": "analysis",
+    "policy": "071bd7ab7a988c64b3e507c6fae7db1f5d5950836a0db563c18ca7267718899a"
+   }
+  ],
+  "provider_requests": 3,
+  "schema": "work-engine.pi-analysis-result.v1",
+  "settlement": "CompletedSettled",
+  "snapshot_deliveries": 4,
+  "standing": "live-provider hosted analysis; real inference; no research standing, owner acceptance or domain effect"
+ },
+ "containers_after": [],
+ "qualification_sha256": "65e86592c85cefe50cf5dc490c4b7d35f88224ff305683682e25a4aecfc8f86e",
+ "observer_sha256": "a837d94b9912dbd32e2293ead1f2ba3e1bd5bd926c7a849ee06fa195c33b0481"
+}

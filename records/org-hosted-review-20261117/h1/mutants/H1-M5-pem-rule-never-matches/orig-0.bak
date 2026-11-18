@@ -1,0 +1,154 @@
+//! The closed, named, versioned rule set for private or secret material (operator decision
+//! D3/OQ-2, 2026-11-17). Every snapshot member is scanned line by line; any hit refuses with the
+//! rule id, member path and line number. Matched content is never echoed.
+//!
+//! The rules are deliberately broad and have no allow-list: a false positive refuses the job,
+//! which is the safe direction for material leaving to a provider. A changed rule is a new
+//! [`RULESET_ID`].
+
+use regex::Regex;
+use serde::{Deserialize, Serialize};
+use std::sync::OnceLock;
+
+pub const RULESET_ID: &str = "work-engine.review-hosted-secret-rules.v1";
+
+/// Rule ids, in evaluation order.
+pub const RULE_IDS: [&str; 5] = [
+    PEM_PRIVATE_KEY,
+    CREDENTIAL_TOKEN_PREFIX,
+    SECRET_ASSIGNMENT,
+    PRIVATE_PATH,
+    EMAIL_ADDRESS,
+];
+/// A PEM private key block header (`-----BEGIN … PRIVATE KEY-----`).
+pub const PEM_PRIVATE_KEY: &str = "pem-private-key";
+/// A common credential token prefix with a token-shaped tail: `sk-` (incl. `sk-ant-`, `sk-proj-`),
+/// GitHub `ghp_`/`gho_`/`ghu_`/`ghs_`/`ghr_`/`github_pat_`, Slack `xox?-`, AWS `AKIA`, Google
+/// `AIza`, GitLab `glpat-`, npm `npm_`.
+pub const CREDENTIAL_TOKEN_PREFIX: &str = "credential-token-prefix";
+/// A `password|passwd|secret|token|api[_-]?key` name assigned (`=` or `:`) a quoted literal of at
+/// least 8 characters that is not trivial (see [`non_trivial`]).
+pub const SECRET_ASSIGNMENT: &str = "secret-assignment";
+/// An absolute or home-relative path under `~/.pi`, `~/.codex`, `~/.claude`,
+/// `~/.local/state/work-engine` (as `~`, `$HOME`, `/root` or `/home/<user>`), or `/etc/work-engine`.
+pub const PRIVATE_PATH: &str = "private-path";
+/// An e-mail address.
+pub const EMAIL_ADDRESS: &str = "email-address";
+
+/// One hit: rule, member and 1-based line. No content.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SecretHit {
+    pub rule: String,
+    pub path: String,
+    pub line: usize,
+}
+
+struct Rule {
+    id: &'static str,
+    pattern: Regex,
+    /// Capture group 1 must pass this predicate for the match to count.
+    value_filter: Option<fn(&str) -> bool>,
+}
+
+const HOME: &str = r#"(?:~|\$HOME|\$\{HOME\}|/root|/home/[^/\s"'`]+)"#;
+
+fn rules() -> &'static [Rule] {
+    static RULES: OnceLock<Vec<Rule>> = OnceLock::new();
+    RULES.get_or_init(|| {
+        let re = |p: &str| Regex::new(p).expect("rule pattern compiles");
+        vec![
+            Rule {
+                id: PEM_PRIVATE_KEY,
+                pattern: re(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----"),
+                value_filter: None,
+            },
+            Rule {
+                id: CREDENTIAL_TOKEN_PREFIX,
+                pattern: re(concat!(
+                    r"\b(?:sk-(?:ant-|proj-)?[A-Za-z0-9_-]{20,}",
+                    r"|gh[pousr]_[A-Za-z0-9]{30,}",
+                    r"|github_pat_[A-Za-z0-9_]{30,}",
+                    r"|xox[abprs]-[A-Za-z0-9-]{10,}",
+                    r"|AKIA[0-9A-Z]{16}",
+                    r"|AIza[0-9A-Za-z_-]{35}",
+                    r"|glpat-[A-Za-z0-9_-]{20,}",
+                    r"|npm_[A-Za-z0-9]{36})"
+                )),
+                value_filter: None,
+            },
+            Rule {
+                id: SECRET_ASSIGNMENT,
+                pattern: re(
+                    r#"(?i)(?:password|passwd|secret|token|api[_-]?key)[A-Za-z0-9_.-]*["']?\s*[:=]\s*["']([^"'\s]{8,})["']"#,
+                ),
+                value_filter: Some(non_trivial),
+            },
+            Rule {
+                id: PRIVATE_PATH,
+                pattern: re(&format!(
+                    r#"{HOME}/\.(?:pi|codex|claude)(?:[/\s"'`),;:]|$)|{HOME}/\.local/state/work-engine|/etc/work-engine"#
+                )),
+                value_filter: None,
+            },
+            Rule {
+                id: EMAIL_ADDRESS,
+                pattern: re(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}"),
+                value_filter: None,
+            },
+        ]
+    })
+}
+
+/// A literal is trivial when it is a placeholder, an environment-variable name, a template
+/// reference or has fewer than four distinct characters.
+pub fn non_trivial(value: &str) -> bool {
+    let lower = value.to_ascii_lowercase();
+    let placeholder = [
+        "example",
+        "placeholder",
+        "changeme",
+        "redacted",
+        "dummy",
+        "your_",
+        "your-",
+        "xxxx",
+        "****",
+        "<",
+        "${",
+        "{{",
+    ]
+    .iter()
+    .any(|p| lower.contains(p));
+    let env_name = value
+        .bytes()
+        .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'_');
+    let distinct = value
+        .chars()
+        .collect::<std::collections::BTreeSet<_>>()
+        .len();
+    !(placeholder || env_name || value.starts_with('$') || distinct < 4)
+}
+
+/// Scans one member; every hit, in line then rule order.
+pub fn scan(path: &str, text: &str) -> Vec<SecretHit> {
+    let mut hits = Vec::new();
+    for (index, line) in text.lines().enumerate() {
+        for rule in rules() {
+            let hit = match rule.value_filter {
+                None => rule.pattern.is_match(line),
+                Some(filter) => rule
+                    .pattern
+                    .captures_iter(line)
+                    .any(|c| c.get(1).is_some_and(|m| filter(m.as_str()))),
+            };
+            if hit {
+                hits.push(SecretHit {
+                    rule: rule.id.to_owned(),
+                    path: path.to_owned(),
+                    line: index + 1,
+                });
+            }
+        }
+    }
+    hits
+}

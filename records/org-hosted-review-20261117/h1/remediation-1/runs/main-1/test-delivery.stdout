@@ -1,0 +1,24 @@
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 8 tests
+test strict_wire_representation_keeps_json_like_strings_and_rejects_recursive_duplicates ... ok
+test toolsets_and_provider_entry_are_refused ... ok
+test possible_delivery_without_a_complete_observation_is_uncertain_not_refused_as_wrong ... ok
+test a_fully_consistent_observation_verifies_and_returns_the_observed_text ... ok
+test each_wrong_identity_or_byte_is_refused_by_its_owner_check ... ok
+test the_envelope_carries_the_complete_preparation_and_adds_transport_only ... ok
+test freezing_is_deterministic_and_transport_changes_only_transport ... ok
+test frames_with_unknown_members_are_invalid_and_never_a_permitted_success ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 1 test
+test crates/work-engine-review-delivery/src/lib.rs - (line 33) - compile fail ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+

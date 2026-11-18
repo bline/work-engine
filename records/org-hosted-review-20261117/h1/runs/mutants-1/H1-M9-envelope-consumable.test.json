@@ -1,0 +1,42 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "H1-M9-envelope-consumable.test",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 60473,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 71797,
+  "pgid": 71797,
+  "started_at": "2026-11-18T00:32:39.523969Z",
+  "ended_at": "2026-11-18T00:32:49.312538Z",
+  "duration_s": 9.789,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M9-envelope-consumable.test.stdout",
+    "length": 4237,
+    "sha256": "00d079a702eb6c59d3b210a394b36c417e13173916fe68068807cf5c199b8139"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M9-envelope-consumable.test.stderr",
+    "length": 1300,
+    "sha256": "29302f8dabb720d06f6610ef9de7406605f747ef5748ddd399f83d145cdb3f6a"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

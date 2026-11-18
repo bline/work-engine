@@ -1,0 +1,18 @@
+{
+ "mutant": "H1-M5-pem-rule-never-matches",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/secrets.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "dcffbcaab3c316850986ab456e373e445b0bc3fd5281a3ef92f30816afacd359",
+   "mutated_sha256": "04fe7a1db1a33a93bf527970b7db8cd8793f178306f04b52d3e4a5d3e4eb72f0"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/secrets.rs",
+   "old": "PRIVATE KEY(?: BLOCK)?-----",
+   "new": "PRIVATE KEYS(?: BLOCK)?-----"
+  }
+ ]
+}

@@ -1,0 +1,18 @@
+{
+ "mutant": "R1-M2-prompt-bound-slack",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/task.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "f9f503e997c92908d166f96bf66bb18c1f3e213b800d5808a96ea5b65856fc1d",
+   "mutated_sha256": "8fde1b83a9690484a4877672f69a5054b1a2b0f4471daded5cab453309267634"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/task.rs",
+   "old": "    if task.len() + HOST_SUFFIX_BYTES > MAX_PROMPT_BYTES {",
+   "new": "    if task.len() + HOST_SUFFIX_BYTES > MAX_PROMPT_BYTES + 1 {"
+  }
+ ]
+}

@@ -1,0 +1,42 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "H1-M5-pem-rule-never-matches.test",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 60473,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 66141,
+  "pgid": 66141,
+  "started_at": "2026-11-18T00:32:14.898017Z",
+  "ended_at": "2026-11-18T00:32:20.058910Z",
+  "duration_s": 5.161,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M5-pem-rule-never-matches.test.stdout",
+    "length": 8422,
+    "sha256": "0281d82d1ae030ec4d32bf4932cf202766a2c5fcef50c9419245e87133a98f10"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M5-pem-rule-never-matches.test.stderr",
+    "length": 1304,
+    "sha256": "7985a3d4d3bbc8cb2f1bd48414d05fdeb5841ea41b04196fcf85c3397a933dff"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}
