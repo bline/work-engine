@@ -45,6 +45,7 @@ METER_MAX_AGE_SECONDS = 300
 COST_BASIS = 'speed_adjusted_api_usd'
 LIMITS = ("max_weekly_points", "max_weekly_percent", "reconsider_after_additions")
 POOLS = ("codex", "claude_all_models", "claude_fable", "pi_api")
+PROVIDERS = ("codex", "claude", "pi")
 LEDGER = Path("metrics/scripts/usage_ledger.py")
 SPEND_KINDS = ("mark_crossed", "node_mark_crossed", "limit_fraction", "limit_reached")
 
@@ -627,7 +628,7 @@ def parser() -> argparse.ArgumentParser:
     i.add_argument("--session-from", help="the session's first transcript time, when orientation began before init; "
                                         "the ledger counts from the earliest session start")
     i.add_argument("--session-from-evidence")
-    i.add_argument("--provider", choices=("codex", "claude"))
+    i.add_argument("--provider", choices=PROVIDERS)
     i.add_argument("--pool", required=True, choices=POOLS, help="pool of the objective's dollar limit")
     i.add_argument("--max-usd", type=float, required=True,
                    help="objective dollar limit (API-equivalent, speed-adjusted); cost-limit adds pools and nodes")
@@ -643,14 +644,14 @@ def parser() -> argparse.ArgumentParser:
     a2 = sub.add_parser("add-session")
     a2.add_argument("--record", required=True)
     a2.add_argument("--session", required=True)
-    a2.add_argument("--provider", required=True, choices=("codex", "claude"))
+    a2.add_argument("--provider", required=True, choices=PROVIDERS)
     a2.add_argument("--from", dest="from_time", required=True)
     a2.add_argument("--bound-by", required=True, choices=("init", "rotation", "supervisor", "user"))
     a2.add_argument("--evidence")
     b = sub.add_parser("bind")
     b.add_argument("--record", required=True)
     b.add_argument("--session", required=True)
-    b.add_argument("--provider", required=True, choices=("codex", "claude"))
+    b.add_argument("--provider", required=True, choices=PROVIDERS)
     b.add_argument("--parent")
     b.add_argument("--bound-by", required=True, choices=("supervisor", "user"))
     b.add_argument("--reason", required=True)

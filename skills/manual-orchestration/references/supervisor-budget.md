@@ -23,11 +23,11 @@ An addition is something the original items do not cover: a new deliverable, com
 
 <!-- cli-synopsis script=skills/manual-orchestration/scripts/scope_budget.py display="python3 -I <skill-dir>/scripts/scope_budget.py" -->
 ```text
-python3 -I <skill-dir>/scripts/scope_budget.py init --record RECORD --objective OBJECTIVE --item ITEM [--rollout ROLLOUT] [--session SESSION] [--session-from SESSION_FROM] [--session-from-evidence SESSION_FROM_EVIDENCE] [--provider {codex,claude}] --pool {codex,claude_all_models,claude_fable,pi_api} --max-usd MAX_USD [--mark-usd MARK_USD] [--max-weekly-points MAX_WEEKLY_POINTS] [--max-weekly-percent MAX_WEEKLY_PERCENT] [--reconsider-after-additions RECONSIDER_AFTER_ADDITIONS] --set-by {user,supervisor} [--reason REASON]
+python3 -I <skill-dir>/scripts/scope_budget.py init --record RECORD --objective OBJECTIVE --item ITEM [--rollout ROLLOUT] [--session SESSION] [--session-from SESSION_FROM] [--session-from-evidence SESSION_FROM_EVIDENCE] [--provider {codex,claude,pi}] --pool {codex,claude_all_models,claude_fable,pi_api} --max-usd MAX_USD [--mark-usd MARK_USD] [--max-weekly-points MAX_WEEKLY_POINTS] [--max-weekly-percent MAX_WEEKLY_PERCENT] [--reconsider-after-additions RECONSIDER_AFTER_ADDITIONS] --set-by {user,supervisor} [--reason REASON]
 python3 -I <skill-dir>/scripts/scope_budget.py add --record RECORD --item ITEM --reason REASON
 python3 -I <skill-dir>/scripts/scope_budget.py revise --record RECORD [--max-weekly-points MAX_WEEKLY_POINTS] [--max-weekly-percent MAX_WEEKLY_PERCENT] [--reconsider-after-additions RECONSIDER_AFTER_ADDITIONS] --set-by {user,supervisor} [--reason REASON]
-python3 -I <skill-dir>/scripts/scope_budget.py add-session --record RECORD --session SESSION --provider {codex,claude} --from FROM_TIME --bound-by {init,rotation,supervisor,user} [--evidence EVIDENCE]
-python3 -I <skill-dir>/scripts/scope_budget.py bind --record RECORD --session SESSION --provider {codex,claude} [--parent PARENT] --bound-by {supervisor,user} --reason REASON
+python3 -I <skill-dir>/scripts/scope_budget.py add-session --record RECORD --session SESSION --provider {codex,claude,pi} --from FROM_TIME --bound-by {init,rotation,supervisor,user} [--evidence EVIDENCE]
+python3 -I <skill-dir>/scripts/scope_budget.py bind --record RECORD --session SESSION --provider {codex,claude,pi} [--parent PARENT] --bound-by {supervisor,user} --reason REASON
 python3 -I <skill-dir>/scripts/scope_budget.py cost-limit --record RECORD --pool {codex,claude_all_models,claude_fable,pi_api} [--node NODE] [--max-usd MAX_USD] [--mark-usd MARK_USD] --set-by {user,supervisor} --reason REASON
 python3 -I <skill-dir>/scripts/scope_budget.py close --record RECORD --disposition {accepted,abandoned} --reason REASON --set-by {user,supervisor} [--at AT]
 python3 -I <skill-dir>/scripts/scope_budget.py listen --record RECORD --session SESSION [--since SINCE] [--topic TOPIC] [--interval INTERVAL] [--repository REPOSITORY]

@@ -217,6 +217,20 @@ class ScopeBudgetTest(unittest.TestCase):
         self.assertEqual(sb["cost_limits"][0]["max_usd"], 20)
         self.assertEqual(sb["limit_history"][-1]["previous_cost_limit"]["marks_usd"], [2, 5])
 
+    def test_pi_child_binding_and_node_cap(self):
+        call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--pool", "pi_api",
+             "--max-usd", "5", "--set-by", "user", "--session", "root", "--provider", "pi")
+        self.assertEqual(call("bind", "--record", str(self.rec), "--session", "pi-child", "--provider", "pi",
+                              "--parent", "root", "--bound-by", "supervisor", "--reason", "pi child")[0], 0)
+        self.assertEqual(call("add-session", "--record", str(self.rec), "--session", "pi-next", "--provider", "pi",
+                              "--from", "2026-10-30T00:00:00Z", "--bound-by", "rotation")[0], 0)
+        self.assertEqual(call("cost-limit", "--record", str(self.rec), "--pool", "pi_api", "--node", "pi-child",
+                              "--max-usd", "1", "--set-by", "user", "--reason", "cap")[0], 0)
+        sb = json.loads(self.rec.read_text())["scope_budget"]
+        self.assertEqual([s["provider"] for s in sb["sessions"]], ["pi", "pi"])
+        self.assertEqual(sb["bindings"][0]["provider"], "pi")
+        self.assertEqual((sb["cost_limits"][-1]["pool"], sb["cost_limits"][-1]["node"]), ("pi_api", "pi-child"))
+
     def test_cost_limits_preserve_other_setters_and_history(self):
         call("init", "--record", str(self.rec), "--objective", "x", "--item", "a", "--pool", "codex", "--max-usd", "3", "--set-by", "user")
         for node in (None, "child"):
