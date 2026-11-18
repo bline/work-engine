@@ -39,11 +39,25 @@ pub const ANALYSIS_PROFILE: &str = "work-engine.pi-analysis-hosted.v1";
 pub fn is_live_bridge(schema: &str) -> bool {
     is_hosted(schema)
 }
+/// Lifecycle relay (Pi Host realization, `native-realization` `pi_host`):
+/// the analysis profile's Host-held access, dispatch and no-effect surface,
+/// with the pinned lifecycle tools relayed to the controller instead of
+/// served by the Host.
+pub const LIFECYCLE_PROFILE: &str = "work-engine.pi-lifecycle-hosted.v1";
+/// Finite per-thread bound on relayed tool calls.
+pub const MAX_RELAYS: u32 = 256;
+/// Upper bound of a relay thread's job deadline (H4: above the 300-second
+/// job cap of the other profiles).
+pub const RELAY_DEADLINE_SECONDS: u64 = 3600;
 pub fn is_hosted(schema: &str) -> bool {
-    schema == HOSTED_BRIDGE_PROFILE || schema == ANALYSIS_PROFILE
+    schema == HOSTED_BRIDGE_PROFILE || is_analysis(schema)
 }
+/// The no-effect hosted family: Host-served (analysis) or relayed tools.
 pub fn is_analysis(schema: &str) -> bool {
-    schema == ANALYSIS_PROFILE
+    schema == ANALYSIS_PROFILE || is_relay(schema)
+}
+pub fn is_relay(schema: &str) -> bool {
+    schema == LIFECYCLE_PROFILE
 }
 /// The live coding continuity profile (one shell call, one reset).
 fn is_continuity(schema: &str) -> bool {
@@ -82,7 +96,9 @@ fn tools_match(advertised: &Value, schema: &str) -> bool {
     }
 }
 fn ready_tools(schema: &str) -> Value {
-    if is_analysis(schema) {
+    if is_relay(schema) {
+        json!(native_realization::pi_host::tools::names())
+    } else if is_analysis(schema) {
         json!(analysis::TOOLS)
     } else if schema == CLAIMS_BRIDGE_PROFILE {
         json!(
@@ -167,6 +183,18 @@ pub trait CodingEffectGate {
         _artifact: &Artifact,
     ) -> Result<()> {
         refuse("analysis snapshot deliveries unavailable")
+    }
+    /// Lifecycle relay profile only: relay one Pi tool call to the
+    /// controller and return its answer (success, text) unchanged. The intent
+    /// is persisted before the call and the result retained after it.
+    fn relay(
+        &mut self,
+        _id: &str,
+        _tool: &str,
+        _arguments: &Value,
+        _until: std::time::Instant,
+    ) -> Result<(bool, String)> {
+        refuse("lifecycle tool relay unavailable")
     }
     /// Called only after the exact result artifact is persisted in the journal.
     fn observed(
@@ -375,7 +403,9 @@ impl Profile {
         }
         if self.schema
             != if self.provider.is_some() {
-                if is_analysis(&self.schema) {
+                if is_relay(&self.schema) {
+                    LIFECYCLE_PROFILE
+                } else if is_analysis(&self.schema) {
                     ANALYSIS_PROFILE
                 } else {
                     HOSTED_BRIDGE_PROFILE
@@ -399,7 +429,9 @@ impl Profile {
                 !self.fixture_command.is_empty()
             }
             // Analysis: `max_tool_calls` bounds the Host snapshot deliveries.
-            || !(1..=if is_analysis(&self.schema) {
+            || !(1..=if is_relay(&self.schema) {
+                MAX_RELAYS
+            } else if is_analysis(&self.schema) {
                 analysis::MAX_READS
             } else {
                 8
@@ -746,6 +778,60 @@ fn verify(j: &Journal, v: &Value, tool: bool, validation: bool) -> Result<()> {
 }
 pub(super) fn verify_inference(j: &Journal, v: &Value) -> Result<()> {
     verify(j, v, false, false)
+}
+/// Protected-surface observation of a relay thread's inference container
+/// (H5): a fresh `docker inspect` under the job's pinned Docker client,
+/// checked by the same containment verifier the Host applies at launch
+/// (identity, image, labels, user, no network, read-only root, capabilities,
+/// limits, exact mounts and environment), plus `running`. Read-only; it
+/// grants nothing. The journal is the Host's durable `pi-state.json`.
+pub fn observe_relay_container(state_dir: &Path) -> Result<Value> {
+    let j: Journal = serde_json::from_slice(&fs::read(state_dir.join("pi-state.json"))?)?;
+    if j.job.coding.as_ref().is_none_or(|p| !is_relay(&p.schema)) || j.container_id.is_none() {
+        return refuse("observation outside a launched relay thread");
+    }
+    if file_digest(&j.job.docker.path, None)? != j.job.docker.sha256 {
+        return refuse("docker client pin conflict");
+    }
+    let output = std::process::Command::new(&j.job.docker.path)
+        .args(["inspect", "--type", "container", &j.container_name])
+        .stdin(std::process::Stdio::null())
+        .output()?;
+    if !output.status.success() || output.stdout.len() > 1 << 20 {
+        return refuse("container inspection failed");
+    }
+    let all: Value = serde_json::from_slice(&output.stdout)?;
+    let v = match all.as_array().map(Vec::as_slice) {
+        Some([v]) => v.clone(),
+        _ => return refuse("container inspection is not one container"),
+    };
+    verify(&j, &v, false, false)?;
+    if v["State"]["Running"] != true {
+        return refuse("inference container is not running");
+    }
+    let mounts: Vec<Value> = v["Mounts"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|m| json!({"destination":m["Destination"],"rw":m["RW"]}))
+        .collect();
+    let auth = mounts.iter().any(|m| {
+        m["destination"]
+            .as_str()
+            .is_some_and(|d| d == "/auth" || d.starts_with("/auth/"))
+    });
+    if auth {
+        return refuse("inference container mounts /auth");
+    }
+    Ok(
+        json!({"schema":"work-engine.pi-host-observation.v1","container_id":v["Id"],
+        "container_name":j.container_name,"image":v["Config"]["Image"],"running":true,
+        "network_mode":v["HostConfig"]["NetworkMode"],"readonly_rootfs":v["HostConfig"]["ReadonlyRootfs"],
+        "user":v["Config"]["User"],"mounts":mounts,"auth_mount":false,
+        "containment_verified":true,"inspect_sha256":digest(&output.stdout),
+        "observed_unix_ms":std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_millis() as u64).unwrap_or(0)}),
+    )
 }
 impl Host {
     /// Gate binding is explicit, fresh and non-recoverable. Existing profiles

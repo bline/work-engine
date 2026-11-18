@@ -11,7 +11,10 @@
 //!
 //! `HOSTED_OBSERVER_SCENARIO`: `ok` (default) or `retry-head` (the
 //! secondary's first response is a 500, which is not a definitive refusal:
-//! the attempt is uncertain and no further request may arrive).
+//! the attempt is uncertain and no further request may arrive), or `relay`
+//! (the lifecycle relay profile's tools, Pi Host controller mode: an
+//! `mcp__pi__snapshot_read`, an `mcp__pi__result_publish`, the first turn's
+//! answer, then the second turn's answer).
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{
@@ -147,13 +150,15 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     );
     std::io::stdout().flush()?;
     let scenario = std::env::var("HOSTED_OBSERVER_SCENARIO").unwrap_or_else(|_| "ok".into());
-    if !matches!(scenario.as_str(), "ok" | "retry-head") {
+    if !matches!(scenario.as_str(), "ok" | "retry-head" | "relay") {
         return Err("unknown scenario".into());
     }
     let deadline = Instant::now() + Duration::from_secs(600);
     let (mut served, mut refused) = (0usize, 0usize);
     let mut authority: std::collections::BTreeMap<&str, String> = Default::default();
-    while served < 3 {
+    let relay = scenario == "relay";
+    let total = if relay { 4 } else { 3 };
+    while served < total {
         if Instant::now() > deadline {
             return Err("observer deadline".into());
         }
@@ -186,15 +191,21 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             .filter_map(|t| t["name"].as_str())
             .collect();
         names.sort_unstable();
-        if v["model"] != MODEL
-            || v["stream"] != true
-            || names
-                != [
-                    "DeferredToolPlaceholder",
-                    "mcp__pi__snapshot_list",
-                    "mcp__pi__snapshot_read",
-                ]
-        {
+        let expected: &[&str] = if relay {
+            &[
+                "DeferredToolPlaceholder",
+                "mcp__pi__question_open",
+                "mcp__pi__result_publish",
+                "mcp__pi__snapshot_read",
+            ]
+        } else {
+            &[
+                "DeferredToolPlaceholder",
+                "mcp__pi__snapshot_list",
+                "mcp__pi__snapshot_read",
+            ]
+        };
+        if v["model"] != MODEL || v["stream"] != true || names != expected {
             return Err(format!("projection: {names:?}").into());
         }
         let receipt = json!({"route":route,"requestId":r.id,"bodySha256":hash(&r.body),
@@ -246,6 +257,30 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             return Ok(());
         }
         let reply = match served {
+            1 if relay => sse(
+                1,
+                &[Block::Tool(
+                    "mcp__pi__snapshot_read".into(),
+                    json!({"snapshot_id":"snapshot:serve-qual","member_id":"docs/claim.md","offset":0,"length":4096}),
+                )],
+            ),
+            2 if relay => sse(
+                2,
+                &[Block::Tool(
+                    "mcp__pi__result_publish".into(),
+                    json!({"result_id":"result-1","body":"The claim states a 200,000-token threshold.",
+                        "source_refs":[{"id":"src-1","owner_namespace":"task","owner_ref":"owner-1","revision":1,"sha256":"1".repeat(64)}],
+                        "attribution":"native:claude-haiku-5-5"}),
+                )],
+            ),
+            n if relay => sse(
+                n,
+                &[Block::Text(if n == 3 {
+                    "Published result-1 from the claim member.".into()
+                } else {
+                    "I published result-1 citing the claim member.".into()
+                })],
+            ),
             1 => sse(
                 1,
                 &[Block::Tool("mcp__pi__snapshot_list".into(), json!({}))],

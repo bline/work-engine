@@ -814,6 +814,12 @@ impl Host {
             job["frameBytes"] = json!(super::analysis::FRAME_BYTES);
             job["maxReads"] = json!(profile.max_tool_calls);
             job["pageBytes"] = json!(super::analysis::PAGE_BYTES);
+            if super::is_relay(&profile.schema) {
+                // Relayed lifecycle tools: the pinned definitions, executed by
+                // the controller; the receiver returns each answer unchanged.
+                job["schema"] = json!(super::LIFECYCLE_PROFILE);
+                job["tools"] = native_realization::pi_host::tools::receiver_tools();
+            }
         }
         atomic(&public.join("job.json"), &job)?;
         Ok(())

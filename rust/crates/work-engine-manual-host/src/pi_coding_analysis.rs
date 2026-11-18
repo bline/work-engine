@@ -23,6 +23,8 @@ pub const PAGE_BYTES: usize = 24_576;
 const SNAPSHOT_BYTES: u64 = 1 << 20;
 const SNAPSHOT_FILES: usize = 256;
 const MAX_ARGUMENT_BYTES: usize = 1024;
+/// Relayed call arguments (a `result_publish` body is up to 8 KiB).
+const MAX_RELAY_ARGUMENT_BYTES: usize = 32_768;
 const MAX_RESULT_BYTES: usize = 100_000;
 /// The settled answer bound (the store's analysis grammar refuses longer).
 pub const MAX_ANSWER_BYTES: usize = 65_536;
@@ -66,21 +68,45 @@ pub(super) fn check_answer_bound(event: &Value) -> Result<()> {
     }
     Ok(())
 }
+/// SHA-256 of the Responses `tools` the pinned receiver and SDK send on the
+/// lifecycle relay profile (`native-realization` `pi_host::tools`). Not yet
+/// observed (no Responses relay run): the zero value refuses every request.
+pub const RELAY_TOOLS_SHA256: &str =
+    "0000000000000000000000000000000000000000000000000000000000000000";
+/// SHA-256 of the Messages `tools` on the relay profile's `claude-sdk` route:
+/// Claude Code's `DeferredToolPlaceholder` and the pinned tools as
+/// `mcp__pi__<name>` (from the first offline run's refusal message, and
+/// equal to the digest of that array rebuilt from `pi_host::tools`).
+pub const RELAY_CLAUDE_SDK_TOOLS_SHA256: &str =
+    "7e97ed24669af3a0bd142c5163906ba608a96874f3229feee64190880104c847";
+/// The profile's tool names (Host-served or relayed).
+fn profile_tools(schema: &str) -> Vec<&'static str> {
+    if is_relay(schema) {
+        native_realization::pi_host::tools::names()
+    } else {
+        TOOLS.to_vec()
+    }
+}
 /// The request's tool surface: exactly the profile's function tools, with the
 /// pinned specification digest.
-pub(super) fn check_request_tools(tools: &Value) -> Result<()> {
+pub(super) fn check_request_tools(schema: &str, tools: &Value) -> Result<()> {
     let Some(list) = tools.as_array() else {
         return refuse("analysis request tools absent");
     };
     let mut names: Vec<&str> = list.iter().filter_map(|t| t["name"].as_str()).collect();
     names.sort_unstable();
-    let mut expected = TOOLS.to_vec();
+    let mut expected = profile_tools(schema);
     expected.sort_unstable();
     let actual = digest(&serde_json::to_vec(tools)?);
     if names != expected || list.iter().any(|t| t["type"] != "function") {
         return refuse("analysis request tool set differs from the profile");
     }
-    if actual != TOOLS_SHA256 {
+    let pinned = if is_relay(schema) {
+        RELAY_TOOLS_SHA256
+    } else {
+        TOOLS_SHA256
+    };
+    if actual != pinned {
         return refuse(format!(
             "analysis request tool specification differs from the pinned digest (got {actual})"
         ));
@@ -96,7 +122,7 @@ pub const CLAUDE_SDK_TOOLS_SHA256: &str =
     "4dc958d99fc79a7cc2736c0216fc83e592c8fce53e6dc5e302116f195fa0e503";
 /// The Messages request's tool surface: exactly the profile's tools as the
 /// plan's Pi provider names them, with the pinned specification digest.
-pub(super) fn check_messages_tools(provider: &str, tools: &Value) -> Result<()> {
+pub(super) fn check_messages_tools(schema: &str, provider: &str, tools: &Value) -> Result<()> {
     let Some(list) = tools.as_array() else {
         return refuse("analysis request tools absent");
     };
@@ -104,7 +130,11 @@ pub(super) fn check_messages_tools(provider: &str, tools: &Value) -> Result<()> 
         "claude-sdk" => (
             "mcp__pi__",
             &["DeferredToolPlaceholder"],
-            CLAUDE_SDK_TOOLS_SHA256,
+            if is_relay(schema) {
+                RELAY_CLAUDE_SDK_TOOLS_SHA256
+            } else {
+                CLAUDE_SDK_TOOLS_SHA256
+            },
         ),
         _ => return refuse("analysis request provider unknown"),
     };
@@ -113,7 +143,7 @@ pub(super) fn check_messages_tools(provider: &str, tools: &Value) -> Result<()> 
         .filter_map(|t| t["name"].as_str().map(str::to_owned))
         .collect();
     names.sort_unstable();
-    let mut expected: Vec<String> = TOOLS
+    let mut expected: Vec<String> = profile_tools(schema)
         .iter()
         .map(|t| format!("{prefix}{t}"))
         .chain(extra.iter().map(|t| (*t).to_owned()))
@@ -221,6 +251,9 @@ impl Host {
         if !self.analysis_profile() {
             return refuse("snapshot request outside the analysis profile");
         }
+        if self.relay_profile() {
+            return self.coding_relay_frame(frame);
+        }
         if self.expired() || self.cancelled() {
             return refuse("snapshot admission expired/cancelled");
         }
@@ -289,9 +322,98 @@ impl Host {
             .snapshot_delivered(&id, &tool, &arguments, &result, &artifact)?;
         Ok(bytes)
     }
+    pub(crate) fn relay_profile(&self) -> bool {
+        self.journal
+            .job
+            .coding
+            .as_ref()
+            .is_some_and(|p| is_relay(&p.schema))
+    }
+    /// One relayed lifecycle tool call: durable intent, the controller's
+    /// answer through the gate, a create-only retained result, then the reply
+    /// (`{"type":"snapshot_result","id","ok","text"}`; the receiver returns
+    /// `text` to Pi unchanged).
+    fn coding_relay_frame(&mut self, frame: &Value) -> Result<Vec<u8>> {
+        if self.expired() || self.cancelled() {
+            return refuse("relay admission expired/cancelled");
+        }
+        let id = frame["id"]
+            .as_str()
+            .filter(|s| !s.is_empty() && s.len() < 128)
+            .ok_or_else(|| Error::Refused("relay id absent".into()))?
+            .to_string();
+        let tool = frame["tool"]
+            .as_str()
+            .filter(|t| native_realization::pi_host::tools::namespace(t).is_some())
+            .ok_or_else(|| Error::Refused("unknown relayed tool".into()))?
+            .to_string();
+        let arguments = frame["arguments"].clone();
+        if !arguments.is_object() || arguments.to_string().len() > MAX_RELAY_ARGUMENT_BYTES {
+            return refuse("relay arguments bound");
+        }
+        let limit = self.journal.job.coding.as_ref().unwrap().max_tool_calls as usize;
+        let state = self.journal.coding.as_mut().unwrap();
+        if state.snapshot_requests.contains_key(&id)
+            || state.sdk_refused_ids.contains(&id)
+            || state.snapshot_requests.len() >= limit
+        {
+            return refuse("duplicate or excess relayed call");
+        }
+        state.snapshot_requests.insert(id.clone(), None);
+        state.snapshot_tools.insert(id.clone(), tool.clone());
+        self.save()?; // intent precedes the relay; None stays unknown
+        let deadline_ms = self.journal.job.deadline_unix_seconds.saturating_mul(1000);
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(|_| Error::Refused("clock".into()))?
+            .as_millis() as u64;
+        if now_ms >= deadline_ms {
+            return refuse("relay deadline expired");
+        }
+        let until =
+            std::time::Instant::now() + std::time::Duration::from_millis(deadline_ms - now_ms);
+        let mut gate = self
+            .coding_gate
+            .take()
+            .ok_or_else(|| Error::Refused("coding lifecycle gate missing".into()))?;
+        let answer = gate.relay(&id, &tool, &arguments, until);
+        self.coding_gate = Some(gate);
+        let (ok, text) = answer?;
+        let result = json!({"type":"snapshot_result","id":id,"ok":ok,"text":text});
+        let bytes = serde_json::to_vec(&result)?;
+        if bytes.len() > FRAME_BYTES - 1024 {
+            return refuse("relayed result exceeds the receiver frame bound");
+        }
+        let path = self
+            .journal
+            .job
+            .state_dir
+            .join(format!("coding-relay-{}.json", digest(id.as_bytes())));
+        let mut file = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(&path)?;
+        file.write_all(&bytes)?;
+        file.sync_all()?;
+        self.journal
+            .coding
+            .as_mut()
+            .unwrap()
+            .snapshot_requests
+            .insert(
+                id,
+                Some(Artifact {
+                    sha256: digest(&bytes),
+                    path,
+                }),
+            );
+        self.save()?;
+        Ok(bytes)
+    }
     /// A native completion of an analysis tool call: either exactly the Host
     /// delivery, or an SDK refusal that never reached the Host.
     pub(super) fn analysis_native_end(&mut self, event: &Value) -> Result<()> {
+        let relay = self.relay_profile();
         let id = event["toolCallId"]
             .as_str()
             .ok_or_else(|| Error::Refused("native snapshot id absent".into()))?;
@@ -310,6 +432,20 @@ impl Host {
             return refuse("native snapshot completion mismatch");
         };
         let ok = delivered["ok"] == true;
+        if relay {
+            // Relayed: Pi's tool result is the controller's text, unchanged.
+            if event["isError"] != false
+                || state.snapshot_tools.get(id).map(String::as_str) != event["toolName"].as_str()
+                || event["result"]["content"].as_array().map(Vec::len) != Some(1)
+                || event["result"]["content"][0]["type"] != "text"
+                || event["result"]["content"][0]["text"] != delivered["text"]
+                || event["result"]["details"]["hostReportedSuccess"] != json!(ok)
+                || !state.native_snapshot_ids.insert(id.into())
+            {
+                return refuse("native relayed completion mismatch");
+            }
+            return Ok(());
+        }
         let expected = if ok {
             delivered["result"].clone()
         } else {
@@ -444,7 +580,7 @@ mod tests {
     #[test]
     fn request_tools_must_be_exactly_the_pinned_function_tools() {
         let tool = |name: &str| json!({"type":"function","name":name,"parameters":{}});
-        let err = |v: Value| match check_request_tools(&v) {
+        let err = |v: Value| match check_request_tools(ANALYSIS_PROFILE, &v) {
             Err(Error::Refused(m)) => m,
             other => panic!("{other:?}"),
         };

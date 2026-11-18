@@ -835,7 +835,10 @@ impl Host {
             return refuse("provider fetch body policy: store/background/service_tier/tools");
         }
         if analysis {
-            super::analysis::check_request_tools(&json!(declared.unwrap_or_default()))?;
+            super::analysis::check_request_tools(
+                &self.journal.job.coding.as_ref().unwrap().schema,
+                &json!(declared.unwrap_or_default()),
+            )?;
         }
         Ok(Fetch {
             headers,
@@ -887,7 +890,11 @@ impl Host {
             return refuse("provider fetch body policy: provider-hosted tool");
         }
         if analysis {
-            super::analysis::check_messages_tools(&plan.provider, &body["tools"])?;
+            super::analysis::check_messages_tools(
+                &self.journal.job.coding.as_ref().unwrap().schema,
+                &plan.provider,
+                &body["tools"],
+            )?;
         }
         if let Some(previous) = &self.hosted.last_messages
             && !canonical::is_prefix_extension(previous, &body["messages"])

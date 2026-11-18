@@ -21,6 +21,7 @@ members = [
   "crates/lifecycle-provider",
   "crates/lifecycle-codex",
   "crates/lifecycle-wire",
+  "crates/native-realization",
   "crates/lifecycle-client",
   "crates/lifecycle-service",
   "crates/lifecycle-test-support",

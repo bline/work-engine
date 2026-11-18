@@ -20,7 +20,10 @@ const config=live?JSON.parse(readFileSync('/profile/job.json','utf8')):null;
 // each request and relays the response stream (pull/cancel/ack).
 // Hosted analysis: same transport and lifecycle bridge; no shell, only the
 // Host-served read-only snapshot tools.
-const analysis=live&&config.schema==='work-engine.pi-analysis-hosted.v1';
+// Lifecycle relay: the analysis surface with the pinned lifecycle tools,
+// executed by the controller; each answer is returned to Pi unchanged.
+const relay=live&&config.schema==='work-engine.pi-lifecycle-hosted.v1';
+const analysis=live&&(config.schema==='work-engine.pi-analysis-hosted.v1'||relay);
 const hosted=live&&(config.schema==='work-engine.pi-coding-hosted.v1'||analysis);
 const SNAPSHOT_NAMES=['snapshot_list','snapshot_read'];
 const FRAME_BYTES=analysis?config.frameBytes:65536;
@@ -258,11 +261,21 @@ try {
   });
   return {content:[{type:'text',text:JSON.stringify(result.ok?result.result:{error:result.error})}],details:{hostReportedSuccess:result.ok}};
  };
- const snapshotCustom=analysis?[
+ const relayExecute=name=>async(id,args,signal)=>{
+  const result=await new Promise((resolve,reject)=>{
+   pending.set(id,resolve);
+   signal?.addEventListener('abort',()=>{pending.delete(id);reject(Error('relayed call cancelled'));},{once:true});
+   emit({type:'snapshot_request',id,tool:name,arguments:args});
+  });
+  if(typeof result.text!=='string'||typeof result.ok!=='boolean')throw Error('relayed answer malformed');
+  return {content:[{type:'text',text:result.text}],details:{hostReportedSuccess:result.ok}};
+ };
+ const relayCustom=relay?config.tools.map(t=>({name:t.name,label:t.name,description:t.description,promptSnippet:t.description,parameters:Type.Unsafe(t.parameters),executionMode:'sequential',execute:relayExecute(t.name)})):[];
+ const snapshotCustom=relay?relayCustom:analysis?[
   {name:'snapshot_list',label:'snapshot_list',description:'List the members of the read-only analysis snapshot (path, size in bytes, SHA-256). The snapshot is the only material available.',promptSnippet:'List the snapshot members',parameters:Type.Object({}),executionMode:'sequential',execute:snapshotExecute('snapshot_list')},
   {name:'snapshot_read',label:'snapshot_read',description:`Read one snapshot member as UTF-8 text, one page at a time: at most ${config.pageBytes} bytes from offset (default 0); next_offset is null at the end of the member.`,promptSnippet:'Read a page of a snapshot member',parameters:Type.Object({path:Type.String({minLength:1,maxLength:256}),offset:Type.Optional(Type.Integer({minimum:0})),max_bytes:Type.Optional(Type.Integer({minimum:1,maximum:config.pageBytes}))}),executionMode:'sequential',execute:snapshotExecute('snapshot_read')},
  ]:[];
- const activeNames=analysis?SNAPSHOT_NAMES:['workspace_exec',...(claimsTools?CLAIMS_NAMES:[])];
+ const activeNames=relay?config.tools.map(t=>t.name):analysis?SNAPSHOT_NAMES:['workspace_exec',...(claimsTools?CLAIMS_NAMES:[])];
  const baseOptions={cwd:'/workspace',agentDir,settingsManager,resourceLoader,modelRuntime,model,...providerOptions,noTools:'builtin',tools:activeNames,customTools:analysis?snapshotCustom:[tool,...claimsCustom]};
  function bindBridge(selected,services){
   session=selected;

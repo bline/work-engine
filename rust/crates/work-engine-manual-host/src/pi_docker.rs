@@ -252,8 +252,19 @@ fn check_job(job: &Job, fresh: bool) -> Result<()> {
     if !pin_is_hash(image_hash) || job.image != IMAGE {
         return refuse("only the qualified digest-pinned node image is supported");
     }
-    if fresh && (job.deadline_unix_seconds <= now() || job.deadline_unix_seconds > now() + 300) {
-        return refuse("fresh fixture deadline must be within 300 seconds");
+    // A relay thread (Pi Host realization) serves up to several controller
+    // turns under one container; every other job stays within 300 seconds.
+    let cap = if job
+        .coding
+        .as_ref()
+        .is_some_and(|p| coding::is_relay(&p.schema))
+    {
+        coding::RELAY_DEADLINE_SECONDS
+    } else {
+        300
+    };
+    if fresh && (job.deadline_unix_seconds <= now() || job.deadline_unix_seconds > now() + cap) {
+        return refuse("fresh job deadline exceeds its profile bound");
     }
     if job.receiver.is_some() && job.coding.is_some() {
         return refuse("exclusive Pi profile required");
