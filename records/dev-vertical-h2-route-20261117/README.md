@@ -343,15 +343,26 @@ attempt; receipt `container_provider_identity: claude-sdk`); `retry-head`
 fails closed as before.
 
 **Pre-dispatch subscription check** (operator decision 2026-11-18, the commit
-after `ed30ad1f`). On `https:anthropic-oauth`, the Host dispatches a request
-only if its first two system blocks are Claude Code's billing header
-(`x-anthropic-billing-header: … cc_entrypoint=sdk-ts;`) and the Agent SDK
-identity. Anything else is neither reserved nor sent: the request is answered
-`response-unavailable` (`subscription_request_not_claude_code`) and the job
-fails. The receiver also clears `PI_CLAUDE_SDK_PROMPT`, so the extension
-stays in its Claude prompt mode. The check is necessary, not sufficient; the
-response-side billing guard stays. All three live-c1 bodies satisfy it.
-Offline `w4c/ok` (`analysis-qualification` `0b8fff28…`) passes.
+after `ed30ad1f`, tightened after its review). On `https:anthropic-oauth`, the
+Host dispatches a request only if its first three system blocks are Claude
+Code's billing header (`x-anthropic-billing-header: … cc_entrypoint=sdk-ts;`),
+the Agent SDK identity and the extension's Claude prompt (`You are Claude,
+working as a coding agent in pi, a terminal coding harness.`). That is the
+shape that has stayed in plan on every live request. Pi's own prompt mode
+through the same extension (probe `run1` request 5) carries the same first
+two blocks and a different third, so the first revision's two-block check did
+not exclude it (review P2-1). Otherwise no attempt is reserved and nothing is
+sent: the request records `not_dispatched:
+subscription_request_not_claude_code`, settles at 0, the receiver's error
+names the code, and the job fails.
+
+The check reads bytes the container authors, so it guards against
+misconfiguration, not against imitation; it is not an identity proof. The
+prompt mode is also held by the receiver (it clears `PI_CLAUDE_SDK_PROMPT`)
+and by the Host's pi-config allowlist, and billing is checked again on the
+response head. All six live bodies (live-c1 and live-c2) satisfy it, and the
+probe's Pi-prompt body does not. Offline `w4d/ok` (`analysis-qualification`
+`31385d8b…`) passes.
 
 ## Thinking blocks accepted; first settled Claude analysis job (`live-c2`)
 
@@ -394,5 +405,10 @@ non-H2 task): **exit 0, `CompletedSettled`**, 23 s. Three requests, all HTTP
 then 12 reads in one response). The completion reported
 `forwarderRefused: 0`; the receipt names `claude-sdk` / `claude-haiku-5-5`.
 The answer describes each of the 12 members in one line. No subscription
-access or refresh token appears in the 94 run files, and `private-access` is
-empty. Every request body passes the pre-dispatch subscription check.
+access or refresh token appears in the 94 files scanned (92 run files plus the
+harness summary and error log), and `private-access` is empty. Every request
+body passes the pre-dispatch subscription check. Not yet exercised live:
+an exact thinking-block comparison inside a common prefix. In both live runs
+the first thinking block appears only in the last request's new part, so
+the first job with four or more requests is the first live test of it
+(review P3-1).

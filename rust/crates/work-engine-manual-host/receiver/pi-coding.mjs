@@ -144,7 +144,7 @@ const forwarder=claudeSdk?http.createServer((req,res)=>{
    res.writeHead(response.status,{'content-type':response.status===200?'text/event-stream':'application/json'});
    for await(const chunk of response.body)res.write(chunk);
    res.end();
-  }catch{clearTimeout(headTimer);if(!res.headersSent)forwardRefuse(res,502,'host relay failed');else res.destroy();}
+  }catch(e){clearTimeout(headTimer);if(!res.headersSent)forwardRefuse(res,502,`host relay failed: ${String(e?.message??'').slice(0,200)}`);else res.destroy();}
  });
 }):null;
 const input=createInterface({input:process.stdin,crlfDelay:Infinity});

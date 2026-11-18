@@ -449,10 +449,17 @@ impl stream::Screen for Screen<'_> {
     }
 }
 
-/// Claude Code's Agent SDK request shape on the subscription: the first two
-/// system blocks are its billing header (`cc_entrypoint=sdk-ts`) and the Agent
-/// SDK identity, as on every observed request. Necessary, not sufficient:
-/// Anthropic's classification is checked again on the response head.
+/// The request shape that has stayed in the subscription plan: the first three
+/// system blocks are Claude Code's billing header (`cc_entrypoint=sdk-ts`),
+/// the Agent SDK identity and the extension's Claude prompt (as on every
+/// live-c1/live-c2 request). Pi's own prompt mode, which drew Anthropic's
+/// third-party (extra usage) answer, carries the same first two blocks and a
+/// different third. A guard against misconfiguration over bytes the
+/// container authors, not an identity proof: the prompt mode is also held by
+/// the receiver (env) and the Host's pi-config allowlist, and billing is
+/// checked again on the response head.
+const CLAUDE_PROMPT: &str =
+    "You are Claude, working as a coding agent in pi, a terminal coding harness.";
 fn claude_code_request(body: &[u8]) -> bool {
     let Ok(v) = serde_json::from_slice::<Value>(body) else {
         return false;
@@ -464,6 +471,7 @@ fn claude_code_request(body: &[u8]) -> bool {
     block(0).is_some_and(|t| {
         t.starts_with("x-anthropic-billing-header: ") && t.contains("cc_entrypoint=sdk-ts;")
     }) && block(1) == Some("You are a Claude agent, built on Anthropic's Claude Agent SDK.")
+        && block(2).is_some_and(|t| t.starts_with(CLAUDE_PROMPT))
 }
 /// Validated container request, kept for every attempt of the request.
 #[derive(Clone)]
@@ -1025,10 +1033,12 @@ impl Host {
             Decision::Unavailable(reason) => return self.hosted_unavailable(s, reason),
         };
         let route = routes.routes[index].clone();
-        // Subscription routes carry only Claude Code's own requests: anything
-        // else is never dispatched (operator constraint: a third-party request
-        // on the subscription may draw extra usage). The response-side
-        // billing guard remains the second layer.
+        // Subscription routes carry only requests shaped as Claude Code in the
+        // extension's Claude prompt mode; anything else is never dispatched
+        // (operator constraint: a third-party request on the subscription may
+        // draw extra usage). No byte was written: the request records why and
+        // settles at 0. The response-side billing guard remains the second
+        // layer.
         if Endpoint::parse(&route.endpoint) == Some(Endpoint::AnthropicOauth)
             && !claude_code_request(&fetch.body)
         {
@@ -1038,7 +1048,14 @@ impl Host {
                 .unwrap()
                 .settle(routed, Disposition::NotDispatched, Value::Null)
                 .map_err(|c| Error::Refused(c.into()))?;
-            self.journal.coding.as_mut().unwrap().provider_failed = true;
+            let state = self.journal.coding.as_mut().unwrap();
+            state.provider_failed = true;
+            if let Some(r) = state.provider_requests.get_mut(&s.request)
+                && r.attempts.is_empty()
+            {
+                r.not_dispatched = Some("subscription_request_not_claude_code".into());
+                r.settled_microusd = Some(0);
+            }
             self.save()?;
             return self.hosted_unavailable(s, "subscription_request_not_claude_code");
         }
@@ -2720,7 +2737,7 @@ mod tests {
         json!({"model":HAIKU,"stream":true,"max_tokens":128000,"messages":messages,
             "system":[{"type":"text","text":"x-anthropic-billing-header: cc_version=2.1.325.fba; cc_entrypoint=sdk-ts;"},
                 {"type":"text","text":"You are a Claude agent, built on Anthropic's Claude Agent SDK.","cache_control":{"type":"ephemeral","ttl":"1h"}},
-                {"type":"text","text":"s","cache_control":{"type":"ephemeral","ttl":"1h"}}],
+                {"type":"text","text":"You are Claude, working as a coding agent in pi, a terminal coding harness. You help.","cache_control":{"type":"ephemeral","ttl":"1h"}}],
             "tools":[{"name":"DeferredToolPlaceholder","description":"d","input_schema":{"type":"object"},"defer_loading":true},
                 {"name":"mcp__pi__snapshot_read","description":"r","input_schema":{"type":"object"}}],
             "metadata":{"user_id":"{}"},"thinking":{"type":"disabled"}})
@@ -3139,8 +3156,14 @@ mod tests {
     #[test]
     fn subscription_routes_dispatch_only_claude_code_requests() {
         let claude = messages_body(json!([{"role":"user","content":"q"}]));
+        // Pi's own prompt mode through the same extension (probe run1 0005):
+        // the same billing header and identity, Pi's prompt third.
         let mut pi_prompt = claude.clone();
-        pi_prompt["system"] = json!([{"type":"text","text":"You are an expert coding assistant."}]);
+        pi_prompt["system"][2]["text"] =
+            json!("You are a coding assistant running inside pi, a coding agent harness. Help");
+        let mut no_claude_code_blocks = claude.clone();
+        no_claude_code_blocks["system"] =
+            json!([{"type":"text","text":"You are an expert coding assistant."}]);
         let mut other_entry = claude.clone();
         other_entry["system"][0]["text"] =
             json!("x-anthropic-billing-header: cc_version=1; cc_entrypoint=cli;");
@@ -3149,6 +3172,7 @@ mod tests {
         for (body, ok) in [
             (claude, true),
             (pi_prompt, false),
+            (no_claude_code_blocks, false),
             (other_entry, false),
             (no_identity, false),
         ] {
@@ -3181,7 +3205,14 @@ mod tests {
                 assert_eq!(frames[0]["type"], "response-unavailable", "{body}");
                 assert_eq!(frames[0]["code"], "subscription_request_not_claude_code");
                 assert!(w.opened.lock().unwrap().is_empty(), "nothing dispatched");
-                assert!(request(&h).attempts.is_empty(), "nothing reserved");
+                // No attempt; the request records why and holds nothing.
+                let r = request(&h);
+                assert!(r.attempts.is_empty(), "no attempt reserved");
+                assert_eq!(
+                    r.not_dispatched.as_deref(),
+                    Some("subscription_request_not_claude_code")
+                );
+                assert_eq!((r.charged_microusd(), r.unsettled()), (0, false));
                 assert!(h.journal.coding.as_ref().unwrap().provider_failed);
             }
         }

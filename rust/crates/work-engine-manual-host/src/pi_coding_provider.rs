@@ -76,6 +76,10 @@ pub struct Reservation {
     /// `max(reservation, raw)`; the request stays unsettled.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub raw_microusd: Option<u64>,
+    /// Hosted: why the Host refused to dispatch this request before any
+    /// attempt was reserved (no byte was written; settled at 0).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub not_dispatched: Option<String>,
 }
 /// Financial disposition of one attempt, applied only by this ledger.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
