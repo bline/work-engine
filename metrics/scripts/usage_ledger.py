@@ -97,9 +97,13 @@ turn go with it. Each turn's usage is reconciled with Pi's; a difference is
 `pi_transcript_usage_mismatch`. Calls in no transcript (a direct `anthropic`
 call, an aborted claude-sdk turn) are priced from Pi's recorded usage
 (`cache_write_basis` `pi_session`; without cacheWrite1h the write TTL is
-unknown). Direct `anthropic` calls go to pool `claude_extra_usage` with billing
-`extra_usage_assumed`: without an API key Pi uses its OAuth login, which
-Anthropic bills as Extra usage, and Pi's file does not record which paid. Other Pi providers are `pi_provider_unpriced`. Claude Code history
+unknown). Direct `anthropic` calls join to the `auth-provenance` custom
+entry by response id in the same session. A configuration snapshot of OAuth
+maps to `claude_extra_usage` (`extra_usage_observed`); an API key maps to
+`pi_api` (`api_key_observed`). With missing or inconclusive provenance
+(including bearer), the same call counts against both caps as
+`api_key_or_extra_usage`. The dollar pools then overlap and must not be
+summed. Other Pi providers are `pi_provider_unpriced`. Claude Code history
 that pi-claude-subscription synthesizes (`msg_pi_*` ids) is not a call.
 
 Objective time (2026-11-07). Budgets limit dollars and scope additions, not
@@ -924,9 +928,13 @@ def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
 PI_SESSION_GLOB = f'{HOME}/.pi/agent/sessions/**/*.jsonl'
 PI_NATIVE_USAGE = dict(input='input_tokens', output='output_tokens', cacheRead='cache_read_input_tokens',
                        cacheWrite='cache_creation_input_tokens')
-# Pi provider -> (pools, billing) for calls priced from Pi's usage. Unlisted providers are not priced.
-# A direct `anthropic` call with no API key uses Pi's OAuth login, which Anthropic bills as Extra usage.
-PI_NATIVE_PROVIDERS = {'claude-sdk': (None, 'subscription'), 'anthropic': (['claude_extra_usage'], 'extra_usage_assumed')}
+# Direct Anthropic calls are priced from Pi usage; only a usable config
+# snapshot narrows which dollar cap should count the call.
+PI_ANTHROPIC_BILLING = {
+    'oauth': (['claude_extra_usage'], 'extra_usage_observed'),
+    'api_key': (['pi_api'], 'api_key_observed'),
+}
+PI_ANTHROPIC_UNCERTAIN = (['pi_api', 'claude_extra_usage'], 'api_key_or_extra_usage')
 
 def pi_session_header(path):
     """(session id, start, parent session file) from a Pi session file's first record, or None."""
@@ -939,7 +947,7 @@ def pi_session_header(path):
     return None
 
 def pi_native_sessions(since, root_glob=None):
-    """session id -> dict(paths, start, parent, responses) for Pi session files written since `since`."""
+    """Session files written since `since`, grouped by id with responses and auth snapshots."""
     files = sorted(f for f in glob.glob(root_glob or PI_SESSION_GLOB, recursive=True)
                    if '/subagent-artifacts/' not in f and (since is None or os.path.getmtime(f) >= since.timestamp()))
     sessions, by_path = {}, {}
@@ -948,17 +956,28 @@ def pi_native_sessions(since, root_glob=None):
         if header is None: continue
         sid, start, parent_path = header
         by_path[os.path.abspath(path)] = sid
-        s = sessions.setdefault(sid, dict(session_id=sid, paths=[], start=start, parent_path=parent_path, parent=None, responses=[]))
+        s = sessions.setdefault(sid, dict(session_id=sid, paths=[], start=start, parent_path=parent_path,
+                                          parent=None, responses=[], auth=collections.defaultdict(set)))
         s['paths'].append(path)
         if start and (not s['start'] or ts_of(start) < ts_of(s['start'])): s['start'] = start
         seen = {r['call_id'] for r in s['responses']}
         for n, line in enumerate(open_lines(path), 1):
-            if '"assistant"' not in line: continue
+            if '"assistant"' not in line and '"auth-provenance"' not in line: continue
             try: rec = json.loads(line)
             except ValueError:
                 if line.endswith('\n'): issue('malformed_pi_session_row', path=path, line=n)
                 continue
-            m = rec.get('message') if isinstance(rec, dict) else None
+            if not isinstance(rec, dict): continue
+            if rec.get('type') == 'custom' and rec.get('customType') == 'auth-provenance':
+                data = rec.get('data')
+                if not isinstance(data, dict) or data.get('provider') != 'anthropic' or data.get('confidence') != 'configuration_snapshot':
+                    continue
+                rid, model, billing_class = (data.get(k) for k in ('responseId', 'model', 'billing_class'))
+                if all(isinstance(v, str) and v for v in (rid, model)):
+                    known = billing_class in ('oauth', 'api_key', 'bearer', 'unknown')
+                    s['auth'][rid, model].add(billing_class if known else 'unknown')
+                continue
+            m = rec.get('message')
             if rec.get('type') != 'message' or not isinstance(m, dict) or m.get('role') != 'assistant': continue
             u = m.get('usage')
             if not isinstance(u, dict) or not any(u.get(k) for k in PI_NATIVE_USAGE): continue
@@ -1032,10 +1051,14 @@ def pi_native_join(claude, sessions, skip=()):
         if pending and last: folded[last] += pending
     extra = []
     for call_id, (sid, r) in owner.items():
-        spec = PI_NATIVE_PROVIDERS.get(r['provider'])
-        if spec is None:
+        if r['provider'] == 'anthropic':
+            classes = sessions[sid]['auth'].get((r['response_id'], r['model'])) if isinstance(r['model'], str) else None
+            billing_class = next(iter(classes)) if classes and len(classes) == 1 else None
+            extra.append(pi_native_call(r, sid, *PI_ANTHROPIC_BILLING.get(billing_class, PI_ANTHROPIC_UNCERTAIN)))
+            continue
+        if r['provider'] != 'claude-sdk':
             issue('pi_provider_unpriced', source=r['source'], provider=r['provider']); continue
-        if r['provider'] == 'claude-sdk' and call_id in by_id:
+        if call_id in by_id:
             rows = folded[call_id]
             for c in rows: c['pi_session'] = sid
             got = {k: sum((c['usage'].get(v) or 0) if isinstance(c['usage'].get(v), int) else 0 for c in rows) for k, v in PI_NATIVE_USAGE.items()}
@@ -1043,7 +1066,7 @@ def pi_native_join(claude, sessions, skip=()):
             if got != want:
                 issue('pi_transcript_usage_mismatch', source=r['source'], response_id=call_id, pi=want, transcript=got, rows=len(rows))
             continue
-        extra.append(pi_native_call(r, sid, *spec))
+        extra.append(pi_native_call(r, sid, None, 'subscription'))
     return extra
 
 # ---------------------------------------------------------------- commands

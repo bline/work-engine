@@ -40,6 +40,13 @@ def pi_msg(rid, ts, provider, i, o, cr=0, cw=0, w1h=None, model='claude-opus-5-5
     return json.dumps({'type': 'message', 'id': entry or (rid or 'e')[-8:], 'timestamp': ts, 'message': m})
 
 
+def auth(rid, billing_class, **overrides):
+    data = dict(responseId=rid, provider='anthropic', model='claude-opus-5-5', billing_class=billing_class,
+                confidence='configuration_snapshot', captured_at=at(4), source=None)
+    data.update(overrides)
+    return json.dumps(dict(type='custom', customType='auth-provenance', data=data))
+
+
 def write(path, lines):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, 'w') as f: f.write(''.join(x + '\n' for x in lines))
@@ -62,7 +69,7 @@ class PiNative(unittest.TestCase):
         write(os.path.join(self.project, CC_CHILD + '.jsonl'), [cc(CC_CHILD, 'msg_C', at(5), usage(1, 10))])
         write(os.path.join(self.project, CC_STRAY + '.jsonl'), [cc(CC_STRAY, 'msg_S', at(6), usage(1, 10))])
 
-    def root(self, b_usage=(10, 110, 2000, 0)):
+    def root(self, b_usage=(10, 110, 2000, 0), provenance=()):
         write(self.root_file, [
             json.dumps({'type': 'session', 'version': 3, 'id': ROOT, 'timestamp': at(0), 'cwd': '/p'}),
             pi_msg('msg_A', at(1), 'claude-sdk', 10, 100, cw=1000, w1h=1000),
@@ -70,6 +77,7 @@ class PiNative(unittest.TestCase):
             pi_msg('msg_D', at(4), 'anthropic', 100, 10, w1h=0),                 # direct: in no transcript
             pi_msg('msg_E', at(4), 'claude-sdk', 1, 1000, model='claude-fable-5-1'),  # aborted: no transcript row
             pi_msg(None, at(4), 'claude-sdk', 0, 0),                            # error turn: no usage
+            *provenance,
         ])
 
     def child(self):
@@ -104,7 +112,8 @@ class PiNative(unittest.TestCase):
         # msg_A, msg_B0 + msg_B (one folded turn), and msg_E from Pi's usage; synthesized history is not a call.
         self.assertEqual(root['claude_all_models']['calls'], 4)
         self.assertEqual(root['claude_fable']['calls'], 1)
-        self.assertEqual((root['claude_extra_usage']['calls'], root['pi_api']['calls']), (1, 0))
+        self.assertEqual((root['claude_extra_usage']['calls'], root['pi_api']['calls']), (1, 1))
+        self.assertEqual(root['claude_extra_usage']['usd_high'], root['pi_api']['usd_high'])
         self.assertEqual(nodes[CHILD]['direct']['claude_all_models']['calls'], 1)
         r = L.NATIVE_RATES['claude-opus-5-5']
         self.assertAlmostEqual(root['claude_extra_usage']['usd_high'], (100 * r['input'] + 10 * r['output']) / 1e6)
@@ -114,6 +123,38 @@ class PiNative(unittest.TestCase):
         self.assertEqual(kinds, ['pi_provider_unpriced'])   # msg_F: an unlisted provider is never priced
         self.assertEqual(tree['status'], 'partial')
         self.assertEqual([s['session_id'] for s in tree['unattributed']['sessions']], [CC_STRAY])
+
+    def test_billing_joins_by_session_response_and_model_conservatively(self):
+        cases = [
+            ([auth('msg_D', 'oauth')], ['claude_extra_usage'], 'extra_usage_observed'),
+            ([auth('msg_D', 'api_key')] * 2, ['pi_api'], 'api_key_observed'),
+            *[(entries, ['pi_api', 'claude_extra_usage'], 'api_key_or_extra_usage') for entries in (
+                [],
+                [auth('msg_missing', 'api_key')],
+                [auth('msg_D', 'api_key', model='wrong-model')],
+                [auth('msg_D', 'api_key', provider='claude-sdk')],
+                [auth('msg_D', 'api_key', confidence='unknown')],
+                [auth('msg_D', 'api_key'), auth('msg_D', 'oauth')],
+                [auth('msg_D', 'bearer')],
+                [auth('msg_D', 'unknown')],
+                [auth('msg_D', [])],
+            )],
+        ]
+        # Provenance in another session with no matching response is not evidence.
+        write(os.path.join(self.pi, 'stray.jsonl'), [
+            json.dumps({'type': 'session', 'id': STRAY, 'timestamp': at(5)}),
+            auth('msg_D', 'oauth'),
+        ])
+        for entries, pools, billing in cases:
+            with self.subTest(entries=entries):
+                self.root(provenance=entries)
+                sessions = L.pi_native_sessions(None, os.path.join(self.pi, '*.jsonl'))
+                [direct] = [r for r in L.pi_native_join([], sessions) if r['call_id'] == 'msg_D']
+                self.assertEqual((direct['pools'], direct['billing']), (pools, billing))
+                tree = self.tree([{'session_id': ROOT, 'provider': 'pi', 'from': T0}])
+                root = tree['nodes'][0]['direct']
+                for pool in ('pi_api', 'claude_extra_usage'):
+                    self.assertEqual(root[pool]['calls'], int(pool in pools))
 
     def test_complete_when_every_call_is_priced(self):
         self.root()
@@ -151,8 +192,10 @@ class PiNative(unittest.TestCase):
         with open(rec, 'w') as f:
             json.dump({'scope_budget': {'objective_id': 'o', 'started_at': T0,
                                         'sessions': [{'session_id': ROOT, 'provider': 'pi', 'from': T0}], 'bindings': [],
-                                        'cost_limits': [{'pool': 'claude_all_models', 'node': CHILD, 'max_usd': 1e-6,
-                                                         'marks_usd': [], 'set_by': 'user'}]}}, f)
+                                        'cost_limits': [{'pool': pool, 'node': node, 'max_usd': 1e-6,
+                                                         'marks_usd': [], 'set_by': 'user'} for pool, node in (
+                                                             ('claude_all_models', CHILD), ('pi_api', ROOT),
+                                                             ('claude_extra_usage', ROOT))]}}, f)
         out = io.StringIO()
         args = argparse.Namespace(record=rec, cursor=None, limit_fractions='1.0', role_host_ledger=os.path.join(self.d, 'absent'))
         with patch.object(L, 'HOME', self.d), patch.object(L, 'CODEX_GLOBS', []), \
@@ -161,8 +204,10 @@ class PiNative(unittest.TestCase):
                 patch.object(L, 'thread_index', return_value={}), contextlib.redirect_stdout(out):
             L.cmd_control(args)
         events = json.loads(out.getvalue())['events']
-        self.assertIn(('limit_reached', 'claude_all_models', CHILD, 'user'),
-                      [(e.get('kind'), e.get('pool'), e.get('node_id'), e.get('set_by')) for e in events])
+        reached = {(e.get('pool'), e.get('node_id'), e.get('set_by'))
+                   for e in events if e.get('kind') == 'limit_reached'}
+        self.assertEqual(reached, {('claude_all_models', CHILD, 'user'), ('pi_api', ROOT, 'user'),
+                                   ('claude_extra_usage', ROOT, 'user')})
 
 if __name__ == '__main__':
     unittest.main()
