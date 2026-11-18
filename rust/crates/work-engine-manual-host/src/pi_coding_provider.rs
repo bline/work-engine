@@ -10,6 +10,11 @@ const ANTHROPIC_CATALOG: &str =
     "node_modules/@earendil-works/pi-ai/dist/providers/data/anthropic.json";
 /// Claude models admitted on the Messages routes (operator, 2026-11-18).
 pub const CLAUDE_MODELS: [&str; 1] = ["claude-haiku-5-5"];
+/// The Claude Code binary a `claude-sdk` runtime must carry (C1(vii)): its
+/// manifest entry and digest.
+pub const CLAUDE_CODE_ENTRY: &str = "node_modules/@anthropic-ai/claude-agent-sdk-linux-x64/claude";
+pub const CLAUDE_CODE_SHA256: &str =
+    "0dc4f4a9a165fc60746d7ae8489712e5fc352f1e7ad4eb22e7141bd0812eb0cf";
 /// The Pi provider a plan runs when it names none.
 pub const DEFAULT_PROVIDER: &str = "openai-codex";
 fn default_provider() -> String {
@@ -37,7 +42,7 @@ pub struct ProviderPlan {
     pub hosted: super::hosted::HostedRoutes,
     /// The Pi provider the receiver runs: `openai-codex` (Responses family)
     /// or `claude-sdk` (Claude Code in the container; Messages family, only
-    /// on the analysis profile). A `claude-sdk` plan may route to the
+    /// on the analysis or the lifecycle relay profile). A `claude-sdk` plan may route to the
     /// subscription and to the API-key Messages endpoint: both receive the
     /// same request body.
     #[serde(default = "default_provider")]
@@ -570,6 +575,9 @@ impl ProviderPlan {
         {
             return refuse("provider lane/catalog/limits conflict");
         }
+        if self.provider == "claude-sdk" {
+            claude_code_pinned(&job.runtime.manifest)?;
+        }
         self.hosted.validate()?;
         // Every route speaks the plan's wire family.
         if self
@@ -629,6 +637,19 @@ impl ProviderPlan {
         }
         Ok(())
     }
+}
+/// The runtime manifest carries the pinned Claude Code binary as a file
+/// (admission verifies the runtime tree against that manifest).
+fn claude_code_pinned(manifest: &Artifact) -> Result<()> {
+    let entries: BTreeMap<String, Entry> = serde_json::from_slice(&manifest.verify()?)?;
+    if entries.get(CLAUDE_CODE_ENTRY)
+        != Some(&Entry::File {
+            sha256: CLAUDE_CODE_SHA256.into(),
+        })
+    {
+        return refuse("runtime does not carry the pinned Claude Code binary");
+    }
+    Ok(())
 }
 fn rates(model: &Value) -> Result<(f64, f64)> {
     let mut input = 0.0_f64;
@@ -1352,6 +1373,38 @@ mod admission_tests {
 #[cfg(test)]
 mod raw_evidence_tests {
     use super::*;
+    #[test]
+    fn claude_code_binary_entry_is_the_pinned_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let pinned = |entry: Value| {
+            let bytes = serde_json::to_vec(
+                &json!({"node_modules/x":{"kind":"file","sha256":"0".repeat(64)},
+                CLAUDE_CODE_ENTRY:entry}),
+            )
+            .unwrap();
+            let path = dir.path().join("runtime.json");
+            fs::write(&path, &bytes).unwrap();
+            claude_code_pinned(&Artifact {
+                path,
+                sha256: digest(&bytes),
+            })
+        };
+        pinned(json!({"kind":"file","sha256":CLAUDE_CODE_SHA256})).unwrap();
+        for bad in [
+            json!({"kind":"file","sha256":"1".repeat(64)}),
+            json!({"kind":"symlink","target":"claude-other"}),
+        ] {
+            assert!(pinned(bad).is_err());
+        }
+        let bytes = br#"{"node_modules/x":{"kind":"file","sha256":"0"}}"#;
+        let path = dir.path().join("absent.json");
+        fs::write(&path, bytes).unwrap();
+        let absent = Artifact {
+            path,
+            sha256: digest(bytes),
+        };
+        assert!(claude_code_pinned(&absent).is_err(), "entry absent");
+    }
     #[test]
     fn sdk_zero_defaults_cannot_settle_missing_incomplete_or_nonterminal_raw_evidence() {
         for raw in [

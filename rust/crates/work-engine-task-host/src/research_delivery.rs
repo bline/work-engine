@@ -1595,6 +1595,25 @@ mod projection_tests {
     #[cfg(feature = "controlled-proof")]
     #[ignore = "reads a lifecycle-service pi_host_research_delivery run (WE_PI_HOST_OUT) and its A4 fixture (WE_A4_FIXTURE)"]
     fn pi_host_q_delivery_verifies() {
+        pi_host_delivery(false);
+    }
+
+    /// H2 step 4: the same check over a live advisory run
+    /// (`lifecycle-service` `pi_host_live_arm`, `WE_A4_FIXTURE` the
+    /// controlled card). Whether the model followed the pinned 32 KiB read
+    /// plan is recorded, not asserted; the delivery outcome is
+    /// `verify_delivery`'s own.
+    #[test]
+    #[cfg(feature = "controlled-proof")]
+    #[ignore = "reads a lifecycle-service pi_host_live_arm advisory run (WE_PI_HOST_OUT) and its A4 card (WE_A4_FIXTURE)"]
+    fn pi_host_live_delivery_verifies() {
+        pi_host_delivery(true);
+    }
+
+    /// The task and subject come from the run's summary; the changed-byte
+    /// control picks its marker from the decoded projection.
+    #[cfg(feature = "controlled-proof")]
+    fn pi_host_delivery(live: bool) {
         let out = std::path::PathBuf::from(std::env::var("WE_PI_HOST_OUT").unwrap());
         let a4 = std::path::PathBuf::from(std::env::var("WE_A4_FIXTURE").unwrap());
         let read = |p: std::path::PathBuf| std::fs::read(p).unwrap();
@@ -1611,14 +1630,18 @@ mod projection_tests {
         .concat();
         let bytes = read(out.join("retained.json"));
         let mapping = serde_json::from_slice(&read(out.join("mapping.json"))).unwrap();
+        let summary: Value = serde_json::from_slice(&read(out.join("summary.json"))).unwrap();
+        let task = summary["task_id"].as_str().unwrap();
         let store = retained_task_workflow::TaskStore::open(
             &out.join("tasks.sqlite"),
             "human:fixture".into(),
         )
         .unwrap();
-        let original = store
-            .research_original_evidence("task:input", &mapping)
-            .unwrap();
+        assert_eq!(
+            store.observe(task).unwrap().unwrap().subject_id,
+            summary["subject_id"].as_str().unwrap()
+        );
+        let original = store.research_original_evidence(task, &mapping).unwrap();
         let verify = |value: Value| {
             verify_delivery(
                 RetainedDelivery {
@@ -1640,7 +1663,8 @@ mod projection_tests {
             .find(|a| a.id == "research-decoding-map")
             .map(|a| serde_json::from_slice(&a.bytes).unwrap())
             .unwrap();
-        assert_eq!(spans.len(), material.len().div_ceil(32768));
+        let planned = spans.len() == material.len().div_ceil(32768);
+        assert!(live || planned, "{} spans", spans.len());
         let consumer: Value = delivery
             .artifacts
             .iter()
@@ -1671,12 +1695,34 @@ mod projection_tests {
             json!(reason(verify(v).err().unwrap())),
         );
         // One changed byte of read content inside every wire payload (digests
-        // recomputed, so only the projection and continuity can refuse).
+        // recomputed, so only the projection and continuity can refuse). The
+        // marker: 16 projection bytes that JSON leaves unescaped, occurring
+        // once in the projection and present in a wire body.
+        let bodies: Vec<Vec<u8>> = base["input"]["payloads"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| byte_vec(&p["bytes"]).unwrap())
+            .collect();
+        let count = |hay: &[u8], w: &[u8]| hay.windows(w.len()).filter(|x| *x == w).count();
+        let projection = &delivery.projection;
+        let at = (0..projection.len().saturating_sub(16))
+            .step_by(61)
+            .map(|i| (i + projection.len() / 2) % (projection.len() - 15))
+            .find(|&i| {
+                let w = &projection[i..i + 16];
+                w.iter()
+                    .all(|b| b.is_ascii_alphanumeric() || b" .,-".contains(b))
+                    && count(projection, w) == 1
+                    && bodies.iter().any(|b| count(b, w) == 1)
+            })
+            .expect("no read-content marker");
+        let marker = projection[at..at + 16].to_vec();
         let mut v = base.clone();
         let mut flipped = 0;
         for p in v["input"]["payloads"].as_array_mut().unwrap() {
             let body = byte_vec(&p["bytes"]).unwrap();
-            let marker = &material[40000..40016];
+            let marker = marker.as_slice();
             let Some(at) = body.windows(marker.len()).position(|w| w == marker) else {
                 continue;
             };
@@ -1698,7 +1744,8 @@ mod projection_tests {
         std::fs::write(
             out.join("verify-delivery.json"),
             serde_json::to_vec_pretty(&json!({"projection_sha256":sha(&delivery.projection),
-                "spans":spans.len(),"consumer":consumer,"refusals":refusals}))
+                "spans":spans.len(),"spans_follow_plan":planned,"marker_offset":at,
+                "consumer":consumer,"refusals":refusals}))
             .unwrap(),
         )
         .unwrap();

@@ -16,7 +16,8 @@
 //! `mcp__pi__snapshot_read`, an `mcp__pi__result_publish`, the first turn's
 //! answer, then the second turn's answer), or `steps` (relay tools; the
 //! responses are the steps in `HOSTED_OBSERVER_STEPS`, a JSON array of
-//! `{"tool", "input"}` or `{"text"}`, one per served request).
+//! `{"tool", "input"}`, `{"tools": [{"tool", "input"}, ...]}` (several
+//! tool calls in one response) or `{"text"}`, one per served request).
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{
@@ -272,15 +273,23 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         let reply = match served {
             n if scenario == "steps" => {
                 let step = &steps[n - 1];
-                match step["tool"].as_str() {
-                    Some(tool) => sse(n, &[Block::Tool(tool.into(), step["input"].clone())]),
-                    None => sse(
-                        n,
-                        &[Block::Text(
-                            step["text"].as_str().ok_or("step text")?.into(),
-                        )],
-                    ),
-                }
+                let blocks = match (step["tools"].as_array(), step["tool"].as_str()) {
+                    (Some(tools), None) if !tools.is_empty() => tools
+                        .iter()
+                        .map(|t| {
+                            t["tool"]
+                                .as_str()
+                                .map(|name| Block::Tool(name.into(), t["input"].clone()))
+                                .ok_or("step tool")
+                        })
+                        .collect::<Result<Vec<_>, _>>()?,
+                    (None, Some(tool)) => vec![Block::Tool(tool.into(), step["input"].clone())],
+                    (None, None) => vec![Block::Text(
+                        step["text"].as_str().ok_or("step text")?.into(),
+                    )],
+                    _ => return Err("step shape".into()),
+                };
+                sse(n, &blocks)
             }
             1 if relay => sse(
                 1,

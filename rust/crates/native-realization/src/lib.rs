@@ -20,7 +20,7 @@ pub mod codex {
 pub mod pi_host {
     /// SHA-256 of `PI_HOST_PROTOCOL.md`; the session protocol digest.
     pub const PROTOCOL_DIGEST: &str =
-        "9a33912a78906d4b540dafd9e78584b8af59888e47dec0c1a8ef3f728c49e451";
+        "56c00a88191d20113db419dda7c88d2d80f39679f5f1d138d6c1259936488744";
     pub const PROTOCOL: &str = include_str!("../PI_HOST_PROTOCOL.md");
     pub const REALIZATION: &str = "pi-host-v1";
     pub const EVIDENCE_CLASS: &str = "pi-host-held-requests-tool-relay-host-ledger-history-v1";
