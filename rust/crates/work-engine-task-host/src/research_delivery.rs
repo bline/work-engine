@@ -388,6 +388,18 @@ fn messages_request_checks(payloads: &[Value]) -> Result<(), &'static str> {
             .as_str()
             .ok_or("messages-payload-call-id")?
             .to_owned();
+        // Calls are numbered in send order (`request-<n>`); never backwards.
+        let number = call
+            .strip_prefix("request-")
+            .and_then(|n| n.parse::<u64>().ok())
+            .ok_or("messages-payload-call-id")?;
+        if previous.as_ref().is_some_and(|(prev, _, _)| {
+            prev.strip_prefix("request-")
+                .and_then(|n| n.parse::<u64>().ok())
+                .is_none_or(|p| number < p)
+        }) {
+            return Err("messages-request-call-order");
+        }
         let bytes = byte_vec(&p["bytes"]).map_err(|_| "messages-payload-bytes")?;
         let value = strict(&bytes).map_err(|_| "messages-payload-not-strict-json")?;
         messages_capabilities(&value)?;
@@ -1363,6 +1375,15 @@ mod projection_tests {
         assert_eq!(
             messages_request_checks(&[payload("request-1", &first), payload("request-1", &other)]),
             Err("messages-request-resend-differs")
+        );
+        // A call number never goes backwards.
+        assert_eq!(
+            messages_request_checks(&[
+                payload("request-1", &first),
+                payload("request-2", &full),
+                payload("request-1", &first)
+            ]),
+            Err("messages-request-call-order")
         );
         // Two calls with the same body do not extend each other.
         assert_eq!(

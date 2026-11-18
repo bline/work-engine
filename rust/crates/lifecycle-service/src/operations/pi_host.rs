@@ -240,6 +240,9 @@ struct Runner {
     gate: Arc<NativeGate>,
     next_id: u64,
     bound_turn: bool,
+    /// The active turn's receive bound, set before `turn/start` (the Host's
+    /// turn begins when it answers) and cleared at the turn's terminal.
+    turn_until: Option<Instant>,
     terminal: Option<(NativeEvent, String)>,
     deadline: Duration,
     expected: Expected,
@@ -613,6 +616,7 @@ pub async fn run_pi_host(
             gate: gate.clone(),
             next_id: 0,
             bound_turn: false,
+            turn_until: None,
             terminal: None,
             deadline: Duration::from_secs(host.turn_deadline_secs + 60),
             expected,
@@ -623,14 +627,12 @@ pub async fn run_pi_host(
         // leave the container for reconciliation, so it is the last resort.
         // Mid-turn, the Host may notice only when Pi's current inference
         // attempt ends, so the wait then covers the turn bound.
-        let mid_turn = runner.bound_turn && runner.terminal.is_none();
         runner.pipe.close_stdin();
-        let budget = if mid_turn {
-            runner.deadline
-        } else {
-            Duration::from_secs(CLOSE_SECS)
+        let close = Instant::now() + Duration::from_secs(CLOSE_SECS);
+        let until = match runner.turn_until {
+            Some(turn) if runner.terminal.is_none() => turn.max(close),
+            _ => close,
         };
-        let until = Instant::now() + budget;
         while let Ok(Ok(Some(_))) = tokio::time::timeout_at(until, runner.pipe.receive()).await {}
         let exit = runner
             .pipe
@@ -763,6 +765,7 @@ async fn run_turn(
 ) -> Result<(), StoreError> {
     runner.bound_turn = false;
     runner.terminal = None;
+    runner.turn_until = Some(Instant::now() + runner.deadline);
     runner
         .ask(|reply| NativeMessage::PrepareTurn {
             invocation_id: spec.invocation_id.clone(),
@@ -790,7 +793,9 @@ async fn run_turn(
         })
         .await?;
     runner.bound_turn = true;
-    let until = Instant::now() + runner.deadline;
+    let until = runner
+        .turn_until
+        .unwrap_or_else(|| Instant::now() + runner.deadline);
     while runner.terminal.is_none() {
         let event = runner.receive(until).await?;
         let terminal = event.terminal().ok().flatten();
