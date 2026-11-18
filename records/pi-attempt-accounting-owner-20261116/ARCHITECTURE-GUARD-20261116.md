@@ -219,3 +219,7 @@ Fresh Fable xhigh (claude-sdk/claude-fable-5-1, operator substitute for Astra, s
 ## Slice 2 accepted after one bounded repair — 2026-11-17
 
 Retained Fable re-check of remediation 3883d04 closed D-1..D-5 with executed counterexamples: ACCEPT (bounded). The admission-authority gap did not recur. Root acceptance: /home/bline/cbm-work/pi-accounting-s1-owner-20261116/slice2/ROOT-ACCEPTANCE-SLICE2.json. No rejection count change; all eleven historical findings CLOSED_BOUNDED within the reviewed private subject; full S1 remains OPEN.
+
+## Process deviation recorded — 2026-11-17
+
+The option-3 slices went beyond the first-stage scope supported by the full-realization plan's design review (derivation, bound interfaces, settled structural primitives) without a prior independent design review of the narrowed plan; recorded in slice2/ROOT-ACCEPTANCE-SLICE2.json process_deviation. Operator directed: explore current Work Engine developments for scope reduction, revise the plan if needed, then a Fable xhigh plan review.

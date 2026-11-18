@@ -1,0 +1,3819 @@
+{
+ "schema": "pi-accounting-s1-case-disposition/2",
+ "standing": "scope-closure mapping; not qualification",
+ "paths": {
+  "case_file": "relative to repository root /home/bline/code/work-engine",
+  "dossiers": "relative to records/pi-attempt-accounting-owner-20261116/"
+ },
+ "invariants": {
+  "I1": "retained raw charge cannot be erased or replaced by a smaller reservation",
+  "I2": "malformed/missing/null/empty identity cannot yield a complete or favourable settlement",
+  "I3": "no self-declared authority; non-empty identities before equality",
+  "I4": "placement from raw events and times",
+  "I5": "distinct money evidence is not merged by equal amounts; exact copies do not double a hold",
+  "I6": "uncertainty never releases a hold"
+ },
+ "finding_invariants": {
+  "R8-FIN-01": [
+   "I1"
+  ],
+  "R8-IDENTITY-01": [
+   "I2"
+  ],
+  "R8-NAMESPACE-01": [
+   "I3"
+  ],
+  "R8-GATE-IDENTITY-01": [
+   "I3"
+  ],
+  "R8-COVERAGE-01": [
+   "I3",
+   "I6"
+  ],
+  "R8-PLACEMENT-01": [
+   "I4"
+  ],
+  "R8-RESERVATION-01": [
+   "I5"
+  ],
+  "R8-LOW-INVENTORY-01": [
+   "I6"
+  ],
+  "R8-OWNER-01": [],
+  "R8-SCHEMA-DOMAIN-01": [],
+  "R8-DOC-01": []
+ },
+ "summary": {
+  "cases": 175,
+  "scopes": 374,
+  "by_profile_derivation_transfer": {
+   "current_producer / DERIVED / no-transfer": 1,
+   "current_producer / DERIVED / transfer": 17,
+   "current_producer / NOT_DERIVED / no-transfer": 101,
+   "current_producer / NOT_DERIVED / transfer": 22,
+   "future_qualified_gate / DERIVED / transfer": 1,
+   "future_qualified_gate / NOT_DERIVED / transfer": 33
+  },
+  "transferred_cases": 73,
+  "derived_cases": 19,
+  "invariant_counts": {
+   "I1": 10,
+   "I5": 9,
+   "I6": 13,
+   "I3": 11,
+   "I2": 7,
+   "I4": 4
+  },
+  "transferred_with_root_admission": [
+   "A06-reservation-usage-null-status-no-id",
+   "P130-R02-rounded-up-charge-admitted",
+   "P130-R07-closed-unresolved-predecessor-constrains-successor",
+   "P130-R08-admissions-without-tree-still-block",
+   "P130-T-owned-before-window-summed",
+   "P132-CP-closed-predecessor-outstanding",
+   "P132-FG-VC15-gated",
+   "P9-claimed-charge-above-reservation",
+   "V01-usage-settlement-other-response-model"
+  ],
+  "retirement_evidence_cases": 12,
+  "outputs_corrected_cases": [
+   "N03-contradicted-admission",
+   "N03-control-unlabelled-admission",
+   "P130-R08-admissions-without-tree-still-block",
+   "P130-R12-untrusted-clock-keeps-candidate",
+   "P132-CP-closed-predecessor-outstanding",
+   "P133-A04-cache-counts-both-absent",
+   "P133-A04-cache-write-absent-legacy",
+   "U06-subscription-upstream-error-unlabelled",
+   "V03-control-labelled-upstream-error",
+   "V03-subscription-upstream-error-labelled-api",
+   "VC08-subscription-measured-request"
+  ]
+ },
+ "cases": [
+  {
+   "case_id": "A04-undated-settlement-between-dated-neighbours",
+   "profile": "current_producer",
+   "scopes": [
+    "A04-undated-settlement-between-dated-neighbours/default/o/owned_closed",
+    "A04-undated-settlement-between-dated-neighbours/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/A04-undated-settlement-between-dated-neighbours.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "A06-reservation-usage-null-status-no-id",
+   "profile": "current_producer",
+   "scopes": [
+    "A06-reservation-usage-null-status-no-id/default/o/owned_closed",
+    "A06-reservation-usage-null-status-no-id/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice1/oracle-batch1/dossier/A06-reservation-usage-null-status-no-id.json"
+   ],
+   "outputs_corrected_in_campaign": false,
+   "findings": [
+    "R8-FIN-01",
+    "R8-LOW-INVENTORY-01",
+    "R8-OWNER-01",
+    "R8-RESERVATION-01"
+   ],
+   "invariants": [
+    "I1",
+    "I5",
+    "I6"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/A06-reservation-usage-null-status-no-id.json",
+   "root_admission_entry_ids": [
+    "ADM-1d05792908bd18d8"
+   ],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "A1-01-upstream-error-and-unknown-event",
+   "profile": "current_producer",
+   "scopes": [
+    "A1-01-upstream-error-and-unknown-event/default/o/owned_closed",
+    "A1-01-upstream-error-and-unknown-event/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/A1-01-upstream-error-and-unknown-event.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "A1-02-undated-row-inverted-neighbours",
+   "profile": "current_producer",
+   "scopes": [
+    "A1-02-undated-row-inverted-neighbours/default/o/owned_closed",
+    "A1-02-undated-row-inverted-neighbours/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/A1-02-undated-row-inverted-neighbours.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "A1-03-unreferenced-log",
+   "profile": "current_producer",
+   "scopes": [
+    "A1-03-unreferenced-log/default/o/owned_closed",
+    "A1-03-unreferenced-log/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/A1-03-unreferenced-log.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "A1-06-control-no-session-file",
+   "profile": "current_producer",
+   "scopes": [
+    "A1-06-control-no-session-file/default/o/owned_closed",
+    "A1-06-control-no-session-file/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/A1-06-control-no-session-file.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "A1-06-session-file-is-not-evidence",
+   "profile": "current_producer",
+   "scopes": [
+    "A1-06-session-file-is-not-evidence/default/o/owned_closed",
+    "A1-06-session-file-is-not-evidence/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I3"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/A1-06-session-file-is-not-evidence.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "C1-control-before-reference",
+   "profile": "current_producer",
+   "scopes": [
+    "C1-control-before-reference/default/o/owned_closed",
+    "C1-control-before-reference/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/C1-control-before-reference.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "C1-settlement-after-reference-time",
+   "profile": "current_producer",
+   "scopes": [
+    "C1-settlement-after-reference-time/default/o/owned_closed",
+    "C1-settlement-after-reference-time/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/C1-settlement-after-reference-time.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "C2-unsettled-reservation-after-reference-time",
+   "profile": "current_producer",
+   "scopes": [
+    "C2-unsettled-reservation-after-reference-time/default/o/owned_closed",
+    "C2-unsettled-reservation-after-reference-time/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/C2-unsettled-reservation-after-reference-time.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "C3-identical-reservation-copy",
+   "profile": "current_producer",
+   "scopes": [
+    "C3-identical-reservation-copy/default/o/owned_closed",
+    "C3-identical-reservation-copy/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I5"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/C3-identical-reservation-copy.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "C4-missing-charge-basis",
+   "profile": "current_producer",
+   "scopes": [
+    "C4-missing-charge-basis/default/o/owned_closed",
+    "C4-missing-charge-basis/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/C4-missing-charge-basis.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "D1-closed-objective-provisional",
+   "profile": "current_producer",
+   "scopes": [
+    "D1-closed-objective-provisional/default/o/owned_closed",
+    "D1-closed-objective-provisional/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/D1-closed-objective-provisional.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "D1-successor-constrained-by-predecessor-obligations",
+   "profile": "current_producer",
+   "scopes": [
+    "D1-successor-constrained-by-predecessor-obligations/successor/p/owned_closed",
+    "D1-successor-constrained-by-predecessor-obligations/successor/p/owned_outstanding",
+    "D1-successor-constrained-by-predecessor-obligations/successor/s/owned_closed",
+    "D1-successor-constrained-by-predecessor-obligations/successor/s/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/D1-successor-constrained-by-predecessor-obligations.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "D4-unbudgeted-error-status",
+   "profile": "current_producer",
+   "scopes": [
+    "D4-unbudgeted-error-status/default/o/owned_closed",
+    "D4-unbudgeted-error-status/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/D4-unbudgeted-error-status.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "DUP-response-id-across-attempts",
+   "profile": "current_producer",
+   "scopes": [
+    "DUP-response-id-across-attempts/default/o/owned_closed",
+    "DUP-response-id-across-attempts/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/DUP-response-id-across-attempts.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "Ha-control-consistent-split",
+   "profile": "current_producer",
+   "scopes": [
+    "Ha-control-consistent-split/default/o/owned_closed",
+    "Ha-control-consistent-split/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/Ha-control-consistent-split.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "Ha-inconsistent-cache-split-keeps-supported-low",
+   "profile": "current_producer",
+   "scopes": [
+    "Ha-inconsistent-cache-split-keeps-supported-low/default/o/owned_closed",
+    "Ha-inconsistent-cache-split-keeps-supported-low/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/Ha-inconsistent-cache-split-keeps-supported-low.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "Hb-window-independence",
+   "profile": "current_producer",
+   "scopes": [
+    "Hb-window-independence/window-from-06:00/o/owned_closed",
+    "Hb-window-independence/window-from-06:00/o/owned_outstanding",
+    "Hb-window-independence/window-from-06:20/o/owned_closed",
+    "Hb-window-independence/window-from-06:20/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/Hb-window-independence.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N01-control-served-pinned",
+   "profile": "current_producer",
+   "scopes": [
+    "N01-control-served-pinned/default/o/owned_closed",
+    "N01-control-served-pinned/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N01-control-served-pinned.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N01-identity-refusal-dearer-served",
+   "profile": "current_producer",
+   "scopes": [
+    "N01-identity-refusal-dearer-served/default/o/owned_closed",
+    "N01-identity-refusal-dearer-served/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N01-identity-refusal-dearer-served.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N01-orphan-identity-refusal",
+   "profile": "current_producer",
+   "scopes": [
+    "N01-orphan-identity-refusal/default/o/owned_closed",
+    "N01-orphan-identity-refusal/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N01-orphan-identity-refusal.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N01-variant-no-refusal-row",
+   "profile": "current_producer",
+   "scopes": [
+    "N01-variant-no-refusal-row/default/o/owned_closed",
+    "N01-variant-no-refusal-row/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N01-variant-no-refusal-row.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N01-variant-reservation-above-both",
+   "profile": "current_producer",
+   "scopes": [
+    "N01-variant-reservation-above-both/default/o/owned_closed",
+    "N01-variant-reservation-above-both/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N01-variant-reservation-above-both.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N02-malformed-anthropic-tier",
+   "profile": "current_producer",
+   "scopes": [
+    "N02-malformed-anthropic-tier/default/o/owned_closed",
+    "N02-malformed-anthropic-tier/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N02-malformed-anthropic-tier.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N03-api-row-other-provider",
+   "profile": "current_producer",
+   "scopes": [
+    "N03-api-row-other-provider/default/o/owned_closed",
+    "N03-api-row-other-provider/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N03-api-row-other-provider.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N03-contradicted-admission",
+   "profile": "current_producer",
+   "scopes": [
+    "N03-contradicted-admission/default/o/owned_closed",
+    "N03-contradicted-admission/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice2/oracle-r2-evidence/dossier/N03-contradicted-admission.json"
+   ],
+   "outputs_corrected_in_campaign": true,
+   "findings": [
+    "R8-NAMESPACE-01"
+   ],
+   "invariants": [
+    "I3"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N03-contradicted-admission.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N03-contradicted-refused-row",
+   "profile": "current_producer",
+   "scopes": [
+    "N03-contradicted-refused-row/default/o/owned_closed",
+    "N03-contradicted-refused-row/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N03-contradicted-refused-row.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N03-control-unlabelled-admission",
+   "profile": "current_producer",
+   "scopes": [
+    "N03-control-unlabelled-admission/default/o/owned_closed",
+    "N03-control-unlabelled-admission/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice2/oracle-r2-evidence/dossier/N03-control-unlabelled-admission.json"
+   ],
+   "outputs_corrected_in_campaign": true,
+   "findings": [
+    "R8-NAMESPACE-01"
+   ],
+   "invariants": [
+    "I3"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N03-control-unlabelled-admission.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N03-control-unlabelled-refused-row",
+   "profile": "current_producer",
+   "scopes": [
+    "N03-control-unlabelled-refused-row/default/o/owned_closed",
+    "N03-control-unlabelled-refused-row/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N03-control-unlabelled-refused-row.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N03-identity-refusal-in-subscription",
+   "profile": "current_producer",
+   "scopes": [
+    "N03-identity-refusal-in-subscription/default/o/owned_closed",
+    "N03-identity-refusal-in-subscription/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N03-identity-refusal-in-subscription.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N04-ambiguous-read-failure",
+   "profile": "current_producer",
+   "scopes": [
+    "N04-ambiguous-read-failure/default/o/owned_closed",
+    "N04-ambiguous-read-failure/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N04-ambiguous-read-failure.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N04-budgeted-header-failure-no-own-reservation",
+   "profile": "current_producer",
+   "scopes": [
+    "N04-budgeted-header-failure-no-own-reservation/default/o/owned_closed",
+    "N04-budgeted-header-failure-no-own-reservation/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N04-budgeted-header-failure-no-own-reservation.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N04-budgeted-header-failure-own-reservation",
+   "profile": "current_producer",
+   "scopes": [
+    "N04-budgeted-header-failure-own-reservation/default/o/owned_closed",
+    "N04-budgeted-header-failure-own-reservation/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N04-budgeted-header-failure-own-reservation.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N04-control-request-alone",
+   "profile": "current_producer",
+   "scopes": [
+    "N04-control-request-alone/default/o/owned_closed",
+    "N04-control-request-alone/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N04-control-request-alone.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N04-duplicated-read-failure",
+   "profile": "current_producer",
+   "scopes": [
+    "N04-duplicated-read-failure/default/o/owned_closed",
+    "N04-duplicated-read-failure/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I5"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N04-duplicated-read-failure.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N04-header-write-error-reused-n",
+   "profile": "current_producer",
+   "scopes": [
+    "N04-header-write-error-reused-n/default/o/owned_closed",
+    "N04-header-write-error-reused-n/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N04-header-write-error-reused-n.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N05-control-consistent-retirement",
+   "profile": "current_producer",
+   "scopes": [
+    "N05-control-consistent-retirement/default/o/owned_closed",
+    "N05-control-consistent-retirement/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N05-control-consistent-retirement.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": "LEGACY_RETIREMENT_OWNER: resumable/retired session behaviour to dispose at cutover (CONTRACT 2.3 producer fact)"
+  },
+  {
+   "case_id": "N05-retirement-before-later-delivery",
+   "profile": "current_producer",
+   "scopes": [
+    "N05-retirement-before-later-delivery/default/o/owned_closed",
+    "N05-retirement-before-later-delivery/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N05-retirement-before-later-delivery.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": "LEGACY_RETIREMENT_OWNER: resumable/retired session behaviour to dispose at cutover (CONTRACT 2.3 producer fact)"
+  },
+  {
+   "case_id": "N06-null-cache-counts",
+   "profile": "current_producer",
+   "scopes": [
+    "N06-null-cache-counts/default/o/owned_closed",
+    "N06-null-cache-counts/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N06-null-cache-counts.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N07-control-retired-journal",
+   "profile": "current_producer",
+   "scopes": [
+    "N07-control-retired-journal/default/o/owned_closed",
+    "N07-control-retired-journal/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N07-control-retired-journal.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": "LEGACY_RETIREMENT_OWNER: resumable/retired session behaviour to dispose at cutover (CONTRACT 2.3 producer fact)"
+  },
+  {
+   "case_id": "N07-control-retired-legacy",
+   "profile": "current_producer",
+   "scopes": [
+    "N07-control-retired-legacy/default/o/owned_closed",
+    "N07-control-retired-legacy/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice1/oracle-batch1/dossier/N07-control-retired-legacy.json"
+   ],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N07-control-retired-legacy.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": "LEGACY_RETIREMENT_OWNER: resumable/retired session behaviour to dispose at cutover (CONTRACT 2.3 producer fact)"
+  },
+  {
+   "case_id": "N07-reopened-session-journal",
+   "profile": "current_producer",
+   "scopes": [
+    "N07-reopened-session-journal/default/o/owned_closed",
+    "N07-reopened-session-journal/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N07-reopened-session-journal.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": "LEGACY_RETIREMENT_OWNER: resumable/retired session behaviour to dispose at cutover (CONTRACT 2.3 producer fact)"
+  },
+  {
+   "case_id": "N07-reopened-session-legacy",
+   "profile": "current_producer",
+   "scopes": [
+    "N07-reopened-session-legacy/default/o/owned_closed",
+    "N07-reopened-session-legacy/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N07-reopened-session-legacy.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": "LEGACY_RETIREMENT_OWNER: resumable/retired session behaviour to dispose at cutover (CONTRACT 2.3 producer fact)"
+  },
+  {
+   "case_id": "N08-control-priced-model",
+   "profile": "current_producer",
+   "scopes": [
+    "N08-control-priced-model/default/o/owned_closed",
+    "N08-control-priced-model/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N08-control-priced-model.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "N08-model-without-producer-rate",
+   "profile": "current_producer",
+   "scopes": [
+    "N08-model-without-producer-rate/default/o/owned_closed",
+    "N08-model-without-producer-rate/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I2"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/N08-model-without-producer-rate.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "ORD-sessions-in-ledger-order",
+   "profile": "current_producer",
+   "scopes": [
+    "ORD-sessions-in-ledger-order/default/o/owned_closed",
+    "ORD-sessions-in-ledger-order/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/ORD-sessions-in-ledger-order.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "ORD-sessions-reversed",
+   "profile": "current_producer",
+   "scopes": [
+    "ORD-sessions-reversed/default/o/owned_closed",
+    "ORD-sessions-reversed/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/ORD-sessions-reversed.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "OWN-budgeted-session-without-admission",
+   "profile": "current_producer",
+   "scopes": [
+    "OWN-budgeted-session-without-admission/default/o/owned_closed",
+    "OWN-budgeted-session-without-admission/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/OWN-budgeted-session-without-admission.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "OWN-two-admitting-objectives",
+   "profile": "current_producer",
+   "scopes": [
+    "OWN-two-admitting-objectives/default/o/owned_closed",
+    "OWN-two-admitting-objectives/default/o/owned_outstanding",
+    "OWN-two-admitting-objectives/default/p/owned_closed",
+    "OWN-two-admitting-objectives/default/p/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/OWN-two-admitting-objectives.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P130-A5-unreadable-line-added",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-A5-unreadable-line-added/default/o/owned_closed",
+    "P130-A5-unreadable-line-added/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-A5-unreadable-line-added.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P130-Q11-closure-uncertain",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-Q11-closure-uncertain/default/o/owned_closed",
+    "P130-Q11-closure-uncertain/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I6"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-Q11-closure-uncertain.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P130-R01-usage-incomplete-terminal",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-R01-usage-incomplete-terminal/default/o/owned_closed",
+    "P130-R01-usage-incomplete-terminal/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I6"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-R01-usage-incomplete-terminal.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P130-R02-rounded-up-charge-admitted",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-R02-rounded-up-charge-admitted/default/o/owned_closed",
+    "P130-R02-rounded-up-charge-admitted/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice2/oracle-r2-evidence/dossier/P130-R02-rounded-up-charge-admitted.json"
+   ],
+   "outputs_corrected_in_campaign": false,
+   "findings": [
+    "R8-FIN-01"
+   ],
+   "invariants": [
+    "I1"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-R02-rounded-up-charge-admitted.json",
+   "root_admission_entry_ids": [
+    "ADM-7e42ec89fd65ce82"
+   ],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P130-R04-priority-overrun-above-cap",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-R04-priority-overrun-above-cap/default/o/owned_closed",
+    "P130-R04-priority-overrun-above-cap/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I1"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-R04-priority-overrun-above-cap.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P130-R04-retired-session-releases-commitment",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-R04-retired-session-releases-commitment/limit-1.0/o/owned_closed",
+    "P130-R04-retired-session-releases-commitment/limit-1.0/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-R04-retired-session-releases-commitment.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": "LEGACY_RETIREMENT_OWNER: resumable/retired session behaviour to dispose at cutover (CONTRACT 2.3 producer fact)"
+  },
+  {
+   "case_id": "P130-R05-conflicting-keeps-valuation-high",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-R05-conflicting-keeps-valuation-high/default/o/owned_closed",
+    "P130-R05-conflicting-keeps-valuation-high/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I5"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-R05-conflicting-keeps-valuation-high.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P130-R06-reservation-amount-malformed",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-R06-reservation-amount-malformed/default/o/owned_closed",
+    "P130-R06-reservation-amount-malformed/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-R06-reservation-amount-malformed.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P130-R06-reservation-rid-missing",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-R06-reservation-rid-missing/default/o/owned_closed",
+    "P130-R06-reservation-rid-missing/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-R06-reservation-rid-missing.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P130-R07-closed-unresolved-predecessor-constrains-successor",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-R07-closed-unresolved-predecessor-constrains-successor/successor/p/owned_closed",
+    "P130-R07-closed-unresolved-predecessor-constrains-successor/successor/p/owned_outstanding",
+    "P130-R07-closed-unresolved-predecessor-constrains-successor/successor/s/owned_closed",
+    "P130-R07-closed-unresolved-predecessor-constrains-successor/successor/s/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice1/oracle-batch1/dossier/P130-R07-closed-unresolved-predecessor-constrains-successor.json"
+   ],
+   "outputs_corrected_in_campaign": false,
+   "findings": [
+    "R8-PLACEMENT-01",
+    "R8-RESERVATION-01"
+   ],
+   "invariants": [
+    "I4",
+    "I5"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-R07-closed-unresolved-predecessor-constrains-successor.json",
+   "root_admission_entry_ids": [
+    "ADM-e92a63823249ca79"
+   ],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P130-R08-admissions-without-tree-still-block",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-R08-admissions-without-tree-still-block/default/o/owned_closed",
+    "P130-R08-admissions-without-tree-still-block/default/o/owned_outstanding",
+    "P130-R08-admissions-without-tree-still-block/default/p/owned_closed",
+    "P130-R08-admissions-without-tree-still-block/default/p/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice2/oracle-r2-evidence/dossier/P130-R08-admissions-without-tree-still-block.json"
+   ],
+   "outputs_corrected_in_campaign": true,
+   "findings": [
+    "R8-LOW-INVENTORY-01"
+   ],
+   "invariants": [
+    "I6"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-R08-admissions-without-tree-still-block.json",
+   "root_admission_entry_ids": [
+    "ADM-36bb190719ec61fd"
+   ],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P130-R10-reopened-then-retired",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-R10-reopened-then-retired/default/o/owned_closed",
+    "P130-R10-reopened-then-retired/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-R10-reopened-then-retired.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": "LEGACY_RETIREMENT_OWNER: resumable/retired session behaviour to dispose at cutover (CONTRACT 2.3 producer fact)"
+  },
+  {
+   "case_id": "P130-R11-open-session-before-retirement",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-R11-open-session-before-retirement/default/o/owned_closed",
+    "P130-R11-open-session-before-retirement/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-R11-open-session-before-retirement.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": "LEGACY_RETIREMENT_OWNER: resumable/retired session behaviour to dispose at cutover (CONTRACT 2.3 producer fact)"
+  },
+  {
+   "case_id": "P130-R12-outstanding-interval-keeps-candidate",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-R12-outstanding-interval-keeps-candidate/default/o/owned_closed",
+    "P130-R12-outstanding-interval-keeps-candidate/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-R12-outstanding-interval-keeps-candidate.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P130-R12-untrusted-clock-keeps-candidate",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-R12-untrusted-clock-keeps-candidate/default/o/owned_closed",
+    "P130-R12-untrusted-clock-keeps-candidate/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice2/oracle-r2-evidence/dossier/P130-R12-untrusted-clock-keeps-candidate.json"
+   ],
+   "outputs_corrected_in_campaign": true,
+   "findings": [
+    "R8-LOW-INVENTORY-01"
+   ],
+   "invariants": [
+    "I6"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-R12-untrusted-clock-keeps-candidate.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P130-R14-anthropic-null-tier-admitted",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-R14-anthropic-null-tier-admitted/default/o/owned_closed",
+    "P130-R14-anthropic-null-tier-admitted/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-R14-anthropic-null-tier-admitted.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P130-T-owned-before-window-summed",
+   "profile": "current_producer",
+   "scopes": [
+    "P130-T-owned-before-window-summed/default/o/owned_closed",
+    "P130-T-owned-before-window-summed/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice2/oracle-r2-evidence/dossier/P130-T-owned-before-window-summed.json"
+   ],
+   "outputs_corrected_in_campaign": false,
+   "findings": [
+    "R8-PLACEMENT-01"
+   ],
+   "invariants": [
+    "I4"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P130-T-owned-before-window-summed.json",
+   "root_admission_entry_ids": [
+    "ADM-10dfd6275fd807c5"
+   ],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-CP-close-after-reference-time",
+   "profile": "current_producer",
+   "scopes": [
+    "P132-CP-close-after-reference-time/default/o/owned_closed",
+    "P132-CP-close-after-reference-time/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-CP-close-after-reference-time.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-CP-close-entry-contradicts-closed-at",
+   "profile": "current_producer",
+   "scopes": [
+    "P132-CP-close-entry-contradicts-closed-at/default/o/owned_closed",
+    "P132-CP-close-entry-contradicts-closed-at/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-CP-close-entry-contradicts-closed-at.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-CP-closed-predecessor-outstanding",
+   "profile": "current_producer",
+   "scopes": [
+    "P132-CP-closed-predecessor-outstanding/request-successor/p/owned_closed",
+    "P132-CP-closed-predecessor-outstanding/request-successor/p/owned_outstanding",
+    "P132-CP-closed-predecessor-outstanding/request-successor/s/owned_closed",
+    "P132-CP-closed-predecessor-outstanding/request-successor/s/owned_outstanding",
+    "P132-CP-closed-predecessor-outstanding/request-predecessor/p/owned_closed",
+    "P132-CP-closed-predecessor-outstanding/request-predecessor/p/owned_outstanding",
+    "P132-CP-closed-predecessor-outstanding/request-predecessor/s/owned_closed",
+    "P132-CP-closed-predecessor-outstanding/request-predecessor/s/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice1/oracle-batch1/dossier/P132-CP-closed-predecessor-outstanding.json"
+   ],
+   "outputs_corrected_in_campaign": true,
+   "findings": [
+    "R8-PLACEMENT-01",
+    "R8-RESERVATION-01"
+   ],
+   "invariants": [
+    "I4",
+    "I5"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-CP-closed-predecessor-outstanding.json",
+   "root_admission_entry_ids": [
+    "ADM-a1ec847020ae6ef5"
+   ],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-CP-closed-valid-close-entry",
+   "profile": "current_producer",
+   "scopes": [
+    "P132-CP-closed-valid-close-entry/default/o/owned_closed",
+    "P132-CP-closed-valid-close-entry/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I3"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-CP-closed-valid-close-entry.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-CP-known-over-limit",
+   "profile": "current_producer",
+   "scopes": [
+    "P132-CP-known-over-limit/default/o/owned_closed",
+    "P132-CP-known-over-limit/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-CP-known-over-limit.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-CP-retired-session-resumed-without-admission",
+   "profile": "current_producer",
+   "scopes": [
+    "P132-CP-retired-session-resumed-without-admission/default/o/owned_closed",
+    "P132-CP-retired-session-resumed-without-admission/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-CP-retired-session-resumed-without-admission.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": "LEGACY_RETIREMENT_OWNER: resumable/retired session behaviour to dispose at cutover (CONTRACT 2.3 producer fact)"
+  },
+  {
+   "case_id": "P132-CP-unknown-below-limit",
+   "profile": "current_producer",
+   "scopes": [
+    "P132-CP-unknown-below-limit/default/o/owned_closed",
+    "P132-CP-unknown-below-limit/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-CP-unknown-below-limit.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-N06-gated",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-N06-gated/default/o/owned_closed",
+    "P132-FG-N06-gated/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-N06-gated.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-N07-gated",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-N07-gated/default/o/owned_closed",
+    "P132-FG-N07-gated/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-N07-gated.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-P130-R02-gated",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-P130-R02-gated/default/o/owned_closed",
+    "P132-FG-P130-R02-gated/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-P130-R02-gated.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-P130-R04-gated",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-P130-R04-gated/limit-1.0/o/owned_closed",
+    "P132-FG-P130-R04-gated/limit-1.0/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-P130-R04-gated.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-P130-R14-gated",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-P130-R14-gated/default/o/owned_closed",
+    "P132-FG-P130-R14-gated/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-P130-R14-gated.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-U03-gated",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-U03-gated/default/o/owned_closed",
+    "P132-FG-U03-gated/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-U03-gated.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-V01-gated",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-V01-gated/default/o/owned_closed",
+    "P132-FG-V01-gated/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-V01-gated.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-V02-gated",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-V02-gated/default/o/owned_closed",
+    "P132-FG-V02-gated/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-V02-gated.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-VC01-before-retirement",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-VC01-before-retirement/default/o/owned_closed",
+    "P132-FG-VC01-before-retirement/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-VC01-before-retirement.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-VC01-gated",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-VC01-gated/default/o/owned_closed",
+    "P132-FG-VC01-gated/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-VC01-gated.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-VC01-no-gate",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-VC01-no-gate/default/o/owned_closed",
+    "P132-FG-VC01-no-gate/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-VC01-no-gate.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-VC02-gated",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-VC02-gated/default/o/owned_closed",
+    "P132-FG-VC02-gated/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-VC02-gated.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-VC11-gated",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-VC11-gated/default/o/owned_closed",
+    "P132-FG-VC11-gated/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-VC11-gated.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-VC13-gated",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-VC13-gated/default/o/owned_closed",
+    "P132-FG-VC13-gated/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-VC13-gated.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-VC14-open-no-billing-bound",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-VC14-open-no-billing-bound/limit-1.0/o/owned_closed",
+    "P132-FG-VC14-open-no-billing-bound/limit-1.0/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-VC14-open-no-billing-bound.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-VC14-open-session-billing-bound",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-VC14-open-session-billing-bound/limit-1.0/o/owned_closed",
+    "P132-FG-VC14-open-session-billing-bound/limit-1.0/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-VC14-open-session-billing-bound.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-VC15-gated",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-VC15-gated/successor/p/owned_closed",
+    "P132-FG-VC15-gated/successor/p/owned_outstanding",
+    "P132-FG-VC15-gated/successor/s/owned_closed",
+    "P132-FG-VC15-gated/successor/s/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice1/oracle-batch1/dossier/P132-FG-VC15-gated.json"
+   ],
+   "outputs_corrected_in_campaign": false,
+   "findings": [
+    "R8-COVERAGE-01",
+    "R8-GATE-IDENTITY-01",
+    "R8-RESERVATION-01"
+   ],
+   "invariants": [
+    "I3",
+    "I5",
+    "I6"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-VC15-gated.json",
+   "root_admission_entry_ids": [
+    "ADM-dbffe7f7052e0d3a"
+   ],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-closure-authority",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-closure-authority/default/o/owned_closed",
+    "P132-FG-closure-authority/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-closure-authority.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-closure-legacy-entry-only",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-closure-legacy-entry-only/default/o/owned_closed",
+    "P132-FG-closure-legacy-entry-only/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-closure-legacy-entry-only.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-gate-contradicted-by-reopening",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-gate-contradicted-by-reopening/default/o/owned_closed",
+    "P132-FG-gate-contradicted-by-reopening/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-gate-contradicted-by-reopening.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-gate-expired",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-gate-expired/default/o/owned_closed",
+    "P132-FG-gate-expired/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-gate-expired.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-gate-flag-only",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-gate-flag-only/default/o/owned_closed",
+    "P132-FG-gate-flag-only/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-gate-flag-only.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-gate-receipt-missing",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-gate-receipt-missing/default/o/owned_closed",
+    "P132-FG-gate-receipt-missing/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-gate-receipt-missing.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-gate-reopening-only",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-gate-reopening-only/default/o/owned_closed",
+    "P132-FG-gate-reopening-only/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-gate-reopening-only.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-gate-request-scope",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-gate-request-scope/default/o/owned_closed",
+    "P132-FG-gate-request-scope/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-gate-request-scope.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-gate-self-asserted-file",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-gate-self-asserted-file/default/o/owned_closed",
+    "P132-FG-gate-self-asserted-file/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-gate-self-asserted-file.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-gate-starts-after-launch",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-gate-starts-after-launch/default/o/owned_closed",
+    "P132-FG-gate-starts-after-launch/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-gate-starts-after-launch.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-gate-wrong-authority",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-gate-wrong-authority/default/o/owned_closed",
+    "P132-FG-gate-wrong-authority/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-gate-wrong-authority.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P132-FG-gate-wrong-session",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P132-FG-gate-wrong-session/default/o/owned_closed",
+    "P132-FG-gate-wrong-session/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P132-FG-gate-wrong-session.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P133-A01-incomplete-usage-above-reservation",
+   "profile": "current_producer",
+   "scopes": [
+    "P133-A01-incomplete-usage-above-reservation/default/o/owned_closed",
+    "P133-A01-incomplete-usage-above-reservation/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I1"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P133-A01-incomplete-usage-above-reservation.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P133-A02-error-status-with-priceable-usage",
+   "profile": "current_producer",
+   "scopes": [
+    "P133-A02-error-status-with-priceable-usage/default/o/owned_closed",
+    "P133-A02-error-status-with-priceable-usage/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P133-A02-error-status-with-priceable-usage.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P133-A04-cache-counts-both-absent",
+   "profile": "current_producer",
+   "scopes": [
+    "P133-A04-cache-counts-both-absent/default/o/owned_closed",
+    "P133-A04-cache-counts-both-absent/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice2/oracle-r2-evidence/dossier/P133-A04-cache-counts-both-absent.json"
+   ],
+   "outputs_corrected_in_campaign": true,
+   "findings": [
+    "R8-LOW-INVENTORY-01"
+   ],
+   "invariants": [
+    "I6"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P133-A04-cache-counts-both-absent.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P133-A04-cache-write-absent-legacy",
+   "profile": "current_producer",
+   "scopes": [
+    "P133-A04-cache-write-absent-legacy/default/o/owned_closed",
+    "P133-A04-cache-write-absent-legacy/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice2/oracle-r2-evidence/dossier/P133-A04-cache-write-absent-legacy.json"
+   ],
+   "outputs_corrected_in_campaign": true,
+   "findings": [
+    "R8-LOW-INVENTORY-01"
+   ],
+   "invariants": [
+    "I6"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P133-A04-cache-write-absent-legacy.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P133-A04-cached-malformed",
+   "profile": "current_producer",
+   "scopes": [
+    "P133-A04-cached-malformed/default/o/owned_closed",
+    "P133-A04-cached-malformed/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I2"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P133-A04-cached-malformed.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P133-A04-cached-nonzero",
+   "profile": "current_producer",
+   "scopes": [
+    "P133-A04-cached-nonzero/default/o/owned_closed",
+    "P133-A04-cached-nonzero/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P133-A04-cached-nonzero.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P133-A04-mixed-observations",
+   "profile": "current_producer",
+   "scopes": [
+    "P133-A04-mixed-observations/default/o/owned_closed",
+    "P133-A04-mixed-observations/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P133-A04-mixed-observations.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P133-A05-model-case-variant",
+   "profile": "current_producer",
+   "scopes": [
+    "P133-A05-model-case-variant/default/o/owned_closed",
+    "P133-A05-model-case-variant/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I2"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P133-A05-model-case-variant.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P133-A06-error-status-null",
+   "profile": "current_producer",
+   "scopes": [
+    "P133-A06-error-status-null/default/o/owned_closed",
+    "P133-A06-error-status-null/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P133-A06-error-status-null.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P133-A06-usage-settlement-status-absent",
+   "profile": "current_producer",
+   "scopes": [
+    "P133-A06-usage-settlement-status-absent/default/o/owned_closed",
+    "P133-A06-usage-settlement-status-absent/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P133-A06-usage-settlement-status-absent.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P133-A09-conflicting-reservations-with-settlement",
+   "profile": "current_producer",
+   "scopes": [
+    "P133-A09-conflicting-reservations-with-settlement/default/o/owned_closed",
+    "P133-A09-conflicting-reservations-with-settlement/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P133-A09-conflicting-reservations-with-settlement.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P133-FG-VC14-authenticated-bound",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P133-FG-VC14-authenticated-bound/limit-1.0/o/owned_closed",
+    "P133-FG-VC14-authenticated-bound/limit-1.0/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P133-FG-VC14-authenticated-bound.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P133-FG-bound-binding-mismatch",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P133-FG-bound-binding-mismatch/limit-1.0/o/owned_closed",
+    "P133-FG-bound-binding-mismatch/limit-1.0/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P133-FG-bound-binding-mismatch.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P133-FG-bound-coverage-incomplete",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P133-FG-bound-coverage-incomplete/limit-1.0/o/owned_closed",
+    "P133-FG-bound-coverage-incomplete/limit-1.0/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P133-FG-bound-coverage-incomplete.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P133-FG-bound-exceeds-cap",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P133-FG-bound-exceeds-cap/limit-1.0/o/owned_closed",
+    "P133-FG-bound-exceeds-cap/limit-1.0/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P133-FG-bound-exceeds-cap.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P133-FG-bound-wrong-currency",
+   "profile": "future_qualified_gate",
+   "scopes": [
+    "P133-FG-bound-wrong-currency/limit-1.0/o/owned_closed",
+    "P133-FG-bound-wrong-currency/limit-1.0/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "future-profile contract dropped as implementation target (operator R1)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P133-FG-bound-wrong-currency.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P2-usage-settlement-unpriced-identity-keeps-charge",
+   "profile": "current_producer",
+   "scopes": [
+    "P2-usage-settlement-unpriced-identity-keeps-charge/default/o/owned_closed",
+    "P2-usage-settlement-unpriced-identity-keeps-charge/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I1",
+    "I2"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P2-usage-settlement-unpriced-identity-keeps-charge.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "P9-claimed-charge-above-reservation",
+   "profile": "current_producer",
+   "scopes": [
+    "P9-claimed-charge-above-reservation/default/o/owned_closed",
+    "P9-claimed-charge-above-reservation/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice1/oracle-batch1/dossier/P9-claimed-charge-above-reservation.json"
+   ],
+   "outputs_corrected_in_campaign": false,
+   "findings": [
+    "R8-COVERAGE-01",
+    "R8-FIN-01",
+    "R8-OWNER-01",
+    "R8-PLACEMENT-01",
+    "R8-RESERVATION-01"
+   ],
+   "invariants": [
+    "I1",
+    "I3",
+    "I4",
+    "I5",
+    "I6"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/P9-claimed-charge-above-reservation.json",
+   "root_admission_entry_ids": [
+    "ADM-4379efee7ead1c3a"
+   ],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "Q5-unrecognised-openai-tier",
+   "profile": "current_producer",
+   "scopes": [
+    "Q5-unrecognised-openai-tier/default/o/owned_closed",
+    "Q5-unrecognised-openai-tier/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/Q5-unrecognised-openai-tier.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "Q8-unadmitted-outside-candidate-window",
+   "profile": "current_producer",
+   "scopes": [
+    "Q8-unadmitted-outside-candidate-window/window-contains/o/owned_closed",
+    "Q8-unadmitted-outside-candidate-window/window-contains/o/owned_outstanding",
+    "Q8-unadmitted-outside-candidate-window/window-starts-later/o/owned_closed",
+    "Q8-unadmitted-outside-candidate-window/window-starts-later/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/Q8-unadmitted-outside-candidate-window.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "R01-dated-rows-backwards",
+   "profile": "current_producer",
+   "scopes": [
+    "R01-dated-rows-backwards/default/o/owned_closed",
+    "R01-dated-rows-backwards/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/R01-dated-rows-backwards.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "R02-string-charge",
+   "profile": "current_producer",
+   "scopes": [
+    "R02-string-charge/default/o/owned_closed",
+    "R02-string-charge/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/R02-string-charge.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "R04-reused-reservation-id",
+   "profile": "current_producer",
+   "scopes": [
+    "R04-reused-reservation-id/default/o/owned_closed",
+    "R04-reused-reservation-id/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/R04-reused-reservation-id.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "R05-non-object-json-rows",
+   "profile": "current_producer",
+   "scopes": [
+    "R05-non-object-json-rows/default/o/owned_closed",
+    "R05-non-object-json-rows/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/R05-non-object-json-rows.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "R06-launch-row-missing",
+   "profile": "current_producer",
+   "scopes": [
+    "R06-launch-row-missing/default/o/owned_closed",
+    "R06-launch-row-missing/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/R06-launch-row-missing.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "R6-C01-writer-reservation-floor-control",
+   "profile": "current_producer",
+   "scopes": [
+    "R6-C01-writer-reservation-floor-control/default/o/owned_closed",
+    "R6-C01-writer-reservation-floor-control/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/R6-C01-writer-reservation-floor-control.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "R6-C02-non200-success-terminal-usage-control",
+   "profile": "current_producer",
+   "scopes": [
+    "R6-C02-non200-success-terminal-usage-control/default/o/owned_closed",
+    "R6-C02-non200-success-terminal-usage-control/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I1"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/R6-C02-non200-success-terminal-usage-control.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "S01-reservation-basis-charged-less",
+   "profile": "current_producer",
+   "scopes": [
+    "S01-reservation-basis-charged-less/default/o/owned_closed",
+    "S01-reservation-basis-charged-less/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I1"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/S01-reservation-basis-charged-less.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "S01-reserved-usd-omitted",
+   "profile": "current_producer",
+   "scopes": [
+    "S01-reserved-usd-omitted/default/o/owned_closed",
+    "S01-reserved-usd-omitted/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I1"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/S01-reserved-usd-omitted.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "S01-upstream-error-charged-zero",
+   "profile": "current_producer",
+   "scopes": [
+    "S01-upstream-error-charged-zero/default/o/owned_closed",
+    "S01-upstream-error-charged-zero/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I1"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/S01-upstream-error-charged-zero.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "S02-attempt-number-differs",
+   "profile": "current_producer",
+   "scopes": [
+    "S02-attempt-number-differs/default/o/owned_closed",
+    "S02-attempt-number-differs/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/S02-attempt-number-differs.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "S02-control-error-status-after-reservation",
+   "profile": "current_producer",
+   "scopes": [
+    "S02-control-error-status-after-reservation/default/o/owned_closed",
+    "S02-control-error-status-after-reservation/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I6"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/S02-control-error-status-after-reservation.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "S02-settlement-before-reservation",
+   "profile": "current_producer",
+   "scopes": [
+    "S02-settlement-before-reservation/default/o/owned_closed",
+    "S02-settlement-before-reservation/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/S02-settlement-before-reservation.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "S03-settlement-stamped-far-future",
+   "profile": "current_producer",
+   "scopes": [
+    "S03-settlement-stamped-far-future/default/o/owned_closed",
+    "S03-settlement-stamped-far-future/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/S03-settlement-stamped-far-future.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "S04-next-unrelated-row-does-not-close",
+   "profile": "current_producer",
+   "scopes": [
+    "S04-next-unrelated-row-does-not-close/default/o/owned_closed",
+    "S04-next-unrelated-row-does-not-close/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/S04-next-unrelated-row-does-not-close.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "S05-unrelated-orphan-log-does-not-block",
+   "profile": "current_producer",
+   "scopes": [
+    "S05-unrelated-orphan-log-does-not-block/default/o/owned_closed",
+    "S05-unrelated-orphan-log-does-not-block/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/S05-unrelated-orphan-log-does-not-block.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "S06-string-http-status",
+   "profile": "current_producer",
+   "scopes": [
+    "S06-string-http-status/default/o/owned_closed",
+    "S06-string-http-status/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/S06-string-http-status.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "S08-control-pending-commitment",
+   "profile": "current_producer",
+   "scopes": [
+    "S08-control-pending-commitment/default/o/owned_closed",
+    "S08-control-pending-commitment/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/S08-control-pending-commitment.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "S08-negative-commitment-cap",
+   "profile": "current_producer",
+   "scopes": [
+    "S08-negative-commitment-cap/default/o/owned_closed",
+    "S08-negative-commitment-cap/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/S08-negative-commitment-cap.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "U01-malformed-attempt-number",
+   "profile": "current_producer",
+   "scopes": [
+    "U01-malformed-attempt-number/default/o/owned_closed",
+    "U01-malformed-attempt-number/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/U01-malformed-attempt-number.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "U02-final-line-without-newline",
+   "profile": "current_producer",
+   "scopes": [
+    "U02-final-line-without-newline/default/o/owned_closed",
+    "U02-final-line-without-newline/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/U02-final-line-without-newline.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "U03-control",
+   "profile": "current_producer",
+   "scopes": [
+    "U03-control/default/o/owned_closed",
+    "U03-control/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/U03-control.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": "LEGACY_RETIREMENT_OWNER: resumable/retired session behaviour to dispose at cutover (CONTRACT 2.3 producer fact)"
+  },
+  {
+   "case_id": "U03-retirement-before-turn-evidence",
+   "profile": "current_producer",
+   "scopes": [
+    "U03-retirement-before-turn-evidence/default/o/owned_closed",
+    "U03-retirement-before-turn-evidence/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/U03-retirement-before-turn-evidence.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": "LEGACY_RETIREMENT_OWNER: resumable/retired session behaviour to dispose at cutover (CONTRACT 2.3 producer fact)"
+  },
+  {
+   "case_id": "U04-control-settled-before-closure",
+   "profile": "current_producer",
+   "scopes": [
+    "U04-control-settled-before-closure/default/o/owned_closed",
+    "U04-control-settled-before-closure/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/U04-control-settled-before-closure.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "U04-settled-after-closure-stays-with-owner",
+   "profile": "current_producer",
+   "scopes": [
+    "U04-settled-after-closure-stays-with-owner/default/o/owned_closed",
+    "U04-settled-after-closure-stays-with-owner/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/U04-settled-after-closure-stays-with-owner.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "U05-inconsistent-charge-without-response-id",
+   "profile": "current_producer",
+   "scopes": [
+    "U05-inconsistent-charge-without-response-id/default/o/owned_closed",
+    "U05-inconsistent-charge-without-response-id/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I2"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/U05-inconsistent-charge-without-response-id.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "U05-usage-settlement-without-response-id",
+   "profile": "current_producer",
+   "scopes": [
+    "U05-usage-settlement-without-response-id/default/o/owned_closed",
+    "U05-usage-settlement-without-response-id/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I2"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/U05-usage-settlement-without-response-id.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "U06-subscription-upstream-error-unlabelled",
+   "profile": "current_producer",
+   "scopes": [
+    "U06-subscription-upstream-error-unlabelled/default/o/owned_closed",
+    "U06-subscription-upstream-error-unlabelled/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice2/oracle-r2-evidence/dossier/U06-subscription-upstream-error-unlabelled.json"
+   ],
+   "outputs_corrected_in_campaign": true,
+   "findings": [
+    "R8-NAMESPACE-01"
+   ],
+   "invariants": [
+    "I3"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/U06-subscription-upstream-error-unlabelled.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "U07-unrelated-non-object-usage-does-not-block",
+   "profile": "current_producer",
+   "scopes": [
+    "U07-unrelated-non-object-usage-does-not-block/default/o/owned_closed",
+    "U07-unrelated-non-object-usage-does-not-block/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/U07-unrelated-non-object-usage-does-not-block.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "U08-missing-observed-tier",
+   "profile": "current_producer",
+   "scopes": [
+    "U08-missing-observed-tier/default/o/owned_closed",
+    "U08-missing-observed-tier/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/U08-missing-observed-tier.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "V01-cheaper-response-model-undercharge",
+   "profile": "current_producer",
+   "scopes": [
+    "V01-cheaper-response-model-undercharge/default/o/owned_closed",
+    "V01-cheaper-response-model-undercharge/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/V01-cheaper-response-model-undercharge.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "V01-control-producer-price",
+   "profile": "current_producer",
+   "scopes": [
+    "V01-control-producer-price/default/o/owned_closed",
+    "V01-control-producer-price/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/V01-control-producer-price.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "V01-usage-settlement-other-response-model",
+   "profile": "current_producer",
+   "scopes": [
+    "V01-usage-settlement-other-response-model/default/o/owned_closed",
+    "V01-usage-settlement-other-response-model/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice1/oracle-batch1/dossier/V01-usage-settlement-other-response-model.json"
+   ],
+   "outputs_corrected_in_campaign": false,
+   "findings": [
+    "R8-COVERAGE-01",
+    "R8-IDENTITY-01",
+    "R8-RESERVATION-01"
+   ],
+   "invariants": [
+    "I2",
+    "I3",
+    "I5",
+    "I6"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/V01-usage-settlement-other-response-model.json",
+   "root_admission_entry_ids": [
+    "ADM-85990f1b1f19cb5d"
+   ],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "V02-control-producer-price",
+   "profile": "current_producer",
+   "scopes": [
+    "V02-control-producer-price/default/o/owned_closed",
+    "V02-control-producer-price/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/V02-control-producer-price.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "V02-unsplit-writes-undercharged",
+   "profile": "current_producer",
+   "scopes": [
+    "V02-unsplit-writes-undercharged/default/o/owned_closed",
+    "V02-unsplit-writes-undercharged/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/V02-unsplit-writes-undercharged.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "V03-control-labelled-upstream-error",
+   "profile": "current_producer",
+   "scopes": [
+    "V03-control-labelled-upstream-error/default/o/owned_closed",
+    "V03-control-labelled-upstream-error/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice2/oracle-r2-evidence/dossier/V03-control-labelled-upstream-error.json"
+   ],
+   "outputs_corrected_in_campaign": true,
+   "findings": [
+    "R8-NAMESPACE-01"
+   ],
+   "invariants": [
+    "I3"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/V03-control-labelled-upstream-error.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "V03-subscription-upstream-error-labelled-api",
+   "profile": "current_producer",
+   "scopes": [
+    "V03-subscription-upstream-error-labelled-api/default/o/owned_closed",
+    "V03-subscription-upstream-error-labelled-api/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice2/oracle-r2-evidence/dossier/V03-subscription-upstream-error-labelled-api.json"
+   ],
+   "outputs_corrected_in_campaign": true,
+   "findings": [
+    "R8-NAMESPACE-01"
+   ],
+   "invariants": [
+    "I3"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/V03-subscription-upstream-error-labelled-api.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "V06-reservation-attempt-number-missing",
+   "profile": "current_producer",
+   "scopes": [
+    "V06-reservation-attempt-number-missing/default/o/owned_closed",
+    "V06-reservation-attempt-number-missing/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/V06-reservation-attempt-number-missing.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "V07-unrelated-unreadable-log-does-not-block",
+   "profile": "current_producer",
+   "scopes": [
+    "V07-unrelated-unreadable-log-does-not-block/default/o/owned_closed",
+    "V07-unrelated-unreadable-log-does-not-block/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/V07-unrelated-unreadable-log-does-not-block.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "VC01-openai-usage-settlement",
+   "profile": "current_producer",
+   "scopes": [
+    "VC01-openai-usage-settlement/default/o/owned_closed",
+    "VC01-openai-usage-settlement/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/VC01-openai-usage-settlement.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "VC02-anthropic-usage-settlement",
+   "profile": "current_producer",
+   "scopes": [
+    "VC02-anthropic-usage-settlement/default/o/owned_closed",
+    "VC02-anthropic-usage-settlement/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/VC02-anthropic-usage-settlement.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "VC03-reservation-settlement-with-usage",
+   "profile": "current_producer",
+   "scopes": [
+    "VC03-reservation-settlement-with-usage/default/o/owned_closed",
+    "VC03-reservation-settlement-with-usage/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/VC03-reservation-settlement-with-usage.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "VC04-upstream-error-keeps-reservation",
+   "profile": "current_producer",
+   "scopes": [
+    "VC04-upstream-error-keeps-reservation/default/o/owned_closed",
+    "VC04-upstream-error-keeps-reservation/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I6"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/VC04-upstream-error-keeps-reservation.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "VC05-unsettled-reservation",
+   "profile": "current_producer",
+   "scopes": [
+    "VC05-unsettled-reservation/default/o/owned_closed",
+    "VC05-unsettled-reservation/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [
+    "I6"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/VC05-unsettled-reservation.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "VC06-unbudgeted-completed-request",
+   "profile": "current_producer",
+   "scopes": [
+    "VC06-unbudgeted-completed-request/default/o/owned_closed",
+    "VC06-unbudgeted-completed-request/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/VC06-unbudgeted-completed-request.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "VC07-read-failure-paired",
+   "profile": "current_producer",
+   "scopes": [
+    "VC07-read-failure-paired/default/o/owned_closed",
+    "VC07-read-failure-paired/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/VC07-read-failure-paired.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "VC08-subscription-measured-request",
+   "profile": "current_producer",
+   "scopes": [
+    "VC08-subscription-measured-request/default/o/owned_closed",
+    "VC08-subscription-measured-request/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "DERIVED (owner dossier)",
+   "dossiers": [
+    "slice1/oracle-batch1/dossier/VC08-subscription-measured-request.json",
+    "slice2/oracle-r2-evidence/dossier/VC08-subscription-measured-request.json"
+   ],
+   "outputs_corrected_in_campaign": true,
+   "findings": [
+    "R8-NAMESPACE-01"
+   ],
+   "invariants": [
+    "I3"
+   ],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/VC08-subscription-measured-request.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": "DEV_VERTICAL: invariant regression scenario against the hosted ledger",
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "VC11-multi-turn-session",
+   "profile": "current_producer",
+   "scopes": [
+    "VC11-multi-turn-session/default/o/owned_closed",
+    "VC11-multi-turn-session/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/VC11-multi-turn-session.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "VC12-reused-n-without-errors",
+   "profile": "current_producer",
+   "scopes": [
+    "VC12-reused-n-without-errors/default/o/owned_closed",
+    "VC12-reused-n-without-errors/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/VC12-reused-n-without-errors.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "VC13-equal-timestamps",
+   "profile": "current_producer",
+   "scopes": [
+    "VC13-equal-timestamps/default/o/owned_closed",
+    "VC13-equal-timestamps/default/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/VC13-equal-timestamps.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "VC14-open-session-commitment",
+   "profile": "current_producer",
+   "scopes": [
+    "VC14-open-session-commitment/limit-1.0/o/owned_closed",
+    "VC14-open-session-commitment/limit-1.0/o/owned_outstanding",
+    "VC14-open-session-commitment/limit-0.55/o/owned_closed",
+    "VC14-open-session-commitment/limit-0.55/o/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/VC14-open-session-commitment.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  },
+  {
+   "case_id": "VC15-successor-not-charged-settled-predecessor-spend",
+   "profile": "current_producer",
+   "scopes": [
+    "VC15-successor-not-charged-settled-predecessor-spend/successor/p/owned_closed",
+    "VC15-successor-not-charged-settled-predecessor-spend/successor/p/owned_outstanding",
+    "VC15-successor-not-charged-settled-predecessor-spend/successor/s/owned_closed",
+    "VC15-successor-not-charged-settled-predecessor-spend/successor/s/owned_outstanding"
+   ],
+   "historical_record": "RETAINED",
+   "full_s1_qualification": "SUPERSEDED",
+   "superseded_reason": "legacy role_host/pi_container consumer intended for retirement; no full S1/S2a for it (operator R2)",
+   "independent_derivation": "NOT_DERIVED (not pursued)",
+   "dossiers": [],
+   "outputs_corrected_in_campaign": false,
+   "findings": [],
+   "invariants": [],
+   "case_file": "experiments/pi-attempt-accounting/s1/corpus/cases/VC15-successor-not-charged-settled-predecessor-spend.json",
+   "root_admission_entry_ids": [],
+   "transferred_qualification": null,
+   "retirement_evidence": null
+  }
+ ]
+}

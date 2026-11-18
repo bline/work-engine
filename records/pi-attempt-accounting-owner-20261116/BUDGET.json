@@ -30,5 +30,10 @@
     "operator_fact": "Pi using Claude via OAuth (provider 'anthropic') bills separately from the Claude subscription quota; the claude-sdk provider uses the actual Claude subscription quota.",
     "rule": "All campaign children, including Fable reviews, use the claude-sdk provider ('claude-sdk/<model>'), never 'anthropic/<model>'. Verified: root, oracle and spec sessions all record provider claude-sdk.",
     "budget_meaning": "Pi usage.cost on claude-sdk is an API-equivalent proxy for the operator's dollar ceiling, not an invoice; subscription 5-hour/weekly limits are a separate capacity constraint (infrastructure interruptions)."
+  },
+  "grant_amendment": {
+    "at": "2026-11-17",
+    "ceiling_usd": 205,
+    "basis": "Operator chose the Fable xhigh plan review after root stated it needed about +5 headroom; root reads the choice as approving ceiling 205 and told the operator so (can be withdrawn)."
   }
 }
