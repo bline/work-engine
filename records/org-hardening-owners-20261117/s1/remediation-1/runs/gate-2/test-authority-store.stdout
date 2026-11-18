@@ -1,0 +1,42 @@
+
+running 37 tests
+test declared_provider_family_comes_from_the_frozen_requirements ... ok
+test a_binding_to_another_image_or_runtime_is_refused ... ok
+test a_wrong_revision_is_refused ... ok
+test admission_withdrawal_refuses ... ok
+test a_commit_error_is_unknown_never_not_committed_and_the_handle_fails_closed ... ok
+test a_grant_for_another_admission_or_another_scope_is_refused ... ok
+test failure_before_begin_is_not_committed_and_retryable ... ok
+test feature_ordinary_api_has_no_success_value ... ok
+test an_error_after_begin_is_unknown ... ok
+test a_wrong_organization_identity_is_refused ... ok
+test fixture_rows_never_satisfy_the_ordinary_path ... ok
+test host_unknown_is_never_re_executed_and_cannot_publish ... ok
+test fixture_publication_is_marked_complete_and_readable_from_the_store ... ok
+test duplicate_request_replays_and_writes_nothing_new ... ok
+test ordinary_rows_never_satisfy_the_fixture_path ... ok
+test oversized_body_is_refused ... ok
+test a_refusal_is_recorded_and_replays_identically ... ok
+test lost_reply_after_commit_reconciles_as_committed_and_replays_without_a_new_row ... ok
+test corrupt_database_is_a_hard_error ... ok
+test busy_begin_is_not_committed_and_the_same_operation_is_retryable ... ok
+test pf5_fixture_scheduling_exists_without_ordinary_admission ... ok
+test schema_label_constant_matches_the_check ... ok
+test pf4_ordinary_admission_refuses_the_candidate_and_names_the_none_rows ... ok
+test requirements_supersession_refuses_the_old_revision ... ok
+test publish_without_a_prepared_execution_is_refused ... ok
+test projection_failure_after_publish_leaves_authority_intact ... ok
+test read_only_database_never_reports_published ... ok
+test revocation_after_publication_keeps_the_earlier_result_and_orders_after_it ... ok
+test receipt_from_another_job_is_refused ... ok
+test same_operation_id_with_a_different_request_conflicts_without_writing ... ok
+test storage_constraints_reject_non_fixture_results_and_attestation ... ok
+test publication_requires_the_provider_family_record_and_keeps_the_unestablished_list ... ok
+test tampered_receipt_bytes_and_wrong_receipt_id_are_refused ... ok
+test write_transactions_take_the_write_lock_at_begin ... ok
+test second_result_for_the_same_execution_is_refused_as_already_published ... ok
+test revocation_before_publication_refuses ... ok
+test wrong_evidence_is_refused ... ok
+
+test result: ok. 37 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+

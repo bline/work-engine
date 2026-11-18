@@ -1,0 +1,754 @@
+{
+ "cwd": "/home/bline/cbm-work/wt-org-hardening-20261117/rust",
+ "env": {
+  "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target",
+  "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+  "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+ },
+ "steps": [
+  {
+   "name": "pre-hashes",
+   "argv": [
+    "git",
+    "hash-object",
+    "crates/work-engine-review-delivery/src/gate.rs",
+    "crates/work-engine-review-delivery/src/native.rs",
+    "crates/work-engine-review-preparation/src/fixture.rs"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M1-admitted-family.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "M1-admitted-family"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M1-admitted-family.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--test",
+    "gate",
+    "--",
+    "discharge_is_total_admitted_kinds_name_their_check_ids",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "M1-admitted-family.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "M1-admitted-family"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M2-assumed-family.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "M2-assumed-family"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M2-assumed-family.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--test",
+    "gate",
+    "--",
+    "discharge_is_total_admitted_kinds_name_their_check_ids",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "M2-assumed-family.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "M2-assumed-family"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M3-realization-check.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "M3-realization-check"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M3-realization-check.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--test",
+    "gate",
+    "--",
+    "discharge_is_total_admitted_kinds_name_their_check_ids",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "M3-realization-check.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "M3-realization-check"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M4-refusal-after-spawn.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "M4-refusal-after-spawn"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M4-refusal-after-spawn.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "test-support",
+    "--test",
+    "native_vertical",
+    "--",
+    "sb_an_admission_refusal_refuses_before_spawn",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "M4-refusal-after-spawn.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "M4-refusal-after-spawn"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M6-replay-admission-observation.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "M6-replay-admission-observation"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M6-replay-admission-observation.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "test-support",
+    "--test",
+    "native_vertical",
+    "--",
+    "sb_revocation_supersession_or_missing_grant_between_boundaries_refuses_consumption",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "M6-replay-admission-observation.test1",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--test",
+    "gate",
+    "--",
+    "regate_reads_a_fresh_observation",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "M6-replay-admission-observation.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "M6-replay-admission-observation"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M7-no-regate.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "M7-no-regate"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M7-no-regate.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "test-support",
+    "--test",
+    "native_vertical",
+    "--",
+    "sb_revocation_supersession_or_missing_grant_between_boundaries_refuses_consumption",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "M7-no-regate.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "M7-no-regate"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M8-unknown-permits.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "M8-unknown-permits"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M8-unknown-permits.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "test-support",
+    "--test",
+    "native_vertical",
+    "--",
+    "sb_unknown_at_the_regate_fails_closed",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "M8-unknown-permits.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "M8-unknown-permits"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M9-no-finality.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "M9-no-finality"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M9-no-finality.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--test",
+    "gate",
+    "--",
+    "the_first_non_current_state_other_than_unknown_is_final",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "M9-no-finality.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "M9-no-finality"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M10-public-run-attempt.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "M10-public-run-attempt"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M10-public-run-attempt.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--doc"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "M10-public-run-attempt.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "M10-public-run-attempt"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M11-public-assess.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "M11-public-assess"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "M11-public-assess.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--doc"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "M11-public-assess.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "M11-public-assess"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "S1-P1-other-candidate.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "S1-P1-other-candidate"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "S1-P1-other-candidate.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-preparation",
+    "--features",
+    "fixture",
+    "--test",
+    "fixture_consumer",
+    "--",
+    "s1_a_gate_proof_for_another_candidate_subject_or_boundary_is_refused",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "S1-P1-other-candidate.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "S1-P1-other-candidate"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "S1-P2-other-subject.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "S1-P2-other-subject"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "S1-P2-other-subject.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-preparation",
+    "--features",
+    "fixture",
+    "--test",
+    "fixture_consumer",
+    "--",
+    "s1_a_gate_proof_for_another_candidate_subject_or_boundary_is_refused",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "S1-P2-other-subject.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "S1-P2-other-subject"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "S1-P3-other-boundary.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "S1-P3-other-boundary"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "S1-P3-other-boundary.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-preparation",
+    "--features",
+    "fixture",
+    "--test",
+    "fixture_consumer",
+    "--",
+    "s1_a_gate_proof_for_another_candidate_subject_or_boundary_is_refused",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "S1-P3-other-boundary.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "S1-P3-other-boundary"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "S1-P4-missing-proof-accepted.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "S1-P4-missing-proof-accepted"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "S1-P4-missing-proof-accepted.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-preparation",
+    "--features",
+    "fixture",
+    "--test",
+    "fixture_consumer",
+    "--",
+    "s1_a_gate_proof_that_is_not_current_or_has_no_observation_is_refused",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "S1-P4-missing-proof-accepted.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "S1-P4-missing-proof-accepted"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "S1-P5-skip-proof-check.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "S1-P5-skip-proof-check"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "S1-P5-skip-proof-check.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-preparation",
+    "--features",
+    "fixture",
+    "--test",
+    "fixture_consumer",
+    "--",
+    "s1_a_gate_proof_that_is_not_current_or_has_no_observation_is_refused",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "S1-P5-skip-proof-check.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "S1-P5-skip-proof-check"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "S1-P6-test-support-under-fixture.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "S1-P6-test-support-under-fixture"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "S1-P6-test-support-under-fixture.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--doc"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "S1-P6-test-support-under-fixture.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "S1-P6-test-support-under-fixture"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "S1-P7-delivery-regate-revision-dropped.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "apply",
+    "S1-P7-delivery-regate-revision-dropped"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "S1-P7-delivery-regate-revision-dropped.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "test-support",
+    "--test",
+    "native_vertical",
+    "--",
+    "s1_both_regate_revisions_are_carried_and_follow_their_admissions",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "S1-P7-delivery-regate-revision-dropped.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "S1-P7-delivery-regate-revision-dropped"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "final-hashes",
+   "argv": [
+    "git",
+    "hash-object",
+    "crates/work-engine-review-delivery/src/gate.rs",
+    "crates/work-engine-review-delivery/src/native.rs",
+    "crates/work-engine-review-preparation/src/fixture.rs"
+   ],
+   "timeout": 60
+  }
+ ]
+}

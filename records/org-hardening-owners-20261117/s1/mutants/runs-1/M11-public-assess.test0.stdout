@@ -1,0 +1,22 @@
+
+running 9 tests
+test crates/work-engine-review-delivery/src/gate.rs - gate (line 39) - compile fail ... ok
+test crates/work-engine-review-delivery/src/native.rs - native (line 39) - compile fail ... ok
+test crates/work-engine-review-delivery/src/native.rs - native (line 31) - compile fail ... ok
+test crates/work-engine-review-delivery/src/binding.rs - binding (line 21) - compile fail ... ok
+test crates/work-engine-review-delivery/src/native.rs - native (line 58) - compile fail ... ok
+test crates/work-engine-review-delivery/src/native.rs - native (line 52) - compile fail ... ok
+test crates/work-engine-review-delivery/src/native.rs - native (line 35) - compile fail ... ok
+test crates/work-engine-review-delivery/src/native.rs - native (line 45) - compile fail ... ok
+test crates/work-engine-review-delivery/src/gate.rs - gate (line 35) - compile fail ... FAILED
+
+failures:
+
+---- crates/work-engine-review-delivery/src/gate.rs - gate (line 35) stdout ----
+Test compiled successfully, but it's marked `compile_fail`.
+
+failures:
+    crates/work-engine-review-delivery/src/gate.rs - gate (line 35)
+
+test result: FAILED. 8 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+

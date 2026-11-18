@@ -1,0 +1,19 @@
+
+running 1 test
+test sb_revocation_supersession_or_missing_grant_between_boundaries_refuses_consumption ... FAILED
+
+failures:
+
+---- sb_revocation_supersession_or_missing_grant_between_boundaries_refuses_consumption stdout ----
+
+thread 'sb_revocation_supersession_or_missing_grant_between_boundaries_refuses_consumption' (3738879) panicked at crates/work-engine-review-delivery/tests/native_vertical.rs:1089:9:
+sb-between-revoked: expected a gate refusal
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+scratch retained for diagnosis: /home/bline/cbm-work/org-r2-core-20261117/target/tmp/native-vertical/sb-between-revoked-3738878
+
+
+failures:
+    sb_revocation_supersession_or_missing_grant_between_boundaries_refuses_consumption
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 32 filtered out; finished in 1.81s
+

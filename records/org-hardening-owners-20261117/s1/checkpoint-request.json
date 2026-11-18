@@ -1,0 +1,75 @@
+{
+ "schema_version": 1,
+ "repository": "/home/bline/cbm-work/wt-org-hardening-20261117",
+ "run_id": "org-hardening-owners-20261117",
+ "slice_number": 1,
+ "candidate_attempt": 1,
+ "baseline_commit_oid": "0fe9dc745f7c4157d3980ab6d6dd686fef36ad5c",
+ "parent_checkpoint_commit_oid": null,
+ "plan_version": "sha256:47f339465698c4e30fbd5acf3d1de0b226870baae516c97515ca03732c2b9f09",
+ "scope_revision": "s1-post-r2-gate-hardening-r2",
+ "gate_receipt_digest": "e3c23c36af1b527d38b0c636071e7ae7a455af9b703e325e59a1344d3eb1b315",
+ "created_at": "2026-11-18T00:21:25.506303+00:00",
+ "paths": [
+  {
+   "path": "rust/Cargo.lock",
+   "action": "include",
+   "attribution": "generated_dependency"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/Cargo.toml",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/src/binding.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/src/gate.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/src/lib.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/src/native.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-delivery/tests/native_vertical.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-preparation/Cargo.toml",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-preparation/src/fixture.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-preparation/src/lib.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-preparation/tests/common/mod.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  },
+  {
+   "path": "rust/crates/work-engine-review-preparation/tests/fixture_consumer.rs",
+   "action": "include",
+   "attribution": "task_owned"
+  }
+ ]
+}

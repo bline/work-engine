@@ -1,0 +1,4 @@
+   Compiling work-engine-review-delivery v0.1.0 (/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.67s
+   Doc-tests work_engine_review_delivery
+error: doctest failed, to rerun pass `-p work-engine-review-delivery --doc`

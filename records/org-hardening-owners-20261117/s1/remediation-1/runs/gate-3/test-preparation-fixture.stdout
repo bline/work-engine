@@ -1,0 +1,61 @@
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 15 tests
+test coverage_is_derived_from_the_obligation_and_the_declared_mapping ... ok
+test a_boundary_and_consumer_that_merely_match_the_candidate_are_not_a_mapping ... ok
+test removing_a_required_admission_cannot_advance_the_episode ... ok
+test a_complete_consistent_admission_set_reaches_the_real_reducer_and_is_only_a_fixture_observation ... ok
+test a_declaration_cannot_change_the_production_preparation ... ok
+test an_unsupported_result_contract_is_refused_before_the_gate_or_the_transition ... ok
+test s1_a_current_gate_proof_for_this_consumption_lets_the_episode_advance ... ok
+test a_result_with_another_contract_version_is_refused_by_the_episode_owner ... ok
+test the_episode_core_alone_reaches_reported_without_admissions_so_the_gate_is_what_stops_it ... ok
+test non_established_evidence_cannot_advance_the_episode_but_the_reducer_alone_would_record_it ... ok
+test a_substituted_binding_or_reference_cannot_advance_the_episode ... ok
+test s1_a_gate_proof_that_is_not_current_or_has_no_observation_is_refused ... ok
+test declarations_that_disagree_with_the_candidate_the_subject_or_the_episode_are_refused ... ok
+test s1_a_gate_proof_for_another_candidate_subject_or_boundary_is_refused ... ok
+test the_episode_owner_keeps_revision_writer_subject_and_phase_checks ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+
+running 24 tests
+test a_builder_condition_of_another_obligation_still_contributes_to_the_selected_separation ... ok
+test a_builder_condition_added_by_another_obligation_extends_the_selected_separation_rows ... ok
+test changing_an_owned_proposition_or_route_changes_the_constructed_context ... ok
+test a_matching_descriptor_is_a_claim_and_clears_no_blocker ... ok
+test changing_only_the_provider_of_a_writing_coding_fixture_removes_no_other_blocker ... ok
+test another_obligations_unsupported_condition_does_not_refuse_an_obligation_it_does_not_own ... ok
+test a_condition_named_like_another_obligation_does_not_leak_its_rows_into_that_obligation ... ok
+test projection_carries_the_owned_meaning_of_the_selected_obligation ... ok
+test a_changed_requirement_without_a_mechanism_is_refused_by_preparation_not_by_the_owner ... ok
+test preparation_serializes_and_reads_back_without_loss ... ok
+test the_fixture_inputs_are_the_frozen_bytes ... ok
+test separation_has_no_mechanism_in_the_report_and_stays_a_blocker ... ok
+test values_the_schema_owner_rejects_never_reach_preparation ... ok
+test unknown_obligations_and_invalid_subjects_are_refused ... ok
+test an_obligation_named_like_another_obligations_condition_does_not_leak_its_result_contract_row ... ok
+test the_current_candidate_is_blocked_by_every_unestablished_mapping ... ok
+test trace_rows_of_other_kinds_with_a_coincident_id_are_not_provenance ... ok
+test separation_requirements_keep_the_owners_trace_rows ... ok
+test unsupported_result_contracts_are_refused_with_the_contract_named ... ok
+test the_second_obligation_selects_only_its_own_contract_and_condition ... ok
+test removing_the_realization_constraints_removes_their_enforcement_rows ... ok
+test every_emitted_blocker_has_exactly_the_kind_its_id_family_names ... ok
+test incompatible_descriptors_add_known_incompatibilities ... ok
+test fixture_route::another_obligations_coincident_id_does_not_change_fixture_coverage ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+
+running 2 tests
+test crates/work-engine-review-preparation/src/fixture.rs - fixture (line 33) - compile fail ... ok
+test crates/work-engine-review-preparation/src/fixture.rs - fixture (line 51) - compile fail ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+

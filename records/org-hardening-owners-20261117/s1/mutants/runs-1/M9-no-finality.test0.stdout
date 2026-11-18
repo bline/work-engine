@@ -1,0 +1,20 @@
+
+running 1 test
+test the_first_non_current_state_other_than_unknown_is_final ... FAILED
+
+failures:
+
+---- the_first_non_current_state_other_than_unknown_is_final stdout ----
+
+thread 'the_first_non_current_state_other_than_unknown_is_final' (3731209) panicked at crates/work-engine-review-delivery/tests/gate.rs:288:5:
+assertion `left == right` failed: final
+  left: Current { revision: ObservationRevision(16, 78485c28fb44ace11409d1e6ad9b2b8b024a747973facac13f016572ca82cef3) }
+ right: Refused(Outcomes({O3: Passed, O4: Refused([Reason { code: AuthorityScopeUnresolved, subject: "authority:auth-accept-builder-projection" }, Reason { code: AuthorityScopeUnresolved, subject: "authority:auth-accept-campaign-terminalization" }, Reason { code: AuthorityScopeUnresolved, subject: "component:component:campaign/terminalize_campaign" }, Reason { code: AuthorityScopeUnresolved, subject: "component:component:episode_host/read_episode" }, Reason { code: AuthorityScopeUnresolved, subject: "component:component:episode_host/write_episode" }]), O5: Passed, O8: Passed, O9: Passed, R1: Passed, R2: Passed, R3: Passed, R4: Passed}))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    the_first_non_current_state_other_than_unknown_is_final
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.02s
+

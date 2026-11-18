@@ -1,0 +1,29 @@
+{
+ "mutant": "M4-refusal-after-spawn",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery/src/native.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "66169b9cf6a880accf38f6e3087ebb1ede7056483432bef10d465a78983d70fd",
+   "mutated_sha256": "4a5126c5c1995683c6d364c6807c43664f062b9fa1bf73b0e17cf137a8c80f91"
+  },
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery/src/gate.rs",
+   "backup": "orig-1.bak",
+   "original_sha256": "eaa57bf8baee3ffe8461ac0ae04180f874db6d9321d88a25c6eeca673e7ab3a2",
+   "mutated_sha256": "1a051392b131f13491a8b4349284e8c1e9aca2d90d898744b9301e5a2f1cf898"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery/src/native.rs",
+   "old": "    let mut delivery = admit_at(BoundaryKind::Delivery).map_err(before_spawn)?;",
+   "new": "    let mut delivery = match admit_at(BoundaryKind::Delivery) {\n        Ok(d) => d,\n        Err(refusal) => {\n            let _ = run_native(cfg, binding, &crate::gate::mutant_assumed(binding));\n            return Err(before_spawn(refusal));\n        }\n    };"
+  },
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery/src/gate.rs",
+   "old": "/// One admission the host obtained itself at one reserved boundary, held for its regate.\n",
+   "new": "pub(crate) fn mutant_assumed(binding: &ExperimentBinding) -> AssumedDischarges {\n    AssumedDischarges { boundary: Boundary::BeforeSpawn, bound_to: binding.frozen().contract_sha256().to_owned(), assumed: vec![] }\n}\n\n/// One admission the host obtained itself at one reserved boundary, held for its regate.\n"
+  }
+ ]
+}

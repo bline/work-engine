@@ -1,0 +1,21 @@
+
+running 1 test
+test sb_an_admission_refusal_refuses_before_spawn ... FAILED
+
+failures:
+
+---- sb_an_admission_refusal_refuses_before_spawn stdout ----
+
+thread 'sb_an_admission_refusal_refuses_before_spawn' (3728946) panicked at crates/work-engine-review-delivery/tests/native_vertical.rs:866:5:
+assertion `left == right` failed: sb-admission-refused: no child was spawned
+  left: 1
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+scratch retained for diagnosis: /home/bline/cbm-work/org-r2-core-20261117/target/tmp/native-vertical/sb-admission-refused-3728945
+
+
+failures:
+    sb_an_admission_refusal_refuses_before_spawn
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 32 filtered out; finished in 1.93s
+

@@ -1,0 +1,43 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "S1-P8-vantage-unchecked.restore",
+  "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/mutate.py",
+    "restore",
+    "S1-P8-vantage-unchecked"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hardening-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 4160347,
+  "inputs": [],
+  "timeout_s": 60,
+  "pid": 4161155,
+  "pgid": 4161155,
+  "started_at": "2026-11-18T00:10:09.381902Z",
+  "ended_at": "2026-11-18T00:10:09.498743Z",
+  "duration_s": 0.117,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs/S1-P8-vantage-unchecked.restore.stdout",
+    "length": 47,
+    "sha256": "8ea1ca1568a2bb0b7d6189f965d22be887bf0637666610174732a4ba21f20efb"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs/S1-P8-vantage-unchecked.restore.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

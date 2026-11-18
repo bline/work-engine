@@ -1,0 +1,387 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutant-plan-1.json",
+  "plan_sha256": "83e8d864aa9be6dc7ea2566272a78cb32302bab6662451c3d51e50adcebf5b8d",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "pre-hashes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/pre-hashes.json",
+      "record_sha256": "fc2552d9de75a667bba23ed96debcc504c9b4769eb1ec36158a11fb6f4ab8cb0",
+      "leftovers": 0
+    },
+    {
+      "name": "M1-admitted-family.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M1-admitted-family.apply.json",
+      "record_sha256": "a3b4edafcb62911c39027b995925d4f1504eae60ae3df1bbe4cba3d31bd5ce08",
+      "leftovers": 0
+    },
+    {
+      "name": "M1-admitted-family.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M1-admitted-family.test0.json",
+      "record_sha256": "009ac2e8ca5152ff64add90b3d083f6d7a8f2c91053f2d61ad34b5d269d2c7fa",
+      "leftovers": 0
+    },
+    {
+      "name": "M1-admitted-family.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M1-admitted-family.restore.json",
+      "record_sha256": "65e307a866a13cd99cc94b6bfdf536a7c101e71e2fff4d75f3091cdee193257b",
+      "leftovers": 0
+    },
+    {
+      "name": "M2-assumed-family.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M2-assumed-family.apply.json",
+      "record_sha256": "876cc8a66c3fcc05e95d9e2fa62cafd6d5b1c20441664fd52d516646c3ecceee",
+      "leftovers": 0
+    },
+    {
+      "name": "M2-assumed-family.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M2-assumed-family.test0.json",
+      "record_sha256": "4c215a077b78781017d21d7f286440b7889265257da607abbede6af61621198f",
+      "leftovers": 0
+    },
+    {
+      "name": "M2-assumed-family.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M2-assumed-family.restore.json",
+      "record_sha256": "1327c72241dea34e01ddd106558386a0de8111318e72351347f01c2cfde54d83",
+      "leftovers": 0
+    },
+    {
+      "name": "M3-realization-check.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M3-realization-check.apply.json",
+      "record_sha256": "7423dc92e053ecc788b3532fe5a1e5a44d6825b04dd97fe0e986a99b92d9ec76",
+      "leftovers": 0
+    },
+    {
+      "name": "M3-realization-check.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M3-realization-check.test0.json",
+      "record_sha256": "e0fef8da3bc4e3068a1d280edf18c6de8361c10b3e0bc416a45804842f146938",
+      "leftovers": 0
+    },
+    {
+      "name": "M3-realization-check.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M3-realization-check.restore.json",
+      "record_sha256": "d7a86cceda65ac4b2fb79e3654fd16ee05ab2dece967ec0e27d06b4ab1be3266",
+      "leftovers": 0
+    },
+    {
+      "name": "M4-refusal-after-spawn.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M4-refusal-after-spawn.apply.json",
+      "record_sha256": "ac052419a3f2a8ddfb4077b244a75e25dc8b81c2586a27a0f7ca9dc14a7fe037",
+      "leftovers": 0
+    },
+    {
+      "name": "M4-refusal-after-spawn.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M4-refusal-after-spawn.test0.json",
+      "record_sha256": "d1b29ca53c6fbef23586975df6dc4090e9fce9dd038a3de5ae473773d2d153f1",
+      "leftovers": 0
+    },
+    {
+      "name": "M4-refusal-after-spawn.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M4-refusal-after-spawn.restore.json",
+      "record_sha256": "15b3db931b6b5e749e0a5305c9034c92ef3d9d1e1d0c62465626f09e155e9562",
+      "leftovers": 0
+    },
+    {
+      "name": "M6-replay-admission-observation.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M6-replay-admission-observation.apply.json",
+      "record_sha256": "493f69abe700da4a2d843110a598adfd175a46c2dd3979add7f763a6ae2cb484",
+      "leftovers": 0
+    },
+    {
+      "name": "M6-replay-admission-observation.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M6-replay-admission-observation.test0.json",
+      "record_sha256": "1b6e7961490b10ca959ef0c2adc68ce8c4d33eb5f0d856ee598a90d536cbfb5d",
+      "leftovers": 0
+    },
+    {
+      "name": "M6-replay-admission-observation.test1",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M6-replay-admission-observation.test1.json",
+      "record_sha256": "c9171c32e95bf0b887944fc44a1346e8589ace684cebffbfcbd5d5d0185bdf25",
+      "leftovers": 0
+    },
+    {
+      "name": "M6-replay-admission-observation.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M6-replay-admission-observation.restore.json",
+      "record_sha256": "1f28f3ff561ae9c2ff365c5f4e16a96bb3fae55fbb733a7181537c354fbe8e85",
+      "leftovers": 0
+    },
+    {
+      "name": "M7-no-regate.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M7-no-regate.apply.json",
+      "record_sha256": "239fae58e00344b68030397f9c0de4077bd45662ad34f1f7f2b7d25c1d346447",
+      "leftovers": 0
+    },
+    {
+      "name": "M7-no-regate.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M7-no-regate.test0.json",
+      "record_sha256": "3de6ef38e605204be6faf31e560632cef8b2dbdf1059fc6fdc10036c7d8856e9",
+      "leftovers": 0
+    },
+    {
+      "name": "M7-no-regate.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M7-no-regate.restore.json",
+      "record_sha256": "50008a3978284c01ca18a5fe6afea73f453d1ed8c4192e1288a28f2d8a65196e",
+      "leftovers": 0
+    },
+    {
+      "name": "M8-unknown-permits.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M8-unknown-permits.apply.json",
+      "record_sha256": "7a10404605171ec432d89bbc68b2352b9a78fef98a0fde7e1cd6ad11bbbf9144",
+      "leftovers": 0
+    },
+    {
+      "name": "M8-unknown-permits.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M8-unknown-permits.test0.json",
+      "record_sha256": "8fddc0971b36648957715774350af50b98162d79315eb6c6287421142b60649c",
+      "leftovers": 0
+    },
+    {
+      "name": "M8-unknown-permits.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M8-unknown-permits.restore.json",
+      "record_sha256": "eff53473eef183f173710f89bd02102f23f2dca5dd389473642d7a3eca17527d",
+      "leftovers": 0
+    },
+    {
+      "name": "M9-no-finality.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M9-no-finality.apply.json",
+      "record_sha256": "4d111c8aa033cf6043c7e0ec6b43ae1404a2979e4cc3552a989063d5303d5b83",
+      "leftovers": 0
+    },
+    {
+      "name": "M9-no-finality.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M9-no-finality.test0.json",
+      "record_sha256": "af9e4b3bd9feb4e5055a2f73bbbca586ce4c8a7702f1b46a0e8b32d3cdda8aa8",
+      "leftovers": 0
+    },
+    {
+      "name": "M9-no-finality.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M9-no-finality.restore.json",
+      "record_sha256": "835a7e2c0d9907e27bab86e99b0dd134b420e7c3f11f439898cf07df90b21f5f",
+      "leftovers": 0
+    },
+    {
+      "name": "M10-public-run-attempt.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M10-public-run-attempt.apply.json",
+      "record_sha256": "f3923ee33570bea5ba5467d683391b6a90ebce9f2efdb06f84d1a5ee51dd88d6",
+      "leftovers": 0
+    },
+    {
+      "name": "M10-public-run-attempt.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M10-public-run-attempt.test0.json",
+      "record_sha256": "ee9b7a88851a39e99ca6967f6555addddca5b72cabbddbb4a146826a67b83db7",
+      "leftovers": 0
+    },
+    {
+      "name": "M10-public-run-attempt.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M10-public-run-attempt.restore.json",
+      "record_sha256": "86292af9a60cb203fc5b23f0bf35ad7f5fe6820d691c57465fad2c620f691452",
+      "leftovers": 0
+    },
+    {
+      "name": "M11-public-assess.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M11-public-assess.apply.json",
+      "record_sha256": "9e26260f4ad73329ea4132713f73acce0bea13124575adb1259d2500ecdad8ba",
+      "leftovers": 0
+    },
+    {
+      "name": "M11-public-assess.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M11-public-assess.test0.json",
+      "record_sha256": "356acac4a2cfa58e357a31b1cb13514b139192ff4b65441f61d8679ee51ae775",
+      "leftovers": 0
+    },
+    {
+      "name": "M11-public-assess.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M11-public-assess.restore.json",
+      "record_sha256": "bc42d703bb3c5a90bd5eece0854bb78337a32c400ff66e08bb0cb81fdab27a63",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P1-other-candidate.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P1-other-candidate.apply.json",
+      "record_sha256": "cea5d03d14f20778023f81657cd021685748d418c2b2a3193435d9f2e9ef14c1",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P1-other-candidate.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P1-other-candidate.test0.json",
+      "record_sha256": "80baa12b3cb4e6ff064f9791172e32125e38e019d1e6b0fed76a1675bf4ce8f7",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P1-other-candidate.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P1-other-candidate.restore.json",
+      "record_sha256": "03d19e5753b14e56c2b61b39e03b1b0b428c5cf1290e34bc4113e03057ead59c",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P2-other-subject.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P2-other-subject.apply.json",
+      "record_sha256": "65627e7cebe6a543ab364cde65ebaccc705d014ef386f535df754816171ce580",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P2-other-subject.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P2-other-subject.test0.json",
+      "record_sha256": "c1226ddc5abee3b5db2cf203cd4f218b580dc3fbacab06c490bb84eec56aaf8b",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P2-other-subject.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P2-other-subject.restore.json",
+      "record_sha256": "1a1de7687ef0a7caa52d90ffb2a390d121df096ebaef39ec980fdbe0e2d2cc17",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P3-other-boundary.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P3-other-boundary.apply.json",
+      "record_sha256": "130b5a445727af05ce41a98de76dd1faeb8ed6312bb224921c2f5c033e28ced6",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P3-other-boundary.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P3-other-boundary.test0.json",
+      "record_sha256": "b0b89d750098133bff249654c9fd01f20a0049ce1860b3bf6f36acb2e904bd96",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P3-other-boundary.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P3-other-boundary.restore.json",
+      "record_sha256": "511775bee60e01ca0b129430e87d4899dae77340848e0affeebe97640915cf13",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P4-missing-proof-accepted.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P4-missing-proof-accepted.apply.json",
+      "record_sha256": "57fcfaf44abc32ebca0d5085f29970e65ca7f4b4bf8f802fde59c65a55d095be",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P4-missing-proof-accepted.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P4-missing-proof-accepted.test0.json",
+      "record_sha256": "8136015330ce42a780fe1e406bd22e25e86dbf43a37b91dcade74fe97a27e879",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P4-missing-proof-accepted.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P4-missing-proof-accepted.restore.json",
+      "record_sha256": "2bea88af6baa48109d1d1937464295ea5caa881b7f23330de93dd4a83411c809",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P5-skip-proof-check.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P5-skip-proof-check.apply.json",
+      "record_sha256": "886aa8c4d7d8587e609fcd17f2beb7aca00f34cb9230d29efd767024fa91e350",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P5-skip-proof-check.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P5-skip-proof-check.test0.json",
+      "record_sha256": "0b2b7b2ff28ec63c5c4f2ff598b555aef95a095bda8045f937cc56ea37b06e3a",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P5-skip-proof-check.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P5-skip-proof-check.restore.json",
+      "record_sha256": "dfbfd7c745f432b79fc201231470ba0c6b73a716f1531649a865b31d3c07424e",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P6-test-support-under-fixture.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P6-test-support-under-fixture.apply.json",
+      "record_sha256": "d749bed48531c760e21de796d489c875943674c93b7768abfd7193687517526c",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P6-test-support-under-fixture.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P6-test-support-under-fixture.test0.json",
+      "record_sha256": "1edfab6c80ed932fae91a1ba93871ee182cea08393676f2c880738e388dc1b52",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P6-test-support-under-fixture.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P6-test-support-under-fixture.restore.json",
+      "record_sha256": "e8f0c0e1f00bcc68a3ce4db3eb183786a20c68179011f472defb126d4f9783ff",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P7-delivery-regate-revision-dropped.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P7-delivery-regate-revision-dropped.apply.json",
+      "record_sha256": "ef61cd16a4d7a2d48e68024bb2ec81dd0493b5c176927bdcbdc01bb0b64c90e0",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P7-delivery-regate-revision-dropped.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P7-delivery-regate-revision-dropped.test0.json",
+      "record_sha256": "bfd7a645a0a10b72b4d193553d2599cfc67ad3fb406dd8915068e33dfc9bb11e",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P7-delivery-regate-revision-dropped.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P7-delivery-regate-revision-dropped.restore.json",
+      "record_sha256": "8da8daeae81517200a8fa624e7ae54ac7f190bd76508fcc0f14e4fd4db65d018",
+      "leftovers": 0
+    },
+    {
+      "name": "final-hashes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/final-hashes.json",
+      "record_sha256": "8a00d56ef46f52050c01d855d9ae6098da7a09e288113ab231e07b0daa57d6a6",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

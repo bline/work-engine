@@ -1,0 +1,13 @@
+{
+  "revision": "a5c804a12195c0cc1757bd002f8ab0f0479b82c8",
+  "claim": {
+    "resource": "worktree:/home/bline/cbm-work/wt-org-hardening-20261117",
+    "claim_id": "89650e0d-b75a-4157-9d26-333f1a3cc8ae",
+    "author": "pi-claude-org-compilation-root",
+    "session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+    "claimed_at": "2026-11-17T20:08:17.148831Z",
+    "expires_at": "2026-11-18T08:08:17.148831Z",
+    "note": "Post-R2 hardening slice (review-delivery/review-preparation fixture; branch org-hardening-20261117 from 0fe9dc74)",
+    "authority": "advisory_coordination_only"
+  }
+}

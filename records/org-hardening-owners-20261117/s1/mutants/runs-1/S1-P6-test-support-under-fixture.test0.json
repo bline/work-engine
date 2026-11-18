@@ -1,0 +1,47 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "S1-P6-test-support-under-fixture.test0",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--doc"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hardening-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3726716,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 3733239,
+  "pgid": 3733239,
+  "started_at": "2026-11-17T20:30:08.793143Z",
+  "ended_at": "2026-11-17T20:30:10.059965Z",
+  "duration_s": 1.267,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P6-test-support-under-fixture.test0.stdout",
+    "length": 1210,
+    "sha256": "b805759496ac661c4c565784d5b5f660a7a50139876f05a6c4674c95a15d287f"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P6-test-support-under-fixture.test0.stderr",
+    "length": 470,
+    "sha256": "e241254cf9998fd33271f5257d98deacf2a568ecb3d2e78d0d05df038ef8ba39"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

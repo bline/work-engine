@@ -1,0 +1,43 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "S1-P7-delivery-regate-revision-dropped.restore",
+  "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py",
+    "restore",
+    "S1-P7-delivery-regate-revision-dropped"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hardening-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3726716,
+  "inputs": [],
+  "timeout_s": 60,
+  "pid": 3734054,
+  "pgid": 3734054,
+  "started_at": "2026-11-17T20:30:12.203364Z",
+  "ended_at": "2026-11-17T20:30:12.235764Z",
+  "duration_s": 0.032,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P7-delivery-regate-revision-dropped.restore.stdout",
+    "length": 62,
+    "sha256": "d4236206b3cf0f2c521b5379dac1393cb1425caac17032a10ac13f7c7c4c8b18"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/S1-P7-delivery-regate-revision-dropped.restore.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

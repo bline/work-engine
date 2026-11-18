@@ -1,0 +1,4 @@
+   Compiling work-engine-review-delivery v0.1.0 (/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.89s
+     Running tests/native_vertical.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/native_vertical-d22b229a9b617a92)
+error: test failed, to rerun pass `-p work-engine-review-delivery --test native_vertical`

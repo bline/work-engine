@@ -1,0 +1,22 @@
+{
+ "cwd": "/home/bline/cbm-work/wt-org-hardening-20261117/rust",
+ "env": {
+  "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target",
+  "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+  "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+ },
+ "steps": [
+  {"name": "toolchain", "argv": ["sh", "-c", "cargo --version; rustc --version; node --version"], "timeout": 60},
+  {"name": "fmt", "argv": ["cargo", "fmt", "--check", "-p", "work-engine-review-delivery", "-p", "work-engine-review-preparation", "-p", "work-engine-organization", "-p", "review-episode-core", "-p", "work-engine-organization-authority"], "timeout": 600},
+  {"name": "clippy-fixture", "argv": ["cargo", "clippy", "--offline", "--locked", "-p", "work-engine-review-delivery", "-p", "work-engine-review-preparation", "-p", "work-engine-organization-authority", "--features", "work-engine-review-delivery/fixture,work-engine-organization-authority/fixture", "--all-targets", "--", "-D", "warnings"], "timeout": 1800},
+  {"name": "clippy-default", "argv": ["cargo", "clippy", "--offline", "--locked", "-p", "work-engine-review-delivery", "-p", "work-engine-review-preparation", "-p", "work-engine-organization-authority", "--all-targets", "--", "-D", "warnings"], "timeout": 1800},
+  {"name": "clippy-test-support", "argv": ["cargo", "clippy", "--offline", "--locked", "-p", "work-engine-review-delivery", "-p", "work-engine-review-preparation", "-p", "work-engine-organization-authority", "--features", "work-engine-review-delivery/test-support,work-engine-organization-authority/fixture", "--all-targets", "--", "-D", "warnings"], "timeout": 1800},
+  {"name": "check-preparation-fixture-lib-alone", "argv": ["cargo", "clippy", "--offline", "--locked", "-p", "work-engine-review-preparation", "--features", "fixture", "--lib", "--", "-D", "warnings"], "timeout": 1800},
+  {"name": "test-four-plus-sa", "argv": ["cargo", "test", "--offline", "--locked", "-p", "work-engine-organization", "-p", "work-engine-review-preparation", "-p", "review-episode-core", "-p", "work-engine-review-delivery", "-p", "work-engine-organization-authority", "--features", "work-engine-review-delivery/fixture,work-engine-organization-authority/fixture"], "timeout": 2400, "kill_leftovers": true},
+  {"name": "test-preparation-fixture", "argv": ["cargo", "test", "--offline", "--locked", "-p", "work-engine-review-preparation", "--features", "fixture"], "timeout": 1800, "kill_leftovers": true},
+  {"name": "test-default-features", "argv": ["cargo", "test", "--offline", "--locked", "-p", "work-engine-review-delivery", "-p", "work-engine-review-preparation", "-p", "work-engine-organization-authority"], "timeout": 1800, "kill_leftovers": true},
+  {"name": "test-authority-store", "argv": ["cargo", "test", "--offline", "--locked", "-p", "work-engine-authority-store", "--features", "fixture", "--test", "store"], "timeout": 1800},
+  {"name": "native-1", "argv": ["cargo", "test", "--offline", "--locked", "-p", "work-engine-review-delivery", "--features", "test-support", "--test", "native_vertical"], "timeout": 1800, "kill_leftovers": true},
+  {"name": "hashes", "argv": ["git", "hash-object", "crates/work-engine-review-delivery/src/gate.rs", "crates/work-engine-review-delivery/src/native.rs", "crates/work-engine-review-delivery/src/binding.rs", "crates/work-engine-review-delivery/src/lib.rs", "crates/work-engine-review-delivery/Cargo.toml", "crates/work-engine-review-preparation/src/fixture.rs", "crates/work-engine-review-preparation/src/lib.rs", "crates/work-engine-review-preparation/Cargo.toml", "Cargo.lock"], "timeout": 60}
+ ]
+}

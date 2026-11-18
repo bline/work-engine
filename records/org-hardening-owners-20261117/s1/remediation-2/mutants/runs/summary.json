@@ -1,0 +1,44 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/mutant-plan.json",
+  "plan_sha256": "b90eb19a58dc6a237d1198dba98435a69c235a8a53f84ef22a5f366d1aa34549",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "pre-hashes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs/pre-hashes.json",
+      "record_sha256": "794f0c1ff17ca7a82083e7111b62b5ee0ea05746ac3946fd2b1dea9176ae3e09",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P8-vantage-unchecked.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs/S1-P8-vantage-unchecked.apply.json",
+      "record_sha256": "f84171b1d0d1dba713bf6c6d7723af945193b85419c0c8961bd9268890dc6b51",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P8-vantage-unchecked.test-suite",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs/S1-P8-vantage-unchecked.test-suite.json",
+      "record_sha256": "f87eab9186bae70089a4598522ed480bf58d557aa1ef53ae2c6ff29956bf9c12",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P8-vantage-unchecked.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs/S1-P8-vantage-unchecked.restore.json",
+      "record_sha256": "ae14c80c94309d3b54b079ce881581c743c265595bab4499b9135ddff3d9737d",
+      "leftovers": 0
+    },
+    {
+      "name": "final-hashes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs/final-hashes.json",
+      "record_sha256": "ceed183fd20662541852ae575b7a56b622b17c840378606095e9b4278e486984",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

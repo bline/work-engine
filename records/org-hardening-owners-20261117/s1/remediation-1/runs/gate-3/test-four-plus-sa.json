@@ -1,0 +1,54 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "test-four-plus-sa",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization",
+    "-p",
+    "work-engine-review-preparation",
+    "-p",
+    "review-episode-core",
+    "-p",
+    "work-engine-review-delivery",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "work-engine-review-delivery/fixture,work-engine-organization-authority/fixture"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hardening-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3813501,
+  "inputs": [],
+  "timeout_s": 2400,
+  "pid": 3813724,
+  "pgid": 3813724,
+  "started_at": "2026-11-17T21:03:33.443138Z",
+  "ended_at": "2026-11-17T21:03:39.426268Z",
+  "duration_s": 5.983,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-1/runs/gate-3/test-four-plus-sa.stdout",
+    "length": 26501,
+    "sha256": "31915c25dea541aacb9ba30afd0e8742fe648d87d794d71d76dfff00eddd0344"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-1/runs/gate-3/test-four-plus-sa.stderr",
+    "length": 2945,
+    "sha256": "7298460071b14fbdba1142f22054de846c646a511fad27199b834f0d9a9a59f2"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

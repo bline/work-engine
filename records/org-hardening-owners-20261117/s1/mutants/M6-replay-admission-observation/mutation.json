@@ -1,0 +1,28 @@
+{
+ "mutant": "M6-replay-admission-observation",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery/src/gate.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "eaa57bf8baee3ffe8461ac0ae04180f874db6d9321d88a25c6eeca673e7ab3a2",
+   "mutated_sha256": "f2fc3598583abb725055e3b4184cae48569602830d6c78278f25d3ed8e45a4b1"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery/src/gate.rs",
+   "old": "    settled: Option<AdmissionState>,\n}",
+   "new": "    settled: Option<AdmissionState>,\n    replay: Result<SealedObservation, Unobserved>,\n}"
+  },
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery/src/gate.rs",
+   "old": "        Ok(Self {\n            source,\n            clock,\n            reservation,\n            admission,\n            settled: None,\n        })",
+   "new": "        let replay = observe_for(source, &reservation);\n        Ok(Self {\n            source,\n            clock,\n            reservation,\n            admission,\n            settled: None,\n            replay,\n        })"
+  },
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery/src/gate.rs",
+   "old": "        let state = self.admission.admission_state(&fresh, now_millis);",
+   "new": "        let state = self.admission.admission_state(&self.replay, now_millis);"
+  }
+ ]
+}

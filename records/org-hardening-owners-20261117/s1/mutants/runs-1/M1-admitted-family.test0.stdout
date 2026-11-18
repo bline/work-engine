@@ -1,0 +1,20 @@
+
+running 1 test
+test discharge_is_total_admitted_kinds_name_their_check_ids ... FAILED
+
+failures:
+
+---- discharge_is_total_admitted_kinds_name_their_check_ids stdout ----
+
+thread 'discharge_is_total_admitted_kinds_name_their_check_ids' (3727755) panicked at crates/work-engine-review-delivery/tests/gate.rs:35:5:
+assertion `left == right` failed
+  left: [(ScopeDigestToSubject, AssumedDischarge), (ProblemScopeToEpisodeIdentity, AssumedDischarge), (ConsumptionEvidenceMapping, AssumedDischarge), (Separation, AssumedDischarge), (ObserverIdentity, Admitted([R2, R3])), (RealizationAdmission, Admitted([R1, R2, R4])), (ComponentBinding, Admitted([O4, R3])), (AuthorityRequirement, Admitted([O4])), (RealizationCheck, Undischarged)]
+ right: [(ScopeDigestToSubject, AssumedDischarge), (ProblemScopeToEpisodeIdentity, AssumedDischarge), (ConsumptionEvidenceMapping, AssumedDischarge), (Separation, Admitted([O8, R3])), (ObserverIdentity, Admitted([R2, R3])), (RealizationAdmission, Admitted([R1, R2, R4])), (ComponentBinding, Admitted([O4, R3])), (AuthorityRequirement, Admitted([O4])), (RealizationCheck, Undischarged)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    discharge_is_total_admitted_kinds_name_their_check_ids
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+

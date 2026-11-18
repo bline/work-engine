@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "M8-unknown-permits.test0",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "test-support",
+    "--test",
+    "native_vertical",
+    "--",
+    "sb_unknown_at_the_regate_fails_closed",
+    "--exact"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hardening-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3726716,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 3730488,
+  "pgid": 3730488,
+  "started_at": "2026-11-17T20:29:53.941227Z",
+  "ended_at": "2026-11-17T20:29:57.122294Z",
+  "duration_s": 3.181,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M8-unknown-permits.test0.stdout",
+    "length": 680,
+    "sha256": "d8a349716a718888374654cb76a189920184e69cd5c9b73e0179d26ac54249b0"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M8-unknown-permits.test0.stderr",
+    "length": 433,
+    "sha256": "3dbb5fa0e9c63082bc2ec30d7c4fc0d2a3a826751b16c817fec2ba55ae9e3f19"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

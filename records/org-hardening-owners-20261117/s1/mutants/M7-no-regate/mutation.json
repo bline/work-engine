@@ -1,0 +1,18 @@
+{
+ "mutant": "M7-no-regate",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery/src/native.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "66169b9cf6a880accf38f6e3087ebb1ede7056483432bef10d465a78983d70fd",
+   "mutated_sha256": "f6ec7a95707e3e802005ffe5e0e22dab51b3f4e0646a3d51824b42f710766562"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery/src/native.rs",
+   "old": "        (AdmissionState::Current { revision }, Some(inputs)) => Ok((discharges, revision, inputs)),\n        (other, _) => Err(GateRefusal::NotCurrent(other)),",
+   "new": "        (_, Some(inputs)) => Ok((discharges, held_consumption.admission().revision(), inputs)),\n        (other, None) => Err(GateRefusal::NotCurrent(other)),"
+  }
+ ]
+}

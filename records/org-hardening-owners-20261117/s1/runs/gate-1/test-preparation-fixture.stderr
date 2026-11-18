@@ -1,0 +1,5 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/work_engine_review_preparation-85ea83ef39103cf2)
+     Running tests/fixture_consumer.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/fixture_consumer-e50d226c0c7f69ab)
+     Running tests/preparation.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/preparation-2d65d853d23678a8)
+   Doc-tests work_engine_review_preparation

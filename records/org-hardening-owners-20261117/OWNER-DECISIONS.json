@@ -1,0 +1,20 @@
+{
+ "schema": "org-owner-decisions/v1",
+ "recorded_by": "Pi root 01a1e56e-be12-7424-977b-c7c7983887d0",
+ "decisions": [
+  {
+   "at": "2026-11-17T20:06:09Z",
+   "text": "Proceed",
+   "meaning": "steps 1 (fixture hardening) and 2 (owner-naming design pass) under $20"
+  },
+  {
+   "at": "2026-11-17T~20:50Z",
+   "text": "Yes top up. Yes, recommendations. Yes, step 3 and budget authorized. Also, use Fable high/xhigh for all reviews.",
+   "meaning": "+$5 (to $25); D1-D8 accepted; step 3 authorized; all reviews Fable"
+  },
+  {
+   "at": "2026-11-17T~21:30Z",
+   "text": "D1 / S1: Choose (a). Authorize up to $5 additional spend for the focused multi-obligation negative control, mutation kill, and Fable recheck. Set the prospective aggregate S1 ceiling to $32, accounting for the already observed $26.20. Do not retroactively normalize the overrun. The cap-stop watcher must verify successful stopping; a failed or unconfirmed stop cannot count as enforced."
+  }
+ ]
+}

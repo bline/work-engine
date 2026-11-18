@@ -1,0 +1,4 @@
+   Compiling work-engine-review-delivery v0.1.0 (/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.72s
+     Running tests/gate.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/gate-8622bb8d704ee7e4)
+error: test failed, to rerun pass `-p work-engine-review-delivery --test gate`

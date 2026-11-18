@@ -1,0 +1,12 @@
+Diff in /home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-preparation/tests/fixture_consumer.rs:898:
+     let request = w.gate.admission.request();
+     assert_eq!(request.vantage(), second_vantage);
+     assert_eq!(request.candidate_digest(), w.candidate.content_digest());
+[31m-    assert_eq!(w.gate.admission.boundary().kind(), BoundaryKind::Consumption);
+(B[m[32m+    assert_eq!(
+(B[m[32m+        w.gate.admission.boundary().kind(),
+(B[m[32m+        BoundaryKind::Consumption
+(B[m[32m+    );
+(B[m     assert_eq!(request.subject().commit, subject().commit);
+     assert_eq!(request.subject().tree, subject().tree);
+     assert_eq!(request.subject().patch_identity, subject().patch_identity);

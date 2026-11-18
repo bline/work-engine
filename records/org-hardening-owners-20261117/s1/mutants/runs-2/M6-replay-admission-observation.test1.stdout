@@ -1,0 +1,20 @@
+
+running 1 test
+test regate_reads_a_fresh_observation ... FAILED
+
+failures:
+
+---- regate_reads_a_fresh_observation stdout ----
+
+thread 'regate_reads_a_fresh_observation' (3739221) panicked at crates/work-engine-review-delivery/tests/gate.rs:257:5:
+assertion `left == right` failed
+  left: Current { revision: ObservationRevision(14, 1a21ececcc9e84c34a56ddc9add2b9eba1452eb51d02438b8ed3973b239c4755) }
+ right: Revoked([IssuanceId(19cdc9041112493d8db3ab58f85810ab40fe768c5b12b668a3c615655ee47ef7)])
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    regate_reads_a_fresh_observation
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.01s
+

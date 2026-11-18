@@ -1,0 +1,50 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "check-preparation-fixture-lib-alone",
+  "argv": [
+    "cargo",
+    "clippy",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-preparation",
+    "--features",
+    "fixture",
+    "--lib",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hardening-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 4169845,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 4171121,
+  "pgid": 4171121,
+  "started_at": "2026-11-18T00:12:17.274938Z",
+  "ended_at": "2026-11-18T00:12:17.845996Z",
+  "duration_s": 0.571,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/runs/gate-2/check-preparation-fixture-lib-alone.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/runs/gate-2/check-preparation-fixture-lib-alone.stderr",
+    "length": 72,
+    "sha256": "f591e097f22f91dd5c31fbbf7e587d80c0a4e0ed594f9c9012a544f38c52d926"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

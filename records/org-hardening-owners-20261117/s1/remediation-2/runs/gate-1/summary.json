@@ -1,0 +1,93 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/gate-plan.json",
+  "plan_sha256": "910b66c3c34f2c45e21f9369534e10b83fa3e14d959139696e62bbbba164d357",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "toolchain",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/runs/gate-1/toolchain.json",
+      "record_sha256": "7b4d851adee395cb70ae6a28567c15e542bedabfa451da3bc45d00f8711eb701",
+      "leftovers": 0
+    },
+    {
+      "name": "fmt",
+      "outcome": "1",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/runs/gate-1/fmt.json",
+      "record_sha256": "a352e43c6ba1a4dda2b611ef1fc5953bda11fdd725d14e1aeec1a6653e726626",
+      "leftovers": 0
+    },
+    {
+      "name": "clippy-fixture",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/runs/gate-1/clippy-fixture.json",
+      "record_sha256": "fe75a9985748823934a72874343278eaa48903f7bc2abd74056da2f7c241236f",
+      "leftovers": 0
+    },
+    {
+      "name": "clippy-default",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/runs/gate-1/clippy-default.json",
+      "record_sha256": "49754ec441cabe84029a38a64bc67d7bb3d778c2b3f2be3b8ffc05691721b217",
+      "leftovers": 0
+    },
+    {
+      "name": "clippy-test-support",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/runs/gate-1/clippy-test-support.json",
+      "record_sha256": "a360489c37d27637fd61342fc325e3e8538d5d29d2ee8aafae213fc01828c344",
+      "leftovers": 0
+    },
+    {
+      "name": "check-preparation-fixture-lib-alone",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/runs/gate-1/check-preparation-fixture-lib-alone.json",
+      "record_sha256": "e67df0467c18fb753a7b624308e1756873c4243a5ad12d02b67cfa4dec97219b",
+      "leftovers": 0
+    },
+    {
+      "name": "test-four-plus-sa",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/runs/gate-1/test-four-plus-sa.json",
+      "record_sha256": "28be1c71e5196ce09601ea6de9d1f0ef492bfafef5f04824227216ca7d132b06",
+      "leftovers": 0
+    },
+    {
+      "name": "test-preparation-fixture",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/runs/gate-1/test-preparation-fixture.json",
+      "record_sha256": "6d1d2824266fc2943eef125987e80a30db896caeffe0063ff9231457cc40c526",
+      "leftovers": 0
+    },
+    {
+      "name": "test-default-features",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/runs/gate-1/test-default-features.json",
+      "record_sha256": "45aa024c2d5656c9f59044180efb0b195926615ea4e11c82f0824429a3120e33",
+      "leftovers": 0
+    },
+    {
+      "name": "test-authority-store",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/runs/gate-1/test-authority-store.json",
+      "record_sha256": "142b3fa256d14369836045b84fb02ec681867fd6653dcd64f5e84caea45af505",
+      "leftovers": 0
+    },
+    {
+      "name": "native-1",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/runs/gate-1/native-1.json",
+      "record_sha256": "cfe386f7daf6c3f5dc66ec66a6e2a311339bc224d43e8212bd816cf382d4a1cc",
+      "leftovers": 0
+    },
+    {
+      "name": "hashes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/runs/gate-1/hashes.json",
+      "record_sha256": "227c9f9b796372602af69b241f79c793af0e7da268a8e2ab22562a8e385463d5",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

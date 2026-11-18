@@ -1,0 +1,67 @@
+{
+ "cwd": "/home/bline/cbm-work/wt-org-hardening-20261117/rust",
+ "env": {
+  "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target",
+  "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+  "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+ },
+ "steps": [
+  {
+   "name": "pre-hashes",
+   "argv": [
+    "git",
+    "hash-object",
+    "crates/work-engine-review-preparation/src/fixture.rs"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "S1-P8-vantage-unchecked.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/mutate.py",
+    "apply",
+    "S1-P8-vantage-unchecked"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "S1-P8-vantage-unchecked.test-suite",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-preparation",
+    "--features",
+    "fixture",
+    "--test",
+    "fixture_consumer"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "S1-P8-vantage-unchecked.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/mutate.py",
+    "restore",
+    "S1-P8-vantage-unchecked"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "final-hashes",
+   "argv": [
+    "git",
+    "hash-object",
+    "crates/work-engine-review-preparation/src/fixture.rs"
+   ],
+   "timeout": 60
+  }
+ ]
+}
