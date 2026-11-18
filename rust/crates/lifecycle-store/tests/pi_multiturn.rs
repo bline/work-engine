@@ -251,7 +251,7 @@ fn unsettled_predecessor_and_unowned_prefix_are_refused() {
 #[test]
 fn valid_generic_native_proof_cannot_bypass_either_pi_identifier() {
     let generic_profile = "a".repeat(64);
-    let generic_protocol = "b".repeat(64);
+    let generic_protocol = native_realization::codex::SCHEMA_THREAD_START_SHA256.to_owned();
     let bindings = [
         (generic_profile.clone(), generic_protocol.clone(), true),
         (
@@ -931,6 +931,115 @@ fn sol_high_v5_preserves_thinking_history_and_rejects_cross_profile_or_bad_block
             assert_eq!(
                 reopened.pi_coding_live_checkpoint(&parent).unwrap(),
                 checkpoint
+            );
+        }
+    }
+}
+
+/// Same settlement flow as above under an explicit (profile, protocol) binding.
+fn settle_under(profile: &str, protocol: &str) -> Result<(), StoreError> {
+    let root = tempdir().unwrap();
+    let (mut store, session) = setup_binding(root.path(), profile, protocol);
+    let mut turn = claim(&mut store, &session, "generic").unwrap();
+    store.mark_native_send_intent(&turn).unwrap();
+    store
+        .bind_native_turn(&mut turn, ProviderTurnId::parse("turn:generic").unwrap())
+        .unwrap();
+    let item = json!({"type":"agentMessage","id":"native-final","text":"generic result"});
+    for (sequence, method, value) in [
+        (
+            1,
+            Some("turn/completed"),
+            json!({"method":"turn/completed","params":{"threadId":"physical:pi","turn":{"id":"turn:generic","status":"completed"}}}),
+        ),
+        (
+            2,
+            Some("item/completed"),
+            json!({"method":"item/completed","params":{"threadId":"physical:pi","turnId":"turn:generic","item":item}}),
+        ),
+        (
+            3,
+            None,
+            json!({"id":3,"result":{"thread":{"id":"physical:pi","historyMode":"legacy","turns":[{"id":"turn:generic","status":"completed","itemsView":"full","items":[item]}]}}}),
+        ),
+    ] {
+        store
+            .record_native_ingress(
+                session.id(),
+                "generic-wire",
+                sequence,
+                &serde_json::to_vec(&value).unwrap(),
+                "qualified",
+                method,
+                method.map(|_| "physical:pi"),
+                method.map(|_| "turn:generic"),
+                None,
+                clock(),
+            )
+            .unwrap();
+    }
+    store
+        .settle_native_turn(
+            &turn,
+            "generic result",
+            "observed_complete",
+            "generic-wire",
+            3,
+            clock(),
+        )
+        .map(|_| ())
+}
+
+#[test]
+fn native_settlement_allows_only_recognized_realizations() {
+    let generic_profile = "a".repeat(64);
+    let codex = native_realization::codex::SCHEMA_THREAD_START_SHA256;
+    let pi_host = native_realization::pi_host::PROTOCOL_DIGEST;
+    assert!(settle_under(&generic_profile, codex).is_ok());
+    assert!(settle_under(&generic_profile, pi_host).is_ok());
+    // An unknown protocol digest refuses.
+    for unknown in ["c".repeat(64), "0".repeat(64)] {
+        assert!(
+            matches!(
+                settle_under(&generic_profile, &unknown),
+                Err(StoreError::Rejected)
+            ),
+            "{unknown}"
+        );
+    }
+    // Every existing Pi protocol digest refuses, and every Pi profile digest
+    // refuses even under a recognized protocol.
+    for pi_protocol in [
+        pi_protocol_digest(),
+        pi_multiturn_protocol_digest(),
+        pi_coding_protocol_digest(),
+        pi_coding_live_protocol_digest(),
+        pi_coding_sol_high_protocol_digest(),
+        pi_analysis_protocol_digest(),
+    ] {
+        assert!(
+            matches!(
+                settle_under(&generic_profile, &pi_protocol),
+                Err(StoreError::Rejected)
+            ),
+            "{pi_protocol}"
+        );
+    }
+    for pi_profile in [
+        pi_profile_digest(),
+        pi_multiturn_profile_digest(),
+        pi_coding_profile_digest(),
+        pi_coding_live_profile_digest(),
+        pi_coding_sol_high_profile_digest(),
+        pi_analysis_profile_digest(),
+    ] {
+        for protocol in [codex, pi_host] {
+            assert!(
+                matches!(
+                    settle_under(&pi_profile, protocol),
+                    Err(StoreError::Rejected)
+                ),
+                "{pi_profile}"
             );
         }
     }

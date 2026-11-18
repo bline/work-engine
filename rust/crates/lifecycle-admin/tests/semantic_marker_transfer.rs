@@ -67,7 +67,7 @@ fn create_semantic_required_transition(store: &mut SqliteLifecycleStore) -> Tran
             RuntimeIncarnation::parse("incarnation-semantic-marker").unwrap(),
             &digest,
             &digest,
-            &digest,
+            native_realization::codex::SCHEMA_THREAD_START_SHA256,
             SnapshotId::parse("snapshot-semantic-marker").unwrap(),
             &digest,
             false,

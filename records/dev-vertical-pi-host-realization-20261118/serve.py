@@ -9,7 +9,8 @@ turns, one relayed snapshot_read and one result_publish in turn 1, a text
 answer in each turn) with synthetic Host-held access; `live` uses the Claude
 subscription route (operator-authorized only). Provider: claude-sdk on the
 runtime root built by ../dev-vertical-h2-route-20261117/claude_runtime.py
-(PI_HOST_RUNTIME_DIR). PI_HOST_CONTROLLER_REFUSE=1: the controller answers every relayed call with
+(PI_HOST_RUNTIME_DIR). PI_HOST_PAUSE_S=<n>: the controller waits n seconds between the turns.
+PI_HOST_CONTROLLER_REFUSE=1: the controller answers every relayed call with
 an error (the turn must fail and the thread end). Writes <root-dir>/<run-name>/
 and prints a summary.
 """
@@ -203,6 +204,9 @@ def main():
             out['captures'].append(cap.get('result') or cap.get('error'))
             if completed.get('status') != 'completed':
                 break
+            # PI_HOST_PAUSE_S: idle the thread between turns (H4: a relay
+            # thread outlives the 300 s bound of other Host processes).
+            time.sleep(int(os.environ.get('PI_HOST_PAUSE_S', 0)) if prompt != PROMPTS[-1] else 0)
     except (TimeoutError, EOFError) as e:
         out['controller_error'] = str(e)
     p.stdin.close()

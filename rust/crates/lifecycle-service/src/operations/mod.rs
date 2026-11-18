@@ -1,5 +1,6 @@
 //! Private S5 operation registry: exactly one finite immutable snapshot read.
 
+pub mod pi_host;
 pub mod workspace_snapshot_read;
 
 use std::{
@@ -52,6 +53,11 @@ pub enum NativeMessage {
     },
     CaptureInput {
         observation: lifecycle_codex::AcquiredNativeInput,
+        reply: oneshot::Sender<Result<(), StoreError>>,
+    },
+    /// Pi Host realization: input checked from the Host capture.
+    CaptureHostInput {
+        input: pi_host::HostCapturedInput,
         reply: oneshot::Sender<Result<(), StoreError>>,
     },
     Settle {
@@ -1160,6 +1166,8 @@ pub struct NativeLaunch {
     pub auth_mode: NativeAuthMode,
     pub chatgpt_access_source: Option<ChatgptAccessSource>,
     pub code_mode_host: bool,
+    /// Set only for the Pi Host realization.
+    pub pi_host: Option<pi_host::PiHostConfig>,
 }
 
 // Companion executable shipped with the pinned native 0.163 package. The
@@ -1428,6 +1436,9 @@ pub fn preview_native_task_launch(
 /// Input-only predicates shared by preflight and native launch. Runtime
 /// canonicalization, credentials and filesystem observations stay at launch.
 pub(crate) fn validate_native_config(config: &NativeConfig) -> Result<(), StoreError> {
+    if config.provider_route == NativeProviderRoute::PiHostV1 {
+        return pi_host::validate(config, &pi_host::load(config)?);
+    }
     workspace_snapshot_read::validate(&config.snapshot)?;
     use lifecycle_core::{AttemptId, NativeSessionId};
     config
@@ -1506,6 +1517,10 @@ fn prepare_native_launch_with_code_mode(
     code_mode_host: bool,
     materialize: bool,
 ) -> Result<NativeLaunch, StoreError> {
+    if config.provider_route == NativeProviderRoute::PiHostV1 {
+        let _ = code_mode_host;
+        return pi_host::prepare_launch(config, uid, materialize);
+    }
     validate_native_config(config)?;
     let url = config
         .provider_route
@@ -1774,6 +1789,7 @@ enabled = false
         auth_mode,
         chatgpt_access_source,
         code_mode_host,
+        pi_host: None,
     })
 }
 
@@ -1871,6 +1887,7 @@ mod provider_launch_tests {
                 auth_mode: NativeAuthMode::None,
                 chatgpt_access_source: None,
                 code_mode_host,
+                pi_host: None,
             };
             let (messages, mut received) = mpsc::channel(1);
             let run = tokio::spawn(run_native(
@@ -2762,6 +2779,7 @@ mod provider_launch_tests {
             auth_mode: NativeAuthMode::ExternalChatgptAccess,
             chatgpt_access_source: None,
             code_mode_host: true,
+            pi_host: None,
         };
         let valid = json!({"model":"gpt-6-sol","model_provider":"openai",
             "forced_login_method":"chatgpt","openai_base_url":null,
@@ -2869,6 +2887,7 @@ mod provider_launch_tests {
             auth_mode: NativeAuthMode::RuntimeApiKey,
             chatgpt_access_source: None,
             code_mode_host: false,
+            pi_host: None,
         };
         let valid = json!({"model":"gpt-6-sol","model_provider":"openai_responses_live",
             "model_providers":{"openai_responses_live":{

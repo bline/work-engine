@@ -363,6 +363,212 @@ fn snapshot_projection(
     }
     Ok(Some((out, spans)))
 }
+/// C1(ii)/(iii) for the Pi Host realization on Messages (claude-sdk): no capability fields outside
+/// `tools`, no forcing `tool_choice`, and every retained wire payload's
+/// `messages` extends the previous one under the shared canonical rule.
+fn messages_capabilities(request: &Value) -> Result<(), &'static str> {
+    if request.get("mcp_servers").is_some() || request.get("container").is_some() {
+        return Err("messages-request-capability-field");
+    }
+    if let Some(choice) = request.get("tool_choice")
+        && choice != &json!({"type":"auto"})
+    {
+        return Err("messages-request-forcing-tool-choice");
+    }
+    Ok(())
+}
+fn messages_request_checks(request: &Value, payloads: &[Value]) -> Result<(), &'static str> {
+    messages_capabilities(request)?;
+    let mut previous: Option<Value> = None;
+    for p in payloads.iter().filter(|p| p["representation"] == "wire") {
+        let bytes = byte_vec(&p["bytes"]).map_err(|_| "messages-payload-bytes")?;
+        let value = strict(&bytes).map_err(|_| "messages-payload-not-strict-json")?;
+        messages_capabilities(&value)?;
+        if let Some(prev) = &previous
+            && !native_realization::pi_host::canonical::is_prefix_extension(
+                &prev["messages"],
+                &value["messages"],
+            )
+        {
+            return Err("messages-request-continuity-broken");
+        }
+        previous = Some(value);
+    }
+    if previous.is_none() {
+        return Err("messages-request-no-wire-payload");
+    }
+    Ok(())
+}
+/// C1(i): snapshot reads are model-visible as `tool_result` blocks in an
+/// Anthropic Messages request. Each is joined to its earlier assistant
+/// `tool_use` (`mcp__pi__snapshot_read`) by id, its arguments are that
+/// `tool_use`'s input, and the decoded JSON result must carry exactly the
+/// expected bytes. `system` and the reminder are never projected.
+fn messages_snapshot_projection(
+    request: &Value,
+    inference: &str,
+    send: u64,
+    snapshot_id: &str,
+    expected: &[u8],
+) -> Result<Option<(Vec<u8>, Vec<Span>)>, HostError> {
+    use std::collections::{BTreeMap, BTreeSet};
+    let messages = request["messages"]
+        .as_array()
+        .ok_or(HostError::Configuration)?;
+    let mut uses = BTreeMap::new();
+    for (i, m) in messages.iter().enumerate() {
+        if m["role"] != "assistant" {
+            continue;
+        }
+        for (j, b) in m["content"].as_array().into_iter().flatten().enumerate() {
+            if b["type"] == "tool_use" {
+                let id = b["id"].as_str().ok_or(HostError::Configuration)?;
+                if uses.insert(id.to_owned(), (i, j, b)).is_some() {
+                    return refuse();
+                }
+            }
+        }
+    }
+    let mut chunks = BTreeMap::new();
+    let mut ids = BTreeSet::new();
+    let mut member = None;
+    for (i, m) in messages.iter().enumerate() {
+        if m["role"] != "user" {
+            continue;
+        }
+        for (j, b) in m["content"].as_array().into_iter().flatten().enumerate() {
+            if b["type"] != "tool_result" {
+                continue;
+            }
+            let id = b["tool_use_id"].as_str().ok_or(HostError::Configuration)?;
+            let Some((call_index, call_block, call)) = uses.get(id).copied() else {
+                return refuse();
+            };
+            if call["name"] != "mcp__pi__snapshot_read" {
+                continue;
+            }
+            if call_index >= i || !ids.insert(id.to_owned()) {
+                return refuse();
+            }
+            let (raw, pointer) = match &b["content"] {
+                Value::String(text) => {
+                    (text.as_str(), format!("/messages/{i}/content/{j}/content"))
+                }
+                Value::Array(a) if a.len() == 1 && a[0]["type"] == "text" => (
+                    a[0]["text"].as_str().ok_or(HostError::Configuration)?,
+                    format!("/messages/{i}/content/{j}/content/0/text"),
+                ),
+                _ => return refuse(),
+            };
+            let args = &call["input"];
+            let value = strict(raw.as_bytes())?;
+            let snapshot = value["snapshot_id"]
+                .as_str()
+                .ok_or(HostError::Configuration)?;
+            let name = value["member_id"]
+                .as_str()
+                .ok_or(HostError::Configuration)?;
+            let offset = value["offset"]
+                .as_u64()
+                .and_then(|n| usize::try_from(n).ok())
+                .ok_or(HostError::Configuration)?;
+            let length = value["length"]
+                .as_u64()
+                .and_then(|n| usize::try_from(n).ok())
+                .ok_or(HostError::Configuration)?;
+            if snapshot != snapshot_id
+                || name.is_empty()
+                || member.as_ref().is_some_and(|m| m != name)
+                || args["snapshot_id"] != snapshot
+                || args["member_id"] != name
+                || args["offset"] != offset
+                || args["length"] != length
+                || length == 0
+                || length > 65536
+                || offset
+                    .checked_add(length)
+                    .is_none_or(|end| end > expected.len())
+            {
+                return refuse();
+            }
+            member = Some(name.to_owned());
+            let (bytes, transformation, field) = match value["encoding"].as_str() {
+                Some("utf8") => (
+                    value["text"]
+                        .as_str()
+                        .ok_or(HostError::Configuration)?
+                        .as_bytes()
+                        .to_vec(),
+                    "strict-json-unescape-utf8-snapshot-v1",
+                    "text",
+                ),
+                Some("hex") => {
+                    let hex = value["bytes_hex"]
+                        .as_str()
+                        .ok_or(HostError::Configuration)?;
+                    if hex.len() != length * 2
+                        || !hex
+                            .bytes()
+                            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+                    {
+                        return refuse();
+                    }
+                    let bytes = hex
+                        .as_bytes()
+                        .chunks_exact(2)
+                        .map(|pair| {
+                            u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap()
+                        })
+                        .collect::<Vec<_>>();
+                    (bytes, "strict-json-hex-snapshot-v1", "bytes_hex")
+                }
+                _ => return refuse(),
+            };
+            if bytes.len() != length
+                || value["sha256"] != sha(&bytes)
+                || bytes != expected[offset..offset + length]
+            {
+                return refuse();
+            }
+            let span = Span {
+                inference_call_id: inference.into(),
+                physical_send: send,
+                json_pointer: pointer,
+                message: i,
+                tool_call: Some(id.into()),
+                utf8_start: offset,
+                utf8_end: offset + length,
+                transformation,
+                text: value[field].as_str().unwrap_or_default().into(),
+                snapshot: Some(
+                    json!({"snapshot_id":snapshot,"member_id":name,"offset":offset,"length":length,
+                    "sha256":sha(&bytes),"tool_use_id":id,
+                    "arguments_pointer":format!("/messages/{call_index}/content/{call_block}/input"),"decoded_pointer":format!("/{field}"),
+                    "source_utf8_start":0,"source_utf8_end":value[field].as_str().unwrap_or_default().len()}),
+                ),
+            };
+            if chunks.insert(offset, (bytes, span)).is_some() {
+                return refuse();
+            }
+        }
+    }
+    if chunks.is_empty() {
+        return Ok(None);
+    }
+    let mut out = Vec::new();
+    let mut spans = Vec::new();
+    for (offset, (bytes, span)) in chunks {
+        if offset != out.len() {
+            return refuse();
+        }
+        out.extend(bytes);
+        spans.push(span);
+    }
+    if out != expected || std::str::from_utf8(&out).is_err() {
+        return refuse();
+    }
+    Ok(Some((out, spans)))
+}
 fn verify_delivery(
     retained: RetainedDelivery,
     original: &ResearchOriginalEvidence,
@@ -566,46 +772,131 @@ fn verify_delivery(
     }
     let request_value = strict(&decoded)
         .map_err(|e| scoped_error(e, "refused", "strict-wire-json", sources.clone()))?;
-    if request_value
-        .get("previous_response_id")
-        .is_some_and(|v| !v.is_null())
-    {
-        return Err(delivery_error(
-            "refused",
-            "native-delivery",
-            "stateful-previous-response-request-unsupported",
-            sources.clone(),
-        ));
-    }
-    let mut expected = request.to_vec();
-    expected.push(b'\n');
-    expected.extend_from_slice(card);
-    expected.push(b'\n');
-    expected.extend_from_slice(reconstruction_bytes);
-    let (projection, spans) = match snapshot_projection(
-        &request_value,
-        inference,
-        send,
-        &original.advisory().snapshot_ref,
-        &expected,
-    )
-    .map_err(|_| {
-        delivery_error(
-            "mismatch",
-            "snapshot-projection",
-            "snapshot-call-identity-content-or-range-mismatch",
-            sources.clone(),
-        )
-    })? {
-        Some(value) => value,
-        None => text_projection(&request_value, inference, send).map_err(|_| {
-            delivery_error(
-                "mismatch",
-                "text-projection",
-                "model-visible-text-missing-or-malformed",
-                sources.clone(),
+    // S1: the wire grammar is selected by the realization the session bound;
+    // an unknown protocol refuses.
+    let realization = input["protocol_digest"]
+        .as_str()
+        .and_then(native_realization::Realization::from_protocol_digest);
+    let (projection, spans) = match realization {
+        Some(native_realization::Realization::Codex) => {
+            if request_value
+                .get("previous_response_id")
+                .is_some_and(|v| !v.is_null())
+            {
+                return Err(delivery_error(
+                    "refused",
+                    "native-delivery",
+                    "stateful-previous-response-request-unsupported",
+                    sources.clone(),
+                ));
+            }
+            let mut expected = request.to_vec();
+            expected.push(b'\n');
+            expected.extend_from_slice(card);
+            expected.push(b'\n');
+            expected.extend_from_slice(reconstruction_bytes);
+            let (projection, spans) = match snapshot_projection(
+                &request_value,
+                inference,
+                send,
+                &original.advisory().snapshot_ref,
+                &expected,
             )
-        })?,
+            .map_err(|_| {
+                delivery_error(
+                    "mismatch",
+                    "snapshot-projection",
+                    "snapshot-call-identity-content-or-range-mismatch",
+                    sources.clone(),
+                )
+            })? {
+                Some(value) => value,
+                None => text_projection(&request_value, inference, send).map_err(|_| {
+                    delivery_error(
+                        "mismatch",
+                        "text-projection",
+                        "model-visible-text-missing-or-malformed",
+                        sources.clone(),
+                    )
+                })?,
+            };
+            (projection, spans)
+        }
+        Some(native_realization::Realization::PiHost) => {
+            // The Pi Host records its wire in the checked input metadata. Only
+            // the Messages wire (Pi's claude-sdk provider) is qualified; a
+            // Responses relay has no observed request tool pin yet.
+            let wire = byte_vec(&input["metadata"])
+                .ok()
+                .and_then(|m| strict(&m).ok())
+                .and_then(|m| m["wire"].as_str().map(str::to_owned));
+            if wire.as_deref() != Some("messages") {
+                return Err(delivery_error(
+                    "refused",
+                    "native-delivery",
+                    "pi-host-wire-unqualified",
+                    sources.clone(),
+                ));
+            }
+            let mut expected = request.to_vec();
+            expected.push(b'\n');
+            expected.extend_from_slice(card);
+            expected.push(b'\n');
+            expected.extend_from_slice(reconstruction_bytes);
+            messages_request_checks(&request_value, payloads).map_err(|reason| {
+                delivery_error("refused", "messages-request", reason, sources.clone())
+            })?;
+            // The selected request is the one that produced the publication
+            // call, so it cannot already contain that call.
+            let publication = causal["call_id"].as_str().unwrap_or("");
+            let contains_publication = request_value["messages"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .flat_map(|m| m["content"].as_array().into_iter().flatten())
+                .any(|b| b["type"] == "tool_use" && b["id"] == publication);
+            if contains_publication {
+                return Err(delivery_error(
+                    "mismatch",
+                    "messages-request",
+                    "selected-request-already-contains-publication",
+                    sources.clone(),
+                ));
+            }
+            // Snapshot projection only: no text fallback, so system and
+            // reminder text never enter a projection.
+            messages_snapshot_projection(
+                &request_value,
+                inference,
+                send,
+                &original.advisory().snapshot_ref,
+                &expected,
+            )
+            .map_err(|_| {
+                delivery_error(
+                    "mismatch",
+                    "snapshot-projection",
+                    "snapshot-call-identity-content-or-range-mismatch",
+                    sources.clone(),
+                )
+            })?
+            .ok_or_else(|| {
+                delivery_error(
+                    "mismatch",
+                    "snapshot-projection",
+                    "pi-host-requires-snapshot-projection",
+                    sources.clone(),
+                )
+            })?
+        }
+        None => {
+            return Err(delivery_error(
+                "refused",
+                "native-delivery",
+                "unknown-realization-protocol",
+                sources.clone(),
+            ));
+        }
     };
     let visible = std::str::from_utf8(&projection).map_err(|_| HostError::Configuration)?;
     // Exact decoded model-visible strings, not digest echoes or escaped wire substrings.
@@ -946,6 +1237,135 @@ fn validate_original_request(
 #[cfg(test)]
 mod projection_tests {
     use super::*;
+
+    fn read_result(snapshot: &str, member: &str, data: &[u8], offset: usize) -> String {
+        let slice = &data[offset..];
+        json!({"encoding":"utf8","text":std::str::from_utf8(slice).unwrap(),"sha256":sha(slice),
+            "snapshot_id":snapshot,"member_id":member,"offset":offset,"length":slice.len()})
+        .to_string()
+    }
+
+    /// A Pi Host Messages request with two snapshot reads (one string and one
+    /// single-text-block result) and a later result_publish call.
+    fn messages_request(expected: &[u8]) -> Value {
+        let split = 7;
+        let a = json!({"snapshot_id":"snap","member_id":"m","offset":0,"length":split});
+        let b = json!({"snapshot_id":"snap","member_id":"m","offset":split,"length":expected.len()-split});
+        json!({"model":"claude","system":[{"type":"text","text":"x-anthropic-billing-header"}],
+            "messages":[
+            {"role":"user","content":[{"type":"text","text":"<system-reminder>user@example.com</system-reminder>"},{"type":"text","text":"task"}]},
+            {"role":"assistant","content":[{"type":"tool_use","id":"t1","name":"mcp__pi__snapshot_read","input":a},
+                {"type":"tool_use","id":"t2","name":"mcp__pi__snapshot_read","input":b}]},
+            {"role":"user","content":[
+                {"type":"tool_result","tool_use_id":"t1","content":read_result("snap","m",&expected[..split],0)},
+                {"type":"tool_result","tool_use_id":"t2","content":[{"type":"text","text":read_result("snap","m",expected,split)}]}]},
+            {"role":"assistant","content":[{"type":"tool_use","id":"t3","name":"mcp__pi__result_publish","input":{"result_id":"r"}}]},
+            {"role":"user","content":[{"type":"tool_result","tool_use_id":"t3","content":"{\"ok\":true}"}]}
+        ]})
+    }
+
+    fn read_result_fixed(expected: &[u8]) -> String {
+        read_result("snap", "m", &expected[..7], 0)
+    }
+
+    #[test]
+    fn messages_projection_joins_tool_results_to_tool_uses() {
+        let expected = b"request\ncard\nreconstruction".to_vec();
+        let request = messages_request(&expected);
+        let (out, spans) =
+            messages_snapshot_projection(&request, "request-3", 1, "snap", &expected)
+                .unwrap()
+                .unwrap();
+        assert_eq!(out, expected);
+        assert_eq!(spans.len(), 2);
+        assert_eq!(spans[0].json_pointer, "/messages/2/content/0/content");
+        assert_eq!(
+            spans[1].json_pointer,
+            "/messages/2/content/1/content/0/text"
+        );
+        // The reminder and system blocks are not projected.
+        assert!(!String::from_utf8_lossy(&out).contains("example.com"));
+        // No snapshot read: nothing to project (and no text fallback exists).
+        let mut none = request.clone();
+        none["messages"] = json!([none["messages"][0].clone()]);
+        assert!(
+            messages_snapshot_projection(&none, "r", 1, "snap", &expected)
+                .unwrap()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn messages_projection_refuses_identity_order_and_content_changes() {
+        let expected = b"request\ncard\nreconstruction".to_vec();
+        let base = messages_request(&expected);
+        let check = |v: &Value| messages_snapshot_projection(v, "r", 1, "snap", &expected).is_err();
+        let mut v = base.clone();
+        v["messages"][1]["content"][0]["input"]["offset"] = json!(1);
+        assert!(check(&v), "arguments differ from the result scope");
+        let mut v = base.clone();
+        v["messages"][2]["content"][0]["tool_use_id"] = json!("unknown");
+        assert!(check(&v), "result without a tool_use");
+        let mut v = base.clone();
+        let call = v["messages"][1].clone();
+        v["messages"][1] = v["messages"][2].clone();
+        v["messages"][2] = call;
+        v["messages"][1]["role"] = json!("user");
+        v["messages"][2]["role"] = json!("assistant");
+        assert!(check(&v), "result before its call");
+        let mut v = base.clone();
+        v["messages"][2]["content"][0]["content"] =
+            json!(read_result_fixed(b"REQUEST\ncard\nreconstruction"));
+        assert!(check(&v), "bytes differ");
+        let mut v = base.clone();
+        v["messages"][2]["content"][1]["content"] =
+            json!([{"type":"text","text":"a"},{"type":"text","text":"b"}]);
+        assert!(check(&v), "not one text block");
+        let mut v = base.clone();
+        v["messages"][1]["content"][1]["id"] = json!("t1");
+        assert!(check(&v), "duplicate tool_use id");
+        assert!(messages_snapshot_projection(&base, "r", 1, "other-snap", &expected).is_err());
+    }
+
+    #[test]
+    fn messages_request_checks_capabilities_and_continuity() {
+        let expected = b"request\ncard\nreconstruction".to_vec();
+        let full = messages_request(&expected);
+        let mut first = full.clone();
+        first["messages"] = json!([full["messages"][0].clone()]);
+        let payload =
+            |v: &Value| json!({"representation":"wire","bytes":serde_json::to_vec(v).unwrap()});
+        let payloads = vec![payload(&first), payload(&full)];
+        assert!(messages_request_checks(&full, &payloads).is_ok());
+        let mut v = full.clone();
+        v["mcp_servers"] = json!([]);
+        assert_eq!(
+            messages_request_checks(&v, &payloads),
+            Err("messages-request-capability-field")
+        );
+        let mut v = full.clone();
+        v["tool_choice"] = json!({"type":"any"});
+        assert_eq!(
+            messages_request_checks(&v, &payloads),
+            Err("messages-request-forcing-tool-choice")
+        );
+        let mut altered = full.clone();
+        altered["messages"][0]["content"][1]["text"] = json!("changed task");
+        assert_eq!(
+            messages_request_checks(&full, &[payload(&first), payload(&altered)]),
+            Err("messages-request-continuity-broken")
+        );
+        assert_eq!(
+            messages_request_checks(&full, &[]),
+            Err("messages-request-no-wire-payload")
+        );
+        let mut early = first.clone();
+        early["container"] = json!({"id":"x"});
+        assert_eq!(
+            messages_request_checks(&full, &[payload(&early), payload(&full)]),
+            Err("messages-request-capability-field")
+        );
+    }
     #[test]
     fn scoped_chunk_assembly_checks_identity_ranges_content_and_encoding() {
         use std::io::{BufRead, BufReader, Write};

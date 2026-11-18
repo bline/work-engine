@@ -17,5 +17,6 @@ rusqlite = { version = "=0.37.0", features = ["bundled"] }
 
 [dev-dependencies]
 tempfile = "=3.27.0"
+native-realization = { path = "../native-realization" }
 work-engine-types = { path = "../work-engine-types" }
 ed25519-dalek = "=2.2.0"

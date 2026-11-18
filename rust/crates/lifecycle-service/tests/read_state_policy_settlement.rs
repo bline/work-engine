@@ -63,7 +63,7 @@ fn fixture() -> (
             RuntimeIncarnation::parse("incarnation:synthetic").unwrap(),
             &digest,
             &digest,
-            &digest,
+            lifecycle_codex::SCHEMA_THREAD_START_SHA256,
             SnapshotId::parse("snapshot:synthetic").unwrap(),
             &digest,
             false,

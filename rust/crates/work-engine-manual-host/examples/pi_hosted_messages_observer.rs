@@ -14,7 +14,9 @@
 //! the attempt is uncertain and no further request may arrive), or `relay`
 //! (the lifecycle relay profile's tools, Pi Host controller mode: an
 //! `mcp__pi__snapshot_read`, an `mcp__pi__result_publish`, the first turn's
-//! answer, then the second turn's answer).
+//! answer, then the second turn's answer), or `steps` (relay tools; the
+//! responses are the steps in `HOSTED_OBSERVER_STEPS`, a JSON array of
+//! `{"tool", "input"}` or `{"text"}`, one per served request).
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{
@@ -150,14 +152,25 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     );
     std::io::stdout().flush()?;
     let scenario = std::env::var("HOSTED_OBSERVER_SCENARIO").unwrap_or_else(|_| "ok".into());
-    if !matches!(scenario.as_str(), "ok" | "retry-head" | "relay") {
+    if !matches!(scenario.as_str(), "ok" | "retry-head" | "relay" | "steps") {
         return Err("unknown scenario".into());
     }
     let deadline = Instant::now() + Duration::from_secs(600);
     let (mut served, mut refused) = (0usize, 0usize);
     let mut authority: std::collections::BTreeMap<&str, String> = Default::default();
-    let relay = scenario == "relay";
-    let total = if relay { 4 } else { 3 };
+    let steps: Vec<Value> = if scenario == "steps" {
+        serde_json::from_slice(&std::fs::read(std::env::var("HOSTED_OBSERVER_STEPS")?)?)?
+    } else {
+        vec![]
+    };
+    let relay = scenario == "relay" || scenario == "steps";
+    let total = if scenario == "steps" {
+        steps.len()
+    } else if relay {
+        4
+    } else {
+        3
+    };
     while served < total {
         if Instant::now() > deadline {
             return Err("observer deadline".into());
@@ -257,6 +270,18 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             return Ok(());
         }
         let reply = match served {
+            n if scenario == "steps" => {
+                let step = &steps[n - 1];
+                match step["tool"].as_str() {
+                    Some(tool) => sse(n, &[Block::Tool(tool.into(), step["input"].clone())]),
+                    None => sse(
+                        n,
+                        &[Block::Text(
+                            step["text"].as_str().ok_or("step text")?.into(),
+                        )],
+                    ),
+                }
+            }
             1 if relay => sse(
                 1,
                 &[Block::Tool(

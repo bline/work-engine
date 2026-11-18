@@ -59,9 +59,67 @@ Unit tests: `native-realization` (protocol digest, tool pins),
 capture and `thread/read`, unrelayed and missing calls, Responses call
 join).
 
+## Review remediation and L, S, T, Q (second commit)
+
+Fable review of `047dba58`:
+[REVIEW.md](../../reviews/pi-host-h1-h5-fable-20261118/REVIEW.md) (accept
+with changes). Dispositions:
+
+| Finding | Change |
+| --- | --- |
+| P1 relay thread killed at 300 s | The inference process wall bound is the relay thread bound for relay jobs (`process_wall_seconds`, unit test); run `r6-pause330` idles 330 s between turns and both turns complete (375.8 s). |
+| P2 no `userMessage` | Protocol: turns are domain work; the ledger carries no `userMessage`. |
+| P2 capture does not bind the input | Capture `turn.prompt_sha256`; the lifecycle-service runner requires it to equal the prompt it sent. |
+| P2 missing response stream silently omitted | Eligibility reason for any attempt relayed to Pi without its retained stream. |
+| P2 `MAX_TURNS` undocumented | Protocol: at most 16 turns per thread. |
+| P3 `success: false`, duplicate final text | `success: false` makes the capture ineligible (the store settles only successful calls); protocol states `completed` is the Host's verdict. |
+| P3 request handling during a turn | Protocol states it. |
+| P3 notify order, inspect buffering, over-built parts | No change (accepted as is by the review). |
+
+Also: the capture names the job's nonsecret route table; the Messages tools
+pin and the canonical continuity rule moved to `native-realization`
+(`pi_host::tools::MESSAGES_TOOLS_SHA256`, `pi_host::canonical`), shared by the
+Host and the task host.
+
+S (ported from `claude-realization-20261117` `cff1cb5c`/`704bd087`, Claude
+Host replaced by Pi Host): Codex digests moved to `native-realization::codex`
+and re-exported unchanged; `Realization {Codex, PiHost}`;
+`settle_native_turn` positive allow-list (every Pi grammar digest still
+refused); causal scope by protocol digest with the Codex bytes pinned.
+
+L: `lifecycle-service` `operations/pi_host.rs`: route `pi-host-v1`,
+`<root>/pi-host.json` (Host binary, serve configuration and job by digest,
+state directory inside the native root), loopback routes only under
+`controlled-proof`, session binary identity from Host and job, protocol
+digest `pi_host::PROTOCOL_DIGEST`, no successor; runner: handshake,
+`thread/start`, `pi-host/observe` check, turns over the eight actor
+messages, capture checked (identities, prompt digest, payloads re-read inside
+the state directory) into `CaptureHostInput`; an orderly Host close (end of
+input, then wait) before any kill, because a killed Host leaves its
+container (found by Q run `q2`).
+
+T: `work-engine-task-host` `verify_delivery` dispatches on the session's
+realization; Pi Host on the Messages wire uses the `mcp__pi__snapshot_read`
+projection (no text fallback), request capability checks and the shared
+continuity rule; a Pi Host input on another wire is refused
+(`pi-host-wire-unqualified`).
+
+Q: `lifecycle-service` `tests/pi_host_join.rs` (ignored; needs Docker, the
+Host binary, the `claude-sdk` runtime and the observer): task owner,
+actor, Pi Host runner, the Host and Pi in the container, observer
+scenario `steps` (`result_publish`, then the answer). Run `q3`: result
+published through the actor, causal record with the Pi Host scope, input
+eligible, `CompletedSettled`, causal read returns the operation, no Host
+failures, no container left.
+
 ## Open
 
 - The Responses (`openai-codex`) relay tools digest is unobserved (OpenAI
-  exhausted until 2026-11-21); relay requests on that wire are refused.
-- No live run. L, S, T, Q (lifecycle-service runner, allow-list, projection,
-  composed qualification) follow on this branch.
+  exhausted until 2026-11-21); relay requests on that wire are refused by
+  the Host and by the task host.
+- Not composed yet: the task host's `verify_delivery` over a real Pi Host
+  payload through a controlled research delivery (unit tests only); the
+  actor's `snapshot_read` in Q (the fixture has no material port).
+- Startup hold (L4) for the Pi Host is refused, as for the Claude Host: it
+  needs the protection owner's contract (R9′).
+- No live run.

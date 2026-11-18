@@ -222,6 +222,10 @@ pub enum NativeProviderRoute {
     #[cfg(feature = "native-sim-proof")]
     OpenaiChatgptSyntheticTestV1,
     OpenaiResponsesFakeV1,
+    /// Pi Host realization (`native-realization` `pi_host`). Not a
+    /// Codex provider route: no base URL; its configuration is
+    /// `<root>/pi-host.json`, bound into the session profile digest.
+    PiHostV1,
 }
 
 impl NativeProviderRoute {
@@ -251,6 +255,7 @@ impl NativeProviderRoute {
             #[cfg(feature = "native-sim-proof")]
             Self::OpenaiChatgptSyntheticTestV1 => "openai-chatgpt-synthetic-test-v1",
             Self::OpenaiResponsesFakeV1 => "openai-responses-fake-v1",
+            Self::PiHostV1 => "pi-host-v1",
         }
     }
 
@@ -262,6 +267,7 @@ impl NativeProviderRoute {
             #[cfg(feature = "native-sim-proof")]
             Self::OpenaiChatgptSyntheticTestV1 => "lease_loopback",
             Self::OpenaiResponsesFakeV1 => "openai_responses_fake",
+            Self::PiHostV1 => "pi_host",
         }
     }
 

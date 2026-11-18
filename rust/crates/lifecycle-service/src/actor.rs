@@ -1043,6 +1043,9 @@ impl Actor {
                 clock_sample(),
             )?;
             let session = if let Some(intent) = selected_restart {
+                if launch.pi_host.is_some() {
+                    return Err(ServiceError::Configuration);
+                }
                 if intent.profile_digest != launch.profile_digest
                     || intent.binary_sha256 != NATIVE_BINARY_SHA256
                     || intent.protocol_digest != SCHEMA_THREAD_START_SHA256
@@ -1083,8 +1086,15 @@ impl Actor {
                         .map_err(|_| ServiceError::Configuration)?,
                     incarnation.clone(),
                     &launch.profile_digest,
-                    &operations::selected_native_binary(native),
-                    SCHEMA_THREAD_START_SHA256,
+                    &match &launch.pi_host {
+                        Some(host) => operations::pi_host::binary_identity(host),
+                        None => operations::selected_native_binary(native),
+                    },
+                    if launch.pi_host.is_some() {
+                        native_realization::pi_host::PROTOCOL_DIGEST
+                    } else {
+                        SCHEMA_THREAD_START_SHA256
+                    },
                     snapshot.id.clone(),
                     &snapshot.manifest_sha256,
                     native.same_native_session_required,
@@ -1198,16 +1208,29 @@ impl Actor {
             let startup_hold = self.startup_hold.take();
             let mut completion = self.native_task.lock().await;
             completion.task = Some(tokio::spawn(async move {
-                operations::run_native(
-                    config,
-                    launch,
-                    transport,
-                    sender,
-                    gate,
-                    task_work,
-                    startup_hold,
-                )
-                .await;
+                if launch.pi_host.is_some() {
+                    operations::pi_host::run_pi_host(
+                        config,
+                        launch,
+                        transport,
+                        sender,
+                        gate,
+                        task_work,
+                        startup_hold,
+                    )
+                    .await;
+                } else {
+                    operations::run_native(
+                        config,
+                        launch,
+                        transport,
+                        sender,
+                        gate,
+                        task_work,
+                        startup_hold,
+                    )
+                    .await;
+                }
             }));
         }
         if self.config.profile == "controlled" {
@@ -1311,6 +1334,11 @@ impl Actor {
                     let session = self.native_session.as_ref().ok_or(StoreError::Rejected)?;
                     let snapshot = self.native_snapshot.as_ref().ok_or(StoreError::Rejected)?;
                     let native = self.config.native.as_ref().ok_or(StoreError::Rejected)?;
+                    // The Pi Host realization is fresh start only: never
+                    // reserve a (Codex-identity) successor for its thread.
+                    if native.provider_route == crate::NativeProviderRoute::PiHostV1 {
+                        return Err(StoreError::Rejected);
+                    }
                     let successor = self.store.reserve_native_session(
                         NativeSessionId::parse(format!("session:successor:{}", id.as_str()))
                             .map_err(|_| StoreError::Rejected)?,
@@ -1550,6 +1578,41 @@ impl Actor {
                             session,
                             turn,
                             &bytes,
+                            clock_sample(),
+                        )?;
+                        if results.contains(&lifecycle_store::NativeInputApply::Conflict) {
+                            return Err(StoreError::ClaimConflict);
+                        }
+                    }
+                    Ok(())
+                })();
+                let _ = reply.send(result);
+            }
+            NativeMessage::CaptureHostInput { input, reply } => {
+                let result = (|| {
+                    let session = self.native_session.as_ref().ok_or(StoreError::Rejected)?;
+                    let turn = self.native_turn.as_ref().ok_or(StoreError::Rejected)?;
+                    let applied = self.store.retain_native_input_with_registry(
+                        session,
+                        turn,
+                        &input.transport,
+                        input.terminal_sequence,
+                        &input.terminal_raw,
+                        &input.metadata,
+                        input.payloads,
+                        &input.tool_registry,
+                        input.eligible,
+                        &input.outcome,
+                        clock_sample(),
+                    )?;
+                    if applied == lifecycle_store::NativeInputApply::Conflict {
+                        return Err(StoreError::ClaimConflict);
+                    }
+                    if let Some(bundle) = &input.causal_bundle {
+                        let results = self.store.retain_native_causal(
+                            session,
+                            turn,
+                            bundle,
                             clock_sample(),
                         )?;
                         if results.contains(&lifecycle_store::NativeInputApply::Conflict) {
@@ -4978,7 +5041,7 @@ mod restart_epoch_tests {
                 RuntimeIncarnation::parse("incarnation:prior-held").unwrap(),
                 &hash,
                 &hash,
-                &hash,
+                SCHEMA_THREAD_START_SHA256,
                 lifecycle_core::SnapshotId::parse("snapshot:prior").unwrap(),
                 &hash,
                 false,
@@ -5109,3 +5172,7 @@ mod direct_selection_tests;
 #[cfg(all(test, feature = "native-input-proof"))]
 #[path = "../tests/native_input_capture.rs"]
 mod native_input_capture;
+
+#[cfg(all(test, feature = "controlled-proof"))]
+#[path = "../tests/pi_host_join.rs"]
+mod pi_host_join;

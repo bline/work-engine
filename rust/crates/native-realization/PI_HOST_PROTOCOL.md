@@ -38,8 +38,11 @@ process.
 
 `turn/start` `{"threadId", "input": [{"type": "text", "text"}]}` →
 `{"turn": {"id"}}`. Exactly one non-empty text input, sent to Pi unchanged as
-the prompt. At most one turn is active. After a failed turn the thread
-accepts no further turn.
+the prompt. Turns are domain work: the Host-ledger items carry no
+`userMessage`. At most one turn is active, and at most 16 turns per thread.
+After a failed turn the thread accepts no further turn. Controller requests
+sent while a turn is active are refused with an error while a relayed call
+awaits its answer, and otherwise answered after the turn ends.
 
 `thread/read` `{"threadId", "includeTurns": true}` → `{"thread": {"id",
 "historyMode": "legacy", "turns": [{"id", "status", "itemsView": "full",
@@ -89,7 +92,9 @@ Notifications, in order for a turn:
 - `turn/completed` `{"threadId", "turn": {"id", "status", "error"}}` where
   `status` is `completed` and `error` is `null` only if the turn's capture is
   eligible; otherwise `status` is `failed` and `error` is `{"message"}`
-  naming the first reason.
+  naming the first reason. `completed` is the Host's verdict; the
+  controller's settlement applies its own rules (for example, a final text
+  that equals an earlier text block of the turn).
 
 The capture is complete before `turn/completed` is written.
 
@@ -106,12 +111,14 @@ relayed call is joined to exactly one model tool call in the retained
 response of exactly one completed attempt of the turn; the relayed result
 texts by digest; Pi's session history artifact by digest; `realization`,
 `evidence_class`, `provider`, `wire`, `contains_account_identifier`, the
-identities the Host ran with; the `pi-host/observe` observation taken when
+identities the Host ran with (Host binary, job and its nonsecret route
+table, provider, model) and the turn's prompt digest; the `pi-host/observe` observation taken when
 the turn ended; and an eligibility verdict with reasons.
 Eligible means: the turn ended with a final answer; every relayed call was
-answered and joined; every physical send's body is retained with a matching
+answered with `success: true` and joined; every physical send's body is retained with a matching
 digest and passed the Host's request policy (model, pinned tools, body
-bounds); every attempt is settled and none is uncertain; the observation
+bounds); every attempt relayed to Pi has its response stream retained; every
+attempt is settled and none is uncertain; the observation
 succeeded; and the turn is within the bounds below.
 
 ## Bounds

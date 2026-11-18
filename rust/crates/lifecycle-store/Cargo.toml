@@ -9,6 +9,7 @@ publish.workspace = true
 lifecycle-core = { path = "../lifecycle-core" }
 lifecycle-semantic = { path = "../lifecycle-semantic" }
 work-engine-types = { path = "../work-engine-types" }
+native-realization = { path = "../native-realization" }
 rusqlite = { version = "=0.37.0", features = ["bundled"] }
 serde_json.workspace = true
 serde.workspace = true

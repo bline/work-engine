@@ -68,17 +68,6 @@ pub(super) fn check_answer_bound(event: &Value) -> Result<()> {
     }
     Ok(())
 }
-/// SHA-256 of the Responses `tools` the pinned receiver and SDK send on the
-/// lifecycle relay profile (`native-realization` `pi_host::tools`). Not yet
-/// observed (no Responses relay run): the zero value refuses every request.
-pub const RELAY_TOOLS_SHA256: &str =
-    "0000000000000000000000000000000000000000000000000000000000000000";
-/// SHA-256 of the Messages `tools` on the relay profile's `claude-sdk` route:
-/// Claude Code's `DeferredToolPlaceholder` and the pinned tools as
-/// `mcp__pi__<name>` (from the first offline run's refusal message, and
-/// equal to the digest of that array rebuilt from `pi_host::tools`).
-pub const RELAY_CLAUDE_SDK_TOOLS_SHA256: &str =
-    "7e97ed24669af3a0bd142c5163906ba608a96874f3229feee64190880104c847";
 /// The profile's tool names (Host-served or relayed).
 fn profile_tools(schema: &str) -> Vec<&'static str> {
     if is_relay(schema) {
@@ -102,11 +91,11 @@ pub(super) fn check_request_tools(schema: &str, tools: &Value) -> Result<()> {
         return refuse("analysis request tool set differs from the profile");
     }
     let pinned = if is_relay(schema) {
-        RELAY_TOOLS_SHA256
+        native_realization::pi_host::tools::RESPONSES_TOOLS_SHA256
     } else {
-        TOOLS_SHA256
+        Some(TOOLS_SHA256)
     };
-    if actual != pinned {
+    if Some(actual.as_str()) != pinned {
         return refuse(format!(
             "analysis request tool specification differs from the pinned digest (got {actual})"
         ));
@@ -131,7 +120,7 @@ pub(super) fn check_messages_tools(schema: &str, provider: &str, tools: &Value) 
             "mcp__pi__",
             &["DeferredToolPlaceholder"],
             if is_relay(schema) {
-                RELAY_CLAUDE_SDK_TOOLS_SHA256
+                native_realization::pi_host::tools::MESSAGES_TOOLS_SHA256
             } else {
                 CLAUDE_SDK_TOOLS_SHA256
             },

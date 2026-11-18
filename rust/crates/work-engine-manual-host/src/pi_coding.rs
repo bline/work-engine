@@ -2137,6 +2137,24 @@ mod tests {
         assert!(h.journal.coding.as_ref().unwrap().tool_requests.is_empty());
         assert!(h.journal.processes.is_empty());
     }
+    /// H4: only a relay thread's inference process outlives 300 s.
+    #[test]
+    fn relay_inference_process_wall_bound_is_the_relay_thread_bound() {
+        let (_dir, mut h) = fixture();
+        assert_eq!(h.process_wall_seconds(true), 300);
+        assert_eq!(
+            h.process_wall_seconds(false),
+            h.journal.job.command_timeout_seconds
+        );
+        h.journal.job.coding.as_mut().unwrap().schema = ANALYSIS_PROFILE.into();
+        assert_eq!(h.process_wall_seconds(true), 300);
+        h.journal.job.coding.as_mut().unwrap().schema = LIFECYCLE_PROFILE.into();
+        assert_eq!(h.process_wall_seconds(true), RELAY_DEADLINE_SECONDS);
+        assert_eq!(
+            h.process_wall_seconds(false),
+            h.journal.job.command_timeout_seconds
+        );
+    }
     #[test]
     fn analysis_answer_bound_is_checked_when_the_answer_is_observed() {
         let answer = |n: usize| json!({"type":"message_end","message":{"role":"assistant","stopReason":"stop","content":[{"type":"text","text":"x".repeat(n)}]}});

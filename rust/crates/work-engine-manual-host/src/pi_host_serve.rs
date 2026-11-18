@@ -127,6 +127,8 @@ pub struct Identity {
     pub model: String,
     pub state_dir: PathBuf,
     pub routes: Vec<(String, String)>,
+    /// The job's nonsecret route table (id, payer, endpoint), as admitted.
+    pub route_table: Value,
     pub max_attempts_per_request: u64,
     pub job_deadline_ms: i64,
     pub turn_deadline: Duration,
@@ -169,6 +171,7 @@ struct Active {
     /// Pi's completed assistant messages, in stream order.
     messages: Vec<Value>,
     sends: u64,
+    prompt_sha256: String,
 }
 
 struct State {
@@ -443,6 +446,7 @@ impl State {
             sent: BTreeSet::new(),
             messages: vec![],
             sends: 0,
+            prompt_sha256: digest(prompt.as_bytes()),
         });
         let command = json!({"type":"bridge_prompt","sessionId":session,"invocationId":invocation,
             "turnCorrelation":id,"prompt":prompt});
@@ -895,7 +899,11 @@ fn build_capture(
             let stream_path = id
                 .state_dir
                 .join(format!("coding-hosted-{n}-{k}.stream.sse"));
-            if let Ok(stream) = fs::read(&stream_path) {
+            let stream = fs::read(&stream_path);
+            if stream.is_err() && disposition != "refused" {
+                reasons.push(format!("request {n} attempt {k} response stream absent"));
+            }
+            if let Ok(stream) = stream {
                 responses.push(
                     json!({"inference_call_id":format!("request-{n}"),"physical_send":k,
                     "path":stream_path,"sha256":digest(&stream)}),
@@ -924,6 +932,12 @@ fn build_capture(
         let item = &a.items[call];
         let (ok, text) = &a.answers[call];
         results.push(json!({"call_id":call,"success":ok,"text_sha256":digest(text.as_bytes())}));
+        if !ok {
+            // The lifecycle store settles only turns whose calls all succeeded.
+            reasons.push(format!(
+                "call {call}: the controller answered success false"
+            ));
+        }
         match produced.get(wire_call_id(wire, call)).map(Vec::as_slice) {
             Some([(n, k, Some(response))]) => calls.push(json!({"call_id":call,
                 "inference_call_id":format!("request-{n}"),"physical_send":k,"response_id":response,
@@ -943,9 +957,9 @@ fn build_capture(
         "protocol_digest":pi_host::PROTOCOL_DIGEST,
         "evidence_class":pi_host::EVIDENCE_CLASS,
         "identities":{"host_sha256":id.host_sha256,"job_sha256":id.job_sha256,
-            "provider":id.provider,"model":id.model},
+            "provider":id.provider,"model":id.model,"routes":id.route_table},
         "wire":wire,
-        "turn":{"id":a.id,"number":a.number,"invocation":a.invocation,
+        "turn":{"id":a.id,"number":a.number,"invocation":a.invocation,"prompt_sha256":a.prompt_sha256,
             "requests":[a.first_request,last_request],"items":items.len()},
         "contains_account_identifier":account,
         "payloads":payloads,
@@ -1087,6 +1101,7 @@ pub fn serve(
         model: plan.model.clone(),
         state_dir: job.state_dir.clone(),
         routes: plan.hosted.pairs(),
+        route_table: serde_json::to_value(&plan.hosted.routes)?,
         max_attempts_per_request: u64::from(plan.hosted.max_attempts_per_request),
         job_deadline_ms: i64::try_from(job.deadline_unix_seconds.saturating_mul(1000))
             .unwrap_or(i64::MAX),
@@ -1151,6 +1166,7 @@ mod tests {
             model: "claude-haiku-5-5".into(),
             state_dir: dir.into(),
             routes: vec![("primary".into(), "synthetic".into())],
+            route_table: json!([{"id":"primary","payer":"synthetic","endpoint":"loopback:1"}]),
             max_attempts_per_request: 2,
             job_deadline_ms: now_ms() + 600_000,
             turn_deadline: Duration::from_secs(120),
@@ -1404,6 +1420,7 @@ mod tests {
             sent: BTreeSet::new(),
             messages: vec![json!({"role":"assistant","content":[{"type":"toolCall","id":"x"}]})],
             sends: 0,
+            prompt_sha256: String::new(),
         };
         assert!(ledger_items(&a).unwrap_err().contains("not relayed"));
         a.messages.clear();

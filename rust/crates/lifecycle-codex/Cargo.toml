@@ -16,6 +16,7 @@ base64.workspace = true
 libc = "0.2.190"
 lifecycle-runtime = { path = "../lifecycle-runtime" }
 lifecycle-wire = { path = "../lifecycle-wire" }
+native-realization = { path = "../native-realization" }
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true

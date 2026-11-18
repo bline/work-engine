@@ -483,74 +483,9 @@ struct Fetch {
     /// Messages: the request's `messages`, which the next request must extend.
     messages: Option<Value>,
 }
-/// Continuity of successive Messages requests of one job. A copy of
-/// `native-realization`'s `claude_host::canonical` rule (branch
-/// `claude-realization-20261117`, research-lifecycle owner conditions 5854):
-/// when that crate reaches the shared base, this must become that one
-/// implementation.
-///
-/// The closed set of differences Claude Code introduces between successive
-/// requests: (1) `cache_control` keys move, and (2) a message whose `content`
-/// is a string equals the same message whose `content` is one text block with
-/// that text. Nothing else is equal. Used only to compare continuity; never
-/// stored as evidence (the exact bodies are retained).
-pub mod canonical {
-    use serde_json::{Map, Value, json};
-    fn strip_cache_control(v: &Value) -> Value {
-        match v {
-            Value::Object(m) => Value::Object(
-                m.iter()
-                    .filter(|(k, _)| k.as_str() != "cache_control")
-                    .map(|(k, x)| (k.clone(), strip_cache_control(x)))
-                    .collect::<Map<_, _>>(),
-            ),
-            Value::Array(a) => Value::Array(a.iter().map(strip_cache_control).collect()),
-            other => other.clone(),
-        }
-    }
-    /// Thinking blocks are compared exactly, outside both rules
-    /// (research-lifecycle owner condition 3, board 5886).
-    fn thinking(block: &Value) -> bool {
-        matches!(
-            block["type"].as_str(),
-            Some("thinking" | "redacted_thinking")
-        )
-    }
-    fn message(v: &Value) -> Value {
-        let mut m = strip_cache_control(v);
-        if let Some(Value::String(text)) = m.get("content").cloned() {
-            m["content"] = json!([{"type":"text","text":text}]);
-        }
-        if let (Some(original), Some(content)) =
-            (v["content"].as_array(), m["content"].as_array_mut())
-        {
-            for (kept, block) in content.iter_mut().zip(original) {
-                if thinking(block) {
-                    *kept = block.clone();
-                }
-            }
-        }
-        m
-    }
-    /// `next` is `previous` extended by at least one message, under the two
-    /// rules above. Both must be arrays of message objects.
-    pub fn is_prefix_extension(previous: &Value, next: &Value) -> bool {
-        let (Some(prev), Some(next)) = (previous.as_array(), next.as_array()) else {
-            return false;
-        };
-        if next.len() <= prev.len()
-            || !prev
-                .iter()
-                .chain(next.iter())
-                .all(|m| m.get("role").is_some())
-        {
-            return false;
-        }
-        prev.iter()
-            .zip(next.iter())
-            .all(|(a, b)| message(a) == message(b))
-    }
-}
+/// The canonical continuity rule, shared with the task host
+/// (`native-realization` `pi_host::canonical`).
+pub use native_realization::pi_host::canonical;
 enum StreamPhase {
     /// Grant written with the stream identity; awaiting `provider_fetch`.
     Granted,

@@ -80,7 +80,7 @@ fn late_native_conflict_after_signed_retirement_preserves_original_evidence(
             incarnation.clone(),
             &digest,
             &digest,
-            &digest,
+            native_realization::codex::SCHEMA_THREAD_START_SHA256,
             SnapshotId::parse("snapshot-late").unwrap(),
             &digest,
             false,

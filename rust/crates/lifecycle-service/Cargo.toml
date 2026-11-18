@@ -21,6 +21,7 @@ lifecycle-store = { path = "../lifecycle-store" }
 lifecycle-runtime = { path = "../lifecycle-runtime" }
 lifecycle-provider = { path = "../lifecycle-provider" }
 lifecycle-codex = { path = "../lifecycle-codex" }
+native-realization = { path = "../native-realization" }
 lifecycle-wire = { path = "../lifecycle-wire" }
 work-engine-types = { path = "../work-engine-types" }
 tokio.workspace = true

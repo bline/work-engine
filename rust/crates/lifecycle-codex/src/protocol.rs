@@ -9,11 +9,11 @@ pub const PROFILE_ID: &str = "codex-0.163.0-workspace-snapshot-read-v1";
 /// Owner-selected prospective consumer rule for additive read-state presentation data.
 /// The profile digest binds this rule; producer and operation eligibility remain separate.
 pub const READ_STATE_CONSUMER_POLICY_ID: &str = "codex-0.163.0-read-state-opaque-scalars-v3";
-pub const NATIVE_BINARY_SHA256: &str =
-    "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215";
+/// Moved to `native-realization` (the lowest owner that needs it); value unchanged.
+pub use native_realization::codex::NATIVE_BINARY_SHA256;
 pub const NATIVE_USER_AGENT_VERSION: &str = "0.163.0";
-pub const SCHEMA_THREAD_START_SHA256: &str =
-    "80a40a7fac15b4bf70efb7f893fb353acc0a0d30c68f54aee4f01923deca85de";
+/// Moved to `native-realization`; value unchanged.
+pub use native_realization::codex::SCHEMA_THREAD_START_SHA256;
 pub const SCHEMA_TOOL_CALL_SHA256: &str =
     "401bba20cfbd95762bef0467d840430c46be53369093ad9f26425ba757e34efc";
 
@@ -441,6 +441,22 @@ mod tests {
                 br#"{"method":"unknown","params":{"message":"\uD800"}}"#.to_vec()
             )
             .is_err()
+        );
+    }
+}
+
+#[cfg(test)]
+mod moved_constant_tests {
+    /// The re-exported values equal the original literals byte for byte.
+    #[test]
+    fn moved_digest_constants_are_unchanged() {
+        assert_eq!(
+            super::NATIVE_BINARY_SHA256.as_bytes(),
+            b"399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215"
+        );
+        assert_eq!(
+            super::SCHEMA_THREAD_START_SHA256.as_bytes(),
+            b"80a40a7fac15b4bf70efb7f893fb353acc0a0d30c68f54aee4f01923deca85de"
         );
     }
 }

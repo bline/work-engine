@@ -516,6 +516,17 @@ impl Host {
     fn failure(&mut self, error: impl ToString) {
         self.journal.failures.push(error.to_string());
     }
+    /// Wall bound of one Host process: the inference (`rpc`) process of a
+    /// relay thread lives up to the relay thread bound (H4; its job deadline
+    /// still ends it earlier), every other `rpc` process 300 s, other
+    /// commands their configured timeout.
+    fn process_wall_seconds(&self, rpc: bool) -> u64 {
+        match (rpc, self.journal.job.coding.as_ref()) {
+            (true, Some(p)) if coding::is_relay(&p.schema) => coding::RELAY_DEADLINE_SECONDS,
+            (true, _) => 300,
+            (false, _) => self.journal.job.command_timeout_seconds,
+        }
+    }
     fn cancelled(&self) -> bool {
         STOP.load(Ordering::SeqCst) || self.journal.job.state_dir.join("cancel.json").exists()
     }
@@ -806,12 +817,7 @@ impl Host {
             }) {
                 drop(stdin.take());
             }
-            let timeout = start.elapsed()
-                >= Duration::from_secs(if rpc {
-                    300
-                } else {
-                    self.journal.job.command_timeout_seconds
-                });
+            let timeout = start.elapsed() >= Duration::from_secs(self.process_wall_seconds(rpc));
             if timeout
                 || ((rpc
                     || label == "coding-tool-exec"

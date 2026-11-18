@@ -59,6 +59,16 @@ impl SqliteLifecycleStore {
         {
             return Err(StoreError::ClaimConflict);
         }
+        // The scope states the realization's actual tool path (S2): the Pi
+        // Host relays tool calls to its controller; any other session keeps
+        // the Codex bytes.
+        let scope =
+            match native_realization::Realization::from_protocol_digest(&input.protocol_digest) {
+                Some(native_realization::Realization::PiHost) => {
+                    native_realization::pi_host::CAUSAL_SCOPE
+                }
+                _ => native_realization::codex::CAUSAL_SCOPE,
+            };
         let input_sha: String = self
             .connection
             .query_row(
@@ -102,7 +112,21 @@ impl SqliteLifecycleStore {
             {
                 return Err(StoreError::ClaimConflict);
             }
-            records.push(NativeCausalRecord{version:1,operation_id:operation,invocation_id:turn.invocation_id().into(),input_artifact_sha256:input_sha.clone(),session_id:session.id().as_str().into(),call_id:call,transport_session:transport,transport_sequence:sequence,ingress,entry,owner_commit:commit,bundle:bundle.to_vec(),scope:"controlled-native-causal-evidence-v1; explicit direct/same-turn-code-mode; historical non-authority evidence".into()});
+            records.push(NativeCausalRecord {
+                version: 1,
+                operation_id: operation,
+                invocation_id: turn.invocation_id().into(),
+                input_artifact_sha256: input_sha.clone(),
+                session_id: session.id().as_str().into(),
+                call_id: call,
+                transport_session: transport,
+                transport_sequence: sequence,
+                ingress,
+                entry,
+                owner_commit: commit,
+                bundle: bundle.to_vec(),
+                scope: scope.into(),
+            });
         }
         drop(statement);
         let mut results = Vec::new();
