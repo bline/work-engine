@@ -259,8 +259,10 @@ async fn pi_host_causal_join() {
     join(None).await;
 }
 
-/// L2: the derived A4 research material (`request\ncard\nreconstruction`,
-/// `WE_A4_FIXTURE`) is the snapshot member; Pi reads it through the Host and
+/// L2: the advisory part of the derived A4 research material
+/// (`request\ncard`, `WE_A4_FIXTURE`; option A, board 5928: the
+/// reconstruction is host-held and never a snapshot member) is the snapshot
+/// member; Pi reads it through the Host and
 /// the actor in 32 KiB `mcp__pi__snapshot_read` calls, then publishes a
 /// recommendation. The actor's retained causal read and the owner selector
 /// map are written for the task host's `verify_delivery` test
@@ -439,14 +441,7 @@ async fn join(research: Option<PathBuf>) {
     use retained_task_workflow::{FactInput, FactKind, SubjectKind};
     let research = research.map(|a4| {
         let read = |n: &str| std::fs::read(a4.join(n)).unwrap();
-        let material = [
-            read("request.json"),
-            b"\n".to_vec(),
-            read("card.json"),
-            b"\n".to_vec(),
-            read("reconstruction.json"),
-        ]
-        .concat();
+        let material = [read("request.json"), b"\n".to_vec(), read("card.json")].concat();
         (material, read("target.txt"))
     });
     let root = out_root();

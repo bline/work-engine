@@ -596,6 +596,48 @@ fn messages_snapshot_projection(
     }
     Ok(Some((out, spans)))
 }
+/// Option A (operator decision, board 5928): the Pi Host advisory reads only
+/// `request\ncard` through `snapshot_read`; `reconstruction.json` is never a
+/// snapshot member. The host reads it from the caller-supplied bytes, which
+/// are the host-held `research-reconstruction` artifact (in the controlled
+/// path the basis bundle's pinned artifact, bound by
+/// `BasisBundle::reconstruction_digest`); they are retained as that artifact
+/// and bound by `reconstruction_sha256` in the delivery record. Before any
+/// projection is accepted the host replays them with `card_host::reconstruct`
+/// and requires exactly this card and this original request. Empty bytes mean
+/// the host holds no reconstruction.
+fn pi_host_reconstruction(
+    request: &[u8],
+    card: &[u8],
+    reconstruction: &[u8],
+    sources: &Value,
+) -> Result<research_register::card_host::Reconstruction, HostError> {
+    let refusal = |status: &str, reason: &str| {
+        delivery_error(status, "host-reconstruction", reason, sources.clone())
+    };
+    if reconstruction.is_empty() {
+        return Err(refusal("unavailable", "pi-host-reconstruction-missing"));
+    }
+    let parsed: research_register::card_host::Reconstruction = strict(reconstruction)
+        .ok()
+        .and_then(|v| serde_json::from_value(v).ok())
+        .ok_or_else(|| refusal("refused", "pi-host-reconstruction-malformed"))?;
+    let digest = sha(&serde_json::to_vec(&parsed)?);
+    let reconstructed = research_register::card_host::reconstruct(&parsed, &digest)
+        .map_err(|_| refusal("refused", "pi-host-reconstruction-does-not-replay"))?;
+    if reconstructed != card {
+        return Err(refusal("mismatch", "pi-host-reconstruction-card-mismatch"));
+    }
+    if parsed.request.current.request_sha256 != sha(request)
+        || validate_original_request(request, &parsed).is_err()
+    {
+        return Err(refusal(
+            "mismatch",
+            "pi-host-reconstruction-request-mismatch",
+        ));
+    }
+    Ok(parsed)
+}
 fn verify_delivery(
     retained: RetainedDelivery,
     original: &ResearchOriginalEvidence,
@@ -605,22 +647,33 @@ fn verify_delivery(
 ) -> Result<VerifiedConsumerDelivery, HostError> {
     let sources = json!({"request_sha256":sha(request),"card_sha256":sha(card),"reconstruction_sha256":sha(reconstruction),"retained_sha256":sha(&retained.bytes),"advisory_task":original.advisory().task_id,"advisory_subject":original.advisory().subject_id,"operation_id":original.advisory().result.as_ref().map(|r|&r.operation_id)});
     let reconstruction_bytes = reconstruction;
-    let reconstruction_value = strict(reconstruction)?;
-    let reconstruction: research_register::card_host::Reconstruction =
-        serde_json::from_value(reconstruction_value)?;
-    let reconstructed = research_register::card_host::reconstruct(
-        &reconstruction,
-        &sha(&serde_json::to_vec(&reconstruction)?),
-    )
-    .map_err(|_| HostError::Configuration)?;
-    if reconstructed != card || reconstruction.request.current.request_sha256 != sha(request) {
-        return Err(delivery_error(
-            "mismatch",
-            "native-delivery",
-            "reconstruction-card-or-request-digest-mismatch",
-            sources.clone(),
-        ));
-    }
+    // S1: the wire grammar is selected by the realization the session bound;
+    // an unknown protocol refuses.
+    let realization = retained.value["input"]["protocol_digest"]
+        .as_str()
+        .and_then(native_realization::Realization::from_protocol_digest);
+    let pi_host = realization == Some(native_realization::Realization::PiHost);
+    let reconstruction = if pi_host {
+        pi_host_reconstruction(request, card, reconstruction_bytes, &sources)?
+    } else {
+        let reconstruction_value = strict(reconstruction)?;
+        let reconstruction: research_register::card_host::Reconstruction =
+            serde_json::from_value(reconstruction_value)?;
+        let reconstructed = research_register::card_host::reconstruct(
+            &reconstruction,
+            &sha(&serde_json::to_vec(&reconstruction)?),
+        )
+        .map_err(|_| HostError::Configuration)?;
+        if reconstructed != card || reconstruction.request.current.request_sha256 != sha(request) {
+            return Err(delivery_error(
+                "mismatch",
+                "native-delivery",
+                "reconstruction-card-or-request-digest-mismatch",
+                sources.clone(),
+            ));
+        }
+        reconstruction
+    };
     validate_original_request(request, &reconstruction)?;
     let envelope =
         research_register::card_wire::decode(card).map_err(|_| HostError::Configuration)?;
@@ -799,11 +852,6 @@ fn verify_delivery(
     }
     let request_value = strict(&decoded)
         .map_err(|e| scoped_error(e, "refused", "strict-wire-json", sources.clone()))?;
-    // S1: the wire grammar is selected by the realization the session bound;
-    // an unknown protocol refuses.
-    let realization = input["protocol_digest"]
-        .as_str()
-        .and_then(native_realization::Realization::from_protocol_digest);
     let (projection, spans) = match realization {
         Some(native_realization::Realization::Codex) => {
             if request_value
@@ -865,11 +913,12 @@ fn verify_delivery(
                     sources.clone(),
                 ));
             }
+            // Option A: the model-read target is exactly `request\ncard`; a
+            // projection that also carries the reconstruction is not equal
+            // to it and refuses.
             let mut expected = request.to_vec();
             expected.push(b'\n');
             expected.extend_from_slice(card);
-            expected.push(b'\n');
-            expected.extend_from_slice(reconstruction_bytes);
             messages_request_checks(payloads).map_err(|reason| {
                 delivery_error("refused", "messages-request", reason, sources.clone())
             })?;
@@ -927,17 +976,30 @@ fn verify_delivery(
     };
     let visible = std::str::from_utf8(&projection).map_err(|_| HostError::Configuration)?;
     // Exact decoded model-visible strings, not digest echoes or escaped wire substrings.
-    for required in [request, card, reconstruction_bytes] {
+    let (required, not_visible): (&[&[u8]], _) = if pi_host {
+        (&[request, card], "full-request-card-not-uniquely-visible")
+    } else {
+        (
+            &[request, card, reconstruction_bytes],
+            "full-request-card-reconstruction-not-uniquely-visible",
+        )
+    };
+    for required in required {
         let literal = std::str::from_utf8(required).map_err(|_| HostError::Configuration)?;
         if visible.match_indices(literal).count() != 1 {
             return Err(delivery_error(
                 "mismatch",
                 "native-delivery",
-                "full-request-card-reconstruction-not-uniquely-visible",
+                not_visible,
                 sources.clone(),
             ));
         }
     }
+    let complete = if pi_host {
+        "request-card-explicit-cause-reconstruction-host-verified-original-owner-joins-checked"
+    } else {
+        "full-payload-card-explicit-cause-original-owner-joins-checked"
+    };
     artifacts.push(artifact("native-causal-delivery", retained.bytes));
     artifacts.push(artifact("research-request", request.to_vec()));
     artifacts.push(artifact("research-card", card.to_vec()));
@@ -949,7 +1011,7 @@ fn verify_delivery(
         "research-decoding-map",
         serde_json::to_vec(&spans)?,
     ));
-    artifacts.push(artifact("research-consumer-delivery-v1",serde_json::to_vec(&json!({"version":1,"schema":"research-consumer-delivery-v1","status":"complete","reason":"full-payload-card-explicit-cause-original-owner-joins-checked","sources":sources,"scope":"explicit-cause delivery attribution; no model-use or authority claim","operation_id":result.operation_id,"inference_call_id":inference,"physical_send":send,"response_id":call["response_id"],"request_sha256":sha(request),"card_sha256":sha(card)}))?));
+    artifacts.push(artifact("research-consumer-delivery-v1",serde_json::to_vec(&json!({"version":1,"schema":"research-consumer-delivery-v1","status":"complete","reason":complete,"sources":sources,"scope":"explicit-cause delivery attribution; no model-use or authority claim","operation_id":result.operation_id,"inference_call_id":inference,"physical_send":send,"response_id":call["response_id"],"request_sha256":sha(request),"card_sha256":sha(card)}))?));
     let context = input["context_id"]
         .as_str()
         .ok_or(HostError::Configuration)?
@@ -1322,6 +1384,22 @@ mod projection_tests {
         );
     }
 
+    /// Option A: the Pi Host target is `request\ncard`. Reads of the old
+    /// member (`request\ncard\nreconstruction`) are not equal to it, so they
+    /// refuse rather than project a prefix.
+    #[test]
+    fn messages_projection_refuses_old_shape_with_reconstruction() {
+        let old = b"request\ncard\nreconstruction".to_vec();
+        let target = b"request\ncard".to_vec();
+        let request = messages_request(&old);
+        assert!(messages_snapshot_projection(&request, "request-3", 1, "snap", &target).is_err());
+        let request = messages_request(&target);
+        let (out, _) = messages_snapshot_projection(&request, "request-3", 1, "snap", &target)
+            .unwrap()
+            .unwrap();
+        assert_eq!(out, target);
+    }
+
     #[test]
     fn messages_projection_refuses_identity_order_and_content_changes() {
         let expected = b"request\ncard\nreconstruction".to_vec();
@@ -1588,12 +1666,13 @@ mod projection_tests {
 
     /// L2: `verify_delivery` over the retained delivery of a real Pi Host run
     /// (`lifecycle-service` `pi_host_research_delivery`: Pi in the Host's
-    /// container read the A4 material in `mcp__pi__snapshot_read` calls
+    /// container read `request\ncard` in `mcp__pi__snapshot_read` calls
     /// relayed through the actor, then published), with the owner's original
-    /// evidence read from that run's task store.
+    /// evidence read from that run's task store. `WE_A4_OTHER_RECONSTRUCTION`
+    /// is a valid reconstruction of a different card (option A negative).
     #[test]
     #[cfg(feature = "controlled-proof")]
-    #[ignore = "reads a lifecycle-service pi_host_research_delivery run (WE_PI_HOST_OUT) and its A4 fixture (WE_A4_FIXTURE)"]
+    #[ignore = "reads a lifecycle-service pi_host_research_delivery run (WE_PI_HOST_OUT), its A4 fixture (WE_A4_FIXTURE) and another card's reconstruction (WE_A4_OTHER_RECONSTRUCTION)"]
     fn pi_host_q_delivery_verifies() {
         pi_host_delivery(false);
     }
@@ -1605,7 +1684,7 @@ mod projection_tests {
     /// `verify_delivery`'s own.
     #[test]
     #[cfg(feature = "controlled-proof")]
-    #[ignore = "reads a lifecycle-service pi_host_live_arm advisory run (WE_PI_HOST_OUT) and its A4 card (WE_A4_FIXTURE)"]
+    #[ignore = "reads a lifecycle-service pi_host_live_arm advisory run (WE_PI_HOST_OUT), its A4 card (WE_A4_FIXTURE) and another card's reconstruction (WE_A4_OTHER_RECONSTRUCTION)"]
     fn pi_host_live_delivery_verifies() {
         pi_host_delivery(true);
     }
@@ -1620,14 +1699,12 @@ mod projection_tests {
         let request = read(a4.join("request.json"));
         let card = read(a4.join("card.json"));
         let reconstruction = read(a4.join("reconstruction.json"));
-        let material = [
-            request.clone(),
-            b"\n".to_vec(),
-            card.clone(),
-            b"\n".to_vec(),
-            reconstruction.clone(),
-        ]
-        .concat();
+        let other_reconstruction = read(std::path::PathBuf::from(
+            std::env::var("WE_A4_OTHER_RECONSTRUCTION").unwrap(),
+        ));
+        // Option A: the advisory reads `request\ncard`; the reconstruction is
+        // host-held and checked out of band.
+        let material = [request.clone(), b"\n".to_vec(), card.clone()].concat();
         let bytes = read(out.join("retained.json"));
         let mapping = serde_json::from_slice(&read(out.join("mapping.json"))).unwrap();
         let summary: Value = serde_json::from_slice(&read(out.join("summary.json"))).unwrap();
@@ -1642,18 +1719,19 @@ mod projection_tests {
             summary["subject_id"].as_str().unwrap()
         );
         let original = store.research_original_evidence(task, &mapping).unwrap();
-        let verify = |value: Value| {
+        let verify_with = |value: Value, request: &[u8], reconstruction: &[u8]| {
             verify_delivery(
                 RetainedDelivery {
                     bytes: bytes.clone(),
                     value,
                 },
                 &original,
-                &request,
+                request,
                 &card,
-                &reconstruction,
+                reconstruction,
             )
         };
+        let verify = |value: Value| verify_with(value, &request, &reconstruction);
         let base: Value = serde_json::from_slice(&bytes).unwrap();
         let delivery = verify(base.clone()).unwrap();
         assert_eq!(delivery.projection, material);
@@ -1672,11 +1750,55 @@ mod projection_tests {
             .map(|a| serde_json::from_slice(&a.bytes).unwrap())
             .unwrap();
         assert_eq!(consumer["status"], "complete");
+        assert_eq!(
+            consumer["reason"],
+            "request-card-explicit-cause-reconstruction-host-verified-original-owner-joins-checked"
+        );
+        assert_eq!(
+            consumer["sources"]["reconstruction_sha256"],
+            sha(&reconstruction)
+        );
+        assert!(
+            delivery
+                .artifacts
+                .iter()
+                .any(|a| a.id == "research-reconstruction" && a.bytes == reconstruction)
+        );
         let reason = |e: HostError| match e {
             HostError::ResearchDelivery(v) => v["reason"].as_str().unwrap_or_default().to_owned(),
             other => format!("{other:?}"),
         };
         let mut refusals = serde_json::Map::new();
+        refusals.insert(
+            "reconstruction-missing".into(),
+            json!(reason(
+                verify_with(base.clone(), &request, b"").err().unwrap()
+            )),
+        );
+        refusals.insert(
+            "reconstruction-malformed".into(),
+            json!(reason(
+                verify_with(base.clone(), &request, b"{").err().unwrap()
+            )),
+        );
+        refusals.insert(
+            "reconstruction-other-card".into(),
+            json!(reason(
+                verify_with(base.clone(), &request, &other_reconstruction)
+                    .err()
+                    .unwrap()
+            )),
+        );
+        let mut other_request = request.clone();
+        other_request.push(b' ');
+        refusals.insert(
+            "reconstruction-other-request".into(),
+            json!(reason(
+                verify_with(base.clone(), &other_request, &reconstruction)
+                    .err()
+                    .unwrap()
+            )),
+        );
         let mut v = base.clone();
         v["input"]["eligible"] = json!(false);
         refusals.insert("ineligible".into(), json!(reason(verify(v).err().unwrap())));
@@ -1753,6 +1875,22 @@ mod projection_tests {
             .unwrap(),
         )
         .unwrap();
+        assert_eq!(
+            refusals["reconstruction-missing"],
+            "pi-host-reconstruction-missing"
+        );
+        assert_eq!(
+            refusals["reconstruction-malformed"],
+            "pi-host-reconstruction-malformed"
+        );
+        assert_eq!(
+            refusals["reconstruction-other-card"],
+            "pi-host-reconstruction-card-mismatch"
+        );
+        assert_eq!(
+            refusals["reconstruction-other-request"],
+            "pi-host-reconstruction-request-mismatch"
+        );
         assert_eq!(
             refusals["ineligible"],
             "native-input-not-eligible-checked-completed"
