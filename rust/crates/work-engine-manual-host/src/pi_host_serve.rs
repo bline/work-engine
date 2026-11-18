@@ -888,7 +888,9 @@ fn build_capture(
     let mut payloads = vec![];
     let mut responses = vec![];
     let mut total = 0u64;
-    let mut account = false;
+    // `contains_account_identifier` is false only when the shared absence
+    // check verified every request body of the turn (Messages wire only).
+    let mut account = wire != "messages";
     // (wire call id) -> [(request, attempt, response id)]
     let mut produced: BTreeMap<String, Vec<(u64, u64, Option<String>)>> = BTreeMap::new();
     if last_request < a.first_request {
@@ -898,6 +900,7 @@ fn build_capture(
         let r = &requests[n.to_string()];
         if r.is_null() {
             reasons.push(format!("request {n} has no ledger record"));
+            account = true;
             continue;
         }
         if r["settled_microusd"].is_null() {
@@ -906,15 +909,12 @@ fn build_capture(
         let body_path = id.state_dir.join(format!("coding-hosted-{n}.body.json"));
         let body = fs::read(&body_path).ok();
         let body_sha = body.as_deref().map(digest);
-        if let Some(b) = &body
-            && wire == "messages"
-        {
-            let parsed: Value = serde_json::from_slice(b).unwrap_or(Value::Null);
-            let user: Value = parsed["metadata"]["user_id"]
-                .as_str()
-                .and_then(|u| serde_json::from_str(u).ok())
-                .unwrap_or(Value::Null);
-            account |= user["account_uuid"].as_str().is_some_and(|u| !u.is_empty());
+        if wire == "messages" {
+            let verified = body
+                .as_deref()
+                .and_then(|b| serde_json::from_slice::<Value>(b).ok())
+                .is_some_and(|v| pi_host::messages_account_identifier_absent(&v));
+            account |= !verified;
         }
         let attempts = r["attempts"].as_array().cloned().unwrap_or_default();
         if attempts.is_empty() {
@@ -1540,6 +1540,46 @@ mod tests {
         a.messages.clear();
         a.items.insert("y".into(), json!({}));
         assert!(ledger_items(&a).unwrap_err().contains("absent"));
+    }
+
+    /// `contains_account_identifier` is the shared absence check over every
+    /// body of the turn: false only when each was read and verified (L1).
+    #[test]
+    fn capture_account_flag_is_the_verified_absence_check() {
+        let dir = tempfile::tempdir().unwrap();
+        let id = identity(dir.path());
+        let a = Active {
+            number: 1,
+            id: "t".into(),
+            invocation: "turn-1".into(),
+            first_request: 1,
+            deadline: Instant::now(),
+            deadline_ms: 0,
+            order: vec![],
+            items: BTreeMap::new(),
+            answers: BTreeMap::new(),
+            sent: BTreeSet::new(),
+            messages: vec![],
+            sends: 0,
+            prompt_sha256: String::new(),
+        };
+        let flag = |n: u64| {
+            build_capture(&id, &a, n, None, &[]).unwrap()["contains_account_identifier"].clone()
+        };
+        journal(dir.path(), &[vec![], vec![]]);
+        assert_eq!(flag(2), false);
+        let body = dir.path().join("coding-hosted-2.body.json");
+        fs::write(
+            &body,
+            json!({"model":"claude-haiku-5-5","messages":[],"metadata":{"user_id":
+                "{\"device_id\":\"d0\",\"account_uuid\":\"5f0c1a2e-0000-4000-8000-000000000001\",\"session_id\":\"s0\"}"}})
+            .to_string(),
+        )
+        .unwrap();
+        assert_eq!(flag(2), true);
+        fs::remove_file(&body).unwrap();
+        assert_eq!(flag(2), true, "an unread body is not verified");
+        assert_eq!(flag(1), false);
     }
 
     #[test]

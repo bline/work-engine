@@ -113,16 +113,26 @@ path and digest; a calls bundle (`call_id`, `inference_call_id`,
 relayed call is joined to exactly one model tool call in the retained
 response of exactly one completed attempt of the turn; the relayed result
 texts by digest; Pi's session history artifact by digest; `realization`,
-`evidence_class`, `provider`, `wire`, `contains_account_identifier`, the
-identities the Host ran with (Host binary, job and its nonsecret route
+`evidence_class`, `provider`, `wire`, `contains_account_identifier` (false
+only when every request body of the turn was read and passed the account
+identifier check below), the identities the Host ran with (Host binary, job and its nonsecret route
 table, provider, model) and the turn's prompt digest; the `pi-host/observe` observation taken when
 the turn ended; and an eligibility verdict with reasons.
 Eligible means: the turn ended with a final answer; every relayed call was
 answered with `success: true` and joined; every physical send's body is retained with a matching
 digest and passed the Host's request policy (model, pinned tools, body
-bounds); every attempt relayed to Pi has its response stream retained; every
+bounds, no account identifier); every attempt relayed to Pi has its response stream retained; every
 attempt is settled and none is uncertain; the observation
 succeeded; and the turn is within the bounds below.
+
+## Account identifier
+
+On the Messages wire the Host refuses, before dispatch, a request body whose
+`metadata` is not an object, whose `metadata.user_id` (when present) is not a
+string holding a JSON object, whose `account_uuid` there is present and not
+empty, or in which any key under `metadata` names an email or any string
+under it contains `@`. Device and session ids in `metadata.user_id` remain
+and are retained with the body.
 
 ## Bounds
 

@@ -440,6 +440,9 @@ pub(crate) fn check_capture(
         || ids["routes"] != expected.routes
         || capture["turn"]["id"] != turn
         || capture["turn"]["prompt_sha256"] != sha(prompt.as_bytes()).as_str()
+        // L1: on Messages the Host verified that no body carries an account
+        // identifier; anything else is not retained.
+        || (expected.wire == "messages" && capture["contains_account_identifier"] != false)
     {
         return Err(StoreError::Rejected);
     }
@@ -483,7 +486,9 @@ pub(crate) fn check_capture(
         if expected.wire == "messages" {
             let parsed: Value = serde_json::from_slice(&body).map_err(|_| StoreError::Rejected)?;
             let tools = serde_json::to_vec(&parsed["tools"]).map_err(|_| StoreError::Rejected)?;
-            if sha(&tools) != pi_host::tools::MESSAGES_TOOLS_SHA256 {
+            if sha(&tools) != pi_host::tools::MESSAGES_TOOLS_SHA256
+                || !pi_host::messages_account_identifier_absent(&parsed)
+            {
                 return Err(StoreError::Rejected);
             }
         } else {
@@ -1018,6 +1023,28 @@ mod tests {
         let mut v = base.clone();
         v["observation"] = Value::Null;
         assert!(!run(&v).unwrap().eligible, "no verified observation");
+        // L1: the Host's flag must be false on Messages, and the retained
+        // body is re-checked.
+        for flag in [json!(true), Value::Null] {
+            let mut v = base.clone();
+            v["contains_account_identifier"] = flag;
+            assert!(run(&v).is_err(), "account identifier flag");
+        }
+        let body_path = expected.state_dir.join("coding-hosted-1.body.json");
+        let mut with_account: Value =
+            serde_json::from_slice(&std::fs::read(&body_path).unwrap()).unwrap();
+        with_account["metadata"] = json!({"user_id":
+            "{\"device_id\":\"d0\",\"account_uuid\":\"5f0c1a2e-0000-4000-8000-000000000001\",\"session_id\":\"s0\"}"});
+        let with_account = serde_json::to_vec(&with_account).unwrap();
+        let original = std::fs::read(&body_path).unwrap();
+        std::fs::write(&body_path, &with_account).unwrap();
+        let mut v = base.clone();
+        v["payloads"][0]["sha256"] = json!(sha(&with_account));
+        assert!(
+            run(&v).is_err(),
+            "retained body carries an account identifier"
+        );
+        std::fs::write(&body_path, original).unwrap();
         // A body whose tools differ from the pin refuses.
         let body_path = expected.state_dir.join("coding-hosted-1.body.json");
         let other = br#"{"messages":[],"tools":[]}"#;

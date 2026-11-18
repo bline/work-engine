@@ -240,6 +240,58 @@ delivery check refused at reconstruction). `q9` used the current fixture:
 `q10`: `pi_host_causal_join` (publication only) with the forwarding adapter
 passed (`summary.json` sha256 `d6ebc5b9…`).
 
+## L1: account identifier absence (owner ruling 5904)
+
+The revised L1 replaces L1 in 5900. No email-retention consent is needed,
+because the design keeps the identifier out:
+
+- `native-realization` `pi_host::messages_account_identifier_absent` is a
+  single check shared by the Host and the runner. Absence is verified when:
+  `metadata` is absent, or `metadata` is an object whose `user_id` (if
+  present) is a string holding a JSON object, its `account_uuid` is absent,
+  `null` or empty, no key under `metadata` names an email, and no string
+  under it contains `@`. Anything else counts as not verified.
+- The Host's Messages request policy (`messages_policy`) refuses a body that
+  fails the check, before dispatch. That covers every hosted Messages job,
+  not only the Pi Host.
+- The capture's `contains_account_identifier` is the result of that check
+  over every request body of the turn. It is false only when each body was
+  read and verified; a missing ledger record or an unread body makes it true.
+  On the Responses wire it is true, because the check covers Messages only.
+- The lifecycle-service runner refuses a Messages capture unless the flag is
+  `false`, and re-runs the check on every retained body.
+- Protocol: a new "Account identifier" section, and the eligibility and
+  capture text changed, so `PROTOCOL_DIGEST` is now `8ec540f8…` (was
+  `604f1a10…`). The Codex digests are unchanged.
+- Tests: unit tests for the shared check (observed shape passes; a populated
+  `account_uuid`, an email key, `@` in a value, non-JSON, a non-string
+  `user_id` and a non-object `metadata` all refuse), Host policy cases (a
+  populated `account_uuid` and an email field refuse with nothing opened),
+  the capture flag (true for a populated `account_uuid` and for an unread
+  body), and the runner (flag `true` or absent, and a retained body with a
+  populated `account_uuid`, both refuse).
+
+Present and retained: Claude Code's `metadata.user_id` in every observed
+offline Messages body carries `device_id` (64 hex characters) and
+`session_id` (a UUID) alongside the empty `account_uuid`
+(`q9` `coding-hosted-1.body.json`). These stay in the retained bodies.
+
+Runs on the L1 build (2026-11-18, offline):
+
+- `q11` (`pi_host_research_delivery` plus `pi_host_q_delivery_verifies`):
+  protocol `8ec540f8…`, eligible, `CompletedSettled`, seven payloads, flag
+  `false`. `verify_delivery` is `complete` (`request-5`, four spans) with the
+  same four refusals. sha256: `summary.json` `6aa9ba6a…`, `retained.json`
+  `4022c8dc…`, `verify-delivery.json` `0900c933…`.
+- `q12` (`pi_host_causal_join`): passed, flag `false`; `summary.json`
+  `a537e00c…`.
+
+Unit tests at this commit: `native-realization` 6/6, `work-engine-manual-host`
+lib 103 passed (6 ignored), `lifecycle-service` lib with `controlled-proof`
+97 passed (2 ignored), `lifecycle-store` lib 33 passed (2 ignored),
+`work-engine-task-host` `research_delivery` with `controlled-proof` 6
+passed (2 ignored).
+
 ## Open
 
 - Identical request bodies across two distinct calls (an SDK-level retry

@@ -20,7 +20,7 @@ pub mod codex {
 pub mod pi_host {
     /// SHA-256 of `PI_HOST_PROTOCOL.md`; the session protocol digest.
     pub const PROTOCOL_DIGEST: &str =
-        "604f1a104640aec09909b54f863e47b6873cdfc366f4c59eaae93fa4abc34d42";
+        "8ec540f8a6f5da8df2f600528b232a04d57f39b09e105c4ccd8e1cee5dffb685";
     pub const PROTOCOL: &str = include_str!("../PI_HOST_PROTOCOL.md");
     pub const REALIZATION: &str = "pi-host-v1";
     pub const EVIDENCE_CLASS: &str = "pi-host-held-requests-tool-relay-host-ledger-history-v1";
@@ -31,6 +31,47 @@ pub mod pi_host {
     pub const MAX_TURN_BODY_BYTES: u64 = 8 * 1024 * 1024;
     pub const MAX_ANSWER_BYTES: usize = 65_536;
     pub const HISTORY_FRAME_LIMIT: usize = 1_000_000;
+
+    /// Verified absence of an account identifier in a Messages request body,
+    /// shared by the Host's request policy (before dispatch) and its capture's
+    /// `contains_account_identifier`. `metadata.user_id`, when present, must
+    /// be a JSON object in a string whose `account_uuid` is absent or empty;
+    /// no key under `metadata` names an email and no string under it contains
+    /// `@`. Device and session ids may remain. Anything that cannot be read
+    /// this way is not verified.
+    pub fn messages_account_identifier_absent(body: &serde_json::Value) -> bool {
+        use serde_json::Value;
+        fn email(v: &Value) -> bool {
+            match v {
+                Value::String(s) => s.contains('@'),
+                Value::Array(a) => a.iter().any(email),
+                Value::Object(o) => o
+                    .iter()
+                    .any(|(k, v)| k.to_ascii_lowercase().contains("email") || email(v)),
+                _ => false,
+            }
+        }
+        let Some(metadata) = body.get("metadata") else {
+            return true;
+        };
+        let Some(object) = metadata.as_object() else {
+            return false;
+        };
+        let user = match object.get("user_id") {
+            None => Value::Object(Default::default()),
+            Some(Value::String(s)) => match serde_json::from_str::<Value>(s) {
+                Ok(user @ Value::Object(_)) => user,
+                _ => return false,
+            },
+            Some(_) => return false,
+        };
+        let account_empty = match user.get("account_uuid") {
+            None | Some(Value::Null) => true,
+            Some(Value::String(s)) => s.is_empty(),
+            Some(_) => false,
+        };
+        account_empty && !email(metadata) && !email(&user)
+    }
 
     /// Continuity of successive Messages requests of one thread, shared by
     /// the Pi Host (before dispatch) and the task host (over retained
@@ -378,5 +419,32 @@ mod tests {
         assert_eq!(dynamic[0]["tools"][0]["name"], "snapshot_read");
         assert_eq!(dynamic[1]["tools"].as_array().unwrap().len(), 2);
         assert_eq!(receiver_tools().as_array().unwrap().len(), 3);
+    }
+
+    #[test]
+    fn account_identifier_absence_is_verified_not_assumed() {
+        use pi_host::messages_account_identifier_absent as absent;
+        use serde_json::json;
+        let body = |user: &str| json!({"metadata":{"user_id":user}});
+        // Observed shape (dummy credential, no Claude config): device and
+        // session ids remain, account_uuid is empty.
+        assert!(absent(&body(
+            r#"{"device_id":"ab12","account_uuid":"","session_id":"0d1c"}"#
+        )));
+        assert!(absent(&json!({"model":"m"})));
+        assert!(!absent(&body(
+            r#"{"device_id":"ab12","account_uuid":"5f0c1a2e-0000-4000-8000-000000000001","session_id":"0d1c"}"#
+        )));
+        assert!(!absent(&body(r#"{"account_uuid":"","email":""}"#)));
+        assert!(!absent(&body(r#"{"account_uuid":"","session_id":"a@b"}"#)));
+        assert!(!absent(
+            &json!({"metadata":{"user_id":"{}","user_email":"x"}})
+        ));
+        assert!(!absent(&body("not json")));
+        assert!(!absent(&body(r#"{"account_uuid":7}"#)));
+        assert!(!absent(
+            &json!({"metadata":{"user_id":{"account_uuid":""}}})
+        ));
+        assert!(!absent(&json!({"metadata":"x"})));
     }
 }
