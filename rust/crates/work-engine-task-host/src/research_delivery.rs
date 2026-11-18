@@ -377,22 +377,37 @@ fn messages_capabilities(request: &Value) -> Result<(), &'static str> {
     }
     Ok(())
 }
-fn messages_request_checks(request: &Value, payloads: &[Value]) -> Result<(), &'static str> {
-    messages_capabilities(request)?;
-    let mut previous: Option<Value> = None;
+/// Payloads are one per physical send: the sends of one inference call (a
+/// Host failover or retry) carry byte-identical bodies; successive calls
+/// extend each other under the canonical rule. The selected request is one
+/// of the payloads, so its capabilities are checked there.
+fn messages_request_checks(payloads: &[Value]) -> Result<(), &'static str> {
+    let mut previous: Option<(String, Vec<u8>, Value)> = None;
     for p in payloads.iter().filter(|p| p["representation"] == "wire") {
+        let call = p["inference_call_id"]
+            .as_str()
+            .ok_or("messages-payload-call-id")?
+            .to_owned();
         let bytes = byte_vec(&p["bytes"]).map_err(|_| "messages-payload-bytes")?;
         let value = strict(&bytes).map_err(|_| "messages-payload-not-strict-json")?;
         messages_capabilities(&value)?;
-        if let Some(prev) = &previous
-            && !native_realization::pi_host::canonical::is_prefix_extension(
-                &prev["messages"],
-                &value["messages"],
-            )
-        {
-            return Err("messages-request-continuity-broken");
+        match &previous {
+            Some((prev_call, prev_bytes, _)) if *prev_call == call => {
+                if *prev_bytes != bytes {
+                    return Err("messages-request-resend-differs");
+                }
+            }
+            Some((_, _, prev))
+                if !native_realization::pi_host::canonical::is_prefix_extension(
+                    &prev["messages"],
+                    &value["messages"],
+                ) =>
+            {
+                return Err("messages-request-continuity-broken");
+            }
+            _ => {}
         }
-        previous = Some(value);
+        previous = Some((call, bytes, value));
     }
     if previous.is_none() {
         return Err("messages-request-no-wire-payload");
@@ -843,7 +858,7 @@ fn verify_delivery(
             expected.extend_from_slice(card);
             expected.push(b'\n');
             expected.extend_from_slice(reconstruction_bytes);
-            messages_request_checks(&request_value, payloads).map_err(|reason| {
+            messages_request_checks(payloads).map_err(|reason| {
                 delivery_error("refused", "messages-request", reason, sources.clone())
             })?;
             // The selected request is the one that produced the publication
@@ -1333,36 +1348,56 @@ mod projection_tests {
         let full = messages_request(&expected);
         let mut first = full.clone();
         first["messages"] = json!([full["messages"][0].clone()]);
-        let payload =
-            |v: &Value| json!({"representation":"wire","bytes":serde_json::to_vec(v).unwrap()});
-        let payloads = vec![payload(&first), payload(&full)];
-        assert!(messages_request_checks(&full, &payloads).is_ok());
+        let payload = |call: &str, v: &Value| json!({"inference_call_id":call,"representation":"wire","bytes":serde_json::to_vec(v).unwrap()});
+        let payloads = vec![payload("request-1", &first), payload("request-2", &full)];
+        assert!(messages_request_checks(&payloads).is_ok());
+        // A failover resend of one call: identical bytes, then extension.
+        let resent = vec![
+            payload("request-1", &first),
+            payload("request-1", &first),
+            payload("request-2", &full),
+        ];
+        assert!(messages_request_checks(&resent).is_ok());
+        let mut other = first.clone();
+        other["max_tokens"] = json!(1);
+        assert_eq!(
+            messages_request_checks(&[payload("request-1", &first), payload("request-1", &other)]),
+            Err("messages-request-resend-differs")
+        );
+        // Two calls with the same body do not extend each other.
+        assert_eq!(
+            messages_request_checks(&[payload("request-1", &first), payload("request-2", &first)]),
+            Err("messages-request-continuity-broken")
+        );
         let mut v = full.clone();
         v["mcp_servers"] = json!([]);
         assert_eq!(
-            messages_request_checks(&v, &payloads),
+            messages_request_checks(&[payload("request-1", &first), payload("request-2", &v)]),
             Err("messages-request-capability-field")
         );
         let mut v = full.clone();
         v["tool_choice"] = json!({"type":"any"});
         assert_eq!(
-            messages_request_checks(&v, &payloads),
+            messages_request_checks(&[payload("request-1", &first), payload("request-2", &v)]),
             Err("messages-request-forcing-tool-choice")
         );
         let mut altered = full.clone();
         altered["messages"][0]["content"][1]["text"] = json!("changed task");
         assert_eq!(
-            messages_request_checks(&full, &[payload(&first), payload(&altered)]),
+            messages_request_checks(&[
+                payload("request-1", &first),
+                payload("request-2", &altered)
+            ]),
             Err("messages-request-continuity-broken")
         );
         assert_eq!(
-            messages_request_checks(&full, &[]),
+            messages_request_checks(&[]),
             Err("messages-request-no-wire-payload")
         );
         let mut early = first.clone();
         early["container"] = json!({"id":"x"});
         assert_eq!(
-            messages_request_checks(&full, &[payload(&early), payload(&full)]),
+            messages_request_checks(&[payload("request-1", &early), payload("request-2", &full)]),
             Err("messages-request-capability-field")
         );
     }

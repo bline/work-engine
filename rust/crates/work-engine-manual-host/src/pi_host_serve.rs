@@ -177,6 +177,9 @@ struct Active {
 struct State {
     out: Out,
     inbox: Receiver<Option<Value>>,
+    /// Controller messages read early (while checking for end of input
+    /// during a turn), answered in order later.
+    queued: std::collections::VecDeque<Option<Value>>,
     id: Identity,
     /// The `thread/start` request awaiting the container's readiness.
     thread_start: Option<Value>,
@@ -211,6 +214,7 @@ impl Controller {
         Self(Rc::new(RefCell::new(State {
             out,
             inbox,
+            queued: Default::default(),
             id,
             thread_start: None,
             thread: None,
@@ -327,6 +331,31 @@ impl Controller {
 }
 
 impl State {
+    /// The next controller message, queued ones first.
+    fn next_message(
+        &mut self,
+        timeout: Option<Duration>,
+    ) -> std::result::Result<Option<Value>, RecvTimeoutError> {
+        if let Some(m) = self.queued.pop_front() {
+            return Ok(m);
+        }
+        match timeout {
+            Some(t) => self.inbox.recv_timeout(t),
+            None => self
+                .inbox
+                .recv()
+                .map_err(|_| RecvTimeoutError::Disconnected),
+        }
+    }
+    /// Whether the controller ended its input; messages read on the way are
+    /// queued. A turn cannot finish once its controller is gone, so the Host
+    /// ends the job (closing the container) instead of running on.
+    fn controller_ended(&mut self) -> bool {
+        while let Ok(m) = self.inbox.try_recv() {
+            self.queued.push_back(m);
+        }
+        self.queued.iter().any(Option::is_none)
+    }
     fn view(&self) -> Vec<Value> {
         self.turns
             .iter()
@@ -338,7 +367,7 @@ impl State {
     /// or the controller ends (`bridge_close`, `None` once closing).
     fn wait_controller(&mut self) -> Result<Option<Value>> {
         loop {
-            let msg = match self.inbox.recv() {
+            let msg = match self.next_message(None) {
                 Ok(Some(msg)) => msg,
                 Ok(None) | Err(_) => {
                     if self.closing {
@@ -678,7 +707,7 @@ impl State {
         )?;
         let answer = loop {
             let left = until.saturating_duration_since(Instant::now());
-            match self.inbox.recv_timeout(left.max(Duration::from_millis(1))) {
+            match self.next_message(Some(left.max(Duration::from_millis(1)))) {
                 Ok(Some(msg)) if msg.get("method").is_none() && msg["id"] == rpc => break msg,
                 Ok(Some(msg)) if msg.get("method").is_some() => {
                     if let Some(rid) = msg.get("id") {
@@ -993,6 +1022,12 @@ impl CodingEffectGate for Controller {
         if now_ms() >= s.id.job_deadline_ms {
             return refused("job deadline passed");
         }
+        // The history frame ends the turn, so a turn already finished is
+        // still reported; any other frame of a turn whose controller is gone
+        // ends the job.
+        if s.active.is_some() && frame["type"] != "coding_history" && s.controller_ended() {
+            return refused("controller ended during a turn");
+        }
         match frame["type"].as_str() {
             Some("ready") => s.ready(frame),
             Some("native_event") => s.native(frame),
@@ -1016,6 +1051,9 @@ impl CodingEffectGate for Controller {
         dispatch: &mut dyn FnMut(i64) -> Result<()>,
     ) -> Result<()> {
         let mut s = self.0.borrow_mut();
+        if s.controller_ended() {
+            return refused("controller ended during a turn");
+        }
         if s.pending.is_some() || intent.request == 0 || intent.request != s.provider_calls {
             return refused("provider attempt outside an admitted request");
         }
@@ -1403,6 +1441,46 @@ mod tests {
         assert_eq!(capture["payloads"].as_array().unwrap().len(), 2);
         assert_eq!(capture["contains_account_identifier"], false);
         let _ = &mut r;
+    }
+
+    /// End of controller input during a turn ends the Host job (the next
+    /// frame or attempt is refused) instead of letting the turn run on.
+    #[test]
+    fn controller_end_during_a_turn_is_noticed_at_the_next_frame() {
+        let r = rig();
+        r.tx.send(rpc(1, "pi-host/initialize", json!({}))).unwrap();
+        r.tx.send(rpc(
+            2,
+            "thread/start",
+            json!({"model":"claude-haiku-5-5","dynamicTools":pi_host::tools::dynamic_tools()}),
+        ))
+        .unwrap();
+        assert!(r.gate.handshake().unwrap());
+        let thread = format!("pi-host-thread-{}", &"a".repeat(16));
+        r.tx.send(rpc(
+            3,
+            "turn/start",
+            json!({"threadId":thread,"input":[{"type":"text","text":"x"}]}),
+        ))
+        .unwrap();
+        let mut gate = r.gate.clone();
+        let cmds = gate
+            .frame(
+                &json!({"type":"ready","sessionId":"s1","snapshot":{"idle":true,"sessionId":"s1"}}),
+            )
+            .unwrap();
+        gate.dispatch(&cmds[0], &mut |_| Ok(())).unwrap();
+        r.tx.send(rpc(4, "thread/read", json!({"threadId":thread})))
+            .unwrap();
+        r.tx.send(None).unwrap();
+        let request = json!({"type":"coding_provider_request","id":1,"sessionId":"s1",
+            "invocationId":"turn-1","turnCorrelation":"pi-host-turn-1"});
+        match gate.frame(&request) {
+            Err(Error::Refused(m)) => assert_eq!(m, "controller ended during a turn"),
+            other => panic!("{other:?}"),
+        }
+        // The early-read request stays queued in order.
+        assert_eq!(r.gate.0.borrow().queued.len(), 2);
     }
 
     #[test]

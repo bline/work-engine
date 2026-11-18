@@ -20,7 +20,7 @@ pub mod codex {
 pub mod pi_host {
     /// SHA-256 of `PI_HOST_PROTOCOL.md`; the session protocol digest.
     pub const PROTOCOL_DIGEST: &str =
-        "2433b0930a8ccf502382b35728c9cf5d25735f230bd238f4ed5c1e83e047781a";
+        "604f1a104640aec09909b54f863e47b6873cdfc366f4c59eaae93fa4abc34d42";
     pub const PROTOCOL: &str = include_str!("../PI_HOST_PROTOCOL.md");
     pub const REALIZATION: &str = "pi-host-v1";
     pub const EVIDENCE_CLASS: &str = "pi-host-held-requests-tool-relay-host-ledger-history-v1";
@@ -112,6 +112,27 @@ pub mod pi_host {
         /// `specs`. The Host refuses any other request tools.
         pub const MESSAGES_TOOLS_SHA256: &str =
             "7e97ed24669af3a0bd142c5163906ba608a96874f3229feee64190880104c847";
+        /// The Messages `tools` array whose digest is `MESSAGES_TOOLS_SHA256`,
+        /// rebuilt from `specs` in the order Claude Code sends it (observed).
+        pub fn messages_request_tools() -> Value {
+            let tool = |n: &str| {
+                let (_, name, description, schema) = specs()
+                    .into_iter()
+                    .find(|(_, x, _, _)| *x == n)
+                    .expect("pinned tool");
+                json!({"name":format!("mcp__pi__{name}"),"description":description,"input_schema":schema})
+            };
+            let placeholder = json!({"name":"DeferredToolPlaceholder",
+                "description":"Reserved placeholder that keeps deferred tool loading active; never call this tool.",
+                "input_schema":{"type":"object","properties":{}},"defer_loading":true});
+            json!([
+                tool("question_open"),
+                tool("result_publish"),
+                placeholder,
+                tool("snapshot_read")
+            ])
+        }
+
         /// The Responses (`openai-codex`) request tools digest is not yet
         /// observed; the Host refuses relay requests on that wire.
         pub const RESPONSES_TOOLS_SHA256: Option<&str> = None;
@@ -274,7 +295,10 @@ mod tests {
         assert!(!is_prefix_extension(&prev, &prev), "no extension");
         let mut signed = next.clone();
         signed[1]["content"][0]["signature"] = json!("s2");
-        assert!(!is_prefix_extension(&prev, &signed), "thinking compared exactly");
+        assert!(
+            !is_prefix_extension(&prev, &signed),
+            "thinking compared exactly"
+        );
         let mut thinking_cache = prev.clone();
         thinking_cache[1]["content"][0]["cache_control"] = json!({"type":"ephemeral"});
         assert!(
@@ -310,23 +334,7 @@ mod tests {
     /// specs in the order Claude Code sends it (observed).
     #[test]
     fn messages_tools_digest_is_rebuilt_from_the_specs() {
-        use serde_json::json;
-        let tool = |n: &str| {
-            let (_, name, description, schema) = pi_host::tools::specs()
-                .into_iter()
-                .find(|(_, x, _, _)| *x == n)
-                .unwrap();
-            json!({"name":format!("mcp__pi__{name}"),"description":description,"input_schema":schema})
-        };
-        let placeholder = json!({"name":"DeferredToolPlaceholder",
-            "description":"Reserved placeholder that keeps deferred tool loading active; never call this tool.",
-            "input_schema":{"type":"object","properties":{}},"defer_loading":true});
-        let array = json!([
-            tool("question_open"),
-            tool("result_publish"),
-            placeholder,
-            tool("snapshot_read")
-        ]);
+        let array = pi_host::tools::messages_request_tools();
         let digest: String = Sha256::digest(serde_json::to_vec(&array).unwrap())
             .iter()
             .map(|b| format!("{b:02x}"))

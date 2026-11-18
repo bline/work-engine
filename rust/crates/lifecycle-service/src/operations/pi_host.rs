@@ -363,6 +363,10 @@ impl Runner {
             let result = event.value.get("result").cloned();
             let error = event.value.get("error").is_some();
             if matches!(event.kind, NativeEventKind::Response { .. }) && !mine {
+                // Recorded as ingress before the conflict, as the Codex runner does.
+                let _ = self
+                    .ask(|reply| NativeMessage::Ingress { event, reply })
+                    .await;
                 return Err(StoreError::ClaimConflict);
             }
             self.handle(event).await?;
@@ -438,25 +442,53 @@ pub(crate) fn check_capture(
     }
     let mut payloads = Vec::new();
     let mut total = 0usize;
+    let mut sends = std::collections::BTreeSet::new();
     for p in capture["payloads"].as_array().ok_or(StoreError::Rejected)? {
+        // `request-<n>` names the Host's retained body `coding-hosted-<n>.body.json`.
+        let call = p["inference_call_id"]
+            .as_str()
+            .ok_or(StoreError::Rejected)?;
+        let n = call
+            .strip_prefix("request-")
+            .and_then(|n| n.parse::<u64>().ok())
+            .filter(|n| *n >= 1)
+            .ok_or(StoreError::Rejected)?;
         let path = PathBuf::from(p["path"].as_str().ok_or(StoreError::Rejected)?);
+        if path.file_name()
+            != Some(std::ffi::OsStr::new(&format!(
+                "coding-hosted-{n}.body.json"
+            )))
+        {
+            return Err(StoreError::Rejected);
+        }
         let body = read_inside(&path, &expected.state_dir)?;
         total += body.len();
-        let send = p["physical_send"].as_u64().filter(|n| *n >= 1);
+        let send = p["physical_send"]
+            .as_u64()
+            .filter(|n| *n >= 1)
+            .ok_or(StoreError::Rejected)?;
         if Some(sha(&body).as_str()) != p["sha256"].as_str()
             || p["representation"] != "wire"
             || p["original_codec"] != "identity"
-            || send.is_none()
+            || !sends.insert((call.to_owned(), send))
             || total as u64 > pi_host::MAX_TURN_BODY_BYTES
         {
             return Err(StoreError::Rejected);
         }
+        // The pinned request tools, checked here over the retained bytes
+        // rather than taken from the Host's own check.
+        if expected.wire == "messages" {
+            let parsed: Value = serde_json::from_slice(&body).map_err(|_| StoreError::Rejected)?;
+            let tools = serde_json::to_vec(&parsed["tools"]).map_err(|_| StoreError::Rejected)?;
+            if sha(&tools) != pi_host::tools::MESSAGES_TOOLS_SHA256 {
+                return Err(StoreError::Rejected);
+            }
+        } else {
+            return Err(StoreError::Rejected);
+        }
         payloads.push(NativeInputPayload {
-            inference_call_id: p["inference_call_id"]
-                .as_str()
-                .ok_or(StoreError::Rejected)?
-                .into(),
-            physical_send: send.unwrap_or(1),
+            inference_call_id: call.into(),
+            physical_send: send,
             representation: "wire".into(),
             original_sha256: sha(&body),
             original_codec: "identity".into(),
@@ -466,8 +498,20 @@ pub(crate) fn check_capture(
     if payloads.len() as u64 > pi_host::MAX_TURN_SENDS {
         return Err(StoreError::Rejected);
     }
-    let eligible =
-        capture["eligibility"]["eligible"] == true && status == "completed" && !payloads.is_empty();
+    // Every relayed call names a retained physical send.
+    let calls_named = capture["calls"].as_array().is_some_and(|calls| {
+        calls.iter().all(|c| {
+            c["inference_call_id"]
+                .as_str()
+                .zip(c["physical_send"].as_u64())
+                .is_some_and(|(call, send)| sends.contains(&(call.to_owned(), send)))
+        })
+    });
+    let eligible = capture["eligibility"]["eligible"] == true
+        && status == "completed"
+        && !payloads.is_empty()
+        && calls_named
+        && capture["observation"]["containment_verified"] == true;
     let outcome = if eligible {
         "checked_completed".to_owned()
     } else if status != "completed" {
@@ -494,7 +538,7 @@ pub(crate) fn check_capture(
     let tool_registry = serde_json::to_vec(&json!({"request_tools_sha256":request_tools,
         "receiver_tools":pi_host::tools::receiver_tools(),
         "dynamic_tools":pi_host::tools::dynamic_tools(),
-        "check":"host-exact-request-tools-digest-before-dispatch"}))
+        "check":"host-exact-request-tools-digest-before-dispatch; runner re-digested every retained body"}))
     .map_err(|_| StoreError::Rejected)?;
     let causal_bundle = if eligible {
         let calls: Vec<Value> = capture["calls"]
@@ -577,17 +621,26 @@ pub async fn run_pi_host(
         // End of input closes the Host's thread: it closes Pi's bridge,
         // collects and removes the container, then exits. A forced kill would
         // leave the container for reconciliation, so it is the last resort.
+        // Mid-turn, the Host may notice only when Pi's current inference
+        // attempt ends, so the wait then covers the turn bound.
+        let mid_turn = runner.bound_turn && runner.terminal.is_none();
         runner.pipe.close_stdin();
-        let until = Instant::now() + Duration::from_secs(CLOSE_SECS);
+        let budget = if mid_turn {
+            runner.deadline
+        } else {
+            Duration::from_secs(CLOSE_SECS)
+        };
+        let until = Instant::now() + budget;
         while let Ok(Ok(Some(_))) = tokio::time::timeout_at(until, runner.pipe.receive()).await {}
         let exit = runner
             .pipe
             .terminate_and_reap(Duration::from_secs(10))
-            .await
-            .ok();
-        result
-            .map(|()| exit)
-            .map_err(|_| ("transport_error_turn", exit))
+            .await;
+        match (result, exit) {
+            (_, Err(_)) => Err(("cleanup_unobserved", None)),
+            (Ok(()), Ok(exit)) => Ok(Some(exit)),
+            (Err(_), Ok(exit)) => Err(("transport_error_turn", Some(exit))),
+        }
     }
     .await;
     let (exit, kind) = match outcome {
@@ -640,6 +693,9 @@ async fn drive(
             Duration::from_secs(THREAD_START_SECS),
         )
         .await?;
+    if started["thread"]["ephemeral"] != false {
+        return Err(StoreError::Rejected);
+    }
     let thread = started["thread"]["id"]
         .as_str()
         .ok_or(StoreError::Unavailable)?
@@ -774,6 +830,7 @@ async fn run_turn(
     let exact = turns
         .iter()
         .find(|t| t["id"] == turn.as_str())
+        .filter(|t| t["status"] == "completed")
         .ok_or(StoreError::Unavailable)?;
     let items = exact["items"].as_array().ok_or(StoreError::Unavailable)?;
     let final_text = items
@@ -862,7 +919,11 @@ mod tests {
     fn capture_fixture(dir: &Path, eligible: bool) -> (Vec<u8>, Expected, NativeEvent) {
         let state = dir.join("state");
         std::fs::create_dir_all(&state).unwrap();
-        let body = br#"{"messages":[]}"#;
+        let body = serde_json::to_vec(
+            &json!({"messages":[],"tools":pi_host::tools::messages_request_tools()}),
+        )
+        .unwrap();
+        let body = body.as_slice();
         let body_path = state.join("coding-hosted-1.body.json");
         std::fs::write(&body_path, body).unwrap();
         let routes = json!([{"id":"primary","payer":"claude-subscription","endpoint":"https:anthropic-oauth"}]);
@@ -883,7 +944,8 @@ mod tests {
             "turn":{"id":"u","prompt_sha256":sha(b"prompt")},
             "payloads":[{"inference_call_id":"request-1","physical_send":1,"representation":"wire",
                 "original_codec":"identity","sha256":sha(body),"path":body_path}],
-            "calls":[],"eligibility":{"eligible":eligible,"reasons":[]}});
+            "calls":[],"observation":{"containment_verified":true},
+            "eligibility":{"eligible":eligible,"reasons":[]}});
         let terminal = parse_event(
             "transport:t".into(),
             7,
@@ -926,8 +988,40 @@ mod tests {
         outside.state_dir = dir.path().join("other");
         std::fs::create_dir_all(&outside.state_dir).unwrap();
         assert!(check(&outside, "u", "prompt", "completed").is_err());
+        // Capture shapes the runner refuses or never makes eligible.
+        let base: Value = serde_json::from_slice(&bytes).unwrap();
+        let run = |v: &Value| {
+            check_capture(
+                &serde_json::to_vec(v).unwrap(),
+                terminal.clone(),
+                "completed".into(),
+                &expected,
+                "u",
+                "prompt",
+            )
+        };
+        let mut v = base.clone();
+        v["payloads"][0]["inference_call_id"] = json!("request-2");
+        assert!(run(&v).is_err(), "call id names another body file");
+        let mut v = base.clone();
+        let p = v["payloads"][0].clone();
+        v["payloads"] = json!([p.clone(), p]);
+        assert!(run(&v).is_err(), "duplicate physical send");
+        let mut v = base.clone();
+        v["calls"] = json!([{"call_id":"c","inference_call_id":"request-1","physical_send":2}]);
+        assert!(!run(&v).unwrap().eligible, "call names no retained send");
+        let mut v = base.clone();
+        v["observation"] = Value::Null;
+        assert!(!run(&v).unwrap().eligible, "no verified observation");
+        // A body whose tools differ from the pin refuses.
+        let body_path = expected.state_dir.join("coding-hosted-1.body.json");
+        let other = br#"{"messages":[],"tools":[]}"#;
+        std::fs::write(&body_path, other).unwrap();
+        let mut v = base.clone();
+        v["payloads"][0]["sha256"] = json!(sha(other));
+        assert!(run(&v).is_err(), "request tools differ from the pin");
         // A tampered payload refuses.
-        std::fs::write(expected.state_dir.join("coding-hosted-1.body.json"), b"{}").unwrap();
+        std::fs::write(&body_path, b"{}").unwrap();
         assert!(check(&expected, "u", "prompt", "completed").is_err());
     }
 }

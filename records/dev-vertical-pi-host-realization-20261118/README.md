@@ -112,6 +112,33 @@ published through the actor, causal record with the Pi Host scope, input
 eligible, `CompletedSettled`, causal read returns the operation, no Host
 failures, no container left.
 
+## Second review remediation (third commit)
+
+Fable review of `fab290f4`:
+[REVIEW.md](../../reviews/pi-host-lst-q-fable-20261118/REVIEW.md) (accept
+with changes).
+
+| Finding | Change |
+| --- | --- |
+| P1 T continuity refuses every Host resend (one payload per physical send) | Sends of one inference call must be byte-identical; the canonical extension rule applies only across calls; unit test with a failover resend, a differing resend and two calls with one body. |
+| P2 L close bound shorter than a turn | Mid-turn the orderly-close wait covers the turn bound; the Host now notices end of controller input during a turn at the next provider attempt or Pi frame and ends the job (protocol text; unit test). |
+| P2 L request tools only Host-asserted | The runner digests the `tools` of every retained Messages body against the shared pin; any other wire refuses. |
+| P3 L capture bindings | `request-<n>` must name `coding-hosted-<n>.body.json`; `(call, send)` unique; every call names a retained send and a verified observation is required for eligibility; unit tests. |
+| P3 L vs Codex runner | `thread.ephemeral == false`, `thread/read` turn `completed`, a stray response recorded before the conflict, a failed reap reported `cleanup_unobserved`. |
+| P3 S unreachable protocol comparisons | Kept as the explicit fence with a comment (the profile comparisons are not unreachable). |
+| P3 T redundant capability call | Removed (the selected request is one of the payloads). |
+| P3 Q record | Command below; `summary.json` `binary` is the session binary identity (Host and job), not the Host file digest. |
+
+Q command (offline, Docker required):
+
+```
+cd rust && WE_PI_HOST_OUT=<fresh dir> WE_PI_HOST_BIN=target/debug/work-engine-pi-host \
+  WE_PI_HOST_OBSERVER=target/debug/examples/pi_hosted_messages_observer \
+  WE_PI_HOST_RUNTIME_DIR=~/.local/state/work-engine/dev-vertical-h2-route-20261117/runtime-claude-sdk \
+  WE_PI_HOST_RECEIVER_DIR=crates/work-engine-manual-host/receiver \
+  cargo test -p lifecycle-service --features controlled-proof --lib pi_host_causal_join -- --ignored
+```
+
 ## Open
 
 - The Responses (`openai-codex`) relay tools digest is unobserved (OpenAI

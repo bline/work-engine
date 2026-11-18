@@ -42,7 +42,10 @@ the prompt. Turns are domain work: the Host-ledger items carry no
 `userMessage`. At most one turn is active, and at most 16 turns per thread.
 After a failed turn the thread accepts no further turn. Controller requests
 sent while a turn is active are refused with an error while a relayed call
-awaits its answer, and otherwise answered after the turn ends.
+awaits its answer, and otherwise answered after the turn ends. End of the
+controller's input closes the thread: between turns the Host closes Pi's
+session and removes the container; during a turn the Host ends the job at
+the next provider attempt or Pi frame, and the turn is reported failed.
 
 `thread/read` `{"threadId", "includeTurns": true}` → `{"thread": {"id",
 "historyMode": "legacy", "turns": [{"id", "status", "itemsView": "full",

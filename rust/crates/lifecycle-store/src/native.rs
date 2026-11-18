@@ -3022,7 +3022,10 @@ impl SqliteLifecycleStore {
             "SELECT s.protocol_digest,s.profile_digest FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id WHERE t.invocation_id=?1",
             [entry.invocation_id()], |r| Ok((r.get(0)?,r.get(1)?))).map_err(|_| StoreError::ClaimConflict)?;
         // Positive allow-list (S6): only a recognized native realization settles
-        // here. Pi grammars keep their own settlement and stay refused below.
+        // here. Pi grammars keep their own settlement: the protocol comparisons
+        // below are subsumed by the allow-list (kept as the explicit fence);
+        // the profile comparisons still refuse a Pi grammar profile under a
+        // recognized protocol.
         if native_realization::Realization::from_protocol_digest(&protocol).is_none() {
             return Err(StoreError::Rejected);
         }
