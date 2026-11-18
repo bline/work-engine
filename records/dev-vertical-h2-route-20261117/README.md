@@ -183,3 +183,104 @@ was relayed separately. The check now accepts either order of events and
 still requires the exclusion interruption, an Uncertain attempt with its
 reservation retained, and no access token in any run file. s3 passes under
 the corrected check as well.
+
+## W1-W4: Anthropic Messages family for the `claude-sdk` provider (`c4a8ecfc`)
+
+Plan: [Pi Host realization](../../planning/dev-vertical-pi-host-realization-20261117.md)
+W1-W4 (operator authorization 2026-11-18, model `claude-haiku-5-5`). Standing:
+qualification record; not owner acceptance, not an H2 arm.
+
+Changes (`work-engine-manual-host`, its receiver, harness):
+
+- **Plan and admission.** `ProviderPlan.provider` (`openai-codex` by default,
+  or `claude-sdk`), bound by the runtime admission. `claude-sdk` only on the
+  analysis profile, model `claude-haiku-5-5`, priced from Pi's
+  `anthropic.json`. Full reservation 945 001 µUSD per request (1M context,
+  128k output, upper tier); Messages analysis budget ceiling 32 000 000 µUSD.
+  Pi's own `anthropic` provider is not offered: pi-ai 1.5.0's Anthropic client
+  takes no fetch override. A `claude-sdk` plan may instead route to the
+  API-key endpoint, because both endpoints receive the same body.
+- **Endpoints.** `https:anthropic-oauth` (Claude Code's credentials file,
+  read again before every connection; every token seen is screened) and
+  `https:anthropic-api` (`x-api-key`). Loopback routes serve either family.
+- **Body policy.** Strict JSON (duplicate keys refuse), top-level key
+  allowlist (no `mcp_servers`, `container`, `service_tier`), `tool_choice`
+  auto only, custom tools only, the analysis tool surface pinned by digest
+  (`CLAUDE_SDK_TOOLS_SHA256`, from the first offline run's refusal message),
+  and every request must extend the previous request's `messages` under the
+  two canonical rules. That rule is copied from `native-realization`
+  (branch `claude-realization-20261117`); it must become one implementation
+  when that crate reaches the base.
+- **Relay and settlement.** `message_stop` terminal under the same tail rule;
+  usage from `message_start` and the last `message_delta`; settlement per
+  token class at the catalog tier of all input tokens; the raw stop reason
+  must agree with the container's.
+- **Subscription billing guard.** On `https:anthropic-oauth`, a 200 head is
+  relayed only with `anthropic-ratelimit-unified-status` `allowed` or
+  `allowed_warning` and `...-overage-status` `rejected` or absent; anything
+  else closes the attempt as uncertain and fails the job. Kept rate-limit,
+  overage and `request-id` headers are retained in `relay.json`
+  (`headHeaders`).
+- **Receiver (W2).** Loads the pinned extension; a loopback forwarder is
+  Claude Code's `ANTHROPIC_BASE_URL`, and each request becomes one
+  `provider_fetch` under the current grant. At most one request per grant;
+  anything outside an open grant is answered locally. A dummy credential
+  sits in the tmpfs `HOME`. Completion is reported only after the relay has
+  settled (Claude Code ends its turn at `message_stop`, before the stream's
+  end). The process exits after close.
+- **Retries (W3).** Claude Code's retries and fallbacks are off
+  (`CLAUDE_CODE_MAX_RETRIES=0`, `..._DISABLE_NONSTREAMING_FALLBACK`,
+  `..._NO_MODEL_FALLBACK`, `..._DISABLE_MODEL_ACCESS_FALLBACK`,
+  `..._DISABLE_REFUSAL_FALLBACK`, `..._DISABLE_REFUSAL_RETRY`; switches
+  present in the bundled binary). The forwarder refuses a second request per
+  grant, and the Host refuses `x-stainless-retry-count` other than `0`.
+- **Harness (W4).** [claude_runtime.py](claude_runtime.py) builds the runtime
+  root: Pi's pinned runtime plus the extension (0.2.4), the Agent SDK, its
+  linux-x64 `claude` binary and the MCP SDK; 19 014 entries, manifest
+  `52ace834…`. `examples/pi_hosted_messages_observer.rs` is the offline
+  Messages upstream; `analyze.py` runs it with `ANALYSIS_PROVIDER=claude-sdk`.
+
+Unit tests: `work-engine-manual-host` passes (94 lib tests, 8 new Messages and
+guard tests), except the known inherited timing failure in `tests/lifecycle.rs`
+(`mutation_during_snapshot_collection_is_a_conflict`), which passed in two of
+three runs. The receiver's node tests pass with `--experimental-vm-modules`
+(their module sandbox gained `node:http` and `mkdirSync`).
+
+Found during development and fixed before the commit: the receiver kept the
+container alive after `complete` (forwarder listening); and `provider_complete`
+raced the relay's end (Claude Code reports the turn before the forwarder
+pulled `response-end`), which the Host refuses.
+
+**Offline run set w4a** (`~/.local/state/work-engine/dev-vertical-h2-route-20261117/w4a`,
+`analysis-qualification` `555ac071…`, observer `f34e1cc5…`), Pi Host container
+with the real Claude Code against the synthetic upstream:
+
+| Run | Result |
+| --- | --- |
+| `ok` | exit 0, 10 s, `CompletedSettled`. Request 1 refused (429) on the primary, then dispatched with the same retained body on the secondary; three requests, each settled at 450 µUSD (40 + 3 000 cache-write + 1 000 cache-read input, 120 output at base-tier rates); two Host deliveries; retry count 0 on every request; no container left. |
+| `retry-head` | The secondary answers 500 (not a definitive refusal): attempt `Uncertain`, reservation retained, job failed closed; no further request reached upstream. |
+
+**Live run `live-c1`** (`…/live/live-c1`, same binary): route
+`https:anthropic-oauth` only (no API-key failover), the draft H2 treatment
+snapshot (12 members, 158 961 bytes) and the qualification task
+[live-task-1.txt](live-task-1.txt). This is not an H2 arm. Inference and
+transport worked. Three requests, all HTTP 200 on the subscription, each head
+`unified-status: allowed` and `overage-status: rejected`. They settled at
+227, 603 and 7 960 µUSD at catalog rates (request 3: 58 868 cache-write input
+tokens). There were 12 `snapshot_read` calls in one response, every Host
+delivery was made, and the answer was produced. A scan of 91 run files found
+neither the subscription access token nor the refresh token;
+`private-access` is empty.
+
+**The job failed at the lifecycle gate**: "entry claim conflicted with durable
+state". The model's assistant messages carry `thinking` blocks (requests 2
+and 3), and the analysis grammar (`lifecycle-store`
+`pi_analysis_proof.rs`) accepts only `text` and `toolCall` content. The
+receiver pins `thinkingLevel: off`, but Pi's catalog has no `off` level for
+`claude-haiku-5-5` and marks the model `forceAdaptiveThinking`, so Pi sends
+adaptive thinking at effort `low`. As far as these catalogs show, thinking
+cannot be turned off for this model. Running Claude on this profile, for
+qualification or H2, therefore needs the analysis grammar to accept
+`thinking` blocks. That is a `lifecycle-store` change for the
+research-lifecycle owner, not part of W1-W4. The offline runs pass because
+the synthetic upstream sends no thinking.
