@@ -242,9 +242,12 @@ Changes (`work-engine-manual-host`, its receiver, harness):
 - **Receiver (W2).** Loads the pinned extension; a loopback forwarder is
   Claude Code's `ANTHROPIC_BASE_URL`, and each request becomes one
   `provider_fetch` under the current grant. At most one request per grant;
-  anything outside an open grant is answered locally, and those local
-  answers are counted (`counts.forwarderRefused` in the completion frame). The
-  Host completes an analysis job only if the count is 0. A dummy credential
+  anything outside an open grant is answered locally. Those local answers,
+  and an admitted request whose Host relay failed before a head, are counted
+  (`counts.forwarderRefused` in the completion frame). The Host completes an
+  analysis job only if the count is 0. This has not yet been exercised live:
+  if Claude Code ever sends an auxiliary request to its base URL, live jobs
+  will fail closed at completion. A dummy credential
   sits in the tmpfs `HOME`. Completion is reported only after the relay has
   settled (Claude Code ends its turn at `message_stop`, before the stream's
   end). The process exits after close.
@@ -329,6 +332,10 @@ P1-1 (one-hour cache-write pricing, lifetime split, reservation, ceiling), P1-2
 requires none), P2-2 (the guard requires `overage-status: rejected`), P2-3 (the
 retry header must be present and `0`), and the P3 record wording; see the
 [disposition](../../reviews/dev-vertical-w1-w4-fable-20261118/DISPOSITION.md).
+The [recheck](../../reviews/dev-vertical-w1-w4-fable-20261118/RECHECK.md) of
+`48908c99` accepts it; its three P3 notes (the count's wording, a unit test of
+the `claude-sdk` completion counts, the live condition above) are addressed in
+the following commit.
 **Run set w4b** on the remediation (`analysis-qualification` `cb64b517…`):
 `ok` passes (each request settled at 675 µUSD; the synthetic upstream sends no
 lifetime split, so writes are priced as one-hour; reserved 1 320 001 per

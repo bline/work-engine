@@ -331,9 +331,10 @@ impl Host {
     }
     /// The counts an analysis completion must report. On `claude-sdk` the
     /// receiver also reports requests its forwarder answered locally (outside
-    /// a grant, a second request per grant, another path): none may occur in
-    /// a completed job, since each is a request Claude Code made that no Host
-    /// attempt accounts for.
+    /// a grant, a second request per grant, another path, or an admitted
+    /// request whose Host relay failed before a head): none may occur in a
+    /// completed job, since each is a request Claude Code made that no
+    /// completed Host attempt accounts for.
     fn analysis_counts(&self) -> Value {
         let state = self.journal.coding.as_ref().unwrap();
         let claude = self
@@ -478,5 +479,29 @@ mod tests {
         let (_dir2, tree2) = snapshot(&[("big.md", &big)]);
         job.workspace = tree2;
         assert!(validate_snapshot(&job).is_err());
+    }
+    #[test]
+    fn claude_sdk_completion_requires_no_forwarder_refusals() {
+        let (_dir, mut h) = super::super::provider::ledger_tests::fixture();
+        let counts = |h: &Host| h.analysis_counts();
+        assert_eq!(counts(&h), json!({"providerRequests":0,"resets":0}));
+        h.journal
+            .job
+            .coding
+            .as_mut()
+            .unwrap()
+            .provider
+            .as_mut()
+            .unwrap()
+            .provider = "claude-sdk".into();
+        assert_eq!(
+            counts(&h),
+            json!({"providerRequests":0,"resets":0,"forwarderRefused":0})
+        );
+        assert_ne!(
+            counts(&h),
+            json!({"providerRequests":0,"resets":0,"forwarderRefused":1})
+        );
+        assert_ne!(counts(&h), json!({"providerRequests":0,"resets":0}));
     }
 }
