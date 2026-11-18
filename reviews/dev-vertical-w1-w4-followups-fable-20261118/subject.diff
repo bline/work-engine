@@ -1,0 +1,402 @@
+diff --git a/records/dev-vertical-h2-route-20261117/README.md b/records/dev-vertical-h2-route-20261117/README.md
+index 519d8163..551f1975 100644
+--- a/records/dev-vertical-h2-route-20261117/README.md
++++ b/records/dev-vertical-h2-route-20261117/README.md
+@@ -341,3 +341,58 @@ the following commit.
+ lifetime split, so writes are priced as one-hour; reserved 1 320 001 per
+ attempt; receipt `container_provider_identity: claude-sdk`); `retry-head`
+ fails closed as before.
++
++**Pre-dispatch subscription check** (operator decision 2026-11-18, the commit
++after `ed30ad1f`). On `https:anthropic-oauth`, the Host dispatches a request
++only if its first two system blocks are Claude Code's billing header
++(`x-anthropic-billing-header: … cc_entrypoint=sdk-ts;`) and the Agent SDK
++identity. Anything else is neither reserved nor sent: the request is answered
++`response-unavailable` (`subscription_request_not_claude_code`) and the job
++fails. The receiver also clears `PI_CLAUDE_SDK_PROMPT`, so the extension
++stays in its Claude prompt mode. The check is necessary, not sufficient; the
++response-side billing guard stays. All three live-c1 bodies satisfy it.
++Offline `w4c/ok` (`analysis-qualification` `0b8fff28…`) passes.
++
++## Thinking blocks accepted; first settled Claude analysis job (`live-c2`)
++
++The research-lifecycle owner decided on the `thinking` blocks (board 5886)
++and authorized the grammar change in this lane, under six conditions:
++
++1. **Closed set.** `lifecycle-store` `pi_analysis_proof.rs` accepts exactly
++   Pi's observed block, `{type: "thinking", thinking, thinkingSignature}`
++   (strings, no other key), in any assistant message. The redacted variant was
++   not observed and still refuses, as does any other type.
++2. **Non-semantic.** Thinking blocks are never tool calls and never part of
++   the answer or of any delivery check. The answer is the final message's text
++   blocks only; a final message with thinking but no text has no answer and
++   refuses.
++3. **Byte-exact.** Retained bodies are unchanged. The Host's continuity rule
++   now compares `thinking`/`redacted_thinking` blocks in requests exactly,
++   outside both canonical rules (a moved `cache_control` on one refuses).
++4. **Settlement and bounds.** Anthropic's `output_tokens` includes thinking
++   tokens (`output_tokens_details.thinking_tokens` is a part of it), so
++   settlement and the output bound already count them as output.
++5. **Tests.** A positive turn with thinking, text and tool calls; negatives
++   for an unknown type, the redacted variant, malformed thinking blocks and a
++   thinking-only final answer (`lifecycle-store` `tests/pi_analysis.rs`); and
++   the continuity test.
++6. **Effective thinking setting.** On `claude-haiku-5-5`, the profile's
++   `thinkingLevel: off` becomes adaptive thinking at effort `low` (request
++   body `thinking: {type: adaptive, display: updates}`,
++   `output_config.effort: low`), because Pi's catalog has no `off` level for
++   the model. Thinking was on in every Claude run in this record. An H2 arm
++   configuration must state it, and both arms must run with it identically.
++   The blocks Pi records carry an empty `thinking` text and an encrypted
++   signature.
++
++**Live run `live-c2`** (`analysis-qualification` `beb44475…`, same inputs as
++`live-c1`: subscription route only, the draft H2 treatment snapshot, the
++non-H2 task): **exit 0, `CompletedSettled`**, 23 s. Three requests, all HTTP
++200 with `unified-status: allowed` and `overage-status: rejected`, settled at
++351, 703 and 12 360 µUSD at catalog rates (all cache writes one-hour; request
++3: 58 910 written, 2 716 read, 1 098 output). 13 Host deliveries (the list,
++then 12 reads in one response). The completion reported
++`forwarderRefused: 0`; the receipt names `claude-sdk` / `claude-haiku-5-5`.
++The answer describes each of the 12 members in one line. No subscription
++access or refresh token appears in the 94 run files, and `private-access` is
++empty. Every request body passes the pre-dispatch subscription check.
+diff --git a/rust/crates/lifecycle-store/src/pi_analysis_proof.rs b/rust/crates/lifecycle-store/src/pi_analysis_proof.rs
+index 2989123d..1a453903 100644
+--- a/rust/crates/lifecycle-store/src/pi_analysis_proof.rs
++++ b/rust/crates/lifecycle-store/src/pi_analysis_proof.rs
+@@ -47,6 +47,35 @@ fn delivery<'a>(reads: &[&'a Value], inv: &str, call: &Value) -> Result<&'a Valu
+     }
+     Ok(read)
+ }
++/// A thinking block exactly as Pi records it for the `claude-sdk` provider
++/// (observed in live run `live-c1`): `type`, `thinking` text and an opaque
++/// `thinkingSignature`, nothing else. Non-semantic: never a tool call, never
++/// part of the answer or of any delivery check (research-lifecycle owner
++/// decision, board 5886). Any other content type still refuses.
++fn thinking(c: &Value) -> bool {
++    c["type"] == "thinking"
++        && c.as_object().is_some_and(|o| o.len() == 3)
++        && c["thinking"].is_string()
++        && c["thinkingSignature"].is_string()
++}
++/// The answer of the final message: its text blocks, in order. Only text and
++/// thinking blocks may appear; a final message without a text block has no
++/// answer (and is refused like an empty answer).
++fn answer_text(m: &Value) -> Result<String, StoreError> {
++    if m["content"].is_string() {
++        return text(m);
++    }
++    let a = m["content"].as_array().ok_or(StoreError::ClaimConflict)?;
++    let mut out = String::new();
++    for c in a {
++        if c["type"] == "text" {
++            out.push_str(c["text"].as_str().ok_or(StoreError::ClaimConflict)?);
++        } else if !thinking(c) {
++            return bad();
++        }
++    }
++    Ok(out)
++}
+ /// What the receiver returns to the SDK for a Host delivery.
+ fn expected_content(delivered: &Value) -> Value {
+     if delivered["ok"] == true {
+@@ -123,7 +152,7 @@ pub(crate) fn validate(
+             .ok_or(StoreError::ClaimConflict)?;
+         if content
+             .iter()
+-            .any(|c| c["type"] != "text" && c["type"] != "toolCall")
++            .any(|c| c["type"] != "text" && c["type"] != "toolCall" && !thinking(c))
+         {
+             return bad();
+         }
+@@ -191,7 +220,7 @@ pub(crate) fn validate(
+     if used != reads.len() {
+         return bad();
+     }
+-    let answer = text(&final_message)?;
++    let answer = answer_text(&final_message)?;
+     if answer.is_empty() || answer.len() > MAX_ANSWER_BYTES {
+         return bad();
+     }
+diff --git a/rust/crates/lifecycle-store/tests/pi_analysis.rs b/rust/crates/lifecycle-store/tests/pi_analysis.rs
+index 2376080f..97e0d962 100644
+--- a/rust/crates/lifecycle-store/tests/pi_analysis.rs
++++ b/rust/crates/lifecycle-store/tests/pi_analysis.rs
+@@ -134,6 +134,11 @@ fn request(inv: &str, input: &[Value]) -> Value {
+ /// Three provider requests: a list call, then a read and an SDK-refused call
+ /// in one message, then the final answer.
+ fn events(inv: &str) -> Vec<Value> {
++    events_with(inv, &[], json!([{"type":"text","text":"supported: hello"}]))
++}
++/// `events` with `prefix` blocks before the second message's content and the
++/// final message's `content`.
++fn events_with(inv: &str, prefix: &[Value], final_content: Value) -> Vec<Value> {
+     let user = json!({"role":"user","content":[{"type":"text","text":inv}]});
+     let call1 = json!({"type":"toolCall","id":"c1","name":"snapshot_list","arguments":{}});
+     let a1 = json!({"role":"assistant","content":[call1],"stopReason":"toolUse"});
+@@ -147,7 +152,13 @@ fn events(inv: &str) -> Vec<Value> {
+     let call2 =
+         json!({"type":"toolCall","id":"c2","name":"snapshot_read","arguments":{"path":"a.md"}});
+     let call3 = json!({"type":"toolCall","id":"c3","name":"bogus","arguments":{}});
+-    let a2 = json!({"role":"assistant","content":[{"type":"text","text":"reading"},call2,call3],"stopReason":"toolUse"});
++    let mut a2_content = prefix.to_vec();
++    a2_content.extend([
++        json!({"type":"text","text":"reading"}),
++        call2.clone(),
++        call3.clone(),
++    ]);
++    let a2 = json!({"role":"assistant","content":a2_content,"stopReason":"toolUse"});
+     let (r2, t2) = delivery(
+         inv,
+         "c2",
+@@ -156,7 +167,7 @@ fn events(inv: &str) -> Vec<Value> {
+         json!({"path":"a.md","text":"hello"}),
+     );
+     let t3 = json!({"role":"toolResult","toolCallId":"c3","toolName":"bogus","content":[{"type":"text","text":"Tool bogus not found"}],"details":{},"isError":true});
+-    let a3 = json!({"role":"assistant","content":[{"type":"text","text":"supported: hello"}],"stopReason":"stop"});
++    let a3 = json!({"role":"assistant","content":final_content,"stopReason":"stop"});
+     let full = vec![
+         user.clone(),
+         a1.clone(),
+@@ -352,3 +363,55 @@ fn analysis_turns_need_the_analysis_binding_and_have_no_effect_entry() {
+     let entered = s.with_pi_coding_effect(&turn, "wire", 1, &intent, clock(), |_| Ok::<(), ()>(()));
+     assert!(entered.is_err());
+ }
++fn think(signature: &str) -> Value {
++    json!({"type":"thinking","thinking":"","thinkingSignature":signature})
++}
++#[test]
++fn analysis_turn_with_thinking_blocks_settles_and_answers_text_only() {
++    let values = events_with(
++        "audit",
++        &[think("sig-2")],
++        json!([think("sig-3"), {"type":"text","text":"supported: hello"}]),
++    );
++    let (r, s, _root) = settle(&values);
++    r.unwrap();
++    assert_eq!(
++        s.native_recovery("audit").unwrap().unwrap().class,
++        "CompletedSettled"
++    );
++}
++#[test]
++fn analysis_grammar_refuses_unknown_content_and_thinking_only_answers() {
++    let answer = json!({"type":"text","text":"supported: hello"});
++    for (name, prefix, final_content) in [
++        (
++            "redacted thinking (not observed)",
++            vec![json!({"type":"redacted_thinking","data":"x"})],
++            json!([answer.clone()]),
++        ),
++        (
++            "unknown content type",
++            vec![json!({"type":"image","data":"x"})],
++            json!([answer.clone()]),
++        ),
++        (
++            "thinking with an extra key",
++            vec![json!({"type":"thinking","thinking":"","thinkingSignature":"s","text":"x"})],
++            json!([answer.clone()]),
++        ),
++        (
++            "thinking without signature",
++            vec![json!({"type":"thinking","thinking":""})],
++            json!([answer.clone()]),
++        ),
++        ("thinking-only final", vec![], json!([think("sig-3")])),
++    ] {
++        let (r, s, _root) = settle(&events_with("audit", &prefix, final_content));
++        assert!(r.is_err(), "{name}");
++        assert_eq!(
++            s.native_recovery("audit").unwrap().unwrap().class,
++            "EnteredUncertain",
++            "{name}"
++        );
++    }
++}
+diff --git a/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs b/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs
+index e96bfe5e..70c35b73 100644
+--- a/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs
++++ b/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs
+@@ -200,6 +200,9 @@ try {
+    mkdirSync(`${process.env.HOME}/.claude`,{recursive:true,mode:0o700});
+    writeFileSync(`${process.env.HOME}/.claude/.credentials.json`,JSON.stringify(DUMMY_CREDENTIALS),{mode:0o600,flag:'wx'});
+    Object.assign(process.env,CLAUDE_CODE_ENV,{ANTHROPIC_BASE_URL:`http://127.0.0.1:${forwarder.address().port}`});
++   // The extension's Claude prompt mode only: Pi's prompt mode has drawn
++   // Anthropic's third-party (extra usage) answer.
++   delete process.env.PI_CLAUDE_SDK_PROMPT;
+    // The extension registers its provider while the session services load.
+   }else{
+   if(config.schema!==schema||config.provider!=='openai-codex'||config.model!=='gpt-6-luna')throw Error('provider configuration rejected');
+diff --git a/rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs b/rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs
+index dd0ec7bd..f4664bdd 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs
+@@ -449,6 +449,22 @@ impl stream::Screen for Screen<'_> {
+     }
+ }
+ 
++/// Claude Code's Agent SDK request shape on the subscription: the first two
++/// system blocks are its billing header (`cc_entrypoint=sdk-ts`) and the Agent
++/// SDK identity, as on every observed request. Necessary, not sufficient:
++/// Anthropic's classification is checked again on the response head.
++fn claude_code_request(body: &[u8]) -> bool {
++    let Ok(v) = serde_json::from_slice::<Value>(body) else {
++        return false;
++    };
++    let block = |i: usize| {
++        let b = &v["system"][i];
++        (b["type"] == "text").then(|| b["text"].as_str()).flatten()
++    };
++    block(0).is_some_and(|t| {
++        t.starts_with("x-anthropic-billing-header: ") && t.contains("cc_entrypoint=sdk-ts;")
++    }) && block(1) == Some("You are a Claude agent, built on Anthropic's Claude Agent SDK.")
++}
+ /// Validated container request, kept for every attempt of the request.
+ #[derive(Clone)]
+ struct Fetch {
+@@ -484,11 +500,28 @@ pub mod canonical {
+             other => other.clone(),
+         }
+     }
++    /// Thinking blocks are compared exactly, outside both rules
++    /// (research-lifecycle owner condition 3, board 5886).
++    fn thinking(block: &Value) -> bool {
++        matches!(
++            block["type"].as_str(),
++            Some("thinking" | "redacted_thinking")
++        )
++    }
+     fn message(v: &Value) -> Value {
+         let mut m = strip_cache_control(v);
+         if let Some(Value::String(text)) = m.get("content").cloned() {
+             m["content"] = json!([{"type":"text","text":text}]);
+         }
++        if let (Some(original), Some(content)) =
++            (v["content"].as_array(), m["content"].as_array_mut())
++        {
++            for (kept, block) in content.iter_mut().zip(original) {
++                if thinking(block) {
++                    *kept = block.clone();
++                }
++            }
++        }
+         m
+     }
+     /// `next` is `previous` extended by at least one message, under the two
+@@ -992,6 +1025,23 @@ impl Host {
+             Decision::Unavailable(reason) => return self.hosted_unavailable(s, reason),
+         };
+         let route = routes.routes[index].clone();
++        // Subscription routes carry only Claude Code's own requests: anything
++        // else is never dispatched (operator constraint: a third-party request
++        // on the subscription may draw extra usage). The response-side
++        // billing guard remains the second layer.
++        if Endpoint::parse(&route.endpoint) == Some(Endpoint::AnthropicOauth)
++            && !claude_code_request(&fetch.body)
++        {
++            self.hosted
++                .router
++                .as_mut()
++                .unwrap()
++                .settle(routed, Disposition::NotDispatched, Value::Null)
++                .map_err(|c| Error::Refused(c.into()))?;
++            self.journal.coding.as_mut().unwrap().provider_failed = true;
++            self.save()?;
++            return self.hosted_unavailable(s, "subscription_request_not_claude_code");
++        }
+         let reserve = plan.request_reservation()?;
+         let state = self.journal.coding.as_mut().unwrap();
+         let attempt = match provider::reserve_attempt(
+@@ -2668,7 +2718,9 @@ mod tests {
+     }
+     fn messages_body(messages: Value) -> Value {
+         json!({"model":HAIKU,"stream":true,"max_tokens":128000,"messages":messages,
+-            "system":[{"type":"text","text":"s","cache_control":{"type":"ephemeral","ttl":"1h"}}],
++            "system":[{"type":"text","text":"x-anthropic-billing-header: cc_version=2.1.325.fba; cc_entrypoint=sdk-ts;"},
++                {"type":"text","text":"You are a Claude agent, built on Anthropic's Claude Agent SDK.","cache_control":{"type":"ephemeral","ttl":"1h"}},
++                {"type":"text","text":"s","cache_control":{"type":"ephemeral","ttl":"1h"}}],
+             "tools":[{"name":"DeferredToolPlaceholder","description":"d","input_schema":{"type":"object"},"defer_loading":true},
+                 {"name":"mcp__pi__snapshot_read","description":"r","input_schema":{"type":"object"}}],
+             "metadata":{"user_id":"{}"},"thinking":{"type":"disabled"}})
+@@ -2913,7 +2965,23 @@ mod tests {
+         let extended = json!([{"role":"user","content":[{"type":"text","text":"q","cache_control":{"type":"ephemeral"}}]},
+             {"role":"system","content":"env"},
+             {"role":"assistant","content":[{"type":"text","text":"a"}]}]);
+-        h.messages_policy(&plan, &next(extended), false).unwrap();
++        h.messages_policy(&plan, &next(extended.clone()), false)
++            .unwrap();
++        // Thinking blocks are compared exactly: a moved cache_control on one
++        // is a difference.
++        let with_thinking = json!([{"role":"user","content":"q"},
++            {"role":"assistant","content":[{"type":"thinking","thinking":"","signature":"s"},{"type":"text","text":"a"}]}]);
++        h.hosted.last_messages = Some(with_thinking.clone());
++        let mut longer = with_thinking.as_array().unwrap().clone();
++        longer.push(json!({"role":"user","content":"more"}));
++        h.messages_policy(&plan, &next(json!(longer.clone())), false)
++            .unwrap();
++        longer[1]["content"][0]["cache_control"] = json!({"type":"ephemeral"});
++        assert!(
++            h.messages_policy(&plan, &next(json!(longer)), false)
++                .is_err()
++        );
++        h.hosted.last_messages = Some(first.clone());
+         for bad in [
+             first.clone(),
+             json!([{"role":"user","content":[{"type":"text","text":"altered"}]},
+@@ -3068,4 +3136,54 @@ mod tests {
+             }
+         }
+     }
++    #[test]
++    fn subscription_routes_dispatch_only_claude_code_requests() {
++        let claude = messages_body(json!([{"role":"user","content":"q"}]));
++        let mut pi_prompt = claude.clone();
++        pi_prompt["system"] = json!([{"type":"text","text":"You are an expert coding assistant."}]);
++        let mut other_entry = claude.clone();
++        other_entry["system"][0]["text"] =
++            json!("x-anthropic-billing-header: cc_version=1; cc_entrypoint=cli;");
++        let mut no_identity = claude.clone();
++        no_identity["system"][1]["text"] = json!("You are Claude.");
++        for (body, ok) in [
++            (claude, true),
++            (pi_prompt, false),
++            (other_entry, false),
++            (no_identity, false),
++        ] {
++            let (_dir, mut h, mut w) = messages_host(vec![messages_completed_with(
++                "anthropic-ratelimit-unified-status: allowed\r\nanthropic-ratelimit-unified-overage-status: rejected\r\n",
++            )]);
++            h.journal
++                .job
++                .coding
++                .as_mut()
++                .unwrap()
++                .provider
++                .as_mut()
++                .unwrap()
++                .hosted
++                .routes[0]
++                .endpoint = "https:anthropic-oauth".into();
++            let g = messages_grant(&mut h, &mut w);
++            push(
++                &mut h,
++                &mut w,
++                messages_fetch(&g, &serde_json::to_vec(&body).unwrap()),
++            )
++            .unwrap();
++            let frames = tick_until(&mut h, &w, |a| !a.is_empty());
++            if ok {
++                assert_eq!(frames[0]["type"], "response-head", "{body}");
++                assert_eq!(w.opened.lock().unwrap().len(), 1);
++            } else {
++                assert_eq!(frames[0]["type"], "response-unavailable", "{body}");
++                assert_eq!(frames[0]["code"], "subscription_request_not_claude_code");
++                assert!(w.opened.lock().unwrap().is_empty(), "nothing dispatched");
++                assert!(request(&h).attempts.is_empty(), "nothing reserved");
++                assert!(h.journal.coding.as_ref().unwrap().provider_failed);
++            }
++        }
++    }
+ }
