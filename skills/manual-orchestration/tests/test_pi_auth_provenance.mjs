@@ -10,10 +10,7 @@ function harness(auth) {
   const ctx = {
     model: { provider: "openai", id: "selected-model" },
     modelRegistry: {
-      getProviderAuth: async (provider) => {
-        assert.equal(provider, "anthropic");
-        return auth();
-      },
+      getProviderAuth: async (provider) => auth(provider),
     },
   };
   return { entries, emit: (name, data) => handlers.get(name)(data, ctx) };
@@ -43,6 +40,27 @@ test("records only allowlisted provenance and the response's identity", async ()
   }
 });
 
+test("OpenAI distinguishes ChatGPT OAuth and API credentials by resolver source", async () => {
+  for (const [source, header, expected] of [
+    ["OAuth", {}, "oauth"],
+    ["OPENAI_API_KEY", {}, "api_key"],
+    ["stored credential", { Authorization: "Bearer synthetic" }, "api_key"],
+    ["OPENAI_API_KEY", { Authorization: "Bearer different" }, "unknown"],
+    ["other", {}, "unknown"],
+  ]) {
+    const { emit, entries } = harness((provider) => provider === "openai"
+      ? { auth: { apiKey: "synthetic" }, source }
+      : { auth: { apiKey: "sk-ant-oat-synthetic" }, source: "OAuth" });
+    emit("turn_start");
+    await emit("before_provider_headers", { headers: header });
+    emit("message_end", { message: { ...assistant.message, provider: "openai" } });
+    const [[, data]] = entries;
+    assert.equal(data.provider, "openai");
+    assert.equal(data.billing_class, expected);
+    assert.ok(!JSON.stringify(data).includes("synthetic"));
+  }
+});
+
 test("does not guess when requests overlap or reuse an earlier turn's snapshot", async () => {
   const { emit, entries } = harness(() => ({ auth: { apiKey: "synthetic" }, source: "stored credential" }));
   const request = () => emit("before_provider_headers", { headers: {} });
@@ -54,7 +72,7 @@ test("does not guess when requests overlap or reuse an earlier turn's snapshot",
   emit("message_end", assistant);
   emit("turn_start");
   await request();
-  emit("message_end", { message: { ...assistant.message, provider: "openai" } });
+  emit("message_end", { message: { ...assistant.message, provider: "openai-codex" } });
   emit("message_end", assistant);
   emit("turn_start");
   await request();

@@ -103,7 +103,12 @@ maps to `claude_extra_usage` (`extra_usage_observed`); an API key maps to
 `pi_api` (`api_key_observed`). With missing or inconclusive provenance
 (including bearer), the same call counts against both caps as
 `api_key_or_extra_usage`. The dollar pools then overlap and must not be
-summed. Other Pi providers are `pi_provider_unpriced`. Claude Code history
+summed. Direct `openai` calls use Responses pricing: API-key snapshots
+count toward `pi_api`; ChatGPT OAuth snapshots stay out of dollar and quota
+pools. Missing or inconclusive provenance counts conservatively toward the
+API cap as possible spend (`pi_openai_billing_unconfirmed`). These estimates
+are not invoice charges; an unrecorded service tier retains the tier bounds.
+Other Pi providers are `pi_provider_unpriced`. Claude Code history
 that pi-claude-subscription synthesizes (`msg_pi_*` ids) is not a call.
 
 Objective time (2026-11-07). Budgets limit dollars and scope additions, not
@@ -120,7 +125,9 @@ CODEX_KEYS = ('input_tokens', 'cached_input_tokens', 'cache_write_input_tokens',
 NATIVE_KEYS = ('input_tokens', 'cache_creation_input_tokens', 'cache_read_input_tokens', 'output_tokens')
 TTL_KEYS = ('ephemeral_5m_input_tokens', 'ephemeral_1h_input_tokens')
 CODEX_RATES = {'gpt-6.1-terra': (1, .05, 1.25, 5), 'gpt-6-sol': (2, .2, 2.5, 10),
-               'gpt-6.1-sol': (2, .1, 2.5, 10), 'gpt-6-astra': (10, 1, 12.5, 50)}
+               'gpt-6.1-sol': (2, .1, 2.5, 10), 'gpt-6-astra': (10, 1, 12.5, 50),
+               # Pi OpenAI model catalog, 2026-11-18; same 272k long-context rule.
+               'gpt-6.2-sol': (2, .1, 2.5, 10)}
 NATIVE_RATES = {
     'claude-sonnet-5-5': dict(input=2, output=10, cache_write_5m=2.5, cache_write_1h=4, cache_read=.1),
     'claude-opus-5-5': dict(input=4, output=20, cache_write_5m=5, cache_write_1h=8, cache_read=.2)}
@@ -970,12 +977,12 @@ def pi_native_sessions(since, root_glob=None):
             if not isinstance(rec, dict): continue
             if rec.get('type') == 'custom' and rec.get('customType') == 'auth-provenance':
                 data = rec.get('data')
-                if not isinstance(data, dict) or data.get('provider') != 'anthropic' or data.get('confidence') != 'configuration_snapshot':
+                if not isinstance(data, dict) or data.get('provider') not in ('anthropic', 'openai') or data.get('confidence') != 'configuration_snapshot':
                     continue
                 rid, model, billing_class = (data.get(k) for k in ('responseId', 'model', 'billing_class'))
                 if all(isinstance(v, str) and v for v in (rid, model)):
                     known = billing_class in ('oauth', 'api_key', 'bearer', 'unknown')
-                    s['auth'][rid, model].add(billing_class if known else 'unknown')
+                    s['auth'][data['provider'], rid, model].add(billing_class if known else 'unknown')
                 continue
             m = rec.get('message')
             if rec.get('type') != 'message' or not isinstance(m, dict) or m.get('role') != 'assistant': continue
@@ -987,7 +994,7 @@ def pi_native_sessions(since, root_glob=None):
             seen.add(call_id)
             s['responses'].append(dict(call_id=call_id, response_id=rid, provider=m.get('provider'),
                                        model=m.get('responseModel') or m.get('model'), usage=u, ts=rec.get('timestamp'),
-                                       stop=m.get('stopReason'), source=f'{path}:{n}'))
+                                       stop=m.get('stopReason'), service_tier=m.get('serviceTier'), source=f'{path}:{n}'))
     for s in sessions.values():
         p = s['parent_path']
         if not p: continue
@@ -1023,6 +1030,40 @@ def pi_native_call(r, sid, pools, billing):
     annotate_call_measurements(row)
     return row
 
+def pi_native_openai_call(r, sid, billing_class):
+    """Map Pi's disjoint token buckets to Responses usage (input includes cache)."""
+    model = r['model'] if isinstance(r['model'], str) else None
+    pu = r['usage']
+    buckets = ('input', 'cacheRead', 'cacheWrite', 'output', 'reasoning')
+    valid = valid_usage(pu, buckets, buckets[:-1]) and valid_timestamp(r['ts'])
+    u, price = {}, None
+    if valid:
+        i = pu['input'] + pu['cacheRead'] + pu['cacheWrite']
+        u = dict(input_tokens=i, cached_input_tokens=pu['cacheRead'], cache_write_input_tokens=pu['cacheWrite'],
+                 output_tokens=pu['output'], reasoning_output_tokens=pu.get('reasoning', 0), total_tokens=i + pu['output'])
+        valid = valid_usage(u, CODEX_KEYS)
+        if valid: price = codex_usd(u, model)
+    oauth = billing_class == 'oauth'
+    billing = ('chatgpt_oauth_observed' if oauth else 'api_key_observed' if billing_class == 'api_key'
+               else 'possible_api_spend')
+    tier = r['service_tier'] if isinstance(r['service_tier'], str) else None
+    row = dict(provider='pi', ts=r['ts'], call_id=r['call_id'],
+               dedupe_basis='response_id' if r['response_id'] else 'pi_entry', thread=sid, parent_thread=None,
+               agent_path=None, originator='pi_session', model=model, effort=None, role_index=None, role_heuristic=None,
+               usage=u, weighted=codex_weighted(u) if valid else None, usd=price, source=r['source'],
+               usd_low=0 if price is not None and billing == 'possible_api_spend' else price, usd_high=price,
+               pools=[] if oauth else ['pi_api'], service_tier=tier, quota_multiplier=API_TIER_MULTIPLIER.get(tier),
+               requested_tier=None, lane=billing, billing=billing, cache_write_basis='pi_session',
+               latency_s=None, latency_basis='pi_session_usage')
+    annotate_call_measurements(row)
+    if price is None and not oauth:
+        issue('unpriced_call', source=r['source'], reason='Pi OpenAI session usage: no rate or invalid usage')
+    if billing == 'possible_api_spend':
+        issue('pi_openai_billing_unconfirmed', source=r['source'],
+              possible_api_usd_high=row['speed_adjusted_api_usd_high'])
+    return row
+
+
 def pi_native_join(claude, sessions, skip=()):
     """Attribute Claude Code rows to the Pi sessions whose claude-sdk calls they are; return calls priced from Pi.
 
@@ -1051,10 +1092,14 @@ def pi_native_join(claude, sessions, skip=()):
         if pending and last: folded[last] += pending
     extra = []
     for call_id, (sid, r) in owner.items():
-        if r['provider'] == 'anthropic':
-            classes = sessions[sid]['auth'].get((r['response_id'], r['model'])) if isinstance(r['model'], str) else None
+        if r['provider'] in ('anthropic', 'openai'):
+            key = (r['provider'], r['response_id'], r['model'])
+            classes = sessions[sid]['auth'].get(key) if isinstance(r['model'], str) else None
             billing_class = next(iter(classes)) if classes and len(classes) == 1 else None
-            extra.append(pi_native_call(r, sid, *PI_ANTHROPIC_BILLING.get(billing_class, PI_ANTHROPIC_UNCERTAIN)))
+            if r['provider'] == 'openai':
+                extra.append(pi_native_openai_call(r, sid, billing_class))
+            else:
+                extra.append(pi_native_call(r, sid, *PI_ANTHROPIC_BILLING.get(billing_class, PI_ANTHROPIC_UNCERTAIN)))
             continue
         if r['provider'] != 'claude-sdk':
             issue('pi_provider_unpriced', source=r['source'], provider=r['provider']); continue

@@ -156,6 +156,37 @@ class PiNative(unittest.TestCase):
                 for pool in ('pi_api', 'claude_extra_usage'):
                     self.assertEqual(root[pool]['calls'], int(pool in pools))
 
+    def test_openai_pricing_and_api_pool_routing(self):
+        model = 'gpt-6.2-sol'
+        self.root(provenance=[auth('msg_D', 'oauth')])
+        with open(self.root_file, 'a') as f:
+            for rid in ('api', 'oauth', 'missing', 'conflict', 'no-rate'):
+                f.write(pi_msg(rid, at(7), 'openai', 180, 10, cr=800, cw=20,
+                               model=model if rid != 'no-rate' else 'unpriced') + '\n')
+            for rid, billing_class in [('api', 'api_key'), ('oauth', 'oauth'),
+                                       ('conflict', 'oauth'), ('conflict', 'api_key')]:
+                f.write(auth(rid, billing_class, provider='openai', model=model) + '\n')
+            # An Anthropic entry for the right id/model can't establish OpenAI billing.
+            f.write(auth('missing', 'oauth', model=model) + '\n')
+        sessions = L.pi_native_sessions(None, self.root_file)
+        rows = {r['call_id']: r for r in L.pi_native_join([], sessions)}
+        self.assertEqual((rows['oauth']['billing'], rows['oauth']['pools']), ('chatgpt_oauth_observed', []))
+        for rid, billing in [('api', 'api_key_observed'), ('missing', 'possible_api_spend'),
+                             ('conflict', 'possible_api_spend')]:
+            r = rows[rid]
+            self.assertEqual((r['billing'], r['pools']), (billing, ['pi_api']))
+            self.assertEqual(r['usage']['input_tokens'], 1000)
+            self.assertEqual(r['usage']['total_tokens'], 1010)
+            self.assertAlmostEqual(r['usd'], .00059)
+            self.assertAlmostEqual(r['speed_adjusted_api_usd_low'], .00059 if rid == 'api' else 0)
+            self.assertAlmostEqual(r['speed_adjusted_api_usd_high'], .001475)
+        tree = self.tree([{'session_id': ROOT, 'provider': 'pi', 'from': T0}])
+        pools = tree['nodes'][0]['direct']
+        self.assertEqual((pools['pi_api']['calls'], pools['pi_api']['unpriced_calls']), (4, 1))
+        self.assertAlmostEqual(pools['pi_api']['quota_usd_high'], .001475 * 3)
+        self.assertEqual(pools['codex']['calls'], 0)
+        self.assertEqual(sum(i['kind'] == 'pi_openai_billing_unconfirmed' for i in tree['issues']), 3)
+
     def test_complete_when_every_call_is_priced(self):
         self.root()
         tree = self.tree([{'session_id': ROOT, 'provider': 'pi', 'from': T0}])
@@ -187,7 +218,9 @@ class PiNative(unittest.TestCase):
 
     def test_user_cap_on_a_pi_child_trips(self):
         import argparse, contextlib, io
-        self.root(); self.child()
+        self.root(provenance=[auth('msg_D', 'oauth')]); self.child()
+        with open(self.root_file, 'a') as f:
+            f.write(pi_msg('msg_openai', at(7), 'openai', 100, 10, model='gpt-6.2-sol') + '\n')
         rec = os.path.join(self.d, 'record.json')
         with open(rec, 'w') as f:
             json.dump({'scope_budget': {'objective_id': 'o', 'started_at': T0,
