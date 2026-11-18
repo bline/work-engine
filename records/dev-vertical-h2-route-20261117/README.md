@@ -197,8 +197,13 @@ Changes (`work-engine-manual-host`, its receiver, harness):
   analysis profile, model `claude-haiku-5-5`, priced from Pi's
   `anthropic.json`. Full reservation 945 001 µUSD per request (1M context,
   128k output, upper tier); Messages analysis budget ceiling 32 000 000 µUSD.
-  Pi's own `anthropic` provider is not offered: pi-ai 1.5.0's Anthropic client
-  takes no fetch override. A `claude-sdk` plan may instead route to the
+  Pi's own `anthropic` provider is not offered yet. Its client does accept a
+  fetch override (`pi-ai` `api/anthropic-messages.js` passes `options.fetch`
+  to the Anthropic SDK), so the receiver's existing fetch interception could
+  serve it; it was left out because its API-key route bills API credits and
+  its OAuth route would make Pi a third-party client (correction: an earlier
+  revision of this record said the client takes no fetch override, which was
+  checked in the wrong file). A `claude-sdk` plan may instead route to the
   API-key endpoint, because both endpoints receive the same body.
 - **Endpoints.** `https:anthropic-oauth` (Claude Code's credentials file,
   read again before every connection; every token seen is screened) and
