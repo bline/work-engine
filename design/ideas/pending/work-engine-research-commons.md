@@ -21,7 +21,7 @@ Members and other users execute Work Engine locally or on infrastructure of thei
 
 Participating installations can contribute bounded inference capacity and eligible coding tasks to centrally coordinated research programs. Those contributions generate experimental evidence that benefits the wider network.
 
-Members support the research through dues, research contributions, or both. Contributions are recorded in a transparent ledger, and members become more vested the more they contribute. Earlier access to new releases is one possible membership benefit; established research eventually becomes available to everyone.
+Members support the research through dues, research contributions, or both. Verified contributions create durable standing in a privacy-conscious, auditable ledger; any benefits or governance rights associated with that standing require separately published rules. Earlier access to qualified releases is one possible membership benefit, not a requirement; established research ultimately becomes available to the community under a defined publication policy.
 
 **The core proposition is that participants collectively finance and perform research whose findings improve the engineering work they already undertake.**
 
@@ -42,14 +42,11 @@ They may conduct their own experiments, maintain their own research findings, an
 The Commons must not depend on deliberately crippling the open-source version.
 
 ### 2.2 Knowledge becomes broadly accessible
-
-Qualified research improvements advance through release tiers.
-
-Paid members receive earlier access, while free members eventually receive the same established research releases.
+Qualified research should become broadly accessible under a published, versioned release policy. Early access for supporting members is one possible model; tiered releases are optional, not a condition of the Commons.
 
 Member support funds research freshness and ongoing research operations, not permanent exclusion from accumulated knowledge.
 
-Material corrections, withdrawals, and validity updates are not artificially delayed for lower tiers.
+Material corrections, withdrawals, and validity updates are not artificially delayed by membership status or release tier.
 
 ### 2.3 Research participation is bounded and consensual
 
@@ -345,7 +342,7 @@ Whichever mechanism is adopted, the system should preserve local authority, repr
 
 ## 7. Membership and Research Release Tiers
 
-*This section is one candidate funding model, retained for reference. It predates the vested-membership framing (§8) and may be simplified or dropped; tiered release access is not required by the Commons.*
+*This section is an optional, illustrative funding model retained for comparison. It predates the vested-membership framing (§8). No particular release tier, price, discount, or delay is a present commitment; a simpler supporter-membership model may replace it.*
 
 The candidate model has three intelligence membership tiers, alongside unrestricted standalone use of the open-source engine.
 
@@ -397,11 +394,11 @@ Organization memberships could be introduced later for centralized administratio
 
 ### Fairness guarantee
 
-Research access is delayed, not permanently withheld.
+If tiered releases are adopted, access to established research may be delayed but is not permanently withheld.
 
 Validity corrections, critical withdrawals, and necessary safety updates propagate without artificial tier delays.
 
-A free member may have older decision capabilities, but should not be given knowingly false validity information about those capabilities.
+No participant or independent user should be given knowingly false validity information about older decision capabilities, whether or not release tiers are adopted.
 
 ---
 
@@ -438,12 +435,20 @@ Member support pays for:
 The distributed network reduces the need to purchase every experimental workload centrally, but does not eliminate the cost of rigorous research.
 
 ### Funding objective
+The initial objective is to cover one full-time maintainer, necessary infrastructure, and research operations, not to generate profit. Member-supplied inference resources may lower experimental costs but do not themselves pay salaries or service bills.
 
-The initial objective is to cover infrastructure and one full-time maintainer salary, not to generate profit.
+Illustratively, an annual operating requirement of roughly $150k for compensation, taxes, infrastructure, and research operations **before deductions from gross dues** would require about 1,400 members paying $9 per month, 830 at $15, or 520 at $24. These are gross-receipt illustrations, not validated membership forecasts.
 
-Illustratively, at roughly $150k per year including taxes, infrastructure, and platform fees, that requires about 1,400 supporting members at $9 per month, about 830 at $15, or about 520 at $24. These figures are planning arithmetic, not validated estimates.
+A transparent planning model should separately report:
 
-The Commons is sustainable when members' measured savings and improvements clearly exceed what they contribute.
+- **Gross recurring dues:** billed memberships multiplied by their actual prices, after membership mix and discounts.
+- **Net collected cash:** dues actually collected, less payment-processing and platform deductions, refunds, and chargebacks. Do not deduct any fee a second time if it is already included in the operating requirement.
+- **Operating coverage:** net cash available against maintainer compensation, taxes, infrastructure, research operations, and other documented cash obligations.
+- **Operating reserve:** liquid funds held against a published reserve target (for example, three months of projected obligations), accounted for separately from current spending capacity.
+
+As a sensitivity example, if net collections equal 85% of gross billed dues after deductions **not already included in the $150k operating requirement**, funding $150k of annual cash obligations would require about 1,634 supporting members at $9, 981 at $15, or 613 at $24 per month, before any additional reserve accumulation. The 85% factor is an illustrative stress assumption, not a forecast. Churn and uneven payment timing need separate treatment.
+
+The Commons is sustainable when members' measured savings and improvements clearly exceed what they contribute, and recurring cash support covers actual obligations with a prudent reserve.
 
 Possible funding channels, usable before any distributed network exists:
 
@@ -464,29 +469,29 @@ Incomplete experiments, negative outcomes, and documented refusals may provide i
 Discounts should be bounded so that research participation cannot inadvertently create unsustainable liabilities.
 
 ### Vested membership and transparent accounting
+Members are participants, not merely clients. Verified contributions establish **recorded contribution standing**. That standing is a historical accounting fact; it does not by itself grant votes, an economic share, equity, profit participation, or future charter rights. Any current privileges must be separately defined and versioned.
 
-Members are participants, not clients. The more a member contributes, the more vested they become.
+The accounting system should be append-only and independently auditable, with **restricted evidence custody** separated from a **privacy-safe public projection**:
 
-The contribution ledger is fully transparent:
+- **Durable receipts.** Each accepted contribution has an attributable, content-bound receipt under an explicit disclosure scope. Corrections append records rather than rewriting historical evidence.
+- **Recomputable valuation.** Given the authorized receipt set and published valuation-rule revision, standing is a deterministic projection, not an administrator-assigned number. A public summary can verify disclosed arithmetic; it does not imply that private source evidence is publicly accessible or independently established.
+- **Explicit revisions.** Valuation-rule changes create new revisions, expose which revision produced each reported standing, and disclose whether historical contributions are revalued.
+- **Privacy-aware transparency.** Public projections use minimally identifying or pseudonymous references and appropriately aggregated contribution classes or values. Exact task descriptions, project metadata, sensitive evidence and raw evidence digests are not published by default; even hashes and timestamps can reveal information.
+- **Separate meanings.** Scientific evidence and qualification, contribution valuation, and governance entitlements are distinct records and decision owners. A valid contribution receipt does not establish scientific truth or automatically confer authority.
+- **Independent checks.** Where public disclosure is unsafe, qualified independent auditors can check restricted evidence under consented access controls. Public reproducibility of ledger arithmetic must not be misrepresented as public verification of all underlying contributions.
 
-- **Append-only and public.** Each entry is a contribution receipt referencing the evidence or support it represents.
-- **Recomputable.** Any member's vesting is a deterministic projection of ledger receipts under a published, versioned valuation rule, not an assigned number.
-- **Explicit revisions.** Valuation-rule changes are new revisions, and the ledger records which revision produced each standing.
-- **Privacy-preserving.** Public entries carry contribution class, value, and evidence digest, not task descriptions or project details (§9).
+Financial income and expenses, including aggregate maintainer compensation, should be publicly accountable without disclosing personal payment details or protected participant information.
 
-Financial income and expenses, including the maintainer salary, are equally public.
+Transparency makes valuation disputes reviewable, not absent. Open questions include:
 
-Transparency makes valuation disputes auditable, not absent. Open questions:
+- What recorded standing grants today, and what a future charter may choose to grant.
+- Whether voting privileges are permanent, decay, or combine both, and how contribution points are capped.
+- Whether a new valuation-rule revision re-scores earlier contributions.
+- Whether financial support counts alongside research capacity and qualified evidence, without allowing money to buy scientific conclusions.
+- How member eligibility, identity uniqueness, restricted audits, disputes, and pseudonymous public reporting are governed.
+- What legal form, if any, applies to future economic rights; cooperative and securities law may require professional review.
 
-- What vesting confers: governance voice only, or also an economic share.
-- Whether vesting is permanent, decays, or combines both.
-- Whether valuation-rule changes re-score past contributions.
-- Whether financial support counts as contribution alongside research capacity and evidence.
-- What legal form applies if vesting ever carries economic rights; cooperative and securities law may apply and require legal review.
-
-**Pre-charter commitment.** A charter is needed only if the Commons grows beyond one maintainer. Before the first outside contribution, publish a short commitment: contributions are recorded now under published rules; any future charter will honor recorded standing; and what standing currently does and does not confer.
-
----
+**Pre-charter commitment.** Before accepting outside contributions, publish the receipt, valuation, disclosure, and dispute rules and state exactly which privileges currently exist. Preserve verified contributions and their original valuation provenance; later changes must be visible as versioned decisions, not silent rewrites. A future charter must address recorded contributions explicitly, but neither contribution history nor this proposal promises future ownership, economic rights, or permanent voting rights.
 
 ## 9. Privacy, Trust, and Research Integrity
 
@@ -557,12 +562,14 @@ Governing separations:
 - **Members vote on what is worth investigating. They do not vote on what is scientifically true.** Qualification still depends on evidence, independent review, and established acceptance criteria.
 - **A mandatory maintenance budget is reserved.** Requalification of drifting or contradicted claims does not have to win a vote.
 - **Money does not buy voice by default.** Voting weight follows verified research contribution; whether financial support also counts is an open question (§8).
+- **Voting eligibility and uniqueness are enforced.** One baseline vote belongs to each eligible member, not each account; governance-approved identity controls must prevent multi-account voting and counting the same contribution repeatedly. Eligibility verification need not expose a public legal identity.
+- **Unqualified voting remains advisory.** Until the identity, duplicate-contribution, dispute, and manipulation controls are tested, board results inform priorities without binding the research budget.
 
 Candidate weighting: every member receives a baseline vote, increased by verified contribution with diminishing returns and a cap. One illustrative form is `1 + sqrt(contribution_points)`, capped at 5×; the exact function requires governance testing.
 
 Contribution points reward verified research value, not tokens spent. Invalidating an incorrect optimization, reproducing an existing result, identifying an unknown limitation, or supplying a missing workload population all earn credit. Rewarding consumption would incentivize burning inference to buy influence.
 
-The board also yields a live demand and feasibility signal: which questions members care about, which members can actually supply qualifying workloads, and where existing evidence is already sufficient to start an experiment.
+The board also yields a live demand and feasibility signal: which questions members care about, which members can actually supply qualifying workloads, and where existing evidence is already sufficient to start an experiment. A popular proposal still requires a feasible protocol, qualified resources, and an authorized research budget before execution.
 
 ---
 
@@ -572,9 +579,11 @@ The original concept centered on proprietary research results feeding decision p
 
 The cooperative model refines that distinction.
 
-The Commons may keep frontier research, aggregation methods, decision-selection intelligence, and publication infrastructure unreleased for a period.
+The Commons may temporarily withhold preliminary research, participant-private evidence, internal operational details, and portions of its publication infrastructure, consistent with consent and explicit release terms. Such confidentiality must not be confused with qualification.
 
-However, qualified releases ultimately move toward community availability under defined terms.
+A result presented as independently qualified must disclose sufficient protocol, methodology, provenance, applicability limits, and competing evidence for its claimed conclusion to be scrutinized or reproduced. Where underlying inputs cannot be public, an appropriately independent, scoped audit may establish only the claims it actually checks. Opaque proprietary aggregation or selection logic that has not been independently evaluated must remain an attributed recommendation with disclosed limits, not a claim of independently verified scientific truth.
+
+Qualified releases ultimately move toward community availability under defined terms.
 
 The Commons' durable value is therefore not exclusive possession of any single discovery.
 
@@ -652,7 +661,7 @@ Demonstrate automatic identification of findings requiring revalidation and corr
 
 ### Phase E — Validate member support
 
-Introduce experimental memberships and release tiers.
+Introduce experimental member-support arrangements; test whether optional release tiers add enough value to justify their complexity.
 
 Measure actual member value, contribution participation, retention, and willingness to support.
 
@@ -686,7 +695,7 @@ The existing open-source engineering roadmap should not be subordinated to prema
 
 **Availability:** Central service outages must not unnecessarily interrupt local development.
 
-**Release policy:** The exact delay between tiers, guarantees of eventual availability, and licensing of published research require formal definition.
+**Release policy:** Publication timing, the guarantee of eventual public availability, licensing, and—only if tiers are adopted—tier delays require formal definition.
 
 **Decision location:** The balance between locally distributed policy bundles and centrally evaluated recommendations remains an architectural choice.
 
@@ -696,7 +705,9 @@ The existing open-source engineering roadmap should not be subordinated to prema
 
 **Causal validity:** Real coding tasks vary in difficulty, user intervention, model behavior, and environment. Assigned comparisons must separate genuine improvement from selection bias, easier tasks, differing environments, and favorable randomness.
 
-**Governance manipulation:** Contribution-weighted voting invites contribution farming, sybil accounts, and coordinated agenda capture.
+**Governance manipulation:** Contribution-weighted voting invites contribution farming, sybil accounts, repeated credit for the same evidence, and coordinated agenda capture; identity verification must be compatible with member privacy.
+
+**Contribution-ledger disclosure:** Public receipts, digests, and activity timing can reveal participant relationships or private work even without raw code; privacy-safe projection and restricted independent audits require explicit design.
 
 **Portability:** Research crates currently depend on native Git, filesystem, and SQLite; Wasm hosting requires a deliberate core/adapter split.
 
@@ -714,7 +725,7 @@ A central research organization identifies what needs to be learned, coordinates
 
 Members sustain this work through dues, bounded research contributions, or both, and become more vested the more they contribute.
 
-New discoveries become available to paying members first and ultimately enter the shared body of community knowledge.
+Qualified discoveries ultimately enter the shared body of community knowledge. Supporting members may receive earlier access if a tiered-release policy is later adopted.
 
 As the compiler and execution architecture mature, an increasing portion of research advancement may occur through qualified decision-policy updates rather than architectural changes.
 
