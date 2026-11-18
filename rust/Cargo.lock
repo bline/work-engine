@@ -4470,6 +4470,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "work-engine-review-hosted"
+version = "0.1.0"
+dependencies = [
+ "regex",
+ "review-episode-core",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
+ "work-engine-organization",
+ "work-engine-review-delivery",
+ "work-engine-review-preparation",
+]
+
+[[package]]
 name = "work-engine-review-preparation"
 version = "0.1.0"
 dependencies = [

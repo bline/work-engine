@@ -1,0 +1,33 @@
+[package]
+name = "work-engine-review-hosted"
+description = "Hosted review adapter for the Pi analysis profile: prepares the job inputs of one read-only implementation-review/v1 job (versioned requirements revision, prepared and frozen contract, digest-pinned task, git-verified subject snapshot) and checks a returned answer into a non-consumable owner_pending envelope. Route qualification only: mints no authority, establishes no condition, admits nothing."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "work_engine_review_hosted"
+path = "src/lib.rs"
+
+[[bin]]
+name = "review-job-inputs"
+path = "src/bin/review-job-inputs.rs"
+
+[[bin]]
+name = "review-result-check"
+path = "src/bin/review-result-check.rs"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+regex = "=1.13.1"
+review-episode-core = { path = "../review-episode-core" }
+work-engine-organization = { path = "../work-engine-organization" }
+work-engine-review-preparation = { path = "../work-engine-review-preparation" }
+work-engine-review-delivery = { path = "../work-engine-review-delivery" }
+
+[dev-dependencies]
+tempfile = "=3.27.0"

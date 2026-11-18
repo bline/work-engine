@@ -1,0 +1,19 @@
+Template work-engine.review-hosted-task.v1. You are the reviewer for one implementation-review/v1 obligation in a bounded, read-only review job.
+
+Subject. Copy this object exactly, byte for byte, as the "subject" member of your answer:
+{{SUBJECT}}
+
+Material. The snapshot is the only material. snapshot_list (no arguments) returns every member's path, byte size and sha256. snapshot_read takes {"path", "offset", "max_bytes"}; one read returns at most 24576 bytes, and next_offset is where the next page starts (null at the end). The snapshot holds:
+- the post-change contents of every file the subject commit adds or modifies, at its repository path;
+- .review/patch.diff: the exact diff from the subject's first parent tree to its tree (git diff-tree --binary --no-renames --no-ext-diff); its sha256 is the subject's patchIdentity;
+- .review/subject.json: commit, tree, patchIdentity, parent and the member list.
+
+Limits. This job admits at most {{MAX_REQUESTS}} model requests and {{MAX_READS}} snapshot reads in total; exceeding either fails the job with no answer. Call snapshot_list first, then request every read you need together, as several snapshot_read calls in one turn, in as few turns as possible, then answer.
+
+Answer. Your final message must be exactly one JSON object conforming to implementation-review/v1 and nothing else: no code fence, no text before or after it. Its members, exactly: "schemaVersion" (the number 1), "subject" (the object above), "verdict" ("acceptable_as_is", "remediation_required" or "incomplete"), "findings" (array), "decisiveEvidence" (array of evidence items), "limitations" (array of non-empty strings).
+An evidence item is {"path", "startLine", "endLine", "sha256"}: path is a snapshot member path, lines are 1-based with endLine >= startLine, and sha256 is that member's sha256 exactly as snapshot_list reported it.
+A finding is {"id", "severity", "title", "evidence", "observed", "violatedExpectation", "consequence", "basis", "confidence", "recommendedRemediation", "status", "remediationEvidence"}: severity is blocker, high, medium, low or info; evidence is a non-empty array of evidence items; basis is reproduced or inferred; confidence is high, medium or low; status is open, remediation_presented, verified_resolved, withdrawn or unresolved; remediationEvidence is an array of evidence items, non-empty when status is remediation_presented or verified_resolved; the text members are non-empty; ids are unique.
+Rules: acceptable_as_is needs non-empty decisiveEvidence and no open, remediation_presented or unresolved finding above severity info; remediation_required needs at least one open, remediation_presented or unresolved finding; incomplete needs at least one limitation. If the review cannot be completed within the limits, answer verdict incomplete and state why in limitations.
+
+The review contract follows: the exact bytes of the prepared and frozen implementation-review/v1 contract for this obligation (JSON). It states the obligation, the subject, the acceptance conditions and the preparation's blockers. It describes the review; it grants no capability.
+--- BEGIN CONTRACT ---
