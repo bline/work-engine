@@ -1,0 +1,155 @@
+{
+  "scope_budget": {
+    "schema": "manual-orchestration.scope-budget.v2",
+    "objective_id": "be25b55a-5160-4cd8-8cfc-dc52cb2f6e9f",
+    "sessions": [],
+    "bindings": [
+      {
+        "session_id": "d77a571a-a4a4-4d7f-b240-756a57799767",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T20:11:15Z",
+        "bound_by": "supervisor",
+        "reason": "S1 builder Opus high"
+      },
+      {
+        "session_id": "48d0ad85-98e4-4463-860d-cdeab2996839",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T20:11:15Z",
+        "bound_by": "supervisor",
+        "reason": "D1 owners design Opus high"
+      },
+      {
+        "session_id": "844517ab-647c-453d-b54b-b09f061461f7",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T20:33:53Z",
+        "bound_by": "supervisor",
+        "reason": "S1 review Opus xhigh"
+      },
+      {
+        "session_id": "ed6581ce-4b66-4bf4-8756-6980448e7010",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T20:57:16Z",
+        "bound_by": "supervisor",
+        "reason": "S1 remediation-1 Sonnet high"
+      },
+      {
+        "session_id": "024e5c8e-5983-41a6-b547-d222b09e3ac9",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-17T21:08:01Z",
+        "bound_by": "supervisor",
+        "reason": "S1 recheck Fable high"
+      },
+      {
+        "session_id": "57f0de5c-1513-4049-8b21-31cbaadc39e0",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-18T00:08:55Z",
+        "bound_by": "supervisor",
+        "reason": "S1 remediation-2 Sonnet high"
+      },
+      {
+        "session_id": "f336a6ef-5019-4ac9-a2bd-50f3fd4d7608",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-18T00:16:44Z",
+        "bound_by": "supervisor",
+        "reason": "S1 recheck-2 Fable high"
+      },
+      {
+        "session_id": "4e953df0-3321-40c5-90eb-fb11aaa86278",
+        "provider": "claude",
+        "parent_session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "bound_at": "2026-11-18T00:19:49Z",
+        "bound_by": "supervisor",
+        "reason": "S1 recheck-2 resume to write verdict"
+      }
+    ],
+    "cost_limits": [
+      {
+        "pool": "claude_all_models",
+        "node": null,
+        "max_usd": 32.0,
+        "marks_usd": [],
+        "set_by": "user",
+        "set_at": "2026-11-18T00:06:57Z",
+        "reason": "Operator 2026-11-17 ~21:30Z D1/S1 (a): up to $5 more for multi-obligation negative control + mutation kill + Fable recheck; prospective aggregate ceiling $32 accounting for observed $26.20; overrun over prior $25 NOT retroactively normalized (failed cap-stops: claude stop needs short id)",
+        "basis": "speed_adjusted_api_usd"
+      }
+    ],
+    "objective": "Post-R2 hardening (fixture) + owner-naming design pass",
+    "original_items": [
+      "Step 1 hardening slice: consume_fixture_result requires gate-issued proof; review-delivery test_support behind separate non-default feature; delivery regate revision carried into Delivered; S-B mutants M1-M11 re-established on corrected code",
+      "Step 2 design pass (read-only, Opus): owners for 3 O7 mapping rules + organization anchor record; ends in operator decisions"
+    ],
+    "started_at": "2026-11-17T20:08:05Z",
+    "weekly_at_start": null,
+    "limits": {},
+    "limits_set_by": "user",
+    "limits_reason": "Operator 2026-11-17T20:06Z 'Proceed' on root recommendations: steps 1+2 under $20; step 3 decided after O7 owners; R3, S-C deferred; Claude subscription (claude-sdk namespace equivalent)",
+    "limit_history": [
+      {
+        "cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 20.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-17T20:08:05Z",
+          "reason": "Operator 2026-11-17T20:06Z 'Proceed' on root recommendations: steps 1+2 under $20; step 3 decided after O7 owners; R3, S-C deferred; Claude subscription (claude-sdk namespace equivalent)",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 25.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-17T20:56:31Z",
+          "reason": "Operator 2026-11-17 'Yes top up' (+$5) for S1 remediation + Fable recheck",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 20.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-17T20:08:05Z",
+          "reason": "Operator 2026-11-17T20:06Z 'Proceed' on root recommendations: steps 1+2 under $20; step 3 decided after O7 owners; R3, S-C deferred; Claude subscription (claude-sdk namespace equivalent)",
+          "basis": "speed_adjusted_api_usd"
+        }
+      },
+      {
+        "cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 32.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-18T00:06:57Z",
+          "reason": "Operator 2026-11-17 ~21:30Z D1/S1 (a): up to $5 more for multi-obligation negative control + mutation kill + Fable recheck; prospective aggregate ceiling $32 accounting for observed $26.20; overrun over prior $25 NOT retroactively normalized (failed cap-stops: claude stop needs short id)",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 25.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-17T20:56:31Z",
+          "reason": "Operator 2026-11-17 'Yes top up' (+$5) for S1 remediation + Fable recheck",
+          "basis": "speed_adjusted_api_usd"
+        }
+      }
+    ],
+    "additions": []
+  }
+}

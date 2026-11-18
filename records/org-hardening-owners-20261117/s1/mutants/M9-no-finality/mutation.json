@@ -1,0 +1,18 @@
+{
+ "mutant": "M9-no-finality",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery/src/gate.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "eaa57bf8baee3ffe8461ac0ae04180f874db6d9321d88a25c6eeca673e7ab3a2",
+   "mutated_sha256": "673c1e9f47f109139c84df4ac7a2e4d21b27efc7d7a688abc1ca29942bfe7158"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery/src/gate.rs",
+   "old": "        if let Some(settled) = &self.settled {\n            return (settled.clone(), None);\n        }\n",
+   "new": ""
+  }
+ ]
+}

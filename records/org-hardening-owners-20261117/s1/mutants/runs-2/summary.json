@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutant-plan-2.json",
+  "plan_sha256": "08315cd6e4d92ad865171bc3744aeabc88154bcf685fb05aa0569f7dd021f95c",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "pre-hashes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-2/pre-hashes.json",
+      "record_sha256": "5ba18b9fad1c2e1248ead24e8dc07895c2348d654558e6b05e32f5cb9cef1535",
+      "leftovers": 0
+    },
+    {
+      "name": "M6-replay-admission-observation.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-2/M6-replay-admission-observation.apply.json",
+      "record_sha256": "97bbf334242cce45ce0ce9d083d69797706a2d7f2295c8af09cc2251d770eca9",
+      "leftovers": 0
+    },
+    {
+      "name": "M6-replay-admission-observation.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-2/M6-replay-admission-observation.test0.json",
+      "record_sha256": "ce0bcd1eb57e51c46742947dfab6e51d9fb2b9dcc67fc14b6c5349cba96a1dd1",
+      "leftovers": 0
+    },
+    {
+      "name": "M6-replay-admission-observation.test1",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-2/M6-replay-admission-observation.test1.json",
+      "record_sha256": "cdb2e5864d6d127858e255249baa5d1542b94856bec6b8412e084d3c35d30e93",
+      "leftovers": 0
+    },
+    {
+      "name": "M6-replay-admission-observation.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-2/M6-replay-admission-observation.restore.json",
+      "record_sha256": "251e385aa7558dbe70df0639488a0ee2baebc4e897a440fc9fab90d41e7fe9a2",
+      "leftovers": 0
+    },
+    {
+      "name": "final-hashes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-2/final-hashes.json",
+      "record_sha256": "4df88bed7e95802d003ed08e3e0b6e52843832f32c8553585360986e3d054fc6",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

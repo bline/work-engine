@@ -1,0 +1,18 @@
+{
+ "mutant": "S1-P4-missing-proof-accepted",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-preparation/src/fixture.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "30835c77bcdd9b924ae002d75e05e84c592c0acfae30c81953ae49b798500eb5",
+   "mutated_sha256": "a1944c3b952f1dbae7156dca256e759fbe1f874687d587a11a90a44bfdecaca9"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-preparation/src/fixture.rs",
+   "old": "        other => Err(ConsumeRefusal::GateProofNotCurrent(other)),",
+   "new": "        AdmissionState::Unknown(_) => Ok(GateCheck {\n            boundary: admission.boundary().clone(),\n            admission_revision: admission.revision(),\n            regate_revision: admission.revision(),\n            regate_now_millis: proof.regate_now_millis,\n        }),\n        other => Err(ConsumeRefusal::GateProofNotCurrent(other)),"
+  }
+ ]
+}

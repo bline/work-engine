@@ -1,0 +1,9 @@
+d77a571a-a4a4-4d7f-b240-756a57799767 S1 builder Opus high
+48d0ad85-98e4-4463-860d-cdeab2996839 D1 owners design Opus high
+844517ab-647c-453d-b54b-b09f061461f7 S1 review Opus xhigh
+ed6581ce-4b66-4bf4-8756-6980448e7010 S1 remediation-1 Sonnet high
+024e5c8e-5983-41a6-b547-d222b09e3ac9 S1 recheck Fable high
+a41cc675-e4fb-4ab2-9f01-831a747d711c failed resume of ed6581ce (prompt not delivered; stopped)
+57f0de5c-1513-4049-8b21-31cbaadc39e0 S1 remediation-2 Sonnet high
+f336a6ef-5019-4ac9-a2bd-50f3fd4d7608 S1 recheck-2 Fable high
+4e953df0-3321-40c5-90eb-fb11aaa86278 S1 recheck-2 copy-on-resume of f336a6ef (write verdict)

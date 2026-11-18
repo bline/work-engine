@@ -1,0 +1,4 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/work_engine_review_preparation-85ea83ef39103cf2)
+     Running tests/fixture_consumer.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/fixture_consumer-e50d226c0c7f69ab)
+error: test failed, to rerun pass `-p work-engine-review-preparation --test fixture_consumer`

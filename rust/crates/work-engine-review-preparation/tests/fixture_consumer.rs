@@ -16,16 +16,20 @@ use review_episode_core::reducer::transition;
 use review_episode_core::state::{Phase, ReviewEpisodeState};
 use serde_json::{Value, json};
 use work_engine_organization::OrganizationCandidate;
+use work_engine_organization_authority::{AdmissionState, BoundaryKind, UnknownReason};
 use work_engine_review_preparation::fixture::{
     Acceptance, ConsumeRefusal, EvidenceStanding, FIXTURE_LABEL, FixtureConsumption,
-    FixtureDeclaration, ProductionConsequence, consume_fixture_result, fixture_coverage,
+    FixtureDeclaration, GATE_OBSERVATION_FRESHNESS_ASSERTED_LABEL, GATE_TIME_ASSERTED_LABEL,
+    ProductionConsequence, consume_fixture_result, fixture_coverage,
 };
-use work_engine_review_preparation::{PreparationRefusal, prepare};
+use work_engine_review_preparation::{PreparationRefusal, Subject, prepare};
 
 struct World {
     candidate: OrganizationCandidate,
     declaration: FixtureDeclaration,
     admissions: Vec<Value>,
+    /// The S-A consumption admission for this world and the host's fresh regate observation.
+    gate: gate::Admitted,
 }
 
 fn identity_of(authority: &Value, key: &str) -> Value {
@@ -121,6 +125,7 @@ fn world() -> World {
         candidate,
         declaration,
         admissions,
+        gate: gate::admitted(gate::Ask::default()),
     }
 }
 
@@ -147,6 +152,7 @@ fn try_consume(
         result,
         &[],
         &text(admissions),
+        &w.gate.proof(),
     )
 }
 
@@ -166,6 +172,11 @@ fn consume_with(w: &World, admissions: &[Value]) -> Result<FixtureConsumption, C
 
 /// The refusal for `admissions`, asserting that the input state is unchanged.
 fn refused_with(w: &World, admissions: &[Value]) -> ConsumeRefusal {
+    refused_case("", w, admissions)
+}
+
+/// As [`refused_with`], naming `case` (a loop case) in the failure message when nothing refuses.
+fn refused_case(case: &str, w: &World, admissions: &[Value]) -> ConsumeRefusal {
     let state = begun();
     let before = canonical(&state);
     let error = try_consume(
@@ -177,11 +188,12 @@ fn refused_with(w: &World, admissions: &[Value]) -> ConsumeRefusal {
         &result_json(|_| {}),
         admissions,
     )
-    .expect_err("must be refused");
+    .err()
+    .unwrap_or_else(|| panic!("case `{case}` must be refused"));
     assert_eq!(
         canonical(&state),
         before,
-        "a refusal leaves the input state unchanged"
+        "a refusal leaves the input state unchanged (case `{case}`)"
     );
     error
 }
@@ -621,6 +633,7 @@ fn the_episode_owner_keeps_revision_writer_subject_and_phase_checks() {
         &good,
         &[],
         &text(&w.admissions),
+        &w.gate.proof(),
     )
     .expect_err("second result");
     assert!(
@@ -637,6 +650,7 @@ fn the_episode_owner_keeps_revision_writer_subject_and_phase_checks() {
         &good,
         &[],
         &text(&w.admissions),
+        &w.gate.proof(),
     )
     .expect_err("reported episode");
     assert!(
@@ -726,4 +740,208 @@ fn a_declaration_cannot_change_the_production_preparation() {
             "{id} must remain a blocker"
         );
     }
+}
+
+/// S1 invariant 1 (positive): with an S-A admission for this consumption and a fresh regate
+/// observation, the consumer advances the episode and reports what its proof check found.
+#[test]
+fn s1_a_current_gate_proof_for_this_consumption_lets_the_episode_advance() {
+    let w = world();
+    let consumed = consume_with(&w, &w.admissions).expect("a current proof is consumed");
+    assert_eq!(consumed.state().phase(), Phase::Reported);
+    let gate = &consumed.gate;
+    assert_eq!(gate.boundary.kind(), BoundaryKind::Consumption);
+    assert_eq!(gate.boundary.operation(), gate::OPERATION);
+    assert_eq!(gate.admission_revision, w.gate.admission.revision());
+    assert_eq!(
+        gate.regate_revision,
+        w.gate.admission.revision(),
+        "nothing changed in between"
+    );
+    assert_eq!(gate.regate_now_millis, gate::NOW);
+    assert_eq!(gate.time_label(), GATE_TIME_ASSERTED_LABEL);
+    assert_eq!(
+        gate.caller_asserted_regate_observation_freshness(),
+        "caller_asserted_regate_observation_freshness"
+    );
+    assert_eq!(
+        gate.caller_asserted_regate_observation_freshness(),
+        GATE_OBSERVATION_FRESHNESS_ASSERTED_LABEL
+    );
+}
+
+/// S1 invariant 1: an admission issued for another candidate, subject or boundary kind is refused
+/// before the transition, with the first differing field named, and the input state unchanged.
+///
+/// The consumer's vantage comparison has no case in this test because the frozen candidate has one
+/// obligation: S-A's R2 admits only a vantage the candidate's requirements name, and the frozen
+/// candidate names one, so no admission for another vantage can be minted for it. A candidate with
+/// two obligations names two, and then S-A can admit the second one's vantage for the same
+/// candidate digest and subject; the comparison is load-bearing there and is covered by
+/// `s1_a_gate_proof_for_another_obligations_vantage_is_refused` below.
+/// Each admission below is a real S-A admission (the world admits it), so only the comparison
+/// with the consumer's own inputs refuses it.
+#[test]
+fn s1_a_gate_proof_for_another_candidate_subject_or_boundary_is_refused() {
+    let other_candidate = edited(|v| {
+        for_each_condition(v, |c| {
+            c.as_object_mut().unwrap().remove("realizationConstraints");
+        })
+    });
+    assert_ne!(
+        candidate_from(&other_candidate).content_digest(),
+        candidate().content_digest()
+    );
+    let other_subject = Subject {
+        tree: "1".repeat(40),
+        ..subject()
+    };
+    for (name, ask, field) in [
+        (
+            "other candidate",
+            gate::Ask {
+                requirements: other_candidate,
+                ..Default::default()
+            },
+            "candidate digest",
+        ),
+        (
+            "other subject",
+            gate::Ask {
+                subject: other_subject,
+                ..Default::default()
+            },
+            "subject",
+        ),
+        (
+            "delivery boundary",
+            gate::Ask {
+                kind: BoundaryKind::Delivery,
+                ..Default::default()
+            },
+            "boundary kind",
+        ),
+    ] {
+        let mut w = world();
+        w.gate = gate::admitted(ask);
+        assert_eq!(
+            refused_case(name, &w, &w.admissions),
+            ConsumeRefusal::GateProofMismatch { field },
+            "{name}"
+        );
+    }
+}
+
+const OTHER_DIGEST: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+const SECOND_OBLIGATION: &str = "rp3-second-implementation-review";
+const SECOND_CONDITION: &str = "cond-second-campaign";
+
+/// The frozen requirements plus a second obligation with its own campaign-boundary condition,
+/// derived the way `tests/preparation.rs` `with_second_obligation` does. The candidate then
+/// carries two vantage requirements (one per obligation).
+fn two_obligation_requirements() -> Vec<u8> {
+    edited(|v| {
+        v["obligations"].as_array_mut().unwrap().push(json!({
+            "id": SECOND_OBLIGATION,
+            "kind": "candidate_review",
+            "subject": "campaign_candidate",
+            "resultContract": {"id": "implementation-review", "version": 1},
+            "scope": {"digest": OTHER_DIGEST},
+        }));
+        let mut condition = v["acceptanceConditions"][1].clone();
+        assert_eq!(condition["id"], COND_CAMPAIGN);
+        condition["id"] = json!(SECOND_CONDITION);
+        condition["obligation"] = json!(SECOND_OBLIGATION);
+        v["acceptanceConditions"]
+            .as_array_mut()
+            .unwrap()
+            .push(condition);
+    })
+}
+
+/// S1 invariant 1 (vantage), negative control for a multi-obligation candidate. The candidate has
+/// two obligations, so S-A can admit the second obligation's vantage at a Consumption boundary for
+/// the same candidate digest and subject. The declaration names the first obligation. The
+/// consumer's kind, digest, subject and point checks all pass for that admission, so the vantage
+/// comparison alone refuses it. Mutant `S1-P8-vantage-unchecked` deletes that comparison.
+#[test]
+fn s1_a_gate_proof_for_another_obligations_vantage_is_refused() {
+    let requirements = two_obligation_requirements();
+    let second_vantage = format!("vantage:{SECOND_OBLIGATION}");
+    assert_ne!(second_vantage, gate::VANTAGE);
+
+    let mut w = world();
+    w.candidate = candidate_from(&requirements);
+    w.declaration.candidate_content_digest = w.candidate.content_digest().to_hex();
+    assert_eq!(w.declaration.obligation_id, OBLIGATION);
+
+    // Control: the first obligation's vantage, same two-obligation candidate, is consumed. The
+    // refusal below is therefore about the vantage and not about the two-obligation candidate.
+    w.gate = gate::admitted(gate::Ask {
+        requirements: requirements.clone(),
+        bound_vantages: vec![second_vantage.clone()],
+        ..Default::default()
+    });
+    assert_eq!(w.gate.admission.request().vantage(), gate::VANTAGE);
+    let consumed = consume_with(&w, &w.admissions).expect("the first vantage is consumed");
+    assert_eq!(consumed.state().phase(), Phase::Reported);
+
+    // S-A admits the second obligation's vantage for this candidate digest and subject at a
+    // Consumption boundary (`admitted` panics on an S-A refusal). Asserted, so that the refusal
+    // below is the consumer's and not S-A's.
+    w.gate = gate::admitted(gate::Ask {
+        requirements,
+        vantage: second_vantage.clone(),
+        bound_vantages: vec![second_vantage.clone()],
+        ..Default::default()
+    });
+    let request = w.gate.admission.request();
+    assert_eq!(request.vantage(), second_vantage);
+    assert_eq!(request.candidate_digest(), w.candidate.content_digest());
+    assert_eq!(
+        w.gate.admission.boundary().kind(),
+        BoundaryKind::Consumption
+    );
+    assert_eq!(request.subject().commit, subject().commit);
+    assert_eq!(request.subject().tree, subject().tree);
+    assert_eq!(request.subject().patch_identity, subject().patch_identity);
+    assert!(
+        matches!(
+            w.gate
+                .admission
+                .admission_state(&w.gate.observation, w.gate.now),
+            AdmissionState::Current { .. }
+        ),
+        "S-A's own point check finds the second vantage's admission current"
+    );
+
+    assert_eq!(
+        refused_case("second obligation's vantage", &w, &w.admissions),
+        ConsumeRefusal::GateProofMismatch { field: "vantage" }
+    );
+}
+
+/// S1 invariant 1: S-A's point check over the host's regate observation must find the admission
+/// current. A revoked pin, and a missing observation (Unknown), refuse before the transition.
+#[test]
+fn s1_a_gate_proof_that_is_not_current_or_has_no_observation_is_refused() {
+    let mut w = world();
+    let grant = w.gate.owner_grant;
+    w.gate.src.revoke(&grant);
+    w.gate.reobserve();
+    assert_eq!(
+        refused_case("revoked pin", &w, &w.admissions),
+        ConsumeRefusal::GateProofNotCurrent(AdmissionState::Revoked(vec![grant]))
+    );
+
+    let mut w = world();
+    w.gate.src.inject_unknown("write in progress");
+    w.gate.reobserve();
+    assert!(w.gate.observation.is_err(), "no observation exists");
+    assert_eq!(
+        refused_case("no observation", &w, &w.admissions),
+        ConsumeRefusal::GateProofNotCurrent(AdmissionState::Unknown(UnknownReason::NoObservation(
+            "write in progress".into()
+        )))
+    );
 }

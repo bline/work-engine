@@ -4494,6 +4494,7 @@ dependencies = [
  "sha2",
  "thiserror",
  "work-engine-organization",
+ "work-engine-organization-authority",
 ]
 
 [[package]]

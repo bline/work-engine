@@ -1,0 +1,3 @@
+   Compiling work-engine-review-delivery v0.1.0 (/home/bline/cbm-work/org-hardening-owners-20261117/s1/export/rust/crates/work-engine-review-delivery)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.16s
+     Running tests/native_vertical.rs (/home/bline/cbm-work/org-r2-core-20261117/target-export/debug/deps/native_vertical-d22b229a9b617a92)

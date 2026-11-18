@@ -1,0 +1,21 @@
+
+running 16 tests
+test a_boundary_and_consumer_that_merely_match_the_candidate_are_not_a_mapping ... ok
+test s1_a_current_gate_proof_for_this_consumption_lets_the_episode_advance ... ok
+test coverage_is_derived_from_the_obligation_and_the_declared_mapping ... ok
+test removing_a_required_admission_cannot_advance_the_episode ... ok
+test a_declaration_cannot_change_the_production_preparation ... ok
+test an_unsupported_result_contract_is_refused_before_the_gate_or_the_transition ... ok
+test the_episode_core_alone_reaches_reported_without_admissions_so_the_gate_is_what_stops_it ... ok
+test a_substituted_binding_or_reference_cannot_advance_the_episode ... ok
+test a_complete_consistent_admission_set_reaches_the_real_reducer_and_is_only_a_fixture_observation ... ok
+test a_result_with_another_contract_version_is_refused_by_the_episode_owner ... ok
+test non_established_evidence_cannot_advance_the_episode_but_the_reducer_alone_would_record_it ... ok
+test declarations_that_disagree_with_the_candidate_the_subject_or_the_episode_are_refused ... ok
+test s1_a_gate_proof_that_is_not_current_or_has_no_observation_is_refused ... ok
+test s1_a_gate_proof_for_another_candidate_subject_or_boundary_is_refused ... ok
+test s1_a_gate_proof_for_another_obligations_vantage_is_refused ... ok
+test the_episode_owner_keeps_revision_writer_subject_and_phase_checks ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+

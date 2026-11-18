@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "M4-refusal-after-spawn.test0",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "test-support",
+    "--test",
+    "native_vertical",
+    "--",
+    "sb_an_admission_refusal_refuses_before_spawn",
+    "--exact"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hardening-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3726716,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 3728545,
+  "pgid": 3728545,
+  "started_at": "2026-11-17T20:29:39.876285Z",
+  "ended_at": "2026-11-17T20:29:43.800977Z",
+  "duration_s": 3.925,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M4-refusal-after-spawn.test0.stdout",
+    "length": 762,
+    "sha256": "2ff37f9c8bc3e2ee7f8f3510843e0bce0fc8a3fa0e67297bde6b6d504de775b5"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M4-refusal-after-spawn.test0.stderr",
+    "length": 433,
+    "sha256": "c6b5a281cd37c8c9309c3f2e9c461678e2a02962bb2dc6a353e0530a7c29cc97"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

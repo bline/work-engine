@@ -1,0 +1,18 @@
+{
+ "mutant": "S1-P7-delivery-regate-revision-dropped",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery/src/native.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "66169b9cf6a880accf38f6e3087ebb1ede7056483432bef10d465a78983d70fd",
+   "mutated_sha256": "dd69ab49b0f319dd6d7ce038eaa72bc6f9e80e47f099faf1ef9a660b9195f4da"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery/src/native.rs",
+   "old": "        AdmissionState::Current { revision } => admitted_before_spawn.with_regate(revision),",
+   "new": "        AdmissionState::Current { revision: _ } => admitted_before_spawn,"
+  }
+ ]
+}

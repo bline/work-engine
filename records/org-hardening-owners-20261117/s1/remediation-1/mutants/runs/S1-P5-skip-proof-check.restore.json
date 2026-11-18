@@ -1,0 +1,43 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "S1-P5-skip-proof-check.restore",
+  "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-1/mutants/mutate.py",
+    "restore",
+    "S1-P5-skip-proof-check"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hardening-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3821601,
+  "inputs": [],
+  "timeout_s": 60,
+  "pid": 3823517,
+  "pgid": 3823517,
+  "started_at": "2026-11-17T21:05:40.422600Z",
+  "ended_at": "2026-11-17T21:05:40.541402Z",
+  "duration_s": 0.119,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-1/mutants/runs/S1-P5-skip-proof-check.restore.stdout",
+    "length": 46,
+    "sha256": "46ac26aef60f6200a196221b9c588e24df98444c71936948fdb1d0efe19c9cf9"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-1/mutants/runs/S1-P5-skip-proof-check.restore.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

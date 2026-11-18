@@ -1,0 +1,4 @@
+   Compiling work-engine-review-preparation v0.1.0 (/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-preparation)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.11s
+     Running tests/fixture_consumer.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/fixture_consumer-e50d226c0c7f69ab)
+error: test failed, to rerun pass `-p work-engine-review-preparation --test fixture_consumer`

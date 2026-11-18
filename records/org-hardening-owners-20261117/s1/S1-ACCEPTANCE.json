@@ -1,0 +1,78 @@
+{
+ "schema": "org-slice-acceptance/v1",
+ "at": "2026-11-18T00:27:08.706455+00:00",
+ "slice": "S1 post-R2 gate hardening (fixture): consumer requires S-A-issued consumption proof; test-support feature; delivery regate revision; S-B mutants re-established",
+ "decision": "accepted_bounded_private_readiness",
+ "decision_owner": "Pi root 01a1e56e-be12-7424-977b-c7c7983887d0",
+ "authority": {
+  "path": "/home/bline/cbm-work/org-hardening-owners-20261117/OWNER-DECISIONS.json",
+  "sha256": "47f339465698c4e30fbd5acf3d1de0b226870baae516c97515ca03732c2b9f09"
+ },
+ "subject": {
+  "repository": "/home/bline/cbm-work/wt-org-hardening-20261117",
+  "checkpoint_commit_oid": "6fe553ca976b5afd7a40f7827ac6e73d7a16e2d4",
+  "checkpoint_tree_oid": "cbb89dd932eab8765afa8e63f338f55944bc6398",
+  "task_patch_digest": "8416ff841b6c5a55369f71d122b044aea746d3471115d49fd77eb85533efdd6e",
+  "baseline": "0fe9dc745f7c4157d3980ab6d6dd686fef36ad5c",
+  "ref": "refs/work-engine/checkpoints/org-hardening-owners-20261117/slice-1/candidate-1"
+ },
+ "evidence": {
+  "root_gate": {
+   "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/root-gate/summary.json",
+   "sha256": "0508692dbc436bda51abd72138f1f1747251f6b6e6281b450c546d711fe26d9c",
+   "result": "passed 12/12 on clean export of checkpoint"
+  },
+  "builder_gate": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/runs/gate-2 (passed 12/12)",
+  "matrix": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/MATRIX.md",
+  "mutants": [
+   "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1",
+   "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-2",
+   "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-1/mutants/runs",
+   "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-2 (S1-P8 killed)",
+   "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5 (root; S1-P1..P5 killed on final blobs by their named cases)"
+  ],
+  "reviews": [
+   {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/review/REVIEW.md",
+    "verdict": "changes_required",
+    "reviewer": "Opus xhigh 844517ab"
+   },
+   {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/recheck/RECHECK.md",
+    "verdict": "changes_required (R-1)",
+    "reviewer": "Fable high 024e5c8e"
+   },
+   {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/recheck-2/RECHECK-2.md",
+    "sha256": "05d487867126433f9308199e4bb5e7919b22ae1cd594844cb0fd2d661bba2fa6",
+    "verdict": "accept_private_readiness",
+    "reviewer": "Fable high f336a6ef + copy-on-resume 4e953df0 (stopped at cap before writing; resumed only to write)"
+   }
+  ]
+ },
+ "p3_carried": [
+  "P3-1 consumer compares boundary kind only (operation/epoch not; O10 class) - documented, owner acceptance open",
+  "P3-4 native_vertical requires test-support",
+  "M6 stronger variant (replay also becomes the proof) not run",
+  "S1-P6, S1-P7, M1-M11 stand on gate-1 blobs (native.rs changed docs-only since)",
+  "s1/RESULT.md:137-138 lacks forward pointer to remediation 2 (history)",
+  "remediation-2 entry blobs not in object store (custody limit; root re-ran S1-P1..P5 on final blobs)"
+ ],
+ "unclaimed": [
+  "fixture standing only",
+  "under S-A fixture any caller can mint a consumption admission and consume outside review-delivery's gate",
+  "observation freshness and regate time are labelled caller assertions",
+  "proof reusable (O10 gap)",
+  "caller-asserted organization id",
+  "assumed mapping discharges (O7)",
+  "a feature is build intent, not access control",
+  "no hosted path, production admission refuses",
+  "private readiness only; not committed"
+ ],
+ "process_record": [
+  "S1 builder overran its $8 cap to $8.98 and recheck-1 its $3.2 cap to $4.46: watcher called `claude stop` with the full session id, which fails silently; fixed (short id + verified stop)",
+  "root stub overwrote builder RESULT.md; restored byte-exact from transcript",
+  "objective total exceeded the $25 limit (observed $26.20) before the operator's prospective $32 ceiling; not normalized"
+ ],
+ "objective_cost_at_acceptance": 30.348
+}

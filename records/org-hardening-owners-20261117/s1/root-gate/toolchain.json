@@ -1,0 +1,41 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "toolchain",
+  "argv": [
+    "sh",
+    "-c",
+    "cargo --version; rustc --version; node --version"
+  ],
+  "cwd": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/export/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target-export",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 5739,
+  "inputs": [],
+  "timeout_s": 60,
+  "pid": 5752,
+  "pgid": 5752,
+  "started_at": "2026-11-18T00:21:52.125936Z",
+  "ended_at": "2026-11-18T00:21:52.495202Z",
+  "duration_s": 0.369,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/root-gate/toolchain.stdout",
+    "length": 81,
+    "sha256": "e6636a72bb59bc778d9df410e1928d90d69d0abc0ebc664312a677785b31d20a"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/root-gate/toolchain.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

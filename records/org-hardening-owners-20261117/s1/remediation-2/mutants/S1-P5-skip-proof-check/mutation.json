@@ -1,0 +1,18 @@
+{
+ "mutant": "S1-P5-skip-proof-check",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-preparation/src/fixture.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "30835c77bcdd9b924ae002d75e05e84c592c0acfae30c81953ae49b798500eb5",
+   "mutated_sha256": "6efc3fe86ec3a7684e4f560bcd41a41bf9641cd21628f5a7e66b658256ae2d8b"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-preparation/src/fixture.rs",
+   "old": "    let gate = check_proof(candidate, declaration, proof)?;",
+   "new": "    let admission = proof.admission;\n    let gate = check_proof(candidate, declaration, proof).unwrap_or(GateCheck {\n            boundary: admission.boundary().clone(),\n            admission_revision: admission.revision(),\n            regate_revision: admission.revision(),\n            regate_now_millis: proof.regate_now_millis,\n        });"
+  }
+ ]
+}

@@ -1,0 +1,48 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "native-1",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "test-support",
+    "--test",
+    "native_vertical"
+  ],
+  "cwd": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/export/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target-export",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 5739,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 22359,
+  "pgid": 22359,
+  "started_at": "2026-11-18T00:25:08.685229Z",
+  "ended_at": "2026-11-18T00:26:50.815437Z",
+  "duration_s": 102.13,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/root-gate/native-1.stdout",
+    "length": 2889,
+    "sha256": "de4447146729bdda2fa15674ccc4ab6bc76f026477be7eb5609290bde9d2f9de"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/root-gate/native-1.stderr",
+    "length": 365,
+    "sha256": "5b1b6501e443089eae97ac430d728abf6c9b91cfea624bfa9cefd6068ff822ea"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

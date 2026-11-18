@@ -1,0 +1,19 @@
+
+running 1 test
+test sb_unknown_at_the_regate_fails_closed ... FAILED
+
+failures:
+
+---- sb_unknown_at_the_regate_fails_closed stdout ----
+
+thread 'sb_unknown_at_the_regate_fails_closed' (3730883) panicked at crates/work-engine-review-delivery/tests/native_vertical.rs:1089:9:
+sb-between-unknown: expected a gate refusal
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+scratch retained for diagnosis: /home/bline/cbm-work/org-r2-core-20261117/target/tmp/native-vertical/sb-between-unknown-3730882
+
+
+failures:
+    sb_unknown_at_the_regate_fails_closed
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 32 filtered out; finished in 1.71s
+

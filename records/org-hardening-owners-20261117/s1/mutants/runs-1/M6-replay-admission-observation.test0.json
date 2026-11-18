@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "M6-replay-admission-observation.test0",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "test-support",
+    "--test",
+    "native_vertical",
+    "--",
+    "sb_revocation_supersession_or_missing_grant_between_boundaries_refuses_consumption",
+    "--exact"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hardening-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3726716,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 3728978,
+  "pgid": 3728978,
+  "started_at": "2026-11-17T20:29:44.046963Z",
+  "ended_at": "2026-11-17T20:29:47.437219Z",
+  "duration_s": 3.39,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M6-replay-admission-observation.test0.stdout",
+    "length": 832,
+    "sha256": "799c85aa9ebba58e443df138af98f69310fba196526312f2a53a90d18b8ae157"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/runs-1/M6-replay-admission-observation.test0.stderr",
+    "length": 433,
+    "sha256": "326d620cda58b338c93e8aaa68ad2b8ea14d9b5739e19206dc589bf24d11a93b"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

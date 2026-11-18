@@ -1,0 +1,18 @@
+{
+ "mutant": "M8-unknown-permits",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery/src/native.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "66169b9cf6a880accf38f6e3087ebb1ede7056483432bef10d465a78983d70fd",
+   "mutated_sha256": "f0acfd3fbf96ec9f1f082e875735a10fe61b240a6cad4ac9dae6c10732ee6320"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-delivery/src/native.rs",
+   "old": "        (AdmissionState::Current { revision }, Some(inputs)) => Ok((discharges, revision, inputs)),\n        (other, _) => Err(GateRefusal::NotCurrent(other)),",
+   "new": "        (AdmissionState::Current { revision }, Some(inputs)) => Ok((discharges, revision, inputs)),\n        (AdmissionState::Unknown(_), Some(inputs)) => Ok((discharges, held_consumption.admission().revision(), inputs)),\n        (other, _) => Err(GateRefusal::NotCurrent(other)),"
+  }
+ ]
+}

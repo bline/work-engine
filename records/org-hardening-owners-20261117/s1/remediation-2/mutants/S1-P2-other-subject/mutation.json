@@ -1,0 +1,18 @@
+{
+ "mutant": "S1-P2-other-subject",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-preparation/src/fixture.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "30835c77bcdd9b924ae002d75e05e84c592c0acfae30c81953ae49b798500eb5",
+   "mutated_sha256": "16a31fd9c45ff10778d1ad8d4437007c072efcfa60c0e1fba68392de9609551d"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-preparation/src/fixture.rs",
+   "old": "        return mismatch(\"subject\");",
+   "new": "        let _ = mismatch(\"subject\");"
+  }
+ ]
+}

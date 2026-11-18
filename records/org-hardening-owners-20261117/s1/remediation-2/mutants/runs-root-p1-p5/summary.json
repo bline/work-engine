@@ -1,0 +1,128 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/root-plan-p1-p5.json",
+  "plan_sha256": "6e50aad970d046fb56c142442ea2a6b5b58edc7a53e04f10ccc9d06726c64e97",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "pre-hashes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/pre-hashes.json",
+      "record_sha256": "42cce573da64e57cd54760056565a1edf62cecda1ea586a1371c4ee903dc61aa",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P1-other-candidate.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/S1-P1-other-candidate.apply.json",
+      "record_sha256": "c6ab879222b0e00d09e8195c5e5907831f9ed217eb616f2847a2d145f7de8c3b",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P1-other-candidate.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/S1-P1-other-candidate.test0.json",
+      "record_sha256": "2d095ddd514b08dded435f1de131e8d9be6d6ea561448e3d90a0211d6777d839",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P1-other-candidate.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/S1-P1-other-candidate.restore.json",
+      "record_sha256": "a600ed38860dfe2200ef4eb6e6a0b72ec28fb143c947fee845fbc4449e447de1",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P2-other-subject.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/S1-P2-other-subject.apply.json",
+      "record_sha256": "bebacfebc799ffe974c923e64c38d401cd2b72f5d650965cd3e7974e55bc3c52",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P2-other-subject.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/S1-P2-other-subject.test0.json",
+      "record_sha256": "09bdbf62e767ec0556e24a86501667e614d18e2e807dac3b8c9648c937958ce2",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P2-other-subject.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/S1-P2-other-subject.restore.json",
+      "record_sha256": "d4b430a43981b1a77824252eea7fb3508d77da07720c979cf8872a9a5c888b6d",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P3-other-boundary.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/S1-P3-other-boundary.apply.json",
+      "record_sha256": "516132971ccf8751bbeca0d241370090bb54a3f54a9f75aedd6bae927a4d19eb",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P3-other-boundary.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/S1-P3-other-boundary.test0.json",
+      "record_sha256": "cda68ae3bb2ff730f83b24812caee471af64b9142b2805bb6b33ff6a29aa43ad",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P3-other-boundary.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/S1-P3-other-boundary.restore.json",
+      "record_sha256": "1c5557a8c6ddc2b547dfbf56324bfcbce15209834f1cc37bbbe88654279dd3ab",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P4-missing-proof-accepted.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/S1-P4-missing-proof-accepted.apply.json",
+      "record_sha256": "bcb264cfc73e54cbd1297f6fc8ce135446943e59b6cb63897e97407db53d922a",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P4-missing-proof-accepted.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/S1-P4-missing-proof-accepted.test0.json",
+      "record_sha256": "9f7809797e45a39174e9583e313737aa2f27707f596f40dfc36dca85fbd7c516",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P4-missing-proof-accepted.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/S1-P4-missing-proof-accepted.restore.json",
+      "record_sha256": "e084484f10201b3347434b8e4536f96fd490636e05126a10c848d0566e4e74a9",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P5-skip-proof-check.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/S1-P5-skip-proof-check.apply.json",
+      "record_sha256": "99dfec17051ef58b48d148579d1cd9867b8abf1d0e0e131e87f0f7599f7e3b76",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P5-skip-proof-check.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/S1-P5-skip-proof-check.test0.json",
+      "record_sha256": "bd49cda8b1b4f3692ceb2a6220b998428263607a3a5a0c3f782fe4550299435b",
+      "leftovers": 0
+    },
+    {
+      "name": "S1-P5-skip-proof-check.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/S1-P5-skip-proof-check.restore.json",
+      "record_sha256": "a9b6d92f5fda7c327f6f0d201156ef61ab9ece2245e617771353177f871c0626",
+      "leftovers": 0
+    },
+    {
+      "name": "final-hashes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hardening-owners-20261117/s1/remediation-2/mutants/runs-root-p1-p5/final-hashes.json",
+      "record_sha256": "ae6df41ed376753400899f6a4a60a010e366d238b3e7516c57e7e2e21d302ec3",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

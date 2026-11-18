@@ -1,0 +1,18 @@
+{
+ "mutant": "S1-P3-other-boundary",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-preparation/src/fixture.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "8ea93429f0ac0e19fabfec421809714dea99d4d19bde5a20018d4af3f4878244",
+   "mutated_sha256": "b78b3f645e0a091634cc1773287a165ff370f7d2b5d4cbf621ca5dd35d2ab6b8"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hardening-20261117/rust/crates/work-engine-review-preparation/src/fixture.rs",
+   "old": "        return mismatch(\"boundary kind\");",
+   "new": "        let _ = mismatch(\"boundary kind\");"
+  }
+ ]
+}

@@ -1,0 +1,6 @@
+    Checking work-engine-organization v0.1.0 (/home/bline/cbm-work/org-hardening-owners-20261117/s1/export/rust/crates/work-engine-organization)
+    Checking review-episode-core v0.1.0 (/home/bline/cbm-work/org-hardening-owners-20261117/s1/export/rust/crates/review-episode-core)
+    Checking work-engine-organization-authority v0.1.0 (/home/bline/cbm-work/org-hardening-owners-20261117/s1/export/rust/crates/work-engine-organization-authority)
+    Checking work-engine-review-preparation v0.1.0 (/home/bline/cbm-work/org-hardening-owners-20261117/s1/export/rust/crates/work-engine-review-preparation)
+    Checking work-engine-review-delivery v0.1.0 (/home/bline/cbm-work/org-hardening-owners-20261117/s1/export/rust/crates/work-engine-review-delivery)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.30s

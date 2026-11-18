@@ -1,0 +1,16 @@
+{
+ "cwd": "/home/bline/cbm-work/wt-org-hardening-20261117/rust",
+ "env": {
+  "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target",
+  "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+  "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+ },
+ "steps": [
+  {"name": "pre-hashes", "argv": ["git", "hash-object", "crates/work-engine-review-delivery/src/gate.rs", "crates/work-engine-review-delivery/src/native.rs", "crates/work-engine-review-preparation/src/fixture.rs"], "timeout": 60},
+  {"name": "M6-replay-admission-observation.apply", "argv": ["python3", "-I", "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py", "apply", "M6-replay-admission-observation"], "timeout": 60},
+  {"name": "M6-replay-admission-observation.test0", "argv": ["cargo", "test", "--offline", "--locked", "-p", "work-engine-review-delivery", "--features", "test-support", "--test", "native_vertical", "--", "sb_revocation_supersession_or_missing_grant_between_boundaries_refuses_consumption", "--exact"], "timeout": 1800, "kill_leftovers": true},
+  {"name": "M6-replay-admission-observation.test1", "argv": ["cargo", "test", "--offline", "--locked", "-p", "work-engine-review-delivery", "--features", "fixture", "--test", "gate", "--", "regate_reads_a_fresh_observation", "--exact"], "timeout": 1800, "kill_leftovers": true},
+  {"name": "M6-replay-admission-observation.restore", "argv": ["python3", "-I", "/home/bline/cbm-work/org-hardening-owners-20261117/s1/mutants/mutate.py", "restore", "M6-replay-admission-observation"], "timeout": 60},
+  {"name": "final-hashes", "argv": ["git", "hash-object", "crates/work-engine-review-delivery/src/gate.rs", "crates/work-engine-review-delivery/src/native.rs", "crates/work-engine-review-preparation/src/fixture.rs"], "timeout": 60}
+ ]
+}

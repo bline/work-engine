@@ -15,13 +15,23 @@
 //! is [`deliver_and_consume`] (or its observed form): before the spawn the host constructs the
 //! admission request from the binding, obtains fixture-domain organizational admissions itself,
 //! runs the delivery gate ([`crate::gate`]) and regates the delivery admission; immediately before
-//! consumption it regates against a fresh observation and runs the gate again. The runner itself
-//! is private and takes the gate's pre-spawn output. The generic owned-attempt runner is
-//! crate-private, but [`test_support`] (public wrappers, present in every build in which this
-//! module exists, i.e. under `fixture`; it is not behind a separate feature) runs it from a
-//! caller-built command outside the gate. A route around the gate through the generic runner or
-//! the preparation crate's public `consume_fixture_result` therefore exists in a fixture build:
-//! absence of a spawn route is not claimed beyond this crate's binding-taking function.
+//! consumption it regates against a fresh observation and runs the gate again, then hands the
+//! consumer that admission, observation and time sample as its proof. The runner itself is
+//! private and takes the gate's pre-spawn output. The generic owned-attempt runner is
+//! crate-private. Its public wrappers (`test_support`) exist only with the separate,
+//! non-default `test-support` feature, which `fixture` does not imply: in a build with `fixture`
+//! and without `test-support`, the gated delivery path is this crate's only spawn route, by
+//! `cfg`. A feature states build intent; it is not access control: any dependent may enable
+//! `test-support`, and then the generic runner runs a caller-built command outside the gate (it
+//! takes no binding and never reaches the consumer). The preparation crate's public
+//! `consume_fixture_result` is a route around this crate's gate whenever S-A's `fixture` feature is
+//! on (this crate's `fixture` turns it on): any caller can build its own S-A fixture source, mint a
+//! fixture consumption admission and consume with it, with no delivery gate, spawn, native
+//! correspondence or blocker evaluation. Without S-A's `fixture` feature no episode can advance,
+//! because S-A's production policy admits nothing. The consumer checks only that S-A found *a*
+//! consumption admission current for its candidate, subject and vantage (and the boundary kind
+//! only, not its operation or epoch); it cannot tell whose admission that is, nor how fresh the
+//! observation is (a caller assertion, labelled on its success output).
 //!
 //! ```compile_fail,E0603
 //! use work_engine_review_delivery::native::run_native;
@@ -34,6 +44,11 @@
 //! ```compile_fail,E0603
 //! use work_engine_review_delivery::native::run_attempt_observed;
 //! ```
+//!
+#![cfg_attr(
+    not(feature = "test-support"),
+    doc = "Without `test-support` the generic runner's public wrappers do not exist:\n\n```compile_fail,E0432\nuse work_engine_review_delivery::native::test_support;\n```\n"
+)]
 //!
 //! No caller supplies an operation request or a boundary operation: `FixtureAuthority` has
 //! neither field (stable rustdoc asserts only that these fail to compile, not the error code):
@@ -63,7 +78,9 @@ use work_engine_organization_authority::{
     AdmissionState, AuthorityObservation, Boundary as AuthorityBoundary, BoundaryKind,
     DeclaredRealization, ExecutableDigest, OperationRequest, RealizationDigest, SubjectRef,
 };
-use work_engine_review_preparation::fixture::{ConsumeRefusal, FixtureConsumption};
+use work_engine_review_preparation::fixture::{
+    ConsumeRefusal, ConsumptionProof, FixtureConsumption,
+};
 use work_engine_review_preparation::{Blocker, MutationClaim, RealizationClaim, prepare};
 
 pub use crate::attempt::*;
@@ -612,9 +629,9 @@ const POLL_QUANTUM: Duration = Duration::from_millis(20);
 /// draining open pipes and reaping; when it ends, open streams are `Cancelled` and an unreaped
 /// child is `NotReaped`. Facts are recorded as they happen, never inferred afterwards.
 ///
-/// Crate-private. The gated delivery path is the only caller that takes a binding; a generic
-/// caller-built-command route also exists as [`test_support`] under `fixture` (outside the gate,
-/// for lifecycle tests with ordinary commands).
+/// Crate-private. Without the `test-support` feature the gated delivery path is its only caller;
+/// with it, `test_support` also exposes it over a caller-built command (outside the gate, for
+/// lifecycle tests with ordinary commands; build intent, not access control).
 pub(crate) fn run_attempt(
     command: Command,
     driver: &mut dyn AttemptDriver,
@@ -623,11 +640,12 @@ pub(crate) fn run_attempt(
     run_attempt_observed(command, driver, policy, &mut OsWait)
 }
 
-/// Test support (feature `fixture`) for the owned-attempt lifecycle: the generic runner over an
-/// ordinary caller-built command, exported only so lifecycle tests can drive `/bin/sh` children.
-/// It is not a delivery route: it takes no binding, never sends a contract from a binding and
-/// never reaches the consumer. Delivery of a binding is reachable only through
-/// [`deliver_and_consume`].
+/// Test support (feature `test-support`, not implied by `fixture`) for the owned-attempt
+/// lifecycle: the generic runner over an ordinary caller-built command, exported only so
+/// lifecycle tests can drive `/bin/sh` children. It is a spawn route outside the gate, but not a
+/// delivery route: it takes no binding, never sends a contract from a binding and never reaches
+/// the consumer. Delivery of a binding is reachable only through [`deliver_and_consume`].
+#[cfg(feature = "test-support")]
 #[doc(hidden)]
 pub mod test_support {
     use super::*;
@@ -1333,7 +1351,8 @@ pub struct Delivered {
     pub consumption: FixtureConsumption,
     pub run: NativeRun,
     /// The pre-spawn evaluation: blockers discharged by the host's delivery-boundary admission
-    /// (`Domain::Fixture`, outcomes by check id, revision).
+    /// (`Domain::Fixture`, outcomes by check id, revision), carrying the revision of the fresh
+    /// delivery regate that found it current immediately before the spawn.
     pub admitted_before_spawn: AdmittedDischarges,
     /// The pre-spawn evaluation: blockers that passed only by labelled assumed discharge.
     pub assumed_before_spawn: AssumedDischarges,
@@ -1506,17 +1525,18 @@ impl BetweenBoundaries for NothingObserved {
 /// exact observation correspondence. Immediately before consumption: evaluate again over the
 /// consumption admission, then regate it against a **fresh** observation at a freshly sampled
 /// time and require `Current` (Unknown fails closed), then call the existing
-/// `consume_fixture_result` with the text found in the native history and the binding's own
-/// inputs. There is no independent candidate, preparation, declaration, realization digest,
-/// request, admission or discharge argument. It is the only function in this crate that takes a
-/// binding and runs the SDK delivery protocol from it; a fixture build can also reach the generic
-/// runner through [`test_support`] with a caller-built command and consume a result through the
-/// preparation crate's public `consume_fixture_result`, both outside this gate (carried, not
-/// closed here).
+/// `consume_fixture_result` with the text found in the native history, the binding's own inputs
+/// and the proof (the consumption admission, that regate observation and its time sample), which
+/// the consumer checks against its own candidate, subject and vantage and point-checks itself.
+/// There is no independent candidate, preparation, declaration, realization digest, request,
+/// admission or discharge argument. In a build with `fixture` and without `test-support` it is
+/// the only spawn route in this crate (by `cfg`); with `test-support` the generic runner also
+/// runs a caller-built command outside this gate (build intent, not access control). The
+/// consumer refuses without a current consumption proof in every build.
 ///
 /// On success [`Delivered`] carries both admission summaries (with the constructed request
-/// identity and the caller-asserted inputs) and the remaining labelled assumed discharges at both
-/// boundaries.
+/// identity, the caller-asserted inputs and the revision of the regate that found each current)
+/// and the remaining labelled assumed discharges at both boundaries.
 #[allow(clippy::result_large_err)] // the error carries the retained native run so failure evidence survives
 pub fn deliver_and_consume(
     cfg: &NativeConfig,
@@ -1567,11 +1587,12 @@ pub fn deliver_and_consume_observed(
     )
     .map_err(before_spawn)?;
     // The spawn is an effect: its own admission is regated against a fresh observation
-    // immediately before it, like the consumption's. Only `Current` permits.
-    match delivery.regate() {
-        AdmissionState::Current { .. } => {}
+    // immediately before it, like the consumption's. Only `Current` permits; its revision is
+    // carried into the delivery summary.
+    let admitted_before_spawn = match delivery.regate() {
+        AdmissionState::Current { revision } => admitted_before_spawn.with_regate(revision),
         other => return Err(before_spawn(GateRefusal::NotCurrent(other))),
-    }
+    };
     let run = run_native(cfg, binding, &assumed_before_spawn)?;
     let verdict = completed(&run).and_then(|done| {
         done.bound
@@ -1598,11 +1619,12 @@ pub fn deliver_and_consume_observed(
     });
     // The regate is the last step before the consumer: a fresh observation for the consumption
     // reservation, never the admission-time one. Only `Current` permits; Unknown fails closed.
-    let regated = evaluated.and_then(|discharges| match held_consumption.regate() {
-        AdmissionState::Current { revision } => Ok((discharges, revision)),
-        other => Err(GateRefusal::NotCurrent(other)),
+    // The admission, that observation and the time sample are the consumer's proof.
+    let regated = evaluated.and_then(|discharges| match held_consumption.regate_observed() {
+        (AdmissionState::Current { revision }, Some(inputs)) => Ok((discharges, revision, inputs)),
+        (other, _) => Err(GateRefusal::NotCurrent(other)),
     });
-    let ((admitted, assumed_before_consumption), revision) = match regated {
+    let ((admitted, assumed_before_consumption), revision, inputs) = match regated {
         Ok(passed) => passed,
         Err(refusal) => {
             return Err(DeliverError::Refused {
@@ -1613,7 +1635,12 @@ pub fn deliver_and_consume_observed(
         }
     };
     let admitted_before_consumption = admitted.with_regate(revision);
-    match binding.consume(&verified.result_text) {
+    let proof = ConsumptionProof {
+        admission: held_consumption.admission(),
+        regate_observation: &inputs.observation,
+        regate_now_millis: inputs.now_millis,
+    };
+    match binding.consume(&verified.result_text, &proof) {
         Ok(consumption) => Ok(Delivered {
             verified,
             consumption,
