@@ -86,6 +86,22 @@ every CODEX_RATES model on developers.openai.com/api/docs/pricing as read on
 Pi turns run on the host without --container have no proxy log; they are
 counted in coverage as `pi_host_turns_not_read`, not read.
 
+Pi sessions outside role_host (2026-11-18). When a record binds a Pi session
+role_host does not account for, `tree` reads Pi's own session files
+(~/.pi/agent/sessions). A child session's header names its parent's file, so
+pi-subagents children join as `pi_parent` nodes without a binding. A
+`claude-sdk` call runs through Claude Code, and its transcript row (same
+message id as Pi's responseId) is the call: it moves to the Pi session, keeps
+its Claude pools and pricing, and continuations Claude Code folded into the
+turn go with it. Each turn's usage is reconciled with Pi's; a difference is
+`pi_transcript_usage_mismatch`. Calls in no transcript (a direct `anthropic`
+call, an aborted claude-sdk turn) are priced from Pi's recorded usage
+(`cache_write_basis` `pi_session`; without cacheWrite1h the write TTL is
+unknown). Direct `anthropic` calls go to pool `claude_extra_usage` with billing
+`extra_usage_assumed`: without an API key Pi uses its OAuth login, which
+Anthropic bills as Extra usage, and Pi's file does not record which paid. Other Pi providers are `pi_provider_unpriced`. Claude Code history
+that pi-claude-subscription synthesizes (`msg_pi_*` ids) is not a call.
+
 Objective time (2026-11-07). Budgets limit dollars and scope additions, not
 time: wall-clock limits expired while work waited for a person. Tree and
 control snapshots carry `time`, information only: the window's length and
@@ -535,7 +551,8 @@ def claude_transcript(path, msgs, cost_state, members=None, unrecorded=None, sin
             m = o.get('message') or {}
             if not isinstance(m, dict): issue('malformed_line', path=path, line=n); continue
             u = m.get('usage'); mid = m.get('id'); model = m.get('model')
-            if model == '<synthetic>' or not mid: continue
+            # msg_pi_*: history pi-claude-subscription writes into a Claude Code session it synthesizes; not a call.
+            if model == '<synthetic>' or not mid or (isinstance(mid, str) and mid.startswith('msg_pi_')): continue
             if not isinstance(u, dict):
                 issue('invalid_call_usage', path=path, line=n, usage=u); u = {'_invalid': u}
             if not valid_timestamp(o.get('timestamp')): issue('invalid_call_timestamp', path=path, line=n, timestamp=o.get('timestamp'))
@@ -900,6 +917,135 @@ def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
                 rows.append(pi_retained_reservation(log, n, at, res_id, amount, sid, launch))
     return rows, cov
 
+# Pi's own session files: sessions run outside role_host (a root on the host, pi-subagents children).
+# A claude-sdk call runs through Claude Code, whose transcript records it under the same message id
+# (Pi's responseId); that transcript row is the call, and Pi's file only says which Pi session made it.
+# A direct Anthropic call reaches no transcript, so Pi's recorded usage is the only record of it.
+PI_SESSION_GLOB = f'{HOME}/.pi/agent/sessions/**/*.jsonl'
+PI_NATIVE_USAGE = dict(input='input_tokens', output='output_tokens', cacheRead='cache_read_input_tokens',
+                       cacheWrite='cache_creation_input_tokens')
+# Pi provider -> (pools, billing) for calls priced from Pi's usage. Unlisted providers are not priced.
+# A direct `anthropic` call with no API key uses Pi's OAuth login, which Anthropic bills as Extra usage.
+PI_NATIVE_PROVIDERS = {'claude-sdk': (None, 'subscription'), 'anthropic': (['claude_extra_usage'], 'extra_usage_assumed')}
+
+def pi_session_header(path):
+    """(session id, start, parent session file) from a Pi session file's first record, or None."""
+    for line in open_lines(path):
+        try: rec = json.loads(line)
+        except ValueError: return None
+        if isinstance(rec, dict) and rec.get('type') == 'session' and isinstance(rec.get('id'), str):
+            return rec['id'], rec.get('timestamp'), rec.get('parentSession')
+        return None
+    return None
+
+def pi_native_sessions(since, root_glob=None):
+    """session id -> dict(paths, start, parent, responses) for Pi session files written since `since`."""
+    files = sorted(f for f in glob.glob(root_glob or PI_SESSION_GLOB, recursive=True)
+                   if '/subagent-artifacts/' not in f and (since is None or os.path.getmtime(f) >= since.timestamp()))
+    sessions, by_path = {}, {}
+    for path in files:
+        header = pi_session_header(path)
+        if header is None: continue
+        sid, start, parent_path = header
+        by_path[os.path.abspath(path)] = sid
+        s = sessions.setdefault(sid, dict(session_id=sid, paths=[], start=start, parent_path=parent_path, parent=None, responses=[]))
+        s['paths'].append(path)
+        if start and (not s['start'] or ts_of(start) < ts_of(s['start'])): s['start'] = start
+        seen = {r['call_id'] for r in s['responses']}
+        for n, line in enumerate(open_lines(path), 1):
+            if '"assistant"' not in line: continue
+            try: rec = json.loads(line)
+            except ValueError:
+                if line.endswith('\n'): issue('malformed_pi_session_row', path=path, line=n)
+                continue
+            m = rec.get('message') if isinstance(rec, dict) else None
+            if rec.get('type') != 'message' or not isinstance(m, dict) or m.get('role') != 'assistant': continue
+            u = m.get('usage')
+            if not isinstance(u, dict) or not any(u.get(k) for k in PI_NATIVE_USAGE): continue
+            rid = m.get('responseId') if isinstance(m.get('responseId'), str) and m.get('responseId') else None
+            call_id = rid or f"pi-entry:{sid}:{rec.get('id')}"
+            if call_id in seen: continue
+            seen.add(call_id)
+            s['responses'].append(dict(call_id=call_id, response_id=rid, provider=m.get('provider'),
+                                       model=m.get('responseModel') or m.get('model'), usage=u, ts=rec.get('timestamp'),
+                                       stop=m.get('stopReason'), source=f'{path}:{n}'))
+    for s in sessions.values():
+        p = s['parent_path']
+        if not p: continue
+        p = os.path.abspath(p)
+        if p not in by_path:
+            header = pi_session_header(p) if os.path.exists(p) else None
+            by_path[p] = header[0] if header else None
+        s['parent'] = by_path[p]
+        if s['parent'] is None: issue('pi_parent_session_unreadable', path=s['paths'][0], parent=p)
+    return sessions
+
+def pi_native_call(r, sid, pools, billing):
+    """One call priced from Pi's recorded usage (Claude-shaped). Without cacheWrite1h the write TTL is unknown."""
+    pu = r['usage']
+    u = {v: pu.get(k, 0) for k, v in PI_NATIVE_USAGE.items()}
+    if isinstance(pu.get('cacheWrite1h'), int) and not isinstance(pu.get('cacheWrite1h'), bool):
+        u[TTL_KEYS[1]] = pu['cacheWrite1h']; u[TTL_KEYS[0]] = u['cache_creation_input_tokens'] - pu['cacheWrite1h']
+    valid = valid_usage(u, NATIVE_KEYS + TTL_KEYS, NATIVE_KEYS) and valid_timestamp(r['ts'])
+    lo = hi = un = None
+    if valid:
+        try: lo, hi, un = native_usd(u, r['model'])
+        except (ValueError, TypeError, ArithmeticError) as e: issue('invalid_call_usage', source=r['source'], error=str(e))
+    if lo is None: issue('unpriced_call', source=r['source'], reason='pi session usage: no rate or invalid usage')
+    model = r['model'] if isinstance(r['model'], str) else None
+    row = dict(provider='pi', usage_shape='anthropic', ts=r['ts'], call_id=r['call_id'],
+               dedupe_basis='response_id' if r['response_id'] else 'pi_entry', thread=sid, parent_thread=None,
+               agent_path=None, originator='pi_session', model=model, effort=None, role_index=None, role_heuristic=None,
+               usage=u, weighted=native_weighted(u) if valid else None, usd=lo if lo == hi else None,
+               usd_low=lo, usd_high=hi, unknown_ttl_tokens=un, source=r['source'],
+               pools=pools or ['claude_all_models'] + (['claude_fable'] if (model or '').startswith('claude-fable-') else []),
+               service_tier=None, quota_multiplier=1.0, requested_tier=None, lane=billing, billing=billing,
+               cache_write_basis='pi_session', latency_s=None, latency_basis='pi_session_usage')
+    annotate_call_measurements(row)
+    return row
+
+def pi_native_join(claude, sessions, skip=()):
+    """Attribute Claude Code rows to the Pi sessions whose claude-sdk calls they are; return calls priced from Pi.
+
+    A Pi turn can fold several Claude Code responses (continuations) and records only the last id, so an
+    unmatched row belongs to the next matched row of its Claude Code session. Each turn's folded usage is
+    reconciled with Pi's; a difference is an issue. A response in several Pi files (a fork's copied history)
+    belongs to the earliest-started session. Sessions in `skip` are accounted by role_host.
+    """
+    order = sorted((s for s in sessions.values() if s['session_id'] not in skip),
+                   key=lambda s: (ts_of(s['start']) if valid_timestamp(s['start']) else dt.datetime.max.replace(tzinfo=dt.timezone.utc)))
+    owner = {}
+    for s in order:
+        for r in s['responses']: owner.setdefault(r['call_id'], (s['session_id'], r))
+    by_id = {c.get('call_id'): c for c in claude}
+    by_session = collections.defaultdict(list)
+    for c in claude: by_session[c.get('session')].append(c)
+    folded = collections.defaultdict(list)
+    for rows in by_session.values():
+        if not any(c.get('call_id') in owner and owner[c['call_id']][1]['provider'] == 'claude-sdk' for c in rows): continue
+        pending, last = [], None
+        for c in sorted(rows, key=lambda c: (str(c.get('ts')), str(c.get('source')))):
+            hit = owner.get(c.get('call_id'))
+            if hit and hit[1]['provider'] == 'claude-sdk':
+                folded[c['call_id']] += pending + [c]; pending = []; last = c['call_id']
+            else: pending.append(c)
+        if pending and last: folded[last] += pending
+    extra = []
+    for call_id, (sid, r) in owner.items():
+        spec = PI_NATIVE_PROVIDERS.get(r['provider'])
+        if spec is None:
+            issue('pi_provider_unpriced', source=r['source'], provider=r['provider']); continue
+        if r['provider'] == 'claude-sdk' and call_id in by_id:
+            rows = folded[call_id]
+            for c in rows: c['pi_session'] = sid
+            got = {k: sum((c['usage'].get(v) or 0) if isinstance(c['usage'].get(v), int) else 0 for c in rows) for k, v in PI_NATIVE_USAGE.items()}
+            want = {k: r['usage'].get(k, 0) for k in PI_NATIVE_USAGE}
+            if got != want:
+                issue('pi_transcript_usage_mismatch', source=r['source'], response_id=call_id, pi=want, transcript=got, rows=len(rows))
+            continue
+        extra.append(pi_native_call(r, sid, *spec))
+    return extra
+
 # ---------------------------------------------------------------- commands
 def cmd_build(a):
     since = ts_of(a.since) if a.since else None; until = ts_of(a.until) if a.until else None
@@ -1069,7 +1215,7 @@ def cmd_windows(a):
         for model, g in sorted(models.items(), key=lambda kv: -kv[1]['usd']):
             print(f"   {str(model):16s} calls={g['calls']:6d} modelled_usd={g['usd']:9.2f} weighted={g['weighted'] / 1e6:8.2f}M unpriced={g['unpriced']}")
 
-POOLS = ('codex', 'claude_all_models', 'claude_fable', 'pi_api')
+POOLS = ('codex', 'claude_all_models', 'claude_fable', 'pi_api', 'claude_extra_usage')
 
 def empty_spend():
     return dict(calls=0, unpriced_calls=0, usd_low=0.0, usd_high=0.0, quota_usd_low=0.0, quota_usd_high=0.0)
@@ -1121,11 +1267,21 @@ def finish_measurements(result, quota):
 def digest(path):
     with open(path, 'rb') as f: return hashlib.sha256(f.read()).hexdigest()
 
-def transcript_available(provider, sid, metadata, node_id=None, pi_sessions=None):
+def call_session(c):
+    """The session a call is attributed to: the Pi session that made a claude-sdk call, else its own."""
+    if c.get('pi_session'): return c['pi_session']
+    return c.get('thread') if c['provider'] in CODEX_SHAPED else c.get('session')
+
+def call_node(c):
+    sid = call_session(c)
+    return sid + '/agent:' + c['agent'] if c.get('subagent') and sid and not c.get('pi_session') else sid
+
+def transcript_available(provider, sid, metadata, node_id=None, pi_sessions=None, pi_native=None):
     if provider == 'codex': return sid in metadata
     if provider == 'pi':
         turns = (pi_sessions or {}).get(sid)
-        return bool(turns) and turns['read'] > 0 and not turns['not_read'] and not turns['missing']
+        if turns: return turns['read'] > 0 and not turns['not_read'] and not turns['missing']
+        return sid in (pi_native or {})
     if provider == 'claude':
         for path in find_transcripts(sid):
             if node_id is not None and node_id != sid:
@@ -1286,6 +1442,16 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     except (OSError, subprocess.SubprocessError) as e:
         pi = []; pi_sessions.clear()
         result['issues'].append(dict(kind='pi_read_failed', path=ledger, error=str(e)))
+    # Pi sessions outside role_host: their own session files, joined to Claude Code rows by message id.
+    # Read only when the record binds a Pi session role_host does not account for; children join through it.
+    pi_native = {}
+    if any(isinstance(b, dict) and b.get('provider') == 'pi' and b.get('session_id') not in pi_sessions
+           for b in (sb.get('sessions') or []) + (sb.get('bindings') or [])):
+        try:
+            pi_native = pi_native_sessions(since)
+        except OSError as e:
+            result['issues'].append(dict(kind='pi_session_read_failed', error=str(e)))
+        pi += pi_native_join(claude, pi_native, skip=set(pi_sessions))
     observed_calls = codex + claude + pi
     calls = [c for c in observed_calls if in_window(c.get('ts'), since, until)]
     nodes = {}; starts = {}; links = []
@@ -1320,7 +1486,7 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     for i, bound in enumerate(sessions + (sb.get('bindings') or [])):
         sid = bound.get('session_id'); provider = bound.get('provider')
         checked_sessions.add((sid, provider))
-        if not transcript_available(provider, sid, metadata, pi_sessions=pi_sessions):
+        if not transcript_available(provider, sid, metadata, pi_sessions=pi_sessions, pi_native=pi_native):
             result['issues'].append(dict(kind='transcript_missing', session_id=sid, provider=provider))
             if i == 0 and sessions: missing_root = True
     for b in sb.get('bindings') or []:
@@ -1328,6 +1494,9 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     for sid, meta in metadata.items():
         if meta.get('parent_thread_id'):
             links.append((1, sid, sid, 'codex', meta['parent_thread_id'], 'codex_parent', meta.get('agent_nickname')))
+    for sid, ps in pi_native.items():
+        if ps['parent'] and sid not in pi_sessions:
+            links.append((1, sid, sid, 'pi', ps['parent'], 'pi_parent', None))
     try:
         with open(ledger) as fh:
             for number, line in enumerate(fh, 1):
@@ -1363,8 +1532,11 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     for node in nodes.values():
         sid = node['session_id']; provider = node['provider']; nid = node['node_id']
         if nid == sid and (sid, provider) in checked_sessions: continue
-        if not transcript_available(provider, sid, metadata, nid, pi_sessions=pi_sessions):
+        if not transcript_available(provider, sid, metadata, nid, pi_sessions=pi_sessions, pi_native=pi_native):
             result['issues'].append(dict(kind='transcript_missing', session_id=sid, provider=provider, node_id=nid))
+    # A claude-sdk row stays with its Claude Code session unless the Pi session that made it is a member.
+    for c in claude:
+        if c.get('pi_session') and c['pi_session'] not in nodes: del c['pi_session']
     # The winning graph is now fixed. Derive descendant boundaries from it,
     # rather than retaining the boundary of an earlier, displaced parent.
     def inherited_start(nid):
@@ -1390,14 +1562,13 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
             cur, seen = nid, set()
             while cur and cur not in seen:
                 if cur in succ['sessions']: return True
-                if cur not in nodes or nodes[cur]['link'] not in ('codex_parent', 'role_host', 'claude_subagent'): return False
+                if cur not in nodes or nodes[cur]['link'] not in ('codex_parent', 'role_host', 'claude_subagent', 'pi_parent'): return False
                 seen.add(cur); cur = nodes[cur]['parent_node_id']
             return False
         for c in observed_calls:
             if not valid_timestamp(c.get('ts')) or not (after < ts_of(c['ts']) <= ts_of(now)):
                 continue
-            sid = c.get('thread') if c['provider'] in CODEX_SHAPED else c.get('session')
-            nid = sid + '/agent:' + c['agent'] if c.get('subagent') and sid else sid
+            sid = call_session(c); nid = call_node(c)
             if nid not in nodes or (starts[nid] and ts_of(c['ts']) < ts_of(starts[nid])):
                 continue
             spend = call_spend(c)
@@ -1423,8 +1594,7 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
     # one of its sessions; the window holds other objectives' sessions too.
     members = {n['session_id'] for n in nodes.values()}
     for c in calls:
-        sid = c.get('thread') if c['provider'] in CODEX_SHAPED else c.get('session')
-        nid = sid + '/agent:' + c['agent'] if c.get('subagent') and sid else sid
+        sid = call_session(c); nid = call_node(c)
         if not valid_timestamp(c.get('ts')):
             if sid not in members:
                 undated_outside += 1
@@ -1463,7 +1633,7 @@ def cost_tree(record_path, since_arg=None, until_arg=None, role_ledger=None):
                             (not starts[x['session_id']] or in_window(x['at'], ts_of(starts[x['session_id']]), None))]
     file_sessions = collections.defaultdict(set)
     for c in calls:
-        src = c.get('source'); sid = c.get('thread') if c['provider'] in CODEX_SHAPED else c.get('session')
+        src = c.get('source'); sid = call_session(c)
         if isinstance(src, str) and isinstance(sid, str): file_sessions[src.rsplit(':', 1)[0]].add(sid)
     def in_scope(i):
         # An issue is outside only when everything known about its file points to
