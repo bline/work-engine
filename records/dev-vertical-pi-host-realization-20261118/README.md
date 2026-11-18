@@ -323,6 +323,48 @@ passed (6 ignored), `lifecycle-service` lib with `controlled-proof` 97 passed
 `work-engine-task-host` `research_delivery` with `controlled-proof` 6 passed
 (2 ignored).
 
+## Owner 5911: closed metadata shape
+
+The owner accepted the allow-list offered for the open P3, using the same
+closed-observed-shape rule as the thinking blocks (5886). The shared check
+now also requires that `metadata`, when present:
+
+- has exactly the key `user_id`;
+- holds a strictly parsed object whose keys are among `device_id`,
+  `account_uuid` and `session_id`;
+- has `device_id` and `session_id` as strings without `@`;
+- has `account_uuid` as `null` or `""`.
+
+Anything else is not verified. The earlier checks remain on top: nested JSON
+strings are decoded, and the email, `account_uuid` and `@` rules apply at
+every level, so an encoded value inside an allowed key still refuses. Host
+policy, capture flag and runner still use this one function. The protocol
+section was rewritten, so `PROTOCOL_DIGEST` is now `9a33912a…` (was
+`5e0e4f3e…`); Codex is unchanged.
+
+New negatives: an extra `metadata` key; an extra `user_id` key
+(`organization_uuid`), in the shared unit test and in the Host policy test
+with nothing opened; `metadata: {}`; a non-string `device_id`; a `null`
+`session_id`; and encoded values inside allowed keys (an escaped `@`, a
+nested `account_uuid`, a nested duplicate key).
+
+Runs on this build (2026-11-18, offline). Claude Code's observed body
+`metadata` is exactly the allowed shape:
+
+- `q15` (`pi_host_research_delivery` plus `pi_host_q_delivery_verifies`):
+  protocol `9a33912a…`, eligible, `CompletedSettled`, seven payloads, flag
+  `false`. `verify_delivery` is `complete` (`request-5`, four spans) with the
+  same four refusals. sha256: `summary.json` `5493d96a…`, `retained.json`
+  `e1e71d4c…`, `verify-delivery.json` `8e1285fc…`.
+- `q16` (`pi_host_causal_join`): passed, flag `false`; `summary.json`
+  `01eee491…`.
+
+Unit tests: `native-realization` 6/6, `work-engine-manual-host` lib 103
+passed (6 ignored), `lifecycle-service` lib with `controlled-proof` 97 passed
+(2 ignored), `lifecycle-store` lib 33 passed (2 ignored),
+`work-engine-task-host` `research_delivery` with `controlled-proof` 6 passed
+(2 ignored). `cargo fmt --check` is clean for the two changed crates.
+
 ## Open
 
 - The Q fixture's owner adapter answers `original_result_operation` without

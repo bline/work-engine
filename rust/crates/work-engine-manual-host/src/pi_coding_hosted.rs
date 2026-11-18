@@ -2872,11 +2872,15 @@ mod tests {
         for user in [
             r#"{"device_id":"d0","account_uuid":"5f0c1a2e-0000-4000-8000-000000000001","session_id":"s0"}"#,
             r#"{"device_id":"d0","account_uuid":"","email":"user@example.com"}"#,
+            r#"{"device_id":"d0","account_uuid":"","organization_uuid":"5f0c"}"#,
         ] {
             let mut b = ok.clone();
             b["metadata"]["user_id"] = json!(user);
             cases.push((serde_json::to_vec(&b).unwrap(), "account-identifier"));
         }
+        let mut b = ok.clone();
+        b["metadata"]["trace"] = json!("t");
+        cases.push((serde_json::to_vec(&b).unwrap(), "metadata-key"));
         // A duplicate key could be read differently upstream.
         let text = String::from_utf8(serde_json::to_vec(&ok).unwrap()).unwrap();
         cases.push((

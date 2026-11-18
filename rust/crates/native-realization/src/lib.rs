@@ -20,7 +20,7 @@ pub mod codex {
 pub mod pi_host {
     /// SHA-256 of `PI_HOST_PROTOCOL.md`; the session protocol digest.
     pub const PROTOCOL_DIGEST: &str =
-        "5e0e4f3e92560a5542cdce8729f5e3668e93aba5bab6ef9ee8b34a930c2afea4";
+        "9a33912a78906d4b540dafd9e78584b8af59888e47dec0c1a8ef3f728c49e451";
     pub const PROTOCOL: &str = include_str!("../PI_HOST_PROTOCOL.md");
     pub const REALIZATION: &str = "pi-host-v1";
     pub const EVIDENCE_CLASS: &str = "pi-host-held-requests-tool-relay-host-ledger-history-v1";
@@ -35,13 +35,15 @@ pub mod pi_host {
     /// Verified absence of an account identifier in a Messages request body,
     /// shared by the Host's request policy (before dispatch), its capture's
     /// `contains_account_identifier` and the runner's re-check (protocol
-    /// "Account identifier"). `metadata`, when present, must be an object;
-    /// `metadata.user_id`, when present, a string holding a JSON object
-    /// without duplicate keys. Under `metadata`, every string that is itself
-    /// JSON is decoded (strictly, at most four levels); no key names an email,
-    /// no `account_uuid` holds anything but `null` or `""`, and no string
-    /// contains `@`. Device and session ids may remain. Anything that cannot
-    /// be read this way is not verified.
+    /// "Account identifier"). `metadata`, when present, must have the closed
+    /// observed shape: exactly the key `user_id`, a string holding a JSON
+    /// object without duplicate keys whose keys are among `device_id`,
+    /// `account_uuid` and `session_id`; `device_id` and `session_id` strings
+    /// without `@`; `account_uuid` `null` or `""`. In addition, every string
+    /// under `metadata` that is itself JSON is decoded (strictly, at most four
+    /// levels); no key names an email, no `account_uuid` holds anything but
+    /// `null` or `""`, and no string contains `@`. Device and session ids may
+    /// remain. Anything that cannot be read this way is not verified.
     pub fn messages_account_identifier_absent(body: &serde_json::Value) -> bool {
         use serde_json::Value;
         fn identifies(v: &Value, depth: u8) -> bool {
@@ -76,12 +78,22 @@ pub mod pi_host {
         let Some(object) = metadata.as_object() else {
             return false;
         };
-        match object.get("user_id") {
-            None => {}
-            Some(Value::String(s)) if matches!(strict::parse(s), Some(Value::Object(_))) => {}
-            Some(_) => return false,
+        // Owner 5911: the closed observed shape, as for thinking blocks.
+        if object.len() != 1 {
+            return false;
         }
-        !identifies(metadata, 0)
+        let Some(Value::String(user_id)) = object.get("user_id") else {
+            return false;
+        };
+        let Some(Value::Object(user)) = strict::parse(user_id) else {
+            return false;
+        };
+        let observed = user.iter().all(|(k, v)| match k.as_str() {
+            "device_id" | "session_id" => v.as_str().is_some_and(|s| !s.contains('@')),
+            "account_uuid" => v.is_null() || v.as_str() == Some(""),
+            _ => false,
+        });
+        observed && !identifies(metadata, 0)
     }
 
     /// Strict JSON for the account check: a duplicate key could read as one
@@ -551,5 +563,22 @@ mod tests {
             deep = json!(deep.to_string());
         }
         assert!(!absent(&json!({"metadata":{"note":deep}})));
+        // Owner 5911: the closed observed shape. Only `user_id` under
+        // `metadata`; only device_id, account_uuid and session_id in it.
+        assert!(absent(&body("{}")));
+        assert!(absent(&body(r#"{"session_id":"0d1c"}"#)));
+        assert!(!absent(&json!({"metadata":{}})));
+        assert!(!absent(&json!({"metadata":{"user_id":"{}","trace":"t"}})));
+        assert!(!absent(&body(
+            r#"{"device_id":"ab12","account_uuid":"","organization_uuid":"5f0c","session_id":"0d1c"}"#
+        )));
+        assert!(!absent(&body(r#"{"device_id":7}"#)));
+        assert!(!absent(&body(r#"{"session_id":null}"#)));
+        // Inside an allowed key, encoded values are still decoded.
+        assert!(!absent(&body(r#"{"device_id":"\"x\\u0040y\""}"#)));
+        assert!(!absent(&body(
+            r#"{"session_id":"{\"account_uuid\":\"5f0c\"}"}"#
+        )));
+        assert!(!absent(&body(r#"{"session_id":"{\"a\":1,\"a\":2}"}"#)));
     }
 }
