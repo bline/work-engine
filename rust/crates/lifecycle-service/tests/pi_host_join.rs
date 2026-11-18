@@ -48,7 +48,7 @@ fn write_json(path: &Path, value: &Value) -> PathBuf {
     path.to_path_buf()
 }
 
-fn config(root: &Path, host: &Path, prompt: &str) -> ServiceConfig {
+fn config(root: &Path, host: &Path, prompt: &str, member: (&str, &[u8])) -> ServiceConfig {
     let now = clock_sample().wall.get();
     let grants = [
         ("grant:turn", "native_turn"),
@@ -111,12 +111,12 @@ fn config(root: &Path, host: &Path, prompt: &str) -> ServiceConfig {
                 id: "snapshot:input".into(),
                 source_revision: "synthetic:input".into(),
                 members: vec![workspace_snapshot_read::TrustedMember {
-                    id: "member".into(),
+                    id: member.0.into(),
                     sha256: CodecContract::BinaryArtifactV1
-                        .digest_binary(b"synthetic")
+                        .digest_binary(member.1)
                         .unwrap()
                         .hex(),
-                    bytes: b"synthetic".to_vec(),
+                    bytes: member.1.to_vec(),
                 }],
             },
             semantic: Some(serde_json::from_value(json!({"capture_id":"capture:input","compile_session_id":"session:compile","verify_session_id":"session:verify","successor_verify_session_id":"session:successor","compile_invocation_id":"invocation:compile","compile_attempt_id":"attempt:compile","candidate_verify_invocation_id":"invocation:verify","candidate_verify_attempt_id":"attempt:verify","successor_verify_invocation_id":"invocation:successor","successor_verify_attempt_id":"attempt:successor","challenge_id":"challenge:input","challenge_text":"synthetic","control_grant_ref":"grant:control","control_grant_revision":1,"successor_control_grant_ref":"grant:next","successor_control_grant_revision":1})).unwrap()),
@@ -231,7 +231,35 @@ fn prepare_host_job(native: &Path, host: &Path, ports: (u64, u64)) {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires Docker, the Pi Host binary, its claude-sdk runtime and the Messages observer"]
 async fn pi_host_causal_join() {
-    use retained_task_workflow::{SubjectKind, SubmitTask, TaskStore};
+    join(None).await;
+}
+
+/// L2: the derived A4 research material (`request\ncard\nreconstruction`,
+/// `WE_A4_FIXTURE`) is the snapshot member; Pi reads it through the Host and
+/// the actor in 32 KiB `mcp__pi__snapshot_read` calls, then publishes a
+/// recommendation. The actor's retained causal read and the owner selector
+/// map are written for the task host's `verify_delivery` test
+/// (`work-engine-task-host` `pi_host_q_delivery_verifies`).
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "requires Docker, the Pi Host binary, its claude-sdk runtime, the Messages observer and the A4 fixture"]
+async fn pi_host_research_delivery() {
+    join(Some(PathBuf::from(std::env::var("WE_A4_FIXTURE").unwrap()))).await;
+}
+
+async fn join(research: Option<PathBuf>) {
+    use retained_task_workflow::{FactInput, FactKind, SubjectKind, SubmitTask, TaskStore};
+    let research = research.map(|a4| {
+        let read = |n: &str| std::fs::read(a4.join(n)).unwrap();
+        let material = [
+            read("request.json"),
+            b"\n".to_vec(),
+            read("card.json"),
+            b"\n".to_vec(),
+            read("reconstruction.json"),
+        ]
+        .concat();
+        (material, read("target.txt"))
+    });
     let root = PathBuf::from(std::env::var("WE_PI_HOST_OUT").unwrap());
     let host = PathBuf::from(std::env::var("WE_PI_HOST_BIN").unwrap());
     let observer = PathBuf::from(std::env::var("WE_PI_HOST_OBSERVER").unwrap());
@@ -256,7 +284,15 @@ async fn pi_host_causal_join() {
             objective: question.into(),
             engineering_question: question.into(),
             snapshot_ref: "snapshot:input".into(),
-            facts: vec![],
+            facts: research
+                .iter()
+                .map(|(_, target)| FactInput {
+                    id: "target".into(),
+                    kind: FactKind::Decision,
+                    text: String::from_utf8(target.clone()).unwrap(),
+                    current: true,
+                })
+                .collect(),
         })
         .unwrap();
     let text = owner.input_text("input").unwrap().unwrap();
@@ -266,8 +302,38 @@ async fn pi_host_causal_join() {
         .iter()
         .map(|s| s.reference())
         .collect::<Vec<_>>();
-    let args = json!({"result_id":"result:pi-host","body":"pi host recommendation","source_refs":refs,"attribution":"native:claude-haiku-5-5"});
-    let steps = json!([{"tool":"mcp__pi__result_publish","input":args},{"text":"published"}]);
+    let (member, material, steps, mapping) = match &research {
+        None => {
+            let args = json!({"result_id":"result:pi-host","body":"pi host recommendation","source_refs":refs,"attribution":"native:claude-haiku-5-5"});
+            let steps =
+                json!([{"tool":"mcp__pi__result_publish","input":args},{"text":"published"}]);
+            ("member", b"synthetic".to_vec(), steps, None)
+        }
+        Some((material, target)) => {
+            let source = record
+                .sources
+                .iter()
+                .find(|s| s.id == "target")
+                .unwrap()
+                .reference();
+            let body = json!({"dependencies":{"decision.target":sha(target)},
+                "text":"Unknown transfer; alternatives include defer. Synthetic evidence supports only a private audit; execution and approval are refused."});
+            let args = json!({"result_id":"result:pi-host-research","body":body.to_string(),
+                "source_refs":[source.clone()],"attribution":"native:claude-haiku-5-5"});
+            let mut steps = (0..material.len())
+                .step_by(32768)
+                .map(|offset| json!({"tool":"mcp__pi__snapshot_read","input":{"snapshot_id":"snapshot:input",
+                    "member_id":"research","offset":offset,"length":(material.len()-offset).min(32768)}}))
+                .collect::<Vec<_>>();
+            steps.push(json!({"tool":"mcp__pi__result_publish","input":args}));
+            steps.push(json!({"text":"published"}));
+            let mapping = BTreeMap::from([(
+                "decision.target".to_string(),
+                ("task:input".to_string(), source),
+            )]);
+            ("research", material.clone(), json!(steps), Some(mapping))
+        }
+    };
     std::fs::write(root.join("steps.json"), steps.to_string()).unwrap();
     let mut fixture = std::process::Command::new(&observer)
         .env("HOSTED_OBSERVER_SCENARIO", "steps")
@@ -285,7 +351,7 @@ async fn pi_host_causal_join() {
         ready["secondary"].as_u64().unwrap(),
     );
     prepare_host_job(&root.join("native"), &host, ports);
-    let config = config(&root, &host, &text);
+    let config = config(&root, &host, &text, (member, &material));
     let native = config.native.as_ref().unwrap();
     operations::pi_host::validate(native, &operations::pi_host::load(native).expect("load"))
         .expect("validate");
@@ -399,6 +465,38 @@ async fn pi_host_causal_join() {
         .unwrap();
     assert_eq!(recovery.class, "CompletedSettled");
     assert!(kinds.contains(&"capture_host") && !kinds.contains(&"capture_codex"));
+    if let Some(mapping) = &mapping {
+        // The actor's scoped causal read, paged as the task host's `acquire`
+        // pages it over the service socket.
+        use base64::Engine;
+        let (mut bytes, mut digest) = (Vec::new(), None::<String>);
+        loop {
+            let chunk = actor.native_causal_read(
+                "task:input",
+                "subject:input",
+                bytes.len(),
+                digest.as_deref(),
+            );
+            let data = base64::engine::general_purpose::STANDARD
+                .decode(chunk["bytes_base64"].as_str().expect(&chunk.to_string()))
+                .unwrap();
+            assert_eq!(chunk["offset"], bytes.len());
+            digest = Some(chunk["content_sha256"].as_str().unwrap().into());
+            bytes.extend(data);
+            if bytes.len() == chunk["length"].as_u64().unwrap() as usize {
+                break;
+            }
+        }
+        assert_eq!(Some(sha(&bytes)), digest);
+        std::fs::write(root.join("retained.json"), &bytes).unwrap();
+        std::fs::write(
+            root.join("mapping.json"),
+            serde_json::to_vec(mapping).unwrap(),
+        )
+        .unwrap();
+        let reads = kinds.iter().filter(|k| **k == "tool").count();
+        assert_eq!(reads, material.len().div_ceil(32768) + 1);
+    }
     std::fs::write(
         root.join("summary.json"),
         json!({"operation":result.operation_id,"scope":causal.scope,"eligible":input.eligible,
@@ -447,18 +545,97 @@ impl TaskOperationPort for Owner {
         }
         Ok(r.result.map(|r| r.operation_id))
     }
+    // Snapshot-read effects forward to the owner as `retained-task-workflow`'s
+    // own port does (`port.rs`), so the actor's `snapshot_read` commits.
     fn lookup_completed_effect(
         &self,
-        _: &str,
-        _: &str,
+        task_id: &str,
+        effect_id: &str,
     ) -> Result<Option<crate::CompletedTaskEffectReadback>, TaskOperationError> {
-        Ok(None)
+        let Some(effect) = self.0.lookup_completed_effect(effect_id).map_err(error)? else {
+            return Ok(None);
+        };
+        let record = self
+            .0
+            .observe(task_id)
+            .map_err(error)?
+            .ok_or(TaskOperationError::Uncertain)?;
+        if !record.completed_effects.contains(&effect) {
+            return Err(TaskOperationError::Invalid);
+        }
+        Ok(Some(crate::CompletedTaskEffectReadback {
+            task_id: task_id.into(),
+            logical_delivery_id: effect.delivery_id,
+            effect_id: effect.effect_id,
+            receipt_sha256: effect.receipt_digest,
+            attribution: effect
+                .attribution
+                .map(|a| crate::CompletedTaskEffectAttribution {
+                    parent_invocation_id: a.parent_invocation_id,
+                    call_id: a.call_id,
+                    contract_id: a.contract_id,
+                    snapshot_id: a.snapshot_id,
+                    member_id: a.member_id,
+                    offset: a.offset,
+                    requested_length: a.requested_length,
+                    returned_length: a.returned_length,
+                    result_sha256: a.result_sha256,
+                }),
+        }))
     }
     fn record_completed_effect(
         &self,
-        _: &crate::CompletedTaskEffect,
+        effect: &crate::CompletedTaskEffect,
     ) -> Result<(), TaskOperationError> {
-        Err(TaskOperationError::Invalid)
+        use retained_task_workflow::{
+            CompletedEffect, CompletedSnapshotReadAttribution, CompletedSnapshotResult as R,
+            CompletedSnapshotUnavailable as U,
+        };
+        let result = match effect.result_bytes.as_deref() {
+            None => R::Unavailable {
+                reason: U::MissingResult,
+            },
+            Some(b)
+                if b.len() as u64 != effect.returned_length || sha(b) != effect.receipt_sha256 =>
+            {
+                return Err(TaskOperationError::Invalid);
+            }
+            Some(b) => match std::str::from_utf8(b) {
+                Err(_) => R::Unavailable { reason: U::NonUtf8 },
+                Ok(_) if b.len() > 4 * 1024 => R::Unavailable {
+                    reason: U::OverInlineLimit,
+                },
+                Ok(t) if serde_json::to_vec(t).unwrap().len() > 8 * 1024 => R::Unavailable {
+                    reason: U::OverEscapedLimit,
+                },
+                Ok(t) => R::InlineUtf8 { text: t.into() },
+            },
+        };
+        self.0
+            .record_completed_effect(
+                &effect.task_id,
+                CompletedEffect {
+                    effect_id: effect.effect_id.clone(),
+                    delivery_id: effect.logical_delivery_id.clone(),
+                    receipt_digest: effect.receipt_sha256.clone(),
+                    attribution: Some(CompletedSnapshotReadAttribution {
+                        schema: "completed-snapshot-read-attribution-v2".into(),
+                        parent_invocation_id: effect.parent_invocation_id.clone(),
+                        call_id: effect.call_id.clone(),
+                        contract_id: effect.contract_id.clone(),
+                        snapshot_id: effect.snapshot_id.clone(),
+                        member_id: effect.member_id.clone(),
+                        offset: effect.offset,
+                        requested_length: effect.requested_length,
+                        returned_length: effect.returned_length,
+                        result_sha256: effect.receipt_sha256.clone(),
+                        result,
+                    }),
+                },
+                effect.expected_cursor_revision,
+            )
+            .map(|_| ())
+            .map_err(error)
     }
     fn validate_input(&self, id: &str, text: &str) -> Result<TaskInputBinding, TaskOperationError> {
         let r = self.0.validate_input(id, text).map_err(error)?;

@@ -1585,4 +1585,125 @@ mod projection_tests {
         changed[0] ^= 1;
         assert!(check(&base, &changed).is_err());
     }
+
+    /// L2: `verify_delivery` over the retained delivery of a real Pi Host run
+    /// (`lifecycle-service` `pi_host_research_delivery`: Pi in the Host's
+    /// container read the A4 material in `mcp__pi__snapshot_read` calls
+    /// relayed through the actor, then published), with the owner's original
+    /// evidence read from that run's task store.
+    #[test]
+    #[cfg(feature = "controlled-proof")]
+    #[ignore = "reads a lifecycle-service pi_host_research_delivery run (WE_PI_HOST_OUT) and its A4 fixture (WE_A4_FIXTURE)"]
+    fn pi_host_q_delivery_verifies() {
+        let out = std::path::PathBuf::from(std::env::var("WE_PI_HOST_OUT").unwrap());
+        let a4 = std::path::PathBuf::from(std::env::var("WE_A4_FIXTURE").unwrap());
+        let read = |p: std::path::PathBuf| std::fs::read(p).unwrap();
+        let request = read(a4.join("request.json"));
+        let card = read(a4.join("card.json"));
+        let reconstruction = read(a4.join("reconstruction.json"));
+        let material = [
+            request.clone(),
+            b"\n".to_vec(),
+            card.clone(),
+            b"\n".to_vec(),
+            reconstruction.clone(),
+        ]
+        .concat();
+        let bytes = read(out.join("retained.json"));
+        let mapping = serde_json::from_slice(&read(out.join("mapping.json"))).unwrap();
+        let store = retained_task_workflow::TaskStore::open(
+            &out.join("tasks.sqlite"),
+            "human:fixture".into(),
+        )
+        .unwrap();
+        let original = store
+            .research_original_evidence("task:input", &mapping)
+            .unwrap();
+        let verify = |value: Value| {
+            verify_delivery(
+                RetainedDelivery {
+                    bytes: bytes.clone(),
+                    value,
+                },
+                &original,
+                &request,
+                &card,
+                &reconstruction,
+            )
+        };
+        let base: Value = serde_json::from_slice(&bytes).unwrap();
+        let delivery = verify(base.clone()).unwrap();
+        assert_eq!(delivery.projection, material);
+        let spans: Vec<Value> = delivery
+            .artifacts
+            .iter()
+            .find(|a| a.id == "research-decoding-map")
+            .map(|a| serde_json::from_slice(&a.bytes).unwrap())
+            .unwrap();
+        assert_eq!(spans.len(), material.len().div_ceil(32768));
+        let consumer: Value = delivery
+            .artifacts
+            .iter()
+            .find(|a| a.id == "research-consumer-delivery-v1")
+            .map(|a| serde_json::from_slice(&a.bytes).unwrap())
+            .unwrap();
+        assert_eq!(consumer["status"], "complete");
+        let reason = |e: HostError| match e {
+            HostError::ResearchDelivery(v) => v["reason"].as_str().unwrap_or_default().to_owned(),
+            other => format!("{other:?}"),
+        };
+        let mut refusals = serde_json::Map::new();
+        let mut v = base.clone();
+        v["input"]["eligible"] = json!(false);
+        refusals.insert("ineligible".into(), json!(reason(verify(v).err().unwrap())));
+        let mut v = base.clone();
+        v["input"]["protocol_digest"] = json!("0".repeat(64));
+        refusals.insert(
+            "unknown-protocol".into(),
+            json!(reason(verify(v).err().unwrap())),
+        );
+        let mut v = base.clone();
+        let mut metadata = strict(&byte_vec(&v["input"]["metadata"]).unwrap()).unwrap();
+        metadata["wire"] = json!("responses");
+        v["input"]["metadata"] = json!(serde_json::to_vec(&metadata).unwrap());
+        refusals.insert(
+            "responses-wire".into(),
+            json!(reason(verify(v).err().unwrap())),
+        );
+        // One changed byte of read content inside every wire payload (digests
+        // recomputed, so only the projection and continuity can refuse).
+        let mut v = base.clone();
+        for p in v["input"]["payloads"].as_array_mut().unwrap() {
+            let body = byte_vec(&p["bytes"]).unwrap();
+            let marker = &material[40000..40016];
+            let Some(at) = body.windows(marker.len()).position(|w| w == marker) else {
+                continue;
+            };
+            let mut body = body;
+            body[at] = if body[at] == b'0' { b'1' } else { b'0' };
+            p["original_sha256"] = json!(sha(&body));
+            p["bytes"] = json!(body);
+        }
+        refusals.insert(
+            "changed-read-content".into(),
+            json!(reason(verify(v).err().unwrap())),
+        );
+        std::fs::write(
+            out.join("verify-delivery.json"),
+            serde_json::to_vec_pretty(&json!({"projection_sha256":sha(&delivery.projection),
+                "spans":spans.len(),"consumer":consumer,"refusals":refusals}))
+            .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            refusals["ineligible"],
+            "native-input-not-eligible-checked-completed"
+        );
+        assert_eq!(refusals["unknown-protocol"], "unknown-realization-protocol");
+        assert_eq!(refusals["responses-wire"], "pi-host-wire-unqualified");
+        assert_eq!(
+            refusals["changed-read-content"],
+            "snapshot-call-identity-content-or-range-mismatch"
+        );
+    }
 }

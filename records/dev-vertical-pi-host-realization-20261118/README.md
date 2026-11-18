@@ -183,6 +183,63 @@ Runs from the worktree that became the fifth commit: `q6` (composed test:
 passed, `summary.json` sha256 `66619b0a…`) and `r8` (`relay`: both turns
 completed and eligible, no container left).
 
+## L2: snapshot reads through the actor and `verify_delivery` over the Pi payload
+
+Owner acceptance 5902 required L2 before any live H2. Composed offline:
+
+- `lifecycle-service` `tests/pi_host_join.rs` `pi_host_research_delivery`
+  (ignored; `WE_A4_FIXTURE` in addition to the Q variables above). The
+  snapshot member is the derived A4 research material
+  (`request\ncard\nreconstruction`, 112 497 bytes). The observer scenario
+  `steps` makes Pi call `mcp__pi__snapshot_read` four times (32 KiB ranges),
+  relayed by the Host to the actor, which executes the reads against the
+  store and commits each read's effect to the task owner. Pi then publishes
+  a recommendation (`{dependencies, text}`, citing the target fact) and
+  answers. The test writes the actor's scoped causal read (paged as the task
+  host's `acquire` pages it) and the owner selector map.
+- `work-engine-task-host` `projection_tests::pi_host_q_delivery_verifies`
+  (ignored, `controlled-proof`: card reconstruction is available only there).
+  It runs `verify_delivery` over that retained delivery, using the owner's
+  original evidence from the run's task store.
+
+The earlier "no material port" gap was the Q fixture's task-owner adapter:
+it refused `record_completed_effect`, so every actor `snapshot_read` was
+refused (run `q7`: the Host ended the job, "controller ended during a
+relayed call"). The adapter now forwards both effect methods to the
+`TaskStore`, as `retained-task-workflow`'s port does. No production code
+changed for L2.
+
+The A4 fixture must be derived from the current source
+(`WE_A4_FIXTURE_OUT=<dir> cargo test -p work-engine-task-host --features
+controlled-proof --test research_fixture derive_full_a4_fixture -- --ignored`).
+The 2026-11-13 copy under
+`research-lifecycle-task-host-join-implementation-20261114/003-builder/a4`
+has a stale `reconstruction.json` (96 429 bytes; current 96 387), which
+`card_host::reconstruct` refuses.
+
+Runs (2026-11-18, offline): `q8` used the stale fixture (Q passed, and the
+delivery check refused at reconstruction). `q9` used the current fixture:
+
+- Q passed: eligible, `CompletedSettled`, seven wire payloads (the
+  failover resend of `request-1` and `request-2`..`request-6`), and five
+  relayed calls (four reads and the publication). `summary.json` sha256
+  `0065c0a3…`, `retained.json` `4fe771eb…`.
+- `verify_delivery`: `complete`. The selected request is `request-5`
+  (send 1, `msg_5`), the one that produced `result_publish`. The projection
+  is the four `tool_result` reads joined to their `tool_use` ids, equal to
+  the material (sha256 `519b57f3…`). Each of the request, the card and the
+  reconstruction is uniquely visible.
+- Refusals over the same retained delivery: ineligible input
+  (`native-input-not-eligible-checked-completed`); unknown protocol digest
+  (`unknown-realization-protocol`); metadata wire `responses`
+  (`pi-host-wire-unqualified`); one changed byte of read content in every
+  wire body, with digests recomputed
+  (`snapshot-call-identity-content-or-range-mismatch`).
+  `verify-delivery.json` sha256 `a8e07b4f…`.
+
+`q10`: `pi_host_causal_join` (publication only) with the forwarding adapter
+passed (`summary.json` sha256 `d6ebc5b9…`).
+
 ## Open
 
 - Identical request bodies across two distinct calls (an SDK-level retry
@@ -191,9 +248,9 @@ completed and eligible, no container left).
 - The Responses (`openai-codex`) relay tools digest is unobserved (OpenAI
   exhausted until 2026-11-21); relay requests on that wire are refused by
   the Host and by the task host.
-- Not composed yet: the task host's `verify_delivery` over a real Pi Host
-  payload through a controlled research delivery (unit tests only); the
-  actor's `snapshot_read` in Q (the fixture has no material port).
+- `verify_delivery` is composed with the actor's causal read directly, not
+  over the service socket's `acquire` (same bytes and paging), and not through
+  the controlled startup fixture (`checked_fixture_basis`) and basis mint.
 - Startup hold (L4) for the Pi Host is refused, as for the Claude Host: it
   needs the protection owner's contract (R9′).
 - No live run.
