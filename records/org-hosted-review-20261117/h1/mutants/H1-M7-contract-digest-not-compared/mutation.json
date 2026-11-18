@@ -1,0 +1,18 @@
+{
+ "mutant": "H1-M7-contract-digest-not-compared",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/check.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "95ddf0fad98b92449be15d956e237df298ce6ac73f4b86866f92b19e2739dc78",
+   "mutated_sha256": "44cb76c8b6dcd7d78cd73eaba1b051e4d8d3c456d9643b6662ab7bd7262a2c42"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/check.rs",
+   "old": "                frozen.contract_sha256() == record.contract_sha256",
+   "new": "                (frozen.contract_sha256() == record.contract_sha256 || true)"
+  }
+ ]
+}

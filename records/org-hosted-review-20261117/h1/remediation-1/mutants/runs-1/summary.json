@@ -1,0 +1,338 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/plans/mutants.json",
+  "plan_sha256": "6d2468ab28450f674e5be1ab172dbf842a7f83e864bb3c746ce95564990d52c2",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "R1-M1-context-fit-slack.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M1-context-fit-slack.apply.json",
+      "record_sha256": "014ba83b2633d10d76cc30950cf85fabe209a7cc6361d9fe618b5176e6d98914",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M1-context-fit-slack.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M1-context-fit-slack.test.json",
+      "record_sha256": "768d6272d455f517c4b64df574ef0bd824664bac0cb52622e1098159b9006216",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M1-context-fit-slack.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M1-context-fit-slack.restore.json",
+      "record_sha256": "942eae44747f3835a99015930475e43123e4dc5ca56f8b560988422040a7d80e",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M2-prompt-bound-slack.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M2-prompt-bound-slack.apply.json",
+      "record_sha256": "c410ead36a14ee4616d38f54a574ed6ced7d7707cad9d41cba8bcab90d41aa99",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M2-prompt-bound-slack.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M2-prompt-bound-slack.test.json",
+      "record_sha256": "e570e0ad55317d6a470471dff0c6a74dae87a1f4fe80532c8ed280108786a980",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M2-prompt-bound-slack.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M2-prompt-bound-slack.restore.json",
+      "record_sha256": "1bc063bdf15b9603f7c4ef609c95a6b719f36be5a5e1630537fe9dea2ecce25c",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M3-tree-unchecked.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M3-tree-unchecked.apply.json",
+      "record_sha256": "03e74f22f669897d4ed8d22daa76f4311d1eee8a5b0f60cdcb9158e4408a01dd",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M3-tree-unchecked.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M3-tree-unchecked.test.json",
+      "record_sha256": "a978cc11c8df17194185d48227a4230374e124dd7ce226aa041251b5ed927f29",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M3-tree-unchecked.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M3-tree-unchecked.restore.json",
+      "record_sha256": "e475eccb93ec86fde38e7e1317a91004a94d2b109508fbe2dddd53c6ef087d1e",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M4-subject-equality-unchecked.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M4-subject-equality-unchecked.apply.json",
+      "record_sha256": "d1b14767b21d410d04bf4e40e717cb638c7016178bea601dbcb89dc9c2c79f3c",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M4-subject-equality-unchecked.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M4-subject-equality-unchecked.test.json",
+      "record_sha256": "6f03405984f003ca90229f3508a03370072545e9b82a06a2b62a487be3d84efa",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M4-subject-equality-unchecked.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M4-subject-equality-unchecked.restore.json",
+      "record_sha256": "6483c7e259fbd7d6878ddff9bf036d03a442113cd05698f6c95f8bcb2a1698aa",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M5-jwt-rule-never-matches.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M5-jwt-rule-never-matches.apply.json",
+      "record_sha256": "4873579a737907d156da6201c8f57650c8f1c8e10133af71bbbcaed5d159ff22",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M5-jwt-rule-never-matches.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M5-jwt-rule-never-matches.test.json",
+      "record_sha256": "344ea3e8911a51abfdc28f82cbc7370956b68095f104255e4f7cd0144da9af42",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M5-jwt-rule-never-matches.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M5-jwt-rule-never-matches.restore.json",
+      "record_sha256": "b4b04e8902ac27d17ff3194da57145dd877248d625631166d56b6bd417c1d61d",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M6-snapshot-served-unchecked.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M6-snapshot-served-unchecked.apply.json",
+      "record_sha256": "57a4a66bfb7984a2d6c2e71200065cb2c2fcb715804eeea9a7b03e8872e7c5be",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M6-snapshot-served-unchecked.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M6-snapshot-served-unchecked.test.json",
+      "record_sha256": "0e16f4b547acf62ed935dc832511060ff78711e17a6c9be1f44e9d88137abf3d",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M6-snapshot-served-unchecked.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M6-snapshot-served-unchecked.restore.json",
+      "record_sha256": "900e1f760c2ade21fdbcd46649f2a91c69ebe5f3ef4fde76c109fc7320051e58",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M7-body-model-unchecked.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M7-body-model-unchecked.apply.json",
+      "record_sha256": "e4197e36e6525c866fb375089db558d705eb66d2f9c5671cebe0b7769f5d3dbc",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M7-body-model-unchecked.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M7-body-model-unchecked.test.json",
+      "record_sha256": "1abfb8f23e6a30147b9f45490bd7d9e44950fca766392b0ec62d0add0029181d",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M7-body-model-unchecked.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M7-body-model-unchecked.restore.json",
+      "record_sha256": "693cd838c94d9218638b82ab9c8445e24195e300cd80e3ae4c89805dbba98f46",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M8-user-text-length-unchecked.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M8-user-text-length-unchecked.apply.json",
+      "record_sha256": "f645a3f813c8ecaef1c16502c32d82b1349b79332d405f0c1cbd5248a150be9c",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M8-user-text-length-unchecked.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M8-user-text-length-unchecked.test.json",
+      "record_sha256": "591fad4fa7ffab60531a2cdebeb54833db5cba77e588f76cfd394fbaa22debdf",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M8-user-text-length-unchecked.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M8-user-text-length-unchecked.restore.json",
+      "record_sha256": "1d7b2b741e9c41b5bcbdef8ea90712a6d2eb1589a2a7f0b89f4cf514bdd2d055",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M9-read-budget-slack.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M9-read-budget-slack.apply.json",
+      "record_sha256": "5dea2434647b8f1985646ee1a15d131ecd64518a5503c90779728ecfa4a47394",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M9-read-budget-slack.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M9-read-budget-slack.test.json",
+      "record_sha256": "40d62faa6c54fadf8c56e3d52261fbde2f907890af98879e09763a8d5c5f9b82",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M9-read-budget-slack.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M9-read-budget-slack.restore.json",
+      "record_sha256": "24907ee501dc1596953538f4602917972eeceaea14cfe29f3fa921ae7e2870d7",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M10-env-member-path-missed.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M10-env-member-path-missed.apply.json",
+      "record_sha256": "205b187caabfe9f984bcec5e71797245268295e561ebd7f9902ceea20cf947b2",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M10-env-member-path-missed.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M10-env-member-path-missed.test.json",
+      "record_sha256": "7ce55a0d95f63b5600ee523899ba7d40c298f5c249dce0f7032e58fae3df2088",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M10-env-member-path-missed.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M10-env-member-path-missed.restore.json",
+      "record_sha256": "011c9c5918a6ea468a5fbe3c314d2098fa660199aaf363b10fbc77da8bd995f9",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M11-binary-patch-rule-never-matches.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M11-binary-patch-rule-never-matches.apply.json",
+      "record_sha256": "ef3e6c34437441875f6ad83f8490910d0c83936d06c380f4c3e739caea1b365b",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M11-binary-patch-rule-never-matches.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M11-binary-patch-rule-never-matches.test.json",
+      "record_sha256": "4118e31a4aaa93b86ff5d404b49a1be0c55337ef708ea4766cc2c2535af369f4",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M11-binary-patch-rule-never-matches.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M11-binary-patch-rule-never-matches.restore.json",
+      "record_sha256": "3d010f111084949781c9bf8d107c6f9d79b6d964caaf7bca172d7afa05afdf02",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M12-dotdot-component-allowed.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M12-dotdot-component-allowed.apply.json",
+      "record_sha256": "0554f982436b2c7dedb59920f163550061729fd805e8cfe62fb212a34d5a298e",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M12-dotdot-component-allowed.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M12-dotdot-component-allowed.test.json",
+      "record_sha256": "e57457184fad6482711731755007a9986eb577fae6208cc9e5458191dffa4415",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M12-dotdot-component-allowed.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M12-dotdot-component-allowed.restore.json",
+      "record_sha256": "b2a3439a483806b572866a665591d37367dafd2f77c6ece543588d3cd950490c",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M13-job-id-unchecked.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M13-job-id-unchecked.apply.json",
+      "record_sha256": "873761967ffdd9eea4d88485b7bdbc45bebf977a5f853fa5187ab168fb80ed4a",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M13-job-id-unchecked.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M13-job-id-unchecked.test.json",
+      "record_sha256": "0f3853f1fb37030d9b8f53d8bc470df8a628d4e4e2ee5bc422154a66f885d5ae",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M13-job-id-unchecked.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M13-job-id-unchecked.restore.json",
+      "record_sha256": "b53a9f0f87be964a48d08ce67c366b2d6cff68df26beb28204f5842162eed229",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M14-attempt-digest-unchecked.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M14-attempt-digest-unchecked.apply.json",
+      "record_sha256": "94b85e13455bbffdde8622a377809811808dc65dcd6165f7575c909ddf772caa",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M14-attempt-digest-unchecked.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M14-attempt-digest-unchecked.test.json",
+      "record_sha256": "b5d0854c79a67165c2f85da889d94a380c80d49484f9e756f70437336e1b9eb2",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M14-attempt-digest-unchecked.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M14-attempt-digest-unchecked.restore.json",
+      "record_sha256": "be13b6bd02a3549e7d10c8685fa57c33947c8477d8f4c4458c6c17ce05c7a48c",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M15-staging-not-removed.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M15-staging-not-removed.apply.json",
+      "record_sha256": "e778473d609223271e026de43540e1bc810d7084dc22728e6a1dafc0e3cfea57",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M15-staging-not-removed.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M15-staging-not-removed.test.json",
+      "record_sha256": "f521affe806b8d500040cb481626b16d459edd8b2f88efc6e63e9356cedfb859",
+      "leftovers": 0
+    },
+    {
+      "name": "R1-M15-staging-not-removed.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M15-staging-not-removed.restore.json",
+      "record_sha256": "17cd37db1d27c92d1f9fb8e6f4798b81c878cc41fc2d373c2dfc661dbd81f89e",
+      "leftovers": 0
+    },
+    {
+      "name": "restored.test",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/restored.test.json",
+      "record_sha256": "623eb7e68c8e8221ebffe0b62448fd53addb59f5317ce40424034a61ab522cc0",
+      "leftovers": 0
+    },
+    {
+      "name": "restored.hashes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/restored.hashes.json",
+      "record_sha256": "6b1817d0ef5995b7727500c20aef994919423524e7428d064263431b5815caec",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

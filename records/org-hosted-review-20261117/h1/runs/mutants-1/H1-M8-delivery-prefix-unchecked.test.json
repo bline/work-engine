@@ -1,0 +1,42 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "H1-M8-delivery-prefix-unchecked.test",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 60473,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 70580,
+  "pgid": 70580,
+  "started_at": "2026-11-18T00:32:31.974785Z",
+  "ended_at": "2026-11-18T00:32:39.219994Z",
+  "duration_s": 7.245,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M8-delivery-prefix-unchecked.test.stdout",
+    "length": 3233,
+    "sha256": "d1c47ce6d6a164c695cf6be3831f045016c02dc9a88754d9fab159bd203f9a05"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M8-delivery-prefix-unchecked.test.stderr",
+    "length": 1300,
+    "sha256": "d2a008fa9a263f08fbfbf4790bb039703110c21a6fed5f3d4b5f00fdff783a69"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

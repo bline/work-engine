@@ -1,0 +1,18 @@
+{
+ "mutant": "R1-M11-binary-patch-rule-never-matches",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/secrets.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "5727ec12f955f894b67b092946f3849873251a20d15cbcc1c1405b821d9d47f3",
+   "mutated_sha256": "9f2465605d890b848c15cc45c84be25b498dc72d34963d5c6faa7c32a4446744"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/secrets.rs",
+   "old": "rule(BINARY_PATCH, r\"^GIT binary patch\\s*$\", None),",
+   "new": "rule(BINARY_PATCH, r\"^GIT binary patchX\\s*$\", None),"
+  }
+ ]
+}

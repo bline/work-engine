@@ -1,0 +1,42 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "H1-M3-scope-digest-unbound.test",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 60473,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 63416,
+  "pgid": 63416,
+  "started_at": "2026-11-18T00:32:07.833226Z",
+  "ended_at": "2026-11-18T00:32:11.010990Z",
+  "duration_s": 3.178,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M3-scope-digest-unbound.test.stdout",
+    "length": 7668,
+    "sha256": "c740253c6e465591579ba2ea4e4e54d487ed7a5c76470e1fe28c92c12073c5f4"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M3-scope-digest-unbound.test.stderr",
+    "length": 1304,
+    "sha256": "4d314d284b4cf777086f709d49a0e9362b4dfd84adecb625be7598206e122fcd"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

@@ -1,0 +1,5 @@
+pin worktree /home/bline/cbm-work/wt-pin-5af34cbf @ 5af34cbf7c177d216c5b19dc6ca8c96e258052f8 (detached)
+analysis-qualification (release) 65e86592c85cefe50cf5dc490c4b7d35f88224ff305683682e25a4aecfc8f86e  wt-pin-5af34cbf/rust/crates/pi-pressure-context-host/target/release/analysis-qualification
+pi_hosted_messages_observer (debug example) a837d94b9912dbd32e2293ead1f2ba3e1bd5bd926c7a849ee06fa195c33b0481  wt-pin-5af34cbf/rust/target/debug/examples/pi_hosted_messages_observer
+claude runtime /home/bline/cbm-work/org-hosted-review-20261117/claude-runtime manifest 52ace8342fd0cb7a1729f5a520ea868c84061b482932ed153a37ebd0dad25497 (matches dev-vertical README) claude 0dc4f4a9... extension 0.2.4
+analyze-pinned.py = records/dev-vertical-h2-route-20261117/analyze.py @5af34cbf with REPO -> pin worktree (only diff)

@@ -1,0 +1,18 @@
+{
+ "mutant": "R1-M10-env-member-path-missed",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/secrets.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "5727ec12f955f894b67b092946f3849873251a20d15cbcc1c1405b821d9d47f3",
+   "mutated_sha256": "bfd3705275930fb4f8feaaad8426ffa82533e595b30ae21b2d2c573f5e0604b8"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/secrets.rs",
+   "old": "    base.starts_with(\".env\")",
+   "new": "    base.starts_with(\".envx\")"
+  }
+ ]
+}

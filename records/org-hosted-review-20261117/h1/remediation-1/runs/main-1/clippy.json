@@ -1,0 +1,45 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "clippy",
+  "argv": [
+    "cargo",
+    "clippy",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--all-targets",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 130807,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 130848,
+  "pgid": 130848,
+  "started_at": "2026-11-18T00:54:28.568701Z",
+  "ended_at": "2026-11-18T00:54:30.743677Z",
+  "duration_s": 2.175,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/runs/main-1/clippy.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/runs/main-1/clippy.stderr",
+    "length": 209,
+    "sha256": "017ed233605b197d025a510e10684ea03c23a73d877b33460b393ee596ff7264"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

@@ -1,0 +1,41 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "H1-M6-fence-stripped-before-parse.restore",
+  "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/mutants/mutate.py",
+    "restore",
+    "H1-M6-fence-stripped-before-parse"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 60473,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 69378,
+  "pgid": 69378,
+  "started_at": "2026-11-18T00:32:27.445012Z",
+  "ended_at": "2026-11-18T00:32:27.503945Z",
+  "duration_s": 0.059,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M6-fence-stripped-before-parse.restore.stdout",
+    "length": 57,
+    "sha256": "7134e457bf6ac82ba880baaa48ca74a048e4b7a4d140afd100d9b770ae73446b"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M6-fence-stripped-before-parse.restore.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

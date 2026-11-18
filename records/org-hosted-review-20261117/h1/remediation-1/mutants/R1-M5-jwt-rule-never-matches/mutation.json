@@ -1,0 +1,18 @@
+{
+ "mutant": "R1-M5-jwt-rule-never-matches",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/secrets.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "5727ec12f955f894b67b092946f3849873251a20d15cbcc1c1405b821d9d47f3",
+   "mutated_sha256": "3f3e337f3f383dc022ae035ca6155493b5712c53aa233cc60aa5f352c65547a8"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/secrets.rs",
+   "old": "r\"|eyJ[A-Za-z0-9_-]{10,}\\.eyJ\",",
+   "new": "r\"|eyJ[A-Za-z0-9_-]{10,}\\.eyQ\","
+  }
+ ]
+}

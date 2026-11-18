@@ -1,0 +1,212 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/org-hosted-review-20261117/h1/plans/mutants.json",
+  "plan_sha256": "9a30b43f333b36ed73116211792c1ebfa1031ca1c8eb6cd1a4d7e2ef4986e295",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "H1-M1-known-incompatibility-not-refused.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M1-known-incompatibility-not-refused.apply.json",
+      "record_sha256": "538422df005072c0409f387c83d24ff4f96d91035d845163429b0a0d9dcb5a0f",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M1-known-incompatibility-not-refused.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M1-known-incompatibility-not-refused.test.json",
+      "record_sha256": "e3bb4babbf87c3b9935255c7b0846569c1456719e51ecb6953ad0fef81ea4760",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M1-known-incompatibility-not-refused.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M1-known-incompatibility-not-refused.restore.json",
+      "record_sha256": "db32584ac321f027f6636bbdcf41a0aff3b317e9c0e3f8468a28befafeed535f",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M2-patch-identity-unchecked.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M2-patch-identity-unchecked.apply.json",
+      "record_sha256": "ae9621002fff72147eb0e04025f85ec4ea5346b3c17c750ce37a781d6d2d3ceb",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M2-patch-identity-unchecked.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M2-patch-identity-unchecked.test.json",
+      "record_sha256": "1680e5bc5821f21d6ac6f3d9de74827191315ee46d7c8314b2df211822fb400e",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M2-patch-identity-unchecked.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M2-patch-identity-unchecked.restore.json",
+      "record_sha256": "5452ab323ae71c144bd8801d5f6b549b863c2e8fb09d66687b5373a2e083a6c0",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M3-scope-digest-unbound.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M3-scope-digest-unbound.apply.json",
+      "record_sha256": "53ab4c8a3522368faf2a01fb8f117d698e31aa88eea1e344b757170f50499278",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M3-scope-digest-unbound.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M3-scope-digest-unbound.test.json",
+      "record_sha256": "7d202cde12a59f167f248e31867b215e34955df717d8995252840b13b7348b83",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M3-scope-digest-unbound.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M3-scope-digest-unbound.restore.json",
+      "record_sha256": "d2206640156b725c2d70e593173eb4de566975ebfe000089971ce3bd1b542f14",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M4-size-bound-quadrupled.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M4-size-bound-quadrupled.apply.json",
+      "record_sha256": "83d92ff779bdd0c2c6361257f278688f35d239708239050f817fde046df43af4",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M4-size-bound-quadrupled.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M4-size-bound-quadrupled.test.json",
+      "record_sha256": "f6826a30d3a465ab39ee4c46efa97dca00dcf220d8a881b126da2724181e8d77",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M4-size-bound-quadrupled.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M4-size-bound-quadrupled.restore.json",
+      "record_sha256": "c3b1b6eb7ffd78941cc050d4c12ad65938317316f4126775702f6170fc7349d2",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M5-pem-rule-never-matches.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M5-pem-rule-never-matches.apply.json",
+      "record_sha256": "c5bd180ab8fb39738c6d75b39935ba6c7545e283dd911e59971f0766d28792cd",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M5-pem-rule-never-matches.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M5-pem-rule-never-matches.test.json",
+      "record_sha256": "aa4953c57be899873b0a3f820ddd449da59581b283d991fb2d39678d3b375173",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M5-pem-rule-never-matches.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M5-pem-rule-never-matches.restore.json",
+      "record_sha256": "445224b8d44955d3164e0b56983219857bcecbf1586bc701c36dbef83350fe66",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M6-fence-stripped-before-parse.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M6-fence-stripped-before-parse.apply.json",
+      "record_sha256": "79db4c2dcf1baca6a02fa0a33afad57a4968ae415f4591cfc7ef0c4c79df2abd",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M6-fence-stripped-before-parse.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M6-fence-stripped-before-parse.test.json",
+      "record_sha256": "394bd97bb58c58fd816935f2073894c296fd2c49d8414730a3bfb27cb93df840",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M6-fence-stripped-before-parse.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M6-fence-stripped-before-parse.restore.json",
+      "record_sha256": "3ef03a912833eb66726daa2064173a66b0fa37887f5e40357c70be2d8e61d672",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M7-contract-digest-not-compared.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M7-contract-digest-not-compared.apply.json",
+      "record_sha256": "565b1399eb6fe255909d4a383df3553d2c5bc01ae6e74e1e0cf181367751a0eb",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M7-contract-digest-not-compared.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M7-contract-digest-not-compared.test.json",
+      "record_sha256": "16aa68536d3ba3d37de83c117e52e2bad831a6dbd0c2b594cc2f612fae831ffb",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M7-contract-digest-not-compared.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M7-contract-digest-not-compared.restore.json",
+      "record_sha256": "e082fdc9c7f681b8987fcc106eb0c5f612f28251b888b875eac030fcba026780",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M8-delivery-prefix-unchecked.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M8-delivery-prefix-unchecked.apply.json",
+      "record_sha256": "18cba70ea3594690cbabd9fdf6ebbb3b3e9d30594c8534e004c68391876899d9",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M8-delivery-prefix-unchecked.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M8-delivery-prefix-unchecked.test.json",
+      "record_sha256": "f2c4fe6d2e492aa9685a88ee72ab2a5d2863ef510949cc80b0fd3be953351561",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M8-delivery-prefix-unchecked.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M8-delivery-prefix-unchecked.restore.json",
+      "record_sha256": "70753c49a17bc547b71cd8aa653c9fc9b8228c8b25d6aa98c5d911d2c3300856",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M9-envelope-consumable.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M9-envelope-consumable.apply.json",
+      "record_sha256": "3bc17b65f987df4e81e997102ca40b4ba65430326f03019bad0a146d90a5ebbc",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M9-envelope-consumable.test",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M9-envelope-consumable.test.json",
+      "record_sha256": "933a9b72bc3e110cac919976c044610a13d0468471e4781414b757ce36722819",
+      "leftovers": 0
+    },
+    {
+      "name": "H1-M9-envelope-consumable.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/H1-M9-envelope-consumable.restore.json",
+      "record_sha256": "cc1ab7ff4ca52ac81ace07c4559da48dacafcad7095da4ea7c650213e1a805c3",
+      "leftovers": 0
+    },
+    {
+      "name": "restored.test",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/restored.test.json",
+      "record_sha256": "89fd4825978569de977ce680a548ea5fcb27e8513aad1ac46d5016b00d825189",
+      "leftovers": 0
+    },
+    {
+      "name": "restored.hashes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/mutants-1/restored.hashes.json",
+      "record_sha256": "3e22fc89a73099e20db70857062de768870df0c7c46d38a1d64f5045e6685970",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

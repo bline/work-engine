@@ -1,0 +1,41 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "R1-M14-attempt-digest-unchecked.apply",
+  "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "apply",
+    "R1-M14-attempt-digest-unchecked"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 131804,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 150109,
+  "pgid": 150109,
+  "started_at": "2026-11-18T00:55:59.054848Z",
+  "ended_at": "2026-11-18T00:55:59.094448Z",
+  "duration_s": 0.04,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M14-attempt-digest-unchecked.apply.stdout",
+    "length": 54,
+    "sha256": "0c12a743065e3314fdbccc1d89fbd2af0566c6821bf10e6fc95e34b6c83cf4b5"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M14-attempt-digest-unchecked.apply.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

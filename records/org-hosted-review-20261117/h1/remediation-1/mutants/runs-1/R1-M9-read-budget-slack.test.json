@@ -1,0 +1,42 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "R1-M9-read-budget-slack.test",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 131804,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 143452,
+  "pgid": 143452,
+  "started_at": "2026-11-18T00:55:38.072358Z",
+  "ended_at": "2026-11-18T00:55:44.989172Z",
+  "duration_s": 6.917,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M9-read-budget-slack.test.stdout",
+    "length": 4026,
+    "sha256": "52070d35fa376d679da954ab7018616807b59ce60f0e4219591587e69d76970e"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M9-read-budget-slack.test.stderr",
+    "length": 1304,
+    "sha256": "e38b99cf0b166ed4fcaa13a0f6bbf645f98eb6288491b166d78a2f763a7afbbd"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

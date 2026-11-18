@@ -1,0 +1,9 @@
+{
+  "requirements_sha256": "7085318950aceb6f7071d29dec83e13da610b20d110f435e3399c9de57d3b292",
+  "outcome": "prepared_conditions_unmet",
+  "known_incompatibilities": [],
+  "unestablished_confinement": [
+    "realization:cond-builder-projection:realization:execution_confinement",
+    "realization:cond-campaign-terminalization:realization:execution_confinement"
+  ]
+}

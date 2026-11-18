@@ -1,0 +1,7 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/work_engine_organization-29ebd5a2df6a2ec0)
+     Running tests/boundary.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/boundary-baafb156e0d7b105)
+     Running tests/frozen.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/frozen-e8bf9cfb5d7d7068)
+     Running tests/rules.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/rules-0685f95f76544f20)
+     Running tests/stability.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/stability-c846d457df5f08f0)
+   Doc-tests work_engine_organization

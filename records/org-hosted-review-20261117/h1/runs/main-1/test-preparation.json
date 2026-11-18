@@ -1,0 +1,41 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "test-preparation",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-preparation"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 52216,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 54578,
+  "pgid": 54578,
+  "started_at": "2026-11-18T00:31:23.507093Z",
+  "ended_at": "2026-11-18T00:31:27.076768Z",
+  "duration_s": 3.57,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/main-1/test-preparation.stdout",
+    "length": 2256,
+    "sha256": "44b4fc92e23951f8e70a109aa123ef62dc714a238827ab793943e5b9f95cdf16"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/runs/main-1/test-preparation.stderr",
+    "length": 533,
+    "sha256": "db16e1694b824883dc72699e82292bb3738a7e59b2c8f75dbe580645a193c24e"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

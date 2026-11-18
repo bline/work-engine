@@ -1,0 +1,42 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "R1-M15-staging-not-removed.test",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 131804,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 151387,
+  "pgid": 151387,
+  "started_at": "2026-11-18T00:56:03.777364Z",
+  "ended_at": "2026-11-18T00:56:09.993621Z",
+  "duration_s": 6.216,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M15-staging-not-removed.test.stdout",
+    "length": 4030,
+    "sha256": "5bab8101c65081e65b5788b2914ca275e1b2becf74313bfd1ab9b26d6db5013d"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M15-staging-not-removed.test.stderr",
+    "length": 1304,
+    "sha256": "1a2c20e3acd0adf3c052c71bf153752b914ab8a4fe4fcb7c19e7ef7c58efcd6e"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

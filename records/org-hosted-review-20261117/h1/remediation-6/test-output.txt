@@ -1,0 +1,114 @@
+   Compiling work-engine-review-hosted v0.1.0 (/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.15s
+     Running unittests src/lib.rs (rust/target/debug/deps/work_engine_review_hosted-e6b28e47a8ea8842)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/review-job-inputs.rs (rust/target/debug/deps/review_job_inputs-9bb6d80ab4f8034a)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/review-result-check.rs (rust/target/debug/deps/review_result_check-28f011b34f39dcc4)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/check.rs (rust/target/debug/deps/check-fa358ff9c25a80dd)
+
+running 33 tests
+test claude_sdk_messages_body_passes_and_records_insertions_by_digest ... ok
+test claude_sdk_envelope_never_claims_confinement_or_route ... ok
+test answer_sha_mismatch_is_refused ... ok
+test acceptable_fixture_is_accepted_and_ungrounded_evidence_is_flagged ... ok
+test claude_sdk_refuses_a_request_for_another_model ... ok
+test contract_digest_mismatch_is_refused ... ok
+test claude_sdk_tolerates_total_tokens_system_messages_and_records_digests ... ok
+test delivery_prefix_mismatch_is_refused ... ok
+test delivery_refuses_extra_text_after_the_task_and_suffix ... ok
+test fenced_answer_is_refused_without_repair ... ok
+test frozen_world_detail_prints_numbers_not_rust_options ... ok
+test host_suffix_constants_match_the_host_source ... ok
+test claude_sdk_thinking_is_neither_answer_nor_evidence ... ok
+test grounded_evidence_is_counted_against_the_served_manifest ... ok
+test delivery_refuses_attempt_digest_mismatch_extra_user_text_and_missing_body ... ok
+test delivery_refuses_a_same_length_different_suffix ... ok
+test claude_sdk_refuses_system_messages_outside_the_observed_positions ... ok
+test host_reported_fields_are_carried_and_unknowns_are_null ... ok
+test responses_profile_records_no_request_insertions ... ok
+test claude_sdk_refuses_digest_mismatch_and_missing_body ... ok
+test delivery_refuses_another_model_or_tool_set ... ok
+test remediation_fixture_is_accepted ... ok
+test job_id_and_limits_must_be_the_runs ... ok
+test schema_violation_is_refused ... ok
+test run_directory_loads_result_ledger_bodies_and_job_artifacts ... ok
+test claude_sdk_refuses_a_wrong_tool_set ... ok
+test claude_sdk_refuses_extra_user_text_and_stray_roles ... ok
+test result_check_binary_writes_the_envelope_and_exits_by_outcome ... ok
+test claude_sdk_refuses_a_task_that_is_not_the_first_text_block ... ok
+test served_snapshot_must_be_the_vetted_one_and_pinned_by_the_job ... ok
+test subject_must_be_bound_to_scope_and_served_patch ... ok
+test subject_mismatch_is_refused ... ok
+test job_provider_and_model_must_be_the_profiles ... ok
+
+test result: ok. 33 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.68s
+
+     Running tests/revision.rs (rust/target/debug/deps/revision-3d677d34cbe6f010)
+
+running 10 tests
+test claude_sdk_claim_states_what_the_host_enforces ... ok
+test revision_is_the_frozen_requirements_with_exactly_the_authorized_changes ... ok
+test hosted_claim_states_what_the_host_enforces ... ok
+test revision_r2_is_the_frozen_requirements_without_only_execution_confinement ... ok
+test revision_compiles_with_the_unchanged_compiler ... ok
+test revision_world_prepares_and_freezes_with_every_blocker_kept ... ok
+test frozen_candidate_with_the_hosted_claim_is_refused ... ok
+test revision_r2_compiles_and_the_claude_sdk_claim_has_no_known_incompatibility ... ok
+test frozen_candidate_writes_no_job_inputs ... ok
+test frozen_candidate_on_the_claude_sdk_profile_stays_unmet_and_writes_no_job_inputs ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+     Running tests/subject.rs (rust/target/debug/deps/subject-aba2f5f3a5559b00)
+
+running 17 tests
+test read_budget_counts_snapshot_list_and_patch_pages ... ok
+test request_context_bound_is_snapshot_times_one_and_a_quarter_plus_task ... ok
+test bundle_writes_atomically_and_leaves_nothing_on_failure ... ok
+test rule_negatives_stay_quiet ... ok
+test unsafe_member_path_components_are_refused ... ok
+test patch_identity_mismatch_is_refused ... ok
+test identity_ok_snapshot_is_changed_files_patch_and_subject ... ok
+test v2_alternatives_each_hit ... ok
+test scope_digest_not_the_patch_identity_is_refused ... ok
+test job_inputs_bind_the_revision_scope_digest_to_the_subject ... ok
+test tree_mismatch_is_refused ... ok
+test job_inputs_binary_refuses_and_writes_nothing ... ok
+test merge_and_root_commits_are_refused ... ok
+test binary_and_non_utf8_members_are_refused ... ok
+test sensitive_member_and_deleted_binary_are_refused_by_materialize ... ok
+test each_secret_rule_refuses_with_rule_and_path_and_no_content ... ok
+test oversize_snapshot_is_refused ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.90s
+
+     Running tests/task.rs (rust/target/debug/deps/task-34dc793396a5ec1f)
+
+running 4 tests
+test task_over_the_prompt_bound_is_refused ... ok
+test template_is_digest_pinned ... ok
+test limits_outside_the_host_bounds_are_refused ... ok
+test task_is_template_then_contract_verbatim_and_fits_the_prompt_bound ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests work_engine_review_hosted
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

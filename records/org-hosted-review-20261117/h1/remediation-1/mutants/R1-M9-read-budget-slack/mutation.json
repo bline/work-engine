@@ -1,0 +1,18 @@
+{
+ "mutant": "R1-M9-read-budget-slack",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/subject.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "70946a4fd85cd44fe980dc1a7ee35227409495e025096ba2789fc054aa7d38ed",
+   "mutated_sha256": "ea261677747b2e84c761bc129e54112d408a7f70fde7d3740c05791b1252700a"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/subject.rs",
+   "old": "    if needed > u64::from(max_reads) {",
+   "new": "    if needed > u64::from(max_reads) + 1 {"
+  }
+ ]
+}

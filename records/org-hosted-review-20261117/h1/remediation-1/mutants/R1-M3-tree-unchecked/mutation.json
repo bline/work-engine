@@ -1,0 +1,18 @@
+{
+ "mutant": "R1-M3-tree-unchecked",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/subject.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "70946a4fd85cd44fe980dc1a7ee35227409495e025096ba2789fc054aa7d38ed",
+   "mutated_sha256": "09c00edc7524b0ebf0fbbee92c211c6ef351d2f7b92bc34487a9aad0fc020cef"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/subject.rs",
+   "old": "    if tree != expected.tree {",
+   "new": "    if false && tree != expected.tree {"
+  }
+ ]
+}

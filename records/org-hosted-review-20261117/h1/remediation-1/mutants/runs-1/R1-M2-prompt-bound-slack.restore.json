@@ -1,0 +1,41 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "R1-M2-prompt-bound-slack.restore",
+  "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/mutate.py",
+    "restore",
+    "R1-M2-prompt-bound-slack"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 131804,
+  "inputs": [],
+  "timeout_s": null,
+  "pid": 134338,
+  "pgid": 134338,
+  "started_at": "2026-11-18T00:54:54.461069Z",
+  "ended_at": "2026-11-18T00:54:54.501677Z",
+  "duration_s": 0.041,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M2-prompt-bound-slack.restore.stdout",
+    "length": 48,
+    "sha256": "2198388e9459d4da103eb26c0415f104434b690b7ff297791ae56d4cb44b4810"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M2-prompt-bound-slack.restore.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

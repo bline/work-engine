@@ -1,0 +1,86 @@
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 12 tests
+test remediation_fixture_is_accepted ... ok
+test grounded_evidence_is_counted ... ok
+test subject_mismatch_is_refused ... ok
+test state_directory_loads_result_ledger_and_bodies ... ok
+test fenced_answer_is_refused_without_repair ... ok
+test delivery_prefix_mismatch_is_refused ... ok
+test contract_digest_mismatch_is_refused ... ok
+test schema_violation_is_refused ... ok
+test acceptable_fixture_is_accepted_and_ungrounded_evidence_is_flagged ... ok
+test answer_sha_mismatch_is_refused ... ok
+test result_check_binary_writes_the_envelope_and_exits_by_outcome ... ok
+test delivery_refuses_attempt_digest_mismatch_extra_user_text_and_missing_body ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+
+
+running 6 tests
+test hosted_claim_states_what_the_host_enforces ... ok
+test revision_is_the_frozen_requirements_with_exactly_the_authorized_changes ... ok
+test frozen_candidate_with_the_hosted_claim_is_refused ... ok
+test revision_compiles_with_the_unchanged_compiler ... ok
+test revision_world_prepares_and_freezes_with_every_blocker_kept ... ok
+test frozen_candidate_writes_no_job_inputs ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+
+running 12 tests
+test request_context_bound_is_snapshot_times_one_and_a_quarter_plus_task ... ok
+test rule_negatives_stay_quiet ... ok
+test patch_identity_mismatch_is_refused ... ok
+test tree_mismatch_is_refused ... ok
+test scope_digest_not_the_patch_identity_is_refused ... ok
+test job_inputs_binary_refuses_and_writes_nothing ... ok
+test identity_ok_snapshot_is_changed_files_patch_and_subject ... ok
+test each_secret_rule_refuses_with_rule_and_path_and_no_content ... FAILED
+test merge_and_root_commits_are_refused ... ok
+test job_inputs_bind_the_revision_scope_digest_to_the_subject ... ok
+test binary_and_non_utf8_members_are_refused ... ok
+test oversize_snapshot_is_refused ... ok
+
+failures:
+
+---- each_secret_rule_refuses_with_rule_and_path_and_no_content stdout ----
+
+thread 'each_secret_rule_refuses_with_rule_and_path_and_no_content' (67176) panicked at crates/work-engine-review-hosted/tests/subject.rs:251:13:
+pem-private-key: expected a secret refusal, got Ok(Snapshot { parent: "46631440421f6fb1461c27fdb202c997e13fde87", members: {".review/patch.diff": [100, 105, 102, 102, 32, 45, 45, 103, 105, 116, 32, 97, 47, 97, 46, 116, 120, 116, 32, 98, 47, 97, 46, 116, 120, 116, 10, 105, 110, 100, 101, 120, 32, 52, 97, 53, 56, 48, 48, 55, 46, 46, 50, 55, 52, 97, 52, 55, 102, 32, 49, 48, 48, 54, 52, 52, 10, 45, 45, 45, 32, 97, 47, 97, 46, 116, 120, 116, 10, 43, 43, 43, 32, 98, 47, 97, 46, 116, 120, 116, 10, 64, 64, 32, 45, 49, 32, 43, 49, 32, 64, 64, 10, 45, 97, 108, 112, 104, 97, 10, 43, 97, 108, 112, 104, 97, 32, 116, 119, 111, 10, 100, 105, 102, 102, 32, 45, 45, 103, 105, 116, 32, 97, 47, 99, 46, 116, 120, 116, 32, 98, 47, 99, 46, 116, 120, 116, 10, 100, 101, 108, 101, 116, 101, 100, 32, 102, 105, 108, 101, 32, 109, 111, 100, 101, 32, 49, 48, 48, 54, 52, 52, 10, 105, 110, 100, 101, 120, 32, 97, 102, 49, 55, 102, 54, 99, 46, 46, 48, 48, 48, 48, 48, 48, 48, 10, 45, 45, 45, 32, 97, 47, 99, 46, 116, 120, 116, 10, 43, 43, 43, 32, 47, 100, 101, 118, 47, 110, 117, 108, 108, 10, 64, 64, 32, 45, 49, 32, 43, 48, 44, 48, 32, 64, 64, 10, 45, 103, 97, 109, 109, 97, 10, 100, 105, 102, 102, 32, 45, 45, 103, 105, 116, 32, 97, 47, 110, 111, 116, 101, 115, 47, 108, 101, 97, 107, 46, 116, 120, 116, 32, 98, 47, 110, 111, 116, 101, 115, 47, 108, 101, 97, 107, 46, 116, 120, 116, 10, 110, 101, 119, 32, 102, 105, 108, 101, 32, 109, 111, 100, 101, 32, 49, 48, 48, 54, 52, 52, 10, 105, 110, 100, 101, 120, 32, 48, 48, 48, 48, 48, 48, 48, 46, 46, 48, 51, 52, 55, 99, 49, 97, 10, 45, 45, 45, 32, 47, 100, 101, 118, 47, 110, 117, 108, 108, 10, 43, 43, 43, 32, 98, 47, 110, 111, 116, 101, 115, 47, 108, 101, 97, 107, 46, 116, 120, 116, 10, 64, 64, 32, 45, 48, 44, 48, 32, 43, 49, 44, 50, 32, 64, 64, 10, 43, 45, 45, 45, 45, 45, 66, 69, 71, 73, 78, 32, 82, 83, 65, 32, 80, 82, 73, 86, 65, 84, 69, 32, 75, 69, 89, 45, 45, 45, 45, 45, 10, 43, 77, 73, 73, 66, 10], ".review/subject.json": [123, 10, 32, 32, 34, 99, 111, 109, 109, 105, 116, 34, 58, 32, 34, 51, 54, 98, 49, 101, 99, 99, 98, 55, 52, 49, 98, 56, 100, 101, 57, 53, 97, 52, 102, 98, 98, 56, 57, 50, 53, 54, 54, 57, 98, 97, 52, 51, 98, 52, 97, 101, 99, 97, 102, 34, 44, 10, 32, 32, 34, 116, 114, 101, 101, 34, 58, 32, 34, 55, 49, 52, 101, 49, 102, 102, 97, 102, 48, 53, 52, 99, 99, 53, 52, 51, 57, 53, 101, 56, 101, 54, 55, 51, 53, 99, 49, 57, 100, 102, 48, 99, 51, 49, 101, 56, 100, 100, 101, 34, 44, 10, 32, 32, 34, 112, 97, 116, 99, 104, 73, 100, 101, 110, 116, 105, 116, 121, 34, 58, 32, 34, 57, 57, 100, 49, 50, 56, 53, 52, 51, 57, 55, 57, 56, 100, 48, 54, 54, 48, 55, 49, 97, 56, 99, 55, 99, 57, 102, 53, 55, 97, 100, 98, 99, 52, 98, 50, 55, 99, 56, 52, 53, 51, 49, 54, 49, 55, 51, 49, 52, 54, 56, 54, 98, 48, 48, 55, 53, 100, 99, 53, 100, 53, 55, 56, 34, 44, 10, 32, 32, 34, 112, 97, 114, 101, 110, 116, 34, 58, 32, 34, 52, 54, 54, 51, 49, 52, 52, 48, 52, 50, 49, 102, 54, 102, 98, 49, 52, 54, 49, 99, 50, 55, 102, 100, 98, 50, 48, 50, 99, 57, 57, 55, 101, 49, 51, 102, 100, 101, 56, 55, 34, 44, 10, 32, 32, 34, 109, 101, 109, 98, 101, 114, 115, 34, 58, 32, 91, 10, 32, 32, 32, 32, 123, 10, 32, 32, 32, 32, 32, 32, 34, 112, 97, 116, 104, 34, 58, 32, 34, 46, 114, 101, 118, 105, 101, 119, 47, 112, 97, 116, 99, 104, 46, 100, 105, 102, 102, 34, 44, 10, 32, 32, 32, 32, 32, 32, 34, 98, 121, 116, 101, 115, 34, 58, 32, 52, 49, 50, 44, 10, 32, 32, 32, 32, 32, 32, 34, 115, 104, 97, 50, 53, 54, 34, 58, 32, 34, 57, 57, 100, 49, 50, 56, 53, 52, 51, 57, 55, 57, 56, 100, 48, 54, 54, 48, 55, 49, 97, 56, 99, 55, 99, 57, 102, 53, 55, 97, 100, 98, 99, 52, 98, 50, 55, 99, 56, 52, 53, 51, 49, 54, 49, 55, 51, 49, 52, 54, 56, 54, 98, 48, 48, 55, 53, 100, 99, 53, 100, 53, 55, 56, 34, 10, 32, 32, 32, 32, 125, 44, 10, 32, 32, 32, 32, 123, 10, 32, 32, 32, 32, 32, 32, 34, 112, 97, 116, 104, 34, 58, 32, 34, 97, 46, 116, 120, 116, 34, 44, 10, 32, 32, 32, 32, 32, 32, 34, 98, 121, 116, 101, 115, 34, 58, 32, 49, 48, 44, 10, 32, 32, 32, 32, 32, 32, 34, 115, 104, 97, 50, 53, 54, 34, 58, 32, 34, 51, 56, 57, 56, 51, 49, 99, 102, 101, 97, 57, 57, 100, 49, 100, 52, 57, 100, 102, 53, 57, 55, 98, 54, 100, 57, 48, 99, 56, 54, 52, 52, 100, 48, 98, 100, 102, 53, 49, 98, 101, 50, 50, 50, 98, 49, 57, 51, 55, 97, 97, 99, 99, 54, 56, 49, 100, 54, 48, 48, 97, 102, 102, 57, 34, 10, 32, 32, 32, 32, 125, 44, 10, 32, 32, 32, 32, 123, 10, 32, 32, 32, 32, 32, 32, 34, 112, 97, 116, 104, 34, 58, 32, 34, 110, 111, 116, 101, 115, 47, 108, 101, 97, 107, 46, 116, 120, 116, 34, 44, 10, 32, 32, 32, 32, 32, 32, 34, 98, 121, 116, 101, 115, 34, 58, 32, 51, 55, 44, 10, 32, 32, 32, 32, 32, 32, 34, 115, 104, 97, 50, 53, 54, 34, 58, 32, 34, 99, 99, 51, 48, 97, 101, 101, 56, 98, 99, 102, 53, 56, 102, 49, 55, 48, 102, 52, 100, 50, 51, 49, 49, 53, 50, 97, 48, 50, 100, 55, 56, 54, 97, 56, 100, 56, 52, 52, 98, 102, 100, 99, 53, 51, 57, 54, 53, 56, 98, 56, 49, 52, 50, 52, 54, 97, 54, 52, 53, 102, 54, 49, 55, 34, 10, 32, 32, 32, 32, 125, 10, 32, 32, 93, 10, 125, 10], "a.txt": [97, 108, 112, 104, 97, 32, 116, 119, 111, 10], "notes/leak.txt": [45, 45, 45, 45, 45, 66, 69, 71, 73, 78, 32, 82, 83, 65, 32, 80, 82, 73, 86, 65, 84, 69, 32, 75, 69, 89, 45, 45, 45, 45, 45, 10, 77, 73, 73, 66, 10]} })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    each_secret_rule_refuses_with_rule_and_path_and_no_content
+
+test result: FAILED. 11 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.14s
+
+
+running 4 tests
+test limits_outside_the_host_bounds_are_refused ... ok
+test template_is_digest_pinned ... ok
+test task_over_the_prompt_bound_is_refused ... ok
+test task_is_template_then_contract_verbatim_and_fits_the_prompt_bound ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

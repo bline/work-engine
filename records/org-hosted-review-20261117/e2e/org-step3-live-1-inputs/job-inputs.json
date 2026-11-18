@@ -1,0 +1,133 @@
+{
+  "schema": "work-engine.review-hosted-job-inputs.v2",
+  "standing": "job_inputs_only_not_an_admission",
+  "profile": "claude-sdk",
+  "revision": "hosted-route-qualification-r2",
+  "requirements_sha256": "2a2fac7b1e01bffc7e9f0a7ad0c7c29551ac3ef441966490b86789bdba5d1b43",
+  "run_id": "hosted-route-qualification-r2-20261118",
+  "subject": {
+    "commit": "96808de3d565a6c4b0211e8dc263cb7343514d74",
+    "tree": "9c5d94ba059ea5b4ff497a0540f6b8a7476e4474",
+    "patchIdentity": "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51"
+  },
+  "parent": "60b3b4f3b7f9f01fc0e21f7e9ad00a3c486154a8",
+  "job_id": "dev-vertical-hosted-analysis-org-step3-live-1",
+  "transport": {
+    "attempt_id": "dev-vertical-hosted-analysis-org-step3-live-1",
+    "generation": 1
+  },
+  "requested_model": "claude-haiku-5-5",
+  "provider": "claude-sdk",
+  "realization_claim": {
+    "provider_family": "anthropic",
+    "execution_confinement": null,
+    "mutation": "read_only_claimed",
+    "granted_tools": [
+      "DeferredToolPlaceholder",
+      "mcp__pi__snapshot_list",
+      "mcp__pi__snapshot_read"
+    ],
+    "continuity": "fresh_initial"
+  },
+  "blockers": [
+    {
+      "id": "scope-digest-to-subject:rp3-initial-implementation-review",
+      "class": "unestablished"
+    },
+    {
+      "id": "problem-scope-to-episode-identity",
+      "class": "unestablished"
+    },
+    {
+      "id": "separation:cond-builder-projection",
+      "class": "unestablished"
+    },
+    {
+      "id": "separation:cond-campaign-terminalization",
+      "class": "unestablished"
+    },
+    {
+      "id": "consumption-evidence-mapping:cond-builder-projection",
+      "class": "unestablished"
+    },
+    {
+      "id": "observer-identity:cond-builder-projection",
+      "class": "unestablished"
+    },
+    {
+      "id": "realization-admission:cond-builder-projection",
+      "class": "unestablished"
+    },
+    {
+      "id": "consumption-evidence-mapping:cond-campaign-terminalization",
+      "class": "unestablished"
+    },
+    {
+      "id": "observer-identity:cond-campaign-terminalization",
+      "class": "unestablished"
+    },
+    {
+      "id": "realization-admission:cond-campaign-terminalization",
+      "class": "unestablished"
+    },
+    {
+      "id": "component-binding:component:campaign",
+      "class": "unestablished"
+    },
+    {
+      "id": "component-binding:component:episode_host",
+      "class": "unestablished"
+    },
+    {
+      "id": "authority-requirement:auth-accept-builder-projection",
+      "class": "unestablished"
+    },
+    {
+      "id": "authority-requirement:auth-accept-campaign-terminalization",
+      "class": "unestablished"
+    },
+    {
+      "id": "realization:cond-builder-projection:mutation",
+      "class": "unestablished"
+    },
+    {
+      "id": "realization:cond-builder-projection:capabilities",
+      "class": "unestablished"
+    },
+    {
+      "id": "realization:cond-campaign-terminalization:mutation",
+      "class": "unestablished"
+    },
+    {
+      "id": "realization:cond-campaign-terminalization:capabilities",
+      "class": "unestablished"
+    }
+  ],
+  "contract_sha256": "5c1c586e227961cde8fa167d9e9047c091eb14094e84b746335b85d3d880376c",
+  "contract_bytes": 25815,
+  "template": "work-engine.review-hosted-task.claude-sdk.v1",
+  "template_sha256": "68118bbdbaaab7c3ec1b53783c704de1c8eb65a885137576cb92481f1b080297",
+  "limits": {
+    "max_requests": 4,
+    "max_reads": 16
+  },
+  "task_sha256": "89a8f99c08d08011c305c74c7cca73d1fb9d8479d4e21e712b7edd46c44041ba",
+  "task_bytes": 29169,
+  "snapshot_manifest": {
+    ".review/patch.diff": "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51",
+    ".review/subject.json": "fe06205e3fad4510f704b0db78628b7011fc43809efbdf2f9be75eb5deb09523",
+    "rust/crates/context-pressure/src/timestamp.rs": "589ecffa40f3667189f0ba7c8f5413f24e3f0b2285f401803b77364383291684"
+  },
+  "snapshot_bytes": 8673,
+  "snapshot_read_pages": 3,
+  "secret_rules": "work-engine.review-hosted-secret-rules.v2",
+  "frozen_world": {
+    "requirements_sha256": "7085318950aceb6f7071d29dec83e13da610b20d110f435e3399c9de57d3b292",
+    "outcome": "prepared_conditions_unmet",
+    "known_incompatibilities": [],
+    "unestablished_confinement": [
+      "realization:cond-builder-projection:realization:execution_confinement",
+      "realization:cond-campaign-terminalization:realization:execution_confinement"
+    ]
+  }
+}

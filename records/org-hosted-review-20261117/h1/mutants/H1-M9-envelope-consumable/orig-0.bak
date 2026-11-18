@@ -1,0 +1,479 @@
+//! Result check and the non-consumable envelope (P2-2, P1-2(c), P3-1, P3-3).
+//!
+//! The answer is kept only as a string inside an [`Envelope`] whose standing fields are fixed:
+//! `owner_pending`, no organizational admission, not consumable, route qualification only. No
+//! check here establishes a condition; a passing envelope is still not a review result anyone may
+//! consume.
+
+use review_episode_core::codec::{JsValue, digest, parse_json};
+use review_episode_core::implementation_review_v1::ReviewResult;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::BTreeMap;
+use std::path::Path;
+
+use crate::inputs::JobInputs;
+use crate::revision::{self, REVISION_ID, REVISION_REQUIREMENTS};
+use crate::{Refusal, sha256_hex, task};
+
+pub const ENVELOPE_SCHEMA: &str = "work-engine.review-hosted-envelope.v1";
+
+/// One retained provider request: the body the Host retained create-only
+/// (`coding-hosted-{request}.body.json`, `work-engine-manual-host/src/pi_coding_hosted.rs:521-539`)
+/// and every attempt's recorded `request_body_sha256` (`pi_coding_provider.rs:110-114`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RetainedRequest {
+    pub request: u64,
+    pub body: Option<Vec<u8>>,
+    pub attempt_digests: Vec<Option<String>>,
+}
+
+/// `analysis-result.json` (`pi-pressure-context-host/src/analysis.rs:293-302`): only the members
+/// this check reads.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct AnalysisResult {
+    pub answer: String,
+    pub answer_sha256: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Outcome {
+    Passed,
+    Failed,
+    NotRun,
+    /// Informational: reported for the operator, never a pass condition.
+    Reported,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CheckOutcome {
+    pub id: String,
+    pub outcome: Outcome,
+    pub detail: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Grounding {
+    /// Evidence items (decisive, finding and remediation evidence) whose `(path, sha256)` is a
+    /// snapshot member.
+    pub grounded: usize,
+    pub total: usize,
+    /// Indices into `decisiveEvidence` that are not grounded.
+    pub ungrounded_decisive: Vec<usize>,
+    pub flags: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct World {
+    pub label: String,
+    pub run_id: String,
+    pub requirements_sha256: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FrozenWorldOutcome {
+    pub outcome: String,
+    pub known_incompatibilities: usize,
+}
+
+/// Never a bare review file: the answer is a string member, and the standing fields are fixed.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Envelope {
+    pub schema: String,
+    pub standing: String,
+    pub org_admission: String,
+    pub consumable: bool,
+    pub proposition: String,
+    pub world: World,
+    pub requested_model: String,
+    pub provider: String,
+    pub frozen_world: FrozenWorldOutcome,
+    pub undischarged_blockers: usize,
+    pub job_id: String,
+    pub subject: Value,
+    pub contract_sha256: String,
+    pub task_sha256: String,
+    pub answer: String,
+    pub answer_sha256: String,
+    pub checks: Vec<CheckOutcome>,
+    pub grounding: Option<Grounding>,
+    /// `checks_passed` only when every non-informational check passed.
+    pub outcome: String,
+    pub not_claimed: Vec<String>,
+}
+
+/// What no envelope claims, whatever its checks say (see `CLAIMS.md`).
+pub const NOT_CLAIMED: [&str; 9] = [
+    "mutation: none is unestablished; only the Host-recorded boundaries are claimed",
+    "no acceptance condition of either world is established",
+    "not consumable",
+    "not organizationally admitted",
+    "grants are self-issued by the operator's own process",
+    "the job and its runtime admission are prepared by analyze.py, not by this crate",
+    "receipt by the live provider is not independently observed",
+    "the review's quality and correctness are unassessed",
+    "the frozen candidate's conditions remain unmet; it is refused on this route",
+];
+
+struct Checks(Vec<CheckOutcome>);
+
+impl Checks {
+    fn push(&mut self, id: &str, outcome: Outcome, detail: impl Into<String>) {
+        self.0.push(CheckOutcome {
+            id: id.to_owned(),
+            outcome,
+            detail: detail.into(),
+        });
+    }
+    fn pass(&mut self, id: &str, ok: bool, detail: impl Into<String>) -> bool {
+        self.push(
+            id,
+            if ok { Outcome::Passed } else { Outcome::Failed },
+            detail,
+        );
+        ok
+    }
+}
+
+fn user_texts(body: &Value) -> Vec<String> {
+    let mut out = Vec::new();
+    for item in body["input"].as_array().into_iter().flatten() {
+        if item["role"] != "user" || !(item["type"].is_null() || item["type"] == "message") {
+            continue;
+        }
+        match &item["content"] {
+            Value::String(text) => out.push(text.clone()),
+            Value::Array(parts) => out.extend(
+                parts
+                    .iter()
+                    .filter(|p| p["type"] == "input_text")
+                    .filter_map(|p| p["text"].as_str().map(str::to_owned)),
+            ),
+            _ => {}
+        }
+    }
+    out
+}
+
+/// P3-3: each retained body's digest equals every attempt's recorded digest; it holds exactly one
+/// user text item; that text starts with the task bytes (the Host suffix is not copied).
+fn delivery(requests: &[RetainedRequest], task: &str) -> Result<String, String> {
+    if requests.is_empty() {
+        return Err("no retained request".into());
+    }
+    for (index, r) in requests.iter().enumerate() {
+        if r.request != index as u64 + 1 {
+            return Err(format!("requests are not numbered 1..={}", requests.len()));
+        }
+        let body = r
+            .body
+            .as_ref()
+            .ok_or(format!("request {}: body not retained", r.request))?;
+        let digest = sha256_hex(body);
+        if r.attempt_digests.is_empty()
+            || r.attempt_digests
+                .iter()
+                .any(|d| d.as_deref() != Some(&digest))
+        {
+            return Err(format!(
+                "request {}: an attempt's request_body_sha256 is not the retained body's",
+                r.request
+            ));
+        }
+        let parsed: Value = serde_json::from_slice(body)
+            .map_err(|_| format!("request {}: body is not JSON", r.request))?;
+        let texts = user_texts(&parsed);
+        if texts.len() != 1 {
+            return Err(format!(
+                "request {}: {} user text items, expected exactly one",
+                r.request,
+                texts.len()
+            ));
+        }
+        if !texts[0].starts_with(task) {
+            return Err(format!(
+                "request {}: the user text does not start with the task bytes",
+                r.request
+            ));
+        }
+    }
+    Ok(format!(
+        "{} retained request bodies carry the task bytes as their one user text",
+        requests.len()
+    ))
+}
+
+fn evidence_items(result: &ReviewResult) -> (Vec<&JsValue>, usize) {
+    let mut all = Vec::new();
+    let decisive = result
+        .value
+        .get("decisiveEvidence")
+        .and_then(|v| v.as_array().ok())
+        .unwrap_or(&[]);
+    all.extend(decisive.iter());
+    for finding in &result.findings {
+        for key in ["evidence", "remediationEvidence"] {
+            if let Some(items) = finding.get(key).and_then(|v| v.as_array().ok()) {
+                all.extend(items.iter());
+            }
+        }
+    }
+    (all, decisive.len())
+}
+
+fn text_of(value: &JsValue, key: &str) -> Option<String> {
+    value.get(key)?.as_text().ok()?.to_string_checked().ok()
+}
+
+/// P3-1: k of n evidence items whose `(path, sha256)` is a snapshot member.
+pub fn grounding(result: &ReviewResult, manifest: &BTreeMap<String, String>) -> Grounding {
+    let (items, decisive) = evidence_items(result);
+    let is_grounded = |item: &JsValue| match (text_of(item, "path"), text_of(item, "sha256")) {
+        (Some(path), Some(sha)) => manifest.get(&path) == Some(&sha),
+        _ => false,
+    };
+    let grounded = items.iter().filter(|i| is_grounded(i)).count();
+    let ungrounded_decisive: Vec<usize> = items[..decisive]
+        .iter()
+        .enumerate()
+        .filter(|(_, i)| !is_grounded(i))
+        .map(|(n, _)| n)
+        .collect();
+    let mut flags = Vec::new();
+    if !ungrounded_decisive.is_empty() {
+        flags.push("evidence_ungrounded".to_owned());
+    }
+    Grounding {
+        grounded,
+        total: items.len(),
+        ungrounded_decisive,
+        flags,
+    }
+}
+
+/// Runs every check and returns the envelope. Never fails: a refusal is an envelope whose
+/// `outcome` is `checks_failed`.
+pub fn check(
+    record: &JobInputs,
+    result: &AnalysisResult,
+    requests: &[RetainedRequest],
+) -> Envelope {
+    let mut checks = Checks(Vec::new());
+    let subject = &record.subject;
+
+    // Recompute candidate -> prepare -> freeze -> render from the retained inputs (P1-2(c)).
+    checks.pass(
+        "requirements_revision",
+        record.revision == REVISION_ID
+            && record.requirements_sha256 == sha256_hex(REVISION_REQUIREMENTS),
+        format!(
+            "revision {} sha256 {}",
+            record.revision, record.requirements_sha256
+        ),
+    );
+    checks.pass(
+        "realization_claim",
+        record.realization_claim == revision::hosted_claim(),
+        "the recorded claim is the crate's hosted claim",
+    );
+    let recomputed = revision::prepare_world(REVISION_REQUIREMENTS, subject, &record.job_id);
+    let (blockers, run_id, task_bytes) = match &recomputed {
+        Ok(frozen) => {
+            checks.pass(
+                "contract_recomputed",
+                frozen.contract_sha256() == record.contract_sha256
+                    && *frozen.transport() == record.transport,
+                format!("recomputed contract_sha256 {}", frozen.contract_sha256()),
+            );
+            let task = task::render(frozen.contract(), subject, record.limits);
+            let task_ok = task
+                .as_ref()
+                .is_ok_and(|t| sha256_hex(t.as_bytes()) == record.task_sha256);
+            checks.pass(
+                "task_recomputed",
+                task_ok && record.template_sha256 == task::TEMPLATE_SHA256,
+                match &task {
+                    Ok(t) => format!("recomputed task_sha256 {}", sha256_hex(t.as_bytes())),
+                    Err(e) => e.to_string(),
+                },
+            );
+            (
+                frozen.preparation().blockers.len(),
+                frozen.preparation().model_context.identity.run_id.clone(),
+                task.ok().filter(|_| task_ok),
+            )
+        }
+        Err(e) => {
+            checks.pass("contract_recomputed", false, e.to_string());
+            checks.push("task_recomputed", Outcome::NotRun, "no recomputed contract");
+            (0, String::new(), None)
+        }
+    };
+    let frozen_world = match revision::frozen_world(subject, &record.job_id) {
+        Ok(w) => FrozenWorldOutcome {
+            outcome: w.outcome,
+            known_incompatibilities: w.known_incompatibilities.len(),
+        },
+        Err(e) => FrozenWorldOutcome {
+            outcome: format!("not_established: {e}"),
+            known_incompatibilities: 0,
+        },
+    };
+    checks.pass(
+        "frozen_world_refused",
+        frozen_world.outcome == "refused" && frozen_world.known_incompatibilities > 0,
+        format!(
+            "{} known incompatibilities",
+            frozen_world.known_incompatibilities
+        ),
+    );
+    match &task_bytes {
+        Some(task) => match delivery(requests, task) {
+            Ok(detail) => checks.pass("delivery", true, detail),
+            Err(detail) => checks.pass("delivery", false, detail),
+        },
+        None => {
+            checks.push("delivery", Outcome::NotRun, "no recomputed task");
+            false
+        }
+    };
+
+    // The answer: digest, strict parse (no fence stripping, no repair), schema, subject.
+    let answer_ok = checks.pass(
+        "answer_sha256",
+        sha256_hex(result.answer.as_bytes()) == result.answer_sha256,
+        format!("recorded {}", result.answer_sha256),
+    );
+    let mut grounding_report = None;
+    let parsed = if answer_ok {
+        match parse_json(&result.answer) {
+            Ok(v) => {
+                checks.pass("strict_json", true, "the answer is exactly one JSON value");
+                Some(v)
+            }
+            Err(e) => {
+                checks.pass("strict_json", false, e.message);
+                None
+            }
+        }
+    } else {
+        checks.push("strict_json", Outcome::NotRun, "answer digest mismatch");
+        None
+    };
+    let review = match parsed {
+        Some(value) => match ReviewResult::parse(value) {
+            Ok(r) => {
+                checks.pass("result_contract", true, "implementation-review/v1");
+                Some(r)
+            }
+            Err(e) => {
+                checks.pass("result_contract", false, e.message);
+                None
+            }
+        },
+        None => {
+            checks.push("result_contract", Outcome::NotRun, "no parsed answer");
+            None
+        }
+    };
+    match &review {
+        Some(r) => {
+            let digest_ok = r
+                .subject_digest()
+                .is_ok_and(|d| d.0 == digest(&subject.to_js_value()));
+            let fields_ok = r.value.get("subject").is_some_and(|s| {
+                text_of(s, "commit").as_deref() == Some(subject.commit.as_str())
+                    && text_of(s, "tree").as_deref() == Some(subject.tree.as_str())
+                    && text_of(s, "patchIdentity").as_deref()
+                        == Some(subject.patch_identity.as_str())
+            });
+            checks.pass(
+                "subject_equal",
+                digest_ok && fields_ok,
+                "subject digest and its three fields",
+            );
+            let g = grounding(r, &record.snapshot_manifest);
+            checks.push(
+                "grounding",
+                Outcome::Reported,
+                format!("{} of {} evidence items grounded", g.grounded, g.total),
+            );
+            grounding_report = Some(g);
+        }
+        None => {
+            checks.push("subject_equal", Outcome::NotRun, "no valid result");
+            checks.push("grounding", Outcome::NotRun, "no valid result");
+        }
+    }
+
+    let passed = checks
+        .0
+        .iter()
+        .all(|c| matches!(c.outcome, Outcome::Passed | Outcome::Reported));
+    let subject_value = serde_json::to_value(subject).unwrap_or(Value::Null);
+    Envelope {
+        schema: ENVELOPE_SCHEMA.to_owned(),
+        standing: "owner_pending".to_owned(),
+        org_admission: "none_requested".to_owned(),
+        consumable: false,
+        proposition: "route_qualification_only".to_owned(),
+        world: World {
+            label: REVISION_ID.to_owned(),
+            run_id,
+            requirements_sha256: sha256_hex(REVISION_REQUIREMENTS),
+        },
+        requested_model: revision::REQUESTED_MODEL.to_owned(),
+        provider: revision::PROVIDER.to_owned(),
+        frozen_world,
+        undischarged_blockers: blockers,
+        job_id: record.job_id.clone(),
+        subject: subject_value,
+        contract_sha256: record.contract_sha256.clone(),
+        task_sha256: record.task_sha256.clone(),
+        answer: result.answer.clone(),
+        answer_sha256: result.answer_sha256.clone(),
+        checks: checks.0,
+        grounding: grounding_report,
+        outcome: if passed {
+            "checks_passed"
+        } else {
+            "checks_failed"
+        }
+        .to_owned(),
+        not_claimed: NOT_CLAIMED.iter().map(|s| (*s).to_owned()).collect(),
+    }
+}
+
+/// Reads a run's state directory: `analysis-result.json`, the request ledger in `pi-state.json`
+/// (`coding.provider_requests.<n>.attempts[].request_body_sha256`, the shape `analyze.py:139`,
+/// `:146` reads) and each `coding-hosted-<n>.body.json`.
+pub fn load_state(state: &Path) -> Result<(AnalysisResult, Vec<RetainedRequest>), Refusal> {
+    let read = |name: &str| std::fs::read(state.join(name));
+    let result: AnalysisResult = serde_json::from_slice(&read("analysis-result.json")?)
+        .map_err(|e| Refusal::Io(format!("analysis-result.json: {e}")))?;
+    let pi: Value = serde_json::from_slice(&read("pi-state.json")?)
+        .map_err(|e| Refusal::Io(format!("pi-state.json: {e}")))?;
+    let ledger = pi["coding"]["provider_requests"]
+        .as_object()
+        .ok_or_else(|| Refusal::Io("pi-state.json: no coding.provider_requests".into()))?;
+    let mut requests = Vec::new();
+    for (key, entry) in ledger {
+        let request: u64 = key
+            .parse()
+            .map_err(|_| Refusal::Io(format!("pi-state.json: request key {key}")))?;
+        let attempt_digests = entry["attempts"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .map(|a| a["request_body_sha256"].as_str().map(str::to_owned))
+            .collect();
+        requests.push(RetainedRequest {
+            request,
+            body: read(&format!("coding-hosted-{request}.body.json")).ok(),
+            attempt_digests,
+        });
+    }
+    requests.sort_by_key(|r| r.request);
+    Ok((result, requests))
+}

@@ -1,0 +1,42 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "R1-M11-binary-patch-rule-never-matches.test",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "work-engine-review-hosted",
+    "--no-fail-fast"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-r2-core-20261117/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 131804,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 146338,
+  "pgid": 146338,
+  "started_at": "2026-11-18T00:55:49.817565Z",
+  "ended_at": "2026-11-18T00:55:52.600067Z",
+  "duration_s": 2.783,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M11-binary-patch-rule-never-matches.test.stdout",
+    "length": 4198,
+    "sha256": "bc7c0ac03e92087f86709aa24e7b286292e31239c5b5085f640719a2bfd68904"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-hosted-review-20261117/h1/remediation-1/mutants/runs-1/R1-M11-binary-patch-rule-never-matches.test.stderr",
+    "length": 1304,
+    "sha256": "0ad0f616a55bb5fb1daa268868e4164d642311bf3cdec2b7d36d8425ccab3440"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

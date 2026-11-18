@@ -1,0 +1,99 @@
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 12 tests
+test answer_sha_mismatch_is_refused ... ok
+test remediation_fixture_is_accepted ... ok
+test contract_digest_mismatch_is_refused ... ok
+test delivery_prefix_mismatch_is_refused ... ok
+test acceptable_fixture_is_accepted_and_ungrounded_evidence_is_flagged ... ok
+test subject_mismatch_is_refused ... ok
+test fenced_answer_is_refused_without_repair ... ok
+test schema_violation_is_refused ... ok
+test grounded_evidence_is_counted ... ok
+test state_directory_loads_result_ledger_and_bodies ... ok
+test result_check_binary_writes_the_envelope_and_exits_by_outcome ... ok
+test delivery_refuses_attempt_digest_mismatch_extra_user_text_and_missing_body ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+
+running 6 tests
+test hosted_claim_states_what_the_host_enforces ... ok
+test revision_is_the_frozen_requirements_with_exactly_the_authorized_changes ... ok
+test revision_compiles_with_the_unchanged_compiler ... ok
+test frozen_candidate_with_the_hosted_claim_is_refused ... ok
+test revision_world_prepares_and_freezes_with_every_blocker_kept ... ok
+test frozen_candidate_writes_no_job_inputs ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+
+running 12 tests
+test request_context_bound_is_snapshot_times_one_and_a_quarter_plus_task ... ok
+test rule_negatives_stay_quiet ... ok
+test tree_mismatch_is_refused ... ok
+test patch_identity_mismatch_is_refused ... ok
+test scope_digest_not_the_patch_identity_is_refused ... FAILED
+test identity_ok_snapshot_is_changed_files_patch_and_subject ... ok
+test job_inputs_bind_the_revision_scope_digest_to_the_subject ... FAILED
+test binary_and_non_utf8_members_are_refused ... ok
+test merge_and_root_commits_are_refused ... ok
+test job_inputs_binary_refuses_and_writes_nothing ... FAILED
+test each_secret_rule_refuses_with_rule_and_path_and_no_content ... ok
+test oversize_snapshot_is_refused ... ok
+
+failures:
+
+---- scope_digest_not_the_patch_identity_is_refused stdout ----
+
+thread 'scope_digest_not_the_patch_identity_is_refused' (64287) panicked at crates/work-engine-review-hosted/tests/subject.rs:92:5:
+assertion failed: matches!(materialize(&r.path(), &r.subject, &"5".repeat(64)),
+    Err(Refusal::ScopeDigestMismatch { .. }))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- job_inputs_bind_the_revision_scope_digest_to_the_subject stdout ----
+
+thread 'job_inputs_bind_the_revision_scope_digest_to_the_subject' (64280) panicked at crates/work-engine-review-hosted/tests/subject.rs:120:18:
+expected the scope binding refusal, got Ok(JobInputs { schema: "work-engine.review-hosted-job-inputs.v1", standing: "job_inputs_only_not_an_admission", revision: "hosted-route-qualification-r1", requirements_sha256: "a2d08797241df85404f627e1603a9c980921236b2debf6ba34290819bb5803b3", run_id: "hosted-route-qualification-20261117", subject: Subject { commit: "e00732b1ccbbda78b5a8828368b49a5c5c02db89", tree: "767b199b61bc450101238da66268e73f4f7076e2", patch_identity: "bb9cc49bd18946cc47189ab96dff610ea94b0b3620c7c0563080ef64b0f21086" }, parent: "fc9ee0eebac37c84cbb37d2a90fca37d21287699", job_id: "job-1", transport: Transport { attempt_id: "job-1", generation: 1 }, requested_model: "gpt-6-luna", provider: "openai-codex", realization_claim: RealizationClaim { provider_family: Some("openai-codex"), execution_confinement: None, mutation: ReadOnlyClaimed, granted_tools: ["snapshot_list", "snapshot_read"], continuity: Some("fresh_initial") }, blockers: [BlockerRef { id: "scope-digest-to-subject:rp3-initial-implementation-review", class: "unestablished" }, BlockerRef { id: "problem-scope-to-episode-identity", class: "unestablished" }, BlockerRef { id: "separation:cond-builder-projection", class: "unestablished" }, BlockerRef { id: "separation:cond-campaign-terminalization", class: "unestablished" }, BlockerRef { id: "consumption-evidence-mapping:cond-builder-projection", class: "unestablished" }, BlockerRef { id: "observer-identity:cond-builder-projection", class: "unestablished" }, BlockerRef { id: "realization-admission:cond-builder-projection", class: "unestablished" }, BlockerRef { id: "consumption-evidence-mapping:cond-campaign-terminalization", class: "unestablished" }, BlockerRef { id: "observer-identity:cond-campaign-terminalization", class: "unestablished" }, BlockerRef { id: "realization-admission:cond-campaign-terminalization", class: "unestablished" }, BlockerRef { id: "component-binding:component:campaign", class: "unestablished" }, BlockerRef { id: "component-binding:component:episode_host", class: "unestablished" }, BlockerRef { id: "authority-requirement:auth-accept-builder-projection", class: "unestablished" }, BlockerRef { id: "authority-requirement:auth-accept-campaign-terminalization", class: "unestablished" }, BlockerRef { id: "realization:cond-builder-projection:mutation", class: "unestablished" }, BlockerRef { id: "realization:cond-builder-projection:capabilities", class: "unestablished" }, BlockerRef { id: "realization:cond-campaign-terminalization:mutation", class: "unestablished" }, BlockerRef { id: "realization:cond-campaign-terminalization:capabilities", class: "unestablished" }], contract_sha256: "4e693921c8e673576acb4fdee51f8cd243cb0262a7585475b37d8c53c47bf009", contract_bytes: 23621, template: "work-engine.review-hosted-task.v1", template_sha256: "7ecfbef93557b6770aeaad07c1c89d733426e994ab2427c350b5bff8e8f90718", limits: Limits { max_requests: 8, max_reads: 16 }, task_sha256: "1d25763f5cbecc9102d7568639fb7f707372cd150b8ea3b3c632b85f8826547f", task_bytes: 26919, snapshot_manifest: {".review/patch.diff": "bb9cc49bd18946cc47189ab96dff610ea94b0b3620c7c0563080ef64b0f21086", ".review/subject.json": "bd233dce62899a9b7b361bf643633a70c5be488f4d722c33540db128f8f5122e", "a.txt": "389831cfea99d1d49df597b6d90c8644d0bdf51be222b1937aacc681d600aff9", "src/b.rs": "1f3d5518bbe8f397911c1c39663b4d856ec33a07a641575d2ad8fc4e37207544"}, snapshot_bytes: 1130, secret_rules: "work-engine.review-hosted-secret-rules.v1", frozen_world: FrozenWorld { requirements_sha256: "7085318950aceb6f7071d29dec83e13da610b20d110f435e3399c9de57d3b292", outcome: "refused", known_incompatibilities: ["realization:cond-builder-projection:realization:provider_family", "realization:cond-campaign-terminalization:realization:provider_family"] } })
+
+---- job_inputs_binary_refuses_and_writes_nothing stdout ----
+
+thread 'job_inputs_binary_refuses_and_writes_nothing' (64276) panicked at crates/work-engine-review-hosted/tests/subject.rs:298:5:
+assertion failed: !run.status.success()
+
+
+failures:
+    job_inputs_binary_refuses_and_writes_nothing
+    job_inputs_bind_the_revision_scope_digest_to_the_subject
+    scope_digest_not_the_patch_identity_is_refused
+
+test result: FAILED. 9 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.65s
+
+
+running 4 tests
+test template_is_digest_pinned ... ok
+test limits_outside_the_host_bounds_are_refused ... ok
+test task_over_the_prompt_bound_is_refused ... ok
+test task_is_template_then_contract_verbatim_and_fits_the_prompt_bound ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

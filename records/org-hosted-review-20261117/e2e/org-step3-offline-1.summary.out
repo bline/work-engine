@@ -1,0 +1,230 @@
+{
+ "scenario": "ok",
+ "exit": 0,
+ "elapsed_s": 16.8,
+ "stdout": "{\"acceptance\":\"owner_pending\",\"domain_effect_settlement\":\"not_claimed\",\"receipt_id\":\"7329d9cba3012223dad62d37d9b5cf883de389f8b216ec03f3f9cf3021eac588\",\"result\":\"/home/bline/cbm-work/org-hosted-review-20261117/e2e/org-step3-offline-1/state/analysis-result.json\",\"status\":\"bounded_live_analysis_completed\"}",
+ "stderr": "",
+ "phase": "collected",
+ "failures": [],
+ "completed": true,
+ "ledger": {
+  "1": {
+   "settled_microusd": 675,
+   "attempts": [
+    {
+     "attempt": 1,
+     "route": "primary",
+     "payer": "synthetic-subscription",
+     "reserved_microusd": 1320001,
+     "disposition": "refused",
+     "http_status": 429,
+     "relay_sha256": null,
+     "refusal_body_sha256": "24be1ecf4d321bdc45aaba4c924d1c7cf9da2937141a29d617d476a61ed08679",
+     "settled_microusd": null,
+     "reason": null,
+     "gate_entered": true,
+     "deadline_ms": 1795021418000,
+     "routes_sha256": "c8a38cbcfeb965f723069dafe94d9847cb1463bcc828b90eb18a402efea10c32",
+     "request_body_sha256": "557ca8fd8052587157d6b33b0e7358078a4650f2730e0245ad7b9d0f20915289"
+    },
+    {
+     "attempt": 2,
+     "route": "secondary",
+     "payer": "synthetic-api",
+     "reserved_microusd": 1320001,
+     "disposition": "completed",
+     "http_status": 200,
+     "relay_sha256": "1b6f66a755e35e2eaa86e219c51f084bac6e1bc7aca6e32bd47bef525864007d",
+     "refusal_body_sha256": null,
+     "settled_microusd": 675,
+     "reason": null,
+     "gate_entered": true,
+     "deadline_ms": 1795021418000,
+     "routes_sha256": "c8a38cbcfeb965f723069dafe94d9847cb1463bcc828b90eb18a402efea10c32",
+     "framed_end_observed": true,
+     "request_body_sha256": "557ca8fd8052587157d6b33b0e7358078a4650f2730e0245ad7b9d0f20915289"
+    }
+   ]
+  },
+  "2": {
+   "settled_microusd": 675,
+   "attempts": [
+    {
+     "attempt": 1,
+     "route": "secondary",
+     "payer": "synthetic-api",
+     "reserved_microusd": 1320001,
+     "disposition": "completed",
+     "http_status": 200,
+     "relay_sha256": "d83a8e98a49dda5795b9a1ae5e6c629cfca5ebf2433525fb3564388b11e11485",
+     "refusal_body_sha256": null,
+     "settled_microusd": 675,
+     "reason": null,
+     "gate_entered": true,
+     "deadline_ms": 1795021418000,
+     "routes_sha256": "c8a38cbcfeb965f723069dafe94d9847cb1463bcc828b90eb18a402efea10c32",
+     "framed_end_observed": true,
+     "request_body_sha256": "e668e5c840db4f5bb4208fcba2481c7e0ab2df4da261e2a80e8d4e4863a6b183"
+    }
+   ]
+  },
+  "3": {
+   "settled_microusd": 675,
+   "attempts": [
+    {
+     "attempt": 1,
+     "route": "secondary",
+     "payer": "synthetic-api",
+     "reserved_microusd": 1320001,
+     "disposition": "completed",
+     "http_status": 200,
+     "relay_sha256": "48a3ab26946f732ce821ab9144579cb52da7b7ebef74e45e06f371b2b605006e",
+     "refusal_body_sha256": null,
+     "settled_microusd": 675,
+     "reason": null,
+     "gate_entered": true,
+     "deadline_ms": 1795021418000,
+     "routes_sha256": "c8a38cbcfeb965f723069dafe94d9847cb1463bcc828b90eb18a402efea10c32",
+     "framed_end_observed": true,
+     "request_body_sha256": "8c18d413f81e9bf9303e80c4bc2d8f92bb2202cbe21d9d75d8d2de3fbf760ac5"
+    }
+   ]
+  }
+ },
+ "snapshot_requests": {
+  "toolu_1_0": {
+   "path": "/home/bline/cbm-work/org-hosted-review-20261117/e2e/org-step3-offline-1/state/coding-snapshot-83cd978ce13c0371ff4b850a77844b8689420b776d60edfe2a088b9475c13e46.json",
+   "sha256": "d9fcf0317e5395a5126493b7d238311e86c59609737a3fbdf985b79ab8133bc8"
+  },
+  "toolu_2_0": {
+   "path": "/home/bline/cbm-work/org-hosted-review-20261117/e2e/org-step3-offline-1/state/coding-snapshot-f696364b7ee3ea5b20a3e3e01d4293fb8222ae08eabaebd2704b6f089d59784f.json",
+   "sha256": "256e6f8b4a9a53bed6844e4e964663e2cee5b530199ef85a2650fecccf153f23"
+  }
+ },
+ "snapshot_tools": {
+  "toolu_1_0": "snapshot_list",
+  "toolu_2_0": "snapshot_read"
+ },
+ "native_snapshot_ids": [
+  "toolu_1_0",
+  "toolu_2_0"
+ ],
+ "sdk_refused_ids": [],
+ "observer": [
+  {
+   "receipt": {
+    "bodySha256": "557ca8fd8052587157d6b33b0e7358078a4650f2730e0245ad7b9d0f20915289",
+    "messages": 2,
+    "requestId": "1-1",
+    "retryCount": "0",
+    "route": "primary",
+    "toolsSha256": "4dc958d99fc79a7cc2736c0216fc83e592c8fce53e6dc5e302116f195fa0e503"
+   },
+   "status": 429,
+   "type": "refused"
+  },
+  {
+   "effect": 1,
+   "receipt": {
+    "bodySha256": "557ca8fd8052587157d6b33b0e7358078a4650f2730e0245ad7b9d0f20915289",
+    "messages": 2,
+    "requestId": "1-2",
+    "retryCount": "0",
+    "route": "secondary",
+    "toolsSha256": "4dc958d99fc79a7cc2736c0216fc83e592c8fce53e6dc5e302116f195fa0e503"
+   },
+   "responseSha256": "1b6f66a755e35e2eaa86e219c51f084bac6e1bc7aca6e32bd47bef525864007d",
+   "type": "served"
+  },
+  {
+   "effect": 2,
+   "receipt": {
+    "bodySha256": "e668e5c840db4f5bb4208fcba2481c7e0ab2df4da261e2a80e8d4e4863a6b183",
+    "messages": 5,
+    "requestId": "2-1",
+    "retryCount": "0",
+    "route": "secondary",
+    "toolsSha256": "4dc958d99fc79a7cc2736c0216fc83e592c8fce53e6dc5e302116f195fa0e503"
+   },
+   "responseSha256": "d83a8e98a49dda5795b9a1ae5e6c629cfca5ebf2433525fb3564388b11e11485",
+   "type": "served"
+  },
+  {
+   "effect": 3,
+   "receipt": {
+    "bodySha256": "8c18d413f81e9bf9303e80c4bc2d8f92bb2202cbe21d9d75d8d2de3fbf760ac5",
+    "messages": 8,
+    "requestId": "3-1",
+    "retryCount": "0",
+    "route": "secondary",
+    "toolsSha256": "4dc958d99fc79a7cc2736c0216fc83e592c8fce53e6dc5e302116f195fa0e503"
+   },
+   "responseSha256": "48a3ab26946f732ce821ab9144579cb52da7b7ebef74e45e06f371b2b605006e",
+   "type": "served"
+  },
+  {
+   "rawAuthOrBodyRetained": false,
+   "refused": 1,
+   "served": 3,
+   "type": "complete"
+  }
+ ],
+ "result": {
+  "answer": "Supported: the snapshot member was read. Unsupported: none. Unknown: none.",
+  "answer_sha256": "cb10e9a4e7394a9e8519702d951dd8aa7990b5f028a9a6d3ce4389d36c80937c",
+  "hosted_attempts": [
+   {
+    "deadlineMs": 1795021418000,
+    "intent": {
+     "attempt": 1,
+     "payer": "synthetic-subscription",
+     "request": 1,
+     "route": "primary"
+    },
+    "invocationId": "analysis",
+    "policy": "ed37aeb3034a44d52cd9d0a16f1e306e17745adea9034febc0f4a376ca94f41b"
+   },
+   {
+    "deadlineMs": 1795021418000,
+    "intent": {
+     "attempt": 2,
+     "payer": "synthetic-api",
+     "request": 1,
+     "route": "secondary"
+    },
+    "invocationId": "analysis",
+    "policy": "ed37aeb3034a44d52cd9d0a16f1e306e17745adea9034febc0f4a376ca94f41b"
+   },
+   {
+    "deadlineMs": 1795021418000,
+    "intent": {
+     "attempt": 1,
+     "payer": "synthetic-api",
+     "request": 2,
+     "route": "secondary"
+    },
+    "invocationId": "analysis",
+    "policy": "ed37aeb3034a44d52cd9d0a16f1e306e17745adea9034febc0f4a376ca94f41b"
+   },
+   {
+    "deadlineMs": 1795021418000,
+    "intent": {
+     "attempt": 1,
+     "payer": "synthetic-api",
+     "request": 3,
+     "route": "secondary"
+    },
+    "invocationId": "analysis",
+    "policy": "ed37aeb3034a44d52cd9d0a16f1e306e17745adea9034febc0f4a376ca94f41b"
+   }
+  ],
+  "provider_requests": 3,
+  "schema": "work-engine.pi-analysis-result.v1",
+  "settlement": "CompletedSettled",
+  "snapshot_deliveries": 2,
+  "standing": "live-provider hosted analysis; real inference; no research standing, owner acceptance or domain effect"
+ },
+ "containers_after": [],
+ "qualification_sha256": "65e86592c85cefe50cf5dc490c4b7d35f88224ff305683682e25a4aecfc8f86e",
+ "observer_sha256": "a837d94b9912dbd32e2293ead1f2ba3e1bd5bd926c7a849ee06fa195c33b0481"
+}

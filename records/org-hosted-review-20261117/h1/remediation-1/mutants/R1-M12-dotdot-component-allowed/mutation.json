@@ -1,0 +1,18 @@
+{
+ "mutant": "R1-M12-dotdot-component-allowed",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/subject.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "70946a4fd85cd44fe980dc1a7ee35227409495e025096ba2789fc054aa7d38ed",
+   "mutated_sha256": "a097a1776a3f28f3baffc9ff17da6a1a59f456fa7eefa8703b667f0c9e540666"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted/src/subject.rs",
+   "old": "|| c == \"..\" ||",
+   "new": "|| c == \"...\" ||"
+  }
+ ]
+}

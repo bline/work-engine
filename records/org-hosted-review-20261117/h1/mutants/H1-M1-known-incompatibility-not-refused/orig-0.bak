@@ -1,0 +1,133 @@
+//! The requirements revision, the hosted realization claim, and preparation with refusal.
+
+use serde::{Deserialize, Serialize};
+use work_engine_organization::{
+    OrganizationCandidate, OrganizationalRequirements, Profile, derive,
+};
+use work_engine_review_delivery::{FrozenDelivery, Transport};
+use work_engine_review_preparation::{
+    BlockerClass, MutationClaim, PreparationRequest, RealizationClaim, ReviewPreparation, Subject,
+    prepare,
+};
+
+use crate::{Refusal, sha256_hex};
+
+/// The versioned requirements revision this route runs on (see its `DERIVATION.md`).
+pub const REVISION_ID: &str = "hosted-route-qualification-r1";
+/// The revision's requirements bytes.
+pub const REVISION_REQUIREMENTS: &[u8] =
+    include_bytes!("../fixtures/hosted-route-qualification-r1/requirements.json");
+/// The frozen requirements, unchanged: the reported negative world on this route.
+pub const FROZEN_REQUIREMENTS: &[u8] =
+    include_bytes!("../../work-engine-organization/tests/fixtures/frozen/requirements.json");
+/// The one obligation both worlds carry.
+pub const OBLIGATION: &str = "rp3-initial-implementation-review";
+
+/// The provider the Host enforces for this profile: the catalog entry must name it
+/// (`work-engine-manual-host/src/pi_coding_provider.rs:425`) and every provider request frame
+/// must carry it (`pi_coding_provider.rs:650`).
+pub const PROVIDER: &str = "openai-codex";
+/// The only model the hosted profile admits (`pi_coding_provider.rs:459`). Requested, not observed.
+pub const REQUESTED_MODEL: &str = "gpt-6-luna";
+/// The profile's tools, in the receiver's registration order
+/// (`work-engine-manual-host/src/pi_coding_analysis.rs:9`).
+pub const HOSTED_TOOLS: [&str; 2] = ["snapshot_list", "snapshot_read"];
+
+/// The single realization claim of this route: what the Host enforces, stated as a claim
+/// (P1-2(b)). Confinement is unstated: no owner maps the hosted container to a confinement class.
+/// Read-only is claimed, and the two Host-served tools are named, so `prepare` leaves mutation and
+/// capabilities unestablished (`work-engine-review-preparation/src/realization.rs:134-138`,
+/// `:166-176`). Continuity is a fresh native session per job.
+pub fn hosted_claim() -> RealizationClaim {
+    RealizationClaim {
+        provider_family: Some(PROVIDER.to_owned()),
+        execution_confinement: None,
+        mutation: MutationClaim::ReadOnlyClaimed,
+        granted_tools: HOSTED_TOOLS.iter().map(|t| (*t).to_owned()).collect(),
+        continuity: Some("fresh_initial".to_owned()),
+    }
+}
+
+/// The one candidate the unchanged v1 compiler derives from `requirements`.
+pub fn candidate(requirements: &[u8]) -> Result<OrganizationCandidate, Refusal> {
+    let requirements = OrganizationalRequirements::from_json_bytes(requirements)
+        .map_err(|e| Refusal::Requirements(format!("{e:?}")))?;
+    let mut derived = derive(&requirements, Profile::FixedSliceReviewV1);
+    if !derived.unresolved.is_empty() || derived.candidates.len() != 1 {
+        return Err(Refusal::Requirements(format!(
+            "derivation gave {} candidates and {} unresolved",
+            derived.candidates.len(),
+            derived.unresolved.len()
+        )));
+    }
+    Ok(derived.candidates.remove(0))
+}
+
+/// The preparation request: the obligation, the exact subject and the hosted claim.
+pub fn request(subject: &Subject) -> PreparationRequest {
+    PreparationRequest {
+        obligation_id: OBLIGATION.to_owned(),
+        subject: subject.clone(),
+        realization: Some(hosted_claim()),
+    }
+}
+
+/// Ids of every blocker of class `KnownIncompatibility`.
+pub fn known_incompatibilities(preparation: &ReviewPreparation) -> Vec<String> {
+    preparation
+        .blockers
+        .iter()
+        .filter(|b| b.class == BlockerClass::KnownIncompatibility)
+        .map(|b| b.id.clone())
+        .collect()
+}
+
+/// Candidate → `prepare` → refusal on known incompatibility → `FrozenDelivery::freeze` with
+/// transport `{attempt_id: job_id, generation: 1}`.
+pub fn prepare_world(
+    requirements: &[u8],
+    subject: &Subject,
+    job_id: &str,
+) -> Result<FrozenDelivery, Refusal> {
+    let candidate = candidate(requirements)?;
+    let preparation = prepare(&candidate, &request(subject))
+        .map_err(|e| Refusal::Preparation(format!("{e:?}")))?;
+    let known = known_incompatibilities(&preparation);
+    if !known.is_empty() {
+        return Err(Refusal::KnownIncompatibility(known));
+    }
+    FrozenDelivery::freeze(
+        preparation,
+        Transport {
+            attempt_id: job_id.to_owned(),
+            generation: 1,
+        },
+    )
+    .map_err(|e| Refusal::Freeze(e.to_string()))
+}
+
+/// The frozen world's outcome on this route: always a refusal, retained as an artifact.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FrozenWorld {
+    pub requirements_sha256: String,
+    pub outcome: String,
+    pub known_incompatibilities: Vec<String>,
+}
+
+/// Prepares the frozen requirements with the hosted claim and requires the refusal. A frozen world
+/// that prepared without a known incompatibility would contradict the route's premise and is
+/// itself refused.
+pub fn frozen_world(subject: &Subject, job_id: &str) -> Result<FrozenWorld, Refusal> {
+    match prepare_world(FROZEN_REQUIREMENTS, subject, job_id) {
+        Err(Refusal::KnownIncompatibility(ids)) => Ok(FrozenWorld {
+            requirements_sha256: sha256_hex(FROZEN_REQUIREMENTS),
+            outcome: "refused".to_owned(),
+            known_incompatibilities: ids,
+        }),
+        Err(other) => Err(other),
+        Ok(_) => Err(Refusal::Requirements(
+            "the frozen world prepared without a known incompatibility".to_owned(),
+        )),
+    }
+}

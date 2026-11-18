@@ -1,0 +1,221 @@
+{
+  "schema": "work-engine.review-hosted-envelope.v3",
+  "standing": "owner_pending",
+  "org_admission": "none_requested",
+  "consumable": false,
+  "proposition": "route_qualification_only",
+  "profile": "claude-sdk",
+  "world": {
+    "label": "hosted-route-qualification-r2",
+    "run_id": "hosted-route-qualification-r2-20261118",
+    "requirements_sha256": "2a2fac7b1e01bffc7e9f0a7ad0c7c29551ac3ef441966490b86789bdba5d1b43"
+  },
+  "requested_model": "claude-haiku-5-5",
+  "requested_provider": "claude-sdk",
+  "frozen_world": {
+    "outcome": "prepared_conditions_unmet",
+    "known_incompatibilities": 0,
+    "unestablished_confinement": 2
+  },
+  "undischarged_blockers": 18,
+  "job_id": "dev-vertical-hosted-analysis-org-step3-offline-1",
+  "subject": {
+    "commit": "96808de3d565a6c4b0211e8dc263cb7343514d74",
+    "patchIdentity": "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51",
+    "tree": "9c5d94ba059ea5b4ff497a0540f6b8a7476e4474"
+  },
+  "contract_sha256": "2cfb6c59c5ab70d642ae37b5c08b23e617f80910da6b61876644c4d1c09f3630",
+  "task_sha256": "a590d19335ef69092cdb919c65fa0905dee06d8f7fde8ef91a07b52767bfa668",
+  "answer": "Supported: the snapshot member was read. Unsupported: none. Unknown: none.",
+  "answer_sha256": "cb10e9a4e7394a9e8519702d951dd8aa7990b5f028a9a6d3ce4389d36c80937c",
+  "host_reported": {
+    "settlement": "CompletedSettled",
+    "provider_requests": 3,
+    "snapshot_deliveries": 2,
+    "hosted_attempts": [
+      {
+        "deadlineMs": 1795021418000,
+        "intent": {
+          "attempt": 1,
+          "payer": "synthetic-subscription",
+          "request": 1,
+          "route": "primary"
+        },
+        "invocationId": "analysis",
+        "policy": "ed37aeb3034a44d52cd9d0a16f1e306e17745adea9034febc0f4a376ca94f41b"
+      },
+      {
+        "deadlineMs": 1795021418000,
+        "intent": {
+          "attempt": 2,
+          "payer": "synthetic-api",
+          "request": 1,
+          "route": "secondary"
+        },
+        "invocationId": "analysis",
+        "policy": "ed37aeb3034a44d52cd9d0a16f1e306e17745adea9034febc0f4a376ca94f41b"
+      },
+      {
+        "deadlineMs": 1795021418000,
+        "intent": {
+          "attempt": 1,
+          "payer": "synthetic-api",
+          "request": 2,
+          "route": "secondary"
+        },
+        "invocationId": "analysis",
+        "policy": "ed37aeb3034a44d52cd9d0a16f1e306e17745adea9034febc0f4a376ca94f41b"
+      },
+      {
+        "deadlineMs": 1795021418000,
+        "intent": {
+          "attempt": 1,
+          "payer": "synthetic-api",
+          "request": 3,
+          "route": "secondary"
+        },
+        "invocationId": "analysis",
+        "policy": "ed37aeb3034a44d52cd9d0a16f1e306e17745adea9034febc0f4a376ca94f41b"
+      }
+    ],
+    "request_insertions": [
+      {
+        "request": 1,
+        "system_blocks_sha256": [
+          "05def25e2fbb8e58a14a8b2420c324d3bfbb7f1c09d465e314e704805f0a6be7",
+          "e2ef99071b6f79c0ce60992a3ad887de02fc4dfbe22f18ff0c85427fea138719",
+          "7dac7d8c2965fbe55d7dc10be9a598f2938fac504f2b5e074262bce0dab11c41"
+        ],
+        "environment_message_sha256": "7ddb732f3bea8d927af494ca1a07e8765acb0b407607a3dbb3cdb3ef38688a25",
+        "inserted_system_messages": []
+      },
+      {
+        "request": 2,
+        "system_blocks_sha256": [
+          "05def25e2fbb8e58a14a8b2420c324d3bfbb7f1c09d465e314e704805f0a6be7",
+          "e2ef99071b6f79c0ce60992a3ad887de02fc4dfbe22f18ff0c85427fea138719",
+          "7dac7d8c2965fbe55d7dc10be9a598f2938fac504f2b5e074262bce0dab11c41"
+        ],
+        "environment_message_sha256": "4c147a0c593e0f432df72c3e7ab5c83f6f0996674fef50020199cbd64db74c8b",
+        "inserted_system_messages": [
+          {
+            "message_index": 4,
+            "sha256": "b19f66a72016917e9ef5fef830695009bae746f8886c546f59e5484cc50b608d"
+          }
+        ]
+      },
+      {
+        "request": 3,
+        "system_blocks_sha256": [
+          "05def25e2fbb8e58a14a8b2420c324d3bfbb7f1c09d465e314e704805f0a6be7",
+          "e2ef99071b6f79c0ce60992a3ad887de02fc4dfbe22f18ff0c85427fea138719",
+          "7dac7d8c2965fbe55d7dc10be9a598f2938fac504f2b5e074262bce0dab11c41"
+        ],
+        "environment_message_sha256": "4c147a0c593e0f432df72c3e7ab5c83f6f0996674fef50020199cbd64db74c8b",
+        "inserted_system_messages": [
+          {
+            "message_index": 4,
+            "sha256": "03450cf1a478ec56fc936a32b1542aaa8c3073b257919e1034107559d5ec785f"
+          },
+          {
+            "message_index": 7,
+            "sha256": "b19f66a72016917e9ef5fef830695009bae746f8886c546f59e5484cc50b608d"
+          }
+        ]
+      }
+    ]
+  },
+  "checks": [
+    {
+      "id": "requirements_revision",
+      "outcome": "passed",
+      "detail": "profile claude-sdk: revision hosted-route-qualification-r2 sha256 2a2fac7b1e01bffc7e9f0a7ad0c7c29551ac3ef441966490b86789bdba5d1b43"
+    },
+    {
+      "id": "realization_claim",
+      "outcome": "passed",
+      "detail": "the recorded claim, provider and model are profile claude-sdk's; bodies are compared in `delivery`"
+    },
+    {
+      "id": "contract_recomputed",
+      "outcome": "passed",
+      "detail": "recomputed contract_sha256 2cfb6c59c5ab70d642ae37b5c08b23e617f80910da6b61876644c4d1c09f3630"
+    },
+    {
+      "id": "task_recomputed",
+      "outcome": "passed",
+      "detail": "recomputed task_sha256 a590d19335ef69092cdb919c65fa0905dee06d8f7fde8ef91a07b52767bfa668"
+    },
+    {
+      "id": "frozen_world_unmet",
+      "outcome": "passed",
+      "detail": "prepared_conditions_unmet: Some(0) known incompatibilities, Some(2) unestablished confinement"
+    },
+    {
+      "id": "snapshot_served",
+      "outcome": "passed",
+      "detail": "served manifest pinned by job.json: true; equal to the vetted record: true"
+    },
+    {
+      "id": "subject_bound_to_scope",
+      "outcome": "passed",
+      "detail": "patchIdentity 5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51; scope.digest Some(\"5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51\"); served .review/patch.diff Some(\"5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51\")"
+    },
+    {
+      "id": "job_id_bound",
+      "outcome": "passed",
+      "detail": "record dev-vertical-hosted-analysis-org-step3-offline-1; job.json Some(\"dev-vertical-hosted-analysis-org-step3-offline-1\")"
+    },
+    {
+      "id": "limits_bound",
+      "outcome": "passed",
+      "detail": "record Limits { max_requests: 4, max_reads: 16 }; packet requests 4 reads 16; authority task_sha256 \"a590d19335ef69092cdb919c65fa0905dee06d8f7fde8ef91a07b52767bfa668\""
+    },
+    {
+      "id": "delivery",
+      "outcome": "passed",
+      "detail": "3 retained Messages request bodies: model claude-haiku-5-5, tools [\"DeferredToolPlaceholder\", \"mcp__pi__snapshot_list\", \"mcp__pi__snapshot_read\"], messages[0] one text block = task + Host suffix, later user turns tool results only; insertions recorded by digest in host_reported"
+    },
+    {
+      "id": "answer_sha256",
+      "outcome": "passed",
+      "detail": "recorded cb10e9a4e7394a9e8519702d951dd8aa7990b5f028a9a6d3ce4389d36c80937c"
+    },
+    {
+      "id": "strict_json",
+      "outcome": "failed",
+      "detail": "invalid JSON value"
+    },
+    {
+      "id": "result_contract",
+      "outcome": "not_run",
+      "detail": "no parsed answer"
+    },
+    {
+      "id": "subject_equal",
+      "outcome": "not_run",
+      "detail": "no valid result"
+    },
+    {
+      "id": "grounding",
+      "outcome": "not_run",
+      "detail": "no valid result"
+    }
+  ],
+  "grounding": null,
+  "outcome": "checks_failed",
+  "not_claimed": [
+    "mutation: none is unestablished; only the Host-recorded boundaries are claimed",
+    "execution confinement is unestablished",
+    "no acceptance condition of either world is established",
+    "not consumable",
+    "not organizationally admitted",
+    "grants are self-issued by the operator's own process",
+    "the job and its runtime admission are prepared by analyze.py, not by this crate",
+    "receipt by the live provider is not independently observed",
+    "the serving route, payer and any subscription billing guard are Host-reported (host_reported.hosted_attempts), not checked",
+    "Claude Code's system blocks and environment message are recorded by digest only, not interpreted",
+    "the review's quality and correctness are unassessed",
+    "the frozen candidate's conditions remain unmet and it yields no job inputs (refused on openai-codex; execution confinement unestablished on claude-sdk)"
+  ]
+}

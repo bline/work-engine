@@ -1,0 +1,23 @@
+   Compiling work-engine-review-hosted v0.1.0 (/home/bline/cbm-work/wt-org-hosted-review-20261117/rust/crates/work-engine-review-hosted)
+warning: unused variable: `digest`
+   --> crates/work-engine-review-hosted/src/check.rs:272:13
+    |
+272 |         let digest = sha256_hex(body);
+    |             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_digest`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `work-engine-review-hosted` (lib test) generated 1 warning (run `cargo fix --lib -p work-engine-review-hosted --tests` to apply 1 suggestion)
+warning: `work-engine-review-hosted` (lib) generated 1 warning (1 duplicate)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.30s
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/work_engine_review_hosted-e6b28e47a8ea8842)
+     Running unittests src/bin/review-job-inputs.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/review_job_inputs-9bb6d80ab4f8034a)
+     Running unittests src/bin/review-result-check.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/review_result_check-28f011b34f39dcc4)
+     Running tests/check.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/check-fa358ff9c25a80dd)
+error: test failed, to rerun pass `-p work-engine-review-hosted --test check`
+     Running tests/revision.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/revision-3d677d34cbe6f010)
+     Running tests/subject.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/subject-aba2f5f3a5559b00)
+     Running tests/task.rs (/home/bline/cbm-work/org-r2-core-20261117/target/debug/deps/task-34dc793396a5ec1f)
+   Doc-tests work_engine_review_hosted
+error: 1 target failed:
+    `-p work-engine-review-hosted --test check`

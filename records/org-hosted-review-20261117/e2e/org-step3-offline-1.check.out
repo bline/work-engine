@@ -1,0 +1,16 @@
+requirements_revision: Passed
+realization_claim: Passed
+contract_recomputed: Passed
+task_recomputed: Passed
+frozen_world_unmet: Passed
+snapshot_served: Passed
+subject_bound_to_scope: Passed
+job_id_bound: Passed
+limits_bound: Passed
+delivery: Failed
+answer_sha256: Passed
+strict_json: Failed
+result_contract: NotRun
+subject_equal: NotRun
+grounding: NotRun
+outcome: checks_failed (standing owner_pending, consumable false)
