@@ -81,8 +81,13 @@ with the epoch, so preserve first, make the call the last action, and end the
 run. With the package's default `autoRollover`, Pi's compaction threshold or a
 provider overflow takes the same route, so, as with Codex `token_budget`,
 summarization is not the recovery fallback; if another extension replaces the
-compaction result, the package fails closed and sends no continuation. On a
-very small context the tool refuses instead of creating a boundary.
+compaction result, the package fails closed and sends no continuation. The
+tool can refuse on a small context, and a headless rollover can also fail
+after acknowledgement without any notice, so an acknowledgement is not a
+boundary; the reader's epoch is. In the
+[route probe](../../../metrics/probes/pi-context-routes-20261116.md) one model
+treated the quoted request as fresh work and repeated the task, including
+`new_context`, for eight epochs.
 
 `context_notes` survive the rollover on the session branch, so they can hold
 session-scoped state the extension's own contract assigns them. They are not
