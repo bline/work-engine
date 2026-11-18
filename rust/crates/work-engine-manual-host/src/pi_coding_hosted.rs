@@ -500,10 +500,27 @@ pub mod canonical {
             other => other.clone(),
         }
     }
+    /// Thinking blocks are compared exactly, outside both rules
+    /// (research-lifecycle owner condition 3, board 5886).
+    fn thinking(block: &Value) -> bool {
+        matches!(
+            block["type"].as_str(),
+            Some("thinking" | "redacted_thinking")
+        )
+    }
     fn message(v: &Value) -> Value {
         let mut m = strip_cache_control(v);
         if let Some(Value::String(text)) = m.get("content").cloned() {
             m["content"] = json!([{"type":"text","text":text}]);
+        }
+        if let (Some(original), Some(content)) =
+            (v["content"].as_array(), m["content"].as_array_mut())
+        {
+            for (kept, block) in content.iter_mut().zip(original) {
+                if thinking(block) {
+                    *kept = block.clone();
+                }
+            }
         }
         m
     }
@@ -2948,7 +2965,23 @@ mod tests {
         let extended = json!([{"role":"user","content":[{"type":"text","text":"q","cache_control":{"type":"ephemeral"}}]},
             {"role":"system","content":"env"},
             {"role":"assistant","content":[{"type":"text","text":"a"}]}]);
-        h.messages_policy(&plan, &next(extended), false).unwrap();
+        h.messages_policy(&plan, &next(extended.clone()), false)
+            .unwrap();
+        // Thinking blocks are compared exactly: a moved cache_control on one
+        // is a difference.
+        let with_thinking = json!([{"role":"user","content":"q"},
+            {"role":"assistant","content":[{"type":"thinking","thinking":"","signature":"s"},{"type":"text","text":"a"}]}]);
+        h.hosted.last_messages = Some(with_thinking.clone());
+        let mut longer = with_thinking.as_array().unwrap().clone();
+        longer.push(json!({"role":"user","content":"more"}));
+        h.messages_policy(&plan, &next(json!(longer.clone())), false)
+            .unwrap();
+        longer[1]["content"][0]["cache_control"] = json!({"type":"ephemeral"});
+        assert!(
+            h.messages_policy(&plan, &next(json!(longer)), false)
+                .is_err()
+        );
+        h.hosted.last_messages = Some(first.clone());
         for bad in [
             first.clone(),
             json!([{"role":"user","content":[{"type":"text","text":"altered"}]},

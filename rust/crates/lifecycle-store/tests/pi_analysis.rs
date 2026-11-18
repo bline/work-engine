@@ -134,6 +134,11 @@ fn request(inv: &str, input: &[Value]) -> Value {
 /// Three provider requests: a list call, then a read and an SDK-refused call
 /// in one message, then the final answer.
 fn events(inv: &str) -> Vec<Value> {
+    events_with(inv, &[], json!([{"type":"text","text":"supported: hello"}]))
+}
+/// `events` with `prefix` blocks before the second message's content and the
+/// final message's `content`.
+fn events_with(inv: &str, prefix: &[Value], final_content: Value) -> Vec<Value> {
     let user = json!({"role":"user","content":[{"type":"text","text":inv}]});
     let call1 = json!({"type":"toolCall","id":"c1","name":"snapshot_list","arguments":{}});
     let a1 = json!({"role":"assistant","content":[call1],"stopReason":"toolUse"});
@@ -147,7 +152,13 @@ fn events(inv: &str) -> Vec<Value> {
     let call2 =
         json!({"type":"toolCall","id":"c2","name":"snapshot_read","arguments":{"path":"a.md"}});
     let call3 = json!({"type":"toolCall","id":"c3","name":"bogus","arguments":{}});
-    let a2 = json!({"role":"assistant","content":[{"type":"text","text":"reading"},call2,call3],"stopReason":"toolUse"});
+    let mut a2_content = prefix.to_vec();
+    a2_content.extend([
+        json!({"type":"text","text":"reading"}),
+        call2.clone(),
+        call3.clone(),
+    ]);
+    let a2 = json!({"role":"assistant","content":a2_content,"stopReason":"toolUse"});
     let (r2, t2) = delivery(
         inv,
         "c2",
@@ -156,7 +167,7 @@ fn events(inv: &str) -> Vec<Value> {
         json!({"path":"a.md","text":"hello"}),
     );
     let t3 = json!({"role":"toolResult","toolCallId":"c3","toolName":"bogus","content":[{"type":"text","text":"Tool bogus not found"}],"details":{},"isError":true});
-    let a3 = json!({"role":"assistant","content":[{"type":"text","text":"supported: hello"}],"stopReason":"stop"});
+    let a3 = json!({"role":"assistant","content":final_content,"stopReason":"stop"});
     let full = vec![
         user.clone(),
         a1.clone(),
@@ -351,4 +362,56 @@ fn analysis_turns_need_the_analysis_binding_and_have_no_effect_entry() {
     let intent = json!({"job_id":"j","input_digest":"a".repeat(64),"session_id":"physical:pi","call_id":"c1","command_sha256":"b".repeat(64)});
     let entered = s.with_pi_coding_effect(&turn, "wire", 1, &intent, clock(), |_| Ok::<(), ()>(()));
     assert!(entered.is_err());
+}
+fn think(signature: &str) -> Value {
+    json!({"type":"thinking","thinking":"","thinkingSignature":signature})
+}
+#[test]
+fn analysis_turn_with_thinking_blocks_settles_and_answers_text_only() {
+    let values = events_with(
+        "audit",
+        &[think("sig-2")],
+        json!([think("sig-3"), {"type":"text","text":"supported: hello"}]),
+    );
+    let (r, s, _root) = settle(&values);
+    r.unwrap();
+    assert_eq!(
+        s.native_recovery("audit").unwrap().unwrap().class,
+        "CompletedSettled"
+    );
+}
+#[test]
+fn analysis_grammar_refuses_unknown_content_and_thinking_only_answers() {
+    let answer = json!({"type":"text","text":"supported: hello"});
+    for (name, prefix, final_content) in [
+        (
+            "redacted thinking (not observed)",
+            vec![json!({"type":"redacted_thinking","data":"x"})],
+            json!([answer.clone()]),
+        ),
+        (
+            "unknown content type",
+            vec![json!({"type":"image","data":"x"})],
+            json!([answer.clone()]),
+        ),
+        (
+            "thinking with an extra key",
+            vec![json!({"type":"thinking","thinking":"","thinkingSignature":"s","text":"x"})],
+            json!([answer.clone()]),
+        ),
+        (
+            "thinking without signature",
+            vec![json!({"type":"thinking","thinking":""})],
+            json!([answer.clone()]),
+        ),
+        ("thinking-only final", vec![], json!([think("sig-3")])),
+    ] {
+        let (r, s, _root) = settle(&events_with("audit", &prefix, final_content));
+        assert!(r.is_err(), "{name}");
+        assert_eq!(
+            s.native_recovery("audit").unwrap().unwrap().class,
+            "EnteredUncertain",
+            "{name}"
+        );
+    }
 }

@@ -352,3 +352,47 @@ fails. The receiver also clears `PI_CLAUDE_SDK_PROMPT`, so the extension
 stays in its Claude prompt mode. The check is necessary, not sufficient; the
 response-side billing guard stays. All three live-c1 bodies satisfy it.
 Offline `w4c/ok` (`analysis-qualification` `0b8fff28…`) passes.
+
+## Thinking blocks accepted; first settled Claude analysis job (`live-c2`)
+
+The research-lifecycle owner decided on the `thinking` blocks (board 5886)
+and authorized the grammar change in this lane, under six conditions:
+
+1. **Closed set.** `lifecycle-store` `pi_analysis_proof.rs` accepts exactly
+   Pi's observed block, `{type: "thinking", thinking, thinkingSignature}`
+   (strings, no other key), in any assistant message. The redacted variant was
+   not observed and still refuses, as does any other type.
+2. **Non-semantic.** Thinking blocks are never tool calls and never part of
+   the answer or of any delivery check. The answer is the final message's text
+   blocks only; a final message with thinking but no text has no answer and
+   refuses.
+3. **Byte-exact.** Retained bodies are unchanged. The Host's continuity rule
+   now compares `thinking`/`redacted_thinking` blocks in requests exactly,
+   outside both canonical rules (a moved `cache_control` on one refuses).
+4. **Settlement and bounds.** Anthropic's `output_tokens` includes thinking
+   tokens (`output_tokens_details.thinking_tokens` is a part of it), so
+   settlement and the output bound already count them as output.
+5. **Tests.** A positive turn with thinking, text and tool calls; negatives
+   for an unknown type, the redacted variant, malformed thinking blocks and a
+   thinking-only final answer (`lifecycle-store` `tests/pi_analysis.rs`); and
+   the continuity test.
+6. **Effective thinking setting.** On `claude-haiku-5-5`, the profile's
+   `thinkingLevel: off` becomes adaptive thinking at effort `low` (request
+   body `thinking: {type: adaptive, display: updates}`,
+   `output_config.effort: low`), because Pi's catalog has no `off` level for
+   the model. Thinking was on in every Claude run in this record. An H2 arm
+   configuration must state it, and both arms must run with it identically.
+   The blocks Pi records carry an empty `thinking` text and an encrypted
+   signature.
+
+**Live run `live-c2`** (`analysis-qualification` `beb44475…`, same inputs as
+`live-c1`: subscription route only, the draft H2 treatment snapshot, the
+non-H2 task): **exit 0, `CompletedSettled`**, 23 s. Three requests, all HTTP
+200 with `unified-status: allowed` and `overage-status: rejected`, settled at
+351, 703 and 12 360 µUSD at catalog rates (all cache writes one-hour; request
+3: 58 910 written, 2 716 read, 1 098 output). 13 Host deliveries (the list,
+then 12 reads in one response). The completion reported
+`forwarderRefused: 0`; the receipt names `claude-sdk` / `claude-haiku-5-5`.
+The answer describes each of the 12 members in one line. No subscription
+access or refresh token appears in the 94 run files, and `private-access` is
+empty. Every request body passes the pre-dispatch subscription check.

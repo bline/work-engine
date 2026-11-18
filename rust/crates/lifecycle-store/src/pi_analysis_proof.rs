@@ -47,6 +47,35 @@ fn delivery<'a>(reads: &[&'a Value], inv: &str, call: &Value) -> Result<&'a Valu
     }
     Ok(read)
 }
+/// A thinking block exactly as Pi records it for the `claude-sdk` provider
+/// (observed in live run `live-c1`): `type`, `thinking` text and an opaque
+/// `thinkingSignature`, nothing else. Non-semantic: never a tool call, never
+/// part of the answer or of any delivery check (research-lifecycle owner
+/// decision, board 5886). Any other content type still refuses.
+fn thinking(c: &Value) -> bool {
+    c["type"] == "thinking"
+        && c.as_object().is_some_and(|o| o.len() == 3)
+        && c["thinking"].is_string()
+        && c["thinkingSignature"].is_string()
+}
+/// The answer of the final message: its text blocks, in order. Only text and
+/// thinking blocks may appear; a final message without a text block has no
+/// answer (and is refused like an empty answer).
+fn answer_text(m: &Value) -> Result<String, StoreError> {
+    if m["content"].is_string() {
+        return text(m);
+    }
+    let a = m["content"].as_array().ok_or(StoreError::ClaimConflict)?;
+    let mut out = String::new();
+    for c in a {
+        if c["type"] == "text" {
+            out.push_str(c["text"].as_str().ok_or(StoreError::ClaimConflict)?);
+        } else if !thinking(c) {
+            return bad();
+        }
+    }
+    Ok(out)
+}
 /// What the receiver returns to the SDK for a Host delivery.
 fn expected_content(delivered: &Value) -> Value {
     if delivered["ok"] == true {
@@ -123,7 +152,7 @@ pub(crate) fn validate(
             .ok_or(StoreError::ClaimConflict)?;
         if content
             .iter()
-            .any(|c| c["type"] != "text" && c["type"] != "toolCall")
+            .any(|c| c["type"] != "text" && c["type"] != "toolCall" && !thinking(c))
         {
             return bad();
         }
@@ -191,7 +220,7 @@ pub(crate) fn validate(
     if used != reads.len() {
         return bad();
     }
-    let answer = text(&final_message)?;
+    let answer = answer_text(&final_message)?;
     if answer.is_empty() || answer.len() > MAX_ANSWER_BYTES {
         return bad();
     }
