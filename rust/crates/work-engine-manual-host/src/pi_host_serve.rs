@@ -959,7 +959,13 @@ fn build_capture(
         }
         let attempts = r["attempts"].as_array().cloned().unwrap_or_default();
         if attempts.is_empty() {
-            reasons.push(format!("request {n} has no attempt"));
+            // A request the Host refused before reserving any attempt
+            // (e.g. not a Claude Code request on the subscription) names why.
+            let why = r["not_dispatched"]
+                .as_str()
+                .map(|s| format!(" (not dispatched: {s})"))
+                .unwrap_or_default();
+            reasons.push(format!("request {n} has no attempt{why}"));
         }
         for (i, at) in attempts.iter().enumerate() {
             let k = at["attempt"].as_u64().unwrap_or(0);
@@ -1245,11 +1251,15 @@ fn serve_record(
         record["status"] = json!("refused");
         record["error"] = json!(e.to_string());
     }
-    if state_dir.is_dir() {
-        create_only(
+    // A failed write is recorded in the returned record (stderr) rather than
+    // replacing the run's own error.
+    if state_dir.is_dir()
+        && let Err(e) = create_only(
             &state_dir.join(SERVE_RECORD),
             &serde_json::to_vec_pretty(&record)?,
-        )?;
+        )
+    {
+        record["record_error"] = json!(e.to_string());
     }
     Ok(record)
 }
@@ -1612,6 +1622,23 @@ mod tests {
                 "Pi's history for the turn is absent"
             ])
         );
+        // A request refused before any attempt was reserved: no attempt to
+        // list; the reason names why.
+        let request = &mut state["coding"]["provider_requests"]["1"];
+        request["attempts"] = json!([]);
+        request["not_dispatched"] = json!("subscription_request_not_claude_code");
+        fs::write(&path, state.to_string()).unwrap();
+        let capture = build_capture(&id, &active(), 1, 0, None, &[]).unwrap();
+        assert_eq!(capture["attempts"], json!([]));
+        assert!(
+            capture["eligibility"]["reasons"]
+                .as_array()
+                .unwrap()
+                .contains(&json!(
+                    "request 1 has no attempt (not dispatched: subscription_request_not_claude_code)"
+                )),
+            "{capture}"
+        );
     }
 
     /// R1: the serve record is retained in an existing state directory,
@@ -1643,6 +1670,16 @@ mod tests {
         let absent = dir.path().join("absent");
         serve_record(&absent, &Ok(json!({})), vec![], &Ok(())).unwrap();
         assert!(!absent.exists());
+        // An existing record is kept; the failed write is reported, and the
+        // run's own error is not replaced.
+        let again = serve_record(dir.path(), &run, vec![], &refused).unwrap();
+        assert_eq!(again["status"], "refused");
+        assert!(again["record_error"].is_string());
+        assert_eq!(
+            serde_json::from_slice::<Value>(&fs::read(dir.path().join(SERVE_RECORD)).unwrap())
+                .unwrap(),
+            retained
+        );
     }
 
     fn active() -> Active {

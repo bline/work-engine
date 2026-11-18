@@ -545,6 +545,11 @@ impl Run {
     /// The Host closed its thread in order: no container is left behind and
     /// it recorded no failure.
     fn assert_closed(&self) {
+        assert!(
+            self.kinds.contains(&"capture_host") && !self.kinds.contains(&"capture_codex"),
+            "{:?}",
+            self.kinds
+        );
         assert!(!self.container_left, "container left behind");
         assert!(
             self.failures.as_array().is_some_and(Vec::is_empty),

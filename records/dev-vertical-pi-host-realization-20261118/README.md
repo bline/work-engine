@@ -460,6 +460,48 @@ spins at full CPU. Run alone, it hits a 240 s timeout both on this branch and
 at the base `bf64a1e3`, so it predates this unit. The other 17
 `selected_startup` tests pass alone.
 
+### Review (Fable) and remediation
+
+Fable (`claude-sdk/claude-fable-5-1`), read-only, over `bf64a1e3..546a24a9`
+(`reviews/pi-host-h2-live-prep-fable-20261118/REVIEW.md`): accept with
+changes. It found nothing that makes the first live run unsafe.
+
+| Finding | Disposition |
+| --- | --- |
+| P2-1: the delivery check's changed-byte marker could come from the prompt. A window that also occurs in the task text satisfies "once in some body" through request 1. The flip then changes only the prompt copy and the control fails for the wrong reason. | Fixed: the marker must not occur in the first body (the shared prefix, which holds no read result), must occur at most once in any body, and once in some body. |
+| P2-2: the refactor dropped `capture_host` present / `capture_codex` absent. | Fixed: restored in `Run::assert_closed`, so offline and live both check it. |
+| P3-1: a request the Host refuses before reserving any attempt (`not_dispatched`, for example not a Claude Code request on the subscription) has no `attempts` entry, and its reason said only "has no attempt". | Fixed: the reason names the `not_dispatched` cause; test added. `attempts` still lists only real attempts, and the protocol sentence (attempts, including a reserved one never dispatched) is unchanged. |
+| P3-2: the forwarder count is job-wide and sampled at frame times. A refusal after a turn's history frame lands on the next provider request or the job completion, not on the turn already settled, whose answer preceded it. The job still cannot complete. | Recorded here; no change. |
+| P3-3: a failed serve-record write replaced the run's error and the stderr record. | Fixed: the failure becomes `record_error` in the returned record; an existing record file is kept; test added. |
+| P3-4: `cargo fmt --check -p work-engine-task-host` reports `observation.rs`. | Predates this unit, and this unit does not touch the file. |
+
+Runs after the remediation (offline):
+
+- `q23` (`pi_host_research_delivery`, then both delivery checks): eligible,
+  `CompletedSettled`, 7 payloads and 7 attempts, `capture_host` asserted,
+  account flag `false`, serve record `served`. `verify_delivery` is `complete`
+  (`request-5`, 4 spans, which follow the plan) with the same four refusals;
+  under the stricter rule the marker is still at offset 58,444. sha256:
+  `summary.json` `98ad052f…`, `retained.json` `bb62e248…`,
+  `verify-delivery.json` `7429c7cb…`, `grants.json` `ab150216…`.
+- `q24` (`pi_host_causal_join`): eligible, `CompletedSettled`, 3 payloads;
+  `summary.json` `e4ca0d5d…`.
+- Unit tests: `native-realization` 6, `work-engine-manual-host` lib 108,
+  `lifecycle-service` lib 97, `lifecycle-store` lib 33,
+  `work-engine-task-host` `research_delivery` 6. Formatting is clean for the
+  changed files.
+
+Incident (validation only): the base comparison of the hanging task-host test
+was built in this worktree's target directory. Cargo records workspace
+source paths relative to the workspace root, and this branch's sources were
+older than that build, so cargo kept base artifacts it should have rebuilt,
+including `native-realization` with the old digest `9a33912a`. The first
+remediation run failed as a result: the runner refused the Host's
+`pi-host/initialize` digest, and the Host never started its thread. The
+files that differ from base were touched and rebuilt. Every binary was
+checked to carry `56c00a88…` and not `9a33912a…` before `q23`/`q24`. `q21`,
+`q22`, `r9` and `r10` ran before the base build.
+
 ## Open
 
 - The Q fixture's owner adapter answers `original_result_operation` without

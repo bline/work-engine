@@ -1714,6 +1714,10 @@ mod projection_tests {
                 w.iter()
                     .all(|b| b.is_ascii_alphanumeric() || b" .,-".contains(b))
                     && count(projection, w) == 1
+                    // Not in the first body (the shared prefix, which holds
+                    // no read result), at most once in any body.
+                    && count(&bodies[0], w) == 0
+                    && bodies.iter().all(|b| count(b, w) <= 1)
                     && bodies.iter().any(|b| count(b, w) == 1)
             })
             .expect("no read-content marker");
