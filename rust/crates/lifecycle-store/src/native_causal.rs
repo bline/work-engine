@@ -59,15 +59,18 @@ impl SqliteLifecycleStore {
         {
             return Err(StoreError::ClaimConflict);
         }
-        // The scope states the realization's actual tool path (S2): the Pi
-        // Host relays tool calls to its controller; any other session keeps
-        // the Codex bytes.
+        // The scope states the realization's actual tool path (S2): Codex
+        // keeps its bytes, the Pi Host relays tool calls to its controller,
+        // and an unrecognized session retains no causal record.
         let scope =
             match native_realization::Realization::from_protocol_digest(&input.protocol_digest) {
+                Some(native_realization::Realization::Codex) => {
+                    native_realization::codex::CAUSAL_SCOPE
+                }
                 Some(native_realization::Realization::PiHost) => {
                     native_realization::pi_host::CAUSAL_SCOPE
                 }
-                _ => native_realization::codex::CAUSAL_SCOPE,
+                None => return Err(StoreError::Rejected),
             };
         let input_sha: String = self
             .connection

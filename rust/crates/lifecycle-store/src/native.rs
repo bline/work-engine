@@ -3861,7 +3861,7 @@ mod tests {
             )
             .unwrap();
         store.connection.execute_batch("INSERT INTO grants(grant_id,issuer,principal,subject_id,context_id,build_id,proof_run_id,scope,expires_ms,revision,revoked) VALUES('grant:input-store','trusted','principal:fixture','subject:input-store','context:input-store','build:input-store','proof:input-store','native_turn',100,1,0);
-            INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,thread_id,created_wall_ms,role) VALUES('session:input-store','subject:input-store','context:input-store','incarnation:input-store','hash','hash','hash','snapshot:input-store','hash','bound','thread:input-store',1,'domain');
+            INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,thread_id,created_wall_ms,role) VALUES('session:input-store','subject:input-store','context:input-store','incarnation:input-store','hash','hash','80a40a7fac15b4bf70efb7f893fb353acc0a0d30c68f54aee4f01923deca85de','snapshot:input-store','hash','bound','thread:input-store',1,'domain');
             INSERT INTO native_turns(invocation_id,session_id,attempt_id,grant_id,grant_revision,purpose,prompt_sha256,prompt,profile_digest,state,thread_id,turn_id,send_intent,entered_wall_ms) VALUES('invocation:input-store','session:input-store','attempt:input-store','grant:input-store',1,'domain_work','hash',X'61','hash','entered_uncertain','thread:input-store','turn:input-store',1,1);").unwrap();
         store.connection.execute_batch("INSERT INTO inputs(input_id,subject_id,sequence,delivery_id,producer_ref,text,text_digest,grant_id,state) VALUES('input:input-store','subject:input-store',1,'delivery:input-store','producer:fixture',X'61','hash','grant:input-store','entered');
             INSERT INTO effects(effect_id,subject_id,input_id,expected_revision,state) VALUES('effect:input-store','subject:input-store','input:input-store',0,'entered');
@@ -3937,7 +3937,9 @@ mod tests {
     }
     /// Store-boundary causal fixture under a chosen session protocol digest;
     /// returns the retained causal record and its exact artifact bytes.
-    fn causal_record_for_protocol(protocol: &str) -> (crate::NativeCausalRecord, Vec<u8>) {
+    fn causal_record_for_protocol(
+        protocol: &str,
+    ) -> Result<(crate::NativeCausalRecord, Vec<u8>), StoreError> {
         let root = tempdir().unwrap();
         let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
         let subject = SubjectId::parse("subject:input-store").unwrap();
@@ -4001,20 +4003,19 @@ mod tests {
         store.connection.execute("INSERT INTO native_ingress(transport_session,sequence,raw_sha256,raw,decode_status,method,thread_id,turn_id,observed_wall_ms,session_id) VALUES('transport:input-store',2,'hash',?1,'qualified','item/tool/call','thread:input-store','turn:input-store',1,'session:input-store')",[&ingress]).unwrap();
         store.connection.execute_batch("INSERT INTO native_task_operations VALUES('operation:causal','invocation:input-store','call:causal','transport:input-store',2,'task.result.publish.v1','rust.result.publish.v1','lifecycle.service.task','grant:input-store',1,'hash','hash',X'7B7D','completed_settled',X'7B7D','hash',1,1);").unwrap();
         let bundle=serde_json::to_vec(&serde_json::json!({"calls":[{"call_id":"call:causal","namespace":"task","tool":"result_publish","arguments":{"body":"original"}}]})).unwrap();
-        store
-            .retain_native_causal(&session, &turn, &bundle, clock())
-            .unwrap();
+        store.retain_native_causal(&session, &turn, &bundle, clock())?;
         let record = store
             .native_causal_evidence("operation:causal")
             .unwrap()
             .unwrap();
         let bytes = serde_json::to_vec(&record).unwrap();
-        (record, bytes)
+        Ok((record, bytes))
     }
     #[test]
     fn codex_causal_record_bytes_are_pinned() {
         let (record, bytes) =
-            causal_record_for_protocol(native_realization::codex::SCHEMA_THREAD_START_SHA256);
+            causal_record_for_protocol(native_realization::codex::SCHEMA_THREAD_START_SHA256)
+                .unwrap();
         assert_eq!(
             record.scope,
             "controlled-native-causal-evidence-v1; explicit direct/same-turn-code-mode; historical non-authority evidence"
@@ -4026,10 +4027,14 @@ mod tests {
     }
     #[test]
     fn pi_host_causal_record_states_the_relay_tool_path() {
-        let (record, _) = causal_record_for_protocol(native_realization::pi_host::PROTOCOL_DIGEST);
+        let (record, _) =
+            causal_record_for_protocol(native_realization::pi_host::PROTOCOL_DIGEST).unwrap();
         assert_eq!(record.scope, native_realization::pi_host::CAUSAL_SCOPE);
-        let (other, _) = causal_record_for_protocol("hash");
-        assert_eq!(other.scope, native_realization::codex::CAUSAL_SCOPE);
+        // An unrecognized session protocol retains no causal record.
+        assert!(matches!(
+            causal_record_for_protocol("hash"),
+            Err(StoreError::Rejected)
+        ));
     }
     #[test]
     fn native_strict_input_conflict_fences_causal_history_and_retention() {
@@ -4049,7 +4054,7 @@ mod tests {
             )
             .unwrap();
         store.connection.execute_batch("INSERT INTO grants(grant_id,issuer,principal,subject_id,context_id,build_id,proof_run_id,scope,expires_ms,revision,revoked) VALUES('grant:input-store','trusted','principal:fixture','subject:input-store','context:input-store','build:input-store','proof:input-store','native_turn',100,1,0);
-            INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,thread_id,created_wall_ms,role) VALUES('session:input-store','subject:input-store','context:input-store','incarnation:input-store','hash','hash','hash','snapshot:input-store','hash','bound','thread:input-store',1,'domain');
+            INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,thread_id,created_wall_ms,role) VALUES('session:input-store','subject:input-store','context:input-store','incarnation:input-store','hash','hash','80a40a7fac15b4bf70efb7f893fb353acc0a0d30c68f54aee4f01923deca85de','snapshot:input-store','hash','bound','thread:input-store',1,'domain');
             INSERT INTO native_turns(invocation_id,session_id,attempt_id,grant_id,grant_revision,purpose,prompt_sha256,prompt,profile_digest,state,thread_id,turn_id,send_intent,entered_wall_ms) VALUES('invocation:input-store','session:input-store','attempt:input-store','grant:input-store',1,'domain_work','hash',X'61','hash','entered_uncertain','thread:input-store','turn:input-store',1,1);").unwrap();
         store.connection.execute_batch("INSERT INTO inputs(input_id,subject_id,sequence,delivery_id,producer_ref,text,text_digest,grant_id,state) VALUES('input:input-store','subject:input-store',1,'delivery:input-store','producer:fixture',X'61','hash','grant:input-store','entered');
             INSERT INTO effects(effect_id,subject_id,input_id,expected_revision,state) VALUES('effect:input-store','subject:input-store','input:input-store',0,'entered');
@@ -4178,7 +4183,7 @@ mod tests {
             )
             .unwrap();
         store.connection.execute_batch("INSERT INTO grants(grant_id,issuer,principal,subject_id,context_id,build_id,proof_run_id,scope,expires_ms,revision,revoked) VALUES('grant:input-store','trusted','principal:fixture','subject:input-store','context:input-store','build:input-store','proof:input-store','native_turn',100,1,0);
-            INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,thread_id,created_wall_ms,role) VALUES('session:input-store','subject:input-store','context:input-store','incarnation:input-store','hash','hash','hash','snapshot:input-store','hash','bound','thread:input-store',1,'domain');
+            INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,thread_id,created_wall_ms,role) VALUES('session:input-store','subject:input-store','context:input-store','incarnation:input-store','hash','hash','80a40a7fac15b4bf70efb7f893fb353acc0a0d30c68f54aee4f01923deca85de','snapshot:input-store','hash','bound','thread:input-store',1,'domain');
             INSERT INTO native_turns(invocation_id,session_id,attempt_id,grant_id,grant_revision,purpose,prompt_sha256,prompt,profile_digest,state,thread_id,turn_id,send_intent,entered_wall_ms) VALUES('invocation:input-store','session:input-store','attempt:input-store','grant:input-store',1,'domain_work','hash',X'61','hash','entered_uncertain','thread:input-store','turn:input-store',1,1);").unwrap();
         store.connection.execute_batch("INSERT INTO inputs(input_id,subject_id,sequence,delivery_id,producer_ref,text,text_digest,grant_id,state) VALUES('input:input-store','subject:input-store',1,'delivery:input-store','producer:fixture',X'61','hash','grant:input-store','entered');
             INSERT INTO effects(effect_id,subject_id,input_id,expected_revision,state) VALUES('effect:input-store','subject:input-store','input:input-store',0,'entered');

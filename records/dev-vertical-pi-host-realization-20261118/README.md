@@ -139,7 +139,54 @@ cd rust && WE_PI_HOST_OUT=<fresh dir> WE_PI_HOST_BIN=target/debug/work-engine-pi
   cargo test -p lifecycle-service --features controlled-proof --lib pi_host_causal_join -- --ignored
 ```
 
+Runs on the remediated code (2026-11-18, offline): `q4` from the worktree
+that became `3f8007d3` (composed test with the command above: passed;
+eligible, `CompletedSettled`, 3 wire payloads including the failover
+resend, protocol `604f1a10…`; `summary.json` sha256 `02e38c9f…`) and `r7`
+(`serve.py` `relay`: both turns completed and eligible, no failures, no
+container left).
+
+## Recheck (fourth commit)
+
+Fable recheck of `3f8007d3`:
+[REVIEW.md](../../reviews/pi-host-lst-q-recheck-fable-20261118/REVIEW.md)
+(accept with changes; P3 only). Changes: the q4 and r7 runs recorded above
+(P3-1); the runner's close wait ends at the active turn's own bound (set
+before `turn/start`, so a turn whose binding failed is covered) or 120 s,
+whichever is later (P3-2, P3-3); the task host refuses a call number that
+goes backwards (`messages-request-call-order`, unit test; P3-5). P3-4
+(identical bodies across distinct calls are refused) is kept fail-closed and
+noted. Run `q5` from the worktree that became the fourth commit: passed
+(eligible, `CompletedSettled`; `summary.json` sha256 `81287463…`).
+
+## Owner ruling 5900 (fifth commit)
+
+Research-lifecycle owner ruling (board 5900; review
+`/home/bline/cbm-work/research-lifecycle-tool-registry-20261116/015-pi-host-review/REVIEW.md`):
+accept with required changes.
+
+| Item | Change |
+| --- | --- |
+| R1 thinking rule at the Host-ledger seam | `ledger_items` accepts a `thinking` block only with exactly `{type, thinking, thinkingSignature}`, all strings; the unit test carries `thinkingSignature`; negatives for a missing signature, an extra (redacted) key, a non-string signature and `redacted_thinking`. The shared canonical rule compares `thinking` exactly and refuses any request containing `redacted_thinking` (in either request). |
+| R2 causal fence fail-open | `retain_native_causal` matches Codex and Pi Host only; an unknown session protocol is `Rejected`; the test now expects the refusal; the Codex record-byte pin is unchanged. Three store test fixtures that retained causal records under the literal protocol `hash` now bind the Codex digest. |
+| R3 C1(iii) negative | Test: an altered earlier `tool_result` content refuses. |
+| F6 (record) | The Pi Host's tool pin is `dynamicTools` equality at `thread/start` plus the request tools digest pins (Host before dispatch, runner over retained bodies); it is not the Codex `ExpectedToolSet`. |
+| L3 (record) | The startup hold stays refused until R9′. The Responses wire stays refused for the Pi Host: 5879(3) "both wire families" is met by Codex for Responses and the Pi Host for Messages. |
+
+Pending before any live or delivery claim: L1 (account-identifier rule and
+the runner's check; operator consent on email retention pending) and L2 (a Q
+run relaying `snapshot_read` through the actor and `verify_delivery` over
+the real Pi payload). F4 (per-request attempts in capture metadata) is
+recommended and not yet done.
+
+Runs from the worktree that became the fifth commit: `q6` (composed test:
+passed, `summary.json` sha256 `66619b0a…`) and `r8` (`relay`: both turns
+completed and eligible, no container left).
+
 ## Open
+
+- Identical request bodies across two distinct calls (an SDK-level retry
+  after a completed stream) are refused by the task host; not observed.
 
 - The Responses (`openai-codex`) relay tools digest is unobserved (OpenAI
   exhausted until 2026-11-21); relay requests on that wire are refused by

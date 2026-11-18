@@ -58,10 +58,14 @@ pub mod pi_host {
         /// Thinking blocks are compared exactly, outside both rules
         /// (research-lifecycle owner condition 3, board 5886).
         fn thinking(block: &Value) -> bool {
-            matches!(
-                block["type"].as_str(),
-                Some("thinking" | "redacted_thinking")
-            )
+            block["type"] == "thinking"
+        }
+        /// A redacted thinking block was never observed; a request carrying
+        /// one is not a continuation (board 5886(1)).
+        fn redacted(message: &Value) -> bool {
+            message["content"]
+                .as_array()
+                .is_some_and(|c| c.iter().any(|b| b["type"] == "redacted_thinking"))
         }
         fn message(v: &Value) -> Value {
             let mut m = strip_cache_control(v);
@@ -90,6 +94,7 @@ pub mod pi_host {
                     .iter()
                     .chain(next.iter())
                     .all(|m| m.get("role").is_some())
+                || prev.iter().chain(next.iter()).any(redacted)
             {
                 return false;
             }
@@ -308,6 +313,23 @@ mod tests {
         let mut altered = next.clone();
         altered[1]["content"][1]["input"] = json!({"x":1});
         assert!(!is_prefix_extension(&prev, &altered));
+        // An altered earlier tool_result content refuses (C1(iii)).
+        let mut later = next.clone();
+        later
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"role":"assistant","content":[{"type":"text","text":"done"}]}));
+        let mut changed = later.clone();
+        changed[2]["content"][0]["content"][0]["text"] = json!("other bytes");
+        assert!(is_prefix_extension(&next, &later));
+        assert!(!is_prefix_extension(&next, &changed));
+        // Any redacted thinking block refuses, in either request.
+        let mut redacted = next.clone();
+        redacted[1]["content"][0] = json!({"type":"redacted_thinking","data":"x"});
+        assert!(!is_prefix_extension(&prev, &redacted));
+        let mut redacted_prev = prev.clone();
+        redacted_prev[1]["content"][0] = json!({"type":"redacted_thinking","data":"x"});
+        assert!(!is_prefix_extension(&redacted_prev, &redacted));
         assert!(!is_prefix_extension(&json!(null), &next));
     }
 

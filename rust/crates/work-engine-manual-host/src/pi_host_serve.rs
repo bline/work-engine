@@ -156,6 +156,7 @@ struct TurnRecord {
     capture: Option<(PathBuf, String)>,
 }
 
+#[derive(Clone)]
 struct Active {
     number: usize,
     id: String,
@@ -784,7 +785,22 @@ fn ledger_items(a: &Active) -> std::result::Result<Vec<Value>, String> {
                     }
                     items.push(item.clone());
                 }
-                Some("thinking") => {}
+                // Pi's thinking block as observed on claude-sdk (board 5886):
+                // exactly {type, thinking, thinkingSignature}, all strings.
+                // Anything else (no signature, an extra or redacted marker)
+                // is not a recognized shape.
+                Some("thinking") => {
+                    let keys: BTreeSet<&str> = block
+                        .as_object()
+                        .map(|o| o.keys().map(String::as_str).collect())
+                        .unwrap_or_default();
+                    if keys != BTreeSet::from(["type", "thinking", "thinkingSignature"])
+                        || !block["thinking"].is_string()
+                        || !block["thinkingSignature"].is_string()
+                    {
+                        return Err("thinking block outside the observed shape".into());
+                    }
+                }
                 other => return Err(format!("unknown assistant block {other:?}")),
             }
         }
@@ -1378,7 +1394,7 @@ mod tests {
         r.gate.provider_attempt(&intent, &mut |_| Ok(())).unwrap();
         for m in [
             json!({"role":"assistant","stopReason":"toolUse","content":[{"type":"toolCall","id":"toolu_1","name":"snapshot_read"}]}),
-            json!({"role":"assistant","stopReason":"stop","content":[{"type":"thinking","thinking":""},{"type":"text","text":"answer"}]}),
+            json!({"role":"assistant","stopReason":"stop","content":[{"type":"thinking","thinking":"","thinkingSignature":"sig"},{"type":"text","text":"answer"}]}),
         ] {
             r.gate
                 .frame(&json!({"type":"native_event","sessionId":"s1","event":{"type":"message_end","message":m}}))
@@ -1501,6 +1517,26 @@ mod tests {
             prompt_sha256: String::new(),
         };
         assert!(ledger_items(&a).unwrap_err().contains("not relayed"));
+        // Thinking blocks: exactly the observed shape.
+        let thinking = |block: Value| {
+            let mut t = Active {
+                messages: vec![
+                    json!({"role":"assistant","content":[block,{"type":"text","text":"x"}]}),
+                ],
+                ..a.clone()
+            };
+            t.items.clear();
+            ledger_items(&t)
+        };
+        assert!(thinking(json!({"type":"thinking","thinking":"","thinkingSignature":"s"})).is_ok());
+        for bad in [
+            json!({"type":"thinking","thinking":""}),
+            json!({"type":"thinking","thinking":"","thinkingSignature":"s","redacted":true}),
+            json!({"type":"thinking","thinking":"","thinkingSignature":1}),
+            json!({"type":"redacted_thinking","data":"x"}),
+        ] {
+            assert!(thinking(bad.clone()).is_err(), "{bad}");
+        }
         a.messages.clear();
         a.items.insert("y".into(), json!({}));
         assert!(ledger_items(&a).unwrap_err().contains("absent"));
