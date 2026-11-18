@@ -30,7 +30,10 @@ PI_HOST_S2_MANIFEST selects another snapshot manifest (default S2 r2). A
 manifest with an `a4_request_card_member` (S2 r3) takes that member's bytes
 from PI_HOST_A4_MEMBER, checked against its pinned SHA-256, instead of
 building the A4 material from PI_HOST_A4_FIXTURE. Scenario `advisory`: the
-A4 member alone, read the same way. PI_HOST_OBSERVER overrides the observer
+A4 member alone, read the same way. PI_HOST_MAX_CONTEXT sets the job's
+max_context_bytes (default 400,000). PI_HOST_PAD_BYTES=<n> adds a treatment
+member `zz/padding.md` of n bytes of plain ASCII text (no JSON escapes), to
+measure a context near the bound. PI_HOST_OBSERVER overrides the observer
 binary.
 """
 import hashlib, json, os, select, shutil, subprocess, sys, threading, time
@@ -107,6 +110,10 @@ def treatment_members():
         members[e['proposed_member_id']] = data
     mid, data = a4_member(m)
     members[mid] = data
+    pad = int(os.environ.get('PI_HOST_PAD_BYTES', 0))
+    if pad:
+        line = b'Padding for the context bound measurement; plain text without escapes. '
+        members['zz/padding.md'] = (line * (pad // len(line) + 1))[:pad]
     return dict(sorted(members.items()))
 
 def treatment_steps(members):
@@ -183,7 +190,7 @@ def prepare(base, scenario, members=None):
                 'lane': {'pi_config': {'root': str(config), 'manifest': art(inputs / 'pi-config-manifest.json')}},
                 'task': art(task), 'catalog': art(catalog), 'stream_adapter': art(stream_adapter), 'hosted': routes,
                 'provider': 'claude-sdk', 'model': MODEL, 'max_requests': MAX_REQUESTS, 'budget_microusd': BUDGET,
-                'max_context_bytes': 400_000}}}
+                'max_context_bytes': int(os.environ.get('PI_HOST_MAX_CONTEXT', 400_000))}}}
     job_path = write(base / 'job.json', json.dumps(job, indent=1))
     serve_config = write(base / 'serve-config.json', canon({'schema': 'work-engine.pi-host-serve.v1', 'job': art(job_path), 'turn_deadline_secs': TURN_DEADLINE_S}))
     return serve_config, obs, obs_out

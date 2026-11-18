@@ -540,6 +540,54 @@ context. The "about 1.07" ratio in 5929 was wrong. Live requests add thinking
 blocks and signatures that the offline observer does not send, so the live
 margin to 400,000 is below 52,730.
 
+## Relay context bound 500,000 (RL 5947, operator decision)
+
+Branch `pi-host-relay-context-500k-20261118`, from `24a77f7a` (the shared head
+`f772612f` plus the R3 real-card records commit). No live inference.
+
+- `work-engine-manual-host`: new `RELAY_MAX_CONTEXT_BYTES` = 500,000. On the
+  lifecycle relay profile, `ProviderPlan::validate` admits `max_context_bytes` up
+  to it (`context_bound`). The analysis profile keeps `MAX_CONTEXT_BYTES` =
+  400,000. That bound exists because the analysis gate's
+  `pi.provider_request` ingress, carrying the context twice, must fit the
+  store's 1 MiB bound, and the relay gate stores no provider frame. The
+  hosted coding profile keeps 32,768. Unchanged: `MAX_REQUEST_BODY` 600,000;
+  `FRAME_BYTES` 1 MiB (the receiver refuses to emit, and the Host refuses to
+  read, a larger frame); `HISTORY_FRAME_LIMIT` 1,000,000. The protocol states
+  no context bound, so neither it nor `PROTOCOL_DIGEST` changes.
+- Test `context_bound_is_per_profile`: 500,000 for relay, 400,000 for
+  analysis, 32,768 otherwise. The relay bound is below the body bound, and
+  twice it is below the frame bound.
+- `serve.py`: `PI_HOST_MAX_CONTEXT` (the job's `max_context_bytes`) and
+  `PI_HOST_PAD_BYTES` (an extra treatment member `zz/padding.md` of plain
+  text, to reach a context near the bound).
+
+Measurement (offline). The real-card treatment of `r11` plus padding, with
+the H2 job parameters and `max_context_bytes` 500,000. Host built on this
+branch:
+
+| Run | Members | Outcome | `contextBytes` (last) | Request frame / history frame (1 MiB) | Largest body (600,000) | `thread/read` | `memory.peak` |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `r13-context-pad` | 410,633 B (pad 140,000) | completed, eligible, 24 calls | 490,314 | 981,130 / 985,860 | 488,271 | 481,804 | 278 MiB |
+| `r14-context-495k` | 415,219 B (pad 144,586) | completed, eligible, 24 calls | 494,902 | 990,306 / 995,036 | 492,859 | 486,392 | 273 MiB |
+| `r15-cap-500001` | 270,633 B | `max_context_bytes` 500,001 refused at admission (`thread/start` error: provider lane/catalog/limits conflict) | n/a | n/a | n/a | n/a | n/a |
+| `r16-over-cap` | 425,985 B (pad 155,352) | the third request (about 505,000 of context) was refused by the receiver's `contextBytes` bound before any frame or dispatch; the turn failed and was not eligible; no container was left | 275,918 | 552,351 / none | 275,998 | 496,523 | 272 MiB |
+
+`summary.json` sha256: `r13` `676412a4…`, `r14` `876cfd0e…`, `r15`
+`ec74e2cb…`, `r16` `32c86519…`. In every run `forwarderRefused` was 0 and no
+container was left.
+
+No other bound refuses a context below 500,000 first. The margin at the
+full bound comes from the frames, which carry the context about twice: a
+request frame at 500,000 is about 1,000,500 bytes (48 KB below 1 MiB). The
+turn-end history frame also carries the final answer twice, so near the
+bound a final answer above about 19 KB makes the receiver's history frame
+exceed 1 MiB, and the turn fails closed. In `r16` the turn failure reads
+"unknown coding frame": the receiver reports its refusal with a generic
+`error` frame, which the Host does not name. That predates this change and
+behaves the same at the 400,000 bound. Live thinking blocks count in
+`contextBytes` like any other context.
+
 ## Open
 
 - The Q fixture's owner adapter answers `original_result_operation` without

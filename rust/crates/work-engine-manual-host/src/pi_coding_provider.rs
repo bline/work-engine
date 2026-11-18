@@ -537,6 +537,10 @@ impl ProviderPlan {
             .coding
             .as_ref()
             .is_some_and(|p| super::is_analysis(&p.schema));
+        let relay = job
+            .coding
+            .as_ref()
+            .is_some_and(|p| super::is_relay(&p.schema));
         let wire = self.wire_checked()?;
         let messages = wire == crate::pi_stream::Wire::Messages;
         if job
@@ -559,11 +563,7 @@ impl ProviderPlan {
                 .contains(&self.budget_microusd)
             // K-d: a turn admitted by context bytes must fit the hosted request
             // body bound (instructions and tools need the remaining room).
-            || !(1024..=if analysis {
-                super::analysis::MAX_CONTEXT_BYTES
-            } else {
-                32768
-            })
+            || !(1024..=context_bound(analysis, relay))
                 .contains(&self.max_context_bytes)
             || self.catalog.path
                 != job
@@ -636,6 +636,16 @@ impl ProviderPlan {
             return refuse("provider admission does not bind this exact realization");
         }
         Ok(())
+    }
+}
+/// The upper bound of a plan's `max_context_bytes` on its profile.
+fn context_bound(analysis: bool, relay: bool) -> u64 {
+    if relay {
+        super::analysis::RELAY_MAX_CONTEXT_BYTES
+    } else if analysis {
+        super::analysis::MAX_CONTEXT_BYTES
+    } else {
+        32768
     }
 }
 /// The runtime manifest carries the pinned Claude Code binary as a file
@@ -1373,6 +1383,22 @@ mod admission_tests {
 #[cfg(test)]
 mod raw_evidence_tests {
     use super::*;
+    #[test]
+    fn context_bound_is_per_profile() {
+        assert_eq!(context_bound(true, true), 500_000, "lifecycle relay");
+        assert_eq!(context_bound(true, false), 400_000, "analysis");
+        assert_eq!(context_bound(false, false), 32768, "hosted coding");
+        // The relay bound keeps a request body and a frame carrying the
+        // context twice within their bounds.
+        assert!(
+            (super::super::analysis::RELAY_MAX_CONTEXT_BYTES as usize)
+                < super::super::analysis::MAX_REQUEST_BODY
+        );
+        assert!(
+            2 * super::super::analysis::RELAY_MAX_CONTEXT_BYTES
+                < super::super::analysis::FRAME_BYTES as u64
+        );
+    }
     #[test]
     fn claude_code_binary_entry_is_the_pinned_file() {
         let dir = tempfile::tempdir().unwrap();
