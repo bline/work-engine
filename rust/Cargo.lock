@@ -2238,6 +2238,7 @@ dependencies = [
 name = "native-realization"
 version = "0.1.0"
 dependencies = [
+ "serde",
  "serde_json",
  "sha2",
 ]

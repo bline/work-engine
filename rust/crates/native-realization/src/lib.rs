@@ -20,7 +20,7 @@ pub mod codex {
 pub mod pi_host {
     /// SHA-256 of `PI_HOST_PROTOCOL.md`; the session protocol digest.
     pub const PROTOCOL_DIGEST: &str =
-        "8ec540f8a6f5da8df2f600528b232a04d57f39b09e105c4ccd8e1cee5dffb685";
+        "5e0e4f3e92560a5542cdce8729f5e3668e93aba5bab6ef9ee8b34a930c2afea4";
     pub const PROTOCOL: &str = include_str!("../PI_HOST_PROTOCOL.md");
     pub const REALIZATION: &str = "pi-host-v1";
     pub const EVIDENCE_CLASS: &str = "pi-host-held-requests-tool-relay-host-ledger-history-v1";
@@ -33,21 +33,40 @@ pub mod pi_host {
     pub const HISTORY_FRAME_LIMIT: usize = 1_000_000;
 
     /// Verified absence of an account identifier in a Messages request body,
-    /// shared by the Host's request policy (before dispatch) and its capture's
-    /// `contains_account_identifier`. `metadata.user_id`, when present, must
-    /// be a JSON object in a string whose `account_uuid` is absent or empty;
-    /// no key under `metadata` names an email and no string under it contains
-    /// `@`. Device and session ids may remain. Anything that cannot be read
-    /// this way is not verified.
+    /// shared by the Host's request policy (before dispatch), its capture's
+    /// `contains_account_identifier` and the runner's re-check (protocol
+    /// "Account identifier"). `metadata`, when present, must be an object;
+    /// `metadata.user_id`, when present, a string holding a JSON object
+    /// without duplicate keys. Under `metadata`, every string that is itself
+    /// JSON is decoded (strictly, at most four levels); no key names an email,
+    /// no `account_uuid` holds anything but `null` or `""`, and no string
+    /// contains `@`. Device and session ids may remain. Anything that cannot
+    /// be read this way is not verified.
     pub fn messages_account_identifier_absent(body: &serde_json::Value) -> bool {
         use serde_json::Value;
-        fn email(v: &Value) -> bool {
+        fn identifies(v: &Value, depth: u8) -> bool {
+            if depth > 4 {
+                return true;
+            }
             match v {
-                Value::String(s) => s.contains('@'),
-                Value::Array(a) => a.iter().any(email),
-                Value::Object(o) => o
-                    .iter()
-                    .any(|(k, v)| k.to_ascii_lowercase().contains("email") || email(v)),
+                Value::String(s) => {
+                    s.contains('@')
+                        || match strict::parse(s) {
+                            Some(
+                                inner @ (Value::Object(_) | Value::Array(_) | Value::String(_)),
+                            ) => identifies(&inner, depth + 1),
+                            Some(_) => false,
+                            // JSON that is not strict (duplicate keys) is not verified.
+                            None => serde_json::from_str::<Value>(s).is_ok(),
+                        }
+                }
+                Value::Array(a) => a.iter().any(|x| identifies(x, depth)),
+                Value::Object(o) => o.iter().any(|(k, x)| {
+                    let k = k.to_ascii_lowercase();
+                    k.contains("email")
+                        || (k == "account_uuid" && !x.is_null() && x.as_str() != Some(""))
+                        || identifies(x, depth)
+                }),
                 _ => false,
             }
         }
@@ -57,20 +76,83 @@ pub mod pi_host {
         let Some(object) = metadata.as_object() else {
             return false;
         };
-        let user = match object.get("user_id") {
-            None => Value::Object(Default::default()),
-            Some(Value::String(s)) => match serde_json::from_str::<Value>(s) {
-                Ok(user @ Value::Object(_)) => user,
-                _ => return false,
-            },
+        match object.get("user_id") {
+            None => {}
+            Some(Value::String(s)) if matches!(strict::parse(s), Some(Value::Object(_))) => {}
             Some(_) => return false,
-        };
-        let account_empty = match user.get("account_uuid") {
-            None | Some(Value::Null) => true,
-            Some(Value::String(s)) => s.is_empty(),
-            Some(_) => false,
-        };
-        account_empty && !email(metadata) && !email(&user)
+        }
+        !identifies(metadata, 0)
+    }
+
+    /// Strict JSON for the account check: a duplicate key could read as one
+    /// value here and another upstream (as `lifecycle-wire`'s strict parse;
+    /// copied, this crate is a leaf).
+    mod strict {
+        use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
+        use serde_json::{Map, Number, Value};
+        struct StrictValue(Value);
+        impl<'de> Deserialize<'de> for StrictValue {
+            fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+                deserializer.deserialize_any(StrictVisitor)
+            }
+        }
+        struct StrictVisitor;
+        impl<'de> Visitor<'de> for StrictVisitor {
+            type Value = StrictValue;
+            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str("JSON without duplicate names")
+            }
+            fn visit_bool<E: de::Error>(self, v: bool) -> Result<Self::Value, E> {
+                Ok(StrictValue(Value::Bool(v)))
+            }
+            fn visit_i64<E: de::Error>(self, v: i64) -> Result<Self::Value, E> {
+                Ok(StrictValue(Value::Number(Number::from(v))))
+            }
+            fn visit_u64<E: de::Error>(self, v: u64) -> Result<Self::Value, E> {
+                Ok(StrictValue(Value::Number(Number::from(v))))
+            }
+            fn visit_f64<E: de::Error>(self, v: f64) -> Result<Self::Value, E> {
+                Number::from_f64(v)
+                    .map(|n| StrictValue(Value::Number(n)))
+                    .ok_or_else(|| E::custom("non-finite number"))
+            }
+            fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
+                Ok(StrictValue(Value::String(v.to_owned())))
+            }
+            fn visit_string<E: de::Error>(self, v: String) -> Result<Self::Value, E> {
+                Ok(StrictValue(Value::String(v)))
+            }
+            fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
+                Ok(StrictValue(Value::Null))
+            }
+            fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
+                Ok(StrictValue(Value::Null))
+            }
+            fn visit_seq<A: SeqAccess<'de>>(self, mut access: A) -> Result<Self::Value, A::Error> {
+                let mut items = Vec::new();
+                while let Some(StrictValue(v)) = access.next_element::<StrictValue>()? {
+                    items.push(v);
+                }
+                Ok(StrictValue(Value::Array(items)))
+            }
+            fn visit_map<A: MapAccess<'de>>(self, mut access: A) -> Result<Self::Value, A::Error> {
+                let mut items = Map::new();
+                while let Some(key) = access.next_key::<String>()? {
+                    if items.contains_key(&key) {
+                        return Err(de::Error::custom("duplicate JSON key"));
+                    }
+                    let StrictValue(v) = access.next_value::<StrictValue>()?;
+                    items.insert(key, v);
+                }
+                Ok(StrictValue(Value::Object(items)))
+            }
+        }
+        pub(super) fn parse(input: &str) -> Option<Value> {
+            let mut deserializer = serde_json::Deserializer::from_str(input);
+            let StrictValue(value) = StrictValue::deserialize(&mut deserializer).ok()?;
+            deserializer.end().ok()?;
+            Some(value)
+        }
     }
 
     /// Continuity of successive Messages requests of one thread, shared by
@@ -446,5 +528,28 @@ mod tests {
             &json!({"metadata":{"user_id":{"account_uuid":""}}})
         ));
         assert!(!absent(&json!({"metadata":"x"})));
+        // Review P2: duplicate keys and doubly-encoded values are read, not
+        // trusted; `null` is not an identifier.
+        assert!(absent(&body(r#"{"device_id":"ab12","account_uuid":null}"#)));
+        assert!(!absent(&body(
+            r#"{"account_uuid":"5f0c1a2e-0000-4000-8000-000000000001","account_uuid":""}"#
+        )));
+        assert!(!absent(&body(
+            r#"{"account_uuid":"","profile":"{\"email\":\"x\\u0040y\"}"}"#
+        )));
+        assert!(!absent(&body(
+            r#"{"account_uuid":"","profile":"{\"name\":\"x\\u0040y\"}"}"#
+        )));
+        assert!(!absent(&body(
+            r#"{"account_uuid":"","profile":"{\"account_uuid\":\"5f0c\"}"}"#
+        )));
+        assert!(!absent(&body(
+            r#"{"account_uuid":"","profile":"{\"a\":1,\"a\":2}"}"#
+        )));
+        let mut deep = json!("x");
+        for _ in 0..6 {
+            deep = json!(deep.to_string());
+        }
+        assert!(!absent(&json!({"metadata":{"note":deep}})));
     }
 }

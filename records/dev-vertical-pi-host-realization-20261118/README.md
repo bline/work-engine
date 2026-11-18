@@ -292,8 +292,41 @@ lib 103 passed (6 ignored), `lifecycle-service` lib with `controlled-proof`
 `work-engine-task-host` `research_delivery` with `controlled-proof` 6
 passed (2 ignored).
 
+## L2 and L1 review remediation
+
+Fable review of `5af34cbf..9d048765`:
+[REVIEW.md](../../reviews/pi-host-l2-l1-fable-20261118/REVIEW.md) (accept
+with changes, no P1). An earlier attempt died when its build directory
+filled `/tmp`; it produced no review.
+
+| Finding | Change |
+| --- | --- |
+| P2: the inner `user_id` JSON was parsed non-strictly (a duplicate `account_uuid` read as the last value) and only one level deep (a doubly-encoded email passed) | The shared check parses `user_id` strictly, with duplicate keys refused (a copy of `lifecycle-wire`'s strict visitor; the crate is a leaf). It also decodes every string under `metadata` that is itself JSON, strictly and at most four levels deep, and applies the email, `account_uuid` and `@` rules at every level. Duplicate keys or deeper nesting count as not verified. Unit tests cover the duplicate `account_uuid`, an escaped email key, an escaped `@`, a nested `account_uuid`, a nested duplicate key and six levels of nesting. Because the Host, capture and runner share this function, all three tighten together. |
+| P3: the protocol said "present and not empty" but the code treats `null` as absent | The protocol now says "anything other than `null` or an empty string", with a test for `null`. With the P2 text, `PROTOCOL_DIGEST` is now `5e0e4f3e…` (was `8ec540f8…`). |
+| P3: `metadata` sub-keys are otherwise unconstrained (for example an `organization_uuid`) | Not changed: the ruling names `account_uuid` and email. An allow-list (`metadata` = `{user_id}`, `user_id` = `{device_id, account_uuid, session_id}`, the whole observed shape) is offered to the owner. |
+| P3: the changed-read-content negative depends on the fixture | The test now asserts that the marker was found and a byte changed. |
+| P3: the Q owner adapter has no causal-scope gate (pre-existing) | Not changed: the gate is a private `TaskStore` field that the fixture cannot forward; it is unit-tested in `port.rs`. Recorded under Open. |
+
+Runs on the remediated build (2026-11-18, offline):
+
+- `q13` (`pi_host_research_delivery` plus `pi_host_q_delivery_verifies`):
+  protocol `5e0e4f3e…`, eligible, `CompletedSettled`, seven payloads, flag
+  `false`. `verify_delivery` is `complete` (`request-5`, four spans) with the
+  same four refusals. sha256: `summary.json` `db3ea741…`, `retained.json`
+  `14a04fdc…`, `verify-delivery.json` `03837bf8…`.
+- `q14` (`pi_host_causal_join`): passed, flag `false`; `summary.json`
+  `06e68c6e…`.
+
+Unit tests: `native-realization` 6/6, `work-engine-manual-host` lib 103
+passed (6 ignored), `lifecycle-service` lib with `controlled-proof` 97 passed
+(2 ignored), `lifecycle-store` lib 33 passed (2 ignored),
+`work-engine-task-host` `research_delivery` with `controlled-proof` 6 passed
+(2 ignored).
+
 ## Open
 
+- The Q fixture's owner adapter answers `original_result_operation` without
+  the production controlled-research causal-scope gate.
 - Identical request bodies across two distinct calls (an SDK-level retry
   after a completed stream) are refused by the task host; not observed.
 

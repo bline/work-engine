@@ -1673,6 +1673,7 @@ mod projection_tests {
         // One changed byte of read content inside every wire payload (digests
         // recomputed, so only the projection and continuity can refuse).
         let mut v = base.clone();
+        let mut flipped = 0;
         for p in v["input"]["payloads"].as_array_mut().unwrap() {
             let body = byte_vec(&p["bytes"]).unwrap();
             let marker = &material[40000..40016];
@@ -1683,7 +1684,13 @@ mod projection_tests {
             body[at] = if body[at] == b'0' { b'1' } else { b'0' };
             p["original_sha256"] = json!(sha(&body));
             p["bytes"] = json!(body);
+            flipped += 1;
         }
+        // The marker must appear unescaped in the bodies, or no byte changed.
+        assert!(
+            flipped > 0,
+            "read-content marker not found in any wire body"
+        );
         refusals.insert(
             "changed-read-content".into(),
             json!(reason(verify(v).err().unwrap())),

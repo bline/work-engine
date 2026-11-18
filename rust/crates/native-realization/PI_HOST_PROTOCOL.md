@@ -128,11 +128,14 @@ succeeded; and the turn is within the bounds below.
 ## Account identifier
 
 On the Messages wire the Host refuses, before dispatch, a request body whose
-`metadata` is not an object, whose `metadata.user_id` (when present) is not a
-string holding a JSON object, whose `account_uuid` there is present and not
-empty, or in which any key under `metadata` names an email or any string
-under it contains `@`. Device and session ids in `metadata.user_id` remain
-and are retained with the body.
+`metadata` is not an object, or whose `metadata.user_id` (when present) is
+not a string holding a JSON object without duplicate keys. Under `metadata`,
+every string that is itself JSON is decoded, strictly and at most four levels
+deep; JSON with duplicate keys, or nested deeper, refuses. The body also
+refuses if, at any level, a key names an email, an `account_uuid` holds
+anything other than `null` or an empty string, or a string contains `@`.
+Device and session ids in `metadata.user_id` remain and are retained with the
+body.
 
 ## Bounds
 
