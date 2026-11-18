@@ -54,6 +54,13 @@ pub struct Upstream<R: Read> {
     chunk_left: usize,
     done: bool,
     pub status: u16,
+    /// Response headers kept as evidence: provider rate-limit, overage and
+    /// request identity headers (lowercased names), in order.
+    pub kept: Vec<(String, String)>,
+}
+/// Whether a response header is kept as evidence.
+pub fn kept_header(name: &str) -> bool {
+    name == "request-id" || name.starts_with("anthropic-ratelimit-") || name.contains("overage")
 }
 impl<R: Read> Upstream<R> {
     pub fn open(r: R) -> Result<Self> {
@@ -87,10 +94,15 @@ impl<R: Read> Upstream<R> {
             .ok_or("upstream_status")?;
         let mut length = None;
         let mut chunked = false;
+        let mut kept = Vec::new();
         for line in lines.filter(|l| !l.is_empty()) {
             let (k, v) = line.split_once(':').ok_or("upstream_header")?;
             let v = v.trim();
-            match k.to_ascii_lowercase().as_str() {
+            let name = k.to_ascii_lowercase();
+            if kept_header(&name) {
+                kept.push((name.clone(), v.to_owned()));
+            }
+            match name.as_str() {
                 "content-length" => {
                     let n: usize = v.parse().map_err(|_| "upstream_length")?;
                     if length.replace(n).is_some_and(|p| p != n) || n > MAX_RESPONSE {
@@ -121,6 +133,7 @@ impl<R: Read> Upstream<R> {
             chunk_left: 0,
             done: matches!(framing, Framing::Length(0)),
             status,
+            kept,
         })
     }
     /// Next body bytes (at most `max`), or `None` at a correctly framed end.
@@ -284,6 +297,8 @@ pub struct Relay {
     /// `cancel` that raced the terminal frame (then confirmed). `None` when
     /// the stream ended by cancellation.
     pub closing: Option<&'static str>,
+    /// The response head's kept headers ([`kept_header`]).
+    pub head_headers: Vec<(String, String)>,
 }
 impl Relay {
     pub fn sha256(&self) -> String {
@@ -295,6 +310,9 @@ impl Relay {
         self.chunks.iter().skip(1).filter(|c| !c.4).count()
     }
     pub fn evidence(&self) -> Value {
+        self.evidence_for(Wire::Responses)
+    }
+    pub fn evidence_for(&self, wire: Wire) -> Value {
         json!({
             "status": self.status,
             "outcome": self.outcome.label(),
@@ -312,7 +330,8 @@ impl Relay {
             "drainError": self.drain_error,
             "cancelDuringPendingPullMs": self.cancel_wait_ms,
             "closing": self.closing,
-            "usage": usage(&self.forwarded),
+            "headHeaders": self.head_headers.iter().map(|(k, v)| json!([k, v])).collect::<Vec<_>>(),
+            "usage": usage_for(wire, &self.forwarded),
         })
     }
 }
@@ -349,6 +368,23 @@ pub fn sse_data(sse: &[u8]) -> Vec<String> {
     }
     out
 }
+/// Provider wire family of a relayed stream. Each has its own terminal event,
+/// failure events and usage fields.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Wire {
+    /// OpenAI Responses SSE (`response.completed`).
+    Responses,
+    /// Anthropic Messages SSE (`message_stop`).
+    Messages,
+}
+impl Wire {
+    pub fn terminal_event(self) -> &'static str {
+        match self {
+            Wire::Responses => "response.completed",
+            Wire::Messages => "message_stop",
+        }
+    }
+}
 /// Whether the first `response.completed` is the final event of the bytes
 /// the provider sent (`forwarded` then `unforwarded`): after its event block
 /// only SSE comment lines and blank lines may follow. Any other line,
@@ -356,6 +392,12 @@ pub fn sse_data(sse: &[u8]) -> Vec<String> {
 /// attempt completes only on such a clean terminal event (operator decisions
 /// K-a and Q-a, 2026-11-17).
 pub fn terminal_is_last(forwarded: &[u8], unforwarded: &[u8]) -> bool {
+    terminal_is_last_for(Wire::Responses, forwarded, unforwarded)
+}
+/// [`terminal_is_last`] for the wire's terminal event. An `event:` line inside
+/// the terminal block (Messages names every event) is part of that block;
+/// after it the same tail rule applies.
+pub fn terminal_is_last_for(wire: Wire, forwarded: &[u8], unforwarded: &[u8]) -> bool {
     let mut all = forwarded.to_vec();
     all.extend_from_slice(unforwarded);
     let text = String::from_utf8_lossy(&all)
@@ -373,7 +415,7 @@ pub fn terminal_is_last(forwarded: &[u8], unforwarded: &[u8]) -> bool {
         if terminal_end.is_none()
             && block.ends_with("\n\n")
             && serde_json::from_str::<Value>(&data.join("\n"))
-                .is_ok_and(|v| v["type"] == "response.completed")
+                .is_ok_and(|v| v["type"] == wire.terminal_event())
         {
             terminal_end = Some(offset);
         }
@@ -389,10 +431,17 @@ pub fn terminal_is_last(forwarded: &[u8], unforwarded: &[u8]) -> bool {
 /// Normalized usage from a Responses SSE `response.completed` event. Missing
 /// values remain null; nothing is inferred from HTTP completion.
 pub fn usage(sse: &[u8]) -> Value {
+    usage_for(Wire::Responses, sse)
+}
+/// Normalized usage of the wire's stream.
+pub fn usage_for(wire: Wire, sse: &[u8]) -> Value {
     let events: Vec<Value> = sse_data(sse)
         .iter()
         .filter_map(|d| serde_json::from_str::<Value>(d).ok())
         .collect();
+    if wire == Wire::Messages {
+        return messages_usage(&events);
+    }
     // A provider failure event inside a relayed stream (e.g. quota after
     // output began) is reported, never treated as completion.
     let failed = events.iter().find_map(|v| match v["type"].as_str() {
@@ -431,6 +480,56 @@ pub fn usage(sse: &[u8]) -> Value {
     })
 }
 
+/// Messages usage: `message_start` carries the input-side counts, the last
+/// `message_delta` before `message_stop` the final output count (and, when
+/// present, final input-side counts, which take precedence). An `error` event
+/// is a provider failure, never a completion.
+fn messages_usage(events: &[Value]) -> Value {
+    let failed = events.iter().find_map(|v| {
+        (v["type"] == "error").then(|| v["error"]["type"].as_str().unwrap_or("error").to_owned())
+    });
+    let stop = events.iter().position(|v| v["type"] == "message_stop");
+    let (Some(stop), None) = (stop, &failed) else {
+        return json!({"completed": false, "observed": false, "failed": failed});
+    };
+    let start = events[..stop].iter().find(|v| v["type"] == "message_start");
+    let delta = events[..stop]
+        .iter()
+        .rev()
+        .find(|v| v["type"] == "message_delta");
+    let (Some(start), Some(delta)) = (start, delta) else {
+        return json!({"completed": true, "failed": null, "observed": false});
+    };
+    let first = &start["message"]["usage"];
+    let last = &delta["usage"];
+    let pick = |key: &str| {
+        if last[key].is_u64() {
+            last[key].clone()
+        } else {
+            first[key].clone()
+        }
+    };
+    let input = pick("input_tokens");
+    let cache_write = pick("cache_creation_input_tokens");
+    let cache_read = pick("cache_read_input_tokens");
+    let output = last["output_tokens"].clone();
+    let observed = [&input, &cache_write, &cache_read, &output]
+        .iter()
+        .all(|v| v.is_u64());
+    json!({
+        "completed": true,
+        "failed": null,
+        "observed": observed,
+        "responseId": start["message"]["id"],
+        "model": start["message"]["model"],
+        "stopReason": delta["delta"]["stop_reason"],
+        "inputTokens": input,
+        "cacheCreationInputTokens": cache_write,
+        "cacheReadInputTokens": cache_read,
+        "outputTokens": output,
+    })
+}
+
 fn frame(kind: &str, b: &Binding, seq: u64, stream: u64, data: Value) -> Value {
     let mut v = json!({"type":kind,"binding":b,"sequence":seq,"stream":stream});
     if let (Some(o), Value::Object(d)) = (v.as_object_mut(), data) {
@@ -439,9 +538,11 @@ fn frame(kind: &str, b: &Binding, seq: u64, stream: u64, data: Value) -> Value {
     v
 }
 
+/// Response status and kept headers.
+type Head = (u16, Vec<(String, String)>);
 /// Messages from the upstream reader thread.
 enum Msg {
-    Head(Result<u16>),
+    Head(Result<Head>),
     Data(Result<Option<Vec<u8>>>),
 }
 /// The upstream connection is owned by a dedicated thread: it reads the
@@ -459,7 +560,10 @@ impl Reader {
         std::thread::spawn(move || {
             let mut up = match Upstream::open(r) {
                 Ok(up) => {
-                    if tx.send(Msg::Head(Ok(up.status))).is_err() {
+                    if tx
+                        .send(Msg::Head(Ok((up.status, up.kept.clone()))))
+                        .is_err()
+                    {
                         return;
                     }
                     up
@@ -501,7 +605,7 @@ impl Reader {
         }
     }
     /// Head message, if it arrives within `wait`.
-    fn head(&mut self, wait: Duration) -> Option<Result<u16>> {
+    fn head(&mut self, wait: Duration) -> Option<Result<Head>> {
         match self.result.recv_timeout(wait) {
             Ok(Msg::Head(h)) => Some(h),
             Ok(Msg::Data(_)) => Some(Err("upstream_reader_order")),
@@ -643,6 +747,7 @@ impl Session {
                 drain_error: None,
                 cancel_wait_ms: None,
                 closing: None,
+                head_headers: Vec::new(),
             },
             abort: Some(Box::new(abort)),
             refuse,
@@ -714,6 +819,7 @@ impl Session {
                 drain_error: None,
                 cancel_wait_ms: None,
                 closing: None,
+                head_headers: Vec::new(),
             },
         )
     }
@@ -813,8 +919,9 @@ impl Session {
                 let mut frames = vec![];
                 match self.reader.head(wait) {
                     None => {}
-                    Some(Ok(status)) => {
+                    Some(Ok((status, kept))) => {
                         self.r.status = status;
+                        self.r.head_headers = kept;
                         if (self.refuse)(status) {
                             self.refusal.0 = status;
                             self.state = State::Refusal;

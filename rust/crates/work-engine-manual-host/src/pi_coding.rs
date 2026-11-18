@@ -1137,18 +1137,8 @@ impl Host {
                     if is_bridge(&self.journal.job.coding.as_ref().unwrap().schema) {
                         if let Some(plan) = &self.journal.job.coding.as_ref().unwrap().provider {
                             // Live: the native catalog model must be the pinned one.
-                            let selected = plan.selected()?;
-                            for key in [
-                                "id",
-                                "provider",
-                                "api",
-                                "contextWindow",
-                                "maxTokens",
-                                "cost",
-                            ] {
-                                if frame["model"][key] != selected[key] {
-                                    return refuse("native selected catalog model differs");
-                                }
+                            if !plan.native_model_matches(&frame["model"])? {
+                                return refuse("native selected catalog model differs");
                             }
                         }
                         replies.extend(self.coding_bridge_frame(&frame)?);
@@ -1158,18 +1148,8 @@ impl Host {
                     }
                     let profile = self.journal.job.coding.as_ref().unwrap();
                     let reply = if let Some(plan) = &profile.provider {
-                        let selected = plan.selected()?;
-                        for key in [
-                            "id",
-                            "provider",
-                            "api",
-                            "contextWindow",
-                            "maxTokens",
-                            "cost",
-                        ] {
-                            if frame["model"][key] != selected[key] {
-                                return refuse("native selected catalog model differs");
-                            }
+                        if !plan.native_model_matches(&frame["model"])? {
+                            return refuse("native selected catalog model differs");
                         }
                         json!({"type":"task_start","sessionId":session})
                     } else {

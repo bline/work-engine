@@ -1508,6 +1508,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "lifecycle-wire"
+version = "0.1.0"
+dependencies = [
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "work-engine-types",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2670,6 +2681,7 @@ version = "0.1.0"
 dependencies = [
  "base64",
  "libc",
+ "lifecycle-wire",
  "repository-claims-handoff",
  "review-episode-core",
  "review-execution-evidence",

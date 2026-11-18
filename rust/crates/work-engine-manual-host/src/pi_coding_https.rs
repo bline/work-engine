@@ -35,6 +35,15 @@ pub enum CredentialSource {
     /// Qualification only: the account of a Pi auth store with access that
     /// the backend must refuse, to exercise a real definitive refusal.
     ChatgptInvalidForQualification { path: PathBuf },
+    /// Claude subscription access from Claude Code's credentials file
+    /// (`claudeAiOauth.accessToken`, `expiresAt`). The Host's own Claude Code
+    /// keeps it fresh; it is read again before every connection and never
+    /// refreshed here.
+    ClaudeCodeAuth { path: PathBuf },
+    /// Anthropic API key from an environment variable of the embedder.
+    AnthropicApiKeyEnv { variable: String },
+    /// Anthropic API key from an owner-only file (one line).
+    AnthropicApiKeyFile { path: PathBuf },
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -44,20 +53,39 @@ struct CredentialsFile {
 }
 
 enum Credential {
-    ChatGpt { access: String, account: String },
+    ChatGpt {
+        access: String,
+        account: String,
+    },
     ApiKey(String),
+    /// The current access and every earlier one this process read (all are
+    /// screened).
+    ClaudeOauth {
+        path: PathBuf,
+        access: String,
+        earlier: Vec<String>,
+    },
+    AnthropicApiKey(String),
 }
 impl Credential {
     fn endpoint(&self) -> Endpoint {
         match self {
             Self::ChatGpt { .. } => Endpoint::ChatGptCodex,
             Self::ApiKey(_) => Endpoint::OpenAiResponses,
+            Self::ClaudeOauth { .. } => Endpoint::AnthropicOauth,
+            Self::AnthropicApiKey(_) => Endpoint::AnthropicApi,
         }
     }
-    fn secret(&self) -> &[u8] {
+    fn secrets(&self) -> Vec<&[u8]> {
         match self {
-            Self::ChatGpt { access, .. } => access.as_bytes(),
-            Self::ApiKey(key) => key.as_bytes(),
+            Self::ChatGpt { access, .. } => vec![access.as_bytes()],
+            Self::ApiKey(key) | Self::AnthropicApiKey(key) => vec![key.as_bytes()],
+            Self::ClaudeOauth {
+                access, earlier, ..
+            } => std::iter::once(access)
+                .chain(earlier)
+                .map(String::as_bytes)
+                .collect(),
         }
     }
 }
@@ -105,6 +133,42 @@ fn pi_auth(path: &Path) -> Result<(String, String)> {
     Ok((access, account))
 }
 
+/// Claude Code's subscription access, valid for at least `margin_ms`.
+fn claude_auth(path: &Path, margin_ms: i64) -> Result<String> {
+    let v: serde_json::Value = serde_json::from_slice(&owner_only(path, 1 << 20)?)?;
+    let e = &v["claudeAiOauth"];
+    let access = e["accessToken"].as_str().unwrap_or("").to_string();
+    let expires = e["expiresAt"].as_i64().unwrap_or(0);
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|_| Error::Refused("clock".into()))?
+        .as_millis() as i64;
+    if !valid_token(&access) || !access.starts_with("sk-ant-oat") {
+        return refuse("Claude Code credentials have no usable subscription access");
+    }
+    if expires <= now + margin_ms {
+        return refuse("Claude subscription access expires too soon; refresh it first");
+    }
+    Ok(access)
+}
+fn key_from_env(variable: &str) -> Result<String> {
+    let key = std::env::var(variable).unwrap_or_default();
+    if !valid_token(&key) {
+        return refuse(format!("API key variable {variable} unusable"));
+    }
+    Ok(key)
+}
+fn key_from_file(path: &Path) -> Result<String> {
+    let key = String::from_utf8(owner_only(path, 4096)?)
+        .map_err(|_| Error::Refused("API key file encoding".into()))?
+        .trim()
+        .to_string();
+    if !valid_token(&key) {
+        return refuse("API key file unusable");
+    }
+    Ok(key)
+}
+
 /// Host-held HTTPS transport to the fixed public endpoints.
 pub struct HttpsTransport {
     credentials: BTreeMap<String, Credential>,
@@ -133,6 +197,9 @@ impl HttpsTransport {
                         CredentialSource::ChatgptInvalidForQualification { .. } => {
                             "chatgpt-invalid-for-qualification"
                         }
+                        CredentialSource::ClaudeCodeAuth { .. } => "claude-code-auth",
+                        CredentialSource::AnthropicApiKeyEnv { .. } => "anthropic-api-key-env",
+                        CredentialSource::AnthropicApiKeyFile { .. } => "anthropic-api-key-file",
                     },
                 )
             })
@@ -149,21 +216,19 @@ impl HttpsTransport {
                     Credential::ChatGpt { access, account }
                 }
                 CredentialSource::ApiKeyEnv { variable } => {
-                    let key = std::env::var(&variable).unwrap_or_default();
-                    if !valid_token(&key) {
-                        return refuse(format!("API key variable {variable} unusable"));
-                    }
-                    Credential::ApiKey(key)
+                    Credential::ApiKey(key_from_env(&variable)?)
                 }
-                CredentialSource::ApiKeyFile { path } => {
-                    let key = String::from_utf8(owner_only(&path, 4096)?)
-                        .map_err(|_| Error::Refused("API key file encoding".into()))?
-                        .trim()
-                        .to_string();
-                    if !valid_token(&key) {
-                        return refuse("API key file unusable");
-                    }
-                    Credential::ApiKey(key)
+                CredentialSource::ApiKeyFile { path } => Credential::ApiKey(key_from_file(&path)?),
+                CredentialSource::ClaudeCodeAuth { path } => Credential::ClaudeOauth {
+                    access: claude_auth(&path, 600_000)?,
+                    path,
+                    earlier: Vec::new(),
+                },
+                CredentialSource::AnthropicApiKeyEnv { variable } => {
+                    Credential::AnthropicApiKey(key_from_env(&variable)?)
+                }
+                CredentialSource::AnthropicApiKeyFile { path } => {
+                    Credential::AnthropicApiKey(key_from_file(&path)?)
                 }
                 CredentialSource::ChatgptInvalidForQualification { path } => {
                     let (_, account) = pi_auth(&path)?;
@@ -218,7 +283,20 @@ impl HostedProviderTransport for HttpsTransport {
     }
     fn connect(&mut self, route: &HostedRoute, deadline_ms: i64) -> Result<Connection> {
         let (endpoint, _) = self.credential(route)?;
-        let (host, _) = endpoint.target();
+        // Subscription access is read again (it may have been refreshed since)
+        // and must outlive this attempt's deadline window by its margin.
+        if let Some(Credential::ClaudeOauth {
+            path,
+            access,
+            earlier,
+        }) = self.credentials.get_mut(&route.payer)
+        {
+            let current = claude_auth(path, 300_000)?;
+            if current != *access {
+                earlier.push(std::mem::replace(access, current));
+            }
+        }
+        let host = endpoint.host();
         let address = (host, 443)
             .to_socket_addrs()?
             .next()
@@ -263,6 +341,14 @@ impl HostedProviderTransport for HttpsTransport {
                 &[("Authorization", &format!("Bearer {key}"))],
                 request,
             ),
+            Credential::ClaudeOauth { access, .. } => request_head(
+                endpoint,
+                &[("Authorization", &format!("Bearer {access}"))],
+                request,
+            ),
+            Credential::AnthropicApiKey(key) => {
+                request_head(endpoint, &[("x-api-key", key)], request)
+            }
         };
         let Connection { mut stream, abort } = connection;
         stream.write_all(head.as_bytes())?;
@@ -271,7 +357,11 @@ impl HostedProviderTransport for HttpsTransport {
         Ok((Box::new(stream), abort))
     }
     fn hold(&self, pending: &[u8]) -> std::result::Result<usize, &'static str> {
-        let secrets: Vec<&[u8]> = self.credentials.values().map(Credential::secret).collect();
+        let secrets: Vec<&[u8]> = self
+            .credentials
+            .values()
+            .flat_map(Credential::secrets)
+            .collect();
         hold_secrets(&secrets, pending)
     }
 }
@@ -294,6 +384,18 @@ mod tests {
                 (
                     "api".to_string(),
                     Credential::ApiKey("sk-test-0123456789abcdef".into()),
+                ),
+                (
+                    "claude".to_string(),
+                    Credential::ClaudeOauth {
+                        path: PathBuf::from("/nonexistent"),
+                        access: "sk-ant-oat01-current-0123456789".into(),
+                        earlier: vec!["sk-ant-oat01-earlier-0123456789".into()],
+                    },
+                ),
+                (
+                    "anthropic-api".to_string(),
+                    Credential::AnthropicApiKey("sk-ant-api03-0123456789abcdef".into()),
                 ),
             ]),
             serde_json::json!({}),
@@ -332,6 +434,80 @@ mod tests {
         }
     }
     #[test]
+    fn messages_routes_need_their_anthropic_access() {
+        let t = transport();
+        let ok = HostedRoutes {
+            routes: vec![
+                route("primary", "claude", "https:anthropic-oauth"),
+                route("secondary", "anthropic-api", "https:anthropic-api"),
+            ],
+            max_attempts_per_request: 2,
+        };
+        t.check(&ok).unwrap();
+        for bad in [
+            route("primary", "claude", "https:anthropic-api"),
+            route("primary", "anthropic-api", "https:anthropic-oauth"),
+            route("primary", "subscription", "https:anthropic-oauth"),
+            route("primary", "claude", "https:chatgpt-codex"),
+        ] {
+            let routes = HostedRoutes {
+                routes: vec![bad],
+                max_attempts_per_request: 1,
+            };
+            assert!(t.check(&routes).is_err());
+        }
+        // Current and earlier subscription access and the API key are screened.
+        assert!(t.hold(b"x sk-ant-oat01-current-0123456789").is_err());
+        assert!(t.hold(b"x sk-ant-oat01-earlier-0123456789").is_err());
+        assert!(t.hold(b"x sk-ant-api03-0123456789abcdef").is_err());
+    }
+    #[test]
+    fn messages_heads_keep_the_beta_query_and_claude_code_headers_only() {
+        let mut request = HostedRequest {
+            request: 1,
+            attempt: 1,
+            headers: BTreeMap::from([
+                ("anthropic-version".to_string(), "2023-06-01".to_string()),
+                ("anthropic-beta".to_string(), "x".to_string()),
+                ("x-app".to_string(), "cli".to_string()),
+                ("x-stainless-retry-count".to_string(), "0".to_string()),
+                ("originator".to_string(), "pi".to_string()),
+                ("x-unknown".to_string(), "u".to_string()),
+            ]),
+            body: b"{}".to_vec(),
+            wire: crate::pi_stream::Wire::Messages,
+            beta: true,
+        };
+        let oauth = request_head(
+            Endpoint::AnthropicOauth,
+            &[("Authorization", "Bearer t")],
+            &request,
+        );
+        assert!(
+            oauth
+                .starts_with("POST /v1/messages?beta=true HTTP/1.1\r\nHost: api.anthropic.com\r\n")
+        );
+        for kept in [
+            "anthropic-version: 2023-06-01\r\n",
+            "anthropic-beta: x\r\n",
+            "x-app: cli\r\n",
+            "x-stainless-retry-count: 0\r\n",
+        ] {
+            assert!(oauth.contains(kept), "{kept}");
+        }
+        assert!(!oauth.contains("originator") && !oauth.contains("x-unknown"));
+        request.beta = false;
+        let api = request_head(Endpoint::AnthropicApi, &[("x-api-key", "k")], &request);
+        assert!(api.starts_with("POST /v1/messages HTTP/1.1\r\nHost: api.anthropic.com\r\n"));
+        assert!(api.contains("x-api-key: k\r\n"));
+        let looped = request_head(
+            Endpoint::Loopback(std::net::SocketAddr::from(([127, 0, 0, 1], 9))),
+            &[],
+            &request,
+        );
+        assert!(looped.starts_with("POST /v1/messages HTTP/1.1\r\nHost: localhost\r\n"));
+    }
+    #[test]
     fn every_payers_access_is_screened() {
         let t = transport();
         assert!(t.hold(b"x chatgpt-access-0123456789 y").is_err());
@@ -353,6 +529,8 @@ mod tests {
                 ("accept".to_string(), "text/event-stream".to_string()),
             ]),
             body: b"{}".to_vec(),
+            wire: crate::pi_stream::Wire::Responses,
+            beta: false,
         };
         let codex = request_head(
             Endpoint::ChatGptCodex,

@@ -11,7 +11,7 @@
 //! the relayed bytes; the container's own observations are not evidence.
 use super::*;
 use crate::pi_route::{self as route, Decision, Disposition, Router};
-use crate::pi_stream::{self as stream, Progress, Session, Unavailable};
+use crate::pi_stream::{self as stream, Progress, Session, Unavailable, Wire};
 use base64::{Engine, engine::general_purpose::STANDARD as B64};
 use provider::{AttemptDisposition, AttemptEvidence};
 use review_execution_evidence::pi::Binding;
@@ -46,11 +46,30 @@ fn declared_tools(body: &Value) -> Option<Vec<Value>> {
 const MAX_HEADERS: usize = 64;
 /// Credential-bearing request headers. The container's values are markers;
 /// the transport applies real access itself.
-const ACCESS_HEADERS: [&str; 4] = [
+const ACCESS_HEADERS: [&str; 5] = [
     "authorization",
     "chatgpt-account-id",
     "cookie",
     "proxy-authorization",
+    "x-api-key",
+];
+/// Top-level Messages request keys Claude Code was observed to send, plus
+/// inert sampling keys. Anything else (for example `mcp_servers`,
+/// `container`, `service_tier`) refuses.
+const MESSAGES_KEYS: [&str; 13] = [
+    "model",
+    "messages",
+    "system",
+    "tools",
+    "tool_choice",
+    "metadata",
+    "max_tokens",
+    "thinking",
+    "context_management",
+    "output_config",
+    "stream",
+    "temperature",
+    "stop_sequences",
 ];
 
 /// One permitted provider route. The order of routes is preference order.
@@ -61,8 +80,11 @@ pub struct HostedRoute {
     pub payer: String,
     /// Nonsecret endpoint identity, never a credential: `loopback:<port>`
     /// (offline qualification), `https:chatgpt-codex` (the ChatGPT Codex
-    /// backend, subscription funding) or `https:openai-responses` (the public
-    /// Responses API, API-key funding). Origins are fixed by this code.
+    /// backend, subscription funding), `https:openai-responses` (the public
+    /// Responses API, API-key funding), `https:anthropic-oauth` (Anthropic
+    /// Messages with a Claude subscription OAuth bearer) or
+    /// `https:anthropic-api` (Anthropic Messages, API key). Origins are fixed
+    /// by this code.
     pub endpoint: String,
 }
 /// Route table for the hosted profile. Its `(route, payer)` pairs and attempt
@@ -141,12 +163,16 @@ pub enum Endpoint {
     Loopback(std::net::SocketAddr),
     ChatGptCodex,
     OpenAiResponses,
+    AnthropicOauth,
+    AnthropicApi,
 }
 impl Endpoint {
     pub fn parse(endpoint: &str) -> Option<Self> {
         match endpoint {
             "https:chatgpt-codex" => Some(Self::ChatGptCodex),
             "https:openai-responses" => Some(Self::OpenAiResponses),
+            "https:anthropic-oauth" => Some(Self::AnthropicOauth),
+            "https:anthropic-api" => Some(Self::AnthropicApi),
             _ => {
                 let port: u16 = endpoint.strip_prefix("loopback:")?.parse().ok()?;
                 (port != 0)
@@ -154,18 +180,63 @@ impl Endpoint {
             }
         }
     }
-    /// `(host, request path)` of the endpoint.
-    pub fn target(self) -> (&'static str, &'static str) {
+    /// Whether the endpoint speaks `wire`. Loopback routes serve either.
+    pub fn serves(self, wire: Wire) -> bool {
         match self {
-            Self::Loopback(_) => ("localhost", "/backend-api/codex/responses"),
-            Self::ChatGptCodex => ("chatgpt.com", "/backend-api/codex/responses"),
-            Self::OpenAiResponses => ("api.openai.com", "/v1/responses"),
+            Self::Loopback(_) => true,
+            Self::ChatGptCodex | Self::OpenAiResponses => wire == Wire::Responses,
+            Self::AnthropicOauth | Self::AnthropicApi => wire == Wire::Messages,
         }
     }
-    /// Container request headers forwarded to this endpoint (an allowlist;
-    /// everything else, including billing-context headers such as
-    /// `openai-organization` or `openai-project`, is dropped).
-    pub fn forwarded(self, name: &str) -> bool {
+    /// Host name of the endpoint.
+    pub fn host(self) -> &'static str {
+        match self {
+            Self::Loopback(_) => "localhost",
+            Self::ChatGptCodex => "chatgpt.com",
+            Self::OpenAiResponses => "api.openai.com",
+            Self::AnthropicOauth | Self::AnthropicApi => "api.anthropic.com",
+        }
+    }
+    /// `(host, request path)` for `request`: fixed per endpoint and wire;
+    /// Messages requests keep the validated `?beta=true` query.
+    pub fn target(self, request: &HostedRequest) -> (&'static str, &'static str) {
+        let path = match (self, request.wire) {
+            (_, Wire::Messages) if request.beta => "/v1/messages?beta=true",
+            (_, Wire::Messages) => "/v1/messages",
+            (Self::OpenAiResponses, Wire::Responses) => "/v1/responses",
+            (_, Wire::Responses) => "/backend-api/codex/responses",
+        };
+        (self.host(), path)
+    }
+    /// Container request headers forwarded to this endpoint for `wire` (an
+    /// allowlist; everything else, including billing-context headers such as
+    /// `openai-organization` or `openai-project`, is dropped). Messages
+    /// requests keep the headers Claude Code sends besides access and
+    /// transport headers (as forwarded by the in-container probe, whose
+    /// requests stayed in the subscription plan).
+    pub fn forwarded(self, wire: Wire, name: &str) -> bool {
+        if wire == Wire::Messages {
+            return matches!(
+                name,
+                "accept"
+                    | "content-type"
+                    | "anthropic-version"
+                    | "anthropic-beta"
+                    | "anthropic-dangerous-direct-browser-access"
+                    | "user-agent"
+                    | "x-app"
+                    | "x-client-app"
+                    | "x-claude-code-session-id"
+                    | "x-stainless-arch"
+                    | "x-stainless-lang"
+                    | "x-stainless-os"
+                    | "x-stainless-package-version"
+                    | "x-stainless-retry-count"
+                    | "x-stainless-runtime"
+                    | "x-stainless-runtime-version"
+                    | "x-stainless-timeout"
+            );
+        }
         match self {
             Self::Loopback(_) | Self::ChatGptCodex => matches!(
                 name,
@@ -181,6 +252,7 @@ impl Endpoint {
                 name,
                 "accept" | "content-type" | "x-client-request-id" | "user-agent"
             ),
+            Self::AnthropicOauth | Self::AnthropicApi => false,
         }
     }
 }
@@ -193,6 +265,9 @@ pub struct HostedRequest {
     pub attempt: u64,
     pub headers: BTreeMap<String, String>,
     pub body: Vec<u8>,
+    pub wire: Wire,
+    /// Messages: the container's request carried `?beta=true`.
+    pub beta: bool,
 }
 /// Upstream response reader and its abort.
 pub type Upstream = (Box<dyn Read + Send>, Box<dyn FnOnce() + Send>);
@@ -246,7 +321,7 @@ pub fn request_head(
     access: &[(&str, &str)],
     request: &HostedRequest,
 ) -> String {
-    let (host, path) = endpoint.target();
+    let (host, path) = endpoint.target(request);
     let mut head = format!(
         "POST {path} HTTP/1.1\r\nHost: {host}\r\nX-Request-Id: {}-{}\r\nContent-Length: {}\r\nConnection: close\r\n",
         request.request,
@@ -257,7 +332,7 @@ pub fn request_head(
         head.push_str(&format!("{k}: {v}\r\n"));
     }
     for (k, v) in &request.headers {
-        if endpoint.forwarded(k) {
+        if endpoint.forwarded(request.wire, k) {
             head.push_str(&format!("{k}: {v}\r\n"));
         }
     }
@@ -379,6 +454,61 @@ impl stream::Screen for Screen<'_> {
 struct Fetch {
     headers: BTreeMap<String, String>,
     body: Vec<u8>,
+    wire: Wire,
+    beta: bool,
+    /// Messages: the request's `messages`, which the next request must extend.
+    messages: Option<Value>,
+}
+/// Continuity of successive Messages requests of one job. A copy of
+/// `native-realization`'s `claude_host::canonical` rule (branch
+/// `claude-realization-20261117`, research-lifecycle owner conditions 5854):
+/// when that crate reaches the shared base, this must become that one
+/// implementation.
+///
+/// The closed set of differences Claude Code introduces between successive
+/// requests: (1) `cache_control` keys move, and (2) a message whose `content`
+/// is a string equals the same message whose `content` is one text block with
+/// that text. Nothing else is equal. Used only to compare continuity; never
+/// stored as evidence (the exact bodies are retained).
+pub mod canonical {
+    use serde_json::{Map, Value, json};
+    fn strip_cache_control(v: &Value) -> Value {
+        match v {
+            Value::Object(m) => Value::Object(
+                m.iter()
+                    .filter(|(k, _)| k.as_str() != "cache_control")
+                    .map(|(k, x)| (k.clone(), strip_cache_control(x)))
+                    .collect::<Map<_, _>>(),
+            ),
+            Value::Array(a) => Value::Array(a.iter().map(strip_cache_control).collect()),
+            other => other.clone(),
+        }
+    }
+    fn message(v: &Value) -> Value {
+        let mut m = strip_cache_control(v);
+        if let Some(Value::String(text)) = m.get("content").cloned() {
+            m["content"] = json!([{"type":"text","text":text}]);
+        }
+        m
+    }
+    /// `next` is `previous` extended by at least one message, under the two
+    /// rules above. Both must be arrays of message objects.
+    pub fn is_prefix_extension(previous: &Value, next: &Value) -> bool {
+        let (Some(prev), Some(next)) = (previous.as_array(), next.as_array()) else {
+            return false;
+        };
+        if next.len() <= prev.len()
+            || !prev
+                .iter()
+                .chain(next.iter())
+                .all(|m| m.get("role").is_some())
+        {
+            return false;
+        }
+        prev.iter()
+            .zip(next.iter())
+            .all(|(a, b)| message(a) == message(b))
+    }
 }
 enum StreamPhase {
     /// Grant written with the stream identity; awaiting `provider_fetch`.
@@ -411,6 +541,8 @@ pub struct Hosted {
     router: Option<Router>,
     stream: Option<Stream>,
     out: Vec<Value>,
+    /// Messages: the last accepted request's `messages`.
+    last_messages: Option<Value>,
     /// This Host ran the launch: attempts still pending at its end were left
     /// by this process, not by one that is gone.
     ran: bool,
@@ -538,6 +670,9 @@ impl Host {
                 sha256: digest(&fetch.body),
             });
             self.save()?;
+            if let Some(messages) = &fetch.messages {
+                self.hosted.last_messages = Some(messages.clone());
+            }
             self.hosted.stream.as_mut().unwrap().phase = StreamPhase::Fetched(fetch);
             return Ok(());
         }
@@ -563,10 +698,15 @@ impl Host {
             .unwrap_or("")
             .trim_end_matches('/')
             .to_string();
-        if !Self::own_stream_frame(s, frame)
-            || frame["method"] != "POST"
-            || frame["url"] != format!("{base}/codex/responses")
-        {
+        let wire = plan.wire_checked()?;
+        let url = frame["url"].as_str().unwrap_or("");
+        let beta = match wire {
+            Wire::Responses if url == format!("{base}/codex/responses") => false,
+            Wire::Messages if url == format!("{base}/v1/messages") => false,
+            Wire::Messages if url == format!("{base}/v1/messages?beta=true") => true,
+            _ => return refuse("provider fetch identity/method/url conflict"),
+        };
+        if !Self::own_stream_frame(s, frame) || frame["method"] != "POST" {
             return refuse("provider fetch identity/method/url conflict");
         }
         let mut headers = BTreeMap::new();
@@ -599,8 +739,13 @@ impl Host {
         let body = B64
             .decode(frame["body"].as_str().unwrap_or(""))
             .map_err(|_| Error::Refused("provider fetch body encoding".into()))?;
-        let parsed: Value = serde_json::from_slice(&body)
-            .map_err(|_| Error::Refused("provider fetch body JSON".into()))?;
+        // Messages bodies are parsed strictly: a duplicate key could mean one
+        // thing here and another upstream.
+        let parsed: Value = match wire {
+            Wire::Responses => serde_json::from_slice(&body).ok(),
+            Wire::Messages => lifecycle_wire::parse_strict_json(&body).ok(),
+        }
+        .ok_or_else(|| Error::Refused("provider fetch body JSON".into()))?;
         let analysis = self.analysis_profile();
         if body.len()
             > if analysis {
@@ -612,6 +757,25 @@ impl Host {
             || parsed["stream"] != true
         {
             return refuse("provider fetch body bound/model/stream conflict");
+        }
+        if wire == Wire::Messages {
+            // W3: a client-side retry is never dispatched; every upstream
+            // request is one Host attempt (the receiver also disables Claude
+            // Code's retries and admits one request per grant).
+            if headers
+                .get("x-stainless-retry-count")
+                .is_some_and(|v| v != "0")
+            {
+                return refuse("provider fetch is a client retry");
+            }
+            self.messages_policy(&plan, &parsed, analysis)?;
+            return Ok(Fetch {
+                headers,
+                body,
+                wire,
+                beta,
+                messages: Some(parsed["messages"].clone()),
+            });
         }
         // R-a: body fields the Host pins on real routes. Nothing stored at the
         // provider, no background processing, no non-default service tier,
@@ -635,7 +799,66 @@ impl Host {
         if analysis {
             super::analysis::check_request_tools(&json!(declared.unwrap_or_default()))?;
         }
-        Ok(Fetch { headers, body })
+        Ok(Fetch {
+            headers,
+            body,
+            wire,
+            beta,
+            messages: None,
+        })
+    }
+    /// Messages body policy: only the known top-level keys (so no
+    /// `mcp_servers`, `container` or service tier), `tool_choice` auto, only
+    /// the container's own custom tools (no provider-hosted tools; on the
+    /// analysis profile exactly the pinned tool surface), and every request
+    /// extends the previous one's messages under the two canonical rules.
+    fn messages_policy(
+        &self,
+        plan: &provider::ProviderPlan,
+        body: &Value,
+        analysis: bool,
+    ) -> Result<()> {
+        let object = body
+            .as_object()
+            .ok_or_else(|| Error::Refused("provider fetch body is not an object".into()))?;
+        if let Some(key) = object.keys().find(|k| !MESSAGES_KEYS.contains(&k.as_str())) {
+            return refuse(format!(
+                "provider fetch body policy: field {key} is not allowed"
+            ));
+        }
+        if object
+            .get("tool_choice")
+            .is_some_and(|c| c != &json!({"type":"auto"}))
+        {
+            return refuse("provider fetch body policy: only tool_choice auto");
+        }
+        if body["messages"].as_array().is_none_or(|m| m.is_empty()) {
+            return refuse("provider fetch body policy: no messages");
+        }
+        let tools = match &body["tools"] {
+            Value::Null => vec![],
+            Value::Array(tools) => tools.clone(),
+            _ => return refuse("provider fetch body policy: tools"),
+        };
+        // Provider-hosted (server) tools carry a `type`; custom tools do not
+        // (or name `custom`).
+        if tools
+            .iter()
+            .any(|t| !t.is_object() || t.get("type").is_some_and(|ty| ty != "custom"))
+        {
+            return refuse("provider fetch body policy: provider-hosted tool");
+        }
+        if analysis {
+            super::analysis::check_messages_tools(&plan.provider, &body["tools"])?;
+        }
+        if let Some(previous) = &self.hosted.last_messages
+            && !canonical::is_prefix_extension(previous, &body["messages"])
+        {
+            return refuse(
+                "provider fetch body policy: messages do not extend the previous request",
+            );
+        }
+        Ok(())
     }
     fn hosted_native(&mut self, s: &mut Stream, frame: &Value) -> Result<()> {
         if !Self::own_stream_frame(s, frame) {
@@ -827,6 +1050,8 @@ impl Host {
             attempt,
             headers: fetch.headers.clone(),
             body: fetch.body.clone(),
+            wire: fetch.wire,
+            beta: fetch.beta,
         };
         let Some(mut transport) = self.hosted_transport.take() else {
             self.hosted_uncertain(s.request, attempt, routed, "hosted transport absent")?;
@@ -1048,9 +1273,15 @@ impl Host {
                         body_sha256: sha,
                     },
                 )?;
+                // Responses errors name a `code`, Messages errors a `type`.
                 let code = serde_json::from_slice::<Value>(&body)
                     .ok()
-                    .and_then(|v| v["error"]["code"].as_str().map(str::to_owned))
+                    .and_then(|v| {
+                        v["error"]["code"]
+                            .as_str()
+                            .or(v["error"]["type"].as_str())
+                            .map(str::to_owned)
+                    })
                     .unwrap_or_else(|| "unspecified".into());
                 let router = self.hosted.router.as_mut().unwrap();
                 if disposition == AttemptDisposition::Refused {
@@ -1098,6 +1329,7 @@ impl Host {
         relay: stream::Relay,
     ) -> Result<()> {
         let (plan, _) = self.hosted_plan()?;
+        let wire = plan.wire_checked()?;
         let (sha, retained) = self.hosted_stream_register(request, attempt)?;
         if retained != relay.forwarded {
             self.hosted_uncertain(
@@ -1117,13 +1349,13 @@ impl Host {
             request,
             attempt,
             "relay.json",
-            &serde_json::to_vec(&relay.evidence())?,
+            &serde_json::to_vec(&relay.evidence_for(wire))?,
         )?;
         let terminal = stream::sse_data(&relay.forwarded)
             .iter()
             .filter_map(|d| serde_json::from_str::<Value>(d).ok())
-            .find(|v| v["type"] == "response.completed");
-        let usage = stream::usage(&relay.forwarded);
+            .find(|v| v["type"] == wire.terminal_event());
+        let usage = stream::usage_for(wire, &relay.forwarded);
         let r = self
             .journal
             .coding
@@ -1132,7 +1364,8 @@ impl Host {
             .provider_requests
             .get_mut(&request)
             .unwrap();
-        let disposition = r.settle_attempt(attempt, AttemptEvidence::from_relay(&relay))?;
+        let disposition =
+            r.settle_attempt(attempt, AttemptEvidence::from_relay_for(wire, &relay))?;
         if let (stream::Outcome::Interrupted(code), Some(a)) =
             (&relay.outcome, r.attempts.last_mut())
             && disposition == AttemptDisposition::Uncertain
@@ -1146,19 +1379,33 @@ impl Host {
         );
         r.http_status = Some(relay.status.into());
         if let Some(v) = terminal.as_ref().filter(|_| usage["failed"].is_null()) {
-            let response = &v["response"];
-            if let Some(model) = response["model"].as_str() {
+            let (model, raw) = match wire {
+                Wire::Responses => {
+                    let response = &v["response"];
+                    (
+                        response["model"].as_str().map(str::to_owned),
+                        json!({"eventType":"response.completed","status":response["status"],
+                        "usage":{"input_tokens":response["usage"]["input_tokens"],"output_tokens":response["usage"]["output_tokens"],"total_tokens":response["usage"]["total_tokens"]}}),
+                    )
+                }
+                // Model and input-side usage from `message_start`, stop
+                // reason and final usage from the last `message_delta`.
+                Wire::Messages => (
+                    usage["model"].as_str().map(str::to_owned),
+                    json!({"eventType":"message_stop","stopReason":usage["stopReason"],
+                    "usage":{"input_tokens":usage["inputTokens"],"cache_creation_input_tokens":usage["cacheCreationInputTokens"],
+                    "cache_read_input_tokens":usage["cacheReadInputTokens"],"output_tokens":usage["outputTokens"]}}),
+                ),
+            };
+            if let Some(model) = model {
                 if model != plan.model {
                     self.journal.coding.as_mut().unwrap().provider_failed = true;
                     self.save()?;
                     return refuse("backend model identity conflict");
                 }
-                r.backend_model = Some(model.into());
+                r.backend_model = Some(model);
             }
-            r.raw_terminal = Some(
-                json!({"eventType":"response.completed","status":response["status"],
-                "usage":{"input_tokens":response["usage"]["input_tokens"],"output_tokens":response["usage"]["output_tokens"],"total_tokens":response["usage"]["total_tokens"]}}),
-            );
+            r.raw_terminal = Some(raw);
         }
         let completed = disposition == AttemptDisposition::Completed && usage["completed"] == true;
         self.hosted
@@ -1308,6 +1555,12 @@ impl Host {
     /// without relaying the chunk.
     fn hosted_emit(&mut self, s: &mut Stream, attempt: u64, frames: Vec<Value>) -> Result<()> {
         for f in frames {
+            if f["type"] == "response-head"
+                && let Err(reason) = self.subscription_guard(s, attempt)
+            {
+                self.hosted_close_uncertain(s, &reason)?;
+                return refuse(reason);
+            }
             let kept = (|| -> Result<()> {
                 match f["type"].as_str() {
                     Some("response-chunk") => {
@@ -1347,6 +1600,54 @@ impl Host {
             self.hosted.out.push(f);
         }
         Ok(())
+    }
+    /// Claude subscription routes: a successful response is relayed only if
+    /// its head shows the request inside the plan's limits
+    /// (`anthropic-ratelimit-unified-status` `allowed` or `allowed_warning`)
+    /// with extra usage unavailable (`...-overage-status` `rejected` or
+    /// absent). Anything else (including headers that are missing) stops the
+    /// job before more requests are made: such a request may draw on extra
+    /// usage. The headers are retained in the attempt's `relay.json`.
+    fn subscription_guard(&self, s: &Stream, attempt: u64) -> std::result::Result<(), String> {
+        let StreamPhase::Active { session, .. } = &s.phase else {
+            return Ok(());
+        };
+        let relay = session.relay();
+        let route = self
+            .journal
+            .coding
+            .as_ref()
+            .and_then(|c| c.provider_requests.get(&s.request))
+            .and_then(|r| r.attempts.iter().find(|a| a.attempt == attempt))
+            .map(|a| a.route.clone());
+        let endpoint = self.hosted_plan().ok().and_then(|(_, routes)| {
+            routes
+                .routes
+                .iter()
+                .find(|r| Some(&r.id) == route.as_ref())
+                .and_then(|r| Endpoint::parse(&r.endpoint))
+        });
+        if endpoint != Some(Endpoint::AnthropicOauth) || relay.status != 200 {
+            return Ok(());
+        }
+        let header = |name: &str| {
+            relay
+                .head_headers
+                .iter()
+                .find(|(k, _)| k == name)
+                .map(|(_, v)| v.as_str())
+        };
+        let status = header("anthropic-ratelimit-unified-status");
+        let overage = header("anthropic-ratelimit-unified-overage-status");
+        if matches!(status, Some("allowed" | "allowed_warning"))
+            && matches!(overage, None | Some("rejected"))
+        {
+            Ok(())
+        } else {
+            Err(format!(
+                "subscription_billing_guard: unified-status {status:?}, overage-status {overage:?}"
+            ))
+        }
     }
     /// Create-only retention of exact screened bytes, registered as a journal
     /// artifact so collection verifies it; returns the digest.
@@ -1397,11 +1698,16 @@ impl Host {
         }
         let (sha, retained) = self.hosted_stream_register(s.request, attempt)?;
         let differs = retained != relay.forwarded;
+        let wire = self
+            .hosted_plan()
+            .ok()
+            .and_then(|(plan, _)| plan.wire())
+            .unwrap_or(Wire::Responses);
         self.hosted_retain(
             s.request,
             attempt,
             "relay.json",
-            &serde_json::to_vec(&relay.evidence())?,
+            &serde_json::to_vec(&relay.evidence_for(wire))?,
         )?;
         let state = self.journal.coding.as_mut().unwrap();
         if let Some(r) = state.provider_requests.get_mut(&s.request) {
@@ -2316,5 +2622,381 @@ mod tests {
         let a = request(&h).attempts[0].clone();
         assert_eq!(a.disposition, AttemptDisposition::Uncertain);
         assert_eq!(a.reason.as_deref(), Some("hosted transport absent"));
+    }
+
+    // Anthropic Messages family (W1).
+    const HAIKU: &str = "claude-haiku-5-5";
+    /// The offline host switched to the `claude-sdk` provider with Pi's
+    /// Anthropic catalog entry of the model.
+    fn messages_host(responses: Vec<Vec<u8>>) -> (tempfile::TempDir, Host, Wire) {
+        let (dir, mut h, w) = host(responses, None);
+        let path = dir.path().join("anthropic.json");
+        let bytes = serde_json::to_vec(&json!({"anthropic-messages":{"chat:claude-haiku-5-5":{
+            "id":HAIKU,"provider":"anthropic","api":"anthropic-messages","baseUrl":"https://api.anthropic.com",
+            "cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,
+                "tiers":[{"inputTokensAbove":100000,"input":0.5,"output":2.5,"cacheRead":0.05,"cacheWrite":0.625}]},
+            "contextWindow":1000000,"maxTokens":128000}}}))
+        .unwrap();
+        fs::write(&path, &bytes).unwrap();
+        let plan = h
+            .journal
+            .job
+            .coding
+            .as_mut()
+            .unwrap()
+            .provider
+            .as_mut()
+            .unwrap();
+        plan.provider = "claude-sdk".into();
+        plan.model = HAIKU.into();
+        plan.budget_microusd = 10_000_000;
+        plan.catalog = Artifact {
+            path,
+            sha256: digest(&bytes),
+        };
+        (dir, h, w)
+    }
+    fn messages_grant(h: &mut Host, w: &mut Wire) -> Value {
+        let replies = push(h, w, json!({"type":"coding_provider_request","id":1,"requestModel":{"id":HAIKU,"provider":"claude-sdk","contextWindow":1000000},"contextBytes":1000})).unwrap();
+        assert_eq!(replies.len(), 1);
+        let mut written = vec![];
+        h.coding_bridge_dispatch(&replies[0], &mut |b| {
+            written = b.to_vec();
+            Ok(())
+        })
+        .unwrap();
+        serde_json::from_slice(&written).unwrap()
+    }
+    fn messages_body(messages: Value) -> Value {
+        json!({"model":HAIKU,"stream":true,"max_tokens":128000,"messages":messages,
+            "system":[{"type":"text","text":"s","cache_control":{"type":"ephemeral","ttl":"1h"}}],
+            "tools":[{"name":"DeferredToolPlaceholder","description":"d","input_schema":{"type":"object"},"defer_loading":true},
+                {"name":"mcp__pi__snapshot_read","description":"r","input_schema":{"type":"object"}}],
+            "metadata":{"user_id":"{}"},"thinking":{"type":"disabled"}})
+    }
+    fn messages_fetch(grant: &Value, body: &[u8]) -> Value {
+        let s = &grant["stream"];
+        json!({"type":"provider_fetch","id":1,"binding":s["binding"],"sequence":s["sequence"],"stream":s["stream"],
+            "url":"https://api.anthropic.com/v1/messages?beta=true","method":"POST",
+            "headers":{"authorization":"Bearer sk-ant-oat01-DUMMY","x-api-key":"marker","content-type":"application/json",
+                "anthropic-version":"2023-06-01","x-stainless-retry-count":"0"},
+            "body":B64.encode(body)})
+    }
+    fn messages_completed() -> Vec<u8> {
+        messages_completed_with("")
+    }
+    fn messages_completed_with(headers: &str) -> Vec<u8> {
+        let events = [
+            (
+                "message_start",
+                json!({"type":"message_start","message":{"id":"msg_1","model":HAIKU,"usage":
+                {"input_tokens":10,"cache_creation_input_tokens":1000,"cache_read_input_tokens":2000,"output_tokens":1}}}),
+            ),
+            (
+                "content_block_start",
+                json!({"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}),
+            ),
+            ("ping", json!({"type":"ping"})),
+            (
+                "content_block_delta",
+                json!({"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ok"}}),
+            ),
+            (
+                "content_block_stop",
+                json!({"type":"content_block_stop","index":0}),
+            ),
+            (
+                "message_delta",
+                json!({"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":
+                {"input_tokens":10,"cache_creation_input_tokens":1000,"cache_read_input_tokens":2000,"output_tokens":50}}),
+            ),
+            ("message_stop", json!({"type":"message_stop"})),
+        ];
+        let body = events
+            .iter()
+            .map(|(name, e)| format!("event: {name}\ndata: {e}\n\n"))
+            .collect::<String>();
+        format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\n{headers}Content-Length: {}\r\n\r\n{body}",
+            body.len()
+        )
+        .into_bytes()
+    }
+    fn relay_to_end(h: &mut Host, w: &mut Wire, g: &Value) {
+        tick_until(h, w, has("response-head"));
+        let mut ordinal = 1;
+        loop {
+            push(h, w, op(g, "pull", ordinal)).unwrap();
+            let f = tick_until(h, w, |a| !a.is_empty());
+            ordinal += 1;
+            if f[0]["type"] == "response-end" {
+                break;
+            }
+        }
+        push(h, w, op(g, "ack", ordinal)).unwrap();
+    }
+    #[test]
+    fn messages_relay_settles_per_token_class_from_host_evidence() {
+        let (dir, mut h, mut w) = messages_host(vec![refusal(429), messages_completed()]);
+        let g = messages_grant(&mut h, &mut w);
+        let body =
+            serde_json::to_vec(&messages_body(json!([{"role":"user","content":"q"}]))).unwrap();
+        assert!(
+            push(&mut h, &mut w, messages_fetch(&g, &body))
+                .unwrap()
+                .is_empty()
+        );
+        relay_to_end(&mut h, &mut w, &g);
+        // Access markers never reach the transport; Claude Code headers do.
+        for (_, headers) in w.opened.lock().unwrap().iter() {
+            assert!(!headers.contains_key("authorization") && !headers.contains_key("x-api-key"));
+            assert_eq!(headers["anthropic-version"], "2023-06-01");
+        }
+        let r = request(&h);
+        assert_eq!(r.attempts[0].disposition, AttemptDisposition::Refused);
+        assert_eq!(r.attempts[1].disposition, AttemptDisposition::Completed);
+        assert_eq!(r.backend_model.as_deref(), Some(HAIKU));
+        assert_eq!(
+            r.raw_terminal.as_ref().unwrap(),
+            &json!({"eventType":"message_stop","stopReason":"end_turn","usage":{"input_tokens":10,
+                "cache_creation_input_tokens":1000,"cache_read_input_tokens":2000,"output_tokens":50}})
+        );
+        let relay: Value = serde_json::from_slice(
+            &fs::read(dir.path().join("coding-hosted-1-2.relay.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(relay["usage"]["cacheReadInputTokens"], 2000);
+        // The container's stop reason must agree with the raw one.
+        assert!(
+            push(
+                &mut h,
+                &mut w,
+                json!({"type":"provider_complete","id":1,"stopReason":"toolUse","usage":{}})
+            )
+            .is_err()
+        );
+        let (_dir, mut h, mut w) = messages_host(vec![messages_completed()]);
+        let g = messages_grant(&mut h, &mut w);
+        push(&mut h, &mut w, messages_fetch(&g, &body)).unwrap();
+        relay_to_end(&mut h, &mut w, &g);
+        push(
+            &mut h,
+            &mut w,
+            json!({"type":"provider_complete","id":1,"stopReason":"stop","usage":{}}),
+        )
+        .unwrap();
+        // 10 x 0.1 + 1000 x 0.125 + 2000 x 0.01 + 50 x 0.5 = 171, plus one.
+        assert_eq!(request(&h).settled_microusd, Some(172));
+    }
+    #[test]
+    fn messages_cost_uses_the_tier_of_all_input_tokens() {
+        let model = json!({"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,
+            "tiers":[{"inputTokensAbove":100000,"input":0.5,"output":2.5,"cacheRead":0.05,"cacheWrite":0.625}]}});
+        assert_eq!(
+            provider::messages_cost_for_tests(&model, 0, 0, 100_000, 0),
+            1001
+        );
+        // Cache reads push the request over the threshold: every class at tier rates.
+        assert_eq!(
+            provider::messages_cost_for_tests(&model, 0, 0, 100_001, 10),
+            5001 + 25 + 1
+        );
+    }
+    #[test]
+    fn messages_body_policy_and_url_are_enforced() {
+        let ok = messages_body(json!([{"role":"user","content":"q"}]));
+        let mut cases = vec![];
+        for (key, value) in [
+            ("mcp_servers", json!([{"type":"url","url":"https://x"}])),
+            ("container", json!("c")),
+            ("service_tier", json!("auto")),
+            ("tool_choice", json!({"type":"any"})),
+            (
+                "tools",
+                json!([{"type":"web_search_20250305","name":"web_search"}]),
+            ),
+            ("tools", json!({"name":"x"})),
+            ("messages", json!([])),
+            ("stream", json!(false)),
+            ("model", json!("claude-opus-5-5")),
+        ] {
+            let mut b = ok.clone();
+            b[key] = value;
+            cases.push((serde_json::to_vec(&b).unwrap(), "messages-bound"));
+        }
+        // A duplicate key could be read differently upstream.
+        let text = String::from_utf8(serde_json::to_vec(&ok).unwrap()).unwrap();
+        cases.push((
+            text.replacen("{", &format!("{{\"model\":\"{HAIKU}\","), 1)
+                .into_bytes(),
+            "duplicate",
+        ));
+        for (body, label) in cases {
+            let (_dir, mut h, mut w) = messages_host(vec![]);
+            let g = messages_grant(&mut h, &mut w);
+            assert!(
+                push(&mut h, &mut w, messages_fetch(&g, &body)).is_err(),
+                "{label}: {}",
+                String::from_utf8_lossy(&body)
+            );
+            assert!(w.opened.lock().unwrap().is_empty());
+        }
+        let (_dir, mut h, mut w) = messages_host(vec![]);
+        let g = messages_grant(&mut h, &mut w);
+        let mut f = messages_fetch(&g, &serde_json::to_vec(&ok).unwrap());
+        f["headers"]["x-stainless-retry-count"] = json!("1");
+        assert!(push(&mut h, &mut w, f).is_err(), "client retry");
+        for url in [
+            "https://api.anthropic.com/v1/messages?beta=false",
+            "https://api.anthropic.com/v1/complete",
+            "https://chatgpt.com/backend-api/codex/responses",
+        ] {
+            let (_dir, mut h, mut w) = messages_host(vec![]);
+            let g = messages_grant(&mut h, &mut w);
+            let mut f = messages_fetch(&g, &serde_json::to_vec(&ok).unwrap());
+            f["url"] = json!(url);
+            assert!(push(&mut h, &mut w, f).is_err(), "{url}");
+        }
+        let (_dir, mut h, mut w) = messages_host(vec![]);
+        let g = messages_grant(&mut h, &mut w);
+        let mut f = messages_fetch(&g, &serde_json::to_vec(&ok).unwrap());
+        f["url"] = json!("https://api.anthropic.com/v1/messages");
+        assert!(push(&mut h, &mut w, f).is_ok());
+    }
+    #[test]
+    fn messages_requests_must_extend_the_previous_messages() {
+        let (_dir, mut h, _w) = messages_host(vec![]);
+        let (plan, _) = h.hosted_plan().unwrap();
+        let first = json!([{"role":"user","content":[{"type":"text","text":"q"}]},
+            {"role":"system","content":[{"type":"text","text":"env"}]}]);
+        h.hosted.last_messages = Some(first.clone());
+        let next = |m: Value| messages_body(m);
+        // Claude Code's observed rewrites: string content and moved cache_control.
+        let extended = json!([{"role":"user","content":[{"type":"text","text":"q","cache_control":{"type":"ephemeral"}}]},
+            {"role":"system","content":"env"},
+            {"role":"assistant","content":[{"type":"text","text":"a"}]}]);
+        h.messages_policy(&plan, &next(extended), false).unwrap();
+        for bad in [
+            first.clone(),
+            json!([{"role":"user","content":[{"type":"text","text":"altered"}]},
+                {"role":"system","content":"env"},{"role":"assistant","content":"a"}]),
+            json!([{"role":"system","content":"env"},{"role":"user","content":"q"},{"role":"assistant","content":"a"}]),
+        ] {
+            assert!(
+                h.messages_policy(&plan, &next(bad.clone()), false).is_err(),
+                "{bad}"
+            );
+        }
+    }
+    #[test]
+    fn messages_stream_terminal_and_failure_rules() {
+        let sse = |events: &[Value]| {
+            events
+                .iter()
+                .map(|e| format!("event: {}\ndata: {e}\n\n", e["type"].as_str().unwrap()))
+                .collect::<String>()
+        };
+        let start = json!({"type":"message_start","message":{"id":"m","model":HAIKU,"usage":{"input_tokens":1,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":1}}});
+        let delta = json!({"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":7}});
+        let stop = json!({"type":"message_stop"});
+        let clean = sse(&[start.clone(), delta.clone(), stop.clone()]);
+        let u = stream::usage_for(stream::Wire::Messages, clean.as_bytes());
+        assert_eq!(
+            (u["completed"].clone(), u["observed"].clone()),
+            (json!(true), json!(true))
+        );
+        assert_eq!(
+            (u["inputTokens"].clone(), u["outputTokens"].clone()),
+            (json!(1), json!(7))
+        );
+        assert!(stream::terminal_is_last_for(
+            stream::Wire::Messages,
+            clean.as_bytes(),
+            b": keepalive\n\n"
+        ));
+        assert!(!stream::terminal_is_last_for(
+            stream::Wire::Messages,
+            clean.as_bytes(),
+            b"event: ping\n\n"
+        ));
+        assert!(!stream::terminal_is_last_for(
+            stream::Wire::Responses,
+            clean.as_bytes(),
+            b""
+        ));
+        let failed = sse(&[
+            start.clone(),
+            json!({"type":"error","error":{"type":"overloaded_error"}}),
+            stop,
+        ]);
+        let u = stream::usage_for(stream::Wire::Messages, failed.as_bytes());
+        assert_eq!(
+            (u["completed"].clone(), u["failed"].clone()),
+            (json!(false), json!("overloaded_error"))
+        );
+        let unterminated = sse(&[start, delta]);
+        assert_eq!(
+            stream::usage_for(stream::Wire::Messages, unterminated.as_bytes())["completed"],
+            false
+        );
+    }
+    #[test]
+    fn subscription_route_relays_only_in_plan_responses() {
+        let allowed = "anthropic-ratelimit-unified-status: allowed\r\nanthropic-ratelimit-unified-overage-status: rejected\r\nanthropic-ratelimit-unified-overage-disabled-reason: org_level_disabled\r\nrequest-id: req_1\r\n";
+        for (headers, ok) in [
+            (allowed, true),
+            (
+                "anthropic-ratelimit-unified-status: allowed_warning\r\n",
+                true,
+            ),
+            (
+                "anthropic-ratelimit-unified-status: allowed\r\nanthropic-ratelimit-unified-overage-status: allowed\r\n",
+                false,
+            ),
+            ("anthropic-ratelimit-unified-status: rejected\r\n", false),
+            ("", false),
+        ] {
+            let (dir, mut h, mut w) = messages_host(vec![messages_completed_with(headers)]);
+            h.journal
+                .job
+                .coding
+                .as_mut()
+                .unwrap()
+                .provider
+                .as_mut()
+                .unwrap()
+                .hosted
+                .routes[0]
+                .endpoint = "https:anthropic-oauth".into();
+            let g = messages_grant(&mut h, &mut w);
+            let body =
+                serde_json::to_vec(&messages_body(json!([{"role":"user","content":"q"}]))).unwrap();
+            push(&mut h, &mut w, messages_fetch(&g, &body)).unwrap();
+            let mut seen = vec![];
+            for _ in 0..1000 {
+                match h.coding_hosted_tick(&w.path) {
+                    Ok(frames) => seen.extend(frames),
+                    Err(_) => break,
+                }
+                if !seen.is_empty() {
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(2));
+            }
+            let a = request(&h).attempts[0].clone();
+            if ok {
+                assert_eq!(seen.len(), 1, "{headers}");
+                assert_eq!(a.disposition, AttemptDisposition::Pending);
+            } else {
+                assert!(seen.is_empty(), "head relayed: {headers}");
+                assert_eq!(a.disposition, AttemptDisposition::Uncertain);
+                assert!(a.reason.unwrap().contains("subscription_billing_guard"));
+                let relay: Value = serde_json::from_slice(
+                    &fs::read(dir.path().join("coding-hosted-1-1.relay.json")).unwrap(),
+                )
+                .unwrap();
+                assert!(relay["headHeaders"].is_array());
+            }
+        }
     }
 }

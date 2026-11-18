@@ -353,6 +353,7 @@ fn run() -> Result<Value> {
                 coding::provider::STREAM_ADAPTER,
             )?,
             hosted: live.routes.clone(),
+            provider: coding::provider::DEFAULT_PROVIDER.into(),
             model: "gpt-6-luna".into(),
             max_requests: 4,
             budget_microusd: admission["budget_microusd"].as_u64().unwrap_or(0),

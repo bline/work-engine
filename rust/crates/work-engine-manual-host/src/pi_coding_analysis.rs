@@ -88,6 +88,49 @@ pub(super) fn check_request_tools(tools: &Value) -> Result<()> {
     Ok(())
 }
 
+/// SHA-256 of the canonical Messages `tools` array the pinned receiver,
+/// extension and Claude Code send on the `claude-sdk` provider: Claude Code's
+/// `DeferredToolPlaceholder` and the profile's tools as `mcp__pi__<name>`
+/// (taken from the first offline run's refusal message, W4).
+pub const CLAUDE_SDK_TOOLS_SHA256: &str =
+    "4dc958d99fc79a7cc2736c0216fc83e592c8fce53e6dc5e302116f195fa0e503";
+/// The Messages request's tool surface: exactly the profile's tools as the
+/// plan's Pi provider names them, with the pinned specification digest.
+pub(super) fn check_messages_tools(provider: &str, tools: &Value) -> Result<()> {
+    let Some(list) = tools.as_array() else {
+        return refuse("analysis request tools absent");
+    };
+    let (prefix, extra, pinned): (&str, &[&str], &str) = match provider {
+        "claude-sdk" => (
+            "mcp__pi__",
+            &["DeferredToolPlaceholder"],
+            CLAUDE_SDK_TOOLS_SHA256,
+        ),
+        _ => return refuse("analysis request provider unknown"),
+    };
+    let mut names: Vec<String> = list
+        .iter()
+        .filter_map(|t| t["name"].as_str().map(str::to_owned))
+        .collect();
+    names.sort_unstable();
+    let mut expected: Vec<String> = TOOLS
+        .iter()
+        .map(|t| format!("{prefix}{t}"))
+        .chain(extra.iter().map(|t| (*t).to_owned()))
+        .collect();
+    expected.sort_unstable();
+    if names != expected || names.len() != list.len() {
+        return refuse("analysis request tool set differs from the profile");
+    }
+    let actual = digest(&serde_json::to_vec(tools)?);
+    if actual != pinned {
+        return refuse(format!(
+            "analysis request tool specification differs from the pinned digest (got {actual})"
+        ));
+    }
+    Ok(())
+}
+
 /// One read-only tool call over the snapshot, or the error text returned to
 /// the model.
 fn serve(snapshot: &Tree, tool: &str, arguments: &Value) -> std::result::Result<Value, String> {

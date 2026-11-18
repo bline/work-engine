@@ -4,6 +4,20 @@ use super::*;
 /// Host-relayed response stream (`openResponse`) imported by the hosted receiver.
 pub const STREAM_ADAPTER: &[u8] = include_bytes!("../receiver/pi-native-tools.mjs");
 const CATALOG: &str = "node_modules/@earendil-works/pi-ai/dist/providers/data/openai-codex.json";
+/// Pi's Anthropic catalog: the prices and limits of the Claude models, which
+/// the `claude-sdk` extension takes from it too.
+const ANTHROPIC_CATALOG: &str =
+    "node_modules/@earendil-works/pi-ai/dist/providers/data/anthropic.json";
+/// Claude models admitted on the Messages routes (operator, 2026-11-18).
+pub const CLAUDE_MODELS: [&str; 1] = ["claude-haiku-5-5"];
+/// The Pi provider a plan runs when it names none.
+pub const DEFAULT_PROVIDER: &str = "openai-codex";
+fn default_provider() -> String {
+    DEFAULT_PROVIDER.into()
+}
+/// Analysis budget ceiling for the Messages family: full catalog reservations
+/// of a 1M-context Claude model for the profile's request maximum.
+const MESSAGES_ANALYSIS_BUDGET: u64 = 32_000_000;
 /// Public Pi configuration staged read-only for the container. Provider
 /// access is not a lane input: the Host's transport holds it.
 #[derive(Clone, Serialize, Deserialize)]
@@ -20,6 +34,13 @@ pub struct ProviderPlan {
     pub stream_adapter: Artifact,
     /// Route table; its digest is bound by the runtime admission.
     pub hosted: super::hosted::HostedRoutes,
+    /// The Pi provider the receiver runs: `openai-codex` (Responses family)
+    /// or `claude-sdk` (Claude Code in the container; Messages family, only
+    /// on the analysis profile). A `claude-sdk` plan may route to the
+    /// subscription and to the API-key Messages endpoint: both receive the
+    /// same request body.
+    #[serde(default = "default_provider")]
+    pub provider: String,
     pub model: String,
     pub max_requests: u32,
     pub budget_microusd: u64,
@@ -28,6 +49,7 @@ pub struct ProviderPlan {
 impl std::fmt::Debug for ProviderPlan {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ProviderPlan")
+            .field("provider", &self.provider)
             .field("model", &self.model)
             .field("max_requests", &self.max_requests)
             .finish_non_exhaustive()
@@ -154,7 +176,11 @@ pub enum AttemptEvidence {
 }
 impl AttemptEvidence {
     pub fn from_relay(relay: &crate::pi_stream::Relay) -> Self {
+        Self::from_relay_for(crate::pi_stream::Wire::Responses, relay)
+    }
+    pub fn from_relay_for(wire: crate::pi_stream::Wire, relay: &crate::pi_stream::Relay) -> Self {
         use crate::pi_stream::Outcome;
+        let usage = crate::pi_stream::usage_for(wire, &relay.forwarded);
         Self::Relayed {
             status: relay.status,
             upstream_end: matches!(
@@ -163,11 +189,9 @@ impl AttemptEvidence {
             ),
             interrupted: matches!(relay.outcome, Outcome::Interrupted(_)),
             relay_sha256: relay.sha256(),
-            provider_failure: crate::pi_stream::usage(&relay.forwarded)["failed"]
-                .as_str()
-                .map(String::from),
-            terminal_last: crate::pi_stream::usage(&relay.forwarded)["completed"] == true
-                && crate::pi_stream::terminal_is_last(&relay.forwarded, &relay.unforwarded)
+            provider_failure: usage["failed"].as_str().map(String::from),
+            terminal_last: usage["completed"] == true
+                && crate::pi_stream::terminal_is_last_for(wire, &relay.forwarded, &relay.unforwarded)
                 && relay.held_dropped == 0
                 // A drain that ended on a read or framing error may have
                 // dropped provider bytes (M4): never clean.
@@ -185,10 +209,9 @@ impl Reservation {
     /// Money this request currently holds against the budget.
     pub fn charged_microusd(&self) -> u64 {
         if self.attempts.is_empty() {
-            return self.settled_microusd.unwrap_or(
-                self.reserved_microusd
-                    .max(self.raw_microusd.unwrap_or(0)),
-            );
+            return self
+                .settled_microusd
+                .unwrap_or(self.reserved_microusd.max(self.raw_microusd.unwrap_or(0)));
         }
         self.attempts
             .iter()
@@ -416,19 +439,63 @@ struct Admission {
     allow_provider: bool,
     /// Digest of the hosted route table.
     hosted_routes_sha256: String,
+    #[serde(default = "default_provider")]
+    provider: String,
 }
 impl ProviderPlan {
+    /// Wire family of the plan's provider; `None` for an unknown provider.
+    pub fn wire(&self) -> Option<crate::pi_stream::Wire> {
+        match self.provider.as_str() {
+            "openai-codex" => Some(crate::pi_stream::Wire::Responses),
+            "claude-sdk" => Some(crate::pi_stream::Wire::Messages),
+            _ => None,
+        }
+    }
+    pub(super) fn wire_checked(&self) -> Result<crate::pi_stream::Wire> {
+        self.wire()
+            .ok_or_else(|| Error::Refused("provider family unknown".into()))
+    }
+    /// The pinned catalog entry of the plan's model.
     pub(super) fn selected(&self) -> Result<Value> {
         let data: Value = serde_json::from_slice(&self.catalog.verify()?)?;
-        let selected = data["openai-codex-responses"][format!("chat:{}", self.model)].clone();
+        let (key, provider, api, base) = match self.wire_checked()? {
+            crate::pi_stream::Wire::Responses => (
+                "openai-codex-responses",
+                "openai-codex",
+                "openai-codex-responses",
+                "https://chatgpt.com/backend-api",
+            ),
+            crate::pi_stream::Wire::Messages => (
+                "anthropic-messages",
+                "anthropic",
+                "anthropic-messages",
+                "https://api.anthropic.com",
+            ),
+        };
+        let selected = data[key][format!("chat:{}", self.model)].clone();
         if selected["id"] != self.model
-            || selected["provider"] != "openai-codex"
-            || selected["api"] != "openai-codex-responses"
-            || selected["baseUrl"] != "https://chatgpt.com/backend-api"
+            || selected["provider"] != provider
+            || selected["api"] != api
+            || selected["baseUrl"] != base
         {
-            return refuse("exact subscription catalog model absent");
+            return refuse("exact catalog model absent");
         }
         Ok(selected)
+    }
+    /// Whether the receiver's native model is the pinned catalog model: same
+    /// id, limits and prices; provider and API as the plan's Pi provider
+    /// registers them.
+    pub(super) fn native_model_matches(&self, native: &Value) -> Result<bool> {
+        let selected = self.selected()?;
+        let (provider, api) = match self.provider.as_str() {
+            "claude-sdk" => (json!("claude-sdk"), json!("claude-agent-sdk")),
+            _ => (selected["provider"].clone(), selected["api"].clone()),
+        };
+        Ok(native["provider"] == provider
+            && native["api"] == api
+            && ["id", "contextWindow", "maxTokens", "cost"]
+                .iter()
+                .all(|k| native[*k] == selected[*k]))
     }
     /// Pure preparation check over the pinned public catalog; grants no entry
     /// and neither inspects nor opens native credential references.
@@ -452,14 +519,25 @@ impl ProviderPlan {
             .coding
             .as_ref()
             .is_some_and(|p| super::is_analysis(&p.schema));
+        let wire = self.wire_checked()?;
+        let messages = wire == crate::pi_stream::Wire::Messages;
         if job
             .coding
             .as_ref()
             .is_none_or(|p| !super::is_hosted(&p.schema))
-            || self.model != "gpt-6-luna"
+            || (messages && !analysis)
+            || !if messages {
+                CLAUDE_MODELS.contains(&self.model.as_str())
+            } else {
+                self.model == "gpt-6-luna"
+            }
             || !(1..=if analysis { super::analysis::MAX_REQUESTS } else { 6 })
                 .contains(&self.max_requests)
-            || !(1..=if analysis { 10_000_000 } else { 1_000_000 })
+            || !(1..=match (analysis, messages) {
+                (true, true) => MESSAGES_ANALYSIS_BUDGET,
+                (true, false) => 10_000_000,
+                _ => 1_000_000,
+            })
                 .contains(&self.budget_microusd)
             // K-d: a turn admitted by context bytes must fit the hosted request
             // body bound (instructions and tools need the remaining room).
@@ -469,13 +547,26 @@ impl ProviderPlan {
                 32768
             })
                 .contains(&self.max_context_bytes)
-            || self.catalog.path != job.runtime.root.join(CATALOG)
+            || self.catalog.path
+                != job
+                    .runtime
+                    .root
+                    .join(if messages { ANTHROPIC_CATALOG } else { CATALOG })
             || self.stream_adapter.verify()? != STREAM_ADAPTER
             || !canonical(&self.stream_adapter)?
         {
             return refuse("provider lane/catalog/limits conflict");
         }
         self.hosted.validate()?;
+        // Every route speaks the plan's wire family.
+        if self
+            .hosted
+            .routes
+            .iter()
+            .any(|r| super::hosted::Endpoint::parse(&r.endpoint).is_none_or(|e| !e.serves(wire)))
+        {
+            return refuse("route endpoint does not serve the provider's wire family");
+        }
         self.lane.pi_config.verify()?;
         canonical_directory(&self.lane.pi_config.root)?;
         if self.lane.pi_config.root.starts_with(&job.state_dir)
@@ -512,6 +603,7 @@ impl ProviderPlan {
             || admission.job_id != job.job_id
             || admission.binary_sha256 != file_digest(&std::env::current_exe()?, None)?
             || admission.model != self.model
+            || admission.provider != self.provider
             || admission.pi_config_manifest_sha256 != self.lane.pi_config.manifest.sha256
             || admission.task_sha256 != self.task.sha256
             || admission.catalog_sha256 != self.catalog.sha256
@@ -565,6 +657,57 @@ const RAW_COST_SATURATED: u64 = 1_000_000_001;
 fn raw_cost(model: &Value, input: u64, output: u64) -> u64 {
     cost(model, input, output).unwrap_or(RAW_COST_SATURATED)
 }
+/// Messages usage priced per token class at the catalog rates of the tier
+/// the request falls in. The tier is chosen by all input tokens (uncached,
+/// cache writes and cache reads), so a request is never priced below its
+/// tier. Rounded up, plus one microUSD, like [`cost`].
+fn messages_cost(
+    model: &Value,
+    input: u64,
+    cache_write: u64,
+    cache_read: u64,
+    output: u64,
+) -> Result<u64> {
+    let rate = |cost: &Value, key: &str| {
+        cost[key]
+            .as_f64()
+            .filter(|v| v.is_finite() && *v >= 0.0 && *v <= 1000.0)
+            .ok_or_else(|| Error::Refused("catalog rate absent/invalid".into()))
+    };
+    let all_input = input.saturating_add(cache_write).saturating_add(cache_read);
+    let mut tier = &model["cost"];
+    let mut above = 0u64;
+    if let Some(tiers) = model["cost"]["tiers"].as_array() {
+        for t in tiers {
+            let threshold = t["inputTokensAbove"]
+                .as_u64()
+                .ok_or_else(|| Error::Refused("catalog tier threshold absent".into()))?;
+            if all_input > threshold && threshold >= above {
+                tier = t;
+                above = threshold;
+            }
+        }
+    }
+    let value = (input as f64 * rate(tier, "input")?
+        + cache_write as f64 * rate(tier, "cacheWrite")?
+        + cache_read as f64 * rate(tier, "cacheRead")?
+        + output as f64 * rate(tier, "output")?)
+    .ceil();
+    if !value.is_finite() || !(0.0..=1_000_000_000.0).contains(&value) {
+        return refuse("catalog cost overflow");
+    }
+    Ok(value as u64 + 1)
+}
+#[cfg(test)]
+pub(super) fn messages_cost_for_tests(
+    model: &Value,
+    input: u64,
+    cache_write: u64,
+    cache_read: u64,
+    output: u64,
+) -> u64 {
+    messages_cost(model, input, cache_write, cache_read, output).unwrap()
+}
 pub(super) fn full_reservation(model: &Value) -> Result<u64> {
     let input = model["contextWindow"]
         .as_u64()
@@ -604,7 +747,7 @@ impl Host {
         fs::create_dir(&public)?;
         let task = String::from_utf8(plan.task.verify()?)
             .map_err(|_| Error::Refused("task is not UTF8".into()))?;
-        let mut job = json!({"schema":super::HOSTED_BRIDGE_PROFILE,"provider":"openai-codex","model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes});
+        let mut job = json!({"schema":super::HOSTED_BRIDGE_PROFILE,"provider":plan.provider,"model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes});
         if super::is_analysis(&profile.schema) {
             // The receiver's own bounds for this profile; the Host checks
             // every one of them again where it reads.
@@ -647,7 +790,7 @@ impl Host {
                     || id != state.provider_requests.len() as u64 + 1
                     || state.provider_requests.values().any(Reservation::unsettled)
                     || frame["model"] != plan.model
-                    || frame["provider"] != "openai-codex"
+                    || frame["provider"] != plan.provider
                     || frame["contextBytes"]
                         .as_u64()
                         .is_none_or(|v| v > plan.max_context_bytes)
@@ -757,31 +900,75 @@ impl Host {
                     self.save()?;
                     return refuse("provider result unknown/error; reservation retained");
                 }
-                let raw = r.raw_terminal.as_ref().filter(|raw| {
-                    raw["eventType"] == "response.completed" && raw["status"] == "completed"
-                });
-                let measured = raw.and_then(|raw| {
-                    Some((
-                        raw["usage"]["input_tokens"].as_u64()?,
-                        raw["usage"]["output_tokens"].as_u64()?,
-                        raw["usage"]["total_tokens"].as_u64()?,
-                    ))
-                });
-                let Some((input, output, total)) = measured else {
-                    state.provider_failed = true;
-                    self.save()?;
-                    return refuse(
-                        "raw completed status/usage unavailable; full reservation retained",
-                    );
+                // Raw-usage cost and all input tokens, per wire family.
+                let measured = match plan.wire_checked()? {
+                    crate::pi_stream::Wire::Responses => {
+                        let raw = r.raw_terminal.as_ref().filter(|raw| {
+                            raw["eventType"] == "response.completed" && raw["status"] == "completed"
+                        });
+                        let measured = raw.and_then(|raw| {
+                            Some((
+                                raw["usage"]["input_tokens"].as_u64()?,
+                                raw["usage"]["output_tokens"].as_u64()?,
+                                raw["usage"]["total_tokens"].as_u64()?,
+                            ))
+                        });
+                        match measured {
+                            None => Err("raw completed status/usage unavailable"),
+                            Some((input, output, total))
+                                if input.checked_add(output) != Some(total) =>
+                            {
+                                Err("raw usage inconsistent")
+                            }
+                            Some((input, output, _)) => {
+                                Ok((raw_cost(&model, input, output), input, output))
+                            }
+                        }
+                    }
+                    crate::pi_stream::Wire::Messages => {
+                        // The raw stop reason must be the one the container
+                        // reports: `stop` is an ended turn, `toolUse` a tool call.
+                        let raw = r.raw_terminal.as_ref().filter(|raw| {
+                            raw["eventType"] == "message_stop"
+                                && match frame["stopReason"].as_str() {
+                                    Some("stop") => matches!(
+                                        raw["stopReason"].as_str(),
+                                        Some("end_turn" | "stop_sequence")
+                                    ),
+                                    Some("toolUse") => raw["stopReason"] == "tool_use",
+                                    _ => false,
+                                }
+                        });
+                        let measured = raw.and_then(|raw| {
+                            let u = &raw["usage"];
+                            Some((
+                                u["input_tokens"].as_u64()?,
+                                u["cache_creation_input_tokens"].as_u64()?,
+                                u["cache_read_input_tokens"].as_u64()?,
+                                u["output_tokens"].as_u64()?,
+                            ))
+                        });
+                        match measured {
+                            None => Err("raw completed stop reason/usage unavailable"),
+                            Some((input, cache_write, cache_read, output)) => Ok((
+                                messages_cost(&model, input, cache_write, cache_read, output)
+                                    .unwrap_or(RAW_COST_SATURATED),
+                                input.saturating_add(cache_write).saturating_add(cache_read),
+                                output,
+                            )),
+                        }
+                    }
                 };
-                if input.checked_add(output) != Some(total) {
-                    state.provider_failed = true;
-                    self.save()?;
-                    return refuse("raw usage inconsistent; full reservation retained");
-                }
+                let (actual, input, output) = match measured {
+                    Ok(m) => m,
+                    Err(reason) => {
+                        state.provider_failed = true;
+                        self.save()?;
+                        return refuse(format!("{reason}; full reservation retained"));
+                    }
+                };
                 // An overrun (or catalog cost overflow) still fails the job,
                 // but its raw-usage cost is recorded and held (G1).
-                let actual = raw_cost(&model, input, output);
                 if input > model["contextWindow"].as_u64().unwrap_or(0)
                     || output > model["maxTokens"].as_u64().unwrap_or(0)
                     || actual > r.reserved_microusd
@@ -861,6 +1048,7 @@ pub(super) mod ledger_tests {
                 }],
                 max_attempts_per_request: 1,
             },
+            provider: DEFAULT_PROVIDER.into(),
             model: "gpt-6-luna".into(),
             max_requests: 6,
             budget_microusd: 1_000_000,
@@ -1063,6 +1251,7 @@ mod admission_tests {
                 }],
                 max_attempts_per_request: 1,
             },
+            provider: DEFAULT_PROVIDER.into(),
             model: "gpt-6-luna".into(),
             max_requests: 6,
             budget_microusd: 1000000,
@@ -1551,6 +1740,7 @@ mod attempt_tests {
             drain_error: None,
             cancel_wait_ms: None,
             closing: None,
+            head_headers: vec![],
         };
         let clean = |r: &Relay| match AttemptEvidence::from_relay(r) {
             AttemptEvidence::Relayed { terminal_last, .. } => terminal_last,

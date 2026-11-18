@@ -19,6 +19,7 @@ rustls-platform-verifier = "=0.7.1"
 review-episode-core = { path = "../review-episode-core" }
 review-execution-evidence = { path = "../review-execution-evidence" }
 repository-claims-handoff = { path = "../repository-claims-handoff" }
+lifecycle-wire = { path = "../lifecycle-wire" }
 
 [dev-dependencies]
 tempfile = "=3.27.0"

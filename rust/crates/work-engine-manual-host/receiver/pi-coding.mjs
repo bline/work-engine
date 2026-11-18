@@ -6,7 +6,8 @@ import {createHash} from 'node:crypto';
 import {Type} from '/pi/node_modules/typebox/build/index.mjs';
 import {createInterface} from 'node:readline';
 import {zstdDecompressSync} from 'node:zlib';
-import {openSync,writeFileSync,fsyncSync,closeSync,existsSync,readFileSync,readdirSync,lstatSync} from 'node:fs';
+import {openSync,writeFileSync,fsyncSync,closeSync,existsSync,readFileSync,readdirSync,lstatSync,mkdirSync} from 'node:fs';
+import http from 'node:http';
 const bridge=process.argv.includes('--lifecycle-bridge');
 const fixtureSigned=existsSync('/auth/signed-fixture.json');
 const live=existsSync('/profile/job.json');
@@ -25,6 +26,20 @@ const SNAPSHOT_NAMES=['snapshot_list','snapshot_read'];
 const FRAME_BYTES=analysis?config.frameBytes:65536;
 const MAX_BODY=analysis?config.maxBodyBytes:45000;
 const MAX_REQUESTS=analysis?config.maxRequests:4;
+// claude-sdk: Pi's provider is the pinned pi-claude-subscription extension,
+// whose Claude Code child process sends its Messages requests to a loopback
+// forwarder here. Each request becomes one provider_fetch under the current
+// grant's stream identity; the Host dispatches it with real access. The
+// container holds only a dummy credential.
+const claudeSdk=hosted&&config.provider==='claude-sdk';
+const CLAUDE_MODELS=['claude-haiku-5-5'];
+const EXTENSION='/pi/node_modules/pi-claude-subscription';
+const ANTHROPIC_BASE='https://api.anthropic.com';
+// Claude Code's own retries and fallbacks stay off: every upstream request is
+// one Host-admitted attempt (a second request under one grant is refused here).
+const CLAUDE_CODE_ENV={CLAUDE_CODE_MAX_RETRIES:'0',CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK:'1',CLAUDE_CODE_NO_MODEL_FALLBACK:'1',CLAUDE_CODE_DISABLE_MODEL_ACCESS_FALLBACK:'1',CLAUDE_CODE_DISABLE_REFUSAL_FALLBACK:'1',CLAUDE_CODE_DISABLE_REFUSAL_RETRY:'1',CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC:'1',NO_PROXY:'127.0.0.1,localhost',TMPDIR:'/tmp'};
+const DUMMY_TOKEN=kind=>`sk-ant-${kind}01-${'D'.repeat(95)}`;
+const DUMMY_CREDENTIALS={claudeAiOauth:{accessToken:DUMMY_TOKEN('oat'),refreshToken:DUMMY_TOKEN('ort'),expiresAt:4102444800000,refreshTokenExpiresAt:4102444800000,scopes:['user:file_upload','user:inference','user:mcp_servers','user:plugins','user:privacy_consents:write','user:profile','user:sessions:claude_code'],subscriptionType:'max',subscriptionTypeSource:'sign_in',rateLimitTier:'default_claude_max_5x'}};
 // The hosted profile is the only live profile; credential-mounted live
 // profiles are retired. It always runs on the lifecycle bridge.
 if(live&&(!hosted||!bridge))throw Error('only the hosted live profile on the lifecycle bridge is supported');
@@ -99,6 +114,37 @@ const RESPONSE_FRAMES=['response-head','response-chunk','response-end','response
 const hostedFrames={open:false,queue:[],waiting:null,
  push(f){if(!this.open)throw Error('response frame without stream');if(this.waiting){const w=this.waiting;this.waiting=null;w(f);}else this.queue.push(f);},
  read(){if(this.waiting)throw Error('concurrent_read');return this.queue.length?Promise.resolve(this.queue.shift()):new Promise(r=>{this.waiting=r;});}};
+// claude-sdk forwarder: at most one request per grant, only while the grant is
+// open and no stream is; anything else is answered here and never leaves.
+let forwardSlot=null,openForwarded=null;
+const forwardRefuse=(res,status,message)=>{const b=JSON.stringify({type:'error',error:{type:'forwarder_refused',message}});res.writeHead(status,{'content-type':'application/json','content-length':Buffer.byteLength(b)});res.end(b);};
+const HOP=['host','connection','keep-alive','content-length','accept-encoding','transfer-encoding','proxy-connection','te','upgrade','expect'];
+const forwarder=claudeSdk?http.createServer((req,res)=>{
+ const chunks=[];let size=0,over=false;
+ req.on('data',c=>{size+=c.length;if(size>MAX_BODY){if(!over){over=true;forwardRefuse(res,413,'request bound');}}else chunks.push(c);});
+ req.on('end',async()=>{
+  if(over)return;
+  const slot=forwardSlot;
+  if(req.method!=='POST'||!/^\/v1\/messages(\?beta=true)?$/.test(req.url))return forwardRefuse(res,404,'only POST /v1/messages');
+  if(!slot||slot.used||hostedFrames.open||Date.now()>=slot.until)return forwardRefuse(res,503,'no open provider grant');
+  const headers={};
+  for(const [k,v] of Object.entries(req.headers))if(!HOP.includes(k))headers[k]=Array.isArray(v)?v.join(', '):v;
+  if(headers['content-encoding']!==undefined)return forwardRefuse(res,415,'encoded request body');
+  slot.used=true;
+  const abort=new AbortController();
+  res.on('close',()=>{if(!res.writableFinished)abort.abort();});
+  const headTimer=setTimeout(()=>abort.abort(),Math.max(1,Math.min(slot.headTimeoutMs,slot.until-Date.now())));
+  hostedFrames.open=true;
+  emit({type:'provider_fetch',id:slot.id,binding:slot.sid.binding,sequence:slot.sid.sequence,stream:slot.sid.stream,url:ANTHROPIC_BASE+req.url,method:'POST',headers,body:Buffer.concat(chunks).toString('base64')});
+  const handle=openForwarded({id:slot.sid,sendRaw:async v=>emit(v),read:()=>hostedFrames.read(),signal:abort.signal,onSettled:()=>{hostedFrames.open=false;hostedFrames.queue=[];slot.settle();}});
+  try{
+   const response=await handle.response;clearTimeout(headTimer);
+   res.writeHead(response.status,{'content-type':response.status===200?'text/event-stream':'application/json'});
+   for await(const chunk of response.body)res.write(chunk);
+   res.end();
+  }catch{clearTimeout(headTimer);if(!res.headersSent)forwardRefuse(res,502,'host relay failed');else res.destroy();}
+ });
+}):null;
 const input=createInterface({input:process.stdin,crlfDelay:Infinity});
 input.on('line',line=>{
  try {
@@ -143,6 +189,17 @@ try {
  await resourceLoader.reload();
  let modelRuntime,providerOptions={thinkingLevel:'off'};
  if(live){
+  if(claudeSdk){
+   if(config.schema!==schema||!analysis||!CLAUDE_MODELS.includes(config.model))throw Error('provider configuration rejected');
+   const reject=async()=>{throw Error('credential_mutation');};
+   modelRuntime=await ModelRuntime.create({credentials:{read:async()=>undefined,list:async()=>[],modify:reject,delete:reject},modelsPath:null,allowModelNetwork:false,refreshOnCreate:false});
+   ({openResponse:openForwarded}=await import('/receiver/pi-native-tools.mjs'));
+   await new Promise((resolve,reject)=>{forwarder.once('error',reject);forwarder.listen(0,'127.0.0.1',resolve);});
+   mkdirSync(`${process.env.HOME}/.claude`,{recursive:true,mode:0o700});
+   writeFileSync(`${process.env.HOME}/.claude/.credentials.json`,JSON.stringify(DUMMY_CREDENTIALS),{mode:0o600,flag:'wx'});
+   Object.assign(process.env,CLAUDE_CODE_ENV,{ANTHROPIC_BASE_URL:`http://127.0.0.1:${forwarder.address().port}`});
+   // The extension registers its provider while the session services load.
+  }else{
   if(config.schema!==schema||config.provider!=='openai-codex'||config.model!=='gpt-6-luna')throw Error('provider configuration rejected');
   // Nonauthenticating marker only; the Host holds and applies real access.
   const marker='syntactic.'+Buffer.from(JSON.stringify({'https://api.openai.com/auth':{chatgpt_account_id:'nonsecret-marker'}})).toString('base64')+'.nonsecret';
@@ -152,6 +209,7 @@ try {
   if(signed)checkConsumption(signedDeadline);
   model=modelRuntime.getModel('openai-codex',config.model);
   if(!model||model.api!=='openai-codex-responses'||model.baseUrl!=='https://chatgpt.com/backend-api')throw Error('exact subscription model absent');
+  }
  }else{
   if(signed)checkConsumption(signedDeadline);
   modelRuntime=await ModelRuntime.create({authPath:'/tmp/fixture-auth.json',modelsPath:null,allowModelNetwork:false,refreshOnCreate:false});
@@ -242,7 +300,9 @@ try {
       if(!sid||typeof sid.binding!=='object'||!Number.isSafeInteger(sid.sequence)||!Number.isSafeInteger(sid.stream)||!Number.isSafeInteger(grant.headTimeoutMs)||grant.headTimeoutMs<=0)throw Error('hosted stream identity');
       const {openResponse}=await import('/receiver/pi-native-tools.mjs');
       let fetched=false;
-      const inner=await original(requestModel,context,{...options,transport:'sse',maxRetries:0,cacheRetention:'none',timeoutMs:Math.max(1,Math.min(grant.headTimeoutMs,until-Date.now())),fetch:async(url,init)=>{
+      if(claudeSdk){forwardSlot={id,sid,until,headTimeoutMs:grant.headTimeoutMs,used:false};forwardSlot.settled=new Promise(r=>{forwardSlot.settle=r;});}
+      const slot=forwardSlot;
+      const inner=claudeSdk?await original(requestModel,context,options):await original(requestModel,context,{...options,transport:'sse',maxRetries:0,cacheRetention:'none',timeoutMs:Math.max(1,Math.min(grant.headTimeoutMs,until-Date.now())),fetch:async(url,init)=>{
        checkConsumption(until);
        if(fetched||hostedFrames.open)throw Error('hosted fetch already used');
        fetched=true;
@@ -265,12 +325,16 @@ try {
         for await(const event of inner){
          if(event.type==='done'||event.type==='error'){
           const message=event.type==='done'?event.message:event.error;
+          // Claude Code ends its turn at message_stop, before the forwarder
+          // has relayed the stream's end; the Host settles only a closed relay.
+          if(claudeSdk&&slot.used)await slot.settled;
           emit({type:'provider_complete',id,stopReason:message.stopReason,usage:message.usage});
          }
          relay.push(event);
         }
         relay.end();
        }catch{const aborted=failure('provider stream failed');for await(const event of aborted)relay.push(event);relay.end();}
+       finally{forwardSlot=null;}
       })();
       return relay;
      }
@@ -316,7 +380,13 @@ try {
   markRuntimeStreamFunction(stream,services.modelRuntime);session.agent.streamFunction=stream;
  }
  if(bridge){
-  const factory=async options=>{const services=await createAgentSessionServices({...baseOptions,...options,resourceLoaderOptions:{noExtensions:true,disabledBuiltinExtensions:['mcp'],noSkills:true,noPromptTemplates:true,noThemes:true,noContextFiles:true}});const result=await createAgentSessionFromServices({...baseOptions,...options,services});bindBridge(result.session,services);return {...result,services,diagnostics:services.diagnostics};};
+  const factory=async options=>{const services=await createAgentSessionServices({...baseOptions,...options,resourceLoaderOptions:{noExtensions:true,disabledBuiltinExtensions:['mcp'],noSkills:true,noPromptTemplates:true,noThemes:true,noContextFiles:true,...(claudeSdk?{additionalExtensionPaths:[EXTENSION]}:{})}});
+   if(claudeSdk){
+    // The pinned extension's provider and model; the Host checks the ready frame's model against the catalog.
+    model=services.modelRuntime.getModel('claude-sdk',config.model);
+    if(!model||model.api!=='claude-agent-sdk'||model.provider!=='claude-sdk')throw Error('exact claude-sdk model absent');
+   }
+   const result=await createAgentSessionFromServices({...baseOptions,...options,model,services});bindBridge(result.session,services);return {...result,services,diagnostics:services.diagnostics};};
   runtime=await createAgentSessionRuntime(factory,{cwd:'/workspace',agentDir,sessionManager:SessionManager.create('/workspace','/export/sessions')});
  }else{({session}=await createAgentSession({...baseOptions,sessionManager:manager??SessionManager.create('/workspace','/export/sessions')}));}
  if(signed)checkConsumption(signedDeadline);
@@ -365,7 +435,7 @@ try {
    const history={type:'coding_history',producer:'pi-1.5.0',sessionId:session.sessionId,invocationId:op.invocationId,messages:session.messages,branch:session.sessionManager.getBranch(),header:session.sessionManager.getHeader(),leafId:session.sessionManager.getLeafId(),snapshot:snapshot()};
    writeFileSync(`/export/coding-history-${op.invocationId}.json`,JSON.stringify(history)+'\n',{flag:'wx',mode:0o600});emit(history);
   }
-  const history={schema,provider:liveBridge?'openai-codex':'disabled_fixture',model:liveBridge?model.id:null,sessionId:session.sessionId,messages:session.messages,entries:session.sessionManager.getEntries(),header:session.sessionManager.getHeader(),counts:{providerRequests:bridgeCalls,resets:bridgeResets}};
+  const history={schema,provider:liveBridge?config.provider:'disabled_fixture',model:liveBridge?model.id:null,sessionId:session.sessionId,messages:session.messages,entries:session.sessionManager.getEntries(),header:session.sessionManager.getHeader(),counts:{providerRequests:bridgeCalls,resets:bridgeResets}};
   writeFileSync('/export/coding-native-history.json',JSON.stringify(history)+'\n',{flag:'wx',mode:0o600});emit({type:'complete',provider:history.provider,counts:history.counts});
  }else{
  emit({type:'ready',tools:session.getActiveToolNames(),...(live?{model:{id:model.id,provider:model.provider,api:model.api,contextWindow:model.contextWindow,maxTokens:model.maxTokens,cost:model.cost}}:{})});
@@ -386,4 +456,7 @@ try {
  emit({type:'complete',provider:history.provider});
  }
 }catch{emit({type:'error',message:'Pi coding profile failed'});process.exitCode=2;}
-finally{clearTimeout(deadline);if(runtime)await runtime.dispose();else session?.dispose();input.close();process.stdin.destroy();}
+finally{clearTimeout(deadline);if(runtime)await runtime.dispose();else session?.dispose();input.close();process.stdin.destroy();
+ // claude-sdk: the forwarder and Claude Code's child process would keep the
+ // process alive; exit runs the extension's shutdown of Claude Code.
+ if(forwarder){forwarder.close();forwarder.closeAllConnections();setTimeout(()=>process.exit(),2000).unref();}}

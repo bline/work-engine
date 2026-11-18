@@ -99,10 +99,12 @@ async function runHosted({grantStream = {binding, sequence: 1, stream: 1}, zstd 
     'node:readline': {createInterface: () => input},
     'node:crypto': {createHash},
     'node:zlib': {zstdDecompressSync},
+    // The claude-sdk forwarder only; never created on this provider.
+    'node:http': {default: {createServer() { throw Error('no forwarder on openai-codex'); }}},
     'node:fs': {
       existsSync: p => p === '/profile/job.json',
       readFileSync: p => { if (p.startsWith('/auth')) seen.accessReads++; return JSON.stringify(p === '/profile/job.json' ? config : {}); },
-      writeFileSync() {}, openSync: () => 1, fsyncSync() {}, closeSync() {}, readdirSync: () => [], lstatSync: () => ({}),
+      writeFileSync() {}, openSync: () => 1, fsyncSync() {}, closeSync() {}, readdirSync: () => [], lstatSync: () => ({}), mkdirSync() {},
     },
     '/pi/node_modules/typebox/build/index.mjs': {Type: new Proxy({}, {get: () => () => ({})})},
     '/pi/node_modules/@earendil-works/pi-ai/dist/utils/event-stream.js': {createAssistantMessageEventStream: queueStream},
