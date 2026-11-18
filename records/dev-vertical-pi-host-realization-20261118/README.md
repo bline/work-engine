@@ -502,6 +502,44 @@ files that differ from base were touched and rebuilt. Every binary was
 checked to carry `56c00a88…` and not `9a33912a…` before `q23`/`q24`. `q21`,
 `q22`, `r9` and `r10` ran before the base build.
 
+### R3 at the real-card composition (RL 5943)
+
+Branch `pi-host-r3-real-card-20261118`, cut from `f772612f`. Offline, no
+inference. The Host and observer binaries were built at `f772612f` in the
+post-merge gate's own target directory (Host `0306b6f2…`, observer
+`9c2a5d9e…`). `serve.py` gained `PI_HOST_S2_MANIFEST`, `PI_HOST_A4_MEMBER`
+(the S2 r3 `a4_request_card_member`, checked against its pin), the
+`advisory` scenario and `PI_HOST_OBSERVER`. The draft A4 bytes were read at
+run time from the S2 r3 directory and are not in the repository.
+
+The manifest was S2 r3 `snapshot-manifest.json` (`9fcaa325…`) and the A4
+member `request-card.member` (`bdc8c2ef…`, 144,537 B, all ASCII). The H2 job
+parameters were as in `r10`. Reads were 32 KiB pages, 12 calls in the first
+response and the rest in the second.
+
+| | `r11-treatment-real-card` | `r12-advisory-real-card` |
+| --- | --- | --- |
+| Members | 14, 270,633 B | 1 (`research/a4-request-card`), 144,537 B |
+| Turn | completed, eligible; 19 calls (18 reads) | completed, eligible; 6 calls (5 reads) |
+| `contextBytes` per request | 5,048; 275,918; 346,149; 347,270 | 5,048; 194,609; 195,730 |
+| Margin to `max_context_bytes` 400,000 | 52,730 | 204,270 |
+| `coding_provider_request` frame (largest; 1 MiB bound) | 695,042 | 391,962 |
+| History frame | 699,242 | 394,678 |
+| Request bodies (largest; total) | 345,812; 973,869 | 196,152; 398,551 |
+| `thread/read` reply (1,000,000 bound) | 339,231 | 189,415 |
+| `memory.peak` (512 MiB) | 344,199,168 (328 MiB), no `oom_kill` | 263,245,824 (251 MiB), no `oom_kill` |
+| `forwarderRefused` | 0 in every frame | 0 in every frame |
+| Containers left / serve record | none / `served` | none / `served` |
+| Elapsed | 76.9 s | 55.9 s |
+| `summary.json` sha256 | `6b1cbef7…` | `013ea538…` |
+
+Context per member byte is about 1.27 for this composition and 1.32 for the
+card alone. The fixture A4 in `r10` gave 1.15. The real card is dense JSON,
+and its quotes are escaped twice, once in the actor's answer and once in the
+context. The "about 1.07" ratio in 5929 was wrong. Live requests add thinking
+blocks and signatures that the offline observer does not send, so the live
+margin to 400,000 is below 52,730.
+
 ## Open
 
 - The Q fixture's owner adapter answers `original_result_operation` without

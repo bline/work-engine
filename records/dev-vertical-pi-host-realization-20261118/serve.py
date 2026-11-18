@@ -25,6 +25,13 @@ PI_HOST_MAX_RELAYS=32, PI_HOST_DEADLINE_S=1800, PI_HOST_TURN_DEADLINE_S=900).
 The summary adds every request's contextBytes and forwarderRefused (from the
 container's frames), the retained body total, the thread/read frame size and
 the inference container's cgroup memory.peak, sampled while it runs.
+
+PI_HOST_S2_MANIFEST selects another snapshot manifest (default S2 r2). A
+manifest with an `a4_request_card_member` (S2 r3) takes that member's bytes
+from PI_HOST_A4_MEMBER, checked against its pinned SHA-256, instead of
+building the A4 material from PI_HOST_A4_FIXTURE. Scenario `advisory`: the
+A4 member alone, read the same way. PI_HOST_OBSERVER overrides the observer
+binary.
 """
 import hashlib, json, os, select, shutil, subprocess, sys, threading, time
 from pathlib import Path
@@ -32,7 +39,7 @@ from pathlib import Path
 REPO = Path(os.environ.get('PI_HOST_REPO', Path(__file__).resolve().parents[2]))
 HOST_SRC = REPO / 'rust/crates/work-engine-manual-host'
 HOST = Path(os.environ.get('PI_HOST_BIN', REPO / 'rust/target/debug/work-engine-pi-host'))
-OBSERVER = REPO / 'rust/target/debug/examples/pi_hosted_messages_observer'
+OBSERVER = Path(os.environ.get('PI_HOST_OBSERVER', REPO / 'rust/target/debug/examples/pi_hosted_messages_observer'))
 RUNTIME_DIR = Path(os.environ.get('PI_HOST_RUNTIME_DIR', '/home/bline/.local/state/work-engine/dev-vertical-h2-route-20261117/runtime-claude-sdk'))
 RUNTIME = RUNTIME_DIR / 'root'
 IMAGE = 'node@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da'
@@ -46,7 +53,7 @@ BUDGET = 1_320_001 * MAX_REQUESTS
 PROMPTS = ['Read the claim member, then publish the result and answer.', 'Summarize what you published.']
 TREATMENT_PROMPTS = ['Read every snapshot member, then publish the result and answer.']
 # S2 r2 treatment arm (snapshot-manifest.json): (member id, commit, path, sha256).
-S2 = '/home/bline/cbm-work/research-lifecycle-tool-registry-20261116/016-s2-r2/snapshot-manifest.json'
+S2 = os.environ.get('PI_HOST_S2_MANIFEST', '/home/bline/cbm-work/research-lifecycle-tool-registry-20261116/016-s2-r2/snapshot-manifest.json')
 TREATMENT_SNAPSHOT = 'snapshot:h2-treatment-r2'
 LEDGER = 'metrics/efficiency-ledger.md'
 LEDGER_LINES = [50] + list(range(295, 375)) + [431]
@@ -70,6 +77,21 @@ def write(p, data, mode=0o644):
 def git_blob(commit, path):
     return subprocess.run(['git', '-C', str(REPO), 'show', f'{commit}:{path}'], capture_output=True, check=True).stdout
 
+def a4_member(m):
+    """The A4 member: (id, bytes), from the manifest's file member (r3) or the fixture (r2)."""
+    if 'a4_request_card_member' in m:
+        e = m['a4_request_card_member']
+        data = Path(os.environ['PI_HOST_A4_MEMBER']).read_bytes()
+        assert sha(data) == e['sha256'] and len(data) == int(e['bytes']), 'A4 member pin'
+        return e['proposed_member_id'], data
+    a4 = Path(os.environ['PI_HOST_A4_FIXTURE'])
+    return 'research/a4-material', b'\n'.join((a4 / f).read_bytes() for f in ('request.json', 'card.json', 'reconstruction.json'))
+
+def advisory_members():
+    """The advisory snapshot: the A4 member alone."""
+    mid, data = a4_member(json.loads(Path(S2).read_text())['treatment_arm_members'])
+    return {mid: data}
+
 def treatment_members():
     """The treatment snapshot: member id -> bytes, each checked against its pin."""
     m = json.loads(Path(S2).read_text())['treatment_arm_members']
@@ -83,8 +105,8 @@ def treatment_members():
             data = b''.join(lines[n - 1] + b'\n' for n in LEDGER_LINES)
             assert sha(data) == LEDGER_RANGE_SHA256
         members[e['proposed_member_id']] = data
-    a4 = Path(os.environ['PI_HOST_A4_FIXTURE'])
-    members['research/a4-material'] = b'\n'.join((a4 / f).read_bytes() for f in ('request.json', 'card.json', 'reconstruction.json'))
+    mid, data = a4_member(m)
+    members[mid] = data
     return dict(sorted(members.items()))
 
 def treatment_steps(members):
@@ -96,7 +118,8 @@ def treatment_steps(members):
                'body': 'The treatment members were read in full.',
                'source_refs': [{'id': 'src-1', 'owner_namespace': 'task', 'owner_ref': 'owner-1', 'revision': 1, 'sha256': '1' * 64}],
                'attribution': 'native:claude-haiku-5-5'}}
-    return [{'tools': reads[:12]}, {'tools': reads[12:]}, publish, {'text': 'Published result-1 over the treatment members.'}]
+    first, rest = reads[:12], reads[12:]
+    return [{'tools': first}] + ([{'tools': rest}] if rest else []) + [publish, {'text': 'Published result-1 over the snapshot members.'}]
 
 def prepare(base, scenario, members=None):
     live = scenario == 'live'
@@ -109,7 +132,7 @@ def prepare(base, scenario, members=None):
         obs, ready = subprocess.Popen(['sleep', '3600'], stdout=subprocess.PIPE, text=True), None
     else:
         obs_env = {**os.environ, 'HOSTED_OBSERVER_SCENARIO': scenario}
-        if scenario == 'treatment':
+        if scenario in ('treatment', 'advisory'):
             steps = write(base / 'observer-steps.json', json.dumps(treatment_steps(members)))
             obs_env.update(HOSTED_OBSERVER_SCENARIO='steps', HOSTED_OBSERVER_STEPS=str(steps))
         obs = subprocess.Popen([str(OBSERVER)], env=obs_env,
@@ -276,7 +299,7 @@ def main():
     root, name, scenario = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
     root.mkdir(exist_ok=True)
     base = root / name
-    members = treatment_members() if scenario == 'treatment' else None
+    members = treatment_members() if scenario == 'treatment' else advisory_members() if scenario == 'advisory' else None
     prompts = TREATMENT_PROMPTS if members else PROMPTS
     serve_config, obs, obs_out = prepare(base, scenario, members)
     sampler = MemorySampler(base / 'state'); sampler.start()
