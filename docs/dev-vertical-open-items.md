@@ -23,6 +23,19 @@ answer limit for the coding profile: the 64 KiB container frame (the history
 frame carries the conversation twice). Relay throughput for long answers was
 raised by coalescing already-received bytes (`1051e660`).
 
+## Resolved: overrun completions held at their raw cost (G1)
+
+Handed over by the Pi-accounting lane (board 5863; operator 5864: the dev
+vertical owns it). A completion whose raw-usage cost exceeded its reservation,
+or whose catalog cost overflowed the 1e9 uUSD bound, failed the job but
+recorded no amount, so the ledger held only the reservation. Now the ledger
+records `raw_microusd` on the attempt (or the request, for single-attempt
+profiles), saturating at 1 000 000 001 on overflow, and holds
+`max(reservation, raw)`; the job still fails and the request stays unsettled.
+Ledgers without an overrun serialize unchanged. Tests
+`overrun_completion_holds_its_raw_cost` and
+`hosted_overrun_attempt_holds_max_of_reservation_and_raw`.
+
 ## Hosted analysis profile (`work-engine.pi-analysis-hosted.v1`)
 
 Built for the research-lifecycle H2 run (plan

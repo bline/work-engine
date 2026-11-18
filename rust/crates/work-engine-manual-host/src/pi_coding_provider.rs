@@ -48,6 +48,11 @@ pub struct Reservation {
     /// `settled_microusd` mirrors a settled completion for existing checks.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub attempts: Vec<AttemptRecord>,
+    /// Single-attempt profiles: raw-usage cost of a completion that exceeded
+    /// the admitted bound (saturating at the catalog cost cap). Held as
+    /// `max(reservation, raw)`; the request stays unsettled.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub raw_microusd: Option<u64>,
 }
 /// Financial disposition of one attempt, applied only by this ledger.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -107,6 +112,11 @@ pub struct AttemptRecord {
     /// request's first attempt and persisted here before any upstream byte.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub request_body_sha256: Option<String>,
+    /// Raw-usage cost of a completion that exceeded the admitted bound
+    /// (saturating at the catalog cost cap). Held as `max(reservation, raw)`;
+    /// the attempt stays unsettled.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub raw_microusd: Option<u64>,
 }
 /// Observed facts about one attempt, from which the ledger derives the
 /// disposition. Callers report evidence; they never choose a release.
@@ -175,16 +185,21 @@ impl Reservation {
     /// Money this request currently holds against the budget.
     pub fn charged_microusd(&self) -> u64 {
         if self.attempts.is_empty() {
-            return self.settled_microusd.unwrap_or(self.reserved_microusd);
+            return self.settled_microusd.unwrap_or(
+                self.reserved_microusd
+                    .max(self.raw_microusd.unwrap_or(0)),
+            );
         }
         self.attempts
             .iter()
             .map(|a| match a.disposition {
                 AttemptDisposition::Refused | AttemptDisposition::NotDispatched => 0,
-                AttemptDisposition::Completed => a.settled_microusd.unwrap_or(a.reserved_microusd),
+                AttemptDisposition::Completed => a
+                    .settled_microusd
+                    .unwrap_or(a.reserved_microusd.max(a.raw_microusd.unwrap_or(0))),
                 AttemptDisposition::Pending | AttemptDisposition::Uncertain => a.reserved_microusd,
             })
-            .sum()
+            .fold(0u64, u64::saturating_add)
     }
     /// Whether this request still blocks new grants.
     pub fn unsettled(&self) -> bool {
@@ -382,6 +397,7 @@ pub fn reserve_attempt(
         routes_sha256: None,
         framed_end_observed: None,
         request_body_sha256: None,
+        raw_microusd: None,
     });
     Ok(next)
 }
@@ -542,6 +558,12 @@ fn cost(model: &Value, input: u64, output: u64) -> Result<u64> {
         return refuse("catalog cost overflow");
     }
     Ok(value as u64 + 1)
+}
+/// Raw-usage cost for the ledger record: `cost`, or the cap plus one when the
+/// catalog cost overflows its bound, so an overrun is never recorded as less.
+const RAW_COST_SATURATED: u64 = 1_000_000_001;
+fn raw_cost(model: &Value, input: u64, output: u64) -> u64 {
+    cost(model, input, output).unwrap_or(RAW_COST_SATURATED)
 }
 pub(super) fn full_reservation(model: &Value) -> Result<u64> {
     let input = model["contextWindow"]
@@ -757,14 +779,27 @@ impl Host {
                     self.save()?;
                     return refuse("raw usage inconsistent; full reservation retained");
                 }
-                let actual = cost(&model, input, output)?;
+                // An overrun (or catalog cost overflow) still fails the job,
+                // but its raw-usage cost is recorded and held (G1).
+                let actual = raw_cost(&model, input, output);
                 if input > model["contextWindow"].as_u64().unwrap_or(0)
                     || output > model["maxTokens"].as_u64().unwrap_or(0)
                     || actual > r.reserved_microusd
                 {
+                    if actual > r.reserved_microusd {
+                        if r.attempts.is_empty() {
+                            r.raw_microusd = Some(actual);
+                        } else if let Some(a) = r
+                            .attempts
+                            .last_mut()
+                            .filter(|a| a.disposition == AttemptDisposition::Completed)
+                        {
+                            a.raw_microusd = Some(actual);
+                        }
+                    }
                     state.provider_failed = true;
                     self.save()?;
-                    return refuse("provider usage exceeds admitted catalog bound");
+                    return refuse("provider usage exceeds admitted catalog bound; raw cost held");
                 }
                 if r.attempts.is_empty() {
                     r.settled_microusd = Some(actual);
@@ -868,6 +903,61 @@ pub(super) mod ledger_tests {
         );
         assert!(h.coding_provider_frame(&request(2)).unwrap().is_some());
         assert!(h.coding_provider_frame(&request(7)).is_err());
+    }
+    /// G1: a completion whose raw-usage cost exceeds the reservation still
+    /// fails the job, but the raw cost is recorded and held, never less.
+    #[test]
+    fn overrun_completion_holds_its_raw_cost() {
+        for (output, expect_saturated) in [(230_000u64, false), (4_000_000_000_000u64, true)] {
+            let (_dir, mut h) = fixture();
+            h.coding_provider_frame(&request(1)).unwrap();
+            let total = 20_000 + output;
+            h.coding_provider_frame(&json!({"type":"provider_observation","id":1,"httpStatus":200,"backendModel":"gpt-6-luna","rawTerminal":{"eventType":"response.completed","status":"completed","usage":{"input_tokens":20000,"output_tokens":output,"total_tokens":total}}})).unwrap();
+            let refused = h.coding_provider_frame(&json!({"type":"provider_complete","id":1,"stopReason":"stop","usage":{"input":20000,"output":output,"cacheRead":0,"cacheWrite":0}}));
+            assert!(refused.is_err());
+            let state = h.journal.coding.as_ref().unwrap();
+            assert!(state.provider_failed);
+            let r = &state.provider_requests[&1];
+            let raw = r.raw_microusd.expect("raw cost recorded");
+            assert!(raw > r.reserved_microusd, "{raw}");
+            assert_eq!(raw == RAW_COST_SATURATED, expect_saturated);
+            assert_eq!((r.charged_microusd(), r.unsettled()), (raw, true));
+            assert!(h.coding_provider_frame(&request(2)).is_err());
+        }
+    }
+    #[test]
+    fn hosted_overrun_attempt_holds_max_of_reservation_and_raw() {
+        let mut r = Reservation {
+            reserved_microusd: 164001,
+            ..Reservation::default()
+        };
+        r.attempts.push(AttemptRecord {
+            attempt: 1,
+            route: "primary".into(),
+            payer: "payer".into(),
+            reserved_microusd: 164001,
+            disposition: AttemptDisposition::Completed,
+            http_status: Some(200),
+            relay_sha256: None,
+            refusal_body_sha256: None,
+            settled_microusd: None,
+            reason: None,
+            gate_entered: true,
+            deadline_ms: None,
+            routes_sha256: None,
+            framed_end_observed: Some(true),
+            request_body_sha256: None,
+            raw_microusd: None,
+        });
+        assert_eq!((r.charged_microusd(), r.unsettled()), (164001, true));
+        r.attempts[0].raw_microusd = Some(177501);
+        assert_eq!((r.charged_microusd(), r.unsettled()), (177501, true));
+        // A raw cost at or below the reservation never lowers the hold.
+        r.attempts[0].raw_microusd = Some(1);
+        assert_eq!(r.charged_microusd(), 164001);
+        // The record serializes exactly as before when no raw cost is set.
+        r.attempts[0].raw_microusd = None;
+        assert!(!serde_json::to_string(&r).unwrap().contains("raw_microusd"));
     }
     #[test]
     fn error_unknown_identity_and_over_budget_never_regrant() {
