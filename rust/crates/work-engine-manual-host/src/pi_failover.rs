@@ -293,17 +293,23 @@ struct PoolState {
     /// Exhausted: the reset after which every exhausted dimension is usable
     /// again (`None`: unknown), with that dimension and its evidence.
     resume: Option<(u64, String, Value)>,
-    /// Exhausted only on other jobs' evidence.
+    /// Exhausted only on other jobs' evidence: every admitted reading, or
+    /// in-job evidence naming another job.
     foreign: bool,
     /// Reset elapsed: the dimension, evidence and reset time.
     reset: Option<(String, Value, u64)>,
     /// A low dimension: name, utilization and reading evidence.
     low: Option<(String, Value, Value)>,
+    /// The low reading is another job's (always, when admitted).
+    low_foreign: bool,
 }
 fn evidence_job(e: &Value) -> Option<&str> {
     e["job_id"].as_str()
 }
-fn pool_state(pool: Option<&Value>, decided_ms: u64, job: &str) -> PoolState {
+/// A pool's state from one view output. `admitted`: the output is the
+/// admitted observation, so none of its evidence is this job's own.
+fn pool_state(pool: Option<&Value>, decided_ms: u64, job: &str, admitted: bool) -> PoolState {
+    let foreign = |e: &Value| admitted || evidence_job(e).is_some_and(|j| j != job);
     let mut st = PoolState {
         status: "unknown",
         ..PoolState::default()
@@ -332,6 +338,7 @@ fn pool_state(pool: Option<&Value>, decided_ms: u64, job: &str) -> PoolState {
             _ => {}
         }
         if d["low"] == true && st.low.is_none() {
+            st.low_foreign = foreign(&d["utilization_evidence"]);
             st.low = Some((
                 name,
                 d["utilization"].clone(),
@@ -341,9 +348,7 @@ fn pool_state(pool: Option<&Value>, decided_ms: u64, job: &str) -> PoolState {
     }
     if !exhausted.is_empty() {
         st.status = "exhausted";
-        st.foreign = exhausted
-            .iter()
-            .all(|(_, _, e)| evidence_job(e).is_some_and(|j| j != job));
+        st.foreign = exhausted.iter().all(|(_, _, e)| foreign(e));
         st.resume = if exhausted.iter().all(|(_, at, _)| at.is_some()) {
             exhausted
                 .iter()
@@ -354,6 +359,7 @@ fn pool_state(pool: Option<&Value>, decided_ms: u64, job: &str) -> PoolState {
         };
         st.reset = None;
         st.low = None;
+        st.low_foreign = false;
     } else if st.reset.is_some() {
         st.status = "reset_elapsed";
     } else if available {
@@ -425,7 +431,10 @@ impl Context {
             return Err("incomplete");
         }
         let observed = obs["now_ms"].as_u64().ok_or("schema")?;
-        if decided_ms.saturating_sub(observed) > self.policy.max_observation_age_ms {
+        if observed > decided_ms {
+            return Err("future_dated");
+        }
+        if decided_ms - observed > self.policy.max_observation_age_ms {
             return Err("stale_age");
         }
         Ok(obs)
@@ -471,13 +480,13 @@ impl Context {
             let (source, state) = match (&admitted, attempted) {
                 (_, true) => (
                     "in_job",
-                    pool_state(view_pool(in_job, pool).as_ref(), decided_ms, job),
+                    pool_state(view_pool(in_job, pool).as_ref(), decided_ms, job, false),
                 ),
                 (Ok(obs), false) => (
                     "admitted",
-                    pool_state(view_pool(obs, pool).as_ref(), decided_ms, job),
+                    pool_state(view_pool(obs, pool).as_ref(), decided_ms, job, true),
                 ),
-                (Err(_), false) => ("none", pool_state(None, decided_ms, job)),
+                (Err(_), false) => ("none", pool_state(None, decided_ms, job, false)),
             };
             let class = match snapshot.refused.get(idx).copied().flatten() {
                 Some(refused_at) => {
@@ -587,13 +596,23 @@ impl Context {
             }
             .into();
             if let Some((dimension, utilization, evidence)) = &row.state.low {
-                let low_foreign = evidence_job(evidence).is_some_and(|j| j != job);
                 match policy_route(row).prepare_on_low {
                     PrepareOnLow::SwitchEarly => {
-                        if let Some(next) = rows[t + 1..]
+                        // Every route passed over on the way to the switch
+                        // target: a paying target needs its gate when any of
+                        // them was passed only on another job's evidence (the
+                        // low route itself, or an exhausted one).
+                        let next = rows[t + 1..]
                             .iter()
-                            .find(|n| matches!(n.class, Class::Send(_)))
-                            .filter(|n| !(low_foreign && paying_gated(n)))
+                            .position(|n| matches!(n.class, Class::Send(_)))
+                            .map(|k| t + 1 + k);
+                        let foreign_passed = |j: usize| {
+                            row.state.low_foreign
+                                || rows[..j].iter().any(|r| r.class == Class::ExhaustedForeign)
+                        };
+                        if let Some(next) = next
+                            .filter(|j| !(foreign_passed(*j) && paying_gated(&rows[*j])))
+                            .map(|j| &rows[j])
                         {
                             let Class::Send(reset) = &next.class else {
                                 unreachable!()
@@ -620,14 +639,14 @@ impl Context {
             eval.route = Some(route_id(&rows[v]));
         } else {
             eval.action = "pause".into();
+            // Only resets still ahead count: `resume` holds only exhausted
+            // dimensions whose reset is after `decided_ms` (`pool_state`). A
+            // passed reset (also on a route refused again after it) says
+            // nothing about when work can resume.
             let earliest = rows
                 .iter()
                 .filter_map(|row| {
-                    let (at, dimension, evidence) = match (&row.state.resume, &row.state.reset) {
-                        (Some((at, d, e)), _) => (*at, d.clone(), e.clone()),
-                        (None, Some((d, e, at))) => (*at, d.clone(), e.clone()),
-                        _ => return None,
-                    };
+                    let (at, dimension, evidence) = row.state.resume.clone()?;
                     Some((at, row, dimension, evidence))
                 })
                 .min_by_key(|(at, row, ..)| (*at, row.idx));
@@ -860,7 +879,12 @@ pub fn replay(
                     }
                     router.next_with(request, &model, d.decided_ms, &d.directive(&ctx.job_id))
                 }
-                None => router.next(request, &model, 0),
+                None => {
+                    return Err(format!(
+                        "request {request} attempt {}: no failover decision journaled",
+                        a.attempt
+                    ));
+                }
             };
             let Decision::Attempt { route, attempt } = decision else {
                 return Err(format!(
@@ -1830,6 +1854,9 @@ pub(crate) mod tests {
             .unwrap()
             .action = "skip".into();
         assert!(replay(&c, fresh_router(), &other, &read(&store)).is_err());
+        let mut undecided = ledger.clone();
+        undecided.get_mut(&1).unwrap().attempts[0].failover = None;
+        assert!(replay(&c, fresh_router(), &undecided, &read(&store)).is_err());
         let mut missing = store.clone();
         missing.remove(&observation_name(5, None));
         assert!(replay(&c, fresh_router(), &ledger, &read(&missing)).is_err());
@@ -2070,5 +2097,227 @@ pub(crate) mod tests {
         assert!(ledger_snapshot(&t, &ledger, 1, Some(2)).verified.is_empty());
         ledger.insert(2, Reservation::default());
         assert!(ledger_snapshot(&t, &ledger, 2, None).verified.is_empty());
+    }
+
+    fn table3() -> HostedRoutes {
+        let mut t = table();
+        t.routes.insert(
+            1,
+            HostedRoute {
+                id: "sub2".into(),
+                payer: "claude-sub2".into(),
+                endpoint: "https:anthropic-oauth".into(),
+            },
+        );
+        t
+    }
+    /// Three routes `sub` (low on this job's reading), `sub2` (exhausted on
+    /// another job's admitted evidence) and `api`, in `order`.
+    fn three_routes(order: &[&str], api_gate: bool, sub2_exhausted: bool) -> Evaluation {
+        let mut v = policy_json();
+        v["routes"] = json!(
+            order
+                .iter()
+                .map(|r| json!({"route": r, "prepare_on_low": "switch_early",
+                "foreign_evidence_skip": *r == "api" && api_gate}))
+                .collect::<Vec<_>>()
+        );
+        v["availability"]["pools"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"id": "claude-sub2", "funding": "subscription",
+                "members": [{"payer": "claude-sub2", "endpoint": "https:anthropic-oauth"}]}));
+        let t = table3();
+        let p = FailoverPolicy::parse(&serde_json::to_vec(&v).unwrap(), &t).unwrap();
+        let foreign: Vec<Dim> = if sub2_exhausted {
+            vec![(
+                "claude-sub2",
+                "subscription_5h",
+                "exhausted",
+                Some(NOW + H),
+                false,
+                "job-0",
+                1,
+                1,
+            )]
+        } else {
+            vec![]
+        };
+        let c = Context {
+            policy_sha256: "p".into(),
+            table: t,
+            job_id: JOB.into(),
+            admitted: Some((view(&p, NOW, &foreign), "obs".into())),
+            policy: p.clone(),
+        };
+        let in_job = view(
+            &p,
+            NOW,
+            &[(
+                "claude-sub",
+                "subscription_5h",
+                "available",
+                None,
+                true,
+                JOB,
+                1,
+                1,
+            )],
+        );
+        let s = RouterSnapshot {
+            refused: vec![None; 3],
+            attempted: vec![true, false, false],
+            verified: vec![],
+        };
+        c.evaluate(NOW, &in_job, &s, &[])
+    }
+
+    #[test]
+    fn an_early_switch_past_another_jobs_exhaustion_to_a_paying_route_needs_its_gate() {
+        // The switch would pass sub2 only on another job's evidence.
+        assert_eq!(
+            act(&three_routes(&["sub", "sub2", "api"], false, true)),
+            ("send", Some("sub"))
+        );
+        assert_eq!(
+            act(&three_routes(&["sub", "sub2", "api"], true, true)),
+            ("switch_early", Some("api"))
+        );
+        // Without that evidence the switch goes to sub2, no API spend.
+        assert_eq!(
+            act(&three_routes(&["sub", "sub2", "api"], false, false)),
+            ("switch_early", Some("sub2"))
+        );
+        // sub2 first: skipped on foreign evidence before the low route.
+        assert_eq!(
+            act(&three_routes(&["sub2", "sub", "api"], false, true)),
+            ("skip", Some("sub"))
+        );
+        assert_eq!(
+            act(&three_routes(&["sub2", "sub", "api"], true, true)),
+            ("switch_early", Some("api"))
+        );
+    }
+
+    /// The API route failed back on its rate-limit reset and was refused
+    /// again (an authentication failure adds no observation, so its passed
+    /// reset stays the newest); the subscription is exhausted until T1.
+    #[test]
+    fn a_pause_never_waits_for_a_reset_that_has_passed() {
+        let p = policy_with(|v| {
+            v["routes"] = json!([{"route":"api","prepare_on_low":"switch_early"},
+                {"route":"sub","prepare_on_low":"switch_early"}])
+        });
+        let c = ctx(p.clone(), None);
+        let refused = snap([Some((2, 2)), Some((2, 1))], [true, true]);
+        let t1 = NOW + H;
+        let with_sub = |at: Option<u64>| {
+            view(
+                &p,
+                NOW,
+                &[
+                    (
+                        "anthropic-api",
+                        "api_rate",
+                        "reset_elapsed",
+                        Some(NOW - 1),
+                        false,
+                        JOB,
+                        1,
+                        1,
+                    ),
+                    (
+                        "claude-sub",
+                        "subscription_5h",
+                        "exhausted",
+                        at,
+                        false,
+                        JOB,
+                        2,
+                        2,
+                    ),
+                ],
+            )
+        };
+        let e = c.evaluate(NOW, &with_sub(Some(t1)), &refused, &[]);
+        assert_eq!(act(&e), ("pause", None));
+        assert_eq!(e.resume_time, Some(ResumeTime::At(t1)));
+        assert_eq!(e.waits_for.unwrap()["route"], "sub");
+        let e = c.evaluate(NOW, &with_sub(None), &refused, &[]);
+        assert_eq!(e.resume_time, Some(ResumeTime::Unknown("unknown".into())));
+        assert_eq!(e.waits_for, None);
+    }
+
+    #[test]
+    fn admitted_evidence_is_never_this_jobs_own() {
+        // Admitted evidence naming this job's id, or no job: still foreign.
+        let p = policy_with(|_| {});
+        for job in [JOB, ""] {
+            let mut obs = view(
+                &p,
+                NOW,
+                &[(
+                    "claude-sub",
+                    "subscription_5h",
+                    "exhausted",
+                    Some(NOW + H),
+                    false,
+                    job,
+                    1,
+                    1,
+                )],
+            );
+            if job.is_empty() {
+                obs["pools"][0]["dimensions"][0]["evidence"]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("job_id");
+            }
+            let e = ctx(p.clone(), Some(obs)).evaluate(NOW, &empty(&p), &fresh(), &[]);
+            assert_eq!(act(&e), ("verify_foreign", Some("sub")), "job {job:?}");
+        }
+        // An admitted low reading switches early to a paying route only
+        // through its gate.
+        let p = policy_with(|v| v["routes"][0]["prepare_on_low"] = json!("switch_early"));
+        let obs = view(
+            &p,
+            NOW,
+            &[(
+                "claude-sub",
+                "subscription_5h",
+                "available",
+                None,
+                true,
+                JOB,
+                1,
+                1,
+            )],
+        );
+        let e = ctx(p.clone(), Some(obs)).evaluate(NOW, &empty(&p), &fresh(), &[]);
+        assert_eq!(act(&e), ("send", Some("sub")));
+    }
+
+    #[test]
+    fn a_future_dated_admitted_observation_is_ignored() {
+        let g = policy_with(|v| v["routes"][1]["foreign_evidence_skip"] = json!(true));
+        let foreign = [(
+            "claude-sub",
+            "subscription_5h",
+            "exhausted",
+            Some(NOW + H),
+            false,
+            "job-0",
+            1,
+            1,
+        )];
+        let c = ctx(g.clone(), Some(view(&g, NOW + 1, &foreign)));
+        let e = c.evaluate(NOW, &empty(&g), &fresh(), &[]);
+        assert_eq!(act(&e), ("send", Some("sub")));
+        assert_eq!(e.admitted_ignored, Some("future_dated"));
+        // At its own time it applies.
+        assert_eq!(
+            act(&c.evaluate(NOW + 1, &empty(&g), &fresh(), &[])),
+            ("skip", Some("api"))
+        );
     }
 }

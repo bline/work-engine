@@ -3761,10 +3761,39 @@ mod tests {
             .unwrap();
         plan.hosted = openai_routes();
         plan.failover = failover;
-        h.journal.coding.as_mut().unwrap().hosted_transport = Some(
-            json!({"transport":"fake","payer_sources":{SUB:"chatgpt-pi-auth",API:"api-key-env"}}),
-        );
+        h.journal.coding.as_mut().unwrap().hosted_transport = Some(https_identity(dir.path()));
         (dir, h, w)
+    }
+    /// The identity the real HTTPS transport records for the OpenAI table's
+    /// payers (synthetic owner-only access files), so the view's funding
+    /// cross-check is pinned to the transport's vocabulary.
+    fn https_identity(dir: &Path) -> Value {
+        use std::os::unix::fs::PermissionsExt;
+        let private = |name: &str, bytes: &[u8]| {
+            let path = dir.join(name);
+            fs::write(&path, bytes).unwrap();
+            fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+            path
+        };
+        let auth = private(
+            "pi-auth.json",
+            json!({"openai-codex":{"access":"synthetic-access-token-0123456789","accountId":"acct-1",
+                "expires": epoch_ms() + 3_600_000}})
+            .to_string()
+            .as_bytes(),
+        );
+        let key = private("api-key", b"sk-synthetic-key-0123456789");
+        let credentials = private(
+            "credentials.json",
+            json!({"schema": super::super::https::CREDENTIALS_SCHEMA, "payers": {
+                SUB: {"kind": "chatgpt-pi-auth", "path": auth},
+                API: {"kind": "api-key-file", "path": key}}})
+            .to_string()
+            .as_bytes(),
+        );
+        let transport = super::super::https::HttpsTransport::from_file(&credentials).unwrap();
+        transport.check(&openai_routes()).unwrap();
+        transport.identity()
     }
     fn grant_n(h: &mut Host, w: &mut Wire, id: u64) -> Value {
         if id == 2 {
