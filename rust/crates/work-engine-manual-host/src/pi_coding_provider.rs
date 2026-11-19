@@ -724,8 +724,22 @@ impl ProviderPlan {
             return refuse("provider admission does not bind this exact realization");
         }
         capability_ok(self.allow_shell, self.allow_background)?;
+        // The analysis / lifecycle-relay lanes have no workspace effect, so
+        // they must not carry shell or background execution authority. Enforce
+        // here on Host-held admission, not by relying on the receiver's tool
+        // selection to suppress it (P2, review consistency).
+        analysis_execution_ok(analysis, self.allow_shell, self.allow_background)?;
         Ok(())
     }
+}
+/// The analysis / lifecycle-relay lanes have no workspace effect: an admission
+/// that grants shell or background there is refused outright, instead of being
+/// suppressed only by the receiver's tool selection.
+fn analysis_execution_ok(analysis: bool, allow_shell: bool, allow_background: bool) -> Result<()> {
+    if analysis && (allow_shell || allow_background) {
+        return refuse("provider capability conflict: analysis lane admits no execution");
+    }
+    Ok(())
 }
 /// Revision 4 capability matrix. `allow_background` requires `allow_shell`;
 /// the invalid (no-shell, background) combination is refused. Returns Ok only
@@ -1693,6 +1707,30 @@ mod admission_tests {
             completions_model_family("deepseek/deepseek-v4-flash:floor"),
             "deepseek/deepseek-v4-flash"
         );
+    }
+    /// The analysis / lifecycle-relay lanes have no workspace effect: an
+    /// admission that grants shell or background there is refused on Host-held
+    /// authority, not silently suppressed by the receiver.
+    #[test]
+    fn analysis_lane_refuses_shell_or_background_admission() {
+        for (analysis, shell, bg, ok) in [
+            (false, false, false, true),
+            (false, true, false, true),
+            (false, true, true, true),
+            (true, false, false, true),
+            (true, true, false, false),
+            (true, false, true, false),
+            (true, true, true, false),
+        ] {
+            let out = analysis_execution_ok(analysis, shell, bg);
+            assert_eq!(out.is_ok(), ok, "({analysis},{shell},{bg})");
+            if !ok {
+                assert!(
+                    out.unwrap_err().to_string().contains("analysis"),
+                    "reason names the analysis lane"
+                );
+            }
+        }
     }
 }
 
