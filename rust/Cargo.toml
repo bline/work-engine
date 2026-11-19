@@ -55,6 +55,7 @@ members = [
   "crates/work-engine-review-preparation",
   "crates/work-engine-review-delivery",
   "crates/work-engine-review-hosted",
+  "crates/hosted-route-availability",
 ]
 exclude = ["crates/terminal-ui"]
 

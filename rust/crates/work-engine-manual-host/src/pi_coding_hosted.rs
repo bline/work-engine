@@ -2368,6 +2368,39 @@ mod tests {
         assert_eq!(head["headHeaders"], json!([["retry-after", "60"]]));
     }
     #[test]
+    fn head_evidence_replaces_a_stale_partial_by_rename() {
+        // A junk `.partial` left by an earlier failed write, longer than any
+        // head evidence: the writer must truncate it (not open it
+        // create-only), write there, and rename it into place rather than
+        // writing `head.json` directly.
+        let (dir, mut h, mut w) = host(vec![completed()], None);
+        let partial = dir.path().join("coding-hosted-1-1.head.json.partial");
+        fs::write(&partial, vec![b'x'; 64 * 1024]).unwrap();
+        let g = grant(&mut h, &mut w);
+        push(&mut h, &mut w, fetch(&g)).unwrap();
+        relay_to_end(&mut h, &mut w, &g);
+        assert_eq!(
+            request(&h).attempts[0].disposition,
+            AttemptDisposition::Completed
+        );
+        let head = head_evidence(&dir, &h, "1-1");
+        assert_eq!(
+            (head["status"].as_u64(), head["attempt"].as_u64()),
+            (Some(200), Some(1))
+        );
+        assert!(head["headMs"].is_u64());
+        assert!(!partial.exists(), "the partial was renamed into place");
+        assert_eq!(
+            hosted_artifacts(&dir, &h),
+            [
+                "1-1.head.json",
+                "1-1.relay.json",
+                "1-1.stream.sse",
+                "1.body.json"
+            ]
+        );
+    }
+    #[test]
     fn crash_after_a_relayed_head_retains_its_head_evidence_on_reconcile() {
         let (dir, mut h, mut w) = host(vec![chunked_head()], None);
         mid_body(&mut h, &mut w);
