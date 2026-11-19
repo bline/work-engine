@@ -71,6 +71,23 @@ const MESSAGES_KEYS: [&str; 13] = [
     "temperature",
     "stop_sequences",
 ];
+/// Top-level OpenAI Chat Completions keys the Completions lane admits. This is
+/// the OpenRouter body shape Pi's `openrouter-floor` provider sends. Anything
+/// else (e.g. `store`, `background`, `service_tier`) is refused. `reasoning`
+/// carries DeepSeek's effort setting (its thinkingLevelMap `high -> "high"`).
+const COMPLETIONS_KEYS: [&str; 11] = [
+    "model",
+    "messages",
+    "stream",
+    "stream_options",
+    "tools",
+    "tool_choice",
+    "temperature",
+    "max_tokens",
+    "reasoning",
+    "stop",
+    "top_p",
+];
 
 /// One permitted provider route. The order of routes is preference order.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -165,6 +182,11 @@ pub enum Endpoint {
     OpenAiResponses,
     AnthropicOauth,
     AnthropicApi,
+    /// OpenRouter's public Chat Completions endpoint, API-key funded. The
+    /// transmitted model slug may carry OpenRouter's request-time `:floor`
+    /// routing suffix; the resolved checkpoint is OpenRouter's reported
+    /// `model` field. See Revision 2's three-layer identity contract.
+    OpenRouter,
 }
 impl Endpoint {
     pub fn parse(endpoint: &str) -> Option<Self> {
@@ -173,6 +195,7 @@ impl Endpoint {
             "https:openai-responses" => Some(Self::OpenAiResponses),
             "https:anthropic-oauth" => Some(Self::AnthropicOauth),
             "https:anthropic-api" => Some(Self::AnthropicApi),
+            "https:openrouter" => Some(Self::OpenRouter),
             _ => {
                 let port: u16 = endpoint.strip_prefix("loopback:")?.parse().ok()?;
                 (port != 0)
@@ -186,6 +209,7 @@ impl Endpoint {
             Self::Loopback(_) => true,
             Self::ChatGptCodex | Self::OpenAiResponses => wire == Wire::Responses,
             Self::AnthropicOauth | Self::AnthropicApi => wire == Wire::Messages,
+            Self::OpenRouter => wire == Wire::Completions,
         }
     }
     /// Host name of the endpoint.
@@ -195,6 +219,7 @@ impl Endpoint {
             Self::ChatGptCodex => "chatgpt.com",
             Self::OpenAiResponses => "api.openai.com",
             Self::AnthropicOauth | Self::AnthropicApi => "api.anthropic.com",
+            Self::OpenRouter => "openrouter.ai",
         }
     }
     /// `(host, request path)` for `request`: fixed per endpoint and wire;
@@ -204,7 +229,11 @@ impl Endpoint {
             (_, Wire::Messages) if request.beta => "/v1/messages?beta=true",
             (_, Wire::Messages) => "/v1/messages",
             (Self::OpenAiResponses, Wire::Responses) => "/v1/responses",
+            (Self::OpenRouter, Wire::Completions) => "/api/v1/chat/completions",
             (_, Wire::Responses) => "/backend-api/codex/responses",
+            // Only OpenRouter serves Completions; any other endpoint on that
+            // wire is a config error and falls through to the route check.
+            (_, Wire::Completions) => "/unsupported-completions",
         };
         (self.host(), path)
     }
@@ -251,6 +280,10 @@ impl Endpoint {
             Self::OpenAiResponses => matches!(
                 name,
                 "accept" | "content-type" | "x-client-request-id" | "user-agent"
+            ),
+            Self::OpenRouter => matches!(
+                name,
+                "accept" | "content-type" | "x-requested-with" | "user-agent"
             ),
             Self::AnthropicOauth | Self::AnthropicApi => false,
         }
@@ -680,6 +713,7 @@ impl Host {
             Wire::Responses if url == format!("{base}/codex/responses") => false,
             Wire::Messages if url == format!("{base}/v1/messages") => false,
             Wire::Messages if url == format!("{base}/v1/messages?beta=true") => true,
+            Wire::Completions if url == format!("{base}/api/v1/chat/completions") => false,
             _ => return refuse("provider fetch identity/method/url conflict"),
         };
         if !Self::own_stream_frame(s, frame) || frame["method"] != "POST" {
@@ -719,17 +753,23 @@ impl Host {
         // thing here and another upstream.
         let parsed: Value = match wire {
             Wire::Responses => serde_json::from_slice(&body).ok(),
-            Wire::Messages => lifecycle_wire::parse_strict_json(&body).ok(),
+            Wire::Messages | Wire::Completions => lifecycle_wire::parse_strict_json(&body).ok(),
         }
         .ok_or_else(|| Error::Refused("provider fetch body JSON".into()))?;
         let analysis = self.analysis_profile();
+        // The body model is the transmitted slug (Layer B for Completions).
+        // `parsed["model"]` is what Pi actually serialized; `transmitted_model`
+        // is what this plan must send. For Completions these are the same
+        // string; the plan's Layer A catalog id differs and is checked by
+        // `selected()`.
+        let transmitted = plan.transmitted_model()?;
         if body.len()
             > if analysis {
                 super::analysis::MAX_REQUEST_BODY
             } else {
                 MAX_REQUEST_BODY
             }
-            || parsed["model"] != plan.model
+            || parsed["model"] != transmitted
             || parsed["stream"] != true
         {
             return refuse("provider fetch body bound/model/stream conflict");
@@ -748,6 +788,16 @@ impl Host {
                 wire,
                 beta,
                 messages: Some(parsed["messages"].clone()),
+            });
+        }
+        if wire == Wire::Completions {
+            self.completions_policy(&plan, &parsed, analysis)?;
+            return Ok(Fetch {
+                headers,
+                body,
+                wire,
+                beta,
+                messages: None,
             });
         }
         // R-a: body fields the Host pins on real routes. Nothing stored at the
@@ -840,6 +890,61 @@ impl Host {
             return refuse(
                 "provider fetch body policy: messages do not extend the previous request",
             );
+        }
+        Ok(())
+    }
+    /// Chat Completions body policy for the OpenRouter lane: only the known
+    /// top-level keys (so no store/background/service-tier), `stream: true`,
+    /// the exact transmitted model (_i.e._ Layer B) checked above, `high`
+    /// reasoning carried in `reasoning`, and only the container's own function
+    /// tools (no provider-hosted tools). `stream_options.include_usage` is
+    /// required so settlement has a usage chunk.
+    fn completions_policy(
+        &self,
+        _plan: &provider::ProviderPlan,
+        body: &Value,
+        _analysis: bool,
+    ) -> Result<()> {
+        let object = body
+            .as_object()
+            .ok_or_else(|| Error::Refused("provider fetch body is not an object".into()))?;
+        if let Some(key) = object.keys().find(|k| !COMPLETIONS_KEYS.contains(&k.as_str())) {
+            return refuse(format!(
+                "provider fetch body policy: field {key} is not allowed"
+            ));
+        }
+        if body["stream_options"]["include_usage"] != true {
+            return refuse(
+                "provider fetch body policy: stream_options.include_usage must be true",
+            );
+        }
+        if body["max_tokens"].as_u64().is_none_or(|v| v == 0) {
+            return refuse("provider fetch body policy: max_tokens required");
+        }
+        let tools = match &body["tools"] {
+            Value::Null => vec![],
+            Value::Array(tools) => tools.clone(),
+            _ => return refuse("provider fetch body policy: tools"),
+        };
+        // Chat Completions tools are OpenAI `function` tools; any other type is
+        // a provider-hosted tool and refused.
+        if tools.iter().any(|t| !t.is_object() || t["type"] != "function") {
+            return refuse("provider fetch body policy: provider-hosted tool");
+        }
+        if _analysis {
+            // Chat Completions introduces no tool-name prefix on the wire the
+            // way Messages does; the analysis surface is the profile's function
+            // tools with the pinned specification digest, as on Responses.
+            super::analysis::check_request_tools(
+                &self.journal.job.coding.as_ref().unwrap().schema,
+                &body["tools"],
+            )?;
+        }
+        // `reasoning` must be present but the effort is applied by Pi's
+        // thinkingLevelMap (high -> "high"); its exact shape is verified by
+        // the body-identity test, not assumed here.
+        if body["reasoning"].is_null() {
+            return refuse("provider fetch body policy: reasoning required (high effort)");
         }
         Ok(())
     }
@@ -1406,13 +1511,29 @@ impl Host {
                     "cache_read_input_tokens":usage["cacheReadInputTokens"],"output_tokens":usage["outputTokens"],
                     "cache_creation_5m_input_tokens":usage["cacheCreation5mInputTokens"],"cache_creation_1h_input_tokens":usage["cacheCreation1hInputTokens"]}}),
                 ),
+                // Chat Completions: model is OpenRouter's resolved checkpoint
+                // (Layer C); usage comes from the include_usage chunk.
+                Wire::Completions => (
+                    usage["model"].as_str().map(str::to_owned),
+                    json!({"eventType":"chat_completion",
+                    "usage":{"input_tokens":usage["inputTokens"],"completion_tokens":usage["outputTokens"],"total_tokens":usage["totalTokens"]}}),
+                ),
             };
-            if let Some(model) = model {
-                if model != plan.model {
-                    self.journal.coding.as_mut().unwrap().provider_failed = true;
-                    self.save()?;
-                    return refuse("backend model identity conflict");
+            // Layer C (resolved checkpoint) is recorded, and for the
+            // Completions family it is not required to equal the transmitted
+            // slug (plan.model, Layer B): OpenRouter resolves `latest:floor` to
+            // a concrete checkpoint. It must belong to the pinned model's
+            // floor family (checked by `provider_observation`), not equal it.
+            if wire != Wire::Completions {
+                if let Some(model) = model.clone() {
+                    if model != plan.model {
+                        self.journal.coding.as_mut().unwrap().provider_failed = true;
+                        self.save()?;
+                        return refuse("backend model identity conflict");
+                    }
                 }
+            }
+            if let Some(model) = model {
                 r.backend_model = Some(model);
             }
             r.raw_terminal = Some(raw);

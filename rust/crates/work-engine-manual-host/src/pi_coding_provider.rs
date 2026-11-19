@@ -10,6 +10,10 @@ const ANTHROPIC_CATALOG: &str =
     "node_modules/@earendil-works/pi-ai/dist/providers/data/anthropic.json";
 /// Claude models admitted on the Messages routes (operator, 2026-11-18).
 pub const CLAUDE_MODELS: [&str; 1] = ["claude-haiku-5-5"];
+/// OpenRouter Completions models admitted on the hosted lanes, by the
+/// transmitted model slug (Layer B: base id + `:floor`), since the catalog
+/// binds the Layer A alias id.
+pub const OPENROUTER_MODELS: [&str; 1] = ["deepseek/deepseek-v4-flash-latest:floor"];
 /// The Claude Code binary a `claude-sdk` runtime must carry (C1(vii)): its
 /// manifest entry and digest.
 pub const CLAUDE_CODE_ENTRY: &str = "node_modules/@anthropic-ai/claude-agent-sdk-linux-x64/claude";
@@ -17,6 +21,18 @@ pub const CLAUDE_CODE_SHA256: &str =
     "0dc4f4a9a165fc60746d7ae8489712e5fc352f1e7ad4eb22e7141bd0812eb0cf";
 /// The Pi provider a plan runs when it names none.
 pub const DEFAULT_PROVIDER: &str = "openai-codex";
+/// OpenRouter request-time floor routing suffix, appended to the base model id
+/// at dispatch. This is a routing directive to OpenRouter (sort providers by
+/// price, admit flex-tier endpoints), not a distinct catalog model.
+pub const OPENROUTER_FLOOR_SUFFIX: &str = ":floor";
+/// The OpenRouter provider data catalog bound for the Completions family.
+const OPENROUTER_CATALOG: &str =
+    "node_modules/@earendil-works/pi-ai/dist/providers/data/openrouter.json";
+/// Analysis budget ceiling for the OpenRouter Completions family. Set high
+/// enough to admit the plan's max_requests full-catalog reservations; the
+/// operator monitors external spend. (Reservation math is the same full-catalog
+/// bound as Responses; the constant mirrors MESSAGES_ANALYSIS_BUDGET.)
+const OPENROUTER_ANALYSIS_BUDGET: u64 = 10_000_000;
 fn default_provider() -> String {
     DEFAULT_PROVIDER.into()
 }
@@ -458,7 +474,30 @@ impl ProviderPlan {
         match self.provider.as_str() {
             "openai-codex" => Some(crate::pi_stream::Wire::Responses),
             "claude-sdk" => Some(crate::pi_stream::Wire::Messages),
+            "openrouter" => Some(crate::pi_stream::Wire::Completions),
             _ => None,
+        }
+    }
+    /// The model id transmitted to the provider for this plan. For the
+    /// Completions/OpenRouter family this is the catalog (Layer A) id with the
+    /// `~` (Pi alias) prefix removed and the floor routing suffix appended
+    /// (Layer B), e.g. `~deepseek/deepseek-v4-flash-latest` -
+    /// `deepseek/deepseek-v4-flash-latest:floor`.
+    pub fn transmitted_model(&self) -> Result<String> {
+        let model = self.model.as_str();
+        match self.wire_checked()? {
+            crate::pi_stream::Wire::Completions => {
+                let base = model.strip_prefix('~').unwrap_or(model);
+                if base.is_empty() {
+                    return refuse("empty transmitted model");
+                }
+                if base.ends_with(OPENROUTER_FLOOR_SUFFIX) {
+                    Ok(base.to_string())
+                } else {
+                    Ok(format!("{base}{OPENROUTER_FLOOR_SUFFIX}"))
+                }
+            }
+            _ => Ok(model.to_string()),
         }
     }
     pub(super) fn wire_checked(&self) -> Result<crate::pi_stream::Wire> {
@@ -481,6 +520,12 @@ impl ProviderPlan {
                 "anthropic-messages",
                 "https://api.anthropic.com",
             ),
+            crate::pi_stream::Wire::Completions => (
+                "openai-completions",
+                "openrouter",
+                "openai-completions",
+                "https://openrouter.ai/api/v1",
+            ),
         };
         let selected = data[key][format!("chat:{}", self.model)].clone();
         if selected["id"] != self.model
@@ -498,6 +543,12 @@ impl ProviderPlan {
         match self.wire_checked()? {
             crate::pi_stream::Wire::Responses => full_reservation(&model),
             crate::pi_stream::Wire::Messages => messages_full_reservation(&model),
+            // OpenRouter Chat Completions: full-catalog reservation over the
+            // whole context window and output bound at the dearer of the input
+            // / cache rates. Floor may change the effective per-token rate;
+            // the reservation uses the pinned catalog row and the recorded
+            // receipts split pinned vs provider-reported cost.
+            crate::pi_stream::Wire::Completions => full_reservation(&model),
         }
     }
     /// Whether the receiver's native model is the pinned catalog model: same
@@ -543,21 +594,26 @@ impl ProviderPlan {
             .is_some_and(|p| super::is_relay(&p.schema));
         let wire = self.wire_checked()?;
         let messages = wire == crate::pi_stream::Wire::Messages;
+        let completions = wire == crate::pi_stream::Wire::Completions;
+        let model_ok = if messages {
+            CLAUDE_MODELS.contains(&self.model.as_str())
+        } else if completions {
+            OPENROUTER_MODELS.contains(&self.transmitted_model()?.as_str())
+        } else {
+            self.model == "gpt-6-luna"
+        };
         if job
             .coding
             .as_ref()
             .is_none_or(|p| !super::is_hosted(&p.schema))
             || (messages && !analysis)
-            || !if messages {
-                CLAUDE_MODELS.contains(&self.model.as_str())
-            } else {
-                self.model == "gpt-6-luna"
-            }
+            || !model_ok
             || !(1..=if analysis { super::analysis::MAX_REQUESTS } else { 6 })
                 .contains(&self.max_requests)
-            || !(1..=match (analysis, messages) {
-                (true, true) => MESSAGES_ANALYSIS_BUDGET,
-                (true, false) => 10_000_000,
+            || !(1..=match (analysis, messages, completions) {
+                (true, true, _) => MESSAGES_ANALYSIS_BUDGET,
+                (true, false, true) => OPENROUTER_ANALYSIS_BUDGET,
+                (true, false, false) => 10_000_000,
                 _ => 1_000_000,
             })
                 .contains(&self.budget_microusd)
@@ -566,10 +622,15 @@ impl ProviderPlan {
             || !(1024..=context_bound(analysis, relay))
                 .contains(&self.max_context_bytes)
             || self.catalog.path
-                != job
-                    .runtime
-                    .root
-                    .join(if messages { ANTHROPIC_CATALOG } else { CATALOG })
+                != job.runtime.root.join(
+                    if messages {
+                        ANTHROPIC_CATALOG
+                    } else if completions {
+                        OPENROUTER_CATALOG
+                    } else {
+                        CATALOG
+                    },
+                )
             || self.stream_adapter.verify()? != STREAM_ADAPTER
             || !canonical(&self.stream_adapter)?
         {
@@ -987,10 +1048,24 @@ impl Host {
                     self.save()?;
                     return refuse(detail);
                 }
-                if !matches!(frame["stopReason"].as_str(), Some("stop" | "toolUse"))
-                    || r.http_status != Some(200)
-                    || r.backend_model.as_deref() != Some(&plan.model)
-                {
+                // For the Completions family the transmitted slug (Layer B) is
+                // checked at dispatch; the recorded backend model is the
+                // resolved checkpoint (Layer C) and is NOT required to equal
+                // `plan.model`. stopReason corresponds to chat-completion
+                // finish ("stop" ends a turn; a streaming tool turn continues).
+                let wire = plan.wire_checked()?;
+                let backend_ok = if wire == crate::pi_stream::Wire::Completions {
+                    true
+                } else {
+                    r.backend_model.as_deref() == Some(plan.model.as_str())
+                };
+                let stop_ok = match (wire, frame["stopReason"].as_str()) {
+                    (crate::pi_stream::Wire::Completions, Some("stop")) => true,
+                    (crate::pi_stream::Wire::Completions, Some("toolUse")) => true,
+                    (_, Some("stop" | "toolUse")) => true,
+                    _ => false,
+                };
+                if !stop_ok || r.http_status != Some(200) || !backend_ok {
                     state.provider_failed = true;
                     self.save()?;
                     return refuse("provider result unknown/error; reservation retained");
@@ -1060,6 +1135,32 @@ impl Host {
                             )),
                         }
                     }
+                    crate::pi_stream::Wire::Completions => {
+                        // Chat Completions: raw terminal usage from the
+                        // include_usage chunk.
+                        let raw = r.raw_terminal.as_ref().filter(|raw| {
+                            raw["eventType"] == "chat_completion"
+                        });
+                        let measured = raw.and_then(|raw| {
+                            let u = &raw["usage"];
+                            Some((
+                                u["input_tokens"].as_u64()?,
+                                u["completion_tokens"].as_u64()?,
+                                u["total_tokens"].as_u64()?,
+                            ))
+                        });
+                        match measured {
+                            None => Err("raw completed usage unavailable"),
+                            Some((input, output, total))
+                                if input.checked_add(output) != Some(total) =>
+                            {
+                                Err("raw usage inconsistent")
+                            }
+                            Some((input, output, _)) => {
+                                Ok((raw_cost(&model, input, output), input, output))
+                            }
+                        }
+                    }
                 };
                 let (actual, input, output) = match measured {
                     Ok(m) => m,
@@ -1118,6 +1219,71 @@ mod tests {
         assert_eq!(full_reservation(&model).unwrap(), 164001);
         assert_eq!(full_reservation(&model).unwrap() * 6, 984006);
         assert!(full_reservation(&json!({"contextWindow":272000,"maxTokens":128000})).is_err());
+    }
+
+    #[test]
+    fn openrouter_transmitted_model_derives_the_floor_slug_from_the_catalog_alias() {
+        let plan = |provider: &str, model: &str| ProviderPlan {
+            lane: LaneInputs {
+                pi_config: Tree {
+                    root: PathBuf::from("/nonexistent"),
+                    manifest: Artifact {
+                        path: PathBuf::from("/nonexistent"),
+                        sha256: "0".repeat(64),
+                    },
+                },
+            },
+            task: Artifact {
+                path: PathBuf::from("/nonexistent"),
+                sha256: "0".repeat(64),
+            },
+            catalog: Artifact {
+                path: PathBuf::from("/nonexistent"),
+                sha256: "0".repeat(64),
+            },
+            stream_adapter: Artifact {
+                path: PathBuf::from("/nonexistent"),
+                sha256: "0".repeat(64),
+            },
+            hosted: super::super::hosted::HostedRoutes {
+                routes: vec![super::super::hosted::HostedRoute {
+                    id: "primary".into(),
+                    payer: "openrouter".into(),
+                    endpoint: "https:openrouter".into(),
+                }],
+                max_attempts_per_request: 1,
+            },
+            provider: provider.into(),
+            model: model.into(),
+            max_requests: 1,
+            budget_microusd: 1_000_000,
+            max_context_bytes: 16384,
+        };
+        let b = plan("openrouter", "~deepseek/deepseek-v4-flash-latest");
+        assert_eq!(
+            b.transmitted_model().unwrap(),
+            "deepseek/deepseek-v4-flash-latest:floor"
+        );
+        // Idempotent: an already-suffixed catalog id is not double-suffixed.
+        let b = plan("openrouter", "deepseek/deepseek-v4-flash-latest:floor");
+        assert_eq!(
+            b.transmitted_model().unwrap(),
+            "deepseek/deepseek-v4-flash-latest:floor"
+        );
+        // Non-completions lanes transmit the plan model unchanged.
+        assert_eq!(plan(DEFAULT_PROVIDER, "gpt-6-luna").transmitted_model().unwrap(), "gpt-6-luna");
+    }
+
+    #[test]
+    fn openrouter_full_reservation_covers_the_deepseek_floor_catalog_bounds() {
+        // The pinned openrouter.json DeepSeek entry (context 1M, max out
+        // 943 718, input 0.07 / output 0.5 / cache-read 0.008 / cache-write 0).
+        let model = json!({"contextWindow":1048576,"maxTokens":943718,
+            "cost":{"input":0.07,"output":0.5,"cacheRead":0.008,"cacheWrite":0.0}});
+        let r = full_reservation(&model).unwrap();
+        // window * dearer(input, cache-read, cache-write)=0.07 + out * 0.5.
+        assert!(r > 1000);
+        assert!(full_reservation(&model).unwrap() == r);
     }
 }
 

@@ -376,14 +376,29 @@ pub enum Wire {
     Responses,
     /// Anthropic Messages SSE (`message_stop`).
     Messages,
+    /// OpenAI Chat Completions SSE. There is no typed terminal event: the
+    /// stream ends with a literal `data: [DONE]` line (not JSON). Usage is
+    /// carried in a final chunk's `usage` object when the request set
+    /// `stream_options.include_usage`.
+    Completions,
 }
 impl Wire {
     pub fn terminal_event(self) -> &'static str {
         match self {
             Wire::Responses => "response.completed",
             Wire::Messages => "message_stop",
+            // Chat Completions has no typed terminal event; the terminal is a
+            // literal `[DONE]` data payload handled by `completions_terminal`.
+            Wire::Completions => "[DONE]",
         }
     }
+}
+/// The literal data payload terminating a Chat Completions stream.
+pub const COMPLETIONS_DONE: &str = "[DONE]";
+/// Whether `data` is Chat Completions' terminal payload (`[DONE]`, with an
+/// optional single leading space after the `data:` colon as SSE allows).
+fn completions_terminal(data: &str) -> bool {
+    data == COMPLETIONS_DONE
 }
 /// Whether the first `response.completed` is the final event of the bytes
 /// the provider sent (`forwarded` then `unforwarded`): after its event block
@@ -412,12 +427,19 @@ pub fn terminal_is_last_for(wire: Wire, forwarded: &[u8], unforwarded: &[u8]) ->
             .map(|d| d.strip_prefix(' ').unwrap_or(d))
             .collect();
         offset += block.len();
-        if terminal_end.is_none()
-            && block.ends_with("\n\n")
-            && serde_json::from_str::<Value>(&data.join("\n"))
-                .is_ok_and(|v| v["type"] == wire.terminal_event())
-        {
-            terminal_end = Some(offset);
+        if terminal_end.is_none() && block.ends_with("\n\n") {
+            let joined = data.join("\n");
+            let terminal = if wire == Wire::Completions {
+                // Chat Completions' terminal is the literal `[DONE]` payload,
+                // which is not JSON.
+                data.len() == 1 && completions_terminal(&joined)
+            } else {
+                serde_json::from_str::<Value>(&joined)
+                    .is_ok_and(|v| v["type"] == wire.terminal_event())
+            };
+            if terminal {
+                terminal_end = Some(offset);
+            }
         }
     }
     let Some(end) = terminal_end else {
@@ -441,6 +463,9 @@ pub fn usage_for(wire: Wire, sse: &[u8]) -> Value {
         .collect();
     if wire == Wire::Messages {
         return messages_usage(&events);
+    }
+    if wire == Wire::Completions {
+        return completions_usage(&events);
     }
     // A provider failure event inside a relayed stream (e.g. quota after
     // output began) is reported, never treated as completion.
@@ -477,6 +502,59 @@ pub fn usage_for(wire: Wire, sse: &[u8]) -> Value {
         "totalTokens": u["total_tokens"],
         "cachedInputTokens": u["input_tokens_details"]["cached_tokens"],
         "reasoningTokens": u["output_tokens_details"]["reasoning_tokens"],
+    })
+}
+
+/// Chat Completions usage. The stream ends with a literal `[DONE]` payload,
+/// which is not JSON, so it never appears in `events`. Completion is present
+/// when a `usage` chunk was observed (the last chunk carrying `usage` when
+/// the request set `stream_options.include_usage`). An `error` field on any
+/// event is a provider failure, never a completion.
+fn completions_usage(events: &[Value]) -> Value {
+    // An error chunk (`type: "error"` or with an `error` object) is a provider
+    // failure, never a completion.
+    let failed = events.iter().find_map(|v| {
+        if v["type"] == "error" {
+            Some(
+                v["error"]["code"]
+                    .as_str()
+                    .or(v["error"]["type"].as_str())
+                    .unwrap_or("error")
+                    .to_owned(),
+            )
+        } else if v["error"].is_object() {
+            Some(
+                v["error"]["code"]
+                    .as_str()
+                    .or(v["error"]["type"].as_str())
+                    .unwrap_or("error")
+                    .to_owned(),
+            )
+        } else {
+            None
+        }
+    });
+    if let Some(failed) = failed {
+        return json!({"completed": false, "observed": false, "failed": failed});
+    }
+    // The last chunk that carries a `usage` object. With include_usage the
+    // provider appends a final usage chunk before `[DONE]`.
+    let usage = events.iter().rev().find(|v| v["usage"].is_object()).cloned();
+    let Some(u) = usage else {
+        return json!({"completed": true, "failed": null, "observed": false});
+    };
+    let input = u["usage"]["prompt_tokens"].clone();
+    let output = u["usage"]["completion_tokens"].clone();
+    let total = u["usage"]["total_tokens"].clone();
+    let observed = [&input, &output].iter().all(|v| v.is_u64());
+    json!({
+        "completed": true,
+        "failed": null,
+        "observed": observed,
+        "model": u["model"],
+        "inputTokens": input,
+        "outputTokens": output,
+        "totalTokens": total,
     })
 }
 
@@ -1270,5 +1348,57 @@ mod coalescing_tests {
         // `next` itself still returns what is available (unchanged).
         assert_eq!(up.next(CHUNK).unwrap().unwrap(), b"data");
         assert_eq!(up.next(CHUNK).unwrap().unwrap(), b": b\n\n");
+    }
+}
+
+#[cfg(test)]
+mod completions_tests {
+    use super::*;
+
+    /// A clean Chat Completions stream: deltas, a final usage chunk, `[DONE]`.
+    fn clean() -> &'static [u8] {
+        b"data: {\"id\":\"c1\",\"object\":\"chat.completion.chunk\",\"model\":\"deepseek/deepseek-v4-flash-0731\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"hi\"}}]}\n\n\
+              data: {\"model\":\"deepseek/deepseek-v4-flash-0731\",\"choices\":[],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":4,\"total_tokens\":16}}\n\n\
+              data: [DONE]\n\n"
+    }
+
+    #[test]
+    fn completions_done_is_the_terminal_and_must_be_last() {
+        assert!(terminal_is_last_for(Wire::Completions, clean(), b""));
+        // Anything after `[DONE]` other than comments/blank lines is unclean.
+        assert!(!terminal_is_last_for(
+            Wire::Completions,
+            b"data: {}\n\ndata: [DONE]\n\ndata: {}\n\n",
+            b""
+        ));
+    }
+
+    #[test]
+    fn completions_usage_comes_from_the_include_usage_chunk() {
+        let u = usage_for(Wire::Completions, clean());
+        assert_eq!(u["completed"], true);
+        assert_eq!(u["failed"], Value::Null);
+        assert_eq!(u["observed"], true);
+        assert_eq!(u["model"], "deepseek/deepseek-v4-flash-0731");
+        assert_eq!(u["inputTokens"], 12);
+        assert_eq!(u["outputTokens"], 4);
+        assert_eq!(u["totalTokens"], 16);
+    }
+
+    #[test]
+    fn completions_error_chunk_is_a_failure_not_complete() {
+        let sse = b"data: {\"type\":\"error\",\"error\":{\"code\":\"rate_limit\"}}\n\n";
+        let u = usage_for(Wire::Completions, sse);
+        assert_eq!(u["completed"], false);
+        assert_eq!(u["failed"], "rate_limit");
+    }
+
+    #[test]
+    fn completions_without_a_usage_chunk_is_observed_false_but_completed() {
+        let sse =
+            b"data: {\"choices\":[{\"delta\":{\"content\":\"x\"}}]}\n\ndata: [DONE]\n\n";
+        let u = usage_for(Wire::Completions, sse);
+        assert_eq!(u["completed"], true);
+        assert_eq!(u["observed"], false);
     }
 }

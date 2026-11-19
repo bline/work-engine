@@ -44,6 +44,10 @@ pub enum CredentialSource {
     AnthropicApiKeyEnv { variable: String },
     /// Anthropic API key from an owner-only file (one line).
     AnthropicApiKeyFile { path: PathBuf },
+    /// OpenRouter API key (`sk-or-...`) from an environment variable.
+    OpenRouterApiKeyEnv { variable: String },
+    /// OpenRouter API key (`sk-or-...`) from an owner-only file (one line).
+    OpenRouterApiKeyFile { path: PathBuf },
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -66,6 +70,7 @@ enum Credential {
         earlier: Vec<String>,
     },
     AnthropicApiKey(String),
+    OpenRouterApiKey(String),
 }
 impl Credential {
     fn endpoint(&self) -> Endpoint {
@@ -74,12 +79,15 @@ impl Credential {
             Self::ApiKey(_) => Endpoint::OpenAiResponses,
             Self::ClaudeOauth { .. } => Endpoint::AnthropicOauth,
             Self::AnthropicApiKey(_) => Endpoint::AnthropicApi,
+            Self::OpenRouterApiKey(_) => Endpoint::OpenRouter,
         }
     }
     fn secrets(&self) -> Vec<&[u8]> {
         match self {
             Self::ChatGpt { access, .. } => vec![access.as_bytes()],
-            Self::ApiKey(key) | Self::AnthropicApiKey(key) => vec![key.as_bytes()],
+            Self::ApiKey(key) | Self::AnthropicApiKey(key) | Self::OpenRouterApiKey(key) => {
+                vec![key.as_bytes()]
+            }
             Self::ClaudeOauth {
                 access, earlier, ..
             } => std::iter::once(access)
@@ -200,6 +208,8 @@ impl HttpsTransport {
                         CredentialSource::ClaudeCodeAuth { .. } => "claude-code-auth",
                         CredentialSource::AnthropicApiKeyEnv { .. } => "anthropic-api-key-env",
                         CredentialSource::AnthropicApiKeyFile { .. } => "anthropic-api-key-file",
+                        CredentialSource::OpenRouterApiKeyEnv { .. } => "openrouter-api-key-env",
+                        CredentialSource::OpenRouterApiKeyFile { .. } => "openrouter-api-key-file",
                     },
                 )
             })
@@ -229,6 +239,12 @@ impl HttpsTransport {
                 }
                 CredentialSource::AnthropicApiKeyFile { path } => {
                     Credential::AnthropicApiKey(key_from_file(&path)?)
+                }
+                CredentialSource::OpenRouterApiKeyEnv { variable } => {
+                    Credential::OpenRouterApiKey(key_from_env(&variable)?)
+                }
+                CredentialSource::OpenRouterApiKeyFile { path } => {
+                    Credential::OpenRouterApiKey(key_from_file(&path)?)
                 }
                 CredentialSource::ChatgptInvalidForQualification { path } => {
                     let (_, account) = pi_auth(&path)?;
@@ -349,6 +365,9 @@ impl HostedProviderTransport for HttpsTransport {
             Credential::AnthropicApiKey(key) => {
                 request_head(endpoint, &[("x-api-key", key)], request)
             }
+            Credential::OpenRouterApiKey(key) => {
+                request_head(endpoint, &[("Authorization", &format!("Bearer {key}"))], request)
+            }
         };
         let Connection { mut stream, abort } = connection;
         stream.write_all(head.as_bytes())?;
@@ -397,6 +416,10 @@ mod tests {
                     "anthropic-api".to_string(),
                     Credential::AnthropicApiKey("sk-ant-api03-0123456789abcdef".into()),
                 ),
+                (
+                    "openrouter".to_string(),
+                    Credential::OpenRouterApiKey("sk-or-v1-0123456789abcdef".into()),
+                ),
             ]),
             serde_json::json!({}),
         )
@@ -408,6 +431,62 @@ mod tests {
             payer: payer.into(),
             endpoint: endpoint.into(),
         }
+    }
+    #[test]
+    fn openrouter_routes_need_their_openrouter_access_and_screen_it() {
+        let t = transport();
+        let ok = HostedRoutes {
+            routes: vec![HostedRoute {
+                id: "primary".into(),
+                payer: "openrouter".into(),
+                endpoint: "https:openrouter".into(),
+            }],
+            max_attempts_per_request: 1,
+        };
+        t.check(&ok).unwrap();
+        for bad in [
+            route("p", "api", "https:openrouter"), // an OpenAI key is not OpenRouter access
+            route("p", "openrouter", "https:openai-responses"), // wrong endpoint for the key
+            route("p", "missing", "https:openrouter"),
+        ] {
+            let routes = HostedRoutes {
+                routes: vec![bad],
+                max_attempts_per_request: 1,
+            };
+            assert!(t.check(&routes).is_err());
+        }
+        // The OpenRouter key is screened from everything relayed to the container.
+        assert!(t.hold(b"x sk-or-v1-0123456789abcdef y").is_err());
+        // A partial key prefix is not surfaced; its tail is held back.
+        assert!(t.hold(b"x sk-or-").unwrap() > 0);
+    }
+    #[test]
+    fn openrouter_heads_use_the_fixed_origin_and_allowlisted_headers() {
+        let request = HostedRequest {
+            request: 4,
+            attempt: 1,
+            headers: BTreeMap::from([
+                (
+                    "x-requested-with".to_string(),
+                    "pi".to_string(),
+                ),
+                ("openai-organization".to_string(), "org-x".to_string()),
+                ("accept".to_string(), "text/event-stream".to_string()),
+            ]),
+            body: b"{}".to_vec(),
+            wire: crate::pi_stream::Wire::Completions,
+            beta: false,
+        };
+        let head = request_head(
+            Endpoint::OpenRouter,
+            &[("Authorization", "Bearer sk-or-v1-0123456789abcdef")],
+            &request,
+        );
+        assert!(head
+            .starts_with("POST /api/v1/chat/completions HTTP/1.1\r\nHost: openrouter.ai\r\n"));
+        assert!(head.contains("Authorization: Bearer sk-or-v1-0123456789abcdef\r\n"));
+        assert!(head.contains("x-requested-with: pi\r\n"));
+        assert!(!head.contains("openai-organization"));
     }
     #[test]
     fn each_route_needs_its_payers_access_of_the_matching_kind() {
