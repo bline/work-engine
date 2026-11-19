@@ -757,20 +757,24 @@ impl Host {
         }
         .ok_or_else(|| Error::Refused("provider fetch body JSON".into()))?;
         let analysis = self.analysis_profile();
-        // The body model is the transmitted slug (Layer B for Completions).
-        // `parsed["model"]` is what Pi actually serialized; `transmitted_model`
-        // is what this plan must send. For Completions these are the same
-        // string; the plan's Layer A catalog id differs and is checked by
-        // `selected()`.
+        // For Completions the container's Pi resolves the offline Layer A id
+        // (`~deepseek/deepseek-v4-flash-latest`); the Host owns appending the
+        // `:floor` routing suffix at dispatch. So `parsed["model"]` must equal
+        // the Layer A catalog id the plan binds, and the Host rewrites the
+        // forwarded body to the transmitted slug (Layer B) below.
         let transmitted = plan.transmitted_model()?;
+        let body_ok = if wire == Wire::Completions {
+            parsed["model"] == plan.model && parsed["stream"] == true
+        } else {
+            parsed["model"] == transmitted && parsed["stream"] == true
+        };
         if body.len()
             > if analysis {
                 super::analysis::MAX_REQUEST_BODY
             } else {
                 MAX_REQUEST_BODY
             }
-            || parsed["model"] != transmitted
-            || parsed["stream"] != true
+            || !body_ok
         {
             return refuse("provider fetch body bound/model/stream conflict");
         }
@@ -792,9 +796,19 @@ impl Host {
         }
         if wire == Wire::Completions {
             self.completions_policy(&plan, &parsed, analysis)?;
+            // Host owns the Layer B append: forward the body with the
+            // transmitted (`:floor`) model slug, never the offline Layer A id.
+            let transmitted_body = lifecycle_wire::parse_strict_json(&body)
+                .ok()
+                .and_then(|mut v| {
+                    v.as_object_mut()?
+                        .insert("model".into(), Value::String(transmitted.clone()));
+                    Some(serde_json::to_vec(&v).unwrap_or(body.clone()))
+                })
+                .unwrap_or(body.clone());
             return Ok(Fetch {
                 headers,
-                body,
+                body: transmitted_body,
                 wire,
                 beta,
                 messages: None,
@@ -3295,5 +3309,26 @@ mod tests {
                 assert!(h.journal.coding.as_ref().unwrap().provider_failed);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod body_tests {
+    use super::completions_forward_body;
+
+    #[test]
+    fn completions_forward_replaces_layer_a_with_layer_b_floor_slug() {
+        let body = br#"{"model":"~deepseek/deepseek-v4-flash-latest","messages":[],"stream":true}"#;
+        let out = completions_forward_body(body, "deepseek/deepseek-v4-flash-latest:floor");
+        assert_eq!(
+            &String::from_utf8(out).unwrap(),
+            r#"{"messages":[],"model":"deepseek/deepseek-v4-flash-latest:floor","stream":true}"#
+        );
+    }
+
+    #[test]
+    fn completions_forward_passes_through_non_json_bytes() {
+        let body = b"not json";
+        assert_eq!(completions_forward_body(body, "x"), body.to_vec());
     }
 }

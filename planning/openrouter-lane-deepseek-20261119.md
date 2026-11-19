@@ -263,3 +263,94 @@ Remaining before authorization to run live: implement offline-qualifiable core
 with the dispositions above, add mock-completions fixture + positive/negative
 refusal cases + the identity/body/budget tests, cargo build + test green, and
 the plan author's self-review before an independent review of the slice.
+
+## Revision 3 — receiver plugin finding (2026-11-19, after commit e44d7f0e)
+
+Pinned plugin packages (live checkout v the container's `/ext`):
+- `pi-openrouter-floor` 1.0.2
+  (`/home/bline/.pi/agent/git/github.com/herijooj/pi-openrouter-floor`, git).
+- `pi-better-background-tasks` 0.18.0
+  (`/home/bline/.pi/agent/npm/node_modules/pi-better-background-tasks`, npm).
+The Job's immutable runtime/manifest pins digests, so `/ext` copies carry
+version+digest identity exactly like the claude-sdk extension.
+
+Finding (read 2026-11-19): `pi-better-background-tasks` is a full `ExtensionAPI`
+integration, not a passive provider. `src/index.ts` calls `pi.registerTool`
+(so its tools land in Pi's own tool registry), subscribes to `before_agent_start`
+and `session_start`, and `src/runtime.ts` `spawnCommand`s real child processes
+and may host a runtime server. That is a second execution path around the Host's
+`customTool`-`tool_request` gate and the container's networkless/read-only/-no
+long-lived-daemon model.
+
+Disposition (unchanged in intent, now with the concrete mechanism): the
+process-management plugin is **functional in the arm**: its background
+spawn/status/log/cancel/async-completion capabilities are exposed to Pi, but
+**each useful operation is mediated by the Host** through the same gate as
+`workspace_exec`. The receiver does not let the plugin's in-process
+`spawnCommand`/server run directly; it presents the plugin's tools as
+`customTool`s whose `execute` `emit(tool_request)` and returns only on Host
+approval.
+
+Receiver changes needed (next) — **corrected 2026-11-19**:
+
+Key correction: `pi-openrouter-floor` fetches OpenRouter's live `/models` catalog
+at pi startup and **silently skips registration when the network is unavailable**
+(a documented property of the extension). The Host's container is `--network
+none`, so the extension can NOT be what registers `openrouter-floor` in the
+container; neither can `additionalExtensionPaths:[EXTENSION]` by itself make the
+model resolvable. Instead:
+
+- The Host **stages a `/config/models.json`** catalog with the pinned
+  `openrouter-floor` entry (`~deepseek/deepseek-v4-flash-latest`,
+  `api=openai-completions`, baseUrl -> the in-container completions forwarder),
+  exactly as the OpenAI lane is resolved off `modelsPath` by
+  `getModel('openai-codex', config.model)`.
+- The receiver adds a **chat/completions loopback forwarder** (the claude-sdk
+  `ANTHROPIC_BASE_URL -> forwarder` pattern, ported to `POST
+  /v1/chat/completions`): at most one request per grant, only while a grant is
+  open, else refused locally; each admitted request becomes one `provider_fetch`
+  under the grant's stream identity; the Host validates policy + dispatches with
+  real access (Rust core already has this endpoint/custody). The staged
+  baseUrl points Pi's `openrouter-floor` provider at the forwarder.
+- The receiver resolves the model off `createAgentSessionServices().modelRuntime`
+  by `getModel('openrouter-floor', config.model)` and rejects when absent or
+  not the pinned one — mirroring both `getModel('openai-codex',...)` and the
+  claude-sdk check.
+- `pi-openrouter-floor` is still mounted/pinned (its model definitions set the
+  openai-completions api + reasoning map Pi needs), but its live-catalog fetch
+  must be seedable/bypassed; the staged models.json is authoritative.
+
+Model-id convention (settled 2026-11-19, operator): **the wire model always
+carries the `:floor` suffix, appended at dispatch.** Option B. The plan and
+catalog bind Layer A (`~deepseek/deepseek-v4-flash-latest`, `plan.model`,
+`selected()` key, reservation); `transmitted_model()` derives Layer B
+(`deepseek/deepseek-v4-flash-latest:floor`), which `completions_policy`
+requires. `:floor` is appended to the **model**, not to a separate provider.
+
+Provider resolution (probed against the real Pi SDK 2026-11-19):
+- `openrouter` / `~deepseek/deepseek-v4-flash-latest` -> resolves OFFLINE (Pi
+  ships `openrouter.json`; api=openai-completions, base openrouter.ai/api/v1).
+- `openrouter-floor` / `deepseek/deepseek-v4-flash-latest:floor` -> NOT
+  resolvable offline; that provider only exists from the extension's live
+  `/models` fetch, which skips silently when networkless.
+Therefore the in-container receiver runs the **built-in `openrouter`** provider
+(no staged models.json, no extension fetch), `ProviderPlan.provider="openrouter"`
+-> `Wire::Completions`, and `:floor` is appended to the model at dispatch.
+`openrouter-floor` is how the operator's free-standing Pi names floor routing;
+in the Host, `openrouter` provider + `:floor` model is the same route.
+
+The OpenRouter provider is `openai-completions`, so the receiver routes it
+through the **OpenAI-lane `options.fetch` override** (emit `provider_fetch`),
+NOT the claude-sdk forwarder; no new loopback server. The Host validates
+policy + dispatches with the real key (Rust core). `pi-openrouter-floor` is
+still pinned/mounted for its model definitions/reasoning map but its live fetch
+is not the registration path.
+- `pi-better-background-tasks` is mounted/pinned and its tools are exposed
+  **through the Host gate**: every side-effecting extension tool is a
+  `customTool` whose `execute` `emit(tool_request)` and returns only on Host
+  approval; negative test that an unapproved process start is refused. Its own
+  in-process `spawnCommand`/server is not exposed directly to Pi.
+
+This is the largest remaining offline piece and the one the P1 review calls
+out; it will get its own offline fixture + independent review before any live
+run.
