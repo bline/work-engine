@@ -35,6 +35,12 @@ const MAX_REQUESTS=analysis?config.maxRequests:4;
 // grant's stream identity; the Host dispatches it with real access. The
 // container holds only a dummy credential.
 const claudeSdk=hosted&&config.provider==='claude-sdk';
+// OpenRouter Chat Completions provider. Pi's built-in catalog resolves
+// provider `openrouter` / model `~deepseek/deepseek-v4-flash-latest` offline;
+// the Host owns appending the `:floor` routing suffix at dispatch. The
+// `pi-openrouter-floor` extension's live /models fetch cannot register the
+// provider inside the networkless container, so the built-in provider is used.
+const openrouter=hosted&&config.provider==='openrouter';
 const CLAUDE_MODELS=['claude-haiku-5-5'];
 const EXTENSION='/pi/node_modules/pi-claude-subscription';
 const ANTHROPIC_BASE='https://api.anthropic.com';
@@ -210,6 +216,15 @@ try {
    // Anthropic's third-party (extra usage) answer.
    delete process.env.PI_CLAUDE_SDK_PROMPT;
    // The extension registers its provider while the session services load.
+  }else if(openrouter){
+   if(config.schema!==schema||config.model!=='~deepseek/deepseek-v4-flash-latest')throw Error('provider configuration rejected');
+   const reject=async()=>{throw Error('credential_mutation');};
+   modelRuntime=await ModelRuntime.create({credentials:{read:async()=>undefined,list:async()=>[],modify:reject,delete:reject},modelsPath:null,allowModelNetwork:false,refreshOnCreate:false});
+   // Host-validated catalog binding (pi_coding_provider::selected): the Layer A
+   // id Pi resolves offline; the Host appends `:floor` at dispatch. No network
+   // fetch, no extension live-catalog dependency.
+   model=modelRuntime.getModel('openrouter',config.model);
+   if(!model||model.api!=='openai-completions'||model.provider!=='openrouter'||model.baseUrl!=='https://openrouter.ai/api/v1')throw Error('exact openrouter model absent');
   }else{
   if(config.schema!==schema||config.provider!=='openai-codex'||config.model!=='gpt-6-luna')throw Error('provider configuration rejected');
   // Nonauthenticating marker only; the Host holds and applies real access.

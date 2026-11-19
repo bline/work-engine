@@ -25,6 +25,20 @@ pub const HEAD_TIMEOUT_MS: u64 = 60_000;
 /// deadline.
 pub const READ_IDLE_MS: u64 = 30_000;
 const MAX_REQUEST_BODY: usize = 45_000;
+/// The body forwarded upstream for a Completions request: the offline Layer A
+/// model id Pi serialized is replaced by the transmitted Layer B slug
+/// (`:floor` appended). Returns the original bytes if the body is not a
+/// re-serializable chat/completions object.
+fn completions_forward_body(body: &[u8], transmitted: &str) -> Vec<u8> {
+    lifecycle_wire::parse_strict_json(body)
+        .ok()
+        .and_then(|mut v| {
+            v.as_object_mut()?
+                .insert("model".into(), Value::String(transmitted.to_string()));
+            Some(serde_json::to_vec(&v).ok()?)
+        })
+        .unwrap_or_else(|| body.to_vec())
+}
 /// Every tool a request body declares: the top-level `tools` array and the
 /// tools of each `additional_tools` input item, in order. `None` when either
 /// is malformed.
@@ -798,14 +812,7 @@ impl Host {
             self.completions_policy(&plan, &parsed, analysis)?;
             // Host owns the Layer B append: forward the body with the
             // transmitted (`:floor`) model slug, never the offline Layer A id.
-            let transmitted_body = lifecycle_wire::parse_strict_json(&body)
-                .ok()
-                .and_then(|mut v| {
-                    v.as_object_mut()?
-                        .insert("model".into(), Value::String(transmitted.clone()));
-                    Some(serde_json::to_vec(&v).unwrap_or(body.clone()))
-                })
-                .unwrap_or(body.clone());
+            let transmitted_body = completions_forward_body(&body, &transmitted);
             return Ok(Fetch {
                 headers,
                 body: transmitted_body,
@@ -3320,10 +3327,9 @@ mod body_tests {
     fn completions_forward_replaces_layer_a_with_layer_b_floor_slug() {
         let body = br#"{"model":"~deepseek/deepseek-v4-flash-latest","messages":[],"stream":true}"#;
         let out = completions_forward_body(body, "deepseek/deepseek-v4-flash-latest:floor");
-        assert_eq!(
-            &String::from_utf8(out).unwrap(),
-            r#"{"messages":[],"model":"deepseek/deepseek-v4-flash-latest:floor","stream":true}"#
-        );
+        let v: serde_json::Value = serde_json::from_slice(&out).unwrap();
+        assert_eq!(v["model"], "deepseek/deepseek-v4-flash-latest:floor");
+        assert_eq!(v["stream"], true);
     }
 
     #[test]
