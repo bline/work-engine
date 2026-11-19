@@ -174,6 +174,15 @@ pub struct AttemptRecord {
     /// Hosted: the bound failover decision this attempt was sent under.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub failover: Option<super::failover::FailoverDecision>,
+    /// Hosted: the classification table this attempt's non-success heads
+    /// were classified under (`coding::classification`); set before any
+    /// upstream byte while classification is active for the route.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub classification_table_sha256: Option<String>,
+    /// Hosted: what the head hold did with this attempt's head (held,
+    /// refused, relayed, or a refusal's class as evidence).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub head_hold: Option<crate::pi_stream::HoldRecord>,
 }
 /// Observed facts about one attempt, from which the ledger derives the
 /// disposition. Callers report evidence; they never choose a release.
@@ -503,6 +512,8 @@ pub fn reserve_attempt(
         request_body_sha256: None,
         raw_microusd: None,
         failover: None,
+        classification_table_sha256: None,
+        head_hold: None,
     });
     Ok(next)
 }
@@ -1366,6 +1377,8 @@ pub(super) mod ledger_tests {
             request_body_sha256: None,
             raw_microusd: None,
             failover: None,
+            classification_table_sha256: None,
+            head_hold: None,
         });
         assert_eq!((r.charged_microusd(), r.unsettled()), (164001, true));
         r.attempts[0].raw_microusd = Some(177501);

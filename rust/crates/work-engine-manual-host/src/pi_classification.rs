@@ -18,6 +18,7 @@ use hosted_route_availability::{
     self as availability,
     provisional::{self, Class, Table},
 };
+use serde_json::{Value, json};
 use std::time::Instant;
 
 /// Classes a held head is refused on, so the router fails over within the
@@ -61,6 +62,44 @@ pub fn table_binding(admitted_sha256: Option<&str>) -> TableBinding {
     }
 }
 
+/// The binding record of an admitted table digest: the digest, the linked
+/// table's version and digest, and whether classification is active (a
+/// mismatch is journaled, not refused). `None` when no table was admitted.
+pub fn binding_record(admitted_sha256: Option<&str>) -> Option<Value> {
+    let admitted = admitted_sha256?;
+    Some(json!({
+        "admitted_sha256": admitted,
+        "table_version": provisional::table().version,
+        "table_sha256": provisional::table_sha256(),
+        "active": table_binding(Some(admitted)) == TableBinding::Active,
+    }))
+}
+/// API exposure of classified refusals: each route (in the effective order,
+/// as `(id, endpoint)`) whose held heads can be refused on their class,
+/// with every later API-funded route that would then receive the request.
+/// A classified refusal (an overload, for example) has no reset, so the
+/// route stays off for the rest of the job. Empty unless classification is
+/// active.
+pub fn held_failover_to_api(admitted_sha256: Option<&str>, order: &[(&str, &str)]) -> Vec<Value> {
+    let mut out = vec![];
+    for (i, (from, endpoint)) in order.iter().enumerate() {
+        let Some(c) = Classifier::for_route(admitted_sha256, endpoint) else {
+            continue;
+        };
+        let statuses = c.held_statuses();
+        if statuses.is_empty() {
+            continue;
+        }
+        for (to, to_endpoint) in &order[i + 1..] {
+            if availability::endpoint_provider_funding(to_endpoint).is_some_and(|(_, f)| f == "api")
+            {
+                out.push(json!({"from": from, "to": to, "statuses": statuses}));
+            }
+        }
+    }
+    out
+}
+
 /// Classifier of one route's heads under the linked table.
 pub struct Classifier {
     provider: &'static str,
@@ -91,6 +130,21 @@ impl Classifier {
             max_bytes: HOLD_MAX_BYTES,
             window_until,
         }
+    }
+}
+impl Classifier {
+    /// The statuses this route's heads are held for.
+    pub fn held_statuses(&self) -> Vec<u16> {
+        let mut out: Vec<u16> = self
+            .table
+            .head_rules
+            .iter()
+            .map(|r| r.status)
+            .filter(|s| self.holds(*s))
+            .collect();
+        out.sort_unstable();
+        out.dedup();
+        out
     }
 }
 impl HeadClassifier for Classifier {
@@ -215,6 +269,39 @@ mod tests {
         );
     }
 
+    #[test]
+    fn binding_record_and_held_failover_exposure() {
+        assert!(binding_record(None).is_none());
+        let active = binding_record(Some(&linked())).unwrap();
+        assert_eq!(active["active"], true);
+        assert_eq!(active["table_sha256"], linked());
+        assert_eq!(active["table_version"], provisional::table().version);
+        let other = "0".repeat(64);
+        let mismatch = binding_record(Some(&other)).unwrap();
+        assert_eq!(
+            (
+                mismatch["active"].clone(),
+                mismatch["admitted_sha256"].clone()
+            ),
+            (json!(false), json!(other))
+        );
+        let order = [
+            ("sub", "https:anthropic-oauth"),
+            ("api", "https:anthropic-api"),
+            ("codex", "https:chatgpt-codex"),
+            ("api2", "https:anthropic-api"),
+        ];
+        assert_eq!(
+            held_failover_to_api(Some(&linked()), &order),
+            vec![
+                json!({"from":"sub","to":"api","statuses":[529]}),
+                json!({"from":"sub","to":"api2","statuses":[529]}),
+                json!({"from":"api","to":"api2","statuses":[529]}),
+            ]
+        );
+        assert!(held_failover_to_api(None, &order).is_empty());
+        assert!(held_failover_to_api(Some(&other), &order).is_empty());
+    }
     #[test]
     fn failover_classes_are_quota_rate_credit_and_overload() {
         for (c, f) in [

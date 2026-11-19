@@ -25,6 +25,11 @@ pub const HEAD_TIMEOUT_MS: u64 = 60_000;
 /// Upstream idle read bound set by this profile, never above the attempt
 /// deadline.
 pub const READ_IDLE_MS: u64 = 30_000;
+/// The head window a held head must be relayed or refused within ends this
+/// long before Pi's head timeout, counted from the Host's receipt of the
+/// fetch: the container's timer starts earlier, before the fetch frame
+/// reaches the Host.
+pub const HOLD_WINDOW_MARGIN_MS: u64 = 2_000;
 const MAX_REQUEST_BODY: usize = 45_000;
 /// Every tool a request body declares: the top-level `tools` array and the
 /// tools of each `additional_tools` input item, in order. `None` when either
@@ -483,6 +488,8 @@ struct Fetch {
     beta: bool,
     /// Messages: the request's `messages`, which the next request must extend.
     messages: Option<Value>,
+    /// When the Host received the fetch: the head window's start.
+    received: Instant,
 }
 /// The canonical continuity rule, shared with the task host
 /// (`native-realization` `pi_host::canonical`).
@@ -528,6 +535,9 @@ pub struct Hosted {
     /// Tests: the decision clock.
     #[cfg(test)]
     now_override: Option<u64>,
+    /// Tests: the head window from the fetch's receipt.
+    #[cfg(test)]
+    head_window_override: Option<Duration>,
 }
 
 impl Host {
@@ -563,6 +573,29 @@ impl Host {
     /// gate's evaluation for the first request (informational; the job is
     /// not refused on it).
     fn hosted_failover_record(&mut self, routes: &HostedRoutes) -> Result<Value> {
+        let mut record = self.hosted_failover_policy_record(routes)?;
+        // An admitted classification table: its standing (a mismatch is
+        // journaled and classifies nothing) and, when active, the API
+        // exposure of classified refusals. Without one the record is as
+        // before.
+        let (plan, _) = self.hosted_plan()?;
+        let admitted = plan.classification_table_sha256.as_deref();
+        if let Some(c) = super::classification::binding_record(admitted) {
+            if c["active"] == true {
+                let policy = self.hosted_failover()?.map(|ctx| ctx.policy);
+                let order: Vec<(&str, &str)> = failover::route_order(routes, policy.as_ref())
+                    .iter()
+                    .map(|r| (r.id.as_str(), r.endpoint.as_str()))
+                    .collect();
+                record["exposure"]["held_failover_to_api"] = json!(
+                    super::classification::held_failover_to_api(admitted, &order)
+                );
+            }
+            record["classification"] = c;
+        }
+        Ok(record)
+    }
+    fn hosted_failover_policy_record(&mut self, routes: &HostedRoutes) -> Result<Value> {
         let Some(ctx) = self.hosted_failover()? else {
             return Ok(json!({"exposure": failover::api_exposure(routes, None), "policy": null}));
         };
@@ -607,6 +640,34 @@ impl Host {
         };
         self.hosted.failover = Some(ctx.clone());
         Ok(ctx)
+    }
+    /// The end of the head window a held head is relayed or refused within:
+    /// Pi's head timeout from the fetch's receipt less
+    /// [`HOLD_WINDOW_MARGIN_MS`], never past the attempt's admitted deadline.
+    fn hosted_hold_window(&self, fetch: &Fetch, deadline_ms: Option<i64>) -> Instant {
+        let window = Duration::from_millis(HEAD_TIMEOUT_MS - HOLD_WINDOW_MARGIN_MS);
+        #[cfg(test)]
+        let window = self.hosted.head_window_override.unwrap_or(window);
+        let mut until = fetch.received + window;
+        if let (Some(d), Ok(now)) = (deadline_ms, now_ms()) {
+            let left = u64::try_from(d.saturating_sub(now)).unwrap_or(0);
+            until = until.min(Instant::now() + Duration::from_millis(left));
+        }
+        until
+    }
+    /// Keep the head hold's record on the attempt (not yet saved).
+    fn hosted_keep_hold(&mut self, request: u64, attempt: u64, hold: Option<stream::HoldRecord>) {
+        if let Some(a) = self
+            .journal
+            .coding
+            .as_mut()
+            .and_then(|c| c.provider_requests.get_mut(&request))
+            .and_then(|r| r.attempts.last_mut())
+            .filter(|a| a.attempt == attempt)
+            && hold.is_some()
+        {
+            a.head_hold = hold;
+        }
     }
     /// The failover decision clock.
     fn hosted_now(&self) -> u64 {
@@ -728,6 +789,7 @@ impl Host {
         result
     }
     fn hosted_fetch(&self, frame: &Value) -> Result<Fetch> {
+        let received = Instant::now();
         let (plan, _) = self.hosted_plan()?;
         let s = self
             .hosted
@@ -814,6 +876,7 @@ impl Host {
                 wire,
                 beta,
                 messages: Some(parsed["messages"].clone()),
+                received,
             });
         }
         // R-a: body fields the Host pins on real routes. Nothing stored at the
@@ -847,6 +910,7 @@ impl Host {
             wire,
             beta,
             messages: None,
+            received,
         })
     }
     /// Messages body policy: only the known top-level keys (so no
@@ -1091,6 +1155,12 @@ impl Host {
             Decision::Unavailable(reason) => return self.hosted_unavailable(s, reason),
         };
         let route = routes.routes[index].clone();
+        // Non-success heads are classified when the admitted table is the
+        // linked one and the table covers the route.
+        let classifier = super::classification::Classifier::for_route(
+            plan.classification_table_sha256.as_deref(),
+            &route.endpoint,
+        );
         // Subscription routes carry only requests shaped as Claude Code in the
         // extension's Claude prompt mode; anything else is never dispatched
         // (operator constraint: a third-party request on the subscription may
@@ -1152,6 +1222,9 @@ impl Host {
             a.request_body_sha256 = Some(digest(&fetch.body));
             if let Some((d, _)) = &decided {
                 a.failover = Some(d.clone());
+            }
+            if classifier.is_some() {
+                a.classification_table_sha256 = plan.classification_table_sha256.clone();
             }
         }
         if let Some((_, document)) = &decided {
@@ -1336,6 +1409,14 @@ impl Host {
             self.hosted_uncertain(s.request, attempt, routed, "gate returned without dispatch")?;
             return refuse("hosted gate returned without dispatch evidence");
         };
+        let deadline_ms = self
+            .journal
+            .coding
+            .as_ref()
+            .and_then(|c| c.provider_requests.get(&s.request))
+            .and_then(|r| r.attempts.last())
+            .and_then(|a| a.deadline_ms);
+        let hold = classifier.map(|c| c.hold(Some(self.hosted_hold_window(&fetch, deadline_ms))));
         let session = match Session::start(
             reader,
             abort,
@@ -1344,7 +1425,10 @@ impl Host {
             STREAM,
             route::refusal_status,
         ) {
-            Ok(session) => session,
+            Ok(session) => match hold {
+                Some(hold) => session.with_hold(hold),
+                None => session,
+            },
             Err(code) => {
                 self.hosted_uncertain(s.request, attempt, routed, code)?;
                 return refuse(format!("hosted stream start: {code}"));
@@ -1404,10 +1488,12 @@ impl Host {
                     unreachable!()
                 };
                 let relayed = session.relay().forwarded.len() as u64;
+                let hold = session.relay().hold.clone();
                 self.hosted_head_write(s.request, attempt, session.relay())?;
                 drop(session);
                 self.hosted_head_register(s.request, attempt)?;
                 let sha = self.hosted_retain(s.request, attempt, "refusal.body", &body)?;
+                self.hosted_keep_hold(s.request, attempt, hold.clone());
                 let r = self
                     .journal
                     .coding
@@ -1416,6 +1502,20 @@ impl Host {
                     .provider_requests
                     .get_mut(&s.request)
                     .unwrap();
+                // A held head refused on its class, under the table recorded
+                // on the attempt; the ledger checks both.
+                let classified = hold
+                    .filter(|h| h.reason == "classified")
+                    .and_then(|h| h.class)
+                    .zip(
+                        r.attempts
+                            .last()
+                            .and_then(|a| a.classification_table_sha256.clone()),
+                    )
+                    .map(|(c, table_sha256)| provider::TableRefusal {
+                        table_sha256,
+                        class: c.class,
+                    });
                 let disposition = r.settle_attempt(
                     attempt,
                     AttemptEvidence::HeadRefusal {
@@ -1423,7 +1523,7 @@ impl Host {
                         relayed_bytes: relayed,
                         drained_and_screened: true,
                         body_sha256: sha,
-                        classified: None,
+                        classified,
                     },
                 )?;
                 // Responses errors name a `code`, Messages errors a `type`.
@@ -1485,6 +1585,7 @@ impl Host {
         let wire = plan.wire_checked()?;
         self.hosted_head_write(request, attempt, &relay)?;
         self.hosted_head_register(request, attempt)?;
+        self.hosted_keep_hold(request, attempt, relay.hold.clone());
         let (sha, retained) = self.hosted_stream_register(request, attempt)?;
         if retained != relay.forwarded {
             self.hosted_uncertain(
@@ -1787,6 +1888,12 @@ impl Host {
             self.hosted_close_uncertain(s, "hosted_retention")?;
             return Err(e);
         }
+        // A held head relayed now: its hold record is persisted with the
+        // head's status, before the head is queued.
+        let hold = match &s.phase {
+            StreamPhase::Active { session, .. } => session.relay().hold.clone(),
+            _ => None,
+        };
         for f in frames {
             if f["type"] == "response-head"
                 && let Err(reason) = self.subscription_guard(s, attempt)
@@ -1819,6 +1926,9 @@ impl Host {
                             .filter(|a| a.attempt == attempt)
                         {
                             a.http_status = f["status"].as_u64().and_then(|v| v.try_into().ok());
+                            if hold.is_some() {
+                                a.head_hold = hold.clone();
+                            }
                         }
                         self.save()?;
                     }
@@ -2083,11 +2193,35 @@ mod tests {
                 .responses
                 .pop_front()
                 .ok_or_else(|| Error::Refused("no scripted response".into()))?;
+            // A scripted pause: the bytes after `DELAY` (`DELAY3`) arrive one
+            // (three) seconds later.
+            for (marker, secs) in [(DELAY, 1), (DELAY3, 3)] {
+                if let Some(i) = bytes.windows(marker.len()).position(|w| w == marker) {
+                    let first = std::io::Cursor::new(bytes[..i].to_vec());
+                    let rest = std::io::Cursor::new(bytes[i + marker.len()..].to_vec());
+                    let paused =
+                        Read::chain(first, Pause(Some(Duration::from_secs(secs)))).chain(rest);
+                    return Ok((Box::new(paused), Box::new(|| {})));
+                }
+            }
             Ok((Box::new(std::io::Cursor::new(bytes)), Box::new(|| {})))
         }
         fn hold(&self, pending: &[u8]) -> std::result::Result<usize, &'static str> {
             if pending.windows(6).any(|w| w == b"SECRET") {
                 return Err("hosted_access_exclusion");
+            }
+            Ok(0)
+        }
+    }
+    /// Marks a pause in a scripted response ([`FakeTransport`]).
+    const DELAY: &[u8] = b"\0DELAY\0";
+    const DELAY3: &[u8] = b"\0DELAY3\0";
+    /// A reader that sleeps once, then is empty.
+    struct Pause(Option<Duration>);
+    impl Read for Pause {
+        fn read(&mut self, _: &mut [u8]) -> std::io::Result<usize> {
+            if let Some(d) = self.0.take() {
+                std::thread::sleep(d);
             }
             Ok(0)
         }
@@ -4358,5 +4492,608 @@ mod tests {
         let d = decision(&c, 1, 0);
         assert_eq!((d.action.as_str(), d.route.as_str()), ("skip", "sub"));
         replay(&mut c).unwrap();
+    }
+
+    // ---- Head classification before relay (slice 3b) ----
+
+    fn linked_table() -> String {
+        hosted_route_availability::provisional::table_sha256()
+    }
+    /// Anthropic subscription then API routes (`apis` API routes).
+    fn anthropic_routes(apis: usize) -> HostedRoutes {
+        let mut routes = vec![HostedRoute {
+            id: "sub".into(),
+            payer: "payer-a".into(),
+            endpoint: "https:anthropic-oauth".into(),
+        }];
+        for i in 0..apis {
+            routes.push(HostedRoute {
+                id: if i == 0 {
+                    "api".into()
+                } else {
+                    format!("api{}", i + 1)
+                },
+                payer: format!("payer-{}", (b'b' + i as u8) as char),
+                endpoint: "https:anthropic-api".into(),
+            });
+        }
+        HostedRoutes {
+            max_attempts_per_request: routes.len() as u32,
+            routes,
+        }
+    }
+    /// A Messages Host on Anthropic routes with the admitted classification
+    /// table digest `table` (none: no classification) and payer sources the
+    /// route availability view accepts.
+    fn classify_host(
+        responses: Vec<Vec<u8>>,
+        apis: usize,
+        table: Option<String>,
+    ) -> (tempfile::TempDir, Host, Wire) {
+        let (dir, mut h, w) = messages_host(responses);
+        let plan = h
+            .journal
+            .job
+            .coding
+            .as_mut()
+            .unwrap()
+            .provider
+            .as_mut()
+            .unwrap();
+        plan.hosted = anthropic_routes(apis);
+        plan.classification_table_sha256 = table;
+        h.journal.coding.as_mut().unwrap().hosted_transport = Some(json!({"transport":"fake",
+            "payer_sources":{"payer-a":"claude-code-auth","payer-b":"anthropic-api-key-env","payer-c":"anthropic-api-key-env"}}));
+        (dir, h, w)
+    }
+    fn anthropic_error(status: u16, error: &str) -> Vec<u8> {
+        refusal_body(
+            status,
+            "request-id: req_9\r\n",
+            json!({"type":"error","error":{"type":error,"message":"m"}}),
+        )
+    }
+    /// Send request 1; the frames up to the first head, unavailable answer
+    /// or failure.
+    fn classify_send(h: &mut Host, w: &mut Wire) -> (Value, Vec<Value>) {
+        let g = messages_grant(h, w);
+        let body =
+            serde_json::to_vec(&messages_body(json!([{"role":"user","content":"q"}]))).unwrap();
+        push(h, w, messages_fetch(&g, &body)).unwrap();
+        let f = tick_until(h, w, |a| {
+            a.iter().any(|f| {
+                matches!(
+                    f["type"].as_str(),
+                    Some("response-head" | "response-unavailable" | "response-failure")
+                )
+            })
+        });
+        (g, f)
+    }
+    /// Pull to the terminal frame and acknowledge; the body bytes and the
+    /// terminal frame.
+    fn classify_drain(h: &mut Host, w: &mut Wire, g: &Value) -> (Vec<u8>, Value) {
+        let mut body = vec![];
+        let mut ordinal = 1;
+        loop {
+            push(h, w, op(g, "pull", ordinal)).unwrap();
+            let f = tick_until(h, w, |a| !a.is_empty());
+            ordinal += 1;
+            match f[0]["type"].as_str() {
+                Some("response-chunk") => {
+                    body.extend(B64.decode(f[0]["body"].as_str().unwrap()).unwrap())
+                }
+                _ => {
+                    push(h, w, op(g, "ack", ordinal)).unwrap();
+                    return (body, f[0].clone());
+                }
+            }
+        }
+    }
+    fn hold_of(h: &Host, attempt: usize) -> stream::HoldRecord {
+        request(h).attempts[attempt].head_hold.clone().unwrap()
+    }
+
+    #[test]
+    fn held_overload_head_fails_over_and_reaches_the_container_as_nothing() {
+        let (dir, mut h, mut w) = classify_host(
+            vec![
+                anthropic_error(529, "overloaded_error"),
+                messages_completed(),
+            ],
+            1,
+            Some(linked_table()),
+        );
+        let (g, frames) = classify_send(&mut h, &mut w);
+        // The container's first and only head is the fallback's 200.
+        assert_eq!(frames.len(), 1, "{frames:?}");
+        assert_eq!(
+            (frames[0]["type"].as_str(), frames[0]["status"].as_u64()),
+            (Some("response-head"), Some(200))
+        );
+        assert_eq!(w.opened.lock().unwrap().len(), 2);
+        let r = request(&h);
+        let a = &r.attempts[0];
+        assert_eq!(
+            (a.route.as_str(), a.disposition, a.http_status),
+            ("sub", AttemptDisposition::Refused, Some(529))
+        );
+        assert_eq!(a.classification_table_sha256, Some(linked_table()));
+        let hold = hold_of(&h, 0);
+        assert_eq!(
+            (hold.held, hold.outcome.as_str(), hold.reason.as_str()),
+            (true, "refused", "classified")
+        );
+        assert_eq!(hold.class.as_ref().unwrap().class, "overload");
+        assert_eq!(
+            r.attempts[1].classification_table_sha256,
+            Some(linked_table())
+        );
+        // Retained exactly like a definitive refusal: head evidence and the
+        // refusal body, no stream.
+        let names = hosted_artifacts(&dir, &h);
+        assert!(
+            names.contains(&"1-1.head.json".to_string())
+                && names.contains(&"1-1.refusal.body".to_string()),
+            "{names:?}"
+        );
+        assert!(!names.contains(&"1-1.stream.sse".to_string()));
+        let body = fs::read(dir.path().join("coding-hosted-1-1.refusal.body")).unwrap();
+        assert_eq!(Some(digest(&body)), a.refusal_body_sha256);
+        // The router took it as a refusal of the route.
+        let router = h.hosted.router.as_ref().unwrap();
+        assert_eq!(
+            router.attempts()[1].reason,
+            "failover-after-529-overloaded_error"
+        );
+        classify_drain(&mut h, &mut w, &g);
+        let r = request(&h);
+        assert_eq!(r.attempts[1].disposition, AttemptDisposition::Completed);
+        assert!(
+            r.attempts[1].head_hold.is_none(),
+            "a success head is never held"
+        );
+        // The route availability view reads it as it reads a 429.
+        let config = json!({"schema": hosted_route_availability::CONFIG_SCHEMA, "now_ms": epoch_ms() + 1000,
+            "journal_roots": [dir.path()], "max_evidence_age_ms": 604_800_000u64,
+            "pools": [{"id":"claude-sub","funding":"subscription","members":[{"payer":"payer-a","endpoint":"https:anthropic-oauth"}]}]});
+        let out: Value = serde_json::from_slice(
+            &hosted_route_availability::view(&serde_json::to_vec(&config).unwrap()).unwrap(),
+        )
+        .unwrap();
+        assert!(
+            out["marks"]["informational"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|m| m["kind"] == "non_quota_failure"
+                    && m["class"] == "overload"
+                    && m["request"] == 1
+                    && m["attempt"] == 1),
+            "{out}"
+        );
+    }
+
+    /// The container-visible result of request 1 and the provider requests.
+    fn classify_run(
+        response: Vec<u8>,
+        table: Option<String>,
+    ) -> (tempfile::TempDir, Host, (u64, Vec<u8>, Value), usize) {
+        let (dir, mut h, mut w) = classify_host(vec![response, messages_completed()], 1, table);
+        let (g, frames) = classify_send(&mut h, &mut w);
+        assert_eq!(frames.len(), 1, "{frames:?}");
+        assert_eq!(frames[0]["type"], "response-head");
+        let status = frames[0]["status"].as_u64().unwrap();
+        let (body, end) = classify_drain(&mut h, &mut w, &g);
+        let opened = w.opened.lock().unwrap().len();
+        (dir, h, (status, body, end), opened)
+    }
+    /// Provider requests JSON without the classification fields.
+    fn without_classification(h: &Host) -> Value {
+        let mut v =
+            serde_json::to_value(&h.journal.coding.as_ref().unwrap().provider_requests).unwrap();
+        for a in v["1"]["attempts"].as_array_mut().unwrap() {
+            a.as_object_mut().unwrap().remove("head_hold");
+            a.as_object_mut()
+                .unwrap()
+                .remove("classification_table_sha256");
+        }
+        v
+    }
+    fn relay_json(dir: &tempfile::TempDir) -> Value {
+        serde_json::from_slice(&fs::read(dir.path().join("coding-hosted-1-1.relay.json")).unwrap())
+            .unwrap()
+    }
+
+    #[test]
+    fn unmatched_held_head_is_replayed_byte_for_byte_and_settles_uncertain() {
+        let unmatched = anthropic_error(529, "api_error");
+        let body =
+            unmatched[unmatched.windows(4).position(|w| w == b"\r\n\r\n").unwrap() + 4..].to_vec();
+        let (dir_a, a, seen_a, opened_a) = classify_run(unmatched.clone(), Some(linked_table()));
+        let (dir_b, b, seen_b, opened_b) = classify_run(unmatched, None);
+        // The container sees the same status, body bytes and terminal frame.
+        assert_eq!(seen_a, seen_b);
+        assert_eq!(seen_a.0, 529);
+        assert_eq!(seen_a.1, body);
+        assert_eq!(seen_a.2["type"], "response-end");
+        assert_eq!((opened_a, opened_b), (1, 1), "never failed over");
+        for (dir, h) in [(&dir_a, &a), (&dir_b, &b)] {
+            let r = request(h);
+            assert_eq!(r.attempts.len(), 1);
+            assert_eq!(r.attempts[0].disposition, AttemptDisposition::Uncertain);
+            assert!(r.unsettled());
+            assert_eq!(
+                fs::read(dir.path().join("coding-hosted-1-1.stream.sse")).unwrap(),
+                body
+            );
+        }
+        let hold = hold_of(&a, 0);
+        assert_eq!(
+            (hold.outcome.as_str(), hold.reason.as_str(), hold.bytes),
+            ("relayed", "unmatched", body.len())
+        );
+        assert_eq!(hold.class.unwrap().class, "unclassified");
+        assert_eq!(relay_json(&dir_a)["hold"]["reason"], "unmatched");
+        // Apart from the classification fields the ledger is the same.
+        assert_eq!(without_classification(&a), without_classification(&b));
+        assert!(relay_json(&dir_b).get("hold").is_none());
+    }
+
+    #[test]
+    fn absent_or_mismatched_classification_digest_relays_as_today() {
+        let overload = anthropic_error(529, "overloaded_error");
+        let (dir_n, none, seen_n, opened_n) = classify_run(overload.clone(), None);
+        let (dir_m, mismatch, seen_m, opened_m) = classify_run(overload, Some("0".repeat(64)));
+        assert_eq!(seen_n, seen_m);
+        assert_eq!(seen_n.0, 529, "relayed, not refused");
+        assert_eq!((opened_n, opened_m), (1, 1));
+        // Identical ledgers, with none of the classification fields, and
+        // relay evidence without a hold.
+        let ledger = |h: &Host| {
+            serde_json::to_value(&h.journal.coding.as_ref().unwrap().provider_requests).unwrap()
+        };
+        assert_eq!(ledger(&none), ledger(&mismatch));
+        let attempt = ledger(&none)["1"]["attempts"][0].clone();
+        assert!(
+            attempt.get("head_hold").is_none()
+                && attempt.get("classification_table_sha256").is_none(),
+            "{attempt}"
+        );
+        assert_eq!(attempt["disposition"], "uncertain");
+        assert_eq!(relay_json(&dir_n), {
+            let mut v = relay_json(&dir_m);
+            // Timing fields differ between runs.
+            for k in ["openedMs", "upstreamEndMs", "chunks"] {
+                v[k] = relay_json(&dir_n)[k].clone();
+            }
+            v
+        });
+        assert!(relay_json(&dir_m).get("hold").is_none());
+    }
+
+    #[test]
+    fn binding_journals_the_classification_table_and_held_failover_exposure() {
+        let record = |table: Option<String>| {
+            let (_dir, mut h) = super::super::provider::ledger_tests::fixture();
+            h.journal.job.coding.as_mut().unwrap().schema = HOSTED_BRIDGE_PROFILE.into();
+            let plan = h
+                .journal
+                .job
+                .coding
+                .as_mut()
+                .unwrap()
+                .provider
+                .as_mut()
+                .unwrap();
+            plan.hosted = anthropic_routes(1);
+            plan.classification_table_sha256 = table;
+            h.bind_hosted_transport(Box::new(FakeTransport {
+                responses: VecDeque::new(),
+                opened: Opened::default(),
+                unreachable: false,
+            }))
+            .unwrap();
+            h.journal
+                .coding
+                .as_ref()
+                .unwrap()
+                .hosted_failover
+                .clone()
+                .unwrap()
+        };
+        let absent = record(None);
+        assert!(absent.get("classification").is_none());
+        assert!(absent["exposure"].get("held_failover_to_api").is_none());
+        // A mismatch is journaled; nothing else changes.
+        let other = "0".repeat(64);
+        let mut mismatch = record(Some(other.clone()));
+        let c = mismatch
+            .as_object_mut()
+            .unwrap()
+            .remove("classification")
+            .unwrap();
+        assert_eq!(
+            (
+                c["active"].clone(),
+                c["admitted_sha256"].clone(),
+                c["table_sha256"].clone()
+            ),
+            (json!(false), json!(other), json!(linked_table()))
+        );
+        assert_eq!(mismatch, absent);
+        // Active: the overload-to-API exposure is reported.
+        let active = record(Some(linked_table()));
+        assert_eq!(active["classification"]["active"], true);
+        assert_eq!(
+            active["classification"]["table_version"],
+            hosted_route_availability::provisional::table().version
+        );
+        assert_eq!(
+            active["exposure"]["held_failover_to_api"],
+            json!([{"from":"sub","to":"api","statuses":[529]}])
+        );
+        assert_eq!(active["exposure"]["subscription_to_api"], true);
+    }
+
+    #[test]
+    fn classified_failures_then_success_relay_one_head_inside_the_window() {
+        let (_dir, mut h, mut w) = classify_host(
+            vec![
+                anthropic_error(529, "overloaded_error"),
+                anthropic_error(529, "overloaded_error"),
+                messages_completed(),
+            ],
+            2,
+            Some(linked_table()),
+        );
+        let start = std::time::Instant::now();
+        let (g, frames) = classify_send(&mut h, &mut w);
+        let window = Duration::from_millis(HEAD_TIMEOUT_MS - HOLD_WINDOW_MARGIN_MS);
+        assert!(start.elapsed() < Duration::from_secs(2) && start.elapsed() < window);
+        assert_eq!(frames.len(), 1, "{frames:?}");
+        assert_eq!(frames[0]["status"], 200);
+        classify_drain(&mut h, &mut w, &g);
+        let r = request(&h);
+        let got: Vec<_> = r
+            .attempts
+            .iter()
+            .map(|a| (a.route.as_str(), a.disposition))
+            .collect();
+        assert_eq!(
+            got,
+            vec![
+                ("sub", AttemptDisposition::Refused),
+                ("api", AttemptDisposition::Refused),
+                ("api2", AttemptDisposition::Completed)
+            ]
+        );
+        assert_eq!(
+            (r.charged_microusd() > 0, r.unsettled()),
+            (true, true),
+            "only the completion is held until settlement"
+        );
+    }
+
+    #[test]
+    fn slow_overload_body_is_relayed_before_the_head_window_ends() {
+        let mut slow = anthropic_error(529, "overloaded_error");
+        let start = slow.windows(4).position(|w| w == b"\r\n\r\n").unwrap() + 4;
+        let body = slow[start..].to_vec();
+        let at = start + 6;
+        slow.splice(at..at, DELAY.iter().copied());
+        let (_dir, mut h, mut w) =
+            classify_host(vec![slow, messages_completed()], 1, Some(linked_table()));
+        h.hosted.head_window_override = Some(Duration::from_millis(300));
+        let start = std::time::Instant::now();
+        let (g, frames) = classify_send(&mut h, &mut w);
+        assert!(
+            start.elapsed() < Duration::from_millis(900),
+            "the container was stranded: {:?}",
+            start.elapsed()
+        );
+        assert_eq!(
+            (frames[0]["type"].as_str(), frames[0]["status"].as_u64()),
+            (Some("response-head"), Some(529))
+        );
+        let (got, end) = classify_drain(&mut h, &mut w, &g);
+        assert_eq!(got, body, "the held bytes, then the rest of the body");
+        assert_eq!(end["type"], "response-end");
+        assert_eq!(w.opened.lock().unwrap().len(), 1, "never failed over");
+        let r = request(&h);
+        assert_eq!(r.attempts[0].disposition, AttemptDisposition::Uncertain);
+        let hold = hold_of(&h, 0);
+        assert_eq!(
+            (hold.outcome.as_str(), hold.reason.as_str(), hold.bytes),
+            ("relayed", "time_budget", 6)
+        );
+    }
+
+    #[test]
+    fn post_200_overload_event_stays_uncertain_with_classification_active() {
+        let events = [
+            json!({"type":"message_start","message":{"id":"msg_1","model":HAIKU,"usage":{"input_tokens":10,"output_tokens":1}}}),
+            json!({"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}),
+        ];
+        let body: String = events
+            .iter()
+            .map(|e| format!("event: {}\ndata: {e}\n\n", e["type"].as_str().unwrap()))
+            .collect();
+        let failed = format!("HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\n\r\n{body}", body.len()).into_bytes();
+        let (_dir, mut h, mut w) =
+            classify_host(vec![failed, messages_completed()], 1, Some(linked_table()));
+        // The API route: no subscription billing guard on the head.
+        h.journal
+            .job
+            .coding
+            .as_mut()
+            .unwrap()
+            .provider
+            .as_mut()
+            .unwrap()
+            .hosted
+            .routes
+            .remove(0);
+        let (g, frames) = classify_send(&mut h, &mut w);
+        assert_eq!(frames[0]["status"], 200);
+        classify_drain(&mut h, &mut w, &g);
+        let a = &request(&h).attempts[0];
+        assert_eq!(a.disposition, AttemptDisposition::Uncertain);
+        assert!(
+            a.reason.as_deref().unwrap().contains("overloaded_error"),
+            "{:?}",
+            a.reason
+        );
+        assert!(a.head_hold.is_none());
+        assert_eq!(w.opened.lock().unwrap().len(), 1);
+        assert!(h.journal.coding.as_ref().unwrap().provider_failed);
+    }
+
+    #[test]
+    fn replay_reproduces_decisions_across_a_classified_refusal() {
+        let (dir, mut h, mut w) = classify_host(
+            vec![
+                anthropic_error(529, "overloaded_error"),
+                messages_completed(),
+            ],
+            1,
+            Some(linked_table()),
+        );
+        let policy = json!({
+            "schema": failover::POLICY_SCHEMA, "version": "ops-1",
+            "routes": [{"route":"sub","prepare_on_low":"switch_early"},{"route":"api","prepare_on_low":"switch_early"}],
+            "max_observation_age_ms": 3_600_000,
+            "availability": {"max_evidence_age_ms": 604_800_000u64, "pools": [
+                {"id":"claude-sub","funding":"subscription","members":[{"payer":"payer-a","endpoint":"https:anthropic-oauth"}]},
+                {"id":"anthropic-api","funding":"api","members":[{"payer":"payer-b","endpoint":"https:anthropic-api"}]}]},
+        });
+        let bytes = serde_json::to_vec(&policy).unwrap();
+        let path = dir.path().join("failover-policy.json");
+        fs::write(&path, &bytes).unwrap();
+        h.journal
+            .job
+            .coding
+            .as_mut()
+            .unwrap()
+            .provider
+            .as_mut()
+            .unwrap()
+            .failover = Some(provider::FailoverInputs {
+            policy: Artifact {
+                path,
+                sha256: digest(&bytes),
+            },
+            observation: None,
+        });
+        let (g, frames) = classify_send(&mut h, &mut w);
+        assert_eq!((frames.len(), frames[0]["status"].as_u64()), (1, Some(200)));
+        classify_drain(&mut h, &mut w, &g);
+        let r = request(&h);
+        assert_eq!(r.attempts[0].disposition, AttemptDisposition::Refused);
+        let (d0, d1) = (decision(&h, 1, 0), decision(&h, 1, 1));
+        assert_eq!((d0.action.as_str(), d0.route.as_str()), ("send", "sub"));
+        assert_eq!(d1.route, "api");
+        replay(&mut h).unwrap();
+        // The replay is bound to the retained observations.
+        let name = failover::observation_name(1, Some(2));
+        let path = h.journal.job.state_dir.join(&name);
+        let mut doc: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        doc["decided_ms"] = json!(1);
+        fs::write(&path, serde_json::to_vec(&doc).unwrap()).unwrap();
+        assert!(replay(&mut h).is_err());
+    }
+
+    #[test]
+    fn crash_or_cancel_during_hold_settles_uncertain_without_failover() {
+        let mut slow = anthropic_error(529, "overloaded_error");
+        let at = slow.windows(4).position(|w| w == b"\r\n\r\n").unwrap() + 4;
+        slow.splice(at..at, DELAY.iter().copied());
+        // Crash: the head was read and held; nothing reached the container.
+        let (dir, mut h, mut w) = classify_host(
+            vec![slow.clone(), messages_completed()],
+            1,
+            Some(linked_table()),
+        );
+        let g = messages_grant(&mut h, &mut w);
+        let body =
+            serde_json::to_vec(&messages_body(json!([{"role":"user","content":"q"}]))).unwrap();
+        push(&mut h, &mut w, messages_fetch(&g, &body)).unwrap();
+        let path = dir.path().join("coding-hosted-1-1.head.json");
+        let frames = tick_until(&mut h, &w, |_| path.exists());
+        assert!(frames.is_empty(), "{frames:?}");
+        h.hosted = Hosted::default();
+        h.coding_hosted_reconcile_unsettled().unwrap();
+        let a = &request(&h).attempts[0];
+        assert_eq!(a.disposition, AttemptDisposition::Uncertain);
+        assert!(
+            a.reason.as_deref().unwrap().contains("nothing was relayed"),
+            "{:?}",
+            a.reason
+        );
+        assert_eq!(head_evidence(&dir, &h, "1-1")["status"], 529);
+        // Cancel: confirmed, uncertain, no failover.
+        let (dir, mut h, mut w) =
+            classify_host(vec![slow, messages_completed()], 1, Some(linked_table()));
+        let g = messages_grant(&mut h, &mut w);
+        push(&mut h, &mut w, messages_fetch(&g, &body)).unwrap();
+        let path = dir.path().join("coding-hosted-1-1.head.json");
+        let frames = tick_until(&mut h, &w, |_| path.exists());
+        assert!(frames.is_empty(), "held: {frames:?}");
+        push(&mut h, &mut w, op(&g, "cancel", 1)).unwrap();
+        let frames = tick_until(&mut h, &w, has("response-cancelled"));
+        assert_eq!(frames.len(), 1);
+        let r = request(&h);
+        assert_eq!(
+            (r.attempts.len(), r.attempts[0].disposition),
+            (1, AttemptDisposition::Uncertain)
+        );
+        assert_eq!(hold_of(&h, 0).outcome, "cancelled");
+        assert_eq!(w.opened.lock().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn hold_never_outlasts_the_attempt_deadline() {
+        // The body completes (and would classify) only after three seconds;
+        // the attempt deadline, a second or less away, ends the hold first.
+        let mut slow = anthropic_error(529, "overloaded_error");
+        let at = slow.windows(4).position(|w| w == b"\r\n\r\n").unwrap() + 4;
+        slow.splice(at..at, DELAY3.iter().copied());
+        let (_dir, mut h, mut w) =
+            classify_host(vec![slow, messages_completed()], 1, Some(linked_table()));
+        h.journal.job.deadline_unix_seconds = epoch_ms() / 1000 + 1;
+        let start = std::time::Instant::now();
+        let (_g, frames) = classify_send(&mut h, &mut w);
+        assert!(
+            start.elapsed() < Duration::from_millis(2500),
+            "{:?}",
+            start.elapsed()
+        );
+        assert_eq!(
+            (frames[0]["type"].as_str(), frames[0]["status"].as_u64()),
+            (Some("response-head"), Some(529))
+        );
+        assert_eq!(hold_of(&h, 0).reason, "time_budget");
+        assert_eq!(w.opened.lock().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn host_close_after_a_relayed_held_head_keeps_its_hold_record() {
+        let mut slow = anthropic_error(529, "overloaded_error");
+        let at = slow.windows(4).position(|w| w == b"\r\n\r\n").unwrap() + 4;
+        slow.splice(at..at, DELAY.iter().copied());
+        let (_dir, mut h, mut w) =
+            classify_host(vec![slow, messages_completed()], 1, Some(linked_table()));
+        h.hosted.head_window_override = Some(Duration::from_millis(200));
+        let (_g, frames) = classify_send(&mut h, &mut w);
+        assert_eq!(frames[0]["status"], 529);
+        h.coding_hosted_abort("run ended").unwrap();
+        let a = &request(&h).attempts[0];
+        assert_eq!(a.disposition, AttemptDisposition::Uncertain);
+        assert!(a.reason.as_deref().unwrap().contains("run ended"));
+        let hold = a.head_hold.clone().unwrap();
+        assert_eq!(
+            (hold.outcome.as_str(), hold.reason.as_str()),
+            ("relayed", "time_budget")
+        );
     }
 }
