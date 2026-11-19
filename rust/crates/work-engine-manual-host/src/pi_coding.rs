@@ -1407,7 +1407,11 @@ impl Host {
                     // recording intent or invoking the effect gate, so a
                     // malformed or compromised receiver cannot bypass the gate
                     // by submitting a tool_request when allow_shell is false.
-                    if !self
+                    // Scope to live (hosted) bridges: provider-disabled fixture
+                    // bridges have provider: None and always advertise the shell
+                    // tool, so the capability check must not apply to them.
+                    let schema = self.journal.job.coding.as_ref().unwrap().schema.as_str();
+                    let live_shell = self
                         .journal
                         .job
                         .coding
@@ -1416,8 +1420,8 @@ impl Host {
                         .provider
                         .as_ref()
                         .map(|p| p.allow_shell)
-                        .unwrap_or(false)
-                    {
+                        .unwrap_or(false);
+                    if is_live_bridge(schema) && !live_shell {
                         return refuse("shell execution not admitted");
                     }
                     if self.expired() || self.cancelled() {
@@ -2192,6 +2196,25 @@ mod tests {
             .is_err()
         );
         assert!(h.journal.processes.is_empty());
+    }
+    /// Regression (P1-4): a provider-disabled fixture bridge (provider: None)
+    /// must NOT be refused by the shell-capability guard. The guard is scoped
+    /// to live bridges, so a fixture tool_request proceeds past it; any error
+    /// is a downstream fixture/gate error, never "shell execution not admitted".
+    #[test]
+    fn fixture_bridge_tool_request_is_not_refused_by_shell_capability() {
+        let (_dir, mut h) = fixture();
+        h.journal.session_id = Some("native".into());
+        let request = frame(
+            json!({"schema":PROFILE,"sessionId":"native","type":"tool_request","id":"t1","command":"id"}),
+        );
+        match h.coding_advance(&request) {
+            Err(Error::Refused(m)) => {
+                assert_ne!(m, "shell execution not admitted");
+            }
+            Err(_) => {} // a downstream fixture/gate error is fine
+            Ok(_) => {}
+        }
     }
     /// The analysis profile refuses a shell call by policy, before any
     /// intent is journaled or Docker is consulted.

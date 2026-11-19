@@ -2991,7 +2991,6 @@ mod tests {
             1_320_001
         );
     }
-    #[test]
     /// The OpenRouter Completions URL is `{base}/chat/completions`. The catalog
     /// baseUrl is `https://openrouter.ai/api/v1`, so the correct presented URL
     /// is that base plus `/chat/completions`; the doubled `/api/v1/api/v1/...`
@@ -3011,6 +3010,7 @@ mod tests {
         assert_eq!(doubled, "https://openrouter.ai/api/v1/api/v1/chat/completions");
     }
 
+    #[test]
     fn messages_body_policy_and_url_are_enforced() {
         let ok = messages_body(json!([{"role":"user","content":"q"}]));
         let mut cases = vec![];
