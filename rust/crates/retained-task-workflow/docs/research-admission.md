@@ -38,7 +38,7 @@ observation of unreported outside changes is promised.
 
 The fixture contract bounds identifiers to 128 bytes; a task to 16 request keys
 and 64 adoptions; a basis to 256 dependency pins, 128 immutable members, 128 KiB
-metadata and 8 MiB retained bytes; a key to 256 checked preparations and 1,024
+metadata and 16 MiB retained bytes; a key to 256 checked preparations and 1,024
 detailed notices. Existing stricter submit/locator/text bounds still apply.
 A complete query reads at most 64 rows and refuses on a 65th. Detailed notice
 exhaustion atomically blocks the head and retains one bounded digest marker;
