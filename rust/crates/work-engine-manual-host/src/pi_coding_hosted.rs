@@ -9,6 +9,7 @@
 //! dispatch, and switched only after a definitive head refusal. Settlement
 //! evidence (status, backend model, raw terminal usage) is produced here from
 //! the relayed bytes; the container's own observations are not evidence.
+use super::failover::{self, Outcome};
 use super::*;
 use crate::pi_route::{self as route, Decision, Disposition, Router};
 use crate::pi_stream::{self as stream, Progress, Session, Unavailable, Wire};
@@ -522,6 +523,11 @@ pub struct Hosted {
     /// This Host ran the launch: attempts still pending at its end were left
     /// by this process, not by one that is gone.
     ran: bool,
+    /// The job's failover inputs, once loaded (`None` inside: none admitted).
+    failover: Option<Option<failover::Context>>,
+    /// Tests: the decision clock.
+    #[cfg(test)]
+    now_override: Option<u64>,
 }
 
 impl Host {
@@ -547,8 +553,68 @@ impl Host {
             state.hosted_transport = Some(transport.identity());
             self.save()?;
         }
+        let record = self.hosted_failover_record(&routes)?;
+        self.journal.coding.as_mut().unwrap().hosted_failover = Some(record);
+        self.save()?;
         self.hosted_transport = Some(transport);
         Ok(())
+    }
+    /// The binding record: API exposure, the failover inputs' digests and the
+    /// gate's evaluation for the first request (informational; the job is
+    /// not refused on it).
+    fn hosted_failover_record(&mut self, routes: &HostedRoutes) -> Result<Value> {
+        let Some(ctx) = self.hosted_failover()? else {
+            return Ok(json!({"exposure": failover::api_exposure(routes, None), "policy": null}));
+        };
+        let decided = self.hosted_now();
+        let in_job = ctx.in_job_observation(&self.journal.job.state_dir, decided)?;
+        let requests = &self.journal.coding.as_ref().unwrap().provider_requests;
+        let e = ctx.evaluate(
+            decided,
+            &in_job,
+            &failover::ledger_snapshot(routes, requests, 1, None),
+            &[],
+        );
+        Ok(json!({
+            "exposure": failover::api_exposure(routes, Some(&ctx.policy)),
+            "policy": {"version": ctx.policy.version, "sha256": ctx.policy_sha256},
+            "observation_sha256": ctx.admitted.as_ref().map(|a| &a.1),
+            "admission_evaluation": {"decided_ms": decided, "action": e.action, "route": e.route,
+                "resume_time": e.resume_time, "admitted_ignored": e.admitted_ignored},
+        }))
+    }
+    /// The job's failover context, loaded once from the plan's admitted
+    /// inputs; `None` without them (refusal-only failover, as before).
+    fn hosted_failover(&mut self) -> Result<Option<failover::Context>> {
+        if let Some(ctx) = &self.hosted.failover {
+            return Ok(ctx.clone());
+        }
+        let (plan, routes) = self.hosted_plan()?;
+        let ctx = match &plan.failover {
+            None => None,
+            Some(f) => plan
+                .failover_admitted(
+                    Some(&f.policy.sha256),
+                    f.observation.as_ref().map(|o| o.sha256.as_str()),
+                )?
+                .map(|(policy, policy_sha256, admitted)| failover::Context {
+                    policy,
+                    policy_sha256,
+                    table: routes,
+                    job_id: self.journal.job.job_id.clone(),
+                    admitted,
+                }),
+        };
+        self.hosted.failover = Some(ctx.clone());
+        Ok(ctx)
+    }
+    /// The failover decision clock.
+    fn hosted_now(&self) -> u64 {
+        #[cfg(test)]
+        if let Some(t) = self.hosted.now_override {
+            return t;
+        }
+        stream::now_millis()
     }
     fn hosted_profile(&self) -> bool {
         self.journal
@@ -969,11 +1035,58 @@ impl Host {
     fn hosted_attempt(&mut self, s: &mut Stream, fetch: Fetch, stdout: &Path) -> Result<()> {
         let (plan, routes) = self.hosted_plan()?;
         let deadline = self.journal.job.deadline_unix_seconds.saturating_mul(1000);
-        let router = self
-            .hosted
-            .router
-            .get_or_insert_with(|| routes.router(&plan.model, plan.max_requests, deadline));
-        let (index, routed) = match router.next(s.request, &plan.model, stream::now_millis()) {
+        let ctx = self.hosted_failover()?;
+        if self.hosted.router.is_none() {
+            let router = routes.router(&plan.model, plan.max_requests, deadline);
+            self.hosted.router = Some(match &ctx {
+                Some(c) => Router::with_failover(router.policy().clone(), c.binding()),
+                None => router,
+            });
+        }
+        // With failover inputs the gate decides before each send, from the
+        // admitted observation, the view over this job's own journal and the
+        // ledger's routing history; the router checks the decision.
+        let mut decided = None;
+        let routed = match &ctx {
+            None => self.hosted.router.as_mut().unwrap().next(
+                s.request,
+                &plan.model,
+                stream::now_millis(),
+            ),
+            Some(ctx) => {
+                let now = self.hosted_now();
+                let in_job = match ctx.in_job_observation(&self.journal.job.state_dir, now) {
+                    Ok(v) => v,
+                    Err(_) => {
+                        return self.hosted_unavailable(s, "failover_observation_unavailable");
+                    }
+                };
+                let requests = &self.journal.coding.as_ref().unwrap().provider_requests;
+                let (outcome, document) = ctx.decide(
+                    s.request,
+                    now,
+                    &in_job,
+                    &failover::ledger_snapshot(&routes, requests, s.request, None),
+                    &failover::preserved(requests, s.request, None),
+                );
+                match outcome {
+                    Outcome::Pause(pause) => {
+                        return self.hosted_failover_pause(s, pause, &document);
+                    }
+                    Outcome::Attempt(d) => {
+                        let directive = d.directive(&ctx.job_id);
+                        decided = Some((d, document));
+                        self.hosted.router.as_mut().unwrap().next_with(
+                            s.request,
+                            &plan.model,
+                            now,
+                            &directive,
+                        )
+                    }
+                }
+            }
+        };
+        let (index, routed) = match routed {
             Decision::Attempt { route, attempt } => (route, attempt),
             Decision::Unavailable(reason) => return self.hosted_unavailable(s, reason),
         };
@@ -1037,6 +1150,14 @@ impl Host {
             .filter(|a| a.attempt == attempt)
         {
             a.request_body_sha256 = Some(digest(&fetch.body));
+            if let Some((d, _)) = &decided {
+                a.failover = Some(d.clone());
+            }
+        }
+        if let Some((_, document)) = &decided {
+            // The decision's observation, bound by its digest, retained with
+            // the attempt record before any upstream byte.
+            self.hosted_retain(s.request, attempt, "observation.json", document)?;
         }
         self.save()?; // Durable attempt reservation before any upstream byte.
         if self.expired() || self.cancelled() {
@@ -1236,6 +1357,26 @@ impl Host {
             fetch,
         };
         Ok(())
+    }
+    /// A failover pause: no attempt; the decision's observation is retained,
+    /// the pause (resume time, what it waits for, evidence) is journaled on
+    /// the request, and the job's provider use ends.
+    fn hosted_failover_pause(
+        &mut self,
+        s: &mut Stream,
+        pause: failover::FailoverPause,
+        document: &[u8],
+    ) -> Result<()> {
+        self.hosted_retain_named(&failover::observation_name(s.request, None), document)?;
+        let state = self.journal.coding.as_mut().unwrap();
+        state
+            .provider_requests
+            .get_mut(&s.request)
+            .ok_or_else(|| Error::Refused("failover pause without a request".into()))?
+            .record_failover_pause(pause)?;
+        state.provider_failed = true;
+        self.save()?;
+        self.hosted_unavailable(s, "failover_pause")
     }
     fn hosted_unavailable(&mut self, s: &mut Stream, reason: &str) -> Result<()> {
         let (u, answer) = Unavailable::answer(&s.binding, s.request, STREAM, reason)
@@ -1750,8 +1891,13 @@ impl Host {
         kind: &str,
         bytes: &[u8],
     ) -> Result<String> {
+        self.hosted_retain_named(&format!("coding-hosted-{request}-{attempt}.{kind}"), bytes)
+    }
+    /// Retain `bytes` create-only under `name` in the state directory and
+    /// register them as a journal artifact.
+    fn hosted_retain_named(&mut self, name: &str, bytes: &[u8]) -> Result<String> {
         let dir = self.journal.job.state_dir.clone();
-        let path = dir.join(format!("coding-hosted-{request}-{attempt}.{kind}"));
+        let path = dir.join(name);
         let mut f = OpenOptions::new()
             .create_new(true)
             .write(true)
@@ -3536,5 +3682,651 @@ mod tests {
                 assert!(h.journal.coding.as_ref().unwrap().provider_failed);
             }
         }
+    }
+
+    // ---- Failover gate wiring (slice 3a) ----
+
+    const SUB: &str = "codex-sub";
+    const API: &str = "openai-api";
+    fn openai_routes() -> HostedRoutes {
+        HostedRoutes {
+            routes: vec![
+                HostedRoute {
+                    id: "sub".into(),
+                    payer: SUB.into(),
+                    endpoint: "https:chatgpt-codex".into(),
+                },
+                HostedRoute {
+                    id: "api".into(),
+                    payer: API.into(),
+                    endpoint: "https:openai-responses".into(),
+                },
+            ],
+            max_attempts_per_request: 3,
+        }
+    }
+    fn openai_pools() -> Value {
+        json!([
+            {"id": "codex-sub", "funding": "subscription",
+             "members": [{"payer": SUB, "endpoint": "https:chatgpt-codex"}]},
+            {"id": "openai-api", "funding": "api",
+             "members": [{"payer": API, "endpoint": "https:openai-responses"}]}
+        ])
+    }
+    fn failover_policy(order: &[&str], edit: impl FnOnce(&mut Value)) -> Value {
+        let mut p = json!({
+            "schema": failover::POLICY_SCHEMA,
+            "version": "ops-1",
+            "routes": order.iter().map(|r| json!({"route": r, "prepare_on_low": "switch_early"})).collect::<Vec<_>>(),
+            "max_observation_age_ms": 3_600_000,
+            "availability": {"max_evidence_age_ms": 604_800_000u64, "pools": openai_pools()},
+        });
+        edit(&mut p);
+        p
+    }
+    /// A hosted Host on the OpenAI subscription/API table with the given job
+    /// id, failover policy and admitted observation (none: refusal-only), and
+    /// a transport identity naming each payer's access source.
+    fn failover_host(
+        job: &str,
+        responses: Vec<Vec<u8>>,
+        policy: Option<Value>,
+        observation: Option<Value>,
+    ) -> (tempfile::TempDir, Host, Wire) {
+        let (dir, mut h, w) = host(responses, None);
+        h.journal.job.job_id = job.into();
+        let file = |name: &str, v: &Value| {
+            let bytes = serde_json::to_vec(v).unwrap();
+            let path = dir.path().join(name);
+            fs::write(&path, &bytes).unwrap();
+            Artifact {
+                path,
+                sha256: digest(&bytes),
+            }
+        };
+        let failover = policy.map(|p| provider::FailoverInputs {
+            policy: file("failover-policy.json", &p),
+            observation: observation
+                .as_ref()
+                .map(|o| file("state-observation.json", o)),
+        });
+        let plan = h
+            .journal
+            .job
+            .coding
+            .as_mut()
+            .unwrap()
+            .provider
+            .as_mut()
+            .unwrap();
+        plan.hosted = openai_routes();
+        plan.failover = failover;
+        h.journal.coding.as_mut().unwrap().hosted_transport = Some(
+            json!({"transport":"fake","payer_sources":{SUB:"chatgpt-pi-auth",API:"api-key-env"}}),
+        );
+        (dir, h, w)
+    }
+    fn grant_n(h: &mut Host, w: &mut Wire, id: u64) -> Value {
+        if id == 2 {
+            // The coding profile's second request follows the tool checkpoint
+            // (no tool ran in these tests).
+            h.journal.coding.as_mut().unwrap().tool_removed = true;
+            let _ = fs::create_dir(h.journal.job.state_dir.join("coding-workspace"));
+        }
+        let replies = push(h, w, json!({"type":"coding_provider_request","id":id,"requestModel":{"id":"gpt-6-luna","provider":"openai-codex","contextWindow":272000},"contextBytes":1000})).unwrap();
+        let mut written = vec![];
+        h.coding_bridge_dispatch(&replies[0], &mut |b| {
+            written = b.to_vec();
+            Ok(())
+        })
+        .unwrap();
+        serde_json::from_slice(&written).unwrap()
+    }
+    fn fetch_n(grant: &Value, id: u64) -> Value {
+        let mut f = fetch(grant);
+        f["id"] = json!(id);
+        f
+    }
+    /// Pull a relayed response to its end, acknowledge and complete it.
+    fn finish(h: &mut Host, w: &mut Wire, g: &Value, id: u64) {
+        let mut ordinal = 1;
+        loop {
+            push(h, w, op(g, "pull", ordinal)).unwrap();
+            let f = tick_until(h, w, |a| !a.is_empty());
+            ordinal += 1;
+            if f[0]["type"] == "response-end" {
+                break;
+            }
+        }
+        push(h, w, op(g, "ack", ordinal)).unwrap();
+        push(
+            h,
+            w,
+            json!({"type":"provider_complete","id":id,"stopReason":"stop","usage":{}}),
+        )
+        .unwrap();
+    }
+    /// Run request `id` to its first answer frame (head or unavailable).
+    fn send_request(h: &mut Host, w: &mut Wire, id: u64) -> (Value, Vec<Value>) {
+        let g = grant_n(h, w, id);
+        push(h, w, fetch_n(&g, id)).unwrap();
+        let f = tick_until(h, w, |a| {
+            a.iter()
+                .any(|f| f["type"] == "response-head" || f["type"] == "response-unavailable")
+        });
+        (g, f)
+    }
+    fn refusal_body(status: u16, headers: &str, body: Value) -> Vec<u8> {
+        let body = body.to_string();
+        let mut b = format!(
+            "HTTP/1.1 {status} Refused\r\n{headers}Content-Length: {}\r\n\r\n{body}",
+            body.len()
+        )
+        .into_bytes();
+        b.extend(b"");
+        b
+    }
+    fn sse(events: &[Value]) -> Vec<u8> {
+        let body: String = events.iter().map(|e| format!("data: {e}\n\n")).collect();
+        format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\n\r\n{body}",
+            body.len()
+        )
+        .into_bytes()
+    }
+    fn reservation(h: &Host, id: u64) -> provider::Reservation {
+        h.journal.coding.as_ref().unwrap().provider_requests[&id].clone()
+    }
+    fn decision(h: &Host, id: u64, attempt: usize) -> failover::FailoverDecision {
+        reservation(h, id).attempts[attempt]
+            .failover
+            .clone()
+            .unwrap()
+    }
+    /// Reproduce every journaled decision from the ledger and the registered,
+    /// digest-verified observation artifacts.
+    fn replay(h: &mut Host) -> std::result::Result<(), String> {
+        let ctx = h.hosted_failover().unwrap().unwrap();
+        let (plan, routes) = h.hosted_plan().unwrap();
+        let router = Router::with_failover(
+            routes
+                .router(&plan.model, plan.max_requests, u64::MAX)
+                .policy()
+                .clone(),
+            ctx.binding(),
+        );
+        let dir = h.journal.job.state_dir.clone();
+        let artifacts = h.journal.artifacts.clone();
+        let read = move |name: &str| {
+            let a = artifacts.iter().find(|a| a.path == dir.join(name))?;
+            a.verify().ok()
+        };
+        failover::replay(
+            &ctx,
+            router,
+            &h.journal.coding.as_ref().unwrap().provider_requests,
+            &read,
+        )
+    }
+    fn observation_doc(h: &Host, name: &str) -> Value {
+        let path = h.journal.job.state_dir.join(name);
+        let a = h.journal.artifacts.iter().find(|a| a.path == path).unwrap();
+        serde_json::from_slice(&a.verify().unwrap()).unwrap()
+    }
+
+    #[test]
+    fn failover_cold_start_sends_the_preferred_route_and_journals_a_replayable_decision() {
+        let (_dir, mut h, mut w) = failover_host(
+            "job-a",
+            vec![completed()],
+            Some(failover_policy(&["sub", "api"], |_| {})),
+            None,
+        );
+        let (g, _) = send_request(&mut h, &mut w, 1);
+        finish(&mut h, &mut w, &g, 1);
+        let d = decision(&h, 1, 0);
+        assert_eq!((d.action.as_str(), d.route.as_str()), ("send", "sub"));
+        assert_eq!(d.policy_version, "ops-1");
+        assert_eq!(d.table_digest, openai_routes().digest());
+        // The observation is retained, registered and bound by its digest.
+        let path = h
+            .journal
+            .job
+            .state_dir
+            .join("coding-hosted-1-1.observation.json");
+        let a = h.journal.artifacts.iter().find(|a| a.path == path).unwrap();
+        assert_eq!(a.sha256, d.state_observation_sha256);
+        let doc = observation_doc(&h, "coding-hosted-1-1.observation.json");
+        assert_eq!(doc["admitted"]["ignored"], "absent");
+        assert_eq!(
+            doc["in_job"]["schema"],
+            "work-engine.hosted-route-availability.v2"
+        );
+        assert_eq!(doc["exposure"]["subscription_to_api"], true);
+        assert_eq!(w.opened.lock().unwrap()[0].0, "sub");
+        replay(&mut h).unwrap();
+    }
+
+    #[test]
+    fn without_failover_inputs_routing_is_refusal_only_and_journals_no_decision() {
+        let (dir, mut h, mut w) =
+            failover_host("job-a", vec![refusal(429), completed()], None, None);
+        let (g, _) = send_request(&mut h, &mut w, 1);
+        finish(&mut h, &mut w, &g, 1);
+        let r = reservation(&h, 1);
+        assert_eq!(r.attempts.len(), 2);
+        assert!(r.attempts.iter().all(|a| a.failover.is_none()));
+        assert!(
+            !hosted_artifacts(&dir, &h)
+                .iter()
+                .any(|n| n.contains("observation"))
+        );
+        assert!(h.hosted.router.as_ref().unwrap().failover().is_none());
+    }
+
+    /// Another job's subscription exhaustion with a known reset: the policy
+    /// gate allows a skip to the paying route; once the reset has passed the
+    /// next send returns to the subscription. A stale observation is ignored.
+    #[test]
+    fn failover_skips_on_admitted_exhaustion_and_returns_after_its_reset() {
+        let now = epoch_ms();
+        let reset = now + 20_000;
+        let policy = failover_policy(&["sub", "api"], |p| {
+            p["routes"][1]["foreign_evidence_skip"] = json!(true)
+        });
+        let parsed = failover::FailoverPolicy::parse(
+            &serde_json::to_vec(&policy).unwrap(),
+            &openai_routes(),
+        )
+        .unwrap();
+        let foreign = |observed| {
+            failover::tests::view(
+                &parsed,
+                observed,
+                &[(
+                    "codex-sub",
+                    "subscription_5h",
+                    "exhausted",
+                    Some(reset),
+                    false,
+                    "job-x",
+                    1,
+                    1,
+                )],
+            )
+        };
+        let (_dir, mut h, mut w) = failover_host(
+            "job-a",
+            vec![completed(), completed()],
+            Some(policy.clone()),
+            Some(foreign(now - 1000)),
+        );
+        h.hosted.now_override = Some(now);
+        let (g, _) = send_request(&mut h, &mut w, 1);
+        finish(&mut h, &mut w, &g, 1);
+        assert_eq!(decision(&h, 1, 0).action, "skip");
+        assert_eq!(decision(&h, 1, 0).route, "api");
+        h.hosted.now_override = Some(reset);
+        let (g, _) = send_request(&mut h, &mut w, 2);
+        finish(&mut h, &mut w, &g, 2);
+        assert_eq!(decision(&h, 2, 0).route, "sub");
+        assert_eq!(decision(&h, 2, 0).action, "send");
+        let opened: Vec<String> = w
+            .opened
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|o| o.0.clone())
+            .collect();
+        assert_eq!(opened, ["api", "sub"]);
+        replay(&mut h).unwrap();
+
+        // Older than the operator's bound: ignored, no proactive skip.
+        let (_dir, mut h, mut w) = failover_host(
+            "job-b",
+            vec![completed()],
+            Some(policy),
+            Some(foreign(now - 3_600_001)),
+        );
+        h.hosted.now_override = Some(now);
+        let (g, _) = send_request(&mut h, &mut w, 1);
+        finish(&mut h, &mut w, &g, 1);
+        assert_eq!(decision(&h, 1, 0).route, "sub");
+        let doc = observation_doc(&h, "coding-hosted-1-1.observation.json");
+        assert_eq!(doc["admitted"]["ignored"], "stale_age");
+    }
+
+    /// This job's own API rate-limit refusal carries a reset (retry-after):
+    /// the next request returns to it only once the reset has passed, as one
+    /// verification attempt; refused again, the same reset is not reused.
+    #[test]
+    fn failover_fails_back_on_its_own_reset_once_per_request() {
+        let limited = || {
+            refusal_body(
+                429,
+                "Retry-After: 20\r\n",
+                json!({"error":{"code":"rate_limit_exceeded","type":"requests"}}),
+            )
+        };
+        let (_dir, mut h, mut w) = failover_host(
+            "job-a",
+            vec![limited(), completed(), limited(), completed()],
+            Some(failover_policy(&["api", "sub"], |_| {})),
+            None,
+        );
+        let now = epoch_ms();
+        h.hosted.now_override = Some(now + 100);
+        let (g, _) = send_request(&mut h, &mut w, 1);
+        finish(&mut h, &mut w, &g, 1);
+        let r = reservation(&h, 1);
+        assert_eq!(r.attempts[0].disposition, AttemptDisposition::Refused);
+        assert_eq!(decision(&h, 1, 1).route, "sub");
+        // Before the reset the refused API route stays out.
+        let head_ms = head_evidence(&_dir, &h, "1-1")["headMs"].as_u64().unwrap();
+        h.hosted.now_override = Some(head_ms + 20_000);
+        let (g, _) = send_request(&mut h, &mut w, 2);
+        finish(&mut h, &mut w, &g, 2);
+        let d = decision(&h, 2, 0);
+        assert_eq!((d.action.as_str(), d.route.as_str()), ("fail_back", "api"));
+        let o = d.reset_observation.unwrap();
+        assert_eq!((o.job_id.as_str(), o.request, o.attempt), ("job-a", 1, 1));
+        assert_eq!(o.available_again_at, head_ms + 20_000);
+        // Refused again within request 2: its newer refusal has a future
+        // reset, so the request falls to the subscription.
+        let r = reservation(&h, 2);
+        assert_eq!(r.attempts[0].disposition, AttemptDisposition::Refused);
+        assert_eq!(decision(&h, 2, 1).route, "sub");
+        let opened: Vec<String> = w
+            .opened
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|o| o.0.clone())
+            .collect();
+        assert_eq!(opened, ["api", "sub", "api", "sub"]);
+        replay(&mut h).unwrap();
+    }
+
+    #[test]
+    fn failover_pause_ends_the_request_without_a_send() {
+        let credit = refusal_body(
+            429,
+            "",
+            json!({"error":{"code":"insufficient_quota","type":"insufficient_quota"}}),
+        );
+        let (dir, mut h, mut w) = failover_host(
+            "job-a",
+            vec![refusal(429), credit],
+            Some(failover_policy(&["sub", "api"], |_| {})),
+            None,
+        );
+        let (_, f) = send_request(&mut h, &mut w, 1);
+        assert_eq!(f[0]["type"], "response-unavailable");
+        assert_eq!(f[0]["code"], "failover_pause");
+        let r = reservation(&h, 1);
+        assert_eq!(r.attempts.len(), 2);
+        assert_eq!(w.opened.lock().unwrap().len(), 2, "no third send");
+        let pause = r.failover_pause.unwrap();
+        assert_eq!(pause.action, "pause");
+        // Codex refusals carry no reset; API credit has none.
+        assert_eq!(
+            pause.resume_time,
+            failover::ResumeTime::Unknown("unknown".into())
+        );
+        assert!(h.journal.coding.as_ref().unwrap().provider_failed);
+        let path = dir.path().join("coding-hosted-1-pause.observation.json");
+        let a = h.journal.artifacts.iter().find(|a| a.path == path).unwrap();
+        assert_eq!(a.sha256, pause.state_observation_sha256);
+        let doc = observation_doc(&h, "coding-hosted-1-pause.observation.json");
+        assert_eq!(
+            doc["in_job"]["pools"][1]["dimensions"][1]["status"], "exhausted",
+            "API credit exhausted on this job's own refusal"
+        );
+        replay(&mut h).unwrap();
+    }
+
+    /// A router attempt that never reaches the ledger (a non-Claude-Code
+    /// request on the subscription OAuth route) is not in the gate's
+    /// routing history, and replay still reproduces the journal.
+    #[test]
+    fn a_router_attempt_outside_the_ledger_is_not_in_the_gate_snapshot() {
+        let (_dir, mut h, mut w) = failover_host("job-a", vec![], Some(json!({})), None);
+        let mut routes = openai_routes();
+        routes.routes[0].endpoint = "https:anthropic-oauth".into();
+        routes.routes[0].payer = "claude-sub".into();
+        let mut policy = failover_policy(&["sub", "api"], |_| {});
+        policy["availability"]["pools"][0] = json!({"id": "claude-sub", "funding": "subscription",
+            "members": [{"payer": "claude-sub", "endpoint": "https:anthropic-oauth"}]});
+        let bytes = serde_json::to_vec(&policy).unwrap();
+        let path = h.journal.job.state_dir.join("failover-policy.json");
+        fs::write(&path, &bytes).unwrap();
+        let plan = h
+            .journal
+            .job
+            .coding
+            .as_mut()
+            .unwrap()
+            .provider
+            .as_mut()
+            .unwrap();
+        plan.hosted = routes.clone();
+        plan.failover = Some(provider::FailoverInputs {
+            policy: Artifact {
+                path,
+                sha256: digest(&bytes),
+            },
+            observation: None,
+        });
+        let (_, f) = send_request(&mut h, &mut w, 1);
+        assert_eq!(f[0]["code"], "subscription_request_not_claude_code");
+        let router = h.hosted.router.as_ref().unwrap();
+        assert_eq!(router.attempts().len(), 1);
+        assert!(router.snapshot(2).attempted[0], "the router saw it");
+        let requests = &h.journal.coding.as_ref().unwrap().provider_requests;
+        assert!(requests[&1].attempts.is_empty());
+        let snap = failover::ledger_snapshot(&routes, requests, 2, None);
+        assert_eq!(snap.attempted, vec![false, false], "the ledger did not");
+        replay(&mut h).unwrap();
+    }
+
+    #[test]
+    fn binding_journals_api_exposure_and_the_admission_evaluation() {
+        let (_dir, mut h) = super::super::provider::ledger_tests::fixture();
+        h.journal.job.coding.as_mut().unwrap().schema = HOSTED_BRIDGE_PROFILE.into();
+        h.journal
+            .job
+            .coding
+            .as_mut()
+            .unwrap()
+            .provider
+            .as_mut()
+            .unwrap()
+            .hosted = openai_routes();
+        let transport = || -> Box<dyn HostedProviderTransport> {
+            Box::new(FakeTransport {
+                responses: VecDeque::new(),
+                opened: Opened::default(),
+                unreachable: false,
+            })
+        };
+        h.bind_hosted_transport(transport()).unwrap();
+        let record = h
+            .journal
+            .coding
+            .as_ref()
+            .unwrap()
+            .hosted_failover
+            .clone()
+            .unwrap();
+        assert_eq!(record["exposure"]["subscription_to_api"], true);
+        assert_eq!(record["exposure"]["pairs"], json!([["sub", "api"]]));
+        assert_eq!(record["policy"], Value::Null);
+
+        let (dir, mut h) = super::super::provider::ledger_tests::fixture();
+        h.journal.job.coding.as_mut().unwrap().schema = HOSTED_BRIDGE_PROFILE.into();
+        let policy = serde_json::to_vec(&failover_policy(&["api", "sub"], |_| {})).unwrap();
+        let path = dir.path().join("failover-policy.json");
+        fs::write(&path, &policy).unwrap();
+        let plan = h
+            .journal
+            .job
+            .coding
+            .as_mut()
+            .unwrap()
+            .provider
+            .as_mut()
+            .unwrap();
+        plan.hosted = openai_routes();
+        plan.failover = Some(provider::FailoverInputs {
+            policy: Artifact {
+                path,
+                sha256: digest(&policy),
+            },
+            observation: None,
+        });
+        h.bind_hosted_transport(transport()).unwrap();
+        let record = h
+            .journal
+            .coding
+            .as_ref()
+            .unwrap()
+            .hosted_failover
+            .clone()
+            .unwrap();
+        assert_eq!(record["exposure"]["subscription_to_api"], false);
+        assert_eq!(record["exposure"]["policy"], true);
+        assert_eq!(record["policy"]["sha256"], digest(&policy));
+        assert_eq!(record["admission_evaluation"]["action"], "send");
+        assert_eq!(record["admission_evaluation"]["route"], "api");
+        assert_eq!(record["admission_evaluation"]["admitted_ignored"], "absent");
+    }
+
+    /// P2-7: journals produced by the real Host feed the route availability
+    /// view. Job A: a Codex subscription refusal with head evidence, a relayed
+    /// API success, then a post-200 provider failure (the Host's reason
+    /// wording); job B: a 200 that closes without a failure event. The view's
+    /// reading of the journal shape and the reason wording is pinned here.
+    /// The post-200 failure ends job A's provider use; the next job, admitted
+    /// with this view's output, switches at its first send (Q1).
+    #[test]
+    fn host_journals_feed_the_route_availability_view_and_the_next_job_switches() {
+        let refused = refusal_body(
+            429,
+            "Retry-After: 120\r\nrequest-id: req_1\r\n",
+            json!({"error":{"code":"usage_limit_reached","type":"usage_limit_reached"}}),
+        );
+        let failed = sse(&[
+            json!({"type":"response.created","response":{"id":"r2"}}),
+            json!({"type":"response.failed","response":{"id":"r2","status":"failed","error":{"code":"insufficient_quota","message":"quota"}}}),
+        ]);
+        let (dir_a, mut a, mut wa) =
+            failover_host("job-a", vec![refused, completed(), failed], None, None);
+        let (g, _) = send_request(&mut a, &mut wa, 1);
+        finish(&mut a, &mut wa, &g, 1);
+        let (g, _) = send_request(&mut a, &mut wa, 2);
+        let mut ordinal = 1;
+        loop {
+            push(&mut a, &mut wa, op(&g, "pull", ordinal)).unwrap();
+            let f = tick_until(&mut a, &wa, |x| !x.is_empty());
+            ordinal += 1;
+            if f[0]["type"] == "response-end" {
+                break;
+            }
+        }
+        push(&mut a, &mut wa, op(&g, "ack", ordinal)).unwrap();
+        let r2 = reservation(&a, 2);
+        assert_eq!(r2.attempts[0].route, "api");
+        assert_eq!(r2.attempts[0].disposition, AttemptDisposition::Uncertain);
+        let reason = r2.attempts[0].reason.clone().unwrap();
+        assert_eq!(
+            reason,
+            "provider failure event in relayed stream: insufficient_quota"
+        );
+        assert!(reason.starts_with(hosted_route_availability::HOST_STREAM_FAILURE));
+        // Never resent, and the job's provider use is over.
+        assert!(a.journal.coding.as_ref().unwrap().provider_failed);
+        assert_eq!(wa.opened.lock().unwrap().len(), 3);
+
+        let open = sse(&[json!({"type":"response.created","response":{"id":"r3"}})]);
+        let (dir_b, mut b, mut wb) = failover_host("job-b", vec![open], None, None);
+        let (g, _) = send_request(&mut b, &mut wb, 1);
+        let mut ordinal = 1;
+        loop {
+            push(&mut b, &mut wb, op(&g, "pull", ordinal)).unwrap();
+            let f = tick_until(&mut b, &wb, |x| !x.is_empty());
+            ordinal += 1;
+            if f[0]["type"] == "response-end" {
+                break;
+            }
+        }
+        push(&mut b, &mut wb, op(&g, "ack", ordinal)).unwrap();
+        let rb = reservation(&b, 1);
+        assert_eq!(rb.attempts[0].disposition, AttemptDisposition::Uncertain);
+
+        let now = epoch_ms() + 1000;
+        let config = json!({
+            "schema": hosted_route_availability::CONFIG_SCHEMA,
+            "now_ms": now,
+            "journal_roots": [dir_a.path(), dir_b.path()],
+            "max_evidence_age_ms": 604_800_000u64,
+            "pools": openai_pools(),
+        });
+        let out: Value = serde_json::from_slice(
+            &hosted_route_availability::view(&serde_json::to_vec(&config).unwrap()).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(out["journals"].as_array().unwrap().len(), 2);
+        assert!(
+            out["journals"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|j| j["read"] == true),
+            "{out}"
+        );
+        assert_eq!(out["complete"], true, "{out}");
+        let dim = |pool: usize, d: usize| out["pools"][pool]["dimensions"][d].clone();
+        // Codex subscription refusal: no window headers, so no known window.
+        assert_eq!(dim(0, 0)["status"], "unknown");
+        assert_eq!(dim(0, 0)["reason"], "window_undetermined");
+        assert_eq!(dim(0, 0)["evidence"]["artifact"], "head.json");
+        // The API success, then API credit exhausted by the post-200 failure.
+        assert_eq!(dim(1, 0)["status"], "available");
+        assert_eq!(dim(1, 1)["status"], "exhausted");
+        assert_eq!(dim(1, 1)["available_again_reason"], "operator_action");
+        assert_eq!(
+            (
+                dim(1, 1)["evidence"]["job_id"].as_str(),
+                dim(1, 1)["evidence"]["request"].as_u64()
+            ),
+            (Some("job-a"), Some(2))
+        );
+        let informational = out["marks"]["informational"].as_array().unwrap();
+        assert!(
+            informational
+                .iter()
+                .any(|m| m["kind"] == "post_head_failure" && m["job_id"] == "job-a")
+        );
+        assert!(
+            informational
+                .iter()
+                .any(|m| m["kind"] == "post_head_no_failure_event" && m["job_id"] == "job-b"),
+            "{out}"
+        );
+
+        // The next job starts from this view: API credit is exhausted on
+        // another job's evidence, so its first send skips to the subscription.
+        let (_dir_c, mut c, mut wc) = failover_host(
+            "job-c",
+            vec![completed()],
+            Some(failover_policy(&["api", "sub"], |_| {})),
+            Some(out),
+        );
+        c.hosted.now_override = Some(now);
+        let (g, _) = send_request(&mut c, &mut wc, 1);
+        finish(&mut c, &mut wc, &g, 1);
+        let d = decision(&c, 1, 0);
+        assert_eq!((d.action.as_str(), d.route.as_str()), ("skip", "sub"));
+        replay(&mut c).unwrap();
     }
 }

@@ -249,7 +249,7 @@ struct Attempt {
 }
 /// The Host's settlement reason for a provider failure event it found in a
 /// relayed stream (`pi_coding_provider.rs`).
-const HOST_STREAM_FAILURE: &str = "provider failure event in relayed stream:";
+pub const HOST_STREAM_FAILURE: &str = "provider failure event in relayed stream:";
 
 /// A response head as retained for one attempt.
 struct Head {

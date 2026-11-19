@@ -379,7 +379,6 @@ fn a_directive_selects_only_an_admitted_route_under_its_binding() {
     assert_eq!(rec.decision, Some(directive("skip", "secondary")));
     r.settle(a, Disposition::Completed, json!(null)).unwrap();
     assert_eq!(r.snapshot(2).refused, vec![None, None]);
-    assert_eq!(r.snapshot(2).default_route, Some(0));
     // Without a decision the router's default applies.
     assert_eq!(attempt(r.next(2, "gpt-6-luna", 500)).0, 0);
     // Pause admits nothing.

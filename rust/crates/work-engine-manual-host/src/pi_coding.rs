@@ -350,6 +350,12 @@ pub struct State {
     /// file digest and each payer's access-source kind), recorded at binding.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hosted_transport: Option<Value>,
+    /// Hosted: recorded at binding: whether the admitted table (and failover
+    /// policy) lets subscription exhaustion spill into API spend, the failover
+    /// inputs' digests, and the gate's admission-time evaluation
+    /// (informational).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hosted_failover: Option<Value>,
     #[serde(default)]
     pub access_removed: bool,
     #[serde(default)]

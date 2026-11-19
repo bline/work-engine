@@ -118,8 +118,6 @@ pub struct RouterSnapshot {
     /// Reset observations already used for a verification attempt in this
     /// request, with their route.
     pub verified: Vec<(String, ResetObservation)>,
-    /// The route the router selects without a decision input, if any.
-    pub default_route: Option<usize>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -228,7 +226,6 @@ impl Router {
                 .filter(|v| v.0 == request)
                 .map(|v| (v.1.clone(), v.2.clone()))
                 .collect(),
-            default_route: self.default_route(),
         }
     }
     /// Admit the next attempt for `request` or explain why none is permitted.

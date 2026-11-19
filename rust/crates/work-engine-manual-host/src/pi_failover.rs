@@ -578,9 +578,11 @@ impl Context {
             eval.reset_observation = reset.clone();
             eval.action = if reset.is_some() {
                 "fail_back"
-            } else if snapshot.default_route == Some(row.idx) {
+            } else if rows[..t].iter().all(|r| r.class == Class::Excluded) {
+                // Only refused routes precede it: the refusal path.
                 "send"
             } else {
+                // A policy route that is not refused was passed over.
                 "skip"
             }
             .into();
@@ -709,6 +711,92 @@ impl Context {
     }
 }
 
+/// Attempts of the ledger in order, up to `request` and, within it, before
+/// attempt `before` (all of its attempts when `None`).
+fn ledger_prefix(
+    requests: &BTreeMap<u64, Reservation>,
+    request: u64,
+    before: Option<u64>,
+) -> impl Iterator<Item = (u64, &super::provider::AttemptRecord)> {
+    requests.range(..=request).flat_map(move |(&rid, r)| {
+        r.attempts
+            .iter()
+            .take_while(move |a| rid != request || before.is_none_or(|b| a.attempt < b))
+            .map(move |a| (rid, a))
+    })
+}
+/// What the gate needs from routing history, derived from the ledger's
+/// attempt records (the journal replay reads) rather than from router-only
+/// attempts that never reached the ledger. A refused route stays refused
+/// until an attempt on it (a verification) follows; `verified` lists the
+/// reset observations of this request's verification attempts.
+pub fn ledger_snapshot(
+    table: &HostedRoutes,
+    requests: &BTreeMap<u64, Reservation>,
+    request: u64,
+    before: Option<u64>,
+) -> RouterSnapshot {
+    let n = table.routes.len();
+    let mut refused = vec![None; n];
+    let mut attempted = vec![false; n];
+    let mut verified = vec![];
+    for (rid, a) in ledger_prefix(requests, request, before) {
+        let Some(i) = table.routes.iter().position(|t| t.id == a.route) else {
+            continue;
+        };
+        attempted[i] = true;
+        if refused[i].take().is_some()
+            && rid == request
+            && let Some(o) = a
+                .failover
+                .as_ref()
+                .and_then(|d| d.reset_observation.clone())
+        {
+            verified.push((a.route.clone(), o));
+        }
+        if a.disposition == AttemptDisposition::Refused {
+            refused[i] = Some((rid, a.attempt));
+        }
+    }
+    RouterSnapshot {
+        refused,
+        attempted,
+        verified,
+    }
+}
+/// Evidence identities of low readings already sent as preservation
+/// requests in this job, before the given point.
+pub fn preserved(
+    requests: &BTreeMap<u64, Reservation>,
+    request: u64,
+    before: Option<u64>,
+) -> Vec<Value> {
+    ledger_prefix(requests, request, before)
+        .filter_map(|(_, a)| a.failover.as_ref()?.preservation_request.as_ref())
+        .map(|p| p["evidence"].clone())
+        .collect()
+}
+impl Context {
+    /// The view over this job's own state directory at `decided_ms`, under
+    /// the policy's pools.
+    pub fn in_job_observation(
+        &self,
+        state_dir: &std::path::Path,
+        decided_ms: u64,
+    ) -> Result<Value> {
+        let config = json!({
+            "schema": availability::CONFIG_SCHEMA,
+            "now_ms": decided_ms,
+            "journal_roots": [state_dir],
+            "max_evidence_age_ms": self.policy.availability.max_evidence_age_ms,
+            "pools": self.policy.availability.pools,
+        });
+        let out = availability::view(&serde_json::to_vec(&config)?)
+            .map_err(|e| Error::Refused(format!("in-job observation: {e}")))?;
+        Ok(serde_json::from_slice(&out)?)
+    }
+}
+
 /// Retained decision observation names.
 pub fn observation_name(request: u64, attempt: Option<u64>) -> String {
     match attempt {
@@ -730,13 +818,10 @@ pub fn replay(
     artifact: &dyn Fn(&str) -> Option<Vec<u8>>,
 ) -> std::result::Result<(), String> {
     let model = router.policy().model.clone();
-    let mut preserved = vec![];
     let redecide = |request: u64,
                     attempt: Option<u64>,
                     decided_ms: u64,
-                    sha: &str,
-                    router: &Router,
-                    preserved: &[Value]|
+                    sha: &str|
      -> std::result::Result<Outcome, String> {
         let name = observation_name(request, attempt);
         let bytes = artifact(&name).ok_or(format!("{name}: not retained"))?;
@@ -750,8 +835,8 @@ pub fn replay(
             request,
             decided_ms,
             &doc["in_job"],
-            &router.snapshot(request),
-            preserved,
+            &ledger_snapshot(&ctx.table, requests, request, attempt),
+            &preserved(requests, request, attempt),
         );
         Ok(outcome)
     };
@@ -764,8 +849,6 @@ pub fn replay(
                         Some(a.attempt),
                         d.decided_ms,
                         &d.state_observation_sha256,
-                        &router,
-                        &preserved,
                     )? {
                         Outcome::Attempt(again) if again == *d => {}
                         _ => {
@@ -774,9 +857,6 @@ pub fn replay(
                                 a.attempt
                             ));
                         }
-                    }
-                    if let Some(p) = &d.preservation_request {
-                        preserved.push(p["evidence"].clone());
                     }
                     router.next_with(request, &model, d.decided_ms, &d.directive(&ctx.job_id))
                 }
@@ -809,14 +889,7 @@ pub fn replay(
             router.settle(attempt, disposition, Value::Null)?;
         }
         if let Some(p) = &r.failover_pause {
-            match redecide(
-                request,
-                None,
-                p.decided_ms,
-                &p.state_observation_sha256,
-                &router,
-                &preserved,
-            )? {
+            match redecide(request, None, p.decided_ms, &p.state_observation_sha256)? {
                 Outcome::Pause(again) if again == *p => {}
                 _ => return Err(format!("request {request}: pause not reproduced")),
             }
@@ -848,7 +921,7 @@ pub fn replay(
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::super::hosted::HostedRoute;
     use super::*;
 
@@ -901,7 +974,7 @@ mod tests {
     }
     /// A dimension state: (pool, dimension, status, available_again_at, low,
     /// evidence job, request, attempt).
-    type Dim<'a> = (
+    pub(crate) type Dim<'a> = (
         &'a str,
         &'a str,
         &'a str,
@@ -913,7 +986,7 @@ mod tests {
     );
     /// A view output under `policy` at `now` with the given dimension states;
     /// every other dimension is `unknown`.
-    fn view(policy: &FailoverPolicy, now: u64, dims: &[Dim]) -> Value {
+    pub(crate) fn view(policy: &FailoverPolicy, now: u64, dims: &[Dim]) -> Value {
         let table = availability::provisional::table();
         let pools: Vec<Value> = policy
             .availability
@@ -962,12 +1035,10 @@ mod tests {
         }
     }
     fn snap(refused: [Option<(u64, u64)>; 2], attempted: [bool; 2]) -> RouterSnapshot {
-        let default_route = (0..2).find(|i| refused[*i].is_none());
         RouterSnapshot {
             refused: refused.to_vec(),
             attempted: attempted.to_vec(),
             verified: vec![],
-            default_route,
         }
     }
     fn fresh() -> RouterSnapshot {
@@ -1604,6 +1675,26 @@ mod tests {
                 ),
                 AttemptDisposition::Completed,
             ),
+            // Request 4: the same low reading: no second request.
+            (
+                4,
+                reset,
+                view(
+                    &p,
+                    reset,
+                    &[(
+                        "claude-sub",
+                        "subscription_5h",
+                        "available",
+                        None,
+                        true,
+                        JOB,
+                        2,
+                        1,
+                    )],
+                ),
+                AttemptDisposition::Completed,
+            ),
         ];
         for (request, at, in_job, disposition) in steps {
             ledger.entry(request).or_default();
@@ -1676,10 +1767,10 @@ mod tests {
             .collect();
         assert_eq!(
             actions,
-            ["send", "send", "fail_back", "request_preservation"]
+            ["send", "send", "fail_back", "request_preservation", "send"]
         );
-        // Request 4: everything exhausted -> pause, journaled on the request.
-        ledger.entry(4).or_default();
+        // Request 5: everything exhausted -> pause, journaled on the request.
+        ledger.entry(5).or_default();
         let in_job = view(
             &p,
             reset,
@@ -1706,14 +1797,14 @@ mod tests {
                 ),
             ],
         );
-        let (outcome, doc) = c.decide(4, reset, &in_job, &router.snapshot(4), &preserved);
+        let (outcome, doc) = c.decide(5, reset, &in_job, &router.snapshot(5), &preserved);
         let Outcome::Pause(pause) = outcome else {
             panic!("not a pause")
         };
         assert_eq!(pause.resume_time, ResumeTime::At(reset + 5 * H));
-        store.insert(observation_name(4, None), doc);
+        store.insert(observation_name(5, None), doc);
         ledger
-            .get_mut(&4)
+            .get_mut(&5)
             .unwrap()
             .record_failover_pause(pause)
             .unwrap();
@@ -1740,11 +1831,11 @@ mod tests {
             .action = "skip".into();
         assert!(replay(&c, fresh_router(), &other, &read(&store)).is_err());
         let mut missing = store.clone();
-        missing.remove(&observation_name(4, None));
+        missing.remove(&observation_name(5, None));
         assert!(replay(&c, fresh_router(), &ledger, &read(&missing)).is_err());
         let mut other = ledger.clone();
         other
-            .get_mut(&4)
+            .get_mut(&5)
             .unwrap()
             .failover_pause
             .as_mut()
@@ -1931,5 +2022,53 @@ mod tests {
         let e = c.evaluate(NOW, &in_job, &all, &[]);
         assert_eq!(e.resume_time, Some(ResumeTime::At(NOW + H)));
         assert_eq!(e.waits_for.unwrap()["route"], "api");
+    }
+
+    #[test]
+    fn the_ledger_snapshot_mirrors_refusals_verifications_and_attempts() {
+        use super::super::provider::reserve_attempt;
+        let t = table();
+        let mut ledger: BTreeMap<u64, Reservation> = BTreeMap::new();
+        ledger.insert(1, Reservation::default());
+        reserve_attempt(&mut ledger, 1, "sub", "claude-sub", 1, 100, 3).unwrap();
+        ledger.get_mut(&1).unwrap().attempts[0].disposition = AttemptDisposition::Refused;
+        let s = ledger_snapshot(&t, &ledger, 1, None);
+        assert_eq!(
+            (s.refused.clone(), s.attempted.clone()),
+            (vec![Some((1, 1)), None], vec![true, false])
+        );
+        // A verification attempt on the refused route clears the refusal and
+        // records its reset observation for this request only.
+        let o = ResetObservation {
+            job_id: JOB.into(),
+            request: 1,
+            attempt: 1,
+            available_again_at: NOW,
+        };
+        reserve_attempt(&mut ledger, 1, "sub", "claude-sub", 1, 100, 3).unwrap();
+        let a = &mut ledger.get_mut(&1).unwrap().attempts[1];
+        a.disposition = AttemptDisposition::Refused;
+        a.failover = Some(FailoverDecision {
+            policy_version: "ops-1".into(),
+            policy_sha256: "p".into(),
+            table_digest: "t".into(),
+            state_observation_sha256: "o".into(),
+            action: "fail_back".into(),
+            route: "sub".into(),
+            decided_ms: NOW,
+            reset_observation: Some(o.clone()),
+            preservation_request: None,
+        });
+        let s = ledger_snapshot(&t, &ledger, 1, None);
+        assert_eq!(s.refused[0], Some((1, 2)));
+        assert_eq!(s.verified, vec![("sub".to_string(), o)]);
+        // Before attempt 2 the snapshot is the earlier one.
+        assert_eq!(
+            ledger_snapshot(&t, &ledger, 1, Some(2)).refused[0],
+            Some((1, 1))
+        );
+        assert!(ledger_snapshot(&t, &ledger, 1, Some(2)).verified.is_empty());
+        ledger.insert(2, Reservation::default());
+        assert!(ledger_snapshot(&t, &ledger, 2, None).verified.is_empty());
     }
 }
