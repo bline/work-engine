@@ -513,3 +513,37 @@ Operator direction:
 Hence the OpenRouter E1a lane is FOREGROUND-ONLY (allow_shell honored, bg refused)
 and is submitted for independent Fable xhigh review with background execution
 declared OUT OF SCOPE.
+
+## Revision 8 — self-review complete; meets the foreground-only submission gate (2026-11-19)
+
+Self-review of the full OpenRouter lane (serial, single edits):
+- `ProviderPlan::validate` order: capability matrix -> analysis/relay rejection ->
+  background_gate; each is a pure helper with a direct test.
+- Receiver gating is consistent with the Host: on a valid foreground admission
+  (allow_shell true, allow_background false settled) no background plugin is
+  loaded, no bg tools are exposed, and workspace_exec appears only when shell is
+  admitted. Host refuses allow_background at admission, so the two surface rules
+  cannot diverge.
+- URL validation `{base}/chat/completions` matches the actual Pi-openrouter fetch;
+  upstream dispatch uses Endpoint::target (openrouter.ai/api/v1/chat/completions),
+  independent of the catalog base.
+
+Offline verification (all green, 0 failures):
+- cargo build clean; 126 lib tests (incl. background_gate, capability matrix,
+  URL, shell-not-admitted, resolved-family, analysis rejection, budget fits).
+- Integration: lifecycle 50, pi_route 26, pi_native_transport 4, pi_native_bridge
+  4, pi_native_memory 2/1+1, pi_native_result 2.
+- clippy: warnings introduced by this lane resolved; only pre-existing workspace
+  warnings remain (no crate-wide `-D warnings` gate exists; out of scope).
+- Background-dependent Revision-4 acceptance tests (plugin loaded w/ tools when
+  both true; two concurrent bg commands; status/logs/cancel/notify; bg boundary
+  escape) are DEFERRED to a separate capability qualification pending the
+  workspace-bounded process host. Not reported passing; not waived. Recorded in
+  Revision 7.
+- The lifecycle `mutation_during_snapshot_collection_is_a_conflict` flakiness
+  passed in this full run; noted as pre-existing, unrelated to this lane.
+
+Foreground-only lane is ready for independent Fable xhigh review (provider
+claude-sdk). Background execution is declared OUT OF SCOPE for this review;
+deferred to the future workspace-bounded process-container design. No live
+inference / no E1a run until the review passes.
