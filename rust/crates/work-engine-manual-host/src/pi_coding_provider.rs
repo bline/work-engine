@@ -729,6 +729,7 @@ impl ProviderPlan {
         // here on Host-held admission, not by relying on the receiver's tool
         // selection to suppress it (P2, review consistency).
         analysis_execution_ok(analysis, self.allow_shell, self.allow_background)?;
+        background_gate(self.allow_background)?;
         Ok(())
     }
 }
@@ -738,6 +739,18 @@ impl ProviderPlan {
 fn analysis_execution_ok(analysis: bool, allow_shell: bool, allow_background: bool) -> Result<()> {
     if analysis && (allow_shell || allow_background) {
         return refuse("provider capability conflict: analysis lane admits no execution");
+    }
+    Ok(())
+}
+/// Background execution is not yet implemented: the approved plugin requires a
+/// separately-staged detached Host daemon outside the Docker boundary (blocker,
+/// Revision 6). Any admission that requests it is refused here until a
+/// workspace-bounded execution host exists. Foreground shell is unaffected.
+fn background_gate(allow_background: bool) -> Result<()> {
+    if allow_background {
+        return refuse(
+            "provider capability: allow_background not yet implemented (execution boundary pending)",
+        );
     }
     Ok(())
 }
@@ -1707,6 +1720,23 @@ mod admission_tests {
             completions_model_family("deepseek/deepseek-v4-flash:floor"),
             "deepseek/deepseek-v4-flash"
         );
+    }
+    /// Background execution is not yet implemented (blocker, Revision 6): any
+    /// admission requesting `allow_background` must be refused at runtime, not
+    /// merely gated out of the receiver. This is the explicit refusal until a
+    /// workspace-bounded execution host exists.
+    #[test]
+    fn background_admission_is_refused_until_implemented() {
+        for (bg, ok) in [(false, true), (true, false)] {
+            let out = background_gate(bg);
+            assert_eq!(out.is_ok(), ok, "allow_background={bg}");
+            if !ok {
+                assert!(
+                    out.unwrap_err().to_string().contains("allow_background"),
+                    "reason names allow_background and the pending boundary"
+                );
+            }
+        }
     }
     /// The analysis / lifecycle-relay lanes have no workspace effect: an
     /// admission that grants shell or background there is refused on Host-held

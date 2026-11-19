@@ -490,3 +490,26 @@ beyond the coding tool container, the lane raises background to a documented
 blocker pending a boundary design decision (e.g. a workspace-bounded relay or a
 dedicated process host). No live E1a arm exercises background until that is
 resolved. `allow_background=false` remains the default, secure posture.
+
+## Revision 7 — background deferred; foreground-only lane for review (2026-11-19)
+
+Operator direction:
+- Keep `allow_background=false` for the OpenRouter E1a lane.
+- Add an explicit RUNTIME refusal if background is requested until its execution
+  boundary is implemented (done: `background_gate` in `ProviderPlan::validate`
+  refuses any admission with `allow_background=true`, reason names the pending
+  boundary; `background_admission_is_refused_until_implemented` test, 126 lib
+  tests).
+- Defer the Revision-4 background-dependent acceptance tests (items 2, 3, 4, 5
+  -- plugin loaded with normal tools when both true; two concurrent background
+  commands non-blocking; status/logs/cancel/notifications; no boundary escape for
+  background) into a SEPARATE CAPABILITY QUALIFICATION, NOT reported as passing
+  and NOT waived. They are recorded as `deferred` pending the workspace-bounded
+  process-host implementation. Items 1, 6 (foreground), 7 remain valid for the
+  foreground-only lane.
+- Future design: host the existing plugin's RUNTIME inside a workspace-bounded
+  process container, not on the unrestricted Host.
+
+Hence the OpenRouter E1a lane is FOREGROUND-ONLY (allow_shell honored, bg refused)
+and is submitted for independent Fable xhigh review with background execution
+declared OUT OF SCOPE.
