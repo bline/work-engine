@@ -548,9 +548,10 @@ Branch `pi-host-relay-context-500k-20261118`, from `24a77f7a` (the shared head
 - `work-engine-manual-host`: new `RELAY_MAX_CONTEXT_BYTES` = 500,000. On the
   lifecycle relay profile, `ProviderPlan::validate` admits `max_context_bytes` up
   to it (`context_bound`). The analysis profile keeps `MAX_CONTEXT_BYTES` =
-  400,000. That bound exists because the analysis gate's
-  `pi.provider_request` ingress, carrying the context twice, must fit the
-  store's 1 MiB bound, and the relay gate stores no provider frame. The
+  400,000, by scope: RL 5947 covers the relay for the live H2, and
+  `work-engine-review-hosted` mirrors the analysis value. The analysis
+  gate's ingress records are no larger than the container frame, so the same
+  frame arithmetic would govern a later raise there. The
   hosted coding profile keeps 32,768. Unchanged: `MAX_REQUEST_BODY` 600,000;
   `FRAME_BYTES` 1 MiB (the receiver refuses to emit, and the Host refuses to
   read, a larger frame); `HISTORY_FRAME_LIMIT` 1,000,000. The protocol states
@@ -571,22 +572,52 @@ branch:
 | `r13-context-pad` | 410,633 B (pad 140,000) | completed, eligible, 24 calls | 490,314 | 981,130 / 985,860 | 488,271 | 481,804 | 278 MiB |
 | `r14-context-495k` | 415,219 B (pad 144,586) | completed, eligible, 24 calls | 494,902 | 990,306 / 995,036 | 492,859 | 486,392 | 273 MiB |
 | `r15-cap-500001` | 270,633 B | `max_context_bytes` 500,001 refused at admission (`thread/start` error: provider lane/catalog/limits conflict) | n/a | n/a | n/a | n/a | n/a |
-| `r16-over-cap` | 425,985 B (pad 155,352) | the third request (about 505,000 of context) was refused by the receiver's `contextBytes` bound before any frame or dispatch; the turn failed and was not eligible; no container was left | 275,918 | 552,351 / none | 275,998 | 496,523 | 272 MiB |
+| `r16-over-cap` | 425,985 B (pad 155,352) | the third request (about 505,000 of context) was refused by the receiver's `contextBytes` bound before any provider request frame, grant or dispatch (the aborted assistant message carries "outside host admission unavailable"); the turn failed and was not eligible; no container was left | 275,918 | 552,351 / none | 275,998 | 496,523 | 272 MiB |
 
 `summary.json` sha256: `r13` `676412a4…`, `r14` `876cfd0e…`, `r15`
 `ec74e2cb…`, `r16` `32c86519…`. In every run `forwarderRefused` was 0 and no
 container was left.
 
-No other bound refuses a context below 500,000 first. The margin at the
-full bound comes from the frames, which carry the context about twice: a
-request frame at 500,000 is about 1,000,500 bytes (48 KB below 1 MiB). The
-turn-end history frame also carries the final answer twice, so near the
-bound a final answer above about 19 KB makes the receiver's history frame
-exceed 1 MiB, and the turn fails closed. In `r16` the turn failure reads
+No other per-request bound refuses a context below 500,000 first. The
+margin at the full bound comes from the frames, which carry the context
+about twice: a request frame at 500,000 is about 1,000,500 bytes (48 KB
+below 1 MiB). The turn-end history frame also carries the final answer
+twice: at 500,000 a final answer above about 21 KB of plain text (less with
+JSON escapes or thinking in the final message) makes it exceed 1 MiB, and
+the turn fails closed. Above about 456,000 of context this frame, not the
+protocol's 64 KiB answer bound, limits the answer, and the failure reads as
+an unnamed receiver error instead of "final answer exceeds its bound".
+
+Two cumulative limits are reached sooner at this bound, both fail-closed
+and both checked only after spending. One is 8 MiB of retained request
+bodies per turn: about 16 near-bound requests fit, and a 17th makes the
+turn ineligible (at 400,000, about 21). The other is 64 MiB of container
+output per job: one turn of 32 near-bound requests fits (about 57 MB), but
+a long multi-turn relay thread near the bound can exceed it. No code change
+is needed for the live H2.
+
+In `r16` the turn failure reads
 "unknown coding frame": the receiver reports its refusal with a generic
 `error` frame, which the Host does not name. That predates this change and
 behaves the same at the 400,000 bound. Live thinking blocks count in
 `contextBytes` like any other context.
+
+Review (Opus xhigh, `reviews/pi-host-relay-context-500k-opus-20261118/REVIEW.b8b4f666.md`):
+accept with changes, with no P1 or P2 findings. The first attempt stopped
+on the Claude subscription's 5-hour limit and was resumed after the reset.
+
+- Fixed (P3-1 to P3-4): the reason for keeping analysis at 400,000, the r16
+  wording, the answer margin and its crossover, and the cumulative limits
+  above.
+- For the owner (P3-5): two line citations in `work-engine-review-hosted`
+  `subject.rs` (`:16`, `:322`) now point five lines early into
+  `pi_coding_analysis.rs`.
+- Recorded (P3-6): `serve.py` runs from the r3 manifest still request the
+  snapshot id `snapshot:h2-treatment-r2`; the manifest at its default path
+  has changed since the runs (now `d6a0bf71…`, A4 entry unchanged). Each
+  `summary.json` keeps every member's digest.
+- Not done (P3-7): admission is unit-tested at the helper only. The
+  relay end to end is covered by `r13`-`r15`.
 
 ## Open
 
