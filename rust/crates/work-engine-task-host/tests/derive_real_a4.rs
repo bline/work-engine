@@ -34,6 +34,9 @@ struct DeriveInput {
     out: PathBuf,
     producer: String,
     issuers: BTreeSet<String>,
+    /// Role to issuer label (`qualification`, `applicability`), installed so
+    /// the controlled card enforces each approval event's issuer per role.
+    role_issuers: BTreeMap<String, String>,
     delegation: String,
     purpose: String,
     scope: DisclosureScope,
@@ -222,6 +225,25 @@ fn write_synthetic_measurement(input: &DeriveInput, finding: &str) {
 }
 
 fn copy_operator_material(repo: &Path, bundle_dir: &Path, approvals_dir: &Path) {
+    // Every committed bundle file lands in the retained bundle tree, so the
+    // directory holds exactly `manifest.json` and the inputs it names.
+    let manifest: Value =
+        serde_json::from_slice(&std::fs::read(bundle_dir.join("manifest.json")).unwrap()).unwrap();
+    let mut named: BTreeSet<String> = manifest["inputs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| i["path"].as_str().unwrap().to_owned())
+        .collect();
+    named.insert("manifest.json".into());
+    let listed: BTreeSet<String> = std::fs::read_dir(bundle_dir)
+        .unwrap()
+        .map(|e| e.unwrap().file_name().into_string().unwrap())
+        .collect();
+    assert_eq!(
+        listed, named,
+        "bundle_dir must equal manifest.json and its inputs"
+    );
     std::fs::create_dir_all(repo.join("bundle")).unwrap();
     for entry in std::fs::read_dir(bundle_dir).unwrap() {
         let entry = entry.unwrap();
@@ -248,6 +270,18 @@ fn derive_real_a4() {
     .unwrap();
     let repo = input.repository.clone();
     assert!(!repo.exists(), "dedicated repository must not exist");
+    assert_eq!(
+        input.role_issuers.keys().collect::<Vec<_>>(),
+        ["applicability", "qualification"],
+        "role_issuers names exactly both roles"
+    );
+    assert!(
+        input
+            .role_issuers
+            .values()
+            .all(|i| input.issuers.contains(i)),
+        "every role issuer is an installed issuer"
+    );
     let closure = card_host::synthetic_source_copies(
         &input.source_repository,
         &input.source_commit,
@@ -324,9 +358,29 @@ fn derive_real_a4() {
         repository_scope: Some(repo.clone()),
         ..HostProfile::default()
     };
-    let worker_input = json!({"request":request,"profile":profile,"producer":input.producer,"installation":{"issuers":input.issuers,"delegation":input.delegation,"purpose":input.purpose,"scope":input.scope,"receipts":receipts,"role_issuers":null}});
-    let reconstruction =
-        card_host::synthetic_reconstruction(serde_json::from_value(worker_input).unwrap()).unwrap();
+    let worker_input = |role_issuers: &BTreeMap<String, String>| json!({"request":request,"profile":profile,"producer":input.producer,"installation":{"issuers":input.issuers,"delegation":input.delegation,"purpose":input.purpose,"scope":input.scope,"receipts":receipts,"role_issuers":role_issuers}});
+    let reconstruction = card_host::synthetic_reconstruction(
+        serde_json::from_value(worker_input(&input.role_issuers)).unwrap(),
+    )
+    .unwrap();
+    // Negative: the same events under swapped role labels refuse.
+    let mut swapped = input.role_issuers.clone();
+    let (q, a) = (
+        swapped["qualification"].clone(),
+        swapped["applicability"].clone(),
+    );
+    let swapped_outcome = if q == a {
+        "not-applicable: one issuer holds both roles".to_string()
+    } else {
+        swapped.insert("qualification".into(), a);
+        swapped.insert("applicability".into(), q);
+        let refused = card_host::synthetic_reconstruction(
+            serde_json::from_value(worker_input(&swapped)).unwrap(),
+        )
+        .err()
+        .expect("swapped role issuers must refuse");
+        format!("refused: {refused}")
+    };
     let basis = serde_json::to_vec(&reconstruction).unwrap();
     assert_eq!(
         card_host::reconstruct(&reconstruction, &revision(&basis)).unwrap(),
@@ -363,11 +417,14 @@ fn derive_real_a4() {
         e.1 += o.bytes.len();
     }
     let material = request_bytes.len() + reconstruction.card_bytes.len() + basis.len() + 2;
+    // Option A: the advisory member is `request\ncard`.
+    let advisory = request_bytes.len() + 1 + reconstruction.card_bytes.len();
     println!(
         "{}",
         json!({"bundle_commit":commit,"request":request_bytes.len(),"card":reconstruction.card_bytes.len(),
             "reconstruction":basis.len(),"material_with_separators":material,
-            "reads_32k":material.div_ceil(32768),"objects":reconstruction.objects.len(),
-            "objects_by_kind":kinds,"reconstruction_sha256":revision(&basis)})
+            "reads_32k":material.div_ceil(32768),"request_card":advisory,"request_card_reads_32k":advisory.div_ceil(32768),"objects":reconstruction.objects.len(),
+            "objects_by_kind":kinds,"reconstruction_sha256":revision(&basis),
+            "card_sha256":revision(&reconstruction.card_bytes),"swapped_role_issuers":swapped_outcome})
     );
 }

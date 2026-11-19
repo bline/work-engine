@@ -605,7 +605,10 @@ fn messages_snapshot_projection(
 /// and bound by `reconstruction_sha256` in the delivery record. Before any
 /// projection is accepted the host replays them with `card_host::reconstruct`
 /// and requires exactly this card and this original request. Empty bytes mean
-/// the host holds no reconstruction.
+/// the host holds no reconstruction. `checked_fixture_basis` never passes
+/// empty bytes (its pinned lookup refuses an absent artifact as unavailable,
+/// and basis validation rejects empty artifacts), so `missing` names the gap
+/// only for direct callers.
 fn pi_host_reconstruction(
     request: &[u8],
     card: &[u8],
@@ -623,8 +626,15 @@ fn pi_host_reconstruction(
         .and_then(|v| serde_json::from_value(v).ok())
         .ok_or_else(|| refusal("refused", "pi-host-reconstruction-malformed"))?;
     let digest = sha(&serde_json::to_vec(&parsed)?);
-    let reconstructed = research_register::card_host::reconstruct(&parsed, &digest)
-        .map_err(|_| refusal("refused", "pi-host-reconstruction-does-not-replay"))?;
+    let reconstructed =
+        research_register::card_host::reconstruct(&parsed, &digest).map_err(|error| {
+            delivery_error(
+                "refused",
+                "host-reconstruction",
+                "pi-host-reconstruction-does-not-replay",
+                json!({"retained":sources,"reconstruct_error":error}),
+            )
+        })?;
     if reconstructed != card {
         return Err(refusal("mismatch", "pi-host-reconstruction-card-mismatch"));
     }
@@ -674,7 +684,10 @@ fn verify_delivery(
         }
         reconstruction
     };
-    validate_original_request(request, &reconstruction)?;
+    // The Pi Host check above already validated the original request.
+    if !pi_host {
+        validate_original_request(request, &reconstruction)?;
+    }
     let envelope =
         research_register::card_wire::decode(card).map_err(|_| HostError::Configuration)?;
     if envelope.outcome != "card"
@@ -769,7 +782,15 @@ fn verify_delivery(
     let send = call["physical_send"]
         .as_u64()
         .ok_or(HostError::Configuration)?;
-    let mut total = request.len() + card.len() + reconstruction_bytes.len() + result.body.len();
+    // Option A: the Pi Host reconstruction is host-held, never on the wire,
+    // and bounded by the basis artifact cap, so only the Codex arm counts it
+    // in the combined payload bound.
+    let held = if pi_host {
+        0
+    } else {
+        reconstruction_bytes.len()
+    };
+    let mut total = request.len() + card.len() + held + result.body.len();
     let payloads = input["payloads"]
         .as_array()
         .ok_or(HostError::Configuration)?;
@@ -1398,6 +1419,31 @@ mod projection_tests {
             .unwrap()
             .unwrap();
         assert_eq!(out, target);
+        // Reads covering only the `request\ncard` prefix of an old member
+        // read exactly the target, so they project it.
+        let mut prefix = messages_request(&old);
+        let tail = target.len() - 7;
+        prefix["messages"][1]["content"][1]["input"]["length"] = json!(tail);
+        let result = json!({"encoding":"utf8","text":std::str::from_utf8(&old[7..target.len()]).unwrap(),
+            "sha256":sha(&old[7..target.len()]),"snapshot_id":"snap","member_id":"m","offset":7,"length":tail});
+        prefix["messages"][2]["content"][1]["content"] =
+            json!([{"type":"text","text":result.to_string()}]);
+        let (out, _) = messages_snapshot_projection(&prefix, "request-3", 1, "snap", &target)
+            .unwrap()
+            .unwrap();
+        assert_eq!(out, target);
+    }
+
+    /// The two Pi Host reconstruction refusals that need no card replay.
+    #[test]
+    fn pi_host_reconstruction_missing_and_malformed_are_named() {
+        let reason = |bytes: &[u8]| match pi_host_reconstruction(b"r", b"c", bytes, &json!({})) {
+            Err(HostError::ResearchDelivery(v)) => v["reason"].as_str().unwrap().to_owned(),
+            other => panic!("{:?}", other.err()),
+        };
+        assert_eq!(reason(b""), "pi-host-reconstruction-missing");
+        assert_eq!(reason(b"{"), "pi-host-reconstruction-malformed");
+        assert_eq!(reason(b"{}"), "pi-host-reconstruction-malformed");
     }
 
     #[test]
@@ -1789,6 +1835,24 @@ mod projection_tests {
                     .unwrap()
             )),
         );
+        // A reconstruction whose retained card bytes differ by one byte from
+        // its own replay.
+        let mut corrupt: Value = serde_json::from_slice(&reconstruction).unwrap();
+        let first = corrupt["card_bytes"][0].as_u64().unwrap();
+        corrupt["card_bytes"][0] = json!(first ^ 1);
+        let corrupt = serde_json::to_vec(&corrupt).unwrap();
+        let (corrupt_reason, corrupt_error) =
+            match verify_with(base.clone(), &request, &corrupt).err().unwrap() {
+                HostError::ResearchDelivery(v) => (
+                    v["reason"].as_str().unwrap_or_default().to_owned(),
+                    v["sources"]["reconstruct_error"].clone(),
+                ),
+                other => (format!("{other:?}"), Value::Null),
+            };
+        refusals.insert(
+            "reconstruction-does-not-replay".into(),
+            json!(corrupt_reason),
+        );
         let mut other_request = request.clone();
         other_request.push(b' ');
         refusals.insert(
@@ -1888,6 +1952,21 @@ mod projection_tests {
             "pi-host-reconstruction-card-mismatch"
         );
         assert_eq!(
+            refusals["reconstruction-does-not-replay"],
+            "pi-host-reconstruction-does-not-replay"
+        );
+        assert!(
+            corrupt_error.as_str().is_some_and(|e| !e.is_empty()),
+            "{corrupt_error}"
+        );
+        // F2: the host-held reconstruction is outside the combined payload
+        // bound. The same reconstruction padded with JSON whitespace past
+        // `LIMIT` still delivers.
+        let mut padded = reconstruction.clone();
+        padded.resize(LIMIT + 1, b' ');
+        let padded_delivery = verify_with(base.clone(), &request, &padded).unwrap();
+        assert_eq!(padded_delivery.projection, material);
+        assert_eq!(
             refusals["reconstruction-other-request"],
             "pi-host-reconstruction-request-mismatch"
         );
@@ -1901,5 +1980,169 @@ mod projection_tests {
             refusals["changed-read-content"],
             "snapshot-call-identity-content-or-range-mismatch"
         );
+    }
+
+    /// Owner sizing (option A repair, item 3): the artifact bytes a basis mint
+    /// would hold for a Pi Host delivery of the real card. The delivery is
+    /// the q1 run (`WE_PI_HOST_OUT`) with its read rebuilt as the planned
+    /// 32 KiB sequential reads of the real `request\ncard` (`WE_A4_REAL`):
+    /// q1's message templates, one Messages body per read, the publication
+    /// body last, and the publication call moved to the selected request.
+    /// `verify_delivery` then runs over it; the report
+    /// (`WE_PI_HOST_MEASURE_OUT`) lists every artifact `checked_unminted_basis`
+    /// would add, plus the dependency target and the selector map.
+    #[test]
+    #[cfg(feature = "controlled-proof")]
+    #[ignore = "measurement: reads a pi_host_research_delivery run (WE_PI_HOST_OUT) and real A4 material (WE_A4_REAL); writes WE_PI_HOST_MEASURE_OUT"]
+    fn pi_host_real_size_basis_artifact_total() {
+        let env = |k: &str| std::path::PathBuf::from(std::env::var(k).unwrap());
+        let (out, real) = (env("WE_PI_HOST_OUT"), env("WE_A4_REAL"));
+        let read = |p: std::path::PathBuf| std::fs::read(p).unwrap();
+        let request = read(real.join("request.json"));
+        let card = read(real.join("card.json"));
+        let reconstruction = read(real.join("reconstruction.json"));
+        let target = read(real.join("target.txt"));
+        let material = [request.clone(), b"\n".to_vec(), card.clone()].concat();
+        let mapping_bytes = read(out.join("mapping.json"));
+        let mapping = serde_json::from_slice(&mapping_bytes).unwrap();
+        let summary: Value = serde_json::from_slice(&read(out.join("summary.json"))).unwrap();
+        let store = retained_task_workflow::TaskStore::open(
+            &out.join("tasks.sqlite"),
+            "human:fixture".into(),
+        )
+        .unwrap();
+        let task = summary["task_id"].as_str().unwrap();
+        let original = store.research_original_evidence(task, &mapping).unwrap();
+        let mut value: Value = serde_json::from_slice(&read(out.join("retained.json"))).unwrap();
+        let payloads = value["input"]["payloads"].as_array().unwrap().clone();
+        let body =
+            |i: usize| -> Value { strict(&byte_vec(&payloads[i]["bytes"]).unwrap()).unwrap() };
+        // q1: request-1 twice (failover), request-2 (one read), request-3
+        // (the publication's result).
+        let (r2, r3) = (body(2), body(3));
+        let (m2, m3) = (
+            r2["messages"].as_array().unwrap(),
+            r3["messages"].as_array().unwrap(),
+        );
+        assert_eq!((payloads.len(), m2.len(), m3.len()), (4, 5, 8));
+        let (separator, tail) = (m3[4].clone(), m2[4].clone());
+        let read_block = |i: usize, offset: usize| -> Vec<Value> {
+            let len = (material.len() - offset).min(32768);
+            let slice = &material[offset..offset + len];
+            let id = format!("toolu_read_{i}");
+            let mut call = m2[2].clone();
+            call["content"][0]["id"] = json!(id);
+            call["content"][0]["input"] = json!({"length":len,"member_id":"research","offset":offset,"snapshot_id":"snapshot:input"});
+            let mut result = m2[3].clone();
+            result["content"][0]["tool_use_id"] = json!(id);
+            result["content"][0]["content"][0]["text"] = json!(json!({"encoding":"utf8","length":len,
+                "member_id":"research","offset":offset,"sha256":sha(slice),"snapshot_id":"snapshot:input",
+                "text":std::str::from_utf8(slice).unwrap()}).to_string());
+            vec![call, result]
+        };
+        let reads: Vec<Vec<Value>> = (0..material.len())
+            .step_by(32768)
+            .enumerate()
+            .map(|(i, offset)| read_block(i, offset))
+            .collect();
+        let publication = vec![m3[5].clone(), m3[6].clone()];
+        let request_body = |blocks: &[Vec<Value>]| -> Vec<u8> {
+            let mut messages = m2[..2].to_vec();
+            for (i, block) in blocks.iter().enumerate() {
+                if i > 0 {
+                    messages.push(separator.clone());
+                }
+                messages.extend(block.iter().cloned());
+            }
+            messages.push(tail.clone());
+            let mut b = r2.clone();
+            b["messages"] = json!(messages);
+            serde_json::to_vec(&b).unwrap()
+        };
+        let mut rebuilt = payloads[..2].to_vec();
+        let mut bodies = Vec::new();
+        for k in 1..=reads.len() {
+            bodies.push(request_body(&reads[..k]));
+        }
+        let mut all = reads.clone();
+        all.push(publication);
+        bodies.push(request_body(&all));
+        for (k, b) in bodies.iter().enumerate() {
+            rebuilt.push(json!({"bytes":b,"inference_call_id":format!("request-{}",k+2),
+                "original_codec":"identity","original_sha256":sha(b),"physical_send":1,"representation":"wire"}));
+        }
+        value["input"]["payloads"] = json!(rebuilt);
+        // The publication is produced by the request holding every read.
+        let selected = format!("request-{}", reads.len() + 1);
+        let mut bundle = strict(&byte_vec(&value["causal"]["bundle"]).unwrap()).unwrap();
+        let call_id = value["causal"]["call_id"].clone();
+        for call in bundle["calls"].as_array_mut().unwrap() {
+            if call["call_id"] == call_id {
+                call["inference_call_id"] = json!(selected);
+                call["physical_send"] = json!(1);
+            }
+        }
+        value["causal"]["bundle"] = json!(serde_json::to_vec(&bundle).unwrap());
+        let retained = serde_json::to_vec(&value).unwrap();
+        let delivery = verify_delivery(
+            RetainedDelivery {
+                bytes: retained.clone(),
+                value,
+            },
+            &original,
+            &request,
+            &card,
+            &reconstruction,
+        )
+        .unwrap();
+        assert_eq!(delivery.projection, material);
+        let result = original.advisory().result.as_ref().unwrap();
+        let recommendation: Recommendation =
+            serde_json::from_value(strict(result.body.as_bytes()).unwrap()).unwrap();
+        let mut sizes = std::collections::BTreeMap::new();
+        for a in &delivery.artifacts {
+            sizes.insert(a.id.clone(), a.bytes.len());
+        }
+        sizes.insert(
+            "<input artifact: projection>".into(),
+            delivery.projection.len(),
+        );
+        sizes.insert(
+            "<result artifact: recommendation>".into(),
+            serde_json::to_vec(
+                &json!({"dependencies":recommendation.dependencies,"text":recommendation.text}),
+            )
+            .unwrap()
+            .len(),
+        );
+        sizes.insert(
+            "research-original-result".into(),
+            serde_json::to_vec(result).unwrap().len(),
+        );
+        sizes.insert(
+            "research-original-operation".into(),
+            original.operation_commit().len(),
+        );
+        sizes.insert("<dependency: decision.target>".into(), target.len());
+        sizes.insert("research-selector-map".into(), mapping_bytes.len());
+        let total: usize = sizes.values().sum();
+        let payload_bytes: usize = rebuilt
+            .iter()
+            .map(|p| byte_vec(&p["bytes"]).unwrap().len())
+            .sum();
+        let cap = retained_task_workflow::research_admission::MAX_ARTIFACT_BYTES;
+        let report = json!({"approximation":"q1 delivery with its single read rebuilt as sequential 32 KiB reads of the real request+card from q1 message templates; payload keys re-serialized sorted",
+            "material":material.len(),"reads":reads.len(),"wire_bodies":rebuilt.iter().map(|p| byte_vec(&p["bytes"]).unwrap().len()).collect::<Vec<_>>(),
+            "wire_bytes":payload_bytes,"retained_bytes":retained.len(),
+            "pi_host_combined_bound":request.len()+card.len()+result.body.len()+payload_bytes,
+            "codex_rule_combined_bound":request.len()+card.len()+reconstruction.len()+result.body.len()+payload_bytes,
+            "combined_limit":LIMIT,"artifacts":sizes,"basis_artifact_total":total,"max_artifact_bytes":cap,
+            "margin":cap as i64 - total as i64});
+        std::fs::write(
+            env("WE_PI_HOST_MEASURE_OUT"),
+            serde_json::to_vec_pretty(&report).unwrap(),
+        )
+        .unwrap();
+        println!("{report}");
     }
 }
