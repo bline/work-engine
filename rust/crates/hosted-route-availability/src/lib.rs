@@ -11,7 +11,7 @@
 //! skipped and marked, and a dimension without usable evidence is `unknown`.
 pub mod provisional;
 
-use provisional::{Class, Reset, Table, WindowReading};
+use provisional::{Class, Effect, Reset, Table, WindowReading};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -72,16 +72,11 @@ pub struct Member {
     pub endpoint: String,
 }
 impl Funding {
-    fn label(self) -> &'static str {
+    /// The funding's name in [`provisional::TABLE`].
+    pub fn label(self) -> &'static str {
         match self {
             Self::Subscription => "subscription",
             Self::Api => "api",
-        }
-    }
-    pub fn dimensions(self) -> &'static [&'static str] {
-        match self {
-            Self::Subscription => &["subscription_5h", "subscription_weekly"],
-            Self::Api => &["api_rate", "api_credit"],
         }
     }
 }
@@ -110,13 +105,17 @@ fn digest(bytes: &[u8]) -> String {
 pub fn view(config_bytes: &[u8]) -> Result<Vec<u8>, String> {
     let config: Config =
         serde_json::from_slice(config_bytes).map_err(|e| format!("config: {e}"))?;
-    let mut out = serde_json::to_vec_pretty(&derive(&config, &digest(config_bytes))?)
-        .map_err(|e| e.to_string())?;
+    let mut out = serde_json::to_vec_pretty(&derive(
+        &config,
+        &digest(config_bytes),
+        &provisional::table(),
+    )?)
+    .map_err(|e| e.to_string())?;
     out.push(b'\n');
     Ok(out)
 }
 
-fn check(config: &Config) -> Result<(), String> {
+fn check(config: &Config, table: &Table) -> Result<(), String> {
     if config.schema != CONFIG_SCHEMA {
         return Err(format!("config schema must be {CONFIG_SCHEMA}"));
     }
@@ -149,16 +148,24 @@ fn check(config: &Config) -> Result<(), String> {
             }
         }
         for (d, t) in &p.low_thresholds {
-            if !p.funding.dimensions().contains(&d.as_str()) {
+            if !table.dimensions(p.funding.label()).contains(d) {
                 return Err(format!("pool {}: no dimension {d}", p.id));
             }
-            if !(t.is_finite() && *t > 0.0 && *t <= 1.0) {
-                return Err(format!("pool {}: threshold {d} must be in (0, 1]", p.id));
+            if !table.threshold_valid(*t) {
+                let u = &table.utilization;
+                return Err(format!(
+                    "pool {}: threshold {d} must be in ({}, {}]",
+                    p.id, u.threshold_min_exclusive, u.threshold_max
+                ));
             }
         }
-        if p.credit_cleared_ms.is_some() && p.funding != Funding::Api {
+        if p.credit_cleared_ms.is_some()
+            && table
+                .operator_action_dimensions(p.funding.label())
+                .is_empty()
+        {
             return Err(format!(
-                "pool {}: credit_cleared_ms needs api funding",
+                "pool {}: credit_cleared_ms needs a dimension the operator clears",
                 p.id
             ));
         }
@@ -170,26 +177,58 @@ fn check(config: &Config) -> Result<(), String> {
 enum Kind {
     Available,
     Exhausted(Reset),
-    /// API credit: no reset; the operator clears it.
+    /// No reset; the operator clears it.
     OperatorAction,
     Unknown(&'static str),
 }
+/// A status observation of one dimension.
 #[derive(Clone, Debug)]
 struct Observation {
     pool: usize,
-    dimension: &'static str,
+    dimension: String,
     time: u64,
     job: String,
     request: u64,
     attempt: u64,
     kind: Kind,
-    utilization: Option<f64>,
     evidence: Value,
 }
-impl Observation {
-    fn same_reading(&self, o: &Observation) -> bool {
-        self.kind == o.kind && self.utilization.map(f64::to_bits) == o.utilization.map(f64::to_bits)
-    }
+/// A utilization reading of one window from any valid head, successful or
+/// not, with the reset of the window it was read in.
+#[derive(Clone, Debug)]
+struct Reading {
+    pool: usize,
+    dimension: String,
+    time: u64,
+    job: String,
+    request: u64,
+    attempt: u64,
+    utilization: f64,
+    reset: Option<Reset>,
+    evidence: Value,
+}
+/// The deterministic order of observations and readings.
+fn order(time: u64, job: &str, request: u64, attempt: u64) -> (u64, &str, u64, u64) {
+    (time, job, request, attempt)
+}
+
+/// Blocking marks: evidence that could not be read or verified, so the view
+/// may be missing something (`complete` is false). Informational marks:
+/// classified evidence that changes no quota dimension.
+#[derive(Default)]
+struct Marks {
+    blocking: BTreeSet<String>,
+    informational: BTreeSet<String>,
+}
+
+/// One attempt record as read from the journal.
+struct Attempt {
+    request: u64,
+    attempt: u64,
+    route: String,
+    payer: String,
+    disposition: String,
+    status: Option<u16>,
 }
 
 /// A response head as retained for one attempt.
@@ -209,7 +248,7 @@ struct Journal {
     routes: BTreeMap<String, (String, String)>,
     payer_sources: Option<BTreeMap<String, String>>,
     artifacts: BTreeMap<String, String>,
-    attempts: Vec<(u64, u64, String, String, String, Option<u16>)>,
+    attempts: Vec<Attempt>,
 }
 
 fn s(v: &Value) -> Result<String, &'static str> {
@@ -290,14 +329,14 @@ fn read_journal(root: &Path) -> Result<(Journal, String), &'static str> {
                         .ok_or("unexpected_journal_shape")?,
                 ),
             };
-            attempts.push((
+            attempts.push(Attempt {
                 request,
-                a["attempt"].as_u64().ok_or("unexpected_journal_shape")?,
-                s(&a["route"])?,
-                s(&a["payer"])?,
+                attempt: a["attempt"].as_u64().ok_or("unexpected_journal_shape")?,
+                route: s(&a["route"])?,
+                payer: s(&a["payer"])?,
                 disposition,
                 status,
-            ));
+            });
         }
     }
     Ok((
@@ -314,11 +353,14 @@ fn read_journal(root: &Path) -> Result<(Journal, String), &'static str> {
 }
 
 struct Reader<'a> {
-    marks: &'a mut BTreeSet<String>,
+    marks: &'a mut Marks,
 }
 impl Reader<'_> {
     fn mark(&mut self, v: Value) {
-        self.marks.insert(v.to_string());
+        self.marks.blocking.insert(v.to_string());
+    }
+    fn note(&mut self, v: Value) {
+        self.marks.informational.insert(v.to_string());
     }
     /// A registered artifact whose bytes match the journal's digest. An
     /// unregistered file is no evidence; a mismatch is ignored and marked.
@@ -377,169 +419,218 @@ impl Reader<'_> {
     }
 }
 
-/// Observations of one attempt on its pool's dimensions.
-#[allow(clippy::too_many_arguments)]
+/// Where one attempt's observations and readings go.
+struct Sink<'a> {
+    observations: &'a mut Vec<Observation>,
+    readings: &'a mut Vec<Reading>,
+}
+
+fn class_label(class: Class) -> String {
+    serde_json::to_value(class)
+        .ok()
+        .and_then(|v| v.as_str().map(str::to_owned))
+        .unwrap_or_default()
+}
+
+/// Status observations and utilization readings of one attempt on its
+/// pool's dimensions.
 fn observe(
     table: &Table,
     reader: &mut Reader,
     j: &Journal,
-    pool_index: usize,
-    pool: &Pool,
-    (request, attempt, route, payer, disposition, status): &(
-        u64,
-        u64,
-        String,
-        String,
-        String,
-        Option<u16>,
-    ),
+    pool: usize,
+    a: &Attempt,
     endpoint: &str,
-    out: &mut Vec<Observation>,
+    sink: Sink,
 ) {
     let (provider, funding, kinds) = endpoint_kind(endpoint).expect("pool member endpoint");
-    let (request, attempt) = (*request, *attempt);
-    let refused = disposition == "refused";
-    if !(refused || disposition == "completed" || disposition == "uncertain") {
+    let f = funding.label();
+    let (request, attempt) = (a.request, a.attempt);
+    let id = json!({"job_id":j.job,"request":request,"attempt":attempt});
+    let with_id = |mut v: Value| {
+        v.as_object_mut()
+            .unwrap()
+            .extend(id.as_object().unwrap().clone());
+        v
+    };
+    let refused = a.disposition == "refused";
+    if !matches!(
+        a.disposition.as_str(),
+        "refused" | "completed" | "uncertain"
+    ) {
         return;
     }
     let Some(head) = reader.head(j, request, attempt) else {
-        if refused || disposition == "completed" {
-            reader.mark(json!({"kind":"no_head_evidence","job_id":j.job,"request":request,"attempt":attempt}));
+        if a.disposition != "uncertain" {
+            reader.mark(with_id(json!({"kind":"no_head_evidence"})));
         }
         return;
     };
     let Some(time) = head.time else {
-        reader.mark(json!({"kind":"no_observation_time","job_id":j.job,"request":request,"attempt":attempt}));
+        reader.mark(with_id(json!({"kind":"no_observation_time"})));
         return;
     };
-    let success = disposition == "completed" && (200..300).contains(&head.status);
-    if !success && !refused && head.status < 400 {
-        // An uncertain attempt after a success head is not a quota input.
-        return;
-    }
     let base = |source: String| {
-        json!({"job_id":j.job,"request":request,"attempt":attempt,"route":route,"payer":payer,
+        json!({"job_id":j.job,"request":request,"attempt":attempt,"route":a.route,"payer":a.payer,
             "endpoint":endpoint,"observed_ms":time,"artifact":head.artifact,"source":source})
     };
-    let mut push =
-        |dimension: &'static str, kind: Kind, utilization: Option<f64>, source: String| {
-            out.push(Observation {
-                pool: pool_index,
-                dimension,
-                time,
-                job: j.job.clone(),
-                request,
-                attempt,
-                kind,
-                utilization,
-                evidence: base(source),
-            })
-        };
-    let dims = funding.dimensions();
-    let source_kind = j.payer_sources.as_ref().and_then(|m| m.get(payer));
-    let funding_reason = match source_kind {
+    let dims = table.dimensions(f);
+    let funding_reason = match j.payer_sources.as_ref().and_then(|m| m.get(&a.payer)) {
         None => Some("funding_unverified"),
         Some(k) if !kinds.contains(&k.as_str()) => Some("funding_conflict"),
         _ => None,
     };
-    let reason = funding_reason.or(match status {
-        Some(s) if *s != head.status => Some("status_conflict"),
+    let reason = funding_reason.or(match a.status {
+        Some(s) if s != head.status => Some("status_conflict"),
         _ => None,
     });
+    let windows: Vec<WindowReading> = table.windows(provider, &head.headers, head.head_ms);
+    if reason.is_none() {
+        // Every valid window utilization is a reading, whatever the outcome.
+        for w in windows.iter().filter(|w| w.malformed.is_none()) {
+            let Some(utilization) = w.utilization else {
+                continue;
+            };
+            let mut evidence = base(format!("header:{}", w.utilization_header));
+            evidence["reset_at"] = match &w.reset {
+                Some(Reset::At(t)) => json!(t),
+                _ => Value::Null,
+            };
+            sink.readings.push(Reading {
+                pool,
+                dimension: w.dimension.clone(),
+                time,
+                job: j.job.clone(),
+                request,
+                attempt,
+                utilization,
+                reset: w.reset.clone(),
+                evidence,
+            });
+        }
+    }
+    let mut push = |dimension: &str, kind: Kind, source: String| {
+        sink.observations.push(Observation {
+            pool,
+            dimension: dimension.to_owned(),
+            time,
+            job: j.job.clone(),
+            request,
+            attempt,
+            kind,
+            evidence: base(source),
+        })
+    };
     if let Some(reason) = reason {
         for d in dims {
-            push(d, Kind::Unknown(reason), None, format!("journal:{reason}"));
+            push(d, Kind::Unknown(reason), format!("journal:{reason}"));
         }
         return;
     }
-    let windows: Vec<WindowReading> = table.windows(provider, &head.headers, head.head_ms);
     let window = |d: &str| windows.iter().find(|w| w.dimension == d);
-    if success {
+    if a.disposition == "completed" && (200..300).contains(&head.status) {
         for d in dims {
             match window(d) {
                 Some(w) if w.malformed.is_some() => push(
                     d,
                     Kind::Unknown(w.malformed.unwrap()),
-                    None,
                     format!("header:{}", w.source),
                 ),
                 Some(w) if w.exhausted == Some(true) => push(
                     d,
                     Kind::Unknown("conflicting_header"),
-                    None,
                     format!("header:{}", w.source),
                 ),
-                Some(w) => push(
-                    d,
-                    Kind::Available,
-                    w.utilization,
-                    format!("success;header:{}", w.source),
-                ),
-                None => push(d, Kind::Available, None, "success".into()),
+                Some(w) => push(d, Kind::Available, format!("success;header:{}", w.source)),
+                None => push(d, Kind::Available, "success".into()),
             }
         }
         return;
     }
-    let body = if refused {
-        reader.artifact(
-            j,
-            &format!("coding-hosted-{request}-{attempt}.refusal.body"),
-        )
+    let class = if refused || head.status >= 400 {
+        let kind = if refused {
+            "refusal.body"
+        } else {
+            "stream.sse"
+        };
+        let body = reader
+            .artifact(j, &format!("coding-hosted-{request}-{attempt}.{kind}"))
+            .unwrap_or_default();
+        table.classify_head(provider, f, head.status, &body)
     } else {
-        reader.artifact(j, &format!("coding-hosted-{request}-{attempt}.stream.sse"))
-    }
-    .unwrap_or_default();
-    let class = table.classify(provider, funding.label(), head.status, &body);
-    let source = format!(
-        "classification:{}",
-        serde_json::to_value(class).unwrap().as_str().unwrap()
-    );
-    match (class, funding) {
-        (Class::SubscriptionQuotaExhausted, Funding::Subscription) => {
+        // A provider failure after a success head (the attempt stayed
+        // uncertain): classified from the retained stream's failure event.
+        let stream = reader
+            .artifact(j, &format!("coding-hosted-{request}-{attempt}.stream.sse"))
+            .unwrap_or_default();
+        match table.classify_stream(provider, f, &stream) {
+            None => {
+                reader.mark(with_id(json!({"kind":"post_head_failure_unclassified"})));
+                return;
+            }
+            Some(class) => {
+                reader.note(with_id(json!({"kind":"post_head_failure","class":class})));
+                class
+            }
+        }
+    };
+    let source = format!("classification:{}", class_label(class));
+    let effect = table
+        .effect(class, f)
+        .map(|e| (e.effect, e.dimension.as_deref()));
+    match effect {
+        Some((Effect::Windows, _)) => {
             let exhausted: Vec<_> = windows
                 .iter()
-                .filter(|w| w.malformed.is_none())
-                .filter(|w| w.exhausted == Some(true) || w.utilization.is_some_and(|u| u >= 1.0))
+                .filter(|w| table.window_exhausted(w))
                 .collect();
             for d in dims {
                 if let Some(w) = window(d).filter(|w| w.malformed.is_some()) {
-                    push(d, Kind::Unknown(w.malformed.unwrap()), None, format!("{source};header:{}", w.source));
+                    push(
+                        d,
+                        Kind::Unknown(w.malformed.unwrap()),
+                        format!("{source};header:{}", w.source),
+                    );
                 } else if exhausted.is_empty() {
-                    push(d, Kind::Unknown("window_undetermined"), None, source.clone());
+                    push(d, Kind::Unknown("window_undetermined"), source.clone());
                 } else if let Some(w) = exhausted.iter().find(|w| w.dimension == *d) {
                     let reset = w.reset.clone().unwrap_or(Reset::Unknown("reset_absent"));
-                    push(d, Kind::Exhausted(reset), w.utilization, format!("{source};header:{}", w.source));
+                    push(
+                        d,
+                        Kind::Exhausted(reset),
+                        format!("{source};header:{}", w.source),
+                    );
                 }
             }
         }
-        (Class::RateLimited, Funding::Api) => {
+        Some((Effect::RetryAfter, Some(d))) => {
             let reset = table
                 .retry_after(&head.headers, head.head_ms)
                 .unwrap_or(Reset::Unknown("reset_absent"));
-            push("api_rate", Kind::Exhausted(reset), None, format!("{source};header:{}", table.retry_after));
+            push(
+                d,
+                Kind::Exhausted(reset),
+                format!("{source};header:{}", table.retry_after),
+            );
         }
-        (Class::ApiCreditExhausted, Funding::Api) => {
-            if pool.credit_cleared_ms.is_none_or(|c| time > c) {
-                push("api_credit", Kind::OperatorAction, None, source);
-            }
+        Some((Effect::OperatorAction, Some(d))) => push(d, Kind::OperatorAction, source),
+        Some((Effect::NonQuota, _)) => {
+            reader.note(with_id(json!({"kind":"non_quota_failure","class":class})))
         }
-        (Class::Overload | Class::AuthorizationFailure, _) => reader.mark(
-            json!({"kind":"non_quota_failure","class":class,"job_id":j.job,"request":request,"attempt":attempt}),
-        ),
         _ => {
             for d in dims {
-                push(d, Kind::Unknown("unclassified_failure"), None, source.clone());
+                push(d, Kind::Unknown("unclassified_failure"), source.clone());
             }
         }
     }
 }
 
-fn derive(config: &Config, config_sha256: &str) -> Result<Value, String> {
-    check(config)?;
-    let table = provisional::table();
-    let mut marks = BTreeSet::new();
+fn derive(config: &Config, config_sha256: &str, table: &Table) -> Result<Value, String> {
+    check(config, table)?;
+    let mut marks = Marks::default();
     let mut journals = vec![];
     let mut observations = vec![];
+    let mut readings = vec![];
     let roots: BTreeSet<&PathBuf> = config.journal_roots.iter().collect();
     let members: BTreeMap<&Member, usize> = config
         .pools
@@ -552,67 +643,90 @@ fn derive(config: &Config, config_sha256: &str) -> Result<Value, String> {
             Ok(v) => v,
             Err(reason) => {
                 journals.push(json!({"root":root,"read":false,"reason":reason}));
-                marks.insert(json!({"kind":reason,"root":root}).to_string());
+                marks
+                    .blocking
+                    .insert(json!({"kind":reason,"root":root}).to_string());
                 continue;
             }
         };
         journals.push(json!({"root":root,"read":true,"job_id":j.job,"journal_sha256":sha}));
         let mut reader = Reader { marks: &mut marks };
         for a in &j.attempts {
-            let Some((route_payer, endpoint)) = j.routes.get(&a.2) else {
-                reader.mark(
-                    json!({"kind":"unknown_route","job_id":j.job,"request":a.0,"attempt":a.1}),
-                );
+            let id = |kind: &str| json!({"kind":kind,"job_id":j.job,"request":a.request,"attempt":a.attempt});
+            let Some((route_payer, endpoint)) = j.routes.get(&a.route) else {
+                reader.mark(id("unknown_route"));
                 continue;
             };
-            if *route_payer != a.3 {
-                reader.mark(json!({"kind":"route_payer_mismatch","job_id":j.job,"request":a.0,"attempt":a.1}));
+            if *route_payer != a.payer {
+                reader.mark(id("route_payer_mismatch"));
                 continue;
             }
             let key = Member {
-                payer: a.3.clone(),
+                payer: a.payer.clone(),
                 endpoint: endpoint.clone(),
             };
             if let Some(&i) = members.get(&key) {
-                observe(
-                    &table,
-                    &mut reader,
-                    &j,
-                    i,
-                    &config.pools[i],
-                    a,
-                    endpoint,
-                    &mut observations,
-                );
+                let sink = Sink {
+                    observations: &mut observations,
+                    readings: &mut readings,
+                };
+                observe(table, &mut reader, &j, i, a, endpoint, sink);
             }
         }
     }
     let now = config.now_ms;
     let mut pools = vec![];
     for (i, p) in config.pools.iter().enumerate() {
+        let f = p.funding.label();
+        let operator = table.operator_action_dimensions(f);
         let mut dimensions = vec![];
-        for d in p.funding.dimensions() {
+        for d in table.dimensions(f) {
             let mut obs: Vec<&Observation> = observations
                 .iter()
                 .filter(|o| o.pool == i && o.dimension == *d && o.time <= now)
                 .collect();
             obs.sort_by(|a, b| {
-                (a.time, &a.job, a.request, a.attempt).cmp(&(b.time, &b.job, b.request, b.attempt))
+                order(a.time, &a.job, a.request, a.attempt)
+                    .cmp(&order(b.time, &b.job, b.request, b.attempt))
             });
-            dimensions.push(state(
-                d,
-                &obs,
-                now,
-                config.max_evidence_age_ms,
-                p.low_thresholds.get(*d),
-            ));
+            let mut reads: Vec<&Reading> = readings
+                .iter()
+                .filter(|r| r.pool == i && r.dimension == *d && r.time <= now)
+                .collect();
+            reads.sort_by(|a, b| {
+                order(a.time, &a.job, a.request, a.attempt)
+                    .cmp(&order(b.time, &b.job, b.request, b.attempt))
+            });
+            let cleared = p
+                .credit_cleared_ms
+                .filter(|_| operator.contains(&d.as_str()));
+            let st = status(&obs, now, config.max_evidence_age_ms, cleared);
+            let (utilization, utilization_reason, reading) =
+                utilization(&reads, now, config.max_evidence_age_ms);
+            let low = match (utilization, p.low_thresholds.get(d)) {
+                (Some(u), Some(t)) => json!(u >= *t),
+                _ => Value::Null,
+            };
+            dimensions.push(json!({
+                "dimension": d,
+                "status": st.status,
+                "reason": st.reason,
+                "available_again_at": st.at,
+                "available_again_reason": st.at_reason,
+                "evidence": st.evidence.map(|o| &o.evidence),
+                "utilization": utilization,
+                "utilization_reason": utilization_reason,
+                "utilization_evidence": reading.map(|r| &r.evidence),
+                "low": low,
+            }));
         }
-        pools.push(json!({"id":p.id,"funding":p.funding.label(),"dimensions":dimensions}));
+        pools.push(json!({"id":p.id,"funding":f,"dimensions":dimensions}));
     }
-    let marks: Vec<Value> = marks
-        .iter()
-        .map(|m| serde_json::from_str(m).unwrap())
-        .collect();
+    let list = |set: &BTreeSet<String>| -> Vec<Value> {
+        set.iter()
+            .map(|m| serde_json::from_str(m).unwrap())
+            .collect()
+    };
     Ok(json!({
         "schema": OUTPUT_SCHEMA,
         "now_ms": now,
@@ -620,72 +734,102 @@ fn derive(config: &Config, config_sha256: &str) -> Result<Value, String> {
         "table": {"version": table.version, "sha256": provisional::table_sha256(), "provisional": table.provisional},
         "journals": journals,
         "pools": pools,
-        "marks": marks,
-        "complete": marks.is_empty(),
+        "marks": {"blocking": list(&marks.blocking), "informational": list(&marks.informational)},
+        "complete": marks.blocking.is_empty(),
     }))
 }
 
-/// One dimension's state from its observations, oldest first.
-fn state(
-    dimension: &str,
-    obs: &[&Observation],
-    now: u64,
-    max_age: u64,
-    threshold: Option<&f64>,
-) -> Value {
-    let entry = |status: &str,
-                 reason: Option<&str>,
-                 o: Option<&Observation>,
-                 at: Option<u64>,
-                 at_reason: Option<&str>| {
-        let utilization = o
-            .and_then(|o| o.utilization)
-            .filter(|_| status != "unknown");
-        let low = match (utilization, threshold) {
-            (Some(u), Some(t)) => json!(u >= *t),
-            _ => Value::Null,
-        };
-        json!({"dimension":dimension,"status":status,"reason":reason,"utilization":utilization,"low":low,
-            "available_again_at":at,"available_again_reason":at_reason,"evidence":o.map(|o| &o.evidence)})
+struct Status<'a> {
+    status: &'static str,
+    reason: Option<&'static str>,
+    evidence: Option<&'a Observation>,
+    at: Option<u64>,
+    at_reason: Option<&'static str>,
+}
+
+/// A dimension's status from its observations, oldest first. `cleared`: the
+/// operator cleared this operator-action dimension at that time.
+fn status<'a>(obs: &[&'a Observation], now: u64, max_age: u64, cleared: Option<u64>) -> Status<'a> {
+    let unknown = |reason, evidence| Status {
+        status: "unknown",
+        reason: Some(reason),
+        evidence,
+        at: None,
+        at_reason: Some("status_unknown"),
     };
+    let mut obs = obs;
+    if let Some(c) = cleared
+        && let Some(exhaustion) = obs
+            .iter()
+            .rev()
+            .find(|o| o.time <= c && o.kind == Kind::OperatorAction)
+    {
+        // Nothing at or before the clear counts after it; the clear is the
+        // reset, verified only by a later success.
+        let after = obs.partition_point(|o| o.time <= c);
+        if after == obs.len() {
+            return Status {
+                status: "reset_elapsed",
+                reason: Some("operator_cleared"),
+                evidence: Some(exhaustion),
+                at: Some(c),
+                at_reason: None,
+            };
+        }
+        obs = &obs[after..];
+    }
     let Some(last) = obs.last().copied() else {
-        return entry(
-            "unknown",
-            Some("no_evidence"),
-            None,
-            None,
-            Some("status_unknown"),
-        );
+        return unknown("no_evidence", None);
     };
     if obs
         .iter()
-        .any(|o| o.time == last.time && !o.same_reading(last))
+        .any(|o| o.time == last.time && o.kind != last.kind)
     {
-        return entry(
-            "unknown",
-            Some("conflicting"),
-            Some(last),
-            None,
-            Some("status_unknown"),
-        );
+        return unknown("conflicting", Some(last));
+    }
+    // Operator-action exhaustion never expires by age.
+    if now.saturating_sub(last.time) > max_age && last.kind != Kind::OperatorAction {
+        return unknown("stale", Some(last));
+    }
+    let known = |status, at, at_reason| Status {
+        status,
+        reason: None,
+        evidence: Some(last),
+        at,
+        at_reason,
+    };
+    match &last.kind {
+        Kind::Available => known("available", None, None),
+        Kind::Exhausted(Reset::At(t)) if now >= *t => known("reset_elapsed", Some(*t), None),
+        Kind::Exhausted(Reset::At(t)) => known("exhausted", Some(*t), None),
+        Kind::Exhausted(Reset::Unknown(r)) => known("exhausted", None, Some(r)),
+        Kind::OperatorAction => known("exhausted", None, Some("operator_action")),
+        Kind::Unknown(r) => unknown(r, Some(last)),
+    }
+}
+
+/// The last reported share of a window, from its newest reading, oldest
+/// first. It applies only within the window it was read in: once that
+/// window's reset has passed, utilization is null until a new reading.
+fn utilization<'a>(
+    reads: &[&'a Reading],
+    now: u64,
+    max_age: u64,
+) -> (Option<f64>, Option<&'static str>, Option<&'a Reading>) {
+    let Some(last) = reads.last().copied() else {
+        return (None, Some("no_reading"), None);
+    };
+    if reads
+        .iter()
+        .any(|r| r.time == last.time && r.utilization.to_bits() != last.utilization.to_bits())
+    {
+        return (None, Some("conflicting"), Some(last));
     }
     if now.saturating_sub(last.time) > max_age {
-        return entry(
-            "unknown",
-            Some("stale"),
-            Some(last),
-            None,
-            Some("status_unknown"),
-        );
+        return (None, Some("stale"), Some(last));
     }
-    match &last.kind {
-        Kind::Available => entry("available", None, Some(last), None, None),
-        Kind::Exhausted(Reset::At(t)) if now >= *t => {
-            entry("reset_elapsed", None, Some(last), Some(*t), None)
-        }
-        Kind::Exhausted(Reset::At(t)) => entry("exhausted", None, Some(last), Some(*t), None),
-        Kind::Exhausted(Reset::Unknown(r)) => entry("exhausted", None, Some(last), None, Some(r)),
-        Kind::OperatorAction => entry("exhausted", None, Some(last), None, Some("operator_action")),
-        Kind::Unknown(r) => entry("unknown", Some(r), Some(last), None, Some("status_unknown")),
+    if matches!(last.reset, Some(Reset::At(t)) if now >= t) {
+        return (None, Some("window_reset_since_reading"), Some(last));
     }
+    (Some(last.utilization), None, Some(last))
 }

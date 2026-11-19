@@ -1,19 +1,38 @@
-//! PROVISIONAL provider header names and failure classification.
+//! PROVISIONAL provider header names, quota dimensions and failure
+//! classification.
 //!
-//! Nothing here is verified against a live provider: the names and shapes are
+//! Nothing here is verified against a live provider: names and shapes are
 //! plausible fixtures until slice 5 retains real evidence. Every
-//! provider-specific header name, unit and error name lives in [`TABLE`],
-//! whose version and SHA-256 identify it in every output, so a real name
-//! change touches only this module.
+//! provider-specific assumption lives in [`TABLE`]: the dimensions per
+//! funding, header names and units, the utilization scale, the error rules
+//! and each class's effect on a dimension. Its version and SHA-256 identify
+//! it in every output. A change to the parsing code here (header, reset and
+//! error-name reading) must bump the version.
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-/// The pinned table. `windows` read per-window quota headers; `retry_after`
-/// names the relative retry header; `rules` map (provider, funding, HTTP
-/// status, error type or code) to a failure class.
+/// The pinned table.
+///
+/// - `dimensions`: quota dimensions per funding.
+/// - `utilization`: the reported share at which a window counts as exhausted,
+///   and the range of operator low-quota thresholds (exclusive minimum,
+///   inclusive maximum).
+/// - `windows`: per-window quota headers.
+/// - `retry_after`: the relative retry header.
+/// - `head_rules`: (provider, funding, HTTP status, error code or type) of a
+///   non-success head to a class.
+/// - `stream_rules`: (provider, funding, error code or type) of a provider
+///   failure event after a success head to a class.
+/// - `effects`: what each (class, funding) means for the dimensions. A class
+///   without an effect row for its funding is unclassified.
 pub const TABLE: &str = r#"{
-  "version": "hosted-route-availability-table.provisional.1",
+  "version": "hosted-route-availability-table.provisional.2",
   "provisional": true,
+  "dimensions": {
+    "subscription": ["subscription_5h", "subscription_weekly"],
+    "api": ["api_rate", "api_credit"]
+  },
+  "utilization": {"exhausted_at": 1.0, "threshold_min_exclusive": 0.0, "threshold_max": 1.0},
   "windows": [
     {
       "provider": "anthropic",
@@ -35,7 +54,7 @@ pub const TABLE: &str = r#"{
     }
   ],
   "retry_after": "retry-after",
-  "rules": [
+  "head_rules": [
     {"provider": "anthropic", "funding": "subscription", "status": 429, "error": "rate_limit_error", "class": "subscription_quota_exhausted"},
     {"provider": "anthropic", "funding": "api", "status": 429, "error": "rate_limit_error", "class": "rate_limited"},
     {"provider": "anthropic", "funding": "api", "status": 402, "error": "billing_error", "class": "api_credit_exhausted"},
@@ -46,6 +65,22 @@ pub const TABLE: &str = r#"{
     {"provider": "openai", "funding": "subscription", "status": 429, "error": "usage_limit_reached", "class": "subscription_quota_exhausted"},
     {"provider": "openai", "funding": "api", "status": 429, "error": "rate_limit_exceeded", "class": "rate_limited"},
     {"provider": "openai", "funding": "api", "status": 429, "error": "insufficient_quota", "class": "api_credit_exhausted"}
+  ],
+  "stream_rules": [
+    {"provider": "anthropic", "funding": "subscription", "error": "overloaded_error", "class": "overload"},
+    {"provider": "anthropic", "funding": "api", "error": "overloaded_error", "class": "overload"},
+    {"provider": "openai", "funding": "subscription", "error": "usage_limit_reached", "class": "subscription_quota_exhausted"},
+    {"provider": "openai", "funding": "api", "error": "rate_limit_exceeded", "class": "rate_limited"},
+    {"provider": "openai", "funding": "api", "error": "insufficient_quota", "class": "api_credit_exhausted"}
+  ],
+  "effects": [
+    {"class": "subscription_quota_exhausted", "funding": "subscription", "effect": "windows"},
+    {"class": "rate_limited", "funding": "api", "effect": "retry_after", "dimension": "api_rate"},
+    {"class": "api_credit_exhausted", "funding": "api", "effect": "operator_action", "dimension": "api_credit"},
+    {"class": "overload", "funding": "subscription", "effect": "non_quota"},
+    {"class": "overload", "funding": "api", "effect": "non_quota"},
+    {"class": "authorization_failure", "funding": "subscription", "effect": "non_quota"},
+    {"class": "authorization_failure", "funding": "api", "effect": "non_quota"}
   ]
 }"#;
 
@@ -54,9 +89,20 @@ pub const TABLE: &str = r#"{
 pub struct Table {
     pub version: String,
     pub provisional: bool,
+    pub dimensions: std::collections::BTreeMap<String, Vec<String>>,
+    pub utilization: Utilization,
     pub windows: Vec<Window>,
     pub retry_after: String,
-    pub rules: Vec<Rule>,
+    pub head_rules: Vec<HeadRule>,
+    pub stream_rules: Vec<StreamRule>,
+    pub effects: Vec<EffectRow>,
+}
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Utilization {
+    pub exhausted_at: f64,
+    pub threshold_min_exclusive: f64,
+    pub threshold_max: f64,
 }
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -80,10 +126,18 @@ pub enum ResetUnit {
 }
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct Rule {
+pub struct HeadRule {
     pub provider: String,
     pub funding: String,
     pub status: u16,
+    pub error: String,
+    pub class: Class,
+}
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct StreamRule {
+    pub provider: String,
+    pub funding: String,
     pub error: String,
     pub class: Class,
 }
@@ -96,6 +150,28 @@ pub enum Class {
     Overload,
     AuthorizationFailure,
     Unclassified,
+}
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct EffectRow {
+    pub class: Class,
+    pub funding: String,
+    pub effect: Effect,
+    /// The affected dimension, for `retry_after` and `operator_action`.
+    #[serde(default)]
+    pub dimension: Option<String>,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Effect {
+    /// The exhausted windows named by the head's window headers.
+    Windows,
+    /// `dimension` exhausted until the retry header's reset.
+    RetryAfter,
+    /// `dimension` exhausted with no reset until the operator clears it.
+    OperatorAction,
+    /// Not a quota signal.
+    NonQuota,
 }
 
 /// A reset time: absolute epoch ms, or unknown with a reason.
@@ -118,6 +194,8 @@ pub struct WindowReading {
     pub malformed: Option<&'static str>,
     /// The status header name, else the first present header name.
     pub source: String,
+    /// The utilization header name.
+    pub utilization_header: String,
 }
 
 pub fn table() -> Table {
@@ -157,6 +235,35 @@ fn reset(value: &str, unit: ResetUnit, head_ms: Option<u64>) -> Reset {
 }
 
 impl Table {
+    /// The quota dimensions of a funding.
+    pub fn dimensions(&self, funding: &str) -> &[String] {
+        self.dimensions.get(funding).map_or(&[], Vec::as_slice)
+    }
+    /// Dimensions that only the operator clears.
+    pub fn operator_action_dimensions(&self, funding: &str) -> Vec<&str> {
+        self.effects
+            .iter()
+            .filter(|e| e.funding == funding && e.effect == Effect::OperatorAction)
+            .filter_map(|e| e.dimension.as_deref())
+            .collect()
+    }
+    pub fn effect(&self, class: Class, funding: &str) -> Option<&EffectRow> {
+        self.effects
+            .iter()
+            .find(|e| e.class == class && e.funding == funding)
+    }
+    pub fn threshold_valid(&self, t: f64) -> bool {
+        t.is_finite()
+            && t > self.utilization.threshold_min_exclusive
+            && t <= self.utilization.threshold_max
+    }
+    /// A valid window reading names its window exhausted.
+    pub fn window_exhausted(&self, w: &WindowReading) -> bool {
+        w.malformed.is_none()
+            && (w.exhausted == Some(true)
+                || w.utilization
+                    .is_some_and(|u| u >= self.utilization.exhausted_at))
+    }
     /// Readings for each of `provider`'s windows with at least one header.
     pub fn windows(
         &self,
@@ -180,6 +287,7 @@ impl Table {
                         reset: None,
                         malformed: Some("conflicting_header"),
                         source: w.status.clone(),
+                        utilization_header: w.utilization.clone(),
                     });
                     continue;
                 }
@@ -209,6 +317,7 @@ impl Table {
                 reset: reset_value.map(|r| reset(r, w.reset_unit, head_ms)),
                 malformed,
                 source,
+                utilization_header: w.utilization.clone(),
             });
         }
         out
@@ -221,13 +330,13 @@ impl Table {
             Ok(v) => v.map(|v| reset(v, ResetUnit::RelativeS, head_ms)),
         }
     }
-    /// The failure class of a non-success response; `Unclassified` unless a
-    /// rule matches exactly, including the error name from `body`.
-    pub fn classify(&self, provider: &str, funding: &str, status: u16, body: &[u8]) -> Class {
+    /// The class of a non-success head; `Unclassified` unless a head rule
+    /// matches exactly, including the error name from `body`.
+    pub fn classify_head(&self, provider: &str, funding: &str, status: u16, body: &[u8]) -> Class {
         let Some(error) = error_name(body) else {
             return Class::Unclassified;
         };
-        self.rules
+        self.head_rules
             .iter()
             .find(|r| {
                 r.provider == provider
@@ -237,22 +346,66 @@ impl Table {
             })
             .map_or(Class::Unclassified, |r| r.class)
     }
+    /// The class of a provider failure event in a stream relayed after a
+    /// success head; `None` when the stream carries no failure event.
+    pub fn classify_stream(&self, provider: &str, funding: &str, stream: &[u8]) -> Option<Class> {
+        let error = stream_error_name(stream)?;
+        Some(
+            self.stream_rules
+                .iter()
+                .find(|r| r.provider == provider && r.funding == funding && r.error == error)
+                .map_or(Class::Unclassified, |r| r.class),
+        )
+    }
 }
 
-/// The error name of an error body: Messages `error.type`, else Responses
-/// `error.code`, from a JSON document or the first SSE `data` line carrying
+fn sse_events(bytes: &[u8]) -> Vec<serde_json::Value> {
+    std::str::from_utf8(bytes)
+        .map(|text| {
+            text.lines()
+                .filter_map(|l| l.strip_prefix("data:"))
+                .filter_map(|d| serde_json::from_str(d.trim()).ok())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+/// `error.code`, else `error.type` (the Host's order).
+fn code_or_type(error: &serde_json::Value) -> Option<String> {
+    error["code"]
+        .as_str()
+        .or(error["type"].as_str())
+        .map(str::to_owned)
+}
+
+/// The error name of a non-success head's body: `error.code`, else
+/// `error.type`, from a JSON document or the first SSE `data` line carrying
 /// an `error` object.
 pub fn error_name(body: &[u8]) -> Option<String> {
-    let name = |v: &serde_json::Value| {
-        let e = &v["error"];
-        e["type"].as_str().or(e["code"].as_str()).map(str::to_owned)
-    };
     if let Ok(v) = serde_json::from_slice::<serde_json::Value>(body) {
-        return name(&v);
+        return code_or_type(&v["error"]);
     }
-    let text = std::str::from_utf8(body).ok()?;
-    text.lines()
-        .filter_map(|l| l.strip_prefix("data:"))
-        .filter_map(|d| serde_json::from_str::<serde_json::Value>(d.trim()).ok())
-        .find_map(|v| name(&v))
+    sse_events(body)
+        .iter()
+        .find_map(|v| code_or_type(&v["error"]))
+}
+
+/// The error name of the first provider failure event in a relayed stream:
+/// `response.failed` (`response.error`) or `error` (top-level `code`, else
+/// `error`), as the Host reads them; `"failed"` for an unnamed failure event.
+pub fn stream_error_name(stream: &[u8]) -> Option<String> {
+    sse_events(stream)
+        .iter()
+        .find_map(|v| match v["type"].as_str() {
+            Some("response.failed") => {
+                Some(code_or_type(&v["response"]["error"]).unwrap_or_else(|| "failed".into()))
+            }
+            Some("error") => Some(
+                v["code"]
+                    .as_str()
+                    .map(str::to_owned)
+                    .or_else(|| code_or_type(&v["error"]))
+                    .unwrap_or_else(|| "failed".into()),
+            ),
+            _ => None,
+        })
 }
