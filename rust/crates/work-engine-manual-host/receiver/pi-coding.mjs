@@ -58,6 +58,16 @@ const EXTENSION='/pi/node_modules/pi-claude-subscription';
 // runtime manifest and mounted read-only at /ext. Loaded only when
 // allow_background is admitted (see bgPlugin).
 const BG_EXTENSION='/ext/node_modules/pi-better-background-tasks';
+// The exact tool set the approved pi-better-background-tasks 0.18.0 plugin
+// registers (src/tools.ts). When allow_background is admitted we expect these
+// names to appear on the ready frame; the Host validates the same set. This is
+// a tool-set contract, not per-call execution approval.
+const BG_TOOLS=[
+ 'bg_task_spawn','bg_task_spawn_batch','bg_task_watch','bg_task_list',
+ 'bg_task_status','bg_task_log','bg_task_stop','bg_task','bg_status',
+ 'wait_for_operations','acknowledge_operation_result','bg_task_wait_cancel',
+ 'bg_task_wait_list'
+];
 const ANTHROPIC_BASE='https://api.anthropic.com';
 // Claude Code's own retries and fallbacks stay off: every upstream request is
 // one Host-admitted attempt (a second request under one grant is refused here).
@@ -314,7 +324,11 @@ try {
  // background plugin is a separate extension surface.
  const execCapable=!live||allowShell;
  const execNames=execCapable?['workspace_exec']:[];
- const activeNames=relay?config.tools.map(t=>t.name):analysis?SNAPSHOT_NAMES:[...execNames,...(claimsTools?CLAIMS_NAMES:[])];
+ // Background tools come from the admitted plugin (loaded as an extension);
+ // they are activated by name so the ready frame advertises them. Only on a
+ // live run (fixtures have no such plugin).
+ const bgNames=live&&bgPlugin?BG_TOOLS:[];
+ const activeNames=relay?config.tools.map(t=>t.name):analysis?SNAPSHOT_NAMES:[...execNames,...bgNames,...(claimsTools?CLAIMS_NAMES:[])];
  const customTools=analysis?snapshotCustom:[...(execCapable?[tool]:[]),...claimsCustom];
  const baseOptions={cwd:'/workspace',agentDir,settingsManager,resourceLoader,modelRuntime,model,...providerOptions,noTools:'builtin',tools:activeNames,customTools};
  function bindBridge(selected,services){

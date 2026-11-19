@@ -28,11 +28,17 @@ pub const OPENROUTER_FLOOR_SUFFIX: &str = ":floor";
 /// The OpenRouter provider data catalog bound for the Completions family.
 const OPENROUTER_CATALOG: &str =
     "node_modules/@earendil-works/pi-ai/dist/providers/data/openrouter.json";
-/// Analysis budget ceiling for the OpenRouter Completions family. Set high
-/// enough to admit the plan's max_requests full-catalog reservations; the
-/// operator monitors external spend. (Reservation math is the same full-catalog
-/// bound as Responses; the constant mirrors MESSAGES_ANALYSIS_BUDGET.)
-const OPENROUTER_ANALYSIS_BUDGET: u64 = 10_000_000;
+/// Analysis budget ceiling for the OpenRouter Completions family (32 requests).
+/// A DeepSeek V4 Flash full-catalog reservation is about 545 259 µUSD
+/// (1M window + 943 718 output at the pinned rates), so 32 of them need about
+/// 17 448 288 µUSD; this ceiling admits that while staying a finite
+/// Host-enforced limit (the operator monitors external spend separately).
+const OPENROUTER_ANALYSIS_BUDGET: u64 = 20_000_000;
+/// Coding-profile budget ceiling for the OpenRouter Completions family (at most
+/// 6 requests). 6 x 545 259 = 3 271 554; this admits a realistic multi-turn
+/// coding plan without an unbounded ceiling. `reservation_microusd()` still
+/// refuses a plan whose own max_requests x reservation exceeds its budget.
+const OPENROUTER_CODING_BUDGET: u64 = 4_000_000;
 fn default_provider() -> String {
     DEFAULT_PROVIDER.into()
 }
@@ -629,6 +635,7 @@ impl ProviderPlan {
             || !(1..=match (analysis, messages, completions) {
                 (true, true, _) => MESSAGES_ANALYSIS_BUDGET,
                 (true, false, true) => OPENROUTER_ANALYSIS_BUDGET,
+                (false, false, true) => OPENROUTER_CODING_BUDGET,
                 (true, false, false) => 10_000_000,
                 _ => 1_000_000,
             })
@@ -1604,6 +1611,25 @@ mod admission_tests {
                 );
             }
         }
+    }
+    /// A realistic multi-turn OpenRouter coding plan must fit its own
+    /// full-catalog reservation x request count within the finite coding
+    /// ceiling (Revision 4 budget fix, review P1). Delta-Seek V4 Flash
+    /// reserves about 545 259 µUSD/request; 4 requests need ~2 181 036, and
+    /// the coding completions ceiling (4 000 000) admits it.
+    #[test]
+    fn realistic_multiturn_openrouter_coding_plan_fits_the_budget_ceiling() {
+        let model = json!({"contextWindow":1048576,"maxTokens":943718,
+            "cost":{"input":0.07,"output":0.5,"cacheRead":0.008,"cacheWrite":0.0}});
+        let per = full_reservation(&model).unwrap();
+        // 4 requests of a realistic coding plan.
+        let reserve = per.checked_mul(4).unwrap();
+        assert!(reserve <= OPENROUTER_CODING_BUDGET, "plan {reserve} exceeds ceiling");
+        assert!(reserve <= OPENROUTER_ANALYSIS_BUDGET);
+        // The per-plan check used by validate/reservation_microusd admits it.
+        assert!(reserve > 1_000_000, "exercise the coding ceiling, not the old $1 cap");
+        // 32 analysis requests also fit the analysis ceiling.
+        assert!(per.checked_mul(32).unwrap() <= OPENROUTER_ANALYSIS_BUDGET);
     }
 }
 

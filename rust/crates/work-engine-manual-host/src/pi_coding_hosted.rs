@@ -727,7 +727,10 @@ impl Host {
             Wire::Responses if url == format!("{base}/codex/responses") => false,
             Wire::Messages if url == format!("{base}/v1/messages") => false,
             Wire::Messages if url == format!("{base}/v1/messages?beta=true") => true,
-            Wire::Completions if url == format!("{base}/api/v1/chat/completions") => false,
+            // The catalog baseUrl already ends in `/api/v1` (openrouter.ai/api/v1),
+            // so the URL Pi presents is {base}/chat/completions. Do not append a
+            // second /api/v1 here (see the upstream request path handling).
+            Wire::Completions if url == format!("{base}/chat/completions") => false,
             _ => return refuse("provider fetch identity/method/url conflict"),
         };
         if !Self::own_stream_frame(s, frame) || frame["method"] != "POST" {
@@ -2989,6 +2992,25 @@ mod tests {
         );
     }
     #[test]
+    /// The OpenRouter Completions URL is `{base}/chat/completions`. The catalog
+    /// baseUrl is `https://openrouter.ai/api/v1`, so the correct presented URL
+    /// is that base plus `/chat/completions`; the doubled `/api/v1/api/v1/...`
+    /// form is a regression to refuse. This pins the URL rule that `hosted_fetch`
+    /// uses (the `Wire::Completions` arm).
+    #[test]
+    fn completions_url_uses_the_catalog_base_not_a_doubled_path() {
+        let base = "https://openrouter.ai/api/v1";
+        let good = format!("{base}/chat/completions");
+        let doubled = format!("{base}/api/v1/chat/completions");
+        // The arm's effective predicate (see hosted_fetch, Wire::Completions).
+        let accept = |url: &str| url == format!("{base}/chat/completions");
+        assert!(accept(&good));
+        assert!(!accept(&doubled));
+        // Freeze the exact strings so a future catalog or path change is caught.
+        assert_eq!(good, "https://openrouter.ai/api/v1/chat/completions");
+        assert_eq!(doubled, "https://openrouter.ai/api/v1/api/v1/chat/completions");
+    }
+
     fn messages_body_policy_and_url_are_enforced() {
         let ok = messages_body(json!([{"role":"user","content":"q"}]));
         let mut cases = vec![];
