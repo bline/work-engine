@@ -354,3 +354,75 @@ is not the registration path.
 This is the largest remaining offline piece and the one the P1 review calls
 out; it will get its own offline fixture + independent review before any live
 run.
+
+## Revision 4 — shell/background capability authorization (operator, 2026-11-19)
+
+Operator decision applied to this lane. Work Engine authorizes **capabilities
+at admission**, not per function within an already-authorized capability.
+
+Capabilities (bound to the admitted execution authority, never model-selected):
+- `allow_shell`: command execution within the admitted Docker execution.
+- `allow_background`: managed asynchronous execution (process spawning,
+  concurrent tasks, status/log inspection, cancellation, completion
+  notifications, waits).
+
+Contract matrix:
+| allow_shell | allow_background | behavior |
+|---|---|---|
+| false | false | no shell or background tools |
+| true | false | foreground shell only; background plugin NOT loaded |
+| true | true | shell + the full approved background plugin |
+| false | true | INVALID; refuse admission |
+Deterministic dependency: `allow_background => allow_shell`.
+
+Plugin integration when both true:
+- Load version-pinned `pi-better-background-tasks` 0.18.0 via Pi's existing
+  embedded `additionalExtensionPaths` mechanism.
+- Expose its normal tools (bg_task_spawn/watch/status/log/stop/list, bg_task,
+  bg_status, bg_task_spawn_batch, wait_for_operations, acknowledge_operation,
+  bg_task_wait_cancel/list) incl. completion notifications.
+- Let the plugin manage its own internal processes WITHOUT routing all 13
+  tools through Host `tool_request` one-by-one. Preserve its own supervision,
+  logging, status, cancellation, async-notification. Do NOT recreate a process
+  manager. (Supersedes Revision 3's per-tool `tool_request` disposition.)
+- Keep the plugin and its process service confined to the admitted Docker
+  execution boundary.
+- When `allow_background` is false, do not load/expose the plugin.
+
+Security boundary: grants process execution only inside the existing sandbox;
+no FS beyond the workspace, no network/remote SSH, no Host credentials or
+privileged Host interfaces, no execution beyond deadline/container lifetime,
+no authority over processes outside the admitted execution. If the plugin
+needs a Host-side service beyond the boundary, that is an ARCHITECTURAL
+BLOCKER to report, not something to bypass. No new per-tool authorization
+machinery unless a demonstrated security requirement demands it.
+
+Semantic distinction (do not overclaim): `allow_background=false` withholds
+managed background-task capability; it does NOT promise a universal
+prohibition of shell-level background syntax, which may still exist per the
+shell's own policy.
+
+Home in the code (per "inspect current contracts"):
+- `Admission` struct (`pi_coding_provider.rs`, schema
+  `work-engine.pi-coding-runtime-admission.v1`) currently carries
+  `allow_provider`. Add `allow_shell` and `allow_background` there, validated
+  in `ProviderPlan::validate` (refuse the invalid `(false,true)`; enforce
+  `allow_background => allow_shell`), defaulting to preserve existing runs.
+- `CodingEffectGate` is the Host execution boundary; foreground shell
+  (workspace_exec) already goes through it. Background stays inside the
+  Docker boundary the same way.
+- The receiver loads the plugin only when both are true, via the existing
+  embedded `additionalExtensionPaths` mechanism (mounted /ext, version+digest
+  pinned).
+
+Offline acceptance tests (required before live):
+1. All four combos incl. refusal of the invalid one.
+2. Plugin absent when allow_background false.
+3. Plugin loaded with normal tools when both true.
+4. Two authorized background commands run concurrently without blocking Pi.
+5. Status, logs, cancellation, completion notifications work.
+6. Background cannot escape FS/network/credential/lifetime boundaries.
+7. Existing foreground shell + provider lanes unaffected.
+
+No live inference / E1a until the offline implementation + these tests pass
+the independent Fable xhigh (provider `claude-sdk`) review.

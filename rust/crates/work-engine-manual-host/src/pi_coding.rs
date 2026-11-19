@@ -78,7 +78,7 @@ fn is_fixture_bridge(schema: &str) -> bool {
 }
 /// The advertised tool set must equal the profile's exact set (order-free for
 /// the claims profile, whose SDK registry order is not part of the contract).
-fn tools_match(advertised: &Value, schema: &str) -> bool {
+fn tools_match(advertised: &Value, schema: &str, allow_shell: bool) -> bool {
     let sorted = |v: &Value| -> Option<Vec<String>> {
         let mut names: Vec<String> = v
             .as_array()?
@@ -88,14 +88,18 @@ fn tools_match(advertised: &Value, schema: &str) -> bool {
         names.sort();
         Some(names)
     };
-    let expected = ready_tools(schema);
+    let expected = ready_tools(schema, allow_shell);
     if schema == CLAIMS_BRIDGE_PROFILE || is_analysis(schema) {
         sorted(advertised).is_some() && sorted(advertised) == sorted(&expected)
     } else {
         *advertised == expected
     }
 }
-fn ready_tools(schema: &str) -> Value {
+/// The advertised native tool set for a profile's ready frame. For the live
+/// coding profile this is the workspace shell tool only when shell is admitted
+/// (`allow_shell`); without it (e.g. the lifecycle relay remap) no execution
+/// tool is advertised (Revision 4).
+fn ready_tools(schema: &str, allow_shell: bool) -> Value {
     if is_relay(schema) {
         json!(native_realization::pi_host::tools::names())
     } else if is_analysis(schema) {
@@ -107,6 +111,11 @@ fn ready_tools(schema: &str) -> Value {
                 .chain(claims::TOOLS)
                 .collect::<Vec<_>>()
         )
+    } else if is_live_bridge(schema) && !allow_shell {
+        // The hosted coding lane: no execution tool when shell is not
+        // admitted (Revision 4). Fixture surfaces (PROFILE, BRIDGE_PROFILE)
+        // always advertise the workspace shell tool.
+        json!([])
     } else {
         json!(["workspace_exec"])
     }
@@ -1204,6 +1213,15 @@ impl Host {
                         || !tools_match(
                             &frame["tools"],
                             &self.journal.job.coding.as_ref().unwrap().schema,
+                            self.journal
+                                .job
+                                .coding
+                                .as_ref()
+                                .unwrap()
+                                .provider
+                                .as_ref()
+                                .map(|p| p.allow_shell)
+                                .unwrap_or(false),
                         )
                     {
                         return refuse("coding ready mismatch");
@@ -2605,10 +2623,12 @@ mod tests {
     }
     #[test]
     fn claims_profile_ready_tool_set_is_exact_and_legacy_sets_are_unchanged() {
-        assert!(tools_match(&json!(["workspace_exec"]), PROFILE));
+        // Provider-disabled fixture profiles always allow shell.
+        assert!(tools_match(&json!(["workspace_exec"]), PROFILE, true));
         assert!(!tools_match(
             &json!(["workspace_exec", "claims_discover"]),
-            BRIDGE_PROFILE
+            BRIDGE_PROFILE,
+            true
         ));
         let all = json!([
             "claims_currency",
@@ -2617,10 +2637,11 @@ mod tests {
             "claims_resolve",
             "workspace_exec"
         ]);
-        assert!(tools_match(&all, CLAIMS_BRIDGE_PROFILE));
+        assert!(tools_match(&all, CLAIMS_BRIDGE_PROFILE, true));
         assert!(!tools_match(
             &json!(["workspace_exec"]),
-            CLAIMS_BRIDGE_PROFILE
+            CLAIMS_BRIDGE_PROFILE,
+            true
         ));
         assert!(!tools_match(
             &json!([
@@ -2630,8 +2651,14 @@ mod tests {
                 "claims_evidence",
                 "bash"
             ]),
-            CLAIMS_BRIDGE_PROFILE
+            CLAIMS_BRIDGE_PROFILE,
+            true
         ));
+        // Revision 4: on the hosted coding surface, no execution tool is
+        // advertised when shell is not admitted.
+        assert!(tools_match(&json!([]), HOSTED_BRIDGE_PROFILE, false));
+        assert!(!tools_match(&json!(["workspace_exec"]), HOSTED_BRIDGE_PROFILE, false));
+        assert!(tools_match(&json!(["workspace_exec"]), HOSTED_BRIDGE_PROFILE, true));
         assert!(is_bridge(CLAIMS_BRIDGE_PROFILE) && is_fixture_bridge(CLAIMS_BRIDGE_PROFILE));
         assert!(!is_fixture_bridge(HOSTED_BRIDGE_PROFILE));
     }

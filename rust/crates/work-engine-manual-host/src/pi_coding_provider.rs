@@ -67,6 +67,13 @@ pub struct ProviderPlan {
     pub max_requests: u32,
     pub budget_microusd: u64,
     pub max_context_bytes: u64,
+    /// Admitted execution capabilities (Revision 4). Authorized at admission;
+    /// the model never selects them. `allow_background => allow_shell`; the
+    /// combination (false, true) is refused.
+    #[serde(default)]
+    pub allow_shell: bool,
+    #[serde(default)]
+    pub allow_background: bool,
 }
 impl std::fmt::Debug for ProviderPlan {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -74,6 +81,8 @@ impl std::fmt::Debug for ProviderPlan {
             .field("provider", &self.provider)
             .field("model", &self.model)
             .field("max_requests", &self.max_requests)
+            .field("allow_shell", &self.allow_shell)
+            .field("allow_background", &self.allow_background)
             .finish_non_exhaustive()
     }
 }
@@ -463,6 +472,13 @@ struct Admission {
     max_requests: u32,
     budget_microusd: u64,
     allow_provider: bool,
+    /// Admitted execution capabilities (Revision 4): foreground shell and
+    /// managed background execution. Capabilities are authorized at admission,
+    /// never selected by the model. `allow_background => allow_shell`.
+    #[serde(default)]
+    allow_shell: bool,
+    #[serde(default)]
+    allow_background: bool,
     /// Digest of the hosted route table.
     hosted_routes_sha256: String,
     #[serde(default = "default_provider")]
@@ -693,11 +709,25 @@ impl ProviderPlan {
             || admission.budget_microusd != self.budget_microusd
             || !admission.allow_provider
             || admission.hosted_routes_sha256 != self.hosted.digest()
+            // Capabilities are decided at admission and bound exactly: the
+            // Admission and the plan must agree, and the matrix must hold.
+            || admission.allow_shell != self.allow_shell
+            || admission.allow_background != self.allow_background
         {
             return refuse("provider admission does not bind this exact realization");
         }
+        capability_ok(self.allow_shell, self.allow_background)?;
         Ok(())
     }
+}
+/// Revision 4 capability matrix. `allow_background` requires `allow_shell`;
+/// the invalid (no-shell, background) combination is refused. Returns Ok only
+/// for the three valid combos.
+fn capability_ok(allow_shell: bool, allow_background: bool) -> Result<()> {
+    if allow_background && !allow_shell {
+        return refuse("provider capability conflict: allow_background requires allow_shell");
+    }
+    Ok(())
 }
 /// The upper bound of a plan's `max_context_bytes` on its profile.
 fn context_bound(analysis: bool, relay: bool) -> u64 {
@@ -897,7 +927,7 @@ impl Host {
         fs::create_dir(&public)?;
         let task = String::from_utf8(plan.task.verify()?)
             .map_err(|_| Error::Refused("task is not UTF8".into()))?;
-        let mut job = json!({"schema":super::HOSTED_BRIDGE_PROFILE,"provider":plan.provider,"model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes});
+        let mut job = json!({"schema":super::HOSTED_BRIDGE_PROFILE,"provider":plan.provider,"model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes,"allowShell":plan.allow_shell,"allowBackground":plan.allow_background});
         if super::is_analysis(&profile.schema) {
             // The receiver's own bounds for this profile; the Host checks
             // every one of them again where it reads.
@@ -911,6 +941,10 @@ impl Host {
                 // the controller; the receiver returns each answer unchanged.
                 job["schema"] = json!(super::LIFECYCLE_PROFILE);
                 job["tools"] = native_realization::pi_host::tools::receiver_tools();
+                // The lifecycle relay lane has no workspace effect: never
+                // admit shell or background execution on it (Revision 4).
+                job["allowShell"] = json!(false);
+                job["allowBackground"] = json!(false);
             }
         }
         atomic(&public.join("job.json"), &job)?;
@@ -1258,6 +1292,8 @@ mod tests {
             max_requests: 1,
             budget_microusd: 1_000_000,
             max_context_bytes: 16384,
+            allow_shell: true,
+            allow_background: true,
         };
         let b = plan("openrouter", "~deepseek/deepseek-v4-flash-latest");
         assert_eq!(
@@ -1304,6 +1340,8 @@ pub(super) mod ledger_tests {
             manifest: pin.clone(),
         };
         h.journal.job.coding.as_mut().unwrap().provider = Some(ProviderPlan {
+            allow_shell: true,
+            allow_background: true,
             lane: LaneInputs { pi_config: tree },
             task: pin.clone(),
             catalog: pin.clone(),
@@ -1490,6 +1528,8 @@ mod admission_tests {
         let profile = h.journal.job.coding.as_mut().unwrap();
         profile.schema = super::super::HOSTED_BRIDGE_PROFILE.into();
         profile.provider = Some(ProviderPlan {
+            allow_shell: true,
+            allow_background: true,
             lane: LaneInputs {
                 pi_config: Tree {
                     root: config,
@@ -1541,6 +1581,27 @@ mod admission_tests {
                 }
                 let error = job.coding.as_ref().unwrap().validate(&job).unwrap_err();
                 assert!(error.to_string().contains("retired"), "{retired}: {error}");
+            }
+        }
+    }
+    /// Revision 4 capability matrix: `allow_background` implies `allow_shell`;
+    /// the invalid (no-shell, background) combination is refused.
+    #[test]
+    fn capability_matrix_background_requires_shell() {
+        for (shell, bg, valid) in [
+            (false, false, true),
+            (true, false, true),
+            (true, true, true),
+            (false, true, false),
+        ] {
+            let out = capability_ok(shell, bg);
+            if valid {
+                assert!(out.is_ok(), "({shell},{bg}) should admit");
+            } else {
+                assert!(
+                    out.is_err() && out.unwrap_err().to_string().contains("allow_background"),
+                    "({shell},{bg}) should refuse with the matrix reason"
+                );
             }
         }
     }
