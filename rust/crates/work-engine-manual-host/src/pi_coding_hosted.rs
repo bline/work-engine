@@ -1489,10 +1489,27 @@ impl Host {
             "relay.json",
             &serde_json::to_vec(&relay.evidence_for(wire))?,
         )?;
-        let terminal = stream::sse_data(&relay.forwarded)
+        let sse = stream::sse_data(&relay.forwarded);
+        let events: Vec<Value> = sse
             .iter()
             .filter_map(|d| serde_json::from_str::<Value>(d).ok())
-            .find(|v| v["type"] == wire.terminal_event());
+            .collect();
+        // Responses/Messages terminate on a typed event; Completions terminates
+        // on the literal `[DONE]` line, which is not JSON, so the terminal
+        // evidence is the last chunk carrying a `usage` object (the same one
+        // `completions_usage` reads).
+        let terminal = if wire == Wire::Completions {
+            events
+                .iter()
+                .rev()
+                .find(|v| v["usage"].is_object())
+                .cloned()
+        } else {
+            events
+                .iter()
+                .find(|v| v["type"] == wire.terminal_event())
+                .cloned()
+        };
         let usage = stream::usage_for(wire, &relay.forwarded);
         let r = self
             .journal
