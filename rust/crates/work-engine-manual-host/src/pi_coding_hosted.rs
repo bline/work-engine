@@ -89,7 +89,7 @@ const MESSAGES_KEYS: [&str; 13] = [
 /// the OpenRouter body shape Pi's `openrouter-floor` provider sends. Anything
 /// else (e.g. `store`, `background`, `service_tier`) is refused. `reasoning`
 /// carries DeepSeek's effort setting (its thinkingLevelMap `high -> "high"`).
-const COMPLETIONS_KEYS: [&str; 11] = [
+const COMPLETIONS_KEYS: [&str; 12] = [
     "model",
     "messages",
     "stream",
@@ -97,8 +97,9 @@ const COMPLETIONS_KEYS: [&str; 11] = [
     "tools",
     "tool_choice",
     "temperature",
-    "max_tokens",
+    "max_completion_tokens",
     "reasoning",
+    "store",
     "stop",
     "top_p",
 ];
@@ -925,7 +926,7 @@ impl Host {
     /// required so settlement has a usage chunk.
     fn completions_policy(
         &self,
-        _plan: &provider::ProviderPlan,
+        plan: &provider::ProviderPlan,
         body: &Value,
         _analysis: bool,
     ) -> Result<()> {
@@ -942,8 +943,21 @@ impl Host {
                 "provider fetch body policy: stream_options.include_usage must be true",
             );
         }
-        if body["max_tokens"].as_u64().is_none_or(|v| v == 0) {
-            return refuse("provider fetch body policy: max_tokens required");
+        // Pi 1.5.0's openai-completions client sets `store:false` (supportsStore)
+        // for openrouter; `store` must be exactly false. The max-token bound, if
+        // present, is emitted as `max_completion_tokens` (Pi's agent loop usually
+        // sends none), so it is validated only when present and pinned to the
+        // catalog output bound -- it is not required.
+        if body["store"] != false {
+            return refuse("provider fetch body policy: store must be false");
+        }
+        if let Some(max) = body["max_completion_tokens"].as_u64()
+            && (max == 0
+                || max > plan.selected()?["maxTokens"].as_u64().unwrap_or(0))
+        {
+            return refuse(
+                "provider fetch body policy: max_completion_tokens exceeds catalog bound",
+            );
         }
         let tools = match &body["tools"] {
             Value::Null => vec![],
@@ -964,11 +978,13 @@ impl Host {
                 &body["tools"],
             )?;
         }
-        // `reasoning` must be present but the effort is applied by Pi's
-        // thinkingLevelMap (high -> "high"); its exact shape is verified by
-        // the body-identity test, not assumed here.
-        if body["reasoning"].is_null() {
-            return refuse("provider fetch body policy: reasoning required (high effort)");
+        // The operator fixed effort `high`. The receiver sets thinkingLevel
+        // 'high' for the openrouter lane; enforce that the transmitted body
+        // actually carries reasoning.effort == "high", not merely a presence.
+        if body["reasoning"]["effort"] != "high" {
+            return refuse(
+                "provider fetch body policy: reasoning.effort must be high (operator decision)",
+            );
         }
         Ok(())
     }

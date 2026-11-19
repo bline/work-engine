@@ -243,8 +243,18 @@ try {
    // The extension registers its provider while the session services load.
   }else if(openrouter){
    if(config.schema!==schema||config.model!=='~deepseek/deepseek-v4-flash-latest')throw Error('provider configuration rejected');
+   // Effort `high` per operator; Pi's openrouter lane maps thinkingLevel to the
+   // OpenRouter `reasoning.effort` field (thinkingLevelMap high -> "high"). The
+   // Host policy requires reasoning.effort == "high" in the body.
+   providerOptions={thinkingLevel:'high'};
    const reject=async()=>{throw Error('credential_mutation');};
    modelRuntime=await ModelRuntime.create({credentials:{read:async()=>undefined,list:async()=>[],modify:reject,delete:reject},modelsPath:null,allowModelNetwork:false,refreshOnCreate:false});
+   // Pi's ModelRuntime/setModel/getClientApiKey reject a provider with no key
+   // before the stream's fetch override is reached. Supply a NON-AUTHENTICATING
+   // marker (the Host strips the container's authorization header via
+   // ACCESS_HEADERS and applies the real key in HttpsTransport.send). Never a
+   // real credential.
+   await modelRuntime.setRuntimeApiKey('openrouter','nonsecret-marker');
    // Host-validated catalog binding (pi_coding_provider::selected): the Layer A
    // id Pi resolves offline; the Host appends `:floor` at dispatch. No network
    // fetch, no extension live-catalog dependency.
