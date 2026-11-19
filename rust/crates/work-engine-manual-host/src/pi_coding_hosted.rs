@@ -1263,7 +1263,9 @@ impl Host {
                     unreachable!()
                 };
                 let relayed = session.relay().forwarded.len() as u64;
+                self.hosted_head_write(s.request, attempt, session.relay())?;
                 drop(session);
+                self.hosted_head_register(s.request, attempt)?;
                 let sha = self.hosted_retain(s.request, attempt, "refusal.body", &body)?;
                 let r = self
                     .journal
@@ -1339,6 +1341,8 @@ impl Host {
     ) -> Result<()> {
         let (plan, _) = self.hosted_plan()?;
         let wire = plan.wire_checked()?;
+        self.hosted_head_write(request, attempt, &relay)?;
+        self.hosted_head_register(request, attempt)?;
         let (sha, retained) = self.hosted_stream_register(request, attempt)?;
         if retained != relay.forwarded {
             self.hosted_uncertain(
@@ -1499,6 +1503,8 @@ impl Host {
                 let (sha, bytes) = self.hosted_stream_register(request, attempt)?;
                 Some((sha, bytes.len() as u64))
             };
+            // Head evidence written when the head was read, before the crash.
+            self.hosted_head_register(request, attempt)?;
             let mut reason = if self.hosted.ran {
                 "unsettled when the run ended".to_string()
             } else {
@@ -1531,6 +1537,54 @@ impl Host {
             .state_dir
             .join(format!("coding-hosted-{request}-{attempt}.stream.sse"))
     }
+    fn hosted_head_path(&self, request: u64, attempt: u64) -> PathBuf {
+        self.journal
+            .job
+            .state_dir
+            .join(format!("coding-hosted-{request}-{attempt}.head.json"))
+    }
+    /// Durably write the attempt's head evidence once its response head was
+    /// read: attempt identity, status, the head's epoch ms and the kept
+    /// headers ([`stream::kept_header`]) in order; no other header. Create-only
+    /// and written at most once, before the head reaches the container or a
+    /// refusal settles, so a crash after the head was read leaves it for
+    /// reconcile.
+    fn hosted_head_write(&self, request: u64, attempt: u64, relay: &stream::Relay) -> Result<()> {
+        let Some(head_ms) = relay.head_ms else {
+            return Ok(());
+        };
+        let path = self.hosted_head_path(request, attempt);
+        if path.exists() {
+            return Ok(());
+        }
+        let bytes = serde_json::to_vec(&json!({
+            "jobId": self.journal.job.job_id,
+            "request": request,
+            "attempt": attempt,
+            "status": relay.status,
+            "headMs": head_ms,
+            "headHeaders": relay.head_headers.iter().map(|(k, v)| json!([k, v])).collect::<Vec<_>>(),
+        }))?;
+        let mut f = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(&path)?;
+        f.write_all(&bytes)?;
+        f.sync_all()?;
+        File::open(&self.journal.job.state_dir)?.sync_all()?;
+        Ok(())
+    }
+    /// Register the attempt's head evidence, when a head was read, as a
+    /// journal artifact so collection verifies it. Registered at most once.
+    fn hosted_head_register(&mut self, request: u64, attempt: u64) -> Result<()> {
+        let path = self.hosted_head_path(request, attempt);
+        if !path.exists() || self.journal.artifacts.iter().any(|a| a.path == path) {
+            return Ok(());
+        }
+        let sha = digest(&fs::read(&path)?);
+        self.journal.artifacts.push(Artifact { path, sha256: sha });
+        self.save()
+    }
     /// Create the attempt's empty stream file, create-only and durable. Done
     /// when the response head is relayed, so a refused head leaves none.
     fn hosted_stream_create(&self, request: u64, attempt: u64) -> Result<()> {
@@ -1558,12 +1612,19 @@ impl Host {
         self.save()?;
         Ok((sha, bytes))
     }
-    /// Queue session frames for the container. Before the head is queued its
+    /// Queue session frames for the container. Once a head was read its
+    /// evidence is written (`hosted_head_write`). Before the head is queued its
     /// status is persisted on the attempt record and the attempt's stream
     /// file is created; each relayed chunk is durably appended to that file
     /// before it is queued. A Host crash loses neither. A retention failure closes the attempt uncertain
     /// without relaying the chunk.
     fn hosted_emit(&mut self, s: &mut Stream, attempt: u64, frames: Vec<Value>) -> Result<()> {
+        if let StreamPhase::Active { session, .. } = &s.phase
+            && let Err(e) = self.hosted_head_write(s.request, attempt, session.relay())
+        {
+            self.hosted_close_uncertain(s, "hosted_retention")?;
+            return Err(e);
+        }
         for f in frames {
             if f["type"] == "response-head"
                 && let Err(reason) = self.subscription_guard(s, attempt)
@@ -1707,6 +1768,11 @@ impl Host {
             // kept.
             relay.outcome = stream::Outcome::Interrupted("closed_by_host");
         }
+        // Best effort: failing to keep head evidence (possibly the reason
+        // for closing) must not keep the attempt from closing.
+        let _ = self
+            .hosted_head_write(s.request, attempt, &relay)
+            .and_then(|()| self.hosted_head_register(s.request, attempt));
         let (sha, retained) = self.hosted_stream_register(s.request, attempt)?;
         let differs = retained != relay.forwarded;
         let wire = self
@@ -1915,9 +1981,13 @@ mod tests {
         }
     }
     fn refusal(status: u16) -> Vec<u8> {
+        refusal_with(status, "")
+    }
+    /// A refusal head carrying `headers` (CRLF-terminated lines).
+    fn refusal_with(status: u16, headers: &str) -> Vec<u8> {
         let body = br#"{"error":{"code":"usage_limit"}}"#;
         let mut b = format!(
-            "HTTP/1.1 {status} Refused\r\nContent-Length: {}\r\n\r\n",
+            "HTTP/1.1 {status} Refused\r\n{headers}Content-Length: {}\r\n\r\n",
             body.len()
         )
         .into_bytes();
@@ -2066,6 +2136,183 @@ mod tests {
         );
         assert!(declared_tools(&json!({"input":"text"})).is_none());
         assert_eq!(declared_tools(&json!({})).unwrap(), Vec::<Value>::new());
+    }
+    fn epoch_ms() -> u64 {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64
+    }
+    /// The state directory's retained `coding-hosted-*` names, as registered.
+    fn hosted_artifacts(dir: &tempfile::TempDir, h: &Host) -> Vec<String> {
+        let mut names: Vec<_> = h
+            .journal
+            .artifacts
+            .iter()
+            .filter(|a| a.path.parent() == Some(dir.path()))
+            .filter_map(|a| {
+                a.path
+                    .file_name()?
+                    .to_str()?
+                    .strip_prefix("coding-hosted-")
+                    .map(str::to_owned)
+            })
+            .collect();
+        names.sort();
+        names
+    }
+    /// The attempt's registered and verified head evidence.
+    fn head_evidence(dir: &tempfile::TempDir, h: &Host, name: &str) -> Value {
+        let path = dir.path().join(format!("coding-hosted-{name}.head.json"));
+        let a = h.journal.artifacts.iter().find(|a| a.path == path).unwrap();
+        a.verify().unwrap();
+        serde_json::from_slice(&fs::read(&path).unwrap()).unwrap()
+    }
+    #[test]
+    fn refused_head_retains_allowlisted_headers_and_head_time_then_fails_over() {
+        let headers = "Content-Type: application/json\r\n\
+            Anthropic-Ratelimit-Unified-Status: rejected\r\n\
+            Set-Cookie: session=secret-cookie\r\n\
+            Retry-After: 120\r\n\
+            Authorization: Bearer secret-token\r\n\
+            anthropic-ratelimit-unified-5h-reset: 1790000000\r\n\
+            x-api-key: secret-key\r\n\
+            X-Overage-Reason: org_disabled\r\n\
+            request-id: req_1\r\n\
+            x-unrelated: value\r\n";
+        let before = epoch_ms();
+        let (dir, mut h, mut w) = host(vec![refusal_with(429, headers), completed()], None);
+        let g = grant(&mut h, &mut w);
+        push(&mut h, &mut w, fetch(&g)).unwrap();
+        tick_until(&mut h, &w, has("response-head"));
+        let after = epoch_ms();
+        let head = head_evidence(&dir, &h, "1-1");
+        assert_eq!(head["jobId"], h.journal.job.job_id.as_str());
+        assert_eq!(
+            (head["request"].as_u64(), head["attempt"].as_u64()),
+            (Some(1), Some(1))
+        );
+        assert_eq!(head["status"], 429);
+        let ms = head["headMs"].as_u64().unwrap();
+        assert!(before <= ms && ms <= after, "{before} <= {ms} <= {after}");
+        assert_eq!(
+            head["headHeaders"],
+            json!([
+                ["anthropic-ratelimit-unified-status", "rejected"],
+                ["retry-after", "120"],
+                ["anthropic-ratelimit-unified-5h-reset", "1790000000"],
+                ["x-overage-reason", "org_disabled"],
+                ["request-id", "req_1"],
+            ])
+        );
+        let raw =
+            String::from_utf8(fs::read(dir.path().join("coding-hosted-1-1.head.json")).unwrap())
+                .unwrap();
+        for absent in [
+            "secret",
+            "cookie",
+            "authorization",
+            "x-api-key",
+            "content-type",
+            "unrelated",
+        ] {
+            assert!(
+                !raw.to_ascii_lowercase().contains(absent),
+                "{absent} in {raw}"
+            );
+        }
+        // Failover completes and settles as without head evidence.
+        let mut ordinal = 1;
+        loop {
+            push(&mut h, &mut w, op(&g, "pull", ordinal)).unwrap();
+            let f = tick_until(&mut h, &w, |a| !a.is_empty());
+            ordinal += 1;
+            if f[0]["type"] == "response-end" {
+                break;
+            }
+        }
+        push(&mut h, &mut w, op(&g, "ack", ordinal)).unwrap();
+        let r = request(&h);
+        assert_eq!(r.attempts[0].disposition, AttemptDisposition::Refused);
+        assert_eq!(r.attempts[0].http_status, Some(429));
+        assert_eq!(r.attempts[1].disposition, AttemptDisposition::Completed);
+        // Each attempt whose head was read gains exactly its head evidence.
+        assert_eq!(
+            hosted_artifacts(&dir, &h),
+            [
+                "1-1.head.json",
+                "1-1.refusal.body",
+                "1-2.head.json",
+                "1-2.relay.json",
+                "1-2.stream.sse",
+                "1.body.json"
+            ]
+        );
+        let relayed = head_evidence(&dir, &h, "1-2");
+        assert_eq!(
+            (relayed["status"].as_u64(), relayed["attempt"].as_u64()),
+            (Some(200), Some(2))
+        );
+        assert_eq!(relayed["headHeaders"], json!([]));
+        assert!(relayed["headMs"].as_u64().unwrap() >= ms);
+        // relay.json is unchanged: no head time.
+        let relay: Value = serde_json::from_slice(
+            &fs::read(dir.path().join("coding-hosted-1-2.relay.json")).unwrap(),
+        )
+        .unwrap();
+        assert!(relay.get("headMs").is_none());
+    }
+    #[test]
+    fn crash_after_a_refusal_head_was_read_retains_its_head_evidence_on_reconcile() {
+        // The refusal body never completes: the head is read, the attempt
+        // is not settled when the producing process goes.
+        let partial = b"HTTP/1.1 429 Refused\r\nRetry-After: 30\r\nx-api-key: secret\r\nContent-Length: 100\r\n\r\n{\"error\"".to_vec();
+        let (dir, mut h, mut w) = host(vec![partial], None);
+        let g = grant(&mut h, &mut w);
+        push(&mut h, &mut w, fetch(&g)).unwrap();
+        let path = dir.path().join("coding-hosted-1-1.head.json");
+        tick_until(&mut h, &w, |_| path.exists());
+        h.hosted = Hosted::default(); // the producing process is gone
+        assert_eq!(
+            request(&h).attempts[0].disposition,
+            AttemptDisposition::Pending
+        );
+        assert!(!h.journal.artifacts.iter().any(|a| a.path == path));
+        h.coding_hosted_reconcile_unsettled().unwrap();
+        let a = &request(&h).attempts[0];
+        assert_eq!(a.disposition, AttemptDisposition::Uncertain);
+        let head = head_evidence(&dir, &h, "1-1");
+        assert_eq!(head["status"], 429);
+        assert_eq!(head["headHeaders"], json!([["retry-after", "30"]]));
+        assert!(head["headMs"].is_u64());
+        // Idempotent: registered once.
+        h.coding_hosted_reconcile_unsettled().unwrap();
+        assert_eq!(
+            h.journal
+                .artifacts
+                .iter()
+                .filter(|a| a.path == path)
+                .count(),
+            1
+        );
+    }
+    #[test]
+    fn crash_after_a_relayed_head_retains_its_head_evidence_on_reconcile() {
+        let (dir, mut h, mut w) = host(vec![chunked_head()], None);
+        mid_body(&mut h, &mut w);
+        h.hosted = Hosted::default(); // the producing process is gone
+        h.coding_hosted_reconcile_unsettled().unwrap();
+        assert_eq!(
+            request(&h).attempts[0].disposition,
+            AttemptDisposition::Uncertain
+        );
+        let head = head_evidence(&dir, &h, "1-1");
+        assert_eq!(head["status"], 200);
+        assert!(head["headMs"].is_u64());
+        assert_eq!(
+            hosted_artifacts(&dir, &h),
+            ["1-1.head.json", "1-1.stream.sse", "1.body.json"]
+        );
     }
     #[test]
     fn refusal_fails_over_within_the_grant_and_host_evidence_settles_completion() {
