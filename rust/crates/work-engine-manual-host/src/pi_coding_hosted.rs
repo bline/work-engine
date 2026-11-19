@@ -133,7 +133,7 @@ impl HostedRoutes {
                 .as_bytes(),
         )
     }
-    fn router(&self, model: &str, max_requests: u32, expires_ms: u64) -> Router {
+    pub(super) fn router(&self, model: &str, max_requests: u32, expires_ms: u64) -> Router {
         Router::new(route::Policy {
             model: model.into(),
             routes: self

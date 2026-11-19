@@ -7,6 +7,8 @@ pub mod analysis;
 pub mod claims;
 #[path = "pi_coding_export.rs"]
 pub mod export;
+#[path = "pi_failover.rs"]
+pub mod failover;
 #[path = "pi_coding_hosted.rs"]
 pub mod hosted;
 #[path = "pi_coding_https.rs"]

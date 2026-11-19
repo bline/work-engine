@@ -12,7 +12,7 @@
 pub mod provisional;
 
 use provisional::{Class, Effect, Reset, Table, WindowReading};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{
@@ -22,7 +22,10 @@ use std::{
 };
 
 pub const CONFIG_SCHEMA: &str = "work-engine.hosted-route-availability-config.v1";
-pub const OUTPUT_SCHEMA: &str = "work-engine.hosted-route-availability.v1";
+/// v2 adds each pool's declaration (members, thresholds, credit clear) and
+/// the evidence age bound, so a consumer can check which operator pools an
+/// output was derived under.
+pub const OUTPUT_SCHEMA: &str = "work-engine.hosted-route-availability.v2";
 /// The Host journal schema this view reads.
 pub const JOURNAL_SCHEMA: &str = "work-engine.pi-docker-custody.v1";
 /// Hosted job profiles whose journals carry hosted attempts.
@@ -43,7 +46,7 @@ pub struct Config {
     pub max_evidence_age_ms: u64,
     pub pools: Vec<Pool>,
 }
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Pool {
     pub id: String,
@@ -59,13 +62,13 @@ pub struct Pool {
     #[serde(default)]
     pub credit_cleared_ms: Option<u64>,
 }
-#[derive(Debug, Deserialize, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub enum Funding {
     Subscription,
     Api,
 }
-#[derive(Debug, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Member {
     pub payer: String,
@@ -113,6 +116,16 @@ pub fn view(config_bytes: &[u8]) -> Result<Vec<u8>, String> {
     .map_err(|e| e.to_string())?;
     out.push(b'\n');
     Ok(out)
+}
+
+/// Validate a configuration against the pinned table, as [`view`] does.
+pub fn check_config(config: &Config) -> Result<(), String> {
+    check(config, &provisional::table())
+}
+
+/// A pool's declaration as reported in the output.
+pub fn pool_declaration(p: &Pool) -> Value {
+    json!({"members": p.members, "low_thresholds": p.low_thresholds, "credit_cleared_ms": p.credit_cleared_ms})
 }
 
 fn check(config: &Config, table: &Table) -> Result<(), String> {
@@ -764,7 +777,11 @@ fn derive(config: &Config, config_sha256: &str, table: &Table) -> Result<Value, 
                 "low": low,
             }));
         }
-        pools.push(json!({"id":p.id,"funding":f,"dimensions":dimensions}));
+        let mut pool = json!({"id":p.id,"funding":f,"dimensions":dimensions});
+        if let (Value::Object(m), Value::Object(d)) = (&mut pool, pool_declaration(p)) {
+            m.extend(d);
+        }
+        pools.push(pool);
     }
     let list = |set: &BTreeSet<String>| -> Vec<Value> {
         set.iter()
@@ -774,6 +791,7 @@ fn derive(config: &Config, config_sha256: &str, table: &Table) -> Result<Value, 
     Ok(json!({
         "schema": OUTPUT_SCHEMA,
         "now_ms": now,
+        "max_evidence_age_ms": config.max_evidence_age_ms,
         "config_sha256": config_sha256,
         "table": {"version": table.version, "sha256": provisional::table_sha256(), "provisional": table.provisional},
         "journals": journals,

@@ -774,6 +774,30 @@ fn the_classification_table_is_pinned_and_reported() {
 }
 
 #[test]
+fn the_output_reports_each_pool_declaration_and_the_age_bound() {
+    let c = config(&[], NOW);
+    let out = run(&c);
+    assert_eq!(out["schema"], "work-engine.hosted-route-availability.v2");
+    assert_eq!(out["max_evidence_age_ms"], c["max_evidence_age_ms"]);
+    for (p, declared) in out["pools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .zip(c["pools"].as_array().unwrap())
+    {
+        assert_eq!(p["id"], declared["id"]);
+        assert_eq!(p["members"], declared["members"]);
+        assert_eq!(
+            p["low_thresholds"],
+            declared.get("low_thresholds").cloned().unwrap_or(json!({}))
+        );
+        assert_eq!(p["credit_cleared_ms"], Value::Null);
+    }
+    let parsed: hosted_route_availability::Config = serde_json::from_value(c).unwrap();
+    assert!(hosted_route_availability::check_config(&parsed).is_ok());
+}
+
+#[test]
 fn an_invalid_config_is_refused() {
     let mut c = config(&[], NOW);
     c["pools"][0]["members"][0]["endpoint"] = json!("https:anthropic-api");

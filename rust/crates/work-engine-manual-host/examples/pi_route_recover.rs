@@ -58,7 +58,7 @@ fn run() -> Result<Value, &'static str> {
                 .map_err(|_| "settle_json")?,
         );
     }
-    let mut router = Router::recover(policy, &intents, &settles)?;
+    let mut router = Router::recover(policy, None, &intents, &settles)?;
     let recovered = router.evidence();
     // What this router would now permit for each request it has seen.
     let mut requests: Vec<u64> = router.attempts().iter().map(|a| a.request).collect();

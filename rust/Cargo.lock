@@ -4413,6 +4413,7 @@ name = "work-engine-manual-host"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
+ "hosted-route-availability",
  "libc",
  "lifecycle-wire",
  "native-realization",
