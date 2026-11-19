@@ -426,3 +426,67 @@ Offline acceptance tests (required before live):
 
 No live inference / E1a until the offline implementation + these tests pass
 the independent Fable xhigh (provider `claude-sdk`) review.
+## Revision 5 — review remediation status + migration note (2026-11-19)
+
+Code-review (DeepSeek) findings at fe6e7f14, dispositioned and committed:
+
+| Finding | Commit | Status |
+|---|---|---|
+| P1 Host allow_shell enforced on tool_request (no receiver bypass) | ab79b475 | done; test |
+| P1 Background tools in activeNames + Host readiness surface | ab79b475 | done; BG_TOOLS shared |
+| P1 OpenRouter URL {base}/chat/completions (not doubled /api/v1) | ab79b475 | done; test |
+| P1 Budget ceilings admit realistic multi-turn plans (\$4 coding / \$20 analysis) | ab79b475 | done; test |
+| P2 Resolved checkpoint must belong to admitted model family | e2353906 | done; test |
+| P2 Analysis/relay lanes reject shell+background at admission | acc4fd5d | done; test |
+
+Serde-default migration note: the new capability fields default to `false` via
+`#[serde(default)]`, so a previously-admitted plan without them loses shell
+access. That is the secure default and, for this dev-vertical lane, there are no
+production plans that carry the pre-Revision-4 authority; no migration is
+required. If an old authority is ever replayed with execution expected, it must
+be re-admitted with `allow_shell`/`allow_background` explicitly. The operator
+monitors live spend separately; these ceilings are finite Host limits.
+
+Remaining before independent Fable xhigh review:
+- Background-execution boundary: qualify whether pi-better-background-tasks'
+  managed service can run inside the Docker/workspace boundary or is an
+  architectural blocker (report, do not bypass).
+- Offline acceptance tests (7 from Revision 4), clippy -D clean, full
+  integration suite, self-review.
+
+## Revision 6 — background execution boundary: architectural blocker (2026-11-19)
+
+Investigated the installed pi-better-background-tasks 0.18.0 (`~/.pi/agent/npm/
+node_modules/pi-better-background-tasks`). Its mechanical execution is NOT a
+passive in-process tool set. It carries two execution routes:
+
+1. In-process spawn: `bg_task_*` tools call `spawnTask`/`spawnCommand`
+   (`src/runtime.ts`) in the same process tree as Pi. These run inside whichever
+   container holds Pi (the inference container), which has NO mounted writable
+   coding workspace; the workspace lives in the separate coding-tool container.
+   So even the in-process route does not execute in the `workspace_exec`
+   environment by default.
+2. Managed/durable/delivery paths (`requestBackgroundTool`,
+   `managed-client.ts`) connect over a Unix socket
+   (`$serverDir/pi-server.sock`, from `server-registration-v1.json`) to a
+   SEPARATELY-STAGED LONG-LIVED DAEMON: `runtime-client/src/runtime/client.mjs`
+   `spawn(runtime.node, [runtime.entrypoint, "--agent","pi"],
+   {detached:true, ...})` installing its own private Node runtime
+   (`stageRuntime`), daemon owner, and server. This is a Host-side process
+   service outside the Docker execution boundary.
+
+CONCLUSION — ARCHITECTURAL BLOCKER (report, do not bypass): loading the plugin in
+the Pi container exposes tools that, for their full lifecycle, require a
+separate detached Host daemon over a Unix socket. Wiring that socket/daemon would
+create the unrestricted Host-side execution route the operator and review both
+explicitly prohibited, and running the plugin's in-process spawn in the inference
+container does not share the coding workspace boundary.
+
+DISPOSITION for this lane (offline): keep `allow_background` admit/load gating
+(Revision 4/5) but, in the arm, expose the plugin's tools only where their
+mechanical execution can run inside the authorized workspace boundary. Since the
+plugin's service placement is unresolved and would expand the execution surface
+beyond the coding tool container, the lane raises background to a documented
+blocker pending a boundary design decision (e.g. a workspace-bounded relay or a
+dedicated process host). No live E1a arm exercises background until that is
+resolved. `allow_background=false` remains the default, secure posture.
