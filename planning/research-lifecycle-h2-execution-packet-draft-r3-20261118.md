@@ -9,16 +9,16 @@
 
 | File | SHA-256 |
 | --- | --- |
-| `gate-trace.md` | `a244c4f12554ca088bd6b9d982cc79d2abd73cf199fa95c420da858ef2c7e2e6` |
+| `gate-trace.md` | `dff3889cd55f7187cb642bb87e4797b59295cd07fc8319cf65e309233cd7bc69` |
 | `gate-loci.json` | `739dce5b56950b212ef4d764b62444fb35bf5033d4990a09e059ea82f3c68523` |
 | `audit-request.json` | `1503b95dd217f429e9cfa4f218d8d7487d668883de981999cdfa5daa826347dc` |
-| `snapshot-manifest.json` | `b5c8d199cd90ccc0f789504daccd3d2daaae3e35c5ea9a8cec12c13538d81167` |
+| `snapshot-manifest.json` | `13534370eaf3751bb9a0ceb26504dc9fcf4651be09720e4a5c08308fc4739343` |
 | `rubric.md` | `ba6d3273a45973efd3a1297dd5c95e379aecd4e999af734d1d82bf279adca69c` |
-| `lc7-protocol.json` | `3c46bc95b03fa0bade1ab82f42fef831be4275848f6faa70c5ad96566f5ebc8e` |
+| `lc7-protocol.json` | `65ef31ca7492d143f9ad7a83be001b3c94a6736959ec66f55e4f4fc2984f2730` |
 | `advisory-input.md` | `bf73c2be0629666fff66fbb002a7aa146ce48a8e3a9e6ad9494417be70880b3f` |
 | `authority-skeletons.json` | `ca2b76f967be555e7289b32041f68e867014f9ffc5a26acec233b4e573705280` |
 | `completeness.md` | `e70adc77efdb3a45ed6b70d14414dba780eebbfeac36d21e20bbaf0b4416706f` |
-| `check.py` | `0436d7d5bceaca169f43f2c6064a8be44f4cc7b728490ea346c3a8e673a2fbd2` |
+| `check.py` | `fa3aed725c2a2bc14a96b40f168dcfdf1ad6d509661300ab8477ece92aee8a64` |
 | `use-bundle/gen_draft.py` | `11a85b5064a80edbd3803dc88730ce6e92e4eef64d93c5abcb812d53e7a03825` |
 | `use-bundle/bundle/request.json` | `c0add36d78b9743c3e710bdea0b25c8567a3f441b26968b5d77a50b7292f90a3` |
 | `use-bundle/bundle/manifest.json` | `33ac05d85f500b36559fa377346a8999e8cb01ae2e4201a15ff0d6b9033b66b6` |
@@ -31,6 +31,11 @@
 | `a4/card.json` | `034b25f9b4e15b72e8ada25323d3b99dc2ff3f637e0e9c3fbd0561e3cae33be9` |
 | `a4/request-card.member` | `c257951b53f3c6540101eac4a31919b0fa220d83d292f98a3afca8dd0eb67263` |
 | `a4/target.txt` | `1981220a9c6dfd1be73492d9bfb623a2bc9ee53caf4f042c070cce1ac6f97b19` |
+| `arm-questions/advisory.txt` | `5ed3132d1283706ce4a167505efa267c9495b0ce109bece6e5b2920182b8cec3` |
+| `arm-questions/audit_treatment.txt` | `f4c1c1ba31294b95baba229eb611692d8c4dae868fd868f3a7211f4359295047` |
+| `arm-questions/audit_baseline.txt` | `6e5ae3573a301def80bea0cfe4d46411b49f803a455b919339d8e9b1b720dc2a` |
+| `ARM-QUESTIONS-FROZEN-20261119.md` | `aa36796c9384eca397114eab2155b3d53aaee3ec0a4352173ac29339640d6787` |
+| `OPERATOR-APPROVAL-20261119.md` | `f73c0c971700f57dab710bb1202a32d3e213bfcfccce446b116d10d2dc42d0a0` |
 
 `check.py --index <this file>` recomputes every digest above and the git-pinned members and register digests, re-reads 141 gate loci at `f6dc724e`, and checks:
 - slots, DRAFT/FROZEN marks and settled holders;
@@ -38,7 +43,7 @@
 - the use bundle's binding to the frozen audit request and its internal consistency;
 - the A4 member.
 
-Custody records are in `021-s2-r3/custody/` (r3 check), `021-s2-r3/custody-budget/` (after the budget ruling), `021-s2-r3/custody-derive/` (first card projection), `021-s2-r3/custody-phaseA/` and `021-s2-r3/custody-phaseB/` (review 023 repair: regeneration, build, card re-derive, checks), `021-s2-r3/custody-phaseC/` (phase C checks) and `021-s2-r3/custody-phaseD/` (phase D checks).
+Custody records are in `021-s2-r3/custody/` (r3 check), `021-s2-r3/custody-budget/` (after the budget ruling), `021-s2-r3/custody-derive/` (first card projection), `021-s2-r3/custody-phaseA/` and `021-s2-r3/custody-phaseB/` (review 023 repair: regeneration, build, card re-derive, checks), `021-s2-r3/custody-phaseC/` (phase C checks), `021-s2-r3/custody-phaseD/` (phase D checks) and `021-s2-r3/custody-phaseF/` (phase F checks).
 
 ## Settled inputs (operator or owner decisions; not reopened)
 
@@ -103,6 +108,19 @@ Custody records are in `021-s2-r3/custody/` (r3 check), `021-s2-r3/custody-budge
 | check.py | Pin `f6dc724e` (phase D); P6/P7; FROZEN rule; use-bundle and A4 member checks; rule 12: the card and the skeletons are bound to the current bundle and events. |
 | rubric | unchanged |
 
+## Frozen arm question texts (operator, 2026-11-19; `021-s2-r3/ARM-QUESTIONS-FROZEN-20261119.md`)
+
+Each text is the arm's `engineering_question` byte for byte. The model sees it inside the input locator; the objective text is visible through it (choice 1). The audit texts differ only in the evidence block.
+
+| Arm | File | Bytes | Locator bytes / 8,192 | sha256 |
+| --- | --- | --- | --- | --- |
+| advisory | `arm-questions/advisory.txt` | 1,959 | 2,268 | `5ed3132d1283706ce4a167505efa267c9495b0ce109bece6e5b2920182b8cec3` |
+| audit treatment | `arm-questions/audit_treatment.txt` | 3,337 | 3,652 | `f4c1c1ba31294b95baba229eb611692d8c4dae868fd868f3a7211f4359295047` |
+| audit baseline | `arm-questions/audit_baseline.txt` | 2,435 | 2,740 | `6e5ae3573a301def80bea0cfe4d46411b49f803a455b919339d8e9b1b720dc2a` |
+
+**Known LC-7 limitation (choice 3(a)):** the baseline question names evidence it cannot read (the register findings and the `1a1cb443` target passage); recorded, not reworded (gate-trace 15, `lc7-protocol.json#known_limitations`).
+Not covered by the freeze: the `snapshot_approval` slot, the arm files and any live run.
+
 ## Gate summary (detail: `gate-trace.md`)
 
 | ID | First H2 |
@@ -125,7 +143,7 @@ Custody records are in `021-s2-r3/custody/` (r3 check), `021-s2-r3/custody-budge
 0. **Preconditions** (owner acts and root units):
    - (a) **done (2026-11-19):** the operator approved the two event templates (`44df41cb…`, `eb94eaa4…`) by SHA-256. **Still open:** approval of the exact `audit-request.json` (`1503b95d…`) and installation inputs (`cb3a9b17…`), the snapshot member list, and the remaining R4 acts (estimand, installer admission);
    - (b) the option A change (gate-trace P6) and `derive_real_a4`: merged at `f6dc724e` (board 5966);
-   - (c) `ledger_range` is filled (lines 50, 295–374, 431);
+   - (c) `ledger_range`: **settled** by the operator on 2026-11-19 (lines 50, 295–374, 431; 5,753 B, `e3b452a8…`). The `snapshot_approval` slot stays open;
    - (d) receipt locations are chosen;
    - (f) **live context cap**: merged at `afbcbca8` (board 5961). Arms set `max_context_bytes` 500,000; the final answer stays under about 21 KB (5955);
    - (g) **minted-basis size**: decided as option E (`MAX_ARTIFACT_BYTES` 16 MiB + task-host fixture-file cap 32 MiB), merged at `f6dc724e` (board 5966);
@@ -139,14 +157,14 @@ Custody records are in `021-s2-r3/custody/` (r3 check), `021-s2-r3/custody-budge
    - `kind`, `objective`, `engineering_question` and `facts`. The advisory has the target fact (text = `target.txt`, owner binding only, not model-visible) and `mapping` `decision.target → target`; the audit arms have empty `facts`;
    - `job` = the M2 parameters with route `[{"id":"subscription","payer":"claude","endpoint":"https:anthropic-oauth"}]` and `max_attempts_per_request` 1.
 
-   The model-visible task text is the input locator: `engineering_question` verbatim, the objective by reference only, and the snapshot ref. Facts and the objective text are not model-visible (gate-trace 14). So the arm's `engineering_question` names the member IDs, the 32 KiB read plan and (for the advisory) the recommendation codec with the digest to copy, within the 8 KiB locator cap.
+   Use the frozen texts (above) as each arm's `engineering_question`. The model-visible task text is the input locator: `engineering_question` verbatim, the objective by reference only, and the snapshot ref. Facts and the objective text are not model-visible (gate-trace 14). So the arm's `engineering_question` names the member IDs, the 32 KiB read plan and (for the advisory) the recommendation codec with the digest to copy, within the 8 KiB locator cap.
 4. **Advisory.**
    - Credential check (`expiresAt` ≥ deadline + 10 min) and token scan.
    - `WE_PI_HOST_ARM=<advisory arm> WORK_ENGINE_HOSTED_CREDENTIALS=<credentials file> cargo test -p lifecycle-service --features controlled-proof --lib pi_host_live_arm -- --ignored`, with the other `WE_PI_HOST_*` variables as in the offline command.
    - Then `pi_host_live_delivery_verifies` (task host, `controlled-proof`) with `WE_PI_HOST_OUT` and `WE_A4_FIXTURE` (request, card, host-held reconstruction), under the option A predicate. A refusal is retained, not rerun.
 5. **Baseline audit** (5 members, 45,812 B), then 6.
 6. *(Root's choice)* **Controlled mint** (`checked_unminted_basis` → `mint`).
-7. **Treatment audit:** all 14 members, 270,633 B, within the 275,000 B budget (operator 2026-11-18); `ledger_range` filled. A `max_context_bytes` refusal is retained as the LC-7 outcome.
+7. **Treatment audit:** all 14 members, 270,719 B, within the 275,000 B budget (operator 2026-11-18), with the ledger extract (settled 2026-11-19). A `max_context_bytes` refusal is retained as the LC-7 outcome.
 8. **After each run:**
    - token scan;
    - retain `grants.json` and its digest, `pi-host-serve-record.json`, the capture with `attempts`, and the runner check;
