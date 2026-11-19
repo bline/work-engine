@@ -35,7 +35,7 @@ fn completions_forward_body(body: &[u8], transmitted: &str) -> Vec<u8> {
         .and_then(|mut v| {
             v.as_object_mut()?
                 .insert("model".into(), Value::String(transmitted.to_string()));
-            Some(serde_json::to_vec(&v).ok()?)
+            serde_json::to_vec(&v).ok()
         })
         .unwrap_or_else(|| body.to_vec())
 }
@@ -1548,14 +1548,14 @@ impl Host {
             // slug (plan.model, Layer B): OpenRouter resolves `latest:floor` to
             // a concrete checkpoint. It must belong to the pinned model's
             // floor family (checked by `provider_observation`), not equal it.
-            if wire != Wire::Completions {
-                if let Some(model) = model.clone() {
-                    if model != plan.model {
-                        self.journal.coding.as_mut().unwrap().provider_failed = true;
-                        self.save()?;
-                        return refuse("backend model identity conflict");
-                    }
-                }
+            if wire != Wire::Completions
+                && model
+                    .as_ref()
+                    .is_some_and(|model| model != &plan.model)
+            {
+                self.journal.coding.as_mut().unwrap().provider_failed = true;
+                self.save()?;
+                return refuse("backend model identity conflict");
             }
             if let Some(model) = model {
                 r.backend_model = Some(model);

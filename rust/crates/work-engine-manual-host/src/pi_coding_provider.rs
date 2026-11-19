@@ -1172,12 +1172,13 @@ impl Host {
                 } else {
                     r.backend_model.as_deref() == Some(plan.model.as_str())
                 };
-                let stop_ok = match (wire, frame["stopReason"].as_str()) {
-                    (crate::pi_stream::Wire::Completions, Some("stop")) => true,
-                    (crate::pi_stream::Wire::Completions, Some("toolUse")) => true,
-                    (_, Some("stop" | "toolUse")) => true,
-                    _ => false,
-                };
+                let stop_ok = matches!(
+                    (wire, frame["stopReason"].as_str()),
+                    (
+                        crate::pi_stream::Wire::Completions,
+                        Some("stop" | "toolUse")
+                    ) | (_, Some("stop" | "toolUse"))
+                );
                 if !stop_ok || r.http_status != Some(200) || !backend_ok {
                     state.provider_failed = true;
                     self.save()?;

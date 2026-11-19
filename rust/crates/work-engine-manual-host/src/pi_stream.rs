@@ -514,15 +514,7 @@ fn completions_usage(events: &[Value]) -> Value {
     // An error chunk (`type: "error"` or with an `error` object) is a provider
     // failure, never a completion.
     let failed = events.iter().find_map(|v| {
-        if v["type"] == "error" {
-            Some(
-                v["error"]["code"]
-                    .as_str()
-                    .or(v["error"]["type"].as_str())
-                    .unwrap_or("error")
-                    .to_owned(),
-            )
-        } else if v["error"].is_object() {
+        if v["type"] == "error" || v["error"].is_object() {
             Some(
                 v["error"]["code"]
                     .as_str()
