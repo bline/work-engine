@@ -14,6 +14,13 @@ pub const MAX_REQUESTS: u32 = 32;
 /// frame and the gate's `pi.provider_request` ingress carry it twice, which
 /// must fit the 1 MiB frame and the store's 1 MiB ingress bound.
 pub const MAX_CONTEXT_BYTES: u64 = 400_000;
+/// The lifecycle relay profile's bound (operator 2026-11-18, for the live
+/// H2; the analysis profile stays at 400,000 by scope). The 1 MiB container
+/// frame carrying the context twice bounds it, with the request body bound
+/// above; the history frame at turn end carries the final context and the
+/// answer twice, so near this bound it, not `MAX_ANSWER_BYTES`, limits the
+/// final answer.
+pub const RELAY_MAX_CONTEXT_BYTES: u64 = 500_000;
 pub const MAX_REQUEST_BODY: usize = 600_000;
 /// One container frame (either direction is checked where it is read).
 pub const FRAME_BYTES: usize = 1 << 20;

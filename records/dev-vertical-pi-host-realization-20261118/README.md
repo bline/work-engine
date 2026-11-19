@@ -502,6 +502,123 @@ files that differ from base were touched and rebuilt. Every binary was
 checked to carry `56c00a88…` and not `9a33912a…` before `q23`/`q24`. `q21`,
 `q22`, `r9` and `r10` ran before the base build.
 
+### R3 at the real-card composition (RL 5943)
+
+Branch `pi-host-r3-real-card-20261118`, cut from `f772612f`. Offline, no
+inference. The Host and observer binaries were built at `f772612f` in the
+post-merge gate's own target directory (Host `0306b6f2…`, observer
+`9c2a5d9e…`). `serve.py` gained `PI_HOST_S2_MANIFEST`, `PI_HOST_A4_MEMBER`
+(the S2 r3 `a4_request_card_member`, checked against its pin), the
+`advisory` scenario and `PI_HOST_OBSERVER`. The draft A4 bytes were read at
+run time from the S2 r3 directory and are not in the repository.
+
+The manifest was S2 r3 `snapshot-manifest.json` (`9fcaa325…`) and the A4
+member `request-card.member` (`bdc8c2ef…`, 144,537 B, all ASCII). The H2 job
+parameters were as in `r10`. Reads were 32 KiB pages, 12 calls in the first
+response and the rest in the second.
+
+| | `r11-treatment-real-card` | `r12-advisory-real-card` |
+| --- | --- | --- |
+| Members | 14, 270,633 B | 1 (`research/a4-request-card`), 144,537 B |
+| Turn | completed, eligible; 19 calls (18 reads) | completed, eligible; 6 calls (5 reads) |
+| `contextBytes` per request | 5,048; 275,918; 346,149; 347,270 | 5,048; 194,609; 195,730 |
+| Margin to `max_context_bytes` 400,000 | 52,730 | 204,270 |
+| `coding_provider_request` frame (largest; 1 MiB bound) | 695,042 | 391,962 |
+| History frame | 699,242 | 394,678 |
+| Request bodies (largest; total) | 345,812; 973,869 | 196,152; 398,551 |
+| `thread/read` reply (1,000,000 bound) | 339,231 | 189,415 |
+| `memory.peak` (512 MiB) | 344,199,168 (328 MiB), no `oom_kill` | 263,245,824 (251 MiB), no `oom_kill` |
+| `forwarderRefused` | 0 in every frame | 0 in every frame |
+| Containers left / serve record | none / `served` | none / `served` |
+| Elapsed | 76.9 s | 55.9 s |
+| `summary.json` sha256 | `6b1cbef7…` | `013ea538…` |
+
+Context per member byte is about 1.27 for this composition and 1.32 for the
+card alone. The fixture A4 in `r10` gave 1.15. The real card is dense JSON,
+and its quotes are escaped twice, once in the actor's answer and once in the
+context. The "about 1.07" ratio in 5929 was wrong. Live requests add thinking
+blocks and signatures that the offline observer does not send, so the live
+margin to 400,000 is below 52,730.
+
+## Relay context bound 500,000 (RL 5947, operator decision)
+
+Branch `pi-host-relay-context-500k-20261118`, from `24a77f7a` (the shared head
+`f772612f` plus the R3 real-card records commit). No live inference.
+
+- `work-engine-manual-host`: new `RELAY_MAX_CONTEXT_BYTES` = 500,000. On the
+  lifecycle relay profile, `ProviderPlan::validate` admits `max_context_bytes` up
+  to it (`context_bound`). The analysis profile keeps `MAX_CONTEXT_BYTES` =
+  400,000, by scope: RL 5947 covers the relay for the live H2, and
+  `work-engine-review-hosted` mirrors the analysis value. The analysis
+  gate's ingress records are no larger than the container frame, so the same
+  frame arithmetic would govern a later raise there. The
+  hosted coding profile keeps 32,768. Unchanged: `MAX_REQUEST_BODY` 600,000;
+  `FRAME_BYTES` 1 MiB (the receiver refuses to emit, and the Host refuses to
+  read, a larger frame); `HISTORY_FRAME_LIMIT` 1,000,000. The protocol states
+  no context bound, so neither it nor `PROTOCOL_DIGEST` changes.
+- Test `context_bound_is_per_profile`: 500,000 for relay, 400,000 for
+  analysis, 32,768 otherwise. The relay bound is below the body bound, and
+  twice it is below the frame bound.
+- `serve.py`: `PI_HOST_MAX_CONTEXT` (the job's `max_context_bytes`) and
+  `PI_HOST_PAD_BYTES` (an extra treatment member `zz/padding.md` of plain
+  text, to reach a context near the bound).
+
+Measurement (offline). The real-card treatment of `r11` plus padding, with
+the H2 job parameters and `max_context_bytes` 500,000. Host built on this
+branch:
+
+| Run | Members | Outcome | `contextBytes` (last) | Request frame / history frame (1 MiB) | Largest body (600,000) | `thread/read` | `memory.peak` |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `r13-context-pad` | 410,633 B (pad 140,000) | completed, eligible, 24 calls | 490,314 | 981,130 / 985,860 | 488,271 | 481,804 | 278 MiB |
+| `r14-context-495k` | 415,219 B (pad 144,586) | completed, eligible, 24 calls | 494,902 | 990,306 / 995,036 | 492,859 | 486,392 | 273 MiB |
+| `r15-cap-500001` | 270,633 B | `max_context_bytes` 500,001 refused at admission (`thread/start` error: provider lane/catalog/limits conflict) | n/a | n/a | n/a | n/a | n/a |
+| `r16-over-cap` | 425,985 B (pad 155,352) | the third request (about 505,000 of context) was refused by the receiver's `contextBytes` bound before any provider request frame, grant or dispatch (the aborted assistant message carries "outside host admission unavailable"); the turn failed and was not eligible; no container was left | 275,918 | 552,351 / none | 275,998 | 496,523 | 272 MiB |
+
+`summary.json` sha256: `r13` `676412a4…`, `r14` `876cfd0e…`, `r15`
+`ec74e2cb…`, `r16` `32c86519…`. In every run `forwarderRefused` was 0 and no
+container was left.
+
+No other per-request bound refuses a context below 500,000 first. The
+margin at the full bound comes from the frames, which carry the context
+about twice: a request frame at 500,000 is about 1,000,500 bytes (48 KB
+below 1 MiB). The turn-end history frame also carries the final answer
+twice: at 500,000 a final answer above about 21 KB of plain text (less with
+JSON escapes or thinking in the final message) makes it exceed 1 MiB, and
+the turn fails closed. Above about 456,000 of context this frame, not the
+protocol's 64 KiB answer bound, limits the answer, and the failure reads as
+an unnamed receiver error instead of "final answer exceeds its bound".
+
+Two cumulative limits are reached sooner at this bound, both fail-closed
+and both checked only after spending. One is 8 MiB of retained request
+bodies per turn: about 16 near-bound requests fit, and a 17th makes the
+turn ineligible (at 400,000, about 21). The other is 64 MiB of container
+output per job: one turn of 32 near-bound requests fits (about 57 MB), but
+a long multi-turn relay thread near the bound can exceed it. No code change
+is needed for the live H2.
+
+In `r16` the turn failure reads
+"unknown coding frame": the receiver reports its refusal with a generic
+`error` frame, which the Host does not name. That predates this change and
+behaves the same at the 400,000 bound. Live thinking blocks count in
+`contextBytes` like any other context.
+
+Review (Opus xhigh, `reviews/pi-host-relay-context-500k-opus-20261118/REVIEW.b8b4f666.md`):
+accept with changes, with no P1 or P2 findings. The first attempt stopped
+on the Claude subscription's 5-hour limit and was resumed after the reset.
+
+- Fixed (P3-1 to P3-4): the reason for keeping analysis at 400,000, the r16
+  wording, the answer margin and its crossover, and the cumulative limits
+  above.
+- For the owner (P3-5): two line citations in `work-engine-review-hosted`
+  `subject.rs` (`:16`, `:322`) now point five lines early into
+  `pi_coding_analysis.rs`.
+- Recorded (P3-6): `serve.py` runs from the r3 manifest still request the
+  snapshot id `snapshot:h2-treatment-r2`; the manifest at its default path
+  has changed since the runs (now `d6a0bf71…`, A4 entry unchanged). Each
+  `summary.json` keeps every member's digest.
+- Not done (P3-7): admission is unit-tested at the helper only. The
+  relay end to end is covered by `r13`-`r15`.
+
 ## Open
 
 - The Q fixture's owner adapter answers `original_result_operation` without
