@@ -10,7 +10,8 @@
 //!   [`IssuanceId`] (which act of issuing) separate from [`BodyDigest`] (which terms).
 //! - [`AuthorityObservation`]: the source contract with its four obligations; [`reserve`] and
 //!   [`observe_for`] seal one observation to one boundary.
-//! - [`admit`]: Gate O subset (O3, O4, O5, O8, O9) and Gate R (R1-R4), every check evaluated,
+//! - [`admit`]: Gate O subset (O3, O4, O5, O8, O9), Gate R (R1-R4) and S1 (scope digest is the
+//!   exact-subject digest), every check evaluated,
 //!   one outcome per [`CheckId`]; [`EffectAdmission::admission_state`]: current, stale, revoked,
 //!   unknown or refused.
 //!

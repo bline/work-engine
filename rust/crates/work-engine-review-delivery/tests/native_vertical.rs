@@ -8,12 +8,13 @@
 //! production admission.
 //!
 //! R2-S: the suite's positive and failure-path controls run on the labelled **assumption world**
-//! (`tests/fixtures/assumption-world/`, the frozen requirements without realization constraints;
+//! (`tests/fixtures/assumption-world/`, the frozen requirements without realization constraints
+//! and with `scope.digest` the subject's exact-subject digest;
 //! the child is not confined; the host's read-only claim is scoped to "no granted tool" and is
 //! backed by construction and refusal, not by confinement). S-B: its admitted kinds pass only by
 //! the host's fixture-domain S-A admission over the synthetic fixture authority world
-//! (`common::authority`), regated before consumption; its mapping kinds pass only as labelled
-//! fixture `AssumedDischarge`s. The frozen world is the negative: refused before spawn by a known
+//! (`common::authority`), regated before consumption (`scope-digest-to-subject` by S1); its two
+//! unowned mapping kinds pass only as labelled fixture `AssumedDischarge`s. The frozen world is the negative: refused before spawn by a known
 //! realization incompatibility (spawn attempts 0, consumer invocations 0).
 //!
 //! Every verdict is asserted in-process. When an assertion fails after a native run, the raw
@@ -284,6 +285,15 @@ fn positive_assertions(
         .collect();
     assert_eq!(admitted_ids.len() + assumed_ids.len(), blockers.len());
     assert!(!admitted_ids.is_empty() && !assumed_ids.is_empty());
+    // A1: the scope-digest blocker is admitted by S1, never assumed.
+    assert!(admitted_ids.iter().any(|(_, kind, checks)| {
+        *kind == BlockerKind::ScopeDigestToSubject && checks.as_slice() == [CheckId::S1]
+    }));
+    assert!(
+        assumed_ids
+            .iter()
+            .all(|(_, kind)| *kind != BlockerKind::ScopeDigestToSubject)
+    );
     for (admitted, assumed, boundary, kind) in [
         (
             &delivered.admitted_before_spawn,
@@ -623,8 +633,9 @@ fn the_adapter_refuses_a_wrong_session_and_a_duplicate_start() {
 
 // ---- R2-S: refusal seam with assumed discharges --------------------------------------------
 
-/// The assumption world is the frozen requirements without `realizationConstraints`, compiled by
-/// the unchanged v1 compiler (DERIVATION.md). Semantic JSON equality with the derivation.
+/// The assumption world is the frozen requirements without `realizationConstraints` and with the
+/// exact-subject `scope.digest`, compiled by the unchanged v1 compiler (DERIVATION.md). Semantic
+/// JSON equality with the derivation.
 #[test]
 fn assumption_world_is_the_frozen_world_without_realization_constraints() {
     let mut derived: Value = serde_json::from_slice(REQ).unwrap();
@@ -636,6 +647,22 @@ fn assumption_world_is_the_frozen_world_without_realization_constraints() {
                 .is_some()
         );
     });
+    // A1: `scope.digest` is the exact-subject digest, which is the frozen episode authority's
+    // `initialSubject.sha256`; the frozen file keeps the `patchIdentity` stand-in.
+    let s = subject();
+    let exact = SubjectRef {
+        commit: s.commit,
+        tree: s.tree,
+        patch_identity: s.patch_identity.clone(),
+    }
+    .scope_digest();
+    let authority: Value = serde_json::from_str(AUTHORITY).unwrap();
+    assert_eq!(authority["initialSubject"]["sha256"], json!(exact));
+    assert_eq!(
+        derived["obligations"][0]["scope"]["digest"],
+        json!(s.patch_identity)
+    );
+    derived["obligations"][0]["scope"]["digest"] = json!(exact);
     let stored: Value = serde_json::from_slice(ASSUMPTION_REQ).unwrap();
     assert_eq!(stored, derived);
     let candidate = assumption_candidate();

@@ -4435,6 +4435,7 @@ dependencies = [
 name = "work-engine-organization-authority"
 version = "0.1.0"
 dependencies = [
+ "review-episode-core",
  "serde_json",
  "sha2",
  "thiserror",
