@@ -21,6 +21,7 @@ review-execution-evidence = { path = "../review-execution-evidence" }
 repository-claims-handoff = { path = "../repository-claims-handoff" }
 lifecycle-wire = { path = "../lifecycle-wire" }
 native-realization = { path = "../native-realization" }
+hosted-route-availability = { path = "../hosted-route-availability" }
 
 [dev-dependencies]
 tempfile = "=3.27.0"

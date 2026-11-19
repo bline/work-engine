@@ -51,6 +51,20 @@ pub struct ProviderPlan {
     pub max_requests: u32,
     pub budget_microusd: u64,
     pub max_context_bytes: u64,
+    /// Failover policy and admitted state observation; digests bound by the
+    /// runtime admission. Absent: refusal-only failover.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failover: Option<FailoverInputs>,
+}
+/// Operator failover inputs of a hosted plan.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FailoverInputs {
+    /// `work-engine.hosted-failover-policy.v1`.
+    pub policy: Artifact,
+    /// The route availability view's output (v2) the job starts from.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub observation: Option<Artifact>,
 }
 impl std::fmt::Debug for ProviderPlan {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -85,6 +99,9 @@ pub struct Reservation {
     /// attempt was reserved (no byte was written; settled at 0).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub not_dispatched: Option<String>,
+    /// Hosted: the failover gate paused this request; no attempt followed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failover_pause: Option<super::failover::FailoverPause>,
 }
 /// Financial disposition of one attempt, applied only by this ledger.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -149,6 +166,9 @@ pub struct AttemptRecord {
     /// the attempt stays unsettled.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub raw_microusd: Option<u64>,
+    /// Hosted: the bound failover decision this attempt was sent under.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failover: Option<super::failover::FailoverDecision>,
 }
 /// Observed facts about one attempt, from which the ledger derives the
 /// disposition. Callers report evidence; they never choose a release.
@@ -342,6 +362,27 @@ impl Reservation {
         a.reason = reason;
         Ok(disposition)
     }
+    /// Journal a failover pause: the request ends without a further send.
+    /// Allowed on a new request or after a refused last attempt; a request
+    /// without attempts settles at 0.
+    pub fn record_failover_pause(&mut self, pause: super::failover::FailoverPause) -> Result<()> {
+        if self.failover_pause.is_some()
+            || self.not_dispatched.is_some()
+            || self.settled_microusd.is_some()
+            || pause.action != "pause"
+            || self
+                .attempts
+                .last()
+                .is_some_and(|a| a.disposition != AttemptDisposition::Refused)
+        {
+            return refuse("failover pause outside an open request");
+        }
+        if self.attempts.is_empty() {
+            self.settled_microusd = Some(0);
+        }
+        self.failover_pause = Some(pause);
+        Ok(())
+    }
     /// Record raw-usage settlement of the completed attempt.
     pub fn settle_completed(&mut self, attempt: u64, actual_microusd: u64) -> Result<()> {
         let a = match self.attempts.last_mut() {
@@ -387,6 +428,9 @@ pub fn reserve_attempt(
     if r.settled_microusd.is_some() {
         return refuse("attempt after request settlement");
     }
+    if r.failover_pause.is_some() {
+        return refuse("attempt after a failover pause");
+    }
     let next = match r.attempts.last() {
         None => 1,
         Some(a) if a.disposition == AttemptDisposition::Refused => a.attempt + 1,
@@ -431,6 +475,7 @@ pub fn reserve_attempt(
         framed_end_observed: None,
         request_body_sha256: None,
         raw_microusd: None,
+        failover: None,
     });
     Ok(next)
 }
@@ -449,6 +494,12 @@ struct Admission {
     allow_provider: bool,
     /// Digest of the hosted route table.
     hosted_routes_sha256: String,
+    /// Digest of the failover policy, when the plan carries one.
+    #[serde(default)]
+    failover_policy_sha256: Option<String>,
+    /// Digest of the admitted state observation, when the plan carries one.
+    #[serde(default)]
+    state_observation_sha256: Option<String>,
     #[serde(default = "default_provider")]
     provider: String,
 }
@@ -635,7 +686,41 @@ impl ProviderPlan {
         {
             return refuse("provider admission does not bind this exact realization");
         }
+        self.failover_admitted(
+            admission.failover_policy_sha256.as_deref(),
+            admission.state_observation_sha256.as_deref(),
+        )?;
         Ok(())
+    }
+    /// The plan's failover inputs, checked against the admission's digests:
+    /// both absent, or each present on both sides with equal digests. The
+    /// policy must be valid for the route table and the observation must
+    /// match it. Returns the policy, its digest and the observation.
+    pub fn failover_admitted(
+        &self,
+        policy_sha256: Option<&str>,
+        observation_sha256: Option<&str>,
+    ) -> Result<Option<super::failover::AdmittedFailover>> {
+        let Some(f) = &self.failover else {
+            if policy_sha256.is_some() || observation_sha256.is_some() {
+                return refuse("failover digests admitted without failover inputs");
+            }
+            return Ok(None);
+        };
+        if policy_sha256 != Some(f.policy.sha256.as_str())
+            || observation_sha256 != f.observation.as_ref().map(|o| o.sha256.as_str())
+        {
+            return refuse("failover inputs not bound by the admission");
+        }
+        let policy = super::failover::FailoverPolicy::parse(&f.policy.verify()?, &self.hosted)?;
+        let observation = match &f.observation {
+            None => None,
+            Some(o) => Some((
+                super::failover::check_observation(&o.verify()?, &policy)?,
+                o.sha256.clone(),
+            )),
+        };
+        Ok(Some((policy, f.policy.sha256.clone(), observation)))
     }
 }
 /// The upper bound of a plan's `max_context_bytes` on its profile.
@@ -1155,6 +1240,7 @@ pub(super) mod ledger_tests {
             max_requests: 6,
             budget_microusd: 1_000_000,
             max_context_bytes: 32768,
+            failover: None,
         });
         (dir, h)
     }
@@ -1238,6 +1324,7 @@ pub(super) mod ledger_tests {
             framed_end_observed: Some(true),
             request_body_sha256: None,
             raw_microusd: None,
+            failover: None,
         });
         assert_eq!((r.charged_microusd(), r.unsettled()), (164001, true));
         r.attempts[0].raw_microusd = Some(177501);
@@ -1358,6 +1445,7 @@ mod admission_tests {
             max_requests: 6,
             budget_microusd: 1000000,
             max_context_bytes: 32768,
+            failover: None,
         });
         let error = h.coding_prepare_provider().unwrap_err();
         assert!(error.to_string().contains("runtime admission"), "{error}");

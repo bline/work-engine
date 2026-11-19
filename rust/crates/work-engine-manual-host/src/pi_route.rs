@@ -7,7 +7,8 @@
 //! that may have entered the provider or reached the consumer is uncertain and
 //! is returned to the continuation owner instead of being retried. Reservations
 //! are conservative: only definitive refusals release them. Leaving a route
-//! requires its definitive refusal; limits and revocation stop admission.
+//! requires its definitive refusal or a bound failover decision
+//! ([`RouteDirective`]); limits and revocation stop admission.
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -67,6 +68,58 @@ pub fn refusal_status(status: u16) -> bool {
     matches!(status, 401 | 402 | 403 | 429)
 }
 
+/// The job, admitted route table and failover policy a router's decision
+/// inputs must name.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FailoverBinding {
+    pub job_id: String,
+    /// `hosted_routes_sha256` of the admitted table.
+    pub table_digest: String,
+    pub policy_version: String,
+}
+/// A bound observation that a route's reset has passed: the evidence attempt
+/// (job, request, per-request attempt ordinal) and the reset time.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ResetObservation {
+    pub job_id: String,
+    pub request: u64,
+    pub attempt: u64,
+    pub available_again_at: u64,
+}
+/// Deterministic decision input for one send, produced by the failover gate.
+/// It can select only an admitted route; a route this router saw refuse needs
+/// a [`ResetObservation`] of this job at or after that refusal whose reset
+/// has passed, usable once per request.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RouteDirective {
+    pub job_id: String,
+    pub table_digest: String,
+    pub policy_version: String,
+    pub state_observation_sha256: String,
+    /// `send`, `skip`, `switch_early`, `request_preservation`, `fail_back`,
+    /// `verify_foreign`, or `pause` (no attempt).
+    pub action: String,
+    pub route: Option<String>,
+    pub decided_ms: u64,
+    #[serde(default)]
+    pub reset_observation: Option<ResetObservation>,
+}
+/// What the failover gate needs from the router for one request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RouterSnapshot {
+    /// Per route (policy order): the refusal, as `(request, ordinal)`, that
+    /// makes it unavailable.
+    pub refused: Vec<Option<(u64, u64)>>,
+    /// Per route: attempted at least once in this job.
+    pub attempted: Vec<bool>,
+    /// Reset observations already used for a verification attempt in this
+    /// request, with their route.
+    pub verified: Vec<(String, ResetObservation)>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Attempt {
     pub attempt: u64,
@@ -81,6 +134,9 @@ pub struct Attempt {
     pub reserved_units: u64,
     pub disposition: Option<Disposition>,
     pub usage: Value,
+    /// The bound failover decision this attempt was admitted under.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub decision: Option<RouteDirective>,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Decision {
@@ -88,14 +144,24 @@ pub enum Decision {
     Unavailable(&'static str),
 }
 
+/// Per route: attempts used, and the refusal that made it unavailable (its
+/// code and `(request, ordinal)`). Without a failover decision input a
+/// refused route stays unavailable for the rest of the job (stable routing;
+/// no needless switching back).
+#[derive(Debug, Clone, Default)]
+struct RouteState {
+    attempts: u32,
+    refusal: Option<(String, (u64, u64))>,
+}
 pub struct Router {
     policy: Policy,
     digest: String,
     reserved: u64,
     attempts: Vec<Attempt>,
-    /// Per route: attempts used and the refusal that made it unavailable for
-    /// the rest of this job (stable routing; no needless switching back).
-    state: Vec<(u32, Option<String>)>,
+    state: Vec<RouteState>,
+    failover: Option<FailoverBinding>,
+    /// `(request, route, observation)` used for verification attempts.
+    verified: Vec<(u64, String, ResetObservation)>,
 }
 impl Router {
     pub fn new(policy: Policy) -> Self {
@@ -105,8 +171,19 @@ impl Router {
             policy,
             reserved: 0,
             attempts: vec![],
-            state: vec![(0, None); n],
+            state: vec![RouteState::default(); n],
+            failover: None,
+            verified: vec![],
         }
+    }
+    /// A router that also accepts decision inputs bound to `binding`.
+    pub fn with_failover(policy: Policy, binding: FailoverBinding) -> Self {
+        let mut r = Self::new(policy);
+        r.failover = Some(binding);
+        r
+    }
+    pub fn failover(&self) -> Option<&FailoverBinding> {
+        self.failover.as_ref()
     }
     pub fn policy(&self) -> &Policy {
         &self.policy
@@ -126,13 +203,69 @@ impl Router {
     pub fn last(&self) -> Option<&Attempt> {
         self.attempts.last()
     }
+    fn eligible(&self, i: usize) -> bool {
+        let r = &self.policy.routes[i];
+        r.authorized && r.model == self.policy.model
+    }
+    /// The first statically eligible route without a recorded refusal.
+    fn default_route(&self) -> Option<usize> {
+        (0..self.policy.routes.len())
+            .find(|i| self.eligible(*i) && self.state[*i].refusal.is_none())
+    }
+    pub fn snapshot(&self, request: u64) -> RouterSnapshot {
+        RouterSnapshot {
+            refused: self
+                .state
+                .iter()
+                .map(|s| s.refusal.as_ref().map(|r| r.1))
+                .collect(),
+            attempted: self.state.iter().map(|s| s.attempts > 0).collect(),
+            verified: self
+                .verified
+                .iter()
+                .filter(|v| v.0 == request)
+                .map(|v| (v.1.clone(), v.2.clone()))
+                .collect(),
+        }
+    }
     /// Admit the next attempt for `request` or explain why none is permitted.
     pub fn next(&mut self, request: u64, model: &str, now_ms: u64) -> Decision {
-        if now_ms >= self.policy.expires_ms {
+        self.admit(request, model, now_ms, None, true)
+    }
+    /// Admit the next attempt for `request` under a bound failover decision.
+    /// A `pause` decision admits nothing.
+    pub fn next_with(
+        &mut self,
+        request: u64,
+        model: &str,
+        now_ms: u64,
+        directive: &RouteDirective,
+    ) -> Decision {
+        self.admit(request, model, now_ms, Some(directive), true)
+    }
+    fn admit(
+        &mut self,
+        request: u64,
+        model: &str,
+        now_ms: u64,
+        directive: Option<&RouteDirective>,
+        check_expiry: bool,
+    ) -> Decision {
+        if check_expiry && now_ms >= self.policy.expires_ms {
             return Decision::Unavailable("policy_stale");
         }
         if model != self.policy.model {
             return Decision::Unavailable("model_incompatible");
+        }
+        if let Some(d) = directive {
+            let Some(b) = &self.failover else {
+                return Decision::Unavailable("decision_without_binding");
+            };
+            if (&d.job_id, &d.table_digest, &d.policy_version)
+                != (&b.job_id, &b.table_digest, &b.policy_version)
+            {
+                return Decision::Unavailable("decision_binding_mismatch");
+            }
         }
         let prior: Vec<&Attempt> = self
             .attempts
@@ -140,8 +273,8 @@ impl Router {
             .filter(|a| a.request == request)
             .collect();
         let predecessor = prior.last().map(|a| (a.attempt, a.disposition.clone()));
-        let reason = match &predecessor {
-            None => "preferred".to_owned(),
+        let refused_reason = match &predecessor {
+            None => None,
             Some((_, None)) => return Decision::Unavailable("attempt_unsettled"),
             Some((_, Some(Disposition::Completed))) => {
                 return Decision::Unavailable("request_completed");
@@ -153,27 +286,62 @@ impl Router {
                 return Decision::Unavailable("request_cancelled");
             }
             Some((_, Some(Disposition::Refused { status, code }))) => {
-                format!("failover-after-{status}-{code}")
+                Some(format!("failover-after-{status}-{code}"))
             }
         };
+        if directive.is_some_and(|d| d.action == "pause") {
+            return Decision::Unavailable("failover_pause");
+        }
         if prior.len() as u32 >= self.policy.max_attempts_per_request {
             return Decision::Unavailable("attempt_limit");
         }
-        // The active route is the first statically eligible route (authorized,
-        // same model) without a recorded definitive refusal. Moving past a
-        // route requires such a refusal; revocation or an exhausted per-route
-        // limit stops admission instead of switching. Changing that needs a
-        // new policy (a separate, authorized policy transition).
-        let Some(route) = self.policy.routes.iter().enumerate().position(|(i, r)| {
-            r.authorized && r.model == self.policy.model && self.state[i].1.is_none()
-        }) else {
-            return Decision::Unavailable("no_permitted_route");
+        // Without a decision input the active route is the first statically
+        // eligible route (authorized, same model) without a recorded
+        // definitive refusal. Moving past a route requires such a refusal or
+        // a bound decision; revocation or an exhausted per-route limit stops
+        // admission instead of switching.
+        let mut verification = None;
+        let route = match directive {
+            None => match self.default_route() {
+                Some(i) => i,
+                None => return Decision::Unavailable("no_permitted_route"),
+            },
+            Some(d) => {
+                let Some(i) = d
+                    .route
+                    .as_ref()
+                    .and_then(|id| self.policy.routes.iter().position(|r| &r.id == id))
+                    .filter(|i| self.eligible(*i))
+                else {
+                    return Decision::Unavailable("decision_route_not_admitted");
+                };
+                if let Some((_, refused_at)) = &self.state[i].refusal {
+                    let job = &self.failover.as_ref().expect("bound above").job_id;
+                    let Some(o) = d.reset_observation.as_ref().filter(|o| {
+                        &o.job_id == job
+                            && (o.request, o.attempt) >= *refused_at
+                            && o.available_again_at <= now_ms
+                    }) else {
+                        return Decision::Unavailable("refused_route_without_reset_observation");
+                    };
+                    let id = &self.policy.routes[i].id;
+                    if self
+                        .verified
+                        .iter()
+                        .any(|v| v.0 == request && &v.1 == id && v.2 == *o)
+                    {
+                        return Decision::Unavailable("verification_spent");
+                    }
+                    verification = Some((request, id.clone(), o.clone()));
+                }
+                i
+            }
         };
         let candidate = &self.policy.routes[route];
         if candidate.revoked {
             return Decision::Unavailable("route_revoked");
         }
-        if self.state[route].0 >= candidate.max_attempts {
+        if self.state[route].attempts >= candidate.max_attempts {
             return Decision::Unavailable("route_limit");
         }
         let Some(reserved) = self
@@ -184,7 +352,18 @@ impl Router {
             return Decision::Unavailable("allowance_exhausted");
         };
         self.reserved = reserved;
-        self.state[route].0 += 1;
+        self.state[route].attempts += 1;
+        if let Some(v) = verification {
+            // The verification attempt re-enables the route; a new refusal
+            // marks it again with a newer identity.
+            self.state[route].refusal = None;
+            self.verified.push(v);
+        }
+        let reason = match (directive, refused_reason) {
+            (Some(d), _) => format!("failover-{}", d.action),
+            (None, Some(r)) => r,
+            (None, None) => "preferred".to_owned(),
+        };
         let r = &self.policy.routes[route];
         let attempt = self.attempts.len() as u64 + 1;
         self.attempts.push(Attempt {
@@ -200,6 +379,7 @@ impl Router {
             reserved_units: self.policy.reserve_units,
             disposition: None,
             usage: Value::Null,
+            decision: directive.cloned(),
         });
         Decision::Attempt { route, attempt }
     }
@@ -236,22 +416,39 @@ impl Router {
                 .iter()
                 .position(|r| r.id == a.route)
                 .ok_or("route_unknown")?;
-            self.state[i].1 = Some(format!("{status}-{code}"));
+            let (request, number) = (a.request, a.attempt);
+            let ordinal = self
+                .attempts
+                .iter()
+                .filter(|x| x.request == request && x.attempt <= number)
+                .count() as u64;
+            self.state[i].refusal = Some((format!("{status}-{code}"), (request, ordinal)));
         }
+        let a = self
+            .attempts
+            .iter_mut()
+            .find(|a| a.attempt == attempt)
+            .expect("found above");
         a.disposition = Some(disposition);
         a.usage = usage;
         Ok(())
     }
     /// Rebuild routing state in a fresh process from durable attempt intents
-    /// and settlements of the same pinned policy. An intent without a
-    /// settlement becomes `Uncertain(restart-unsettled)`: its reservation is
-    /// kept and the request cannot be retried or switched by this router.
+    /// and settlements of the same pinned policy by replaying them in order:
+    /// each intent must be what this router admits at that point, under its
+    /// journaled decision input (checked against `binding`) or, without one,
+    /// by default selection, so any route change not preceded by a refusal
+    /// needs a decision. An intent without a settlement becomes
+    /// `Uncertain(restart-unsettled)`: its reservation is kept and the request
+    /// cannot be retried or switched by this router.
     pub fn recover(
         policy: Policy,
+        binding: Option<FailoverBinding>,
         intents: &[Attempt],
         settles: &[Attempt],
     ) -> Result<Self, &'static str> {
         let mut r = Self::new(policy);
+        r.failover = binding;
         let mut intents = intents.to_vec();
         intents.sort_by_key(|a| a.attempt);
         for (i, a) in intents.iter().enumerate() {
@@ -261,33 +458,60 @@ impl Router {
             if a.policy != r.digest {
                 return Err("route_policy_mismatch");
             }
-            let route = r
-                .policy
-                .routes
-                .iter()
-                .position(|x| x.id == a.route)
-                .ok_or("route_unknown")?;
-            r.state[route].0 = r.state[route]
-                .0
-                .checked_add(1)
-                .ok_or("route_attempt_accounting")?;
-            r.reserved = r
-                .reserved
-                .checked_add(a.reserved_units)
-                .ok_or("route_reservation_accounting")?;
-            r.attempts.push(a.clone());
         }
-        for s in settles {
-            let intent = r
-                .attempts
-                .iter()
-                .find(|a| a.attempt == s.attempt)
-                .ok_or("route_settle_without_intent")?;
-            if (intent.request, &intent.route, &intent.payer) != (s.request, &s.route, &s.payer) {
-                return Err("route_settle_mismatch");
+        if settles
+            .iter()
+            .any(|s| !intents.iter().any(|a| a.attempt == s.attempt))
+        {
+            return Err("route_settle_without_intent");
+        }
+        let mut settles = settles.to_vec();
+        settles.sort_by_key(|s| s.attempt);
+        let mut pending = settles.iter().peekable();
+        for a in &intents {
+            while let Some(s) = pending.next_if(|s| s.attempt < a.attempt) {
+                r.recover_settle(s)?;
             }
-            let d = s.disposition.clone().ok_or("route_settle_empty")?;
-            r.settle(s.attempt, d, s.usage.clone())?;
+            if a.decision.is_some() && r.failover.is_none() {
+                return Err("route_decision_without_binding");
+            }
+            if !r.policy.routes.iter().any(|x| x.id == a.route) {
+                return Err("route_unknown");
+            }
+            let model = r.policy.model.clone();
+            let now = a.decision.as_ref().map_or(0, |d| d.decided_ms);
+            match r.admit(a.request, &model, now, a.decision.as_ref(), false) {
+                Decision::Attempt { attempt, .. } => {
+                    let got = r.attempts.last().expect("admitted");
+                    if attempt != a.attempt
+                        || (got.request, &got.route, &got.payer, got.predecessor)
+                            != (a.request, &a.route, &a.payer, a.predecessor)
+                    {
+                        return Err(if a.decision.is_none() {
+                            "route_change_without_decision"
+                        } else {
+                            "route_decision_not_reproduced"
+                        });
+                    }
+                    let reserved = got.reserved_units;
+                    r.reserved = r
+                        .reserved
+                        .checked_sub(reserved)
+                        .and_then(|v| v.checked_add(a.reserved_units))
+                        .ok_or("route_reservation_accounting")?;
+                    *r.attempts.last_mut().expect("admitted") = a.clone();
+                }
+                Decision::Unavailable(_) => {
+                    return Err(if a.decision.is_none() {
+                        "route_change_without_decision"
+                    } else {
+                        "route_decision_not_reproduced"
+                    });
+                }
+            }
+        }
+        for s in pending {
+            r.recover_settle(s)?;
         }
         let unsettled: Vec<u64> = r
             .attempts
@@ -306,13 +530,26 @@ impl Router {
         }
         Ok(r)
     }
+    fn recover_settle(&mut self, s: &Attempt) -> Result<(), &'static str> {
+        let intent = self
+            .attempts
+            .iter()
+            .find(|a| a.attempt == s.attempt)
+            .ok_or("route_settle_without_intent")?;
+        if (intent.request, &intent.route, &intent.payer) != (s.request, &s.route, &s.payer) {
+            return Err("route_settle_mismatch");
+        }
+        let d = s.disposition.clone().ok_or("route_settle_empty")?;
+        self.settle(s.attempt, d, s.usage.clone())
+    }
     pub fn evidence(&self) -> Value {
         json!({
             "policy": self.policy,
             "policyDigest": self.digest,
             "reservedUnits": self.reserved,
             "attempts": self.attempts,
-            "routeState": self.policy.routes.iter().zip(&self.state).map(|(r, s)| json!({"route":r.id,"attempts":s.0,"unavailable":s.1})).collect::<Vec<_>>(),
+            "failover": self.failover,
+            "routeState": self.policy.routes.iter().zip(&self.state).map(|(r, s)| json!({"route":r.id,"attempts":s.attempts,"unavailable":s.refusal.as_ref().map(|x| &x.0)})).collect::<Vec<_>>(),
         })
     }
 }

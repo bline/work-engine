@@ -358,6 +358,7 @@ fn run() -> Result<Value> {
             max_requests: 4,
             budget_microusd: admission["budget_microusd"].as_u64().unwrap_or(0),
             max_context_bytes: 24_000,
+            failover: None,
         })
     } else {
         None
