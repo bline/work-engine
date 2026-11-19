@@ -736,6 +736,43 @@ fn capability_ok(allow_shell: bool, allow_background: bool) -> Result<()> {
     }
     Ok(())
 }
+/// The model-family prefix for the Completions lane: the plan's base model id
+/// without the `~` alias, the `:floor` suffix, and the trailing `-latest` alias
+/// keyword. OpenRouter's `latest` slug is a family alias that floor-resolves to
+/// a concrete checkpoint (e.g. `deepseek/deepseek-v4-flash-0731`); the family
+/// is `deepseek/deepseek-v4-flash`, which any resolved checkpoint must carry
+/// before its own `-<version>` segment.
+fn completions_model_family(model: &str) -> String {
+    let base = model
+        .strip_prefix('~')
+        .unwrap_or(model)
+        .trim_end_matches(OPENROUTER_FLOOR_SUFFIX);
+    let slash = base.rfind('/').unwrap_or(0);
+    let (dir, tail) = if slash == 0 {
+        ("", base)
+    } else {
+        (&base[..slash], &base[slash + 1..])
+    };
+    // Only the alias keyword (`-latest`) is part of the plan id; concrete
+    // version segments appear on the resolved checkpoint, not the plan.
+    let family_tail = match tail.strip_suffix("-latest") {
+        Some(less) if !less.is_empty() => less,
+        _ => tail,
+    };
+    if dir.is_empty() {
+        family_tail.to_string()
+    } else {
+        format!("{dir}/{family_tail}")
+    }
+}
+/// Whether a resolved checkpoint belongs to the plan's admitted model family:
+/// it must be non-empty and equal the family or carry it as a name boundary
+/// (so `deepseek/deepseek-v4-flash-0731` matches `deepseek/deepseek-v4-flash`,
+/// but `deepseek/deepseek-v4-pro` does not).
+fn completions_model_in_family(resolved: &str, family: &str) -> bool {
+    let family_dash: String = format!("{family}-");
+    !resolved.is_empty() && (resolved == family || resolved.starts_with(&family_dash))
+}
 /// The upper bound of a plan's `max_context_bytes` on its profile.
 fn context_bound(analysis: bool, relay: bool) -> u64 {
     if relay {
@@ -1096,7 +1133,15 @@ impl Host {
                 // finish ("stop" ends a turn; a streaming tool turn continues).
                 let wire = plan.wire_checked()?;
                 let backend_ok = if wire == crate::pi_stream::Wire::Completions {
-                    true
+                    // The resolved checkpoint (Layer C) must be present and
+                    // belong to the admitted model family (it is the
+                    // floor-resolved concrete id, not the request slug).
+                    r.backend_model.as_deref().is_some_and(|resolved| {
+                        completions_model_in_family(
+                            resolved,
+                            &completions_model_family(plan.model.as_str()),
+                        )
+                    })
                 } else {
                     r.backend_model.as_deref() == Some(plan.model.as_str())
                 };
@@ -1630,6 +1675,24 @@ mod admission_tests {
         assert!(reserve > 1_000_000, "exercise the coding ceiling, not the old $1 cap");
         // 32 analysis requests also fit the analysis ceiling.
         assert!(per.checked_mul(32).unwrap() <= OPENROUTER_ANALYSIS_BUDGET);
+    }
+    /// The resolved (Layer C) checkpoint the provider settles must belong to
+    /// the admitted model family, not match the request slug exactly (floor
+    /// resolves `latest` to a concrete checkpoint).
+    #[test]
+    fn completions_resolved_model_must_belong_to_the_admitted_family() {
+        let family = completions_model_family("~deepseek/deepseek-v4-flash-latest");
+        assert_eq!(family, "deepseek/deepseek-v4-flash");
+        assert!(completions_model_in_family("deepseek/deepseek-v4-flash-0731", &family));
+        assert!(completions_model_in_family("deepseek/deepseek-v4-flash", &family));
+        // A different model family is not accepted.
+        assert!(!completions_model_in_family("deepseek/deepseek-v4-pro", &family));
+        assert!(!completions_model_in_family("", &family));
+        // A `-latest` slug and an already-`-v4-flash`-suffixed tail stay sane.
+        assert_eq!(
+            completions_model_family("deepseek/deepseek-v4-flash:floor"),
+            "deepseek/deepseek-v4-flash"
+        );
     }
 }
 
