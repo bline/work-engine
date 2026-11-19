@@ -1,0 +1,20 @@
+
+running 1 test
+test g2_a_vantage_the_candidate_does_not_have_and_no_binding_refuse_r2_and_r3 ... FAILED
+
+failures:
+
+---- g2_a_vantage_the_candidate_does_not_have_and_no_binding_refuse_r2_and_r3 stdout ----
+
+thread 'g2_a_vantage_the_candidate_does_not_have_and_no_binding_refuse_r2_and_r3' (2231730) panicked at crates/work-engine-organization-authority/tests/admission.rs:427:17:
+assertion `left == right` failed: reasons for S1
+  left: [Reason { code: ScopeDigestUnserved, subject: "vantage:nope" }]
+ right: [Reason { code: VantageUnknown, subject: "vantage:nope" }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    g2_a_vantage_the_candidate_does_not_have_and_no_binding_refuse_r2_and_r3
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.02s
+

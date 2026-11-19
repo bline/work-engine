@@ -1,0 +1,40 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "post-hashes",
+  "argv": [
+    "git",
+    "hash-object",
+    "crates/work-engine-organization-authority/src/gate.rs",
+    "crates/work-engine-review-delivery/src/gate.rs"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a1-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a1/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2225552,
+  "inputs": [],
+  "timeout_s": 60,
+  "pid": 2231798,
+  "pgid": 2231798,
+  "started_at": "2026-11-18T20:09:34.850692Z",
+  "ended_at": "2026-11-18T20:09:34.854971Z",
+  "duration_s": 0.004,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/post-hashes.stdout",
+    "length": 82,
+    "sha256": "9e1264dfe0aaa55e43a5205ca393e4be5ef3776b87c120208412a7b20f43bb61"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/post-hashes.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

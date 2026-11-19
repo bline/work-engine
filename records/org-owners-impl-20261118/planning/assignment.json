@@ -1,0 +1,95 @@
+{
+  "scope_budget": {
+    "schema": "manual-orchestration.scope-budget.v2",
+    "objective_id": "5f98b242-dd83-4e41-8e35-98d4532fd9c8",
+    "sessions": [
+      {
+        "session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+        "provider": "pi",
+        "from": "2026-11-18T19:42:00Z",
+        "bound_by": "init",
+        "evidence": null
+      }
+    ],
+    "bindings": [],
+    "cost_limits": [
+      {
+        "pool": "claude_all_models",
+        "node": null,
+        "max_usd": 5.0,
+        "marks_usd": [
+          4.0
+        ],
+        "set_by": "user",
+        "set_at": "2026-11-18T19:42:00Z",
+        "reason": "Operator 2026-11-18 'yes, proceed' to root recommendation: $5 planning pass (child $2-3 + root $1-1.5 + headroom)",
+        "basis": "speed_adjusted_api_usd"
+      },
+      {
+        "pool": "claude_all_models",
+        "node": "01a1f02f-3121-74de-9acf-c6e6a798988f",
+        "max_usd": 3.0,
+        "marks_usd": [],
+        "set_by": "user",
+        "set_at": "2026-11-18T19:43:17Z",
+        "reason": "Planning child decdcf3b (claude-sdk/claude-opus-5-5:high), within operator-approved $5 planning pass",
+        "basis": "speed_adjusted_api_usd"
+      }
+    ],
+    "objective": "Planning pass for the four O7 owner items (scope.digest, OrganizationAdmission, episode-within-scope predicate incl planLineage, consumption-evidence mapping): per-item dollar estimates, slice plan, owner sign-off needs; read-only, no code",
+    "original_items": [
+      "O7 owners planning pass and budget request"
+    ],
+    "started_at": "2026-11-18T19:42:00Z",
+    "weekly_at_start": null,
+    "limits": {},
+    "limits_set_by": "user",
+    "limits_reason": "Operator 2026-11-18 'yes, proceed' to root recommendation: $5 planning pass (child $2-3 + root $1-1.5 + headroom)",
+    "limit_history": [
+      {
+        "cost_limit": {
+          "pool": "claude_all_models",
+          "node": null,
+          "max_usd": 5.0,
+          "marks_usd": [
+            4.0
+          ],
+          "set_by": "user",
+          "set_at": "2026-11-18T19:42:00Z",
+          "reason": "Operator 2026-11-18 'yes, proceed' to root recommendation: $5 planning pass (child $2-3 + root $1-1.5 + headroom)",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      },
+      {
+        "cost_limit": {
+          "pool": "claude_all_models",
+          "node": "01a1f02f-3121-74de-9acf-c6e6a798988f",
+          "max_usd": 3.0,
+          "marks_usd": [],
+          "set_by": "user",
+          "set_at": "2026-11-18T19:43:17Z",
+          "reason": "Planning child decdcf3b (claude-sdk/claude-opus-5-5:high), within operator-approved $5 planning pass",
+          "basis": "speed_adjusted_api_usd"
+        },
+        "previous_cost_limit": null
+      }
+    ],
+    "additions": [],
+    "closed_at": "2026-11-18T19:50:53Z",
+    "close": {
+      "at": "2026-11-18T19:50:53Z",
+      "disposition": "accepted",
+      "reason": "Planning pass done: N8/PLAN.md (3 slices A1/A2/B, expected $71, caps total $81, decisions O-1..O-5); root spot-checked 3 citations; not independently reviewed",
+      "set_by": "supervisor"
+    },
+    "successor": {
+      "objective_id": "ac27a564-63ac-41db-94b3-d9771e969d57",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/assignment.json",
+      "authorized_start": "2026-11-18T19:59:21Z",
+      "set_by": "user",
+      "set_at": "2026-11-18T19:59:21Z",
+      "reason": "Operator approved O-1..O-5 and the $81 implementation"
+    }
+  }
+}

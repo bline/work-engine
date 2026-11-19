@@ -1,0 +1,20 @@
+
+running 1 test
+test s1_the_base_admission_passes_s1_and_lists_every_check ... FAILED
+
+failures:
+
+---- s1_the_base_admission_passes_s1_and_lists_every_check stdout ----
+
+thread 's1_the_base_admission_passes_s1_and_lists_every_check' (2230012) panicked at crates/work-engine-organization-authority/tests/admission.rs:1602:5:
+assertion `left == right` failed
+  left: [O3, O4, O5, O8, O9, R1, R2, R3, R4]
+ right: [O3, O4, O5, O8, O9, R1, R2, R3, R4, S1]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    s1_the_base_admission_passes_s1_and_lists_every_check
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.01s
+

@@ -1,0 +1,49 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "A1-M2-digest-ignores-commit-and-tree.test1",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "s1_a_subject_differing_in_each_field_refuses_only_s1",
+    "--exact"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a1-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a1/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2225552,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 2227648,
+  "pgid": 2227648,
+  "started_at": "2026-11-18T20:09:15.852813Z",
+  "ended_at": "2026-11-18T20:09:16.481562Z",
+  "duration_s": 0.629,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M2-digest-ignores-commit-and-tree.test1.stdout",
+    "length": 760,
+    "sha256": "600d6b003eb2fbc12cd1f7fef11fcebe77a33a74671096c8ea4d6304b1b58a64"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M2-digest-ignores-commit-and-tree.test1.stderr",
+    "length": 292,
+    "sha256": "90c1c0890a0db6f19fe9e94eb8234f0e2d04324cb654d05c5b66e77bc691a48c"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

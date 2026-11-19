@@ -1,0 +1,20 @@
+
+running 1 test
+test s1_a_vantage_that_serves_no_obligation_refuses_s1 ... FAILED
+
+failures:
+
+---- s1_a_vantage_that_serves_no_obligation_refuses_s1 stdout ----
+
+thread 's1_a_vantage_that_serves_no_obligation_refuses_s1' (2230931) panicked at crates/work-engine-organization-authority/tests/admission.rs:1746:5:
+assertion `left == right` failed
+  left: Passed
+ right: Refused([Reason { code: ScopeDigestUnserved, subject: "vantage-builder" }])
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    s1_a_vantage_that_serves_no_obligation_refuses_s1
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.01s
+

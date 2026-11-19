@@ -1,0 +1,22 @@
+
+running 1 test
+test the_assumption_world_screens_into_admitted_and_assumed_mapping_kinds ... FAILED
+
+failures:
+
+---- the_assumption_world_screens_into_admitted_and_assumed_mapping_kinds stdout ----
+
+thread 'the_assumption_world_screens_into_admitted_and_assumed_mapping_kinds' (2229442) panicked at crates/work-engine-review-delivery/tests/gate.rs:103:5:
+assertion failed: classified.iter().any(|(_, kind, d)|
+        {
+            *kind == BlockerKind::ScopeDigestToSubject &&
+                *d == Discharge::Admitted(&[CheckId::S1])
+        })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    the_assumption_world_screens_into_admitted_and_assumed_mapping_kinds
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.01s
+

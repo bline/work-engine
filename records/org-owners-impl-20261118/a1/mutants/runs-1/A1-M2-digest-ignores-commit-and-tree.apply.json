@@ -1,0 +1,41 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "A1-M2-digest-ignores-commit-and-tree.apply",
+  "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutate.py",
+    "apply",
+    "A1-M2-digest-ignores-commit-and-tree"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a1-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a1/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2225552,
+  "inputs": [],
+  "timeout_s": 60,
+  "pid": 2227139,
+  "pgid": 2227139,
+  "started_at": "2026-11-18T20:09:13.397363Z",
+  "ended_at": "2026-11-18T20:09:13.513946Z",
+  "duration_s": 0.117,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M2-digest-ignores-commit-and-tree.apply.stdout",
+    "length": 59,
+    "sha256": "5eb7df9846bb10365b5e459d6ef3f8a8ecb2c7b12e7187616b75ed2a380551de"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M2-digest-ignores-commit-and-tree.apply.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

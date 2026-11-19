@@ -1,0 +1,13 @@
+   Compiling work-engine-review-preparation v0.1.0 (/home/bline/cbm-work/wt-a1-export-1/rust/crates/work-engine-review-preparation)
+   Compiling work-engine-review-delivery v0.1.0 (/home/bline/cbm-work/wt-a1-export-1/rust/crates/work-engine-review-delivery)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.67s
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/work_engine_organization_authority-48b9d5c0f8ee21de)
+     Running tests/admission.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/admission-fa70f97e919c4743)
+     Running tests/base_candidate_shape.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/base_candidate_shape-bb193111b1ec40d2)
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/work_engine_review_delivery-6351f3a42bb06fcd)
+     Running tests/pure.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/pure-90955e7a46e9c47e)
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/work_engine_review_preparation-6b1984a550e26296)
+     Running tests/preparation.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/preparation-32bf3141843faafd)
+   Doc-tests work_engine_organization_authority
+   Doc-tests work_engine_review_delivery
+   Doc-tests work_engine_review_preparation

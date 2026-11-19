@@ -1,0 +1,437 @@
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test javascript_number_boundaries_and_missing_are_distinct ... ok
+test raw_surrogates_and_invalid_json_are_handled_without_lossy_normalization ... ok
+test frozen_javascript_bytes_and_hashes ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test stored_integrity_refuses_noncanonical_or_changed_rows ... ok
+test legacy_v1_v2_rows_import_without_rewrite ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 8 tests
+test acceptable_as_is_still_requires_decisive_evidence ... ok
+test acceptable_as_is_may_carry_an_open_info_finding ... ok
+test acceptable_as_is_may_carry_limitations ... ok
+test settled_findings_of_any_severity_remain_admissible ... ok
+test each_pending_status_is_admitted_at_info_and_refused_at_low ... ok
+test acceptable_as_is_refuses_an_open_finding_above_info ... ok
+test remediation_required_and_incomplete_are_unchanged ... ok
+test acceptable_as_is_with_limitations_and_info_finding_reaches_reported ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 8 tests
+test error_kinds_separate_result_contract_authority_cas_and_store_integrity ... ok
+test remediation_preserves_finding_attribution_and_valid_status_evolution ... ok
+test current_writer_replay_is_idempotent_but_replaced_writer_replay_is_rejected ... ok
+test utf16_transition_constructors_preserve_lone_surrogates_and_legacy_scalar_calls ... ok
+test frozen_begin_result_and_replacement_revisions_match_legacy ... ok
+test evidence_succession_retains_questions_and_old_admissions_cannot_establish_new_result ... ok
+test null_admissions_follow_js_omission_but_do_not_reuse_stale_v2_claims ... ok
+test generated_action_sequences_keep_replay_cas_phase_and_retirement_fences ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+
+running 97 tests
+test codec_rules_tests::an_integer_outside_the_canonical_range_is_refused_when_serialized ... ok
+test codec_rules_tests::a_digit_run_that_does_not_parse_is_an_internal_error_not_zero ... ok
+test codec_rules_tests::bytes_from_serde_json_values_canonicalize_identically_under_both_number_features ... ok
+test codec_rules_tests::explicit_null_is_refused_with_its_path ... ok
+test codec_rules_tests::integers_are_accepted_only_within_the_safe_range ... ok
+test codec_rules_tests::identifier_syntax_follows_section_17_3 ... ok
+test codec_rules_tests::identifiers_deserialize_validated_and_sort_by_byte ... ok
+test codec_rules_tests::digest_framing_matches_an_independent_computation ... ok
+test codec_rules_tests::unpaired_surrogate_escapes_are_refused ... ok
+test codec_rules_tests::invalid_utf8_is_refused ... ok
+test codec_rules_tests::key_and_set_order_of_authored_bytes_does_not_change_the_digest ... ok
+test codec_rules_tests::keys_sort_by_utf16_code_unit_and_whitespace_is_dropped ... ok
+test derive::injection_tests::a_consumer_that_slipped_past_the_early_check_is_an_internal_error_not_the_campaign ... ok
+test codec_rules_tests::malformed_json_is_refused_with_a_syntax_error ... ok
+test codec_rules_tests::nesting_is_bounded ... ok
+test codec_rules_tests::strings_use_minimal_escaping_and_no_normalization ... ok
+test codec_rules_tests::unknown_codec_declarations_are_refused ... ok
+test codec_rules_tests::floats_and_exponents_are_refused ... ok
+test codec_rules_tests::duplicate_object_keys_are_refused_including_escaped_spellings ... ok
+test derive::injection_tests::a_duplicate_key_is_detected_and_named_as_an_internal_error ... ok
+test enforce::injection_tests::a_non_empty_capability_list_that_bypassed_validation_is_none_with_no_evidence_class ... ok
+test derive::injection_tests::f4_reports_differing_observer_classes_as_a_condition_conflict ... ok
+test derive::injection_tests::f4_reports_a_disjoint_dimension_as_a_condition_conflict ... ok
+test derive::injection_tests::a_broken_trace_link_is_reported_as_a_broken_internal_reference_naming_the_condition ... ok
+test enforce::injection_tests::independence_is_none_even_for_the_only_recognized_source ... ok
+test rfc_vectors_tests::authored_example_vector_matches_byte_for_byte ... ok
+test rfc_vectors_tests::authored_sorting_vector_orders_keys_by_utf16_code_unit ... ok
+test rfc_vectors_tests::testdata_vectors_in_the_data_model_match_byte_for_byte ... ok
+test rfc_vectors_tests::vectors_with_non_integer_numbers_are_refused ... ok
+test derive::injection_tests::f4_unions_capabilities_when_conditions_state_them ... ok
+test rfc_vectors_tests::fixtures_match_their_recorded_sha256 ... ok
+test rfc_vectors_tests::null_is_canonicalized_but_refused_under_the_v0_rules ... ok
+test derive::injection_tests::a_view_obligation_without_a_serves_row_is_shown_unestablished_not_dropped_or_filled ... ok
+test derive::injection_tests::the_view_and_report_field_lists_are_the_matrix_lists ... ok
+test view::tests::a_duplicate_hosts_execution_row_is_refused ... ok
+test derive::injection_tests::a_validated_integer_outside_the_canonical_range_fails_closed_in_candidate_and_json ... ok
+test derive::injection_tests::an_unbroken_trace_records_no_fault ... ok
+test view::tests::a_derived_two_obligation_candidate_with_a_builder_consumer_projects ... ok
+test derive::injection_tests::a_vantage_requirement_naming_an_absent_condition_is_an_internal_error_naming_both ... ok
+test view::tests::a_reads_episode_row_with_no_target_is_refused ... ok
+test view::tests::a_derived_candidate_projects ... ok
+test view::tests::a_reads_episode_row_for_a_vantage_nobody_writes_is_refused ... ok
+test view::tests::a_serves_row_for_an_obligation_the_candidate_lacks_is_refused ... ok
+test view::tests::a_duplicate_reads_episode_row_is_refused ... ok
+test view::tests::a_hosts_execution_row_with_no_target_is_refused ... ok
+test view::tests::a_vantage_requirement_for_no_vantage_participant_is_refused ... ok
+test view::tests::a_serves_row_with_no_target_is_refused ... ok
+test view::tests::a_serves_row_whose_source_is_another_obligations_vantage_is_refused ... ok
+test view::tests::a_stated_absence_is_shown_not_refused ... ok
+test view::tests::a_writes_episode_row_with_no_target_is_refused ... ok
+test view::tests::accepts_claim_for_a_condition_the_candidate_lacks_is_refused ... ok
+test view::tests::a_writes_episode_row_for_the_builder_vantage_is_refused ... ok
+test view::tests::accepts_claim_from_a_component_is_refused ... ok
+test view::tests::accepts_claim_to_a_non_vantage_is_refused ... ok
+test view::tests::consumes_at_from_a_principal_is_refused ... ok
+test view::tests::consumes_at_to_a_non_vantage_is_refused ... ok
+test view::tests::accepts_claim_from_a_principal_that_is_not_the_conditions_acceptor_is_refused ... ok
+test view::tests::accepts_claim_targeting_another_conditions_vantage_is_refused ... ok
+test view::tests::consumes_at_targeting_another_conditions_vantage_is_refused ... ok
+test view::tests::consumes_at_with_no_condition_is_refused ... ok
+test view::tests::consumes_at_for_a_condition_the_candidate_lacks_is_refused ... ok
+test view::tests::a_reads_episode_row_for_the_builder_vantage_is_refused ... ok
+test view::tests::accepts_claim_with_no_condition_is_refused ... ok
+test view::tests::an_absent_condition_row_is_not_refused_here ... ok
+test view::tests::episode_rows_moved_to_the_builder_vantage_are_refused ... ok
+test view::tests::consumes_at_from_a_participant_that_is_not_the_conditions_consumer_is_refused ... ok
+test view::tests::hosts_execution_from_the_episode_host_is_refused ... ok
+test view::tests::hosts_execution_with_a_condition_is_refused ... ok
+test view::tests::probe_an_extra_consumes_at_row_with_ghost_references_is_refused ... ok
+test view::tests::probe_an_accepts_claim_row_with_no_target_and_no_condition_is_refused ... ok
+test view::tests::hosts_execution_from_a_non_component_is_refused ... ok
+test view::tests::reads_episode_from_the_campaign_is_refused ... ok
+test view::tests::hosts_execution_for_the_builder_vantage_is_accepted ... ok
+test view::tests::probe_a_consumes_at_row_with_no_target_and_no_condition_is_refused ... ok
+test view::tests::reads_episode_from_a_non_component_is_refused ... ok
+test view::tests::reads_episode_with_a_condition_is_refused ... ok
+test view::tests::probe_an_extra_accepts_claim_row_with_ghost_references_is_refused ... ok
+test derive::injection_tests::a_relationship_with_an_unresolved_link_is_an_internal_error_not_a_skipped_row ... ok
+test view::tests::serves_from_a_non_vantage_is_refused ... ok
+test view::tests::terminalizes_from_a_non_component_is_refused ... ok
+test view::tests::serves_with_a_condition_is_refused ... ok
+test view::tests::hosts_execution_to_a_non_vantage_is_refused ... ok
+test view::tests::terminalizes_from_the_episode_host_is_refused ... ok
+test view::tests::terminalizes_with_a_target_is_refused ... ok
+test view::tests::serves_from_the_builder_vantage_is_refused ... ok
+test view::tests::two_accepts_claim_rows_for_one_condition_are_refused ... ok
+test view::tests::terminalizes_with_a_condition_is_refused ... ok
+test view::tests::two_consumes_at_rows_for_one_condition_are_refused ... ok
+test view::tests::two_terminalizes_rows_are_refused ... ok
+test view::tests::two_serves_rows_for_one_obligation_are_refused ... ok
+test view::tests::swapped_serves_sources_are_refused ... ok
+test view::tests::two_writes_episode_rows_for_one_vantage_are_refused ... ok
+test view::tests::two_vantage_requirements_for_one_vantage_are_refused ... ok
+test view::tests::writes_episode_from_a_non_component_is_refused ... ok
+test view::tests::writes_episode_with_a_condition_is_refused ... ok
+test view::tests::writes_episode_from_the_campaign_is_refused ... ok
+test view::tests::writes_episode_to_a_non_vantage_is_refused ... ok
+
+test result: ok. 97 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+
+running 4 tests
+test normal_dependencies_are_exactly_the_four_pure_crates_and_there_are_no_others ... ok
+test no_public_item_is_named_as_an_admission_acknowledgment_grant_gate_dispatch_or_capability ... ok
+test nothing_in_the_public_api_can_mark_separation_established_or_attach_a_principal_to_a_binding ... ok
+test the_crate_has_no_io_clock_environment_process_or_unsafe_code ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+
+running 4 tests
+test fixtures_match_their_recorded_sha256 ... ok
+test n2_probe_identities_in_allowed_are_refused_on_the_frozen_requirements ... ok
+test n1_probe_the_frozen_rows_have_the_revision_4_evidence_classes ... ok
+test frozen_vertical_diagnostic_report ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 45 tests
+test a_class_of_one_dimension_is_not_a_class_of_another_or_of_the_observer_field ... ok
+test a_non_string_in_a_governed_field_is_a_wrong_type_not_a_class ... ok
+test authored_bytes_with_null_floats_and_ambiguity_are_refused ... ok
+test contradictory_conditions_give_no_candidate_and_a_condition_conflict ... ok
+test an_acceptor_that_names_a_dependent_vantage_is_refused ... ok
+test an_unknown_consumer_class_is_unresolved ... ok
+test builder_and_campaign_conditions_on_one_obligation_give_the_amended_counts ... ok
+test closure_failures_give_no_candidate_and_name_the_uncovered_conditions ... ok
+test component_named_principals_bind_nothing ... ok
+test enforceability_rows_cover_every_property_and_dimension ... ok
+test every_candidate_member_is_traced_to_an_existing_input_item ... ok
+test canonical_normalization_refusals_are_typed ... ok
+test distinct_identifiers_give_a_separation_requirement_that_nothing_can_mark_satisfied ... ok
+test every_supported_mechanism_row_has_its_exact_revision_4_evidence_class ... ok
+test every_recognized_class_is_accepted_and_the_vocabulary_is_the_profile_table ... ok
+test heterogeneous_conditions_are_preserved_and_combined_by_the_f4_table ... ok
+test enforceability_none_rows_for_unsupported_requirements ... ok
+test identity_c_changing_the_only_satisfying_permission_gives_no_candidate ... ok
+test heterogeneous_result_contracts_stay_distinct_in_candidate_view_and_report ... ok
+test an_unsupported_result_contract_is_not_masked_by_other_none_rows ... ok
+test identical_conditions_under_distinct_ids_are_both_kept ... ok
+test closure_successes_give_a_candidate ... ok
+test identity_a_unneeded_authority_entry_changes_digests_but_not_rule_derived_sets ... ok
+test every_candidate_has_exactly_the_two_component_binding_requirements ... ok
+test identity_b_adding_an_authority_entry_changes_both_digests_and_no_relationship ... ok
+test referential_integrity_and_non_empty_collections_are_enforced ... ok
+test concrete_identities_and_arbitrary_strings_are_not_classes_in_any_governed_field ... ok
+test literals_dimensions_and_missing_members_are_refused ... ok
+test separation_rows_are_none_in_v1_so_no_candidate_is_executable ... ok
+test identity_d_a_changed_rule_input_changes_the_content_digest ... ok
+test the_builder_vantage_is_dependent_for_every_condition_of_a_candidate_that_has_one ... ok
+test problem_scope_and_obligations_are_copied_unchanged_into_the_candidate ... ok
+test single_value_class_leaves_reach_their_destinations ... ok
+test the_view_projects_hosting_episode_access_and_terminalization ... ok
+test trace_rows_cite_the_sources_the_amendment_names ... ok
+test recognized_but_unsupported_cases_and_unsupported_result_contracts_are_none ... ok
+test unknown_fields_standing_fields_and_realization_identities_are_refused ... ok
+test the_relationship_set_equals_the_set_written_from_the_amendment_table ... ok
+test two_obligations_give_one_reviewer_vantage_each_and_one_terminalizes ... ok
+test the_report_has_exactly_the_rows_the_input_requires ... ok
+test the_candidate_has_exactly_the_members_the_matrix_lists ... ok
+test identity_changes_on_every_listed_input_class ... ok
+test every_required_source_member_is_refused_when_absent_and_never_filled ... ok
+test identity_covers_problem_scope_and_every_obligation_member ... ok
+test every_requirements_leaf_reaches_the_candidate_and_its_documented_projections ... ok
+
+test result: ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.27s
+
+
+running 6 tests
+test golden_vectors_fix_canonical_bytes_and_digests ... ok
+test authored_whitespace_and_escapes_do_not_change_identity ... ok
+test views_of_the_fixture_candidates_are_unchanged_by_relationship_validation ... ok
+test repeated_derivation_gives_identical_bytes_and_digests ... ok
+test permuting_any_one_set_gives_identical_digests_and_trace ... ok
+test seeded_shuffles_of_every_array_and_object_key_order_give_identical_digests ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.66s
+
+
+running 1 test
+test gate::tests::o9_refuses_internal_errors_and_view_errors_as_integrity ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 50 tests
+test fixture_admission_binds_principal_actor_subject_boundary_revision_and_realization ... ok
+test g1_o4_a_principal_named_like_a_component_binds_nothing ... ok
+test g1_o4_two_committed_bindings_of_one_component_are_ambiguous ... ok
+test g1_o4_no_grant_for_the_permission_is_authority_missing ... ok
+test g1_o4_revoke_disables_exactly_its_issuance_not_a_reissue_with_identical_terms ... ok
+test g1_o4_decision_scope_of_another_problem_scope_refuses_only_o4 ... ok
+test g1_o4_two_committed_principals_with_the_named_id_resolve_to_none ... ok
+test g1_o4_unresolved_decision_scope_covers_nothing ... ok
+test g1_o5_a_none_row_other_than_separation_refuses_only_o5 ... ok
+test g1_o4_a_superseded_grant_does_not_cover_unless_its_replacement_does ... ok
+test g1_o4_expired_grant_refuses_only_o4 ... ok
+test g1_o3_candidate_digest_of_another_candidate_refuses_only_o3 ... ok
+test g1_o4_decision_scope_without_the_required_action_refuses_only_o4 ... ok
+test g1_r3_realized_actor_differs_from_bound_actor ... ok
+test g1_o4_grant_for_another_problem_scope_refuses_only_o4 ... ok
+test g1_o4_decision_scope_boundaries_must_contain_the_requirements_boundaries ... ok
+test g2_o3_no_derived_candidate_leaves_candidate_checks_unavailable ... ok
+test g1_o8_distinct_principals_with_the_same_actor_anchor_are_not_separate ... ok
+test g2_a_vantage_the_candidate_does_not_have_and_no_binding_refuse_r2_and_r3 ... ok
+test g2_o5_retained_continuity_has_no_mechanism_and_the_realization_does_not_provide_it ... ok
+test g1_o8_an_unbound_dependent_vantage_is_unresolved ... ok
+test g2_two_committed_bindings_of_the_vantage_are_ambiguous_for_o8_and_r3 ... ok
+test g2_r1_r2_unstated_provider_class_is_unestablished_for_condition_and_vantage ... ok
+test g2_r4_unaccepted_realization_leaves_r1_r2_without_accepted_values ... ok
+test g2_r4_acceptance_for_another_profile_is_not_an_acceptance_for_the_candidate ... ok
+test g2_revoking_the_acceptor_principal_fails_o4_and_o8_together ... ok
+test g1_r2_unstated_effective_property_refuses_only_r2 ... ok
+test g2_two_committed_acceptances_of_one_digest_are_ambiguous_and_state_nothing ... ok
+test g1_r3_installed_component_digest_differs_from_binding ... ok
+test g1_r3_bound_realization_digest_differs_from_the_realization ... ok
+test s1_a_patch_identity_stand_in_scope_digest_refuses_only_s1 ... ok
+test s1_scope_digest_is_the_episode_codec_digest_of_the_subject ... ok
+test s1_a_pin_revoked_after_admission_is_still_revoked ... ok
+test s_unknown_observation_yields_no_observation_and_so_no_outcomes ... ok
+test p_production_refusal_set_is_exact_and_fixture_admits_the_same_candidate ... ok
+test s1_a_vantage_that_serves_no_obligation_refuses_s1 ... ok
+test s1_the_base_admission_passes_s1_and_lists_every_check ... ok
+test state_a_revocation_after_admission_is_seen_only_by_a_new_observation ... ok
+test s1_a_subject_differing_in_each_field_refuses_only_s1 ... ok
+test state_current_at_the_same_revision_and_after_an_unrelated_commit ... ok
+test state_revoked_when_the_acting_principal_is_revoked ... ok
+test state_revoked_when_a_pinned_grant_is_revoked ... ok
+test state_refused_when_a_new_commit_makes_the_decision_scope_ambiguous ... ok
+test seal_a_later_reserved_boundary_makes_the_admission_stale ... ok
+test seal_same_observation_cannot_decide_a_later_boundary ... ok
+test state_unknown_when_the_source_breaks_its_ordering_obligations ... ok
+test state_refused_when_regating_the_same_request_refuses ... ok
+test state_stale_when_a_pinned_issuance_is_superseded ... ok
+test state_unknown_without_an_observation ... ok
+test s1_compares_the_obligation_the_vantage_serves ... ok
+
+test result: ok. 50 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+
+running 1 test
+test base_candidate_shape_that_admission_tests_assume ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test preparation_for_subject_a_is_refused_when_the_consumer_world_is_b ... ok
+test the_declaration_owner_still_refuses_unmapped_conditions_before_any_child ... ok
+test the_host_derives_the_realization_description_and_a_caller_cannot_supply_or_bypass_it ... ok
+test a_different_candidate_or_obligation_is_refused_before_any_child ... ok
+test a_request_for_subject_a_is_refused_against_a_declaration_or_episode_for_b ... ok
+test the_canonical_world_binds_and_delivers_the_recomputed_preparation ... ok
+test altered_conditions_blockers_or_provenance_with_unchanged_identity_are_refused ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+
+running 10 tests
+test an_unestablished_realization_check_has_no_discharge_and_refuses ... ok
+test discharge_is_total_admitted_kinds_name_their_check_ids ... ok
+test an_unknown_or_mislabelled_blocker_kind_refuses ... ok
+test the_frozen_world_is_a_known_incompatibility ... ok
+test unknown_does_not_permit_and_is_not_final ... ok
+test the_assumption_world_screens_into_admitted_and_assumed_mapping_kinds ... ok
+test regate_reads_a_fresh_observation ... ok
+test the_frozen_stand_in_scope_digest_refuses_only_s1 ... ok
+test the_fixture_authority_world_admits_and_an_empty_world_refuses ... ok
+test the_first_non_current_state_other_than_unknown_is_final ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+
+running 8 tests
+test strict_wire_representation_keeps_json_like_strings_and_rejects_recursive_duplicates ... ok
+test a_fully_consistent_observation_verifies_and_returns_the_observed_text ... ok
+test each_wrong_identity_or_byte_is_refused_by_its_owner_check ... ok
+test possible_delivery_without_a_complete_observation_is_uncertain_not_refused_as_wrong ... ok
+test toolsets_and_provider_entry_are_refused ... ok
+test frames_with_unknown_members_are_invalid_and_never_a_permitted_success ... ok
+test the_envelope_carries_the_complete_preparation_and_adds_transport_only ... ok
+test freezing_is_deterministic_and_transport_changes_only_transport ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 16 tests
+test removing_a_required_admission_cannot_advance_the_episode ... ok
+test coverage_is_derived_from_the_obligation_and_the_declared_mapping ... ok
+test a_declaration_cannot_change_the_production_preparation ... ok
+test an_unsupported_result_contract_is_refused_before_the_gate_or_the_transition ... ok
+test a_boundary_and_consumer_that_merely_match_the_candidate_are_not_a_mapping ... ok
+test a_result_with_another_contract_version_is_refused_by_the_episode_owner ... ok
+test a_complete_consistent_admission_set_reaches_the_real_reducer_and_is_only_a_fixture_observation ... ok
+test s1_a_current_gate_proof_for_this_consumption_lets_the_episode_advance ... ok
+test non_established_evidence_cannot_advance_the_episode_but_the_reducer_alone_would_record_it ... ok
+test a_substituted_binding_or_reference_cannot_advance_the_episode ... ok
+test declarations_that_disagree_with_the_candidate_the_subject_or_the_episode_are_refused ... ok
+test the_episode_core_alone_reaches_reported_without_admissions_so_the_gate_is_what_stops_it ... ok
+test s1_a_gate_proof_that_is_not_current_or_has_no_observation_is_refused ... ok
+test s1_a_gate_proof_for_another_candidate_subject_or_boundary_is_refused ... ok
+test s1_a_gate_proof_for_another_obligations_vantage_is_refused ... ok
+test the_episode_owner_keeps_revision_writer_subject_and_phase_checks ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+
+
+running 24 tests
+test a_condition_named_like_another_obligation_does_not_leak_its_rows_into_that_obligation ... ok
+test a_builder_condition_added_by_another_obligation_extends_the_selected_separation_rows ... ok
+test a_builder_condition_of_another_obligation_still_contributes_to_the_selected_separation ... ok
+test a_matching_descriptor_is_a_claim_and_clears_no_blocker ... ok
+test projection_carries_the_owned_meaning_of_the_selected_obligation ... ok
+test separation_has_no_mechanism_in_the_report_and_stays_a_blocker ... ok
+test changing_an_owned_proposition_or_route_changes_the_constructed_context ... ok
+test changing_only_the_provider_of_a_writing_coding_fixture_removes_no_other_blocker ... ok
+test the_fixture_inputs_are_the_frozen_bytes ... ok
+test removing_the_realization_constraints_removes_their_enforcement_rows ... ok
+test a_changed_requirement_without_a_mechanism_is_refused_by_preparation_not_by_the_owner ... ok
+test an_obligation_named_like_another_obligations_condition_does_not_leak_its_result_contract_row ... ok
+test preparation_serializes_and_reads_back_without_loss ... ok
+test separation_requirements_keep_the_owners_trace_rows ... ok
+test values_the_schema_owner_rejects_never_reach_preparation ... ok
+test the_current_candidate_is_blocked_by_every_unestablished_mapping ... ok
+test another_obligations_unsupported_condition_does_not_refuse_an_obligation_it_does_not_own ... ok
+test unknown_obligations_and_invalid_subjects_are_refused ... ok
+test every_emitted_blocker_has_exactly_the_kind_its_id_family_names ... ok
+test fixture_route::another_obligations_coincident_id_does_not_change_fixture_coverage ... ok
+test unsupported_result_contracts_are_refused_with_the_contract_named ... ok
+test trace_rows_of_other_kinds_with_a_coincident_id_are_not_provenance ... ok
+test incompatible_descriptors_add_known_incompatibilities ... ok
+test the_second_obligation_selects_only_its_own_contract_and_condition ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test crates/work-engine-organization-authority/src/lib.rs - (line 77) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 70) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 50) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 26) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 86) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 42) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 34) - compile fail ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+
+running 9 tests
+test crates/work-engine-review-delivery/src/native.rs - native (line 40) - compile fail ... ok
+test crates/work-engine-review-delivery/src/gate.rs - gate (line 37) - compile fail ... ok
+test crates/work-engine-review-delivery/src/native.rs - native (line 44) - compile fail ... ok
+test crates/work-engine-review-delivery/src/gate.rs - gate (line 41) - compile fail ... ok
+test crates/work-engine-review-delivery/src/native.rs - native (line 36) - compile fail ... ok
+test crates/work-engine-review-delivery/src/native.rs - native (line 63) - compile fail ... ok
+test crates/work-engine-review-delivery/src/binding.rs - binding (line 21) - compile fail ... ok
+test crates/work-engine-review-delivery/src/native.rs - native (line 57) - compile fail ... ok
+test crates/work-engine-review-delivery/src/native.rs - native (line 50) - compile fail ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+
+running 2 tests
+test crates/work-engine-review-preparation/src/fixture.rs - fixture (line 51) - compile fail ... ok
+test crates/work-engine-review-preparation/src/fixture.rs - fixture (line 33) - compile fail ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+

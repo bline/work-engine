@@ -1,0 +1,49 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "A1-M4-discharge-assumed.test0",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--test",
+    "gate",
+    "--",
+    "discharge_is_total_admitted_kinds_name_their_check_ids",
+    "--exact"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a1-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a1/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2225552,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 2228452,
+  "pgid": 2228452,
+  "started_at": "2026-11-18T20:09:20.035808Z",
+  "ended_at": "2026-11-18T20:09:24.495556Z",
+  "duration_s": 4.46,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M4-discharge-assumed.test0.stdout",
+    "length": 1365,
+    "sha256": "e195689636eeb96ee23f3156726b92b15839840caa49a643015f0d2ffc09eec5"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M4-discharge-assumed.test0.stderr",
+    "length": 701,
+    "sha256": "8b1580cf23e17168501d6ccc6f8f21ef5b2244b18cbc88ad500884961874aa8f"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

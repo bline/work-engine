@@ -1,0 +1,402 @@
+{
+ "cwd": "/home/bline/cbm-work/wt-org-owners-a1-20261118/rust",
+ "env": {
+  "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a1/target"
+ },
+ "steps": [
+  {
+   "name": "pre-hashes",
+   "argv": [
+    "git",
+    "hash-object",
+    "crates/work-engine-organization-authority/src/gate.rs",
+    "crates/work-engine-review-delivery/src/gate.rs"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A1-M1-s1-always-passes.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutate.py",
+    "apply",
+    "A1-M1-s1-always-passes"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A1-M1-s1-always-passes.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "s1_a_subject_differing_in_each_field_refuses_only_s1",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A1-M1-s1-always-passes.test1",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "s1_a_patch_identity_stand_in_scope_digest_refuses_only_s1",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A1-M1-s1-always-passes.test2",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--test",
+    "gate",
+    "--",
+    "the_frozen_stand_in_scope_digest_refuses_only_s1",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A1-M1-s1-always-passes.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutate.py",
+    "restore",
+    "A1-M1-s1-always-passes"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A1-M2-digest-ignores-commit-and-tree.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutate.py",
+    "apply",
+    "A1-M2-digest-ignores-commit-and-tree"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A1-M2-digest-ignores-commit-and-tree.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "s1_scope_digest_is_the_episode_codec_digest_of_the_subject",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A1-M2-digest-ignores-commit-and-tree.test1",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "s1_a_subject_differing_in_each_field_refuses_only_s1",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A1-M2-digest-ignores-commit-and-tree.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutate.py",
+    "restore",
+    "A1-M2-digest-ignores-commit-and-tree"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A1-M3-first-candidate-obligation.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutate.py",
+    "apply",
+    "A1-M3-first-candidate-obligation"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A1-M3-first-candidate-obligation.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "s1_compares_the_obligation_the_vantage_serves",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A1-M3-first-candidate-obligation.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutate.py",
+    "restore",
+    "A1-M3-first-candidate-obligation"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A1-M4-discharge-assumed.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutate.py",
+    "apply",
+    "A1-M4-discharge-assumed"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A1-M4-discharge-assumed.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--test",
+    "gate",
+    "--",
+    "discharge_is_total_admitted_kinds_name_their_check_ids",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A1-M4-discharge-assumed.test1",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--test",
+    "gate",
+    "--",
+    "the_assumption_world_screens_into_admitted_and_assumed_mapping_kinds",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A1-M4-discharge-assumed.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutate.py",
+    "restore",
+    "A1-M4-discharge-assumed"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A1-M5-s1-dropped-from-all.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutate.py",
+    "apply",
+    "A1-M5-s1-dropped-from-all"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A1-M5-s1-dropped-from-all.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "s1_the_base_admission_passes_s1_and_lists_every_check",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A1-M5-s1-dropped-from-all.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutate.py",
+    "restore",
+    "A1-M5-s1-dropped-from-all"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A1-M6-unserved-vantage-passes.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutate.py",
+    "apply",
+    "A1-M6-unserved-vantage-passes"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A1-M6-unserved-vantage-passes.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "s1_a_vantage_that_serves_no_obligation_refuses_s1",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A1-M6-unserved-vantage-passes.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutate.py",
+    "restore",
+    "A1-M6-unserved-vantage-passes"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A1-M7-unknown-vantage-passes.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutate.py",
+    "apply",
+    "A1-M7-unknown-vantage-passes"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A1-M7-unknown-vantage-passes.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "g2_a_vantage_the_candidate_does_not_have_and_no_binding_refuse_r2_and_r3",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A1-M7-unknown-vantage-passes.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutate.py",
+    "restore",
+    "A1-M7-unknown-vantage-passes"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "post-hashes",
+   "argv": [
+    "git",
+    "hash-object",
+    "crates/work-engine-organization-authority/src/gate.rs",
+    "crates/work-engine-review-delivery/src/gate.rs"
+   ],
+   "timeout": 60
+  }
+ ]
+}

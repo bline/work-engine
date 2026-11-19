@@ -1,0 +1,48 @@
+   Compiling typenum v1.20.1
+   Compiling cpufeatures v0.2.17
+   Compiling cfg-if v1.0.5
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling serde_core v1.0.229
+   Compiling zmij v1.0.23
+   Compiling ryu-js v1.0.3
+   Compiling libc v0.2.190
+   Compiling thiserror v2.0.21
+   Compiling generic-array v0.14.7
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.9
+   Compiling review-episode-core v0.1.0 (/home/bline/cbm-work/wt-a1-export-1/rust/crates/review-episode-core)
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling work-engine-organization v0.1.0 (/home/bline/cbm-work/wt-a1-export-1/rust/crates/work-engine-organization)
+   Compiling work-engine-organization-authority v0.1.0 (/home/bline/cbm-work/wt-a1-export-1/rust/crates/work-engine-organization-authority)
+   Compiling work-engine-review-preparation v0.1.0 (/home/bline/cbm-work/wt-a1-export-1/rust/crates/work-engine-review-preparation)
+   Compiling work-engine-review-delivery v0.1.0 (/home/bline/cbm-work/wt-a1-export-1/rust/crates/work-engine-review-delivery)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.16s
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/review_episode_core-8a389039381dd434)
+     Running tests/codec.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/codec-f935be5acec5e0b2)
+     Running tests/contract.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/contract-096cf962697ab93a)
+     Running tests/result_contract.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/result_contract-499921b0899a0eeb)
+     Running tests/transitions.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/transitions-08fddbce05939c2b)
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/work_engine_organization-29ebd5a2df6a2ec0)
+     Running tests/boundary.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/boundary-baafb156e0d7b105)
+     Running tests/frozen.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/frozen-e8bf9cfb5d7d7068)
+     Running tests/rules.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/rules-0685f95f76544f20)
+     Running tests/stability.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/stability-c846d457df5f08f0)
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/work_engine_organization_authority-48b9d5c0f8ee21de)
+     Running tests/admission.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/admission-fa70f97e919c4743)
+     Running tests/base_candidate_shape.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/base_candidate_shape-bb193111b1ec40d2)
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/work_engine_review_delivery-d997ef66e0b441bf)
+     Running tests/binding.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/binding-b23927cfd16f4ce6)
+     Running tests/gate.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/gate-1a91fd94d6a44664)
+     Running tests/pure.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/pure-4adb7741728b904f)
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/work_engine_review_preparation-cab796d811ce632e)
+     Running tests/fixture_consumer.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/fixture_consumer-ef4f532f80043ed4)
+     Running tests/preparation.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root/debug/deps/preparation-969aae5626d02eba)
+   Doc-tests review_episode_core
+   Doc-tests work_engine_organization
+   Doc-tests work_engine_organization_authority
+   Doc-tests work_engine_review_delivery
+   Doc-tests work_engine_review_preparation
