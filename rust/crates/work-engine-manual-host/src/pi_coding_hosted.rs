@@ -2369,12 +2369,13 @@ mod tests {
     }
     #[test]
     fn head_evidence_replaces_a_stale_partial_by_rename() {
-        // A junk `.partial` left by an earlier failed write: the writer must
-        // truncate it (not create-only), write there, and rename it into
-        // place rather than writing `head.json` directly.
+        // A junk `.partial` left by an earlier failed write, longer than any
+        // head evidence: the writer must truncate it (not open it
+        // create-only), write there, and rename it into place rather than
+        // writing `head.json` directly.
         let (dir, mut h, mut w) = host(vec![completed()], None);
         let partial = dir.path().join("coding-hosted-1-1.head.json.partial");
-        fs::write(&partial, b"{\"junk\":").unwrap();
+        fs::write(&partial, vec![b'x'; 64 * 1024]).unwrap();
         let g = grant(&mut h, &mut w);
         push(&mut h, &mut w, fetch(&g)).unwrap();
         relay_to_end(&mut h, &mut w, &g);
