@@ -9,16 +9,16 @@
 
 | File | SHA-256 |
 | --- | --- |
-| `gate-trace.md` | `7fc523181bb794b4a02edd02a3ff52f0fbeb89e9dfc9b519f7f2cd44122cdb3e` |
+| `gate-trace.md` | `94ed2cbedaa2bf2a124864ef686febd02b453d6f69d9a39224bf264530a9d4dd` |
 | `gate-loci.json` | `739dce5b56950b212ef4d764b62444fb35bf5033d4990a09e059ea82f3c68523` |
 | `audit-request.json` | `1503b95dd217f429e9cfa4f218d8d7487d668883de981999cdfa5daa826347dc` |
-| `snapshot-manifest.json` | `13534370eaf3751bb9a0ceb26504dc9fcf4651be09720e4a5c08308fc4739343` |
+| `snapshot-manifest.json` | `e3fa8567546b17c737a416fec6b17f388d54f29f63b0a0dddb71f1ad82c671af` |
 | `rubric.md` | `ba6d3273a45973efd3a1297dd5c95e379aecd4e999af734d1d82bf279adca69c` |
-| `lc7-protocol.json` | `f4003b1eb0d3ba3876bce51f3441c0a6daaf480315e02f815e0bccc1ed1471ae` |
-| `advisory-input.md` | `bf73c2be0629666fff66fbb002a7aa146ce48a8e3a9e6ad9494417be70880b3f` |
+| `lc7-protocol.json` | `11279f0a6a728a9076df8ada964002fc93a959af639b2c21b1b1724b0a06007a` |
+| `advisory-input.md` | `464388cf95ce79fe011de57946d657a82b18eda4b0919e69bc1150ba7c6d7e48` |
 | `authority-skeletons.json` | `ca2b76f967be555e7289b32041f68e867014f9ffc5a26acec233b4e573705280` |
 | `completeness.md` | `b2a328cdbb909a69a75cd64c12b84e9531fdcaecafb4805b8efbbe5b8c16a697` |
-| `check.py` | `d8809b221f9a79c0fcb2571780d07434b18688cc84b0467415d8a861330aa41b` |
+| `check.py` | `773083c698b167bae29d681372381cca4fd72600050404c1ceea4a5f1a634206` |
 | `use-bundle/gen_draft.py` | `11a85b5064a80edbd3803dc88730ce6e92e4eef64d93c5abcb812d53e7a03825` |
 | `use-bundle/bundle/request.json` | `c0add36d78b9743c3e710bdea0b25c8567a3f441b26968b5d77a50b7292f90a3` |
 | `use-bundle/bundle/manifest.json` | `33ac05d85f500b36559fa377346a8999e8cb01ae2e4201a15ff0d6b9033b66b6` |
@@ -31,16 +31,22 @@
 | `a4/card.json` | `034b25f9b4e15b72e8ada25323d3b99dc2ff3f637e0e9c3fbd0561e3cae33be9` |
 | `a4/request-card.member` | `c257951b53f3c6540101eac4a31919b0fa220d83d292f98a3afca8dd0eb67263` |
 | `a4/target.txt` | `1981220a9c6dfd1be73492d9bfb623a2bc9ee53caf4f042c070cce1ac6f97b19` |
-| `arm-questions/advisory.txt` | `5ed3132d1283706ce4a167505efa267c9495b0ce109bece6e5b2920182b8cec3` |
-| `arm-questions/audit_treatment.txt` | `f4c1c1ba31294b95baba229eb611692d8c4dae868fd868f3a7211f4359295047` |
-| `arm-questions/audit_baseline.txt` | `6e5ae3573a301def80bea0cfe4d46411b49f803a455b919339d8e9b1b720dc2a` |
+| `arm-questions/advisory.txt` | `0efabd90105ccafd0776af1a5ebed4fbc2b9eeb994f8c17c362b7769d65f2aac` |
+| `arm-questions/audit_treatment.txt` | `e24a63eb2e6188a60a8c28112ad78bd649fa11bc0213ef5b8cdd01572511b2ae` |
+| `arm-questions/audit_baseline.txt` | `8ece050d7096127c8c37d2b9ccba90e4d83747f3c46ddba00b4746d0a1698201` |
 | `ARM-QUESTIONS-FROZEN-20261119.md` | `aa36796c9384eca397114eab2155b3d53aaee3ec0a4352173ac29339640d6787` |
 | `OPERATOR-APPROVAL-20261119.md` | `f73c0c971700f57dab710bb1202a32d3e213bfcfccce446b116d10d2dc42d0a0` |
 | `OPERATOR-SNAPSHOT-APPROVAL-20261119.md` | `f300a99895adae4cb9feae0bacd9cdd1d1d98ac64be05481e7084cf6ebab5272` |
-| `arms/advisory.json` | `d7027d31efc2c63ca18d1f772cd2bd38f8ec2aec60f224ea4a54b0d6cf1a3053` |
-| `arms/audit_treatment.json` | `7fae4e0d7a4a67afbc7a380471fa19a03af406eb2ed2954fdcb6a8e6ab01ef65` |
-| `arms/audit_baseline.json` | `95509c7f15518bd6f4314d5d56da89efcaf85247860246485a31ecd96aab8eae` |
+| `arms/advisory.json` | `5c94c88ba1317f0915c961b37dc941456379c1ec9d4bdd308cc3d719ffaeea21` |
+| `arms/audit_treatment.json` | `43db4aca0794354a8eedf0bf7399878960776bb617d38331feb4a97e69c57902` |
+| `arms/audit_baseline.json` | `6c39f12242804909fde79c32f1c8b1c94e7b648a8d8564be3f6ce2885c14419d` |
 | `arms/gen_arms.py` | `005d3c37c8b3ab25f969f8757c5912ed3bf11e95c67448a2490a0d8aeaf80203` |
+| `snapshot-manifest.superseded-20261119-slash-ids.json` | `13534370eaf3751bb9a0ceb26504dc9fcf4651be09720e4a5c08308fc4739343` |
+| `PENDING-REAPPROVAL-20261119.json` | `d2ae1fd44ced78c3ad04bfc1ca0e6a09d0f4c4af3fa4b72bb868b3abed91c73f` |
+| `OPERATOR-REAPPROVAL-20261119.md` | `6576acc85160702137e5ba6d1a37e9ef8d0246f196648bd2460e4af0df5784c1` |
+| `arm-questions/superseded-20261119-slash-ids/advisory.txt` | `5ed3132d1283706ce4a167505efa267c9495b0ce109bece6e5b2920182b8cec3` |
+| `arm-questions/superseded-20261119-slash-ids/audit_treatment.txt` | `f4c1c1ba31294b95baba229eb611692d8c4dae868fd868f3a7211f4359295047` |
+| `arm-questions/superseded-20261119-slash-ids/audit_baseline.txt` | `6e5ae3573a301def80bea0cfe4d46411b49f803a455b919339d8e9b1b720dc2a` |
 
 `check.py --index <this file>` recomputes every digest above and the git-pinned members and register digests, re-reads 141 gate loci at `f6dc724e`, and checks:
 - slots, DRAFT/FROZEN marks and settled holders;
@@ -48,7 +54,7 @@
 - the use bundle's binding to the frozen audit request and its internal consistency;
 - the A4 member.
 
-Custody records are in `021-s2-r3/custody/` (r3 check), `021-s2-r3/custody-budget/` (after the budget ruling), `021-s2-r3/custody-derive/` (first card projection), `021-s2-r3/custody-phaseA/` and `021-s2-r3/custody-phaseB/` (review 023 repair: regeneration, build, card re-derive, checks), `021-s2-r3/custody-phaseC/` (phase C checks), `021-s2-r3/custody-phaseD/` (phase D checks), `021-s2-r3/custody-phaseF/` (phase F checks) and `021-s2-r3/custody-phaseG/` (phase G build, dry runs, checks).
+Custody records are in `021-s2-r3/custody/` (r3 check), `021-s2-r3/custody-budget/` (after the budget ruling), `021-s2-r3/custody-derive/` (first card projection), `021-s2-r3/custody-phaseA/` and `021-s2-r3/custody-phaseB/` (review 023 repair: regeneration, build, card re-derive, checks), `021-s2-r3/custody-phaseC/` (phase C checks), `021-s2-r3/custody-phaseD/` (phase D checks), `021-s2-r3/custody-phaseF/` (phase F checks), `021-s2-r3/custody-phaseG/` (phase G build, dry runs, checks), `021-s2-r3/custody-phaseH/` (phase H id proof, dry runs, checks) and `021-s2-r3/custody-phaseI/` (phase I checks).
 
 ## Settled inputs (operator or owner decisions; not reopened)
 
@@ -105,7 +111,7 @@ Custody records are in `021-s2-r3/custody/` (r3 check), `021-s2-r3/custody-budge
 | --- | --- |
 | gate trace / loci | Re-read at `f772612f`: 127 loci, up from 108; 7 lines moved. Phase B re-pinned them at `afbcbca8`: 136 loci, with 4 relay-bound and 5 basis/fact-bound loci added and 3 lines moved. Phase D re-pinned at `f6dc724e`: 141 loci. The P6 option-A predicate and the basis/fact caps now read the merged source. Protocol `56c00a88`. New gates: P6 (option A; a pending precondition in r3, merged at `f6dc724e`; with the current and intended predicates) and P7 (live harness and live-prep: credential and https refusals, arm schema, grants at the job deadline written to `grants.json`, per-turn forwarder eligibility, serve record, attempts copy, the Claude Code pin). Discrepancies refreshed. |
 | lc7-protocol | Job parameters, credential rule, option A advisory, treatment budget and the overrun, receipt locations (moved), retention of `grants.json`, the serve record and attempts. |
-| advisory-input | Rewritten for option A: one member `research/a4-request-card`, read plan at 32 KiB (offsets 0…131,072, last 13,551), host-held reconstruction. |
+| advisory-input | Rewritten for option A: one member `research:a4-request-card` (renamed from `research/a4-request-card` in phase H), read plan at 32 KiB (offsets 0…131,072, last 13,551), host-held reconstruction. |
 | snapshot-manifest | Re-pinned at `afbcbca8` (blobs identical). A4 member is request + card (exact, phase B card). Treatment budget 275,000 B, as-specified 270,719 B. |
 | authority-skeletons | Protocol `56c00a88`. Purpose, scope and issuers point to the accepted use-bundle content. Event templates by digest. Per-arm inference grant settled (M2). Grant expiry rule. |
 | audit-request | Frozen (above). |
@@ -113,15 +119,31 @@ Custody records are in `021-s2-r3/custody/` (r3 check), `021-s2-r3/custody-budge
 | check.py | Pin `f6dc724e` (phase D); P6/P7; FROZEN rule; use-bundle and A4 member checks; rule 12: the card and the skeletons are bound to the current bundle and events. |
 | rubric | unchanged |
 
-## Frozen arm question texts (operator, 2026-11-19; `021-s2-r3/ARM-QUESTIONS-FROZEN-20261119.md`)
+## Member-id rename (phase H, 2026-11-19): re-approved by the operator (`021-s2-r3/OPERATOR-REAPPROVAL-20261119.md`)
+
+The live advisory failed after its first read committed. Its member id `research/a4-request-card` contains `/`, which the task owner's `valid_id` refuses in `record_completed_effect` (`027-h2-live/DIAGNOSIS-advisory.md`). The operator approved the rule: map `/` to `:` in every member id. Bytes, pins, sizes, read order and the A4 member are unchanged.
+
+| Item | Old (approved / frozen) | New (**re-approved 2026-11-19**) |
+| --- | --- | --- |
+| snapshot manifest | `13534370…` (`snapshot-manifest.superseded-20261119-slash-ids.json`) | `e3fa8567546b17c737a416fec6b17f388d54f29f63b0a0dddb71f1ad82c671af` |
+| question `advisory` | `5ed3132d…` (`arm-questions/superseded-20261119-slash-ids/advisory.txt`) | `0efabd90105ccafd0776af1a5ebed4fbc2b9eeb994f8c17c362b7769d65f2aac` |
+| question `audit_treatment` | `f4c1c1ba…` (`arm-questions/superseded-20261119-slash-ids/audit_treatment.txt`) | `e24a63eb2e6188a60a8c28112ad78bd649fa11bc0213ef5b8cdd01572511b2ae` |
+| question `audit_baseline` | `6e5ae357…` (`arm-questions/superseded-20261119-slash-ids/audit_baseline.txt`) | `8ece050d7096127c8c37d2b9ccba90e4d83747f3c46ddba00b4746d0a1698201` |
+| arm file `advisory` | (phase G) | `5c94c88ba1317f0915c961b37dc941456379c1ec9d4bdd308cc3d719ffaeea21` |
+| arm file `audit_treatment` | (phase G) | `43db4aca0794354a8eedf0bf7399878960776bb617d38331feb4a97e69c57902` |
+| arm file `audit_baseline` | (phase G) | `6c39f12242804909fde79c32f1c8b1c94e7b648a8d8564be3f6ce2885c14419d` |
+
+The record is `021-s2-r3/PENDING-REAPPROVAL-20261119.json`. The operator re-approved these digests on 2026-11-19 (`OPERATOR-REAPPROVAL-20261119.md`), so strict `check.py` now accepts them. `--pending` stays available for the history (PHASE-H, PHASE-I). The frozen-texts section below is history for the slash-id versions.
+
+## Frozen arm question texts, superseded by the rename above (operator, 2026-11-19; `021-s2-r3/ARM-QUESTIONS-FROZEN-20261119.md`)
 
 Each text is the arm's `engineering_question` byte for byte. The model sees it inside the input locator; the objective text is visible through it (choice 1). The audit texts differ only in the evidence block.
 
 | Arm | File | Bytes | Locator bytes / 8,192 | sha256 |
 | --- | --- | --- | --- | --- |
-| advisory | `arm-questions/advisory.txt` | 1,959 | 2,268 | `5ed3132d1283706ce4a167505efa267c9495b0ce109bece6e5b2920182b8cec3` |
-| audit treatment | `arm-questions/audit_treatment.txt` | 3,337 | 3,652 | `f4c1c1ba31294b95baba229eb611692d8c4dae868fd868f3a7211f4359295047` |
-| audit baseline | `arm-questions/audit_baseline.txt` | 2,435 | 2,740 | `6e5ae3573a301def80bea0cfe4d46411b49f803a455b919339d8e9b1b720dc2a` |
+| advisory | `arm-questions/superseded-20261119-slash-ids/advisory.txt` | 1,959 | 2,268 | `5ed3132d1283706ce4a167505efa267c9495b0ce109bece6e5b2920182b8cec3` |
+| audit treatment | `arm-questions/superseded-20261119-slash-ids/audit_treatment.txt` | 3,337 | 3,652 | `f4c1c1ba31294b95baba229eb611692d8c4dae868fd868f3a7211f4359295047` |
+| audit baseline | `arm-questions/superseded-20261119-slash-ids/audit_baseline.txt` | 2,435 | 2,740 | `6e5ae3573a301def80bea0cfe4d46411b49f803a455b919339d8e9b1b720dc2a` |
 
 **Known LC-7 limitation (choice 3(a)):** the baseline question names evidence it cannot read (the register findings and the `1a1cb443` target passage); recorded, not reworded (gate-trace 15, `lc7-protocol.json#known_limitations`).
 Not covered by the freeze: the `snapshot_approval` slot, the arm files and any live run. **Since then:** the snapshot member lists are approved (`OPERATOR-SNAPSHOT-APPROVAL-20261119.md`, manifest `13534370…`, kept unchanged). The arm files are written (`arms/*.json`, step 3) and dry-validated (gate-trace 16).
