@@ -179,6 +179,11 @@ pub fn validate_config(
     }
     actor::validate_config(config)?;
     if let Some(native) = &config.native {
+        if let Some(refusal) =
+            crate::operations::workspace_snapshot_read::snapshot_id_refusal(&native.snapshot)
+        {
+            return Err(ServiceError::SnapshotIdentity(refusal));
+        }
         crate::operations::validate_native_config(native)?;
     }
     Ok(())
