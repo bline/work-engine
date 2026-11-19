@@ -1,6 +1,6 @@
 [package]
 name = "work-engine-organization-authority"
-description = "Pure organizational admission core: owner-attested records, reservation-sealed authority observation, Gate O subset (O3, O4, O5, O8, O9), Gate R (R1-R4), S1 (scope digest is the exact-subject digest) and effect-admission states. No I/O, no clock, no storage."
+description = "Pure organizational admission core: owner-attested records, reservation-sealed authority observation, Gate O subset (O3, OA, O4, O5, O8, O9), Gate R (R1-R4), S1 (scope digest is the exact-subject digest) and effect-admission states. No I/O, no clock, no storage."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

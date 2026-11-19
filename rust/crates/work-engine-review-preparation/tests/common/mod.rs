@@ -199,8 +199,22 @@ pub mod gate {
         ))
     }
 
-    /// Issues the world; returns the owner's grant (the one a test revokes).
-    fn issue(src: &FixtureSource, extra_vantages: &[String]) -> IssuanceId {
+    /// Issues the world: the organization admission of the request's candidate first, then the
+    /// records whose vantage bindings belong to it. Returns the owner's grant (the one a test
+    /// revokes).
+    fn issue(
+        src: &FixtureSource,
+        request: &OperationRequest,
+        extra_vantages: &[String],
+    ) -> IssuanceId {
+        let organization = src.issue(Record::fixture_organization_admission(
+            ORG,
+            1,
+            None,
+            scope(),
+            request.requirements_digest(),
+            request.candidate_digest(),
+        ));
         let owner = principal(
             src,
             ACCEPTOR,
@@ -272,7 +286,7 @@ pub mod gate {
             scope(),
         ));
         src.issue(Record::fixture_vantage_binding(
-            ORG,
+            organization,
             VANTAGE,
             reviewer,
             digest(),
@@ -282,7 +296,7 @@ pub mod gate {
         // realization digest and actor, so the same acceptance covers them.
         for vantage in extra_vantages {
             src.issue(Record::fixture_vantage_binding(
-                ORG,
+                organization,
                 vantage,
                 reviewer,
                 digest(),
@@ -290,7 +304,7 @@ pub mod gate {
             ));
         }
         src.issue(Record::fixture_vantage_binding(
-            ORG,
+            organization,
             "vantage-builder",
             builder,
             RealizationDigest::new("real-builder"),
@@ -373,12 +387,10 @@ pub mod gate {
 
     pub fn admitted(ask: Ask) -> Admitted {
         let src = FixtureSource::new();
-        let owner_grant = issue(&src, &ask.bound_vantages);
         let requirements = OrganizationalRequirements::from_json_bytes(&ask.requirements).unwrap();
         let candidate_digest =
             derive(&requirements, Profile::FixedSliceReviewV1).candidates[0].content_digest();
         let request = OperationRequest::new(
-            ORG,
             requirements,
             candidate_digest,
             ask.vantage,
@@ -388,6 +400,7 @@ pub mod gate {
                 patch_identity: ask.subject.patch_identity,
             },
         );
+        let owner_grant = issue(&src, &request, &ask.bound_vantages);
         let declared = DeclaredRealization::declared(
             digest(),
             ACTOR,

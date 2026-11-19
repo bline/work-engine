@@ -1375,11 +1375,12 @@ pub struct Delivered {
 ///   its digest is the binding candidate's requirements digest
 ///   (`AdmissionMismatch { field: "requirements" }`); the candidate digest itself is the
 ///   binding's, so S-A O3 then checks that these requirements derive the binding's candidate.
-/// - `organization_id`: caller-asserted and unanchored ([`crate::gate::CALLER_ASSERTED_LABEL`]):
-///   no record relates an organization to a candidate or problem scope. S-A O8 and R3 consult
-///   the vantage bindings of this organization.
 /// - `actor_identity` and `installed`: declared values that S-A R3 compares with the bound ones
-///   (no host observation of the spawned process exists); the identity is caller-asserted.
+///   (no host observation of the spawned process exists); the identity is caller-asserted
+///   ([`crate::gate::CALLER_ASSERTED_LABEL`]).
+///
+/// No organization is an input: S-A derives it from the committed `OrganizationAdmission` of the
+/// binding's candidate (S-A check `OA`), and O8 and R3 consult that organization's bindings.
 ///
 /// The realization digest is not an input: the host computes it from its own realization
 /// description ([`realization_digest`]). The boundary operation is host-derived
@@ -1387,7 +1388,6 @@ pub struct Delivered {
 pub struct FixtureAuthority<'a> {
     pub source: &'a dyn AuthorityObservation,
     pub clock: &'a dyn TimeSource,
-    pub organization_id: String,
     pub requirements: OrganizationalRequirements,
     pub actor_identity: String,
     pub installed: Vec<(String, ExecutableDigest)>,
@@ -1403,8 +1403,7 @@ pub fn boundary_operation(binding: &ExperimentBinding) -> String {
 /// The one host construction of the admission request. Vantage is the preparation's
 /// ([`ExperimentBinding::preparation`]`.model_context.vantage.id`), subject and candidate digest
 /// are the binding's; the requirements are the caller's preimage, refused before any observation
-/// unless it is the one the binding's candidate names; the organization id is the caller's
-/// labelled assertion. `OperationRequest::new` takes every field, so a field added upstream is a
+/// unless it is the one the binding's candidate names. `OperationRequest::new` takes every field, so a field added upstream is a
 /// compile error here rather than a caller-chosen value.
 fn construct_request(
     binding: &ExperimentBinding,
@@ -1418,7 +1417,6 @@ fn construct_request(
     }
     let subject = &binding.request().subject;
     Ok(OperationRequest::new(
-        authority.organization_id.clone(),
         authority.requirements.clone(),
         candidate.content_digest(),
         binding.preparation().model_context.vantage.id.clone(),

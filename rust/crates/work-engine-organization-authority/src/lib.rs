@@ -5,14 +5,16 @@
 //! derivation, view and enforceability report of `work-engine-organization`, which it does not
 //! change.
 //!
-//! - [`records`]: owner-attested `Principal`, `VantageActorBinding`, `ComponentBinding`,
-//!   `DecisionScope` (no `decisions` field), `AuthorityGrant` and `RealizationAcceptance`, with
+//! - [`records`]: owner-attested `OrganizationAdmission`, `Principal`, `VantageActorBinding`,
+//!   `ComponentBinding`, `DecisionScope` (no `decisions` field), `AuthorityGrant` and
+//!   `RealizationAcceptance`, with
 //!   [`IssuanceId`] (which act of issuing) separate from [`BodyDigest`] (which terms).
 //! - [`AuthorityObservation`]: the source contract with its four obligations; [`reserve`] and
 //!   [`observe_for`] seal one observation to one boundary.
-//! - [`admit`]: Gate O subset (O3, O4, O5, O8, O9), Gate R (R1-R4) and S1 (scope digest is the
-//!   exact-subject digest), every check evaluated,
-//!   one outcome per [`CheckId`]; [`EffectAdmission::admission_state`]: current, stale, revoked,
+//! - [`admit`]: Gate O subset (O3, OA, O4, O5, O8, O9), Gate R (R1-R4) and S1 (scope digest is the
+//!   exact-subject digest), every check evaluated, one outcome per [`CheckId`]; the organization
+//!   is derived from the committed admission of the candidate (OA), never supplied by the
+//!   request; [`EffectAdmission::admission_state`]: current, stale, revoked,
 //!   unknown or refused.
 //!
 //! Production policy refuses every admission (O5 `none` separation row; O4 component bindings,
@@ -62,6 +64,17 @@
 //! }
 //! ```
 //!
+//! A request names no organization (the gate derives it, [`CheckId::OA`]), so an organization id
+//! is not an argument of [`OperationRequest::new`]:
+//!
+//! ```compile_fail,E0061
+//! use work_engine_organization::{Digest, OrganizationalRequirements};
+//! use work_engine_organization_authority::{OperationRequest, SubjectRef};
+//! fn with_org(r: OrganizationalRequirements, d: Digest, s: SubjectRef) -> OperationRequest {
+//!     OperationRequest::new("org-1", r, d, "vantage", s)
+//! }
+//! ```
+//!
 //! An observation cannot be built outside this crate, with or without the `fixture` feature (only
 //! an observation source in this crate produces an [`AuthorityState`], and only
 //! [`observe_for`] seals one). Neither a struct literal nor the crate-private constructor is
@@ -101,9 +114,9 @@ pub mod fixture;
 #[cfg(feature = "fixture")]
 pub use gate::Fixture;
 pub use gate::{
-    AdmissionRefusal, AdmissionState, AuthorityPins, CheckId, CheckOutcome, DeclaredRealization,
-    Domain, EffectAdmission, OperationRequest, Outcomes, Policy, Production, Reason, ReasonCode,
-    StaleReason, SubjectRef, UnknownReason, admit,
+    AdmissionRefusal, AdmissionState, AdmittedOrganization, AuthorityPins, CheckId, CheckOutcome,
+    DeclaredRealization, Domain, EffectAdmission, OperationRequest, Outcomes, Policy, Production,
+    Reason, ReasonCode, StaleReason, SubjectRef, UnknownReason, admit,
 };
 pub use ids::{
     BodyDigest, Boundary, BoundaryKind, ExecutableDigest, IssuanceId, ObservationRevision,

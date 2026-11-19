@@ -24,9 +24,11 @@
 //! Realization check blockers (`realization:<condition>:<property>`) are never dischargeable.
 //!
 //! Every input of the admission the evaluation reads is host-derived, digest-bound or a named
-//! labelled assertion ([`CALLER_ASSERTED_LABEL`]); no caller supplies an operation request. The
-//! summary on success ([`AdmissionSummary`]) carries the request identity the host constructed
-//! and the asserted inputs, so a label never stays behind the gate.
+//! labelled assertion ([`CALLER_ASSERTED_LABEL`]); no caller supplies an operation request or an
+//! organization (S-A derives the organization from the committed admission of the candidate,
+//! [`CheckId::OA`]). The summary on success ([`AdmissionSummary`]) carries the request identity
+//! the host constructed, the organization S-A derived and the asserted inputs, so a label never
+//! stays behind the gate.
 //!
 //! The evaluation that yields [`AdmittedDischarges`] and [`AssumedDischarges`] is crate-private
 //! and takes the binding and an admission the host obtained itself, so neither value can be
@@ -51,9 +53,10 @@
 
 use work_engine_organization::Digest;
 use work_engine_organization_authority::{
-    AdmissionRefusal, AdmissionState, AuthorityObservation, Boundary as AuthorityBoundary, CheckId,
-    DeclaredRealization, Domain, EffectAdmission, Fixture, ObservationRevision, OperationRequest,
-    Outcomes, Reservation, SealedObservation, SubjectRef, Unobserved, admit, observe_for, reserve,
+    AdmissionRefusal, AdmissionState, AdmittedOrganization, AuthorityObservation,
+    Boundary as AuthorityBoundary, CheckId, DeclaredRealization, Domain, EffectAdmission, Fixture,
+    ObservationRevision, OperationRequest, Outcomes, Reservation, SealedObservation, SubjectRef,
+    Unobserved, admit, observe_for, reserve,
 };
 use work_engine_review_preparation::{Blocker, BlockerClass, BlockerKind};
 
@@ -66,10 +69,9 @@ pub const ASSUMED_DISCHARGE_LABEL: &str = "fixture_assumed_discharge_not_admissi
 /// synthetic fixture records. Not a production admission.
 pub const FIXTURE_ADMISSION_LABEL: &str = "fixture_domain_admission_not_production";
 
-/// The label on the inputs of an admission that a caller supplied and no host-owned fact anchors:
-/// the organization id (no record relates an organization to a candidate or problem scope) and the
-/// declared actor identity (no host observation of the spawned process). S-A checks that depend on
-/// them (O8, R3) are decided relative to these values.
+/// The label on the input of an admission that a caller supplied and no host-owned fact anchors:
+/// the declared actor identity (no host observation of the spawned process). S-A R3 is decided
+/// relative to it.
 pub const CALLER_ASSERTED_LABEL: &str = "caller_asserted_unanchored";
 
 /// The time at which the host reaches a boundary, supplied as a **source** the host samples at
@@ -95,13 +97,17 @@ pub enum Discharge {
 /// The host-owned total discharge function (S-B mapping).
 pub fn discharge(kind: BlockerKind) -> Discharge {
     match kind {
-        BlockerKind::Separation => Discharge::Admitted(&[CheckId::O8, CheckId::R3]),
-        BlockerKind::ComponentBinding => Discharge::Admitted(&[CheckId::O4, CheckId::R3]),
+        BlockerKind::Separation => Discharge::Admitted(&[CheckId::OA, CheckId::O8, CheckId::R3]),
+        BlockerKind::ComponentBinding => {
+            Discharge::Admitted(&[CheckId::OA, CheckId::O4, CheckId::R3])
+        }
         BlockerKind::AuthorityRequirement => Discharge::Admitted(&[CheckId::O4]),
         BlockerKind::RealizationAdmission => {
             Discharge::Admitted(&[CheckId::R1, CheckId::R2, CheckId::R4])
         }
-        BlockerKind::ObserverIdentity => Discharge::Admitted(&[CheckId::R2, CheckId::R3]),
+        BlockerKind::ObserverIdentity => {
+            Discharge::Admitted(&[CheckId::OA, CheckId::R2, CheckId::R3])
+        }
         BlockerKind::ScopeDigestToSubject => Discharge::Admitted(&[CheckId::S1]),
         BlockerKind::ProblemScopeToEpisodeIdentity | BlockerKind::ConsumptionEvidenceMapping => {
             Discharge::AssumedDischarge
@@ -203,11 +209,10 @@ pub struct RequestIdentity {
     pub candidate_digest: Digest,
 }
 
-/// The admission inputs a caller asserted that no host-owned fact anchors, under
+/// The admission input a caller asserted that no host-owned fact anchors, under
 /// [`CALLER_ASSERTED_LABEL`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CallerAsserted {
-    pub organization_id: String,
     pub actor_identity: String,
 }
 
@@ -219,7 +224,7 @@ impl CallerAsserted {
 
 /// What the host's admission at one boundary decided: domain (always `Domain::Fixture` here),
 /// reserved boundary, observation revision, every check outcome by id, the request identity the
-/// host constructed, the caller-asserted inputs it was decided over, and the revision of the
+/// host constructed, the organization S-A derived, the caller-asserted input it was decided over, and the revision of the
 /// fresh regate observation that found it current (the delivery regate immediately before the
 /// spawn; the consumption regate immediately before the consumer).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -229,6 +234,7 @@ pub struct AdmissionSummary {
     revision: ObservationRevision,
     outcomes: Outcomes,
     request: RequestIdentity,
+    organization: AdmittedOrganization,
     asserted: CallerAsserted,
     regate_revision: Option<ObservationRevision>,
 }
@@ -241,7 +247,12 @@ impl AdmissionSummary {
     pub fn request(&self) -> &RequestIdentity {
         &self.request
     }
-    /// The caller-asserted, unanchored inputs the admission was decided over.
+    /// The organization S-A derived from the committed admission of the candidate (unlabelled:
+    /// no caller supplied it).
+    pub fn organization(&self) -> &AdmittedOrganization {
+        &self.organization
+    }
+    /// The caller-asserted, unanchored input the admission was decided over.
     pub fn asserted(&self) -> &CallerAsserted {
         &self.asserted
     }
@@ -366,8 +377,8 @@ pub(crate) fn assess(
                     subject: request.subject().clone(),
                     candidate_digest: request.candidate_digest(),
                 },
+                organization: admission.organization().clone(),
                 asserted: CallerAsserted {
-                    organization_id: request.organization_id().to_owned(),
                     actor_identity: admission.actor_identity().to_owned(),
                 },
                 regate_revision: None,
