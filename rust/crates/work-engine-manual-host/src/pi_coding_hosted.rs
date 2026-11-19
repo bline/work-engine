@@ -1545,10 +1545,11 @@ impl Host {
     }
     /// Durably write the attempt's head evidence once its response head was
     /// read: attempt identity, status, the head's epoch ms and the kept
-    /// headers ([`stream::kept_header`]) in order; no other header. Create-only
-    /// and written at most once, before the head reaches the container or a
-    /// refusal settles, so a crash after the head was read leaves it for
-    /// reconcile.
+    /// headers ([`stream::kept_header`]) in order; no other header. Written at
+    /// most once, before the head reaches the container or a refusal settles,
+    /// so a crash after the head was read leaves it for reconcile. The bytes
+    /// go to a `.partial` file renamed into place, so `head.json` exists only
+    /// complete.
     fn hosted_head_write(&self, request: u64, attempt: u64, relay: &stream::Relay) -> Result<()> {
         let Some(head_ms) = relay.head_ms else {
             return Ok(());
@@ -1565,24 +1566,43 @@ impl Host {
             "headMs": head_ms,
             "headHeaders": relay.head_headers.iter().map(|(k, v)| json!([k, v])).collect::<Vec<_>>(),
         }))?;
+        let partial = self.journal.job.state_dir.join(format!(
+            "coding-hosted-{request}-{attempt}.head.json.partial"
+        ));
         let mut f = OpenOptions::new()
-            .create_new(true)
+            .create(true)
             .write(true)
-            .open(&path)?;
+            .truncate(true)
+            .open(&partial)?;
         f.write_all(&bytes)?;
         f.sync_all()?;
+        fs::rename(&partial, &path)?;
         File::open(&self.journal.job.state_dir)?.sync_all()?;
         Ok(())
     }
     /// Register the attempt's head evidence, when a head was read, as a
-    /// journal artifact so collection verifies it. Registered at most once.
+    /// journal artifact so collection verifies it. Registered at most once,
+    /// and only when complete: JSON naming this job, request and attempt with
+    /// a `headMs`. Anything else stays unregistered: no head evidence.
     fn hosted_head_register(&mut self, request: u64, attempt: u64) -> Result<()> {
         let path = self.hosted_head_path(request, attempt);
         if !path.exists() || self.journal.artifacts.iter().any(|a| a.path == path) {
             return Ok(());
         }
-        let sha = digest(&fs::read(&path)?);
-        self.journal.artifacts.push(Artifact { path, sha256: sha });
+        let bytes = fs::read(&path)?;
+        let complete = serde_json::from_slice::<Value>(&bytes).is_ok_and(|v| {
+            v["jobId"].as_str() == Some(self.journal.job.job_id.as_str())
+                && v["request"].as_u64() == Some(request)
+                && v["attempt"].as_u64() == Some(attempt)
+                && v["headMs"].is_u64()
+        });
+        if !complete {
+            return Ok(());
+        }
+        self.journal.artifacts.push(Artifact {
+            path,
+            sha256: digest(&bytes),
+        });
         self.save()
     }
     /// Create the attempt's empty stream file, create-only and durable. Done
@@ -2278,6 +2298,9 @@ mod tests {
             AttemptDisposition::Pending
         );
         assert!(!h.journal.artifacts.iter().any(|a| a.path == path));
+        // A settlement path registered it, then the process went before the
+        // attempt settled: reconcile must not register it again.
+        h.hosted_head_register(1, 1).unwrap();
         h.coding_hosted_reconcile_unsettled().unwrap();
         let a = &request(&h).attempts[0];
         assert_eq!(a.disposition, AttemptDisposition::Uncertain);
@@ -2285,8 +2308,6 @@ mod tests {
         assert_eq!(head["status"], 429);
         assert_eq!(head["headHeaders"], json!([["retry-after", "30"]]));
         assert!(head["headMs"].is_u64());
-        // Idempotent: registered once.
-        h.coding_hosted_reconcile_unsettled().unwrap();
         assert_eq!(
             h.journal
                 .artifacts
@@ -2295,6 +2316,56 @@ mod tests {
                 .count(),
             1
         );
+    }
+    #[test]
+    fn reconcile_does_not_register_incomplete_head_evidence() {
+        for case in ["empty", "truncated", "no headMs", "another attempt"] {
+            let (dir, mut h, mut w) = host(vec![chunked_head()], None);
+            mid_body(&mut h, &mut w);
+            h.hosted = Hosted::default(); // the producing process is gone
+            let job = &h.journal.job.job_id;
+            let bytes = match case {
+                "empty" => String::new(),
+                "truncated" => format!(r#"{{"jobId":"{job}","request":1,"att"#),
+                "no headMs" => format!(r#"{{"jobId":"{job}","request":1,"attempt":1}}"#),
+                _ => format!(r#"{{"jobId":"{job}","request":1,"attempt":2,"headMs":1}}"#),
+            };
+            let path = dir.path().join("coding-hosted-1-1.head.json");
+            fs::write(&path, bytes).unwrap();
+            h.coding_hosted_reconcile_unsettled().unwrap();
+            assert_eq!(
+                request(&h).attempts[0].disposition,
+                AttemptDisposition::Uncertain,
+                "{case}"
+            );
+            assert!(
+                !h.journal.artifacts.iter().any(|a| a.path == path),
+                "{case} registered"
+            );
+            assert!(path.exists(), "{case}: nothing is deleted");
+        }
+    }
+    #[test]
+    fn relayed_head_keeps_retry_after_in_relay_and_head_evidence() {
+        let (dir, mut h, mut w) = messages_host(vec![messages_completed_with(
+            "Retry-After: 60\r\nx-unrelated: v\r\n",
+        )]);
+        let g = messages_grant(&mut h, &mut w);
+        let body =
+            serde_json::to_vec(&messages_body(json!([{"role":"user","content":"q"}]))).unwrap();
+        push(&mut h, &mut w, messages_fetch(&g, &body)).unwrap();
+        relay_to_end(&mut h, &mut w, &g);
+        assert_eq!(
+            request(&h).attempts[0].disposition,
+            AttemptDisposition::Completed
+        );
+        let relay: Value = serde_json::from_slice(
+            &fs::read(dir.path().join("coding-hosted-1-1.relay.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(relay["headHeaders"], json!([["retry-after", "60"]]));
+        let head = head_evidence(&dir, &h, "1-1");
+        assert_eq!(head["headHeaders"], json!([["retry-after", "60"]]));
     }
     #[test]
     fn crash_after_a_relayed_head_retains_its_head_evidence_on_reconcile() {
@@ -3355,6 +3426,17 @@ mod tests {
                 )
                 .unwrap();
                 assert!(relay["headHeaders"].is_array());
+                // Close-uncertain registers the head evidence.
+                let head = head_evidence(&dir, &h, "1-1");
+                assert_eq!(head["status"], 200);
+                let supplied: Vec<_> = headers
+                    .split_terminator("\r\n")
+                    .map(|l| {
+                        let (k, v) = l.split_once(": ").unwrap();
+                        json!([k, v])
+                    })
+                    .collect();
+                assert_eq!(head["headHeaders"], json!(supplied), "{headers}");
             }
         }
     }
