@@ -1,0 +1,18 @@
+
+running 1 test
+test state_refused_when_a_second_admission_of_the_candidate_is_committed_after_admission ... FAILED
+
+failures:
+
+---- state_refused_when_a_second_admission_of_the_candidate_is_committed_after_admission stdout ----
+
+thread 'state_refused_when_a_second_admission_of_the_candidate_is_committed_after_admission' (3076491) panicked at crates/work-engine-organization-authority/tests/admission.rs:1936:18:
+expected refused, got Current { revision: ObservationRevision(16, eb2afc771d8260f1eade0264cc8a22d22f41c7b361b5a6fd455382b4b47b24db) }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    state_refused_when_a_second_admission_of_the_candidate_is_committed_after_admission
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 56 filtered out; finished in 0.01s
+

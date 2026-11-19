@@ -6,8 +6,8 @@
 mod common;
 
 use common::authority::{
-    ACTOR, FIXED, ORG, VANTAGE, authority_world, boundary, declared, host_digest,
-    operation_request, operation_request_from,
+    ACTOR, FIXED, VANTAGE, authority_world, authority_world_admitting, boundary, declared,
+    host_digest, operation_request, operation_request_from,
 };
 use common::world::host_request;
 use common::*;
@@ -50,10 +50,10 @@ fn discharge_is_total_admitted_kinds_name_their_check_ids() {
                 BlockerKind::ConsumptionEvidenceMapping,
                 Discharge::AssumedDischarge
             ),
-            (BlockerKind::Separation, Discharge::Admitted(&[O8, R3])),
+            (BlockerKind::Separation, Discharge::Admitted(&[OA, O8, R3])),
             (
                 BlockerKind::ObserverIdentity,
-                Discharge::Admitted(&[R2, R3])
+                Discharge::Admitted(&[OA, R2, R3])
             ),
             (
                 BlockerKind::RealizationAdmission,
@@ -61,7 +61,7 @@ fn discharge_is_total_admitted_kinds_name_their_check_ids() {
             ),
             (
                 BlockerKind::ComponentBinding,
-                Discharge::Admitted(&[O4, R3])
+                Discharge::Admitted(&[OA, O4, R3])
             ),
             (
                 BlockerKind::AuthorityRequirement,
@@ -256,13 +256,14 @@ fn the_fixture_authority_world_admits_and_an_empty_world_refuses() {
 /// stand-in restored, over the same fixture authority world and subject, is refused by S1 alone.
 #[test]
 fn the_frozen_stand_in_scope_digest_refuses_only_s1() {
-    let w = authority_world();
     let frozen: Value = serde_json::from_slice(REQ).unwrap();
     let mut stand_in: Value = serde_json::from_slice(ASSUMPTION_REQ).unwrap();
     stand_in["obligations"][0]["scope"] = frozen["obligations"][0]["scope"].clone();
     let patch = subject().patch_identity;
     assert_eq!(stand_in["obligations"][0]["scope"]["digest"], json!(patch));
     let request = operation_request_from(&serde_json::to_vec(&stand_in).unwrap(), subject());
+    // The owner admitted this candidate, so only S1 refuses.
+    let w = authority_world_admitting(&request);
     match HeldAdmission::admit(
         &w.src,
         &FIXED,
@@ -332,7 +333,13 @@ fn the_first_non_current_state_other_than_unknown_is_final() {
     let binding = w.ids.reviewer_binding;
     let _ = w.src.supersede(
         &binding,
-        Record::fixture_vantage_binding(ORG, VANTAGE, w.ids.reviewer, host_digest(), ACTOR),
+        Record::fixture_vantage_binding(
+            w.ids.organization,
+            VANTAGE,
+            w.ids.reviewer,
+            host_digest(),
+            ACTOR,
+        ),
     );
     let stale = admission.regate();
     assert_eq!(

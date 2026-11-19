@@ -1,0 +1,13 @@
+
+running 8 tests
+test crates/work-engine-organization-authority/src/lib.rs - (line 89) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 98) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 82) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 51) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 69) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 27) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 35) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 43) - compile fail ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+

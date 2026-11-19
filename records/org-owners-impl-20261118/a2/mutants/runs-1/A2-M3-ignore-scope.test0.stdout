@@ -1,0 +1,18 @@
+
+running 1 test
+test g2_oa_an_admission_of_another_candidate_requirements_or_scope_does_not_admit ... FAILED
+
+failures:
+
+---- g2_oa_an_admission_of_another_candidate_requirements_or_scope_does_not_admit stdout ----
+
+thread 'g2_oa_an_admission_of_another_candidate_requirements_or_scope_does_not_admit' (2250969) panicked at crates/work-engine-organization-authority/tests/admission.rs:433:18:
+expected refusal
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    g2_oa_an_admission_of_another_candidate_requirements_or_scope_does_not_admit
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 48 filtered out; finished in 0.02s
+

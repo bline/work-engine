@@ -1,4 +1,4 @@
-//! Gate O subset (O3, O4, O5, O8, O9), Gate R (R1-R4), S1, effect admission and its states.
+//! Gate O subset (O3, OA, O4, O5, O8, O9), Gate R (R1-R4), S1, effect admission and its states.
 //!
 //! Every check is evaluated over one sealed observation, without short circuit; each admission
 //! decision carries one outcome per [`CheckId`]. Gate O and Gate R are separate functions with
@@ -21,7 +21,8 @@ use crate::observation::{
     AuthorityState, IssuanceStatus, Reservation, Resolution, SealedObservation, Unobserved,
 };
 use crate::records::{
-    ActorAnchor, Principal, ProblemScopeRef, RealizationProperties, Record, VantageActorBinding,
+    ActorAnchor, OrganizationAdmission, Principal, ProblemScopeRef, RealizationProperties, Record,
+    VantageActorBinding,
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -32,10 +33,13 @@ use crate::records::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum CheckId {
     /// Recomputed derivation yields exactly one candidate whose digest is the request's. Both the
-    /// requirements and the digest come from the caller: this shows the request is
-    /// self-consistent, not that it matches anything the owner committed (no committed admission
-    /// anchor exists in this slice).
+    /// requirements and the digest come from the caller, so O3 alone shows the request is
+    /// self-consistent; [`CheckId::OA`] relates it to what the owner committed.
     O3,
+    /// Exactly one committed `OrganizationAdmission` admits the request's candidate: its candidate
+    /// content digest, requirements digest and problem scope (of the derived candidate) equal the
+    /// request's. That admission is the organization O8 and R3 select vantage bindings by.
+    OA,
     /// Authority requirements covered by valid grants in decision scope; component bindings.
     O4,
     /// The enforceability report has no `none` row.
@@ -60,8 +64,9 @@ pub enum CheckId {
 }
 
 impl CheckId {
-    pub const ALL: [CheckId; 10] = [
+    pub const ALL: [CheckId; 11] = [
         CheckId::O3,
+        CheckId::OA,
         CheckId::O4,
         CheckId::O5,
         CheckId::O8,
@@ -80,6 +85,10 @@ pub enum ReasonCode {
     CandidateUnderived,
     CandidateDigestMismatch,
     CandidateUnavailable,
+    /// No committed organization admission admits the request's candidate.
+    OrganizationUnadmitted,
+    /// More than one committed organization admission admits the request's candidate.
+    OrganizationHeadsAmbiguous,
     AuthorityMissing,
     AuthorityRevoked,
     AuthoritySuperseded,
@@ -254,10 +263,10 @@ impl SubjectRef {
     }
 }
 
-/// One admission request. The boundary is the reservation's, not the request's.
+/// One admission request. The boundary is the reservation's, not the request's. It names no
+/// organization: the gate takes it from the committed admission of the candidate ([`CheckId::OA`]).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OperationRequest {
-    organization_id: String,
     requirements: OrganizationalRequirements,
     candidate_digest: Digest,
     vantage: String,
@@ -268,22 +277,17 @@ impl OperationRequest {
     /// `candidate_digest` is the caller's claim of the candidate's content digest; O3 recomputes
     /// it from `requirements` (self-consistency only, see [`CheckId::O3`]).
     pub fn new(
-        organization_id: impl Into<String>,
         requirements: OrganizationalRequirements,
         candidate_digest: Digest,
         vantage: impl Into<String>,
         subject: SubjectRef,
     ) -> Self {
         OperationRequest {
-            organization_id: organization_id.into(),
             requirements,
             candidate_digest,
             vantage: vantage.into(),
             subject,
         }
-    }
-    pub fn organization_id(&self) -> &str {
-        &self.organization_id
     }
     pub fn vantage(&self) -> &str {
         &self.vantage
@@ -331,6 +335,7 @@ impl DeclaredRealization {
 /// The issuances an admission depends on, all from its one observation.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct AuthorityPins {
+    pub organization_admissions: BTreeSet<IssuanceId>,
     pub principals: BTreeSet<IssuanceId>,
     pub vantage_bindings: BTreeSet<IssuanceId>,
     pub component_bindings: BTreeSet<IssuanceId>,
@@ -341,14 +346,24 @@ pub struct AuthorityPins {
 
 impl AuthorityPins {
     fn all(&self) -> impl Iterator<Item = &IssuanceId> {
-        self.principals
+        self.organization_admissions
             .iter()
+            .chain(&self.principals)
             .chain(&self.vantage_bindings)
             .chain(&self.component_bindings)
             .chain(&self.grants)
             .chain(&self.decision_scopes)
             .chain(&self.realization_acceptance)
     }
+}
+
+/// The organization an admission was decided for, as the gate derived it ([`CheckId::OA`]): the
+/// committed `OrganizationAdmission` issuance and its stable organization id. A value, not
+/// authority.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdmittedOrganization {
+    pub admission: IssuanceId,
+    pub organization_id: String,
 }
 
 /// The only value that can permit an effect, and only when the consuming host's own regate
@@ -364,6 +379,7 @@ pub struct EffectAdmission {
     revision: ObservationRevision,
     request: OperationRequest,
     realization: DeclaredRealization,
+    organization: AdmittedOrganization,
     principal: IssuanceId,
     principal_body: BodyDigest,
     anchor: ActorAnchor,
@@ -384,6 +400,10 @@ impl EffectAdmission {
     }
     pub fn request(&self) -> &OperationRequest {
         &self.request
+    }
+    /// The organization the gate derived from the committed admission of the candidate.
+    pub fn organization(&self) -> &AdmittedOrganization {
+        &self.organization
     }
     /// The acting vantage's principal issuance.
     pub fn principal(&self) -> IssuanceId {
@@ -430,6 +450,7 @@ pub enum AdmissionRefusal {
 struct Evaluation {
     outcomes: Outcomes,
     pins: AuthorityPins,
+    organization: Option<AdmittedOrganization>,
     acting: Option<(IssuanceId, ActorAnchor)>,
     profile: Option<String>,
 }
@@ -455,24 +476,28 @@ pub fn admit<P: Policy>(
     let evaluation = evaluate(P::DOMAIN, state, request, realization, now_millis);
     match (
         evaluation.outcomes.all_passed(),
+        evaluation.organization,
         evaluation.acting,
         evaluation.profile,
     ) {
-        (true, Some((principal, anchor)), Some(profile)) => Ok(EffectAdmission {
-            domain: P::DOMAIN,
-            boundary: reservation.boundary().clone(),
-            revision: state.revision(),
-            request: request.clone(),
-            realization: realization.clone(),
-            principal,
-            principal_body: state
-                .body_digest(&principal)
-                .expect("acting principal resolved in this state"),
-            anchor,
-            realization_profile: profile,
-            pins: evaluation.pins,
-            outcomes: evaluation.outcomes,
-        }),
+        (true, Some(organization), Some((principal, anchor)), Some(profile)) => {
+            Ok(EffectAdmission {
+                domain: P::DOMAIN,
+                boundary: reservation.boundary().clone(),
+                revision: state.revision(),
+                request: request.clone(),
+                realization: realization.clone(),
+                organization,
+                principal,
+                principal_body: state
+                    .body_digest(&principal)
+                    .expect("acting principal resolved in this state"),
+                anchor,
+                realization_profile: profile,
+                pins: evaluation.pins,
+                outcomes: evaluation.outcomes,
+            })
+        }
         _ => Err(AdmissionRefusal::Checks(evaluation.outcomes)),
     }
 }
@@ -526,10 +551,12 @@ fn evaluate(
     let unavailable = || vec![reason(ReasonCode::CandidateUnavailable, "")];
     let mut components: BTreeMap<String, ExecutableDigest> = BTreeMap::new();
     let mut o8_bindings: BTreeMap<String, IssuanceId> = BTreeMap::new();
+    let mut organization: Option<AdmittedOrganization> = None;
 
     match candidate {
         None => {
             for id in [
+                CheckId::OA,
                 CheckId::O4,
                 CheckId::O5,
                 CheckId::O8,
@@ -542,6 +569,18 @@ fn evaluate(
         }
         Some(c) => {
             let scope = ProblemScopeRef::of(c.problem_scope());
+            let derived = oa(state, request, &scope, &mut pins);
+            out.insert(
+                CheckId::OA,
+                match derived {
+                    Ok(admitted) => {
+                        organization = Some(admitted);
+                        vec![]
+                    }
+                    Err(r) => r,
+                },
+            );
+            let admission = organization.as_ref().map(|o| o.admission);
             let mut o4 = o4_authority(state, c, &scope, now, &mut pins);
             o4.extend(o4_components(
                 domain,
@@ -557,14 +596,7 @@ fn evaluate(
             out.insert(CheckId::S1, s1(c, &request.vantage, &request.subject));
             out.insert(
                 CheckId::O8,
-                o8(
-                    domain,
-                    state,
-                    c,
-                    &request.organization_id,
-                    &mut pins,
-                    &mut o8_bindings,
-                ),
+                o8(domain, state, c, admission, &mut pins, &mut o8_bindings),
             );
         }
     }
@@ -591,6 +623,7 @@ fn evaluate(
     let (r3, acting) = r3(
         domain,
         state,
+        organization.as_ref().map(|o| o.admission),
         request,
         realization,
         &o8_bindings,
@@ -611,6 +644,7 @@ fn evaluate(
     Evaluation {
         outcomes,
         pins,
+        organization,
         acting,
         profile,
     }
@@ -680,11 +714,52 @@ fn principal_named<'s>(
     }
 }
 
+/// OA: the unique committed organization admission whose candidate content digest, requirements
+/// digest and problem scope are the request's. On success pins it.
+fn oa(
+    state: &AuthorityState,
+    request: &OperationRequest,
+    scope: &ProblemScopeRef,
+    pins: &mut AuthorityPins,
+) -> Result<AdmittedOrganization, Vec<Reason>> {
+    let requirements_digest = request.requirements_digest();
+    let found: Vec<(IssuanceId, &OrganizationAdmission)> = state
+        .entries()
+        .filter(|(_, e)| e.status == IssuanceStatus::Committed)
+        .filter_map(|(id, e)| match &e.record {
+            Record::OrganizationAdmission(a)
+                if a.candidate_content_digest == request.candidate_digest
+                    && a.requirements_digest == requirements_digest
+                    && a.problem_scope == *scope =>
+            {
+                Some((*id, a))
+            }
+            _ => None,
+        })
+        .collect();
+    let subject = request.candidate_digest.to_hex();
+    match found.as_slice() {
+        [(id, admission)] => {
+            pins.organization_admissions.insert(*id);
+            Ok(AdmittedOrganization {
+                admission: *id,
+                organization_id: admission.organization_id.clone(),
+            })
+        }
+        [] => Err(vec![reason(ReasonCode::OrganizationUnadmitted, subject)]),
+        _ => Err(vec![reason(
+            ReasonCode::OrganizationHeadsAmbiguous,
+            subject,
+        )]),
+    }
+}
+
 #[cfg_attr(not(feature = "fixture"), allow(dead_code))]
-/// The committed vantage-actor bindings for `(organization, vantage)`.
+/// The committed vantage-actor bindings of the admitted organization for `vantage`; none when no
+/// organization was admitted.
 fn vantage_bindings<'s>(
     state: &'s AuthorityState,
-    organization: &str,
+    organization: Option<IssuanceId>,
     vantage: &str,
 ) -> Vec<(IssuanceId, &'s VantageActorBinding)> {
     state
@@ -692,7 +767,7 @@ fn vantage_bindings<'s>(
         .filter(|(_, e)| e.status == IssuanceStatus::Committed)
         .filter_map(|(id, e)| match &e.record {
             Record::VantageActorBinding(b)
-                if b.organization_id == organization && b.vantage == vantage =>
+                if Some(b.organization) == organization && b.vantage == vantage =>
             {
                 Some((*id, b))
             }
@@ -974,7 +1049,7 @@ fn o8(
     domain: Domain,
     state: &AuthorityState,
     candidate: &OrganizationCandidate,
-    organization: &str,
+    organization: Option<IssuanceId>,
     pins: &mut AuthorityPins,
     resolved: &mut BTreeMap<String, IssuanceId>,
 ) -> Vec<Reason> {
@@ -1218,6 +1293,7 @@ fn r1_r2(
 fn r3(
     domain: Domain,
     state: &AuthorityState,
+    organization: Option<IssuanceId>,
     request: &OperationRequest,
     realization: &DeclaredRealization,
     o8_bindings: &BTreeMap<String, IssuanceId>,
@@ -1239,7 +1315,7 @@ fn r3(
         Domain::Fixture => {
             let mut reasons = Vec::new();
             // The binding O8 checked for this vantage, if any; otherwise the one committed binding.
-            let found = vantage_bindings(state, &request.organization_id, vantage);
+            let found = vantage_bindings(state, organization, vantage);
             let chosen = match o8_bindings.get(vantage) {
                 Some(id) => found.iter().find(|(bid, _)| bid == id).copied(),
                 None => match found.as_slice() {

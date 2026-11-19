@@ -40,8 +40,9 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 use work_engine_organization_authority::fixture::FixtureSource;
 use work_engine_organization_authority::{
-    AdmissionRefusal, AdmissionState, AuthorityObservation, AuthorityState, BoundaryKind, CheckId,
-    CheckOutcome, Domain, Reason, ReasonCode, StaleReason, SubjectRef, UnknownReason, Unobserved,
+    AdmissionRefusal, AdmissionState, AdmittedOrganization, AuthorityObservation, AuthorityState,
+    BoundaryKind, CheckId, CheckOutcome, Domain, Reason, ReasonCode, StaleReason, SubjectRef,
+    UnknownReason, Unobserved,
 };
 use work_engine_review_delivery::binding::{EpisodeInputs, ExperimentBinding};
 use work_engine_review_delivery::gate::{
@@ -341,7 +342,16 @@ fn positive_assertions(
         );
         assert_eq!(CALLER_ASSERTED_LABEL, "caller_asserted_unanchored");
         assert_eq!(summary.asserted().label(), CALLER_ASSERTED_LABEL);
-        assert_eq!(summary.asserted().organization_id, ORG);
+        // S-A derived the organization from the world's committed admission (fixture issuance
+        // identities are deterministic, so a fresh world names the same issuance); no caller
+        // supplied it, and the caller-asserted input is the actor identity alone.
+        assert_eq!(
+            summary.organization(),
+            &AdmittedOrganization {
+                admission: authority_world().ids.organization,
+                organization_id: ORG.to_owned(),
+            }
+        );
         assert_eq!(summary.asserted().actor_identity, ACTOR);
         assert!(summary.outcomes().all_passed());
         assert_eq!(
@@ -904,7 +914,8 @@ fn sb_refused_before_spawn(
 }
 
 /// S-B invariant 2: the host's own admission refuses before spawn: a revoked owner grant (O4
-/// refuses, every outcome carried) and an unobservable authority source (no observation).
+/// refuses, every outcome carried), a revoked organization admission (OA, O8 and R3 refuse) and
+/// an unobservable authority source (no observation).
 #[test]
 fn sb_an_admission_refusal_refuses_before_spawn() {
     let revoked = authority_world();
@@ -914,6 +925,19 @@ fn sb_an_admission_refusal_refuses_before_spawn() {
             outcomes,
         )) => assert_eq!(outcomes.refused(), [CheckId::O4]),
         other => panic!("expected an O4 admission refusal, got {other:?}"),
+    }
+    // An unadmitted candidate (its organization admission revoked) refuses OA, and with no
+    // admitted organization O8 and R3 find no binding.
+    let unadmitted = authority_world();
+    unadmitted.src.revoke(&unadmitted.ids.organization);
+    match sb_refused_before_spawn(
+        "sb-admission-unadmitted",
+        &fixture_authority(&unadmitted.src),
+    ) {
+        GateRefusal::Admission(work_engine_organization_authority::AdmissionRefusal::Checks(
+            outcomes,
+        )) => assert_eq!(outcomes.refused(), [CheckId::OA, CheckId::O8, CheckId::R3]),
+        other => panic!("expected an OA admission refusal, got {other:?}"),
     }
     let unknown = authority_world();
     unknown.src.inject_unknown("authority source unavailable");
@@ -1026,7 +1050,7 @@ fn sb_a_pin_replaced_between_the_two_admissions_refuses_before_spawn() {
             w.src.supersede(
                 &pinned,
                 work_engine_organization_authority::records::Record::fixture_vantage_binding(
-                    common::authority::ORG,
+                    w.ids.organization,
                     common::authority::VANTAGE,
                     w.ids.reviewer,
                     common::authority::host_digest(),
@@ -1150,7 +1174,7 @@ fn sb_revocation_supersession_or_missing_grant_between_boundaries_refuses_consum
             superseded.src.supersede(
                 &binding,
                 work_engine_organization_authority::records::Record::fixture_vantage_binding(
-                    common::authority::ORG,
+                    superseded.ids.organization,
                     common::authority::VANTAGE,
                     superseded.ids.reviewer,
                     common::authority::host_digest(),

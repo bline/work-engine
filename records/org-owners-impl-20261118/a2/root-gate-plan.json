@@ -1,0 +1,262 @@
+{
+ "cwd": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust",
+ "env": {
+  "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a2/target",
+  "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+  "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+ },
+ "steps": [
+  {
+   "name": "toolchain",
+   "argv": [
+    "sh",
+    "-c",
+    "cargo --version; rustc --version; node --version"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "fmt",
+   "argv": [
+    "cargo",
+    "fmt",
+    "--check",
+    "-p",
+    "work-engine-review-delivery",
+    "-p",
+    "work-engine-review-preparation",
+    "-p",
+    "work-engine-organization",
+    "-p",
+    "review-episode-core",
+    "-p",
+    "work-engine-organization-authority"
+   ],
+   "timeout": 600
+  },
+  {
+   "name": "clippy-fixture",
+   "argv": [
+    "cargo",
+    "clippy",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "-p",
+    "work-engine-review-preparation",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "work-engine-review-delivery/fixture,work-engine-organization-authority/fixture",
+    "--all-targets",
+    "--",
+    "-D",
+    "warnings"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "clippy-default",
+   "argv": [
+    "cargo",
+    "clippy",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "-p",
+    "work-engine-review-preparation",
+    "-p",
+    "work-engine-organization-authority",
+    "--all-targets",
+    "--",
+    "-D",
+    "warnings"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "clippy-test-support",
+   "argv": [
+    "cargo",
+    "clippy",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "-p",
+    "work-engine-review-preparation",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "work-engine-review-delivery/test-support,work-engine-organization-authority/fixture",
+    "--all-targets",
+    "--",
+    "-D",
+    "warnings"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "check-preparation-fixture-lib-alone",
+   "argv": [
+    "cargo",
+    "clippy",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-preparation",
+    "--features",
+    "fixture",
+    "--lib",
+    "--",
+    "-D",
+    "warnings"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "test-four-plus-sa",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization",
+    "-p",
+    "work-engine-review-preparation",
+    "-p",
+    "review-episode-core",
+    "-p",
+    "work-engine-review-delivery",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "work-engine-review-delivery/fixture,work-engine-organization-authority/fixture"
+   ],
+   "timeout": 2400,
+   "kill_leftovers": true
+  },
+  {
+   "name": "test-preparation-fixture",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-preparation",
+    "--features",
+    "fixture"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "test-default-features",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "-p",
+    "work-engine-review-preparation",
+    "-p",
+    "work-engine-organization-authority"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "check-hosted-unchanged-builds",
+   "argv": [
+    "cargo",
+    "check",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-hosted",
+    "--all-targets"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "test-sa-default-doc",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--doc"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "test-authority-store",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-authority-store",
+    "--features",
+    "fixture",
+    "--test",
+    "store"
+   ],
+   "timeout": 1800
+  },
+  {
+   "name": "native-1",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "test-support",
+    "--test",
+    "native_vertical"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "hashes",
+   "argv": [
+    "git",
+    "hash-object",
+    "crates/work-engine-organization-authority/Cargo.toml",
+    "crates/work-engine-organization-authority/src/gate.rs",
+    "crates/work-engine-organization-authority/src/lib.rs",
+    "crates/work-engine-organization-authority/src/records.rs",
+    "crates/work-engine-organization-authority/tests/admission.rs",
+    "crates/work-engine-review-delivery/src/gate.rs",
+    "crates/work-engine-review-delivery/src/native.rs",
+    "crates/work-engine-review-delivery/tests/common/mod.rs",
+    "crates/work-engine-review-delivery/tests/gate.rs",
+    "crates/work-engine-review-delivery/tests/native_vertical.rs",
+    "crates/work-engine-review-preparation/tests/common/mod.rs"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "git-status",
+   "argv": [
+    "git",
+    "status",
+    "--short"
+   ],
+   "timeout": 60
+  }
+ ]
+}

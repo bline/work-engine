@@ -1,0 +1,114 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-plan.json",
+  "plan_sha256": "f0c17795c06582c95b6066aaf7607417957fb0e723de09cf03b4c253683f0854",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "toolchain",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/toolchain.json",
+      "record_sha256": "34f423581459b3d25b1bc219d6e39778b90add17e4d766c503134a276b591503",
+      "leftovers": 0
+    },
+    {
+      "name": "fmt",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/fmt.json",
+      "record_sha256": "1021b8cf98f8aa35d7a41193bd22f05ed0f5de51bf7c52c2204c69e8d8bde4dc",
+      "leftovers": 0
+    },
+    {
+      "name": "clippy-fixture",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/clippy-fixture.json",
+      "record_sha256": "72349cd4ad675928626861dccccaf1388c3d13a59d29ada15fca938e42054fa8",
+      "leftovers": 0
+    },
+    {
+      "name": "clippy-default",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/clippy-default.json",
+      "record_sha256": "f0e9df61862c738900551e05812c660d8c2e17374fc3af7b3c84068e1d755857",
+      "leftovers": 0
+    },
+    {
+      "name": "clippy-test-support",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/clippy-test-support.json",
+      "record_sha256": "9996f666b90a6adf91565692800af2a3e6a7685e5824030c4c141b2463ec5415",
+      "leftovers": 0
+    },
+    {
+      "name": "check-preparation-fixture-lib-alone",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/check-preparation-fixture-lib-alone.json",
+      "record_sha256": "96a69b3c9f5a30db25b3b0c66764e1abb89dc000c8965b935a93b600a3238339",
+      "leftovers": 0
+    },
+    {
+      "name": "test-four-plus-sa",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/test-four-plus-sa.json",
+      "record_sha256": "4d875bd02a14b0f1a9177f7d906d4b7fefe4ba13cd5f045dec539ef925561428",
+      "leftovers": 0
+    },
+    {
+      "name": "test-preparation-fixture",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/test-preparation-fixture.json",
+      "record_sha256": "c9c006754522e3d9829a4dfa12071ad9abfb8671fda7244ec699b0ca9e60afe7",
+      "leftovers": 0
+    },
+    {
+      "name": "test-default-features",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/test-default-features.json",
+      "record_sha256": "3964b9e49f5318fe1e15c19760f8bb2fb4f147b78ed8b4fd9add3c796e1a01ab",
+      "leftovers": 0
+    },
+    {
+      "name": "check-hosted-unchanged-builds",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/check-hosted-unchanged-builds.json",
+      "record_sha256": "73aa1197c5070d6f570c938997601ad589810f330e6f2bcd0144b6e8fb7c36dc",
+      "leftovers": 0
+    },
+    {
+      "name": "test-sa-default-doc",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/test-sa-default-doc.json",
+      "record_sha256": "d968a7d8aec78e82339fb687c805a9be16bf68ae0e64b26b484d60610461276d",
+      "leftovers": 0
+    },
+    {
+      "name": "test-authority-store",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/test-authority-store.json",
+      "record_sha256": "06c6bfe13cfe56b4799e550fba65b94c61d5da40a720b9cd26329de4660602b4",
+      "leftovers": 0
+    },
+    {
+      "name": "native-1",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/native-1.json",
+      "record_sha256": "50cba5d581541c3d9814bed40ca16bb9d0200a1afd934b701b00b5a617049942",
+      "leftovers": 0
+    },
+    {
+      "name": "hashes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/hashes.json",
+      "record_sha256": "b0f76e68d3f65808bfa80d633d5224a2c07808edc4497dbde0b9dc00bf093d50",
+      "leftovers": 0
+    },
+    {
+      "name": "git-status",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/git-status.json",
+      "record_sha256": "3f412acaeb6b8270292cb564f612cd6c349fdf1c86a7a9634e3fe35aac46d02d",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "A2-M7-point-check-ignores-organization-pins.test0",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "state_revoked_when_the_organization_admission_is_revoked_after_admission",
+    "--exact"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a2/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2250203,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 2251731,
+  "pgid": 2251731,
+  "started_at": "2026-11-18T20:12:54.861295Z",
+  "ended_at": "2026-11-18T20:12:55.527072Z",
+  "duration_s": 0.666,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/runs-1/A2-M7-point-check-ignores-organization-pins.test0.stdout",
+    "length": 1427,
+    "sha256": "4102a106ff402d77267d09d17fe0de28e2925abbf77d40f0018a324e2f1b33b4"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/runs-1/A2-M7-point-check-ignores-organization-pins.test0.stderr",
+    "length": 443,
+    "sha256": "c6ecccfb439520e4fef223c1e9f0b828296a83287c2181524bae9c2293fff29b"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

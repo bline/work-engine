@@ -1,0 +1,20 @@
+
+running 1 test
+test state_stale_when_the_organization_admission_is_superseded_and_its_successor_needs_new_bindings ... FAILED
+
+failures:
+
+---- state_stale_when_the_organization_admission_is_superseded_and_its_successor_needs_new_bindings stdout ----
+
+thread 'state_stale_when_the_organization_admission_is_superseded_and_its_successor_needs_new_bindings' (3074739) panicked at crates/work-engine-organization-authority/tests/admission.rs:2005:5:
+assertion `left == right` failed
+  left: Refused(Outcomes({O3: Passed, OA: Passed, O4: Passed, O5: Passed, O8: Refused([Reason { code: SeparationUnresolved, subject: "cond-builder/vantage-builder" }, Reason { code: SeparationUnresolved, subject: "cond-builder/vantage:ob-a" }, Reason { code: SeparationUnresolved, subject: "cond-campaign/vantage-builder" }, Reason { code: SeparationUnresolved, subject: "cond-campaign/vantage:ob-a" }]), O9: Passed, R1: Passed, R2: Passed, R3: Refused([Reason { code: VantageUnbound, subject: "vantage:ob-a" }]), R4: Passed, S1: Passed}))
+ right: Stale(IssuanceSuperseded([IssuanceId(ac06d8a35de9e583f74f5da82e952cc02635c6d3a022001d83717ea1b15a4c09)]))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    state_stale_when_the_organization_admission_is_superseded_and_its_successor_needs_new_bindings
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 56 filtered out; finished in 0.02s
+

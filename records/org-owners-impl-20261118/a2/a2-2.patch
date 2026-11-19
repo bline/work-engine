@@ -1,0 +1,1654 @@
+diff --git a/rust/crates/work-engine-organization-authority/Cargo.toml b/rust/crates/work-engine-organization-authority/Cargo.toml
+index ca8967d8..3d82e394 100644
+--- a/rust/crates/work-engine-organization-authority/Cargo.toml
++++ b/rust/crates/work-engine-organization-authority/Cargo.toml
+@@ -1,6 +1,6 @@
+ [package]
+ name = "work-engine-organization-authority"
+-description = "Pure organizational admission core: owner-attested records, reservation-sealed authority observation, Gate O subset (O3, O4, O5, O8, O9), Gate R (R1-R4), S1 (scope digest is the exact-subject digest) and effect-admission states. No I/O, no clock, no storage."
++description = "Pure organizational admission core: owner-attested records, reservation-sealed authority observation, Gate O subset (O3, OA, O4, O5, O8, O9), Gate R (R1-R4), S1 (scope digest is the exact-subject digest) and effect-admission states. No I/O, no clock, no storage."
+ version.workspace = true
+ edition.workspace = true
+ rust-version.workspace = true
+diff --git a/rust/crates/work-engine-organization-authority/src/gate.rs b/rust/crates/work-engine-organization-authority/src/gate.rs
+index 25138778..bb35a376 100644
+--- a/rust/crates/work-engine-organization-authority/src/gate.rs
++++ b/rust/crates/work-engine-organization-authority/src/gate.rs
+@@ -1,4 +1,4 @@
+-//! Gate O subset (O3, O4, O5, O8, O9), Gate R (R1-R4), S1, effect admission and its states.
++//! Gate O subset (O3, OA, O4, O5, O8, O9), Gate R (R1-R4), S1, effect admission and its states.
+ //!
+ //! Every check is evaluated over one sealed observation, without short circuit; each admission
+ //! decision carries one outcome per [`CheckId`]. Gate O and Gate R are separate functions with
+@@ -21,7 +21,8 @@ use crate::observation::{
+     AuthorityState, IssuanceStatus, Reservation, Resolution, SealedObservation, Unobserved,
+ };
+ use crate::records::{
+-    ActorAnchor, Principal, ProblemScopeRef, RealizationProperties, Record, VantageActorBinding,
++    ActorAnchor, OrganizationAdmission, Principal, ProblemScopeRef, RealizationProperties, Record,
++    VantageActorBinding,
+ };
+ 
+ // ---------------------------------------------------------------------------------------------
+@@ -32,10 +33,13 @@ use crate::records::{
+ #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+ pub enum CheckId {
+     /// Recomputed derivation yields exactly one candidate whose digest is the request's. Both the
+-    /// requirements and the digest come from the caller: this shows the request is
+-    /// self-consistent, not that it matches anything the owner committed (no committed admission
+-    /// anchor exists in this slice).
++    /// requirements and the digest come from the caller, so O3 alone shows the request is
++    /// self-consistent; [`CheckId::OA`] relates it to what the owner committed.
+     O3,
++    /// Exactly one committed `OrganizationAdmission` admits the request's candidate: its candidate
++    /// content digest, requirements digest and problem scope (of the derived candidate) equal the
++    /// request's. That admission is the organization O8 and R3 select vantage bindings by.
++    OA,
+     /// Authority requirements covered by valid grants in decision scope; component bindings.
+     O4,
+     /// The enforceability report has no `none` row.
+@@ -60,8 +64,9 @@ pub enum CheckId {
+ }
+ 
+ impl CheckId {
+-    pub const ALL: [CheckId; 10] = [
++    pub const ALL: [CheckId; 11] = [
+         CheckId::O3,
++        CheckId::OA,
+         CheckId::O4,
+         CheckId::O5,
+         CheckId::O8,
+@@ -80,6 +85,10 @@ pub enum ReasonCode {
+     CandidateUnderived,
+     CandidateDigestMismatch,
+     CandidateUnavailable,
++    /// No committed organization admission admits the request's candidate.
++    OrganizationUnadmitted,
++    /// More than one committed organization admission admits the request's candidate.
++    OrganizationHeadsAmbiguous,
+     AuthorityMissing,
+     AuthorityRevoked,
+     AuthoritySuperseded,
+@@ -254,10 +263,10 @@ impl SubjectRef {
+     }
+ }
+ 
+-/// One admission request. The boundary is the reservation's, not the request's.
++/// One admission request. The boundary is the reservation's, not the request's. It names no
++/// organization: the gate takes it from the committed admission of the candidate ([`CheckId::OA`]).
+ #[derive(Debug, Clone, PartialEq, Eq)]
+ pub struct OperationRequest {
+-    organization_id: String,
+     requirements: OrganizationalRequirements,
+     candidate_digest: Digest,
+     vantage: String,
+@@ -268,23 +277,18 @@ impl OperationRequest {
+     /// `candidate_digest` is the caller's claim of the candidate's content digest; O3 recomputes
+     /// it from `requirements` (self-consistency only, see [`CheckId::O3`]).
+     pub fn new(
+-        organization_id: impl Into<String>,
+         requirements: OrganizationalRequirements,
+         candidate_digest: Digest,
+         vantage: impl Into<String>,
+         subject: SubjectRef,
+     ) -> Self {
+         OperationRequest {
+-            organization_id: organization_id.into(),
+             requirements,
+             candidate_digest,
+             vantage: vantage.into(),
+             subject,
+         }
+     }
+-    pub fn organization_id(&self) -> &str {
+-        &self.organization_id
+-    }
+     pub fn vantage(&self) -> &str {
+         &self.vantage
+     }
+@@ -331,6 +335,7 @@ impl DeclaredRealization {
+ /// The issuances an admission depends on, all from its one observation.
+ #[derive(Debug, Clone, PartialEq, Eq, Default)]
+ pub struct AuthorityPins {
++    pub organization_admissions: BTreeSet<IssuanceId>,
+     pub principals: BTreeSet<IssuanceId>,
+     pub vantage_bindings: BTreeSet<IssuanceId>,
+     pub component_bindings: BTreeSet<IssuanceId>,
+@@ -341,8 +346,9 @@ pub struct AuthorityPins {
+ 
+ impl AuthorityPins {
+     fn all(&self) -> impl Iterator<Item = &IssuanceId> {
+-        self.principals
++        self.organization_admissions
+             .iter()
++            .chain(&self.principals)
+             .chain(&self.vantage_bindings)
+             .chain(&self.component_bindings)
+             .chain(&self.grants)
+@@ -351,6 +357,15 @@ impl AuthorityPins {
+     }
+ }
+ 
++/// The organization an admission was decided for, as the gate derived it ([`CheckId::OA`]): the
++/// committed `OrganizationAdmission` issuance and its stable organization id. A value, not
++/// authority.
++#[derive(Debug, Clone, PartialEq, Eq)]
++pub struct AdmittedOrganization {
++    pub admission: IssuanceId,
++    pub organization_id: String,
++}
++
+ /// The only value that can permit an effect, and only when the consuming host's own regate
+ /// ([`EffectAdmission::admission_state`] against a fresh observation) also passes: the host still
+ /// allocates the boundary, records its single use and commits the effect. Binds principal, actor,
+@@ -364,6 +379,7 @@ pub struct EffectAdmission {
+     revision: ObservationRevision,
+     request: OperationRequest,
+     realization: DeclaredRealization,
++    organization: AdmittedOrganization,
+     principal: IssuanceId,
+     principal_body: BodyDigest,
+     anchor: ActorAnchor,
+@@ -385,6 +401,10 @@ impl EffectAdmission {
+     pub fn request(&self) -> &OperationRequest {
+         &self.request
+     }
++    /// The organization the gate derived from the committed admission of the candidate.
++    pub fn organization(&self) -> &AdmittedOrganization {
++        &self.organization
++    }
+     /// The acting vantage's principal issuance.
+     pub fn principal(&self) -> IssuanceId {
+         self.principal
+@@ -430,6 +450,7 @@ pub enum AdmissionRefusal {
+ struct Evaluation {
+     outcomes: Outcomes,
+     pins: AuthorityPins,
++    organization: Option<AdmittedOrganization>,
+     acting: Option<(IssuanceId, ActorAnchor)>,
+     profile: Option<String>,
+ }
+@@ -455,24 +476,28 @@ pub fn admit<P: Policy>(
+     let evaluation = evaluate(P::DOMAIN, state, request, realization, now_millis);
+     match (
+         evaluation.outcomes.all_passed(),
++        evaluation.organization,
+         evaluation.acting,
+         evaluation.profile,
+     ) {
+-        (true, Some((principal, anchor)), Some(profile)) => Ok(EffectAdmission {
+-            domain: P::DOMAIN,
+-            boundary: reservation.boundary().clone(),
+-            revision: state.revision(),
+-            request: request.clone(),
+-            realization: realization.clone(),
+-            principal,
+-            principal_body: state
+-                .body_digest(&principal)
+-                .expect("acting principal resolved in this state"),
+-            anchor,
+-            realization_profile: profile,
+-            pins: evaluation.pins,
+-            outcomes: evaluation.outcomes,
+-        }),
++        (true, Some(organization), Some((principal, anchor)), Some(profile)) => {
++            Ok(EffectAdmission {
++                domain: P::DOMAIN,
++                boundary: reservation.boundary().clone(),
++                revision: state.revision(),
++                request: request.clone(),
++                realization: realization.clone(),
++                organization,
++                principal,
++                principal_body: state
++                    .body_digest(&principal)
++                    .expect("acting principal resolved in this state"),
++                anchor,
++                realization_profile: profile,
++                pins: evaluation.pins,
++                outcomes: evaluation.outcomes,
++            })
++        }
+         _ => Err(AdmissionRefusal::Checks(evaluation.outcomes)),
+     }
+ }
+@@ -526,10 +551,12 @@ fn evaluate(
+     let unavailable = || vec![reason(ReasonCode::CandidateUnavailable, "")];
+     let mut components: BTreeMap<String, ExecutableDigest> = BTreeMap::new();
+     let mut o8_bindings: BTreeMap<String, IssuanceId> = BTreeMap::new();
++    let mut organization: Option<AdmittedOrganization> = None;
+ 
+     match candidate {
+         None => {
+             for id in [
++                CheckId::OA,
+                 CheckId::O4,
+                 CheckId::O5,
+                 CheckId::O8,
+@@ -542,6 +569,18 @@ fn evaluate(
+         }
+         Some(c) => {
+             let scope = ProblemScopeRef::of(c.problem_scope());
++            let derived = oa(state, request, &scope, &mut pins);
++            out.insert(
++                CheckId::OA,
++                match derived {
++                    Ok(admitted) => {
++                        organization = Some(admitted);
++                        vec![]
++                    }
++                    Err(r) => r,
++                },
++            );
++            let admission = organization.as_ref().map(|o| o.admission);
+             let mut o4 = o4_authority(state, c, &scope, now, &mut pins);
+             o4.extend(o4_components(
+                 domain,
+@@ -557,14 +596,7 @@ fn evaluate(
+             out.insert(CheckId::S1, s1(c, &request.vantage, &request.subject));
+             out.insert(
+                 CheckId::O8,
+-                o8(
+-                    domain,
+-                    state,
+-                    c,
+-                    &request.organization_id,
+-                    &mut pins,
+-                    &mut o8_bindings,
+-                ),
++                o8(domain, state, c, admission, &mut pins, &mut o8_bindings),
+             );
+         }
+     }
+@@ -591,6 +623,7 @@ fn evaluate(
+     let (r3, acting) = r3(
+         domain,
+         state,
++        organization.as_ref().map(|o| o.admission),
+         request,
+         realization,
+         &o8_bindings,
+@@ -611,6 +644,7 @@ fn evaluate(
+     Evaluation {
+         outcomes,
+         pins,
++        organization,
+         acting,
+         profile,
+     }
+@@ -680,11 +714,52 @@ fn principal_named<'s>(
+     }
+ }
+ 
++/// OA: the unique committed organization admission whose candidate content digest, requirements
++/// digest and problem scope are the request's. On success pins it.
++fn oa(
++    state: &AuthorityState,
++    request: &OperationRequest,
++    scope: &ProblemScopeRef,
++    pins: &mut AuthorityPins,
++) -> Result<AdmittedOrganization, Vec<Reason>> {
++    let requirements_digest = request.requirements_digest();
++    let found: Vec<(IssuanceId, &OrganizationAdmission)> = state
++        .entries()
++        .filter(|(_, e)| e.status == IssuanceStatus::Committed)
++        .filter_map(|(id, e)| match &e.record {
++            Record::OrganizationAdmission(a)
++                if a.candidate_content_digest == request.candidate_digest
++                    && a.requirements_digest == requirements_digest
++                    && a.problem_scope == *scope =>
++            {
++                Some((*id, a))
++            }
++            _ => None,
++        })
++        .collect();
++    let subject = request.candidate_digest.to_hex();
++    match found.as_slice() {
++        [(id, admission)] => {
++            pins.organization_admissions.insert(*id);
++            Ok(AdmittedOrganization {
++                admission: *id,
++                organization_id: admission.organization_id.clone(),
++            })
++        }
++        [] => Err(vec![reason(ReasonCode::OrganizationUnadmitted, subject)]),
++        _ => Err(vec![reason(
++            ReasonCode::OrganizationHeadsAmbiguous,
++            subject,
++        )]),
++    }
++}
++
+ #[cfg_attr(not(feature = "fixture"), allow(dead_code))]
+-/// The committed vantage-actor bindings for `(organization, vantage)`.
++/// The committed vantage-actor bindings of the admitted organization for `vantage`; none when no
++/// organization was admitted.
+ fn vantage_bindings<'s>(
+     state: &'s AuthorityState,
+-    organization: &str,
++    organization: Option<IssuanceId>,
+     vantage: &str,
+ ) -> Vec<(IssuanceId, &'s VantageActorBinding)> {
+     state
+@@ -692,7 +767,7 @@ fn vantage_bindings<'s>(
+         .filter(|(_, e)| e.status == IssuanceStatus::Committed)
+         .filter_map(|(id, e)| match &e.record {
+             Record::VantageActorBinding(b)
+-                if b.organization_id == organization && b.vantage == vantage =>
++                if Some(b.organization) == organization && b.vantage == vantage =>
+             {
+                 Some((*id, b))
+             }
+@@ -974,7 +1049,7 @@ fn o8(
+     domain: Domain,
+     state: &AuthorityState,
+     candidate: &OrganizationCandidate,
+-    organization: &str,
++    organization: Option<IssuanceId>,
+     pins: &mut AuthorityPins,
+     resolved: &mut BTreeMap<String, IssuanceId>,
+ ) -> Vec<Reason> {
+@@ -1218,6 +1293,7 @@ fn r1_r2(
+ fn r3(
+     domain: Domain,
+     state: &AuthorityState,
++    organization: Option<IssuanceId>,
+     request: &OperationRequest,
+     realization: &DeclaredRealization,
+     o8_bindings: &BTreeMap<String, IssuanceId>,
+@@ -1239,7 +1315,7 @@ fn r3(
+         Domain::Fixture => {
+             let mut reasons = Vec::new();
+             // The binding O8 checked for this vantage, if any; otherwise the one committed binding.
+-            let found = vantage_bindings(state, &request.organization_id, vantage);
++            let found = vantage_bindings(state, organization, vantage);
+             let chosen = match o8_bindings.get(vantage) {
+                 Some(id) => found.iter().find(|(bid, _)| bid == id).copied(),
+                 None => match found.as_slice() {
+diff --git a/rust/crates/work-engine-organization-authority/src/lib.rs b/rust/crates/work-engine-organization-authority/src/lib.rs
+index 46cc7a2a..0f55da2e 100644
+--- a/rust/crates/work-engine-organization-authority/src/lib.rs
++++ b/rust/crates/work-engine-organization-authority/src/lib.rs
+@@ -5,14 +5,16 @@
+ //! derivation, view and enforceability report of `work-engine-organization`, which it does not
+ //! change.
+ //!
+-//! - [`records`]: owner-attested `Principal`, `VantageActorBinding`, `ComponentBinding`,
+-//!   `DecisionScope` (no `decisions` field), `AuthorityGrant` and `RealizationAcceptance`, with
++//! - [`records`]: owner-attested `OrganizationAdmission`, `Principal`, `VantageActorBinding`,
++//!   `ComponentBinding`, `DecisionScope` (no `decisions` field), `AuthorityGrant` and
++//!   `RealizationAcceptance`, with
+ //!   [`IssuanceId`] (which act of issuing) separate from [`BodyDigest`] (which terms).
+ //! - [`AuthorityObservation`]: the source contract with its four obligations; [`reserve`] and
+ //!   [`observe_for`] seal one observation to one boundary.
+-//! - [`admit`]: Gate O subset (O3, O4, O5, O8, O9), Gate R (R1-R4) and S1 (scope digest is the
+-//!   exact-subject digest), every check evaluated,
+-//!   one outcome per [`CheckId`]; [`EffectAdmission::admission_state`]: current, stale, revoked,
++//! - [`admit`]: Gate O subset (O3, OA, O4, O5, O8, O9), Gate R (R1-R4) and S1 (scope digest is the
++//!   exact-subject digest), every check evaluated, one outcome per [`CheckId`]; the organization
++//!   is derived from the committed admission of the candidate (OA), never supplied by the
++//!   request; [`EffectAdmission::admission_state`]: current, stale, revoked,
+ //!   unknown or refused.
+ //!
+ //! Production policy refuses every admission (O5 `none` separation row; O4 component bindings,
+@@ -62,6 +64,17 @@
+ //! }
+ //! ```
+ //!
++//! A request names no organization (the gate derives it, [`CheckId::OA`]), so an organization id
++//! is not an argument of [`OperationRequest::new`]:
++//!
++//! ```compile_fail,E0061
++//! use work_engine_organization::{Digest, OrganizationalRequirements};
++//! use work_engine_organization_authority::{OperationRequest, SubjectRef};
++//! fn with_org(r: OrganizationalRequirements, d: Digest, s: SubjectRef) -> OperationRequest {
++//!     OperationRequest::new("org-1", r, d, "vantage", s)
++//! }
++//! ```
++//!
+ //! An observation cannot be built outside this crate, with or without the `fixture` feature (only
+ //! an observation source in this crate produces an [`AuthorityState`], and only
+ //! [`observe_for`] seals one). Neither a struct literal nor the crate-private constructor is
+@@ -101,9 +114,9 @@ pub mod fixture;
+ #[cfg(feature = "fixture")]
+ pub use gate::Fixture;
+ pub use gate::{
+-    AdmissionRefusal, AdmissionState, AuthorityPins, CheckId, CheckOutcome, DeclaredRealization,
+-    Domain, EffectAdmission, OperationRequest, Outcomes, Policy, Production, Reason, ReasonCode,
+-    StaleReason, SubjectRef, UnknownReason, admit,
++    AdmissionRefusal, AdmissionState, AdmittedOrganization, AuthorityPins, CheckId, CheckOutcome,
++    DeclaredRealization, Domain, EffectAdmission, OperationRequest, Outcomes, Policy, Production,
++    Reason, ReasonCode, StaleReason, SubjectRef, UnknownReason, admit,
+ };
+ pub use ids::{
+     BodyDigest, Boundary, BoundaryKind, ExecutableDigest, IssuanceId, ObservationRevision,
+diff --git a/rust/crates/work-engine-organization-authority/src/records.rs b/rust/crates/work-engine-organization-authority/src/records.rs
+index 6eab71fa..bc786f04 100644
+--- a/rust/crates/work-engine-organization-authority/src/records.rs
++++ b/rust/crates/work-engine-organization-authority/src/records.rs
+@@ -6,7 +6,7 @@
+ 
+ use std::collections::BTreeSet;
+ 
+-use work_engine_organization::ProblemScope;
++use work_engine_organization::{Digest, ProblemScope};
+ 
+ use crate::ids::{BodyDigest, Enc, ExecutableDigest, IssuanceId, RealizationDigest};
+ use work_engine_organization::{
+@@ -94,10 +94,66 @@ pub struct BoundActor {
+     pub(crate) actor_identity: String,
+ }
+ 
+-/// `VantageActorBinding v1 { organizationId, vantage, principal: IssuanceId, actor }`.
++/// `OrganizationAdmission v1 { organizationId, revision, predecessor?: IssuanceId, problemScope,
++/// requirementsDigest, candidateContentDigest, issuer: deployment_owner }`.
++///
++/// Owner: organizational authority (S-A). Operator decisions O1 and D4/D5 (2026-11-17); definition
++/// recorded here under O-1 (2026-11-18). It adds one kind to the S-A record set (Stage 0 rev6 §18
++/// with Amendment 6.1).
++///
++/// - `organizationId` names the admitted organization: one problem's organization (the execution
++///   envelope identity), stable across revisions. It is not a tenant or an installation.
++/// - A committed issuance admits exactly one candidate: the one whose content digest is
++///   `candidateContentDigest`, derived from the requirements whose digest is `requirementsDigest`,
++///   for `problemScope`. Like every record it confers nothing by its content; it counts only while
++///   an observation reports its issuance committed, and it is revocable (6.1 F5).
++/// - Revision 1 has no predecessor (create-only). A successor keeps `organizationId`, has the next
++///   revision, names its predecessor's issuance and is issued by superseding that predecessor, so
++///   one organization has at most one committed head (no branching). This is the issuer's
++///   obligation: at fixture standing the gate does not check the predecessor chain (revision + 1,
++///   same organization, predecessor superseded by this issuance) or per-organization uniqueness.
++///   `OA` refuses only when more than one committed admission matches the same candidate terms,
++///   which may belong to different organizations. An issuer outside fixture standing requires
++///   that check first; whether it may be one head per organization is an open owner question,
++///   because admissions are keyed by problem scope including the slice number, so one head per
++///   organization would block concurrent slices.
++/// - Vantage-actor bindings name the admission they belong to by its issuance
++///   ([`VantageActorBinding`] `organization`). Revoking or superseding an admission therefore
++///   leaves every binding that pins it without an admitted organization.
++/// - The gate takes the organization of a request from the unique committed admission whose
++///   candidate digest, requirements digest and problem scope equal the request's; no caller
++///   supplies it. None refuses `OrganizationUnadmitted`, more than one refuses
++///   `OrganizationHeadsAmbiguous` (check `OA`).
++/// - Issuer: the deployment owner. Fixture standing only: the constructor exists only with the
++///   `fixture` feature. Production issuance needs observation-source storage (O6), an independent
++///   issuer (K-c) and production authorization.
+ #[derive(Debug, Clone, PartialEq, Eq)]
+-pub struct VantageActorBinding {
++pub struct OrganizationAdmission {
+     pub(crate) organization_id: String,
++    pub(crate) revision: u64,
++    pub(crate) predecessor: Option<IssuanceId>,
++    pub(crate) problem_scope: ProblemScopeRef,
++    pub(crate) requirements_digest: Digest,
++    pub(crate) candidate_content_digest: Digest,
++}
++
++impl OrganizationAdmission {
++    pub fn organization_id(&self) -> &str {
++        &self.organization_id
++    }
++    pub fn revision(&self) -> u64 {
++        self.revision
++    }
++    pub fn predecessor(&self) -> Option<IssuanceId> {
++        self.predecessor
++    }
++}
++
++/// `VantageActorBinding v1 { organization: IssuanceId, vantage, principal: IssuanceId, actor }`.
++/// `organization` is the issuance of the [`OrganizationAdmission`] the binding belongs to.
++#[derive(Debug, Clone, PartialEq, Eq)]
++pub struct VantageActorBinding {
++    pub(crate) organization: IssuanceId,
+     pub(crate) vantage: String,
+     pub(crate) principal: IssuanceId,
+     pub(crate) actor: BoundActor,
+@@ -161,6 +217,7 @@ pub struct RealizationAcceptance {
+ /// One owner-attested record. Every kind is revocable (6.1 F5).
+ #[derive(Debug, Clone, PartialEq, Eq)]
+ pub enum Record {
++    OrganizationAdmission(OrganizationAdmission),
+     Principal(Principal),
+     VantageActorBinding(VantageActorBinding),
+     ComponentBinding(ComponentBinding),
+@@ -176,6 +233,7 @@ fn set(items: &BTreeSet<String>) -> impl ExactSizeIterator<Item = &str> {
+ impl Record {
+     pub fn kind(&self) -> &'static str {
+         match self {
++            Record::OrganizationAdmission(_) => "organization_admission",
+             Record::Principal(_) => "principal",
+             Record::VantageActorBinding(_) => "vantage_actor_binding",
+             Record::ComponentBinding(_) => "component_binding",
+@@ -189,6 +247,16 @@ impl Record {
+     pub fn body_digest(&self) -> BodyDigest {
+         let mut enc = Enc::new(self.kind());
+         match self {
++            Record::OrganizationAdmission(a) => {
++                enc.str(&a.organization_id).u64(a.revision);
++                match &a.predecessor {
++                    None => enc.u64(0),
++                    Some(id) => enc.u64(1).bytes(id.as_bytes()),
++                };
++                a.problem_scope.encode(&mut enc);
++                enc.bytes(a.requirements_digest.as_bytes())
++                    .bytes(a.candidate_content_digest.as_bytes());
++            }
+             Record::Principal(p) => {
+                 enc.str(&p.principal_id)
+                     .u64(p.kind as u64)
+@@ -196,7 +264,7 @@ impl Record {
+                     .str(&p.anchor.id);
+             }
+             Record::VantageActorBinding(b) => {
+-                enc.str(&b.organization_id)
++                enc.bytes(b.organization.as_bytes())
+                     .str(&b.vantage)
+                     .bytes(b.principal.as_bytes())
+                     .str(b.actor.realization_digest.as_str())
+@@ -278,6 +346,24 @@ mod fixture_constructors {
+     }
+ 
+     impl Record {
++        pub fn fixture_organization_admission(
++            organization_id: &str,
++            revision: u64,
++            predecessor: Option<IssuanceId>,
++            problem_scope: ProblemScopeRef,
++            requirements_digest: Digest,
++            candidate_content_digest: Digest,
++        ) -> Self {
++            Record::OrganizationAdmission(OrganizationAdmission {
++                organization_id: organization_id.to_owned(),
++                revision,
++                predecessor,
++                problem_scope,
++                requirements_digest,
++                candidate_content_digest,
++            })
++        }
++
+         pub fn fixture_principal(
+             principal_id: &str,
+             kind: PrincipalKind,
+@@ -291,14 +377,14 @@ mod fixture_constructors {
+         }
+ 
+         pub fn fixture_vantage_binding(
+-            organization_id: &str,
++            organization: IssuanceId,
+             vantage: &str,
+             principal: IssuanceId,
+             realization_digest: RealizationDigest,
+             actor_identity: &str,
+         ) -> Self {
+             Record::VantageActorBinding(VantageActorBinding {
+-                organization_id: organization_id.to_owned(),
++                organization,
+                 vantage: vantage.to_owned(),
+                 principal,
+                 actor: BoundActor {
+diff --git a/rust/crates/work-engine-organization-authority/tests/admission.rs b/rust/crates/work-engine-organization-authority/tests/admission.rs
+index 99033baa..9a2d1b7b 100644
+--- a/rust/crates/work-engine-organization-authority/tests/admission.rs
++++ b/rust/crates/work-engine-organization-authority/tests/admission.rs
+@@ -13,10 +13,10 @@ use work_engine_organization_authority::records::{
+     ActorAnchor, AnchorKind, PrincipalKind, ProblemScopeRef, RealizationProperties, Record,
+ };
+ use work_engine_organization_authority::{
+-    AdmissionRefusal, AdmissionState, Boundary, BoundaryKind, CheckId, CheckOutcome,
+-    DeclaredRealization, EffectAdmission, ExecutableDigest, Fixture, IssuanceId, OperationRequest,
+-    Outcomes, Production, RealizationDigest, Reason, ReasonCode, StaleReason, SubjectRef,
+-    UnknownReason, admit, observe_for, reserve,
++    AdmissionRefusal, AdmissionState, AdmittedOrganization, Boundary, BoundaryKind, CheckId,
++    CheckOutcome, DeclaredRealization, EffectAdmission, ExecutableDigest, Fixture, IssuanceId,
++    OperationRequest, Outcomes, Production, RealizationDigest, Reason, ReasonCode, StaleReason,
++    SubjectRef, UnknownReason, admit, observe_for, reserve,
+ };
+ 
+ const ORG: &str = "org-1";
+@@ -117,7 +117,7 @@ fn request_with(
+     requirements: OrganizationalRequirements,
+     digest: work_engine_organization::Digest,
+ ) -> OperationRequest {
+-    OperationRequest::new(ORG, requirements, digest, VANTAGE, subject())
++    OperationRequest::new(requirements, digest, VANTAGE, subject())
+ }
+ 
+ // --- the fixture world -----------------------------------------------------------------------
+@@ -130,7 +130,40 @@ struct OwnerDs {
+     boundaries: Option<&'static [&'static str]>,
+ }
+ 
++/// The terms of an `OrganizationAdmission`: candidate content digest, requirements digest and
++/// problem scope.
++#[derive(Clone)]
++struct Terms {
++    candidate_digest: work_engine_organization::Digest,
++    requirements_digest: work_engine_organization::Digest,
++    scope: ProblemScopeRef,
++}
++
++impl Terms {
++    fn of(req: &OperationRequest) -> Self {
++        Terms {
++            candidate_digest: req.candidate_digest(),
++            requirements_digest: req.requirements_digest(),
++            scope: scope(),
++        }
++    }
++}
++
++fn admission_record(organization_id: &str, terms: &Terms) -> Record {
++    Record::fixture_organization_admission(
++        organization_id,
++        1,
++        None,
++        terms.scope.clone(),
++        terms.requirements_digest,
++        terms.candidate_digest,
++    )
++}
++
+ struct Opts {
++    /// The terms of the organization admission the world issues first; the vantage bindings
++    /// belong to it.
++    admitted: Terms,
+     owner_grant_ds: (&'static str, u64),
+     owner_ds: Option<OwnerDs>,
+     owner_grant_permission: &'static str,
+@@ -150,6 +183,7 @@ struct Opts {
+ impl Default for Opts {
+     fn default() -> Self {
+         Opts {
++            admitted: Terms::of(&request_for(&Req::default())),
+             owner_grant_ds: ("ds-1", 1),
+             owner_ds: None,
+             owner_grant_permission: "accept_claim",
+@@ -181,6 +215,7 @@ fn owner_ds() -> OwnerDs {
+ #[allow(dead_code)]
+ struct World {
+     src: FixtureSource,
++    organization: IssuanceId,
+     owner: IssuanceId,
+     reviewer: IssuanceId,
+     builder: IssuanceId,
+@@ -221,6 +256,7 @@ fn grant(
+ 
+ fn world(o: Opts) -> World {
+     let src = FixtureSource::new();
++    let organization = src.issue(admission_record(ORG, &o.admitted));
+     let owner = principal(
+         &src,
+         "owner-a",
+@@ -315,7 +351,7 @@ fn world(o: Opts) -> World {
+         scope(),
+     ));
+     let reviewer_binding = src.issue(Record::fixture_vantage_binding(
+-        ORG,
++        organization,
+         VANTAGE,
+         reviewer,
+         RealizationDigest::new(o.binding_digest),
+@@ -323,7 +359,7 @@ fn world(o: Opts) -> World {
+     ));
+     if o.builder_binding {
+         src.issue(Record::fixture_vantage_binding(
+-            ORG,
++            organization,
+             "vantage-builder",
+             builder,
+             RealizationDigest::new("real-builder"),
+@@ -352,6 +388,7 @@ fn world(o: Opts) -> World {
+     }
+     World {
+         src,
++        organization,
+         owner,
+         reviewer,
+         builder,
+@@ -458,7 +495,18 @@ fn fixture_admission_binds_principal_actor_subject_boundary_revision_and_realiza
+     assert_eq!(admission.revision(), observed_revision);
+     assert_eq!(admission.request().subject().commit, "c0ffee");
+     assert_eq!(admission.request().vantage(), VANTAGE);
++    assert_eq!(
++        admission.organization(),
++        &AdmittedOrganization {
++            admission: w.organization,
++            organization_id: ORG.to_owned(),
++        }
++    );
+     let pins = admission.pins();
++    assert_eq!(
++        pins.organization_admissions,
++        std::iter::once(w.organization).collect()
++    );
+     for id in [w.owner, w.reviewer, w.builder, w.campaign, w.episode] {
+         assert!(pins.principals.contains(&id));
+     }
+@@ -588,7 +636,6 @@ fn s_unknown_observation_yields_no_observation_and_so_no_outcomes() {
+ 
+ #[test]
+ fn g1_o3_candidate_digest_of_another_candidate_refuses_only_o3() {
+-    let w = world(Opts::default());
+     let other = derive(
+         &requirements(&Req {
+             scope_digest: "b".repeat(64),
+@@ -599,6 +646,10 @@ fn g1_o3_candidate_digest_of_another_candidate_refuses_only_o3() {
+     .candidates[0]
+         .content_digest();
+     let req = request_with(requirements(&Req::default()), other);
++    let w = world(Opts {
++        admitted: Terms::of(&req),
++        ..Opts::default()
++    });
+     let outcomes = refused(decide_fixture(&w, &req, &realization(), NOW));
+     let recomputed = request_for(&Req::default()).candidate_digest().to_hex();
+     assert_exact(
+@@ -630,12 +681,16 @@ fn g2_o3_no_derived_candidate_leaves_candidate_checks_unavailable() {
+                 CheckId::O3,
+                 vec![r(ReasonCode::CandidateUnderived, "1 unresolved")],
+             ),
++            // Without a derived candidate there is no problem scope to admit, so no organization
++            // is derived and R3 finds no binding of one.
++            (CheckId::OA, unavailable.clone()),
+             (CheckId::O4, unavailable.clone()),
+             (CheckId::O5, unavailable.clone()),
+             (CheckId::O8, unavailable.clone()),
+             (CheckId::O9, unavailable.clone()),
+             (CheckId::R1, unavailable.clone()),
+             (CheckId::R2, unavailable.clone()),
++            (CheckId::R3, vec![r(ReasonCode::VantageUnbound, VANTAGE)]),
+             (CheckId::S1, unavailable),
+         ],
+     );
+@@ -750,16 +805,15 @@ fn g1_o4_revoke_disables_exactly_its_issuance_not_a_reissue_with_identical_terms
+ 
+ #[test]
+ fn g1_o5_a_none_row_other_than_separation_refuses_only_o5() {
+-    let w = world(Opts::default());
+-    let outcomes = refused(decide_fixture(
+-        &w,
+-        &request_for(&Req {
+-            result_version: 2,
+-            ..Req::default()
+-        }),
+-        &realization(),
+-        NOW,
+-    ));
++    let req = request_for(&Req {
++        result_version: 2,
++        ..Req::default()
++    });
++    let w = world(Opts {
++        admitted: Terms::of(&req),
++        ..Opts::default()
++    });
++    let outcomes = refused(decide_fixture(&w, &req, &realization(), NOW));
+     assert_exact(
+         &outcomes,
+         &[(
+@@ -771,16 +825,15 @@ fn g1_o5_a_none_row_other_than_separation_refuses_only_o5() {
+ 
+ #[test]
+ fn g2_o5_retained_continuity_has_no_mechanism_and_the_realization_does_not_provide_it() {
+-    let w = world(Opts::default());
+-    let outcomes = refused(decide_fixture(
+-        &w,
+-        &request_for(&Req {
+-            continuity: "retained",
+-            ..Req::default()
+-        }),
+-        &realization(),
+-        NOW,
+-    ));
++    let req = request_for(&Req {
++        continuity: "retained",
++        ..Req::default()
++    });
++    let w = world(Opts {
++        admitted: Terms::of(&req),
++        ..Opts::default()
++    });
++    let outcomes = refused(decide_fixture(&w, &req, &realization(), NOW));
+     assert_exact(
+         &outcomes,
+         &[
+@@ -1220,6 +1273,14 @@ fn owner_grant_world(owner: OwnerDs) -> World {
+     })
+ }
+ 
++fn owner_grant_world_admitting(owner: OwnerDs, req: &OperationRequest) -> World {
++    world(Opts {
++        owner_ds: Some(owner),
++        admitted: Terms::of(req),
++        ..Opts::default()
++    })
++}
++
+ fn decide_base(w: &World) -> Result<EffectAdmission, AdmissionRefusal> {
+     decide_fixture(w, &request_for(&Req::default()), &realization(), NOW)
+ }
+@@ -1282,10 +1343,13 @@ fn g1_o4_decision_scope_boundaries_must_contain_the_requirements_boundaries() {
+         ..Req::default()
+     });
+     let decide = |boundaries: Option<&'static [&'static str]>| {
+-        let w = owner_grant_world(OwnerDs {
+-            boundaries,
+-            ..owner_ds()
+-        });
++        let w = owner_grant_world_admitting(
++            OwnerDs {
++                boundaries,
++                ..owner_ds()
++            },
++            &req,
++        );
+         decide_fixture(&w, &req, &realization(), NOW)
+     };
+     // Non-covering: the scope names one of the two required boundaries.
+@@ -1421,7 +1485,7 @@ fn g1_o4_two_committed_bindings_of_one_component_are_ambiguous() {
+ fn request_at(vantage: &str) -> OperationRequest {
+     let requirements = requirements(&Req::default());
+     let digest = derive(&requirements, Profile::FixedSliceReviewV1).candidates[0].content_digest();
+-    OperationRequest::new(ORG, requirements, digest, vantage, subject())
++    OperationRequest::new(requirements, digest, vantage, subject())
+ }
+ 
+ #[test]
+@@ -1471,7 +1535,7 @@ fn g2_a_vantage_the_candidate_does_not_have_and_no_binding_refuse_r2_and_r3() {
+ fn g2_two_committed_bindings_of_the_vantage_are_ambiguous_for_o8_and_r3() {
+     let w = world(Opts::default());
+     w.src.issue(Record::fixture_vantage_binding(
+-        ORG,
++        w.organization,
+         VANTAGE,
+         w.builder,
+         RealizationDigest::new("real-1"),
+@@ -1599,7 +1663,7 @@ fn s1_the_base_admission_passes_s1_and_lists_every_check() {
+     let admission = decide_base(&w).expect("admits");
+     let ids: Vec<CheckId> = admission.outcomes().iter().map(|(id, _)| id).collect();
+     use CheckId::*;
+-    assert_eq!(ids, [O3, O4, O5, O8, O9, R1, R2, R3, R4, S1]);
++    assert_eq!(ids, [O3, OA, O4, O5, O8, O9, R1, R2, R3, R4, S1]);
+     assert_eq!(admission.outcomes().get(S1), &CheckOutcome::Passed);
+ }
+ 
+@@ -1636,7 +1700,6 @@ fn s1_a_subject_differing_in_each_field_refuses_only_s1() {
+     for (field, other) in variants {
+         assert_ne!(other.scope_digest(), scope, "{field}");
+         let req = OperationRequest::new(
+-            ORG,
+             requirements(&Req::default()),
+             base.candidate_digest(),
+             VANTAGE,
+@@ -1659,7 +1722,6 @@ fn s1_a_subject_differing_in_each_field_refuses_only_s1() {
+ /// of the frozen world) refuse S1 alone for the subject that carries that patch identity.
+ #[test]
+ fn s1_a_patch_identity_stand_in_scope_digest_refuses_only_s1() {
+-    let w = world(Opts::default());
+     let stand_in = "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51";
+     let requirements = requirements(&Req {
+         scope_digest: stand_in.to_owned(),
+@@ -1667,7 +1729,6 @@ fn s1_a_patch_identity_stand_in_scope_digest_refuses_only_s1() {
+     });
+     let digest = derive(&requirements, Profile::FixedSliceReviewV1).candidates[0].content_digest();
+     let req = OperationRequest::new(
+-        ORG,
+         requirements,
+         digest,
+         VANTAGE,
+@@ -1676,6 +1737,11 @@ fn s1_a_patch_identity_stand_in_scope_digest_refuses_only_s1() {
+             ..subject()
+         },
+     );
++    // The owner admitted these terms, so only S1 refuses.
++    let w = world(Opts {
++        admitted: Terms::of(&req),
++        ..Opts::default()
++    });
+     assert_exact(
+         &refused(decide_fixture(&w, &req, &realization(), NOW)),
+         &[(
+@@ -1694,7 +1760,6 @@ fn s1_a_patch_identity_stand_in_scope_digest_refuses_only_s1() {
+ /// exactly one served obligation, so a vantage serving several obligations is not constructible.)
+ #[test]
+ fn s1_compares_the_obligation_the_vantage_serves() {
+-    let w = world(Opts::default());
+     let mut doc = requirements_doc(&Req {
+         scope_digest: "b".repeat(64),
+         ..Req::default()
+@@ -1714,8 +1779,18 @@ fn s1_compares_the_obligation_the_vantage_serves() {
+         .extend(conditions);
+     let requirements = parse(&doc);
+     let digest = derive(&requirements, Profile::FixedSliceReviewV1).candidates[0].content_digest();
++    // The owner admitted this candidate, so only S1 can differ between the two vantages.
++    let w = world(Opts {
++        admitted: Terms::of(&OperationRequest::new(
++            requirements.clone(),
++            digest,
++            "vantage:ob-b",
++            subject(),
++        )),
++        ..Opts::default()
++    });
+     let outcome_at = |vantage: &str| {
+-        let req = OperationRequest::new(ORG, requirements.clone(), digest, vantage, subject());
++        let req = OperationRequest::new(requirements.clone(), digest, vantage, subject());
+         match decide_fixture(&w, &req, &realization(), NOW) {
+             Ok(admission) => admission.outcomes().get(CheckId::S1).clone(),
+             Err(AdmissionRefusal::Checks(outcomes)) => outcomes.get(CheckId::S1).clone(),
+@@ -1761,3 +1836,199 @@ fn s1_a_pin_revoked_after_admission_is_still_revoked() {
+         AdmissionState::Revoked(_)
+     ));
+ }
++
++// --- OA: the organization comes from the committed OrganizationAdmission ----------------------
++
++/// Without an admitted organization, O8 and R3 find no binding of one.
++fn unadmitted(code: ReasonCode) -> [(CheckId, Vec<Reason>); 3] {
++    let candidate = request_for(&Req::default()).candidate_digest().to_hex();
++    [
++        (CheckId::OA, vec![r(code, &candidate)]),
++        (
++            CheckId::O8,
++            [
++                "cond-builder/vantage-builder",
++                "cond-builder/vantage:ob-a",
++                "cond-campaign/vantage-builder",
++                "cond-campaign/vantage:ob-a",
++            ]
++            .map(|subject| r(ReasonCode::SeparationUnresolved, subject))
++            .to_vec(),
++        ),
++        (CheckId::R3, vec![r(ReasonCode::VantageUnbound, VANTAGE)]),
++    ]
++}
++
++#[test]
++fn g2_oa_an_admission_revoked_before_admission_leaves_the_candidate_unadmitted() {
++    let w = world(Opts::default());
++    w.src.revoke(&w.organization);
++    assert_exact(
++        &refused(decide_base(&w)),
++        &unadmitted(ReasonCode::OrganizationUnadmitted),
++    );
++}
++
++#[test]
++fn g2_oa_an_admission_of_another_candidate_requirements_or_scope_does_not_admit() {
++    let base = Terms::of(&request_for(&Req::default()));
++    let other = Terms::of(&request_for(&Req {
++        scope_digest: "b".repeat(64),
++        ..Req::default()
++    }));
++    let variants = [
++        Terms {
++            candidate_digest: other.candidate_digest,
++            ..base.clone()
++        },
++        Terms {
++            requirements_digest: other.requirements_digest,
++            ..base.clone()
++        },
++        Terms {
++            scope: ProblemScopeRef::fixture("run-1", "plan-a", 2),
++            ..base.clone()
++        },
++    ];
++    for admitted in variants {
++        let w = world(Opts {
++            admitted,
++            ..Opts::default()
++        });
++        assert_exact(
++            &refused(decide_base(&w)),
++            &unadmitted(ReasonCode::OrganizationUnadmitted),
++        );
++    }
++    // Control: the base terms admit.
++    assert!(decide_base(&world(Opts::default())).is_ok());
++}
++
++#[test]
++fn g2_oa_two_committed_admissions_of_the_candidate_are_ambiguous_heads() {
++    let w = world(Opts::default());
++    let base = Terms::of(&request_for(&Req::default()));
++    w.src.issue(admission_record("org-2", &base));
++    assert_exact(
++        &refused(decide_base(&w)),
++        &unadmitted(ReasonCode::OrganizationHeadsAmbiguous),
++    );
++}
++
++/// P3-1: a second admission of the candidate committed after admission does not touch any pin, so
++/// the point check does not see it; the regate re-derives OA, finds two heads and refuses.
++#[test]
++fn state_refused_when_a_second_admission_of_the_candidate_is_committed_after_admission() {
++    let w = world(Opts::default());
++    let admission = admitted(&w);
++    assert!(state_now(&w, &admission, NOW).permits_effect());
++    w.src.issue(admission_record(
++        "org-2",
++        &Terms::of(&request_for(&Req::default())),
++    ));
++    match state_now(&w, &admission, NOW) {
++        AdmissionState::Refused(outcomes) => {
++            assert_exact(
++                &outcomes,
++                &unadmitted(ReasonCode::OrganizationHeadsAmbiguous),
++            );
++        }
++        other => panic!("expected refused, got {other:?}"),
++    }
++}
++
++#[test]
++fn g2_oa_bindings_of_another_organizations_admission_do_not_bind_this_one() {
++    // The world's bindings belong to an admission for another problem scope; the candidate's own
++    // admission (committed, unique) has no bindings.
++    let w = world(Opts {
++        admitted: Terms {
++            scope: ProblemScopeRef::fixture("run-2", "plan-a", 1),
++            ..Terms::of(&request_for(&Req::default()))
++        },
++        ..Opts::default()
++    });
++    let own = w.src.issue(admission_record(
++        "org-own",
++        &Terms::of(&request_for(&Req::default())),
++    ));
++    let [_, o8, r3] = unadmitted(ReasonCode::OrganizationUnadmitted);
++    assert_exact(&refused(decide_base(&w)), &[o8, r3]);
++    // Control: once the candidate's own organization binds the vantages, it admits for it.
++    w.src.issue(Record::fixture_vantage_binding(
++        own,
++        VANTAGE,
++        w.reviewer,
++        RealizationDigest::new("real-1"),
++        "uid:svc-reviewer",
++    ));
++    w.src.issue(Record::fixture_vantage_binding(
++        own,
++        "vantage-builder",
++        w.builder,
++        RealizationDigest::new("real-builder"),
++        "uid:svc-builder",
++    ));
++    let admission = decide_base(&w).expect("admitted");
++    assert_eq!(admission.organization().admission, own);
++    assert_eq!(admission.organization().organization_id, "org-own");
++}
++
++#[test]
++fn state_revoked_when_the_organization_admission_is_revoked_after_admission() {
++    let w = world(Opts::default());
++    let admission = admitted(&w);
++    w.src.revoke(&w.organization);
++    assert_eq!(
++        state_now(&w, &admission, NOW),
++        AdmissionState::Revoked(vec![w.organization])
++    );
++}
++
++#[test]
++fn state_stale_when_the_organization_admission_is_superseded_and_its_successor_needs_new_bindings()
++{
++    let w = world(Opts::default());
++    let admission = admitted(&w);
++    let base = Terms::of(&request_for(&Req::default()));
++    let successor = w.src.supersede(
++        &w.organization,
++        Record::fixture_organization_admission(
++            ORG,
++            2,
++            Some(w.organization),
++            base.scope.clone(),
++            base.requirements_digest,
++            base.candidate_digest,
++        ),
++    );
++    assert_eq!(
++        state_now(&w, &admission, NOW),
++        AdmissionState::Stale(StaleReason::IssuanceSuperseded(vec![w.organization]))
++    );
++    // A new admission resolves the successor, whose organization has no bindings yet.
++    let [_, o8, r3] = unadmitted(ReasonCode::OrganizationUnadmitted);
++    assert_exact(&refused(decide_base(&w)), &[o8, r3]);
++    w.src.issue(Record::fixture_vantage_binding(
++        successor,
++        VANTAGE,
++        w.reviewer,
++        RealizationDigest::new("real-1"),
++        "uid:svc-reviewer",
++    ));
++    w.src.issue(Record::fixture_vantage_binding(
++        successor,
++        "vantage-builder",
++        w.builder,
++        RealizationDigest::new("real-builder"),
++        "uid:svc-builder",
++    ));
++    let readmitted = decide_base(&w).expect("admitted under the successor");
++    assert_eq!(
++        readmitted.organization(),
++        &AdmittedOrganization {
++            admission: successor,
++            organization_id: ORG.to_owned(),
++        }
++    );
++}
+diff --git a/rust/crates/work-engine-review-delivery/src/gate.rs b/rust/crates/work-engine-review-delivery/src/gate.rs
+index cdda8039..b73703bb 100644
+--- a/rust/crates/work-engine-review-delivery/src/gate.rs
++++ b/rust/crates/work-engine-review-delivery/src/gate.rs
+@@ -24,9 +24,11 @@
+ //! Realization check blockers (`realization:<condition>:<property>`) are never dischargeable.
+ //!
+ //! Every input of the admission the evaluation reads is host-derived, digest-bound or a named
+-//! labelled assertion ([`CALLER_ASSERTED_LABEL`]); no caller supplies an operation request. The
+-//! summary on success ([`AdmissionSummary`]) carries the request identity the host constructed
+-//! and the asserted inputs, so a label never stays behind the gate.
++//! labelled assertion ([`CALLER_ASSERTED_LABEL`]); no caller supplies an operation request or an
++//! organization (S-A derives the organization from the committed admission of the candidate,
++//! [`CheckId::OA`]). The summary on success ([`AdmissionSummary`]) carries the request identity
++//! the host constructed, the organization S-A derived and the asserted inputs, so a label never
++//! stays behind the gate.
+ //!
+ //! The evaluation that yields [`AdmittedDischarges`] and [`AssumedDischarges`] is crate-private
+ //! and takes the binding and an admission the host obtained itself, so neither value can be
+@@ -51,9 +53,10 @@
+ 
+ use work_engine_organization::Digest;
+ use work_engine_organization_authority::{
+-    AdmissionRefusal, AdmissionState, AuthorityObservation, Boundary as AuthorityBoundary, CheckId,
+-    DeclaredRealization, Domain, EffectAdmission, Fixture, ObservationRevision, OperationRequest,
+-    Outcomes, Reservation, SealedObservation, SubjectRef, Unobserved, admit, observe_for, reserve,
++    AdmissionRefusal, AdmissionState, AdmittedOrganization, AuthorityObservation,
++    Boundary as AuthorityBoundary, CheckId, DeclaredRealization, Domain, EffectAdmission, Fixture,
++    ObservationRevision, OperationRequest, Outcomes, Reservation, SealedObservation, SubjectRef,
++    Unobserved, admit, observe_for, reserve,
+ };
+ use work_engine_review_preparation::{Blocker, BlockerClass, BlockerKind};
+ 
+@@ -66,10 +69,9 @@ pub const ASSUMED_DISCHARGE_LABEL: &str = "fixture_assumed_discharge_not_admissi
+ /// synthetic fixture records. Not a production admission.
+ pub const FIXTURE_ADMISSION_LABEL: &str = "fixture_domain_admission_not_production";
+ 
+-/// The label on the inputs of an admission that a caller supplied and no host-owned fact anchors:
+-/// the organization id (no record relates an organization to a candidate or problem scope) and the
+-/// declared actor identity (no host observation of the spawned process). S-A checks that depend on
+-/// them (O8, R3) are decided relative to these values.
++/// The label on the input of an admission that a caller supplied and no host-owned fact anchors:
++/// the declared actor identity (no host observation of the spawned process). S-A R3 is decided
++/// relative to it.
+ pub const CALLER_ASSERTED_LABEL: &str = "caller_asserted_unanchored";
+ 
+ /// The time at which the host reaches a boundary, supplied as a **source** the host samples at
+@@ -95,13 +97,17 @@ pub enum Discharge {
+ /// The host-owned total discharge function (S-B mapping).
+ pub fn discharge(kind: BlockerKind) -> Discharge {
+     match kind {
+-        BlockerKind::Separation => Discharge::Admitted(&[CheckId::O8, CheckId::R3]),
+-        BlockerKind::ComponentBinding => Discharge::Admitted(&[CheckId::O4, CheckId::R3]),
++        BlockerKind::Separation => Discharge::Admitted(&[CheckId::OA, CheckId::O8, CheckId::R3]),
++        BlockerKind::ComponentBinding => {
++            Discharge::Admitted(&[CheckId::OA, CheckId::O4, CheckId::R3])
++        }
+         BlockerKind::AuthorityRequirement => Discharge::Admitted(&[CheckId::O4]),
+         BlockerKind::RealizationAdmission => {
+             Discharge::Admitted(&[CheckId::R1, CheckId::R2, CheckId::R4])
+         }
+-        BlockerKind::ObserverIdentity => Discharge::Admitted(&[CheckId::R2, CheckId::R3]),
++        BlockerKind::ObserverIdentity => {
++            Discharge::Admitted(&[CheckId::OA, CheckId::R2, CheckId::R3])
++        }
+         BlockerKind::ScopeDigestToSubject => Discharge::Admitted(&[CheckId::S1]),
+         BlockerKind::ProblemScopeToEpisodeIdentity | BlockerKind::ConsumptionEvidenceMapping => {
+             Discharge::AssumedDischarge
+@@ -203,11 +209,10 @@ pub struct RequestIdentity {
+     pub candidate_digest: Digest,
+ }
+ 
+-/// The admission inputs a caller asserted that no host-owned fact anchors, under
++/// The admission input a caller asserted that no host-owned fact anchors, under
+ /// [`CALLER_ASSERTED_LABEL`].
+ #[derive(Debug, Clone, PartialEq, Eq)]
+ pub struct CallerAsserted {
+-    pub organization_id: String,
+     pub actor_identity: String,
+ }
+ 
+@@ -219,7 +224,7 @@ impl CallerAsserted {
+ 
+ /// What the host's admission at one boundary decided: domain (always `Domain::Fixture` here),
+ /// reserved boundary, observation revision, every check outcome by id, the request identity the
+-/// host constructed, the caller-asserted inputs it was decided over, and the revision of the
++/// host constructed, the organization S-A derived, the caller-asserted input it was decided over, and the revision of the
+ /// fresh regate observation that found it current (the delivery regate immediately before the
+ /// spawn; the consumption regate immediately before the consumer).
+ #[derive(Debug, Clone, PartialEq, Eq)]
+@@ -229,6 +234,7 @@ pub struct AdmissionSummary {
+     revision: ObservationRevision,
+     outcomes: Outcomes,
+     request: RequestIdentity,
++    organization: AdmittedOrganization,
+     asserted: CallerAsserted,
+     regate_revision: Option<ObservationRevision>,
+ }
+@@ -241,7 +247,12 @@ impl AdmissionSummary {
+     pub fn request(&self) -> &RequestIdentity {
+         &self.request
+     }
+-    /// The caller-asserted, unanchored inputs the admission was decided over.
++    /// The organization S-A derived from the committed admission of the candidate (unlabelled:
++    /// no caller supplied it).
++    pub fn organization(&self) -> &AdmittedOrganization {
++        &self.organization
++    }
++    /// The caller-asserted, unanchored input the admission was decided over.
+     pub fn asserted(&self) -> &CallerAsserted {
+         &self.asserted
+     }
+@@ -366,8 +377,8 @@ pub(crate) fn assess(
+                     subject: request.subject().clone(),
+                     candidate_digest: request.candidate_digest(),
+                 },
++                organization: admission.organization().clone(),
+                 asserted: CallerAsserted {
+-                    organization_id: request.organization_id().to_owned(),
+                     actor_identity: admission.actor_identity().to_owned(),
+                 },
+                 regate_revision: None,
+diff --git a/rust/crates/work-engine-review-delivery/src/native.rs b/rust/crates/work-engine-review-delivery/src/native.rs
+index 82ca23e7..bbd1df90 100644
+--- a/rust/crates/work-engine-review-delivery/src/native.rs
++++ b/rust/crates/work-engine-review-delivery/src/native.rs
+@@ -1375,11 +1375,12 @@ pub struct Delivered {
+ ///   its digest is the binding candidate's requirements digest
+ ///   (`AdmissionMismatch { field: "requirements" }`); the candidate digest itself is the
+ ///   binding's, so S-A O3 then checks that these requirements derive the binding's candidate.
+-/// - `organization_id`: caller-asserted and unanchored ([`crate::gate::CALLER_ASSERTED_LABEL`]):
+-///   no record relates an organization to a candidate or problem scope. S-A O8 and R3 consult
+-///   the vantage bindings of this organization.
+ /// - `actor_identity` and `installed`: declared values that S-A R3 compares with the bound ones
+-///   (no host observation of the spawned process exists); the identity is caller-asserted.
++///   (no host observation of the spawned process exists); the identity is caller-asserted
++///   ([`crate::gate::CALLER_ASSERTED_LABEL`]).
++///
++/// No organization is an input: S-A derives it from the committed `OrganizationAdmission` of the
++/// binding's candidate (S-A check `OA`), and O8 and R3 consult that organization's bindings.
+ ///
+ /// The realization digest is not an input: the host computes it from its own realization
+ /// description ([`realization_digest`]). The boundary operation is host-derived
+@@ -1387,7 +1388,6 @@ pub struct Delivered {
+ pub struct FixtureAuthority<'a> {
+     pub source: &'a dyn AuthorityObservation,
+     pub clock: &'a dyn TimeSource,
+-    pub organization_id: String,
+     pub requirements: OrganizationalRequirements,
+     pub actor_identity: String,
+     pub installed: Vec<(String, ExecutableDigest)>,
+@@ -1403,8 +1403,7 @@ pub fn boundary_operation(binding: &ExperimentBinding) -> String {
+ /// The one host construction of the admission request. Vantage is the preparation's
+ /// ([`ExperimentBinding::preparation`]`.model_context.vantage.id`), subject and candidate digest
+ /// are the binding's; the requirements are the caller's preimage, refused before any observation
+-/// unless it is the one the binding's candidate names; the organization id is the caller's
+-/// labelled assertion. `OperationRequest::new` takes every field, so a field added upstream is a
++/// unless it is the one the binding's candidate names. `OperationRequest::new` takes every field, so a field added upstream is a
+ /// compile error here rather than a caller-chosen value.
+ fn construct_request(
+     binding: &ExperimentBinding,
+@@ -1418,7 +1417,6 @@ fn construct_request(
+     }
+     let subject = &binding.request().subject;
+     Ok(OperationRequest::new(
+-        authority.organization_id.clone(),
+         authority.requirements.clone(),
+         candidate.content_digest(),
+         binding.preparation().model_context.vantage.id.clone(),
+diff --git a/rust/crates/work-engine-review-delivery/tests/common/mod.rs b/rust/crates/work-engine-review-delivery/tests/common/mod.rs
+index e9bc309d..c0ce0369 100644
+--- a/rust/crates/work-engine-review-delivery/tests/common/mod.rs
++++ b/rust/crates/work-engine-review-delivery/tests/common/mod.rs
+@@ -354,6 +354,9 @@ pub mod authority {
+     }
+ 
+     pub struct Ids {
++        /// The `OrganizationAdmission` of the assumption world's candidate; every vantage binding
++        /// belongs to it.
++        pub organization: IssuanceId,
+         pub owner: IssuanceId,
+         pub reviewer: IssuanceId,
+         pub ds: IssuanceId,
+@@ -389,8 +392,22 @@ pub mod authority {
+ 
+     pub const OTHER_ACTOR: &str = "uid:some-other-actor";
+ 
+-    /// Issue the world into `src`. The owner's grant is the last issuance, so a world issued
+-    /// without it shares every other issuance identity with one issued with it.
++    /// The organization admission of `request`'s candidate (its content digest, requirements
++    /// digest and problem scope), revision 1.
++    pub fn organization_admission(organization_id: &str, request: &OperationRequest) -> Record {
++        Record::fixture_organization_admission(
++            organization_id,
++            1,
++            None,
++            problem_scope(),
++            request.requirements_digest(),
++            request.candidate_digest(),
++        )
++    }
++
++    /// Issue the world into `src`. The organization admission is the first issuance and the
++    /// owner's grant the last, so a world issued without the grant shares every other issuance
++    /// identity with one issued with it.
+     pub fn issue(src: &FixtureSource, owner_grant: bool) -> Ids {
+         issue_with(
+             src,
+@@ -403,7 +420,14 @@ pub mod authority {
+     }
+ 
+     pub fn issue_with(src: &FixtureSource, shape: Shape) -> Ids {
++        issue_admitting(src, shape, &operation_request())
++    }
++
++    /// The world with the organization admission of `request`'s candidate instead of the
++    /// assumption world's.
++    pub fn issue_admitting(src: &FixtureSource, shape: Shape, request: &OperationRequest) -> Ids {
+         let (owner_grant, owner_expiry) = (shape.owner_grant, shape.owner_expiry);
++        let organization = src.issue(organization_admission(ORG, request));
+         let owner = principal(
+             src,
+             ACCEPTOR,
+@@ -484,14 +508,14 @@ pub mod authority {
+             )
+         };
+         let reviewer_binding = src.issue(Record::fixture_vantage_binding(
+-            ORG,
++            organization,
+             VANTAGE,
+             reviewer,
+             host_digest(),
+             reviewer_actor,
+         ));
+         src.issue(Record::fixture_vantage_binding(
+-            ORG,
++            organization,
+             "vantage-builder",
+             builder,
+             builder_realization,
+@@ -520,6 +544,7 @@ pub mod authority {
+             ))
+         });
+         Ids {
++            organization,
+             owner,
+             reviewer,
+             ds,
+@@ -541,6 +566,21 @@ pub mod authority {
+         AuthorityWorld { src, ids }
+     }
+ 
++    /// The authority world whose organization admission admits `request`'s candidate.
++    pub fn authority_world_admitting(request: &OperationRequest) -> AuthorityWorld {
++        let src = FixtureSource::new();
++        let ids = issue_admitting(
++            &src,
++            Shape {
++                owner_grant: true,
++                owner_expiry: None,
++                swap_actors: false,
++            },
++            request,
++        );
++        AuthorityWorld { src, ids }
++    }
++
+     pub fn authority_world_shaped(shape: Shape) -> AuthorityWorld {
+         let src = FixtureSource::new();
+         let ids = issue_with(&src, shape);
+@@ -570,7 +610,6 @@ pub mod authority {
+         let digest =
+             derive(&requirements, Profile::FixedSliceReviewV1).candidates[0].content_digest();
+         OperationRequest::new(
+-            ORG,
+             requirements,
+             digest,
+             VANTAGE,
+@@ -605,7 +644,6 @@ pub mod authority {
+         FixtureAuthority {
+             source,
+             clock,
+-            organization_id: ORG.to_owned(),
+             requirements,
+             actor_identity: ACTOR.to_owned(),
+             installed: installed(),
+diff --git a/rust/crates/work-engine-review-delivery/tests/gate.rs b/rust/crates/work-engine-review-delivery/tests/gate.rs
+index efbe5e6b..ad9328d7 100644
+--- a/rust/crates/work-engine-review-delivery/tests/gate.rs
++++ b/rust/crates/work-engine-review-delivery/tests/gate.rs
+@@ -6,8 +6,8 @@
+ mod common;
+ 
+ use common::authority::{
+-    ACTOR, FIXED, ORG, VANTAGE, authority_world, boundary, declared, host_digest,
+-    operation_request, operation_request_from,
++    ACTOR, FIXED, VANTAGE, authority_world, authority_world_admitting, boundary, declared,
++    host_digest, operation_request, operation_request_from,
+ };
+ use common::world::host_request;
+ use common::*;
+@@ -50,10 +50,10 @@ fn discharge_is_total_admitted_kinds_name_their_check_ids() {
+                 BlockerKind::ConsumptionEvidenceMapping,
+                 Discharge::AssumedDischarge
+             ),
+-            (BlockerKind::Separation, Discharge::Admitted(&[O8, R3])),
++            (BlockerKind::Separation, Discharge::Admitted(&[OA, O8, R3])),
+             (
+                 BlockerKind::ObserverIdentity,
+-                Discharge::Admitted(&[R2, R3])
++                Discharge::Admitted(&[OA, R2, R3])
+             ),
+             (
+                 BlockerKind::RealizationAdmission,
+@@ -61,7 +61,7 @@ fn discharge_is_total_admitted_kinds_name_their_check_ids() {
+             ),
+             (
+                 BlockerKind::ComponentBinding,
+-                Discharge::Admitted(&[O4, R3])
++                Discharge::Admitted(&[OA, O4, R3])
+             ),
+             (
+                 BlockerKind::AuthorityRequirement,
+@@ -256,13 +256,14 @@ fn the_fixture_authority_world_admits_and_an_empty_world_refuses() {
+ /// stand-in restored, over the same fixture authority world and subject, is refused by S1 alone.
+ #[test]
+ fn the_frozen_stand_in_scope_digest_refuses_only_s1() {
+-    let w = authority_world();
+     let frozen: Value = serde_json::from_slice(REQ).unwrap();
+     let mut stand_in: Value = serde_json::from_slice(ASSUMPTION_REQ).unwrap();
+     stand_in["obligations"][0]["scope"] = frozen["obligations"][0]["scope"].clone();
+     let patch = subject().patch_identity;
+     assert_eq!(stand_in["obligations"][0]["scope"]["digest"], json!(patch));
+     let request = operation_request_from(&serde_json::to_vec(&stand_in).unwrap(), subject());
++    // The owner admitted this candidate, so only S1 refuses.
++    let w = authority_world_admitting(&request);
+     match HeldAdmission::admit(
+         &w.src,
+         &FIXED,
+@@ -332,7 +333,13 @@ fn the_first_non_current_state_other_than_unknown_is_final() {
+     let binding = w.ids.reviewer_binding;
+     let _ = w.src.supersede(
+         &binding,
+-        Record::fixture_vantage_binding(ORG, VANTAGE, w.ids.reviewer, host_digest(), ACTOR),
++        Record::fixture_vantage_binding(
++            w.ids.organization,
++            VANTAGE,
++            w.ids.reviewer,
++            host_digest(),
++            ACTOR,
++        ),
+     );
+     let stale = admission.regate();
+     assert_eq!(
+diff --git a/rust/crates/work-engine-review-delivery/tests/native_vertical.rs b/rust/crates/work-engine-review-delivery/tests/native_vertical.rs
+index b97e2c7d..31a0fe20 100644
+--- a/rust/crates/work-engine-review-delivery/tests/native_vertical.rs
++++ b/rust/crates/work-engine-review-delivery/tests/native_vertical.rs
+@@ -40,8 +40,9 @@ use std::path::{Path, PathBuf};
+ use std::time::Duration;
+ use work_engine_organization_authority::fixture::FixtureSource;
+ use work_engine_organization_authority::{
+-    AdmissionRefusal, AdmissionState, AuthorityObservation, AuthorityState, BoundaryKind, CheckId,
+-    CheckOutcome, Domain, Reason, ReasonCode, StaleReason, SubjectRef, UnknownReason, Unobserved,
++    AdmissionRefusal, AdmissionState, AdmittedOrganization, AuthorityObservation, AuthorityState,
++    BoundaryKind, CheckId, CheckOutcome, Domain, Reason, ReasonCode, StaleReason, SubjectRef,
++    UnknownReason, Unobserved,
+ };
+ use work_engine_review_delivery::binding::{EpisodeInputs, ExperimentBinding};
+ use work_engine_review_delivery::gate::{
+@@ -341,7 +342,16 @@ fn positive_assertions(
+         );
+         assert_eq!(CALLER_ASSERTED_LABEL, "caller_asserted_unanchored");
+         assert_eq!(summary.asserted().label(), CALLER_ASSERTED_LABEL);
+-        assert_eq!(summary.asserted().organization_id, ORG);
++        // S-A derived the organization from the world's committed admission (fixture issuance
++        // identities are deterministic, so a fresh world names the same issuance); no caller
++        // supplied it, and the caller-asserted input is the actor identity alone.
++        assert_eq!(
++            summary.organization(),
++            &AdmittedOrganization {
++                admission: authority_world().ids.organization,
++                organization_id: ORG.to_owned(),
++            }
++        );
+         assert_eq!(summary.asserted().actor_identity, ACTOR);
+         assert!(summary.outcomes().all_passed());
+         assert_eq!(
+@@ -904,7 +914,8 @@ fn sb_refused_before_spawn(
+ }
+ 
+ /// S-B invariant 2: the host's own admission refuses before spawn: a revoked owner grant (O4
+-/// refuses, every outcome carried) and an unobservable authority source (no observation).
++/// refuses, every outcome carried), a revoked organization admission (OA, O8 and R3 refuse) and
++/// an unobservable authority source (no observation).
+ #[test]
+ fn sb_an_admission_refusal_refuses_before_spawn() {
+     let revoked = authority_world();
+@@ -915,6 +926,19 @@ fn sb_an_admission_refusal_refuses_before_spawn() {
+         )) => assert_eq!(outcomes.refused(), [CheckId::O4]),
+         other => panic!("expected an O4 admission refusal, got {other:?}"),
+     }
++    // An unadmitted candidate (its organization admission revoked) refuses OA, and with no
++    // admitted organization O8 and R3 find no binding.
++    let unadmitted = authority_world();
++    unadmitted.src.revoke(&unadmitted.ids.organization);
++    match sb_refused_before_spawn(
++        "sb-admission-unadmitted",
++        &fixture_authority(&unadmitted.src),
++    ) {
++        GateRefusal::Admission(work_engine_organization_authority::AdmissionRefusal::Checks(
++            outcomes,
++        )) => assert_eq!(outcomes.refused(), [CheckId::OA, CheckId::O8, CheckId::R3]),
++        other => panic!("expected an OA admission refusal, got {other:?}"),
++    }
+     let unknown = authority_world();
+     unknown.src.inject_unknown("authority source unavailable");
+     assert_eq!(
+@@ -1026,7 +1050,7 @@ fn sb_a_pin_replaced_between_the_two_admissions_refuses_before_spawn() {
+             w.src.supersede(
+                 &pinned,
+                 work_engine_organization_authority::records::Record::fixture_vantage_binding(
+-                    common::authority::ORG,
++                    w.ids.organization,
+                     common::authority::VANTAGE,
+                     w.ids.reviewer,
+                     common::authority::host_digest(),
+@@ -1150,7 +1174,7 @@ fn sb_revocation_supersession_or_missing_grant_between_boundaries_refuses_consum
+             superseded.src.supersede(
+                 &binding,
+                 work_engine_organization_authority::records::Record::fixture_vantage_binding(
+-                    common::authority::ORG,
++                    superseded.ids.organization,
+                     common::authority::VANTAGE,
+                     superseded.ids.reviewer,
+                     common::authority::host_digest(),
+diff --git a/rust/crates/work-engine-review-preparation/tests/common/mod.rs b/rust/crates/work-engine-review-preparation/tests/common/mod.rs
+index 6408e2a8..cfd44b0e 100644
+--- a/rust/crates/work-engine-review-preparation/tests/common/mod.rs
++++ b/rust/crates/work-engine-review-preparation/tests/common/mod.rs
+@@ -199,8 +199,22 @@ pub mod gate {
+         ))
+     }
+ 
+-    /// Issues the world; returns the owner's grant (the one a test revokes).
+-    fn issue(src: &FixtureSource, extra_vantages: &[String]) -> IssuanceId {
++    /// Issues the world: the organization admission of the request's candidate first, then the
++    /// records whose vantage bindings belong to it. Returns the owner's grant (the one a test
++    /// revokes).
++    fn issue(
++        src: &FixtureSource,
++        request: &OperationRequest,
++        extra_vantages: &[String],
++    ) -> IssuanceId {
++        let organization = src.issue(Record::fixture_organization_admission(
++            ORG,
++            1,
++            None,
++            scope(),
++            request.requirements_digest(),
++            request.candidate_digest(),
++        ));
+         let owner = principal(
+             src,
+             ACCEPTOR,
+@@ -272,7 +286,7 @@ pub mod gate {
+             scope(),
+         ));
+         src.issue(Record::fixture_vantage_binding(
+-            ORG,
++            organization,
+             VANTAGE,
+             reviewer,
+             digest(),
+@@ -282,7 +296,7 @@ pub mod gate {
+         // realization digest and actor, so the same acceptance covers them.
+         for vantage in extra_vantages {
+             src.issue(Record::fixture_vantage_binding(
+-                ORG,
++                organization,
+                 vantage,
+                 reviewer,
+                 digest(),
+@@ -290,7 +304,7 @@ pub mod gate {
+             ));
+         }
+         src.issue(Record::fixture_vantage_binding(
+-            ORG,
++            organization,
+             "vantage-builder",
+             builder,
+             RealizationDigest::new("real-builder"),
+@@ -373,12 +387,10 @@ pub mod gate {
+ 
+     pub fn admitted(ask: Ask) -> Admitted {
+         let src = FixtureSource::new();
+-        let owner_grant = issue(&src, &ask.bound_vantages);
+         let requirements = OrganizationalRequirements::from_json_bytes(&ask.requirements).unwrap();
+         let candidate_digest =
+             derive(&requirements, Profile::FixedSliceReviewV1).candidates[0].content_digest();
+         let request = OperationRequest::new(
+-            ORG,
+             requirements,
+             candidate_digest,
+             ask.vantage,
+@@ -388,6 +400,7 @@ pub mod gate {
+                 patch_identity: ask.subject.patch_identity,
+             },
+         );
++        let owner_grant = issue(&src, &request, &ask.bound_vantages);
+         let declared = DeclaredRealization::declared(
+             digest(),
+             ACTOR,

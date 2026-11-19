@@ -1,0 +1,18 @@
+{
+ "mutant": "A2-M8-revoked-admission-counts",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority/src/gate.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "759a1de635998a031ef20aea143d0c9e5a499a02a702633c399d42d35a8b9a92",
+   "mutated_sha256": "0c43789f0cf0c2b5d5b8d054270b3cc11467865ddf0b7a550e1f79dcee61aaea"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority/src/gate.rs",
+   "old": "    let found: Vec<(IssuanceId, &OrganizationAdmission)> = state\n        .entries()\n        .filter(|(_, e)| e.status == IssuanceStatus::Committed)\n",
+   "new": "    let found: Vec<(IssuanceId, &OrganizationAdmission)> = state\n        .entries()\n"
+  }
+ ]
+}

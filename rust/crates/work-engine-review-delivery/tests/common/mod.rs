@@ -354,6 +354,9 @@ pub mod authority {
     }
 
     pub struct Ids {
+        /// The `OrganizationAdmission` of the assumption world's candidate; every vantage binding
+        /// belongs to it.
+        pub organization: IssuanceId,
         pub owner: IssuanceId,
         pub reviewer: IssuanceId,
         pub ds: IssuanceId,
@@ -389,8 +392,22 @@ pub mod authority {
 
     pub const OTHER_ACTOR: &str = "uid:some-other-actor";
 
-    /// Issue the world into `src`. The owner's grant is the last issuance, so a world issued
-    /// without it shares every other issuance identity with one issued with it.
+    /// The organization admission of `request`'s candidate (its content digest, requirements
+    /// digest and problem scope), revision 1.
+    pub fn organization_admission(organization_id: &str, request: &OperationRequest) -> Record {
+        Record::fixture_organization_admission(
+            organization_id,
+            1,
+            None,
+            problem_scope(),
+            request.requirements_digest(),
+            request.candidate_digest(),
+        )
+    }
+
+    /// Issue the world into `src`. The organization admission is the first issuance and the
+    /// owner's grant the last, so a world issued without the grant shares every other issuance
+    /// identity with one issued with it.
     pub fn issue(src: &FixtureSource, owner_grant: bool) -> Ids {
         issue_with(
             src,
@@ -403,7 +420,14 @@ pub mod authority {
     }
 
     pub fn issue_with(src: &FixtureSource, shape: Shape) -> Ids {
+        issue_admitting(src, shape, &operation_request())
+    }
+
+    /// The world with the organization admission of `request`'s candidate instead of the
+    /// assumption world's.
+    pub fn issue_admitting(src: &FixtureSource, shape: Shape, request: &OperationRequest) -> Ids {
         let (owner_grant, owner_expiry) = (shape.owner_grant, shape.owner_expiry);
+        let organization = src.issue(organization_admission(ORG, request));
         let owner = principal(
             src,
             ACCEPTOR,
@@ -484,14 +508,14 @@ pub mod authority {
             )
         };
         let reviewer_binding = src.issue(Record::fixture_vantage_binding(
-            ORG,
+            organization,
             VANTAGE,
             reviewer,
             host_digest(),
             reviewer_actor,
         ));
         src.issue(Record::fixture_vantage_binding(
-            ORG,
+            organization,
             "vantage-builder",
             builder,
             builder_realization,
@@ -520,6 +544,7 @@ pub mod authority {
             ))
         });
         Ids {
+            organization,
             owner,
             reviewer,
             ds,
@@ -538,6 +563,21 @@ pub mod authority {
     pub fn authority_world() -> AuthorityWorld {
         let src = FixtureSource::new();
         let ids = issue(&src, true);
+        AuthorityWorld { src, ids }
+    }
+
+    /// The authority world whose organization admission admits `request`'s candidate.
+    pub fn authority_world_admitting(request: &OperationRequest) -> AuthorityWorld {
+        let src = FixtureSource::new();
+        let ids = issue_admitting(
+            &src,
+            Shape {
+                owner_grant: true,
+                owner_expiry: None,
+                swap_actors: false,
+            },
+            request,
+        );
         AuthorityWorld { src, ids }
     }
 
@@ -570,7 +610,6 @@ pub mod authority {
         let digest =
             derive(&requirements, Profile::FixedSliceReviewV1).candidates[0].content_digest();
         OperationRequest::new(
-            ORG,
             requirements,
             digest,
             VANTAGE,
@@ -605,7 +644,6 @@ pub mod authority {
         FixtureAuthority {
             source,
             clock,
-            organization_id: ORG.to_owned(),
             requirements,
             actor_identity: ACTOR.to_owned(),
             installed: installed(),

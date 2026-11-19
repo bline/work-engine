@@ -1,0 +1,42 @@
+    Checking aho-corasick v1.1.5
+    Checking regex-syntax v0.8.11
+   Compiling libc v0.2.190
+   Compiling rustix v1.1.5
+   Compiling getrandom v0.4.3
+    Checking linux-raw-sys v0.12.1
+    Checking bitflags v2.13.2
+    Checking once_cell v1.21.4
+    Checking fastrand v2.5.0
+    Checking work-engine-review-delivery v0.1.0 (/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-review-delivery)
+    Checking regex-automata v0.4.18
+    Checking tempfile v3.27.0
+    Checking regex v1.13.1
+    Checking work-engine-review-hosted v0.1.0 (/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-review-hosted)
+error: very complex type used. Consider factoring parts into `type` definitions
+   --> crates/work-engine-review-hosted/tests/check.rs:779:42
+    |
+779 | fn assert_claude_delivery_refused(cases: Vec<(&str, fn(&mut Value), &str)>) {
+    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.92.0/index.html#type_complexity
+    = note: `-D clippy::type-complexity` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::type_complexity)]`
+
+error: very complex type used. Consider factoring parts into `type` definitions
+   --> crates/work-engine-review-hosted/tests/check.rs:816:16
+    |
+816 |     let cases: Vec<(&str, fn(&mut Value), &str)> = vec![
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.92.0/index.html#type_complexity
+
+error: very complex type used. Consider factoring parts into `type` definitions
+   --> crates/work-engine-review-hosted/tests/check.rs:944:16
+    |
+944 |     let cases: Vec<(&str, fn(&mut Value), &str)> = vec![
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.92.0/index.html#type_complexity
+
+error: could not compile `work-engine-review-hosted` (test "check") due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...

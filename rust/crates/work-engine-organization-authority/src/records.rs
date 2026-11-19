@@ -6,7 +6,7 @@
 
 use std::collections::BTreeSet;
 
-use work_engine_organization::ProblemScope;
+use work_engine_organization::{Digest, ProblemScope};
 
 use crate::ids::{BodyDigest, Enc, ExecutableDigest, IssuanceId, RealizationDigest};
 use work_engine_organization::{
@@ -94,10 +94,66 @@ pub struct BoundActor {
     pub(crate) actor_identity: String,
 }
 
-/// `VantageActorBinding v1 { organizationId, vantage, principal: IssuanceId, actor }`.
+/// `OrganizationAdmission v1 { organizationId, revision, predecessor?: IssuanceId, problemScope,
+/// requirementsDigest, candidateContentDigest, issuer: deployment_owner }`.
+///
+/// Owner: organizational authority (S-A). Operator decisions O1 and D4/D5 (2026-11-17); definition
+/// recorded here under O-1 (2026-11-18). It adds one kind to the S-A record set (Stage 0 rev6 §18
+/// with Amendment 6.1).
+///
+/// - `organizationId` names the admitted organization: one problem's organization (the execution
+///   envelope identity), stable across revisions. It is not a tenant or an installation.
+/// - A committed issuance admits exactly one candidate: the one whose content digest is
+///   `candidateContentDigest`, derived from the requirements whose digest is `requirementsDigest`,
+///   for `problemScope`. Like every record it confers nothing by its content; it counts only while
+///   an observation reports its issuance committed, and it is revocable (6.1 F5).
+/// - Revision 1 has no predecessor (create-only). A successor keeps `organizationId`, has the next
+///   revision, names its predecessor's issuance and is issued by superseding that predecessor, so
+///   one organization has at most one committed head (no branching). This is the issuer's
+///   obligation: at fixture standing the gate does not check the predecessor chain (revision + 1,
+///   same organization, predecessor superseded by this issuance) or per-organization uniqueness.
+///   `OA` refuses only when more than one committed admission matches the same candidate terms,
+///   which may belong to different organizations. An issuer outside fixture standing requires
+///   that check first; whether it may be one head per organization is an open owner question,
+///   because admissions are keyed by problem scope including the slice number, so one head per
+///   organization would block concurrent slices.
+/// - Vantage-actor bindings name the admission they belong to by its issuance
+///   ([`VantageActorBinding`] `organization`). Revoking or superseding an admission therefore
+///   leaves every binding that pins it without an admitted organization.
+/// - The gate takes the organization of a request from the unique committed admission whose
+///   candidate digest, requirements digest and problem scope equal the request's; no caller
+///   supplies it. None refuses `OrganizationUnadmitted`, more than one refuses
+///   `OrganizationHeadsAmbiguous` (check `OA`).
+/// - Issuer: the deployment owner. Fixture standing only: the constructor exists only with the
+///   `fixture` feature. Production issuance needs observation-source storage (O6), an independent
+///   issuer (K-c) and production authorization.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OrganizationAdmission {
+    pub(crate) organization_id: String,
+    pub(crate) revision: u64,
+    pub(crate) predecessor: Option<IssuanceId>,
+    pub(crate) problem_scope: ProblemScopeRef,
+    pub(crate) requirements_digest: Digest,
+    pub(crate) candidate_content_digest: Digest,
+}
+
+impl OrganizationAdmission {
+    pub fn organization_id(&self) -> &str {
+        &self.organization_id
+    }
+    pub fn revision(&self) -> u64 {
+        self.revision
+    }
+    pub fn predecessor(&self) -> Option<IssuanceId> {
+        self.predecessor
+    }
+}
+
+/// `VantageActorBinding v1 { organization: IssuanceId, vantage, principal: IssuanceId, actor }`.
+/// `organization` is the issuance of the [`OrganizationAdmission`] the binding belongs to.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VantageActorBinding {
-    pub(crate) organization_id: String,
+    pub(crate) organization: IssuanceId,
     pub(crate) vantage: String,
     pub(crate) principal: IssuanceId,
     pub(crate) actor: BoundActor,
@@ -161,6 +217,7 @@ pub struct RealizationAcceptance {
 /// One owner-attested record. Every kind is revocable (6.1 F5).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Record {
+    OrganizationAdmission(OrganizationAdmission),
     Principal(Principal),
     VantageActorBinding(VantageActorBinding),
     ComponentBinding(ComponentBinding),
@@ -176,6 +233,7 @@ fn set(items: &BTreeSet<String>) -> impl ExactSizeIterator<Item = &str> {
 impl Record {
     pub fn kind(&self) -> &'static str {
         match self {
+            Record::OrganizationAdmission(_) => "organization_admission",
             Record::Principal(_) => "principal",
             Record::VantageActorBinding(_) => "vantage_actor_binding",
             Record::ComponentBinding(_) => "component_binding",
@@ -189,6 +247,16 @@ impl Record {
     pub fn body_digest(&self) -> BodyDigest {
         let mut enc = Enc::new(self.kind());
         match self {
+            Record::OrganizationAdmission(a) => {
+                enc.str(&a.organization_id).u64(a.revision);
+                match &a.predecessor {
+                    None => enc.u64(0),
+                    Some(id) => enc.u64(1).bytes(id.as_bytes()),
+                };
+                a.problem_scope.encode(&mut enc);
+                enc.bytes(a.requirements_digest.as_bytes())
+                    .bytes(a.candidate_content_digest.as_bytes());
+            }
             Record::Principal(p) => {
                 enc.str(&p.principal_id)
                     .u64(p.kind as u64)
@@ -196,7 +264,7 @@ impl Record {
                     .str(&p.anchor.id);
             }
             Record::VantageActorBinding(b) => {
-                enc.str(&b.organization_id)
+                enc.bytes(b.organization.as_bytes())
                     .str(&b.vantage)
                     .bytes(b.principal.as_bytes())
                     .str(b.actor.realization_digest.as_str())
@@ -278,6 +346,24 @@ mod fixture_constructors {
     }
 
     impl Record {
+        pub fn fixture_organization_admission(
+            organization_id: &str,
+            revision: u64,
+            predecessor: Option<IssuanceId>,
+            problem_scope: ProblemScopeRef,
+            requirements_digest: Digest,
+            candidate_content_digest: Digest,
+        ) -> Self {
+            Record::OrganizationAdmission(OrganizationAdmission {
+                organization_id: organization_id.to_owned(),
+                revision,
+                predecessor,
+                problem_scope,
+                requirements_digest,
+                candidate_content_digest,
+            })
+        }
+
         pub fn fixture_principal(
             principal_id: &str,
             kind: PrincipalKind,
@@ -291,14 +377,14 @@ mod fixture_constructors {
         }
 
         pub fn fixture_vantage_binding(
-            organization_id: &str,
+            organization: IssuanceId,
             vantage: &str,
             principal: IssuanceId,
             realization_digest: RealizationDigest,
             actor_identity: &str,
         ) -> Self {
             Record::VantageActorBinding(VantageActorBinding {
-                organization_id: organization_id.to_owned(),
+                organization,
                 vantage: vantage.to_owned(),
                 principal,
                 actor: BoundActor {

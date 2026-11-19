@@ -13,10 +13,10 @@ use work_engine_organization_authority::records::{
     ActorAnchor, AnchorKind, PrincipalKind, ProblemScopeRef, RealizationProperties, Record,
 };
 use work_engine_organization_authority::{
-    AdmissionRefusal, AdmissionState, Boundary, BoundaryKind, CheckId, CheckOutcome,
-    DeclaredRealization, EffectAdmission, ExecutableDigest, Fixture, IssuanceId, OperationRequest,
-    Outcomes, Production, RealizationDigest, Reason, ReasonCode, StaleReason, SubjectRef,
-    UnknownReason, admit, observe_for, reserve,
+    AdmissionRefusal, AdmissionState, AdmittedOrganization, Boundary, BoundaryKind, CheckId,
+    CheckOutcome, DeclaredRealization, EffectAdmission, ExecutableDigest, Fixture, IssuanceId,
+    OperationRequest, Outcomes, Production, RealizationDigest, Reason, ReasonCode, StaleReason,
+    SubjectRef, UnknownReason, admit, observe_for, reserve,
 };
 
 const ORG: &str = "org-1";
@@ -117,7 +117,7 @@ fn request_with(
     requirements: OrganizationalRequirements,
     digest: work_engine_organization::Digest,
 ) -> OperationRequest {
-    OperationRequest::new(ORG, requirements, digest, VANTAGE, subject())
+    OperationRequest::new(requirements, digest, VANTAGE, subject())
 }
 
 // --- the fixture world -----------------------------------------------------------------------
@@ -130,7 +130,40 @@ struct OwnerDs {
     boundaries: Option<&'static [&'static str]>,
 }
 
+/// The terms of an `OrganizationAdmission`: candidate content digest, requirements digest and
+/// problem scope.
+#[derive(Clone)]
+struct Terms {
+    candidate_digest: work_engine_organization::Digest,
+    requirements_digest: work_engine_organization::Digest,
+    scope: ProblemScopeRef,
+}
+
+impl Terms {
+    fn of(req: &OperationRequest) -> Self {
+        Terms {
+            candidate_digest: req.candidate_digest(),
+            requirements_digest: req.requirements_digest(),
+            scope: scope(),
+        }
+    }
+}
+
+fn admission_record(organization_id: &str, terms: &Terms) -> Record {
+    Record::fixture_organization_admission(
+        organization_id,
+        1,
+        None,
+        terms.scope.clone(),
+        terms.requirements_digest,
+        terms.candidate_digest,
+    )
+}
+
 struct Opts {
+    /// The terms of the organization admission the world issues first; the vantage bindings
+    /// belong to it.
+    admitted: Terms,
     owner_grant_ds: (&'static str, u64),
     owner_ds: Option<OwnerDs>,
     owner_grant_permission: &'static str,
@@ -150,6 +183,7 @@ struct Opts {
 impl Default for Opts {
     fn default() -> Self {
         Opts {
+            admitted: Terms::of(&request_for(&Req::default())),
             owner_grant_ds: ("ds-1", 1),
             owner_ds: None,
             owner_grant_permission: "accept_claim",
@@ -181,6 +215,7 @@ fn owner_ds() -> OwnerDs {
 #[allow(dead_code)]
 struct World {
     src: FixtureSource,
+    organization: IssuanceId,
     owner: IssuanceId,
     reviewer: IssuanceId,
     builder: IssuanceId,
@@ -221,6 +256,7 @@ fn grant(
 
 fn world(o: Opts) -> World {
     let src = FixtureSource::new();
+    let organization = src.issue(admission_record(ORG, &o.admitted));
     let owner = principal(
         &src,
         "owner-a",
@@ -315,7 +351,7 @@ fn world(o: Opts) -> World {
         scope(),
     ));
     let reviewer_binding = src.issue(Record::fixture_vantage_binding(
-        ORG,
+        organization,
         VANTAGE,
         reviewer,
         RealizationDigest::new(o.binding_digest),
@@ -323,7 +359,7 @@ fn world(o: Opts) -> World {
     ));
     if o.builder_binding {
         src.issue(Record::fixture_vantage_binding(
-            ORG,
+            organization,
             "vantage-builder",
             builder,
             RealizationDigest::new("real-builder"),
@@ -352,6 +388,7 @@ fn world(o: Opts) -> World {
     }
     World {
         src,
+        organization,
         owner,
         reviewer,
         builder,
@@ -458,7 +495,18 @@ fn fixture_admission_binds_principal_actor_subject_boundary_revision_and_realiza
     assert_eq!(admission.revision(), observed_revision);
     assert_eq!(admission.request().subject().commit, "c0ffee");
     assert_eq!(admission.request().vantage(), VANTAGE);
+    assert_eq!(
+        admission.organization(),
+        &AdmittedOrganization {
+            admission: w.organization,
+            organization_id: ORG.to_owned(),
+        }
+    );
     let pins = admission.pins();
+    assert_eq!(
+        pins.organization_admissions,
+        std::iter::once(w.organization).collect()
+    );
     for id in [w.owner, w.reviewer, w.builder, w.campaign, w.episode] {
         assert!(pins.principals.contains(&id));
     }
@@ -588,7 +636,6 @@ fn s_unknown_observation_yields_no_observation_and_so_no_outcomes() {
 
 #[test]
 fn g1_o3_candidate_digest_of_another_candidate_refuses_only_o3() {
-    let w = world(Opts::default());
     let other = derive(
         &requirements(&Req {
             scope_digest: "b".repeat(64),
@@ -599,6 +646,10 @@ fn g1_o3_candidate_digest_of_another_candidate_refuses_only_o3() {
     .candidates[0]
         .content_digest();
     let req = request_with(requirements(&Req::default()), other);
+    let w = world(Opts {
+        admitted: Terms::of(&req),
+        ..Opts::default()
+    });
     let outcomes = refused(decide_fixture(&w, &req, &realization(), NOW));
     let recomputed = request_for(&Req::default()).candidate_digest().to_hex();
     assert_exact(
@@ -630,12 +681,16 @@ fn g2_o3_no_derived_candidate_leaves_candidate_checks_unavailable() {
                 CheckId::O3,
                 vec![r(ReasonCode::CandidateUnderived, "1 unresolved")],
             ),
+            // Without a derived candidate there is no problem scope to admit, so no organization
+            // is derived and R3 finds no binding of one.
+            (CheckId::OA, unavailable.clone()),
             (CheckId::O4, unavailable.clone()),
             (CheckId::O5, unavailable.clone()),
             (CheckId::O8, unavailable.clone()),
             (CheckId::O9, unavailable.clone()),
             (CheckId::R1, unavailable.clone()),
             (CheckId::R2, unavailable.clone()),
+            (CheckId::R3, vec![r(ReasonCode::VantageUnbound, VANTAGE)]),
             (CheckId::S1, unavailable),
         ],
     );
@@ -750,16 +805,15 @@ fn g1_o4_revoke_disables_exactly_its_issuance_not_a_reissue_with_identical_terms
 
 #[test]
 fn g1_o5_a_none_row_other_than_separation_refuses_only_o5() {
-    let w = world(Opts::default());
-    let outcomes = refused(decide_fixture(
-        &w,
-        &request_for(&Req {
-            result_version: 2,
-            ..Req::default()
-        }),
-        &realization(),
-        NOW,
-    ));
+    let req = request_for(&Req {
+        result_version: 2,
+        ..Req::default()
+    });
+    let w = world(Opts {
+        admitted: Terms::of(&req),
+        ..Opts::default()
+    });
+    let outcomes = refused(decide_fixture(&w, &req, &realization(), NOW));
     assert_exact(
         &outcomes,
         &[(
@@ -771,16 +825,15 @@ fn g1_o5_a_none_row_other_than_separation_refuses_only_o5() {
 
 #[test]
 fn g2_o5_retained_continuity_has_no_mechanism_and_the_realization_does_not_provide_it() {
-    let w = world(Opts::default());
-    let outcomes = refused(decide_fixture(
-        &w,
-        &request_for(&Req {
-            continuity: "retained",
-            ..Req::default()
-        }),
-        &realization(),
-        NOW,
-    ));
+    let req = request_for(&Req {
+        continuity: "retained",
+        ..Req::default()
+    });
+    let w = world(Opts {
+        admitted: Terms::of(&req),
+        ..Opts::default()
+    });
+    let outcomes = refused(decide_fixture(&w, &req, &realization(), NOW));
     assert_exact(
         &outcomes,
         &[
@@ -1220,6 +1273,14 @@ fn owner_grant_world(owner: OwnerDs) -> World {
     })
 }
 
+fn owner_grant_world_admitting(owner: OwnerDs, req: &OperationRequest) -> World {
+    world(Opts {
+        owner_ds: Some(owner),
+        admitted: Terms::of(req),
+        ..Opts::default()
+    })
+}
+
 fn decide_base(w: &World) -> Result<EffectAdmission, AdmissionRefusal> {
     decide_fixture(w, &request_for(&Req::default()), &realization(), NOW)
 }
@@ -1282,10 +1343,13 @@ fn g1_o4_decision_scope_boundaries_must_contain_the_requirements_boundaries() {
         ..Req::default()
     });
     let decide = |boundaries: Option<&'static [&'static str]>| {
-        let w = owner_grant_world(OwnerDs {
-            boundaries,
-            ..owner_ds()
-        });
+        let w = owner_grant_world_admitting(
+            OwnerDs {
+                boundaries,
+                ..owner_ds()
+            },
+            &req,
+        );
         decide_fixture(&w, &req, &realization(), NOW)
     };
     // Non-covering: the scope names one of the two required boundaries.
@@ -1421,7 +1485,7 @@ fn g1_o4_two_committed_bindings_of_one_component_are_ambiguous() {
 fn request_at(vantage: &str) -> OperationRequest {
     let requirements = requirements(&Req::default());
     let digest = derive(&requirements, Profile::FixedSliceReviewV1).candidates[0].content_digest();
-    OperationRequest::new(ORG, requirements, digest, vantage, subject())
+    OperationRequest::new(requirements, digest, vantage, subject())
 }
 
 #[test]
@@ -1471,7 +1535,7 @@ fn g2_a_vantage_the_candidate_does_not_have_and_no_binding_refuse_r2_and_r3() {
 fn g2_two_committed_bindings_of_the_vantage_are_ambiguous_for_o8_and_r3() {
     let w = world(Opts::default());
     w.src.issue(Record::fixture_vantage_binding(
-        ORG,
+        w.organization,
         VANTAGE,
         w.builder,
         RealizationDigest::new("real-1"),
@@ -1599,7 +1663,7 @@ fn s1_the_base_admission_passes_s1_and_lists_every_check() {
     let admission = decide_base(&w).expect("admits");
     let ids: Vec<CheckId> = admission.outcomes().iter().map(|(id, _)| id).collect();
     use CheckId::*;
-    assert_eq!(ids, [O3, O4, O5, O8, O9, R1, R2, R3, R4, S1]);
+    assert_eq!(ids, [O3, OA, O4, O5, O8, O9, R1, R2, R3, R4, S1]);
     assert_eq!(admission.outcomes().get(S1), &CheckOutcome::Passed);
 }
 
@@ -1636,7 +1700,6 @@ fn s1_a_subject_differing_in_each_field_refuses_only_s1() {
     for (field, other) in variants {
         assert_ne!(other.scope_digest(), scope, "{field}");
         let req = OperationRequest::new(
-            ORG,
             requirements(&Req::default()),
             base.candidate_digest(),
             VANTAGE,
@@ -1659,7 +1722,6 @@ fn s1_a_subject_differing_in_each_field_refuses_only_s1() {
 /// of the frozen world) refuse S1 alone for the subject that carries that patch identity.
 #[test]
 fn s1_a_patch_identity_stand_in_scope_digest_refuses_only_s1() {
-    let w = world(Opts::default());
     let stand_in = "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51";
     let requirements = requirements(&Req {
         scope_digest: stand_in.to_owned(),
@@ -1667,7 +1729,6 @@ fn s1_a_patch_identity_stand_in_scope_digest_refuses_only_s1() {
     });
     let digest = derive(&requirements, Profile::FixedSliceReviewV1).candidates[0].content_digest();
     let req = OperationRequest::new(
-        ORG,
         requirements,
         digest,
         VANTAGE,
@@ -1676,6 +1737,11 @@ fn s1_a_patch_identity_stand_in_scope_digest_refuses_only_s1() {
             ..subject()
         },
     );
+    // The owner admitted these terms, so only S1 refuses.
+    let w = world(Opts {
+        admitted: Terms::of(&req),
+        ..Opts::default()
+    });
     assert_exact(
         &refused(decide_fixture(&w, &req, &realization(), NOW)),
         &[(
@@ -1694,7 +1760,6 @@ fn s1_a_patch_identity_stand_in_scope_digest_refuses_only_s1() {
 /// exactly one served obligation, so a vantage serving several obligations is not constructible.)
 #[test]
 fn s1_compares_the_obligation_the_vantage_serves() {
-    let w = world(Opts::default());
     let mut doc = requirements_doc(&Req {
         scope_digest: "b".repeat(64),
         ..Req::default()
@@ -1714,8 +1779,18 @@ fn s1_compares_the_obligation_the_vantage_serves() {
         .extend(conditions);
     let requirements = parse(&doc);
     let digest = derive(&requirements, Profile::FixedSliceReviewV1).candidates[0].content_digest();
+    // The owner admitted this candidate, so only S1 can differ between the two vantages.
+    let w = world(Opts {
+        admitted: Terms::of(&OperationRequest::new(
+            requirements.clone(),
+            digest,
+            "vantage:ob-b",
+            subject(),
+        )),
+        ..Opts::default()
+    });
     let outcome_at = |vantage: &str| {
-        let req = OperationRequest::new(ORG, requirements.clone(), digest, vantage, subject());
+        let req = OperationRequest::new(requirements.clone(), digest, vantage, subject());
         match decide_fixture(&w, &req, &realization(), NOW) {
             Ok(admission) => admission.outcomes().get(CheckId::S1).clone(),
             Err(AdmissionRefusal::Checks(outcomes)) => outcomes.get(CheckId::S1).clone(),
@@ -1760,4 +1835,200 @@ fn s1_a_pin_revoked_after_admission_is_still_revoked() {
         state_now(&w, &admission, NOW),
         AdmissionState::Revoked(_)
     ));
+}
+
+// --- OA: the organization comes from the committed OrganizationAdmission ----------------------
+
+/// Without an admitted organization, O8 and R3 find no binding of one.
+fn unadmitted(code: ReasonCode) -> [(CheckId, Vec<Reason>); 3] {
+    let candidate = request_for(&Req::default()).candidate_digest().to_hex();
+    [
+        (CheckId::OA, vec![r(code, &candidate)]),
+        (
+            CheckId::O8,
+            [
+                "cond-builder/vantage-builder",
+                "cond-builder/vantage:ob-a",
+                "cond-campaign/vantage-builder",
+                "cond-campaign/vantage:ob-a",
+            ]
+            .map(|subject| r(ReasonCode::SeparationUnresolved, subject))
+            .to_vec(),
+        ),
+        (CheckId::R3, vec![r(ReasonCode::VantageUnbound, VANTAGE)]),
+    ]
+}
+
+#[test]
+fn g2_oa_an_admission_revoked_before_admission_leaves_the_candidate_unadmitted() {
+    let w = world(Opts::default());
+    w.src.revoke(&w.organization);
+    assert_exact(
+        &refused(decide_base(&w)),
+        &unadmitted(ReasonCode::OrganizationUnadmitted),
+    );
+}
+
+#[test]
+fn g2_oa_an_admission_of_another_candidate_requirements_or_scope_does_not_admit() {
+    let base = Terms::of(&request_for(&Req::default()));
+    let other = Terms::of(&request_for(&Req {
+        scope_digest: "b".repeat(64),
+        ..Req::default()
+    }));
+    let variants = [
+        Terms {
+            candidate_digest: other.candidate_digest,
+            ..base.clone()
+        },
+        Terms {
+            requirements_digest: other.requirements_digest,
+            ..base.clone()
+        },
+        Terms {
+            scope: ProblemScopeRef::fixture("run-1", "plan-a", 2),
+            ..base.clone()
+        },
+    ];
+    for admitted in variants {
+        let w = world(Opts {
+            admitted,
+            ..Opts::default()
+        });
+        assert_exact(
+            &refused(decide_base(&w)),
+            &unadmitted(ReasonCode::OrganizationUnadmitted),
+        );
+    }
+    // Control: the base terms admit.
+    assert!(decide_base(&world(Opts::default())).is_ok());
+}
+
+#[test]
+fn g2_oa_two_committed_admissions_of_the_candidate_are_ambiguous_heads() {
+    let w = world(Opts::default());
+    let base = Terms::of(&request_for(&Req::default()));
+    w.src.issue(admission_record("org-2", &base));
+    assert_exact(
+        &refused(decide_base(&w)),
+        &unadmitted(ReasonCode::OrganizationHeadsAmbiguous),
+    );
+}
+
+/// P3-1: a second admission of the candidate committed after admission does not touch any pin, so
+/// the point check does not see it; the regate re-derives OA, finds two heads and refuses.
+#[test]
+fn state_refused_when_a_second_admission_of_the_candidate_is_committed_after_admission() {
+    let w = world(Opts::default());
+    let admission = admitted(&w);
+    assert!(state_now(&w, &admission, NOW).permits_effect());
+    w.src.issue(admission_record(
+        "org-2",
+        &Terms::of(&request_for(&Req::default())),
+    ));
+    match state_now(&w, &admission, NOW) {
+        AdmissionState::Refused(outcomes) => {
+            assert_exact(
+                &outcomes,
+                &unadmitted(ReasonCode::OrganizationHeadsAmbiguous),
+            );
+        }
+        other => panic!("expected refused, got {other:?}"),
+    }
+}
+
+#[test]
+fn g2_oa_bindings_of_another_organizations_admission_do_not_bind_this_one() {
+    // The world's bindings belong to an admission for another problem scope; the candidate's own
+    // admission (committed, unique) has no bindings.
+    let w = world(Opts {
+        admitted: Terms {
+            scope: ProblemScopeRef::fixture("run-2", "plan-a", 1),
+            ..Terms::of(&request_for(&Req::default()))
+        },
+        ..Opts::default()
+    });
+    let own = w.src.issue(admission_record(
+        "org-own",
+        &Terms::of(&request_for(&Req::default())),
+    ));
+    let [_, o8, r3] = unadmitted(ReasonCode::OrganizationUnadmitted);
+    assert_exact(&refused(decide_base(&w)), &[o8, r3]);
+    // Control: once the candidate's own organization binds the vantages, it admits for it.
+    w.src.issue(Record::fixture_vantage_binding(
+        own,
+        VANTAGE,
+        w.reviewer,
+        RealizationDigest::new("real-1"),
+        "uid:svc-reviewer",
+    ));
+    w.src.issue(Record::fixture_vantage_binding(
+        own,
+        "vantage-builder",
+        w.builder,
+        RealizationDigest::new("real-builder"),
+        "uid:svc-builder",
+    ));
+    let admission = decide_base(&w).expect("admitted");
+    assert_eq!(admission.organization().admission, own);
+    assert_eq!(admission.organization().organization_id, "org-own");
+}
+
+#[test]
+fn state_revoked_when_the_organization_admission_is_revoked_after_admission() {
+    let w = world(Opts::default());
+    let admission = admitted(&w);
+    w.src.revoke(&w.organization);
+    assert_eq!(
+        state_now(&w, &admission, NOW),
+        AdmissionState::Revoked(vec![w.organization])
+    );
+}
+
+#[test]
+fn state_stale_when_the_organization_admission_is_superseded_and_its_successor_needs_new_bindings()
+{
+    let w = world(Opts::default());
+    let admission = admitted(&w);
+    let base = Terms::of(&request_for(&Req::default()));
+    let successor = w.src.supersede(
+        &w.organization,
+        Record::fixture_organization_admission(
+            ORG,
+            2,
+            Some(w.organization),
+            base.scope.clone(),
+            base.requirements_digest,
+            base.candidate_digest,
+        ),
+    );
+    assert_eq!(
+        state_now(&w, &admission, NOW),
+        AdmissionState::Stale(StaleReason::IssuanceSuperseded(vec![w.organization]))
+    );
+    // A new admission resolves the successor, whose organization has no bindings yet.
+    let [_, o8, r3] = unadmitted(ReasonCode::OrganizationUnadmitted);
+    assert_exact(&refused(decide_base(&w)), &[o8, r3]);
+    w.src.issue(Record::fixture_vantage_binding(
+        successor,
+        VANTAGE,
+        w.reviewer,
+        RealizationDigest::new("real-1"),
+        "uid:svc-reviewer",
+    ));
+    w.src.issue(Record::fixture_vantage_binding(
+        successor,
+        "vantage-builder",
+        w.builder,
+        RealizationDigest::new("real-builder"),
+        "uid:svc-builder",
+    ));
+    let readmitted = decide_base(&w).expect("admitted under the successor");
+    assert_eq!(
+        readmitted.organization(),
+        &AdmittedOrganization {
+            admission: successor,
+            organization_id: ORG.to_owned(),
+        }
+    );
 }

@@ -1,0 +1,48 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "native-1",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "test-support",
+    "--test",
+    "native_vertical"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a2/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2253839,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 2256748,
+  "pgid": 2256748,
+  "started_at": "2026-11-18T20:13:26.846146Z",
+  "ended_at": "2026-11-18T20:14:34.189709Z",
+  "duration_s": 67.344,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/runs/gate-2/native-1.stdout",
+    "length": 2889,
+    "sha256": "6e249109d80213b472580d814151e75fffed054195fd3a98e6e2126d75ba1b59"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/runs/gate-2/native-1.stderr",
+    "length": 350,
+    "sha256": "8850757c951f70d3906b46372c09d7d66e818fa5abbb8fbb299dde0819a49c7c"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}
