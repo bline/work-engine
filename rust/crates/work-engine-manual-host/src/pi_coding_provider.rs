@@ -1891,6 +1891,7 @@ mod attempt_tests {
             cancel_wait_ms: None,
             closing: None,
             head_headers: vec![],
+            head_ms: None,
         };
         let clean = |r: &Relay| match AttemptEvidence::from_relay(r) {
             AttemptEvidence::Relayed { terminal_last, .. } => terminal_last,
