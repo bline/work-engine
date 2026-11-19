@@ -24,6 +24,10 @@ const SNAPSHOT_CONTRACT: &str = "workspace.snapshot.read.v1";
 const SNAPSHOT_IMPLEMENTATION: &str = "rust.snapshot.read.v1";
 const SNAPSHOT_EXECUTOR: &str = "lifecycle.service.snapshot";
 const MAX_RESULT: usize = 65_536;
+/// Snapshot reads one native turn invocation may claim. Equal to the largest
+/// per-job relayed tool-call bound a live arm uses (`max_tool_calls` 32), so a
+/// read plan the job admits is not refused by the store first.
+const MAX_SNAPSHOT_READS_PER_INVOCATION: i64 = 32;
 type PriorNativeSessionRow = (
     String,
     String,
@@ -2936,7 +2940,7 @@ impl SqliteLifecycleStore {
                     |r| r.get(0),
                 )
                 .map_err(|_| StoreError::Unavailable)?;
-            if active != 0 || count >= 16 {
+            if active != 0 || count >= MAX_SNAPSHOT_READS_PER_INVOCATION {
                 return Err(StoreError::ClaimConflict);
             }
             entry.execute("INSERT INTO native_operations(operation_attempt_id,parent_invocation_id,call_id,request_transport_session,request_sequence,grant_id,grant_revision,contract_id,implementation_id,executor_id,snapshot_id,member_id,range_start,range_length,state,entered_wall_ms) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,'entered_uncertain',?15)",
@@ -5617,6 +5621,176 @@ mod tests {
                 "EnteredUncertain"
             );
         }
+    }
+
+    /// One invocation claims exactly `MAX_SNAPSHOT_READS_PER_INVOCATION`
+    /// reads (each settled); the next read is refused before entry, and the
+    /// refusal leaves no operation row. An uncertain read still blocks the
+    /// next claim.
+    #[test]
+    fn snapshot_reads_per_invocation_are_bounded_by_the_named_cap() {
+        let root = tempdir().unwrap();
+        let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        let subject = SubjectId::parse("subject:test").unwrap();
+        let context = ContextGeneration::parse("context:test").unwrap();
+        let build = BuildId::parse("build:test").unwrap();
+        let proof = ProofRunId::parse("proof:test").unwrap();
+        store
+            .register_subject(
+                subject.clone(),
+                context.clone(),
+                build.clone(),
+                proof.clone(),
+                clock(),
+            )
+            .unwrap();
+        for (id, scope) in [
+            ("grant:turn", "native_turn"),
+            ("grant:read", "snapshot_read"),
+        ] {
+            store
+                .install_trusted_grant(TrustedGrant {
+                    id: GrantId::parse(id).unwrap(),
+                    issuer: "trusted".into(),
+                    principal: "principal:test".into(),
+                    subject: subject.clone(),
+                    context: context.clone(),
+                    build: build.clone(),
+                    proof_run: proof.clone(),
+                    scope: GrantScope::parse(scope).unwrap(),
+                    expires: AuthorityExpiresAt::new(WallTimeMs::new(1000)),
+                    revision: Revision::new(1),
+                    revoked: false,
+                })
+                .unwrap();
+        }
+        let hash = "a".repeat(64);
+        let manifest = serde_json::to_vec(&serde_json::json!({
+            "codec":"workspace-snapshot-manifest-v1","id":"snapshot:test",
+            "source_revision":"source:test","members":[{"id":"m1","sha256":sha256(b"abc").unwrap(),"length":3}]
+        }))
+        .unwrap();
+        let staged = store.stage_artifact(subject.clone(), &manifest).unwrap();
+        let manifest_digest = store.publish_artifact(staged, clock()).unwrap().digest_hex;
+        let mut session = store
+            .reserve_native_session(
+                NativeSessionId::parse("session:test").unwrap(),
+                subject,
+                context,
+                RuntimeIncarnation::parse("incarnation:test").unwrap(),
+                &hash,
+                &hash,
+                native_realization::codex::SCHEMA_THREAD_START_SHA256,
+                SnapshotId::parse("snapshot:test").unwrap(),
+                &manifest_digest,
+                false,
+                clock(),
+            )
+            .unwrap();
+        store
+            .bind_native_thread(
+                &mut session,
+                ProviderThreadId::parse("thread:test").unwrap(),
+            )
+            .unwrap();
+        let mut turn = store
+            .claim_native_turn(
+                &session,
+                NativeTurnRequest {
+                    invocation_id: "invocation:test".into(),
+                    attempt: AttemptId::parse("attempt:test").unwrap(),
+                    grant: GrantId::parse("grant:turn").unwrap(),
+                    grant_revision: 1,
+                    purpose: NativeInvocationPurpose::DomainWork,
+                    prompt: b"test".to_vec(),
+                },
+                "principal:test",
+                clock(),
+            )
+            .unwrap();
+        store.mark_native_send_intent(&turn).unwrap();
+        store
+            .bind_native_turn(&mut turn, ProviderTurnId::parse("turn:test").unwrap())
+            .unwrap();
+        let claim = |store: &mut SqliteLifecycleStore, n: u64| {
+            let call = format!("call:{n}");
+            let raw = serde_json::to_vec(&serde_json::json!({"method":"item/tool/call","id":n,
+                "params":{"threadId":"thread:test","turnId":"turn:test","callId":call,"namespace":"workspace",
+                "tool":"snapshot_read","arguments":{"snapshot_id":"snapshot:test","member_id":"m1","offset":0,"length":3}}}))
+            .unwrap();
+            store
+                .record_native_ingress(
+                    &NativeSessionId::parse("session:test").unwrap(),
+                    "transport:test",
+                    n,
+                    &raw,
+                    "qualified",
+                    Some("item/tool/call"),
+                    Some("thread:test"),
+                    Some("turn:test"),
+                    None,
+                    clock(),
+                )
+                .unwrap();
+            store.claim_snapshot_read(
+                &turn,
+                SnapshotReadRequest {
+                    attempt: OperationAttemptId::parse(format!("opattempt:{n}")).unwrap(),
+                    call: NativeToolCallId::parse(call).unwrap(),
+                    transport_session: "transport:test".into(),
+                    sequence: n,
+                    grant: GrantId::parse("grant:read").unwrap(),
+                    grant_revision: 1,
+                    contract: OperationContractId::parse(SNAPSHOT_CONTRACT).unwrap(),
+                    implementation: OperationImplementationId::parse(SNAPSHOT_IMPLEMENTATION)
+                        .unwrap(),
+                    executor: OperationExecutorId::parse(SNAPSHOT_EXECUTOR).unwrap(),
+                    snapshot: SnapshotId::parse("snapshot:test").unwrap(),
+                    member_id: "m1".into(),
+                    range_start: 0,
+                    range_length: 3,
+                },
+                "principal:test",
+                clock(),
+            )
+        };
+        let cap = MAX_SNAPSHOT_READS_PER_INVOCATION as u64;
+        assert!(cap >= 18, "the H2 treatment read plan is 18 reads");
+        // An entered, not yet settled read blocks the next claim.
+        let NativeOperationClaim::Entered(first) = claim(&mut store, 1).unwrap() else {
+            panic!("expected entered read")
+        };
+        assert!(matches!(
+            claim(&mut store, 1000),
+            Err(StoreError::ClaimConflict)
+        ));
+        store
+            .commit_snapshot_result(&first, b"abc", clock())
+            .unwrap();
+        for n in 2..=cap {
+            let NativeOperationClaim::Entered(entry) = claim(&mut store, n).unwrap() else {
+                panic!("expected entered read {n}")
+            };
+            store
+                .commit_snapshot_result(&entry, b"abc", clock())
+                .unwrap();
+        }
+        let rows = |store: &SqliteLifecycleStore| -> i64 {
+            store
+                .connection
+                .query_row(
+                    "SELECT COUNT(*) FROM native_operations WHERE parent_invocation_id='invocation:test'",
+                    [],
+                    |r| r.get(0),
+                )
+                .unwrap()
+        };
+        assert_eq!(rows(&store), cap as i64);
+        assert!(matches!(
+            claim(&mut store, cap + 1),
+            Err(StoreError::ClaimConflict)
+        ));
+        assert_eq!(rows(&store), cap as i64);
     }
 
     #[test]

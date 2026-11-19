@@ -1871,6 +1871,72 @@ pub fn obligations(record: &TaskRecord) -> Vec<RequiredObligation> {
 mod schema_two_tests {
     use super::*;
 
+    /// The H2 treatment read plan: 18 snapshot reads in one native turn, each
+    /// recorded by the task owner as a completed effect of the same task.
+    #[test]
+    fn eighteen_completed_snapshot_reads_record_in_one_task() {
+        let root = tempfile::tempdir().unwrap();
+        let store =
+            TaskStore::open(&root.path().join("owner.sqlite"), "human-operator".into()).unwrap();
+        store
+            .submit(&SubmitTask {
+                command_id: "reads-command".into(),
+                task_id: "task:input".into(),
+                subject_id: "subject:input".into(),
+                kind: SubjectKind::RepositoryAnalysis,
+                objective: "Audit the policy statement".into(),
+                engineering_question: "Which parts are supported?".into(),
+                snapshot_ref: "snapshot:h2-treatment-r2".into(),
+                facts: Vec::new(),
+            })
+            .unwrap();
+        for i in 0..18u64 {
+            let digest = sha256(format!("read-{i}").as_bytes());
+            let cursor = store
+                .observe("task:input")
+                .unwrap()
+                .unwrap()
+                .cursor_revision;
+            store
+                .record_completed_effect(
+                    "task:input",
+                    CompletedEffect {
+                        effect_id: format!("opattempt:{i}"),
+                        delivery_id: "delivery:input".into(),
+                        receipt_digest: digest.clone(),
+                        attribution: Some(CompletedSnapshotReadAttribution {
+                            schema: "completed-snapshot-read-attribution-v2".into(),
+                            parent_invocation_id: "delivery:effect:delivery:input:0:attempt:1"
+                                .into(),
+                            call_id: format!("toolu_{i}"),
+                            contract_id: "workspace.snapshot.read.v1".into(),
+                            snapshot_id: "snapshot:h2-treatment-r2".into(),
+                            member_id: format!("skills:member-{i}.md"),
+                            offset: 0,
+                            requested_length: 32_768,
+                            returned_length: 32_768,
+                            result_sha256: digest,
+                            result: CompletedSnapshotResult::Unavailable {
+                                reason: CompletedSnapshotUnavailable::OverInlineLimit,
+                            },
+                        }),
+                    },
+                    cursor,
+                )
+                .unwrap();
+        }
+        let record = store.observe("task:input").unwrap().unwrap();
+        assert_eq!(record.completed_effects.len(), 18);
+        assert_eq!(
+            record
+                .sources
+                .iter()
+                .filter(|s| s.id.starts_with("effect-"))
+                .count(),
+            36
+        );
+    }
+
     /// Option (i): facts are bound by `MAX_FACT_BYTES`; objective and
     /// question stay under `MAX_TEXT`; the 64 KiB combined bound still holds.
     #[test]
