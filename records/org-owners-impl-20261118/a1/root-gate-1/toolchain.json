@@ -1,0 +1,41 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "toolchain",
+  "argv": [
+    "sh",
+    "-c",
+    "cargo --version; rustc --version; node --version"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-a1-export-1/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2259093,
+  "inputs": [],
+  "timeout_s": 60,
+  "pid": 2259096,
+  "pgid": 2259096,
+  "started_at": "2026-11-18T20:14:34.160058Z",
+  "ended_at": "2026-11-18T20:14:34.274429Z",
+  "duration_s": 0.114,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/root-gate-1/toolchain.stdout",
+    "length": 81,
+    "sha256": "e6636a72bb59bc778d9df410e1928d90d69d0abc0ebc664312a677785b31d20a"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/root-gate-1/toolchain.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

@@ -5,8 +5,14 @@
 `requirements.json` is the frozen vertical's requirements
 (`rust/crates/work-engine-organization/tests/fixtures/frozen/requirements.json`) with the
 `realizationConstraints` member removed from both acceptance conditions
-(`cond-builder-projection`, `cond-campaign-terminalization`). Nothing else differs: same problem
-scope, obligation, normative values (including `mutation: none`), authorities and policy. It is
+(`cond-builder-projection`, `cond-campaign-terminalization`) and the obligation's `scope.digest`
+set to the exact-subject digest of the frozen subject (A1, 2026-11-18): `5212141d…` (the
+`patchIdentity` stand-in) becomes
+`18108e56e12f8428ce69da714ba7fc10e93990226717e987bf228c269951d9c1`, which is
+`review_episode_core::codec::digest({commit, tree, patchIdentity})` of the frozen subject and the
+frozen episode authority's `initialSubject.sha256`. Nothing else differs: same problem scope,
+obligation id and result contract, normative values (including `mutation: none`), authorities
+and policy. It is
 compiled by the unchanged v1 organization compiler (`derive`, profile `fixed-slice-review-v1`).
 
 Derivation, checked by `assumption_world_is_the_frozen_world_without_realization_constraints`
@@ -15,6 +21,8 @@ in `tests/native_vertical.rs` (semantic JSON equality, not byte equality):
 ```text
 value = parse(frozen/requirements.json)
 for condition in value.acceptanceConditions: delete condition.realizationConstraints
+assert value.obligations[0].scope.digest == subject.patchIdentity          # frozen stand-in
+value.obligations[0].scope.digest = digest({commit, tree, patchIdentity})  # == initialSubject.sha256
 assert parse(assumption-world/requirements.json) == value
 ```
 
@@ -43,7 +51,11 @@ What is assumed, and what is not established:
   fresh continuity, verified artifacts, execution-evidence custody, independent observer) is a
   fixture statement, not an established property of the unconfined child. So a realization
   admission here closes the evidence gap only at fixture standing.
-- The three mapping-rule blockers still pass only by a labelled fixture `AssumedDischarge`
-  (`gate::ASSUMED_DISCHARGE_LABEL`), never by an admission (no owner for those rules, O7).
+- `scope-digest-to-subject` is admitted by S-A check S1 (the served obligation's `scope.digest`
+  equals the admitted subject's exact-subject digest). The other two mapping-rule blockers still
+  pass only by a labelled fixture `AssumedDischarge` (`gate::ASSUMED_DISCHARGE_LABEL`), never by an
+  admission (no owner for those rules, O7).
 
 The frozen world remains the negative: refused before spawn by known realization incompatibility.
+Its stand-in `scope.digest` is also refused by S1 when admitted directly
+(`the_frozen_stand_in_scope_digest_refuses_only_s1` in `tests/gate.rs`).

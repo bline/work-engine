@@ -1,0 +1,100 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/org-owners-impl-20261118/a1/gate-plan.json",
+  "plan_sha256": "1739669a68010a634f6056764439412ec39424329c7c1ee205b0a7a2372ece70",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "toolchain",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/runs/gate-1/toolchain.json",
+      "record_sha256": "f0f3a6cc5d81432e4f5ae204c9c3c95118ff6ab7622fad83375e4762bd2e2182",
+      "leftovers": 0
+    },
+    {
+      "name": "fmt",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/runs/gate-1/fmt.json",
+      "record_sha256": "bc7fd071cd87e69080225be2e23fcd6e1b7bd81087d836570c28ef761ef61b01",
+      "leftovers": 0
+    },
+    {
+      "name": "clippy-fixture",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/runs/gate-1/clippy-fixture.json",
+      "record_sha256": "b76769fa4b952553e44b6af52af77abcca39ef10397536fb28a3e0fcbc97ba49",
+      "leftovers": 0
+    },
+    {
+      "name": "clippy-default",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/runs/gate-1/clippy-default.json",
+      "record_sha256": "ca7be942143eed7ffc161da6db0d89964ecbfff46fba624d769d3f3b8d35b823",
+      "leftovers": 0
+    },
+    {
+      "name": "clippy-test-support",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/runs/gate-1/clippy-test-support.json",
+      "record_sha256": "9db3763651758f26cf7688be642f41b93f923a8b059f8e3bed71b0229af64f42",
+      "leftovers": 0
+    },
+    {
+      "name": "check-preparation-fixture-lib-alone",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/runs/gate-1/check-preparation-fixture-lib-alone.json",
+      "record_sha256": "d82e08a881424174fddb7a0a88902688c3653a4f6479483c4d89432e75db2b1e",
+      "leftovers": 0
+    },
+    {
+      "name": "test-four-plus-sa",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/runs/gate-1/test-four-plus-sa.json",
+      "record_sha256": "5eb812963c873d59b5ce4326a1a45e282fc6b506d9cc4327c0d09f5b8e7f2018",
+      "leftovers": 0
+    },
+    {
+      "name": "test-preparation-fixture",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/runs/gate-1/test-preparation-fixture.json",
+      "record_sha256": "35cb9ebdd117ca1f9eb967b7bfc68a88f87efbca014103adc796211fc388c648",
+      "leftovers": 0
+    },
+    {
+      "name": "test-default-features",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/runs/gate-1/test-default-features.json",
+      "record_sha256": "3affa60a2d5dee380b403988f546b8f255fd686763a3b44e2a1f60bd6c48eddd",
+      "leftovers": 0
+    },
+    {
+      "name": "native-1",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/runs/gate-1/native-1.json",
+      "record_sha256": "c9ec1997a4cf1fb4912befa0d1d4925757d1f57ec665dbb68295111efe82c337",
+      "leftovers": 0
+    },
+    {
+      "name": "hashes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/runs/gate-1/hashes.json",
+      "record_sha256": "c66379a8b24198b7e69f1d5b85756a7f97a4f485cc2d1d4796943213789c2f81",
+      "leftovers": 0
+    },
+    {
+      "name": "status",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/runs/gate-1/status.json",
+      "record_sha256": "4e5be15af870358831b8955e552ee936a7815c47269f0e17a58e0ef488e00856",
+      "leftovers": 0
+    },
+    {
+      "name": "staged",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/runs/gate-1/staged.json",
+      "record_sha256": "a7a89716194329e22d909ea5ef76bdc29bcc1eb662ac73704274119457502101",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

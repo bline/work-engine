@@ -1,0 +1,49 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "A1-M3-first-candidate-obligation.test0",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "s1_compares_the_obligation_the_vantage_serves",
+    "--exact"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a1-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a1/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2225552,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 2227832,
+  "pgid": 2227832,
+  "started_at": "2026-11-18T20:09:17.107945Z",
+  "ended_at": "2026-11-18T20:09:19.448329Z",
+  "duration_s": 2.34,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M3-first-candidate-obligation.test0.stdout",
+    "length": 728,
+    "sha256": "dddbbe3fab4232645971662f0edf97496da9be30b2a72b1e459e0fd8cc9d8f5b"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M3-first-candidate-obligation.test0.stderr",
+    "length": 443,
+    "sha256": "a5e5cb7a38aedaab448f9cd134a2863d6ca84e2c44c5387baa5f6e4f878e785b"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

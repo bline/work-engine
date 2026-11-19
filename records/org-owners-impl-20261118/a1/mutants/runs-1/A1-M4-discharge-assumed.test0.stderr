@@ -1,0 +1,6 @@
+   Compiling work-engine-organization-authority v0.1.0 (/home/bline/cbm-work/wt-org-owners-a1-20261118/rust/crates/work-engine-organization-authority)
+   Compiling work-engine-review-preparation v0.1.0 (/home/bline/cbm-work/wt-org-owners-a1-20261118/rust/crates/work-engine-review-preparation)
+   Compiling work-engine-review-delivery v0.1.0 (/home/bline/cbm-work/wt-org-owners-a1-20261118/rust/crates/work-engine-review-delivery)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.26s
+     Running tests/gate.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target/debug/deps/gate-1a91fd94d6a44664)
+error: test failed, to rerun pass `-p work-engine-review-delivery --test gate`

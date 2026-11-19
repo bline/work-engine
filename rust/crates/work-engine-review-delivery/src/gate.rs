@@ -17,8 +17,10 @@
 //! [`discharge`] is the host's **total** function from [`BlockerKind`] to a discharge. It is
 //! derived from the kind alone: no caller supplies, extends or overrides it. Admitted kinds name
 //! S-A [`CheckId`]s and are decided by those ids alone (never by reason subjects, which are
-//! diagnostics). The three mapping kinds stay labelled fixture assumptions
-//! ([`ASSUMED_DISCHARGE_LABEL`]): their mapping rules have no owner (O7), so nothing admits them.
+//! diagnostics). `scope-digest-to-subject` is admitted by S-A check [`CheckId::S1`] (the served
+//! obligations' `scope.digest` is the exact-subject digest of the admitted subject). The other two
+//! mapping kinds stay labelled fixture assumptions ([`ASSUMED_DISCHARGE_LABEL`]): their mapping
+//! rules have no owner (O7), so nothing admits them.
 //! Realization check blockers (`realization:<condition>:<property>`) are never dischargeable.
 //!
 //! Every input of the admission the evaluation reads is host-derived, digest-bound or a named
@@ -100,9 +102,10 @@ pub fn discharge(kind: BlockerKind) -> Discharge {
             Discharge::Admitted(&[CheckId::R1, CheckId::R2, CheckId::R4])
         }
         BlockerKind::ObserverIdentity => Discharge::Admitted(&[CheckId::R2, CheckId::R3]),
-        BlockerKind::ScopeDigestToSubject
-        | BlockerKind::ProblemScopeToEpisodeIdentity
-        | BlockerKind::ConsumptionEvidenceMapping => Discharge::AssumedDischarge,
+        BlockerKind::ScopeDigestToSubject => Discharge::Admitted(&[CheckId::S1]),
+        BlockerKind::ProblemScopeToEpisodeIdentity | BlockerKind::ConsumptionEvidenceMapping => {
+            Discharge::AssumedDischarge
+        }
         BlockerKind::RealizationCheck => Discharge::Undischarged,
     }
 }
@@ -288,7 +291,7 @@ impl AdmittedDischarges {
     }
 }
 
-/// The blockers that passed only by labelled assumed discharge (the mapping kinds), at one
+/// The blockers that passed only by labelled assumed discharge (the unowned mapping kinds), at one
 /// boundary, bound to the binding they were derived from. Constructible only by the crate-private
 /// evaluation. It is not an admission and authorizes nothing outside this crate's fixture runner.
 #[derive(Debug, Clone, PartialEq, Eq)]

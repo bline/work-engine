@@ -1,0 +1,20 @@
+
+running 1 test
+test s1_scope_digest_is_the_episode_codec_digest_of_the_subject ... FAILED
+
+failures:
+
+---- s1_scope_digest_is_the_episode_codec_digest_of_the_subject stdout ----
+
+thread 's1_scope_digest_is_the_episode_codec_digest_of_the_subject' (2227617) panicked at crates/work-engine-organization-authority/tests/admission.rs:1585:5:
+assertion `left == right` failed
+  left: "31c38aac733fd65db15482e43082d31188ffe2271db785880da2389139cbba04"
+ right: "5bf40125d3a7116c0c3a5fb3c24024ffeec3adf137602fa6312fb8d0aa843459"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    s1_scope_digest_is_the_episode_codec_digest_of_the_subject
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.00s
+

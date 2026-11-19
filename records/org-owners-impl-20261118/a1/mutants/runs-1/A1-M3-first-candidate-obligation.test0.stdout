@@ -1,0 +1,20 @@
+
+running 1 test
+test s1_compares_the_obligation_the_vantage_serves ... FAILED
+
+failures:
+
+---- s1_compares_the_obligation_the_vantage_serves stdout ----
+
+thread 's1_compares_the_obligation_the_vantage_serves' (2228376) panicked at crates/work-engine-organization-authority/tests/admission.rs:1725:5:
+assertion `left == right` failed
+  left: Refused([Reason { code: ScopeDigestMismatch, subject: "ob-b: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" }])
+ right: Passed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    s1_compares_the_obligation_the_vantage_serves
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.03s
+

@@ -1,0 +1,49 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "A1-M5-s1-dropped-from-all.test0",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "s1_the_base_admission_passes_s1_and_lists_every_check",
+    "--exact"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a1-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a1/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2225552,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 2229493,
+  "pgid": 2229493,
+  "started_at": "2026-11-18T20:09:25.724066Z",
+  "ended_at": "2026-11-18T20:09:28.664854Z",
+  "duration_s": 2.941,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M5-s1-dropped-from-all.test0.stdout",
+    "length": 700,
+    "sha256": "966623a3eef15d202d44b507fbc7ff4e5917089b7743b96c53b367e7b4de81d7"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M5-s1-dropped-from-all.test0.stderr",
+    "length": 443,
+    "sha256": "2ff4aed811b1a5d96535c3bc7c586b3230775cd7cbc1edb08b3e1c24f6f1d0b0"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

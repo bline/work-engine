@@ -1,0 +1,49 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "A1-M1-s1-always-passes.test2",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--test",
+    "gate",
+    "--",
+    "the_frozen_stand_in_scope_digest_refuses_only_s1",
+    "--exact"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a1-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a1/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2225552,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 2226187,
+  "pgid": 2226187,
+  "started_at": "2026-11-18T20:09:10.065821Z",
+  "ended_at": "2026-11-18T20:09:13.156176Z",
+  "duration_s": 3.09,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M1-s1-always-passes.test2.stdout",
+    "length": 17200,
+    "sha256": "ee7f62f3995c157a72f2946b412c63252a97c850efb5d005afe3dca784ae5cba"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M1-s1-always-passes.test2.stderr",
+    "length": 1473,
+    "sha256": "8e8c2f9a40b3acb134c23ccbdb8a65a334dee8478a7fbfd8581f1f5e0a56f4b9"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

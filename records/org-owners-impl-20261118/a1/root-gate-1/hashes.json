@@ -1,0 +1,54 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "hashes",
+  "argv": [
+    "git",
+    "hash-object",
+    "crates/work-engine-organization-authority/src/gate.rs",
+    "crates/work-engine-organization-authority/src/lib.rs",
+    "crates/work-engine-organization-authority/Cargo.toml",
+    "crates/work-engine-organization-authority/tests/admission.rs",
+    "crates/work-engine-review-delivery/src/gate.rs",
+    "crates/work-engine-review-delivery/src/lib.rs",
+    "crates/work-engine-review-delivery/tests/gate.rs",
+    "crates/work-engine-review-delivery/tests/native_vertical.rs",
+    "crates/work-engine-review-delivery/tests/fixtures/assumption-world/requirements.json",
+    "crates/work-engine-review-delivery/tests/fixtures/assumption-world/DERIVATION.md",
+    "crates/work-engine-review-preparation/tests/common/mod.rs",
+    "crates/work-engine-review-preparation/tests/fixture_consumer.rs",
+    "crates/work-engine-organization/tests/fixtures/frozen/requirements.json",
+    "Cargo.lock"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-a1-export-1/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a1/target-root",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2259093,
+  "inputs": [],
+  "timeout_s": 60,
+  "pid": 2267459,
+  "pgid": 2267459,
+  "started_at": "2026-11-18T20:16:12.511758Z",
+  "ended_at": "2026-11-18T20:16:12.527808Z",
+  "duration_s": 0.016,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/root-gate-1/hashes.stdout",
+    "length": 574,
+    "sha256": "17272662c0337b8ca7103e224dee888f730a22e4f923e58cfe0b3cc259e850ce"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/root-gate-1/hashes.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

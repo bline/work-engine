@@ -1,4 +1,4 @@
-//! Gate O subset (O3, O4, O5, O8, O9), Gate R (R1-R4), effect admission and its states.
+//! Gate O subset (O3, O4, O5, O8, O9), Gate R (R1-R4), S1, effect admission and its states.
 //!
 //! Every check is evaluated over one sealed observation, without short circuit; each admission
 //! decision carries one outcome per [`CheckId`]. Gate O and Gate R are separate functions with
@@ -11,6 +11,8 @@ use work_engine_organization::{
     Digest, EnforceStatus, OrganizationCandidate, OrganizationalRequirements, RealizationClass,
     RealizationConstraint, UnresolvedKind, derive, enforceability, view,
 };
+
+use review_episode_core::codec::JsValue;
 
 use crate::ids::{
     BodyDigest, Boundary, ExecutableDigest, IssuanceId, ObservationRevision, RealizationDigest,
@@ -51,10 +53,14 @@ pub enum CheckId {
     /// The realization digest is accepted by exactly one committed `RealizationAcceptance` whose
     /// profile is the candidate's.
     R4,
+    /// The subject is the scope: every obligation the vantage serves has a `scope.digest` equal to
+    /// the request subject's exact-subject digest ([`SubjectRef::scope_digest`]). A vantage the
+    /// candidate does not have, or one that serves no obligation, refuses.
+    S1,
 }
 
 impl CheckId {
-    pub const ALL: [CheckId; 9] = [
+    pub const ALL: [CheckId; 10] = [
         CheckId::O3,
         CheckId::O4,
         CheckId::O5,
@@ -64,6 +70,7 @@ impl CheckId {
         CheckId::R2,
         CheckId::R3,
         CheckId::R4,
+        CheckId::S1,
     ];
 }
 
@@ -104,6 +111,10 @@ pub enum ReasonCode {
     RealizationAcceptanceAmbiguous,
     /// The committed acceptance of this digest is for a profile other than the candidate's.
     RealizationProfileMismatch,
+    /// A served obligation's `scope.digest` is not the request subject's exact-subject digest.
+    ScopeDigestMismatch,
+    /// The vantage is a participant that serves no obligation, so no scope relates to the subject.
+    ScopeDigestUnserved,
 }
 
 /// One refusal reason: a code and the subject it concerns.
@@ -213,13 +224,34 @@ impl Policy for Fixture {
 // Request and realization inputs
 // ---------------------------------------------------------------------------------------------
 
-/// The exact review subject `{ commit, tree, patchIdentity }`. Bound into the admission; no check
-/// in this crate relates it to the problem scope (that mapping rule has no owner, O7).
+/// The exact review subject `{ commit, tree, patchIdentity }`. Bound into the admission; check
+/// [`CheckId::S1`] relates it to the scope of every obligation the vantage serves.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SubjectRef {
     pub commit: String,
     pub tree: String,
     pub patch_identity: String,
+}
+
+impl SubjectRef {
+    /// The exact-subject digest: the value `obligations[].scope.digest` must carry for this
+    /// subject.
+    ///
+    /// Owner definition (contract 3.1, field owner `work-engine-organization`; recorded here and
+    /// in the O7 owners records entry, operator decision O-1, 2026-11-18): `scope.digest` is the
+    /// exact-subject digest of the candidate under review,
+    /// `review_episode_core::codec::digest({"commit", "tree", "patchIdentity"})`, that is the
+    /// SHA-256 of the canonical JSON of the review subject object, as 64 lowercase hexadecimal
+    /// characters. It is the digest the review episode uses for its subject (`subject.sha256`),
+    /// so one obligation names exactly one subject; a new subject (for example a remediation
+    /// round) needs a new requirements revision, hence a new candidate and admission (D1 = (A)).
+    pub fn scope_digest(&self) -> String {
+        review_episode_core::codec::digest(&JsValue::object([
+            ("commit", JsValue::text(&self.commit)),
+            ("tree", JsValue::text(&self.tree)),
+            ("patchIdentity", JsValue::text(&self.patch_identity)),
+        ]))
+    }
 }
 
 /// One admission request. The boundary is the reservation's, not the request's.
@@ -503,6 +535,7 @@ fn evaluate(
                 CheckId::O8,
                 CheckId::R1,
                 CheckId::R2,
+                CheckId::S1,
             ] {
                 out.insert(id, unavailable());
             }
@@ -521,6 +554,7 @@ fn evaluate(
             ));
             out.insert(CheckId::O4, o4);
             out.insert(CheckId::O5, o5(domain, c));
+            out.insert(CheckId::S1, s1(c, &request.vantage, &request.subject));
             out.insert(
                 CheckId::O8,
                 o8(
@@ -1060,6 +1094,45 @@ fn constraint_reasons(
         }
         Some(_) => None,
     }
+}
+
+/// S1: the scope digest of every obligation the vantage serves is the subject's exact-subject
+/// digest. Every served obligation is compared; one mismatch refuses.
+fn s1(candidate: &OrganizationCandidate, vantage: &str, subject: &SubjectRef) -> Vec<Reason> {
+    let participants: Vec<_> = candidate
+        .participants()
+        .iter()
+        .filter(|p| p.id == vantage)
+        .collect();
+    if participants.is_empty() {
+        return vec![reason(ReasonCode::VantageUnknown, vantage)];
+    }
+    let served: Vec<_> = participants.iter().flat_map(|p| p.serves.iter()).collect();
+    if served.is_empty() {
+        return vec![reason(ReasonCode::ScopeDigestUnserved, vantage)];
+    }
+    let expected = subject.scope_digest();
+    served
+        .into_iter()
+        .filter_map(|id| {
+            let actual = candidate
+                .obligations()
+                .iter()
+                .find(|o| o.id == *id)
+                .map(|o| o.scope_digest.to_hex());
+            match actual {
+                Some(actual) if actual == expected => None,
+                Some(actual) => Some(reason(
+                    ReasonCode::ScopeDigestMismatch,
+                    format!("{}: {actual}", id.as_str()),
+                )),
+                None => Some(reason(
+                    ReasonCode::ScopeDigestMismatch,
+                    format!("{}: no obligation", id.as_str()),
+                )),
+            }
+        })
+        .collect()
 }
 
 fn r1_r2(

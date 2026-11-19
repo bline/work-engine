@@ -1,0 +1,23 @@
+{
+ "mutant": "A1-M5-s1-dropped-from-all",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a1-20261118/rust/crates/work-engine-organization-authority/src/gate.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "0c4ad1b86126e001cc566de445306aa3bfe8e8383621e2e13045cbbe8ba881b6",
+   "mutated_sha256": "ccd6d24dd83cc9f5913b9713a253790d8cd5173efea5b341b132640538a2d61e"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a1-20261118/rust/crates/work-engine-organization-authority/src/gate.rs",
+   "old": "        CheckId::R4,\n        CheckId::S1,\n    ];",
+   "new": "        CheckId::R4,\n    ];"
+  },
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a1-20261118/rust/crates/work-engine-organization-authority/src/gate.rs",
+   "old": "pub const ALL: [CheckId; 10]",
+   "new": "pub const ALL: [CheckId; 9]"
+  }
+ ]
+}

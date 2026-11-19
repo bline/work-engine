@@ -47,6 +47,32 @@ pub fn candidate() -> OrganizationCandidate {
     candidate_from(REQ)
 }
 
+/// The frozen requirements with `scope.digest` set to `subject`'s exact-subject digest (A1): the
+/// episode codec's digest of `{commit, tree, patchIdentity}`. S-A check S1 refuses the frozen
+/// file's `patchIdentity` stand-in, so every S-A admission in these tests is decided over a
+/// scoped world. Labelled synthetic fixture; the frozen file is unchanged.
+pub fn scoped_req_for(subject: &Subject) -> Vec<u8> {
+    scoped_edited_for(subject, |_| {})
+}
+
+/// [`scoped_req_for`] of the frozen subject.
+pub fn scoped_req() -> Vec<u8> {
+    scoped_req_for(&subject())
+}
+
+/// [`scoped_req`] with `edit` applied, as authored JSON bytes.
+pub fn scoped_edited(edit: impl FnOnce(&mut Value)) -> Vec<u8> {
+    scoped_edited_for(&subject(), edit)
+}
+
+fn scoped_edited_for(subject: &Subject, edit: impl FnOnce(&mut Value)) -> Vec<u8> {
+    edited(|value| {
+        value["obligations"][0]["scope"]["digest"] =
+            json!(review_episode_core::codec::digest(&subject.to_js_value()));
+        edit(value);
+    })
+}
+
 /// The frozen requirements with `edit` applied, as authored JSON bytes.
 pub fn edited(edit: impl FnOnce(&mut Value)) -> Vec<u8> {
     let mut value: Value = serde_json::from_slice(REQ).unwrap();
@@ -295,8 +321,8 @@ pub mod gate {
         ))
     }
 
-    /// What an admission is requested for: the frozen requirements, candidate, subject and
-    /// reviewer vantage by default, and a consumption boundary.
+    /// What an admission is requested for: the scoped frozen requirements ([`scoped_req`]),
+    /// candidate, subject and reviewer vantage by default, and a consumption boundary.
     pub struct Ask {
         pub requirements: Vec<u8>,
         pub subject: Subject,
@@ -309,7 +335,7 @@ pub mod gate {
     impl Default for Ask {
         fn default() -> Self {
             Ask {
-                requirements: REQ.to_vec(),
+                requirements: scoped_req(),
                 subject: subject(),
                 vantage: VANTAGE.to_owned(),
                 kind: BoundaryKind::Consumption,

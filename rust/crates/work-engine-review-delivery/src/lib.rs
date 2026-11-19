@@ -21,8 +21,9 @@
 //! again immediately before consumption, on a known realization incompatibility, a blocker kind
 //! without a discharge, or a refused, mismatched or non-current fixture-domain organizational
 //! admission (S-A) that the host obtains itself. The host derives the realization description from
-//! what it runs. Admitted kinds are discharged by named S-A check ids; the mapping kinds remain
-//! labelled fixture **assumptions** (`AssumedDischarge`), never admissions. The consumer itself
+//! what it runs. Admitted kinds are discharged by named S-A check ids (`scope-digest-to-subject` by
+//! S1); the two unowned mapping kinds remain labelled fixture **assumptions** (`AssumedDischarge`),
+//! never admissions. The consumer itself
 //! refuses unless S-A finds *a* consumption admission current for its own candidate, subject and
 //! vantage over the observation it is handed; with S-A's `fixture` feature on, any caller can mint
 //! such an admission and consume outside this crate's gate, and the consumer cannot tell whose

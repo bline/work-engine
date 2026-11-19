@@ -38,7 +38,7 @@ fn identity_of(authority: &Value, key: &str) -> Value {
 
 /// A synthetic world: the declaration and the admissions that agree with it.
 fn world() -> World {
-    let candidate = candidate();
+    let candidate = candidate_from(&scoped_req());
     let selection: Value = serde_json::from_slice(SELECTION).unwrap();
     let authority: Value = serde_json::from_str(AUTHORITY).unwrap();
     let mut bindings = Vec::new();
@@ -662,7 +662,7 @@ fn the_episode_owner_keeps_revision_writer_subject_and_phase_checks() {
 
 #[test]
 fn an_unsupported_result_contract_is_refused_before_the_gate_or_the_transition() {
-    let bytes = edited(|v| {
+    let bytes = scoped_edited(|v| {
         v["obligations"][0]["resultContract"] =
             json!({"id": "implementation-review", "version": 2});
     });
@@ -783,34 +783,42 @@ fn s1_a_current_gate_proof_for_this_consumption_lets_the_episode_advance() {
 /// with the consumer's own inputs refuses it.
 #[test]
 fn s1_a_gate_proof_for_another_candidate_subject_or_boundary_is_refused() {
-    let other_candidate = edited(|v| {
+    let other_candidate = scoped_edited(|v| {
         for_each_condition(v, |c| {
             c.as_object_mut().unwrap().remove("realizationConstraints");
         })
     });
     assert_ne!(
         candidate_from(&other_candidate).content_digest(),
-        candidate().content_digest()
+        world().candidate.content_digest()
     );
     let other_subject = Subject {
         tree: "1".repeat(40),
         ..subject()
     };
-    for (name, ask, field) in [
+    // A1: S-A S1 refuses an admission whose subject is not its requirements' scope, so the
+    // "other subject" admission is decided over requirements scoped to that subject, and the
+    // consumer's candidate is that scoped candidate: candidate digests agree and the subject
+    // comparison alone refuses.
+    let other_subject_req = scoped_req_for(&other_subject);
+    for (name, ask, consumer_candidate, field) in [
         (
             "other candidate",
             gate::Ask {
                 requirements: other_candidate,
                 ..Default::default()
             },
+            None,
             "candidate digest",
         ),
         (
             "other subject",
             gate::Ask {
+                requirements: other_subject_req.clone(),
                 subject: other_subject,
                 ..Default::default()
             },
+            Some(other_subject_req.clone()),
             "subject",
         ),
         (
@@ -819,10 +827,15 @@ fn s1_a_gate_proof_for_another_candidate_subject_or_boundary_is_refused() {
                 kind: BoundaryKind::Delivery,
                 ..Default::default()
             },
+            None,
             "boundary kind",
         ),
     ] {
         let mut w = world();
+        if let Some(bytes) = consumer_candidate {
+            w.candidate = candidate_from(&bytes);
+            w.declaration.candidate_content_digest = w.candidate.content_digest().to_hex();
+        }
         w.gate = gate::admitted(ask);
         assert_eq!(
             refused_case(name, &w, &w.admissions),
@@ -832,7 +845,6 @@ fn s1_a_gate_proof_for_another_candidate_subject_or_boundary_is_refused() {
     }
 }
 
-const OTHER_DIGEST: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 const SECOND_OBLIGATION: &str = "rp3-second-implementation-review";
 const SECOND_CONDITION: &str = "cond-second-campaign";
 
@@ -840,13 +852,13 @@ const SECOND_CONDITION: &str = "cond-second-campaign";
 /// derived the way `tests/preparation.rs` `with_second_obligation` does. The candidate then
 /// carries two vantage requirements (one per obligation).
 fn two_obligation_requirements() -> Vec<u8> {
-    edited(|v| {
+    scoped_edited(|v| {
         v["obligations"].as_array_mut().unwrap().push(json!({
             "id": SECOND_OBLIGATION,
             "kind": "candidate_review",
             "subject": "campaign_candidate",
             "resultContract": {"id": "implementation-review", "version": 1},
-            "scope": {"digest": OTHER_DIGEST},
+            "scope": {"digest": review_episode_core::codec::digest(&subject().to_js_value())},
         }));
         let mut condition = v["acceptanceConditions"][1].clone();
         assert_eq!(condition["id"], COND_CAMPAIGN);

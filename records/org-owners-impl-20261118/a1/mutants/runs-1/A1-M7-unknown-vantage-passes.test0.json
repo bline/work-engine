@@ -1,0 +1,49 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "A1-M7-unknown-vantage-passes.test0",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "g2_a_vantage_the_candidate_does_not_have_and_no_binding_refuse_r2_and_r3",
+    "--exact"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a1-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a1/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2225552,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 2231026,
+  "pgid": 2231026,
+  "started_at": "2026-11-18T20:09:32.457397Z",
+  "ended_at": "2026-11-18T20:09:34.596446Z",
+  "duration_s": 2.139,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M7-unknown-vantage-passes.test0.stdout",
+    "length": 837,
+    "sha256": "9998cdb80b31d802b044e7c99c189714682dee14a72cf8ed640778cfb37dbe57"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M7-unknown-vantage-passes.test0.stderr",
+    "length": 443,
+    "sha256": "281fe776ae6357bf62a91beced8859b66a00d15c5961821c999863820b7bbb5c"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

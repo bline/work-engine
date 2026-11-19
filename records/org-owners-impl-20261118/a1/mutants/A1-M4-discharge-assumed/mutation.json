@@ -1,0 +1,18 @@
+{
+ "mutant": "A1-M4-discharge-assumed",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a1-20261118/rust/crates/work-engine-review-delivery/src/gate.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "4825904ba3627f87858ff9588ffa55f9f2975a98399631f15c8070399b39a32a",
+   "mutated_sha256": "14d14ee0b2ff786b5d1e8d1e18bb583ae0c92b3356ad8a4303aa77efb3685ae8"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a1-20261118/rust/crates/work-engine-review-delivery/src/gate.rs",
+   "old": "BlockerKind::ScopeDigestToSubject => Discharge::Admitted(&[CheckId::S1]),",
+   "new": "BlockerKind::ScopeDigestToSubject => Discharge::AssumedDischarge,"
+  }
+ ]
+}

@@ -27,7 +27,8 @@ const NOW: u64 = 1_000;
 
 #[derive(Clone)]
 struct Req {
-    obligation_digest: char,
+    /// `scope.digest` of `ob-a`; the base subject's exact-subject digest by default (S1 passes).
+    scope_digest: String,
     result_version: u64,
     continuity: &'static str,
     state_acceptor_dependency: bool,
@@ -38,7 +39,7 @@ struct Req {
 impl Default for Req {
     fn default() -> Self {
         Req {
-            obligation_digest: 'a',
+            scope_digest: subject().scope_digest(),
             result_version: 1,
             continuity: "fresh_initial",
             state_acceptor_dependency: true,
@@ -55,6 +56,23 @@ fn normative(continuity: &str) -> Value {
 }
 
 fn requirements(r: &Req) -> OrganizationalRequirements {
+    parse(&requirements_doc(r))
+}
+
+fn parse(doc: &Value) -> OrganizationalRequirements {
+    OrganizationalRequirements::from_json_bytes(&serde_json::to_vec(doc).unwrap()).unwrap()
+}
+
+/// The exact subject every base request names.
+fn subject() -> SubjectRef {
+    SubjectRef {
+        commit: "c0ffee".into(),
+        tree: "7ree".into(),
+        patch_identity: "patch-1".into(),
+    }
+}
+
+fn requirements_doc(r: &Req) -> Value {
     let cond = |id: &str, boundary: &str, class: &str, continuity: &str, constraints: Value| {
         let mut c = json!({"id":id,"obligation":"ob-a","consumptionBoundary":boundary,"consumerClass":class,
                "proposition":"p","coveredState":"review-result","normative":normative(continuity),
@@ -74,11 +92,11 @@ fn requirements(r: &Req) -> OrganizationalRequirements {
     } else {
         json!([])
     };
-    let doc = json!({
+    json!({
         "problemScope": {"runId": "run-1", "planLineage": "plan-a", "sliceNumber": 1},
         "obligations": [{"id":"ob-a","kind":"candidate_review","subject":"campaign_candidate",
                          "resultContract":{"id":"implementation-review","version":r.result_version},
-                         "scope":{"digest":r.obligation_digest.to_string().repeat(64)}}],
+                         "scope":{"digest":r.scope_digest}}],
         "acceptanceConditions": [
             cond("cond-builder","builder_projection","builder", r.continuity,
                  json!([{"dimension":"provider_family","allowed":["anthropic"]}])),
@@ -86,8 +104,7 @@ fn requirements(r: &Req) -> OrganizationalRequirements {
         ],
         "requiredAuthorities": authorities,
         "organizationPolicy": {"mode": "fixed", "profile": "fixed-slice-review-v1"}
-    });
-    OrganizationalRequirements::from_json_bytes(&serde_json::to_vec(&doc).unwrap()).unwrap()
+    })
 }
 
 fn request_for(r: &Req) -> OperationRequest {
@@ -100,17 +117,7 @@ fn request_with(
     requirements: OrganizationalRequirements,
     digest: work_engine_organization::Digest,
 ) -> OperationRequest {
-    OperationRequest::new(
-        ORG,
-        requirements,
-        digest,
-        VANTAGE,
-        SubjectRef {
-            commit: "c0ffee".into(),
-            tree: "7ree".into(),
-            patch_identity: "patch-1".into(),
-        },
-    )
+    OperationRequest::new(ORG, requirements, digest, VANTAGE, subject())
 }
 
 // --- the fixture world -----------------------------------------------------------------------
@@ -584,7 +591,7 @@ fn g1_o3_candidate_digest_of_another_candidate_refuses_only_o3() {
     let w = world(Opts::default());
     let other = derive(
         &requirements(&Req {
-            obligation_digest: 'b',
+            scope_digest: "b".repeat(64),
             ..Req::default()
         }),
         Profile::FixedSliceReviewV1,
@@ -628,7 +635,8 @@ fn g2_o3_no_derived_candidate_leaves_candidate_checks_unavailable() {
             (CheckId::O8, unavailable.clone()),
             (CheckId::O9, unavailable.clone()),
             (CheckId::R1, unavailable.clone()),
-            (CheckId::R2, unavailable),
+            (CheckId::R2, unavailable.clone()),
+            (CheckId::S1, unavailable),
         ],
     );
 }
@@ -1413,17 +1421,7 @@ fn g1_o4_two_committed_bindings_of_one_component_are_ambiguous() {
 fn request_at(vantage: &str) -> OperationRequest {
     let requirements = requirements(&Req::default());
     let digest = derive(&requirements, Profile::FixedSliceReviewV1).candidates[0].content_digest();
-    OperationRequest::new(
-        ORG,
-        requirements,
-        digest,
-        vantage,
-        SubjectRef {
-            commit: "c0ffee".into(),
-            tree: "7ree".into(),
-            patch_identity: "patch-1".into(),
-        },
-    )
+    OperationRequest::new(ORG, requirements, digest, vantage, subject())
 }
 
 #[test]
@@ -1460,6 +1458,10 @@ fn g2_a_vantage_the_candidate_does_not_have_and_no_binding_refuse_r2_and_r3() {
             (
                 CheckId::R3,
                 vec![r(ReasonCode::VantageUnbound, "vantage:nope")],
+            ),
+            (
+                CheckId::S1,
+                vec![r(ReasonCode::VantageUnknown, "vantage:nope")],
             ),
         ],
     );
@@ -1570,4 +1572,192 @@ fn state_a_revocation_after_admission_is_seen_only_by_a_new_observation() {
         admission.admission_state(&observe_for(&w.src, &reservation), NOW),
         AdmissionState::Revoked(vec![w.owner_grant])
     );
+}
+
+// --- S1: scope.digest is the exact-subject digest ---------------------------------------------
+
+/// The exact-subject digest is the episode codec's digest of the subject object (the owner
+/// definition at `SubjectRef::scope_digest`), pinned for the base subject.
+#[test]
+fn s1_scope_digest_is_the_episode_codec_digest_of_the_subject() {
+    let canonical = r#"{"commit":"c0ffee","patchIdentity":"patch-1","tree":"7ree"}"#;
+    let expected = format!("{:x}", sha2_digest(canonical.as_bytes()));
+    assert_eq!(subject().scope_digest(), expected);
+    assert_eq!(expected.len(), 64);
+}
+
+fn sha2_digest(bytes: &[u8]) -> impl std::fmt::LowerHex {
+    use sha2::Digest as _;
+    sha2::Sha256::digest(bytes)
+}
+
+/// Positive: the base world admits, S1 among the passed checks, and the admission's outcome list
+/// is exactly the ten check ids (S1 included).
+#[test]
+fn s1_the_base_admission_passes_s1_and_lists_every_check() {
+    let w = world(Opts::default());
+    let admission = decide_base(&w).expect("admits");
+    let ids: Vec<CheckId> = admission.outcomes().iter().map(|(id, _)| id).collect();
+    use CheckId::*;
+    assert_eq!(ids, [O3, O4, O5, O8, O9, R1, R2, R3, R4, S1]);
+    assert_eq!(admission.outcomes().get(S1), &CheckOutcome::Passed);
+}
+
+/// Negatives: a subject differing in exactly one of `commit`, `tree` and `patchIdentity` refuses
+/// S1 alone, naming the served obligation and the scope digest it carries.
+#[test]
+fn s1_a_subject_differing_in_each_field_refuses_only_s1() {
+    let w = world(Opts::default());
+    let base = request_for(&Req::default());
+    let scope = subject().scope_digest();
+    let variants = [
+        (
+            "commit",
+            SubjectRef {
+                commit: "c0ffef".into(),
+                ..subject()
+            },
+        ),
+        (
+            "tree",
+            SubjectRef {
+                tree: "7ref".into(),
+                ..subject()
+            },
+        ),
+        (
+            "patchIdentity",
+            SubjectRef {
+                patch_identity: "patch-2".into(),
+                ..subject()
+            },
+        ),
+    ];
+    for (field, other) in variants {
+        assert_ne!(other.scope_digest(), scope, "{field}");
+        let req = OperationRequest::new(
+            ORG,
+            requirements(&Req::default()),
+            base.candidate_digest(),
+            VANTAGE,
+            other,
+        );
+        assert_exact(
+            &refused(decide_fixture(&w, &req, &realization(), NOW)),
+            &[(
+                CheckId::S1,
+                vec![r(
+                    ReasonCode::ScopeDigestMismatch,
+                    &format!("ob-a: {scope}"),
+                )],
+            )],
+        );
+    }
+}
+
+/// Negative control: requirements whose `scope.digest` is the stand-in `patchIdentity` (the shape
+/// of the frozen world) refuse S1 alone for the subject that carries that patch identity.
+#[test]
+fn s1_a_patch_identity_stand_in_scope_digest_refuses_only_s1() {
+    let w = world(Opts::default());
+    let stand_in = "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51";
+    let requirements = requirements(&Req {
+        scope_digest: stand_in.to_owned(),
+        ..Req::default()
+    });
+    let digest = derive(&requirements, Profile::FixedSliceReviewV1).candidates[0].content_digest();
+    let req = OperationRequest::new(
+        ORG,
+        requirements,
+        digest,
+        VANTAGE,
+        SubjectRef {
+            patch_identity: stand_in.into(),
+            ..subject()
+        },
+    );
+    assert_exact(
+        &refused(decide_fixture(&w, &req, &realization(), NOW)),
+        &[(
+            CheckId::S1,
+            vec![r(
+                ReasonCode::ScopeDigestMismatch,
+                &format!("ob-a: {stand_in}"),
+            )],
+        )],
+    );
+}
+
+/// S1 compares the obligations the request's vantage serves, not the candidate's first or every
+/// obligation: in a two-obligation candidate where only `ob-b` carries the subject's digest,
+/// `vantage:ob-b` passes S1 and `vantage:ob-a` refuses it. (Derivation gives each reviewer vantage
+/// exactly one served obligation, so a vantage serving several obligations is not constructible.)
+#[test]
+fn s1_compares_the_obligation_the_vantage_serves() {
+    let w = world(Opts::default());
+    let mut doc = requirements_doc(&Req {
+        scope_digest: "b".repeat(64),
+        ..Req::default()
+    });
+    let mut second = doc["obligations"][0].clone();
+    second["id"] = json!("ob-b");
+    second["scope"]["digest"] = json!(subject().scope_digest());
+    doc["obligations"].as_array_mut().unwrap().push(second);
+    let mut conditions = doc["acceptanceConditions"].as_array().unwrap().clone();
+    for c in &mut conditions {
+        c["id"] = json!(format!("{}-b", c["id"].as_str().unwrap()));
+        c["obligation"] = json!("ob-b");
+    }
+    doc["acceptanceConditions"]
+        .as_array_mut()
+        .unwrap()
+        .extend(conditions);
+    let requirements = parse(&doc);
+    let digest = derive(&requirements, Profile::FixedSliceReviewV1).candidates[0].content_digest();
+    let outcome_at = |vantage: &str| {
+        let req = OperationRequest::new(ORG, requirements.clone(), digest, vantage, subject());
+        match decide_fixture(&w, &req, &realization(), NOW) {
+            Ok(admission) => admission.outcomes().get(CheckId::S1).clone(),
+            Err(AdmissionRefusal::Checks(outcomes)) => outcomes.get(CheckId::S1).clone(),
+            Err(other) => panic!("expected checks, got {other:?}"),
+        }
+    };
+    assert_eq!(outcome_at("vantage:ob-b"), CheckOutcome::Passed);
+    assert_eq!(
+        outcome_at("vantage:ob-a"),
+        CheckOutcome::Refused(vec![r(
+            ReasonCode::ScopeDigestMismatch,
+            &format!("ob-a: {}", "b".repeat(64)),
+        )])
+    );
+}
+
+/// A vantage that is a participant but serves no obligation (the builder's) has no scope to
+/// relate to the subject: S1 refuses with `ScopeDigestUnserved`.
+#[test]
+fn s1_a_vantage_that_serves_no_obligation_refuses_s1() {
+    let w = world(Opts::default());
+    let outcomes = refused(decide_fixture(
+        &w,
+        &request_at("vantage-builder"),
+        &realization(),
+        NOW,
+    ));
+    assert_eq!(
+        outcomes.get(CheckId::S1),
+        &CheckOutcome::Refused(vec![r(ReasonCode::ScopeDigestUnserved, "vantage-builder")])
+    );
+}
+
+/// Regression: a pin revoked after an S1-passing admission still reads as revoked.
+#[test]
+fn s1_a_pin_revoked_after_admission_is_still_revoked() {
+    let w = world(Opts::default());
+    let admission = decide_base(&w).expect("admits");
+    assert!(admission.outcomes().passed(CheckId::S1));
+    w.src.revoke(&w.owner_grant);
+    assert!(matches!(
+        state_now(&w, &admission, NOW),
+        AdmissionState::Revoked(_)
+    ));
 }

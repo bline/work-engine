@@ -6,14 +6,17 @@
 mod common;
 
 use common::authority::{
-    ACTOR, FIXED, ORG, VANTAGE, authority_world, boundary, declared, host_digest, operation_request,
+    ACTOR, FIXED, ORG, VANTAGE, authority_world, boundary, declared, host_digest,
+    operation_request, operation_request_from,
 };
 use common::world::host_request;
 use common::*;
+use serde_json::{Value, json};
 use work_engine_organization_authority::fixture::FixtureSource;
 use work_engine_organization_authority::records::Record;
 use work_engine_organization_authority::{
-    AdmissionState, BoundaryKind, CheckId, Domain, StaleReason, UnknownReason, observe_for, reserve,
+    AdmissionRefusal, AdmissionState, BoundaryKind, CheckId, CheckOutcome, Domain, Reason,
+    ReasonCode, StaleReason, UnknownReason, observe_for, reserve,
 };
 use work_engine_review_delivery::gate::{
     ASSUMED_DISCHARGE_LABEL, Discharge, GateRefusal, HeldAdmission, discharge, screen,
@@ -23,8 +26,8 @@ use work_engine_review_preparation::{
 };
 
 /// Invariant 1: discharge is total over the closed kinds; the admitted kinds name exactly the S-B
-/// check ids; the three mapping kinds stay labelled assumptions; realization checks are never
-/// dischargeable.
+/// check ids; `scope-digest-to-subject` is admitted by S1 and the other two mapping kinds stay
+/// labelled assumptions; realization checks are never dischargeable.
 #[test]
 fn discharge_is_total_admitted_kinds_name_their_check_ids() {
     let table: Vec<(BlockerKind, Discharge)> = BlockerKind::ALL
@@ -37,7 +40,7 @@ fn discharge_is_total_admitted_kinds_name_their_check_ids() {
         [
             (
                 BlockerKind::ScopeDigestToSubject,
-                Discharge::AssumedDischarge
+                Discharge::Admitted(&[S1])
             ),
             (
                 BlockerKind::ProblemScopeToEpisodeIdentity,
@@ -74,8 +77,8 @@ fn discharge_is_total_admitted_kinds_name_their_check_ids() {
 }
 
 /// The assumption world under the host's description: no realization check blocker remains;
-/// every blocker is either admitted by named checks or a labelled mapping assumption, and both
-/// families occur.
+/// every blocker is either admitted by named checks or a labelled mapping assumption (the two
+/// unowned mapping kinds), and both families occur; `scope-digest-to-subject` is admitted by S1.
 #[test]
 fn the_assumption_world_screens_into_admitted_and_assumed_mapping_kinds() {
     let prep = prepare(&assumption_candidate(), &host_request()).unwrap();
@@ -94,10 +97,12 @@ fn the_assumption_world_screens_into_admitted_and_assumed_mapping_kinds() {
     let classified = screen(&prep.blockers).expect("screened");
     assert_eq!(classified.len(), prep.blockers.len());
     let mapping = [
-        BlockerKind::ScopeDigestToSubject,
         BlockerKind::ProblemScopeToEpisodeIdentity,
         BlockerKind::ConsumptionEvidenceMapping,
     ];
+    assert!(classified.iter().any(|(_, kind, d)| {
+        *kind == BlockerKind::ScopeDigestToSubject && *d == Discharge::Admitted(&[CheckId::S1])
+    }));
     for (id, kind, d) in &classified {
         match d {
             Discharge::AssumedDischarge => assert!(mapping.contains(kind), "{id}"),
@@ -243,6 +248,39 @@ fn the_fixture_authority_world_admits_and_an_empty_world_refuses() {
     ) {
         Err(GateRefusal::NoObservation(detail)) => assert_eq!(detail, "torn record"),
         other => panic!("expected no observation, got {other:?}"),
+    }
+}
+
+/// A1 negative control (frozen-world admission): the frozen world's stand-in `scope.digest` (the
+/// subject's `patchIdentity`) is not the exact-subject digest. The assumption world with that
+/// stand-in restored, over the same fixture authority world and subject, is refused by S1 alone.
+#[test]
+fn the_frozen_stand_in_scope_digest_refuses_only_s1() {
+    let w = authority_world();
+    let frozen: Value = serde_json::from_slice(REQ).unwrap();
+    let mut stand_in: Value = serde_json::from_slice(ASSUMPTION_REQ).unwrap();
+    stand_in["obligations"][0]["scope"] = frozen["obligations"][0]["scope"].clone();
+    let patch = subject().patch_identity;
+    assert_eq!(stand_in["obligations"][0]["scope"]["digest"], json!(patch));
+    let request = operation_request_from(&serde_json::to_vec(&stand_in).unwrap(), subject());
+    match HeldAdmission::admit(
+        &w.src,
+        &FIXED,
+        boundary(BoundaryKind::Consumption),
+        &request,
+        &declared(),
+    ) {
+        Err(GateRefusal::Admission(AdmissionRefusal::Checks(outcomes))) => {
+            assert_eq!(outcomes.refused(), [CheckId::S1]);
+            assert_eq!(
+                outcomes.get(CheckId::S1),
+                &CheckOutcome::Refused(vec![Reason {
+                    code: ReasonCode::ScopeDigestMismatch,
+                    subject: format!("{OBLIGATION}: {patch}"),
+                }])
+            );
+        }
+        other => panic!("expected an S1 refusal, got {other:?}"),
     }
 }
 

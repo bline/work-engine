@@ -1,0 +1,39 @@
+
+running 33 tests
+test coalesced_markers_never_move_the_unread_observation_into_the_sending_callback ... ok
+test deterministic_seams_distinguish_bounds_uncertainty_and_contradiction ... ok
+test assumption_world_is_the_frozen_world_without_realization_constraints ... ok
+test a_non_default_adapter_is_refused_before_spawn_because_the_description_differs ... ok
+test a_completed_send_means_accepted_by_the_pipe_not_consumed_by_the_peer ... ok
+test a_send_after_the_peer_closed_its_read_end_is_a_failed_send_with_zero_accepted_bytes ... ok
+test partial_stdout_line_and_stderr_prefix_survive_a_missing_terminal_report ... ok
+test an_inherited_pipe_that_never_ends_is_cancelled_at_the_cleanup_bound ... ok
+test a_child_that_stops_reading_stdin_cannot_block_the_deadline_owner ... ok
+test an_injected_wait_failure_is_not_termination_and_the_child_is_still_stopped ... ok
+test a_partially_accepted_send_that_then_fails_keeps_intended_and_accepted_bytes ... ok
+test missing_runtime_key_fails_the_genuine_sdk_auth_preflight_before_any_fixture_stream ... ok
+test a_possible_send_without_observation_stays_uncertain_and_advances_nothing ... ok
+test sb_a_pin_replaced_between_the_two_admissions_refuses_before_spawn ... ok
+test canonical_preparation_reaches_the_real_sdk_and_the_existing_consumer ... ok
+test sb_the_boundary_operation_is_derived_from_the_binding ... ok
+test sb_the_admission_is_decided_for_the_preparations_vantage ... ok
+test sb_requirements_that_are_not_the_candidates_refuse_before_any_observation ... ok
+test sb_an_admission_refusal_refuses_before_spawn ... ok
+test the_frozen_world_is_refused_before_spawn_by_known_realization_incompatibility ... ok
+test s1_both_regate_revisions_are_carried_and_follow_their_admissions ... ok
+test sb_a_grant_that_expires_between_boundaries_refuses_consumption ... ok
+test recorded_elapsed_covers_the_post_loop_digest_and_finalization ... ok
+test each_refusal_stage_reports_its_actual_consumer_invocations ... ok
+test sb_unknown_at_the_regate_fails_closed ... ok
+test the_ordinary_sdk_stream_hits_the_provider_entry_refusal_and_yields_no_usable_result ... ok
+test the_pre_consumption_recheck_refuses_after_a_verified_attempt ... ok
+test sb_revocation_supersession_or_missing_grant_between_boundaries_refuses_consumption ... ok
+test consumer_and_episode_owners_keep_their_checks_after_a_correct_native_delivery ... ok
+test the_adapter_refuses_a_wrong_session_and_a_duplicate_start ... ok
+test trailing_data_after_a_valid_observation_refuses_before_consumption_prompt_and_delayed ... ok
+test recursive_wire_duplicates_refuse_before_consumption ... ok
+test nonzero_exit_timeout_early_eof_and_limits_refuse_with_retained_evidence has been running for over 60 seconds
+test nonzero_exit_timeout_early_eof_and_limits_refuse_with_retained_evidence ... ok
+
+test result: ok. 33 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 64.99s
+

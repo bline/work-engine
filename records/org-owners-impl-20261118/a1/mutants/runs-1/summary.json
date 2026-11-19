@@ -1,0 +1,198 @@
+{
+  "schema": "manual-orchestration.custody.summary.v1",
+  "plan": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutant-plan-1.json",
+  "plan_sha256": "9a6bc61fb55fc53bfaa9dec67977709775c778de87a0943060e4c717df095080",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "pre-hashes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/pre-hashes.json",
+      "record_sha256": "50eeabb87ff04a08a35d3dca6993caf0cb14b93ec8032453c47884681ce8531f",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M1-s1-always-passes.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M1-s1-always-passes.apply.json",
+      "record_sha256": "c8836b76aed5de4b6f12e0d90d4ab5973bcdac803f4dbbb4f72dedcece5d5482",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M1-s1-always-passes.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M1-s1-always-passes.test0.json",
+      "record_sha256": "80694cca31f4940b6866e8472a3bd0eba14d5ff0a991dcfa51737ddae231d6d8",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M1-s1-always-passes.test1",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M1-s1-always-passes.test1.json",
+      "record_sha256": "28bc4a7fc4f84461da215f516786075930bc4acc06f654f029e9e42af67e1b32",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M1-s1-always-passes.test2",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M1-s1-always-passes.test2.json",
+      "record_sha256": "24c590893c5899dae3077880da859ee1274d0f8b5787ad040cc32d25602ff5dd",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M1-s1-always-passes.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M1-s1-always-passes.restore.json",
+      "record_sha256": "b8d0515c4f86bbe330bf55dd381558a92092ee81e6525668b9d51006eff20c78",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M2-digest-ignores-commit-and-tree.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M2-digest-ignores-commit-and-tree.apply.json",
+      "record_sha256": "47afd0c9ed01b8a6f23ea9c47664d79629e14c5657e1b5683bc2c08132499ab4",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M2-digest-ignores-commit-and-tree.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M2-digest-ignores-commit-and-tree.test0.json",
+      "record_sha256": "8cfd65367eedc031376aac875b1c4d5d7a73059f694038fb4b6ff8a9b45d7d3d",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M2-digest-ignores-commit-and-tree.test1",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M2-digest-ignores-commit-and-tree.test1.json",
+      "record_sha256": "19d92d8f8d47c29918d0b382e59db05bc19edfd797556161f62de8c90db05e91",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M2-digest-ignores-commit-and-tree.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M2-digest-ignores-commit-and-tree.restore.json",
+      "record_sha256": "6ea86ef801f33fab56a833273c0214729d5a49503ea3efd1839056dd8fe677b4",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M3-first-candidate-obligation.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M3-first-candidate-obligation.apply.json",
+      "record_sha256": "878748eee67d7eaa496d8d2e2ba062a27afd53aa22be1eae1b3c1c3a518711d7",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M3-first-candidate-obligation.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M3-first-candidate-obligation.test0.json",
+      "record_sha256": "2537d81e767ef2f9678e668c780ee8decb30e0360ce9dae413f3c1bb2cfd28ec",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M3-first-candidate-obligation.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M3-first-candidate-obligation.restore.json",
+      "record_sha256": "e31741dfcff921ef7f2a1d82176b15c0e8f01a8bcf5c597a7a6bd014ddae7a6b",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M4-discharge-assumed.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M4-discharge-assumed.apply.json",
+      "record_sha256": "bbba2e60a467dd7ce94942067e2b08f4d75f66f244955ad08d6fd846e352a81c",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M4-discharge-assumed.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M4-discharge-assumed.test0.json",
+      "record_sha256": "c516327a807f4ef2ce6cd94fd964c0e51aaf1507cd54a967b1151d9e5c6c7d65",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M4-discharge-assumed.test1",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M4-discharge-assumed.test1.json",
+      "record_sha256": "ab4ed2f3f0c12a897b37f58db6935ed6fbc25c5d940263742facd257f8422ec1",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M4-discharge-assumed.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M4-discharge-assumed.restore.json",
+      "record_sha256": "1d008f154cfdebd8cac4ee138d918d537fe56fd1c8842b36cdfc94e34e70eb9f",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M5-s1-dropped-from-all.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M5-s1-dropped-from-all.apply.json",
+      "record_sha256": "ef26888637135d770568c64773b63b0cbbf52a702f552f382e017c91bf670edf",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M5-s1-dropped-from-all.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M5-s1-dropped-from-all.test0.json",
+      "record_sha256": "d73ceb49eeaef5ebeaa5282dbe58247eec6f426254f6deb90ef4b94a80885ddc",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M5-s1-dropped-from-all.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M5-s1-dropped-from-all.restore.json",
+      "record_sha256": "6aaea4c95ea9f93dae77f3d1b725340c84d21a614985ee51ba077386557c0594",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M6-unserved-vantage-passes.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M6-unserved-vantage-passes.apply.json",
+      "record_sha256": "97003b0d828d6a03d9858dc4d90c12759784df367260aeebdb77a9c9ea202bbf",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M6-unserved-vantage-passes.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M6-unserved-vantage-passes.test0.json",
+      "record_sha256": "5620bc2e9324ad9739ed920fe510935eef0bb7dd8dbbee7ba1e3c26a446cc2b8",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M6-unserved-vantage-passes.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M6-unserved-vantage-passes.restore.json",
+      "record_sha256": "4fc80fcf33c068922aed1c02bcf6194464963d37e90b5e148017b8036f735f93",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M7-unknown-vantage-passes.apply",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M7-unknown-vantage-passes.apply.json",
+      "record_sha256": "489f7af51655ddc555b449b5e332df9628653b300d75156b129412b05e1fe786",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M7-unknown-vantage-passes.test0",
+      "outcome": "101",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M7-unknown-vantage-passes.test0.json",
+      "record_sha256": "a12fcedce37ac1df450e85f6d6fb5de7c295f8c6947080c89bea78b23d8ac441",
+      "leftovers": 0
+    },
+    {
+      "name": "A1-M7-unknown-vantage-passes.restore",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M7-unknown-vantage-passes.restore.json",
+      "record_sha256": "d01693540512c68a56f141e8726e3a2286219825393edc37d98dadc3335f154b",
+      "leftovers": 0
+    },
+    {
+      "name": "post-hashes",
+      "outcome": "0",
+      "record": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/post-hashes.json",
+      "record_sha256": "1dd596227581ae21a469d7e8cc40ede263cfb520fa3df14cd2f8a0507009514a",
+      "leftovers": 0
+    }
+  ],
+  "not_run": []
+}

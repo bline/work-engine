@@ -1,0 +1,23 @@
+   Compiling work-engine-organization-authority v0.1.0 (/home/bline/cbm-work/wt-org-owners-a1-20261118/rust/crates/work-engine-organization-authority)
+warning: unreachable pattern
+    --> crates/work-engine-organization-authority/src/gate.rs:1125:17
+     |
+1124 |                 Some(_) => None,
+     |                 ------- matches all the relevant values
+1125 |                 Some(actual) => Some(reason(
+     |                 ^^^^^^^^^^^^ no value can reach this
+     |
+     = note: `#[warn(unreachable_patterns)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `expected`
+    --> crates/work-engine-organization-authority/src/gate.rs:1114:9
+     |
+1114 |     let expected = subject.scope_digest();
+     |         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_expected`
+     |
+     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `work-engine-organization-authority` (lib) generated 2 warnings (run `cargo fix --lib -p work-engine-organization-authority` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.44s
+     Running tests/admission.rs (/home/bline/cbm-work/org-owners-impl-20261118/a1/target/debug/deps/admission-fa70f97e919c4743)
+error: test failed, to rerun pass `-p work-engine-organization-authority --test admission`

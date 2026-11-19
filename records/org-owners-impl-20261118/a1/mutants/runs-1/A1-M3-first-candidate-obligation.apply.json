@@ -1,0 +1,41 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "A1-M3-first-candidate-obligation.apply",
+  "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/mutate.py",
+    "apply",
+    "A1-M3-first-candidate-obligation"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a1-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a1/target"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2225552,
+  "inputs": [],
+  "timeout_s": 60,
+  "pid": 2227795,
+  "pgid": 2227795,
+  "started_at": "2026-11-18T20:09:16.899359Z",
+  "ended_at": "2026-11-18T20:09:17.017624Z",
+  "duration_s": 0.118,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M3-first-candidate-obligation.apply.stdout",
+    "length": 55,
+    "sha256": "99f7eef2ad5ad8e63184ecb859b5d92069817b6c5103074cf8c5058933f4bcab"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a1/mutants/runs-1/A1-M3-first-candidate-obligation.apply.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

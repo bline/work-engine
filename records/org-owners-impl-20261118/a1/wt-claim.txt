@@ -1,0 +1,13 @@
+{
+  "revision": "bf54965ee61f21ddaa93555ce442ae361618baa7",
+  "claim": {
+    "resource": "worktree:/home/bline/cbm-work/wt-org-owners-a1-20261118",
+    "claim_id": "7d0669b4-879b-42b9-a786-4cefb29931a5",
+    "author": "pi-claude-org-compilation-root",
+    "session_id": "01a1e56e-be12-7424-977b-c7c7983887d0",
+    "claimed_at": "2026-11-18T19:59:26.765036Z",
+    "expires_at": "2026-11-19T07:59:26.765036Z",
+    "note": "O7 owners slice A1 builder worktree (branch org-owners-a1-20261118 from f772612f)",
+    "authority": "advisory_coordination_only"
+  }
+}
