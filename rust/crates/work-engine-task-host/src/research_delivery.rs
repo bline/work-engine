@@ -2158,22 +2158,23 @@ mod projection_tests {
         println!("{report}");
     }
 
-    /// Option E (operator, 2026-11-19): the real-size basis through the
-    /// actual controlled path as far as it goes offline. A real-card fixture
-    /// file (`WE_A4_REAL`) → `validate_nomination` → `install` (fixture
-    /// inputs with the card replay, candidate validation at
-    /// `MAX_ARTIFACT_BYTES`, distinct join) → `checked_unminted_basis` over
-    /// the real-size rebuilt q1 delivery (`WE_PI_HOST_OUT`) → `mint`. The
-    /// owner's target fact cannot carry the real 20,025 B target
-    /// (`MAX_TEXT`), so the advisory publishes over a short synthetic fact
-    /// and the mint must refuse at the source binding (`Stale`), after its
-    /// artifact cap check. Report: `WE_PI_HOST_MINT_OUT`.
+    /// Options E and (i) (operator, 2026-11-19): the real-size basis through
+    /// the actual controlled path offline. The advisory task carries the real
+    /// 20,025 B target as its `target` fact (`MAX_FACT_BYTES`), records the
+    /// planned snapshot reads as completed effects and publishes. A real-card
+    /// fixture file (`WE_A4_REAL`) → `validate_nomination` →
+    /// `scope_causal_read` → `install` → `checked_unminted_basis` over the
+    /// real-size rebuilt q1 delivery (`WE_PI_HOST_OUT`) → `mint` →
+    /// `prepare_research`. Then measures each advisory's `task.observe.v2`
+    /// response against `MAX_FRAME`. Report: `WE_PI_HOST_MINT_OUT`.
     #[test]
     #[cfg(feature = "controlled-proof")]
     #[ignore = "reads a pi_host_research_delivery run (WE_PI_HOST_OUT) and real A4 material (WE_A4_REAL); writes WE_PI_HOST_MINT_OUT"]
     fn pi_host_real_size_install_join_mint_path() {
         use retained_task_workflow::{
-            FactInput, FactKind, OperationEntry, ResultPublishPayload, SubjectKind, SubmitTask,
+            CompletedEffect, CompletedSnapshotReadAttribution, CompletedSnapshotResult,
+            CompletedSnapshotUnavailable, FactInput, FactKind, OperationEntry,
+            ResultPublishPayload, SubjectKind, SubmitTask,
             research_admission::{MAX_ARTIFACT_BYTES, ProducerRole},
         };
         use std::os::unix::fs::PermissionsExt;
@@ -2189,66 +2190,103 @@ mod projection_tests {
         let mut host =
             crate::tests::admission_host(root.path(), &root.path().join("unused.sock"), false);
         host.startup.lifecycle.subject_id = "advisory".into();
-        let submit = |task: &str, text: String| SubmitTask {
-            command_id: format!("command-{task}"),
-            task_id: task.into(),
-            subject_id: "advisory".into(),
-            kind: SubjectKind::RepositoryAnalysis,
-            objective: "Audit the registered basis.".into(),
-            engineering_question: "Which option does the basis support?".into(),
-            snapshot_ref: "snapshot:input".into(),
-            facts: vec![FactInput {
-                id: "target".into(),
-                kind: FactKind::Decision,
-                text,
-                current: true,
-            }],
-        };
-        // 1. The real target as the advisory's target fact is refused.
-        let real_fact = host.store.submit(&submit(
-            "advisory-real-target",
-            String::from_utf8(target.clone()).unwrap(),
-        ));
-        assert!(
-            matches!(real_fact, Err(TaskError::Invalid)),
-            "{real_fact:?}"
-        );
-        // 2. The advisory with a short synthetic fact publishes a result
-        //    whose dependencies name the real target.
-        host.store
-            .submit(&submit("advisory", "synthetic target fact".into()))
-            .unwrap();
-        let record = host.store.observe("advisory").unwrap().unwrap();
-        let source = record
-            .sources
-            .iter()
-            .find(|s| s.id == "target")
-            .unwrap()
-            .reference();
         let dependencies =
             std::collections::BTreeMap::from([("decision.target".to_string(), sha(&target))]);
         let body = json!({"dependencies":dependencies,"text":"Unknown transfer; alternatives include defer."});
-        let payload = ResultPublishPayload {
-            result_id: "result:pi-host-research".into(),
-            body: body.to_string(),
-            source_refs: vec![source.clone()],
-            attribution: "native:claude-haiku-5-5".into(),
+        let text = |n: usize, seed: &str| -> String { seed.repeat(n / seed.len() + 1)[..n].into() };
+        // An advisory task with the real target as its `target` fact, the
+        // planned 32 KiB snapshot reads recorded as completed effects (each
+        // over the inline limit, as the actor records them), then the
+        // published recommendation. Returns the target fact's reference.
+        let advise = |task: &str, objective: usize, question: usize| {
+            host.store
+                .submit(&SubmitTask {
+                    command_id: format!("command-{task}"),
+                    task_id: task.into(),
+                    subject_id: task.into(),
+                    kind: SubjectKind::RepositoryAnalysis,
+                    objective: text(objective, "Audit the registered basis. "),
+                    engineering_question: text(question, "Which option does it support? "),
+                    snapshot_ref: "snapshot:input".into(),
+                    facts: vec![FactInput {
+                        id: "target".into(),
+                        kind: FactKind::Decision,
+                        text: String::from_utf8(target.clone()).unwrap(),
+                        current: true,
+                    }],
+                })
+                .unwrap();
+            for (i, offset) in (0..material.len()).step_by(32768).enumerate() {
+                let len = (material.len() - offset).min(32768);
+                let digest = sha(&material[offset..offset + len]);
+                let cursor = host.store.observe(task).unwrap().unwrap().cursor_revision;
+                host.store
+                    .record_completed_effect(
+                        task,
+                        CompletedEffect {
+                            effect_id: format!(
+                                "opattempt:{}",
+                                sha(format!("{task}:{i}").as_bytes())
+                            ),
+                            delivery_id: format!("delivery:{task}"),
+                            receipt_digest: digest.clone(),
+                            attribution: Some(CompletedSnapshotReadAttribution {
+                                schema: "completed-snapshot-read-attribution-v2".into(),
+                                parent_invocation_id: format!("delivery:effect:{task}:0:attempt:1"),
+                                call_id: format!("toolu_read_{i}"),
+                                contract_id: "workspace.snapshot.read.v1".into(),
+                                snapshot_id: "snapshot:input".into(),
+                                member_id: "research".into(),
+                                offset: offset as u64,
+                                requested_length: len as u64,
+                                returned_length: len as u64,
+                                result_sha256: digest,
+                                result: CompletedSnapshotResult::Unavailable {
+                                    reason: CompletedSnapshotUnavailable::OverInlineLimit,
+                                },
+                            }),
+                        },
+                        cursor,
+                    )
+                    .unwrap();
+            }
+            let record = host.store.observe(task).unwrap().unwrap();
+            let source = record
+                .sources
+                .iter()
+                .find(|s| s.id == "target")
+                .unwrap()
+                .reference();
+            let payload = ResultPublishPayload {
+                result_id: "result:pi-host-research".into(),
+                body: body.to_string(),
+                source_refs: vec![source.clone()],
+                attribution: "native:claude-haiku-5-5".into(),
+            };
+            let entry = OperationEntry {
+                operation_id: format!("advice-operation-{task}"),
+                task_id: task.into(),
+                subject_id: task.into(),
+                delivery_id: format!("delivery:{task}"),
+                attempt_id: "attempt-advice".into(),
+                expected_task_revision: record.revision,
+                expected_cursor_revision: record.cursor_revision,
+                grant_ref: "result-grant".into(),
+                grant_revision: 1,
+                payload_sha256: retained_task_workflow::json_digest(&payload).unwrap(),
+            };
+            host.store
+                .publish_result(&entry, &payload, &mut |commit| commit())
+                .unwrap();
+            source
         };
-        let entry = OperationEntry {
-            operation_id: "advice-operation".into(),
-            task_id: "advisory".into(),
-            subject_id: "advisory".into(),
-            delivery_id: "delivery-advice".into(),
-            attempt_id: "attempt-advice".into(),
-            expected_task_revision: record.revision,
-            expected_cursor_revision: record.cursor_revision,
-            grant_ref: "result-grant".into(),
-            grant_revision: 1,
-            payload_sha256: retained_task_workflow::json_digest(&payload).unwrap(),
-        };
-        host.store
-            .publish_result(&entry, &payload, &mut |commit| commit())
-            .unwrap();
+        // 1-2. Option (i): the real 20,025 B target is the advisory's fact.
+        //      Objective and question at the audit request's sizes.
+        let source = advise("advisory", 205, 305);
+        // The same advisory with the objective at `MAX_TEXT` and the question
+        // as large as the 8 KiB input locator allows, for the observation
+        // bound only.
+        advise("advisory-max", 8 * 1024, 7_800);
         // 3. The real-size delivery, joined to this owner result.
         let mut value: Value = serde_json::from_slice(&read(out.join("retained.json"))).unwrap();
         rebuild_real_size(&mut value, &material);
@@ -2389,32 +2427,68 @@ mod projection_tests {
         }
         let joined_total: usize = joined.values().sum();
         let basis_json = serde_json::to_vec(&checked.basis).unwrap().len();
-        // 7. The mint: past the artifact cap, refused at the source binding.
+        // 7. The mint, then the preparation that stores the minted basis.
         let producer = host
             .store
             .controlled_research_producer(&f.key, ProducerRole::Preparer)
             .unwrap();
-        let minted = checked.mint(&host.store, &producer);
-        let mint_outcome = match &minted {
-            Ok(_) => "minted".to_string(),
-            Err(e) => format!("{e:?}"),
+        let minted = checked.mint(&host.store, &producer).unwrap();
+        let preparation = host
+            .store
+            .prepare_research(&f.key, None, minted, &producer)
+            .unwrap();
+        let db = rusqlite::Connection::open(root.path().join("tasks.sqlite")).unwrap();
+        let (stored_digest, stored): (String, Vec<u8>) = db
+            .query_row(
+                "SELECT basis_digest,basis_json FROM research_basis ORDER BY revision DESC LIMIT 1",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        let stored: Value = serde_json::from_slice(&stored).unwrap();
+        let mut minted_artifacts = std::collections::BTreeMap::new();
+        for a in stored["artifacts"].as_array().unwrap() {
+            minted_artifacts.insert(
+                a["id"].as_str().unwrap().to_owned(),
+                a["bytes"].as_array().unwrap().len(),
+            );
+        }
+        let minted_total: usize = minted_artifacts.values().sum();
+        // 8. The task-host observation of each advisory after publish.
+        let frame = |task: &str| {
+            let reply = crate::dispatch(&host, json!({"op":"task.observe.v2","task_id":task}));
+            let response = serde_json::to_vec(&reply).unwrap().len() + 1;
+            let owner = serde_json::to_vec(&reply["components"]["owner"])
+                .unwrap()
+                .len();
+            assert_eq!(reply["components"]["owner"]["state"], "present", "{task}");
+            json!({"response_bytes":response,"owner_component_bytes":owner,"max_frame":crate::MAX_FRAME,
+                "margin":crate::MAX_FRAME as i64 - response as i64,
+                "lifecycle_state":reply["components"]["lifecycle"]["state"],
+                "native_state":reply["components"]["native_delivery_status"]["state"]})
         };
-        let report = json!({"steps":["submit(real target as fact)","submit+publish advisory (synthetic fact)",
-            "rebuild real-size delivery","fixture file","validate_nomination","scope_causal_read","install","checked_unminted_basis","mint"],
-            "real_target_fact":format!("{real_fact:?}"),"target_bytes":target.len(),
-            "fixture_file_bytes":fixture_file,"candidate_artifact_bytes":candidate_bytes,
+        let observation = json!({"advisory (objective 205 B, question 305 B)":frame("advisory"),
+            "advisory-max (objective 8,192 B, question 7,800 B)":frame("advisory-max")});
+        let report = json!({"steps":["submit advisory with the real target fact + 5 read effects + publish",
+            "same with objective 8,192 B and question 7,800 B (advisory-max)","rebuild real-size delivery","fixture file",
+            "validate_nomination","scope_causal_read","install","checked_unminted_basis","mint","prepare_research",
+            "task.observe.v2 (dispatch)"],
+            "target_bytes":target.len(),"fixture_file_bytes":fixture_file,"candidate_artifact_bytes":candidate_bytes,
             "joined_artifacts":joined,"joined_artifact_total":joined_total,"joined_basis_json_bytes":basis_json,
-            "max_artifact_bytes":MAX_ARTIFACT_BYTES,"margin":MAX_ARTIFACT_BYTES as i64 - joined_total as i64,
-            "mint":mint_outcome});
+            "max_artifact_bytes":MAX_ARTIFACT_BYTES,
+            "preparation":preparation,"minted_basis_digest":stored_digest,"minted_artifacts":minted_artifacts,
+            "minted_artifact_total":minted_total,"minted_margin":MAX_ARTIFACT_BYTES as i64 - minted_total as i64,
+            "observation":observation});
         std::fs::write(
             env("WE_PI_HOST_MINT_OUT"),
             serde_json::to_vec_pretty(&report).unwrap(),
         )
         .unwrap();
-        assert!(joined_total > 8 * 1024 * 1024 && joined_total <= MAX_ARTIFACT_BYTES);
-        assert!(
-            matches!(minted, Err(HostError::Task(TaskError::Stale))),
-            "{mint_outcome}"
+        assert!(joined_total > 8 * 1024 * 1024 && minted_total <= MAX_ARTIFACT_BYTES);
+        assert!(preparation.ready, "{preparation:?}");
+        assert_eq!(
+            preparation.basis_digest.as_deref(),
+            Some(stored_digest.as_str())
         );
     }
 }

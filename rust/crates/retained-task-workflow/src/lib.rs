@@ -27,6 +27,11 @@ pub mod research_admission;
 pub const PROFILE: &str = "retained-repository-analysis-v1";
 pub const OWNER_NAMESPACE: &str = "retained-task-workflow";
 const MAX_TEXT: usize = 8 * 1024;
+/// Per-fact text bound (operator decision 2026-11-19, option (i)): a task fact
+/// may carry a registered decision document such as the 20,025 B research
+/// target. Every other text stays under `MAX_TEXT`, and the combined submit
+/// bound is unchanged.
+const MAX_FACT_BYTES: usize = 32 * 1024;
 // These are the experimental inline limits for this retained S10 profile.
 const EFFECT_INLINE_BYTES: usize = 4 * 1024;
 const EFFECT_ESCAPED_BYTES: usize = 8 * 1024;
@@ -1791,7 +1796,7 @@ fn validate_submit(input: &SubmitTask) -> Result<(), TaskError> {
             > 64 * 1024
         || input.facts.iter().any(|f| {
             !valid_id(&f.id)
-                || !valid_text(&f.text)
+                || !valid_fact_text(&f.text)
                 || ["objective", "engineering-question", "snapshot-reference"]
                     .contains(&f.id.as_str())
                 || ["question-", "effect-", "result-", "input-"]
@@ -1816,6 +1821,9 @@ fn valid_id(value: &str) -> bool {
 }
 fn valid_text(value: &str) -> bool {
     !value.is_empty() && value.len() <= MAX_TEXT && !value.contains('\0')
+}
+fn valid_fact_text(value: &str) -> bool {
+    !value.is_empty() && value.len() <= MAX_FACT_BYTES && !value.contains('\0')
 }
 fn valid_digest(value: &str) -> bool {
     value.len() == 64 && value.bytes().all(|b| b.is_ascii_hexdigit())
@@ -1862,6 +1870,53 @@ pub fn obligations(record: &TaskRecord) -> Vec<RequiredObligation> {
 #[cfg(test)]
 mod schema_two_tests {
     use super::*;
+
+    /// Option (i): facts are bound by `MAX_FACT_BYTES`; objective and
+    /// question stay under `MAX_TEXT`; the 64 KiB combined bound still holds.
+    #[test]
+    fn fact_text_bound_is_separate_from_other_texts_and_combined_bound() {
+        let submit = |objective: usize, question: usize, facts: &[usize]| SubmitTask {
+            command_id: "fact-bound".into(),
+            task_id: "fact-task".into(),
+            subject_id: "fact-subject".into(),
+            kind: SubjectKind::RepositoryAnalysis,
+            objective: "o".repeat(objective),
+            engineering_question: "q".repeat(question),
+            snapshot_ref: "snapshot".into(),
+            facts: facts
+                .iter()
+                .enumerate()
+                .map(|(i, n)| FactInput {
+                    id: format!("fact-{i}"),
+                    kind: FactKind::Decision,
+                    text: "f".repeat(*n),
+                    current: true,
+                })
+                .collect(),
+        };
+        assert!(validate_submit(&submit(1, 1, &[MAX_FACT_BYTES])).is_ok());
+        assert!(matches!(
+            validate_submit(&submit(1, 1, &[MAX_FACT_BYTES + 1])),
+            Err(TaskError::Invalid)
+        ));
+        assert!(validate_submit(&submit(MAX_TEXT, MAX_TEXT, &[20_025])).is_ok());
+        for (objective, question) in [(MAX_TEXT + 1, 1), (1, MAX_TEXT + 1)] {
+            assert!(matches!(
+                validate_submit(&submit(objective, question, &[])),
+                Err(TaskError::Invalid)
+            ));
+        }
+        let snapshot = "snapshot".len();
+        let full = 64 * 1024 - 2 - snapshot - MAX_FACT_BYTES;
+        assert!(validate_submit(&submit(1, 1, &[MAX_FACT_BYTES, full])).is_ok());
+        assert!(matches!(
+            validate_submit(&submit(1, 1, &[MAX_FACT_BYTES, full + 1])),
+            Err(TaskError::Invalid)
+        ));
+        let mut nul = submit(1, 1, &[8]);
+        nul.facts[0].text.push('\0');
+        assert!(matches!(validate_submit(&nul), Err(TaskError::Invalid)));
+    }
 
     #[test]
     fn failed_explicit_migration_rolls_back_identity_ddl_and_user_version() {
