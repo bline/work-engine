@@ -99,6 +99,12 @@ fn endpoint_kind(endpoint: &str) -> Option<(&'static str, Funding, &'static [&'s
     })
 }
 
+/// The table's provider and funding names of a route endpoint kind; `None`
+/// for a kind the table does not cover (for example `loopback:` routes).
+pub fn endpoint_provider_funding(endpoint: &str) -> Option<(&'static str, &'static str)> {
+    endpoint_kind(endpoint).map(|(provider, funding, _)| (provider, funding.label()))
+}
+
 fn digest(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }

@@ -1423,6 +1423,7 @@ impl Host {
                         relayed_bytes: relayed,
                         drained_and_screened: true,
                         body_sha256: sha,
+                        classified: None,
                     },
                 )?;
                 // Responses errors name a `code`, Messages errors a `type`.

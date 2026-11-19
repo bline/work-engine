@@ -5,6 +5,8 @@ use super::*;
 pub mod analysis;
 #[path = "pi_coding_claims.rs"]
 pub mod claims;
+#[path = "pi_classification.rs"]
+pub mod classification;
 #[path = "pi_coding_export.rs"]
 pub mod export;
 #[path = "pi_failover.rs"]
