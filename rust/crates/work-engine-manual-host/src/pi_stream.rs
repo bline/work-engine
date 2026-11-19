@@ -54,13 +54,16 @@ pub struct Upstream<R: Read> {
     chunk_left: usize,
     done: bool,
     pub status: u16,
-    /// Response headers kept as evidence: provider rate-limit, overage and
-    /// request identity headers (lowercased names), in order.
+    /// Response headers kept as evidence: provider rate-limit, overage,
+    /// retry-after and request identity headers (lowercased names), in order.
     pub kept: Vec<(String, String)>,
 }
 /// Whether a response header is kept as evidence.
 pub fn kept_header(name: &str) -> bool {
-    name == "request-id" || name.starts_with("anthropic-ratelimit-") || name.contains("overage")
+    name == "request-id"
+        || name == "retry-after"
+        || name.starts_with("anthropic-ratelimit-")
+        || name.contains("overage")
 }
 impl<R: Read> Upstream<R> {
     pub fn open(r: R) -> Result<Self> {
@@ -299,6 +302,9 @@ pub struct Relay {
     pub closing: Option<&'static str>,
     /// The response head's kept headers ([`kept_header`]).
     pub head_headers: Vec<(String, String)>,
+    /// Epoch ms at which the response head was read; `None` before a head.
+    /// Not part of [`Relay::evidence_for`]; the Host retains it per attempt.
+    pub head_ms: Option<u64>,
 }
 impl Relay {
     pub fn sha256(&self) -> String {
@@ -768,6 +774,7 @@ impl Session {
                 cancel_wait_ms: None,
                 closing: None,
                 head_headers: Vec::new(),
+                head_ms: None,
             },
             abort: Some(Box::new(abort)),
             refuse,
@@ -840,6 +847,7 @@ impl Session {
                 cancel_wait_ms: None,
                 closing: None,
                 head_headers: Vec::new(),
+                head_ms: None,
             },
         )
     }
@@ -942,6 +950,7 @@ impl Session {
                     Some(Ok((status, kept))) => {
                         self.r.status = status;
                         self.r.head_headers = kept;
+                        self.r.head_ms = Some(now_millis());
                         if (self.refuse)(status) {
                             self.refusal.0 = status;
                             self.state = State::Refusal;
