@@ -6,7 +6,7 @@ pub const MAX_METADATA: usize = 128 * 1024;
 /// Complete notice receipts leave room for the protected operator response
 /// wrapper within its existing 128KiB frame; the trailing newline is framing.
 pub const MAX_NOTICE_RECEIPT_BYTES: usize = 128 * 1024 - 256;
-pub const MAX_ARTIFACT_BYTES: usize = 8 * 1024 * 1024;
+pub const MAX_ARTIFACT_BYTES: usize = 16 * 1024 * 1024;
 pub const RESERVED_PREFIX: &str = "research-";
 const TABLES: &str = "
 CREATE TABLE research_tasks(task_id TEXT PRIMARY KEY, subject_id TEXT NOT NULL);

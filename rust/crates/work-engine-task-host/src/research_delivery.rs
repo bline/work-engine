@@ -596,6 +596,58 @@ fn messages_snapshot_projection(
     }
     Ok(Some((out, spans)))
 }
+/// Option A (operator decision, board 5928): the Pi Host advisory reads only
+/// `request\ncard` through `snapshot_read`; `reconstruction.json` is never a
+/// snapshot member. The host reads it from the caller-supplied bytes, which
+/// are the host-held `research-reconstruction` artifact (in the controlled
+/// path the basis bundle's pinned artifact, bound by
+/// `BasisBundle::reconstruction_digest`); they are retained as that artifact
+/// and bound by `reconstruction_sha256` in the delivery record. Before any
+/// projection is accepted the host replays them with `card_host::reconstruct`
+/// and requires exactly this card and this original request. Empty bytes mean
+/// the host holds no reconstruction. `checked_fixture_basis` never passes
+/// empty bytes (its pinned lookup refuses an absent artifact as unavailable,
+/// and basis validation rejects empty artifacts), so `missing` names the gap
+/// only for direct callers.
+fn pi_host_reconstruction(
+    request: &[u8],
+    card: &[u8],
+    reconstruction: &[u8],
+    sources: &Value,
+) -> Result<research_register::card_host::Reconstruction, HostError> {
+    let refusal = |status: &str, reason: &str| {
+        delivery_error(status, "host-reconstruction", reason, sources.clone())
+    };
+    if reconstruction.is_empty() {
+        return Err(refusal("unavailable", "pi-host-reconstruction-missing"));
+    }
+    let parsed: research_register::card_host::Reconstruction = strict(reconstruction)
+        .ok()
+        .and_then(|v| serde_json::from_value(v).ok())
+        .ok_or_else(|| refusal("refused", "pi-host-reconstruction-malformed"))?;
+    let digest = sha(&serde_json::to_vec(&parsed)?);
+    let reconstructed =
+        research_register::card_host::reconstruct(&parsed, &digest).map_err(|error| {
+            delivery_error(
+                "refused",
+                "host-reconstruction",
+                "pi-host-reconstruction-does-not-replay",
+                json!({"retained":sources,"reconstruct_error":error}),
+            )
+        })?;
+    if reconstructed != card {
+        return Err(refusal("mismatch", "pi-host-reconstruction-card-mismatch"));
+    }
+    if parsed.request.current.request_sha256 != sha(request)
+        || validate_original_request(request, &parsed).is_err()
+    {
+        return Err(refusal(
+            "mismatch",
+            "pi-host-reconstruction-request-mismatch",
+        ));
+    }
+    Ok(parsed)
+}
 fn verify_delivery(
     retained: RetainedDelivery,
     original: &ResearchOriginalEvidence,
@@ -605,23 +657,37 @@ fn verify_delivery(
 ) -> Result<VerifiedConsumerDelivery, HostError> {
     let sources = json!({"request_sha256":sha(request),"card_sha256":sha(card),"reconstruction_sha256":sha(reconstruction),"retained_sha256":sha(&retained.bytes),"advisory_task":original.advisory().task_id,"advisory_subject":original.advisory().subject_id,"operation_id":original.advisory().result.as_ref().map(|r|&r.operation_id)});
     let reconstruction_bytes = reconstruction;
-    let reconstruction_value = strict(reconstruction)?;
-    let reconstruction: research_register::card_host::Reconstruction =
-        serde_json::from_value(reconstruction_value)?;
-    let reconstructed = research_register::card_host::reconstruct(
-        &reconstruction,
-        &sha(&serde_json::to_vec(&reconstruction)?),
-    )
-    .map_err(|_| HostError::Configuration)?;
-    if reconstructed != card || reconstruction.request.current.request_sha256 != sha(request) {
-        return Err(delivery_error(
-            "mismatch",
-            "native-delivery",
-            "reconstruction-card-or-request-digest-mismatch",
-            sources.clone(),
-        ));
+    // S1: the wire grammar is selected by the realization the session bound;
+    // an unknown protocol refuses.
+    let realization = retained.value["input"]["protocol_digest"]
+        .as_str()
+        .and_then(native_realization::Realization::from_protocol_digest);
+    let pi_host = realization == Some(native_realization::Realization::PiHost);
+    let reconstruction = if pi_host {
+        pi_host_reconstruction(request, card, reconstruction_bytes, &sources)?
+    } else {
+        let reconstruction_value = strict(reconstruction)?;
+        let reconstruction: research_register::card_host::Reconstruction =
+            serde_json::from_value(reconstruction_value)?;
+        let reconstructed = research_register::card_host::reconstruct(
+            &reconstruction,
+            &sha(&serde_json::to_vec(&reconstruction)?),
+        )
+        .map_err(|_| HostError::Configuration)?;
+        if reconstructed != card || reconstruction.request.current.request_sha256 != sha(request) {
+            return Err(delivery_error(
+                "mismatch",
+                "native-delivery",
+                "reconstruction-card-or-request-digest-mismatch",
+                sources.clone(),
+            ));
+        }
+        reconstruction
+    };
+    // The Pi Host check above already validated the original request.
+    if !pi_host {
+        validate_original_request(request, &reconstruction)?;
     }
-    validate_original_request(request, &reconstruction)?;
     let envelope =
         research_register::card_wire::decode(card).map_err(|_| HostError::Configuration)?;
     if envelope.outcome != "card"
@@ -716,7 +782,15 @@ fn verify_delivery(
     let send = call["physical_send"]
         .as_u64()
         .ok_or(HostError::Configuration)?;
-    let mut total = request.len() + card.len() + reconstruction_bytes.len() + result.body.len();
+    // Option A: the Pi Host reconstruction is host-held, never on the wire,
+    // and bounded by the basis artifact cap, so only the Codex arm counts it
+    // in the combined payload bound.
+    let held = if pi_host {
+        0
+    } else {
+        reconstruction_bytes.len()
+    };
+    let mut total = request.len() + card.len() + held + result.body.len();
     let payloads = input["payloads"]
         .as_array()
         .ok_or(HostError::Configuration)?;
@@ -799,11 +873,6 @@ fn verify_delivery(
     }
     let request_value = strict(&decoded)
         .map_err(|e| scoped_error(e, "refused", "strict-wire-json", sources.clone()))?;
-    // S1: the wire grammar is selected by the realization the session bound;
-    // an unknown protocol refuses.
-    let realization = input["protocol_digest"]
-        .as_str()
-        .and_then(native_realization::Realization::from_protocol_digest);
     let (projection, spans) = match realization {
         Some(native_realization::Realization::Codex) => {
             if request_value
@@ -865,11 +934,12 @@ fn verify_delivery(
                     sources.clone(),
                 ));
             }
+            // Option A: the model-read target is exactly `request\ncard`; a
+            // projection that also carries the reconstruction is not equal
+            // to it and refuses.
             let mut expected = request.to_vec();
             expected.push(b'\n');
             expected.extend_from_slice(card);
-            expected.push(b'\n');
-            expected.extend_from_slice(reconstruction_bytes);
             messages_request_checks(payloads).map_err(|reason| {
                 delivery_error("refused", "messages-request", reason, sources.clone())
             })?;
@@ -927,17 +997,30 @@ fn verify_delivery(
     };
     let visible = std::str::from_utf8(&projection).map_err(|_| HostError::Configuration)?;
     // Exact decoded model-visible strings, not digest echoes or escaped wire substrings.
-    for required in [request, card, reconstruction_bytes] {
+    let (required, not_visible): (&[&[u8]], _) = if pi_host {
+        (&[request, card], "full-request-card-not-uniquely-visible")
+    } else {
+        (
+            &[request, card, reconstruction_bytes],
+            "full-request-card-reconstruction-not-uniquely-visible",
+        )
+    };
+    for required in required {
         let literal = std::str::from_utf8(required).map_err(|_| HostError::Configuration)?;
         if visible.match_indices(literal).count() != 1 {
             return Err(delivery_error(
                 "mismatch",
                 "native-delivery",
-                "full-request-card-reconstruction-not-uniquely-visible",
+                not_visible,
                 sources.clone(),
             ));
         }
     }
+    let complete = if pi_host {
+        "request-card-explicit-cause-reconstruction-host-verified-original-owner-joins-checked"
+    } else {
+        "full-payload-card-explicit-cause-original-owner-joins-checked"
+    };
     artifacts.push(artifact("native-causal-delivery", retained.bytes));
     artifacts.push(artifact("research-request", request.to_vec()));
     artifacts.push(artifact("research-card", card.to_vec()));
@@ -949,7 +1032,7 @@ fn verify_delivery(
         "research-decoding-map",
         serde_json::to_vec(&spans)?,
     ));
-    artifacts.push(artifact("research-consumer-delivery-v1",serde_json::to_vec(&json!({"version":1,"schema":"research-consumer-delivery-v1","status":"complete","reason":"full-payload-card-explicit-cause-original-owner-joins-checked","sources":sources,"scope":"explicit-cause delivery attribution; no model-use or authority claim","operation_id":result.operation_id,"inference_call_id":inference,"physical_send":send,"response_id":call["response_id"],"request_sha256":sha(request),"card_sha256":sha(card)}))?));
+    artifacts.push(artifact("research-consumer-delivery-v1",serde_json::to_vec(&json!({"version":1,"schema":"research-consumer-delivery-v1","status":"complete","reason":complete,"sources":sources,"scope":"explicit-cause delivery attribution; no model-use or authority claim","operation_id":result.operation_id,"inference_call_id":inference,"physical_send":send,"response_id":call["response_id"],"request_sha256":sha(request),"card_sha256":sha(card)}))?));
     let context = input["context_id"]
         .as_str()
         .ok_or(HostError::Configuration)?
@@ -1322,6 +1405,47 @@ mod projection_tests {
         );
     }
 
+    /// Option A: the Pi Host target is `request\ncard`. Reads of the old
+    /// member (`request\ncard\nreconstruction`) are not equal to it, so they
+    /// refuse rather than project a prefix.
+    #[test]
+    fn messages_projection_refuses_old_shape_with_reconstruction() {
+        let old = b"request\ncard\nreconstruction".to_vec();
+        let target = b"request\ncard".to_vec();
+        let request = messages_request(&old);
+        assert!(messages_snapshot_projection(&request, "request-3", 1, "snap", &target).is_err());
+        let request = messages_request(&target);
+        let (out, _) = messages_snapshot_projection(&request, "request-3", 1, "snap", &target)
+            .unwrap()
+            .unwrap();
+        assert_eq!(out, target);
+        // Reads covering only the `request\ncard` prefix of an old member
+        // read exactly the target, so they project it.
+        let mut prefix = messages_request(&old);
+        let tail = target.len() - 7;
+        prefix["messages"][1]["content"][1]["input"]["length"] = json!(tail);
+        let result = json!({"encoding":"utf8","text":std::str::from_utf8(&old[7..target.len()]).unwrap(),
+            "sha256":sha(&old[7..target.len()]),"snapshot_id":"snap","member_id":"m","offset":7,"length":tail});
+        prefix["messages"][2]["content"][1]["content"] =
+            json!([{"type":"text","text":result.to_string()}]);
+        let (out, _) = messages_snapshot_projection(&prefix, "request-3", 1, "snap", &target)
+            .unwrap()
+            .unwrap();
+        assert_eq!(out, target);
+    }
+
+    /// The two Pi Host reconstruction refusals that need no card replay.
+    #[test]
+    fn pi_host_reconstruction_missing_and_malformed_are_named() {
+        let reason = |bytes: &[u8]| match pi_host_reconstruction(b"r", b"c", bytes, &json!({})) {
+            Err(HostError::ResearchDelivery(v)) => v["reason"].as_str().unwrap().to_owned(),
+            other => panic!("{:?}", other.err()),
+        };
+        assert_eq!(reason(b""), "pi-host-reconstruction-missing");
+        assert_eq!(reason(b"{"), "pi-host-reconstruction-malformed");
+        assert_eq!(reason(b"{}"), "pi-host-reconstruction-malformed");
+    }
+
     #[test]
     fn messages_projection_refuses_identity_order_and_content_changes() {
         let expected = b"request\ncard\nreconstruction".to_vec();
@@ -1588,12 +1712,13 @@ mod projection_tests {
 
     /// L2: `verify_delivery` over the retained delivery of a real Pi Host run
     /// (`lifecycle-service` `pi_host_research_delivery`: Pi in the Host's
-    /// container read the A4 material in `mcp__pi__snapshot_read` calls
+    /// container read `request\ncard` in `mcp__pi__snapshot_read` calls
     /// relayed through the actor, then published), with the owner's original
-    /// evidence read from that run's task store.
+    /// evidence read from that run's task store. `WE_A4_OTHER_RECONSTRUCTION`
+    /// is a valid reconstruction of a different card (option A negative).
     #[test]
     #[cfg(feature = "controlled-proof")]
-    #[ignore = "reads a lifecycle-service pi_host_research_delivery run (WE_PI_HOST_OUT) and its A4 fixture (WE_A4_FIXTURE)"]
+    #[ignore = "reads a lifecycle-service pi_host_research_delivery run (WE_PI_HOST_OUT), its A4 fixture (WE_A4_FIXTURE) and another card's reconstruction (WE_A4_OTHER_RECONSTRUCTION)"]
     fn pi_host_q_delivery_verifies() {
         pi_host_delivery(false);
     }
@@ -1605,7 +1730,7 @@ mod projection_tests {
     /// `verify_delivery`'s own.
     #[test]
     #[cfg(feature = "controlled-proof")]
-    #[ignore = "reads a lifecycle-service pi_host_live_arm advisory run (WE_PI_HOST_OUT) and its A4 card (WE_A4_FIXTURE)"]
+    #[ignore = "reads a lifecycle-service pi_host_live_arm advisory run (WE_PI_HOST_OUT), its A4 card (WE_A4_FIXTURE) and another card's reconstruction (WE_A4_OTHER_RECONSTRUCTION)"]
     fn pi_host_live_delivery_verifies() {
         pi_host_delivery(true);
     }
@@ -1620,14 +1745,12 @@ mod projection_tests {
         let request = read(a4.join("request.json"));
         let card = read(a4.join("card.json"));
         let reconstruction = read(a4.join("reconstruction.json"));
-        let material = [
-            request.clone(),
-            b"\n".to_vec(),
-            card.clone(),
-            b"\n".to_vec(),
-            reconstruction.clone(),
-        ]
-        .concat();
+        let other_reconstruction = read(std::path::PathBuf::from(
+            std::env::var("WE_A4_OTHER_RECONSTRUCTION").unwrap(),
+        ));
+        // Option A: the advisory reads `request\ncard`; the reconstruction is
+        // host-held and checked out of band.
+        let material = [request.clone(), b"\n".to_vec(), card.clone()].concat();
         let bytes = read(out.join("retained.json"));
         let mapping = serde_json::from_slice(&read(out.join("mapping.json"))).unwrap();
         let summary: Value = serde_json::from_slice(&read(out.join("summary.json"))).unwrap();
@@ -1642,18 +1765,19 @@ mod projection_tests {
             summary["subject_id"].as_str().unwrap()
         );
         let original = store.research_original_evidence(task, &mapping).unwrap();
-        let verify = |value: Value| {
+        let verify_with = |value: Value, request: &[u8], reconstruction: &[u8]| {
             verify_delivery(
                 RetainedDelivery {
                     bytes: bytes.clone(),
                     value,
                 },
                 &original,
-                &request,
+                request,
                 &card,
-                &reconstruction,
+                reconstruction,
             )
         };
+        let verify = |value: Value| verify_with(value, &request, &reconstruction);
         let base: Value = serde_json::from_slice(&bytes).unwrap();
         let delivery = verify(base.clone()).unwrap();
         assert_eq!(delivery.projection, material);
@@ -1672,11 +1796,73 @@ mod projection_tests {
             .map(|a| serde_json::from_slice(&a.bytes).unwrap())
             .unwrap();
         assert_eq!(consumer["status"], "complete");
+        assert_eq!(
+            consumer["reason"],
+            "request-card-explicit-cause-reconstruction-host-verified-original-owner-joins-checked"
+        );
+        assert_eq!(
+            consumer["sources"]["reconstruction_sha256"],
+            sha(&reconstruction)
+        );
+        assert!(
+            delivery
+                .artifacts
+                .iter()
+                .any(|a| a.id == "research-reconstruction" && a.bytes == reconstruction)
+        );
         let reason = |e: HostError| match e {
             HostError::ResearchDelivery(v) => v["reason"].as_str().unwrap_or_default().to_owned(),
             other => format!("{other:?}"),
         };
         let mut refusals = serde_json::Map::new();
+        refusals.insert(
+            "reconstruction-missing".into(),
+            json!(reason(
+                verify_with(base.clone(), &request, b"").err().unwrap()
+            )),
+        );
+        refusals.insert(
+            "reconstruction-malformed".into(),
+            json!(reason(
+                verify_with(base.clone(), &request, b"{").err().unwrap()
+            )),
+        );
+        refusals.insert(
+            "reconstruction-other-card".into(),
+            json!(reason(
+                verify_with(base.clone(), &request, &other_reconstruction)
+                    .err()
+                    .unwrap()
+            )),
+        );
+        // A reconstruction whose retained card bytes differ by one byte from
+        // its own replay.
+        let mut corrupt: Value = serde_json::from_slice(&reconstruction).unwrap();
+        let first = corrupt["card_bytes"][0].as_u64().unwrap();
+        corrupt["card_bytes"][0] = json!(first ^ 1);
+        let corrupt = serde_json::to_vec(&corrupt).unwrap();
+        let (corrupt_reason, corrupt_error) =
+            match verify_with(base.clone(), &request, &corrupt).err().unwrap() {
+                HostError::ResearchDelivery(v) => (
+                    v["reason"].as_str().unwrap_or_default().to_owned(),
+                    v["sources"]["reconstruct_error"].clone(),
+                ),
+                other => (format!("{other:?}"), Value::Null),
+            };
+        refusals.insert(
+            "reconstruction-does-not-replay".into(),
+            json!(corrupt_reason),
+        );
+        let mut other_request = request.clone();
+        other_request.push(b' ');
+        refusals.insert(
+            "reconstruction-other-request".into(),
+            json!(reason(
+                verify_with(base.clone(), &other_request, &reconstruction)
+                    .err()
+                    .unwrap()
+            )),
+        );
         let mut v = base.clone();
         v["input"]["eligible"] = json!(false);
         refusals.insert("ineligible".into(), json!(reason(verify(v).err().unwrap())));
@@ -1754,6 +1940,37 @@ mod projection_tests {
         )
         .unwrap();
         assert_eq!(
+            refusals["reconstruction-missing"],
+            "pi-host-reconstruction-missing"
+        );
+        assert_eq!(
+            refusals["reconstruction-malformed"],
+            "pi-host-reconstruction-malformed"
+        );
+        assert_eq!(
+            refusals["reconstruction-other-card"],
+            "pi-host-reconstruction-card-mismatch"
+        );
+        assert_eq!(
+            refusals["reconstruction-does-not-replay"],
+            "pi-host-reconstruction-does-not-replay"
+        );
+        assert!(
+            corrupt_error.as_str().is_some_and(|e| !e.is_empty()),
+            "{corrupt_error}"
+        );
+        // F2: the host-held reconstruction is outside the combined payload
+        // bound. The same reconstruction padded with JSON whitespace past
+        // `LIMIT` still delivers.
+        let mut padded = reconstruction.clone();
+        padded.resize(LIMIT + 1, b' ');
+        let padded_delivery = verify_with(base.clone(), &request, &padded).unwrap();
+        assert_eq!(padded_delivery.projection, material);
+        assert_eq!(
+            refusals["reconstruction-other-request"],
+            "pi-host-reconstruction-request-mismatch"
+        );
+        assert_eq!(
             refusals["ineligible"],
             "native-input-not-eligible-checked-completed"
         );
@@ -1762,6 +1979,516 @@ mod projection_tests {
         assert_eq!(
             refusals["changed-read-content"],
             "snapshot-call-identity-content-or-range-mismatch"
+        );
+    }
+
+    /// Rebuilds the q1 retained delivery (`value`) at real size: its single
+    /// read becomes sequential 32 KiB reads of `material` from q1's own
+    /// message templates (one Messages body per read, the publication body
+    /// last), and the publication call moves to the request holding every
+    /// read. Returns the number of reads.
+    #[cfg(feature = "controlled-proof")]
+    fn rebuild_real_size(value: &mut Value, material: &[u8]) -> usize {
+        let payloads = value["input"]["payloads"].as_array().unwrap().clone();
+        let body =
+            |i: usize| -> Value { strict(&byte_vec(&payloads[i]["bytes"]).unwrap()).unwrap() };
+        // q1: request-1 twice (failover), request-2 (one read), request-3
+        // (the publication's result).
+        let (r2, r3) = (body(2), body(3));
+        let (m2, m3) = (
+            r2["messages"].as_array().unwrap(),
+            r3["messages"].as_array().unwrap(),
+        );
+        assert_eq!((payloads.len(), m2.len(), m3.len()), (4, 5, 8));
+        let (separator, tail) = (m3[4].clone(), m2[4].clone());
+        let read_block = |i: usize, offset: usize| -> Vec<Value> {
+            let len = (material.len() - offset).min(32768);
+            let slice = &material[offset..offset + len];
+            let id = format!("toolu_read_{i}");
+            let mut call = m2[2].clone();
+            call["content"][0]["id"] = json!(id);
+            call["content"][0]["input"] = json!({"length":len,"member_id":"research","offset":offset,"snapshot_id":"snapshot:input"});
+            let mut result = m2[3].clone();
+            result["content"][0]["tool_use_id"] = json!(id);
+            result["content"][0]["content"][0]["text"] = json!(json!({"encoding":"utf8","length":len,
+                "member_id":"research","offset":offset,"sha256":sha(slice),"snapshot_id":"snapshot:input",
+                "text":std::str::from_utf8(slice).unwrap()}).to_string());
+            vec![call, result]
+        };
+        let reads: Vec<Vec<Value>> = (0..material.len())
+            .step_by(32768)
+            .enumerate()
+            .map(|(i, offset)| read_block(i, offset))
+            .collect();
+        let publication = vec![m3[5].clone(), m3[6].clone()];
+        let request_body = |blocks: &[Vec<Value>]| -> Vec<u8> {
+            let mut messages = m2[..2].to_vec();
+            for (i, block) in blocks.iter().enumerate() {
+                if i > 0 {
+                    messages.push(separator.clone());
+                }
+                messages.extend(block.iter().cloned());
+            }
+            messages.push(tail.clone());
+            let mut b = r2.clone();
+            b["messages"] = json!(messages);
+            serde_json::to_vec(&b).unwrap()
+        };
+        let mut rebuilt = payloads[..2].to_vec();
+        let mut bodies = Vec::new();
+        for k in 1..=reads.len() {
+            bodies.push(request_body(&reads[..k]));
+        }
+        let mut all = reads.clone();
+        all.push(publication);
+        bodies.push(request_body(&all));
+        for (k, b) in bodies.iter().enumerate() {
+            rebuilt.push(json!({"bytes":b,"inference_call_id":format!("request-{}",k+2),
+                "original_codec":"identity","original_sha256":sha(b),"physical_send":1,"representation":"wire"}));
+        }
+        value["input"]["payloads"] = json!(rebuilt);
+        // The publication is produced by the request holding every read.
+        let selected = format!("request-{}", reads.len() + 1);
+        let mut bundle = strict(&byte_vec(&value["causal"]["bundle"]).unwrap()).unwrap();
+        let call_id = value["causal"]["call_id"].clone();
+        for call in bundle["calls"].as_array_mut().unwrap() {
+            if call["call_id"] == call_id {
+                call["inference_call_id"] = json!(selected);
+                call["physical_send"] = json!(1);
+            }
+        }
+        value["causal"]["bundle"] = json!(serde_json::to_vec(&bundle).unwrap());
+        reads.len()
+    }
+
+    /// Owner sizing (option A repair, item 3): the artifact bytes a basis mint
+    /// would hold for a Pi Host delivery of the real card. The delivery is
+    /// the q1 run (`WE_PI_HOST_OUT`) with its read rebuilt as the planned
+    /// 32 KiB sequential reads of the real `request\ncard` (`WE_A4_REAL`):
+    /// q1's message templates, one Messages body per read, the publication
+    /// body last, and the publication call moved to the selected request.
+    /// `verify_delivery` then runs over it; the report
+    /// (`WE_PI_HOST_MEASURE_OUT`) lists every artifact `checked_unminted_basis`
+    /// would add, plus the dependency target and the selector map.
+    #[test]
+    #[cfg(feature = "controlled-proof")]
+    #[ignore = "measurement: reads a pi_host_research_delivery run (WE_PI_HOST_OUT) and real A4 material (WE_A4_REAL); writes WE_PI_HOST_MEASURE_OUT"]
+    fn pi_host_real_size_basis_artifact_total() {
+        let env = |k: &str| std::path::PathBuf::from(std::env::var(k).unwrap());
+        let (out, real) = (env("WE_PI_HOST_OUT"), env("WE_A4_REAL"));
+        let read = |p: std::path::PathBuf| std::fs::read(p).unwrap();
+        let request = read(real.join("request.json"));
+        let card = read(real.join("card.json"));
+        let reconstruction = read(real.join("reconstruction.json"));
+        let target = read(real.join("target.txt"));
+        let material = [request.clone(), b"\n".to_vec(), card.clone()].concat();
+        let mapping_bytes = read(out.join("mapping.json"));
+        let mapping = serde_json::from_slice(&mapping_bytes).unwrap();
+        let summary: Value = serde_json::from_slice(&read(out.join("summary.json"))).unwrap();
+        let store = retained_task_workflow::TaskStore::open(
+            &out.join("tasks.sqlite"),
+            "human:fixture".into(),
+        )
+        .unwrap();
+        let task = summary["task_id"].as_str().unwrap();
+        let original = store.research_original_evidence(task, &mapping).unwrap();
+        let mut value: Value = serde_json::from_slice(&read(out.join("retained.json"))).unwrap();
+        let reads = rebuild_real_size(&mut value, &material);
+        let rebuilt = value["input"]["payloads"].as_array().unwrap().clone();
+        let retained = serde_json::to_vec(&value).unwrap();
+        let delivery = verify_delivery(
+            RetainedDelivery {
+                bytes: retained.clone(),
+                value,
+            },
+            &original,
+            &request,
+            &card,
+            &reconstruction,
+        )
+        .unwrap();
+        assert_eq!(delivery.projection, material);
+        let result = original.advisory().result.as_ref().unwrap();
+        let recommendation: Recommendation =
+            serde_json::from_value(strict(result.body.as_bytes()).unwrap()).unwrap();
+        let mut sizes = std::collections::BTreeMap::new();
+        for a in &delivery.artifacts {
+            sizes.insert(a.id.clone(), a.bytes.len());
+        }
+        sizes.insert(
+            "<input artifact: projection>".into(),
+            delivery.projection.len(),
+        );
+        sizes.insert(
+            "<result artifact: recommendation>".into(),
+            serde_json::to_vec(
+                &json!({"dependencies":recommendation.dependencies,"text":recommendation.text}),
+            )
+            .unwrap()
+            .len(),
+        );
+        sizes.insert(
+            "research-original-result".into(),
+            serde_json::to_vec(result).unwrap().len(),
+        );
+        sizes.insert(
+            "research-original-operation".into(),
+            original.operation_commit().len(),
+        );
+        sizes.insert("<dependency: decision.target>".into(), target.len());
+        sizes.insert("research-selector-map".into(), mapping_bytes.len());
+        let total: usize = sizes.values().sum();
+        let payload_bytes: usize = rebuilt
+            .iter()
+            .map(|p| byte_vec(&p["bytes"]).unwrap().len())
+            .sum();
+        let cap = retained_task_workflow::research_admission::MAX_ARTIFACT_BYTES;
+        let report = json!({"approximation":"q1 delivery with its single read rebuilt as sequential 32 KiB reads of the real request+card from q1 message templates; payload keys re-serialized sorted",
+            "material":material.len(),"reads":reads,"wire_bodies":rebuilt.iter().map(|p| byte_vec(&p["bytes"]).unwrap().len()).collect::<Vec<_>>(),
+            "wire_bytes":payload_bytes,"retained_bytes":retained.len(),
+            "pi_host_combined_bound":request.len()+card.len()+result.body.len()+payload_bytes,
+            "codex_rule_combined_bound":request.len()+card.len()+reconstruction.len()+result.body.len()+payload_bytes,
+            "combined_limit":LIMIT,"artifacts":sizes,"basis_artifact_total":total,"max_artifact_bytes":cap,
+            "margin":cap as i64 - total as i64});
+        std::fs::write(
+            env("WE_PI_HOST_MEASURE_OUT"),
+            serde_json::to_vec_pretty(&report).unwrap(),
+        )
+        .unwrap();
+        println!("{report}");
+    }
+
+    /// Options E and (i) (operator, 2026-11-19): the real-size basis through
+    /// the actual controlled path offline. The advisory task carries the real
+    /// 20,025 B target as its `target` fact (`MAX_FACT_BYTES`), records the
+    /// planned snapshot reads as completed effects and publishes. A real-card
+    /// fixture file (`WE_A4_REAL`) → `validate_nomination` →
+    /// `scope_causal_read` → `install` → `checked_unminted_basis` over the
+    /// real-size rebuilt q1 delivery (`WE_PI_HOST_OUT`) → `mint` →
+    /// `prepare_research`. Then measures each advisory's `task.observe.v2`
+    /// response against `MAX_FRAME`. Report: `WE_PI_HOST_MINT_OUT`.
+    #[test]
+    #[cfg(feature = "controlled-proof")]
+    #[ignore = "reads a pi_host_research_delivery run (WE_PI_HOST_OUT) and real A4 material (WE_A4_REAL); writes WE_PI_HOST_MINT_OUT"]
+    fn pi_host_real_size_install_join_mint_path() {
+        use retained_task_workflow::{
+            CompletedEffect, CompletedSnapshotReadAttribution, CompletedSnapshotResult,
+            CompletedSnapshotUnavailable, FactInput, FactKind, OperationEntry,
+            ResultPublishPayload, SubjectKind, SubmitTask,
+            research_admission::{MAX_ARTIFACT_BYTES, ProducerRole},
+        };
+        use std::os::unix::fs::PermissionsExt;
+        let env = |k: &str| std::path::PathBuf::from(std::env::var(k).unwrap());
+        let (out, real) = (env("WE_PI_HOST_OUT"), env("WE_A4_REAL"));
+        let read = |p: std::path::PathBuf| std::fs::read(p).unwrap();
+        let request = read(real.join("request.json"));
+        let card = read(real.join("card.json"));
+        let reconstruction = read(real.join("reconstruction.json"));
+        let target = read(real.join("target.txt"));
+        let material = [request.clone(), b"\n".to_vec(), card.clone()].concat();
+        let root = tempfile::tempdir().unwrap();
+        let mut host =
+            crate::tests::admission_host(root.path(), &root.path().join("unused.sock"), false);
+        host.startup.lifecycle.subject_id = "advisory".into();
+        let dependencies =
+            std::collections::BTreeMap::from([("decision.target".to_string(), sha(&target))]);
+        let body = json!({"dependencies":dependencies,"text":"Unknown transfer; alternatives include defer."});
+        let text = |n: usize, seed: &str| -> String { seed.repeat(n / seed.len() + 1)[..n].into() };
+        // An advisory task with the real target as its `target` fact, the
+        // planned 32 KiB snapshot reads recorded as completed effects (each
+        // over the inline limit, as the actor records them), then the
+        // published recommendation. Returns the target fact's reference.
+        let advise = |task: &str, objective: usize, question: usize| {
+            host.store
+                .submit(&SubmitTask {
+                    command_id: format!("command-{task}"),
+                    task_id: task.into(),
+                    subject_id: task.into(),
+                    kind: SubjectKind::RepositoryAnalysis,
+                    objective: text(objective, "Audit the registered basis. "),
+                    engineering_question: text(question, "Which option does it support? "),
+                    snapshot_ref: "snapshot:input".into(),
+                    facts: vec![FactInput {
+                        id: "target".into(),
+                        kind: FactKind::Decision,
+                        text: String::from_utf8(target.clone()).unwrap(),
+                        current: true,
+                    }],
+                })
+                .unwrap();
+            for (i, offset) in (0..material.len()).step_by(32768).enumerate() {
+                let len = (material.len() - offset).min(32768);
+                let digest = sha(&material[offset..offset + len]);
+                let cursor = host.store.observe(task).unwrap().unwrap().cursor_revision;
+                host.store
+                    .record_completed_effect(
+                        task,
+                        CompletedEffect {
+                            effect_id: format!(
+                                "opattempt:{}",
+                                sha(format!("{task}:{i}").as_bytes())
+                            ),
+                            delivery_id: format!("delivery:{task}"),
+                            receipt_digest: digest.clone(),
+                            attribution: Some(CompletedSnapshotReadAttribution {
+                                schema: "completed-snapshot-read-attribution-v2".into(),
+                                parent_invocation_id: format!("delivery:effect:{task}:0:attempt:1"),
+                                call_id: format!("toolu_read_{i}"),
+                                contract_id: "workspace.snapshot.read.v1".into(),
+                                snapshot_id: "snapshot:input".into(),
+                                member_id: "research".into(),
+                                offset: offset as u64,
+                                requested_length: len as u64,
+                                returned_length: len as u64,
+                                result_sha256: digest,
+                                result: CompletedSnapshotResult::Unavailable {
+                                    reason: CompletedSnapshotUnavailable::OverInlineLimit,
+                                },
+                            }),
+                        },
+                        cursor,
+                    )
+                    .unwrap();
+            }
+            let record = host.store.observe(task).unwrap().unwrap();
+            let source = record
+                .sources
+                .iter()
+                .find(|s| s.id == "target")
+                .unwrap()
+                .reference();
+            let payload = ResultPublishPayload {
+                result_id: "result:pi-host-research".into(),
+                body: body.to_string(),
+                source_refs: vec![source.clone()],
+                attribution: "native:claude-haiku-5-5".into(),
+            };
+            let entry = OperationEntry {
+                operation_id: format!("advice-operation-{task}"),
+                task_id: task.into(),
+                subject_id: task.into(),
+                delivery_id: format!("delivery:{task}"),
+                attempt_id: "attempt-advice".into(),
+                expected_task_revision: record.revision,
+                expected_cursor_revision: record.cursor_revision,
+                grant_ref: "result-grant".into(),
+                grant_revision: 1,
+                payload_sha256: retained_task_workflow::json_digest(&payload).unwrap(),
+            };
+            host.store
+                .publish_result(&entry, &payload, &mut |commit| commit())
+                .unwrap();
+            source
+        };
+        // 1-2. Option (i): the real 20,025 B target is the advisory's fact.
+        //      Objective and question at the audit request's sizes.
+        let source = advise("advisory", 205, 305);
+        // The same advisory with the objective at `MAX_TEXT` and the question
+        // as large as the 8 KiB input locator allows, for the observation
+        // bound only.
+        advise("advisory-max", 8 * 1024, 7_800);
+        // 3. The real-size delivery, joined to this owner result.
+        let mut value: Value = serde_json::from_slice(&read(out.join("retained.json"))).unwrap();
+        rebuild_real_size(&mut value, &material);
+        let mapping = std::collections::BTreeMap::from([(
+            "decision.target".to_string(),
+            ("advisory".to_string(), source.clone()),
+        )]);
+        let original = host
+            .store
+            .research_original_evidence("advisory", &mapping)
+            .unwrap();
+        let result = original.advisory().result.clone().unwrap();
+        let commit = strict(original.operation_commit()).unwrap();
+        let args = json!({"attribution":result.attribution,"body":result.body,
+            "result_id":result.result_id,"source_refs":result.source_refs});
+        let call_id = value["causal"]["call_id"].clone();
+        let mut edit = |field: &str, change: &dyn Fn(&mut Value)| {
+            let mut v = strict(&byte_vec(&value["causal"][field]).unwrap()).unwrap();
+            change(&mut v);
+            value["causal"][field] = json!(serde_json::to_vec(&v).unwrap());
+        };
+        edit("owner_commit", &|v| {
+            v["operation_id"] = json!(result.operation_id);
+            v["task_id"] = json!("advisory");
+            v["owner_ref"] = json!("advisory");
+            v["sha256"] = commit["digest"].clone();
+            v["owner_revision"] = commit["owner_revision"].clone();
+        });
+        edit("entry", &|v| {
+            v["operation_id"] = json!(result.operation_id);
+            v["task_id"] = json!("advisory");
+            v["subject_id"] = json!("advisory");
+        });
+        edit("ingress", &|v| v["params"]["arguments"] = args.clone());
+        edit("bundle", &|v| {
+            for call in v["calls"].as_array_mut().unwrap() {
+                if call["call_id"] == call_id {
+                    call["arguments"] = args.clone();
+                }
+            }
+        });
+        value["causal"]["operation_id"] = json!(result.operation_id);
+        // 4. The real-card candidate basis and its fixture file.
+        let mut f = crate::research_admission::tests::fixture();
+        let b = &mut f.bases[0];
+        b.snapshot_ref = host.startup.approved_snapshot_ref.clone();
+        b.submit.snapshot_ref = b.snapshot_ref.clone();
+        b.dependencies = dependencies.clone();
+        b.target_digest = sha(&target);
+        b.key.request_digest = sha(&request);
+        b.delivery.request_digest = sha(&request);
+        b.delivery.card_digest = sha(&card);
+        b.delivery.context = value["input"]["context_id"].as_str().unwrap().into();
+        b.delivery.attempt = value["input"]["attempt_id"].as_str().unwrap().into();
+        b.recommendation.request_digest = sha(&request);
+        b.recommendation.target_digest = sha(&target);
+        b.recommendation.context = b.delivery.context.clone();
+        b.recommendation.delivery_digest = research_digest("delivery", &b.delivery).unwrap();
+        b.reconstruction_digest = sha(&reconstruction);
+        let rv: Value = serde_json::from_slice(&reconstruction).unwrap();
+        let manifest = rv["objects"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|o| o["oid"] == rv["request"]["source"]["bundle"]["blob"])
+            .unwrap();
+        let source_bytes: Vec<u8> = serde_json::from_value(manifest["bytes"].clone()).unwrap();
+        b.source_bundle_digest = sha(&source_bytes);
+        // No duplicates: the card and reconstruction are retained once each.
+        b.artifacts
+            .retain(|a| !matches!(a.id.as_str(), "card" | "retained"));
+        for (id, bytes) in [
+            ("target", target.clone()),
+            ("source", source_bytes),
+            ("result", serde_json::to_vec(&body).unwrap()),
+            ("input", card.clone()),
+        ] {
+            let a = b.artifacts.iter_mut().find(|a| a.id == id).unwrap();
+            a.digest = sha(&bytes);
+            a.bytes = bytes;
+        }
+        for (id, bytes) in [
+            ("research-request", request.clone()),
+            ("research-card", card.clone()),
+            ("research-reconstruction", reconstruction.clone()),
+            (
+                "research-selector-map",
+                serde_json::to_vec(&mapping).unwrap(),
+            ),
+        ] {
+            b.artifacts.push(RetainedArtifact {
+                id: id.into(),
+                digest: sha(&bytes),
+                bytes,
+            });
+        }
+        f.key = b.key.clone();
+        let candidate_bytes: usize = b.artifacts.iter().map(|a| a.bytes.len()).sum();
+        let fixture_path = root.path().join("fixture.json");
+        std::fs::write(&fixture_path, serde_json::to_vec(&f).unwrap()).unwrap();
+        std::fs::set_permissions(&fixture_path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let fixture_file = std::fs::metadata(&fixture_path).unwrap().len();
+        host.startup.research = Some(crate::research_admission::ResearchNomination {
+            task_id: f.key.task_id.clone(),
+            subject_id: f.key.subject_id.clone(),
+            controlled_fixture: Some(fixture_path),
+            installation: None,
+            controlled_installation: None,
+        });
+        // 5. The install path over the fixture file.
+        crate::research_admission::validate_nomination(&host.startup).unwrap();
+        // Startup scopes the owner's causal read to the fixture's advisory.
+        host.store = std::sync::Arc::new(
+            crate::research_admission::scope_causal_read(
+                &host.startup,
+                std::sync::Arc::try_unwrap(host.store).ok().unwrap(),
+            )
+            .unwrap(),
+        );
+        crate::research_admission::install(&host.startup, &host.store, None).unwrap();
+        // 6. The join.
+        let retained = serde_json::to_vec(&value).unwrap();
+        let checked = checked_unminted_basis(
+            f.bases[0].clone(),
+            original,
+            RetainedDelivery {
+                bytes: retained,
+                value,
+            },
+            &request,
+            &card,
+            &reconstruction,
+        )
+        .unwrap();
+        let mut joined = std::collections::BTreeMap::new();
+        for a in &checked.basis.artifacts {
+            joined.insert(a.id.clone(), a.bytes.len());
+        }
+        let joined_total: usize = joined.values().sum();
+        let basis_json = serde_json::to_vec(&checked.basis).unwrap().len();
+        // 7. The mint, then the preparation that stores the minted basis.
+        let producer = host
+            .store
+            .controlled_research_producer(&f.key, ProducerRole::Preparer)
+            .unwrap();
+        let minted = checked.mint(&host.store, &producer).unwrap();
+        let preparation = host
+            .store
+            .prepare_research(&f.key, None, minted, &producer)
+            .unwrap();
+        let db = rusqlite::Connection::open(root.path().join("tasks.sqlite")).unwrap();
+        let (stored_digest, stored): (String, Vec<u8>) = db
+            .query_row(
+                "SELECT basis_digest,basis_json FROM research_basis ORDER BY revision DESC LIMIT 1",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        let stored: Value = serde_json::from_slice(&stored).unwrap();
+        let mut minted_artifacts = std::collections::BTreeMap::new();
+        for a in stored["artifacts"].as_array().unwrap() {
+            minted_artifacts.insert(
+                a["id"].as_str().unwrap().to_owned(),
+                a["bytes"].as_array().unwrap().len(),
+            );
+        }
+        let minted_total: usize = minted_artifacts.values().sum();
+        // 8. The task-host observation of each advisory after publish.
+        let frame = |task: &str| {
+            let reply = crate::dispatch(&host, json!({"op":"task.observe.v2","task_id":task}));
+            let response = serde_json::to_vec(&reply).unwrap().len() + 1;
+            let owner = serde_json::to_vec(&reply["components"]["owner"])
+                .unwrap()
+                .len();
+            assert_eq!(reply["components"]["owner"]["state"], "present", "{task}");
+            json!({"response_bytes":response,"owner_component_bytes":owner,"max_frame":crate::MAX_FRAME,
+                "margin":crate::MAX_FRAME as i64 - response as i64,
+                "lifecycle_state":reply["components"]["lifecycle"]["state"],
+                "native_state":reply["components"]["native_delivery_status"]["state"]})
+        };
+        let observation = json!({"advisory (objective 205 B, question 305 B)":frame("advisory"),
+            "advisory-max (objective 8,192 B, question 7,800 B)":frame("advisory-max")});
+        let report = json!({"steps":["submit advisory with the real target fact + 5 read effects + publish",
+            "same with objective 8,192 B and question 7,800 B (advisory-max)","rebuild real-size delivery","fixture file",
+            "validate_nomination","scope_causal_read","install","checked_unminted_basis","mint","prepare_research",
+            "task.observe.v2 (dispatch)"],
+            "target_bytes":target.len(),"fixture_file_bytes":fixture_file,"candidate_artifact_bytes":candidate_bytes,
+            "joined_artifacts":joined,"joined_artifact_total":joined_total,"joined_basis_json_bytes":basis_json,
+            "max_artifact_bytes":MAX_ARTIFACT_BYTES,
+            "preparation":preparation,"minted_basis_digest":stored_digest,"minted_artifacts":minted_artifacts,
+            "minted_artifact_total":minted_total,"minted_margin":MAX_ARTIFACT_BYTES as i64 - minted_total as i64,
+            "observation":observation});
+        std::fs::write(
+            env("WE_PI_HOST_MINT_OUT"),
+            serde_json::to_vec_pretty(&report).unwrap(),
+        )
+        .unwrap();
+        assert!(joined_total > 8 * 1024 * 1024 && minted_total <= MAX_ARTIFACT_BYTES);
+        assert!(preparation.ready, "{preparation:?}");
+        assert_eq!(
+            preparation.basis_digest.as_deref(),
+            Some(stored_digest.as_str())
         );
     }
 }
