@@ -1982,38 +1982,13 @@ mod projection_tests {
         );
     }
 
-    /// Owner sizing (option A repair, item 3): the artifact bytes a basis mint
-    /// would hold for a Pi Host delivery of the real card. The delivery is
-    /// the q1 run (`WE_PI_HOST_OUT`) with its read rebuilt as the planned
-    /// 32 KiB sequential reads of the real `request\ncard` (`WE_A4_REAL`):
-    /// q1's message templates, one Messages body per read, the publication
-    /// body last, and the publication call moved to the selected request.
-    /// `verify_delivery` then runs over it; the report
-    /// (`WE_PI_HOST_MEASURE_OUT`) lists every artifact `checked_unminted_basis`
-    /// would add, plus the dependency target and the selector map.
-    #[test]
+    /// Rebuilds the q1 retained delivery (`value`) at real size: its single
+    /// read becomes sequential 32 KiB reads of `material` from q1's own
+    /// message templates (one Messages body per read, the publication body
+    /// last), and the publication call moves to the request holding every
+    /// read. Returns the number of reads.
     #[cfg(feature = "controlled-proof")]
-    #[ignore = "measurement: reads a pi_host_research_delivery run (WE_PI_HOST_OUT) and real A4 material (WE_A4_REAL); writes WE_PI_HOST_MEASURE_OUT"]
-    fn pi_host_real_size_basis_artifact_total() {
-        let env = |k: &str| std::path::PathBuf::from(std::env::var(k).unwrap());
-        let (out, real) = (env("WE_PI_HOST_OUT"), env("WE_A4_REAL"));
-        let read = |p: std::path::PathBuf| std::fs::read(p).unwrap();
-        let request = read(real.join("request.json"));
-        let card = read(real.join("card.json"));
-        let reconstruction = read(real.join("reconstruction.json"));
-        let target = read(real.join("target.txt"));
-        let material = [request.clone(), b"\n".to_vec(), card.clone()].concat();
-        let mapping_bytes = read(out.join("mapping.json"));
-        let mapping = serde_json::from_slice(&mapping_bytes).unwrap();
-        let summary: Value = serde_json::from_slice(&read(out.join("summary.json"))).unwrap();
-        let store = retained_task_workflow::TaskStore::open(
-            &out.join("tasks.sqlite"),
-            "human:fixture".into(),
-        )
-        .unwrap();
-        let task = summary["task_id"].as_str().unwrap();
-        let original = store.research_original_evidence(task, &mapping).unwrap();
-        let mut value: Value = serde_json::from_slice(&read(out.join("retained.json"))).unwrap();
+    fn rebuild_real_size(value: &mut Value, material: &[u8]) -> usize {
         let payloads = value["input"]["payloads"].as_array().unwrap().clone();
         let body =
             |i: usize| -> Value { strict(&byte_vec(&payloads[i]["bytes"]).unwrap()).unwrap() };
@@ -2083,6 +2058,43 @@ mod projection_tests {
             }
         }
         value["causal"]["bundle"] = json!(serde_json::to_vec(&bundle).unwrap());
+        reads.len()
+    }
+
+    /// Owner sizing (option A repair, item 3): the artifact bytes a basis mint
+    /// would hold for a Pi Host delivery of the real card. The delivery is
+    /// the q1 run (`WE_PI_HOST_OUT`) with its read rebuilt as the planned
+    /// 32 KiB sequential reads of the real `request\ncard` (`WE_A4_REAL`):
+    /// q1's message templates, one Messages body per read, the publication
+    /// body last, and the publication call moved to the selected request.
+    /// `verify_delivery` then runs over it; the report
+    /// (`WE_PI_HOST_MEASURE_OUT`) lists every artifact `checked_unminted_basis`
+    /// would add, plus the dependency target and the selector map.
+    #[test]
+    #[cfg(feature = "controlled-proof")]
+    #[ignore = "measurement: reads a pi_host_research_delivery run (WE_PI_HOST_OUT) and real A4 material (WE_A4_REAL); writes WE_PI_HOST_MEASURE_OUT"]
+    fn pi_host_real_size_basis_artifact_total() {
+        let env = |k: &str| std::path::PathBuf::from(std::env::var(k).unwrap());
+        let (out, real) = (env("WE_PI_HOST_OUT"), env("WE_A4_REAL"));
+        let read = |p: std::path::PathBuf| std::fs::read(p).unwrap();
+        let request = read(real.join("request.json"));
+        let card = read(real.join("card.json"));
+        let reconstruction = read(real.join("reconstruction.json"));
+        let target = read(real.join("target.txt"));
+        let material = [request.clone(), b"\n".to_vec(), card.clone()].concat();
+        let mapping_bytes = read(out.join("mapping.json"));
+        let mapping = serde_json::from_slice(&mapping_bytes).unwrap();
+        let summary: Value = serde_json::from_slice(&read(out.join("summary.json"))).unwrap();
+        let store = retained_task_workflow::TaskStore::open(
+            &out.join("tasks.sqlite"),
+            "human:fixture".into(),
+        )
+        .unwrap();
+        let task = summary["task_id"].as_str().unwrap();
+        let original = store.research_original_evidence(task, &mapping).unwrap();
+        let mut value: Value = serde_json::from_slice(&read(out.join("retained.json"))).unwrap();
+        let reads = rebuild_real_size(&mut value, &material);
+        let rebuilt = value["input"]["payloads"].as_array().unwrap().clone();
         let retained = serde_json::to_vec(&value).unwrap();
         let delivery = verify_delivery(
             RetainedDelivery {
@@ -2132,7 +2144,7 @@ mod projection_tests {
             .sum();
         let cap = retained_task_workflow::research_admission::MAX_ARTIFACT_BYTES;
         let report = json!({"approximation":"q1 delivery with its single read rebuilt as sequential 32 KiB reads of the real request+card from q1 message templates; payload keys re-serialized sorted",
-            "material":material.len(),"reads":reads.len(),"wire_bodies":rebuilt.iter().map(|p| byte_vec(&p["bytes"]).unwrap().len()).collect::<Vec<_>>(),
+            "material":material.len(),"reads":reads,"wire_bodies":rebuilt.iter().map(|p| byte_vec(&p["bytes"]).unwrap().len()).collect::<Vec<_>>(),
             "wire_bytes":payload_bytes,"retained_bytes":retained.len(),
             "pi_host_combined_bound":request.len()+card.len()+result.body.len()+payload_bytes,
             "codex_rule_combined_bound":request.len()+card.len()+reconstruction.len()+result.body.len()+payload_bytes,
@@ -2144,5 +2156,265 @@ mod projection_tests {
         )
         .unwrap();
         println!("{report}");
+    }
+
+    /// Option E (operator, 2026-11-19): the real-size basis through the
+    /// actual controlled path as far as it goes offline. A real-card fixture
+    /// file (`WE_A4_REAL`) → `validate_nomination` → `install` (fixture
+    /// inputs with the card replay, candidate validation at
+    /// `MAX_ARTIFACT_BYTES`, distinct join) → `checked_unminted_basis` over
+    /// the real-size rebuilt q1 delivery (`WE_PI_HOST_OUT`) → `mint`. The
+    /// owner's target fact cannot carry the real 20,025 B target
+    /// (`MAX_TEXT`), so the advisory publishes over a short synthetic fact
+    /// and the mint must refuse at the source binding (`Stale`), after its
+    /// artifact cap check. Report: `WE_PI_HOST_MINT_OUT`.
+    #[test]
+    #[cfg(feature = "controlled-proof")]
+    #[ignore = "reads a pi_host_research_delivery run (WE_PI_HOST_OUT) and real A4 material (WE_A4_REAL); writes WE_PI_HOST_MINT_OUT"]
+    fn pi_host_real_size_install_join_mint_path() {
+        use retained_task_workflow::{
+            FactInput, FactKind, OperationEntry, ResultPublishPayload, SubjectKind, SubmitTask,
+            research_admission::{MAX_ARTIFACT_BYTES, ProducerRole},
+        };
+        use std::os::unix::fs::PermissionsExt;
+        let env = |k: &str| std::path::PathBuf::from(std::env::var(k).unwrap());
+        let (out, real) = (env("WE_PI_HOST_OUT"), env("WE_A4_REAL"));
+        let read = |p: std::path::PathBuf| std::fs::read(p).unwrap();
+        let request = read(real.join("request.json"));
+        let card = read(real.join("card.json"));
+        let reconstruction = read(real.join("reconstruction.json"));
+        let target = read(real.join("target.txt"));
+        let material = [request.clone(), b"\n".to_vec(), card.clone()].concat();
+        let root = tempfile::tempdir().unwrap();
+        let mut host =
+            crate::tests::admission_host(root.path(), &root.path().join("unused.sock"), false);
+        host.startup.lifecycle.subject_id = "advisory".into();
+        let submit = |task: &str, text: String| SubmitTask {
+            command_id: format!("command-{task}"),
+            task_id: task.into(),
+            subject_id: "advisory".into(),
+            kind: SubjectKind::RepositoryAnalysis,
+            objective: "Audit the registered basis.".into(),
+            engineering_question: "Which option does the basis support?".into(),
+            snapshot_ref: "snapshot:input".into(),
+            facts: vec![FactInput {
+                id: "target".into(),
+                kind: FactKind::Decision,
+                text,
+                current: true,
+            }],
+        };
+        // 1. The real target as the advisory's target fact is refused.
+        let real_fact = host.store.submit(&submit(
+            "advisory-real-target",
+            String::from_utf8(target.clone()).unwrap(),
+        ));
+        assert!(
+            matches!(real_fact, Err(TaskError::Invalid)),
+            "{real_fact:?}"
+        );
+        // 2. The advisory with a short synthetic fact publishes a result
+        //    whose dependencies name the real target.
+        host.store
+            .submit(&submit("advisory", "synthetic target fact".into()))
+            .unwrap();
+        let record = host.store.observe("advisory").unwrap().unwrap();
+        let source = record
+            .sources
+            .iter()
+            .find(|s| s.id == "target")
+            .unwrap()
+            .reference();
+        let dependencies =
+            std::collections::BTreeMap::from([("decision.target".to_string(), sha(&target))]);
+        let body = json!({"dependencies":dependencies,"text":"Unknown transfer; alternatives include defer."});
+        let payload = ResultPublishPayload {
+            result_id: "result:pi-host-research".into(),
+            body: body.to_string(),
+            source_refs: vec![source.clone()],
+            attribution: "native:claude-haiku-5-5".into(),
+        };
+        let entry = OperationEntry {
+            operation_id: "advice-operation".into(),
+            task_id: "advisory".into(),
+            subject_id: "advisory".into(),
+            delivery_id: "delivery-advice".into(),
+            attempt_id: "attempt-advice".into(),
+            expected_task_revision: record.revision,
+            expected_cursor_revision: record.cursor_revision,
+            grant_ref: "result-grant".into(),
+            grant_revision: 1,
+            payload_sha256: retained_task_workflow::json_digest(&payload).unwrap(),
+        };
+        host.store
+            .publish_result(&entry, &payload, &mut |commit| commit())
+            .unwrap();
+        // 3. The real-size delivery, joined to this owner result.
+        let mut value: Value = serde_json::from_slice(&read(out.join("retained.json"))).unwrap();
+        rebuild_real_size(&mut value, &material);
+        let mapping = std::collections::BTreeMap::from([(
+            "decision.target".to_string(),
+            ("advisory".to_string(), source.clone()),
+        )]);
+        let original = host
+            .store
+            .research_original_evidence("advisory", &mapping)
+            .unwrap();
+        let result = original.advisory().result.clone().unwrap();
+        let commit = strict(original.operation_commit()).unwrap();
+        let args = json!({"attribution":result.attribution,"body":result.body,
+            "result_id":result.result_id,"source_refs":result.source_refs});
+        let call_id = value["causal"]["call_id"].clone();
+        let mut edit = |field: &str, change: &dyn Fn(&mut Value)| {
+            let mut v = strict(&byte_vec(&value["causal"][field]).unwrap()).unwrap();
+            change(&mut v);
+            value["causal"][field] = json!(serde_json::to_vec(&v).unwrap());
+        };
+        edit("owner_commit", &|v| {
+            v["operation_id"] = json!(result.operation_id);
+            v["task_id"] = json!("advisory");
+            v["owner_ref"] = json!("advisory");
+            v["sha256"] = commit["digest"].clone();
+            v["owner_revision"] = commit["owner_revision"].clone();
+        });
+        edit("entry", &|v| {
+            v["operation_id"] = json!(result.operation_id);
+            v["task_id"] = json!("advisory");
+            v["subject_id"] = json!("advisory");
+        });
+        edit("ingress", &|v| v["params"]["arguments"] = args.clone());
+        edit("bundle", &|v| {
+            for call in v["calls"].as_array_mut().unwrap() {
+                if call["call_id"] == call_id {
+                    call["arguments"] = args.clone();
+                }
+            }
+        });
+        value["causal"]["operation_id"] = json!(result.operation_id);
+        // 4. The real-card candidate basis and its fixture file.
+        let mut f = crate::research_admission::tests::fixture();
+        let b = &mut f.bases[0];
+        b.snapshot_ref = host.startup.approved_snapshot_ref.clone();
+        b.submit.snapshot_ref = b.snapshot_ref.clone();
+        b.dependencies = dependencies.clone();
+        b.target_digest = sha(&target);
+        b.key.request_digest = sha(&request);
+        b.delivery.request_digest = sha(&request);
+        b.delivery.card_digest = sha(&card);
+        b.delivery.context = value["input"]["context_id"].as_str().unwrap().into();
+        b.delivery.attempt = value["input"]["attempt_id"].as_str().unwrap().into();
+        b.recommendation.request_digest = sha(&request);
+        b.recommendation.target_digest = sha(&target);
+        b.recommendation.context = b.delivery.context.clone();
+        b.recommendation.delivery_digest = research_digest("delivery", &b.delivery).unwrap();
+        b.reconstruction_digest = sha(&reconstruction);
+        let rv: Value = serde_json::from_slice(&reconstruction).unwrap();
+        let manifest = rv["objects"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|o| o["oid"] == rv["request"]["source"]["bundle"]["blob"])
+            .unwrap();
+        let source_bytes: Vec<u8> = serde_json::from_value(manifest["bytes"].clone()).unwrap();
+        b.source_bundle_digest = sha(&source_bytes);
+        // No duplicates: the card and reconstruction are retained once each.
+        b.artifacts
+            .retain(|a| !matches!(a.id.as_str(), "card" | "retained"));
+        for (id, bytes) in [
+            ("target", target.clone()),
+            ("source", source_bytes),
+            ("result", serde_json::to_vec(&body).unwrap()),
+            ("input", card.clone()),
+        ] {
+            let a = b.artifacts.iter_mut().find(|a| a.id == id).unwrap();
+            a.digest = sha(&bytes);
+            a.bytes = bytes;
+        }
+        for (id, bytes) in [
+            ("research-request", request.clone()),
+            ("research-card", card.clone()),
+            ("research-reconstruction", reconstruction.clone()),
+            (
+                "research-selector-map",
+                serde_json::to_vec(&mapping).unwrap(),
+            ),
+        ] {
+            b.artifacts.push(RetainedArtifact {
+                id: id.into(),
+                digest: sha(&bytes),
+                bytes,
+            });
+        }
+        f.key = b.key.clone();
+        let candidate_bytes: usize = b.artifacts.iter().map(|a| a.bytes.len()).sum();
+        let fixture_path = root.path().join("fixture.json");
+        std::fs::write(&fixture_path, serde_json::to_vec(&f).unwrap()).unwrap();
+        std::fs::set_permissions(&fixture_path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let fixture_file = std::fs::metadata(&fixture_path).unwrap().len();
+        host.startup.research = Some(crate::research_admission::ResearchNomination {
+            task_id: f.key.task_id.clone(),
+            subject_id: f.key.subject_id.clone(),
+            controlled_fixture: Some(fixture_path),
+            installation: None,
+            controlled_installation: None,
+        });
+        // 5. The install path over the fixture file.
+        crate::research_admission::validate_nomination(&host.startup).unwrap();
+        // Startup scopes the owner's causal read to the fixture's advisory.
+        host.store = std::sync::Arc::new(
+            crate::research_admission::scope_causal_read(
+                &host.startup,
+                std::sync::Arc::try_unwrap(host.store).ok().unwrap(),
+            )
+            .unwrap(),
+        );
+        crate::research_admission::install(&host.startup, &host.store, None).unwrap();
+        // 6. The join.
+        let retained = serde_json::to_vec(&value).unwrap();
+        let checked = checked_unminted_basis(
+            f.bases[0].clone(),
+            original,
+            RetainedDelivery {
+                bytes: retained,
+                value,
+            },
+            &request,
+            &card,
+            &reconstruction,
+        )
+        .unwrap();
+        let mut joined = std::collections::BTreeMap::new();
+        for a in &checked.basis.artifacts {
+            joined.insert(a.id.clone(), a.bytes.len());
+        }
+        let joined_total: usize = joined.values().sum();
+        let basis_json = serde_json::to_vec(&checked.basis).unwrap().len();
+        // 7. The mint: past the artifact cap, refused at the source binding.
+        let producer = host
+            .store
+            .controlled_research_producer(&f.key, ProducerRole::Preparer)
+            .unwrap();
+        let minted = checked.mint(&host.store, &producer);
+        let mint_outcome = match &minted {
+            Ok(_) => "minted".to_string(),
+            Err(e) => format!("{e:?}"),
+        };
+        let report = json!({"steps":["submit(real target as fact)","submit+publish advisory (synthetic fact)",
+            "rebuild real-size delivery","fixture file","validate_nomination","scope_causal_read","install","checked_unminted_basis","mint"],
+            "real_target_fact":format!("{real_fact:?}"),"target_bytes":target.len(),
+            "fixture_file_bytes":fixture_file,"candidate_artifact_bytes":candidate_bytes,
+            "joined_artifacts":joined,"joined_artifact_total":joined_total,"joined_basis_json_bytes":basis_json,
+            "max_artifact_bytes":MAX_ARTIFACT_BYTES,"margin":MAX_ARTIFACT_BYTES as i64 - joined_total as i64,
+            "mint":mint_outcome});
+        std::fs::write(
+            env("WE_PI_HOST_MINT_OUT"),
+            serde_json::to_vec_pretty(&report).unwrap(),
+        )
+        .unwrap();
+        assert!(joined_total > 8 * 1024 * 1024 && joined_total <= MAX_ARTIFACT_BYTES);
+        assert!(
+            matches!(minted, Err(HostError::Task(TaskError::Stale))),
+            "{mint_outcome}"
+        );
     }
 }

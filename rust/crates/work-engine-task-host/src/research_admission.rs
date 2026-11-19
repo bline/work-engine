@@ -88,7 +88,7 @@ pub(crate) fn validate_nomination(startup: &HostStartup) -> Result<(), HostError
                     .as_ref()
                     .ok_or(HostError::Configuration)?;
                 validate_file(path)?;
-                if fs::metadata(path)?.len() > 8 * 1024 * 1024 {
+                if fs::metadata(path)?.len() > 32 * 1024 * 1024 {
                     return Err(HostError::Configuration);
                 }
                 let f: ControlledFixture = serde_json::from_value(
