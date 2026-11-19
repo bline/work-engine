@@ -914,9 +914,28 @@ fn a_failure_after_a_success_head_is_classified_from_the_stream_and_marked() {
         dim(&out, "openai-api", "api_credit")["reason"],
         "unclassified_failure"
     );
-    // No failure event at all (for example a cancelled stream): marked.
-    let mut m = Job::new("job-oai", &[OAI]);
-    m.relayed(
+    // A verified stream with no failure event (the subscription guard closed
+    // the 200 head before relaying it): informational, carrying the reason.
+    let guard = "subscription_billing_guard: overage not rejected";
+    let mut m = Job::new("job-sub", &[SUB]);
+    m.relayed(1, 1, SUB, "uncertain", 200, NOW - HOUR, &[], b"");
+    m.head(1, 1, 200, NOW - HOUR, &[]);
+    m.set(1, 1, "reason", json!(guard));
+    let out = run(&config(&[&m], NOW));
+    let note = out["marks"]["informational"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|n| n["kind"] == "post_head_no_failure_event")
+        .cloned()
+        .unwrap();
+    assert_eq!(note["reason"], guard);
+    assert!(!has_mark(&out, "post_head_failure_unclassified"));
+    assert_eq!(out["complete"], true, "{out}");
+    // The Host recorded a provider failure event the view cannot find:
+    // blocking.
+    let mut n = Job::new("job-oai", &[OAI]);
+    n.relayed(
         1,
         1,
         OAI,
@@ -926,10 +945,68 @@ fn a_failure_after_a_success_head_is_classified_from_the_stream_and_marked() {
         &[],
         b"data: {\"type\":\"response.created\"}\n\n",
     );
-    m.head(1, 1, 200, NOW - HOUR, &[]);
-    let out = run(&config(&[&m], NOW));
+    n.head(1, 1, 200, NOW - HOUR, &[]);
+    n.set(
+        1,
+        1,
+        "reason",
+        json!("provider failure event in relayed stream: insufficient_quota"),
+    );
+    let out = run(&config(&[&n], NOW));
     assert!(has_mark(&out, "post_head_failure_unclassified"));
     assert_eq!(out["complete"], false);
+    // The stream is not registered in the journal: blocking.
+    let mut u = Job::new("job-oai", &[OAI]);
+    u.attempt(1, 1, OAI, "uncertain", 200);
+    u.head(1, 1, 200, NOW - HOUR, &[]);
+    fs::write(u.dir.path().join("coding-hosted-1-1.stream.sse"), b"").unwrap();
+    let out = run(&config(&[&u], NOW));
+    assert!(has_mark(&out, "post_head_failure_unclassified"));
+    assert_eq!(out["complete"], false);
+}
+
+#[test]
+fn an_operator_clear_after_now_is_not_yet_effective() {
+    let mut j = Job::new("job-api", &[API]);
+    j.refusal(1, 1, API, 402, NOW - HOUR, &[], &error("billing_error"));
+    let mut c = config(&[&j], NOW);
+    c["pools"][1]["credit_cleared_ms"] = json!(NOW + HOUR);
+    let credit = dim(&run(&c), "anthropic-api", "api_credit");
+    assert_eq!(
+        (
+            credit["status"].as_str(),
+            credit["available_again_reason"].as_str()
+        ),
+        (Some("exhausted"), Some("operator_action"))
+    );
+    // Replayed after the clear, it applies.
+    c["now_ms"] = json!(NOW + 2 * HOUR);
+    let credit = dim(&run(&c), "anthropic-api", "api_credit");
+    assert_eq!(credit["reason"], "operator_cleared");
+}
+
+#[test]
+fn a_newer_unusable_utilization_reading_supersedes_an_older_share() {
+    let mut j = Job::new("job-a", &[SUB]);
+    j.success(1, 1, SUB, NOW - 2 * HOUR, &[(H5U, "0.95"), (H7U, "0.5")]);
+    j.success(
+        2,
+        1,
+        SUB,
+        NOW - HOUR,
+        &[(H5U, "ninety"), (H7U, "0.4"), (H7U, "0.6")],
+    );
+    let out = run(&config(&[&j], NOW));
+    let h5 = dim(&out, "claude-sub", "subscription_5h");
+    assert_eq!(
+        (h5["utilization"].clone(), h5["low"].clone()),
+        (Value::Null, Value::Null)
+    );
+    assert_eq!(h5["utilization_reason"], "malformed_header");
+    assert_eq!(h5["utilization_evidence"]["request"], 2);
+    let wk = dim(&out, "claude-sub", "subscription_weekly");
+    assert_eq!(wk["utilization"], Value::Null);
+    assert_eq!(wk["utilization_reason"], "conflicting_header");
 }
 
 #[test]

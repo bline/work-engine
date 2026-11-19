@@ -203,7 +203,9 @@ struct Reading {
     job: String,
     request: u64,
     attempt: u64,
-    utilization: f64,
+    /// The reported share, or why the window's headers were unusable
+    /// (`malformed_header`, `conflicting_header`).
+    utilization: Result<f64, &'static str>,
     reset: Option<Reset>,
     evidence: Value,
 }
@@ -229,7 +231,12 @@ struct Attempt {
     payer: String,
     disposition: String,
     status: Option<u16>,
+    /// The Host's settlement reason, when recorded.
+    reason: Option<String>,
 }
+/// The Host's settlement reason for a provider failure event it found in a
+/// relayed stream (`pi_coding_provider.rs`).
+const HOST_STREAM_FAILURE: &str = "provider failure event in relayed stream:";
 
 /// A response head as retained for one attempt.
 struct Head {
@@ -336,6 +343,10 @@ fn read_journal(root: &Path) -> Result<(Journal, String), &'static str> {
                 payer: s(&a["payer"])?,
                 disposition,
                 status,
+                reason: match &a["reason"] {
+                    Value::Null => None,
+                    v => Some(s(v)?),
+                },
             });
         }
     }
@@ -486,12 +497,23 @@ fn observe(
     });
     let windows: Vec<WindowReading> = table.windows(provider, &head.headers, head.head_ms);
     if reason.is_none() {
-        // Every valid window utilization is a reading, whatever the outcome.
-        for w in windows.iter().filter(|w| w.malformed.is_none()) {
-            let Some(utilization) = w.utilization else {
-                continue;
+        // Every window utilization is a reading, whatever the outcome; an
+        // unusable window is a reading of why, so no older share stays in
+        // force.
+        for w in &windows {
+            let utilization = match (w.malformed, w.utilization) {
+                (Some(m), _) => Err(m),
+                (None, Some(u)) => Ok(u),
+                (None, None) => continue,
             };
-            let mut evidence = base(format!("header:{}", w.utilization_header));
+            let mut evidence = base(format!(
+                "header:{}",
+                if w.malformed.is_some() {
+                    &w.source
+                } else {
+                    &w.utilization_header
+                }
+            ));
             evidence["reset_at"] = match &w.reset {
                 Some(Reset::At(t)) => json!(t),
                 _ => Value::Null,
@@ -560,12 +582,33 @@ fn observe(
     } else {
         // A provider failure after a success head (the attempt stayed
         // uncertain): classified from the retained stream's failure event.
-        let stream = reader
-            .artifact(j, &format!("coding-hosted-{request}-{attempt}.stream.sse"))
-            .unwrap_or_default();
+        let Some(stream) =
+            reader.artifact(j, &format!("coding-hosted-{request}-{attempt}.stream.sse"))
+        else {
+            // Unregistered or unverified: the view cannot see the stream.
+            reader.mark(with_id(
+                json!({"kind":"post_head_failure_unclassified","reason":a.reason,"stream":"unverified"}),
+            ));
+            return;
+        };
         match table.classify_stream(provider, f, &stream) {
+            None if a
+                .reason
+                .as_deref()
+                .is_some_and(|r| r.starts_with(HOST_STREAM_FAILURE)) =>
+            {
+                // The Host found a failure event the view cannot.
+                reader.mark(with_id(
+                    json!({"kind":"post_head_failure_unclassified","reason":a.reason,"stream":"verified"}),
+                ));
+                return;
+            }
             None => {
-                reader.mark(with_id(json!({"kind":"post_head_failure_unclassified"})));
+                // A verified stream with no failure event (guard close,
+                // cancel, Host close, crash reconcile): no quota signal.
+                reader.note(with_id(
+                    json!({"kind":"post_head_no_failure_event","reason":a.reason}),
+                ));
                 return;
             }
             Some(class) => {
@@ -697,9 +740,10 @@ fn derive(config: &Config, config_sha256: &str, table: &Table) -> Result<Value, 
                 order(a.time, &a.job, a.request, a.attempt)
                     .cmp(&order(b.time, &b.job, b.request, b.attempt))
             });
+            // A clear after `now` has not happened yet.
             let cleared = p
                 .credit_cleared_ms
-                .filter(|_| operator.contains(&d.as_str()));
+                .filter(|c| *c <= now && operator.contains(&d.as_str()));
             let st = status(&obs, now, config.max_evidence_age_ms, cleared);
             let (utilization, utilization_reason, reading) =
                 utilization(&reads, now, config.max_evidence_age_ms);
@@ -819,17 +863,22 @@ fn utilization<'a>(
     let Some(last) = reads.last().copied() else {
         return (None, Some("no_reading"), None);
     };
+    let bits = |r: &Reading| r.utilization.map(f64::to_bits);
     if reads
         .iter()
-        .any(|r| r.time == last.time && r.utilization.to_bits() != last.utilization.to_bits())
+        .any(|r| r.time == last.time && bits(r) != bits(last))
     {
         return (None, Some("conflicting"), Some(last));
     }
+    let utilization = match last.utilization {
+        Ok(u) => u,
+        Err(reason) => return (None, Some(reason), Some(last)),
+    };
     if now.saturating_sub(last.time) > max_age {
         return (None, Some("stale"), Some(last));
     }
     if matches!(last.reset, Some(Reset::At(t)) if now >= t) {
         return (None, Some("window_reset_since_reading"), Some(last));
     }
-    (Some(last.utilization), None, Some(last))
+    (Some(utilization), None, Some(last))
 }
