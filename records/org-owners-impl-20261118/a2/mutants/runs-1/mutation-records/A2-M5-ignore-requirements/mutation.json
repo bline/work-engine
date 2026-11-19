@@ -1,0 +1,18 @@
+{
+ "mutant": "A2-M5-ignore-requirements",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority/src/gate.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "759a1de635998a031ef20aea143d0c9e5a499a02a702633c399d42d35a8b9a92",
+   "mutated_sha256": "6f60e03a556e369303f6ab437bf1909456e8cd9f0b6c5afd08eb4a0aa31a6fa2"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority/src/gate.rs",
+   "old": "\n                    && a.requirements_digest == requirements_digest",
+   "new": ""
+  }
+ ]
+}

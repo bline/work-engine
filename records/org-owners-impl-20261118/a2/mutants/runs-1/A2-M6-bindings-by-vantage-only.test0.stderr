@@ -1,0 +1,13 @@
+   Compiling work-engine-organization-authority v0.1.0 (/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority)
+warning: unused variable: `organization`
+   --> crates/work-engine-organization-authority/src/gate.rs:728:5
+    |
+728 |     organization: Option<IssuanceId>,
+    |     ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_organization`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `work-engine-organization-authority` (lib) generated 1 warning (run `cargo fix --lib -p work-engine-organization-authority` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.56s
+     Running tests/admission.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/admission-416f55e63c4dfcef)
+error: test failed, to rerun pass `-p work-engine-organization-authority --test admission`

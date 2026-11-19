@@ -1,0 +1,20 @@
+
+running 1 test
+test sb_an_admission_refusal_refuses_before_spawn ... FAILED
+
+failures:
+
+---- sb_an_admission_refusal_refuses_before_spawn stdout ----
+
+thread 'sb_an_admission_refusal_refuses_before_spawn' (2252837) panicked at crates/work-engine-review-delivery/tests/native_vertical.rs:912:15:
+assertion `left == right` failed
+  left: [O8, R3]
+ right: [OA, O8, R3]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    sb_an_admission_refusal_refuses_before_spawn
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 32 filtered out; finished in 0.19s
+

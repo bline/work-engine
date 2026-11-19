@@ -1,0 +1,18 @@
+{
+ "mutant": "A2-M6-bindings-by-vantage-only",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority/src/gate.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "089ac72873e1871b4c781996ced05e3382639723962b8bbe731777a977104d9a",
+   "mutated_sha256": "a2c488839404d563a24ea88f69185d6d75dc3663612b6d9601cbb4f0de571d2f"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority/src/gate.rs",
+   "old": "if Some(b.organization) == organization && b.vantage == vantage =>",
+   "new": "if b.vantage == vantage =>"
+  }
+ ]
+}

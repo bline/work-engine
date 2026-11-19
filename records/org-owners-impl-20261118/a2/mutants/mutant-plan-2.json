@@ -1,0 +1,532 @@
+{
+ "cwd": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust",
+ "env": {
+  "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a2/target",
+  "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+  "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+ },
+ "steps": [
+  {
+   "name": "pre-hashes",
+   "argv": [
+    "git",
+    "hash-object",
+    "crates/work-engine-organization-authority/src/gate.rs",
+    "crates/work-engine-review-delivery/src/gate.rs"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M1-first-of-two-heads.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "apply",
+    "A2-M1-first-of-two-heads"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M1-first-of-two-heads.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "g2_oa_two_committed_admissions_of_the_candidate_are_ambiguous_heads",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A2-M1-first-of-two-heads.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "restore",
+    "A2-M1-first-of-two-heads"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M2-skip-pin.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "apply",
+    "A2-M2-skip-pin"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M2-skip-pin.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "fixture_admission_binds_principal_actor_subject_boundary_revision_and_realization",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A2-M2-skip-pin.test1",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "state_revoked_when_the_organization_admission_is_revoked_after_admission",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A2-M2-skip-pin.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "restore",
+    "A2-M2-skip-pin"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M3-ignore-scope.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "apply",
+    "A2-M3-ignore-scope"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M3-ignore-scope.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "g2_oa_an_admission_of_another_candidate_requirements_or_scope_does_not_admit",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A2-M3-ignore-scope.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "restore",
+    "A2-M3-ignore-scope"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M4-ignore-candidate.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "apply",
+    "A2-M4-ignore-candidate"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M4-ignore-candidate.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "g2_oa_an_admission_of_another_candidate_requirements_or_scope_does_not_admit",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A2-M4-ignore-candidate.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "restore",
+    "A2-M4-ignore-candidate"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M5-ignore-requirements.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "apply",
+    "A2-M5-ignore-requirements"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M5-ignore-requirements.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "g2_oa_an_admission_of_another_candidate_requirements_or_scope_does_not_admit",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A2-M5-ignore-requirements.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "restore",
+    "A2-M5-ignore-requirements"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M6-bindings-by-vantage-only.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "apply",
+    "A2-M6-bindings-by-vantage-only"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M6-bindings-by-vantage-only.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "g2_oa_bindings_of_another_organizations_admission_do_not_bind_this_one",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A2-M6-bindings-by-vantage-only.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "restore",
+    "A2-M6-bindings-by-vantage-only"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M7-point-check-ignores-organization-pins.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "apply",
+    "A2-M7-point-check-ignores-organization-pins"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M7-point-check-ignores-organization-pins.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "state_revoked_when_the_organization_admission_is_revoked_after_admission",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A2-M7-point-check-ignores-organization-pins.test1",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "state_stale_when_the_organization_admission_is_superseded_and_its_successor_needs_new_bindings",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A2-M7-point-check-ignores-organization-pins.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "restore",
+    "A2-M7-point-check-ignores-organization-pins"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M8-revoked-admission-counts.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "apply",
+    "A2-M8-revoked-admission-counts"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M8-revoked-admission-counts.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "g2_oa_an_admission_revoked_before_admission_leaves_the_candidate_unadmitted",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A2-M8-revoked-admission-counts.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "restore",
+    "A2-M8-revoked-admission-counts"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M9-oa-dropped-from-all.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "apply",
+    "A2-M9-oa-dropped-from-all"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M9-oa-dropped-from-all.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "test-support",
+    "--test",
+    "native_vertical",
+    "--",
+    "sb_an_admission_refusal_refuses_before_spawn",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A2-M9-oa-dropped-from-all.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "restore",
+    "A2-M9-oa-dropped-from-all"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M10-separation-discharge-drops-oa.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "apply",
+    "A2-M10-separation-discharge-drops-oa"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M10-separation-discharge-drops-oa.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "fixture",
+    "--test",
+    "gate",
+    "--",
+    "discharge_is_total_admitted_kinds_name_their_check_ids",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A2-M10-separation-discharge-drops-oa.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "restore",
+    "A2-M10-separation-discharge-drops-oa"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M11-regate-ignores-organization-refusals.apply",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "apply",
+    "A2-M11-regate-ignores-organization-refusals"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "A2-M11-regate-ignores-organization-refusals.test0",
+   "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "state_refused_when_a_second_admission_of_the_candidate_is_committed_after_admission",
+    "--exact"
+   ],
+   "timeout": 1800,
+   "kill_leftovers": true
+  },
+  {
+   "name": "A2-M11-regate-ignores-organization-refusals.restore",
+   "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "restore",
+    "A2-M11-regate-ignores-organization-refusals"
+   ],
+   "timeout": 60
+  },
+  {
+   "name": "post-hashes",
+   "argv": [
+    "git",
+    "hash-object",
+    "crates/work-engine-organization-authority/src/gate.rs",
+    "crates/work-engine-review-delivery/src/gate.rs"
+   ],
+   "timeout": 60
+  }
+ ]
+}

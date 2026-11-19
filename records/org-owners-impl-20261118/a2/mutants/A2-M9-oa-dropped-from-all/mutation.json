@@ -1,0 +1,18 @@
+{
+ "mutant": "A2-M9-oa-dropped-from-all",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority/src/gate.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "089ac72873e1871b4c781996ced05e3382639723962b8bbe731777a977104d9a",
+   "mutated_sha256": "dedf0219f99463d5593a0256a6a6c7e99b4ac602ba54d0789b83b9dc8cc2aa47"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority/src/gate.rs",
+   "old": "    pub const ALL: [CheckId; 11] = [\n        CheckId::O3,\n        CheckId::OA,\n",
+   "new": "    pub const ALL: [CheckId; 10] = [\n        CheckId::O3,\n"
+  }
+ ]
+}

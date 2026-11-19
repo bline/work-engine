@@ -1,0 +1,33 @@
+   Compiling ryu-js v1.0.3
+   Compiling libc v0.2.190
+   Compiling work-engine-organization v0.1.0 (/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization)
+   Compiling work-engine-organization-authority v0.1.0 (/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority)
+   Compiling review-episode-core v0.1.0 (/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/review-episode-core)
+   Compiling work-engine-review-preparation v0.1.0 (/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-review-preparation)
+   Compiling work-engine-review-delivery v0.1.0 (/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-review-delivery)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.75s
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/review_episode_core-8a389039381dd434)
+     Running tests/codec.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/codec-f935be5acec5e0b2)
+     Running tests/contract.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/contract-096cf962697ab93a)
+     Running tests/result_contract.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/result_contract-499921b0899a0eeb)
+     Running tests/transitions.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/transitions-08fddbce05939c2b)
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/work_engine_organization-29ebd5a2df6a2ec0)
+     Running tests/boundary.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/boundary-baafb156e0d7b105)
+     Running tests/frozen.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/frozen-e8bf9cfb5d7d7068)
+     Running tests/rules.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/rules-0685f95f76544f20)
+     Running tests/stability.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/stability-c846d457df5f08f0)
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/work_engine_organization_authority-11a6c958d20fe369)
+     Running tests/admission.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/admission-416f55e63c4dfcef)
+     Running tests/base_candidate_shape.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/base_candidate_shape-9b2e05ca3c636156)
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/work_engine_review_delivery-4b2a5a0b13442ccb)
+     Running tests/binding.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/binding-b67c66598e62db48)
+     Running tests/gate.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/gate-8622bb8d704ee7e4)
+     Running tests/pure.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/pure-9ab4a8c5ce65aa10)
+     Running unittests src/lib.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/work_engine_review_preparation-85ea83ef39103cf2)
+     Running tests/fixture_consumer.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/fixture_consumer-e50d226c0c7f69ab)
+     Running tests/preparation.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/preparation-2d65d853d23678a8)
+   Doc-tests review_episode_core
+   Doc-tests work_engine_organization
+   Doc-tests work_engine_organization_authority
+   Doc-tests work_engine_review_delivery
+   Doc-tests work_engine_review_preparation

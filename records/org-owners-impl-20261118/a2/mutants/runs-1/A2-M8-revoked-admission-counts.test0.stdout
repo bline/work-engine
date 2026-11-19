@@ -1,0 +1,18 @@
+
+running 1 test
+test g2_oa_an_admission_revoked_before_admission_leaves_the_candidate_unadmitted ... FAILED
+
+failures:
+
+---- g2_oa_an_admission_revoked_before_admission_leaves_the_candidate_unadmitted stdout ----
+
+thread 'g2_oa_an_admission_revoked_before_admission_leaves_the_candidate_unadmitted' (2252245) panicked at crates/work-engine-organization-authority/tests/admission.rs:433:18:
+expected refusal
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    g2_oa_an_admission_revoked_before_admission_leaves_the_candidate_unadmitted
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 48 filtered out; finished in 0.01s
+

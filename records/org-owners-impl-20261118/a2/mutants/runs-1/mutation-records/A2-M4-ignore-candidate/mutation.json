@@ -1,0 +1,18 @@
+{
+ "mutant": "A2-M4-ignore-candidate",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority/src/gate.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "759a1de635998a031ef20aea143d0c9e5a499a02a702633c399d42d35a8b9a92",
+   "mutated_sha256": "5ac5c3ecb7119b7c0967b52952c4c23c4aecad4f6a65fcd93fb0714f5c6437e6"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority/src/gate.rs",
+   "old": "                if a.candidate_content_digest == request.candidate_digest\n                    && a.requirements_digest",
+   "new": "                if a.requirements_digest"
+  }
+ ]
+}

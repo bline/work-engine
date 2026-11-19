@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "A2-M9-oa-dropped-from-all.test0",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "--features",
+    "test-support",
+    "--test",
+    "native_vertical",
+    "--",
+    "sb_an_admission_refusal_refuses_before_spawn",
+    "--exact"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a2/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2250203,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 2252248,
+  "pgid": 2252248,
+  "started_at": "2026-11-18T20:12:56.569634Z",
+  "ended_at": "2026-11-18T20:12:58.086566Z",
+  "duration_s": 1.517,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/runs-1/A2-M9-oa-dropped-from-all.test0.stdout",
+    "length": 607,
+    "sha256": "00f3ad7b05ac361ce456abb9a26bd6991c3d5c0d4e8b53bf691c2bcfbd0b006e"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/runs-1/A2-M9-oa-dropped-from-all.test0.stderr",
+    "length": 734,
+    "sha256": "ac2cd31b676646958f201e31fe3996f74b603ce5d7eb2dcfba769e8bf05f0865"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

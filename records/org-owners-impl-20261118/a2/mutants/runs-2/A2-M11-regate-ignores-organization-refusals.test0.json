@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "A2-M11-regate-ignores-organization-refusals.test0",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "state_refused_when_a_second_admission_of_the_candidate_is_committed_after_admission",
+    "--exact"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a2/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3072850,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 3076244,
+  "pgid": 3076244,
+  "started_at": "2026-11-19T00:16:59.717222Z",
+  "ended_at": "2026-11-19T00:17:00.333208Z",
+  "duration_s": 0.616,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/runs-2/A2-M11-regate-ignores-organization-refusals.test0.stdout",
+    "length": 828,
+    "sha256": "f67e4302c3c83b9b9434589d6aff6d08564c37b664f625e87ff48fb807d6185a"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/runs-2/A2-M11-regate-ignores-organization-refusals.test0.stderr",
+    "length": 443,
+    "sha256": "21892bcd18b5259cb9d23f0c0860c0623a68bde7285c01f166eae8e05b05b6de"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

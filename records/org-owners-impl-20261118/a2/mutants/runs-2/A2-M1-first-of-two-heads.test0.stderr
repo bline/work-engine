@@ -1,0 +1,23 @@
+   Compiling work-engine-organization-authority v0.1.0 (/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority)
+warning: unreachable pattern
+   --> crates/work-engine-organization-authority/src/gate.rs:750:9
+    |
+750 |         _ => Err(vec![reason(
+    |         ^ no value can reach this
+    |
+note: multiple earlier patterns match some of the same values
+   --> crates/work-engine-organization-authority/src/gate.rs:750:9
+    |
+742 |         [(id, admission), ..] => {
+    |         --------------------- matches some of the same values
+...
+749 |         [] => Err(vec![reason(ReasonCode::OrganizationUnadmitted, subject)]),
+    |         -- matches some of the same values
+750 |         _ => Err(vec![reason(
+    |         ^ collectively making this unreachable
+    = note: `#[warn(unreachable_patterns)]` (part of `#[warn(unused)]`) on by default
+
+warning: `work-engine-organization-authority` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.45s
+     Running tests/admission.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/admission-fa70f97e919c4743)
+error: test failed, to rerun pass `-p work-engine-organization-authority --test admission`

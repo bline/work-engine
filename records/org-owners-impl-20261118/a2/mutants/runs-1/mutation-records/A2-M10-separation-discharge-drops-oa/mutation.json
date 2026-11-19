@@ -1,0 +1,18 @@
+{
+ "mutant": "A2-M10-separation-discharge-drops-oa",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-review-delivery/src/gate.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "f2bb9696ad2ca945408d3d85f3b0ffbb765f4e10d4599f417e2906b4c1885f38",
+   "mutated_sha256": "8b077a7e5e042b9209ec60f968cbaed66e4c89e826e4e468128669d791f0a067"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-review-delivery/src/gate.rs",
+   "old": "BlockerKind::Separation => Discharge::Admitted(&[CheckId::OA, CheckId::O8, CheckId::R3]),",
+   "new": "BlockerKind::Separation => Discharge::Admitted(&[CheckId::O8, CheckId::R3]),"
+  }
+ ]
+}

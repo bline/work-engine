@@ -1,0 +1,18 @@
+
+running 1 test
+test g2_oa_two_committed_admissions_of_the_candidate_are_ambiguous_heads ... FAILED
+
+failures:
+
+---- g2_oa_two_committed_admissions_of_the_candidate_are_ambiguous_heads stdout ----
+
+thread 'g2_oa_two_committed_admissions_of_the_candidate_are_ambiguous_heads' (3073104) panicked at crates/work-engine-organization-authority/tests/admission.rs:466:28:
+OA: expected Some((OA, [Reason { code: OrganizationHeadsAmbiguous, subject: "eaa5d27949f687a07005bd7bab7b7c56fd6324d4a7629518897fd2d616580d5c" }])), got Passed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    g2_oa_two_committed_admissions_of_the_candidate_are_ambiguous_heads
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 56 filtered out; finished in 0.01s
+

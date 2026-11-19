@@ -1,0 +1,4 @@
+   Compiling work-engine-organization-authority v0.1.0 (/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.60s
+     Running tests/admission.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/admission-416f55e63c4dfcef)
+error: test failed, to rerun pass `-p work-engine-organization-authority --test admission`

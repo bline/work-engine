@@ -1,0 +1,20 @@
+
+running 1 test
+test fixture_admission_binds_principal_actor_subject_boundary_revision_and_realization ... FAILED
+
+failures:
+
+---- fixture_admission_binds_principal_actor_subject_boundary_revision_and_realization stdout ----
+
+thread 'fixture_admission_binds_principal_actor_subject_boundary_revision_and_realization' (3073357) panicked at crates/work-engine-organization-authority/tests/admission.rs:506:5:
+assertion `left == right` failed
+  left: {}
+ right: {IssuanceId(ac06d8a35de9e583f74f5da82e952cc02635c6d3a022001d83717ea1b15a4c09)}
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    fixture_admission_binds_principal_actor_subject_boundary_revision_and_realization
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 56 filtered out; finished in 0.01s
+

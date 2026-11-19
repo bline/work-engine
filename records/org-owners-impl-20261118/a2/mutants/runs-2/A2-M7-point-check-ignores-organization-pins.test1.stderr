@@ -1,0 +1,3 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
+     Running tests/admission.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/admission-fa70f97e919c4743)
+error: test failed, to rerun pass `-p work-engine-organization-authority --test admission`

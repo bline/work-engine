@@ -1,0 +1,43 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "A2-M1-first-of-two-heads.restore",
+  "argv": [
+    "python3",
+    "-I",
+    "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/mutate.py",
+    "restore",
+    "A2-M1-first-of-two-heads"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a2/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2250203,
+  "inputs": [],
+  "timeout_s": 60,
+  "pid": 2250454,
+  "pgid": 2250454,
+  "started_at": "2026-11-18T20:12:51.382883Z",
+  "ended_at": "2026-11-18T20:12:51.415247Z",
+  "duration_s": 0.032,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/runs-1/A2-M1-first-of-two-heads.restore.stdout",
+    "length": 48,
+    "sha256": "0d39aa654b4fefb97e9e8b1014be28ca57047850c6135c799a357f911c522138"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/runs-1/A2-M1-first-of-two-heads.restore.stderr",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

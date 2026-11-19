@@ -1,0 +1,50 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "check-preparation-fixture-lib-alone",
+  "argv": [
+    "cargo",
+    "clippy",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-preparation",
+    "--features",
+    "fixture",
+    "--lib",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-a2-export-1/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a2/target-root",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2269198,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 2270866,
+  "pgid": 2270866,
+  "started_at": "2026-11-18T20:17:39.483245Z",
+  "ended_at": "2026-11-18T20:17:40.850619Z",
+  "duration_s": 1.367,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/check-preparation-fixture-lib-alone.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/root-gate-1/check-preparation-fixture-lib-alone.stderr",
+    "length": 344,
+    "sha256": "09ca7f8ef3b33b20072a284b842258cc1fdeaf732cc01a614f7505272629ccb4"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

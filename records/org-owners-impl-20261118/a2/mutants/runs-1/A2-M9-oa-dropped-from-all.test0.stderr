@@ -1,0 +1,6 @@
+   Compiling work-engine-organization-authority v0.1.0 (/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority)
+   Compiling work-engine-review-preparation v0.1.0 (/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-review-preparation)
+   Compiling work-engine-review-delivery v0.1.0 (/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-review-delivery)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.25s
+     Running tests/native_vertical.rs (/home/bline/cbm-work/org-owners-impl-20261118/a2/target/debug/deps/native_vertical-d22b229a9b617a92)
+error: test failed, to rerun pass `-p work-engine-review-delivery --test native_vertical`

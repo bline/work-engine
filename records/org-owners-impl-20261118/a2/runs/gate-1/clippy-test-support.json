@@ -1,0 +1,54 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "clippy-test-support",
+  "argv": [
+    "cargo",
+    "clippy",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-review-delivery",
+    "-p",
+    "work-engine-review-preparation",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "work-engine-review-delivery/test-support,work-engine-organization-authority/fixture",
+    "--all-targets",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a2/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2218960,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 2219221,
+  "pgid": 2219221,
+  "started_at": "2026-11-18T20:08:29.768043Z",
+  "ended_at": "2026-11-18T20:08:30.183257Z",
+  "duration_s": 0.415,
+  "returncode": 0,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/runs/gate-1/clippy-test-support.stdout",
+    "length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/runs/gate-1/clippy-test-support.stderr",
+    "length": 72,
+    "sha256": "d7dae192715495fa89ccbe279af3efb9792c1dae1768228e369035e68a1df673"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

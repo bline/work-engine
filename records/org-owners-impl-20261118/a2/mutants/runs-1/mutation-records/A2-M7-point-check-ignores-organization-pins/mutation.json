@@ -1,0 +1,18 @@
+{
+ "mutant": "A2-M7-point-check-ignores-organization-pins",
+ "files": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority/src/gate.rs",
+   "backup": "orig-0.bak",
+   "original_sha256": "759a1de635998a031ef20aea143d0c9e5a499a02a702633c399d42d35a8b9a92",
+   "mutated_sha256": "20a879dcd75b95afc5359d93d1cb2b526a940dfa7f3b459e6916f55e4b546996"
+  }
+ ],
+ "edits": [
+  {
+   "path": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority/src/gate.rs",
+   "old": "        self.organization_admissions\n            .iter()\n            .chain(&self.principals)",
+   "new": "        self.principals\n            .iter()"
+  }
+ ]
+}

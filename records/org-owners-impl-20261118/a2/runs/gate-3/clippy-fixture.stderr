@@ -1,0 +1,4 @@
+    Checking work-engine-organization-authority v0.1.0 (/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-organization-authority)
+    Checking work-engine-review-preparation v0.1.0 (/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-review-preparation)
+    Checking work-engine-review-delivery v0.1.0 (/home/bline/cbm-work/wt-org-owners-a2-20261118/rust/crates/work-engine-review-delivery)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.17s

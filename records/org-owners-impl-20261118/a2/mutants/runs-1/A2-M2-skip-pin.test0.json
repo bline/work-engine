@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "A2-M2-skip-pin.test0",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "fixture_admission_binds_principal_actor_subject_boundary_revision_and_realization",
+    "--exact"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a2/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2250203,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 2250456,
+  "pgid": 2250456,
+  "started_at": "2026-11-18T20:12:51.468736Z",
+  "ended_at": "2026-11-18T20:12:51.984016Z",
+  "duration_s": 0.515,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/runs-1/A2-M2-skip-pin.test0.stdout",
+    "length": 815,
+    "sha256": "234e6997a4c03f9e4629501e1c0b0dc36a65ef6b83c92d816f751c6666a03aa3"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/runs-1/A2-M2-skip-pin.test0.stderr",
+    "length": 913,
+    "sha256": "8eb9e1c26ee18d51c838b402cfce61634bac12cdb24baed9b64f6df490dff21e"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "A2-M8-revoked-admission-counts.test0",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "g2_oa_an_admission_revoked_before_admission_leaves_the_candidate_unadmitted",
+    "--exact"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a2/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 2250203,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 2251998,
+  "pgid": 2251998,
+  "started_at": "2026-11-18T20:12:55.798341Z",
+  "ended_at": "2026-11-18T20:12:56.464004Z",
+  "duration_s": 0.666,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/runs-1/A2-M8-revoked-admission-counts.test0.stdout",
+    "length": 678,
+    "sha256": "131381227fe3c24be02592b52f303d950fd1f6d9415cf2aa1e24d0b564679747"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/runs-1/A2-M8-revoked-admission-counts.test0.stderr",
+    "length": 443,
+    "sha256": "216bede4241d8cc971e3503f69ef85cf7fabde7c7c45751ce2ffe0d5815cbb61"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

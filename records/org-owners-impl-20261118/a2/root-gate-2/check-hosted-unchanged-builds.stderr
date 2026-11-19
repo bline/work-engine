@@ -1,0 +1,7 @@
+    Checking review-episode-core v0.1.0 (/home/bline/cbm-work/wt-a2-export-2/rust/crates/review-episode-core)
+    Checking work-engine-organization v0.1.0 (/home/bline/cbm-work/wt-a2-export-2/rust/crates/work-engine-organization)
+    Checking work-engine-review-preparation v0.1.0 (/home/bline/cbm-work/wt-a2-export-2/rust/crates/work-engine-review-preparation)
+    Checking work-engine-organization-authority v0.1.0 (/home/bline/cbm-work/wt-a2-export-2/rust/crates/work-engine-organization-authority)
+    Checking work-engine-review-delivery v0.1.0 (/home/bline/cbm-work/wt-a2-export-2/rust/crates/work-engine-review-delivery)
+    Checking work-engine-review-hosted v0.1.0 (/home/bline/cbm-work/wt-a2-export-2/rust/crates/work-engine-review-hosted)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.62s

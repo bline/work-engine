@@ -1,0 +1,51 @@
+{
+  "schema": "manual-orchestration.custody.run.v1",
+  "name": "A2-M6-bindings-by-vantage-only.test0",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "work-engine-organization-authority",
+    "--features",
+    "fixture",
+    "--test",
+    "admission",
+    "--",
+    "g2_oa_bindings_of_another_organizations_admission_do_not_bind_this_one",
+    "--exact"
+  ],
+  "cwd": "/home/bline/cbm-work/wt-org-owners-a2-20261118/rust",
+  "env_clear": false,
+  "env_set": {
+    "CARGO_TARGET_DIR": "/home/bline/cbm-work/org-owners-impl-20261118/a2/target",
+    "WE_PI_SDK_ROOT": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi",
+    "WE_PI_SDK_MANIFEST": "/home/bline/cbm-work/pi-artifact-handoff-20261113/pi.manifest.json"
+  },
+  "env_inherited": true,
+  "wrapper_pid": 3072850,
+  "inputs": [],
+  "timeout_s": 1800,
+  "pid": 3074211,
+  "pgid": 3074211,
+  "started_at": "2026-11-19T00:16:50.339079Z",
+  "ended_at": "2026-11-19T00:16:51.355602Z",
+  "duration_s": 1.017,
+  "returncode": 101,
+  "signal": null,
+  "timed_out": false,
+  "stdout": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/runs-2/A2-M6-bindings-by-vantage-only.test0.stdout",
+    "length": 658,
+    "sha256": "fdcb3ce16c4a9f5dacf380353fcb25f859c147e9f06bfdc8d689f800a7bf3c46"
+  },
+  "stderr": {
+    "path": "/home/bline/cbm-work/org-owners-impl-20261118/a2/mutants/runs-2/A2-M6-bindings-by-vantage-only.test0.stderr",
+    "length": 945,
+    "sha256": "2edb02d3a15543562d4f2b769a430b6529fd4117c1fe7423145d855974365dbc"
+  },
+  "leftover_processes": [],
+  "leftovers_killed": false,
+  "leftovers_after_kill": null
+}

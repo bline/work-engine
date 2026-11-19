@@ -1,0 +1,20 @@
+
+running 1 test
+test state_revoked_when_the_organization_admission_is_revoked_after_admission ... FAILED
+
+failures:
+
+---- state_revoked_when_the_organization_admission_is_revoked_after_admission stdout ----
+
+thread 'state_revoked_when_the_organization_admission_is_revoked_after_admission' (2251979) panicked at crates/work-engine-organization-authority/tests/admission.rs:1757:5:
+assertion `left == right` failed
+  left: Refused(Outcomes({O3: Passed, OA: Refused([Reason { code: OrganizationUnadmitted, subject: "9db35ec89aa4ae5b548789e91e5fd0db9f4ef0d6ad02fb0ebe9e0ce192c26873" }]), O4: Passed, O5: Passed, O8: Refused([Reason { code: SeparationUnresolved, subject: "cond-builder/vantage-builder" }, Reason { code: SeparationUnresolved, subject: "cond-builder/vantage:ob-a" }, Reason { code: SeparationUnresolved, subject: "cond-campaign/vantage-builder" }, Reason { code: SeparationUnresolved, subject: "cond-campaign/vantage:ob-a" }]), O9: Passed, R1: Passed, R2: Passed, R3: Refused([Reason { code: VantageUnbound, subject: "vantage:ob-a" }]), R4: Passed}))
+ right: Revoked([IssuanceId(c096eb81c35eab36954bd4702bff6360a5e9ef0f7e97fe3ca4bae441bcd65246)])
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    state_revoked_when_the_organization_admission_is_revoked_after_admission
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 48 filtered out; finished in 0.01s
+

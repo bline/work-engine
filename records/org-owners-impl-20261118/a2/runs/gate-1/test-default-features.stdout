@@ -1,0 +1,142 @@
+
+running 1 test
+test gate::tests::o9_refuses_internal_errors_and_view_errors_as_integrity ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 49 tests
+test g1_o4_a_principal_named_like_a_component_binds_nothing ... ok
+test g1_o4_no_grant_for_the_permission_is_authority_missing ... ok
+test g1_o3_candidate_digest_of_another_candidate_refuses_only_o3 ... ok
+test fixture_admission_binds_principal_actor_subject_boundary_revision_and_realization ... ok
+test g1_o4_grant_for_another_problem_scope_refuses_only_o4 ... ok
+test g1_o4_expired_grant_refuses_only_o4 ... ok
+test g1_o4_decision_scope_without_the_required_action_refuses_only_o4 ... ok
+test g1_o4_two_committed_principals_with_the_named_id_resolve_to_none ... ok
+test g1_o4_a_superseded_grant_does_not_cover_unless_its_replacement_does ... ok
+test g1_o4_decision_scope_of_another_problem_scope_refuses_only_o4 ... ok
+test g1_o4_unresolved_decision_scope_covers_nothing ... ok
+test g1_o5_a_none_row_other_than_separation_refuses_only_o5 ... ok
+test g1_o4_two_committed_bindings_of_one_component_are_ambiguous ... ok
+test g1_o4_revoke_disables_exactly_its_issuance_not_a_reissue_with_identical_terms ... ok
+test g1_o8_an_unbound_dependent_vantage_is_unresolved ... ok
+test g1_r2_unstated_effective_property_refuses_only_r2 ... ok
+test g1_o8_distinct_principals_with_the_same_actor_anchor_are_not_separate ... ok
+test g2_o3_no_derived_candidate_leaves_candidate_checks_unavailable ... ok
+test g1_r3_installed_component_digest_differs_from_binding ... ok
+test g1_r3_bound_realization_digest_differs_from_the_realization ... ok
+test g2_a_vantage_the_candidate_does_not_have_and_no_binding_refuse_r2_and_r3 ... ok
+test g1_o4_decision_scope_boundaries_must_contain_the_requirements_boundaries ... ok
+test g2_o5_retained_continuity_has_no_mechanism_and_the_realization_does_not_provide_it ... ok
+test g2_oa_an_admission_revoked_before_admission_leaves_the_candidate_unadmitted ... ok
+test g2_r1_r2_unstated_provider_class_is_unestablished_for_condition_and_vantage ... ok
+test g2_r4_unaccepted_realization_leaves_r1_r2_without_accepted_values ... ok
+test g2_r4_acceptance_for_another_profile_is_not_an_acceptance_for_the_candidate ... ok
+test g1_r3_realized_actor_differs_from_bound_actor ... ok
+test g2_revoking_the_acceptor_principal_fails_o4_and_o8_together ... ok
+test g2_oa_two_committed_admissions_of_the_candidate_are_ambiguous_heads ... ok
+test s_unknown_observation_yields_no_observation_and_so_no_outcomes ... ok
+test g2_two_committed_acceptances_of_one_digest_are_ambiguous_and_state_nothing ... ok
+test g2_two_committed_bindings_of_the_vantage_are_ambiguous_for_o8_and_r3 ... ok
+test p_production_refusal_set_is_exact_and_fixture_admits_the_same_candidate ... ok
+test state_a_revocation_after_admission_is_seen_only_by_a_new_observation ... ok
+test seal_same_observation_cannot_decide_a_later_boundary ... ok
+test state_refused_when_a_new_commit_makes_the_decision_scope_ambiguous ... ok
+test state_revoked_when_a_pinned_grant_is_revoked ... ok
+test state_revoked_when_the_acting_principal_is_revoked ... ok
+test state_current_at_the_same_revision_and_after_an_unrelated_commit ... ok
+test state_stale_when_a_pinned_issuance_is_superseded ... ok
+test state_revoked_when_the_organization_admission_is_revoked_after_admission ... ok
+test state_refused_when_regating_the_same_request_refuses ... ok
+test seal_a_later_reserved_boundary_makes_the_admission_stale ... ok
+test state_unknown_when_the_source_breaks_its_ordering_obligations ... ok
+test g2_oa_bindings_of_another_organizations_admission_do_not_bind_this_one ... ok
+test state_unknown_without_an_observation ... ok
+test state_stale_when_the_organization_admission_is_superseded_and_its_successor_needs_new_bindings ... ok
+test g2_oa_an_admission_of_another_candidate_requirements_or_scope_does_not_admit ... ok
+
+test result: ok. 49 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+
+running 1 test
+test base_candidate_shape_that_admission_tests_assume ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 8 tests
+test strict_wire_representation_keeps_json_like_strings_and_rejects_recursive_duplicates ... ok
+test toolsets_and_provider_entry_are_refused ... ok
+test possible_delivery_without_a_complete_observation_is_uncertain_not_refused_as_wrong ... ok
+test a_fully_consistent_observation_verifies_and_returns_the_observed_text ... ok
+test the_envelope_carries_the_complete_preparation_and_adds_transport_only ... ok
+test each_wrong_identity_or_byte_is_refused_by_its_owner_check ... ok
+test freezing_is_deterministic_and_transport_changes_only_transport ... ok
+test frames_with_unknown_members_are_invalid_and_never_a_permitted_success ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 23 tests
+test a_builder_condition_added_by_another_obligation_extends_the_selected_separation_rows ... ok
+test a_matching_descriptor_is_a_claim_and_clears_no_blocker ... ok
+test changing_an_owned_proposition_or_route_changes_the_constructed_context ... ok
+test changing_only_the_provider_of_a_writing_coding_fixture_removes_no_other_blocker ... ok
+test a_changed_requirement_without_a_mechanism_is_refused_by_preparation_not_by_the_owner ... ok
+test another_obligations_unsupported_condition_does_not_refuse_an_obligation_it_does_not_own ... ok
+test a_condition_named_like_another_obligation_does_not_leak_its_rows_into_that_obligation ... ok
+test the_fixture_inputs_are_the_frozen_bytes ... ok
+test projection_carries_the_owned_meaning_of_the_selected_obligation ... ok
+test separation_has_no_mechanism_in_the_report_and_stays_a_blocker ... ok
+test a_builder_condition_of_another_obligation_still_contributes_to_the_selected_separation ... ok
+test separation_requirements_keep_the_owners_trace_rows ... ok
+test the_current_candidate_is_blocked_by_every_unestablished_mapping ... ok
+test every_emitted_blocker_has_exactly_the_kind_its_id_family_names ... ok
+test preparation_serializes_and_reads_back_without_loss ... ok
+test values_the_schema_owner_rejects_never_reach_preparation ... ok
+test removing_the_realization_constraints_removes_their_enforcement_rows ... ok
+test unknown_obligations_and_invalid_subjects_are_refused ... ok
+test trace_rows_of_other_kinds_with_a_coincident_id_are_not_provenance ... ok
+test an_obligation_named_like_another_obligations_condition_does_not_leak_its_result_contract_row ... ok
+test incompatible_descriptors_add_known_incompatibilities ... ok
+test unsupported_result_contracts_are_refused_with_the_contract_named ... ok
+test the_second_obligation_selects_only_its_own_contract_and_condition ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 8 tests
+test crates/work-engine-organization-authority/src/lib.rs - (line 98) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 51) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 89) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 82) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 35) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 69) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 27) - compile fail ... ok
+test crates/work-engine-organization-authority/src/lib.rs - (line 43) - compile fail ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+
+running 1 test
+test crates/work-engine-review-delivery/src/lib.rs - (line 43) - compile fail ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 1 test
+test crates/work-engine-review-preparation/src/lib.rs - (line 31) - compile fail ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
