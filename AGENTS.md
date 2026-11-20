@@ -49,6 +49,31 @@ Use [session control](skills/manual-orchestration/references/context-control.md)
 when establishing or repairing delivery. If the route is unavailable, record
 the gap and own an explicit check before the next substantial phase; unknown
 headroom is not spare capacity. Existing authority and collection owners remain.
+When a reading calls for same-session replacement, the host's native control
+(in Pi, `new_context`) discards history without a summary, so preserve
+meaning first through `$wind-walker`;
+[native recovery](skills/manual-orchestration/references/native-context.md)
+owns each host's invocation.
+
+## Codebase Memory
+
+Codebase Memory (`codebase-memory-mcp`) holds indexed code graphs of
+repositories: symbols, callers and callees, imports and change impact. A graph
+query can answer a structural question for a fraction of the context that
+reading files to the same answer costs, for a builder as much as for its
+parent. Source files remain the authority for exact text and for anything the
+index has not covered. The [repository-search contract](skills/repo-search/SKILL.md)
+owns evidence tiers, coverage and fallback; the `codebase-memory` skill
+describes the tools.
+
+The main checkout and each worktree are separate projects, and an index can
+lag its tree, so a result from the wrong project or generation describes other
+source. Check the project root and `index_status` before relying on results,
+and `check_index_coverage` for cited paths. `list_projects` pages its output.
+In Pi, the core tools are declared as `mcp__codebase_memory__<tool>` and the
+rest are callable from `codemode` scripts; a Pi subagent gets them only when
+its agent's `tools` list names `mcp:codebase-memory` entries
+([Pi host](skills/manual-orchestration/references/pi-host.md#pi-as-the-supervising-host)).
 
 ## Pre-release compatibility policy
 Work Engine is under active development. Internal implementations and

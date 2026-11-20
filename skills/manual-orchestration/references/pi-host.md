@@ -4,7 +4,9 @@ Pi (`pi-coding-agent`) is a third host for a worker or reviewer that a Claude
 Code or Codex supervisor launches. The roles, packets, evidence rules and the
 retained-or-fresh decision are unchanged. Load this when you launch, continue
 or collect a Pi role. Root rotation is not established for Pi:
-`root_rotation.py` accepts only Claude and Codex.
+`root_rotation.py` accepts only Claude and Codex. A Pi session can also be the
+supervising root and delegate through pi-subagents' `subagent` tool;
+[Pi as the supervising host](#pi-as-the-supervising-host) covers what differs.
 
 Host facts and their evidence are in the
 [Pi host probe](../../../metrics/probes/pi-cli-host-20261109.json) (Pi 1.4.0,
@@ -125,6 +127,37 @@ loaded, rolls over without a summary ([native recovery](native-context.md#pi)).
 Make the retained-or-fresh decision from that reading as
 [context boundary](context-boundary.md) describes, and record it.
 
+## Pi as the supervising host
+
+A Pi root launches children with the pi-subagents `subagent` tool rather than
+`role_host.py`. Roles, packets, review and the retained-or-fresh decision are
+unchanged; these properties of the mechanism differ.
+
+- **The `task` field is the packet.** The child's first user message is
+  `Task: <task>` plus any output-path instruction, and a launch without `task`
+  is not rejected. On 2026-11-19 a review launched without one received only
+  its output path, spent its turn trying to infer a subject from repository
+  state, and produced nothing. Read the child's first user message to confirm
+  the packet arrived.
+- **Identity.** A child's session file is
+  `<parent session file without .jsonl>/<run id>/run-<n>/session.jsonl`; its
+  header names the parent in `parentSession`. Bind the child's context listener
+  (`--context-host pi`) to that file and its header ID. Async run state and
+  `events.jsonl` sit in the run directory that `subagent` status reports.
+- **Tools are the agent's list.** An agent with an explicit `tools` list gets
+  only those tools: MCP tools need `mcp:<server>` or `mcp:<server>/<tool>`
+  entries, and `new_context` and `context_notes` are absent unless listed.
+  User-level `subagents.agentOverrides` in `~/.pi/agent/settings.json`
+  currently give `worker`, `scout` and `reviewer` the Codebase Memory read and
+  index tools.
+- **Stalls.** A `claude-sdk` child can stop inside one model call: its session
+  ends with an assistant message holding tool calls and no tool results, while
+  status reports no activity. Two Fable reviewer runs on 2026-11-19 stalled
+  this way, for 71 minutes (a `resume` then completed it) and for 120 minutes,
+  until the subagent timeout. A queued steer is not delivered to a stalled
+  call. A no-activity alarm is a reason to read the child's session file, not
+  evidence of long thinking.
+
 ## Container mode
 
 `--container` runs each turn in a Docker container with no network. It is
@@ -238,7 +271,11 @@ and nothing indexed from outside its mounts. role_host then runs `index_status`
 inside the same container profile, with no model, and refuses the launch unless
 it reports `ready` for the working directory's path. Pi gets the server's
 tools declared directly (17 in 0.11.0), named `mcp__codebase_memory_mcp__<tool>`
-(Pi turns the dashes into underscores). The index records no revision: it
+(Pi turns the dashes into underscores). That name comes from the container's
+server entry; on the host, `~/.pi/agent/mcp.json` names the server
+`codebase-memory`, so its tools are `mcp__codebase_memory__<tool>` with the
+configured exposure, and a Claude provider bridge prefixes them `mcp__pi__`.
+The container index records no revision: it
 matches the tree because it was built from it at launch. Whether it refreshes
 after the agent edits files inside the container is not established.
 

@@ -1,6 +1,6 @@
 ---
 name: manual-orchestration
-description: Coordinate manually decomposed engineering work across Codex sub-agents as the top-level supervisor, a worker or a reviewer - decomposition, packets, dispatch, waiting, the retained-versus-fresh context choice, handoff, review collection and integration. Use whenever a session coordinates sub-agents or is launched as one of these roles outside a configured Slice Builder campaign. It does not plan automatically or replace campaign gate and receipt contracts.
+description: Coordinate manually decomposed engineering work across Codex, Claude Code or Pi sub-agents as the top-level supervisor, a worker or a reviewer - decomposition, packets, dispatch, waiting, the retained-versus-fresh context choice, handoff, review collection and integration. Use whenever a session coordinates sub-agents or is launched as one of these roles outside a configured Slice Builder campaign. It does not plan automatically or replace campaign gate and receipt contracts.
 ---
 
 # Manual orchestration
@@ -23,12 +23,12 @@ Read the reference for the current role and the applicable operation. Links prov
 | Form or revise an organization | [Organization formation](references/organization-formation.md), including revisions during implementation without a new launch |
 | Admit substantial work to retained context or transfer unfinished child work | [Retained dispatch](references/retained-dispatch.md) |
 | Consider context replacement or root transfer | [Context boundary](references/context-boundary.md); load the chosen operation's reference |
-| Codex token_budget is active, or Claude's native context plugin is available | [Native recovery](references/native-context.md): shared preservation/recovery and host-specific invocation; Claude native subagents cannot use the main-conversation clear adapter |
+| Codex token_budget is active, Claude's native context plugin is available, or Pi exposes `new_context` | [Native recovery](references/native-context.md): shared preservation/recovery and host-specific invocation; Claude native subagents cannot use the main-conversation clear adapter |
 | Prepare intentional replacement | [Preparation](references/context-preparation.md) and the applicable host settings reference |
 | Recover after replacement | [Recovery](references/context-recovery.md) and the applicable host settings reference |
 | Operate on Codex | [Codex operation index](references/codex-host.md) |
 | Operate on Claude Code | [Anthropic host](references/anthropic-host.md) |
-| Launch, continue or collect a Pi role | [Pi host](references/pi-host.md) |
+| Launch, continue or collect a Pi role, or supervise from a Pi session | [Pi host](references/pi-host.md) |
 | Measure a run | [Measurement](references/measurement.md); [demonstrated forms](references/demonstrated-forms.md) only when a concrete example helps |
 | Select or invoke a helper script | [Command inventory](references/commands.md) and that operation's reference |
 

@@ -50,7 +50,12 @@ mismatch. Inside a Pi turn, `role_host.py whoami` reads `PI_SESSION_ID` and
 `PI_SESSION_FILE` names the file; [Pi host](pi-host.md) records that its
 launcher does not pass these to sessions it starts, while other launchers are
 unchecked. A latest request whose model and timestamp match this session's own
-most recent call corroborates the binding independently of the environment. One binding serves
+most recent call corroborates the binding independently of the environment.
+A listener started as a Pi background task does not inherit `PI_SESSION_FILE`
+(observed 2026-11-20): the variable expanded empty, the binding resolved to
+the working directory, and the first event read `unavailable`. Pass the absolute path. A `normal`
+level can produce no wait event; `work-engine-context-status control` with the
+same session, file and levels returns the initial observation. One binding serves
 every Pi inference route because Pi records normalized usage itself, while a
 provider-side transcript (such as a Claude Code process behind a Pi bridge) is
 route-specific and is not the accounting Pi's rollover uses. The session file
