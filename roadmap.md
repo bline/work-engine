@@ -122,6 +122,20 @@ and the existing delivery lane, then prove one complete engineering job. This
 selects a development route; implementation grants and original standalone
 release/operational acceptance conditions remain separate.
 
+**Maintainer direction, 2026-11-20:** the research lifecycle becomes product
+work on the Pi Host route. Its protected consequence is the audit of a
+registered decision against its evidence, as the controlled live H2 run of
+2026-11-19 did for `context-boundary.h2-levels` and the operator-decided
+wording correction that followed
+([result](records/research-lifecycle-h2-live-result-20261119.md)). The route
+is the hosted Pi Host (`work-engine.pi-lifecycle-hosted.v1`) under the task
+host, not the native Codex build. The next work lets the installed task host
+launch that realization: per-launch Host job composition, task-host startup and
+install checks for the route, and an offline check of the basis mint against
+the H2 outputs. The startup hold, protection contract, grant derivation and
+production evidence class remain separate decisions, and this direction grants
+no research, execution or inference authority.
+
 The 2026-08-20 strategic reconciliation found that the command-and-control
 direction remains sound, while distribution and live recovery lag behind the
 repository-local terminal lifecycle. Fourteen accepted slices now establish
@@ -947,7 +961,10 @@ first completed standalone release:
 
 Research becomes product work only when it has an owner, a protected
 consequence, a truthful provenance model, and evidence that it adds meaningful
-reach rather than another equivalent control.
+reach rather than another equivalent control. On 2026-11-20 the maintainer
+selected the research lifecycle for product work (see
+[Current strategic route](#current-strategic-route)); evidence of its reach
+beyond the single controlled H2 comparison is not yet established.
 
 ---
 
