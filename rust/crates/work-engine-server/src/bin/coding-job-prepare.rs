@@ -299,13 +299,24 @@ fn run() -> Result<Value> {
         }
     }
     // Validate the supplied runtime admission against the exact live inputs.
-    if let Some(live) = &spec.hosted {
+    // Revision 4 capabilities are authorized at admission; the plan must name
+    // exactly what the admission grants (`allow_background => allow_shell`).
+    let capabilities = if let Some(live) = &spec.hosted {
         let admission: Value = serde_json::from_slice(&live.runtime_admission.verify()?)?;
         let config_sha = digest(&serde_json::to_vec(inputs.pi_config.as_ref().unwrap())?);
         let catalog = pin(&spec
             .runtime
             .join("node_modules/@earendil-works/pi-ai/dist/providers/data/openai-codex.json"))?;
-        if admission.as_object().map_or(0, |o| o.len()) != 11
+        let shell = admission["allow_shell"]
+            .as_bool()
+            .ok_or("admission allow_shell must be a boolean")?;
+        let background = admission["allow_background"]
+            .as_bool()
+            .ok_or("admission allow_background must be a boolean")?;
+        if background && !shell {
+            return Err("admission matrix: allow_background requires allow_shell".into());
+        }
+        if admission.as_object().map_or(0, |o| o.len()) != 13
             || admission["schema"] != "work-engine.pi-coding-runtime-admission.v1"
             || admission["job_id"] != spec.job_id
             || admission["binary_sha256"] != inputs.host_binary.sha256
@@ -322,7 +333,10 @@ fn run() -> Result<Value> {
         {
             return Err("supplied live runtime admission mismatch".into());
         }
-    }
+        (shell, background)
+    } else {
+        (false, false)
+    };
     if !spec.operation_root.exists() {
         fs::create_dir(&spec.operation_root)?;
         fs::set_permissions(&spec.operation_root, fs::Permissions::from_mode(0o700))?;
@@ -360,6 +374,8 @@ fn run() -> Result<Value> {
             max_context_bytes: 24_000,
             failover: None,
             classification_table_sha256: None,
+            allow_shell: capabilities.0,
+            allow_background: capabilities.1,
         })
     } else {
         None
