@@ -179,6 +179,7 @@ fn config(root: &Path, url: String) -> ServiceConfig {
             root: root.join("native"),
             provider_route: NativeProviderRoute::NativeSimProofV1,
             chatgpt_access_source: None,
+            pi_host_composition: None,
             simulator_base_url: url,
             session_id: "session:input".into(),
             invocation_id: "invocation:unused".into(),

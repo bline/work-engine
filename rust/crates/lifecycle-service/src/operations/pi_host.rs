@@ -8,7 +8,9 @@
 //! holds provider access.
 
 use super::{NativeLaunch, NativeMessage, NativeTaskWork};
-use crate::{NativeConfig, NativeFollowupTurn, actor::NativeGate};
+use crate::{
+    NativeConfig, NativeFollowupTurn, NativeProviderRoute, PiHostComposition, actor::NativeGate,
+};
 use lifecycle_codex::{NativeAuthMode, NativeEvent, NativeEventKind, parse_event};
 use lifecycle_runtime::NativeStdio;
 use lifecycle_store::{NativeInputPayload, StoreError};
@@ -99,6 +101,110 @@ fn file_sha(path: &Path) -> Result<String, StoreError> {
         .map_err(|_| StoreError::Rejected)
 }
 
+/// The composition profile is a small JSON document.
+const MAX_PROFILE_BYTES: u64 = 1024 * 1024;
+
+/// Why an installed Pi Host composition is refused. Each class names one
+/// installed fact and carries no path or digest value.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PiHostCompositionRefusal {
+    /// `PiHostV1` without an installed composition.
+    Missing,
+    /// A composition on a route other than `PiHostV1`.
+    WrongRoute,
+    /// A composition path or the Host executable is not absolute and normal.
+    PathTopology,
+    /// A pin is not 64 lowercase hexadecimal characters.
+    MalformedPin,
+    /// The profile is absent, a symlink, not a regular file or oversized.
+    ProfileUnavailable,
+    ProfilePinMismatch,
+    /// The Host executable is absent, a symlink or not a regular file.
+    HostBinaryUnavailable,
+    HostBinaryPinMismatch,
+}
+
+impl PiHostCompositionRefusal {
+    pub fn reason(self) -> &'static str {
+        match self {
+            Self::Missing => "pi host composition missing",
+            Self::WrongRoute => "pi host composition on a non-pi-host route",
+            Self::PathTopology => "pi host composition path not absolute and normal",
+            Self::MalformedPin => "pi host composition pin malformed",
+            Self::ProfileUnavailable => "pi host composition profile unavailable",
+            Self::ProfilePinMismatch => "pi host composition profile digest mismatch",
+            Self::HostBinaryUnavailable => "pi host binary unavailable",
+            Self::HostBinaryPinMismatch => "pi host binary digest mismatch",
+        }
+    }
+}
+
+/// Input-only checks of the installed composition. Absent is allowed here:
+/// the task host's startup requires it for `PiHostV1`.
+fn composition_input(
+    config: &NativeConfig,
+) -> Result<Option<&PiHostComposition>, PiHostCompositionRefusal> {
+    let Some(composition) = &config.pi_host_composition else {
+        return Ok(None);
+    };
+    if config.provider_route != NativeProviderRoute::PiHostV1 {
+        return Err(PiHostCompositionRefusal::WrongRoute);
+    }
+    let normal = |p: &Path| {
+        p.is_absolute()
+            && p.components().all(|c| {
+                !matches!(
+                    c,
+                    std::path::Component::ParentDir | std::path::Component::CurDir
+                )
+            })
+    };
+    if !normal(&composition.profile)
+        || !normal(&composition.credentials_file)
+        || !normal(&config.executable)
+    {
+        return Err(PiHostCompositionRefusal::PathTopology);
+    }
+    let pin = |s: &str| {
+        s.len() == 64
+            && s.bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    };
+    if !pin(&composition.profile_sha256) || !pin(&composition.host_sha256) {
+        return Err(PiHostCompositionRefusal::MalformedPin);
+    }
+    Ok(Some(composition))
+}
+
+/// Digest of a regular file reached without following a final symlink.
+fn regular_file_sha(path: &Path, limit: Option<u64>) -> Option<String> {
+    let meta = std::fs::symlink_metadata(path).ok()?;
+    if !meta.is_file() || limit.is_some_and(|limit| meta.len() > limit) {
+        return None;
+    }
+    std::fs::read(path).ok().map(|bytes| sha(&bytes))
+}
+
+/// The installed composition's pins against the filesystem: the profile and
+/// the Host executable are regular files whose bytes match their pins.
+pub fn verify_pi_host_composition(config: &NativeConfig) -> Result<(), PiHostCompositionRefusal> {
+    if config.provider_route != NativeProviderRoute::PiHostV1 {
+        return Err(PiHostCompositionRefusal::WrongRoute);
+    }
+    let composition = composition_input(config)?.ok_or(PiHostCompositionRefusal::Missing)?;
+    let profile = regular_file_sha(&composition.profile, Some(MAX_PROFILE_BYTES))
+        .ok_or(PiHostCompositionRefusal::ProfileUnavailable)?;
+    if profile != composition.profile_sha256 {
+        return Err(PiHostCompositionRefusal::ProfilePinMismatch);
+    }
+    let host = regular_file_sha(&config.executable, None)
+        .ok_or(PiHostCompositionRefusal::HostBinaryUnavailable)?;
+    if host != composition.host_sha256 {
+        return Err(PiHostCompositionRefusal::HostBinaryPinMismatch);
+    }
+    Ok(())
+}
+
 /// Read `<root>/pi-host.json`, written by trusted composition.
 pub(crate) fn load(config: &NativeConfig) -> Result<PiHostConfig, StoreError> {
     let path = config.root.join("pi-host.json");
@@ -135,6 +241,13 @@ pub(crate) fn validate(config: &NativeConfig, host: &PiHostConfig) -> Result<(),
         || !matches!(host.provider.as_str(), "claude-sdk" | "openai-codex")
         || host.model.is_empty()
         || !(1..=3600).contains(&host.turn_deadline_secs)
+    {
+        return Err(StoreError::Rejected);
+    }
+    // An installed Host binary pin binds the launch configuration's Host.
+    if composition_input(config)
+        .map_err(|_| StoreError::Rejected)?
+        .is_some_and(|composition| composition.host_sha256 != host.host_sha256)
     {
         return Err(StoreError::Rejected);
     }
@@ -902,6 +1015,100 @@ mod tests {
         let mut provider = host.clone();
         provider.provider = "anthropic".into();
         assert!(validate(&config, &provider).is_err());
+    }
+
+    /// A profile and Host binary pinned by an installed composition.
+    fn installed(dir: &Path) -> NativeConfig {
+        let (mut config, _) = native(dir);
+        let profile = dir.join("composition.json");
+        std::fs::write(&profile, b"{\"schema\":\"profile\"}").unwrap();
+        let executable = dir.join("work-engine-pi-host");
+        std::fs::write(&executable, b"host binary").unwrap();
+        config.executable = executable;
+        config.pi_host_composition = Some(PiHostComposition {
+            profile_sha256: sha(&std::fs::read(&profile).unwrap()),
+            profile,
+            host_sha256: sha(b"host binary"),
+            credentials_file: PathBuf::from("/etc/work-engine/hosted-credentials.json"),
+        });
+        config
+    }
+
+    #[test]
+    fn installed_composition_pins_profile_and_host_binary() {
+        use PiHostCompositionRefusal as R;
+        let dir = tempfile::tempdir().unwrap();
+        let config = installed(dir.path());
+        assert_eq!(verify_pi_host_composition(&config), Ok(()));
+        let edit = |f: &dyn Fn(&mut NativeConfig)| {
+            let mut changed = config.clone();
+            f(&mut changed);
+            verify_pi_host_composition(&changed)
+        };
+        let composition = |f: &dyn Fn(&mut PiHostComposition)| {
+            edit(&|c: &mut NativeConfig| f(c.pi_host_composition.as_mut().unwrap()))
+        };
+        assert_eq!(edit(&|c| c.pi_host_composition = None), Err(R::Missing));
+        assert_eq!(
+            edit(&|c| c.provider_route = NativeProviderRoute::NativeSimProofV1),
+            Err(R::WrongRoute)
+        );
+        assert_eq!(
+            composition(&|c| c.profile = PathBuf::from("composition.json")),
+            Err(R::PathTopology)
+        );
+        assert_eq!(
+            composition(&|c| c.credentials_file = PathBuf::from("/etc/../credentials.json")),
+            Err(R::PathTopology)
+        );
+        assert_eq!(
+            composition(&|c| c.profile_sha256 = c.profile_sha256.to_uppercase()),
+            Err(R::MalformedPin)
+        );
+        assert_eq!(
+            composition(&|c| c.host_sha256 = "a".repeat(63)),
+            Err(R::MalformedPin)
+        );
+        assert_eq!(
+            composition(&|c| c.profile_sha256 = "d".repeat(64)),
+            Err(R::ProfilePinMismatch)
+        );
+        assert_eq!(
+            composition(&|c| c.host_sha256 = "d".repeat(64)),
+            Err(R::HostBinaryPinMismatch)
+        );
+        assert_eq!(
+            composition(&|c| c.profile = dir.path().join("absent.json")),
+            Err(R::ProfileUnavailable)
+        );
+        let link = dir.path().join("linked.json");
+        std::os::unix::fs::symlink(dir.path().join("composition.json"), &link).unwrap();
+        assert_eq!(
+            composition(&|c| c.profile = link.clone()),
+            Err(R::ProfileUnavailable)
+        );
+        assert_eq!(
+            edit(&|c| c.executable = dir.path().join("absent-host")),
+            Err(R::HostBinaryUnavailable)
+        );
+    }
+
+    /// The installed Host pin must equal the launch configuration's Host.
+    #[test]
+    fn installed_host_pin_binds_the_launch_configuration() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = installed(dir.path());
+        let (_, mut host) = native(dir.path());
+        assert!(validate(&config, &host).is_err());
+        host.host_sha256 = sha(b"host binary");
+        assert!(validate(&config, &host).is_ok());
+        let mut malformed = config.clone();
+        malformed
+            .pi_host_composition
+            .as_mut()
+            .unwrap()
+            .profile_sha256 = "x".into();
+        assert!(validate(&malformed, &host).is_err());
     }
 
     /// A job with a loopback route is admitted only under controlled proof.
