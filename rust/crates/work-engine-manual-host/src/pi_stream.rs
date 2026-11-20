@@ -867,6 +867,10 @@ pub struct Session {
     bind: Value,
     seq: u64,
     stream: u64,
+    /// The stream's wire family: whose terminal event and usage shape the
+    /// release-drain eligibility and evidence read. The hosted lane passes
+    /// its plan's wire; the Responses helper defaults to [`Wire::Responses`].
+    wire: Wire,
     reader: Reader,
     state: State,
     held: Vec<u8>,
@@ -907,12 +911,14 @@ impl Session {
         seq: u64,
         stream: u64,
         refuse: fn(u16) -> bool,
+        wire: Wire,
     ) -> Result<Self> {
         Ok(Self {
             bind: serde_json::to_value(binding).map_err(|_| "binding")?,
             binding: binding.clone(),
             seq,
             stream,
+            wire,
             reader: Reader::spawn(upstream),
             state: State::Head,
             held: Vec::new(),
@@ -1137,7 +1143,7 @@ impl Session {
                 // forwarded ones: the drain screens them with what follows.
                 // With a held body still to replay the drain would not follow
                 // the forwarded bytes: release without it.
-                let u = usage(&self.r.forwarded);
+                let u = usage_for(self.wire, &self.r.forwarded);
                 if self.r.upstream_end_ms.is_none()
                     && self.replay_left() == 0
                     && (u["completed"] == true || !u["failed"].is_null())
@@ -1462,7 +1468,15 @@ pub fn relay<C: Channel + Screen, R: Read + Send + 'static>(
 ) -> Result<Relayed> {
     relay_session(
         chan,
-        Session::start(upstream, abort, binding, seq, stream, refuse)?,
+        Session::start(
+            upstream,
+            abort,
+            binding,
+            seq,
+            stream,
+            refuse,
+            Wire::Responses,
+        )?,
     )
 }
 /// Drive an already started [`Session`] (for example one with a [`Hold`])

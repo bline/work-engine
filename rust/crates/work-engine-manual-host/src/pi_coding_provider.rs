@@ -13,7 +13,7 @@ pub const CLAUDE_MODELS: [&str; 1] = ["claude-haiku-5-5"];
 /// OpenRouter Completions models admitted on the hosted lanes, by the
 /// transmitted model slug (Layer B: base id + `:floor`), since the catalog
 /// binds the Layer A alias id.
-pub const OPENROUTER_MODELS: [&str; 1] = ["deepseek/deepseek-v4-flash-latest:floor"];
+pub const OPENROUTER_MODELS: [&str; 1] = ["~deepseek/deepseek-v4-flash-latest:floor"];
 /// The Claude Code binary a `claude-sdk` runtime must carry (C1(vii)): its
 /// manifest entry and digest.
 pub const CLAUDE_CODE_ENTRY: &str = "node_modules/@anthropic-ai/claude-agent-sdk-linux-x64/claude";
@@ -593,22 +593,26 @@ impl ProviderPlan {
         }
     }
     /// The model id transmitted to the provider for this plan. For the
-    /// Completions/OpenRouter family this is the catalog (Layer A) id with the
-    /// `~` (Pi alias) prefix removed and the floor routing suffix appended
-    /// (Layer B), e.g. `~deepseek/deepseek-v4-flash-latest` -
-    /// `deepseek/deepseek-v4-flash-latest:floor`.
+    /// Completions/OpenRouter family this is the catalog (Layer A) id kept
+    /// verbatim (including Pi's `~` alias prefix, which OpenRouter's own
+    /// catalog uses and its dispatch requires for aliases) with the floor
+    /// routing suffix appended (Layer B), e.g.
+    /// `~deepseek/deepseek-v4-flash-latest` -
+    /// `~deepseek/deepseek-v4-flash-latest:floor`. Live qualification
+    /// (records/openrouter-lane-live-20261120, 2026-11-20): OpenRouter
+    /// rejects the alias without the `~` (`... is not a valid model ID`)
+    /// and accepts `~<alias>:floor`.
     pub fn transmitted_model(&self) -> Result<String> {
         let model = self.model.as_str();
         match self.wire_checked()? {
             crate::pi_stream::Wire::Completions => {
-                let base = model.strip_prefix('~').unwrap_or(model);
-                if base.is_empty() {
+                if model.is_empty() {
                     return refuse("empty transmitted model");
                 }
-                if base.ends_with(OPENROUTER_FLOOR_SUFFIX) {
-                    Ok(base.to_string())
+                if model.ends_with(OPENROUTER_FLOOR_SUFFIX) {
+                    Ok(model.to_string())
                 } else {
-                    Ok(format!("{base}{OPENROUTER_FLOOR_SUFFIX}"))
+                    Ok(format!("{model}{OPENROUTER_FLOOR_SUFFIX}"))
                 }
             }
             _ => Ok(model.to_string()),
@@ -1522,13 +1526,13 @@ mod tests {
         let b = plan("openrouter", "~deepseek/deepseek-v4-flash-latest");
         assert_eq!(
             b.transmitted_model().unwrap(),
-            "deepseek/deepseek-v4-flash-latest:floor"
+            "~deepseek/deepseek-v4-flash-latest:floor"
         );
         // Idempotent: an already-suffixed catalog id is not double-suffixed.
-        let b = plan("openrouter", "deepseek/deepseek-v4-flash-latest:floor");
+        let b = plan("openrouter", "~deepseek/deepseek-v4-flash-latest:floor");
         assert_eq!(
             b.transmitted_model().unwrap(),
-            "deepseek/deepseek-v4-flash-latest:floor"
+            "~deepseek/deepseek-v4-flash-latest:floor"
         );
         // Non-completions lanes transmit the plan model unchanged.
         assert_eq!(plan(DEFAULT_PROVIDER, "gpt-6-luna").transmitted_model().unwrap(), "gpt-6-luna");

@@ -584,7 +584,7 @@ fn cancel_crossing_a_relayed_head_is_confirmed() {
     let s = store(&t);
     let raw = b"HTTP/1.1 200 OK\r\nContent-Length: 1\r\n\r\nx".to_vec();
     let mut sess =
-        ps::Session::start(Cursor::new(raw), || (), &binding(), 1, 1, |_| false).unwrap();
+        ps::Session::start(Cursor::new(raw), || (), &binding(), 1, 1, |_| false, ps::Wire::Responses).unwrap();
     let mut frames = vec![];
     while frames.is_empty() {
         frames = sess.poll(&s, Duration::from_millis(50)).unwrap();
@@ -599,7 +599,7 @@ fn cancel_crossing_a_relayed_head_is_confirmed() {
     // Pull before any head is refused in the head phase.
     let raw = b"HTTP/1.1 200 OK\r\n\r\n".to_vec();
     let slow = std::io::Read::chain(std::io::empty(), Cursor::new(raw));
-    let mut early = ps::Session::start(slow, || (), &binding(), 1, 1, |_| false).unwrap();
+    let mut early = ps::Session::start(slow, || (), &binding(), 1, 1, |_| false, ps::Wire::Responses).unwrap();
     let pull = json!({"type":"pull","binding":binding(),"sequence":1,"stream":1,"ordinal":1});
     assert_eq!(
         early.on_native(&pull, &s).err(),
@@ -698,6 +698,7 @@ fn release_after_terminal_event_drains_without_blocking_native_handling() {
         1,
         1,
         |_| false,
+        ps::Wire::Responses,
     )
     .unwrap();
     let op = |kind: &str, o: u64| json!({"type":kind,"binding":binding(),"sequence":1,"stream":1,"ordinal":o});
@@ -735,6 +736,81 @@ fn release_after_terminal_event_drains_without_blocking_native_handling() {
             upstream_end: false
         }
     );
+    drop(sess);
+    server.join().unwrap();
+}
+
+/// Same release-drain contract for the Chat Completions wire: the consumer
+/// cancels right after the literal `[DONE]` terminal was relayed while the
+/// provider withholds the framed end (OpenRouter holds the connection open,
+/// records/openrouter-lane-live-20261120). The wire-aware usage read must
+/// admit the drain, and the relay must record the drain so settlement can
+/// treat the terminal as clean (Q-a) instead of settling uncertain.
+#[test]
+fn completions_release_after_done_drains_without_blocking_native_handling() {
+    let t = tempfile::tempdir().unwrap();
+    let s = store(&t);
+    let l = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = l.local_addr().unwrap();
+    let server = std::thread::spawn(move || {
+        let (mut c, _) = l.accept().unwrap();
+        let e = sse(&[
+            r#"{"id":"g","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}]}"#,
+            r#"{"id":"g","object":"chat.completion.chunk","choices":[],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2,"cost":0.0001}}"#,
+            "[DONE]",
+        ]);
+        write!(
+            c,
+            "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n{:x}\r\n{e}\r\n",
+            e.len()
+        )
+        .unwrap();
+        std::thread::sleep(Duration::from_secs(3)); // framed end withheld
+    });
+    let mut sess = ps::Session::start(
+        TcpStream::connect(addr).unwrap(),
+        || (),
+        &binding(),
+        1,
+        1,
+        |_| false,
+        ps::Wire::Completions,
+    )
+    .unwrap();
+    let op = |kind: &str, o: u64| json!({"type":kind,"binding":binding(),"sequence":1,"stream":1,"ordinal":o});
+    while sess.poll(&s, Duration::from_millis(50)).unwrap().is_empty() {}
+    let mut f = sess.on_native(&op("pull", 1), &s).unwrap();
+    while f.is_empty() {
+        f = sess.poll(&s, Duration::from_millis(50)).unwrap();
+    }
+    assert_eq!(f[0]["type"], "response-chunk");
+    let start = std::time::Instant::now();
+    let out = sess.on_native(&op("cancel", 2), &s).unwrap();
+    assert!(
+        start.elapsed() < Duration::from_millis(100),
+        "cancel handling blocked"
+    );
+    assert_eq!(out[0]["type"], "response-cancelled");
+    assert_eq!(sess.progress(), &ps::Progress::Pending);
+    while sess.progress() == &ps::Progress::Pending {
+        sess.poll(&s, Duration::from_millis(50)).unwrap();
+    }
+    assert!(start.elapsed() < Duration::from_millis(1500), "drain bounded");
+    assert_eq!(
+        sess.relay().outcome,
+        Outcome::Cancelled {
+            upstream_end: false
+        }
+    );
+    // The drain ran (release recorded), so the clean `[DONE]` terminal is
+    // settleable: usage completed and nothing unclean followed it.
+    assert!(sess.relay().drained, "release drain recorded");
+    assert!(ps::usage_for(ps::Wire::Completions, &sess.relay().forwarded)["completed"] == true);
+    assert!(ps::terminal_is_last_for(
+        ps::Wire::Completions,
+        &sess.relay().forwarded,
+        &sess.relay().unforwarded
+    ));
     drop(sess);
     server.join().unwrap();
 }
@@ -822,6 +898,7 @@ fn bytes_read_while_draining_after_release_are_kept_as_unforwarded_evidence() {
         1,
         1,
         |_| false,
+        ps::Wire::Responses,
     )
     .unwrap();
     let op = |kind: &str, o: u64| json!({"type":kind,"binding":binding(),"sequence":1,"stream":1,"ordinal":o});
@@ -914,6 +991,7 @@ fn released_after(first: String, later: Vec<(u64, String)>, end: bool) -> ps::Re
         1,
         1,
         |_| false,
+        ps::Wire::Responses,
     )
     .unwrap();
     let op = |kind: &str, o: u64| json!({"type":kind,"binding":binding(),"sequence":1,"stream":1,"ordinal":o});
@@ -1097,6 +1175,7 @@ fn session(up: impl std::io::Read + Send + 'static, h: Option<ps::Hold>) -> ps::
         1,
         1,
         |s| matches!(s, 401 | 402 | 403 | 429),
+        ps::Wire::Responses,
     )
     .unwrap();
     match h {

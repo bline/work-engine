@@ -1580,6 +1580,7 @@ impl Host {
             .and_then(|r| r.attempts.last())
             .and_then(|a| a.deadline_ms);
         let hold = classifier.map(|c| c.hold(Some(self.hosted_hold_window(&fetch, deadline_ms))));
+        let wire = plan.wire().unwrap_or(stream::Wire::Responses);
         let session = match Session::start(
             reader,
             abort,
@@ -1587,6 +1588,7 @@ impl Host {
             s.request,
             STREAM,
             route::refusal_status,
+            wire,
         ) {
             Ok(session) => match hold {
                 Some(hold) => session.with_hold(hold),
@@ -3531,7 +3533,7 @@ mod tests {
     // slug (Layer B) is base + `:floor`. The resolved checkpoint (Layer C) is a
     // concrete id in the family, e.g. `deepseek/deepseek-v4-flash-0731`.
     const OR_ALIAS: &str = "~deepseek/deepseek-v4-flash-latest";
-    const OR_TRANSMITTED: &str = "deepseek/deepseek-v4-flash-latest:floor";
+    const OR_TRANSMITTED: &str = "~deepseek/deepseek-v4-flash-latest:floor";
     const OR_RESOLVED: &str = "deepseek/deepseek-v4-flash-0731";
     /// The offline host switched to the `openrouter` provider with the pinned
     /// OpenRouter catalog entry of the model, and a host budget large enough for
@@ -5576,9 +5578,9 @@ mod body_tests {
     #[test]
     fn completions_forward_replaces_layer_a_with_layer_b_floor_slug() {
         let body = br#"{"model":"~deepseek/deepseek-v4-flash-latest","messages":[],"stream":true}"#;
-        let out = completions_forward_body(body, "deepseek/deepseek-v4-flash-latest:floor");
+        let out = completions_forward_body(body, "~deepseek/deepseek-v4-flash-latest:floor");
         let v: serde_json::Value = serde_json::from_slice(&out).unwrap();
-        assert_eq!(v["model"], "deepseek/deepseek-v4-flash-latest:floor");
+        assert_eq!(v["model"], "~deepseek/deepseek-v4-flash-latest:floor");
         assert_eq!(v["stream"], true);
     }
 
