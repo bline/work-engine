@@ -1,8 +1,9 @@
 //! Closed v3 (provider-disabled) and v4 (live provider) grammars over immutable
 //! raw SDK and trusted Host ingress. v4 differs only where real inference
-//! differs from the fixture: the model's final text is provenance, and the
+//! differs from the fixture: the model's final text is provenance, the
 //! checkpoint is derived here from the exact Host result, workspace manifest
-//! and settled history. v3 behaviour is unchanged.
+//! and settled history, and an assistant message may carry non-semantic
+//! thinking blocks of the closed observed shape. v3 behaviour is unchanged.
 use crate::StoreError;
 use serde_json::{Value, json};
 use work_engine_types::CodecContract;
@@ -244,6 +245,17 @@ pub(super) fn validate_with_thinking(
     if thinking && !live {
         return bad();
     }
+    // Non-semantic reasoning a real provider attaches to an assistant message:
+    // v5's native shape, or for v4 the closed observed shape (e.g. OpenRouter
+    // Completions reasoning at the operator-fixed effort). Never a tool call,
+    // never final text; retained only in the settled history. v3 admits none.
+    let reasoning = |c: &Value| {
+        if thinking {
+            valid_thinking(c)
+        } else {
+            live && crate::pi_analysis_proof::thinking(c)
+        }
+    };
     let intents: Vec<_> = values
         .iter()
         .filter(|v| v["type"] == "pi.coding_tool_intent")
@@ -338,15 +350,15 @@ pub(super) fn validate_with_thinking(
         let content = first["content"]
             .as_array()
             .ok_or(StoreError::ClaimConflict)?;
-        // v3: exactly the toolCall. v4: real models may precede the one call with
-        // text; any other block kind or a second call is refused.
+        // v3: exactly the toolCall. v4/v5: real models may precede the one call
+        // with text or reasoning; any other block kind or a second call is refused.
         let calls = content.iter().filter(|c| c["type"] == "toolCall").count();
         if calls != 1
             || content.last().is_none_or(|c| c["type"] != "toolCall")
             || (!live && content.len() != 1)
-            || content.iter().any(|c| {
-                c["type"] != "toolCall" && c["type"] != "text" && !(thinking && valid_thinking(c))
-            })
+            || content
+                .iter()
+                .any(|c| c["type"] != "toolCall" && c["type"] != "text" && !reasoning(c))
         {
             return bad();
         }
@@ -444,15 +456,14 @@ pub(super) fn validate_with_thinking(
     if final_message["stopReason"] != "stop" {
         return bad();
     }
-    let final_text = if thinking {
+    // The final text is the text blocks only; a reasoning-only final has none
+    // and refuses below.
+    let final_text = if thinking || (live && final_message["content"].is_array()) {
         let mut m = final_message.clone();
         let blocks = m["content"]
             .as_array_mut()
             .ok_or(StoreError::ClaimConflict)?;
-        if blocks
-            .iter()
-            .any(|v| v["type"] != "text" && !valid_thinking(v))
-        {
+        if blocks.iter().any(|v| v["type"] != "text" && !reasoning(v)) {
             return bad();
         }
         blocks.retain(|v| v["type"] == "text");

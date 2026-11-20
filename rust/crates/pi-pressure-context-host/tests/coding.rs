@@ -418,6 +418,9 @@ struct SyntheticSdk {
     live: bool,
     preamble: bool,
     thinking: bool,
+    /// A non-semantic reasoning block a live provider prepends to each
+    /// assistant message.
+    reasoning: Option<serde_json::Value>,
     /// Hosted: after each live grant, attempt 1 on the primary route (taken
     /// as refused) and attempt 2 on the secondary.
     hosted: bool,
@@ -434,12 +437,19 @@ impl SyntheticSdk {
             live: false,
             preamble: false,
             thinking: false,
+            reasoning: None,
             hosted: false,
         }
     }
     fn assistant(&self, mut m: serde_json::Value) -> serde_json::Value {
         if self.thinking {
             m["content"].as_array_mut().unwrap().insert(0,json!({"type":"thinking","thinking":"synthetic high reasoning","thinkingSignature":"{\"type\":\"reasoning\",\"id\":\"fixture\"}"}));
+        }
+        if let Some(block) = &self.reasoning {
+            m["content"]
+                .as_array_mut()
+                .unwrap()
+                .insert(0, block.clone());
         }
         m
     }
@@ -792,13 +802,14 @@ fn run_complete_mode(
     preamble: bool,
     sol: bool,
 ) -> Result<(PathBuf, CodingContinuity), work_engine_manual_host::Error> {
-    run_complete_full(live, preamble, sol, false)
+    run_complete_full(live, preamble, sol, false, None)
 }
 fn run_complete_full(
     live: bool,
     preamble: bool,
     sol: bool,
     hosted: bool,
+    reasoning: Option<&serde_json::Value>,
 ) -> Result<(PathBuf, CodingContinuity), work_engine_manual_host::Error> {
     let policy = hosted.then(hosted_policy);
     let (root, c) =
@@ -823,6 +834,7 @@ fn run_complete_full(
     let mut sdk = SyntheticSdk::new("physical:old", 0);
     sdk.live = live;
     sdk.thinking = sol;
+    sdk.reasoning = reasoning.cloned();
     sdk.preamble = preamble;
     sdk.hosted = hosted;
     let reset = sdk.turn(&mut c, &original, Some(&root))?;
@@ -848,6 +860,7 @@ fn run_complete_full(
     let mut fresh = SyntheticSdk::new("physical:new", 2);
     fresh.live = live;
     fresh.thinking = sol;
+    fresh.reasoning = reasoning.cloned();
     fresh.hosted = hosted;
     let continued = fresh.turn(&mut c, &recovery, None).unwrap();
     control(&mut c, &continued);
@@ -979,7 +992,7 @@ fn hosted_started(
 fn hosted_attempts_leave_the_settled_event_grammar_unchanged_and_are_reported() {
     // Real Docker run (dev-vertical step 4): attempts recorded in the turn
     // ingress made every hosted settlement fail closed.
-    let (root, c) = run_complete_full(true, false, false, true).unwrap();
+    let (root, c) = run_complete_full(true, false, false, true, None).unwrap();
     let report = c.report().unwrap();
     assert_eq!(report["continued_parent"], "CompletedSettled");
     let attempts = report["hosted_attempts"].as_array().unwrap();
@@ -999,6 +1012,40 @@ fn hosted_attempts_leave_the_settled_event_grammar_unchanged_and_are_reported() 
     );
     drop(c);
     fs::remove_dir_all(root).unwrap();
+}
+/// Live regression (openrouter-lane run-1): at the operator-fixed effort
+/// `high`, DeepSeek over OpenRouter Completions prefixes assistant messages
+/// with reasoning that Pi records as a closed 3-key `thinking` block (signature:
+/// the `reasoning_details` JSON). The owner refused the first settlement
+/// (`entry claim conflicted with durable state`), so the gate never sent
+/// `bridge_replace` and the job ended `coding continuity unfinished`.
+#[test]
+fn hosted_live_continuity_settles_completions_reasoning_blocks() {
+    let reasoning = "I'll add the function to src/lib.rs and run acceptance in one command.";
+    let signature =
+        json!([{"type":"reasoning.text","text":reasoning,"format":"unknown","index":0}]);
+    let block =
+        json!({"type":"thinking","thinking":reasoning,"thinkingSignature":signature.to_string()});
+    let (root, c) = run_complete_full(true, false, false, true, Some(&block)).unwrap();
+    let report = c.report().unwrap();
+    assert_eq!(report["provider_requests"], 4);
+    assert_eq!(report["continued_parent"], "CompletedSettled");
+    assert_eq!(report["hosted_attempts"].as_array().unwrap().len(), 8);
+    let checkpoint: serde_json::Value =
+        serde_json::from_str(report["checkpoint"].as_str().unwrap()).unwrap();
+    assert_eq!(
+        checkpoint["profile"],
+        "work-engine.pi-coding-live-continuity.v1"
+    );
+    // The settled final text, and so the checkpoint, exclude the reasoning.
+    assert_eq!(
+        checkpoint["settled_turn"]["assistant_final_text_sha256"],
+        digest(br#"Model-authored summary for "coding" (not a checkpoint)."#)
+    );
+    drop(c);
+    fs::remove_dir_all(root).unwrap();
+    // The provider-disabled v3 grammar still refuses any reasoning block.
+    assert!(run_complete_full(false, false, false, false, Some(&block)).is_err());
 }
 #[test]
 fn hosted_attempts_follow_the_granted_policy_and_are_consumed_once() {

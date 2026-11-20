@@ -872,8 +872,11 @@ fn v4_checkpoint_refuses_tampered_material_and_other_profiles_are_unchanged() {
     assert!(store.pi_coding_live_checkpoint(&parent).is_err());
 }
 
+/// The closed 3-key thinking shape settles under v5 and, as non-semantic
+/// reasoning, under live v4; a v5 signature that is not its native reasoning
+/// item still refuses under v5.
 #[test]
-fn sol_high_v5_preserves_thinking_history_and_rejects_cross_profile_or_bad_blocks() {
+fn sol_high_v5_preserves_thinking_history_and_rejects_bad_blocks() {
     fn inject(v: &mut Value, malformed: bool) {
         match v {
             Value::Array(a) => a.iter_mut().for_each(|v| inject(v, malformed)),
@@ -903,7 +906,7 @@ fn sol_high_v5_preserves_thinking_history_and_rejects_cross_profile_or_bad_block
         values.iter_mut().for_each(|v| inject(v, malformed));
         let (parent, proof) = record(&mut store, &session, "coding", &values, 1);
         let settled = store.settle_pi_coding(&parent, &proof, clock());
-        if !sol || malformed {
+        if sol && malformed {
             assert!(settled.is_err());
             assert!(store.native_final_material("coding").unwrap().is_none());
         } else {
@@ -920,7 +923,11 @@ fn sol_high_v5_preserves_thinking_history_and_rejects_cross_profile_or_bad_block
             let value: Value = serde_json::from_str(&checkpoint).unwrap();
             assert_eq!(
                 value["profile"],
-                "work-engine.pi-coding-sol-high-continuity.v1"
+                if sol {
+                    "work-engine.pi-coding-sol-high-continuity.v1"
+                } else {
+                    "work-engine.pi-coding-live-continuity.v1"
+                }
             );
             assert_eq!(
                 value["settled_turn"]["history_messages_sha256"],
@@ -934,6 +941,124 @@ fn sol_high_v5_preserves_thinking_history_and_rejects_cross_profile_or_bad_block
             );
         }
     }
+}
+
+/// Live regression (openrouter-lane run-1): at the operator-fixed effort
+/// `high`, DeepSeek over OpenRouter Completions precedes the single tool call
+/// with reasoning that Pi records as a closed 3-key `thinking` block whose
+/// signature is the `reasoning_details` JSON array. v4 settles it as
+/// non-semantic: final text and owner checkpoint carry only the text, the
+/// history keeps the block. Any other shape or a thinking-only final still
+/// refuses, and the provider-disabled v3 grammar refuses any thinking block.
+#[test]
+fn v4_admits_closed_completions_thinking_and_refuses_other_shapes() {
+    fn assistants(v: &mut Value, edit: &dyn Fn(&mut serde_json::Map<String, Value>)) {
+        match v {
+            Value::Array(a) => a.iter_mut().for_each(|v| assistants(v, edit)),
+            Value::Object(o) => {
+                if o.get("role").is_some_and(|r| r == "assistant")
+                    && o.get("content").is_some_and(Value::is_array)
+                {
+                    edit(o);
+                }
+                o.values_mut().for_each(|v| assistants(v, edit));
+            }
+            _ => {}
+        }
+    }
+    let reasoning = "I'll add the function to src/lib.rs and run acceptance in one command.";
+    let signature =
+        json!([{"type":"reasoning.text","text":reasoning,"format":"unknown","index":0}]);
+    let block =
+        json!({"type":"thinking","thinking":reasoning,"thinkingSignature":signature.to_string()});
+    let prepend = |b: Value| {
+        move |o: &mut serde_json::Map<String, Value>| {
+            o["content"].as_array_mut().unwrap().insert(0, b.clone())
+        }
+    };
+    let model = "Done. Added the function; the acceptance test passed.";
+    // Accepted: the exact live block before the call and before the final text.
+    let root = tempdir().unwrap();
+    let (mut store, session) = open_live(root.path());
+    let mut values = live_events("coding", model);
+    values
+        .iter_mut()
+        .for_each(|v| assistants(v, &prepend(block.clone())));
+    assert_eq!(values[6]["message"]["content"][0], block);
+    let (parent, proof) = record(&mut store, &session, "coding", &values, 1);
+    store.settle_pi_coding(&parent, &proof, clock()).unwrap();
+    let material = store.native_final_material("coding").unwrap().unwrap();
+    assert_eq!(material.final_text, model.as_bytes());
+    let checkpoint: Value =
+        serde_json::from_str(&store.pi_coding_live_checkpoint(&parent).unwrap()).unwrap();
+    assert_eq!(
+        checkpoint["profile"],
+        "work-engine.pi-coding-live-continuity.v1"
+    );
+    assert_eq!(
+        checkpoint["settled_turn"]["assistant_final_text_sha256"],
+        hash(model.as_bytes())
+    );
+    assert_eq!(
+        checkpoint["settled_turn"]["history_messages_sha256"],
+        hash(&serde_json::to_vec(&values[22]["messages"]).unwrap())
+    );
+    // Refused: every other shape, and a final with no text.
+    let mut extra = block.clone();
+    extra["text"] = json!("x");
+    let mut unsigned = block.clone();
+    unsigned
+        .as_object_mut()
+        .unwrap()
+        .remove("thinkingSignature");
+    let mut structured = block.clone();
+    structured["thinkingSignature"] = signature.clone();
+    let only = block.clone();
+    type Edit = Box<dyn Fn(&mut serde_json::Map<String, Value>)>;
+    let refused: Vec<(&str, Edit)> = vec![
+        ("extra key", Box::new(prepend(extra))),
+        ("no signature", Box::new(prepend(unsigned))),
+        ("non-string signature", Box::new(prepend(structured))),
+        (
+            "redacted thinking",
+            Box::new(prepend(json!({"type":"redacted_thinking","data":"x"}))),
+        ),
+        (
+            "thinking-only final",
+            Box::new(move |o: &mut serde_json::Map<String, Value>| {
+                if o.get("stopReason").is_some_and(|r| r == "stop") {
+                    o["content"] = json!([only]);
+                }
+            }),
+        ),
+    ];
+    for (case, edit) in refused {
+        let root = tempdir().unwrap();
+        let (mut store, session) = open_live(root.path());
+        let mut values = live_events("coding", model);
+        values.iter_mut().for_each(|v| assistants(v, edit.as_ref()));
+        let (parent, proof) = record(&mut store, &session, "coding", &values, 1);
+        assert!(
+            store.settle_pi_coding(&parent, &proof, clock()).is_err(),
+            "{case}"
+        );
+        assert!(
+            store.native_final_material("coding").unwrap().is_none(),
+            "{case}"
+        );
+    }
+    let root = tempdir().unwrap();
+    let (mut store, session) = setup_binding(
+        root.path(),
+        &pi_coding_profile_digest(),
+        &pi_coding_protocol_digest(),
+    );
+    let mut values = coding_events("coding");
+    values
+        .iter_mut()
+        .for_each(|v| assistants(v, &prepend(block.clone())));
+    let (parent, proof) = record(&mut store, &session, "coding", &values, 1);
+    assert!(store.settle_pi_coding(&parent, &proof, clock()).is_err());
 }
 
 /// Same settlement flow as above under an explicit (profile, protocol) binding.

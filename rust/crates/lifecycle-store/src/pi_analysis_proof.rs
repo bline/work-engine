@@ -48,11 +48,14 @@ fn delivery<'a>(reads: &[&'a Value], inv: &str, call: &Value) -> Result<&'a Valu
     Ok(read)
 }
 /// A thinking block exactly as Pi records it for the `claude-sdk` provider
-/// (observed in live run `live-c1`): `type`, `thinking` text and an opaque
-/// `thinkingSignature`, nothing else. Non-semantic: never a tool call, never
-/// part of the answer or of any delivery check (research-lifecycle owner
-/// decision, board 5886). Any other content type still refuses.
-fn thinking(c: &Value) -> bool {
+/// (observed in live run `live-c1`) and for OpenRouter Chat Completions
+/// reasoning (signature: the `reasoning_details` JSON; openrouter-lane live
+/// run-1): `type`, `thinking` text and an opaque `thinkingSignature`, nothing
+/// else. Non-semantic: never a tool call, never part of the answer or of any
+/// delivery check (research-lifecycle owner decision, board 5886). The live v4
+/// coding grammar admits the same closed shape. Any other content type still
+/// refuses.
+pub(crate) fn thinking(c: &Value) -> bool {
     c["type"] == "thinking"
         && c.as_object().is_some_and(|o| o.len() == 3)
         && c["thinking"].is_string()
