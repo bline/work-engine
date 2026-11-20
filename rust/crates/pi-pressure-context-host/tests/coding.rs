@@ -387,6 +387,8 @@ fn continuity_build(
         expires_ms: 1000,
         pressure_basis_points: 9500,
         hosted,
+        battery: false,
+        battery_workspace: None,
     };
     let control = store.grant_control_handle().unwrap();
     (

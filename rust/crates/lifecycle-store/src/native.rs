@@ -2078,12 +2078,14 @@ impl SqliteLifecycleStore {
                              WHERE tr.transition_id=?1 AND d.state='yielded'",
                             [transition],|r|r.get(0),
                         ).optional().map_err(|_|StoreError::Unavailable)?.flatten();
-                        let successor_context: String = self.connection.query_row(
-                            "SELECT successor_context FROM transitions WHERE transition_id=?1",
-                            [transition],|r|r.get(0),
-                        ).map_err(|_|StoreError::Unavailable)?;
-                        let final_text: Option<Vec<u8>> =
-                            crate::pi_coding::settled_basis_text(&self.connection, &source, &successor_context)?;
+                        // The reserved successor's own generation labels the
+                        // basis derivation; the transition row's column is not
+                        // written until the successor is observed.
+                        let final_text: Option<Vec<u8>> = crate::pi_coding::settled_basis_text(
+                            &self.connection,
+                            &source,
+                            context.as_str(),
+                        )?;
                         final_text.is_some()
                             && if let Some(intent) = trusted_intent {
                                 intent == context.as_str()

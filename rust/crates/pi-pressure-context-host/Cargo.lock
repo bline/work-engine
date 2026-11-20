@@ -1308,6 +1308,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "hosted-route-availability"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1499,6 +1508,7 @@ dependencies = [
  "getrandom 0.3.4",
  "lifecycle-core",
  "lifecycle-semantic",
+ "native-realization",
  "rusqlite",
  "serde",
  "serde_json",
@@ -1575,6 +1585,7 @@ checksum = "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d"
 name = "native-realization"
 version = "0.1.0"
 dependencies = [
+ "serde",
  "serde_json",
  "sha2",
 ]
@@ -2688,6 +2699,7 @@ name = "work-engine-manual-host"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "hosted-route-availability",
  "libc",
  "lifecycle-wire",
  "native-realization",

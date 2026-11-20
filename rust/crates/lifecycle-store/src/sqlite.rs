@@ -1468,9 +1468,15 @@ impl SqliteLifecycleStore {
                       ORDER BY n2.entered_wall_ms DESC,n2.rowid DESC LIMIT 1))",
             [transition.as_str()], |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?,row.get(4)?,row.get(5)?)),
         ).optional().map_err(|_| StoreError::Unavailable)?;
-        if let Some((source_id, attempt_id, provider_thread_id, bytes, invocation, successor)) = native {
+        if let Some((source_id, attempt_id, provider_thread_id, bytes, invocation, successor)) =
+            native
+        {
             // v4: the transition text is the owner-derived checkpoint.
-            let bytes = match crate::pi_coding::live_checkpoint_of(&self.connection, &invocation, &successor)? {
+            let bytes = match crate::pi_coding::live_checkpoint_of(
+                &self.connection,
+                &invocation,
+                &successor,
+            )? {
                 Some(checkpoint) => checkpoint.into_bytes(),
                 None => bytes,
             };
@@ -2151,12 +2157,19 @@ impl SqliteLifecycleStore {
                             "SELECT native_basis_source FROM transitions WHERE transition_id=?1",
                             [transition.as_str()], |row| row.get(0),
                         ).map_err(|_|StoreError::Unavailable)?;
-                        let successor_context: String = tx.query_row(
-                            "SELECT successor_context FROM transitions WHERE transition_id=?1",
-                            [transition.as_str()], |row| row.get(0),
-                        ).map_err(|_|StoreError::Unavailable)?;
+                        let successor_context: String = tx
+                            .query_row(
+                                "SELECT successor_context FROM transitions WHERE transition_id=?1",
+                                [transition.as_str()],
+                                |row| row.get(0),
+                            )
+                            .map_err(|_| StoreError::Unavailable)?;
                         let basis_text = match basis {
-                            Some(basis) => crate::pi_coding::settled_basis_text(&tx, &basis, &successor_context)?,
+                            Some(basis) => crate::pi_coding::settled_basis_text(
+                                &tx,
+                                &basis,
+                                &successor_context,
+                            )?,
                             None => None,
                         };
                         match basis_text {

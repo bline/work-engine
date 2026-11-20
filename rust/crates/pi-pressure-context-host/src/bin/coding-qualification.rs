@@ -9,8 +9,8 @@ use work_engine_manual_host::{
     pi_docker::{
         Host, Job, Journal,
         coding::{
-            BRIDGE_PROFILE, WorkspaceWriteBoundary, hosted::LoopbackTransport, is_hosted,
-            is_live_bridge,
+            BATTERY_MAX_TOOL_CALLS, BRIDGE_PROFILE, HOSTED_BATTERY_PROFILE, WorkspaceWriteBoundary,
+            hosted::LoopbackTransport, is_battery, is_hosted, is_live_bridge,
         },
         request_cancel,
     },
@@ -72,10 +72,17 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
     // schema. Live additionally needs the Host's existing exact provider
     // admission (checked again inside Host::admit) and never reuses fixture labels.
     let live = is_live_bridge(&profile.schema);
+    let battery = is_battery(&profile.schema);
     if !((profile.schema == BRIDGE_PROFILE && profile.provider.is_none())
         || (live && profile.provider.is_some()))
-        || profile.max_tool_calls != 1
-        || profile.workspace_write_boundary != WorkspaceWriteBoundary::SrcLibRs
+        || if battery {
+            profile.max_tool_calls == 0
+                || profile.max_tool_calls > BATTERY_MAX_TOOL_CALLS
+                || profile.workspace_write_boundary != WorkspaceWriteBoundary::LegacyWorkspace
+        } else {
+            profile.max_tool_calls != 1
+                || profile.workspace_write_boundary != WorkspaceWriteBoundary::SrcLibRs
+        }
     {
         return Err("bounded source-file coding continuity profile required".into());
     }
@@ -114,12 +121,14 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
     }
     let packet: Value = serde_json::from_slice(&job.packet.verify()?)?;
     if packet["schema"]
-        != if live {
+        != if battery {
+            "work-engine.coding-battery-packet.v1"
+        } else if live {
             "work-engine.coding-live-continuity-packet.v1"
         } else {
             "work-engine.coding-continuity-packet.v1"
         }
-        || (live && packet["bounds"] != bounds)
+        || (live && !battery && packet["bounds"] != bounds)
     {
         return Err("coding packet schema/bounds".into());
     }
@@ -156,6 +165,12 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
         } else {
             None
         },
+        battery,
+        battery_workspace: if battery {
+            Some(job.state_dir.join("coding-workspace"))
+        } else {
+            None
+        },
     };
     let turn = |base: &str| match &config.hosted {
         Some(policy) => policy.grant_id(base),
@@ -175,20 +190,67 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
         ProofRunId::parse("proof:pi:coding")?,
         clock(),
     )?;
-    for (id, context, scope) in [
-        (turn("grant:old"), "context:old", GrantScope::NativeTurn),
-        (turn("grant:new"), "context:new", GrantScope::NativeTurn),
-        (
-            "grant:replace".into(),
-            "context:old",
-            GrantScope::RequestReplacement,
-        ),
-        (
-            "grant:successor".into(),
-            "context:new",
-            GrantScope::EnqueueInput,
-        ),
-    ] {
+    let grants: Vec<(String, String, GrantScope)> = if battery {
+        // One grant set per pinned replacement cycle: cycle c replaces the
+        // cycle c-1 successor generation (cycle 1 replaces context:old) and
+        // names successor generation context:new{c}.
+        let max_resets = packet["budget"]["max_resets"]
+            .as_u64()
+            .ok_or("battery packet max_resets missing")?;
+        let mut g = vec![(
+            turn("grant:old"),
+            "context:old".to_string(),
+            GrantScope::NativeTurn,
+        )];
+        for c in 1..=max_resets {
+            let predecessor = if c == 1 {
+                "context:old".to_string()
+            } else {
+                format!("context:new{}", c - 1)
+            };
+            let successor = format!("context:new{c}");
+            g.push((
+                turn(&format!("grant:replace{c}")),
+                predecessor,
+                GrantScope::RequestReplacement,
+            ));
+            g.push((
+                turn(&format!("grant:new{c}")),
+                successor.clone(),
+                GrantScope::NativeTurn,
+            ));
+            g.push((
+                format!("grant:successor{c}"),
+                successor,
+                GrantScope::EnqueueInput,
+            ));
+        }
+        g
+    } else {
+        vec![
+            (
+                turn("grant:old"),
+                "context:old".to_string(),
+                GrantScope::NativeTurn,
+            ),
+            (
+                turn("grant:new"),
+                "context:new".to_string(),
+                GrantScope::NativeTurn,
+            ),
+            (
+                "grant:replace".into(),
+                "context:old".into(),
+                GrantScope::RequestReplacement,
+            ),
+            (
+                "grant:successor".into(),
+                "context:new".into(),
+                GrantScope::EnqueueInput,
+            ),
+        ]
+    };
+    for (id, context, scope) in grants {
         store.install_trusted_grant(TrustedGrant {
             id: GrantId::parse(id)?,
             issuer: "fixture-root".into(),

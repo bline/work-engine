@@ -4,7 +4,7 @@
 use lifecycle_core::{ClockSample, NativeSessionId};
 use lifecycle_store::{NativeTurnEntry, SqliteLifecycleStore};
 use serde_json::{Value, json};
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, path::PathBuf, rc::Rc};
 use work_engine_manual_host::{
     Artifact, Error, ProcessRecord, Result, digest,
     pi_docker::coding::{CodingEffectGate, CodingToolIntent, ProviderAttemptIntent},
@@ -196,6 +196,17 @@ pub struct CodingConfig {
     /// `Some` selects hosted provider transport for live mode. The policy is
     /// bound into the turn grant ids, so the issuer's grant is what admits it.
     pub hosted: Option<HostedProviderPolicy>,
+    /// Battery mode: one bounded long-form builder run (domain-work turn loop
+    /// with parametrized replacement cycles) instead of the fixed 4-request
+    /// continuity choreography. Battery knobs travel in the packet budget:
+    /// `max_resets`, `replacement_basis_points`, `max_context_bytes` (the
+    /// choreography keys `max_provider_requests`/`max_tool_calls` carry the
+    /// battery job's admission-pinned values instead of 4/1).
+    pub battery: bool,
+    /// Battery only: the Host's staged working workspace
+    /// (`state_dir/coding-workspace`), where the gate reads the builder's
+    /// durable completion signal. `None` for every other mode.
+    pub battery_workspace: Option<std::path::PathBuf>,
 }
 /// Failover policy a hosted grant covers: the only `(route, payer)` pairs a
 /// provider attempt may use, and the attempt limit per logical request.
@@ -264,6 +275,17 @@ struct ContinuityState {
     report: Option<Value>,
     reset_entered: bool,
     tool_result_sent: bool,
+    battery: bool,
+    battery_max_requests: u64,
+    battery_max_resets: u64,
+    replacement_basis_points: u64,
+    battery_max_context_bytes: u64,
+    last_context_bytes: u64,
+    resets_done: u64,
+    cycle_request_count: u64,
+    turn_counter: u64,
+    tool_executions: u64,
+    last_continued: Option<String>,
     /// Hosted attempts consumed for the current logical request.
     hosted_attempts: (u64, u64),
     /// Every admitted hosted attempt, reported with the continuity result.
@@ -369,8 +391,28 @@ impl CodingContinuity {
                 .as_ref()
                 .is_some_and(|t| t.is_empty() || t.len() > 8192)
             || config.budget["available"] != true
-            || config.budget["max_provider_requests"] != 4
-            || config.budget["max_tool_calls"] != 1
+            || if config.battery {
+                // Battery: admission-pinned finite bounds inside the profile
+                // caps (the producer re-checks against the plan's exact pins;
+                // the gate enforces the packet's values at runtime).
+                !config.budget["max_provider_requests"]
+                    .as_u64()
+                    .is_some_and(|v| (1..=512).contains(&v))
+                    || !config.budget["max_tool_calls"]
+                        .as_u64()
+                        .is_some_and(|v| (1..=512).contains(&v))
+                    || !config.budget["max_resets"]
+                        .as_u64()
+                        .is_some_and(|v| (0..=16).contains(&v))
+                    || !config.budget["replacement_basis_points"]
+                        .as_u64()
+                        .is_some_and(|v| (1..=10000).contains(&v))
+                    || !config.budget["max_context_bytes"]
+                        .as_u64()
+                        .is_some_and(|v| (1..=2_000_000).contains(&v))
+            } else {
+                config.budget["max_provider_requests"] != 4 || config.budget["max_tool_calls"] != 1
+            }
             || config.expires_ms <= clock().wall.get()
             || config.pressure_basis_points > 10000
             || config
@@ -381,6 +423,25 @@ impl CodingContinuity {
             return Err(refused("canonical coding budget/control refused"));
         }
         budget_current(&config, clock())?;
+        let battery = config.battery;
+        let battery_max_requests = if config.battery {
+            config.budget["max_provider_requests"].as_u64().unwrap_or(0)
+        } else {
+            4
+        };
+        let battery_max_resets = if config.battery {
+            config.budget["max_resets"].as_u64().unwrap_or(0)
+        } else {
+            1
+        };
+        let replacement_basis_points = if config.battery {
+            config.budget["replacement_basis_points"]
+                .as_u64()
+                .unwrap_or(0)
+        } else {
+            config.pressure_basis_points
+        };
+        let battery_max_context_bytes = config.budget["max_context_bytes"].as_u64().unwrap_or(0);
         Ok(Self(Rc::new(RefCell::new(ContinuityState {
             store: Some(store),
             initial: Some(initial),
@@ -403,6 +464,17 @@ impl CodingContinuity {
             report: None,
             reset_entered: false,
             tool_result_sent: false,
+            battery,
+            battery_max_requests,
+            battery_max_resets,
+            replacement_basis_points,
+            battery_max_context_bytes,
+            last_context_bytes: 0,
+            resets_done: 0,
+            cycle_request_count: 0,
+            turn_counter: 0,
+            tool_executions: 0,
+            last_continued: None,
             hosted_attempts: (0, 0),
             hosted_log: vec![],
         }))))
@@ -541,6 +613,13 @@ impl ContinuityState {
         )?;
         o.parent = p;
         self.first_sequence = o.sequence + 1;
+        // The tool-result guard is per-turn: each new turn may consume exactly
+        // one observed Host result.
+        self.tool_result_sent = false;
+        self.cycle_request_count = 0;
+        if purpose == NativeInvocationPurpose::DomainWork {
+            self.last_continued = Some(id.to_string());
+        }
         let command = json!({"type":"bridge_prompt","sessionId":o.parent.thread().as_str(),"invocationId":id,"turnCorrelation":format!("turn:{id}"),"prompt":prompt});
         drop(o);
         self.queue(command)
@@ -571,6 +650,9 @@ impl ContinuityState {
             .map_err(refused)?;
         let observation = json!({"authority":"observation_only","budget":self.config.budget,"sdk_context":snapshot});
         let prompt = match &self.config.task {
+            Some(task) if self.battery => format!(
+                "{task}\n\nHosted battery builder job: the workspace at /workspace is the whole repository clone you are to work in. Use workspace_exec across as many turns as the task needs; builds and tests run offline (the full toolchain including cargo is at /toolchain, mounted read-only; invoke cargo with CARGO_HOME=/toolchain/cargo-home and --offline). Commit on the task's branch as the task instructs. When the task's obligations are met, write its durable completion artifact (evidence/completion.json) exactly as the task specifies, then reply with a brief final summary for this turn. Outside canonical controls and actual SDK observation: {observation}"
+            ),
             Some(task) => format!(
                 "{task}\n\nBounded live-provider continuity job: the single workspace_exec command may be used exactly once, so make the whole edit and run the acceptance in that one command, then reply with a brief final summary. Outside canonical controls and actual SDK observation: {observation}"
             ),
@@ -601,6 +683,35 @@ impl ContinuityState {
     }
     fn provider(&mut self, frame: &Value) -> Result<Vec<Value>> {
         self.check()?;
+        if self.battery {
+            if !matches!(self.phase, 0 | 2 | 3) {
+                return Err(refused("provider request outside an admitted turn"));
+            }
+            self.provider_calls += 1;
+            if frame["id"] != self.provider_calls || self.provider_calls > self.battery_max_requests
+            {
+                return Err(refused("coding provider count conflict"));
+            }
+            self.last_context_bytes = frame["contextBytes"].as_u64().unwrap_or(0);
+            self.cycle_request_count += 1;
+            let gate = self.gate.as_ref().unwrap().clone();
+            let mut o = gate.0.borrow_mut();
+            if frame["sessionId"] != o.parent.thread().as_str()
+                || frame["invocationId"] != o.parent.invocation_id()
+                || frame["turnCorrelation"] != o.parent.turn().unwrap().as_str()
+            {
+                return Err(refused("coding provider owner correlation conflict"));
+            }
+            let mut request = frame.clone();
+            request["type"] = json!("pi.provider_request");
+            if let Some(m) = request.as_object_mut() {
+                m.remove("host_workspace");
+                m.remove("schema");
+            }
+            o.record("pi.provider_request", &request)?;
+            drop(o);
+            return self.queue(json!({"type":"bridge_provider","sessionId":frame["sessionId"],"id":self.provider_calls,"mode":"live"}));
+        }
         if !matches!(
             (self.phase, self.provider_calls + 1),
             (0, 1 | 2) | (2, 3) | (3, 4)
@@ -722,7 +833,7 @@ impl ContinuityState {
         store
             .settle_pi_coding(parent, &proof, (self.clock)())
             .map_err(refused)?;
-        if self.config.task.is_some() && self.phase == 0 {
+        if self.config.task.is_some() && self.phase == 0 && !self.battery {
             // Owner-derived v4 checkpoint, read back from the settled turn. The
             // model's final text is provenance only (digest inside it).
             if self.original_result.is_none() || self.workspace.is_none() {
@@ -743,7 +854,17 @@ impl ContinuityState {
             self.checkpoint = Some(text);
         }
         drop(o);
-        if self.phase == 0 {
+        if self.battery {
+            match self.phase {
+                0 | 3 => self.battery_after_turn(frame),
+                2 => {
+                    self.battery_finish_rehydration()?;
+                    self.phase = 3;
+                    self.battery_continue()
+                }
+                _ => Err(refused("unexpected coding history phase")),
+            }
+        } else if self.phase == 0 {
             gate.replacement_ready()?;
             self.prepare_reset(frame)
         } else if self.phase == 2 {
@@ -983,6 +1104,292 @@ impl ContinuityState {
         }
         Ok(())
     }
+    // ---- battery mode: one bounded long-form builder run -------------------
+    // The choreography's replacement machinery, parametrized by cycle index
+    // (planning/openrouter-lane-e1a-battery-20261120.md): cycle c >= 1 names
+    // successor generation context:new{c} with its own grants, command,
+    // session and evidence ids. The issuer (the producer) installs every
+    // cycle's grants up front, bounded by the packet's max_resets.
+    fn battery_successor_context(cycle: u64) -> Result<String> {
+        ContextGeneration::parse(format!("context:new{cycle}"))
+            .map(|g| g.as_str().to_string())
+            .map_err(refused)
+    }
+    fn battery_after_turn(&mut self, frame: &Value) -> Result<Vec<Value>> {
+        self.check()?;
+        // Completion signal: the durable workspace artifact the task told the
+        // builder to write. The model's final text is provenance only.
+        let completed = self
+            .config
+            .battery_workspace
+            .as_ref()
+            .and_then(|root| std::fs::read(root.join("evidence/completion.json")).ok())
+            .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
+            .is_some_and(|v| v["status"] == "complete" || v["status"] == "handoff_ready");
+        if completed {
+            self.battery_report()?;
+            self.phase = 4;
+            return self.queue(json!({"type":"bridge_close","sessionId":frame["sessionId"]}));
+        }
+        let pressure = self.battery_max_context_bytes > 0
+            && self.last_context_bytes.saturating_mul(10000)
+                >= self
+                    .battery_max_context_bytes
+                    .saturating_mul(self.replacement_basis_points);
+        if pressure {
+            if self.resets_done >= self.battery_max_resets {
+                return Err(refused("battery reset bound exhausted under pressure"));
+            }
+            return self.battery_prepare_reset(frame, self.resets_done + 1);
+        }
+        self.phase = 3;
+        self.battery_continue()
+    }
+    fn battery_continue(&mut self) -> Result<Vec<Value>> {
+        self.turn_counter += 1;
+        let id = format!("cont-{}", self.turn_counter);
+        let grant = if self.resets_done == 0 {
+            self.turn_grant("grant:old")
+        } else {
+            self.turn_grant(&format!("grant:new{}", self.resets_done))
+        };
+        self.prompt(
+            &id,
+            "Continue the assigned builder work exactly where it stopped; obey the task's original instructions and its completion artifact obligation.",
+            NativeInvocationPurpose::DomainWork,
+            &grant,
+        )
+    }
+    fn battery_prepare_reset(&mut self, frame: &Value, cycle: u64) -> Result<Vec<Value>> {
+        self.check()?;
+        let pressure = json!({"schemaVersion":1,"observationId":format!("coding-battery:{cycle}"),"sequence":cycle,"observedAt":frame["snapshot"]["observedAt"],"pressureBasisPoints":self.config.pressure_basis_points,"source":format!("battery context-pressure replacement cycle {cycle}; pinned replacement policy, not measured quota; actual SDK observation retained separately"),"sourceRevision":format!("sha256:{}",digest(b"coding-pressure-fixture-v1"))});
+        if !crate::pressure_candidate(Some(&pressure)).map_err(refused)? {
+            return Err(refused("no pressure candidate"));
+        }
+        let gate = self.gate.as_ref().unwrap().clone();
+        let mut o = gate.0.borrow_mut();
+        let successor_context = Self::battery_successor_context(cycle)?;
+        // Owner-derived v4 checkpoint of the just-settled domain turn, labeled
+        // with this cycle's successor generation (never stored; re-derived).
+        let CodingLifecycle { store, parent, .. } = &mut *o;
+        let checkpoint = store
+            .pi_coding_live_checkpoint_with_successor(parent, &successor_context)
+            .map_err(refused)?;
+        self.checkpoint = Some(checkpoint.clone());
+        let subject = SubjectId::parse("subject:pi:coding").map_err(refused)?;
+        let rev = o
+            .store
+            .subject_projection(&subject, None, None)
+            .map_err(refused)?
+            .revision;
+        let result = o
+            .store
+            .apply_checked_command(battery_replacement_admission(rev, cycle)?, (self.clock)())
+            .map_err(refused)?;
+        let transition = match result.outcome {
+            CommandOutcome::ReplacementRequested { transition } => transition,
+            _ => return Err(refused("replacement not admitted")),
+        };
+        let semantic = o
+            .store
+            .subject_projection(&subject, None, None)
+            .map_err(refused)?
+            .semantic_revision;
+        let hash = digest(checkpoint.as_bytes());
+        for fact in [
+            TransitionFact::PredecessorSafe {
+                evidence: EvidenceId::parse(format!("coding:host-writers-absent-{cycle}"))
+                    .map_err(refused)?,
+            },
+            TransitionFact::SourceFrozen {
+                evidence: EvidenceId::parse(format!("coding:exact-result-workspace-{cycle}"))
+                    .map_err(refused)?,
+                semantic_revision: Revision::new(semantic),
+            },
+            TransitionFact::VerificationEstablished {
+                evidence: EvidenceId::parse(format!(
+                    "coding:owner-derived-live-checkpoint-{cycle}"
+                ))
+                .map_err(refused)?,
+                checkpoint: CheckpointId::parse(format!("checkpoint:{hash}")).map_err(refused)?,
+            },
+            TransitionFact::SwitchAuthorized {
+                evidence: EvidenceId::parse(format!("coding:operator-live-grant-{cycle}"))
+                    .map_err(refused)?,
+            },
+        ] {
+            let rev = o
+                .store
+                .subject_projection(&subject, None, None)
+                .map_err(refused)?
+                .revision;
+            o.store
+                .apply_transition_fact(&transition, Revision::new(rev), fact, None, (self.clock)())
+                .map_err(refused)?;
+        }
+        let successor = o
+            .store
+            .reserve_native_session(
+                NativeSessionId::parse(format!("session:new{cycle}")).map_err(refused)?,
+                subject,
+                ContextGeneration::parse(&successor_context).map_err(refused)?,
+                RuntimeIncarnation::parse("incarnation:pi:coding").map_err(refused)?,
+                &pi_coding_live_profile_digest(),
+                PI_SDK_INDEX_SHA256,
+                &pi_coding_live_protocol_digest(),
+                SnapshotId::parse("snapshot:coding").map_err(refused)?,
+                &hash,
+                false,
+                (self.clock)(),
+            )
+            .map_err(refused)?;
+        self.transition = Some(transition);
+        self.successor = Some(successor);
+        self.phase = 1;
+        drop(o);
+        self.queue(json!({"type":"bridge_replace","sessionId":frame["sessionId"]}))
+    }
+    fn battery_replaced(&mut self, frame: &Value) -> Result<Vec<Value>> {
+        fresh_successor(frame)?;
+        self.fresh_successor = Some(frame.clone());
+        self.check()?;
+        self.snapshot(frame)?;
+        if self.phase != 1
+            || !self.reset_entered
+            || frame["result"]["cancelled"] != false
+            || frame["messages"] != json!([])
+            || frame["tools"] != json!([])
+            || frame["snapshot"]["idle"] != true
+            || frame["oldSessionId"] != self.session.as_ref().unwrap().thread().unwrap().as_str()
+            || frame["oldSessionId"] == frame["sessionId"]
+            || frame["snapshot"]["sessionId"] != frame["sessionId"]
+        {
+            return Err(refused("physical fresh replacement not established"));
+        }
+        let gate = self.gate.as_ref().unwrap().clone();
+        let mut o = gate.0.borrow_mut();
+        let mut successor = self
+            .successor
+            .take()
+            .ok_or_else(|| refused("successor permit consumed"))?;
+        o.store
+            .bind_native_thread(
+                &mut successor,
+                ProviderThreadId::parse(
+                    frame["sessionId"]
+                        .as_str()
+                        .ok_or_else(|| refused("successor UUID"))?,
+                )
+                .map_err(refused)?,
+            )
+            .map_err(refused)?;
+        let subject = SubjectId::parse("subject:pi:coding").map_err(refused)?;
+        let rev = o
+            .store
+            .subject_projection(&subject, None, None)
+            .map_err(refused)?
+            .revision;
+        o.store
+            .apply_transition_fact(
+                self.transition.as_ref().unwrap(),
+                Revision::new(rev),
+                TransitionFact::SuccessorObserved {
+                    evidence: EvidenceId::parse("coding:actual-newSession").map_err(refused)?,
+                    context: ContextGeneration::parse(Self::battery_successor_context(
+                        self.resets_done + 1,
+                    )?)
+                    .map_err(refused)?,
+                    thread: ProviderThreadId::parse(frame["sessionId"].as_str().unwrap())
+                        .map_err(refused)?,
+                },
+                None,
+                (self.clock)(),
+            )
+            .map_err(refused)?;
+        o.session = successor.id().clone();
+        self.session = Some(successor);
+        self.resets_done += 1;
+        self.reset_entered = false;
+        self.phase = 2;
+        self.observations.push(frame["snapshot"].clone());
+        drop(o);
+        let checkpoint = self.checkpoint.clone().unwrap();
+        let grant = self.turn_grant(&format!("grant:new{}", self.resets_done));
+        self.prompt(
+            "rehydrate",
+            &checkpoint,
+            NativeInvocationPurpose::SuccessorRehydrate,
+            &grant,
+        )
+    }
+    fn battery_finish_rehydration(&mut self) -> Result<()> {
+        let gate = self.gate.as_ref().unwrap().clone();
+        let mut o = gate.0.borrow_mut();
+        let subject = SubjectId::parse("subject:pi:coding").map_err(refused)?;
+        let semantic = o
+            .store
+            .subject_projection(&subject, None, None)
+            .map_err(refused)?
+            .semantic_revision;
+        let transition = self.transition.as_ref().unwrap();
+        let receipt = o
+            .store
+            .native_rehydration_receipt(transition)
+            .map_err(refused)?
+            .ok_or_else(|| refused("rehydration receipt absent"))?;
+        self.recovery_receipt = Some(receipt.clone());
+        for fact in [
+            TransitionFact::RehydrationVerified {
+                evidence: EvidenceId::parse(format!("{receipt}:rehydration")).map_err(refused)?,
+            },
+            TransitionFact::CommitSuccessor {
+                evidence: EvidenceId::parse("coding:commit").map_err(refused)?,
+                semantic_revision: Revision::new(semantic),
+            },
+        ] {
+            let rev = o
+                .store
+                .subject_projection(&subject, None, None)
+                .map_err(refused)?
+                .revision;
+            o.store
+                .apply_transition_fact(
+                    transition,
+                    Revision::new(rev),
+                    fact,
+                    Some(
+                        &GrantId::parse(format!("grant:successor{}", self.resets_done))
+                            .map_err(refused)?,
+                    ),
+                    (self.clock)(),
+                )
+                .map_err(refused)?;
+        }
+        Ok(())
+    }
+    fn battery_report(&mut self) -> Result<()> {
+        let gate = self.gate.as_ref().unwrap().clone();
+        let mut o = gate.0.borrow_mut();
+        let subject = o
+            .store
+            .subject_projection(
+                &SubjectId::parse("subject:pi:coding").map_err(refused)?,
+                None,
+                None,
+            )
+            .map_err(refused)?;
+        let continued = self
+            .last_continued
+            .clone()
+            .ok_or_else(|| refused("battery continuation turn absent"))?;
+        self.report = Some(
+            json!({"schema":"work-engine.pi-coding-continuity-result.v1","standing":"live-provider battery builder run; real inference; acceptance is the coordinator's F3.1 scoring of the produced commit, not a production/domain claim","mode":"battery","context":subject.context_id,"owner":subject.owner_kind,"checkpoint":self.checkpoint,"original_host_result":self.original_result,"workspace":self.workspace,"observations":self.observations,"fresh_successor":self.fresh_successor,"predecessor_history_external_only":true,"provider_requests":self.provider_calls,"tool_executions":self.tool_executions,"physical_resets":self.resets_done,"completion_signal":true,"recovery_receipt":self.recovery_receipt,"continued_parent":o.store.native_recovery(&continued).map_err(refused)?.map(|r| r.class).ok_or_else(|| refused("battery continuation unsettled"))?}),
+        );
+        if self.config.hosted.is_some() {
+            self.report.as_mut().unwrap()["hosted_attempts"] = json!(self.hosted_log);
+        }
+        Ok(())
+    }
 }
 fn fresh_successor(frame: &Value) -> Result<()> {
     if frame["messages"] != json!([])
@@ -1039,6 +1446,34 @@ fn replacement_admission(revision: u64) -> Result<CommandAdmission> {
     CommandAdmission::new(req, "operator:fixture".into(), basis, None)
         .map_err(|e| refused(format!("{e:?}")))
 }
+/// The battery profile's per-cycle replacement command: cycle c replaces the
+/// cycle c-1 successor generation (cycle 1 replaces context:old) and names
+/// its own successor context:new{c} with its own command and grant ids.
+fn battery_replacement_admission(revision: u64, cycle: u64) -> Result<CommandAdmission> {
+    use work_engine_types::CodecContract;
+    let predecessor = if cycle == 1 {
+        "context:old".to_string()
+    } else {
+        format!("context:new{}", cycle - 1)
+    };
+    let basis = json!({"protocol_version":1,"principal_ref":"operator:fixture","command_id":format!("command:replace{cycle}"),"subject_id":"subject:pi:coding","context_generation":predecessor,"build_id":"build:pi:coding","proof_run_id":"proof:pi:coding","grant_ref":format!("grant:replace{cycle}"),"expected_revision":revision.to_string(),"kind":"request_replacement","payload":{"reason":format!("battery context-pressure replacement cycle {cycle}")}});
+    let req = CommandRequest::new(
+        CommandId::parse(format!("command:replace{cycle}")).map_err(refused)?,
+        SubjectId::parse("subject:pi:coding").map_err(refused)?,
+        ContextGeneration::parse(&predecessor).map_err(refused)?,
+        BuildId::parse("build:pi:coding").map_err(refused)?,
+        ProofRunId::parse("proof:pi:coding").map_err(refused)?,
+        GrantId::parse(format!("grant:replace{cycle}")).map_err(refused)?,
+        Revision::new(revision),
+        CodecContract::LifecycleCommandV1
+            .digest_json(&basis)
+            .map_err(refused)?,
+        Command::RequestReplacement,
+    )
+    .map_err(refused)?;
+    CommandAdmission::new(req, "operator:fixture".into(), basis, None)
+        .map_err(|e| refused(format!("{e:?}")))
+}
 impl CodingEffectGate for CodingContinuity {
     fn execute(
         &mut self,
@@ -1047,7 +1482,7 @@ impl CodingEffectGate for CodingContinuity {
     ) -> Result<(bool, Vec<u8>)> {
         let state = self.0.borrow();
         state.check()?;
-        if state.phase != 0 {
+        if state.phase != 0 && !(state.battery && state.phase == 3) {
             return Err(refused("recovery/continuation tools forbidden"));
         }
         state
@@ -1064,6 +1499,7 @@ impl CodingEffectGate for CodingContinuity {
         process: &ProcessRecord,
         container: &str,
     ) -> Result<()> {
+        self.0.borrow_mut().tool_executions += 1;
         self.0
             .borrow()
             .gate
@@ -1080,7 +1516,13 @@ impl CodingEffectGate for CodingContinuity {
             Some("native_event") => s.record_native(frame),
             Some("coding_provider_request") => s.provider(frame),
             Some("coding_history") => s.history(frame),
-            Some("coding_replaced") => s.replaced(frame),
+            Some("coding_replaced") => {
+                if s.battery {
+                    s.battery_replaced(frame)
+                } else {
+                    s.replaced(frame)
+                }
+            }
             _ => Err(refused("unsupported coding frame")),
         }
     }
@@ -1099,7 +1541,7 @@ impl CodingEffectGate for CodingContinuity {
         // before entering the current parent/grant transaction. A failed write
         // stays uncertain and must never be replayed.
         if command["type"] == "tool_result" {
-            if s.phase != 0 || s.tool_result_sent {
+            if s.tool_result_sent || !(s.phase == 0 || (s.battery && s.phase == 3)) {
                 return Err(refused("coding tool result already consumed/forbidden"));
             }
             let gate = s
@@ -1150,7 +1592,12 @@ impl CodingEffectGate for CodingContinuity {
                     s.successor.as_ref().unwrap(),
                     s.transition.as_ref().unwrap(),
                     s.checkpoint.as_ref().unwrap(),
-                    &GrantId::parse("grant:replace").map_err(refused)?,
+                    &if s.battery {
+                        GrantId::parse(format!("grant:replace{}", s.resets_done + 1))
+                            .map_err(refused)?
+                    } else {
+                        GrantId::parse("grant:replace").map_err(refused)?
+                    },
                     clock,
                     send,
                 )
@@ -1185,6 +1632,8 @@ mod control_tests {
                 expires_ms: 1000000,
                 pressure_basis_points: 9500,
                 hosted: None,
+                battery: false,
+                battery_workspace: None,
             };
             match case {
                 1 => config.budget["observed_ms"] = json!(500001),

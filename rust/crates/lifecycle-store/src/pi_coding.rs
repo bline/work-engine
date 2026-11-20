@@ -292,7 +292,9 @@ impl SqliteLifecycleStore {
         let committed = settled_basis_text(
             &tx,
             &basis.ok_or(StoreError::ClaimConflict)?,
-            expected["successor_context"].as_str().ok_or(StoreError::Rejected)?,
+            expected["successor_context"]
+                .as_str()
+                .ok_or(StoreError::Rejected)?,
         )?
         .ok_or(StoreError::ClaimConflict)?;
         if committed != checkpoint.as_bytes() {
@@ -635,8 +637,10 @@ pub(crate) fn settled_basis_text(
         .map_err(|_| StoreError::Unavailable)?
         .flatten();
     let Some(text) = text else { return Ok(None) };
-    Ok(Some(match live_checkpoint_of(conn, invocation, successor_context)? {
-        Some(checkpoint) => checkpoint.into_bytes(),
-        None => text,
-    }))
+    Ok(Some(
+        match live_checkpoint_of(conn, invocation, successor_context)? {
+            Some(checkpoint) => checkpoint.into_bytes(),
+            None => text,
+        },
+    ))
 }
