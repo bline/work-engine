@@ -577,3 +577,26 @@ offline (the plan's key acceptance).
 
 NO live inference / E1a / background. Ready to re-submit to Fable (claude-sdk)
 for a completion check if the operator wishes.
+
+## Revision 10 — Fable re-review: verdict OK; P2 notes (2026-11-20)
+
+Fable re-reviewed the remediated head fa0ac42c (foreground-only lane). Verdict:
+OK with notes. All five prior P1 findings resolved; no P0/P1 remains. Full
+work-engine-manual-host suite passed; Fable captured the pinned Pi client's
+actual request offline and confirmed the Host admits it with
+reasoning.effort:"high".
+
+Two non-blocking P2 notes:
+1. Loopback mismatch: the Host accepted a loopback Completions route but sent it
+   to /unsupported-completions, so receiver->Host could not be exercised against
+   a loopback mock. FIXED in 4bbbf76f: Endpoint::target maps (Loopback,
+   Completions) to /chat/completions and hosted_fetch admits a loopback-presented
+   /chat/completions URL when the plan has a loopback route; two tests.
+2. Model identity: if OpenRouter returns the -latest alias instead of a dated
+   checkpoint, the Host refuses completion and retains the reservation. NOT
+   observed; the checkpoint rule is deliberately strict. Deferred to LIVE
+   qualification: check the actual resolved model in the response during the
+   first live run. Do not weaken the rule on speculation.
+
+Verification after the loopback fix: 132 lib tests pass (+2). Background remains
+refused (out of scope). No live inference / E1a.
