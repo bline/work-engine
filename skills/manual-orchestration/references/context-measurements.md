@@ -8,20 +8,27 @@ Load when: interpreting H2 recommendations, changing telemetry thresholds or eva
 Codex compacts a session automatically when its input nears a limit
 ([probe](../../../metrics/probes/compaction-points-20261105.md), 2026-10-26 to
 11-05). With no configured limit, that point sat near 94% of the recorded
-window: **Sol 6.1 437,522-456,118 of 475,000 (n = 73, 17 threads); Astra
+window: **Sol 6.1 437,522-456,118 of 475,000 (n = 73: 69 in 17 threads, plus
+4 in 2 older roots after the change, overlap not established); Astra
 239,130-245,418 of 258,400 (n = 10)**.
 
-Since 2026-11-05T04:58Z, `~/.codex/config.toml` sets
-`model_auto_compact_token_limit = 250000`. Codex applies it only to sessions
-started after that change. One such session compacted at 248,987 and restarted
-at 30,980 (n = 1); two older roots kept compacting near 449K (n = 2). A spawned
+The probe dates `model_auto_compact_token_limit = 250000` in
+`~/.codex/config.toml` to 2026-11-05T04:58Z from the file's modification time;
+the file is off-repository and mutable, and no digest of it is recorded. Codex
+applies the limit only to sessions started after that change. One such session
+compacted at 248,987 and restarted at 30,980 (n = 1); two older roots kept
+compacting near 449K (n = 2). A spawned
 child takes its parent's limit: a builder launched by an older root reached
 338,682 without compacting (n = 1). A session's compaction point therefore
 depends on when it, or its root, started, not on its window.
 
-With the limit in force, Astra and new Sol 6.1 sessions both compact a little
-under 250K, so the levels are tokens: **trigger 200,000 and band floor
-235,000**, just under the lowest automatic compaction observed. They are
+Under the limit, only that one Sol 6.1 session has been observed compacting
+(n = 1); Astra has been observed only without a configured limit (n = 10), so
+its compaction point under the limit is unknown. The levels are tokens. The
+**band floor 235,000** sits 4,130 below the lowest automatic compaction
+observed (Astra, 239,130) and 13,987 below the one post-limit Sol compaction.
+The **trigger 200,000** is a chosen margin of 35,000 below the floor, not
+measured. They are
 **hypothesis H2, not a product rule or a calibrated optimum.** Their value is
 that they can be refuted, where an undefined "when warranted" produced no
 handoff decisions in the 2026-10-21 pilot.
