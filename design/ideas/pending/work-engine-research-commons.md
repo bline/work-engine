@@ -1,30 +1,31 @@
 # Work Engine Research Commons
-## A Public, Continuously Qualified Intelligence Network for Agentic Engineering
+## A Public, Continuously Qualified Intelligence Network for Sustainable Agentic Engineering
 
 **Status:** Revised concept proposal — not an approved implementation design. Distributed service and institutional development remain deferred pending outside interest and measured local results.  
 **Original proposal:** November 17, 2026  
 **Open-access revision:** November 20, 2026  
+**Sustainability amendment:** November 20, 2026  
 **Project:** Work Engine
 
 ---
 
 ## 1. Executive Summary
 
-Work Engine has the potential to support a **public research commons**: a distributed research network dedicated to continuously improving the efficiency, quality, reliability, and economics of agentic software engineering. It would create and maintain research-backed improvements that any developer or organization can inspect, reuse, and apply without a membership, fee, account, access tier, or release delay.
+Work Engine has the potential to support a **public research commons**: a distributed research network dedicated to continuously improving the efficiency, quality, reliability, affordability, and environmental sustainability of agentic software engineering. It would create and maintain research-backed improvements that any developer or organization can inspect, reuse, and apply without a membership, fee, account, access tier, or release delay.
 
 The near-term institutional goal is modest: **sustain one full-time maintainer and the research operations needed to produce dependable public knowledge.** Potential funding sources include grants and fellowships, institutional underwriting, nonexclusive sponsored research, voluntary donations, and paid engineering support or integration services. These sources pay for work and continuity; they do not purchase control of scientific conclusions or privileged access to Commons findings.
 
-The open-source Work Engine provides the engineering machinery: planning, compilation, deterministic orchestration, execution, evidence collection, independent verification, and policy enforcement.
+The open-source Work Engine provides the engineering machinery: planning, compilation, deterministic orchestration, execution, evidence collection, independent verification, and policy enforcement. Its sustainability hypothesis concerns the *agent side* of AI: reduce unnecessary inference and repeated work, while preserving or improving the quality of accepted engineering outcomes. Deterministic infrastructure can handle quota exhaustion, transport failures, recovery, bookkeeping, and other mechanically decidable operations without requiring a model to repeatedly reason about them.
 
 A separate, publicly accessible intelligence service would coordinate distributed research, maintain qualified findings, determine their continuing applicability, and publish research-backed decision improvements. **The service does not host anyone's development workloads**, and access to published research must not depend on the continued operation of one central endpoint.
 
 Developers run Work Engine locally or on infrastructure they choose, using their own authorized model providers and inference resources. They can benefit from published knowledge without paying or participating in experiments. With explicit consent, participating installations may contribute bounded inference capacity, eligible coding tasks, and privacy-constrained evidence to coordinated studies.
 
-Research protocols, findings, limitations, correction notices, and qualified policy artifacts become public, reusable resources under open licenses. Private participant code, credentials, and restricted evidence remain protected under explicit consent and disclosure rules. Openness must not be confused with claiming that unpublished or unverifiable private evidence has been publicly verified.
+Research protocols, findings, limitations, correction notices, and qualified policy artifacts become public, reusable resources under open licenses. This adds a second layer of efficiency: instead of each installation independently rediscovering the same optimizations, qualifying studies can be reused and revalidated across a community. Private participant code, credentials, and restricted evidence remain protected under explicit consent and disclosure rules. Openness must not be confused with claiming that unpublished or unverifiable private evidence has been publicly verified.
 
-**The core proposition is that independent developers can share the benefits of continuously maintained engineering knowledge while retaining authority over their own work.** Supporters fund the work of producing and maintaining that knowledge, not the right to access it.
+**The core proposition is that independent developers can share the benefits of continuously maintained engineering knowledge while retaining authority over their own work.** The research aims to make useful AI engineering outcomes possible with less wasted computation and repeated effort. Supporters fund the work of producing and maintaining that knowledge, not the right to access it.
 
-Forming an organization, adopting a charter, and growing a team of maintainers and researchers are possible later developments, not commitments. The complete distributed network, public intelligence API, automated policy distribution, and sustainability model remain hypotheses to be tested, not implemented capabilities.
+Forming an organization, adopting a charter, and growing a team of maintainers and researchers are possible later developments, not commitments. The complete distributed network, public intelligence API, automated policy distribution, and institutional sustainability model remain hypotheses to be tested, not implemented capabilities. Reduced inference cost is not itself a measurement of energy use or emissions; the environmental impact of these methods remains to be established with credible evidence.
 
 ---
 
@@ -79,6 +80,18 @@ The central service cannot override local execution authority.
 ### 2.6 Open access and institutional sustainability are separate obligations
 
 The Commons may earn revenue to pay maintainers, researchers, infrastructure, audits, and research expenses. Funding arrangements must preserve the public publication contract and independent scientific qualification. If funding becomes inadequate, the response is to reduce scope, seek more support, or provide portable public archives—not to retroactively close publicly funded knowledge.
+
+### 2.7 Environmental sustainability through better agent-side engineering
+
+The Commons treats environmental sustainability as a **research objective**, not as an impact already demonstrated. Making model inference cheaper is not sufficient. The aim is to reduce unnecessary computational work **per independently accepted engineering outcome at a stated quality standard** and determine whether those improvements translate into lower energy consumption and emissions.
+
+Three complementary layers of efficiency matter:
+
+1. **Model and infrastructure efficiency:** the energy and computation required for individual model operations, largely influenced by model and hardware providers. The Commons may measure and compare this layer but does not claim to build new models or data centers.
+2. **Agent and workflow efficiency:** deterministic orchestration, bounded reasoning, context lifecycle, evidence reuse, appropriate model selection, and dependable review reduce avoidable inference, repeated attempts, unnecessary coordination, and repair work. This is Work Engine's direct engineering focus.
+3. **Collective research efficiency:** the Commons publishes and requalifies transferable findings so independent projects need not individually repeat the same discovery experiments. Research itself has a resource cost, so its net value must be assessed rather than assumed.
+
+Quality and environmental effects must be considered together. A low-cost model that causes more defects, review cycles, or human recovery work is not necessarily more efficient. Resource reductions must not be asserted to reduce *absolute* environmental impact without accounting for additional usage made possible by lower costs, workload growth, and the resource cost of running the research network itself.
 
 ---
 
@@ -216,7 +229,8 @@ Each contract should identify:
 - Research project and immutable protocol revision.
 - Task applicability criteria.
 - Experimental treatment and comparison requirements.
-- Measurement and acceptance criteria.
+- Measurement and acceptance criteria, including outcome quality and independence of acceptance.
+- Intended resource metrics, measurement boundaries, and environmental estimation method when applicable.
 - Maximum permitted inference and execution resources.
 - Data-disclosure requirements.
 - Required evidence and provenance.
@@ -307,6 +321,22 @@ Research priority should consider not only possible improvements but also the ex
 
 This continuing maintenance obligation is a central reason for the intelligence service to exist.
 
+### 5.5 Sustainability research and outcome-based accounting
+
+The principal comparison is not cost or tokens per model call. It is the **total resources required per independently accepted engineering outcome**, under a defined quality and acceptance standard. Research should measure or bound the whole relevant workflow, including planning, context construction, tool use, model inference, deterministic host operations, failed candidates, reviews, remediation, recovery, and any additional research execution necessary to support the claim.
+
+A study should report, where valid and obtainable:
+
+- **Quality and usefulness:** independent acceptance, applicable test and review coverage, escaped defects when observable, and human intervention or repair burden.
+- **Inference demand:** requests, input/output tokens, cache effects, provider/model/effort, avoidable calls, failed attempts, and model reasoning spent on deterministic machinery.
+- **Workflow cost and throughput:** spend per accepted outcome, elapsed time, completion and failure rates, and compute used outside inference.
+- **Environmental evidence:** measured energy when instrumentation permits; otherwise defensible, uncertainty-labeled estimates for provider inference and local infrastructure, with system boundaries, assumptions, and data gaps explicit. Emissions require separate location- and time-relevant carbon-intensity assumptions and cannot be inferred from dollar savings alone.
+- **Scale and rebound:** total workload volume, added or displaced work, experiment/requalification overhead, and whether lower per-outcome resource use results in lower *absolute* consumption.
+
+The first research program can test specific avoidable activities: models managing network and quota errors that a proxy can resolve, repeated context reconstruction, unnecessary orchestration turns or polling, redundant review of settled evidence, and poor routing or reasoning-effort choices. These are **testable hypotheses**, not established environmental savings. Experiments must compare accepted outcomes under comparable workloads and quality conditions, preserving negative results and uncertainty. Where physical inference-energy data are unavailable, publish cost, token, and infrastructure measurements as *proxies* without labeling them verified energy or emissions reductions.
+
+An optimization should not be promoted for efficiency alone if it degrades required quality, authorization, safety, or reproducibility. The research register should retain whether a finding concerns economic efficiency, computational demand, energy, emissions, or some combination, with distinct evidence and applicability boundaries for each.
+
 ---
 
 ## 6. Decision Intelligence and Plan IR
@@ -321,6 +351,7 @@ Examples include:
 
 - Model and provider selection.
 - Reasoning-effort allocation.
+- Avoidance of unnecessary agent inference for deterministic infrastructure and failure handling.
 - Context lifecycle and retrieval strategy.
 - Cache-affinity and cost optimization.
 - Task decomposition and execution strategy.
@@ -522,6 +553,8 @@ Initially, the maintainer directs research priorities using Work Engine's existi
 
 Potential research areas include:
 
+- Environmental sustainability of agentic engineering, including energy per quality-controlled outcome and the effect of induced demand.
+- Agent-side inference avoidance and workflow-level computational efficiency.
 - Inference efficiency and provider economics.
 - Context engineering and memory management.
 - Planning and execution optimization.
@@ -602,7 +635,7 @@ Establish reliable execution, evidence collection, independent verification, and
 
 Demonstrate that qualified research can become executable decision intelligence.
 
-Show improvements on independent workloads, not only on the experiments that produced the findings.
+Show improvements on independent workloads, not only on the experiments that produced the findings. Establish outcome-based baselines covering quality, inference, repeated work, and relevant host resources. Report environmental indicators only when measurement or documented estimation supports them.
 
 ### Extraction test (may run independently of Phase A)
 
@@ -635,13 +668,13 @@ The decisive demonstration is one complete research cycle across two or more ind
 5. Installations apply the policy under local authority.
 6. A dependency change or detected regression triggers requalification, and the policy is narrowed, replaced, or withdrawn.
 
-The primary measurement is **cost per independently accepted engineering outcome**, alongside quality, reliability, and required human intervention.
+The primary operational measurement is **total resource use and cost per independently accepted engineering outcome at a specified quality standard**, alongside reliability, human intervention, and failed-work overhead. Where feasible, report energy per accepted outcome and absolute resource consumption with measurement boundaries and uncertainty. Do not translate cost or token reductions into environmental savings without supporting evidence.
 
 ### Phase D — Prove continuous requalification
 
 Track dependencies and observed drift.
 
-Demonstrate automatic identification of findings requiring revalidation and correct handling of stale, contradicted, or withdrawn claims.
+Demonstrate automatic identification of findings requiring revalidation and correct handling of stale, contradicted, or withdrawn claims. Requalify any environmental-performance finding when the model, provider, hardware assumptions, workload mix, energy data, or deployment context on which it depends changes.
 
 ### Phase E — Validate open-access sustainability
 
@@ -669,7 +702,11 @@ The existing open-source engineering roadmap should not be subordinated to prema
 
 **Service work displacing research:** Consulting or integration commitments can consume the maintainer capacity needed to complete the public engineering system and fulfill research maintenance obligations.
 
-**Experimental validity:** Heterogeneous development workloads may make reliable comparative research difficult and expensive.
+**Experimental validity:** Heterogeneous development workloads may make reliable comparative research difficult and expensive. Quality must not deteriorate merely to reduce measured inference demand.
+
+**Environmental attribution:** Token or dollar reductions do not establish energy or emissions reductions. Provider-side measurements may be inaccessible, proxies may be weak, and system boundaries, geographic energy mix, embodied impacts, and study overhead can materially affect estimates.
+
+**Rebound and absolute impact:** Cheaper or more capable agentic engineering may increase adoption and total usage. Improved per-outcome efficiency is not by itself proof that aggregate energy consumption or environmental impact falls.
 
 **Network bootstrap:** A small early network may not produce enough eligible experimental opportunities.
 
@@ -705,7 +742,7 @@ These questions remain research and design work, not prematurely settled impleme
 
 ## 14. Long-Term Vision
 
-Work Engine evolves into an open-source foundation for governed agentic engineering.
+Work Engine evolves into an open-source foundation for governed and environmentally responsible agentic engineering. Its direct focus is to avoid unnecessary model inference and repeated work on the *agent side*, while maintaining the quality and reliability of useful outcomes.
 
 Around it develops a distributed, opt-in research network in which ordinary engineering work, with appropriate consent and safeguards, creates opportunities for systematic experimentation.
 
@@ -715,7 +752,7 @@ Users may download, mirror, and apply the published research without joining, pa
 
 As the compiler and execution architecture mature, an increasing portion of research advancement may occur through qualified decision-policy updates rather than architectural changes.
 
-The resulting system continuously improves not because its underlying software is constantly rewritten, but because the evidence informing its decisions is continuously refined.
+The resulting system continuously improves not because its underlying software is constantly rewritten, but because the evidence informing its decisions is continuously refined. The intended result is more useful engineering per unit of computation, with environmental benefits measured where possible rather than inferred from lower financial cost.
 
 Over time, its accumulated history also helps determine which research requires attention, how frequently established findings must be revalidated, and where new experiments are most valuable.
 
@@ -729,9 +766,11 @@ The research program itself becomes increasingly informed by its own results.
 
 **The community can collectively participate in the research; supporters pay to sustain the work, not to restrict access to its results.**
 
+**The shared research mission is to make high-quality AI-assisted engineering possible with less unnecessary computation, and to test whether those improvements reduce environmental impact in practice.**
+
 The intended institution is not another hosted AI coding platform, a paywalled research feed, or a subscription required to benefit from better engineering decisions.
 
-It is a proposed sustainable public research institution using a distributed network of real engineering work to make AI-assisted development progressively more efficient, reliable, and effective.
+It is a proposed financially sustainable public research institution using a distributed network of real engineering work to make AI-assisted development progressively more efficient, reliable, effective, and environmentally responsible.
 
 **Its sustainability must depend on the quality and continuity of the work—not on restricting access to what the work discovers.**
 
@@ -759,7 +798,7 @@ The defensible promise is not picking the right model. It is:
 
 > This decision was selected because specific qualifying experiments support it, the relevant evidence remains valid, and the local owner has authorized the policy.
 
-Candidate positioning: *a continuously qualified research network that turns distributed engineering experiments into trustworthy, locally enforceable improvements for AI-assisted software development.*
+Candidate positioning: *an open, continuously qualified research network that turns distributed engineering experiments into trustworthy, locally enforceable improvements—aiming for better accepted software outcomes with less wasted inference and a measurably smaller environmental footprint.*
 
 ---
 
