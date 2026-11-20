@@ -75,6 +75,14 @@ rest are callable from `codemode` scripts; a Pi subagent gets them only when
 its agent's `tools` list names `mcp:codebase-memory` entries
 ([Pi host](skills/manual-orchestration/references/pi-host.md#pi-as-the-supervising-host)).
 
+## Shared build directory
+
+Rust builds on this machine share one Cargo build directory, set in the
+user-level `~/.cargo/config.toml`, so builds run one at a time and disk stays
+bounded. Do not set `CARGO_TARGET_DIR` or `--target-dir`, and never build into
+`/tmp`. `target/` binaries belong to whichever worktree built last: copy and
+pin one before relying on it.
+
 ## Pre-release compatibility policy
 Work Engine is under active development. Internal implementations and
 interfaces have no backward-compatibility guarantee unless an explicit consumer
