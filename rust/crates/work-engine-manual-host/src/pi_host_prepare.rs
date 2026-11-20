@@ -56,8 +56,11 @@ pub struct CompositionProfile {
 }
 
 /// A refusal with its named class: `profile` (the profile is invalid by the
-/// Host's rules), `snapshot-id`, `root` (not absolute, or not fresh),
+/// Host's rules), `snapshot-id`, `root` (the root path, its parent or its
+/// state is not one the Host can own and mount; see `make_root`),
 /// `admission` (the composed job fails the Host's fresh admission) or `io`.
+/// From `describe`, `root` and `io` mean its scratch environment failed
+/// (`TMPDIR`), not that the profile is invalid.
 #[derive(Debug)]
 pub struct Refusal {
     pub class: &'static str,
@@ -124,7 +127,7 @@ fn load_profile(
     // The job must hold thread start (180 s), one turn and close (120 s).
     if !(1..=crate::pi_docker::coding::RELAY_DEADLINE_SECONDS).contains(&profile.job_secs)
         || profile.turn_deadline_secs == 0
-        || profile.job_secs < profile.turn_deadline_secs + START_AND_CLOSE_SECS
+        || profile.turn_deadline_secs > profile.job_secs.saturating_sub(START_AND_CLOSE_SECS)
     {
         return refuse("profile", "composition job or turn duration");
     }
@@ -204,9 +207,11 @@ fn load_profile(
 /// applies (a full `prepare` into a private scratch root under the system
 /// temporary directory, removed afterwards) and described (payers with the
 /// credential kinds that can serve all their routes). It never opens a
-/// credentials file.
+/// credentials file. Its only environment input is `TMPDIR` (the scratch
+/// location). The agreement covers the profile, not a launch root: the
+/// root rules of `make_root` apply to the caller's own root at `prepare`.
 pub fn describe(profile_path: &Path) -> std::result::Result<Value, Refusal> {
-    let (_, _, description) = load_profile(profile_path)?;
+    let (_, profile_sha256, description) = load_profile(profile_path)?;
     let scratch = std::env::temp_dir().join(format!(
         "pi-host-describe-{}-{}",
         std::process::id(),
@@ -222,7 +227,11 @@ pub fn describe(profile_path: &Path) -> std::result::Result<Value, Refusal> {
         .map_err(class("io"))?;
     let outcome = prepare(profile_path, &scratch.join("root"), "describe-dry-run", now);
     let _ = fs::remove_dir_all(&scratch);
-    outcome.map(|_| description)
+    // The description and the dry run must be of the same profile bytes.
+    if outcome?["profile"]["sha256"] != profile_sha256.as_str() {
+        return refuse("profile", "profile changed while it was described");
+    }
+    Ok(description)
 }
 
 /// Prepares one launch under `root`, which must be absent or empty.
@@ -255,24 +264,33 @@ pub fn prepare(
     .map_err(class("io"))
 }
 
-/// The fresh root: an absolute path of plain components
-/// (`[A-Za-z0-9._-]`, no `.` or `..`) that the Host can mount, under an
-/// existing parent directory; either absent (created here with mode 0700) or
-/// an empty, owner-only directory of the caller that is not a symlink. Its
+/// The fresh root: an absolute path whose every component (ancestors
+/// included) is plain (`[A-Za-z0-9._-]`, no `.` or `..` segment) so the Host
+/// can mount it, under an existing parent directory that is not a symlink;
+/// either absent (created here with mode 0700) or an empty, owner-only
+/// directory of the caller that is not a symlink, re-checked after it is
+/// resolved. Its
 /// `inputs` directory is created here, so a concurrent `prepare` on the same
 /// root refuses as `root`. A root is single use: any later refusal leaves it
 /// populated.
 fn make_root(root: &Path) -> std::result::Result<PathBuf, Refusal> {
     use std::path::Component;
-    let plain = root.components().skip(1).all(|c| match c {
-        Component::Normal(n) => n.to_str().is_some_and(|n| {
-            n.bytes()
-                .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
-                && n != "."
-                && n != ".."
-        }),
-        _ => false,
-    });
+    // `Path::components` drops interior `.` segments; refuse them first.
+    let dotted = root
+        .as_os_str()
+        .as_encoded_bytes()
+        .split(|b| *b == b'/')
+        .any(|s| s == b".");
+    let plain = !dotted
+        && root.components().skip(1).all(|c| match c {
+            Component::Normal(n) => n.to_str().is_some_and(|n| {
+                n.bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
+                    && n != "."
+                    && n != ".."
+            }),
+            _ => false,
+        });
     if !root.is_absolute() || !plain || root.parent().is_none() {
         return refuse("root", "root must be an absolute path of plain components");
     }
@@ -281,15 +299,17 @@ fn make_root(root: &Path) -> std::result::Result<PathBuf, Refusal> {
         .map_err(class("root"))?
         .is_dir()
     {
-        return refuse("root", "root parent must be an existing directory");
+        return refuse(
+            "root",
+            "root parent must be an existing directory, not a symlink",
+        );
     }
+    let owner_only = |meta: &fs::Metadata| {
+        meta.is_dir() && meta.uid() == unsafe { libc::geteuid() } && meta.mode() & 0o077 == 0
+    };
     match fs::symlink_metadata(root) {
         Ok(meta) => {
-            if !meta.is_dir()
-                || meta.uid() != unsafe { libc::geteuid() }
-                || meta.mode() & 0o077 != 0
-                || fs::read_dir(root).map_err(class("root"))?.next().is_some()
-            {
+            if !owner_only(&meta) || fs::read_dir(root).map_err(class("root"))?.next().is_some() {
                 return refuse(
                     "root",
                     "root must be an empty owner-only directory, not a symlink",
@@ -305,6 +325,9 @@ fn make_root(root: &Path) -> std::result::Result<PathBuf, Refusal> {
         Err(e) => return refuse("root", &e.to_string()),
     }
     let root = fs::canonicalize(root).map_err(class("root"))?;
+    if !owner_only(&fs::symlink_metadata(&root).map_err(class("root"))?) {
+        return refuse("root", "root changed while it was prepared");
+    }
     fs::DirBuilder::new()
         .mode(0o700)
         .create(root.join("inputs"))
@@ -650,6 +673,12 @@ mod tests {
         let mut p = profile.clone();
         p.turn_deadline_secs = 0;
         assert_eq!(attempt(&p, "s", "c0"), "profile", "zero turn");
+        // A huge turn refuses instead of overflowing the margin sum.
+        let mut p = profile.clone();
+        p.turn_deadline_secs = u64::MAX;
+        assert_eq!(attempt(&p, "s", "c1"), "profile", "turn overflow");
+        p.turn_deadline_secs = u64::MAX - 215;
+        assert_eq!(attempt(&p, "s", "c2"), "profile", "turn overflow");
         let mut p = profile.clone();
         p.provider = "unknown".into();
         assert_eq!(attempt(&p, "s", "d"), "profile", "provider catalog");
@@ -705,6 +734,21 @@ mod tests {
         assert_eq!(class(&n.join("attempt:1")), "root", "':' cannot be mounted");
         assert_eq!(class(&n.join("a,b")), "root", "',' cannot be mounted");
         assert!(!n.join("attempt:1").exists(), "refused before creation");
+        let dotted = PathBuf::from(format!("{}/./dotted", n.display()));
+        assert_eq!(class(&dotted), "root", "interior '.' segment");
+        assert!(!n.join("dotted").exists());
+        let real_parent = base.join("real-parent");
+        fs::DirBuilder::new()
+            .mode(0o700)
+            .create(&real_parent)
+            .unwrap();
+        std::os::unix::fs::symlink(&real_parent, n.join("parent-link")).unwrap();
+        assert_eq!(
+            class(&n.join("parent-link/attempt")),
+            "root",
+            "symlinked parent"
+        );
+        assert!(!real_parent.join("attempt").exists());
         assert_eq!(
             class(&n.join("missing/attempt")),
             "root",

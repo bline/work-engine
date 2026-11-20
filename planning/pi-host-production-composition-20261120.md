@@ -100,11 +100,14 @@ Rejected:
 - Profile path: absolute, a regular file (not a symlink), at most 64 KiB;
   echoed as given in the record.
 - Root precondition, refused as `root` before anything is written:
-  - an absolute path of plain components (`[A-Za-z0-9._-]`, no `.` or
-    `..`), because the Host cannot mount `:` or `,`;
-  - its parent directory must exist;
+  - an absolute path in which every component, ancestors included, is
+    plain (`[A-Za-z0-9._-]`, no `.` or `..` segment), because the Host
+    cannot mount `:`, `,` or similar. A `+`, `@` or space anywhere in the
+    native-root path therefore refuses every launch;
+  - its parent must be an existing directory, not a symlink;
   - it is either absent (created with mode 0700) or an empty, owner-only
-    directory of the caller that is not a symlink.
+    directory of the caller that is not a symlink. After it is resolved,
+    the leaf is checked again.
 
   `prepare` creates `<root>/inputs` exclusively, so a concurrent `prepare` on
   the same root refuses as `root`. A root is single use: any refusal after
@@ -145,9 +148,21 @@ Rejected:
   - the Docker and Host binary digests;
   - the catalog reservation.
 
-  It takes about as long as `prepare` (tens of seconds in a debug build: it
-  hashes the Host binary and the runtime tree). It never opens a credentials
-  file. Exit codes and refusal classes are as for `prepare`.
+  It takes about as long as `prepare`. It hashes the Host binary and the
+  runtime tree: on the real `claude-sdk` runtime that is about 0.6–1.4 s in
+  a release build and 32–41 s in a debug build (RL re-review, N2), so a
+  caller with a short budget runs a release Host. It never opens a
+  credentials file.
+  - Its only environment input is `TMPDIR`, the scratch location.
+  - Exit codes and refusal classes are as for `prepare`, except that `root`
+    or `io` from `describe` means its scratch environment failed, not that
+    the profile is invalid.
+  - The agreement covers the profile, not a launch root. The root rules
+    above apply to the caller's own root at `prepare`. A caller that
+    allocates roots under a native root checks that native root itself
+    (RL's predicate).
+  - The description and the dry run must hash the same profile bytes;
+    otherwise `describe` refuses as `profile`.
 - Exit 0 prints:
   - `{schema, profile_sha256, provider, model, wire, routes:[{id, endpoint, payer}], payers:{<payer>:[kinds]}}`;
   - `payers` lists the credential source kinds that can serve every route
@@ -237,11 +252,15 @@ is a separate Host item, not this slice.
 
 ## Step 1 evidence (offline, 2026-11-20)
 
-- `work-engine-manual-host` lib: 192 passed. These include:
+- `work-engine-manual-host` lib: 192 passed at fa536eee, 194 at bc565d41,
+  and 195 on the merge `eeaa0e7e`. The step 1 tests are:
   - `prepare_writes_one_admissible_relay_job`;
-  - `prepare_refuses_profiles_and_inputs_outside_its_bounds`, which covers
-    every refusal class;
-  - `describe_names_each_payers_credential_kinds`.
+  - `prepare_refusals_carry_their_class`, which covers every refusal class;
+  - `prepare_refuses_roots_it_cannot_own_or_mount`;
+  - `describe_agrees_with_prepare_and_names_credential_kinds`;
+  - `allowed_kinds_parse` in `pi_coding_https`;
+  - `tests/pi_host_prepare_cli.rs` for the binary's exit codes and refusal
+    shape.
 - Binary exit codes: a refused `describe` exits 1, a refused `prepare`
   exits 1, usage exits 2.
 - Real-binary smoke run (`records/dev-vertical-pi-host-realization-20261118/prepare_smoke.py`):
@@ -254,6 +273,7 @@ is a separate Host item, not this slice.
     eligible. `failures` was empty, the serve record was `served`, and no
     container was left. The output is in
     `~/.local/state/work-engine/dev-vertical-pi-host-h2-live-prep-20261118/slice4-smoke-1/`.
+  - Repeated at bc565d41 (`slice4-smoke-2/`) with the same result.
 
 ## RL consumer review of step 1 (6020) and remediation
 
@@ -274,3 +294,21 @@ verdict "ready with required changes".
 | F11: test gaps. | Added tests for root shapes, every class including `io`, an unknown field, a zero turn, a symlinked profile, mixed payers, kinds and agreement, and the binary's exit codes and refusal shape (`tests/pi_host_prepare_cli.rs`). |
 | F12: plan text and field names. | Fixed. |
 | Deadline. | Semantics stated. The profile requires `job_secs ≥ turn_deadline_secs + 300`. The deadline is read from the record. |
+
+## RL consumer re-review of bc565d41 (6038) and follow-ups
+
+Review: `research-lifecycle-tool-registry-20261116/038-step1-consumer-review/REREVIEW-bc565d41.md`.
+F1–F12 were resolved. Step 1 was merged as `eeaa0e7e` before this
+re-review, on the operator's instruction. The follow-ups land on branch
+`pi-host-prepare-followups-20261120`.
+
+| Finding | Disposition |
+| --- | --- |
+| N1 (P2): a huge `turn_deadline_secs` overflowed the margin sum and exited 101. | Compared against `job_secs.saturating_sub(300)`, refused as `profile`; tested at `u64::MAX` and `u64::MAX - 215`. |
+| N2 (P2): debug `describe` takes 32–41 s on the real runtime. | Documented with the release timings; RL's install check uses a release Host. |
+| N3 (P3): `describe` reads `TMPDIR`. | Documented as its only environment input; `root`/`io` from `describe` mean a scratch failure. |
+| N4 (P3): agreement covers the profile, not the launch root. | Documented, including that the grammar applies to every ancestor; symlinked-parent message fixed. RL checks its native root itself. |
+| N5 (P3): check-then-use gaps. | `describe` compares the dry run's `profile.sha256` with its own digest; the resolved leaf is re-checked owner-only. The `symlink_metadata`/`read` gap on the profile remains; it is unreachable for an owner-only profile. |
+| N6 (P3): stale plan evidence and `Refusal` comment. | Refreshed. |
+| Nit: `/n/./x` accepted. | An interior `.` segment now refuses as `root`. |
+| CLI test relink race in the shared build directory. | Not changed. The test runs the binary Cargo built for it, and another worktree can relink that path mid-run (board 6025, point 3). A rerun settles it. |
