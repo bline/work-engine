@@ -195,3 +195,23 @@ is a separate Host item, not this slice.
   to settle: cleanup of finished roots.
 - **Preflight.** Preflight runs before any per-attempt root exists, so it
   validates the profile and the Host binary, not a job.
+
+## Step 1 evidence (offline, 2026-11-20)
+
+- `work-engine-manual-host` lib: 192 passed. These include:
+  - `prepare_writes_one_admissible_relay_job`;
+  - `prepare_refuses_profiles_and_inputs_outside_its_bounds`, which covers
+    every refusal class;
+  - `describe_names_each_payers_credential_kinds`.
+- Binary exit codes: a refused `describe` exits 1, a refused `prepare`
+  exits 1, usage exits 2.
+- Real-binary smoke run (`records/dev-vertical-pi-host-realization-20261118/prepare_smoke.py`):
+  - The profile used the real `claude-sdk` runtime (`runtime-claude-sdk`)
+    and the offline relay observer over two loopback routes. `describe` and
+    `prepare` both exited 0.
+  - `serve --config <root>/serve-config.json` reported the prepared
+    `job_sha256` at `pi-host/initialize`.
+  - Driven by `serve.py`'s controller, both relay turns completed and were
+    eligible. `failures` was empty, the serve record was `served`, and no
+    container was left. The output is in
+    `~/.local/state/work-engine/dev-vertical-pi-host-h2-live-prep-20261118/slice4-smoke-1/`.
