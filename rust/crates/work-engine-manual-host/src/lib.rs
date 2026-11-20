@@ -17,6 +17,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 mod inspection;
 pub mod pi_docker;
+pub mod pi_host_prepare;
 pub mod pi_host_serve;
 pub mod pi_native;
 pub mod pi_route;

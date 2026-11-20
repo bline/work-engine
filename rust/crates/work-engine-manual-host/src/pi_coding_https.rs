@@ -44,9 +44,14 @@ pub enum CredentialSource {
     AnthropicApiKeyEnv { variable: String },
     /// Anthropic API key from an owner-only file (one line).
     AnthropicApiKeyFile { path: PathBuf },
-    /// OpenRouter API key (`sk-or-...`) from an environment variable.
+    /// OpenRouter API key (`sk-or-...`) from an environment variable. The
+    /// kind is `openrouter-api-key-env`, as `allowed_kinds` and the transport
+    /// identity name it; kebab-case alone would spell it `open-router-...`,
+    /// which stays accepted.
+    #[serde(rename = "openrouter-api-key-env", alias = "open-router-api-key-env")]
     OpenRouterApiKeyEnv { variable: String },
     /// OpenRouter API key (`sk-or-...`) from an owner-only file (one line).
+    #[serde(rename = "openrouter-api-key-file", alias = "open-router-api-key-file")]
     OpenRouterApiKeyFile { path: PathBuf },
 }
 #[derive(Deserialize)]
@@ -194,6 +199,22 @@ fn key_from_file(path: &Path) -> Result<String> {
         return refuse("API key file unusable");
     }
     Ok(key)
+}
+
+/// The credential source kinds (the `kind` of a credentials file entry) that
+/// can serve a route endpoint, as `Credential::endpoint` binds them.
+/// Qualification-only kinds are not offered. A loopback route takes no
+/// credential.
+pub fn allowed_kinds(endpoint: &str) -> Option<&'static [&'static str]> {
+    Some(match endpoint {
+        "https:chatgpt-codex" => &["chatgpt-pi-auth"],
+        "https:openai-responses" => &["api-key-env", "api-key-file"],
+        "https:anthropic-oauth" => &["claude-code-auth"],
+        "https:anthropic-api" => &["anthropic-api-key-env", "anthropic-api-key-file"],
+        "https:openrouter" => &["openrouter-api-key-env", "openrouter-api-key-file"],
+        e if e.starts_with("loopback:") => &[],
+        _ => return None,
+    })
 }
 
 /// Host-held HTTPS transport to the fixed public endpoints.
@@ -384,9 +405,11 @@ impl HostedProviderTransport for HttpsTransport {
             Credential::AnthropicApiKey(key) => {
                 request_head(endpoint, &[("x-api-key", key)], request)
             }
-            Credential::OpenRouterApiKey(key) => {
-                request_head(endpoint, &[("Authorization", &format!("Bearer {key}"))], request)
-            }
+            Credential::OpenRouterApiKey(key) => request_head(
+                endpoint,
+                &[("Authorization", &format!("Bearer {key}"))],
+                request,
+            ),
         };
         let Connection { mut stream, abort } = connection;
         stream.write_all(head.as_bytes())?;
@@ -407,6 +430,37 @@ impl HostedProviderTransport for HttpsTransport {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Every kind `allowed_kinds` offers is a credentials-file `kind` the
+    /// transport parses (env kinds take `variable`, file kinds `path`).
+    #[test]
+    fn allowed_kinds_parse_as_credential_sources() {
+        let endpoints = [
+            "https:chatgpt-codex",
+            "https:openai-responses",
+            "https:anthropic-oauth",
+            "https:anthropic-api",
+            "https:openrouter",
+        ];
+        for endpoint in endpoints {
+            for kind in allowed_kinds(endpoint).unwrap() {
+                let entry = if kind.ends_with("-env") {
+                    serde_json::json!({"kind":kind,"variable":"V"})
+                } else {
+                    serde_json::json!({"kind":kind,"path":"/p"})
+                };
+                serde_json::from_value::<CredentialSource>(entry)
+                    .unwrap_or_else(|e| panic!("{endpoint} {kind}: {e}"));
+            }
+        }
+        assert_eq!(allowed_kinds("loopback:1"), Some(&[][..]));
+        assert_eq!(allowed_kinds("https:other"), None);
+        // The kebab-case spelling stays accepted.
+        serde_json::from_value::<CredentialSource>(
+            serde_json::json!({"kind":"open-router-api-key-file","path":"/p"}),
+        )
+        .unwrap();
+    }
     use std::collections::BTreeMap;
 
     fn transport() -> HttpsTransport {
@@ -493,10 +547,7 @@ mod tests {
             request: 4,
             attempt: 1,
             headers: BTreeMap::from([
-                (
-                    "x-requested-with".to_string(),
-                    "pi".to_string(),
-                ),
+                ("x-requested-with".to_string(), "pi".to_string()),
                 ("openai-organization".to_string(), "org-x".to_string()),
                 ("accept".to_string(), "text/event-stream".to_string()),
             ]),
@@ -509,8 +560,9 @@ mod tests {
             &[("Authorization", "Bearer sk-or-v1-0123456789abcdef")],
             &request,
         );
-        assert!(head
-            .starts_with("POST /api/v1/chat/completions HTTP/1.1\r\nHost: openrouter.ai\r\n"));
+        assert!(
+            head.starts_with("POST /api/v1/chat/completions HTTP/1.1\r\nHost: openrouter.ai\r\n")
+        );
         assert!(head.contains("Authorization: Bearer sk-or-v1-0123456789abcdef\r\n"));
         assert!(head.contains("x-requested-with: pi\r\n"));
         assert!(!head.contains("openai-organization"));

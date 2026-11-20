@@ -548,6 +548,15 @@ pub fn reserve_attempt(
     });
     Ok(next)
 }
+/// The runtime-relative catalog a provider's plan must name.
+pub fn catalog_path(provider: &str) -> Option<&'static str> {
+    match provider {
+        "openai-codex" => Some(CATALOG),
+        "claude-sdk" => Some(ANTHROPIC_CATALOG),
+        "openrouter" => Some(OPENROUTER_CATALOG),
+        _ => None,
+    }
+}
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Admission {

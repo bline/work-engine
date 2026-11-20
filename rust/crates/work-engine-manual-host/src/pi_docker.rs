@@ -240,6 +240,10 @@ fn verify_executable(artifact: &Artifact) -> Result<()> {
     }
     Ok(())
 }
+/// The fresh-admission checks without admitting (no state is touched).
+pub fn validate_fresh(job: &Job) -> Result<()> {
+    check_job(job, true)
+}
 fn check_job(job: &Job, fresh: bool) -> Result<()> {
     let battery = job
         .coding
