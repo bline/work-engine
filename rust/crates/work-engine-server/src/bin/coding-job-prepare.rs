@@ -359,6 +359,7 @@ fn run() -> Result<Value> {
             budget_microusd: admission["budget_microusd"].as_u64().unwrap_or(0),
             max_context_bytes: 24_000,
             failover: None,
+            classification_table_sha256: None,
         })
     } else {
         None

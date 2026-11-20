@@ -55,6 +55,11 @@ pub struct ProviderPlan {
     /// runtime admission. Absent: refusal-only failover.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub failover: Option<FailoverInputs>,
+    /// Digest of the classification table the Host classifies non-success
+    /// heads with (`coding::classification`); bound by the runtime
+    /// admission. Absent: no classification.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub classification_table_sha256: Option<String>,
 }
 /// Operator failover inputs of a hosted plan.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -169,6 +174,15 @@ pub struct AttemptRecord {
     /// Hosted: the bound failover decision this attempt was sent under.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub failover: Option<super::failover::FailoverDecision>,
+    /// Hosted: the classification table this attempt's non-success heads
+    /// were classified under (`coding::classification`); set before any
+    /// upstream byte while classification is active for the route.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub classification_table_sha256: Option<String>,
+    /// Hosted: what the head hold did with this attempt's head (held,
+    /// refused, relayed, or a refusal's class as evidence).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub head_hold: Option<crate::pi_stream::HoldRecord>,
 }
 /// Observed facts about one attempt, from which the ledger derives the
 /// disposition. Callers report evidence; they never choose a release.
@@ -180,6 +194,10 @@ pub enum AttemptEvidence {
         relayed_bytes: u64,
         drained_and_screened: bool,
         body_sha256: String,
+        /// A held head refused on its class under the classification table
+        /// (a status outside the definitive set); `None` for a refusal by
+        /// status.
+        classified: Option<TableRefusal>,
     },
     /// A head-phase cancel arrived before dispatch.
     NotDispatched { confirmed_before_write: bool },
@@ -203,6 +221,20 @@ pub enum AttemptEvidence {
     },
     /// No trustworthy observation.
     Unknown { reason: String },
+}
+/// The classification a held head was refused on: the table's digest and
+/// the class name it gave the head and its body.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TableRefusal {
+    pub table_sha256: String,
+    pub class: String,
+}
+impl TableRefusal {
+    /// Releases only under the linked table and for a failover class.
+    fn definitive(&self) -> bool {
+        self.table_sha256 == hosted_route_availability::provisional::table_sha256()
+            && super::classification::failover_class_name(&self.class)
+    }
 }
 impl AttemptEvidence {
     pub fn from_relay(relay: &crate::pi_stream::Relay) -> Self {
@@ -281,10 +313,14 @@ impl Reservation {
                 relayed_bytes,
                 drained_and_screened,
                 body_sha256,
+                classified,
             } => {
                 a.http_status = Some(status);
                 a.refusal_body_sha256 = Some(body_sha256);
-                if crate::pi_route::refusal_status(status)
+                // Definitive by status, or by the linked table's failover
+                // class; either way nothing relayed, drained and screened.
+                if (crate::pi_route::refusal_status(status)
+                    || classified.as_ref().is_some_and(TableRefusal::definitive))
                     && relayed_bytes == 0
                     && drained_and_screened
                 {
@@ -476,6 +512,8 @@ pub fn reserve_attempt(
         request_body_sha256: None,
         raw_microusd: None,
         failover: None,
+        classification_table_sha256: None,
+        head_hold: None,
     });
     Ok(next)
 }
@@ -500,6 +538,9 @@ struct Admission {
     /// Digest of the admitted state observation, when the plan carries one.
     #[serde(default)]
     state_observation_sha256: Option<String>,
+    /// Digest of the classification table, when the plan names one.
+    #[serde(default)]
+    classification_table_sha256: Option<String>,
     #[serde(default = "default_provider")]
     provider: String,
 }
@@ -690,6 +731,16 @@ impl ProviderPlan {
             admission.failover_policy_sha256.as_deref(),
             admission.state_observation_sha256.as_deref(),
         )?;
+        self.classification_admitted(admission.classification_table_sha256.as_deref())?;
+        Ok(())
+    }
+    /// The plan's classification table digest is the admission's: both
+    /// absent or equal. A digest other than the linked table's is admitted
+    /// and classifies nothing (`classification::table_binding`).
+    pub fn classification_admitted(&self, admitted_sha256: Option<&str>) -> Result<()> {
+        if self.classification_table_sha256.as_deref() != admitted_sha256 {
+            return refuse("classification table not bound by the admission");
+        }
         Ok(())
     }
     /// The plan's failover inputs, checked against the admission's digests:
@@ -1241,6 +1292,7 @@ pub(super) mod ledger_tests {
             budget_microusd: 1_000_000,
             max_context_bytes: 32768,
             failover: None,
+            classification_table_sha256: None,
         });
         (dir, h)
     }
@@ -1325,6 +1377,8 @@ pub(super) mod ledger_tests {
             request_body_sha256: None,
             raw_microusd: None,
             failover: None,
+            classification_table_sha256: None,
+            head_hold: None,
         });
         assert_eq!((r.charged_microusd(), r.unsettled()), (164001, true));
         r.attempts[0].raw_microusd = Some(177501);
@@ -1446,6 +1500,7 @@ mod admission_tests {
             budget_microusd: 1000000,
             max_context_bytes: 32768,
             failover: None,
+            classification_table_sha256: None,
         });
         let error = h.coding_prepare_provider().unwrap_err();
         assert!(error.to_string().contains("runtime admission"), "{error}");
@@ -1704,6 +1759,7 @@ mod attempt_tests {
             relayed_bytes: relayed,
             drained_and_screened: drained,
             body_sha256: "c".repeat(64),
+            classified: None,
         }
     }
     /// A relay whose terminal event was clean (`terminal_last`) when the
@@ -1763,6 +1819,111 @@ mod attempt_tests {
             ("secondary", AttemptDisposition::Pending, Some(429))
         );
         assert_eq!(rs[&1].charged_microusd(), 164001);
+    }
+    fn classified(
+        status: u16,
+        relayed: u64,
+        drained: bool,
+        table: &str,
+        class: &str,
+    ) -> AttemptEvidence {
+        AttemptEvidence::HeadRefusal {
+            status,
+            relayed_bytes: relayed,
+            drained_and_screened: drained,
+            body_sha256: "c".repeat(64),
+            classified: Some(TableRefusal {
+                table_sha256: table.into(),
+                class: class.into(),
+            }),
+        }
+    }
+    #[test]
+    fn classified_head_refusal_releases_only_with_the_linked_table_and_a_failover_class() {
+        let linked = hosted_route_availability::provisional::table_sha256();
+        // A held 529 refused on a failover class under the linked table is
+        // released like a definitive refusal, and the next attempt admitted.
+        for class in [
+            "overload",
+            "api_credit_exhausted",
+            "subscription_quota_exhausted",
+            "rate_limited",
+        ] {
+            let mut rs = requests(&[1]);
+            reserve(&mut rs, 1, "primary").unwrap();
+            let r = rs.get_mut(&1).unwrap();
+            assert_eq!(
+                r.settle_attempt(1, classified(529, 0, true, &linked, class))
+                    .unwrap(),
+                AttemptDisposition::Refused,
+                "{class}"
+            );
+            assert_eq!(r.attempts[0].http_status, Some(529));
+            assert_eq!((r.charged_microusd(), r.unsettled()), (0, false));
+            assert_eq!(reserve(&mut rs, 1, "secondary").unwrap(), 2);
+        }
+        // Anything else keeps the reservation: another table, a class that is
+        // not a failover class, bytes relayed, or a body not drained.
+        for evidence in [
+            classified(529, 0, true, &"0".repeat(64), "overload"),
+            classified(529, 0, true, &linked, "authorization_failure"),
+            classified(529, 0, true, &linked, "unclassified"),
+            classified(529, 0, true, &linked, "credit"),
+            classified(529, 1, true, &linked, "overload"),
+            classified(529, 0, false, &linked, "overload"),
+        ] {
+            let mut rs = requests(&[1]);
+            reserve(&mut rs, 1, "primary").unwrap();
+            let r = rs.get_mut(&1).unwrap();
+            assert_eq!(
+                r.settle_attempt(1, evidence.clone()).unwrap(),
+                AttemptDisposition::Uncertain,
+                "{evidence:?}"
+            );
+            assert_eq!(
+                r.attempts[0].reason.as_deref(),
+                Some("refusal not definitive")
+            );
+            assert_eq!((r.charged_microusd(), r.unsettled()), (164001, true));
+        }
+    }
+    #[test]
+    fn classification_digest_must_match_between_plan_and_admission() {
+        let (_dir, h) = super::ledger_tests::fixture();
+        let mut plan = h
+            .journal
+            .job
+            .coding
+            .as_ref()
+            .unwrap()
+            .provider
+            .clone()
+            .unwrap();
+        let linked = hosted_route_availability::provisional::table_sha256();
+        // Absent on both sides: today's plan bytes (no key) and admission.
+        assert!(
+            serde_json::to_value(&plan)
+                .unwrap()
+                .get("classification_table_sha256")
+                .is_none()
+        );
+        assert!(plan.classification_admitted(None).is_ok());
+        assert!(plan.classification_admitted(Some(&linked)).is_err());
+        // Named by the plan: the admission must bind the same digest. Another
+        // table's digest is admitted (it classifies nothing).
+        for sha in [linked.clone(), "0".repeat(64)] {
+            plan.classification_table_sha256 = Some(sha.clone());
+            assert!(plan.classification_admitted(Some(&sha)).is_ok());
+            assert!(plan.classification_admitted(None).is_err());
+            assert!(plan.classification_admitted(Some("x")).is_err());
+        }
+        // The admission accepts the key (it rejects unknown fields).
+        let admission = json!({"schema":"s","job_id":"j","binary_sha256":"b","model":"m",
+            "pi_config_manifest_sha256":"p","task_sha256":"t","catalog_sha256":"c","max_requests":1,
+            "budget_microusd":1,"allow_provider":true,"hosted_routes_sha256":"r",
+            "classification_table_sha256":linked});
+        let parsed: Admission = serde_json::from_value(admission).unwrap();
+        assert_eq!(parsed.classification_table_sha256, Some(linked));
     }
     #[test]
     fn non_definitive_refusals_retain_and_block() {
@@ -1980,6 +2141,7 @@ mod attempt_tests {
             closing: None,
             head_headers: vec![],
             head_ms: None,
+            hold: None,
         };
         let clean = |r: &Relay| match AttemptEvidence::from_relay(r) {
             AttemptEvidence::Relayed { terminal_last, .. } => terminal_last,

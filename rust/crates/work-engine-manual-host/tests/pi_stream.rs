@@ -1022,3 +1022,618 @@ fn the_first_response_completed_is_the_terminal_event() {
     assert_eq!(ps::usage(two.as_bytes())["responseId"], "r");
     assert_eq!(ps::usage(two.as_bytes())["inputTokens"], 1);
 }
+
+// Hold of non-success heads for classification before relay (`ps::Hold`).
+
+/// Holds 529 and 400; failover classes are overload and an out-of-set
+/// credit-exhaustion shape (a 400 naming `credit_balance_too_low`).
+struct TestClassifier;
+impl ps::HeadClassifier for TestClassifier {
+    fn holds(&self, status: u16) -> bool {
+        matches!(status, 400 | 529)
+    }
+    fn classify(&self, status: u16, body: &[u8]) -> ps::HeadClass {
+        let has = |s: &[u8]| body.windows(s.len()).any(|w| w == s);
+        let class = match status {
+            529 if has(b"overloaded_error") => "overload",
+            400 if has(b"credit_balance_too_low") => "api_credit_exhausted",
+            _ => "unclassified",
+        };
+        ps::HeadClass {
+            class: class.into(),
+            error: None,
+            failover: class != "unclassified",
+        }
+    }
+}
+fn hold(max_wait: Duration, window_until: Option<std::time::Instant>) -> ps::Hold {
+    ps::Hold {
+        classifier: Box::new(TestClassifier),
+        max_wait,
+        max_bytes: ps::HOLD_MAX_BYTES,
+        window_until,
+    }
+}
+/// An upstream whose bytes arrive when sent; EOF when the sender is gone.
+struct Gated {
+    rx: mpsc::Receiver<Vec<u8>>,
+    buf: Vec<u8>,
+}
+impl Gated {
+    fn new(first: &[u8]) -> (mpsc::Sender<Vec<u8>>, Self) {
+        let (tx, rx) = mpsc::channel();
+        tx.send(first.to_vec()).unwrap();
+        (tx, Self { rx, buf: vec![] })
+    }
+}
+impl std::io::Read for Gated {
+    fn read(&mut self, out: &mut [u8]) -> std::io::Result<usize> {
+        if self.buf.is_empty() {
+            match self.rx.recv() {
+                Ok(b) => self.buf = b,
+                Err(_) => return Ok(0),
+            }
+        }
+        let n = out.len().min(self.buf.len());
+        out[..n].copy_from_slice(&self.buf[..n]);
+        self.buf.drain(..n);
+        Ok(n)
+    }
+}
+fn response(status: u16, body: &[u8]) -> Vec<u8> {
+    let mut raw = format!(
+        "HTTP/1.1 {status} X\r\nContent-Length: {}\r\n\r\n",
+        body.len()
+    )
+    .into_bytes();
+    raw.extend(body);
+    raw
+}
+fn session(up: impl std::io::Read + Send + 'static, h: Option<ps::Hold>) -> ps::Session {
+    let s = ps::Session::start(
+        up,
+        || (),
+        &binding(),
+        1,
+        1,
+        |s| matches!(s, 401 | 402 | 403 | 429),
+    )
+    .unwrap();
+    match h {
+        Some(h) => s.with_hold(h),
+        None => s,
+    }
+}
+/// What the container received: head status, body bytes, terminal frame
+/// (type and code). Chunk boundaries are not part of it.
+fn seen(c: &Consumer) -> (Option<u64>, Vec<u8>, Option<(String, Value)>) {
+    let head = c
+        .sent
+        .iter()
+        .find(|v| v["type"] == "response-head")
+        .map(|v| v["status"].as_u64().unwrap());
+    let terminal = c
+        .sent
+        .iter()
+        .find(|v| v["type"] == "response-end" || v["type"] == "response-failure")
+        .map(|v| (v["type"].as_str().unwrap().to_owned(), v["code"].clone()));
+    (head, c.body.clone(), terminal)
+}
+/// Relay `raw` with and without the hold; returns both consumers and the
+/// held relay.
+fn with_and_without(t: &tempfile::TempDir, raw: &[u8]) -> (Consumer, Consumer, ps::Relay) {
+    let mut plain = Consumer::new(store(t));
+    stream(ps::relay_session(
+        &mut plain,
+        session(Cursor::new(raw.to_vec()), None),
+    ))
+    .unwrap();
+    let mut held = Consumer::new(store(t));
+    let r = stream(ps::relay_session(
+        &mut held,
+        session(
+            Cursor::new(raw.to_vec()),
+            Some(hold(ps::HOLD_MAX_WAIT, None)),
+        ),
+    ))
+    .unwrap();
+    (plain, held, r)
+}
+/// Pull (from ordinal `next`) until a terminal frame; the body and terminal.
+fn pull_all(sess: &mut ps::Session, c: &Consumer, mut next: u64) -> (Vec<u8>, Value) {
+    let mut body = vec![];
+    loop {
+        let op = json!({"type":"pull","binding":binding(),"sequence":1,"stream":1,"ordinal":next});
+        next += 1;
+        let mut frames = sess.on_native(&op, c).unwrap();
+        while frames.is_empty() {
+            frames = sess.poll(c, Duration::from_millis(20)).unwrap();
+        }
+        let f = &frames[0];
+        match f["type"].as_str().unwrap() {
+            "response-chunk" => body.extend(B64.decode(f["body"].as_str().unwrap()).unwrap()),
+            _ => return (body, f.clone()),
+        }
+    }
+}
+/// The session's first frames, within 3 s.
+fn first_frames(sess: &mut ps::Session, c: &Consumer) -> Vec<Value> {
+    let start = std::time::Instant::now();
+    let mut frames = vec![];
+    while frames.is_empty() {
+        assert!(
+            start.elapsed() < Duration::from_secs(3),
+            "no frame within 3 s"
+        );
+        frames = sess.poll(c, Duration::from_millis(10)).unwrap();
+    }
+    frames
+}
+
+#[test]
+fn held_unmatched_head_is_replayed_byte_for_byte() {
+    let t = tempfile::tempdir().unwrap();
+    let small = br#"{"type":"error","error":{"type":"api_error","message":"x"}}"#.to_vec();
+    let large: Vec<u8> = (0..40 * 1024).map(|i| b'a' + (i % 26) as u8).collect();
+    let mut chunked = b"HTTP/1.1 529 X\r\nTransfer-Encoding: chunked\r\n\r\n".to_vec();
+    chunked.extend(b"5\r\n{\"err\r\nc\r\nor\":\"other\"}\r\n0\r\n\r\n");
+    for (raw, body) in [
+        (response(529, &small), small.clone()),
+        (response(529, &large), large.clone()),
+        (chunked, br#"{"error":"other"}"#.to_vec()),
+    ] {
+        let (plain, held, r) = with_and_without(&t, &raw);
+        assert_eq!(seen(&held), seen(&plain));
+        assert_eq!(
+            seen(&held),
+            (
+                Some(529),
+                body.clone(),
+                Some(("response-end".into(), Value::Null))
+            )
+        );
+        assert_eq!(r.forwarded, body);
+        assert!(r.chunks.iter().all(|c| c.1 <= ps::CHUNK));
+        let h = r.hold.clone().unwrap();
+        assert_eq!(
+            (h.held, h.outcome.as_str(), h.reason.as_str()),
+            (true, "relayed", "unmatched")
+        );
+        assert_eq!(h.class.unwrap().class, "unclassified");
+        assert_eq!(h.bytes, body.len());
+        assert_eq!(r.evidence()["hold"]["reason"], "unmatched");
+    }
+    // A status the classifier does not hold is relayed at once, unrecorded.
+    let (plain, held, r) = with_and_without(&t, &response(500, &small));
+    assert_eq!(seen(&held), seen(&plain));
+    assert!(r.hold.is_none());
+    assert!(r.evidence().get("hold").is_none());
+}
+
+#[test]
+fn classified_held_head_is_refused_and_relays_nothing() {
+    let t = tempfile::tempdir().unwrap();
+    let c = Consumer::new(store(&t));
+    for (status, body, class) in [
+        (
+            529,
+            &br#"{"error":{"type":"overloaded_error"}}"#[..],
+            "overload",
+        ),
+        // An out-of-set credit-exhaustion shape.
+        (
+            400,
+            &br#"{"error":{"type":"invalid_request_error","code":"credit_balance_too_low"}}"#[..],
+            "api_credit_exhausted",
+        ),
+    ] {
+        let mut sess = session(
+            Cursor::new(response(status, body)),
+            Some(hold(ps::HOLD_MAX_WAIT, None)),
+        );
+        while sess.progress() == &ps::Progress::Pending {
+            assert!(
+                sess.poll(&c, Duration::from_millis(10)).unwrap().is_empty(),
+                "nothing relayed"
+            );
+        }
+        assert_eq!(
+            sess.progress(),
+            &ps::Progress::Refused {
+                status,
+                body: body.to_vec()
+            }
+        );
+        let h = sess.relay().hold.clone().unwrap();
+        assert_eq!(
+            (h.outcome.as_str(), h.reason.as_str()),
+            ("refused", "classified")
+        );
+        assert_eq!(h.class.unwrap().class, class);
+        assert!(sess.relay().forwarded.is_empty());
+        assert!(sess.relay().upstream_end_ms.is_some());
+    }
+    // Through `relay_session` the consumer receives nothing.
+    let mut c = Consumer::new(store(&t));
+    let body = br#"{"error":{"type":"overloaded_error"}}"#;
+    match ps::relay_session(
+        &mut c,
+        session(
+            Cursor::new(response(529, body)),
+            Some(hold(ps::HOLD_MAX_WAIT, None)),
+        ),
+    )
+    .unwrap()
+    {
+        ps::Relayed::Refused { status, body: b } => {
+            assert_eq!((status, b.as_slice()), (529, &body[..]))
+        }
+        ps::Relayed::Stream(_) => panic!("relayed a classified head"),
+    }
+    assert!(c.sent.is_empty());
+    // Without the hold the same head is relayed, as before.
+    let mut c = Consumer::new(store(&t));
+    stream(ps::relay_session(
+        &mut c,
+        session(Cursor::new(response(529, body)), None),
+    ))
+    .unwrap();
+    assert_eq!(seen(&c).0, Some(529));
+}
+
+#[test]
+fn held_head_over_the_byte_budget_replays_and_continues_upstream() {
+    let t = tempfile::tempdir().unwrap();
+    let mut body = br#"{"error":{"type":"overloaded_error"}}"#.to_vec();
+    body.extend(vec![b' '; 100 * 1024]);
+    let (plain, held, r) = with_and_without(&t, &response(529, &body));
+    assert_eq!(seen(&held), seen(&plain));
+    assert_eq!(r.forwarded, body);
+    let h = r.hold.unwrap();
+    assert_eq!(
+        (h.outcome.as_str(), h.reason.as_str()),
+        ("relayed", "byte_budget")
+    );
+    assert!(h.bytes > ps::HOLD_MAX_BYTES && h.class.is_none());
+}
+
+#[test]
+fn held_body_read_error_replays_head_then_the_same_failure() {
+    let t = tempfile::tempdir().unwrap();
+    let mut raw = b"HTTP/1.1 529 X\r\nContent-Length: 100\r\n\r\n".to_vec();
+    raw.extend(br#"{"error":{"type":"overloaded_error"}}"#);
+    let (plain, held, r) = with_and_without(&t, &raw);
+    assert_eq!(seen(&held), seen(&plain));
+    assert_eq!(
+        seen(&held).2,
+        Some(("response-failure".into(), json!("upstream_truncated")))
+    );
+    assert_eq!(r.outcome, Outcome::Interrupted("upstream_truncated"));
+    assert_eq!(r.hold.unwrap().reason, "read_error");
+}
+
+#[test]
+fn held_body_with_access_material_fails_after_the_head_as_today() {
+    let t = tempfile::tempdir().unwrap();
+    let body = format!(r#"{{"error":{{"type":"overloaded_error","message":"{A}"}}}}"#);
+    let (plain, held, r) = with_and_without(&t, &response(529, body.as_bytes()));
+    assert_eq!(seen(&held), seen(&plain));
+    assert_eq!(seen(&held).0, Some(529));
+    assert_eq!(seen(&held).2.unwrap().0, "response-failure");
+    assert!(!held.body.windows(A.len()).any(|w| w == A.as_bytes()));
+    assert!(!r.forwarded.windows(A.len()).any(|w| w == A.as_bytes()));
+    assert_eq!(r.hold.unwrap().reason, "screen");
+}
+
+#[test]
+fn slow_held_body_is_replayed_within_its_budget_and_streams_on() {
+    let t = tempfile::tempdir().unwrap();
+    let c = Consumer::new(store(&t));
+    let body = br#"{"error":{"type":"overloaded_error","message":"slow"}}"#;
+    let head = format!("HTTP/1.1 529 X\r\nContent-Length: {}\r\n\r\n", body.len());
+    let mut first = head.into_bytes();
+    first.extend(&body[..10]);
+    // The time budget, then the remaining head window, ends the hold.
+    for h in [
+        hold(Duration::from_millis(100), None),
+        hold(
+            ps::HOLD_MAX_WAIT,
+            Some(std::time::Instant::now() + Duration::from_millis(150)),
+        ),
+    ] {
+        let (tx, up) = Gated::new(&first);
+        let start = std::time::Instant::now();
+        let mut sess = session(up, Some(h));
+        let frames = first_frames(&mut sess, &c);
+        assert!(
+            start.elapsed() < Duration::from_secs(1),
+            "the container was stranded"
+        );
+        assert_eq!(
+            (frames[0]["type"].as_str(), frames[0]["status"].as_u64()),
+            (Some("response-head"), Some(529))
+        );
+        let rec = sess.relay().hold.clone().unwrap();
+        assert_eq!((rec.reason.as_str(), rec.bytes), ("time_budget", 10));
+        tx.send(body[10..].to_vec()).unwrap();
+        let (got, end) = pull_all(&mut sess, &c, 1);
+        assert_eq!(got, body);
+        assert_eq!(end["type"], "response-end");
+        assert_eq!(sess.relay().forwarded, body);
+    }
+}
+
+#[test]
+fn cancel_during_hold_is_confirmed() {
+    let t = tempfile::tempdir().unwrap();
+    let c = Consumer::new(store(&t));
+    let (_tx, up) = Gated::new(b"HTTP/1.1 529 X\r\nContent-Length: 50\r\n\r\n{\"error\"");
+    let mut sess = session(up, Some(hold(ps::HOLD_MAX_WAIT, None)));
+    for _ in 0..5 {
+        assert!(sess.poll(&c, Duration::from_millis(10)).unwrap().is_empty());
+    }
+    let pull = json!({"type":"pull","binding":binding(),"sequence":1,"stream":1,"ordinal":1});
+    let cancel = json!({"type":"cancel","binding":binding(),"sequence":1,"stream":1,"ordinal":1});
+    let mut probe = session(
+        Gated::new(b"HTTP/1.1 529 X\r\nContent-Length: 5\r\n\r\n").1,
+        Some(hold(ps::HOLD_MAX_WAIT, None)),
+    );
+    while probe.relay().status == 0 {
+        probe.poll(&c, Duration::from_millis(10)).unwrap();
+    }
+    assert_eq!(
+        probe.on_native(&pull, &c).err(),
+        Some("stream_frame_before_head")
+    );
+    let out = sess.on_native(&cancel, &c).unwrap();
+    assert_eq!(
+        (out[0]["type"].as_str(), out[0]["ordinal"].as_u64()),
+        (Some("response-cancelled"), Some(1))
+    );
+    assert_eq!(sess.progress(), &ps::Progress::Finished);
+    let r = sess.into_relay();
+    assert_eq!(
+        r.outcome,
+        Outcome::Cancelled {
+            upstream_end: false
+        }
+    );
+    assert!(r.forwarded.is_empty());
+    assert_eq!(r.held_dropped, 8, "held bytes are never kept");
+    assert_eq!(r.hold.unwrap().outcome, "cancelled");
+}
+
+#[test]
+fn hold_with_no_window_left_relays_at_once() {
+    let t = tempfile::tempdir().unwrap();
+    let c = Consumer::new(store(&t));
+    let (_tx, up) = Gated::new(b"HTTP/1.1 529 X\r\nContent-Length: 50\r\n\r\n");
+    let mut sess = session(
+        up,
+        Some(hold(ps::HOLD_MAX_WAIT, Some(std::time::Instant::now()))),
+    );
+    let frames = first_frames(&mut sess, &c);
+    assert_eq!(frames[0]["type"], "response-head");
+    let h = sess.relay().hold.clone().unwrap();
+    assert_eq!((h.reason.as_str(), h.bytes), ("window_exhausted", 0));
+}
+
+#[test]
+fn classified_failures_then_success_relay_one_head_inside_the_window() {
+    let t = tempfile::tempdir().unwrap();
+    let window = Duration::from_secs(2);
+    let start = std::time::Instant::now();
+    let until = start + window;
+    let overload = br#"{"error":{"type":"overloaded_error"}}"#;
+    let c = Consumer::new(store(&t));
+    for _ in 0..3 {
+        let mut sess = session(
+            Cursor::new(response(529, overload)),
+            Some(hold(ps::HOLD_MAX_WAIT, Some(until))),
+        );
+        while sess.progress() == &ps::Progress::Pending {
+            assert!(sess.poll(&c, Duration::from_millis(10)).unwrap().is_empty());
+        }
+        assert!(matches!(
+            sess.progress(),
+            ps::Progress::Refused { status: 529, .. }
+        ));
+    }
+    let ok = sse(&[r#"{"type":"response.completed","response":{"id":"r"}}"#]);
+    let mut sess = session(
+        Cursor::new(response(200, ok.as_bytes())),
+        Some(hold(ps::HOLD_MAX_WAIT, Some(until))),
+    );
+    let frames = first_frames(&mut sess, &c);
+    assert_eq!(
+        (frames[0]["type"].as_str(), frames[0]["status"].as_u64()),
+        (Some("response-head"), Some(200))
+    );
+    assert!(start.elapsed() < window, "head after the window");
+    assert!(sess.relay().hold.is_none(), "a success head is never held");
+    let (got, _) = pull_all(&mut sess, &c, 1);
+    assert_eq!(got, ok.as_bytes());
+}
+
+#[test]
+fn refusal_drain_is_bounded_only_with_a_hold() {
+    let t = tempfile::tempdir().unwrap();
+    let c = Consumer::new(store(&t));
+    let first = b"HTTP/1.1 429 X\r\nContent-Length: 50\r\n\r\n{\"error\"";
+    // With a hold (classification table active) a slow refusal body ends in
+    // a failure inside the budget: not definitive.
+    let (_tx, up) = Gated::new(first);
+    let start = std::time::Instant::now();
+    let mut sess = session(up, Some(hold(Duration::from_millis(100), None)));
+    let frames = first_frames(&mut sess, &c);
+    assert!(start.elapsed() < Duration::from_secs(1));
+    assert_eq!(
+        (frames[0]["type"].as_str(), frames[0]["code"].as_str()),
+        (Some("response-failure"), Some("refusal_budget"))
+    );
+    assert_eq!(sess.relay().outcome, Outcome::Interrupted("refusal_budget"));
+    let h = sess.relay().hold.clone().unwrap();
+    assert_eq!(
+        (h.held, h.outcome.as_str(), h.reason.as_str()),
+        (false, "failed", "refusal_budget")
+    );
+    // Without a hold the drain waits for the body, as before.
+    let (_tx, up) = Gated::new(first);
+    let mut sess = session(up, None);
+    let start = std::time::Instant::now();
+    while start.elapsed() < Duration::from_millis(300) {
+        assert!(sess.poll(&c, Duration::from_millis(20)).unwrap().is_empty());
+    }
+    assert_eq!(sess.progress(), &ps::Progress::Pending);
+    // A refusal read in time stays definitive by status; its class is
+    // evidence only.
+    let body = br#"{"error":{"code":"rate_limit_exceeded"}}"#;
+    let mut sess = session(
+        Cursor::new(response(429, body)),
+        Some(hold(ps::HOLD_MAX_WAIT, None)),
+    );
+    while sess.progress() == &ps::Progress::Pending {
+        sess.poll(&c, Duration::from_millis(10)).unwrap();
+    }
+    assert!(matches!(
+        sess.progress(),
+        ps::Progress::Refused { status: 429, .. }
+    ));
+    let h = sess.relay().hold.clone().unwrap();
+    assert_eq!(
+        (h.held, h.outcome.as_str(), h.reason.as_str()),
+        (false, "refused", "definitive_status")
+    );
+    assert_eq!(h.class.unwrap().class, "unclassified");
+    // A refusal head read after the window drains as without a hold.
+    let mut sess = session(
+        Cursor::new(response(429, body)),
+        Some(hold(ps::HOLD_MAX_WAIT, Some(std::time::Instant::now()))),
+    );
+    while sess.progress() == &ps::Progress::Pending {
+        assert!(sess.poll(&c, Duration::from_millis(10)).unwrap().is_empty());
+    }
+    assert_eq!(
+        sess.progress(),
+        &ps::Progress::Refused {
+            status: 429,
+            body: body.to_vec()
+        }
+    );
+}
+
+/// Holds every status; every class is a failover class.
+struct HoldsAll;
+impl ps::HeadClassifier for HoldsAll {
+    fn holds(&self, _: u16) -> bool {
+        true
+    }
+    fn classify(&self, _: u16, _: &[u8]) -> ps::HeadClass {
+        ps::HeadClass {
+            class: "any".into(),
+            error: None,
+            failover: true,
+        }
+    }
+}
+
+#[test]
+fn a_success_head_is_never_held_whatever_the_classifier() {
+    let t = tempfile::tempdir().unwrap();
+    let mut c = Consumer::new(store(&t));
+    let ok = sse(&[r#"{"type":"response.completed","response":{"id":"r"}}"#]);
+    let h = ps::Hold {
+        classifier: Box::new(HoldsAll),
+        max_wait: ps::HOLD_MAX_WAIT,
+        max_bytes: ps::HOLD_MAX_BYTES,
+        window_until: None,
+    };
+    let r = stream(ps::relay_session(
+        &mut c,
+        session(Cursor::new(response(200, ok.as_bytes())), Some(h)),
+    ))
+    .unwrap();
+    assert_eq!(
+        seen(&c),
+        (
+            Some(200),
+            ok.as_bytes().to_vec(),
+            Some(("response-end".into(), Value::Null))
+        )
+    );
+    assert!(r.hold.is_none());
+}
+
+#[test]
+fn cancel_with_a_held_body_still_to_replay_releases_without_a_drain() {
+    // The replayed prefix shows a provider failure event, the consumer then
+    // cancels: the unreplayed tail is not followed by a drain of later bytes.
+    let t = tempfile::tempdir().unwrap();
+    let c = Consumer::new(store(&t));
+    let mut first_body = b"data: {\"type\":\"error\",\"code\":\"x\"}\n\n".to_vec();
+    first_body.extend(b": ");
+    first_body.extend(vec![b'a'; 20 * 1024]);
+    first_body.extend(b"\n");
+    let rest = b"data: {\"type\":\"done\"}\n\n";
+    let mut first = format!(
+        "HTTP/1.1 529 X\r\nContent-Length: {}\r\n\r\n",
+        first_body.len() + rest.len()
+    )
+    .into_bytes();
+    first.extend(&first_body);
+    let (tx, up) = Gated::new(&first);
+    let mut sess = session(up, Some(hold(Duration::from_millis(100), None)));
+    let frames = first_frames(&mut sess, &c);
+    assert_eq!(frames[0]["type"], "response-head");
+    let pull = json!({"type":"pull","binding":binding(),"sequence":1,"stream":1,"ordinal":1});
+    let mut chunk = sess.on_native(&pull, &c).unwrap();
+    while chunk.is_empty() {
+        chunk = sess.poll(&c, Duration::from_millis(10)).unwrap();
+    }
+    assert_eq!(chunk[0]["type"], "response-chunk");
+    let cancel = json!({"type":"cancel","binding":binding(),"sequence":1,"stream":1,"ordinal":2});
+    let out = sess.on_native(&cancel, &c).unwrap();
+    assert_eq!(out[0]["type"], "response-cancelled");
+    assert_eq!(sess.progress(), &ps::Progress::Finished, "no drain");
+    tx.send(rest.to_vec()).unwrap();
+    let r = sess.into_relay();
+    assert_eq!(
+        r.outcome,
+        Outcome::Cancelled {
+            upstream_end: false
+        }
+    );
+    assert!(!r.forwarded.is_empty() && r.forwarded.len() < first_body.len());
+    assert!(r.unforwarded.is_empty() && !r.drained);
+    assert_eq!(r.held_dropped, first_body.len() - r.forwarded.len());
+}
+
+#[test]
+fn trickling_held_body_still_ends_at_the_time_budget() {
+    let t = tempfile::tempdir().unwrap();
+    let c = Consumer::new(store(&t));
+    let (tx, up) = Gated::new(b"HTTP/1.1 529 X\r\nContent-Length: 10000\r\n\r\n");
+    // A byte every 2 ms: each poll (waiting up to 50 ms) receives bytes.
+    let feeder = std::thread::spawn(move || {
+        for _ in 0..1000 {
+            if tx.send(b" ".to_vec()).is_err() {
+                return;
+            }
+            std::thread::sleep(Duration::from_millis(2));
+        }
+    });
+    let start = std::time::Instant::now();
+    let mut sess = session(up, Some(hold(Duration::from_millis(100), None)));
+    let mut frames = vec![];
+    while frames.is_empty() {
+        assert!(
+            start.elapsed() < Duration::from_secs(1),
+            "a trickling body held the head"
+        );
+        frames = sess.poll(&c, Duration::from_millis(50)).unwrap();
+    }
+    assert_eq!(frames[0]["type"], "response-head");
+    assert_eq!(sess.relay().hold.clone().unwrap().reason, "time_budget");
+    drop(sess);
+    feeder.join().unwrap();
+}

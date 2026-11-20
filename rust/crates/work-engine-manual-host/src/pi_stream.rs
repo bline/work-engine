@@ -305,6 +305,9 @@ pub struct Relay {
     /// Epoch ms at which the response head was read; `None` before a head.
     /// Not part of [`Relay::evidence_for`]; the Host retains it per attempt.
     pub head_ms: Option<u64>,
+    /// What the session's [`Hold`] did with this head; `None` without a
+    /// hold or for a head it did not consider.
+    pub hold: Option<HoldRecord>,
 }
 impl Relay {
     pub fn sha256(&self) -> String {
@@ -319,7 +322,7 @@ impl Relay {
         self.evidence_for(Wire::Responses)
     }
     pub fn evidence_for(&self, wire: Wire) -> Value {
-        json!({
+        let mut v = json!({
             "status": self.status,
             "outcome": self.outcome.label(),
             "interruption": match self.outcome { Outcome::Interrupted(c) => json!(c), _ => json!(null) },
@@ -338,7 +341,13 @@ impl Relay {
             "closing": self.closing,
             "headHeaders": self.head_headers.iter().map(|(k, v)| json!([k, v])).collect::<Vec<_>>(),
             "usage": usage_for(wire, &self.forwarded),
-        })
+        });
+        // Present only when a hold considered the head, so evidence without
+        // one is unchanged.
+        if let Some(h) = &self.hold {
+            v["hold"] = json!(h);
+        }
+        v
     }
 }
 
@@ -664,6 +673,59 @@ const DRAIN: Duration = Duration::from_secs(1);
 /// Bytes the release drain reads before it stops.
 pub const DRAIN_MAX: usize = 64 * 1024;
 const MAX_REFUSAL: usize = 64 * 1024;
+/// Classification budget of a held head: time after the head is read.
+pub const HOLD_MAX_WAIT: Duration = Duration::from_secs(5);
+/// Classification budget of a held head: body bytes.
+pub const HOLD_MAX_BYTES: usize = 64 * 1024;
+
+/// The class a [`HeadClassifier`] gives a non-success head and its body.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct HeadClass {
+    pub class: String,
+    /// The body's error name, when it has one.
+    pub error: Option<String>,
+    /// A failover class: a held head of this class is refused, not relayed.
+    pub failover: bool,
+}
+/// Classifies non-success heads before anything is relayed.
+pub trait HeadClassifier: Send {
+    /// Whether a head with `status` (not refused by status) is held and its
+    /// body classified before relaying.
+    fn holds(&self, status: u16) -> bool;
+    /// The class of a head with `status` and its complete, screened body.
+    fn classify(&self, status: u16, body: &[u8]) -> HeadClass;
+}
+/// Opt-in hold of non-success heads ([`Session::with_hold`]). A held head's
+/// body is read within the classification budget: at most `max_wait` after
+/// the head and `max_bytes`, and never past `window_until` (the remaining
+/// head window). A failover class is then refused like a definitive
+/// refusal; anything else is relayed as if it had never been held.
+/// Heads refused by status drain within the same budget.
+pub struct Hold {
+    pub classifier: Box<dyn HeadClassifier>,
+    pub max_wait: Duration,
+    pub max_bytes: usize,
+    pub window_until: Option<Instant>,
+}
+/// What a [`Hold`] did with a head.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct HoldRecord {
+    pub status: u16,
+    /// The head was held (not refused by status).
+    pub held: bool,
+    /// The class of a completely read body.
+    pub class: Option<HeadClass>,
+    /// `refused`, `relayed`, `failed` or `cancelled`.
+    pub outcome: String,
+    /// `classified`, `unmatched`, `time_budget`, `byte_budget`,
+    /// `read_error`, `screen`, `window_exhausted`, `definitive_status`,
+    /// `refusal_budget` or `cancelled`.
+    pub reason: String,
+    /// Body bytes read before the outcome.
+    pub bytes: usize,
+    /// Milliseconds from the head to the outcome.
+    pub ms: u64,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum State {
@@ -671,6 +733,11 @@ enum State {
     Head,
     /// Head refused by policy: draining its bounded body, nothing relayed.
     Refusal,
+    /// Head held by the session's [`Hold`]: reading its body within the
+    /// classification budget (until `until`), nothing relayed.
+    Hold {
+        until: Instant,
+    },
     /// Awaiting a native `pull` or `cancel`.
     AwaitOp,
     /// A pull is outstanding; awaiting upstream bytes (or an overtaking cancel).
@@ -730,6 +797,18 @@ pub struct Session {
     refuse: fn(u16) -> bool,
     refusal: (u16, Vec<u8>),
     progress: Progress,
+    hold: Option<Hold>,
+    /// When the head was read (the classification budget's start).
+    head_at: Option<Instant>,
+    /// With a hold: the end of a refusal's drain budget.
+    refusal_until: Option<Instant>,
+    /// Body bytes read while the head was held.
+    held_body: Vec<u8>,
+    /// A held head's body, relayed (from `replay_at`) before further
+    /// upstream bytes; then `replay_error`, a read error met while held.
+    replay: Vec<u8>,
+    replay_at: usize,
+    replay_error: Option<&'static str>,
 }
 impl Drop for Session {
     fn drop(&mut self) {
@@ -775,12 +854,68 @@ impl Session {
                 closing: None,
                 head_headers: Vec::new(),
                 head_ms: None,
+                hold: None,
             },
             abort: Some(Box::new(abort)),
             refuse,
             refusal: (0, Vec::new()),
             progress: Progress::Pending,
+            hold: None,
+            head_at: None,
+            refusal_until: None,
+            held_body: Vec::new(),
+            replay: Vec::new(),
+            replay_at: 0,
+            replay_error: None,
         })
+    }
+    /// Hold non-success heads for classification ([`Hold`]). Set before the
+    /// first poll; without it heads are handled exactly as before.
+    pub fn with_hold(mut self, hold: Hold) -> Self {
+        self.hold = Some(hold);
+        self
+    }
+    /// The end of the classification budget for a head read now.
+    fn budget_until(&self, now: Instant) -> Option<Instant> {
+        let h = self.hold.as_ref()?;
+        let until = now + h.max_wait;
+        Some(h.window_until.map_or(until, |w| until.min(w)))
+    }
+    fn record(
+        &mut self,
+        held: bool,
+        class: Option<HeadClass>,
+        outcome: &str,
+        reason: &str,
+        bytes: usize,
+    ) {
+        let ms = self.head_at.map_or(0, |t| {
+            t.elapsed().as_millis().try_into().unwrap_or(u64::MAX)
+        });
+        self.r.hold = Some(HoldRecord {
+            status: self.r.status,
+            held,
+            class,
+            outcome: outcome.into(),
+            reason: reason.into(),
+            bytes,
+            ms,
+        });
+    }
+    /// Relay a held head as if it had never been held: the head now, its
+    /// body bytes (then a read error met while held) before any further
+    /// upstream bytes, through the same screen.
+    fn relay_held(&mut self, reason: &str, class: Option<HeadClass>) -> Vec<Value> {
+        let bytes = self.held_body.len();
+        self.record(true, class, "relayed", reason, bytes);
+        self.replay = std::mem::take(&mut self.held_body);
+        self.replay_at = 0;
+        self.state = State::AwaitOp;
+        vec![self.out("response-head", json!({"status":self.r.status}))]
+    }
+    /// Replay bytes not yet relayed.
+    fn replay_left(&self) -> usize {
+        self.replay.len() - self.replay_at
     }
     pub fn progress(&self) -> &Progress {
         &self.progress
@@ -800,7 +935,9 @@ impl Session {
     }
     fn release_done(&mut self) {
         self.r.outcome = Outcome::Cancelled {
-            upstream_end: self.r.upstream_end_ms.is_some() && self.held.is_empty(),
+            upstream_end: self.r.upstream_end_ms.is_some()
+                && self.held.is_empty()
+                && self.replay_left() == 0,
         };
         self.finish();
     }
@@ -829,7 +966,7 @@ impl Session {
         if !self.r.drained {
             self.r.held_dropped += std::mem::take(&mut self.r.unforwarded).len();
         }
-        self.r.held_dropped += std::mem::take(&mut self.held).len();
+        self.drop_unrelayed();
         std::mem::replace(
             &mut self.r,
             Relay {
@@ -848,15 +985,25 @@ impl Session {
                 closing: None,
                 head_headers: Vec::new(),
                 head_ms: None,
+                hold: None,
             },
         )
+    }
+    /// Count provider bytes read but never relayed or retained: held back by
+    /// the screen, read while the head was held, or not yet replayed.
+    fn drop_unrelayed(&mut self) {
+        self.r.held_dropped += std::mem::take(&mut self.held).len()
+            + std::mem::take(&mut self.held_body).len()
+            + self.replay_left();
+        self.replay.clear();
+        self.replay_at = 0;
     }
     fn out(&self, kind: &str, data: Value) -> Value {
         frame(kind, &self.binding, self.seq, self.stream, data)
     }
     fn finish(&mut self) {
         // Bytes still held back by the screen are never retained.
-        self.r.held_dropped += std::mem::take(&mut self.held).len();
+        self.drop_unrelayed();
         self.state = State::Done;
         if self.progress == Progress::Pending {
             self.progress = Progress::Finished;
@@ -883,9 +1030,13 @@ impl Session {
         let kind = op["type"].as_str().unwrap_or("");
         let mut frames = vec![];
         match (self.state, kind) {
-            (State::Head | State::Refusal, "cancel") => {
+            (State::Head | State::Refusal | State::Hold { .. }, "cancel") => {
                 // Cancelled before any head was relayed.
                 frames.push(self.out("response-cancelled", json!({"ordinal":self.ordinal})));
+                if let State::Hold { .. } = self.state {
+                    let bytes = self.held_body.len();
+                    self.record(true, None, "cancelled", "cancelled", bytes);
+                }
                 self.r.outcome = Outcome::Cancelled {
                     upstream_end: false,
                 };
@@ -905,8 +1056,11 @@ impl Session {
                 // short bound. The stream is already over for the consumer.
                 // Bytes the screen held back are provider bytes after the
                 // forwarded ones: the drain screens them with what follows.
+                // With a held body still to replay the drain would not follow
+                // the forwarded bytes: release without it.
                 let u = usage(&self.r.forwarded);
                 if self.r.upstream_end_ms.is_none()
+                    && self.replay_left() == 0
                     && (u["completed"] == true || !u["failed"].is_null())
                 {
                     self.r.unforwarded = std::mem::take(&mut self.held);
@@ -935,7 +1089,9 @@ impl Session {
                 self.r.closing = Some("cancel-after-terminal");
                 self.finish();
             }
-            (State::Head | State::Refusal, _) => return Err("stream_frame_before_head"),
+            (State::Head | State::Refusal | State::Hold { .. }, _) => {
+                return Err("stream_frame_before_head");
+            }
             _ => return Err("stream_interleaved_frame"),
         }
         Ok(frames)
@@ -951,9 +1107,25 @@ impl Session {
                         self.r.status = status;
                         self.r.head_headers = kept;
                         self.r.head_ms = Some(now_millis());
+                        let now = Instant::now();
+                        self.head_at = Some(now);
+                        // Only error heads are held: they carry no model output.
+                        let holds = status >= 400
+                            && self
+                                .hold
+                                .as_ref()
+                                .is_some_and(|h| h.classifier.holds(status));
                         if (self.refuse)(status) {
                             self.refusal.0 = status;
+                            // No window left: the refusal drains as without a hold.
+                            self.refusal_until = self.budget_until(now).filter(|u| *u > now);
                             self.state = State::Refusal;
+                        } else if holds {
+                            match self.budget_until(now).filter(|u| *u > now) {
+                                Some(until) => self.state = State::Hold { until },
+                                // No head window left to classify in.
+                                None => frames.extend(self.relay_held("window_exhausted", None)),
+                            }
                         } else {
                             frames.push(self.out("response-head", json!({"status":status})));
                             self.state = State::AwaitOp;
@@ -971,7 +1143,26 @@ impl Session {
                 Ok(frames)
             }
             State::Refusal => {
+                let now = Instant::now();
+                let wait = self
+                    .refusal_until
+                    .map_or(wait, |u| u.saturating_duration_since(now).min(wait));
                 match self.reader.data(wait) {
+                    None if self.refusal_until.is_some_and(|u| Instant::now() >= u) => {
+                        // A refusal whose body is not read within the budget is
+                        // not definitive; the consumer is answered now.
+                        let code = "refusal_budget";
+                        let bytes = self.refusal.1.len();
+                        self.record(false, None, "failed", code, bytes);
+                        self.r.outcome = Outcome::Interrupted(code);
+                        let mut frames = vec![];
+                        self.terminal(
+                            &mut frames,
+                            "response-failure",
+                            json!({"ordinal":self.ordinal,"code":code}),
+                        );
+                        return Ok(frames);
+                    }
                     None => {}
                     Some(Ok(Some(b))) => {
                         self.refusal.1.extend(b);
@@ -983,6 +1174,17 @@ impl Session {
                         self.r.upstream_end_ms = Some(now_millis());
                         screen.hold(&self.refusal.1)?;
                         let (status, body) = std::mem::take(&mut self.refusal);
+                        if let Some(h) = &self.hold {
+                            // Refused by status; the class is evidence only.
+                            let class = h.classifier.classify(status, &body);
+                            self.record(
+                                false,
+                                Some(class),
+                                "refused",
+                                "definitive_status",
+                                body.len(),
+                            );
+                        }
                         self.progress = Progress::Refused { status, body };
                         self.finish();
                     }
@@ -999,6 +1201,53 @@ impl Session {
                     }
                 }
                 Ok(vec![])
+            }
+            State::Hold { until } => {
+                // Never waits past `until`: a body that keeps trickling still
+                // ends the hold at the budget.
+                let now = Instant::now();
+                match self
+                    .reader
+                    .data(until.saturating_duration_since(now).min(wait))
+                {
+                    None if Instant::now() >= until => Ok(self.relay_held("time_budget", None)),
+                    None => Ok(vec![]),
+                    Some(Ok(Some(b))) => {
+                        self.held_body.extend(b);
+                        let max = self.hold.as_ref().map_or(0, |h| h.max_bytes);
+                        if self.held_body.len() > max {
+                            return Ok(self.relay_held("byte_budget", None));
+                        }
+                        Ok(vec![])
+                    }
+                    Some(Ok(None)) => {
+                        self.r.upstream_end_ms = Some(now_millis());
+                        // Screened like a refusal body; access material is
+                        // relayed as before, where the relay's screen fails it.
+                        if screen.hold(&self.held_body).is_err() {
+                            return Ok(self.relay_held("screen", None));
+                        }
+                        let status = self.r.status;
+                        let class = self
+                            .hold
+                            .as_ref()
+                            .map(|h| h.classifier.classify(status, &self.held_body));
+                        match class {
+                            Some(c) if c.failover => {
+                                let body = std::mem::take(&mut self.held_body);
+                                self.record(true, Some(c), "refused", "classified", body.len());
+                                self.progress = Progress::Refused { status, body };
+                                self.finish();
+                                Ok(vec![])
+                            }
+                            c => Ok(self.relay_held("unmatched", c)),
+                        }
+                    }
+                    Some(Err(code)) => {
+                        self.replay_error = Some(code);
+                        Ok(self.relay_held("read_error", None))
+                    }
+                }
             }
             State::Upstream { .. } => self.advance(screen, wait),
             State::Draining { until } => {
@@ -1043,11 +1292,26 @@ impl Session {
         let mut frames = vec![];
         let deadline = Instant::now() + wait;
         let release = loop {
-            if self.r.upstream_end_ms.is_some() {
+            // A held head's body is relayed first, then a read error met
+            // while it was held, then further upstream bytes.
+            if self.r.upstream_end_ms.is_some()
+                && self.replay_left() == 0
+                && self.replay_error.is_none()
+            {
                 break std::mem::take(&mut self.held);
             }
-            let left = deadline.saturating_duration_since(Instant::now());
-            match self.reader.data(left) {
+            let next = if self.replay_left() > 0 {
+                let end = self.replay.len().min(self.replay_at + CHUNK);
+                let b = self.replay[self.replay_at..end].to_vec();
+                self.replay_at = end;
+                Some(Ok(Some(b)))
+            } else if let Some(code) = self.replay_error.take() {
+                Some(Err(code))
+            } else {
+                let left = deadline.saturating_duration_since(Instant::now());
+                self.reader.data(left)
+            };
+            match next {
                 None => return Ok(frames),
                 Some(Ok(Some(b))) => {
                     self.held.extend(b);
@@ -1117,7 +1381,14 @@ pub fn relay<C: Channel + Screen, R: Read + Send + 'static>(
     stream: u64,
     refuse: fn(u16) -> bool,
 ) -> Result<Relayed> {
-    let mut s = Session::start(upstream, abort, binding, seq, stream, refuse)?;
+    relay_session(
+        chan,
+        Session::start(upstream, abort, binding, seq, stream, refuse)?,
+    )
+}
+/// Drive an already started [`Session`] (for example one with a [`Hold`])
+/// to completion, as [`relay`] does.
+pub fn relay_session<C: Channel + Screen>(chan: &mut C, mut s: Session) -> Result<Relayed> {
     loop {
         for f in s.poll(chan, POLL)? {
             chan.send(&f)?;

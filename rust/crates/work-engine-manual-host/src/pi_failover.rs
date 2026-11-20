@@ -244,14 +244,7 @@ pub enum Outcome {
 /// into API spend: an API-funded route after a subscription-funded one in the
 /// effective order (policy order, else table order).
 pub fn api_exposure(table: &HostedRoutes, policy: Option<&FailoverPolicy>) -> Value {
-    let order: Vec<&super::hosted::HostedRoute> = match policy {
-        Some(p) => p
-            .routes
-            .iter()
-            .filter_map(|r| table.routes.iter().find(|t| t.id == r.route))
-            .collect(),
-        None => table.routes.iter().collect(),
-    };
+    let order = route_order(table, policy);
     let mut pairs = vec![];
     for (i, a) in order.iter().enumerate() {
         for b in &order[i + 1..] {
@@ -283,6 +276,22 @@ pub fn api_exposure(table: &HostedRoutes, policy: Option<&FailoverPolicy>) -> Va
         .unwrap_or_default();
     json!({"subscription_to_api": !pairs.is_empty(), "pairs": pairs,
         "foreign_evidence_skip_to_api": foreign, "policy": policy.is_some(), "unlisted_routes": unlisted})
+}
+
+/// The effective route order: the policy's order when one is present (its
+/// unlisted routes are never selected), the table's otherwise.
+pub fn route_order<'a>(
+    table: &'a HostedRoutes,
+    policy: Option<&FailoverPolicy>,
+) -> Vec<&'a super::hosted::HostedRoute> {
+    match policy {
+        Some(p) => p
+            .routes
+            .iter()
+            .filter_map(|r| table.routes.iter().find(|t| t.id == r.route))
+            .collect(),
+        None => table.routes.iter().collect(),
+    }
 }
 
 /// A pool's state at a decision, from one view output.
