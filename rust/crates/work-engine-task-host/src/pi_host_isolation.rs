@@ -817,7 +817,8 @@ mod tests {
         } else {
             R::LoopbackRoute
         };
-        let cases: [(&str, &dyn Fn(&str) -> (String, u8), R); 9] = [
+        type Describe<'a> = &'a dyn Fn(&str) -> (String, u8);
+        let cases: [(&str, Describe, R); 9] = [
             (
                 "describe refusal",
                 &|_| {
