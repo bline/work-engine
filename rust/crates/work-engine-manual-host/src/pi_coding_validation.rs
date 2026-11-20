@@ -387,6 +387,31 @@ mod tests {
         assert_eq!(h.journal.processes.len(), before);
     }
     #[test]
+    fn receipt_and_acknowledge_verify_host_pins_above_the_input_bound() {
+        let (dir, mut h) = super::super::tests::fixture();
+        fs::create_dir(dir.path().join("receipts")).unwrap();
+        let output = dir.path().join("0002-rpc-0.stdout");
+        // Over crate::MAX_BYTES (8 MiB), within analysis::OUTPUT_BYTES (64 MiB).
+        for size in [crate::MAX_BYTES as usize + 1, 10_822_784] {
+            let bytes = vec![b'\n'; size];
+            fs::write(&output, &bytes).unwrap();
+            h.journal.artifacts = vec![Artifact {
+                path: output.clone(),
+                sha256: digest(&bytes),
+            }];
+            let id = h.receipt().unwrap_or_else(|e| panic!("{size}: {e}"))["receipt_id"]
+                .as_str()
+                .unwrap()
+                .to_owned();
+            h.acknowledge(&id).unwrap_or_else(|e| panic!("{size}: {e}"));
+            let mut altered = bytes;
+            altered[size / 2] = b' ';
+            fs::write(&output, &altered).unwrap();
+            assert!(h.receipt().is_err(), "{size}");
+            assert!(h.acknowledge(&id).is_err(), "{size}");
+        }
+    }
+    #[test]
     fn final_export_boundary_rejects_test_time_added_files() {
         let before = BTreeMap::from([(
             "src/lib.rs".into(),

@@ -30,6 +30,14 @@ pub const SCHEMA: &str = "work-engine.pi-docker-custody.v1";
 pub const IMAGE: &str =
     "node@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da";
 const LIMIT: u64 = 8 * 1024 * 1024;
+/// The largest process output the Host retains: an analysis-profile RPC
+/// transcript may reach `OUTPUT_BYTES`; every other process output stays
+/// within `LIMIT`. `receipt` and `acknowledge` stream journal pins under it.
+const OUTPUT_BOUND: u64 = if coding::analysis::OUTPUT_BYTES > LIMIT {
+    coding::analysis::OUTPUT_BYTES
+} else {
+    LIMIT
+};
 const PI: &str = "node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js";
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -1319,7 +1327,7 @@ impl Host {
     }
     pub fn receipt(&mut self) -> Result<Value> {
         for artifact in &self.journal.artifacts {
-            artifact.verify()?;
+            artifact.verify_digest(OUTPUT_BOUND)?;
         }
         // Analysis: no tool container or validator; completion already
         // required every delivery matched and every request settled.
@@ -1451,7 +1459,7 @@ impl Host {
         }
         let artifacts: Vec<Artifact> = serde_json::from_value(value["artifacts"].clone())?;
         for artifact in artifacts {
-            artifact.verify()?;
+            artifact.verify_digest(OUTPUT_BOUND)?;
         }
         self.journal.acknowledged.insert(id.into());
         self.save()?;
@@ -1486,7 +1494,7 @@ fn complete_lines(raw: &[u8]) -> impl Iterator<Item = &[u8]> {
 /// whole output.
 fn read_from(path: &Path, offset: u64) -> Result<Vec<u8>> {
     use std::io::{Read, Seek, SeekFrom};
-    let bound = coding::analysis::OUTPUT_BYTES.max(LIMIT);
+    let bound = OUTPUT_BOUND;
     let mut file = File::open(path)?;
     file.seek(SeekFrom::Start(offset))?;
     let mut tail = vec![];
@@ -2188,5 +2196,123 @@ mod tests {
                 println!("retained {case} {}", dir.keep().display());
             }
         }
+    }
+    /// A collected journal on disk whose only artifact is a `size`-byte Host
+    /// pin, as the Pi Host leaves it after collecting an RPC transcript.
+    fn collected_with_pin(size: usize) -> (tempfile::TempDir, PathBuf, PathBuf) {
+        let dir = tempfile::tempdir().unwrap();
+        let state = fs::canonicalize(dir.path()).unwrap();
+        fs::create_dir(state.join("receipts")).unwrap();
+        fs::create_dir(state.join("snapshots")).unwrap();
+        let bytes = vec![b'\n'; size];
+        let sha256 = digest(&bytes);
+        let pin = state.join("snapshots").join(&sha256);
+        fs::write(&pin, &bytes).unwrap();
+        let exe = std::env::current_exe().unwrap();
+        let unused = Artifact {
+            path: exe.clone(),
+            sha256: file_digest(&exe, None).unwrap(),
+        };
+        let tree = Tree {
+            root: state.join("unused"),
+            manifest: unused.clone(),
+        };
+        let job = Job {
+            schema: SCHEMA.into(),
+            job_id: "fixture".into(),
+            state_dir: state.clone(),
+            authority: unused.clone(),
+            packet: unused.clone(),
+            docker: unused.clone(),
+            image: IMAGE.into(),
+            runtime: tree.clone(),
+            workspace: tree,
+            deadline_unix_seconds: 1,
+            command_timeout_seconds: 1,
+            idle_seconds: 0,
+            receiver: None,
+            coding: None,
+        };
+        let input_digest = digest(&serde_json::to_vec(&job).unwrap());
+        let journal = Journal {
+            schema: SCHEMA.into(),
+            binary_sha256: unused.sha256,
+            container_name: format!("we-pi-{}", &input_digest[..24]),
+            input_digest,
+            job,
+            container_id: None,
+            session_id: None,
+            phase: Phase::Collected,
+            processes: vec![],
+            failures: vec![],
+            rpc_verified: false,
+            receiver: None,
+            coding: None,
+            rpc_completion: None,
+            daemon_exit: None,
+            removed: true,
+            artifacts: vec![Artifact {
+                path: pin.clone(),
+                sha256,
+            }],
+            exported_files: BTreeMap::new(),
+            receipt_id: None,
+            acknowledged: BTreeSet::new(),
+        };
+        fs::write(
+            state.join("pi-state.json"),
+            serde_json::to_vec(&journal).unwrap(),
+        )
+        .unwrap();
+        (dir, state, pin)
+    }
+    #[test]
+    fn receipt_acknowledge_and_reopen_stream_host_pins_above_the_input_bound() {
+        // Over crate::MAX_BYTES; the second is the live 10.8 MB RPC transcript size.
+        for size in [crate::MAX_BYTES as usize + 1, 10_822_784] {
+            let (_dir, state, _pin) = collected_with_pin(size);
+            let mut host = Host::open(&state).unwrap();
+            let result = host.reconcile().unwrap_or_else(|e| panic!("{size}: {e}"));
+            let id = result["receipt_id"].as_str().unwrap().to_owned();
+            let receipt = fs::read(state.join("receipts").join(format!("{id}.json"))).unwrap();
+            assert_eq!(digest(&receipt), id);
+            host.acknowledge(&id)
+                .unwrap_or_else(|e| panic!("{size}: {e}"));
+            drop(host);
+            let mut reopened = Host::open(&state).unwrap();
+            assert_eq!(reopened.reconcile().unwrap()["receipt_id"], id);
+            assert!(reopened.journal.acknowledged.contains(&id));
+            reopened.acknowledge(&id).unwrap();
+        }
+    }
+    #[test]
+    fn receipt_and_acknowledge_refuse_a_changed_or_oversize_host_pin() {
+        let (_dir, state, pin) = collected_with_pin(10_822_784);
+        let mut host = Host::open(&state).unwrap();
+        let id = host.reconcile().unwrap()["receipt_id"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let conflict = |r: Result<Value>| matches!(r, Err(Error::Refused(e)) if e.starts_with("artifact conflict"));
+        let mut bytes = fs::read(&pin).unwrap();
+        bytes[crate::MAX_BYTES as usize + 7] = b' ';
+        fs::write(&pin, &bytes).unwrap();
+        assert!(conflict(host.receipt()));
+        assert!(conflict(host.acknowledge(&id)));
+        bytes.pop();
+        fs::write(&pin, &bytes).unwrap();
+        assert!(conflict(host.receipt()));
+        // Sparse: over the streaming bound without writing 64 MiB.
+        File::create(&pin)
+            .unwrap()
+            .set_len(OUTPUT_BOUND + 1)
+            .unwrap();
+        for r in [host.receipt(), host.acknowledge(&id)] {
+            assert!(matches!(r, Err(Error::Refused(e)) if e.starts_with("oversize artifact")));
+        }
+        fs::remove_file(&pin).unwrap();
+        assert!(matches!(host.receipt(), Err(Error::Io(_))));
+        assert!(matches!(host.acknowledge(&id), Err(Error::Io(_))));
+        assert_eq!(host.journal.acknowledged, BTreeSet::new());
     }
 }
