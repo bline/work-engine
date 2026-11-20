@@ -547,3 +547,33 @@ Foreground-only lane is ready for independent Fable xhigh review (provider
 claude-sdk). Background execution is declared OUT OF SCOPE for this review;
 deferred to the future workspace-bounded process-container design. No live
 inference / no E1a run until the review passes.
+
+## Revision 9 — Fable review remediation complete (2026-11-19)
+
+Independent Fable xhigh review (claude-sdk) at frozen commit 31903c4b returned
+CHANGES REQUIRED (foreground-only scope). Findings file:
+reviews/openrouter-lane-fable-20261119/FINDINGS.md. All findings remediated:
+
+| Finding | Disposition | Commit |
+|---|---|---|
+| P1-4 shell guard regressed fixture bridges | guard scoped to live bridges; fixture test | c69f4a12 |
+| P1-5 Messages policy test lost #[test] | attribute restored; duplicate collapsed | c69f4a12 |
+| P1-1 Completions terminal never recorded | settle selects last usage chunk | 69c5aabe |
+| P1-2 openrouter lane missing API-key marker | receiver setRuntimeApiKey marker | dfd95f9a |
+| P1-3 body policy vs real Pi 1.5.0 body; high not enforced | store/max_completion_tokens aligned; reasoning.effort==high required; receiver thinkingLevel high | dfd95f9a |
+| P2-3 no end-to-end fixture | OpenRouter host/grant/fetch + clean SSE; end-to-end settle test + effort-refusal test | 0cfb5f9f |
+| P2-1 provider cost/cached tokens not in receipts | labelled provider_reported in completion + raw terminal; comment fixed | 79a92c9c |
+| P2-2 family check loose | require version-digit suffix; -vision-exp rejected | 79a92c9c |
+| P3 redundant arm; sk-or prefix | stop_ok arm removed; OpenRouter key prefix enforced | 16effd05 |
+
+Self-review: terminal selection, settle arm, provider_complete family gate,
+receiver marker+effort, and policy are coherent, proven by the end-to-end test
+that settles one Completions request with Layer C in family, Layer B forwarded,
+reasoning.effort==high, and raw-usage settlement.
+
+Verification: full crate suite green, 0 failures (130 lib + integration);
+no new clippy warnings in the lane files. The lane is now reachable end-to-end
+offline (the plan's key acceptance).
+
+NO live inference / E1a / background. Ready to re-submit to Fable (claude-sdk)
+for a completion check if the operator wishes.
