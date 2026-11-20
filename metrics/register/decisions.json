@@ -95,14 +95,24 @@
  {
   "anchor": "Hypothesis H2 levels: trigger 200,000 and band floor 235,000 tokens",
   "decision_id": "context-boundary.h2-levels",
-  "document": "skills/manual-orchestration/references/context-boundary.md",
+  "document": "skills/manual-orchestration/references/context-measurements.md",
   "findings": [
    "codex-compaction-points#no-limit-compaction-points",
    "codex-compaction-points#limit-250k-behaviour"
   ],
-  "lines": "88-101",
+  "lines": "25-42",
   "owner": "user (context-boundary H2 policy and applicability owner for this decision and its later revisions under the same decision ID, designated per the user approval of 2026-11-09T15:45:59Z; the skill-release owner separately qualifies and deploys the installed manual-orchestration skill)",
-  "revision": "git:1a1cb443"
+  "revision": "git:9fa95ad9",
+  "revisions": [
+   {
+    "anchor": "Hypothesis H2 levels: trigger 200,000 and band floor 235,000 tokens",
+    "document": "skills/manual-orchestration/references/context-boundary.md",
+    "lines": "88-101",
+    "reason": "e65a349b (2026-11-13) moved the passage registered at 1a1cb443 lines 88-101 verbatim from context-boundary.md (lines 96-109 at its parent b4d24834, shifted unchanged by c4f7399d) to context-measurements.md lines 22-35 (anchored text sha256 e7d87e451b66301fc8519cb0ea45c49dc16fd563278af4eac10771af8b65f296 at all three); from e65a349b on, context-boundary.md 'Measured basis' is only a link. 9fa95ad9 then corrected the passage's scope with values unchanged, per the decision owner's decision of 2026-11-20 on the operator-accepted live H2 audit results (records/research-lifecycle-h2-live-result-20261119.md). The r2 applicability records stay on 1a1cb443 and their authorization is not carried",
+    "revision": "git:1a1cb443",
+    "superseded_at": "2026-11-13"
+   }
+  ]
  },
  {
   "anchor": "Current strategic route",
