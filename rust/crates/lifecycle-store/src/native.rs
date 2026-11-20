@@ -1614,7 +1614,16 @@ impl SqliteLifecycleStore {
         let Some(Some(basis)) = basis else {
             return Ok(None);
         };
-        let Some(basis_text) = crate::pi_coding::settled_basis_text(&self.connection, &basis)?
+        let successor_context: String = self
+            .connection
+            .query_row(
+                "SELECT successor_context FROM transitions WHERE transition_id=?1",
+                [transition.as_str()],
+                |r| r.get(0),
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        let Some(basis_text) =
+            crate::pi_coding::settled_basis_text(&self.connection, &basis, &successor_context)?
         else {
             return Ok(None);
         };
@@ -2069,8 +2078,12 @@ impl SqliteLifecycleStore {
                              WHERE tr.transition_id=?1 AND d.state='yielded'",
                             [transition],|r|r.get(0),
                         ).optional().map_err(|_|StoreError::Unavailable)?.flatten();
+                        let successor_context: String = self.connection.query_row(
+                            "SELECT successor_context FROM transitions WHERE transition_id=?1",
+                            [transition],|r|r.get(0),
+                        ).map_err(|_|StoreError::Unavailable)?;
                         let final_text: Option<Vec<u8>> =
-                            crate::pi_coding::settled_basis_text(&self.connection, &source)?;
+                            crate::pi_coding::settled_basis_text(&self.connection, &source, &successor_context)?;
                         final_text.is_some()
                             && if let Some(intent) = trusted_intent {
                                 intent == context.as_str()
@@ -2531,7 +2544,8 @@ impl SqliteLifecycleStore {
                 params![session.subject.as_str(),session.context.as_str(),thread.as_str()], |r| r.get(0),
             ).map_err(|_|StoreError::Rejected)?;
                 // v4 consumes the owner-derived checkpoint, not the model text.
-                crate::pi_coding::settled_basis_text(&tx, &basis)?.ok_or(StoreError::Rejected)?
+                crate::pi_coding::settled_basis_text(&tx, &basis, session.context.as_str())?
+                    .ok_or(StoreError::Rejected)?
             };
             if request.prompt != source_text {
                 return Err(StoreError::Rejected);

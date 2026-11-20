@@ -1455,8 +1455,8 @@ impl SqliteLifecycleStore {
         transition: &TransitionId,
     ) -> Result<Option<CommittedTextResult>, StoreError> {
         self.verify_identity()?;
-        let native: Option<(String,String,String,Vec<u8>,String)> = self.connection.query_row(
-            "SELECT 'native:'||n.invocation_id,n.attempt_id,n.thread_id,n.final_text,n.invocation_id FROM transitions t \
+        let native: Option<(String,String,String,Vec<u8>,String,String)> = self.connection.query_row(
+            "SELECT 'native:'||n.invocation_id,n.attempt_id,n.thread_id,n.final_text,n.invocation_id,t.successor_context FROM transitions t \
              JOIN native_turns n ON t.native_basis_source=n.invocation_id \
              JOIN native_sessions s ON s.session_id=n.session_id WHERE t.transition_id=?1 \
              AND s.subject_id=t.subject_id AND s.context_id=t.predecessor_context \
@@ -1466,11 +1466,11 @@ impl SqliteLifecycleStore {
                   OR n.invocation_id=(SELECT n2.invocation_id FROM native_turns n2 JOIN native_sessions s2 ON s2.session_id=n2.session_id \
                       WHERE s2.subject_id=t.subject_id AND s2.context_id=t.predecessor_context AND s2.role='domain' AND n2.purpose='domain_work' \
                       ORDER BY n2.entered_wall_ms DESC,n2.rowid DESC LIMIT 1))",
-            [transition.as_str()], |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?,row.get(4)?)),
+            [transition.as_str()], |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?,row.get(4)?,row.get(5)?)),
         ).optional().map_err(|_| StoreError::Unavailable)?;
-        if let Some((source_id, attempt_id, provider_thread_id, bytes, invocation)) = native {
+        if let Some((source_id, attempt_id, provider_thread_id, bytes, invocation, successor)) = native {
             // v4: the transition text is the owner-derived checkpoint.
-            let bytes = match crate::pi_coding::live_checkpoint_of(&self.connection, &invocation)? {
+            let bytes = match crate::pi_coding::live_checkpoint_of(&self.connection, &invocation, &successor)? {
                 Some(checkpoint) => checkpoint.into_bytes(),
                 None => bytes,
             };
@@ -2151,8 +2151,12 @@ impl SqliteLifecycleStore {
                             "SELECT native_basis_source FROM transitions WHERE transition_id=?1",
                             [transition.as_str()], |row| row.get(0),
                         ).map_err(|_|StoreError::Unavailable)?;
+                        let successor_context: String = tx.query_row(
+                            "SELECT successor_context FROM transitions WHERE transition_id=?1",
+                            [transition.as_str()], |row| row.get(0),
+                        ).map_err(|_|StoreError::Unavailable)?;
                         let basis_text = match basis {
-                            Some(basis) => crate::pi_coding::settled_basis_text(&tx, &basis)?,
+                            Some(basis) => crate::pi_coding::settled_basis_text(&tx, &basis, &successor_context)?,
                             None => None,
                         };
                         match basis_text {

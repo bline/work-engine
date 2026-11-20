@@ -249,6 +249,13 @@ pub(super) fn validate_with_thinking(
     // settled history itself, and the follow-on continuation turn still
     // proves real work. Domain-work turns keep the non-empty-final rule.
     rehydrate: bool,
+    // The successor context generation embedded in the owner-derived v4
+    // checkpoint. The 4-request continuity choreography uses the original
+    // literal `context:new`; the battery profile's parametrized replacement
+    // cycles name their own successor generation (cycle index i: `context:newi`).
+    // The checkpoint is derived, never stored, so the label must only agree
+    // across the derivations of one cycle.
+    successor_context: &str,
 ) -> Result<Validated, StoreError> {
     if thinking && !live {
         return bad();
@@ -526,7 +533,7 @@ pub(super) fn validate_with_thinking(
         let checkpoint = json!({
             "version": 2,
             "profile": if thinking { "work-engine.pi-coding-sol-high-continuity.v1" } else { LIVE_CHECKPOINT_PROFILE },
-            "successor_context": "context:new",
+            "successor_context": successor_context,
             "coding_result": results[0]["result"],
             "coding_result_sha256": results[0]["artifact"]["sha256"],
             "workspace_manifest_sha256": workspaces[0]["manifest"]["sha256"],

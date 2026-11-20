@@ -289,8 +289,12 @@ impl SqliteLifecycleStore {
                 |r| r.get(0),
             )
             .map_err(|_| StoreError::ClaimConflict)?;
-        let committed = settled_basis_text(&tx, &basis.ok_or(StoreError::ClaimConflict)?)?
-            .ok_or(StoreError::ClaimConflict)?;
+        let committed = settled_basis_text(
+            &tx,
+            &basis.ok_or(StoreError::ClaimConflict)?,
+            expected["successor_context"].as_str().ok_or(StoreError::Rejected)?,
+        )?
+        .ok_or(StoreError::ClaimConflict)?;
         if committed != checkpoint.as_bytes() {
             return Err(StoreError::ClaimConflict);
         }
@@ -424,6 +428,10 @@ impl SqliteLifecycleStore {
             b.kind != PiCodingKind::Fixture,
             b.kind == PiCodingKind::SolHigh,
             b.purpose == "successor_rehydrate",
+            // Settlement labels the derived checkpoint with the choreography's
+            // original successor generation. The battery profile re-derives
+            // per cycle (never stored, so no divergence is possible).
+            "context:new",
         )?;
         // This bounded live profile's sole tool-bearing turn is the initial
         // emission prefix. Together with the committed end coordinate, this
@@ -452,7 +460,7 @@ impl SqliteLifecycleStore {
         if b.kind != PiCodingKind::Fixture {
             // Atomic self-check: what any later reader derives from the
             // committed rows must equal what this settlement validated.
-            let committed = live_checkpoint_of(&tx, parent.invocation_id())?;
+            let committed = live_checkpoint_of(&tx, parent.invocation_id(), "context:new")?;
             if committed != validated.checkpoint {
                 return Err(StoreError::ClaimConflict);
             }
@@ -467,6 +475,16 @@ impl SqliteLifecycleStore {
         &mut self,
         parent: &NativeTurnEntry,
     ) -> Result<String, StoreError> {
+        self.pi_coding_live_checkpoint_with_successor(parent, "context:new")
+    }
+    /// The owner-derived checkpoint re-derived for one battery replacement
+    /// cycle: the derivation is pure (from the settled turn's immutable
+    /// ingress rows) and the successor generation is the cycle's own label.
+    pub fn pi_coding_live_checkpoint_with_successor(
+        &mut self,
+        parent: &NativeTurnEntry,
+        successor_context: &str,
+    ) -> Result<String, StoreError> {
         self.verify_identity()?;
         let turn = parent.turn().ok_or(StoreError::ClaimConflict)?;
         let bound: bool = self
@@ -480,7 +498,7 @@ impl SqliteLifecycleStore {
         if !bound {
             return Err(StoreError::ClaimConflict);
         }
-        live_checkpoint_of(&self.connection, parent.invocation_id())?
+        live_checkpoint_of(&self.connection, parent.invocation_id(), successor_context)?
             .ok_or(StoreError::ClaimConflict)
     }
 }
@@ -494,6 +512,7 @@ impl SqliteLifecycleStore {
 pub(crate) fn live_checkpoint_of(
     conn: &rusqlite::Connection,
     invocation: &str,
+    successor_context: &str,
 ) -> Result<Option<String>, StoreError> {
     type Row = (
         String,
@@ -587,6 +606,7 @@ pub(crate) fn live_checkpoint_of(
         kind == Some(PiCodingKind::SolHigh),
         // Readback serves only domain_work turns (checked above).
         false,
+        successor_context,
     )?;
     if validated.final_text.as_bytes() != final_text.as_slice()
         || (validated.checkpoint.is_some() && first != 1)
@@ -603,6 +623,7 @@ pub(crate) fn live_checkpoint_of(
 pub(crate) fn settled_basis_text(
     conn: &rusqlite::Connection,
     invocation: &str,
+    successor_context: &str,
 ) -> Result<Option<Vec<u8>>, StoreError> {
     let text: Option<Vec<u8>> = conn
         .query_row(
@@ -614,7 +635,7 @@ pub(crate) fn settled_basis_text(
         .map_err(|_| StoreError::Unavailable)?
         .flatten();
     let Some(text) = text else { return Ok(None) };
-    Ok(Some(match live_checkpoint_of(conn, invocation)? {
+    Ok(Some(match live_checkpoint_of(conn, invocation, successor_context)? {
         Some(checkpoint) => checkpoint.into_bytes(),
         None => text,
     }))
