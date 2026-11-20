@@ -44,9 +44,14 @@ pub enum CredentialSource {
     AnthropicApiKeyEnv { variable: String },
     /// Anthropic API key from an owner-only file (one line).
     AnthropicApiKeyFile { path: PathBuf },
-    /// OpenRouter API key (`sk-or-...`) from an environment variable.
+    /// OpenRouter API key (`sk-or-...`) from an environment variable. The
+    /// kind is `openrouter-api-key-env`, as `allowed_kinds` and the transport
+    /// identity name it; kebab-case alone would spell it `open-router-...`,
+    /// which stays accepted.
+    #[serde(rename = "openrouter-api-key-env", alias = "open-router-api-key-env")]
     OpenRouterApiKeyEnv { variable: String },
     /// OpenRouter API key (`sk-or-...`) from an owner-only file (one line).
+    #[serde(rename = "openrouter-api-key-file", alias = "open-router-api-key-file")]
     OpenRouterApiKeyFile { path: PathBuf },
 }
 #[derive(Deserialize)]
@@ -425,6 +430,37 @@ impl HostedProviderTransport for HttpsTransport {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Every kind `allowed_kinds` offers is a credentials-file `kind` the
+    /// transport parses (env kinds take `variable`, file kinds `path`).
+    #[test]
+    fn allowed_kinds_parse_as_credential_sources() {
+        let endpoints = [
+            "https:chatgpt-codex",
+            "https:openai-responses",
+            "https:anthropic-oauth",
+            "https:anthropic-api",
+            "https:openrouter",
+        ];
+        for endpoint in endpoints {
+            for kind in allowed_kinds(endpoint).unwrap() {
+                let entry = if kind.ends_with("-env") {
+                    serde_json::json!({"kind":kind,"variable":"V"})
+                } else {
+                    serde_json::json!({"kind":kind,"path":"/p"})
+                };
+                serde_json::from_value::<CredentialSource>(entry)
+                    .unwrap_or_else(|e| panic!("{endpoint} {kind}: {e}"));
+            }
+        }
+        assert_eq!(allowed_kinds("loopback:1"), Some(&[][..]));
+        assert_eq!(allowed_kinds("https:other"), None);
+        // The kebab-case spelling stays accepted.
+        serde_json::from_value::<CredentialSource>(
+            serde_json::json!({"kind":"open-router-api-key-file","path":"/p"}),
+        )
+        .unwrap();
+    }
     use std::collections::BTreeMap;
 
     fn transport() -> HttpsTransport {

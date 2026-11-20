@@ -60,8 +60,8 @@ the task host refuses the route.
      - `composition.json`, which records the profile digest and the
        derivation.
    - It validates the job by the Host's own admission rules before
-     returning. `pi_host_join.rs` can then use the same library function
-     instead of its ad hoc JSON.
+     returning. `lifecycle-service` does not link the Host crate, so `pi_host_join.rs` reaches
+     the same composition by running the binary.
 2. **The runner calls `prepare` at launch.** This is `lifecycle-service`,
    owned by research-lifecycle.
    - `NativeConfig` names the composition profile by path and digest.
@@ -97,11 +97,21 @@ Rejected:
 
 `work-engine-pi-host prepare --profile <composition.json> --root <root> --snapshot-id <id>`
 
-- Root precondition: absolute; absent (created) or an empty directory. It is
-  set to mode 0700, and anything else refuses. One job per root.
+- Profile path: absolute, a regular file (not a symlink), at most 64 KiB;
+  echoed as given in the record.
+- Root precondition, refused as `root` before anything is written:
+  - an absolute path of plain components (`[A-Za-z0-9._-]`, no `.` or
+    `..`), because the Host cannot mount `:` or `,`;
+  - its parent directory must exist;
+  - it is either absent (created with mode 0700) or an empty, owner-only
+    directory of the caller that is not a symlink.
+
+  `prepare` creates `<root>/inputs` exclusively, so a concurrent `prepare` on
+  the same root refuses as `root`. A root is single use: any refusal after
+  that leaves it populated, and a retry needs a new root.
 - Snapshot id grammar: `[A-Za-z0-9._:-]{1,128}`.
-- Exit 0 prints one JSON object on stdout
-  (`work-engine.pi-host-composition-record.v1`):
+- Exit 0 prints one JSON object on stdout (`schema`
+  `work-engine.pi-host-composition-record.v1`)
   - `profile` `{path, sha256}`, `root`, `job_id`;
   - `job_sha256`, `serve_config_sha256`, `pi_host_json_sha256`,
     `host_sha256`;
@@ -126,16 +136,28 @@ Rejected:
 
 `work-engine-pi-host profile describe --profile <composition.json>`
 
-- It checks the profile by the same rules: schema, durations, provider
-  catalog, route table, each endpoint serving the provider's wire family,
-  and credential kinds.
-- It never opens a credentials file. Exit and refusal classes are as above.
+- It checks the profile by exactly the rules a launch applies: a full
+  `prepare` into a private scratch root under the system temporary
+  directory, removed afterwards. So it agrees with `prepare` by
+  construction, including the launch-time pins:
+  - the runtime manifest and the Pi version;
+  - the Claude Code binary on `claude-sdk`;
+  - the Docker and Host binary digests;
+  - the catalog reservation.
+
+  It takes about as long as `prepare` (tens of seconds in a debug build: it
+  hashes the Host binary and the runtime tree). It never opens a credentials
+  file. Exit codes and refusal classes are as for `prepare`.
 - Exit 0 prints:
   - `{schema, profile_sha256, provider, model, wire, routes:[{id, endpoint, payer}], payers:{<payer>:[kinds]}}`;
   - `payers` lists the credential source kinds that can serve every route
     the payer pays (one payer holds one credential). An empty list means a
     loopback-only payer, which needs no credential.
-  - A payer whose routes need incompatible kinds refuses as `profile`.
+  - A payer whose https routes need incompatible kinds refuses as
+    `profile`, and so does a payer on both loopback and https routes (in any
+    order).
+- `profile_sha256` in `describe` is the same value as `profile.sha256` in
+  the record.
 - Kinds per endpoint (`https::allowed_kinds`):
 
   | Endpoint | Kinds |
@@ -153,10 +175,27 @@ The profile (`work-engine.pi-host-composition.v1`, strict fields):
 - `provider`, `model`, `hosted {routes, max_attempts_per_request}`;
 - `max_requests`, `budget_microusd`, `max_context_bytes`,
   `max_tool_calls`;
-- `turn_deadline_secs`, `job_secs` (at most the relay deadline, 3,600);
-- optional `pi_settings` (object).
+- `job_secs` (at most the relay deadline, 3,600);
+- `turn_deadline_secs`, with
+  `job_secs ≥ turn_deadline_secs + 300` (the runner's thread start, 180 s,
+  and close, 120 s);
+- optional `pi_settings`: an object of at most 64 KiB, copied verbatim to
+  the container's public Pi settings, so it must be public content.
 
 It carries no credential.
+
+Deadline:
+
+- `deadline_unix_seconds` is `prepare`'s start time (wall clock) plus
+  `job_secs`, and the Host enforces it per turn and per frame.
+- It is in the record and in `composition.json`, not in `pi-host.json`:
+  the runner's `PiHostConfig` is strict, and the runner reads it from the
+  record.
+- Spawn `serve` right after `prepare`.
+- Credential kinds match the credentials-file `kind` tags exactly. The
+  OpenRouter kinds are `openrouter-api-key-env` and
+  `openrouter-api-key-file`; the kebab-case spelling `open-router-...`
+  stays accepted.
 
 Host environment (RL 6015 (b)):
 
@@ -215,3 +254,23 @@ is a separate Host item, not this slice.
     eligible. `failures` was empty, the serve record was `served`, and no
     container was left. The output is in
     `~/.local/state/work-engine/dev-vertical-pi-host-h2-live-prep-20261118/slice4-smoke-1/`.
+
+## RL consumer review of step 1 (6020) and remediation
+
+Review: `research-lifecycle-tool-registry-20261116/038-step1-consumer-review/REVIEW-65c4de02.md`,
+verdict "ready with required changes".
+
+| Finding | Disposition |
+| --- | --- |
+| F1 (P1): `describe` accepted profiles every `prepare` refuses. | `describe` now runs a full `prepare` dry run. An agreement test covers a bad model, `max_tool_calls` 100,000, invalid `pi_settings` and `max_requests` 0. |
+| F4: invalid `pi_settings` refused as `io` after root creation. | Checked with the profile, as `profile`. |
+| F2: a root containing `:` or `,` refused as `admission` after populating. | Path grammar is checked first, as `root`. |
+| F3: symlinked root; parents created at the umask. | Symlink refused; parent must exist; leaf created with mode 0700; an existing root must be the caller's, empty and owner-only. |
+| F5: a loopback-plus-https payer was order-dependent. | Refused in either order. |
+| F6: OpenRouter kind tags. | Explicit `openrouter-api-key-*` with the `open-router-*` alias; each offered kind is parse-tested. |
+| F7: atomicity. | Single-use root documented; exclusive `inputs` makes a concurrent `prepare` refuse as `root`. |
+| F8: profile path. | Absolute, regular, not a symlink, at most 64 KiB. |
+| F10: `pi_settings` is public. | Documented. |
+| F11: test gaps. | Added tests for root shapes, every class including `io`, an unknown field, a zero turn, a symlinked profile, mixed payers, kinds and agreement, and the binary's exit codes and refusal shape (`tests/pi_host_prepare_cli.rs`). |
+| F12: plan text and field names. | Fixed. |
+| Deadline. | Semantics stated. The profile requires `job_secs ≥ turn_deadline_secs + 300`. The deadline is read from the record. |
