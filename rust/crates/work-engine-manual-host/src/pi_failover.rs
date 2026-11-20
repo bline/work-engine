@@ -73,7 +73,9 @@ pub struct FailoverPolicy {
 pub fn funding(endpoint: &str) -> Option<Funding> {
     match Endpoint::parse(endpoint)? {
         Endpoint::ChatGptCodex | Endpoint::AnthropicOauth => Some(Funding::Subscription),
-        Endpoint::OpenAiResponses | Endpoint::AnthropicApi => Some(Funding::Api),
+        Endpoint::OpenAiResponses | Endpoint::AnthropicApi | Endpoint::OpenRouter => {
+            Some(Funding::Api)
+        }
         Endpoint::Loopback(_) => None,
     }
 }

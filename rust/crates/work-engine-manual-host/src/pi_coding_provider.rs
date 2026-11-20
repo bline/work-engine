@@ -10,6 +10,10 @@ const ANTHROPIC_CATALOG: &str =
     "node_modules/@earendil-works/pi-ai/dist/providers/data/anthropic.json";
 /// Claude models admitted on the Messages routes (operator, 2026-11-18).
 pub const CLAUDE_MODELS: [&str; 1] = ["claude-haiku-5-5"];
+/// OpenRouter Completions models admitted on the hosted lanes, by the
+/// transmitted model slug (Layer B: base id + `:floor`), since the catalog
+/// binds the Layer A alias id.
+pub const OPENROUTER_MODELS: [&str; 1] = ["deepseek/deepseek-v4-flash-latest:floor"];
 /// The Claude Code binary a `claude-sdk` runtime must carry (C1(vii)): its
 /// manifest entry and digest.
 pub const CLAUDE_CODE_ENTRY: &str = "node_modules/@anthropic-ai/claude-agent-sdk-linux-x64/claude";
@@ -17,6 +21,24 @@ pub const CLAUDE_CODE_SHA256: &str =
     "0dc4f4a9a165fc60746d7ae8489712e5fc352f1e7ad4eb22e7141bd0812eb0cf";
 /// The Pi provider a plan runs when it names none.
 pub const DEFAULT_PROVIDER: &str = "openai-codex";
+/// OpenRouter request-time floor routing suffix, appended to the base model id
+/// at dispatch. This is a routing directive to OpenRouter (sort providers by
+/// price, admit flex-tier endpoints), not a distinct catalog model.
+pub const OPENROUTER_FLOOR_SUFFIX: &str = ":floor";
+/// The OpenRouter provider data catalog bound for the Completions family.
+const OPENROUTER_CATALOG: &str =
+    "node_modules/@earendil-works/pi-ai/dist/providers/data/openrouter.json";
+/// Analysis budget ceiling for the OpenRouter Completions family (32 requests).
+/// A DeepSeek V4 Flash full-catalog reservation is about 545 259 µUSD
+/// (1M window + 943 718 output at the pinned rates), so 32 of them need about
+/// 17 448 288 µUSD; this ceiling admits that while staying a finite
+/// Host-enforced limit (the operator monitors external spend separately).
+const OPENROUTER_ANALYSIS_BUDGET: u64 = 20_000_000;
+/// Coding-profile budget ceiling for the OpenRouter Completions family (at most
+/// 6 requests). 6 x 545 259 = 3 271 554; this admits a realistic multi-turn
+/// coding plan without an unbounded ceiling. `reservation_microusd()` still
+/// refuses a plan whose own max_requests x reservation exceeds its budget.
+const OPENROUTER_CODING_BUDGET: u64 = 4_000_000;
 fn default_provider() -> String {
     DEFAULT_PROVIDER.into()
 }
@@ -60,6 +82,13 @@ pub struct ProviderPlan {
     /// admission. Absent: no classification.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub classification_table_sha256: Option<String>,
+    /// Admitted execution capabilities (Revision 4). Authorized at admission;
+    /// the model never selects them. `allow_background => allow_shell`; the
+    /// combination (false, true) is refused.
+    #[serde(default)]
+    pub allow_shell: bool,
+    #[serde(default)]
+    pub allow_background: bool,
 }
 /// Operator failover inputs of a hosted plan.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -77,6 +106,8 @@ impl std::fmt::Debug for ProviderPlan {
             .field("provider", &self.provider)
             .field("model", &self.model)
             .field("max_requests", &self.max_requests)
+            .field("allow_shell", &self.allow_shell)
+            .field("allow_background", &self.allow_background)
             .finish_non_exhaustive()
     }
 }
@@ -530,6 +561,13 @@ struct Admission {
     max_requests: u32,
     budget_microusd: u64,
     allow_provider: bool,
+    /// Admitted execution capabilities (Revision 4): foreground shell and
+    /// managed background execution. Capabilities are authorized at admission,
+    /// never selected by the model. `allow_background => allow_shell`.
+    #[serde(default)]
+    allow_shell: bool,
+    #[serde(default)]
+    allow_background: bool,
     /// Digest of the hosted route table.
     hosted_routes_sha256: String,
     /// Digest of the failover policy, when the plan carries one.
@@ -550,7 +588,30 @@ impl ProviderPlan {
         match self.provider.as_str() {
             "openai-codex" => Some(crate::pi_stream::Wire::Responses),
             "claude-sdk" => Some(crate::pi_stream::Wire::Messages),
+            "openrouter" => Some(crate::pi_stream::Wire::Completions),
             _ => None,
+        }
+    }
+    /// The model id transmitted to the provider for this plan. For the
+    /// Completions/OpenRouter family this is the catalog (Layer A) id with the
+    /// `~` (Pi alias) prefix removed and the floor routing suffix appended
+    /// (Layer B), e.g. `~deepseek/deepseek-v4-flash-latest` -
+    /// `deepseek/deepseek-v4-flash-latest:floor`.
+    pub fn transmitted_model(&self) -> Result<String> {
+        let model = self.model.as_str();
+        match self.wire_checked()? {
+            crate::pi_stream::Wire::Completions => {
+                let base = model.strip_prefix('~').unwrap_or(model);
+                if base.is_empty() {
+                    return refuse("empty transmitted model");
+                }
+                if base.ends_with(OPENROUTER_FLOOR_SUFFIX) {
+                    Ok(base.to_string())
+                } else {
+                    Ok(format!("{base}{OPENROUTER_FLOOR_SUFFIX}"))
+                }
+            }
+            _ => Ok(model.to_string()),
         }
     }
     pub(super) fn wire_checked(&self) -> Result<crate::pi_stream::Wire> {
@@ -573,6 +634,12 @@ impl ProviderPlan {
                 "anthropic-messages",
                 "https://api.anthropic.com",
             ),
+            crate::pi_stream::Wire::Completions => (
+                "openai-completions",
+                "openrouter",
+                "openai-completions",
+                "https://openrouter.ai/api/v1",
+            ),
         };
         let selected = data[key][format!("chat:{}", self.model)].clone();
         if selected["id"] != self.model
@@ -590,6 +657,13 @@ impl ProviderPlan {
         match self.wire_checked()? {
             crate::pi_stream::Wire::Responses => full_reservation(&model),
             crate::pi_stream::Wire::Messages => messages_full_reservation(&model),
+            // OpenRouter Chat Completions: full-catalog reservation over the
+            // whole context window and output bound at the dearer of the input
+            // / cache rates. Floor may change the effective per-token rate;
+            // settlement prices from the pinned catalog row (never under-charges),
+            // and the receipt separately records the provider-reported cost and
+            // cached-input tokens as labelled, non-authoritative values.
+            crate::pi_stream::Wire::Completions => full_reservation(&model),
         }
     }
     /// Whether the receiver's native model is the pinned catalog model: same
@@ -635,21 +709,27 @@ impl ProviderPlan {
             .is_some_and(|p| super::is_relay(&p.schema));
         let wire = self.wire_checked()?;
         let messages = wire == crate::pi_stream::Wire::Messages;
+        let completions = wire == crate::pi_stream::Wire::Completions;
+        let model_ok = if messages {
+            CLAUDE_MODELS.contains(&self.model.as_str())
+        } else if completions {
+            OPENROUTER_MODELS.contains(&self.transmitted_model()?.as_str())
+        } else {
+            self.model == "gpt-6-luna"
+        };
         if job
             .coding
             .as_ref()
             .is_none_or(|p| !super::is_hosted(&p.schema))
             || (messages && !analysis)
-            || !if messages {
-                CLAUDE_MODELS.contains(&self.model.as_str())
-            } else {
-                self.model == "gpt-6-luna"
-            }
+            || !model_ok
             || !(1..=if analysis { super::analysis::MAX_REQUESTS } else { 6 })
                 .contains(&self.max_requests)
-            || !(1..=match (analysis, messages) {
-                (true, true) => MESSAGES_ANALYSIS_BUDGET,
-                (true, false) => 10_000_000,
+            || !(1..=match (analysis, messages, completions) {
+                (true, true, _) => MESSAGES_ANALYSIS_BUDGET,
+                (true, false, true) => OPENROUTER_ANALYSIS_BUDGET,
+                (false, false, true) => OPENROUTER_CODING_BUDGET,
+                (true, false, false) => 10_000_000,
                 _ => 1_000_000,
             })
                 .contains(&self.budget_microusd)
@@ -658,10 +738,15 @@ impl ProviderPlan {
             || !(1024..=context_bound(analysis, relay))
                 .contains(&self.max_context_bytes)
             || self.catalog.path
-                != job
-                    .runtime
-                    .root
-                    .join(if messages { ANTHROPIC_CATALOG } else { CATALOG })
+                != job.runtime.root.join(
+                    if messages {
+                        ANTHROPIC_CATALOG
+                    } else if completions {
+                        OPENROUTER_CATALOG
+                    } else {
+                        CATALOG
+                    },
+                )
             || self.stream_adapter.verify()? != STREAM_ADAPTER
             || !canonical(&self.stream_adapter)?
         {
@@ -724,6 +809,10 @@ impl ProviderPlan {
             || admission.budget_microusd != self.budget_microusd
             || !admission.allow_provider
             || admission.hosted_routes_sha256 != self.hosted.digest()
+            // Capabilities are decided at admission and bound exactly: the
+            // Admission and the plan must agree, and the matrix must hold.
+            || admission.allow_shell != self.allow_shell
+            || admission.allow_background != self.allow_background
         {
             return refuse("provider admission does not bind this exact realization");
         }
@@ -732,6 +821,13 @@ impl ProviderPlan {
             admission.state_observation_sha256.as_deref(),
         )?;
         self.classification_admitted(admission.classification_table_sha256.as_deref())?;
+        capability_ok(self.allow_shell, self.allow_background)?;
+        // The analysis / lifecycle-relay lanes have no workspace effect, so
+        // they must not carry shell or background execution authority. Enforce
+        // here on Host-held admission, not by relying on the receiver's tool
+        // selection to suppress it (P2, review consistency).
+        analysis_execution_ok(analysis, self.allow_shell, self.allow_background)?;
+        background_gate(self.allow_background)?;
         Ok(())
     }
     /// The plan's classification table digest is the admission's: both
@@ -772,6 +868,81 @@ impl ProviderPlan {
             )),
         };
         Ok(Some((policy, f.policy.sha256.clone(), observation)))
+    }
+}
+/// The analysis / lifecycle-relay lanes have no workspace effect: an admission
+/// that grants shell or background there is refused outright, instead of being
+/// suppressed only by the receiver's tool selection.
+fn analysis_execution_ok(analysis: bool, allow_shell: bool, allow_background: bool) -> Result<()> {
+    if analysis && (allow_shell || allow_background) {
+        return refuse("provider capability conflict: analysis lane admits no execution");
+    }
+    Ok(())
+}
+/// Background execution is not yet implemented: the approved plugin requires a
+/// separately-staged detached Host daemon outside the Docker boundary (blocker,
+/// Revision 6). Any admission that requests it is refused here until a
+/// workspace-bounded execution host exists. Foreground shell is unaffected.
+fn background_gate(allow_background: bool) -> Result<()> {
+    if allow_background {
+        return refuse(
+            "provider capability: allow_background not yet implemented (execution boundary pending)",
+        );
+    }
+    Ok(())
+}
+/// Revision 4 capability matrix. `allow_background` requires `allow_shell`;
+/// the invalid (no-shell, background) combination is refused. Returns Ok only
+/// for the three valid combos.
+fn capability_ok(allow_shell: bool, allow_background: bool) -> Result<()> {
+    if allow_background && !allow_shell {
+        return refuse("provider capability conflict: allow_background requires allow_shell");
+    }
+    Ok(())
+}
+/// The model-family prefix for the Completions lane: the plan's base model id
+/// without the `~` alias, the `:floor` suffix, and the trailing `-latest` alias
+/// keyword. OpenRouter's `latest` slug is a family alias that floor-resolves to
+/// a concrete checkpoint (e.g. `deepseek/deepseek-v4-flash-0731`); the family
+/// is `deepseek/deepseek-v4-flash`, which any resolved checkpoint must carry
+/// before its own `-<version>` segment.
+fn completions_model_family(model: &str) -> String {
+    let base = model
+        .strip_prefix('~')
+        .unwrap_or(model)
+        .trim_end_matches(OPENROUTER_FLOOR_SUFFIX);
+    let slash = base.rfind('/').unwrap_or(0);
+    let (dir, tail) = if slash == 0 {
+        ("", base)
+    } else {
+        (&base[..slash], &base[slash + 1..])
+    };
+    // Only the alias keyword (`-latest`) is part of the plan id; concrete
+    // version segments appear on the resolved checkpoint, not the plan.
+    let family_tail = match tail.strip_suffix("-latest") {
+        Some(less) if !less.is_empty() => less,
+        _ => tail,
+    };
+    if dir.is_empty() {
+        family_tail.to_string()
+    } else {
+        format!("{dir}/{family_tail}")
+    }
+}
+/// Whether a resolved checkpoint belongs to the plan's admitted model family.
+/// A resolved id is in-family if it equals the family or carries a VERSION
+/// segment after the family dash -- all digits (e.g. `-0731`). A non-version
+/// suffix (e.g. `-vision-exp`), which names a distinct catalog model with its
+/// own price row, is NOT accepted.
+fn completions_model_in_family(resolved: &str, family: &str) -> bool {
+    if resolved == family {
+        return !resolved.is_empty();
+    }
+    let family_dash: String = format!("{family}-");
+    match resolved.strip_prefix(&family_dash) {
+        None => false,
+        Some(rest) => !rest.is_empty()
+            && rest.chars().next().is_some_and(|c| c.is_ascii_digit()),
     }
 }
 /// The upper bound of a plan's `max_context_bytes` on its profile.
@@ -972,7 +1143,7 @@ impl Host {
         fs::create_dir(&public)?;
         let task = String::from_utf8(plan.task.verify()?)
             .map_err(|_| Error::Refused("task is not UTF8".into()))?;
-        let mut job = json!({"schema":super::HOSTED_BRIDGE_PROFILE,"provider":plan.provider,"model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes});
+        let mut job = json!({"schema":super::HOSTED_BRIDGE_PROFILE,"provider":plan.provider,"model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes,"allowShell":plan.allow_shell,"allowBackground":plan.allow_background});
         if super::is_analysis(&profile.schema) {
             // The receiver's own bounds for this profile; the Host checks
             // every one of them again where it reads.
@@ -986,6 +1157,10 @@ impl Host {
                 // the controller; the receiver returns each answer unchanged.
                 job["schema"] = json!(super::LIFECYCLE_PROFILE);
                 job["tools"] = native_realization::pi_host::tools::receiver_tools();
+                // The lifecycle relay lane has no workspace effect: never
+                // admit shell or background execution on it (Revision 4).
+                job["allowShell"] = json!(false);
+                job["allowBackground"] = json!(false);
             }
         }
         atomic(&public.join("job.json"), &job)?;
@@ -1123,10 +1298,30 @@ impl Host {
                     self.save()?;
                     return refuse(detail);
                 }
-                if !matches!(frame["stopReason"].as_str(), Some("stop" | "toolUse"))
-                    || r.http_status != Some(200)
-                    || r.backend_model.as_deref() != Some(&plan.model)
-                {
+                // For the Completions family the transmitted slug (Layer B) is
+                // checked at dispatch; the recorded backend model is the
+                // resolved checkpoint (Layer C) and is NOT required to equal
+                // `plan.model`. stopReason corresponds to chat-completion
+                // finish ("stop" ends a turn; a streaming tool turn continues).
+                let wire = plan.wire_checked()?;
+                let backend_ok = if wire == crate::pi_stream::Wire::Completions {
+                    // The resolved checkpoint (Layer C) must be present and
+                    // belong to the admitted model family (it is the
+                    // floor-resolved concrete id, not the request slug).
+                    r.backend_model.as_deref().is_some_and(|resolved| {
+                        completions_model_in_family(
+                            resolved,
+                            &completions_model_family(plan.model.as_str()),
+                        )
+                    })
+                } else {
+                    r.backend_model.as_deref() == Some(plan.model.as_str())
+                };
+                let stop_ok = matches!(
+                    (wire, frame["stopReason"].as_str()),
+                    (_, Some("stop" | "toolUse"))
+                );
+                if !stop_ok || r.http_status != Some(200) || !backend_ok {
                     state.provider_failed = true;
                     self.save()?;
                     return refuse("provider result unknown/error; reservation retained");
@@ -1196,6 +1391,32 @@ impl Host {
                             )),
                         }
                     }
+                    crate::pi_stream::Wire::Completions => {
+                        // Chat Completions: raw terminal usage from the
+                        // include_usage chunk.
+                        let raw = r.raw_terminal.as_ref().filter(|raw| {
+                            raw["eventType"] == "chat_completion"
+                        });
+                        let measured = raw.and_then(|raw| {
+                            let u = &raw["usage"];
+                            Some((
+                                u["input_tokens"].as_u64()?,
+                                u["completion_tokens"].as_u64()?,
+                                u["total_tokens"].as_u64()?,
+                            ))
+                        });
+                        match measured {
+                            None => Err("raw completed usage unavailable"),
+                            Some((input, output, total))
+                                if input.checked_add(output) != Some(total) =>
+                            {
+                                Err("raw usage inconsistent")
+                            }
+                            Some((input, output, _)) => {
+                                Ok((raw_cost(&model, input, output), input, output))
+                            }
+                        }
+                    }
                 };
                 let (actual, input, output) = match measured {
                     Ok(m) => m,
@@ -1255,6 +1476,75 @@ mod tests {
         assert_eq!(full_reservation(&model).unwrap() * 6, 984006);
         assert!(full_reservation(&json!({"contextWindow":272000,"maxTokens":128000})).is_err());
     }
+
+    #[test]
+    fn openrouter_transmitted_model_derives_the_floor_slug_from_the_catalog_alias() {
+        let plan = |provider: &str, model: &str| ProviderPlan {
+            lane: LaneInputs {
+                pi_config: Tree {
+                    root: PathBuf::from("/nonexistent"),
+                    manifest: Artifact {
+                        path: PathBuf::from("/nonexistent"),
+                        sha256: "0".repeat(64),
+                    },
+                },
+            },
+            task: Artifact {
+                path: PathBuf::from("/nonexistent"),
+                sha256: "0".repeat(64),
+            },
+            catalog: Artifact {
+                path: PathBuf::from("/nonexistent"),
+                sha256: "0".repeat(64),
+            },
+            stream_adapter: Artifact {
+                path: PathBuf::from("/nonexistent"),
+                sha256: "0".repeat(64),
+            },
+            hosted: super::super::hosted::HostedRoutes {
+                routes: vec![super::super::hosted::HostedRoute {
+                    id: "primary".into(),
+                    payer: "openrouter".into(),
+                    endpoint: "https:openrouter".into(),
+                }],
+                max_attempts_per_request: 1,
+            },
+            provider: provider.into(),
+            model: model.into(),
+            max_requests: 1,
+            budget_microusd: 1_000_000,
+            max_context_bytes: 16384,
+            allow_shell: true,
+            allow_background: true,
+            failover: None,
+            classification_table_sha256: None,
+        };
+        let b = plan("openrouter", "~deepseek/deepseek-v4-flash-latest");
+        assert_eq!(
+            b.transmitted_model().unwrap(),
+            "deepseek/deepseek-v4-flash-latest:floor"
+        );
+        // Idempotent: an already-suffixed catalog id is not double-suffixed.
+        let b = plan("openrouter", "deepseek/deepseek-v4-flash-latest:floor");
+        assert_eq!(
+            b.transmitted_model().unwrap(),
+            "deepseek/deepseek-v4-flash-latest:floor"
+        );
+        // Non-completions lanes transmit the plan model unchanged.
+        assert_eq!(plan(DEFAULT_PROVIDER, "gpt-6-luna").transmitted_model().unwrap(), "gpt-6-luna");
+    }
+
+    #[test]
+    fn openrouter_full_reservation_covers_the_deepseek_floor_catalog_bounds() {
+        // The pinned openrouter.json DeepSeek entry (context 1M, max out
+        // 943 718, input 0.07 / output 0.5 / cache-read 0.008 / cache-write 0).
+        let model = json!({"contextWindow":1048576,"maxTokens":943718,
+            "cost":{"input":0.07,"output":0.5,"cacheRead":0.008,"cacheWrite":0.0}});
+        let r = full_reservation(&model).unwrap();
+        // window * dearer(input, cache-read, cache-write)=0.07 + out * 0.5.
+        assert!(r > 1000);
+        assert!(full_reservation(&model).unwrap() == r);
+    }
 }
 
 #[cfg(test)]
@@ -1274,6 +1564,8 @@ pub(super) mod ledger_tests {
             manifest: pin.clone(),
         };
         h.journal.job.coding.as_mut().unwrap().provider = Some(ProviderPlan {
+            allow_shell: true,
+            allow_background: true,
             lane: LaneInputs { pi_config: tree },
             task: pin.clone(),
             catalog: pin.clone(),
@@ -1465,6 +1757,8 @@ mod admission_tests {
         let profile = h.journal.job.coding.as_mut().unwrap();
         profile.schema = super::super::HOSTED_BRIDGE_PROFILE.into();
         profile.provider = Some(ProviderPlan {
+            allow_shell: true,
+            allow_background: true,
             lane: LaneInputs {
                 pi_config: Tree {
                     root: config,
@@ -1518,6 +1812,110 @@ mod admission_tests {
                 }
                 let error = job.coding.as_ref().unwrap().validate(&job).unwrap_err();
                 assert!(error.to_string().contains("retired"), "{retired}: {error}");
+            }
+        }
+    }
+    /// Revision 4 capability matrix: `allow_background` implies `allow_shell`;
+    /// the invalid (no-shell, background) combination is refused.
+    #[test]
+    fn capability_matrix_background_requires_shell() {
+        for (shell, bg, valid) in [
+            (false, false, true),
+            (true, false, true),
+            (true, true, true),
+            (false, true, false),
+        ] {
+            let out = capability_ok(shell, bg);
+            if valid {
+                assert!(out.is_ok(), "({shell},{bg}) should admit");
+            } else {
+                assert!(
+                    out.is_err() && out.unwrap_err().to_string().contains("allow_background"),
+                    "({shell},{bg}) should refuse with the matrix reason"
+                );
+            }
+        }
+    }
+    /// A realistic multi-turn OpenRouter coding plan must fit its own
+    /// full-catalog reservation x request count within the finite coding
+    /// ceiling (Revision 4 budget fix, review P1). Delta-Seek V4 Flash
+    /// reserves about 545 259 µUSD/request; 4 requests need ~2 181 036, and
+    /// the coding completions ceiling (4 000 000) admits it.
+    #[test]
+    fn realistic_multiturn_openrouter_coding_plan_fits_the_budget_ceiling() {
+        let model = json!({"contextWindow":1048576,"maxTokens":943718,
+            "cost":{"input":0.07,"output":0.5,"cacheRead":0.008,"cacheWrite":0.0}});
+        let per = full_reservation(&model).unwrap();
+        // 4 requests of a realistic coding plan.
+        let reserve = per.checked_mul(4).unwrap();
+        assert!(reserve <= OPENROUTER_CODING_BUDGET, "plan {reserve} exceeds ceiling");
+        assert!(reserve <= OPENROUTER_ANALYSIS_BUDGET);
+        // The per-plan check used by validate/reservation_microusd admits it.
+        assert!(reserve > 1_000_000, "exercise the coding ceiling, not the old $1 cap");
+        // 32 analysis requests also fit the analysis ceiling.
+        assert!(per.checked_mul(32).unwrap() <= OPENROUTER_ANALYSIS_BUDGET);
+    }
+    /// The resolved (Layer C) checkpoint the provider settles must belong to
+    /// the admitted model family, not match the request slug exactly (floor
+    /// resolves `latest` to a concrete checkpoint).
+    #[test]
+    fn completions_resolved_model_must_belong_to_the_admitted_family() {
+        let family = completions_model_family("~deepseek/deepseek-v4-flash-latest");
+        assert_eq!(family, "deepseek/deepseek-v4-flash");
+        assert!(completions_model_in_family("deepseek/deepseek-v4-flash-0731", &family));
+        assert!(completions_model_in_family("deepseek/deepseek-v4-flash", &family));
+        // A different model family is not accepted.
+        assert!(!completions_model_in_family("deepseek/deepseek-v4-pro", &family));
+        assert!(!completions_model_in_family("", &family));
+        // A non-version suffix names a distinct catalog model (its own price
+        // row), so it is not in family.
+        assert!(!completions_model_in_family("deepseek/deepseek-v4-flash-vision-exp", &family));
+        // A `-latest` slug and an already-`-v4-flash`-suffixed tail stay sane.
+        assert_eq!(
+            completions_model_family("deepseek/deepseek-v4-flash:floor"),
+            "deepseek/deepseek-v4-flash"
+        );
+        // A bare family (no version segment) is in family; a versioned one is.
+        assert!(completions_model_in_family("deepseek/deepseek-v4-flash", &family));
+    }
+    /// Background execution is not yet implemented (blocker, Revision 6): any
+    /// admission requesting `allow_background` must be refused at runtime, not
+    /// merely gated out of the receiver. This is the explicit refusal until a
+    /// workspace-bounded execution host exists.
+    #[test]
+    fn background_admission_is_refused_until_implemented() {
+        for (bg, ok) in [(false, true), (true, false)] {
+            let out = background_gate(bg);
+            assert_eq!(out.is_ok(), ok, "allow_background={bg}");
+            if !ok {
+                assert!(
+                    out.unwrap_err().to_string().contains("allow_background"),
+                    "reason names allow_background and the pending boundary"
+                );
+            }
+        }
+    }
+    /// The analysis / lifecycle-relay lanes have no workspace effect: an
+    /// admission that grants shell or background there is refused on Host-held
+    /// authority, not silently suppressed by the receiver.
+    #[test]
+    fn analysis_lane_refuses_shell_or_background_admission() {
+        for (analysis, shell, bg, ok) in [
+            (false, false, false, true),
+            (false, true, false, true),
+            (false, true, true, true),
+            (true, false, false, true),
+            (true, true, false, false),
+            (true, false, true, false),
+            (true, true, true, false),
+        ] {
+            let out = analysis_execution_ok(analysis, shell, bg);
+            assert_eq!(out.is_ok(), ok, "({analysis},{shell},{bg})");
+            if !ok {
+                assert!(
+                    out.unwrap_err().to_string().contains("analysis"),
+                    "reason names the analysis lane"
+                );
             }
         }
     }

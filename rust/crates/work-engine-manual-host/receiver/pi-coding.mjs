@@ -16,6 +16,17 @@ const CLAIMS_SCHEMA='work-engine.pi-coding-lifecycle-claims.v1';
 const CLAIMS_NAMES=['claims_discover','claims_resolve','claims_evidence','claims_currency'];
 if(claimsTools&&(!process.argv.includes('--lifecycle-bridge')||existsSync('/profile/job.json')||existsSync('/auth/signed-fixture.json')))throw Error('claims tools require the provider-disabled lifecycle fixture bridge');
 const config=live?JSON.parse(readFileSync('/profile/job.json','utf8')):null;
+// Admitted execution capabilities (Revision 4). Work Engine decides shell and
+// managed background execution at admission; Pi and its approved plugin
+// perform mechanical execution within the Docker boundary. background
+// implies shell; the Host refused the invalid combination before staging.
+const allowShell=live&&config.allowShell===true;
+const allowBackground=live&&config.allowBackground===true;
+// When background is not admitted, the approved process-management plugin is
+// not loaded and its tools are not exposed. (This withholds the managed
+// background capability; it does not promise a universal prohibition of
+// shell-level background syntax, which the shell's own policy controls.)
+const bgPlugin=allowBackground;
 // Hosted transport: no network or access material here; the Host dispatches
 // each request and relays the response stream (pull/cancel/ack).
 // Hosted analysis: same transport and lifecycle bridge; no shell, only the
@@ -35,8 +46,28 @@ const MAX_REQUESTS=analysis?config.maxRequests:4;
 // grant's stream identity; the Host dispatches it with real access. The
 // container holds only a dummy credential.
 const claudeSdk=hosted&&config.provider==='claude-sdk';
+// OpenRouter Chat Completions provider. Pi's built-in catalog resolves
+// provider `openrouter` / model `~deepseek/deepseek-v4-flash-latest` offline;
+// the Host owns appending the `:floor` routing suffix at dispatch. The
+// `pi-openrouter-floor` extension's live /models fetch cannot register the
+// provider inside the networkless container, so the built-in provider is used.
+const openrouter=hosted&&config.provider==='openrouter';
 const CLAUDE_MODELS=['claude-haiku-5-5'];
 const EXTENSION='/pi/node_modules/pi-claude-subscription';
+// Approved managed-background plugin, version-pinned by the Job's immutable
+// runtime manifest and mounted read-only at /ext. Loaded only when
+// allow_background is admitted (see bgPlugin).
+const BG_EXTENSION='/ext/node_modules/pi-better-background-tasks';
+// The exact tool set the approved pi-better-background-tasks 0.18.0 plugin
+// registers (src/tools.ts). When allow_background is admitted we expect these
+// names to appear on the ready frame; the Host validates the same set. This is
+// a tool-set contract, not per-call execution approval.
+const BG_TOOLS=[
+ 'bg_task_spawn','bg_task_spawn_batch','bg_task_watch','bg_task_list',
+ 'bg_task_status','bg_task_log','bg_task_stop','bg_task','bg_status',
+ 'wait_for_operations','acknowledge_operation_result','bg_task_wait_cancel',
+ 'bg_task_wait_list'
+];
 const ANTHROPIC_BASE='https://api.anthropic.com';
 // Claude Code's own retries and fallbacks stay off: every upstream request is
 // one Host-admitted attempt (a second request under one grant is refused here).
@@ -210,6 +241,25 @@ try {
    // Anthropic's third-party (extra usage) answer.
    delete process.env.PI_CLAUDE_SDK_PROMPT;
    // The extension registers its provider while the session services load.
+  }else if(openrouter){
+   if(config.schema!==schema||config.model!=='~deepseek/deepseek-v4-flash-latest')throw Error('provider configuration rejected');
+   // Effort `high` per operator; Pi's openrouter lane maps thinkingLevel to the
+   // OpenRouter `reasoning.effort` field (thinkingLevelMap high -> "high"). The
+   // Host policy requires reasoning.effort == "high" in the body.
+   providerOptions={thinkingLevel:'high'};
+   const reject=async()=>{throw Error('credential_mutation');};
+   modelRuntime=await ModelRuntime.create({credentials:{read:async()=>undefined,list:async()=>[],modify:reject,delete:reject},modelsPath:null,allowModelNetwork:false,refreshOnCreate:false});
+   // Pi's ModelRuntime/setModel/getClientApiKey reject a provider with no key
+   // before the stream's fetch override is reached. Supply a NON-AUTHENTICATING
+   // marker (the Host strips the container's authorization header via
+   // ACCESS_HEADERS and applies the real key in HttpsTransport.send). Never a
+   // real credential.
+   await modelRuntime.setRuntimeApiKey('openrouter','nonsecret-marker');
+   // Host-validated catalog binding (pi_coding_provider::selected): the Layer A
+   // id Pi resolves offline; the Host appends `:floor` at dispatch. No network
+   // fetch, no extension live-catalog dependency.
+   model=modelRuntime.getModel('openrouter',config.model);
+   if(!model||model.api!=='openai-completions'||model.provider!=='openrouter'||model.baseUrl!=='https://openrouter.ai/api/v1')throw Error('exact openrouter model absent');
   }else{
   if(config.schema!==schema||config.provider!=='openai-codex'||config.model!=='gpt-6-luna')throw Error('provider configuration rejected');
   // Nonauthenticating marker only; the Host holds and applies real access.
@@ -278,8 +328,19 @@ try {
   {name:'snapshot_list',label:'snapshot_list',description:'List the members of the read-only analysis snapshot (path, size in bytes, SHA-256). The snapshot is the only material available.',promptSnippet:'List the snapshot members',parameters:Type.Object({}),executionMode:'sequential',execute:snapshotExecute('snapshot_list')},
   {name:'snapshot_read',label:'snapshot_read',description:`Read one snapshot member as UTF-8 text, one page at a time: at most ${config.pageBytes} bytes from offset (default 0); next_offset is null at the end of the member.`,promptSnippet:'Read a page of a snapshot member',parameters:Type.Object({path:Type.String({minLength:1,maxLength:256}),offset:Type.Optional(Type.Integer({minimum:0})),max_bytes:Type.Optional(Type.Integer({minimum:1,maximum:config.pageBytes}))}),executionMode:'sequential',execute:snapshotExecute('snapshot_read')},
  ]:[];
- const activeNames=relay?config.tools.map(t=>t.name):analysis?SNAPSHOT_NAMES:['workspace_exec',...(claimsTools?CLAIMS_NAMES:[])];
- const baseOptions={cwd:'/workspace',agentDir,settingsManager,resourceLoader,modelRuntime,model,...providerOptions,noTools:'builtin',tools:activeNames,customTools:analysis?snapshotCustom:[tool,...claimsCustom]};
+ // Revision 4: the workspace shell tool is exposed only when shell is
+ // admitted on a live run; provider-disabled fixtures (no admission) always
+ // expose it, matching the Host's ready_tools is_live_bridge rule. The
+ // background plugin is a separate extension surface.
+ const execCapable=!live||allowShell;
+ const execNames=execCapable?['workspace_exec']:[];
+ // Background tools come from the admitted plugin (loaded as an extension);
+ // they are activated by name so the ready frame advertises them. Only on a
+ // live run (fixtures have no such plugin).
+ const bgNames=live&&bgPlugin?BG_TOOLS:[];
+ const activeNames=relay?config.tools.map(t=>t.name):analysis?SNAPSHOT_NAMES:[...execNames,...bgNames,...(claimsTools?CLAIMS_NAMES:[])];
+ const customTools=analysis?snapshotCustom:[...(execCapable?[tool]:[]),...claimsCustom];
+ const baseOptions={cwd:'/workspace',agentDir,settingsManager,resourceLoader,modelRuntime,model,...providerOptions,noTools:'builtin',tools:activeNames,customTools};
  function bindBridge(selected,services){
   session=selected;
   session.setAutoCompactionEnabled(false);session.setAutoRetryEnabled(false);
@@ -401,7 +462,7 @@ try {
   markRuntimeStreamFunction(stream,services.modelRuntime);session.agent.streamFunction=stream;
  }
  if(bridge){
-  const factory=async options=>{const services=await createAgentSessionServices({...baseOptions,...options,resourceLoaderOptions:{noExtensions:true,disabledBuiltinExtensions:['mcp'],noSkills:true,noPromptTemplates:true,noThemes:true,noContextFiles:true,...(claudeSdk?{additionalExtensionPaths:[EXTENSION]}:{})}});
+  const factory=async options=>{const extensions=[];if(claudeSdk)extensions.push(EXTENSION);if(bgPlugin)extensions.push(BG_EXTENSION);const services=await createAgentSessionServices({...baseOptions,...options,resourceLoaderOptions:{noExtensions:true,disabledBuiltinExtensions:['mcp'],noSkills:true,noPromptTemplates:true,noThemes:true,noContextFiles:true,...(extensions.length?{additionalExtensionPaths:extensions}:{})}});
    if(claudeSdk){
     // The pinned extension's provider and model; the Host checks the ready frame's model against the catalog.
     model=services.modelRuntime.getModel('claude-sdk',config.model);

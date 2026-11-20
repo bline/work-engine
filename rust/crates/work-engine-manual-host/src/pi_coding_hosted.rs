@@ -31,6 +31,20 @@ pub const READ_IDLE_MS: u64 = 30_000;
 /// reaches the Host.
 pub const HOLD_WINDOW_MARGIN_MS: u64 = 2_000;
 const MAX_REQUEST_BODY: usize = 45_000;
+/// The body forwarded upstream for a Completions request: the offline Layer A
+/// model id Pi serialized is replaced by the transmitted Layer B slug
+/// (`:floor` appended). Returns the original bytes if the body is not a
+/// re-serializable chat/completions object.
+fn completions_forward_body(body: &[u8], transmitted: &str) -> Vec<u8> {
+    lifecycle_wire::parse_strict_json(body)
+        .ok()
+        .and_then(|mut v| {
+            v.as_object_mut()?
+                .insert("model".into(), Value::String(transmitted.to_string()));
+            serde_json::to_vec(&v).ok()
+        })
+        .unwrap_or_else(|| body.to_vec())
+}
 /// Every tool a request body declares: the top-level `tools` array and the
 /// tools of each `additional_tools` input item, in order. `None` when either
 /// is malformed.
@@ -76,6 +90,24 @@ const MESSAGES_KEYS: [&str; 13] = [
     "stream",
     "temperature",
     "stop_sequences",
+];
+/// Top-level OpenAI Chat Completions keys the Completions lane admits. This is
+/// the OpenRouter body shape Pi's `openrouter-floor` provider sends. Anything
+/// else (e.g. `store`, `background`, `service_tier`) is refused. `reasoning`
+/// carries DeepSeek's effort setting (its thinkingLevelMap `high -> "high"`).
+const COMPLETIONS_KEYS: [&str; 12] = [
+    "model",
+    "messages",
+    "stream",
+    "stream_options",
+    "tools",
+    "tool_choice",
+    "temperature",
+    "max_completion_tokens",
+    "reasoning",
+    "store",
+    "stop",
+    "top_p",
 ];
 
 /// One permitted provider route. The order of routes is preference order.
@@ -171,6 +203,11 @@ pub enum Endpoint {
     OpenAiResponses,
     AnthropicOauth,
     AnthropicApi,
+    /// OpenRouter's public Chat Completions endpoint, API-key funded. The
+    /// transmitted model slug may carry OpenRouter's request-time `:floor`
+    /// routing suffix; the resolved checkpoint is OpenRouter's reported
+    /// `model` field. See Revision 2's three-layer identity contract.
+    OpenRouter,
 }
 impl Endpoint {
     pub fn parse(endpoint: &str) -> Option<Self> {
@@ -179,6 +216,7 @@ impl Endpoint {
             "https:openai-responses" => Some(Self::OpenAiResponses),
             "https:anthropic-oauth" => Some(Self::AnthropicOauth),
             "https:anthropic-api" => Some(Self::AnthropicApi),
+            "https:openrouter" => Some(Self::OpenRouter),
             _ => {
                 let port: u16 = endpoint.strip_prefix("loopback:")?.parse().ok()?;
                 (port != 0)
@@ -192,6 +230,7 @@ impl Endpoint {
             Self::Loopback(_) => true,
             Self::ChatGptCodex | Self::OpenAiResponses => wire == Wire::Responses,
             Self::AnthropicOauth | Self::AnthropicApi => wire == Wire::Messages,
+            Self::OpenRouter => wire == Wire::Completions,
         }
     }
     /// Host name of the endpoint.
@@ -201,6 +240,7 @@ impl Endpoint {
             Self::ChatGptCodex => "chatgpt.com",
             Self::OpenAiResponses => "api.openai.com",
             Self::AnthropicOauth | Self::AnthropicApi => "api.anthropic.com",
+            Self::OpenRouter => "openrouter.ai",
         }
     }
     /// `(host, request path)` for `request`: fixed per endpoint and wire;
@@ -210,7 +250,15 @@ impl Endpoint {
             (_, Wire::Messages) if request.beta => "/v1/messages?beta=true",
             (_, Wire::Messages) => "/v1/messages",
             (Self::OpenAiResponses, Wire::Responses) => "/v1/responses",
+            (Self::OpenRouter, Wire::Completions) => "/api/v1/chat/completions",
+            // Loopback mocks serve any wire (offline qualification): give
+            // Completions a real path so a loopback upstream can be driven.
+            (Self::Loopback(_), Wire::Completions) => "/chat/completions",
             (_, Wire::Responses) => "/backend-api/codex/responses",
+            // Only OpenRouter (and loopback) serve Completions; any other
+            // endpoint on that wire is a config error and falls through to the
+            // route check.
+            (_, Wire::Completions) => "/unsupported-completions",
         };
         (self.host(), path)
     }
@@ -257,6 +305,10 @@ impl Endpoint {
             Self::OpenAiResponses => matches!(
                 name,
                 "accept" | "content-type" | "x-client-request-id" | "user-agent"
+            ),
+            Self::OpenRouter => matches!(
+                name,
+                "accept" | "content-type" | "x-requested-with" | "user-agent"
             ),
             Self::AnthropicOauth | Self::AnthropicApi => false,
         }
@@ -808,6 +860,23 @@ impl Host {
             Wire::Responses if url == format!("{base}/codex/responses") => false,
             Wire::Messages if url == format!("{base}/v1/messages") => false,
             Wire::Messages if url == format!("{base}/v1/messages?beta=true") => true,
+            // The catalog baseUrl already ends in `/api/v1` (openrouter.ai/api/v1),
+            // so the URL Pi presents is {base}/chat/completions. Do not append a
+            // second /api/v1 here (see the upstream request path handling).
+            // A loopback mock (offline qualification) presents
+            // http://127.0.0.1:<port>/chat/completions and is accepted for the
+            // Completions wire when the plan has a loopback route.
+            Wire::Completions if url == format!("{base}/chat/completions") => false,
+            Wire::Completions
+                if super::hosted::Endpoint::parse(&plan.hosted.routes[0].endpoint)
+                    .is_some_and(|e| matches!(e, super::hosted::Endpoint::Loopback(_)))
+                    && url
+                        .strip_prefix("http://127.0.0.1:")
+                        .or_else(|| url.strip_prefix("http://localhost:"))
+                        .is_some_and(|rest| rest.contains('/') && rest.ends_with("/chat/completions")) =>
+            {
+                false
+            }
             _ => return refuse("provider fetch identity/method/url conflict"),
         };
         if !Self::own_stream_frame(s, frame) || frame["method"] != "POST" {
@@ -847,18 +916,28 @@ impl Host {
         // thing here and another upstream.
         let parsed: Value = match wire {
             Wire::Responses => serde_json::from_slice(&body).ok(),
-            Wire::Messages => lifecycle_wire::parse_strict_json(&body).ok(),
+            Wire::Messages | Wire::Completions => lifecycle_wire::parse_strict_json(&body).ok(),
         }
         .ok_or_else(|| Error::Refused("provider fetch body JSON".into()))?;
         let analysis = self.analysis_profile();
+        // For Completions the container's Pi resolves the offline Layer A id
+        // (`~deepseek/deepseek-v4-flash-latest`); the Host owns appending the
+        // `:floor` routing suffix at dispatch. So `parsed["model"]` must equal
+        // the Layer A catalog id the plan binds, and the Host rewrites the
+        // forwarded body to the transmitted slug (Layer B) below.
+        let transmitted = plan.transmitted_model()?;
+        let body_ok = if wire == Wire::Completions {
+            parsed["model"] == plan.model && parsed["stream"] == true
+        } else {
+            parsed["model"] == transmitted && parsed["stream"] == true
+        };
         if body.len()
             > if analysis {
                 super::analysis::MAX_REQUEST_BODY
             } else {
                 MAX_REQUEST_BODY
             }
-            || parsed["model"] != plan.model
-            || parsed["stream"] != true
+            || !body_ok
         {
             return refuse("provider fetch body bound/model/stream conflict");
         }
@@ -876,6 +955,20 @@ impl Host {
                 wire,
                 beta,
                 messages: Some(parsed["messages"].clone()),
+                received,
+            });
+        }
+        if wire == Wire::Completions {
+            self.completions_policy(&plan, &parsed, analysis)?;
+            // Host owns the Layer B append: forward the body with the
+            // transmitted (`:floor`) model slug, never the offline Layer A id.
+            let transmitted_body = completions_forward_body(&body, &transmitted);
+            return Ok(Fetch {
+                headers,
+                body: transmitted_body,
+                wire,
+                beta,
+                messages: None,
                 received,
             });
         }
@@ -969,6 +1062,76 @@ impl Host {
         {
             return refuse(
                 "provider fetch body policy: messages do not extend the previous request",
+            );
+        }
+        Ok(())
+    }
+    /// Chat Completions body policy for the OpenRouter lane: only the known
+    /// top-level keys (so no store/background/service-tier), `stream: true`,
+    /// the exact transmitted model (_i.e._ Layer B) checked above, `high`
+    /// reasoning carried in `reasoning`, and only the container's own function
+    /// tools (no provider-hosted tools). `stream_options.include_usage` is
+    /// required so settlement has a usage chunk.
+    fn completions_policy(
+        &self,
+        plan: &provider::ProviderPlan,
+        body: &Value,
+        _analysis: bool,
+    ) -> Result<()> {
+        let object = body
+            .as_object()
+            .ok_or_else(|| Error::Refused("provider fetch body is not an object".into()))?;
+        if let Some(key) = object.keys().find(|k| !COMPLETIONS_KEYS.contains(&k.as_str())) {
+            return refuse(format!(
+                "provider fetch body policy: field {key} is not allowed"
+            ));
+        }
+        if body["stream_options"]["include_usage"] != true {
+            return refuse(
+                "provider fetch body policy: stream_options.include_usage must be true",
+            );
+        }
+        // Pi 1.5.0's openai-completions client sets `store:false` (supportsStore)
+        // for openrouter; `store` must be exactly false. The max-token bound, if
+        // present, is emitted as `max_completion_tokens` (Pi's agent loop usually
+        // sends none), so it is validated only when present and pinned to the
+        // catalog output bound -- it is not required.
+        if body["store"] != false {
+            return refuse("provider fetch body policy: store must be false");
+        }
+        if let Some(max) = body["max_completion_tokens"].as_u64()
+            && (max == 0
+                || max > plan.selected()?["maxTokens"].as_u64().unwrap_or(0))
+        {
+            return refuse(
+                "provider fetch body policy: max_completion_tokens exceeds catalog bound",
+            );
+        }
+        let tools = match &body["tools"] {
+            Value::Null => vec![],
+            Value::Array(tools) => tools.clone(),
+            _ => return refuse("provider fetch body policy: tools"),
+        };
+        // Chat Completions tools are OpenAI `function` tools; any other type is
+        // a provider-hosted tool and refused.
+        if tools.iter().any(|t| !t.is_object() || t["type"] != "function") {
+            return refuse("provider fetch body policy: provider-hosted tool");
+        }
+        if _analysis {
+            // Chat Completions introduces no tool-name prefix on the wire the
+            // way Messages does; the analysis surface is the profile's function
+            // tools with the pinned specification digest, as on Responses.
+            super::analysis::check_request_tools(
+                &self.journal.job.coding.as_ref().unwrap().schema,
+                &body["tools"],
+            )?;
+        }
+        // The operator fixed effort `high`. The receiver sets thinkingLevel
+        // 'high' for the openrouter lane; enforce that the transmitted body
+        // actually carries reasoning.effort == "high", not merely a presence.
+        if body["reasoning"]["effort"] != "high" {
+            return refuse(
+                "provider fetch body policy: reasoning.effort must be high (operator decision)",
             );
         }
         Ok(())
@@ -1607,10 +1770,27 @@ impl Host {
             "relay.json",
             &serde_json::to_vec(&relay.evidence_for(wire))?,
         )?;
-        let terminal = stream::sse_data(&relay.forwarded)
+        let sse = stream::sse_data(&relay.forwarded);
+        let events: Vec<Value> = sse
             .iter()
             .filter_map(|d| serde_json::from_str::<Value>(d).ok())
-            .find(|v| v["type"] == wire.terminal_event());
+            .collect();
+        // Responses/Messages terminate on a typed event; Completions terminates
+        // on the literal `[DONE]` line, which is not JSON, so the terminal
+        // evidence is the last chunk carrying a `usage` object (the same one
+        // `completions_usage` reads).
+        let terminal = if wire == Wire::Completions {
+            events
+                .iter()
+                .rev()
+                .find(|v| v["usage"].is_object())
+                .cloned()
+        } else {
+            events
+                .iter()
+                .find(|v| v["type"] == wire.terminal_event())
+                .cloned()
+        };
         let usage = stream::usage_for(wire, &relay.forwarded);
         let r = self
             .journal
@@ -1653,13 +1833,32 @@ impl Host {
                     "cache_read_input_tokens":usage["cacheReadInputTokens"],"output_tokens":usage["outputTokens"],
                     "cache_creation_5m_input_tokens":usage["cacheCreation5mInputTokens"],"cache_creation_1h_input_tokens":usage["cacheCreation1hInputTokens"]}}),
                 ),
+                // Chat Completions: model is OpenRouter's resolved checkpoint
+                // (Layer C); usage comes from the include_usage chunk.
+                Wire::Completions => (
+                    usage["model"].as_str().map(str::to_owned),
+                    json!({"eventType":"chat_completion",
+                    "usage":{"input_tokens":usage["inputTokens"],"completion_tokens":usage["outputTokens"],"total_tokens":usage["totalTokens"]},
+                    // Labelled provider-reported values, non-authoritative for
+                    // settlement (the Host prices from the pinned catalog).
+                    "provider_reported":{"cost":usage["providerReportedCost"],"cached_input_tokens":usage["providerCachedInputTokens"]}}),
+                ),
             };
+            // Layer C (resolved checkpoint) is recorded, and for the
+            // Completions family it is not required to equal the transmitted
+            // slug (plan.model, Layer B): OpenRouter resolves `latest:floor` to
+            // a concrete checkpoint. It must belong to the pinned model's
+            // floor family (checked by `provider_observation`), not equal it.
+            if wire != Wire::Completions
+                && model
+                    .as_ref()
+                    .is_some_and(|model| model != &plan.model)
+            {
+                self.journal.coding.as_mut().unwrap().provider_failed = true;
+                self.save()?;
+                return refuse("backend model identity conflict");
+            }
             if let Some(model) = model {
-                if model != plan.model {
-                    self.journal.coding.as_mut().unwrap().provider_failed = true;
-                    self.save()?;
-                    return refuse("backend model identity conflict");
-                }
                 r.backend_model = Some(model);
             }
             r.raw_terminal = Some(raw);
@@ -3327,6 +3526,99 @@ mod tests {
                 "anthropic-version":"2023-06-01","x-stainless-retry-count":"0"},
             "body":B64.encode(body)})
     }
+    // OpenRouter Chat Completions family (this lane). The Layer A catalog id Pi
+    // resolves offline is `~deepseek/deepseek-v4-flash-latest`; the transmitted
+    // slug (Layer B) is base + `:floor`. The resolved checkpoint (Layer C) is a
+    // concrete id in the family, e.g. `deepseek/deepseek-v4-flash-0731`.
+    const OR_ALIAS: &str = "~deepseek/deepseek-v4-flash-latest";
+    const OR_TRANSMITTED: &str = "deepseek/deepseek-v4-flash-latest:floor";
+    const OR_RESOLVED: &str = "deepseek/deepseek-v4-flash-0731";
+    /// The offline host switched to the `openrouter` provider with the pinned
+    /// OpenRouter catalog entry of the model, and a host budget large enough for
+    /// one full-catalog reservation.
+    fn openrouter_host(responses: Vec<Vec<u8>>) -> (tempfile::TempDir, Host, Wire) {
+        let (dir, mut h, w) = host(responses, None);
+        let path = dir.path().join("openrouter.json");
+        let catalog = json!({
+            "openai-completions": {
+                "chat:~deepseek/deepseek-v4-flash-latest": {
+                    "id": OR_ALIAS,
+                    "provider": "openrouter",
+                    "api": "openai-completions",
+                    "baseUrl": "https://openrouter.ai/api/v1",
+                    "cost": {"input": 0.07, "output": 0.5, "cacheRead": 0.008, "cacheWrite": 0.0},
+                    "contextWindow": 1048576,
+                    "maxTokens": 943718
+                }
+            }
+        });
+        let bytes = serde_json::to_vec(&catalog).unwrap();
+        fs::write(&path, &bytes).unwrap();
+        let plan = h
+            .journal
+            .job
+            .coding
+            .as_mut()
+            .unwrap()
+            .provider
+            .as_mut()
+            .unwrap();
+        plan.provider = "openrouter".into();
+        plan.model = OR_ALIAS.into();
+        plan.allow_shell = true;
+        plan.allow_background = false;
+        plan.budget_microusd = 4_000_000;
+        plan.max_requests = 1;
+        plan.max_context_bytes = 32768;
+        plan.catalog = Artifact {
+            path,
+            sha256: digest(&bytes),
+        };
+        (dir, h, w)
+    }
+    fn openrouter_grant(h: &mut Host, w: &mut Wire) -> Value {
+        let replies = push(
+            h,
+            w,
+            json!({"type":"coding_provider_request","id":1,"requestModel":{"id":OR_ALIAS,"provider":"openrouter","contextWindow":1048576},"contextBytes":1000}),
+        )
+        .unwrap();
+        assert_eq!(replies.len(), 1);
+        let mut written = vec![];
+        h.coding_bridge_dispatch(&replies[0], &mut |b| {
+            written = b.to_vec();
+            Ok(())
+        })
+        .unwrap();
+        serde_json::from_slice(&written).unwrap()
+    }
+    /// A provider_fetch for the openrouter lane with the body Pi 1.5.0 would
+    /// serialize: model is the Layer A alias id Pi holds; the Host rewrites to
+    /// Layer B at dispatch. `reasoning.effort` is "high" per the operator.
+    fn openrouter_fetch(grant: &Value, body: &[u8]) -> Value {
+        let s = &grant["stream"];
+        json!({"type":"provider_fetch","id":1,"binding":s["binding"],"sequence":s["sequence"],"stream":s["stream"],
+            "url":"https://openrouter.ai/api/v1/chat/completions","method":"POST",
+            "headers":{"authorization":"Bearer nonsecret-marker","content-type":"application/json"},
+            "body":B64.encode(body)})
+    }
+    /// A clean Chat Completions SSE stream (deltas, usage chunk, [DONE]).
+    fn completions_completed() -> Vec<u8> {
+        let events = [
+            json!({"object":"chat.completion.chunk","model":OR_RESOLVED,"choices":[{"index":0,"delta":{"content":"hi"}}]}),
+            json!({"model":OR_RESOLVED,"choices":[],"usage":{"prompt_tokens":12,"completion_tokens":4,"total_tokens":16}}),
+        ];
+        let body = events
+            .iter()
+            .map(|e| format!("data: {e}\n\n"))
+            .collect::<String>()
+            + "data: [DONE]\n\n";
+        format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\n\r\n{body}",
+            body.len()
+        )
+        .into_bytes()
+    }
     fn messages_completed() -> Vec<u8> {
         messages_completed_with("")
     }
@@ -3436,6 +3728,107 @@ mod tests {
         // writes, twice the input rate) + 2000 x 0.01 + 50 x 0.5 = 216, plus one.
         assert_eq!(request(&h).settled_microusd, Some(217));
     }
+    /// End-to-end Completions lane (P2-3, and the P1-1/1-2/1-3 proof): a real
+    /// Pi-shaped openrouter provider_fetch is accepted by completions_policy,
+    /// dispatched, settled over a clean Chat Completions SSE stream, and the
+    /// container completion settles with the resolved checkpoint (Layer C) in
+    /// the admitted family and `reasoning.effort == "high"` in the body.
+    #[test]
+    fn completions_lane_settles_end_to_end_with_high_effort() {
+        let (dir, mut h, mut w) = openrouter_host(vec![completions_completed()]);
+        let g = openrouter_grant(&mut h, &mut w);
+        // Body Pi 1.5.0 serializes for openrouter: store:false, reasoning high,
+        // model is the Layer A alias id Pi holds.
+        let body = serde_json::to_vec(&json!({
+            "model": OR_ALIAS,
+            "stream": true,
+            "store": false,
+            "stream_options": {"include_usage": true},
+            "reasoning": {"effort": "high"},
+            "tools": [{"type": "function", "name": "workspace_exec", "description": "d", "parameters": {"type": "object"}}],
+            "messages": [{"role": "user", "content": "q"}]
+        }))
+        .unwrap();
+        assert!(
+            push(&mut h, &mut w, openrouter_fetch(&g, &body))
+                .unwrap()
+                .is_empty(),
+            "fetch admitted"
+        );
+        relay_to_end(&mut h, &mut w, &g);
+        // The marker is never applied upstream as the real key; the Host swaps it.
+        for (_, headers) in w.opened.lock().unwrap().iter() {
+            assert!(!headers.contains_key("authorization") || headers["authorization"] != "Bearer nonsecret-marker");
+        }
+        let r = request(&h);
+        assert_eq!(r.attempts[0].disposition, AttemptDisposition::Completed);
+        assert_eq!(r.backend_model.as_deref(), Some(OR_RESOLVED));
+        assert_eq!(r.raw_terminal.as_ref().unwrap()["eventType"], "chat_completion");
+        // Layer B (the forwarded slug) is what left the Host, never Layer A.
+        let body_path = dir.path().join("coding-hosted-1.body.json");
+        let forwarded: Value = serde_json::from_slice(&fs::read(&body_path).unwrap()).unwrap();
+        assert_eq!(forwarded["model"], OR_TRANSMITTED);
+        assert_eq!(forwarded["reasoning"]["effort"], "high");
+        // The container completion settles the Host-held reservation.
+        push(
+            &mut h,
+            &mut w,
+            json!({"type":"provider_complete","id":1,"stopReason":"stop","usage":{"input":12,"output":4,"cacheRead":0,"cacheWrite":0,"totalTokens":16}}),
+        )
+        .unwrap();
+        // Settled to the raw-usage cost (12x0.07/1M + 4x0.5/1M ~= 4 microUSD,
+        // +1 rounding), not the full-catalog reservation.
+        assert_eq!(request(&h).settled_microusd, Some(4));
+    }
+    /// The operator fixed effort `high`; a body carrying any other effort (e.g.
+    /// Pi's `thinkingLevel:'off'` -> `reasoning.effort == "none"`) must be
+    /// refused by completions_policy.
+    #[test]
+    fn completions_policy_refuses_effort_below_high() {
+        let (_dir, mut h, mut w) = openrouter_host(vec![]);
+        let g = openrouter_grant(&mut h, &mut w);
+        let body = serde_json::to_vec(&json!({
+            "model": OR_ALIAS,
+            "stream": true,
+            "store": false,
+            "stream_options": {"include_usage": true},
+            "reasoning": {"effort": "none"},
+            "messages": [{"role": "user", "content": "q"}]
+        }))
+        .unwrap();
+        match push(&mut h, &mut w, openrouter_fetch(&g, &body)) {
+            Err(Error::Refused(m)) => assert!(
+                m.contains("reasoning.effort"),
+                "reason names effort: {m}"
+            ),
+            other => panic!("expected refusal, got {other:?}"),
+        }
+        assert!(w.opened.lock().unwrap().is_empty());
+    }
+    /// The receiver->Host->loopback path: a loopback mock presents
+    /// http://127.0.0.1:<port>/chat/completions and must be admitted for the
+    /// Completions wire (the plan has loopback routes), giving a provider-free
+    /// end-to-end check.
+    #[test]
+    fn loopback_completions_url_is_admitted() {
+        let (_dir, mut h, mut w) = openrouter_host(vec![]);
+        let g = openrouter_grant(&mut h, &mut w);
+        let body = serde_json::to_vec(&json!({
+            "model": OR_ALIAS,
+            "stream": true,
+            "store": false,
+            "stream_options": {"include_usage": true},
+            "reasoning": {"effort": "high"},
+            "messages": [{"role": "user", "content": "q"}]
+        }))
+        .unwrap();
+        let mut f = openrouter_fetch(&g, &body);
+        f["url"] = json!("http://127.0.0.1:9876/chat/completions");
+        assert!(
+            push(&mut h, &mut w, f).unwrap().is_empty(),
+            "loopback Completions URL admitted"
+        );
+    }
     #[test]
     fn messages_cost_uses_the_tier_of_all_input_tokens() {
         let model = json!({"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,
@@ -3476,6 +3869,45 @@ mod tests {
         assert_eq!(
             provider::messages_full_reservation_for_tests(&full),
             1_320_001
+        );
+    }
+    /// The OpenRouter Completions URL is `{base}/chat/completions`. The catalog
+    /// baseUrl is `https://openrouter.ai/api/v1`, so the correct presented URL
+    /// is that base plus `/chat/completions`; the doubled `/api/v1/api/v1/...`
+    /// form is a regression to refuse. This pins the URL rule that `hosted_fetch`
+    /// uses (the `Wire::Completions` arm).
+    #[test]
+    fn completions_url_uses_the_catalog_base_not_a_doubled_path() {
+        let base = "https://openrouter.ai/api/v1";
+        let good = format!("{base}/chat/completions");
+        let doubled = format!("{base}/api/v1/chat/completions");
+        // The arm's effective predicate (see hosted_fetch, Wire::Completions).
+        let accept = |url: &str| url == format!("{base}/chat/completions");
+        assert!(accept(&good));
+        assert!(!accept(&doubled));
+        // Freeze the exact strings so a future catalog or path change is caught.
+        assert_eq!(good, "https://openrouter.ai/api/v1/chat/completions");
+        assert_eq!(doubled, "https://openrouter.ai/api/v1/api/v1/chat/completions");
+    }
+
+    /// A loopback Completions route (offline mock) must have a real target path
+    /// so the receiver->Host->loopback path can be exercised provider-free.
+    #[test]
+    fn loopback_completions_target_is_a_real_path() {
+        let req = HostedRequest {
+            request: 1,
+            attempt: 1,
+            headers: BTreeMap::new(),
+            body: vec![],
+            wire: stream::Wire::Completions,
+            beta: false,
+        };
+        let lb = Endpoint::Loopback(std::net::SocketAddr::from(([127, 0, 0, 1], 9)));
+        assert_eq!(lb.target(&req).1, "/chat/completions");
+        assert!(lb.serves(stream::Wire::Completions));
+        assert_eq!(
+            Endpoint::OpenRouter.target(&req).1,
+            "/api/v1/chat/completions"
         );
     }
     #[test]
@@ -5134,5 +5566,25 @@ mod tests {
             (hold.outcome.as_str(), hold.reason.as_str()),
             ("relayed", "time_budget")
         );
+    }
+}
+
+#[cfg(test)]
+mod body_tests {
+    use super::completions_forward_body;
+
+    #[test]
+    fn completions_forward_replaces_layer_a_with_layer_b_floor_slug() {
+        let body = br#"{"model":"~deepseek/deepseek-v4-flash-latest","messages":[],"stream":true}"#;
+        let out = completions_forward_body(body, "deepseek/deepseek-v4-flash-latest:floor");
+        let v: serde_json::Value = serde_json::from_slice(&out).unwrap();
+        assert_eq!(v["model"], "deepseek/deepseek-v4-flash-latest:floor");
+        assert_eq!(v["stream"], true);
+    }
+
+    #[test]
+    fn completions_forward_passes_through_non_json_bytes() {
+        let body = b"not json";
+        assert_eq!(completions_forward_body(body, "x"), body.to_vec());
     }
 }

@@ -39,6 +39,25 @@ pub const HOSTED_BRIDGE_PROFILE: &str = "work-engine.pi-coding-hosted.v1";
 /// no shell, tool container or workspace effect; the Host serves read-only
 /// tools over the job's manifest-pinned workspace (`analysis`).
 pub const ANALYSIS_PROFILE: &str = "work-engine.pi-analysis-hosted.v1";
+/// The exact tool set the approved pi-better-background-tasks 0.18.0 plugin
+/// registers (background process management). When allow_background is admitted
+/// the ready frame must advertise exactly these names; the receiver maintains
+/// the same list. This is a tool-set contract, not per-call execution approval.
+pub const BG_TOOLS: [&str; 13] = [
+    "bg_task_spawn",
+    "bg_task_spawn_batch",
+    "bg_task_watch",
+    "bg_task_list",
+    "bg_task_status",
+    "bg_task_log",
+    "bg_task_stop",
+    "bg_task",
+    "bg_status",
+    "wait_for_operations",
+    "acknowledge_operation_result",
+    "bg_task_wait_cancel",
+    "bg_task_wait_list",
+];
 /// The live profiles: Host-held access, Host dispatch, lifecycle gate.
 pub fn is_live_bridge(schema: &str) -> bool {
     is_hosted(schema)
@@ -82,7 +101,7 @@ fn is_fixture_bridge(schema: &str) -> bool {
 }
 /// The advertised tool set must equal the profile's exact set (order-free for
 /// the claims profile, whose SDK registry order is not part of the contract).
-fn tools_match(advertised: &Value, schema: &str) -> bool {
+fn tools_match(advertised: &Value, schema: &str, allow_shell: bool, allow_background: bool) -> bool {
     let sorted = |v: &Value| -> Option<Vec<String>> {
         let mut names: Vec<String> = v
             .as_array()?
@@ -92,14 +111,18 @@ fn tools_match(advertised: &Value, schema: &str) -> bool {
         names.sort();
         Some(names)
     };
-    let expected = ready_tools(schema);
+    let expected = ready_tools(schema, allow_shell, allow_background);
     if schema == CLAIMS_BRIDGE_PROFILE || is_analysis(schema) {
         sorted(advertised).is_some() && sorted(advertised) == sorted(&expected)
     } else {
         *advertised == expected
     }
 }
-fn ready_tools(schema: &str) -> Value {
+/// The advertised native tool set for a profile's ready frame. For the live
+/// coding profile this is the workspace shell tool only when shell is admitted
+/// (`allow_shell`); without it (e.g. the lifecycle relay remap) no execution
+/// tool is advertised (Revision 4).
+fn ready_tools(schema: &str, allow_shell: bool, allow_background: bool) -> Value {
     if is_relay(schema) {
         json!(native_realization::pi_host::tools::names())
     } else if is_analysis(schema) {
@@ -111,6 +134,19 @@ fn ready_tools(schema: &str) -> Value {
                 .chain(claims::TOOLS)
                 .collect::<Vec<_>>()
         )
+    } else if is_live_bridge(schema) && !allow_shell {
+        // The hosted coding lane: no execution tool when shell is not
+        // admitted (Revision 4). Fixture surfaces (PROFILE, BRIDGE_PROFILE)
+        // always advertise the workspace shell tool. When background is
+        // admitted, the approved plugin's tool set is expected too.
+        if allow_background {
+            json!(BG_TOOLS)
+        } else {
+            json!([])
+        }
+    } else if is_live_bridge(schema) && allow_background {
+        // Shell + the approved background plugin's tool set.
+        json!(["workspace_exec"].into_iter().chain(BG_TOOLS.iter().copied()).collect::<Vec<_>>())
     } else {
         json!(["workspace_exec"])
     }
@@ -1214,6 +1250,24 @@ impl Host {
                         || !tools_match(
                             &frame["tools"],
                             &self.journal.job.coding.as_ref().unwrap().schema,
+                            self.journal
+                                .job
+                                .coding
+                                .as_ref()
+                                .unwrap()
+                                .provider
+                                .as_ref()
+                                .map(|p| p.allow_shell)
+                                .unwrap_or(false),
+                            self.journal
+                                .job
+                                .coding
+                                .as_ref()
+                                .unwrap()
+                                .provider
+                                .as_ref()
+                                .map(|p| p.allow_background)
+                                .unwrap_or(false),
                         )
                     {
                         return refuse("coding ready mismatch");
@@ -1356,6 +1410,29 @@ impl Host {
                     // outside the coding profiles.
                     if self.analysis_profile() {
                         return refuse("workspace tool outside a coding profile");
+                    }
+                    // Revision 4: shell is a capability admitted at admission,
+                    // never selected by the model and never implied by the
+                    // receiver. Refuse here on Host-held authority before
+                    // recording intent or invoking the effect gate, so a
+                    // malformed or compromised receiver cannot bypass the gate
+                    // by submitting a tool_request when allow_shell is false.
+                    // Scope to live (hosted) bridges: provider-disabled fixture
+                    // bridges have provider: None and always advertise the shell
+                    // tool, so the capability check must not apply to them.
+                    let schema = self.journal.job.coding.as_ref().unwrap().schema.as_str();
+                    let live_shell = self
+                        .journal
+                        .job
+                        .coding
+                        .as_ref()
+                        .unwrap()
+                        .provider
+                        .as_ref()
+                        .map(|p| p.allow_shell)
+                        .unwrap_or(false);
+                    if is_live_bridge(schema) && !live_shell {
+                        return refuse("shell execution not admitted");
                     }
                     if self.expired() || self.cancelled() {
                         return refuse("coding tool admission expired/cancelled");
@@ -2130,6 +2207,25 @@ mod tests {
         );
         assert!(h.journal.processes.is_empty());
     }
+    /// Regression (P1-4): a provider-disabled fixture bridge (provider: None)
+    /// must NOT be refused by the shell-capability guard. The guard is scoped
+    /// to live bridges, so a fixture tool_request proceeds past it; any error
+    /// is a downstream fixture/gate error, never "shell execution not admitted".
+    #[test]
+    fn fixture_bridge_tool_request_is_not_refused_by_shell_capability() {
+        let (_dir, mut h) = fixture();
+        h.journal.session_id = Some("native".into());
+        let request = frame(
+            json!({"schema":PROFILE,"sessionId":"native","type":"tool_request","id":"t1","command":"id"}),
+        );
+        match h.coding_advance(&request) {
+            Err(Error::Refused(m)) => {
+                assert_ne!(m, "shell execution not admitted");
+            }
+            Err(_) => {} // a downstream fixture/gate error is fine
+            Ok(_) => {}
+        }
+    }
     /// The analysis profile refuses a shell call by policy, before any
     /// intent is journaled or Docker is consulted.
     #[test]
@@ -2147,6 +2243,68 @@ mod tests {
         assert!(h.journal.coding.as_ref().unwrap().tool_requests.is_empty());
         assert!(h.journal.processes.is_empty());
     }
+    /// Revision 4: shell is a Host-admitted capability. A tool_request is
+    /// refused on Host-held authority (not merely hidden by the receiver) when
+    /// the admitted plan does not grant allow_shell, before any intent is
+    /// journaled or Docker is consulted.
+    #[test]
+    fn tool_request_is_refused_when_shell_is_not_admitted() {
+        let (_dir, mut h) = fixture();
+        h.journal.session_id = Some("native".into());
+        let profile = h.journal.job.coding.as_mut().unwrap();
+        profile.schema = HOSTED_BRIDGE_PROFILE.into();
+        profile.provider = Some(super::provider::ProviderPlan {
+            lane: super::provider::LaneInputs {
+                pi_config: Tree {
+                    root: std::path::PathBuf::from("/nonexistent"),
+                    manifest: Artifact {
+                        path: std::path::PathBuf::from("/nonexistent"),
+                        sha256: "0".repeat(64),
+                    },
+                },
+            },
+            task: Artifact {
+                path: std::path::PathBuf::from("/nonexistent"),
+                sha256: "0".repeat(64),
+            },
+            catalog: Artifact {
+                path: std::path::PathBuf::from("/nonexistent"),
+                sha256: "0".repeat(64),
+            },
+            stream_adapter: Artifact {
+                path: std::path::PathBuf::from("/nonexistent"),
+                sha256: "0".repeat(64),
+            },
+            hosted: super::hosted::HostedRoutes {
+                routes: vec![super::hosted::HostedRoute {
+                    id: "r".into(),
+                    payer: "p".into(),
+                    endpoint: "loopback:9".into(),
+                }],
+                max_attempts_per_request: 1,
+            },
+            provider: "openai-codex".into(),
+            model: "gpt-6-luna".into(),
+            max_requests: 1,
+            budget_microusd: 1_000_000,
+            max_context_bytes: 16384,
+            allow_shell: false,
+            allow_background: false,
+            failover: None,
+            classification_table_sha256: None,
+        });
+        drop(profile);
+        let request = frame(
+            json!({"schema":HOSTED_BRIDGE_PROFILE,"sessionId":"native","type":"tool_request","id":"t1","command":"id"}),
+        );
+        match h.coding_advance(&request) {
+            Err(Error::Refused(m)) => assert_eq!(m, "shell execution not admitted"),
+            other => panic!("{other:?}"),
+        }
+        assert!(h.journal.coding.as_ref().unwrap().tool_requests.is_empty());
+        assert!(h.journal.processes.is_empty());
+    }
+
     /// H4: only a relay thread's inference process outlives 300 s.
     #[test]
     fn relay_inference_process_wall_bound_is_the_relay_thread_bound() {
@@ -2615,10 +2773,13 @@ mod tests {
     }
     #[test]
     fn claims_profile_ready_tool_set_is_exact_and_legacy_sets_are_unchanged() {
-        assert!(tools_match(&json!(["workspace_exec"]), PROFILE));
+        // Provider-disabled fixture profiles always allow shell.
+        assert!(tools_match(&json!(["workspace_exec"]), PROFILE, true, false));
         assert!(!tools_match(
             &json!(["workspace_exec", "claims_discover"]),
-            BRIDGE_PROFILE
+            BRIDGE_PROFILE,
+            true,
+            false
         ));
         let all = json!([
             "claims_currency",
@@ -2627,10 +2788,12 @@ mod tests {
             "claims_resolve",
             "workspace_exec"
         ]);
-        assert!(tools_match(&all, CLAIMS_BRIDGE_PROFILE));
+        assert!(tools_match(&all, CLAIMS_BRIDGE_PROFILE, true, false));
         assert!(!tools_match(
             &json!(["workspace_exec"]),
-            CLAIMS_BRIDGE_PROFILE
+            CLAIMS_BRIDGE_PROFILE,
+            true,
+            false
         ));
         assert!(!tools_match(
             &json!([
@@ -2640,8 +2803,28 @@ mod tests {
                 "claims_evidence",
                 "bash"
             ]),
-            CLAIMS_BRIDGE_PROFILE
+            CLAIMS_BRIDGE_PROFILE,
+            true,
+            false
         ));
+        // Revision 4: on the hosted coding surface, no execution tool is
+        // advertised when shell is not admitted.
+        assert!(tools_match(&json!([]), HOSTED_BRIDGE_PROFILE, false, false));
+        assert!(!tools_match(&json!(["workspace_exec"]), HOSTED_BRIDGE_PROFILE, false, false));
+        assert!(tools_match(&json!(["workspace_exec"]), HOSTED_BRIDGE_PROFILE, true, false));
+        // Shell + granted background: the shell tool and the approved plugin's
+        // tool set are both advertised; without background they are not.
+        let shell_and_bg = {
+            let mut v = serde_json::json!(["workspace_exec"]);
+            let arr = v.as_array_mut().unwrap();
+            for t in BG_TOOLS {
+                arr.push(serde_json::json!(t));
+            }
+            v
+        };
+        assert!(tools_match(&shell_and_bg, HOSTED_BRIDGE_PROFILE, true, true));
+        assert!(!tools_match(&shell_and_bg, HOSTED_BRIDGE_PROFILE, true, false));
+        assert!(!tools_match(&json!(["workspace_exec"]), HOSTED_BRIDGE_PROFILE, true, true));
         assert!(is_bridge(CLAIMS_BRIDGE_PROFILE) && is_fixture_bridge(CLAIMS_BRIDGE_PROFILE));
         assert!(!is_fixture_bridge(HOSTED_BRIDGE_PROFILE));
     }
