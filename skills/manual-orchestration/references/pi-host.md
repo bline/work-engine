@@ -149,7 +149,18 @@ unchanged; these properties of the mechanism differ.
   entries, and `new_context` and `context_notes` are absent unless listed.
   User-level `subagents.agentOverrides` in `~/.pi/agent/settings.json`
   currently give `worker`, `scout` and `reviewer` the Codebase Memory read and
-  index tools.
+  index tools and the context-epoch tools. A foreground child loads no ambient
+  extension, so a listed extension tool without its provider fails the launch;
+  the overrides therefore also name the `pi-context-epochs` entry path.
+- **Rollover inside a child.** A child with the epoch tools can replace its
+  own context. In three 2026-11-20 probes (background without and with the
+  provider path, and foreground with it), each child's `new_context` produced one
+  boundary and one continuation, notes survived, and pi-subagents completed
+  the step only after the post-rollover run, returning that run's answer. The
+  context reader followed the child into its new epoch. The new epoch quotes
+  the child's task verbatim, so a child that records its progress in
+  `context_notes` before calling `new_context` can tell continuation from a
+  fresh start; without that record it can repeat finished work.
 - **Stalls.** A `claude-sdk` child can stop inside one model call: its session
   ends with an assistant message holding tool calls and no tool results, while
   status reports no activity. Two Fable reviewer runs on 2026-11-19 stalled
