@@ -1573,7 +1573,10 @@ impl Host {
                 Wire::Completions => (
                     usage["model"].as_str().map(str::to_owned),
                     json!({"eventType":"chat_completion",
-                    "usage":{"input_tokens":usage["inputTokens"],"completion_tokens":usage["outputTokens"],"total_tokens":usage["totalTokens"]}}),
+                    "usage":{"input_tokens":usage["inputTokens"],"completion_tokens":usage["outputTokens"],"total_tokens":usage["totalTokens"]},
+                    // Labelled provider-reported values, non-authoritative for
+                    // settlement (the Host prices from the pinned catalog).
+                    "provider_reported":{"cost":usage["providerReportedCost"],"cached_input_tokens":usage["providerCachedInputTokens"]}}),
                 ),
             };
             // Layer C (resolved checkpoint) is recorded, and for the

@@ -568,8 +568,9 @@ impl ProviderPlan {
             // OpenRouter Chat Completions: full-catalog reservation over the
             // whole context window and output bound at the dearer of the input
             // / cache rates. Floor may change the effective per-token rate;
-            // the reservation uses the pinned catalog row and the recorded
-            // receipts split pinned vs provider-reported cost.
+            // settlement prices from the pinned catalog row (never under-charges),
+            // and the receipt separately records the provider-reported cost and
+            // cached-input tokens as labelled, non-authoritative values.
             crate::pi_stream::Wire::Completions => full_reservation(&model),
         }
     }
@@ -792,13 +793,21 @@ fn completions_model_family(model: &str) -> String {
         format!("{dir}/{family_tail}")
     }
 }
-/// Whether a resolved checkpoint belongs to the plan's admitted model family:
-/// it must be non-empty and equal the family or carry it as a name boundary
-/// (so `deepseek/deepseek-v4-flash-0731` matches `deepseek/deepseek-v4-flash`,
-/// but `deepseek/deepseek-v4-pro` does not).
+/// Whether a resolved checkpoint belongs to the plan's admitted model family.
+/// A resolved id is in-family if it equals the family or carries a VERSION
+/// segment after the family dash -- all digits (e.g. `-0731`). A non-version
+/// suffix (e.g. `-vision-exp`), which names a distinct catalog model with its
+/// own price row, is NOT accepted.
 fn completions_model_in_family(resolved: &str, family: &str) -> bool {
+    if resolved == family {
+        return !resolved.is_empty();
+    }
     let family_dash: String = format!("{family}-");
-    !resolved.is_empty() && (resolved == family || resolved.starts_with(&family_dash))
+    match resolved.strip_prefix(&family_dash) {
+        None => false,
+        Some(rest) => !rest.is_empty()
+            && rest.chars().next().is_some_and(|c| c.is_ascii_digit()),
+    }
 }
 /// The upper bound of a plan's `max_context_bytes` on its profile.
 fn context_bound(analysis: bool, relay: bool) -> u64 {
@@ -1716,11 +1725,16 @@ mod admission_tests {
         // A different model family is not accepted.
         assert!(!completions_model_in_family("deepseek/deepseek-v4-pro", &family));
         assert!(!completions_model_in_family("", &family));
+        // A non-version suffix names a distinct catalog model (its own price
+        // row), so it is not in family.
+        assert!(!completions_model_in_family("deepseek/deepseek-v4-flash-vision-exp", &family));
         // A `-latest` slug and an already-`-v4-flash`-suffixed tail stay sane.
         assert_eq!(
             completions_model_family("deepseek/deepseek-v4-flash:floor"),
             "deepseek/deepseek-v4-flash"
         );
+        // A bare family (no version segment) is in family; a versioned one is.
+        assert!(completions_model_in_family("deepseek/deepseek-v4-flash", &family));
     }
     /// Background execution is not yet implemented (blocker, Revision 6): any
     /// admission requesting `allow_background` must be refused at runtime, not

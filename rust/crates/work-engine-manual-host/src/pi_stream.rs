@@ -539,6 +539,13 @@ fn completions_usage(events: &[Value]) -> Value {
     let output = u["usage"]["completion_tokens"].clone();
     let total = u["usage"]["total_tokens"].clone();
     let observed = [&input, &output].iter().all(|v| v.is_u64());
+    // Provider-reported, non-authoritative values the Host records in the
+    // receipt (labelled so settlement never treats them as authoritative; the
+    // Host prices from the pinned catalog, not these). Floor routing may change
+    // the effective per-token rate, so `providerReportedCost` is kept for the
+    // ledger to reconcile against the operator's OpenRouter view.
+    let provider_cost = u["usage"]["cost"].clone();
+    let cached = u["usage"]["prompt_tokens_details"]["cached_tokens"].clone();
     json!({
         "completed": true,
         "failed": null,
@@ -547,6 +554,8 @@ fn completions_usage(events: &[Value]) -> Value {
         "inputTokens": input,
         "outputTokens": output,
         "totalTokens": total,
+        "providerReportedCost": provider_cost,
+        "providerCachedInputTokens": cached,
     })
 }
 
