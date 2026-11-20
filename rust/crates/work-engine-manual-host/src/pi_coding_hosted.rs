@@ -245,9 +245,13 @@ impl Endpoint {
             (_, Wire::Messages) => "/v1/messages",
             (Self::OpenAiResponses, Wire::Responses) => "/v1/responses",
             (Self::OpenRouter, Wire::Completions) => "/api/v1/chat/completions",
+            // Loopback mocks serve any wire (offline qualification): give
+            // Completions a real path so a loopback upstream can be driven.
+            (Self::Loopback(_), Wire::Completions) => "/chat/completions",
             (_, Wire::Responses) => "/backend-api/codex/responses",
-            // Only OpenRouter serves Completions; any other endpoint on that
-            // wire is a config error and falls through to the route check.
+            // Only OpenRouter (and loopback) serve Completions; any other
+            // endpoint on that wire is a config error and falls through to the
+            // route check.
             (_, Wire::Completions) => "/unsupported-completions",
         };
         (self.host(), path)
@@ -731,7 +735,20 @@ impl Host {
             // The catalog baseUrl already ends in `/api/v1` (openrouter.ai/api/v1),
             // so the URL Pi presents is {base}/chat/completions. Do not append a
             // second /api/v1 here (see the upstream request path handling).
+            // A loopback mock (offline qualification) presents
+            // http://127.0.0.1:<port>/chat/completions and is accepted for the
+            // Completions wire when the plan has a loopback route.
             Wire::Completions if url == format!("{base}/chat/completions") => false,
+            Wire::Completions
+                if super::hosted::Endpoint::parse(&plan.hosted.routes[0].endpoint)
+                    .is_some_and(|e| matches!(e, super::hosted::Endpoint::Loopback(_)))
+                    && url
+                        .strip_prefix("http://127.0.0.1:")
+                        .or_else(|| url.strip_prefix("http://localhost:"))
+                        .is_some_and(|rest| rest.contains('/') && rest.ends_with("/chat/completions")) =>
+            {
+                false
+            }
             _ => return refuse("provider fetch identity/method/url conflict"),
         };
         if !Self::own_stream_frame(s, frame) || frame["method"] != "POST" {
@@ -3155,6 +3172,30 @@ mod tests {
         }
         assert!(w.opened.lock().unwrap().is_empty());
     }
+    /// The receiver->Host->loopback path: a loopback mock presents
+    /// http://127.0.0.1:<port>/chat/completions and must be admitted for the
+    /// Completions wire (the plan has loopback routes), giving a provider-free
+    /// end-to-end check.
+    #[test]
+    fn loopback_completions_url_is_admitted() {
+        let (_dir, mut h, mut w) = openrouter_host(vec![]);
+        let g = openrouter_grant(&mut h, &mut w);
+        let body = serde_json::to_vec(&json!({
+            "model": OR_ALIAS,
+            "stream": true,
+            "store": false,
+            "stream_options": {"include_usage": true},
+            "reasoning": {"effort": "high"},
+            "messages": [{"role": "user", "content": "q"}]
+        }))
+        .unwrap();
+        let mut f = openrouter_fetch(&g, &body);
+        f["url"] = json!("http://127.0.0.1:9876/chat/completions");
+        assert!(
+            push(&mut h, &mut w, f).unwrap().is_empty(),
+            "loopback Completions URL admitted"
+        );
+    }
     #[test]
     fn messages_cost_uses_the_tier_of_all_input_tokens() {
         let model = json!({"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,
@@ -3216,6 +3257,26 @@ mod tests {
         assert_eq!(doubled, "https://openrouter.ai/api/v1/api/v1/chat/completions");
     }
 
+    /// A loopback Completions route (offline mock) must have a real target path
+    /// so the receiver->Host->loopback path can be exercised provider-free.
+    #[test]
+    fn loopback_completions_target_is_a_real_path() {
+        let req = HostedRequest {
+            request: 1,
+            attempt: 1,
+            headers: BTreeMap::new(),
+            body: vec![],
+            wire: stream::Wire::Completions,
+            beta: false,
+        };
+        let lb = Endpoint::Loopback(std::net::SocketAddr::from(([127, 0, 0, 1], 9)));
+        assert_eq!(lb.target(&req).1, "/chat/completions");
+        assert!(lb.serves(stream::Wire::Completions));
+        assert_eq!(
+            Endpoint::OpenRouter.target(&req).1,
+            "/api/v1/chat/completions"
+        );
+    }
     #[test]
     fn messages_body_policy_and_url_are_enforced() {
         let ok = messages_body(json!([{"role":"user","content":"q"}]));
