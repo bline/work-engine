@@ -196,6 +196,22 @@ fn key_from_file(path: &Path) -> Result<String> {
     Ok(key)
 }
 
+/// The credential source kinds (the `kind` of a credentials file entry) that
+/// can serve a route endpoint, as `Credential::endpoint` binds them.
+/// Qualification-only kinds are not offered. A loopback route takes no
+/// credential.
+pub fn allowed_kinds(endpoint: &str) -> Option<&'static [&'static str]> {
+    Some(match endpoint {
+        "https:chatgpt-codex" => &["chatgpt-pi-auth"],
+        "https:openai-responses" => &["api-key-env", "api-key-file"],
+        "https:anthropic-oauth" => &["claude-code-auth"],
+        "https:anthropic-api" => &["anthropic-api-key-env", "anthropic-api-key-file"],
+        "https:openrouter" => &["openrouter-api-key-env", "openrouter-api-key-file"],
+        e if e.starts_with("loopback:") => &[],
+        _ => return None,
+    })
+}
+
 /// Host-held HTTPS transport to the fixed public endpoints.
 pub struct HttpsTransport {
     credentials: BTreeMap<String, Credential>,
@@ -384,9 +400,11 @@ impl HostedProviderTransport for HttpsTransport {
             Credential::AnthropicApiKey(key) => {
                 request_head(endpoint, &[("x-api-key", key)], request)
             }
-            Credential::OpenRouterApiKey(key) => {
-                request_head(endpoint, &[("Authorization", &format!("Bearer {key}"))], request)
-            }
+            Credential::OpenRouterApiKey(key) => request_head(
+                endpoint,
+                &[("Authorization", &format!("Bearer {key}"))],
+                request,
+            ),
         };
         let Connection { mut stream, abort } = connection;
         stream.write_all(head.as_bytes())?;
@@ -493,10 +511,7 @@ mod tests {
             request: 4,
             attempt: 1,
             headers: BTreeMap::from([
-                (
-                    "x-requested-with".to_string(),
-                    "pi".to_string(),
-                ),
+                ("x-requested-with".to_string(), "pi".to_string()),
                 ("openai-organization".to_string(), "org-x".to_string()),
                 ("accept".to_string(), "text/event-stream".to_string()),
             ]),
@@ -509,8 +524,9 @@ mod tests {
             &[("Authorization", "Bearer sk-or-v1-0123456789abcdef")],
             &request,
         );
-        assert!(head
-            .starts_with("POST /api/v1/chat/completions HTTP/1.1\r\nHost: openrouter.ai\r\n"));
+        assert!(
+            head.starts_with("POST /api/v1/chat/completions HTTP/1.1\r\nHost: openrouter.ai\r\n")
+        );
         assert!(head.contains("Authorization: Bearer sk-or-v1-0123456789abcdef\r\n"));
         assert!(head.contains("x-requested-with: pi\r\n"));
         assert!(!head.contains("openai-organization"));

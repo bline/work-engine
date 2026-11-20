@@ -19,8 +19,46 @@ fn main() {
         println!("{}", native_realization::pi_host::tools::dynamic_tools());
         return;
     }
+    if args.len() == 8
+        && args[1] == "prepare"
+        && args[2] == "--profile"
+        && args[4] == "--root"
+        && args[6] == "--snapshot-id"
+    {
+        // One launch's relay job from the pinned composition profile.
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        match work_engine_manual_host::pi_host_prepare::prepare(
+            std::path::Path::new(&args[3]),
+            std::path::Path::new(&args[5]),
+            &args[7],
+            now,
+        ) {
+            Ok(record) => println!("{record}"),
+            Err(refusal) => {
+                eprintln!("{}", refusal.to_json());
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
+    if args.len() == 5 && args[1] == "profile" && args[2] == "describe" && args[3] == "--profile" {
+        // The profile checked by the Host's rules; never opens credentials.
+        match work_engine_manual_host::pi_host_prepare::describe(std::path::Path::new(&args[4])) {
+            Ok(description) => println!("{description}"),
+            Err(refusal) => {
+                eprintln!("{}", refusal.to_json());
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     if args.len() != 4 || args[1] != "serve" || args[2] != "--config" {
-        eprintln!("usage: work-engine-pi-host serve --config <serve-config.json>");
+        eprintln!(
+            "usage: work-engine-pi-host serve --config <serve-config.json>\n       work-engine-pi-host prepare --profile <composition.json> --root <fresh root> --snapshot-id <id>\n       work-engine-pi-host profile describe --profile <composition.json>"
+        );
         std::process::exit(2);
     }
     let out = Out::new(Box::new(std::io::stdout()));

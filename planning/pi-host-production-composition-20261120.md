@@ -93,6 +93,89 @@ Rejected:
 - (C) `serve` composes internally. The runner would not know the job digest
   before the spawn, and that digest is bound into the session identity.
 
+## Step 1 contract (RL 6015, 6016)
+
+`work-engine-pi-host prepare --profile <composition.json> --root <root> --snapshot-id <id>`
+
+- Root precondition: absolute; absent (created) or an empty directory. It is
+  set to mode 0700, and anything else refuses. One job per root.
+- Snapshot id grammar: `[A-Za-z0-9._:-]{1,128}`.
+- Exit 0 prints one JSON object on stdout
+  (`work-engine.pi-host-composition-record.v1`):
+  - `profile` `{path, sha256}`, `root`, `job_id`;
+  - `job_sha256`, `serve_config_sha256`, `pi_host_json_sha256`,
+    `host_sha256`;
+  - `snapshot_id`, `prepared_unix_seconds`, `deadline_unix_seconds`;
+  - `routes`, `composition_sha256`.
+
+  The same object, without `composition_sha256`, is written as
+  `<root>/composition.json`.
+- Exit 1 prints `{"status":"refused","class","error"}` on stderr. The
+  classes are:
+  - `profile`: the profile is invalid by the Host's rules;
+  - `snapshot-id`;
+  - `root`: not absolute, not fresh, or not creatable;
+  - `admission`: the composed job fails the Host's fresh admission, for
+    example a runtime pin or the context bound;
+  - `io`.
+- Exit 2: usage.
+- Written under the root:
+  - `inputs/`;
+  - `pi-host-state/` (empty);
+  - `job.json`, `serve-config.json`, `pi-host.json`, `composition.json`.
+
+`work-engine-pi-host profile describe --profile <composition.json>`
+
+- It checks the profile by the same rules: schema, durations, provider
+  catalog, route table, each endpoint serving the provider's wire family,
+  and credential kinds.
+- It never opens a credentials file. Exit and refusal classes are as above.
+- Exit 0 prints:
+  - `{schema, profile_sha256, provider, model, wire, routes:[{id, endpoint, payer}], payers:{<payer>:[kinds]}}`;
+  - `payers` lists the credential source kinds that can serve every route
+    the payer pays (one payer holds one credential). An empty list means a
+    loopback-only payer, which needs no credential.
+  - A payer whose routes need incompatible kinds refuses as `profile`.
+- Kinds per endpoint (`https::allowed_kinds`):
+
+  | Endpoint | Kinds |
+  | --- | --- |
+  | `https:chatgpt-codex` | `chatgpt-pi-auth` |
+  | `https:openai-responses` | `api-key-env`, `api-key-file` |
+  | `https:anthropic-oauth` | `claude-code-auth` |
+  | `https:anthropic-api` | `anthropic-api-key-env`, `anthropic-api-key-file` |
+  | `https:openrouter` | `openrouter-api-key-env`, `openrouter-api-key-file` |
+  | `loopback:*` | none |
+
+The profile (`work-engine.pi-host-composition.v1`, strict fields):
+
+- `runtime {root, manifest {path, sha256}}`, `docker`;
+- `provider`, `model`, `hosted {routes, max_attempts_per_request}`;
+- `max_requests`, `budget_microusd`, `max_context_bytes`,
+  `max_tool_calls`;
+- `turn_deadline_secs`, `job_secs` (at most the relay deadline, 3,600);
+- optional `pi_settings` (object).
+
+It carries no credential.
+
+Host environment (RL 6015 (b)):
+
+- `serve` reads only `WORK_ENGINE_HOSTED_CREDENTIALS`, plus the variable
+  that a `*-env` credential source names. Production should prefer the
+  `*-file` kinds, so nothing else needs to pass the allowlist.
+- Docker is spawned with a cleared environment (`PATH=/usr/bin:/bin`,
+  `HOME=/nonexistent`; `pi_docker.rs:610`).
+- TLS uses the platform verifier, so system certificates are used unless
+  `SSL_CERT_FILE` or `SSL_CERT_DIR` are set.
+- `prepare` and `profile describe` read no environment.
+
+Account identifier on non-Messages wires (RL 6015 (e)): the Host verifies
+absence only on the Messages wire. Elsewhere it reports
+`contains_account_identifier: true`, meaning not verified. With the consumer
+refusing on any wire, Responses and Completions (OpenRouter) relay captures
+are refused until the Host has an absence check for those wires. That check
+is a separate Host item, not this slice.
+
 ## Invariants kept
 
 - One fresh state directory per job, and the Host admission unchanged.
