@@ -3,6 +3,7 @@
 #[cfg(test)]
 mod direct_host_tests;
 mod observation;
+mod pi_host_isolation;
 pub mod research_admission;
 mod research_delivery;
 mod research_installation;
@@ -1754,6 +1755,17 @@ fn validate_file(path: &Path) -> Result<(), HostError> {
     Ok(())
 }
 fn validate_startup(s: &HostStartup) -> Result<(), HostError> {
+    // The Pi Host has no provider endpoint: its installed composition pins the
+    // profile and the Host binary instead. Checked first so a refusal is named.
+    let pi_host = s
+        .lifecycle
+        .native
+        .as_ref()
+        .filter(|native| native.provider_route == NativeProviderRoute::PiHostV1);
+    if let Some(native) = pi_host {
+        lifecycle_service::verify_pi_host_composition(native)
+            .map_err(|refusal| startup_invalid(refusal.reason()))?;
+    }
     lifecycle_service::validate_config(&s.lifecycle, true, true, false)
         .map_err(|_| startup_invalid("lifecycle configuration"))?;
     research_admission::validate_nomination(s)?;
@@ -1809,10 +1821,11 @@ fn validate_startup(s: &HostStartup) -> Result<(), HostError> {
         .ok_or_else(|| startup_invalid("native configuration"))?;
     if s.lifecycle.profile != PROFILE
         || s.provider_identity != native.provider_route.identity()
-        || native
-            .provider_route
-            .configured_base_url(&native.simulator_base_url)
-            .is_none()
+        || (pi_host.is_none()
+            && native
+                .provider_route
+                .configured_base_url(&native.simulator_base_url)
+                .is_none())
         || (native.provider_route == NativeProviderRoute::OpenaiResponsesFakeV1
             && !cfg!(feature = "controlled-proof"))
     {

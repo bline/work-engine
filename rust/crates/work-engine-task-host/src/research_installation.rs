@@ -38,6 +38,12 @@ pub struct InstallationSelection {
     operations: Pin,
     operation_admission: Pin,
 }
+impl InstallationSelection {
+    /// The protected installation root, for path exclusion only.
+    pub(crate) fn root(&self) -> &Path {
+        &self.root
+    }
+}
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 struct Pin {
@@ -1339,6 +1345,37 @@ pub(crate) fn admit_external_operator(
     let controlled = false;
     admit_operator_input(startup, selected, input_path, controlled)
 }
+/// The routes an actual installed startup may use: the ChatGPT access lease
+/// with its access-source isolation, or the Pi Host with its credential
+/// isolation (`pi_host_isolation`).
+pub(crate) fn admit_production_route(startup: &HostStartup) -> Result<(), HostError> {
+    let native = startup
+        .lifecycle
+        .native
+        .as_ref()
+        .ok_or(HostError::Configuration)?;
+    if cfg!(feature = "controlled-proof") || !startup.control.is_native() {
+        return invalid();
+    }
+    match native.provider_route {
+        crate::NativeProviderRoute::OpenaiChatgptAccessLeaseV1
+            if native
+                .chatgpt_access_source
+                .as_ref()
+                .and_then(|s| s.isolation.as_ref())
+                .is_some() =>
+        {
+            Ok(())
+        }
+        crate::NativeProviderRoute::PiHostV1 => {
+            crate::pi_host_isolation::admit_installation(startup).map_err(|refusal| {
+                eprintln!("task host install check: {}", refusal.reason());
+                HostError::Configuration
+            })
+        }
+        _ => invalid(),
+    }
+}
 fn admit_operator_input(
     startup: &HostStartup,
     selected: &crate::selected_startup::SelectedIdentity,
@@ -1346,22 +1383,7 @@ fn admit_operator_input(
     controlled: bool,
 ) -> Result<AuthorizedResearchStartup, HostError> {
     if !controlled {
-        let native = startup
-            .lifecycle
-            .native
-            .as_ref()
-            .ok_or(HostError::Configuration)?;
-        if cfg!(feature = "controlled-proof")
-            || !startup.control.is_native()
-            || native.provider_route != crate::NativeProviderRoute::OpenaiChatgptAccessLeaseV1
-            || native
-                .chatgpt_access_source
-                .as_ref()
-                .and_then(|s| s.isolation.as_ref())
-                .is_none()
-        {
-            return invalid();
-        }
+        admit_production_route(startup)?;
     }
 
     if selected.startup_bytes.is_empty()
@@ -1612,7 +1634,7 @@ pub(crate) mod tests {
     fn record(root: &Path, name: &str, value: &Value) -> Pin {
         put(root, name, &serde_json::to_vec(value).unwrap())
     }
-    fn fixture(dir: &Path) -> (HostStartup, InstallationSelection, Value) {
+    pub(crate) fn fixture(dir: &Path) -> (HostStartup, InstallationSelection, Value) {
         let mut startup =
             crate::tests::admission_host(dir, &dir.join("unused.sock"), false).startup;
         for grant in &mut startup.lifecycle.grants {
