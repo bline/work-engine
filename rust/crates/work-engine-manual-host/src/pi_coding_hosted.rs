@@ -2873,6 +2873,99 @@ mod tests {
                 "anthropic-version":"2023-06-01","x-stainless-retry-count":"0"},
             "body":B64.encode(body)})
     }
+    // OpenRouter Chat Completions family (this lane). The Layer A catalog id Pi
+    // resolves offline is `~deepseek/deepseek-v4-flash-latest`; the transmitted
+    // slug (Layer B) is base + `:floor`. The resolved checkpoint (Layer C) is a
+    // concrete id in the family, e.g. `deepseek/deepseek-v4-flash-0731`.
+    const OR_ALIAS: &str = "~deepseek/deepseek-v4-flash-latest";
+    const OR_TRANSMITTED: &str = "deepseek/deepseek-v4-flash-latest:floor";
+    const OR_RESOLVED: &str = "deepseek/deepseek-v4-flash-0731";
+    /// The offline host switched to the `openrouter` provider with the pinned
+    /// OpenRouter catalog entry of the model, and a host budget large enough for
+    /// one full-catalog reservation.
+    fn openrouter_host(responses: Vec<Vec<u8>>) -> (tempfile::TempDir, Host, Wire) {
+        let (dir, mut h, w) = host(responses, None);
+        let path = dir.path().join("openrouter.json");
+        let catalog = json!({
+            "openai-completions": {
+                "chat:~deepseek/deepseek-v4-flash-latest": {
+                    "id": OR_ALIAS,
+                    "provider": "openrouter",
+                    "api": "openai-completions",
+                    "baseUrl": "https://openrouter.ai/api/v1",
+                    "cost": {"input": 0.07, "output": 0.5, "cacheRead": 0.008, "cacheWrite": 0.0},
+                    "contextWindow": 1048576,
+                    "maxTokens": 943718
+                }
+            }
+        });
+        let bytes = serde_json::to_vec(&catalog).unwrap();
+        fs::write(&path, &bytes).unwrap();
+        let plan = h
+            .journal
+            .job
+            .coding
+            .as_mut()
+            .unwrap()
+            .provider
+            .as_mut()
+            .unwrap();
+        plan.provider = "openrouter".into();
+        plan.model = OR_ALIAS.into();
+        plan.allow_shell = true;
+        plan.allow_background = false;
+        plan.budget_microusd = 4_000_000;
+        plan.max_requests = 1;
+        plan.max_context_bytes = 32768;
+        plan.catalog = Artifact {
+            path,
+            sha256: digest(&bytes),
+        };
+        (dir, h, w)
+    }
+    fn openrouter_grant(h: &mut Host, w: &mut Wire) -> Value {
+        let replies = push(
+            h,
+            w,
+            json!({"type":"coding_provider_request","id":1,"requestModel":{"id":OR_ALIAS,"provider":"openrouter","contextWindow":1048576},"contextBytes":1000}),
+        )
+        .unwrap();
+        assert_eq!(replies.len(), 1);
+        let mut written = vec![];
+        h.coding_bridge_dispatch(&replies[0], &mut |b| {
+            written = b.to_vec();
+            Ok(())
+        })
+        .unwrap();
+        serde_json::from_slice(&written).unwrap()
+    }
+    /// A provider_fetch for the openrouter lane with the body Pi 1.5.0 would
+    /// serialize: model is the Layer A alias id Pi holds; the Host rewrites to
+    /// Layer B at dispatch. `reasoning.effort` is "high" per the operator.
+    fn openrouter_fetch(grant: &Value, body: &[u8]) -> Value {
+        let s = &grant["stream"];
+        json!({"type":"provider_fetch","id":1,"binding":s["binding"],"sequence":s["sequence"],"stream":s["stream"],
+            "url":"https://openrouter.ai/api/v1/chat/completions","method":"POST",
+            "headers":{"authorization":"Bearer nonsecret-marker","content-type":"application/json"},
+            "body":B64.encode(body)})
+    }
+    /// A clean Chat Completions SSE stream (deltas, usage chunk, [DONE]).
+    fn completions_completed() -> Vec<u8> {
+        let events = [
+            json!({"object":"chat.completion.chunk","model":OR_RESOLVED,"choices":[{"index":0,"delta":{"content":"hi"}}]}),
+            json!({"model":OR_RESOLVED,"choices":[],"usage":{"prompt_tokens":12,"completion_tokens":4,"total_tokens":16}}),
+        ];
+        let body = events
+            .iter()
+            .map(|e| format!("data: {e}\n\n"))
+            .collect::<String>()
+            + "data: [DONE]\n\n";
+        format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\n\r\n{body}",
+            body.len()
+        )
+        .into_bytes()
+    }
     fn messages_completed() -> Vec<u8> {
         messages_completed_with("")
     }
@@ -2981,6 +3074,83 @@ mod tests {
         // 10 x 0.1 + 400 x 0.125 (5-minute writes) + 600 x 0.2 (one-hour
         // writes, twice the input rate) + 2000 x 0.01 + 50 x 0.5 = 216, plus one.
         assert_eq!(request(&h).settled_microusd, Some(217));
+    }
+    /// End-to-end Completions lane (P2-3, and the P1-1/1-2/1-3 proof): a real
+    /// Pi-shaped openrouter provider_fetch is accepted by completions_policy,
+    /// dispatched, settled over a clean Chat Completions SSE stream, and the
+    /// container completion settles with the resolved checkpoint (Layer C) in
+    /// the admitted family and `reasoning.effort == "high"` in the body.
+    #[test]
+    fn completions_lane_settles_end_to_end_with_high_effort() {
+        let (dir, mut h, mut w) = openrouter_host(vec![completions_completed()]);
+        let g = openrouter_grant(&mut h, &mut w);
+        // Body Pi 1.5.0 serializes for openrouter: store:false, reasoning high,
+        // model is the Layer A alias id Pi holds.
+        let body = serde_json::to_vec(&json!({
+            "model": OR_ALIAS,
+            "stream": true,
+            "store": false,
+            "stream_options": {"include_usage": true},
+            "reasoning": {"effort": "high"},
+            "tools": [{"type": "function", "name": "workspace_exec", "description": "d", "parameters": {"type": "object"}}],
+            "messages": [{"role": "user", "content": "q"}]
+        }))
+        .unwrap();
+        assert!(
+            push(&mut h, &mut w, openrouter_fetch(&g, &body))
+                .unwrap()
+                .is_empty(),
+            "fetch admitted"
+        );
+        relay_to_end(&mut h, &mut w, &g);
+        // The marker is never applied upstream as the real key; the Host swaps it.
+        for (_, headers) in w.opened.lock().unwrap().iter() {
+            assert!(!headers.contains_key("authorization") || headers["authorization"] != "Bearer nonsecret-marker");
+        }
+        let r = request(&h);
+        assert_eq!(r.attempts[0].disposition, AttemptDisposition::Completed);
+        assert_eq!(r.backend_model.as_deref(), Some(OR_RESOLVED));
+        assert_eq!(r.raw_terminal.as_ref().unwrap()["eventType"], "chat_completion");
+        // Layer B (the forwarded slug) is what left the Host, never Layer A.
+        let body_path = dir.path().join("coding-hosted-1.body.json");
+        let forwarded: Value = serde_json::from_slice(&fs::read(&body_path).unwrap()).unwrap();
+        assert_eq!(forwarded["model"], OR_TRANSMITTED);
+        assert_eq!(forwarded["reasoning"]["effort"], "high");
+        // The container completion settles the Host-held reservation.
+        push(
+            &mut h,
+            &mut w,
+            json!({"type":"provider_complete","id":1,"stopReason":"stop","usage":{"input":12,"output":4,"cacheRead":0,"cacheWrite":0,"totalTokens":16}}),
+        )
+        .unwrap();
+        // Settled to the raw-usage cost (12x0.07/1M + 4x0.5/1M ~= 4 microUSD,
+        // +1 rounding), not the full-catalog reservation.
+        assert_eq!(request(&h).settled_microusd, Some(4));
+    }
+    /// The operator fixed effort `high`; a body carrying any other effort (e.g.
+    /// Pi's `thinkingLevel:'off'` -> `reasoning.effort == "none"`) must be
+    /// refused by completions_policy.
+    #[test]
+    fn completions_policy_refuses_effort_below_high() {
+        let (_dir, mut h, mut w) = openrouter_host(vec![]);
+        let g = openrouter_grant(&mut h, &mut w);
+        let body = serde_json::to_vec(&json!({
+            "model": OR_ALIAS,
+            "stream": true,
+            "store": false,
+            "stream_options": {"include_usage": true},
+            "reasoning": {"effort": "none"},
+            "messages": [{"role": "user", "content": "q"}]
+        }))
+        .unwrap();
+        match push(&mut h, &mut w, openrouter_fetch(&g, &body)) {
+            Err(Error::Refused(m)) => assert!(
+                m.contains("reasoning.effort"),
+                "reason names effort: {m}"
+            ),
+            other => panic!("expected refusal, got {other:?}"),
+        }
+        assert!(w.opened.lock().unwrap().is_empty());
     }
     #[test]
     fn messages_cost_uses_the_tier_of_all_input_tokens() {
