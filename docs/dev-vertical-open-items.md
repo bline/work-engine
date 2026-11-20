@@ -38,21 +38,27 @@ Ledgers without an overrun serialize unchanged. Tests
 
 ## Hosted analysis profile (`work-engine.pi-analysis-hosted.v1`)
 
-Built for the research-lifecycle H2 run (plan
-[dev-vertical-h2-pi-route](../planning/dev-vertical-h2-pi-route-20261117.md)).
-Open:
+Used by the organization's hosted review (`work-engine-review-hosted`). It is
+not the research path. Open: crash and cancel are not exercised offline for
+this profile (the transport and ledger are shared with the coding profile,
+whose matrix covers them).
 
-- **Job deadline.** The Host admits at most 300 s for a fresh job; a slower
-  model or many more requests may need a profile-specific bound.
-- **Model.** Admission pins `gpt-6-luna`; the H2 arm's model is the
-  operator's choice (route comparison R6).
-- **No server class or job preparation.** Runs use the
-  `analysis-qualification` producer directly; the entry the task host uses is
-  slice 4's question.
-- **Not exercised offline for this profile:** crash and cancel (the transport
-  and ledger are shared with the coding profile, whose matrix covers them).
-- **Not connected to the research lifecycle** (task host, delivery record,
-  install predicate): slice 4.
+## Pi Host lifecycle relay (`work-engine.pi-lifecycle-hosted.v1`): slice 4
+
+Research runs on this profile: the Pi Host in controller mode
+(`work-engine-pi-host serve`, protocol
+`native-realization/PI_HOST_PROTOCOL.md`), driven by `lifecycle-service`'s
+Pi Host runner. It was qualified live by H2 on `claude-sdk`, with three arms
+accepted on 2026-11-19 (`records/research-lifecycle-h2-live-result-20261119.md`).
+The relay context bound is 500,000.
+
+Open: production composition
+([plan](../planning/pi-host-production-composition-20261120.md)).
+
+- Only `lifecycle-service` `tests/pi_host_join.rs` writes the Host job, serve
+  config and `pi-host.json` (`prepare_host_job`, `config`).
+- The task host refuses the route at startup validation and at the install
+  check.
 
 ## Monitoring log
 
