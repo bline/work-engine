@@ -1,31 +1,30 @@
 # Work Engine Research Commons
-## A Distributed, Continuously Qualified Intelligence Network for Agentic Engineering
+## A Public, Continuously Qualified Intelligence Network for Agentic Engineering
 
-**Status:** Concept proposal — not an approved implementation design. Deferred until Work Engine has outside interest and measured local results.  
-**Date:** November 17, 2026  
+**Status:** Revised concept proposal — not an approved implementation design. Distributed service and institutional development remain deferred pending outside interest and measured local results.  
+**Original proposal:** November 17, 2026  
+**Open-access revision:** November 20, 2026  
 **Project:** Work Engine
 
 ---
 
 ## 1. Executive Summary
 
-Work Engine has the potential to support a member-supported research cooperative: a research network, funded and directed by its contributors, dedicated to continuously improving the efficiency, quality, reliability, and economics of agentic software engineering.
+Work Engine has the potential to support a **public research commons**: a distributed research network dedicated to continuously improving the efficiency, quality, reliability, and economics of agentic software engineering. It would create and maintain research-backed improvements that any developer or organization can inspect, reuse, and apply without a membership, fee, account, access tier, or release delay.
 
-The near-term goal is modest: **sustain one full-time maintainer through transparent, member-supported funding.** Forming a legal organization, adopting a charter, and growing a team of maintainers and researchers are possible later developments, not commitments.
+The near-term institutional goal is modest: **sustain one full-time maintainer and the research operations needed to produce dependable public knowledge.** Potential funding sources include grants and fellowships, institutional underwriting, nonexclusive sponsored research, voluntary donations, and paid engineering support or integration services. These sources pay for work and continuity; they do not purchase control of scientific conclusions or privileged access to Commons findings.
 
 The open-source Work Engine provides the engineering machinery: planning, compilation, deterministic orchestration, execution, evidence collection, independent verification, and policy enforcement.
 
-A separate, member-supported intelligence service coordinates distributed research, maintains qualified findings, determines their continued applicability, and distributes research-backed decision improvements.
+A separate, publicly accessible intelligence service would coordinate distributed research, maintain qualified findings, determine their continuing applicability, and publish research-backed decision improvements. **The service does not host anyone's development workloads**, and access to published research must not depend on the continued operation of one central endpoint.
 
-Members and other users execute Work Engine locally or on infrastructure of their choosing, using their own authorized model providers and inference resources. The intelligence service does not host anyone's development workloads.
+Developers run Work Engine locally or on infrastructure they choose, using their own authorized model providers and inference resources. They can benefit from published knowledge without paying or participating in experiments. With explicit consent, participating installations may contribute bounded inference capacity, eligible coding tasks, and privacy-constrained evidence to coordinated studies.
 
-Participating installations can contribute bounded inference capacity and eligible coding tasks to centrally coordinated research programs. Those contributions generate experimental evidence that benefits the wider network.
+Research protocols, findings, limitations, correction notices, and qualified policy artifacts become public, reusable resources under open licenses. Private participant code, credentials, and restricted evidence remain protected under explicit consent and disclosure rules. Openness must not be confused with claiming that unpublished or unverifiable private evidence has been publicly verified.
 
-Members support the research through dues, research contributions, or both. Verified contributions create durable standing in a privacy-conscious, auditable ledger; any benefits or governance rights associated with that standing require separately published rules. Earlier access to qualified releases is one possible membership benefit, not a requirement; established research ultimately becomes available to the community under a defined publication policy.
+**The core proposition is that independent developers can share the benefits of continuously maintained engineering knowledge while retaining authority over their own work.** Supporters fund the work of producing and maintaining that knowledge, not the right to access it.
 
-**The core proposition is that participants collectively finance and perform research whose findings improve the engineering work they already undertake.**
-
-The Commons is sustained not by permanent secrecy around individual discoveries but by its ability to continuously generate, qualify, maintain, and operationalize useful engineering knowledge.
+Forming an organization, adopting a charter, and growing a team of maintainers and researchers are possible later developments, not commitments. The complete distributed network, public intelligence API, automated policy distribution, and sustainability model remain hypotheses to be tested, not implemented capabilities.
 
 ---
 
@@ -41,12 +40,15 @@ They may conduct their own experiments, maintain their own research findings, an
 
 The Commons must not depend on deliberately crippling the open-source version.
 
-### 2.2 Knowledge becomes broadly accessible
-Qualified research should become broadly accessible under a published, versioned release policy. Early access for supporting members is one possible model; tiered releases are optional, not a condition of the Commons.
+### 2.2 Universal, free access to public research
 
-Member support funds research freshness and ongoing research operations, not permanent exclusion from accumulated knowledge.
+**All published Commons research and research-backed policy releases are free to everyone, on equal terms, from publication.** There are no paid tiers, delayed releases, required memberships, research-access quotas, subscriber-only findings, or sponsor-exclusive results. No payment, research contribution, or account is required to read, download, mirror, verify, or apply public releases.
 
-Material corrections, withdrawals, and validity updates are not artificially delayed by membership status or release tier.
+Public outputs should use open, nonexclusive licenses permitting reuse, including commercial reuse, subject to the license actually adopted. Public, content-addressed archives and independently usable bundles are primary distribution mechanisms; an optional hosted API is a convenience, not a gatekeeper.
+
+The promise concerns **access to public research**, not free commercial model inference, free execution infrastructure, unlimited funded experiments, or a guarantee of perpetual hosted uptime. Any unavoidable abuse-prevention or infrastructure controls on a service endpoint must not become eligibility or pricing restrictions on the underlying research: the public artifacts remain available for independent retrieval and hosting.
+
+Unqualified, preliminary, disputed, or withdrawn material must be labeled by its actual standing. Privacy, consent, security, and legitimate legal restrictions may prevent disclosure of underlying participant evidence, but they do not authorize a paid or privileged alternative version of a Commons result. Corrections, withdrawals, and applicability changes must be published promptly and without differentiated access.
 
 ### 2.3 Research participation is bounded and consensual
 
@@ -54,7 +56,7 @@ Participants explicitly authorize how much of their inference capacity and eligi
 
 Participation cannot silently consume resources, expand permissions, or alter the authoritative production outcome.
 
-Research incentives should reward useful, verifiable participation rather than merely the number of tokens consumed or positive experimental findings.
+Research participation is voluntary and never a condition of reading public results. Contributions should be assessed for useful, verifiable evidence, not merely the number of tokens consumed or positive experimental findings.
 
 ### 2.4 Scientific integrity precedes institutional advantage
 
@@ -64,6 +66,8 @@ A finding is not treated as universally applicable merely because it passed an i
 
 The research organization must be capable of withdrawing, narrowing, or reversing previously published conclusions.
 
+Funders, contributors, and maintainers cannot purchase favorable findings, suppress warranted corrections, or transform scientific claims into execution authority.
+
 ### 2.5 Central coordination does not imply central execution authority
 
 The intelligence service selects research priorities and proposes assignments.
@@ -71,6 +75,10 @@ The intelligence service selects research priorities and proposes assignments.
 Local Work Engine installations retain control over admission, execution, resource limits, privacy, and acceptance of research work.
 
 The central service cannot override local execution authority.
+
+### 2.6 Open access and institutional sustainability are separate obligations
+
+The Commons may earn revenue to pay maintainers, researchers, infrastructure, audits, and research expenses. Funding arrangements must preserve the public publication contract and independent scientific qualification. If funding becomes inadequate, the response is to reduce scope, seek more support, or provide portable public archives—not to retroactively close publicly funded knowledge.
 
 ---
 
@@ -108,11 +116,11 @@ Its responsibilities include:
 - Monitoring changes affecting established findings.
 - Scheduling research discovery and requalification.
 - Publishing immutable research and decision-policy releases.
-- Managing memberships, entitlements, contribution accounting, and release access.
+- Publishing public releases without access entitlements; maintaining optional, consented contributor identity, contribution records, and transparent funding accounts.
 
 A lightweight serverless architecture, potentially using Cloudflare Workers, D1, R2, and asynchronous processing, could support much of this coordination.
 
-More computationally demanding research qualification and analysis could operate in separate workers or servers when necessary.
+More computationally demanding research qualification and analysis could operate in separate workers or servers when necessary. Public artifacts must also be downloadable and mirrorable without a running central API.
 
 **The central service is a research coordinator and intelligence distributor, not an infrastructure provider for anyone's coding sessions.**
 
@@ -123,7 +131,7 @@ The Intelligence API should be a new adapter and coordination layer over Work En
 A candidate decomposition:
 
 - **Portable intelligence core:** A narrow shared Rust library (conceptually `work-engine-intelligence-core`) that composes existing domain libraries rather than moving their implementations. It owns the portable intelligence-facing contracts: validated research references, claim revisions, applicability, experiment descriptions, evidence envelopes, release identities, compatibility checks, and cryptographic verification. It should compile both natively and to Wasm.
-- **Server adapter:** Authentication, research coordination, publication, storage, and memberships.
+- **Server adapter:** Public read access, authenticated research submission and coordination, publication, storage, and operational integrity. Authentication for privileged write operations does not gate public research.
 - **Local client adapter:** Retrieve releases, check applicable protocols, submit explicitly permitted evidence, and hand verified policy inputs to the existing local owners.
 
 The client adapter does not decide whether a remote recommendation grants execution authority. Local admission retains that responsibility.
@@ -148,15 +156,15 @@ Cloudflare Workers supports Rust through `workers-rs`, compiled to `wasm32-unkno
 
 | Service need | Candidate |
 |---|---|
-| HTTP endpoints, authentication, publication, eligibility | Workers (Rust) |
-| Studies, claim revisions, applicability, memberships, assignments | D1 |
+| Public HTTP endpoints, contributor authentication, publication, eligibility | Workers (Rust) |
+| Studies, claim revisions, applicability, contributors, assignments | D1 |
 | Content-addressed evidence packets, manifests, signed releases | R2 (strong read-after-write consistency; conditional create-only writes) |
 | Serialized per-experiment authoritative state | Durable Objects |
 | Requalification scheduling, evidence processing | Queues and Cron Triggers |
 
 Workers KV is eventually consistent and should not hold authoritative research state.
 
-Workers execute Wasm, not a Linux process environment. Native filesystem, `libc`, Git, SQLite (`rusqlite`), and process management do not move over. That is consistent with the design: the service never executes member workloads. It does mean research crates need a split between a portable domain core and environment adapters (native Git/SQLite for local Work Engine; D1/R2 for the service). Long-running maintenance work should run as queued, durable operations rather than inline requests, and the service should avoid loading whole research archives into memory.
+Workers execute Wasm, not a Linux process environment. Native filesystem, `libc`, Git, SQLite (`rusqlite`), and process management do not move over. That is consistent with the design: the service never executes participant workloads. It does mean research crates need a split between a portable domain core and environment adapters (native Git/SQLite for local Work Engine; D1/R2 for the service). Long-running maintenance work should run as queued, durable operations rather than inline requests, and the service should avoid loading whole research archives into memory.
 
 Platform limits, pricing, and binding coverage were reported in an external conversation on November 17, 2026 and must be rechecked before relying on them.
 
@@ -340,158 +348,144 @@ Whichever mechanism is adopted, the system should preserve local authority, repr
 
 ---
 
-## 7. Membership and Research Release Tiers
+## 7. Universal Research Access and Publication
 
-*This section is an optional, illustrative funding model retained for comparison. It predates the vested-membership framing (§8). No particular release tier, price, discount, or delay is a present commitment; a simpler supporter-membership model may replace it.*
+*This section replaces the earlier speculative paid release tiers. The Commons does not have membership prices, research subscriptions, delayed public releases, or paid access entitlements.*
 
-The candidate model has three intelligence membership tiers, alongside unrestricted standalone use of the open-source engine.
+### 7.1 Public publication contract
 
-### Tier 1 — Frontier
+Every Commons finding and associated decision-policy release that may lawfully and ethically be made public is available to everyone simultaneously and at no charge. Protocols, progress records, negative and inconclusive outcomes, and findings with unresolved standing should be published with their actual status wherever contributor consent and privacy protections permit. Qualified publications should include the research question, protocol revision, methodology, relevant aggregates or permitted evidence, competing results, qualification standing, applicability boundaries, assumptions, and revision history appropriate to the claim.
 
-Receives the newest qualified research and decision-policy releases.
+The Commons publishes corrections, suspensions, withdrawals, and dependency changes to everyone without delay. A result's historical qualification and its current applicability remain distinct.
 
-Members pay the highest subscription price.
+Neither sponsorship nor contribution establishes early access, exclusive research, preferential validity information, a private release channel containing otherwise public Commons findings, or permission to suppress unfavorable evidence.
 
-They may voluntarily contribute eligible experimental capacity in exchange for a membership discount.
+### 7.2 Public distribution without dependence on one service
 
-### Tier 2 — Established
+Publication should use immutable, content-addressed bundles, open schemas, and a documented method to verify release identity and provenance. Anyone should be able to obtain published archives through public repositories, downloadable bundles, and mirrors, and serve them independently under their published licenses.
 
-Receives the preceding qualified research release when Tier 1 advances.
+The Intelligence API is an optional convenience for discovery, applicability queries, and changes. **Public research reads require no membership or payment and should not require user registration.** Research-access quotas are not part of the model. Security and abuse controls may protect shared infrastructure, but must not restrict the rights to obtain and reuse the publicly released corpus through independent distribution.
 
-Members pay a lower subscription price.
+Local Work Engine installations must still be able to operate without the central service or a research account. No remote publication can grant local execution authority (§3.3).
 
-They may also participate in research for a discount.
+### 7.3 Transparent evidence standing
 
-### Tier 3 — Community
+Public access is not a promise to publish another person's private code, confidential artifacts, credentials, session transcripts, or identifying metadata. Such inputs remain under the applicable consent and custody controls. Findings relying on restricted evidence must disclose the limits of independent verification; qualified independent audits may establish only the scope actually reviewed.
 
-Receives older qualified research releases after the defined release progression.
+Preliminary experiments may be published as drafts or unresolved records rather than mislabeled as qualified. A temporarily unpublished input cannot secretly support a stronger public claim than the disclosed evidence warrants. Publication and retention rules, including corrections and legitimate privacy/security exceptions, must be documented before accepting external research participation.
 
-This tier is free of subscription charges and is intended to support bounded, consented research contribution.
+### 7.4 Open licenses and portability
 
-Contribution expectations must be transparent, subject to user-controlled limits, and fair when no suitable experiments are available.
+The existing Work Engine software is MIT-licensed. The Commons should adopt explicit, permissive open terms for its own software, public research texts, methods, aggregate datasets, specifications, and policy bundles; the exact license(s) for these new artifact types remain a decision to be made. Redistribution and commercial reuse of published results should be allowed on equal terms.
 
-### Standalone open source
+Participants retain rights in their own material as determined by explicit agreements. Research use rights must be narrow enough to respect contributor consent but broad enough to permit public release of the qualified findings the study promises.
 
-The complete open-source engineering machinery remains usable without membership or research participation.
+### 7.5 No hidden price for public participation
 
-Users may operate independently, implement local policies, and conduct their own research.
-
-### Illustrative pricing hypothesis
-
-An initial candidate is:
-
-| Membership | Base monthly price | Example research discount |
-|---|---:|---:|
-| Community | $0 | Not applicable |
-| Established | $9 | $6 effective price |
-| Frontier | $24 | $18 effective price |
-
-These amounts are exploratory, not final pricing decisions.
-
-They require validation against the funding target (§8), member savings, willingness to contribute, and contribution economics.
-
-Organization memberships could be introduced later for centralized administration, shared policy management, and enterprise research participation.
-
-### Fairness guarantee
-
-If tiered releases are adopted, access to established research may be delayed but is not permanently withheld.
-
-Validity corrections, critical withdrawals, and necessary safety updates propagate without artificial tier delays.
-
-No participant or independent user should be given knowingly false validity information about older decision capabilities, whether or not release tiers are adopted.
+Downloading research never obligates a user to donate, submit workloads, provide telemetry, accept central policy recommendations, or use the hosted service. Contributing research resources is an explicit, locally bounded choice. The cost of a participant's own inference, computing, and connectivity is separate from the Commons' promise of free access to its published knowledge.
 
 ---
 
-## 8. Cooperative Research Economics
+## 8. Sustainable Public-Interest Research Economics
 
-The model separates the cost of performing engineering work from the cost of coordinating and maintaining research knowledge.
+The Commons separates **who can use the research** from **who funds its production and maintenance**. Access is universal; funding remains a practical requirement. A Commons that never pays its maintainer or research costs is not automatically sustainable merely because its artifacts are open.
 
-### Member-supplied resources
+### 8.1 Costs and responsibilities
 
-Participating users supply:
+Participating installations may voluntarily supply:
 
-- Their own inference-provider access.
-- Their own execution infrastructure.
-- Authorized inference capacity for experimental work.
-- Eligible real-world coding tasks.
+- Their own inference-provider access and execution infrastructure.
+- Explicitly bounded experimental inference capacity.
+- Eligible real-world development slices and permissioned evidence.
+- Reproductions, critical reviews, corrections, and maintenance signals.
 
-Their contribution limits are enforced locally.
+Local grants and resource boundaries remain enforceable. Provider terms must permit intended research use; subscription quotas cannot be assumed to authorize distributed research consumption. The public may benefit from findings without contributing any of these resources.
 
-Provider terms must permit the intended use of inference capacity. Subscription quotas cannot be assumed to authorize distributed research use.
+Centrally funded work includes:
 
-### Centrally funded resources
+- Research selection, experimental design, qualification, statistical analysis, and publication.
+- Maintainer and, eventually if justified, researcher compensation.
+- Coordination APIs, research metadata, evidence storage, release archives, and mirrors.
+- Security, privacy, independent review, accounting, and operational controls.
+- Centrally purchased inference for baseline, replication, or missing-cohort studies.
+- Dependency monitoring, drift detection, and recurring requalification.
 
-Member support pays for:
+Distributed participation may reduce purchased experimental costs, but it does not eliminate staff, infrastructure, or scientific rigor costs.
 
-- API and coordination infrastructure.
-- Research metadata and evidence storage.
-- Research selection and program management.
-- Qualification and statistical analysis.
-- Security, privacy, and operational controls.
-- Publication and entitlement services.
-- Maintainer time (initially one full-time maintainer) and, if the Commons grows, researcher compensation.
-- Any centrally funded validation experiments.
+### 8.2 Funding channels compatible with open access
 
-The distributed network reduces the need to purchase every experimental workload centrally, but does not eliminate the cost of rigorous research.
+**Institutional underwriting and recurring sponsorship.** Organizations whose AI engineering practices benefit from openly maintained evidence can fund general upkeep. Sponsor recognition and reporting may be offered, but not research exclusivity, preferential release timing, or favorable conclusions. Avoid reliance on a single funder where possible.
 
-### Funding objective
-The initial objective is to cover one full-time maintainer, necessary infrastructure, and research operations, not to generate profit. Member-supplied inference resources may lower experimental costs but do not themselves pay salaries or service bills.
+**Nonexclusive sponsored research.** A company, foundation, or other organization may finance a defined question, benchmark, comparison, or revalidation program. Protocols, acceptance criteria, conflicts of interest, and publication obligations are set before the study. Payment purchases the work, not a particular result. Publish qualified and negative results on equal terms, with privacy-safe evidence and explicit limitations. If a proposed contract requires suppressing unfavorable results or exclusive rights to Commons findings, it is not a Commons research contract.
 
-Illustratively, an annual operating requirement of roughly $150k for compensation, taxes, infrastructure, and research operations **before deductions from gross dues** would require about 1,400 members paying $9 per month, 830 at $15, or 520 at $24. These are gross-receipt illustrations, not validated membership forecasts.
+**Grants, fellowships, and public-benefit funding.** Time-limited support can pay for public infrastructure, open research, external validation, and maintainer work. Each award's eligibility, allowed costs, IP terms, and publication rules must be checked before acceptance. Grants should not be mistaken for stable recurring income.
 
-A transparent planning model should separately report:
+**Voluntary donations and individual sponsorship.** Developers and organizations may donate once or regularly without purchasing access, membership status, privileged governance, or research influence. A fiscal host or sponsorship platform may simplify accepting and reporting funds; actual costs and conditions must be checked.
 
-- **Gross recurring dues:** billed memberships multiplied by their actual prices, after membership mix and discounts.
-- **Net collected cash:** dues actually collected, less payment-processing and platform deductions, refunds, and chargebacks. Do not deduct any fee a second time if it is already included in the operating requirement.
-- **Operating coverage:** net cash available against maintainer compensation, taxes, infrastructure, research operations, and other documented cash obligations.
-- **Operating reserve:** liquid funds held against a published reserve target (for example, three months of projected obligations), accounted for separately from current spending capacity.
+**Paid engineering services.** Optional consulting, training, integration, deployment assistance, operational support, and custom implementation can support the maintainer. Customers pay for time and service-level commitments, not the right to use public research. Private client configurations and confidential deployment details can remain private, but improvements claimed as Commons research must follow the public research contract. Service commitments must not consume the entire capacity needed for open research and maintenance.
 
-As a sensitivity example, if net collections equal 85% of gross billed dues after deductions **not already included in the $150k operating requirement**, funding $150k of annual cash obligations would require about 1,634 supporting members at $9, 981 at $15, or 613 at $24 per month, before any additional reserve accumulation. The 85% factor is an illustrative stress assumption, not a forecast. Churn and uneven payment timing need separate treatment.
+These funding sources are possibilities, not signed sponsors, confirmed clients, or evidence of market demand. There is no present commitment to build a hosted development platform, sell API inference, or operate member subscriptions.
 
-The Commons is sustainable when members' measured savings and improvements clearly exceed what they contribute, and recurring cash support covers actual obligations with a prudent reserve.
+### 8.3 Independence and sponsor safeguards
 
-Possible funding channels, usable before any distributed network exists:
+Funding agreements should state, before work starts:
 
-- Recurring member support through a fiscal host with public accounting, such as Open Source Collective via Open Collective, or GitHub Sponsors. A fiscal host can receive funds and pay the maintainer without a separate legal entity.
-- Open-source infrastructure or research grants (for example NLnet or the Sovereign Tech Fund; eligibility unverified).
-- Published, maintained research findings as the visible output members support, before distributed experiments exist.
+- The research question, deliverables, budget, timeline, and what will be published.
+- Who approves protocols, analyses, claims, corrections, and release standing.
+- That negative and inconclusive findings remain publishable.
+- That sponsor access to Commons findings is no earlier or broader than public access.
+- Any legitimate restrictions on participant data and what these limit scientifically.
+- Funding, affiliation, conflicts of interest, and any editorial or governance influence.
+- Whether additional commissioned service work is separate from Commons research.
 
-Supporting a team of maintainers and researchers is a possible future, decided only if the Commons and its work justify it.
+Sponsors can suggest research questions. They do not determine which hypothesis is true, what a local installation may execute, or whether a public result is withdrawn. A funded study is admitted based on its public value and scientific feasibility, not solely on payment. Maintain an independent research and requalification allocation when funding permits.
 
-### Contribution accounting
+### 8.4 Funding target and accountable budgeting
 
-Research contributions should be valued according to verified participation and useful evidence coverage.
+The first institutional objective is to sustain **one full-time maintainer, necessary infrastructure, and continuing research operations**, not to generate profit or build an organization prematurely.
 
-The system should not incentivize unnecessary inference consumption or reward only favorable findings.
+An illustrative annual operating requirement of **approximately $150,000** for compensation, taxes, infrastructure, and research operations is a planning hypothesis from the original proposal, **not** a validated budget or revenue forecast. A combination of institutional sponsorship, nonexclusive research contracts, grants, and donations might meet it; none is yet committed.
 
-Incomplete experiments, negative outcomes, and documented refusals may provide important information.
+A transparent planning model must distinguish:
 
-Discounts should be bounded so that research participation cannot inadvertently create unsustainable liabilities.
+- **Unrestricted recurring support:** reliable cash available for maintenance and operating costs.
+- **Restricted grants and research contracts:** money committed to specific deliverables; not assumed freely available for salary or unrelated expenses.
+- **Gross receipts versus net collected cash:** payment and fiscal-host fees, taxes, refunds, and collection timing counted once.
+- **Direct study costs and staff time:** including inference, independent review, publication, and contractual delivery burden.
+- **Operating coverage and runway:** actual liquid funds against projected obligations.
+- **Reserve:** a stated contingency goal, such as three months of eligible operating obligations, held separately from current spending capacity.
+- **Funding concentration:** reliance on any single sponsor, grant, or contract and what happens when it ends.
 
-### Vested membership and transparent accounting
-Members are participants, not merely clients. Verified contributions establish **recorded contribution standing**. That standing is a historical accounting fact; it does not by itself grant votes, an economic share, equity, profit participation, or future charter rights. Any current privileges must be separately defined and versioned.
+A research contract is not profitable merely because its nominal value exceeds its inference bill. Project selection must account for the maintainer time that could otherwise go to core Work Engine development. Periodic public reporting should include aggregated income sources, restricted versus unrestricted funds, operating expenses, maintainer compensation in a privacy-respecting form, research expenditures, and funding risk.
 
-The accounting system should be append-only and independently auditable, with **restricted evidence custody** separated from a **privacy-safe public projection**:
+The Commons should reduce scope or preserve read-only archives if funding stops. It should not respond by closing previously published findings or converting the public research corpus into a subscriber product.
 
-- **Durable receipts.** Each accepted contribution has an attributable, content-bound receipt under an explicit disclosure scope. Corrections append records rather than rewriting historical evidence.
-- **Recomputable valuation.** Given the authorized receipt set and published valuation-rule revision, standing is a deterministic projection, not an administrator-assigned number. A public summary can verify disclosed arithmetic; it does not imply that private source evidence is publicly accessible or independently established.
-- **Explicit revisions.** Valuation-rule changes create new revisions, expose which revision produced each reported standing, and disclose whether historical contributions are revalued.
-- **Privacy-aware transparency.** Public projections use minimally identifying or pseudonymous references and appropriately aggregated contribution classes or values. Exact task descriptions, project metadata, sensitive evidence and raw evidence digests are not published by default; even hashes and timestamps can reveal information.
-- **Separate meanings.** Scientific evidence and qualification, contribution valuation, and governance entitlements are distinct records and decision owners. A valid contribution receipt does not establish scientific truth or automatically confer authority.
-- **Independent checks.** Where public disclosure is unsafe, qualified independent auditors can check restricted evidence under consented access controls. Public reproducibility of ledger arithmetic must not be misrepresented as public verification of all underlying contributions.
+### 8.5 Voluntary research contributions and accounting
 
-Financial income and expenses, including aggregate maintainer compensation, should be publicly accountable without disclosing personal payment details or protected participant information.
+Participants may contribute bounded experiments, replications, negative evidence, and quality improvements. Useful work is not measured by inference burned or by favorable findings. Refusals, failed experiments, and limitations can all provide research value.
 
-Transparency makes valuation disputes reviewable, not absent. Open questions include:
+If contribution accounting is built, it records **attributable research participation**, not a paid membership balance or a promise of economic ownership. A contributor's recorded standing does not confer premium access, votes, equity, profit participation, discounts, employment, or future charter rights automatically.
 
-- What recorded standing grants today, and what a future charter may choose to grant.
-- Whether voting privileges are permanent, decay, or combine both, and how contribution points are capped.
-- Whether a new valuation-rule revision re-scores earlier contributions.
-- Whether financial support counts alongside research capacity and qualified evidence, without allowing money to buy scientific conclusions.
-- How member eligibility, identity uniqueness, restricted audits, disputes, and pseudonymous public reporting are governed.
-- What legal form, if any, applies to future economic rights; cooperative and securities law may require professional review.
+An append-only, independently auditable design should keep restricted source evidence separate from privacy-safe public projections:
 
-**Pre-charter commitment.** Before accepting outside contributions, publish the receipt, valuation, disclosure, and dispute rules and state exactly which privileges currently exist. Preserve verified contributions and their original valuation provenance; later changes must be visible as versioned decisions, not silent rewrites. A future charter must address recorded contributions explicitly, but neither contribution history nor this proposal promises future ownership, economic rights, or permanent voting rights.
+- **Durable receipts:** attributable, content-bound contribution records with explicit disclosure scope; corrections append rather than silently rewrite history.
+- **Recomputable valuations:** deterministic calculations under published, revisioned rules, with no claim that public arithmetic verifies private evidence.
+- **Explicit revisions:** valuation-rule changes and whether prior contributions were revalued remain visible.
+- **Privacy-aware transparency:** aggregate or pseudonymous projections; sensitive tasks, evidence digests, timing, and identifying metadata are not public by default.
+- **Separation of meanings:** scientific validity, contribution acknowledgment, donor recognition, and governance authority are different records and decisions.
+- **Independent checks:** consented restricted audits can establish only what auditors actually inspected.
+
+Before accepting outside research contributions, publish consent, receipt, valuation (if any), disclosure, licensing, withdrawal, and dispute rules. A future governance structure may recognize contributor service, but no contribution history promises future ownership or fixed voting rights. The accounting system is optional and should not delay demonstrating useful research.
+
+### 8.6 Sustainability tests
+
+The model is sustainable only if real users obtain verifiable value, research quality remains credible, and unrestricted recurring support plus appropriately budgeted contracted work can pay the people maintaining it.
+
+Initial tests should seek evidence of external use and measurable value before forecasting sponsor demand; then test whether funders will commit to open outcomes without exclusive benefits. Monitor renewal, funding concentration, time spent delivering paid contracts, publications completed, requalification backlog, operating coverage, and the effect of funding choices on scientific independence.
+
+Scaling to a team, forming a legal entity, or adopting formal cooperative governance is an optional later decision, not an immediate requirement.
+
+---
 
 ## 9. Privacy, Trust, and Research Integrity
 
@@ -503,7 +497,7 @@ Private source code, secrets, proprietary artifacts, and session transcripts sho
 
 Even seemingly harmless metadata can reveal sensitive project information and must be handled accordingly.
 
-Research contracts need explicit disclosure rules, and participants must understand how contributed evidence and derived findings may be used, including any licensing to third parties.
+Research contracts need explicit disclosure rules, and participants must understand how contributed evidence and public derived findings may be used, including redistribution and commercial reuse under the selected open license(s).
 
 Submitted evidence should include sufficient integrity information for qualification while acknowledging the limits of independently verifying activity performed on machines controlled by participants.
 
@@ -518,15 +512,13 @@ Research qualification must account for:
 - Multiple testing and premature conclusions.
 - Differences between measured proxy outcomes and real engineering quality.
 
-The network must not treat large evidence volume as an automatic substitute for sound experimental methodology.
+The network must not treat large evidence volume as an automatic substitute for sound experimental methodology. Public results must separate available open evidence, independently audited restricted evidence, and unsupported or unverified claims. Sponsor funding must never alter those classifications.
 
 ---
 
 ## 10. Research Organization and Governance
 
-Initially, the maintainer directs research priorities using the existing Work Engine research and claims infrastructure.
-
-Whether the Commons ever moves to a team, with maintainers and researchers vetting and planning research portfolios, is an open question rather than a plan.
+Initially, the maintainer directs research priorities using Work Engine's existing research and claims infrastructure. Whether the Commons later develops a team, public advisory process, formal charter, or independent legal entity depends on external participation and operational need, not an assumed organizational structure.
 
 Potential research areas include:
 
@@ -537,57 +529,51 @@ Potential research areas include:
 - Experimental design and research qualification.
 - Long-term engineering reliability and maintainability.
 
-Researchers select valuable questions, design protocols, establish acceptance requirements, and interpret evidence.
+Researchers select valuable questions, design protocols, establish acceptance requirements, and interpret evidence. The distributed system handles much of the deterministic scheduling, execution coordination, evidence collection, and publication workflow.
 
-The distributed system handles much of the deterministic scheduling, execution coordination, evidence collection, and publication workflow.
+### Cooperative principles without paid membership
 
-### Cooperative governance
+The Commons can be community-informed without charging membership dues or creating access classes. All published research stays available to noncontributors, nonsponsors, and critics on the same terms. Contributions may be acknowledged, and participants may advise priorities, but financing alone does not purchase extra scientific or governance power.
 
-The Commons may follow cooperative principles without becoming a legally constituted cooperative. A charter and formal organization become relevant only if the Commons grows beyond one maintainer.
+If an advisory body later exists, its membership, conflicts, selection criteria, term limits, and public minutes should be documented. The institutional arrangement must preserve an accountable maintainer or research owner for each decision, not pretend that a public poll is scientific review.
 
-Over time, members could gain structured input into research priorities through advisory groups, proposals, or elected representation.
+Research selection should remain accountable to scientific value, community needs, feasibility, and the obligation to maintain existing claims. Researchers should be rewarded for reducing uncertainty and producing dependable knowledge, including findings that invalidate popular assumptions.
 
-Research selection should remain accountable to scientific value and member outcomes.
+### Public research board
 
-Researchers should be rewarded for reducing uncertainty and producing dependable knowledge, including findings that invalidate attractive or popular assumptions.
+Anyone should be able to inspect research proposals and their standing without an account. A proposal card could show its hypothesis, public-benefit case, estimated budget, research type, target benefit, required contributions and slice qualifications, supporting evidence, competing hypotheses, and prior results. Once work begins, the same card becomes a progress record; on completion it links to protocols, qualified findings, and resulting public policy releases.
 
-### Community research board
+An optional contribution or feedback channel may require anti-abuse and identity checks for submissions, but reading the board and public research must not. Researchers and external users can suggest work without providing inference capacity or money.
 
-Members could influence the research agenda through a visible board of research proposals. Each proposal card would show the hypothesis, estimated research budget, research type, target benefit, required contributions and slice qualifications, supporting evidence, competing hypotheses, and prior results. Once research begins, the same card becomes its progress record; on completion it links to qualified findings and resulting policy releases.
-
-The board is an entry point into the existing research lifecycle (proposal evaluation, portfolio decision, research register, experiment control), not a separate popularity contest.
+The board is an entry point into Work Engine's existing research lifecycle (proposal evaluation, portfolio decision, research register, experiment control), not a separate popularity contest.
 
 Governing separations:
 
-- **Members vote on what is worth investigating. They do not vote on what is scientifically true.** Qualification still depends on evidence, independent review, and established acceptance criteria.
-- **A mandatory maintenance budget is reserved.** Requalification of drifting or contradicted claims does not have to win a vote.
-- **Money does not buy voice by default.** Voting weight follows verified research contribution; whether financial support also counts is an open question (§8).
-- **Voting eligibility and uniqueness are enforced.** One baseline vote belongs to each eligible member, not each account; governance-approved identity controls must prevent multi-account voting and counting the same contribution repeatedly. Eligibility verification need not expose a public legal identity.
-- **Unqualified voting remains advisory.** Until the identity, duplicate-contribution, dispute, and manipulation controls are tested, board results inform priorities without binding the research budget.
+- **People can advocate for what is worth investigating; they do not vote on what is scientifically true.** Qualification depends on evidence, independent review, and established acceptance criteria.
+- **Maintenance obligations remain protected.** Requalification of drifting or contradicted claims should not depend on popularity or a sponsor's wishes.
+- **Funding does not buy scientific authority.** Donors and sponsors may propose work but have no privileged access, valid-claim authority, or automatic governance power.
+- **Any binding community voting requires tested safeguards.** Identity uniqueness, manipulation resistance, contribution provenance, privacy, appeal procedures, and conflicts of interest must be resolved first.
+- **Unqualified polls and feedback are advisory.** No weighting formula, contributor franchise, or binding research-budget vote is authorized by this concept proposal.
 
-Candidate weighting: every member receives a baseline vote, increased by verified contribution with diminishing returns and a cap. One illustrative form is `1 + sqrt(contribution_points)`, capped at 5×; the exact function requires governance testing.
+Verified research contributions may inform future advisory structures, but rewarding token consumption would invite waste and manipulation. Invalidating an incorrect optimization, reproducing a result, identifying a missing applicability limit, or supplying a new workload population can all add value.
 
-Contribution points reward verified research value, not tokens spent. Invalidating an incorrect optimization, reproducing an existing result, identifying an unknown limitation, or supplying a missing workload population all earn credit. Rewarding consumption would incentivize burning inference to buy influence.
-
-The board also yields a live demand and feasibility signal: which questions members care about, which members can actually supply qualifying workloads, and where existing evidence is already sufficient to start an experiment. A popular proposal still requires a feasible protocol, qualified resources, and an authorized research budget before execution.
+The public board also provides demand and feasibility signals: which questions matter to users, which workload populations are missing, and what evidence is already sufficient to start a study. A popular or sponsored proposal still requires a feasible protocol and an authorized research budget before execution.
 
 ---
 
-## 11. Intellectual Property and the Research Commons
+## 11. Intellectual Property and the Public Research Commons
 
-The original concept centered on proprietary research results feeding decision policies.
+The public-access model changes the original idea of a proprietary intelligence service. **No Commons research finding is maintained as a subscriber-only, sponsor-only, or time-delayed commercial asset.** The durable value of the institution comes from identifying useful questions, running credible studies, maintaining validity over time, and publishing improvements everyone can reuse.
 
-The cooperative model refines that distinction.
+Public research should include sufficient protocol, methodology, provenance, assessment status, applicability limits, competing evidence, and qualified results for scrutiny and reproduction. Negative and inconclusive results deserve truthful treatment. Public policies and immutable releases must point to exact research revisions and publish corrections or withdrawal status when claims change.
 
-The Commons may temporarily withhold preliminary research, participant-private evidence, internal operational details, and portions of its publication infrastructure, consistent with consent and explicit release terms. Such confidentiality must not be confused with qualification.
+Confidentiality is justified only by legitimate concerns such as participant privacy, security-sensitive operational material, consent, or protected third-party intellectual property—not by a desire to create premium research access. Participant-private source code, raw transcripts, identities, and sensitive evidence may remain restricted. Where inputs cannot be public, an appropriately independent, scoped audit may establish only what it actually checks. Opaque proprietary aggregation or selection logic without independent validation remains an attributed recommendation with disclosed limitations, not a claim of established scientific truth.
 
-A result presented as independently qualified must disclose sufficient protocol, methodology, provenance, applicability limits, and competing evidence for its claimed conclusion to be scrutinized or reproduced. Where underlying inputs cannot be public, an appropriately independent, scoped audit may establish only the claims it actually checks. Opaque proprietary aggregation or selection logic that has not been independently evaluated must remain an attributed recommendation with disclosed limits, not a claim of independently verified scientific truth.
+Public releases should be usable without an account and redistributable under expressly selected open, nonexclusive licenses. The existing Work Engine code is MIT-licensed; licensing for new research publications, datasets, protocols, and policy artifacts requires an explicit decision before external contributions are accepted. Publicity alone does not confer reuse rights, and the Commons must not publish material it lacks authority to license.
 
-Qualified releases ultimately move toward community availability under defined terms.
+Funders do not acquire exclusive ownership of Commons results, early access, publication vetoes, or an implied right to silence corrections. Separately commissioned private integration services may keep client-specific configurations and secrets private, but a purported Commons research study cannot promise undisclosed, exclusive qualified findings.
 
-The Commons' durable value is therefore not exclusive possession of any single discovery.
-
-It is the cumulative capability to:
+The Commons' long-lived advantage is cumulative capability to:
 
 - Identify valuable research questions.
 - Coordinate appropriate experiments across a participating network.
@@ -596,9 +582,7 @@ It is the cumulative capability to:
 - Convert qualified results into better decisions.
 - Deliver those improvements continuously and reliably.
 
-This advantage can grow through research history, operational expertise, trusted participation, and the quality of the research process.
-
-A formal IP and licensing policy remains necessary. Ownership of contributed evidence, permissible use of derived results, release licenses, and publication commitments should be resolved before outside members contribute.
+Ownership of contributed evidence, permitted derivatives, publication licenses, permissible use of data, and withdrawal/retention commitments must be settled with contributors before collection. This is a licensing and consent design obligation, not an implemented policy.
 
 ---
 
@@ -626,7 +610,7 @@ Before committing to a standalone service, test the extraction boundary narrowly
 
 > An independent process publishes an existing qualified research record, and a separate Work Engine installation consumes, validates, and reconstructs it without sharing runtime authority or filesystem state.
 
-Ingredients: an existing Git-pinned research record with its assessment and applicability data; a small Rust service linked against `research-register` interfaces; an HTTP response carrying a versioned immutable bundle; a separate local Rust consumer that verifies the artifact against the pinned source and preserves unresolved or unqualified status. Negative tests cover altered bytes, missing evidence, wrong revisions, stale claims, and service unavailability. No user source, hosted execution, subscriptions, or automatic policy promotion are involved.
+Ingredients: an existing Git-pinned research record with its assessment and applicability data; a small Rust service linked against `research-register` interfaces; an HTTP response carrying a versioned immutable bundle; a separate local Rust consumer that verifies the artifact against the pinned source and preserves unresolved or unqualified status. Negative tests cover altered bytes, missing evidence, wrong revisions, stale claims, and service unavailability. No user source, hosted execution, billing, or automatic policy promotion are involved; the public release can be retrieved without a research account.
 
 Acceptance: the remote consumer obtains exactly the same evidence meaning and limitations as the existing local reader.
 
@@ -659,17 +643,17 @@ Track dependencies and observed drift.
 
 Demonstrate automatic identification of findings requiring revalidation and correct handling of stale, contradicted, or withdrawn claims.
 
-### Phase E — Validate member support
+### Phase E — Validate open-access sustainability
 
-Introduce experimental member-support arrangements; test whether optional release tiers add enough value to justify their complexity.
+Publish all Commons findings and qualified releases free from the outset of any public pilot. Do not introduce tiers or delayed research distribution.
 
-Measure actual member value, contribution participation, retention, and willingness to support.
+Test whether external developers use the work and benefit measurably, whether funders will underwrite openly published research, and whether voluntary donations, nonexclusive sponsored studies, grants, and support services can cover real maintenance and research obligations.
 
-Establish whether member support can sustain one full-time maintainer and research operations.
+Assess unrestricted revenue, restricted study obligations, researcher time, concentration risk, sponsor independence, and sustained ability to pay one full-time maintainer. A small external pilot and concrete support commitments matter more than a speculative subscriber count.
 
 ### Phase F — Expand the research organization
 
-Optional. Adopt a charter, form an organization, or add maintainers and researchers only if members and the work justify it.
+Optional. Adopt a charter, form an organization, or add maintainers and researchers only if the community, public benefit, and available resources justify it.
 
 Expand research domains and network participation while preserving evidence quality and cooperative principles.
 
@@ -679,39 +663,43 @@ The existing open-source engineering roadmap should not be subordinated to prema
 
 ## 13. Principal Risks and Open Decisions
 
-**Funding sufficiency:** It remains unknown whether member support will cover one full-time maintainer and infrastructure.
+**Funding sufficiency:** It is unproven that sponsorship, nonexclusive research contracts, grants, donations, or paid services can sustain one full-time maintainer and research operations without imposing access fees.
+
+**Funding concentration and capture:** A small group of sponsors could shape the agenda or threaten continuity when funds end; transparent agreements, editorial independence, and funding diversification are necessary.
+
+**Service work displacing research:** Consulting or integration commitments can consume the maintainer capacity needed to complete the public engineering system and fulfill research maintenance obligations.
 
 **Experimental validity:** Heterogeneous development workloads may make reliable comparative research difficult and expensive.
 
 **Network bootstrap:** A small early network may not produce enough eligible experimental opportunities.
 
-**Revalidation burden:** The cost of maintaining established knowledge may eventually compete with the discovery of new improvements.
+**Revalidation burden:** Maintaining established knowledge may eventually compete with discovering new improvements, especially under restricted funding.
 
-**Contribution incentives:** Research discounts must not encourage wasteful computation, manipulation, or low-quality evidence.
+**Contribution incentives:** Participation and contributor recognition must not encourage wasteful computation, manipulation, or low-quality evidence; no paid-access discount is proposed.
 
-**Privacy:** Shared research must not become an uncontrolled channel for transferring sensitive member information.
+**Privacy:** Shared research must not become an uncontrolled channel for transferring sensitive participant information, even when conclusions are publicly licensed.
 
 **Provider authorization:** Inference participation must respect applicable provider terms and resource restrictions.
 
-**Availability:** Central service outages must not unnecessarily interrupt local development.
+**Availability and public access:** The hosted service may face outages, operational costs, or abuse. Open archives, mirrors, and independently usable bundles must preserve the ability to access published research without an account or payment; local development must not depend on the service.
 
-**Release policy:** Publication timing, the guarantee of eventual public availability, licensing, and—only if tiers are adopted—tier delays require formal definition.
+**Publication licensing:** Open licenses, consent terms, data restrictions, and prompt correction/withdrawal obligations require explicit policies. Public claims must not overstate verification when source evidence is restricted.
 
 **Decision location:** The balance between locally distributed policy bundles and centrally evaluated recommendations remains an architectural choice.
 
-**Governance:** Cooperative principles, membership rights, formal ownership, vesting rights, and IP commitments require eventual policy decisions.
+**Governance:** Cooperative principles, research advisory mechanisms, conflicts of interest, contribution standing, and any future formal organization need decisions without creating a paid franchise or scientific voting authority.
 
 **Competitive substitution:** Narrow routing optimizers and public benchmark data already exist (§15). The Commons must remain measurably more useful than a leaderboard or routing API, or a cheaper specialized service captures most of the value.
 
 **Causal validity:** Real coding tasks vary in difficulty, user intervention, model behavior, and environment. Assigned comparisons must separate genuine improvement from selection bias, easier tasks, differing environments, and favorable randomness.
 
-**Governance manipulation:** Contribution-weighted voting invites contribution farming, sybil accounts, repeated credit for the same evidence, and coordinated agenda capture; identity verification must be compatible with member privacy.
+**Governance manipulation:** Feedback and any future contribution-weighted advisory process invite contribution farming, sybil accounts, and coordinated agenda capture; identity safeguards must protect privacy.
 
 **Contribution-ledger disclosure:** Public receipts, digests, and activity timing can reveal participant relationships or private work even without raw code; privacy-safe projection and restricted independent audits require explicit design.
 
 **Portability:** Research crates currently depend on native Git, filesystem, and SQLite; Wasm hosting requires a deliberate core/adapter split.
 
-These questions should be treated as research and design work, not prematurely settled implementation requirements.
+These questions remain research and design work, not prematurely settled implementation requirements.
 
 ---
 
@@ -719,13 +707,11 @@ These questions should be treated as research and design work, not prematurely s
 
 Work Engine evolves into an open-source foundation for governed agentic engineering.
 
-Around it develops a distributed research network in which ordinary engineering work, with appropriate consent and safeguards, creates opportunities for systematic experimentation.
+Around it develops a distributed, opt-in research network in which ordinary engineering work, with appropriate consent and safeguards, creates opportunities for systematic experimentation.
 
-A central research organization identifies what needs to be learned, coordinates the experiments, qualifies findings, monitors their continuing validity, and publishes decision improvements.
+A publicly accountable research operation identifies what needs to be learned, coordinates experiments, qualifies findings, monitors continuing validity, and publishes decision improvements **to everyone at the same time and at no cost**.
 
-Members sustain this work through dues, bounded research contributions, or both, and become more vested the more they contribute.
-
-Qualified discoveries ultimately enter the shared body of community knowledge. Supporting members may receive earlier access if a tiered-release policy is later adopted.
+Users may download, mirror, and apply the published research without joining, paying, or donating their data. Contributors can choose to support the work with evidence, money, critique, maintenance, or professional collaboration. Institutional underwriting, public grants, nonexclusive research contracts, voluntary gifts, and optional paid services support the people and infrastructure that keep the research current.
 
 As the compiler and execution architecture mature, an increasing portion of research advancement may occur through qualified decision-policy updates rather than architectural changes.
 
@@ -739,15 +725,15 @@ The research program itself becomes increasingly informed by its own results.
 
 **Work Engine provides the open machinery for agentic engineering.**
 
-**The intelligence service maintains the continually requalified knowledge that improves its decisions.**
+**The intelligence service maintains and freely publishes the continually requalified knowledge that improves its decisions.**
 
-**The community collectively supports the research, and the resulting knowledge ultimately benefits the community.**
+**The community can collectively participate in the research; supporters pay to sustain the work, not to restrict access to its results.**
 
-The intended institution is not another hosted AI coding platform.
+The intended institution is not another hosted AI coding platform, a paywalled research feed, or a subscription required to benefit from better engineering decisions.
 
-It is a sustainable research institution that uses a distributed network of real engineering work to make AI-assisted development progressively more efficient, reliable, and effective.
+It is a proposed sustainable public research institution using a distributed network of real engineering work to make AI-assisted development progressively more efficient, reliable, and effective.
 
-Its sustainability should depend on the quality and continuity of its research—not on permanently restricting access to what that research discovers.
+**Its sustainability must depend on the quality and continuity of the work—not on restricting access to what the work discovers.**
 
 ---
 
@@ -793,5 +779,5 @@ Limits on reuse:
 - `experiment-control` does not establish causal validity, randomize cohort allocation, or authenticate participants; those are new responsibilities.
 - The research-to-execution bridge and production scientific feedback cycle are still being qualified; Plan IR remains pending design; distributed research and autonomous requalification scheduling are future work. The promoted materialization path in `metrics/register` is still narrow.
 
-The external assessment's rough effort estimates (one developer with coding agents, unmeasured): read-only API prototype about one week; signed release delivery and local verification 2–4 weeks; eligibility and assignment 3–6 further weeks; evidence submission and cross-installation qualification 4–8 further weeks; adaptive requalification 4–8 further weeks; memberships, accounting, and hardening 3–6 further weeks. Scientific qualification time is separate and may dominate.
+The original external assessment's rough effort estimates (one developer with coding agents, unmeasured): read-only API prototype about one week; signed release delivery and local verification 2–4 weeks; eligibility and assignment 3–6 further weeks; evidence submission and cross-installation qualification 4–8 further weeks; adaptive requalification 4–8 further weeks. That assessment also estimated 3–6 further weeks for memberships, accounting, and hardening. **This revision removes memberships and paid-access logic; the original final-stage estimate is no longer directly applicable, and no replacement estimate has been established.** Scientific qualification time is separate and may dominate.
 
