@@ -166,6 +166,25 @@ fn key_from_env(variable: &str) -> Result<String> {
     }
     Ok(key)
 }
+/// OpenRouter keys are `sk-or-` prefixed. A mis-provisioned non-OpenRouter token
+/// must never be sent as a Bearer to `openrouter.ai`, so the prefix is enforced
+/// at load, not only by `valid_token`.
+fn openrouter_key(variable_or_path: &str, key: &str) -> Result<String> {
+    if !key.starts_with("sk-or-") || !valid_token(key) {
+        return refuse(format!("OpenRouter key {variable_or_path} unusable"));
+    }
+    Ok(key.to_string())
+}
+fn openrouter_key_from_env(variable: &str) -> Result<String> {
+    openrouter_key(variable, &std::env::var(variable).unwrap_or_default())
+}
+fn openrouter_key_from_file(path: &Path) -> Result<String> {
+    let key = String::from_utf8(owner_only(path, 4096)?)
+        .map_err(|_| Error::Refused("OpenRouter key file encoding".into()))?
+        .trim()
+        .to_string();
+    openrouter_key(&path.display().to_string(), &key)
+}
 fn key_from_file(path: &Path) -> Result<String> {
     let key = String::from_utf8(owner_only(path, 4096)?)
         .map_err(|_| Error::Refused("API key file encoding".into()))?
@@ -241,10 +260,10 @@ impl HttpsTransport {
                     Credential::AnthropicApiKey(key_from_file(&path)?)
                 }
                 CredentialSource::OpenRouterApiKeyEnv { variable } => {
-                    Credential::OpenRouterApiKey(key_from_env(&variable)?)
+                    Credential::OpenRouterApiKey(openrouter_key_from_env(&variable)?)
                 }
                 CredentialSource::OpenRouterApiKeyFile { path } => {
-                    Credential::OpenRouterApiKey(key_from_file(&path)?)
+                    Credential::OpenRouterApiKey(openrouter_key_from_file(&path)?)
                 }
                 CredentialSource::ChatgptInvalidForQualification { path } => {
                     let (_, account) = pi_auth(&path)?;
@@ -431,6 +450,14 @@ mod tests {
             payer: payer.into(),
             endpoint: endpoint.into(),
         }
+    }
+    #[test]
+    fn openrouter_keys_require_the_sk_or_prefix() {
+        assert!(openrouter_key("t", "sk-or-v1-0123456789abcdef").is_ok());
+        // A non-OpenRouter token must never be sent to openrouter.ai.
+        assert!(openrouter_key("t", "sk-ant-api03-0123456789abcdef").is_err());
+        assert!(openrouter_key("t", "sk-test-0123456789abcdef").is_err());
+        assert!(openrouter_key("t", "").is_err());
     }
     #[test]
     fn openrouter_routes_need_their_openrouter_access_and_screen_it() {

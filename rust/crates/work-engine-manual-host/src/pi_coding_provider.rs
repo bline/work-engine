@@ -1183,10 +1183,7 @@ impl Host {
                 };
                 let stop_ok = matches!(
                     (wire, frame["stopReason"].as_str()),
-                    (
-                        crate::pi_stream::Wire::Completions,
-                        Some("stop" | "toolUse")
-                    ) | (_, Some("stop" | "toolUse"))
+                    (_, Some("stop" | "toolUse"))
                 );
                 if !stop_ok || r.http_status != Some(200) || !backend_ok {
                     state.provider_failed = true;
