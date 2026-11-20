@@ -4688,10 +4688,33 @@ mod tests {
         let opened = w.opened.lock().unwrap().len();
         (dir, h, (status, body, end), opened)
     }
-    /// Provider requests JSON without the classification fields.
-    fn without_classification(h: &Host) -> Value {
+    /// Provider requests JSON without clock-derived fields, for comparing
+    /// separate runs: each attempt's `deadline_ms` (the job deadline, set
+    /// from the wall clock in whole seconds by the fixture), a hold's `ms`,
+    /// and failover decision and pause times.
+    fn clockless_ledger(h: &Host) -> Value {
         let mut v =
             serde_json::to_value(&h.journal.coding.as_ref().unwrap().provider_requests).unwrap();
+        for r in v.as_object_mut().unwrap().values_mut() {
+            if let Some(p) = r.get_mut("failover_pause").and_then(Value::as_object_mut) {
+                p.remove("decided_ms");
+            }
+            for a in r["attempts"].as_array_mut().into_iter().flatten() {
+                let a = a.as_object_mut().unwrap();
+                a.remove("deadline_ms");
+                if let Some(h) = a.get_mut("head_hold").and_then(Value::as_object_mut) {
+                    h.remove("ms");
+                }
+                if let Some(d) = a.get_mut("failover").and_then(Value::as_object_mut) {
+                    d.remove("decided_ms");
+                }
+            }
+        }
+        v
+    }
+    /// [`clockless_ledger`] without the classification fields.
+    fn without_classification(h: &Host) -> Value {
+        let mut v = clockless_ledger(h);
         for a in v["1"]["attempts"].as_array_mut().unwrap() {
             a.as_object_mut().unwrap().remove("head_hold");
             a.as_object_mut()
@@ -4703,6 +4726,27 @@ mod tests {
     fn relay_json(dir: &tempfile::TempDir) -> Value {
         serde_json::from_slice(&fs::read(dir.path().join("coding-hosted-1-1.relay.json")).unwrap())
             .unwrap()
+    }
+    /// Relay evidence without clock- or timing-derived fields, for comparing
+    /// separate runs: open, end and cancel-wait times, the per-chunk record
+    /// (pull and forward times; boundaries and end-at-pull depend on read
+    /// timing), the pulls counted before the end, and a hold's `ms`.
+    fn clockless_relay(dir: &tempfile::TempDir) -> Value {
+        let mut v = relay_json(dir);
+        let o = v.as_object_mut().unwrap();
+        for k in [
+            "openedMs",
+            "upstreamEndMs",
+            "cancelDuringPendingPullMs",
+            "chunks",
+            "pullsBeforeUpstreamEnd",
+        ] {
+            o.remove(k);
+        }
+        if let Some(h) = o.get_mut("hold").and_then(Value::as_object_mut) {
+            h.remove("ms");
+        }
+        v
     }
 
     #[test]
@@ -4738,6 +4782,9 @@ mod tests {
         // Apart from the classification fields the ledger is the same.
         assert_eq!(without_classification(&a), without_classification(&b));
         assert!(relay_json(&dir_b).get("hold").is_none());
+        let mut held = clockless_relay(&dir_a);
+        held.as_object_mut().unwrap().remove("hold");
+        assert_eq!(held, clockless_relay(&dir_b));
     }
 
     #[test]
@@ -4750,25 +4797,15 @@ mod tests {
         assert_eq!((opened_n, opened_m), (1, 1));
         // Identical ledgers, with none of the classification fields, and
         // relay evidence without a hold.
-        let ledger = |h: &Host| {
-            serde_json::to_value(&h.journal.coding.as_ref().unwrap().provider_requests).unwrap()
-        };
-        assert_eq!(ledger(&none), ledger(&mismatch));
-        let attempt = ledger(&none)["1"]["attempts"][0].clone();
+        assert_eq!(clockless_ledger(&none), clockless_ledger(&mismatch));
+        let attempt = clockless_ledger(&none)["1"]["attempts"][0].clone();
         assert!(
             attempt.get("head_hold").is_none()
                 && attempt.get("classification_table_sha256").is_none(),
             "{attempt}"
         );
         assert_eq!(attempt["disposition"], "uncertain");
-        assert_eq!(relay_json(&dir_n), {
-            let mut v = relay_json(&dir_m);
-            // Timing fields differ between runs.
-            for k in ["openedMs", "upstreamEndMs", "chunks"] {
-                v[k] = relay_json(&dir_n)[k].clone();
-            }
-            v
-        });
+        assert_eq!(clockless_relay(&dir_n), clockless_relay(&dir_m));
         assert!(relay_json(&dir_m).get("hold").is_none());
     }
 
