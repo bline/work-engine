@@ -1505,6 +1505,107 @@ fn refusal_drain_is_bounded_only_with_a_hold() {
         (false, "refused", "definitive_status")
     );
     assert_eq!(h.class.unwrap().class, "unclassified");
+    // A refusal head read after the window drains as without a hold.
+    let mut sess = session(
+        Cursor::new(response(429, body)),
+        Some(hold(ps::HOLD_MAX_WAIT, Some(std::time::Instant::now()))),
+    );
+    while sess.progress() == &ps::Progress::Pending {
+        assert!(sess.poll(&c, Duration::from_millis(10)).unwrap().is_empty());
+    }
+    assert_eq!(
+        sess.progress(),
+        &ps::Progress::Refused {
+            status: 429,
+            body: body.to_vec()
+        }
+    );
+}
+
+/// Holds every status; every class is a failover class.
+struct HoldsAll;
+impl ps::HeadClassifier for HoldsAll {
+    fn holds(&self, _: u16) -> bool {
+        true
+    }
+    fn classify(&self, _: u16, _: &[u8]) -> ps::HeadClass {
+        ps::HeadClass {
+            class: "any".into(),
+            error: None,
+            failover: true,
+        }
+    }
+}
+
+#[test]
+fn a_success_head_is_never_held_whatever_the_classifier() {
+    let t = tempfile::tempdir().unwrap();
+    let mut c = Consumer::new(store(&t));
+    let ok = sse(&[r#"{"type":"response.completed","response":{"id":"r"}}"#]);
+    let h = ps::Hold {
+        classifier: Box::new(HoldsAll),
+        max_wait: ps::HOLD_MAX_WAIT,
+        max_bytes: ps::HOLD_MAX_BYTES,
+        window_until: None,
+    };
+    let r = stream(ps::relay_session(
+        &mut c,
+        session(Cursor::new(response(200, ok.as_bytes())), Some(h)),
+    ))
+    .unwrap();
+    assert_eq!(
+        seen(&c),
+        (
+            Some(200),
+            ok.as_bytes().to_vec(),
+            Some(("response-end".into(), Value::Null))
+        )
+    );
+    assert!(r.hold.is_none());
+}
+
+#[test]
+fn cancel_with_a_held_body_still_to_replay_releases_without_a_drain() {
+    // The replayed prefix shows a provider failure event, the consumer then
+    // cancels: the unreplayed tail is not followed by a drain of later bytes.
+    let t = tempfile::tempdir().unwrap();
+    let c = Consumer::new(store(&t));
+    let mut first_body = b"data: {\"type\":\"error\",\"code\":\"x\"}\n\n".to_vec();
+    first_body.extend(b": ");
+    first_body.extend(vec![b'a'; 20 * 1024]);
+    first_body.extend(b"\n");
+    let rest = b"data: {\"type\":\"done\"}\n\n";
+    let mut first = format!(
+        "HTTP/1.1 529 X\r\nContent-Length: {}\r\n\r\n",
+        first_body.len() + rest.len()
+    )
+    .into_bytes();
+    first.extend(&first_body);
+    let (tx, up) = Gated::new(&first);
+    let mut sess = session(up, Some(hold(Duration::from_millis(100), None)));
+    let frames = first_frames(&mut sess, &c);
+    assert_eq!(frames[0]["type"], "response-head");
+    let pull = json!({"type":"pull","binding":binding(),"sequence":1,"stream":1,"ordinal":1});
+    let mut chunk = sess.on_native(&pull, &c).unwrap();
+    while chunk.is_empty() {
+        chunk = sess.poll(&c, Duration::from_millis(10)).unwrap();
+    }
+    assert_eq!(chunk[0]["type"], "response-chunk");
+    let cancel = json!({"type":"cancel","binding":binding(),"sequence":1,"stream":1,"ordinal":2});
+    let out = sess.on_native(&cancel, &c).unwrap();
+    assert_eq!(out[0]["type"], "response-cancelled");
+    assert_eq!(sess.progress(), &ps::Progress::Finished, "no drain");
+    tx.send(rest.to_vec()).unwrap();
+    let r = sess.into_relay();
+    assert_eq!(
+        r.outcome,
+        Outcome::Cancelled {
+            upstream_end: false
+        }
+    );
+    assert!(!r.forwarded.is_empty() && r.forwarded.len() < first_body.len());
+    assert!(r.unforwarded.is_empty() && !r.drained);
+    assert_eq!(r.held_dropped, first_body.len() - r.forwarded.len());
 }
 
 #[test]

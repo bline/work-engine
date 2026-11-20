@@ -1056,8 +1056,11 @@ impl Session {
                 // short bound. The stream is already over for the consumer.
                 // Bytes the screen held back are provider bytes after the
                 // forwarded ones: the drain screens them with what follows.
+                // With a held body still to replay the drain would not follow
+                // the forwarded bytes: release without it.
                 let u = usage(&self.r.forwarded);
                 if self.r.upstream_end_ms.is_none()
+                    && self.replay_left() == 0
                     && (u["completed"] == true || !u["failed"].is_null())
                 {
                     self.r.unforwarded = std::mem::take(&mut self.held);
@@ -1106,13 +1109,16 @@ impl Session {
                         self.r.head_ms = Some(now_millis());
                         let now = Instant::now();
                         self.head_at = Some(now);
-                        let holds = self
-                            .hold
-                            .as_ref()
-                            .is_some_and(|h| h.classifier.holds(status));
+                        // Only error heads are held: they carry no model output.
+                        let holds = status >= 400
+                            && self
+                                .hold
+                                .as_ref()
+                                .is_some_and(|h| h.classifier.holds(status));
                         if (self.refuse)(status) {
                             self.refusal.0 = status;
-                            self.refusal_until = self.budget_until(now);
+                            // No window left: the refusal drains as without a hold.
+                            self.refusal_until = self.budget_until(now).filter(|u| *u > now);
                             self.state = State::Refusal;
                         } else if holds {
                             match self.budget_until(now).filter(|u| *u > now) {

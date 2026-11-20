@@ -5054,13 +5054,15 @@ mod tests {
     #[test]
     fn hold_never_outlasts_the_attempt_deadline() {
         // The body completes (and would classify) only after three seconds;
-        // the attempt deadline, a second or less away, ends the hold first.
+        // the attempt deadline, at most two seconds away, ends the hold first.
         let mut slow = anthropic_error(529, "overloaded_error");
         let at = slow.windows(4).position(|w| w == b"\r\n\r\n").unwrap() + 4;
         slow.splice(at..at, DELAY3.iter().copied());
         let (_dir, mut h, mut w) =
             classify_host(vec![slow, messages_completed()], 1, Some(linked_table()));
-        h.journal.job.deadline_unix_seconds = epoch_ms() / 1000 + 1;
+        // More than one and at most two seconds away: never at hand at
+        // dispatch, always before the body completes.
+        h.journal.job.deadline_unix_seconds = epoch_ms() / 1000 + 2;
         let start = std::time::Instant::now();
         let (_g, frames) = classify_send(&mut h, &mut w);
         assert!(
