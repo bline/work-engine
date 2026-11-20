@@ -43,7 +43,11 @@ fn refuse<T>(s: impl Into<String>) -> Result<T> {
 pub fn digest(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
-fn file_digest(path: &Path, mut copy: Option<&mut File>) -> Result<String> {
+fn file_digest(path: &Path, copy: Option<&mut File>) -> Result<String> {
+    file_digest_within(path, copy, u64::MAX)
+}
+/// Streams at most `bound` + 1 bytes: the bound applies to the opened file.
+fn file_digest_within(path: &Path, mut copy: Option<&mut File>, bound: u64) -> Result<String> {
     let source = OpenOptions::new()
         .read(true)
         .custom_flags(libc::O_NONBLOCK)
@@ -54,6 +58,9 @@ fn file_digest(path: &Path, mut copy: Option<&mut File>) -> Result<String> {
             "artifact must be a regular file: {}",
             path.display()
         ));
+    }
+    if metadata.len() > bound {
+        return refuse(format!("oversize artifact {}", path.display()));
     }
     // A growing file cannot turn one observation into an unbounded copy.
     let limit = metadata
@@ -140,6 +147,16 @@ impl Artifact {
             return refuse(format!("artifact conflict: {}", self.path.display()));
         }
         Ok(b)
+    }
+    /// The same integrity check as `verify` for a pin whose bytes are not
+    /// parsed: streamed, so its size is limited by the owner's `bound`, not by
+    /// the external-input `MAX_BYTES`.
+    pub fn verify_digest(&self, bound: u64) -> Result<()> {
+        let sha256 = file_digest_within(&self.path, None, bound)?;
+        if !self.path.is_absolute() || sha256 != self.sha256 {
+            return refuse(format!("artifact conflict: {}", self.path.display()));
+        }
+        Ok(())
     }
     fn snapshot(&self, snapshots: &Path) -> Result<PathBuf> {
         if !self.path.is_absolute()
@@ -1980,5 +1997,57 @@ impl Host {
         Ok(
             json!({"receipt_id":receipt,"receipt":path,"receipt_kind":"accounting_reconciliation","delivery":if self.state.acknowledged.contains(&receipt){"acknowledged"}else{"pending"},"accounting":content["budget"],"task_receipt":op.receipt}),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn verify_digest_keeps_verify_integrity_under_its_own_bound() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = fs::canonicalize(dir.path()).unwrap();
+        let path = root.join("pin");
+        let bytes = vec![b'x'; MAX_BYTES as usize + 1];
+        fs::write(&path, &bytes).unwrap();
+        let pin = Artifact {
+            path: path.clone(),
+            sha256: digest(&bytes),
+        };
+        let refused = |r: Result<()>, prefix: &str| matches!(r, Err(Error::Refused(e)) if e.starts_with(prefix));
+        assert!(matches!(pin.verify(), Err(Error::Refused(e)) if e.starts_with("oversize input")));
+        pin.verify_digest(MAX_BYTES + 1).unwrap();
+        assert!(refused(pin.verify_digest(MAX_BYTES), "oversize artifact"));
+        let link = root.join("link");
+        std::os::unix::fs::symlink(&path, &link).unwrap();
+        Artifact {
+            path: link,
+            sha256: pin.sha256.clone(),
+        }
+        .verify_digest(u64::MAX)
+        .unwrap();
+        // Cargo runs unit tests in the package directory.
+        let relative = Artifact {
+            path: "Cargo.toml".into(),
+            sha256: digest(&fs::read("Cargo.toml").unwrap()),
+        };
+        assert!(refused(
+            relative.verify_digest(u64::MAX),
+            "artifact conflict"
+        ));
+        let directory = Artifact {
+            path: root.clone(),
+            sha256: pin.sha256.clone(),
+        };
+        assert!(refused(
+            directory.verify_digest(u64::MAX),
+            "artifact must be a regular file"
+        ));
+        let mut changed = bytes;
+        changed[MAX_BYTES as usize] = b'y';
+        fs::write(&path, &changed).unwrap();
+        assert!(refused(pin.verify_digest(u64::MAX), "artifact conflict"));
+        fs::remove_file(&path).unwrap();
+        assert!(matches!(pin.verify_digest(u64::MAX), Err(Error::Io(_))));
     }
 }
