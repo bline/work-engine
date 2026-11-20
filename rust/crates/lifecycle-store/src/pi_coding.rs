@@ -423,6 +423,7 @@ impl SqliteLifecycleStore {
             anchor.as_ref(),
             b.kind != PiCodingKind::Fixture,
             b.kind == PiCodingKind::SolHigh,
+            b.purpose == "successor_rehydrate",
         )?;
         // This bounded live profile's sole tool-bearing turn is the initial
         // emission prefix. Together with the committed end coordinate, this
@@ -584,6 +585,8 @@ pub(crate) fn live_checkpoint_of(
         anchor.as_ref(),
         true,
         kind == Some(PiCodingKind::SolHigh),
+        // Readback serves only domain_work turns (checked above).
+        false,
     )?;
     if validated.final_text.as_bytes() != final_text.as_slice()
         || (validated.checkpoint.is_some() && first != 1)

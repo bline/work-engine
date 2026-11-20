@@ -424,6 +424,10 @@ struct SyntheticSdk {
     /// Hosted: after each live grant, attempt 1 on the primary route (taken
     /// as refused) and attempt 2 on the secondary.
     hosted: bool,
+    /// The recovery (successor-rehydrate) reply is reasoning-only: no text
+    /// block. Operator decision 2026-11-20 (option B): such a turn settles
+    /// with an empty final text.
+    silent_recovery: bool,
 }
 impl SyntheticSdk {
     fn new(session: &str, requests: u64) -> Self {
@@ -439,6 +443,7 @@ impl SyntheticSdk {
             thinking: false,
             reasoning: None,
             hosted: false,
+            silent_recovery: false,
         }
     }
     fn assistant(&self, mut m: serde_json::Value) -> serde_json::Value {
@@ -599,7 +604,11 @@ impl SyntheticSdk {
         } else {
             response["reply"].clone()
         };
-        let final_message = self.assistant(json!({"role":"assistant","content":[{"type":"text","text":reply}],"stopReason":"stop"}));
+        let final_message = if self.silent_recovery && command["invocationId"] == "rehydrate" {
+            json!({"role":"assistant","content":[{"type":"thinking","thinking":"recovering the checkpoint context","thinkingSignature":"{\"type\":\"reasoning.text\"}"}],"stopReason":"stop"})
+        } else {
+            self.assistant(json!({"role":"assistant","content":[{"type":"text","text":reply}],"stopReason":"stop"}))
+        };
         self.message(c, final_message.clone());
         generated.push(final_message.clone());
         self.native(
@@ -802,7 +811,7 @@ fn run_complete_mode(
     preamble: bool,
     sol: bool,
 ) -> Result<(PathBuf, CodingContinuity), work_engine_manual_host::Error> {
-    run_complete_full(live, preamble, sol, false, None)
+    run_complete_full(live, preamble, sol, false, None, false)
 }
 fn run_complete_full(
     live: bool,
@@ -810,6 +819,7 @@ fn run_complete_full(
     sol: bool,
     hosted: bool,
     reasoning: Option<&serde_json::Value>,
+    silent_recovery: bool,
 ) -> Result<(PathBuf, CodingContinuity), work_engine_manual_host::Error> {
     let policy = hosted.then(hosted_policy);
     let (root, c) =
@@ -862,6 +872,7 @@ fn run_complete_full(
     fresh.thinking = sol;
     fresh.reasoning = reasoning.cloned();
     fresh.hosted = hosted;
+    fresh.silent_recovery = silent_recovery;
     let continued = fresh.turn(&mut c, &recovery, None).unwrap();
     control(&mut c, &continued);
     let close = fresh.turn(&mut c, &continued, None).unwrap();
@@ -992,7 +1003,7 @@ fn hosted_started(
 fn hosted_attempts_leave_the_settled_event_grammar_unchanged_and_are_reported() {
     // Real Docker run (dev-vertical step 4): attempts recorded in the turn
     // ingress made every hosted settlement fail closed.
-    let (root, c) = run_complete_full(true, false, false, true, None).unwrap();
+    let (root, c) = run_complete_full(true, false, false, true, None, false).unwrap();
     let report = c.report().unwrap();
     assert_eq!(report["continued_parent"], "CompletedSettled");
     let attempts = report["hosted_attempts"].as_array().unwrap();
@@ -1026,7 +1037,7 @@ fn hosted_live_continuity_settles_completions_reasoning_blocks() {
         json!([{"type":"reasoning.text","text":reasoning,"format":"unknown","index":0}]);
     let block =
         json!({"type":"thinking","thinking":reasoning,"thinkingSignature":signature.to_string()});
-    let (root, c) = run_complete_full(true, false, false, true, Some(&block)).unwrap();
+    let (root, c) = run_complete_full(true, false, false, true, Some(&block), false).unwrap();
     let report = c.report().unwrap();
     assert_eq!(report["provider_requests"], 4);
     assert_eq!(report["continued_parent"], "CompletedSettled");
@@ -1045,7 +1056,30 @@ fn hosted_live_continuity_settles_completions_reasoning_blocks() {
     drop(c);
     fs::remove_dir_all(root).unwrap();
     // The provider-disabled v3 grammar still refuses any reasoning block.
-    assert!(run_complete_full(false, false, false, false, Some(&block)).is_err());
+    assert!(run_complete_full(false, false, false, false, Some(&block), false).is_err());
+}
+
+/// Operator decision 2026-11-20 (option B): a real reasoning model handed the
+/// owner checkpoint may reply reasoning-only; the successor-rehydrate turn
+/// settles with an empty final text (observed live:
+/// records/openrouter-lane-live-20261120/run-2). The domain turns keep the
+/// non-empty-final-text rule: the same reasoning-only shape on the
+/// "continued" turn still refuses.
+#[test]
+fn successor_rehydrate_settles_a_reasoning_only_recovery() {
+    let (root, mut c) = run_complete_full(true, false, false, true, None, true).unwrap();
+    let report = c.report().unwrap();
+    assert_eq!(report["provider_requests"], 4);
+    assert_eq!(report["continued_parent"], "CompletedSettled");
+    let checkpoint: serde_json::Value =
+        serde_json::from_str(report["checkpoint"].as_str().unwrap()).unwrap();
+    // The checkpoint is still the domain turn's owner-derived one.
+    assert_eq!(
+        checkpoint["profile"],
+        "work-engine.pi-coding-live-continuity.v1"
+    );
+    drop(c);
+    fs::remove_dir_all(root).unwrap();
 }
 #[test]
 fn hosted_attempts_follow_the_granted_policy_and_are_consumed_once() {

@@ -241,6 +241,14 @@ pub(super) fn validate_with_thinking(
     anchor: Option<&Value>,
     live: bool,
     thinking: bool,
+    // A successor-rehydrate acknowledgment turn (operator decision
+    // 2026-11-20, option B): a real reasoning model handed the owner
+    // checkpoint may spend its whole output on reasoning and emit no visible
+    // text (observed live: records/openrouter-lane-live-20261120/run-2). Such
+    // a turn settles with an empty `final_text`; the recovery proof is the
+    // settled history itself, and the follow-on continuation turn still
+    // proves real work. Domain-work turns keep the non-empty-final rule.
+    rehydrate: bool,
 ) -> Result<Validated, StoreError> {
     if thinking && !live {
         return bad();
@@ -471,7 +479,7 @@ pub(super) fn validate_with_thinking(
     } else {
         text(&final_message)?
     };
-    if final_text.is_empty() || final_text.len() > 65536 {
+    if (final_text.is_empty() && !rehydrate) || final_text.len() > 65536 {
         return bad();
     }
     if has_tool && !live {
