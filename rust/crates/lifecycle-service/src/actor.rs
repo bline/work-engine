@@ -3781,6 +3781,35 @@ mod native_mcp_startup_tests {
             })
             .unwrap();
         assert_eq!(conflicts, 1);
+
+        // A model-supplied snapshot_read with a member id outside the
+        // identifier grammar is recorded unsupported at ingress (so the call
+        // can never be claimed) and leaves no native operation.
+        let slash_raw = serde_json::to_vec(&json!({"id":8,"method":"item/tool/call","params":{
+            "threadId":"thread:fixture","turnId":"turn:fixture","callId":"call:slash",
+            "namespace":"workspace","tool":"snapshot_read","arguments":{
+                "snapshot_id":"snapshot:fixture","member_id":"research/a4","offset":0,"length":3}}}))
+        .unwrap();
+        assert!(matches!(
+            actor.record_native_event(
+                &lifecycle_codex::parse_event("transport:fixture".into(), 8, slash_raw).unwrap()
+            ),
+            Err(StoreError::ClaimConflict)
+        ));
+        let slash_status: String = connection
+            .query_row(
+                "SELECT decode_status FROM native_ingress WHERE transport_session='transport:fixture' AND sequence=8",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(slash_status, "unsupported");
+        let operations: i64 = connection
+            .query_row("SELECT COUNT(*) FROM native_operations", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(operations, 0);
     }
 }
 

@@ -31,6 +31,7 @@ use std::path::PathBuf;
 use lifecycle_core::{ContextGeneration, NativeSessionId, SnapshotId, SubjectId};
 use lifecycle_semantic::DirectInferencePort;
 use lifecycle_store::{NativeRestartEpoch, NativeRestartIntent};
+pub use operations::workspace_snapshot_read::SnapshotIdRefusal;
 use operations::workspace_snapshot_read::TrustedSnapshot;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -456,6 +457,8 @@ pub enum ServiceError {
     Runtime(#[from] lifecycle_runtime::RuntimeError),
     #[error("canonical material failed: {0}")]
     Material(#[from] MaterialPortError),
+    #[error("snapshot identifier refused: {0}")]
+    SnapshotIdentity(SnapshotIdRefusal),
 }
 
 pub async fn run(config: ServiceConfig) -> Result<(), ServiceError> {
