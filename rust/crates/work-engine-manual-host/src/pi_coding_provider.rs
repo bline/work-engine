@@ -711,6 +711,10 @@ impl ProviderPlan {
             .coding
             .as_ref()
             .is_some_and(|p| super::is_relay(&p.schema));
+        let battery = job
+            .coding
+            .as_ref()
+            .is_some_and(|p| super::is_battery(&p.schema));
         let wire = self.wire_checked()?;
         let messages = wire == crate::pi_stream::Wire::Messages;
         let completions = wire == crate::pi_stream::Wire::Completions;
@@ -727,7 +731,13 @@ impl ProviderPlan {
             .is_none_or(|p| !super::is_hosted(&p.schema))
             || (messages && !analysis)
             || !model_ok
-            || !(1..=if analysis { super::analysis::MAX_REQUESTS } else { 6 })
+            || !(1..=if battery {
+                super::BATTERY_MAX_REQUESTS
+            } else if analysis {
+                super::analysis::MAX_REQUESTS
+            } else {
+                6
+            })
                 .contains(&self.max_requests)
             || !(1..=match (analysis, messages, completions) {
                 (true, true, _) => MESSAGES_ANALYSIS_BUDGET,
@@ -739,7 +749,11 @@ impl ProviderPlan {
                 .contains(&self.budget_microusd)
             // K-d: a turn admitted by context bytes must fit the hosted request
             // body bound (instructions and tools need the remaining room).
-            || !(1024..=context_bound(analysis, relay))
+            || !(1024..=if battery {
+                super::BATTERY_MAX_CONTEXT_BYTES
+            } else {
+                context_bound(analysis, relay)
+            })
                 .contains(&self.max_context_bytes)
             || self.catalog.path
                 != job.runtime.root.join(
@@ -945,8 +959,7 @@ fn completions_model_in_family(resolved: &str, family: &str) -> bool {
     let family_dash: String = format!("{family}-");
     match resolved.strip_prefix(&family_dash) {
         None => false,
-        Some(rest) => !rest.is_empty()
-            && rest.chars().next().is_some_and(|c| c.is_ascii_digit()),
+        Some(rest) => !rest.is_empty() && rest.chars().next().is_some_and(|c| c.is_ascii_digit()),
     }
 }
 /// The upper bound of a plan's `max_context_bytes` on its profile.
@@ -1148,6 +1161,11 @@ impl Host {
         let task = String::from_utf8(plan.task.verify()?)
             .map_err(|_| Error::Refused("task is not UTF8".into()))?;
         let mut job = json!({"schema":super::HOSTED_BRIDGE_PROFILE,"provider":plan.provider,"model":plan.model,"selected":plan.selected()?,"task":task,"deadline":self.journal.job.deadline_unix_seconds,"maxRequests":plan.max_requests,"maxContextBytes":plan.max_context_bytes,"allowShell":plan.allow_shell,"allowBackground":plan.allow_background});
+        if super::is_battery(&profile.schema) {
+            // Battery: same receiver lane, battery bounds and schema so the
+            // receiver selects its battery behavior.
+            job["schema"] = json!(super::HOSTED_BATTERY_PROFILE);
+        }
         if super::is_analysis(&profile.schema) {
             // The receiver's own bounds for this profile; the Host checks
             // every one of them again where it reads.
@@ -1398,9 +1416,10 @@ impl Host {
                     crate::pi_stream::Wire::Completions => {
                         // Chat Completions: raw terminal usage from the
                         // include_usage chunk.
-                        let raw = r.raw_terminal.as_ref().filter(|raw| {
-                            raw["eventType"] == "chat_completion"
-                        });
+                        let raw = r
+                            .raw_terminal
+                            .as_ref()
+                            .filter(|raw| raw["eventType"] == "chat_completion");
                         let measured = raw.and_then(|raw| {
                             let u = &raw["usage"];
                             Some((
@@ -1535,7 +1554,12 @@ mod tests {
             "~deepseek/deepseek-v4-flash-latest:floor"
         );
         // Non-completions lanes transmit the plan model unchanged.
-        assert_eq!(plan(DEFAULT_PROVIDER, "gpt-6-luna").transmitted_model().unwrap(), "gpt-6-luna");
+        assert_eq!(
+            plan(DEFAULT_PROVIDER, "gpt-6-luna")
+                .transmitted_model()
+                .unwrap(),
+            "gpt-6-luna"
+        );
     }
 
     #[test]
@@ -1852,10 +1876,16 @@ mod admission_tests {
         let per = full_reservation(&model).unwrap();
         // 4 requests of a realistic coding plan.
         let reserve = per.checked_mul(4).unwrap();
-        assert!(reserve <= OPENROUTER_CODING_BUDGET, "plan {reserve} exceeds ceiling");
+        assert!(
+            reserve <= OPENROUTER_CODING_BUDGET,
+            "plan {reserve} exceeds ceiling"
+        );
         assert!(reserve <= OPENROUTER_ANALYSIS_BUDGET);
         // The per-plan check used by validate/reservation_microusd admits it.
-        assert!(reserve > 1_000_000, "exercise the coding ceiling, not the old $1 cap");
+        assert!(
+            reserve > 1_000_000,
+            "exercise the coding ceiling, not the old $1 cap"
+        );
         // 32 analysis requests also fit the analysis ceiling.
         assert!(per.checked_mul(32).unwrap() <= OPENROUTER_ANALYSIS_BUDGET);
     }
@@ -1866,21 +1896,36 @@ mod admission_tests {
     fn completions_resolved_model_must_belong_to_the_admitted_family() {
         let family = completions_model_family("~deepseek/deepseek-v4-flash-latest");
         assert_eq!(family, "deepseek/deepseek-v4-flash");
-        assert!(completions_model_in_family("deepseek/deepseek-v4-flash-0731", &family));
-        assert!(completions_model_in_family("deepseek/deepseek-v4-flash", &family));
+        assert!(completions_model_in_family(
+            "deepseek/deepseek-v4-flash-0731",
+            &family
+        ));
+        assert!(completions_model_in_family(
+            "deepseek/deepseek-v4-flash",
+            &family
+        ));
         // A different model family is not accepted.
-        assert!(!completions_model_in_family("deepseek/deepseek-v4-pro", &family));
+        assert!(!completions_model_in_family(
+            "deepseek/deepseek-v4-pro",
+            &family
+        ));
         assert!(!completions_model_in_family("", &family));
         // A non-version suffix names a distinct catalog model (its own price
         // row), so it is not in family.
-        assert!(!completions_model_in_family("deepseek/deepseek-v4-flash-vision-exp", &family));
+        assert!(!completions_model_in_family(
+            "deepseek/deepseek-v4-flash-vision-exp",
+            &family
+        ));
         // A `-latest` slug and an already-`-v4-flash`-suffixed tail stay sane.
         assert_eq!(
             completions_model_family("deepseek/deepseek-v4-flash:floor"),
             "deepseek/deepseek-v4-flash"
         );
         // A bare family (no version segment) is in family; a versioned one is.
-        assert!(completions_model_in_family("deepseek/deepseek-v4-flash", &family));
+        assert!(completions_model_in_family(
+            "deepseek/deepseek-v4-flash",
+            &family
+        ));
     }
     /// Background execution is not yet implemented (blocker, Revision 6): any
     /// admission requesting `allow_background` must be refused at runtime, not

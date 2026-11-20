@@ -35,11 +35,12 @@ const bgPlugin=allowBackground;
 // executed by the controller; each answer is returned to Pi unchanged.
 const relay=live&&config.schema==='work-engine.pi-lifecycle-hosted.v1';
 const analysis=live&&(config.schema==='work-engine.pi-analysis-hosted.v1'||relay);
-const hosted=live&&(config.schema==='work-engine.pi-coding-hosted.v1'||analysis);
+const battery=live&&config.schema==='work-engine.pi-coding-hosted-battery.v1';
+const hosted=live&&(config.schema==='work-engine.pi-coding-hosted.v1'||battery||analysis);
 const SNAPSHOT_NAMES=['snapshot_list','snapshot_read'];
 const FRAME_BYTES=analysis?config.frameBytes:65536;
 const MAX_BODY=analysis?config.maxBodyBytes:45000;
-const MAX_REQUESTS=analysis?config.maxRequests:4;
+const MAX_REQUESTS=analysis||battery?config.maxRequests:4;
 // claude-sdk: Pi's provider is the pinned pi-claude-subscription extension,
 // whose Claude Code child process sends its Messages requests to a loopback
 // forwarder here. Each request becomes one provider_fetch under the current
@@ -279,7 +280,8 @@ try {
   await modelRuntime.setRuntimeApiKey(model.provider,'FAKE-FIXTURE-NOT-A-CREDENTIAL');
  }
  if(signed)checkConsumption(signedDeadline);
- const tool={name:'workspace_exec',label:'Workspace command',description:'Execute a shell command only in the separate disposable network-disabled workspace container. Workdir /workspace. rustc and cc are available. Immutable tests are /acceptance.rs; compile with rustc --edition=2024 --test /acceptance.rs -o /tmp/check and run /tmp/check. Only edit src/lib.rs.',
+ const toolDescription=battery?'Execute one shell command in the separate disposable network-disabled workspace container. Workdir /workspace holds the whole repository clone you are working in; commits there persist. A full offline Rust toolchain (cargo, rustc, clippy, rustfmt) is mounted read-only at /toolchain/bin on PATH; build and test offline per command with CARGO_HOME=/toolchain/cargo-home (for example: cd /workspace/rust && CARGO_HOME=/toolchain/cargo-home cargo test -p work-engine-context-status --offline). Dependencies are already in that cargo home; there is no network. Keep each command short of the per-command timeout and scope builds to the target crate. ': 'Execute a shell command only in the separate disposable network-disabled workspace container. Workdir /workspace. rustc and cc are available. Immutable tests are /acceptance.rs; compile with rustc --edition=2024 --test /acceptance.rs -o /tmp/check and run /tmp/check. Only edit src/lib.rs.';
+ const tool={name:'workspace_exec',label:'Workspace command',description:toolDescription,
   promptSnippet:'Execute commands in disposable workspace',parameters:Type.Object({command:Type.String()}),executionMode:'sequential',
   execute:async(id,args,signal)=>{
    const result=await new Promise((resolve,reject)=>{

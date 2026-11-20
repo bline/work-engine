@@ -241,6 +241,15 @@ fn verify_executable(artifact: &Artifact) -> Result<()> {
     Ok(())
 }
 fn check_job(job: &Job, fresh: bool) -> Result<()> {
+    let battery = job
+        .coding
+        .as_ref()
+        .is_some_and(|p| coding::is_battery(&p.schema));
+    let command_timeout_cap = if battery {
+        coding::BATTERY_COMMAND_TIMEOUT_SECONDS
+    } else {
+        30
+    };
     if job.schema != SCHEMA
         || job.job_id.is_empty()
         || job.job_id.len() > 80
@@ -248,7 +257,7 @@ fn check_job(job: &Job, fresh: bool) -> Result<()> {
             .job_id
             .bytes()
             .all(|c| c.is_ascii_alphanumeric() || b"-_".contains(&c))
-        || !(1..=30).contains(&job.command_timeout_seconds)
+        || !(1..=u64::from(command_timeout_cap)).contains(&job.command_timeout_seconds)
         || job.idle_seconds > 30
     {
         return refuse("invalid Pi job schema/identity/timeout");
@@ -261,13 +270,16 @@ fn check_job(job: &Job, fresh: bool) -> Result<()> {
         return refuse("only the qualified digest-pinned node image is supported");
     }
     // A relay thread (Pi Host realization) serves up to several controller
-    // turns under one container; every other job stays within 300 seconds.
+    // turns under one container; a battery job runs one bounded builder arm.
+    // Every other job stays within 300 seconds.
     let cap = if job
         .coding
         .as_ref()
         .is_some_and(|p| coding::is_relay(&p.schema))
     {
         coding::RELAY_DEADLINE_SECONDS
+    } else if battery {
+        coding::BATTERY_DEADLINE_SECONDS
     } else {
         300
     };

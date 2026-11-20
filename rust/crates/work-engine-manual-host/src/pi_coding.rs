@@ -35,6 +35,27 @@ pub const RETIRED_LIVE_PROFILES: [&str; 4] = [
 /// Live lifecycle composition with Host-held access and Host dispatch: the
 /// inference container has no network and no credential mount.
 pub const HOSTED_BRIDGE_PROFILE: &str = "work-engine.pi-coding-hosted.v1";
+/// Hosted battery profile: the hosted coding lane's custody (Host-held access,
+/// Host dispatch, network-none inference container) admitting a bounded
+/// long-form builder run instead of the fixed 4-request continuity
+/// choreography. Selected only by its exact schema string; the hosted
+/// profile's own semantics are unchanged. Cap constants below are exact
+/// profile bounds; per-job values are pinned in the job and its admission.
+pub const HOSTED_BATTERY_PROFILE: &str = "work-engine.pi-coding-hosted-battery.v1";
+/// Battery: whole-job wall bound. A Claude E1a builder arm historically ran
+/// 1-3 h; the bound is the fresh-job deadline cap.
+pub const BATTERY_DEADLINE_SECONDS: u64 = 14400;
+/// Battery: per-command bound (`command_timeout_seconds`). Offline cargo
+/// builds take minutes; every other profile stays at 30 s.
+pub const BATTERY_COMMAND_TIMEOUT_SECONDS: u32 = 600;
+/// Battery: per-job admitted tool-call count and provider-request count
+/// (upper bounds; each job pins its own exact values inside them).
+pub const BATTERY_MAX_TOOL_CALLS: u32 = 512;
+pub const BATTERY_MAX_REQUESTS: u32 = 512;
+/// Battery: per-request admitted context size in bytes (the receiver-side
+/// `contextBytes` gate). The spool protocol carries the context by reference,
+/// so this is bounded by the spool file cap, not the 64 KiB frame bound.
+pub const BATTERY_MAX_CONTEXT_BYTES: u64 = 2_000_000;
 /// Hosted analysis: the same Host-held access, dispatch and lifecycle gate,
 /// no shell, tool container or workspace effect; the Host serves read-only
 /// tools over the job's manifest-pinned workspace (`analysis`).
@@ -73,7 +94,7 @@ pub const MAX_RELAYS: u32 = 256;
 /// job cap of the other profiles).
 pub const RELAY_DEADLINE_SECONDS: u64 = 3600;
 pub fn is_hosted(schema: &str) -> bool {
-    schema == HOSTED_BRIDGE_PROFILE || is_analysis(schema)
+    schema == HOSTED_BRIDGE_PROFILE || schema == HOSTED_BATTERY_PROFILE || is_analysis(schema)
 }
 /// The no-effect hosted family: Host-served (analysis) or relayed tools.
 pub fn is_analysis(schema: &str) -> bool {
@@ -85,6 +106,10 @@ pub fn is_relay(schema: &str) -> bool {
 /// The live coding continuity profile (one shell call, one reset).
 fn is_continuity(schema: &str) -> bool {
     schema == HOSTED_BRIDGE_PROFILE
+}
+/// The hosted battery profile: bounded long-form builder runs (loop mode).
+pub fn is_battery(schema: &str) -> bool {
+    schema == HOSTED_BATTERY_PROFILE
 }
 /// Opt-in, versioned fixture composition that additionally admits the four
 /// read-only claims tools before and after SDK context replacement. Provider-
@@ -101,7 +126,12 @@ fn is_fixture_bridge(schema: &str) -> bool {
 }
 /// The advertised tool set must equal the profile's exact set (order-free for
 /// the claims profile, whose SDK registry order is not part of the contract).
-fn tools_match(advertised: &Value, schema: &str, allow_shell: bool, allow_background: bool) -> bool {
+fn tools_match(
+    advertised: &Value,
+    schema: &str,
+    allow_shell: bool,
+    allow_background: bool,
+) -> bool {
     let sorted = |v: &Value| -> Option<Vec<String>> {
         let mut names: Vec<String> = v
             .as_array()?
@@ -146,7 +176,12 @@ fn ready_tools(schema: &str, allow_shell: bool, allow_background: bool) -> Value
         }
     } else if is_live_bridge(schema) && allow_background {
         // Shell + the approved background plugin's tool set.
-        json!(["workspace_exec"].into_iter().chain(BG_TOOLS.iter().copied()).collect::<Vec<_>>())
+        json!(
+            ["workspace_exec"]
+                .into_iter()
+                .chain(BG_TOOLS.iter().copied())
+                .collect::<Vec<_>>()
+        )
     } else {
         json!(["workspace_exec"])
     }
@@ -453,6 +488,8 @@ impl Profile {
                     LIFECYCLE_PROFILE
                 } else if is_analysis(&self.schema) {
                     ANALYSIS_PROFILE
+                } else if is_battery(&self.schema) {
+                    HOSTED_BATTERY_PROFILE
                 } else {
                     HOSTED_BRIDGE_PROFILE
                 }
@@ -479,18 +516,35 @@ impl Profile {
                 MAX_RELAYS
             } else if is_analysis(&self.schema) {
                 analysis::MAX_READS
+            } else if is_battery(&self.schema) {
+                BATTERY_MAX_TOOL_CALLS
             } else {
                 8
             })
                 .contains(&self.max_tool_calls)
             || (is_bridge(&self.schema)
                 && !is_analysis(&self.schema)
+                && !is_battery(&self.schema)
                 && self.max_tool_calls
                     != if self.schema == CLAIMS_BRIDGE_PROFILE {
                         2
                     } else {
                         1
                     })
+            || (is_battery(&self.schema)
+                && match &self.provider {
+                    Some(plan) => {
+                        !plan.allow_shell
+                            || plan.allow_background
+                            || plan.max_requests == 0
+                            || plan.max_requests > BATTERY_MAX_REQUESTS
+                            || plan.max_context_bytes == 0
+                            || plan.max_context_bytes > BATTERY_MAX_CONTEXT_BYTES
+                    }
+                    None => true,
+                })
+            || (is_battery(&self.schema)
+                && self.workspace_write_boundary != WorkspaceWriteBoundary::LegacyWorkspace)
             || (is_continuity(&self.schema)
                 && self.workspace_write_boundary != WorkspaceWriteBoundary::SrcLibRs)
             || (is_analysis(&self.schema)
@@ -498,7 +552,8 @@ impl Profile {
                     || self.toolchain.is_some()
                     || self.acceptance.is_some()))
             || (!is_analysis(&self.schema)
-                && (self.toolchain.is_none() || self.acceptance.is_none()))
+                && (self.toolchain.is_none()
+                    || (self.acceptance.is_none() && !is_battery(&self.schema))))
             || job.idle_seconds != 0
         {
             return refuse("coding fixture profile/pins/limits conflict");
@@ -515,9 +570,33 @@ impl Profile {
                     "live continuity profile admits exactly 4 requests and a bounded context",
                 );
             }
+            // Battery: bounded long-form run; per-job values are pinned by the
+            // admission and must sit inside the profile's exact profile caps.
+            if is_battery(&self.schema)
+                && (plan.max_requests == 0
+                    || plan.max_requests > BATTERY_MAX_REQUESTS
+                    || plan.max_context_bytes == 0
+                    || plan.max_context_bytes > BATTERY_MAX_CONTEXT_BYTES)
+            {
+                return refuse("battery request/context bounds outside the profile caps");
+            }
         }
         if self.workspace_write_boundary == WorkspaceWriteBoundary::SrcLibRs {
             strict_source_file(&job.workspace.root)?;
+        }
+        if is_battery(&self.schema) {
+            let Some(toolchain) = &self.toolchain else {
+                return refuse("battery toolchain absent");
+            };
+            verify_toolchain(toolchain, job)?;
+            if let Some(acceptance) = &self.acceptance {
+                verify_pinned_path(&acceptance.path, job)?;
+            }
+            if self.acceptance.is_none() {
+                // The battery arm's acceptance is the coordinator's F3.1
+                // scoring of the produced commit, not a Host-run validator.
+                return Ok(());
+            }
         }
         let (Some(toolchain), Some(acceptance)) = (&self.toolchain, &self.acceptance) else {
             // Analysis: the workspace is the read-only snapshot the Host serves.
@@ -525,23 +604,34 @@ impl Profile {
         };
         toolchain.verify()?;
         acceptance.verify()?;
-        for path in [&toolchain.root, &acceptance.path] {
-            if !path.is_absolute()
-                || fs::canonicalize(path)? != *path
-                || path.to_string_lossy().contains([',', ':'])
-                || path.starts_with(&job.state_dir)
-                || job.state_dir.starts_with(path)
-                || path.starts_with(&job.runtime.root)
-                || path.starts_with(&job.workspace.root)
-            {
-                return refuse("coding toolchain/acceptance isolation conflict");
-            }
-        }
+        verify_pinned_path(&toolchain.root, job)?;
+        verify_pinned_path(&acceptance.path, job)?;
         if !toolchain.root.join("bin/rustc").is_file() {
             return refuse("offline rustc absent");
         }
         Ok(())
     }
+}
+fn verify_pinned_path(path: &Path, job: &Job) -> Result<()> {
+    if !path.is_absolute()
+        || fs::canonicalize(path)? != *path
+        || path.to_string_lossy().contains([',', ':'])
+        || path.starts_with(&job.state_dir)
+        || job.state_dir.starts_with(path)
+        || path.starts_with(&job.runtime.root)
+        || path.starts_with(&job.workspace.root)
+    {
+        return refuse("coding toolchain/acceptance isolation conflict");
+    }
+    Ok(())
+}
+fn verify_toolchain(toolchain: &Tree, job: &Job) -> Result<()> {
+    toolchain.verify()?;
+    verify_pinned_path(&toolchain.root, job)?;
+    if !toolchain.root.join("bin/rustc").is_file() {
+        return refuse("offline rustc absent");
+    }
+    Ok(())
 }
 fn strict_source_file(workspace: &Path) -> Result<()> {
     use std::os::unix::fs::MetadataExt;
@@ -2774,7 +2864,12 @@ mod tests {
     #[test]
     fn claims_profile_ready_tool_set_is_exact_and_legacy_sets_are_unchanged() {
         // Provider-disabled fixture profiles always allow shell.
-        assert!(tools_match(&json!(["workspace_exec"]), PROFILE, true, false));
+        assert!(tools_match(
+            &json!(["workspace_exec"]),
+            PROFILE,
+            true,
+            false
+        ));
         assert!(!tools_match(
             &json!(["workspace_exec", "claims_discover"]),
             BRIDGE_PROFILE,
@@ -2810,8 +2905,18 @@ mod tests {
         // Revision 4: on the hosted coding surface, no execution tool is
         // advertised when shell is not admitted.
         assert!(tools_match(&json!([]), HOSTED_BRIDGE_PROFILE, false, false));
-        assert!(!tools_match(&json!(["workspace_exec"]), HOSTED_BRIDGE_PROFILE, false, false));
-        assert!(tools_match(&json!(["workspace_exec"]), HOSTED_BRIDGE_PROFILE, true, false));
+        assert!(!tools_match(
+            &json!(["workspace_exec"]),
+            HOSTED_BRIDGE_PROFILE,
+            false,
+            false
+        ));
+        assert!(tools_match(
+            &json!(["workspace_exec"]),
+            HOSTED_BRIDGE_PROFILE,
+            true,
+            false
+        ));
         // Shell + granted background: the shell tool and the approved plugin's
         // tool set are both advertised; without background they are not.
         let shell_and_bg = {
@@ -2822,9 +2927,24 @@ mod tests {
             }
             v
         };
-        assert!(tools_match(&shell_and_bg, HOSTED_BRIDGE_PROFILE, true, true));
-        assert!(!tools_match(&shell_and_bg, HOSTED_BRIDGE_PROFILE, true, false));
-        assert!(!tools_match(&json!(["workspace_exec"]), HOSTED_BRIDGE_PROFILE, true, true));
+        assert!(tools_match(
+            &shell_and_bg,
+            HOSTED_BRIDGE_PROFILE,
+            true,
+            true
+        ));
+        assert!(!tools_match(
+            &shell_and_bg,
+            HOSTED_BRIDGE_PROFILE,
+            true,
+            false
+        ));
+        assert!(!tools_match(
+            &json!(["workspace_exec"]),
+            HOSTED_BRIDGE_PROFILE,
+            true,
+            true
+        ));
         assert!(is_bridge(CLAIMS_BRIDGE_PROFILE) && is_fixture_bridge(CLAIMS_BRIDGE_PROFILE));
         assert!(!is_fixture_bridge(HOSTED_BRIDGE_PROFILE));
     }
