@@ -69,7 +69,8 @@ reason).
 
 - Shells inside an isolated worktree have refused compound commands that mix
   `git` with other programs or `export` variables; run `git` and `cargo` as
-  separate plain commands (`cargo ... --manifest-path <worktree>/rust/Cargo.toml`).
+  separate plain commands with inline variables
+  (`RUST_LOG=... cargo ... --manifest-path <worktree>/rust/Cargo.toml`).
 - A successor launched to continue in an existing worktree is not isolated
   itself: give it the worktree path, and have it use absolute paths,
   `git -C <worktree>` and `--manifest-path`, never the main checkout.

@@ -77,11 +77,16 @@ its agent's `tools` list names `mcp:codebase-memory` entries
 
 ## Shared build directory
 
-Rust builds on this machine share one Cargo build directory, set in the
-user-level `~/.cargo/config.toml`, so builds run one at a time and disk stays
-bounded. Do not set `CARGO_TARGET_DIR` or `--target-dir`, and never build into
-`/tmp`. `target/` binaries belong to whichever worktree built last: copy and
-pin one before relying on it.
+Operator decision 2026-11-20: where the user-level `~/.cargo/config.toml` sets
+`build.target-dir` (it does on the operator's laptop), every worktree builds
+into that one directory, so Cargo's lock runs builds one at a time and disk
+stays bounded; a lock wait is expected. Do not point a build elsewhere with
+`CARGO_TARGET_DIR` or `--target-dir`. The pinned-tool provisioning scripts are
+the exception: they build privately so context observation never waits on that
+lock. Binaries there belong to whichever worktree built last: copy one out and
+pin its digest before relying on it. `/tmp` is a small RAM-backed tmpfs with a
+per-user quota shared by every session; filling it fails other sessions' writes
+(`EDQUOT`), so keep builds and large scratch output out of it.
 
 ## Pre-release compatibility policy
 Work Engine is under active development. Internal implementations and

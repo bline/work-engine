@@ -48,11 +48,14 @@ whether a unit may appear in multiple arms belong to the experiment design.
 ## Build and storage
 
 ```sh
-cargo build --locked --offline --manifest-path rust/Cargo.toml \
-  -p experiment-control --target-dir /absolute/private/target
-sha256sum /absolute/private/target/debug/experiment-control
+cargo build --locked --offline --manifest-path rust/Cargo.toml -p experiment-control
+cp "$(cargo metadata --format-version 1 --no-deps --manifest-path rust/Cargo.toml \
+  | jq -r .target_directory)/debug/experiment-control" /absolute/private/experiment-control
+sha256sum /absolute/private/experiment-control
 ```
 
+The build uses the shared build directory (see [AGENTS.md](../AGENTS.md)), whose
+binaries another worktree can overwrite, so copy the binary out before hashing it.
 Use an immutable provisioned binary and its SHA-256 in subsequent calls. Linux
 is required by the adapter's filesystem lock and opened-file execution binding.
 It checks the digest and executes the same opened inode; concurrent in-place
