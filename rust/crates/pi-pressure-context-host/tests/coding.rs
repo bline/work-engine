@@ -430,6 +430,9 @@ struct SyntheticSdk {
     /// block. Operator decision 2026-11-20 (option B): such a turn settles
     /// with an empty final text.
     silent_recovery: bool,
+    /// The SDK-observed context size the receiver reports per request
+    /// (`contextBytes`); the battery gate's replacement policy reads it.
+    context_bytes: u64,
 }
 impl SyntheticSdk {
     fn new(session: &str, requests: u64) -> Self {
@@ -446,6 +449,7 @@ impl SyntheticSdk {
             reasoning: None,
             hosted: false,
             silent_recovery: false,
+            context_bytes: 0,
         }
     }
     fn assistant(&self, mut m: serde_json::Value) -> serde_json::Value {
@@ -489,7 +493,7 @@ impl SyntheticSdk {
         workspace: Option<&serde_json::Value>,
     ) -> serde_json::Value {
         self.requests += 1;
-        let mut frame = json!({"type":"coding_provider_request","producer":"pi-1.5.0","sessionId":self.session,"id":self.requests,"invocationId":command["invocationId"],"turnCorrelation":command["turnCorrelation"],"prompt_sha256":digest(command["prompt"].as_str().unwrap().as_bytes()),"messages":self.messages,"agentMessages":self.messages,"usage":null});
+        let mut frame = json!({"type":"coding_provider_request","producer":"pi-1.5.0","sessionId":self.session,"id":self.requests,"invocationId":command["invocationId"],"turnCorrelation":command["turnCorrelation"],"prompt_sha256":digest(command["prompt"].as_str().unwrap().as_bytes()),"messages":self.messages,"agentMessages":self.messages,"usage":null,"contextBytes":self.context_bytes});
         match self.system_mutation {
             1 => {
                 frame["messages"][0]["sections"]["preamble"] =
@@ -961,6 +965,196 @@ fn hosted_policy() -> HostedProviderPolicy {
         ],
         max_attempts_per_request: 2,
     }
+}
+/// The battery gate's offline setup: the hosted live profile with one grant
+/// set per pinned replacement cycle (cycle c replaces the cycle c-1
+/// successor generation; cycle 1 replaces context:old).
+fn continuity_build_battery(
+    max_resets: u64,
+    max_requests: u64,
+    max_tool_calls: u64,
+    max_context_bytes: u64,
+    replacement_bps: u64,
+) -> (
+    PathBuf,
+    Result<CodingContinuity, work_engine_manual_host::Error>,
+) {
+    let root = std::env::temp_dir().join(format!(
+        "coding-battery-{}-{}",
+        std::process::id(),
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    let mut store = SqliteLifecycleStore::open(&root, "fixture-root".into()).unwrap();
+    let subject = SubjectId::parse("subject:pi:coding").unwrap();
+    store
+        .register_subject(
+            subject.clone(),
+            ContextGeneration::parse("context:old").unwrap(),
+            BuildId::parse("build:pi:coding").unwrap(),
+            ProofRunId::parse("proof:pi:coding").unwrap(),
+            clock(),
+        )
+        .unwrap();
+    let policy = hosted_policy();
+    let turn = |base: &str| policy.grant_id(base);
+    let mut grants = vec![(turn("grant:old"), "context:old".to_string(), GrantScope::NativeTurn)];
+    for c in 1..=max_resets {
+        let predecessor = if c == 1 {
+            "context:old".to_string()
+        } else {
+            format!("context:new{}", c - 1)
+        };
+        let successor = format!("context:new{c}");
+        grants.push((
+            format!("grant:replace{c}"),
+            predecessor,
+            GrantScope::RequestReplacement,
+        ));
+        grants.push((
+            turn(&format!("grant:new{c}")),
+            successor.clone(),
+            GrantScope::NativeTurn,
+        ));
+        grants.push((
+            format!("grant:successor{c}"),
+            successor,
+            GrantScope::EnqueueInput,
+        ));
+    }
+    for (id, context, scope) in grants {
+        store
+            .install_trusted_grant(TrustedGrant {
+                id: GrantId::parse(id).unwrap(),
+                issuer: "fixture-root".into(),
+                principal: "operator:fixture".into(),
+                subject: subject.clone(),
+                context: ContextGeneration::parse(context).unwrap(),
+                build: BuildId::parse("build:pi:coding").unwrap(),
+                proof_run: ProofRunId::parse("proof:pi:coding").unwrap(),
+                scope,
+                expires: AuthorityExpiresAt::new(WallTimeMs::new(1000)),
+                revision: Revision::new(1),
+                revoked: false,
+            })
+            .unwrap();
+    }
+    let staged = store.stage_artifact(subject.clone(), b"{}").unwrap();
+    let published = store.publish_artifact(staged, clock()).unwrap();
+    let initial = store
+        .reserve_native_session(
+            NativeSessionId::parse("session:old").unwrap(),
+            subject,
+            ContextGeneration::parse("context:old").unwrap(),
+            RuntimeIncarnation::parse("incarnation:pi:coding").unwrap(),
+            &pi_coding_live_profile_digest(),
+            PI_SDK_INDEX_SHA256,
+            &pi_coding_live_protocol_digest(),
+            SnapshotId::parse("snapshot:coding").unwrap(),
+            &published.digest_hex,
+            false,
+            clock(),
+        )
+        .unwrap();
+    let config = CodingConfig {
+        task: Some("Build the assigned crate feature and commit it.".to_string()),
+        budget: json!({"schema":"work-engine.coding-budget-control.v1","classification":"live_provider_observation","available":true,"max_provider_requests":max_requests,"max_tool_calls":max_tool_calls,"max_resets":max_resets,"replacement_basis_points":replacement_bps,"max_context_bytes":max_context_bytes,"authority":"observation_only","sequence":1,"expires_ms":1000,"source":"synthetic-battery-budget","generation":"battery:1","observed_ms":100,"max_age_ms":300000}),
+        expires_ms: 1000,
+        pressure_basis_points: 9500,
+        hosted: Some(policy),
+        battery: true,
+        battery_workspace: Some(root.join("workspace")),
+    };
+    (
+        root,
+        CodingContinuity::new(store, initial, config, clock),
+    )
+}
+#[test]
+fn battery_loop_runs_domain_turns_until_the_durable_completion_signal() {
+    let (root, c) = continuity_build_battery(2, 16, 8, 1_000_000, 7000);
+    let mut c = c.unwrap();
+    let original = c
+        .frame(&json!({"type":"ready","sessionId":"physical:old","snapshot":snapshot("physical:old")}))
+        .unwrap()[0]
+        .clone();
+    assert!(original["prompt"].as_str().unwrap().contains("battery builder job"));
+    control(&mut c, &original);
+    let mut sdk = SyntheticSdk::new("physical:old", 0);
+    sdk.live = true;
+    sdk.hosted = true;
+    // Turn 1 with a tool call; no completion yet -> a continuation turn.
+    let t1 = sdk.turn(&mut c, &original, Some(&root)).unwrap();
+    assert_eq!(t1["type"], "bridge_prompt");
+    assert_eq!(t1["invocationId"], "cont-1");
+    control(&mut c, &t1);
+    // The builder writes the durable completion artifact between turns.
+    fs::create_dir_all(root.join("workspace/evidence")).unwrap();
+    fs::write(
+        root.join("workspace/evidence/completion.json"),
+        json!({"status":"complete","commit":"a".repeat(64)}).to_string(),
+    )
+    .unwrap();
+    // Turn 2 settles -> the gate closes on the durable signal, not the text.
+    let t2 = sdk.turn(&mut c, &t1, None).unwrap();
+    assert_eq!(t2["type"], "bridge_close");
+    control(&mut c, &t2);
+    let report = c.report().unwrap();
+    assert_eq!(report["mode"], "battery");
+    assert_eq!(report["provider_requests"], 3);
+    assert_eq!(report["tool_executions"], 1);
+    assert_eq!(report["physical_resets"], 0);
+    assert_eq!(report["continued_parent"], "CompletedSettled");
+    drop(c);
+    fs::remove_dir_all(root).unwrap();
+}
+#[test]
+fn battery_pressure_replaces_once_and_the_run_continues_to_completion() {
+    let (root, c) = continuity_build_battery(1, 16, 8, 1_000, 5_000);
+    let mut c = c.unwrap();
+    let original = c
+        .frame(&json!({"type":"ready","sessionId":"physical:old","snapshot":snapshot("physical:old")}))
+        .unwrap()[0]
+        .clone();
+    control(&mut c, &original);
+    let mut sdk = SyntheticSdk::new("physical:old", 0);
+    sdk.live = true;
+    sdk.hosted = true;
+    sdk.context_bytes = 600; // >= 50% of the 1000-byte pinned context bound
+    // Turn 1 settles under pressure -> a replacement cycle, not continuation.
+    let reset = sdk.turn(&mut c, &original, Some(&root)).unwrap();
+    assert_eq!(reset["type"], "bridge_replace");
+    control(&mut c, &reset);
+    let commands = c.frame(&json!({"type":"coding_replaced","sessionId":"physical:new1","oldSessionId":"physical:old","result":{"cancelled":false},"messages":[],"branch":[],"header":{"type":"session","id":"physical:new1"},"leafId":null,"autoCompactionEnabled":false,"tools":[],"snapshot":snapshot("physical:new1")})).unwrap();
+    let recovery = commands[0].clone();
+    assert!(recovery["prompt"].as_str().unwrap().contains("context:new1"));
+    control(&mut c, &recovery);
+    let mut fresh = SyntheticSdk::new("physical:new1", 2);
+    fresh.live = true;
+    fresh.hosted = true;
+    // The rehydrate turn settles -> finish_rehydration -> continuation turn.
+    let continued = fresh.turn(&mut c, &recovery, None).unwrap();
+    assert_eq!(continued["type"], "bridge_prompt");
+    assert_eq!(continued["invocationId"], "cont-1");
+    control(&mut c, &continued);
+    fs::create_dir_all(root.join("workspace/evidence")).unwrap();
+    fs::write(
+        root.join("workspace/evidence/completion.json"),
+        json!({"status":"handoff_ready","commit":"b".repeat(64)}).to_string(),
+    )
+    .unwrap();
+    let close = fresh.turn(&mut c, &continued, None).unwrap();
+    assert_eq!(close["type"], "bridge_close");
+    control(&mut c, &close);
+    let report = c.report().unwrap();
+    assert_eq!(report["mode"], "battery");
+    assert_eq!(report["physical_resets"], 1);
+    assert_eq!(report["context"], "context:new1");
+    assert_eq!(report["continued_parent"], "CompletedSettled");
+    drop(c);
+    fs::remove_dir_all(root).unwrap();
 }
 fn intent(request: u64, attempt: u64, route: &str, payer: &str) -> ProviderAttemptIntent {
     ProviderAttemptIntent {

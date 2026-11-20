@@ -702,6 +702,23 @@ impl ContinuityState {
             {
                 return Err(refused("coding provider owner correlation conflict"));
             }
+            // Workspace evidence rides on the first request after a tool call
+            // (the Host binds the manifest when the tool container is drained):
+            // the v4 grammar requires one pi.coding_workspace record per tool
+            // intent, exactly as the choreography records it.
+            if frame["host_workspace"].is_object() && o.result.is_some() {
+                let workspace = frame["host_workspace"].clone();
+                let raw = workspace["manifest_bytes"]
+                    .as_str()
+                    .ok_or_else(|| refused("Host stable workspace absent"))?;
+                if digest(raw.as_bytes()) != workspace["manifest"]["sha256"] {
+                    return Err(refused("Host workspace manifest binding"));
+                }
+                self.original_result = Some(o.result.clone().unwrap());
+                self.workspace = Some(workspace.clone());
+                let e = json!({"type":"pi.coding_workspace","invocationId":o.parent.invocation_id(),"manifest":workspace["manifest"],"manifest_bytes":raw});
+                o.record("pi.coding_workspace", &e)?;
+            }
             let mut request = frame.clone();
             request["type"] = json!("pi.provider_request");
             if let Some(m) = request.as_object_mut() {
@@ -1188,7 +1205,7 @@ impl ContinuityState {
             .map_err(refused)?;
         let transition = match result.outcome {
             CommandOutcome::ReplacementRequested { transition } => transition,
-            _ => return Err(refused("replacement not admitted")),
+            other => return Err(refused(format!("replacement not admitted: {other:?}"))),
         };
         let semantic = o
             .store
