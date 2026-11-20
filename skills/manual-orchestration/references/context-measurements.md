@@ -43,7 +43,8 @@ limit changes, restate both levels with the probe's script.
 
 A context restarted after an automatic compaction measured about 31K on
 2026-11-05 (n = 1). One opened after a replacement measured about 25K on
-2026-10-16 and settled near 116K. That a *fresh launch* opens similarly is
+2026-10-16 and settled near 116K, before Sol 6.1 and the limit. That a
+*fresh launch* opens similarly is
 `unverified`, though its standing floor - system prompt, tool schemas,
 repository instructions - is the same.
 

@@ -39,7 +39,7 @@ path. For a Claude child, also bind its agent ID within that session. Do not use
 an inherited environment variable as proof of identity. For Codex, enroll
 explicit token levels matched to the session's actual rollover configuration
 and recovery needs. The historical 200,000/235,000 levels in
-[context boundary](context-boundary.md#measured-basis) were operating hypotheses
+[context measurements](context-measurements.md#measured-basis) were operating hypotheses
 for a 250,000 limit, not defaults for every current session. Window percentages
 can put warnings above a configured limit and prevent them from firing. Claude
 transcripts record no window and take their own token levels.

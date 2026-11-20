@@ -19,4 +19,4 @@ Plan a requested compaction below the session's automatic compaction point. For
 a session started under the 250,000 limit, that point is just under 250K; a
 compaction planned for 300K or more is never reached, because the provider compacts
 first, mid-turn, without the controller's preparation or attributed recovery
-([measured basis](context-boundary.md#measured-basis)).
+([measured basis](context-measurements.md#measured-basis)).

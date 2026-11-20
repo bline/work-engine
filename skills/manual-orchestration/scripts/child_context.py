@@ -17,12 +17,14 @@ and compares its latest input with two fixed levels:
   trigger     where a chosen boundary should prefer a fresh context
               (default 200,000, hypothesis H2)
   band floor  just under the lowest automatic compaction observed
-              (default 235,000: Astra from 239,130 and Sol 6.1 under the
-              250,000 auto-compaction limit at 248,987, 2026-11-05)
+              (default 235,000: Astra from 239,130 with no configured
+              limit, and one Sol 6.1 session at 248,987 on 2026-11-05
+              under the 250,000 auto-compaction limit)
 
-The levels are tokens, not shares of the window, because the configured
-auto-compaction limit, not the 475,000 window, now decides where Sol 6.1
-compacts (metrics/probes/compaction-points-20261105.md). `claude` reads a Claude Code
+The levels are tokens, not shares of the window, because a session's
+compaction point depends on when it, or its root, started relative to the
+configured auto-compaction limit, not on its window
+(metrics/probes/compaction-points-20261105.md). `claude` reads a Claude Code
 subagent transcript (~/.claude/projects/<project>/<session>/subagents/
 agent-<id>.jsonl) instead, where context is input + cache-creation +
 cache-read tokens of the latest assistant call and no window is recorded, so
