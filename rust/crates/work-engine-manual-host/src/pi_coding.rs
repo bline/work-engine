@@ -56,6 +56,9 @@ pub const BATTERY_MAX_REQUESTS: u32 = 512;
 /// `contextBytes` gate). The spool protocol carries the context by reference,
 /// so this is bounded by the spool file cap, not the 64 KiB frame bound.
 pub const BATTERY_MAX_CONTEXT_BYTES: u64 = 2_000_000;
+/// Battery: one forwarded request body (spool file) bound; the shim refuses
+/// beyond it before the frame is emitted. Matches SPOOL_BODY_BYTES in the shim.
+pub const BATTERY_SPOOL_BODY_BYTES: u64 = 16 * 1024 * 1024;
 /// Hosted analysis: the same Host-held access, dispatch and lifecycle gate,
 /// no shell, tool container or workspace effect; the Host serves read-only
 /// tools over the job's manifest-pinned workspace (`analysis`).
@@ -774,6 +777,12 @@ fn expected_mounts(
     if profile.schema != SIGNED_PROFILE {
         mounts.push((j.job.state_dir.join("exports"), "/export", true));
     }
+    // Battery: the receiver spools large request contexts/bodies by reference
+    // (the inline bridge frame would exceed its 64 KiB bound long before a
+    // builder arm's context does); the Host reads and digest-verifies.
+    if is_battery(&profile.schema) {
+        mounts.push((j.job.state_dir.join("coding-spool"), "/spool", true));
+    }
     if let Some(plan) = &profile.provider
         && is_hosted(&profile.schema)
     {
@@ -987,32 +996,29 @@ impl Host {
     }
     pub(super) fn coding_bridge_frame(&mut self, frame: &Value) -> Result<Vec<Vec<u8>>> {
         let mut frame = frame.clone();
+        let battery = self
+            .journal
+            .job
+            .coding
+            .as_ref()
+            .is_some_and(|p| is_battery(&p.schema));
+        // Battery: the context travels by reference. Expand the digest-verified
+        // spool file into the frame the gate and the settlement grammar see,
+        // so the inline-context validation is unchanged while the bridge
+        // frames (and the receiver's frame bound) stay small.
+        if battery
+            && frame["type"] == "coding_provider_request"
+            && frame["contextSpool"].is_object()
+        {
+            frame = self.coding_expand_context(frame)?;
+        }
         if frame["type"] == "coding_provider_request"
             && frame["id"] == 2
             && !self.analysis_profile()
+            && !battery
         {
             self.coding_collect_tool()?;
-            if !self.journal.coding.as_ref().unwrap().tool_removed {
-                return refuse("coding checkpoint writers not excluded");
-            }
-            let path = self
-                .journal
-                .job
-                .state_dir
-                .join("coding-bridge-workspace.json");
-            atomic(
-                &path,
-                &inventory(&self.journal.job.state_dir.join("coding-workspace"))?,
-            )?;
-            self.journal
-                .coding
-                .as_mut()
-                .unwrap()
-                .bridge_workspace_manifest = Some(Artifact {
-                sha256: file_digest(&path, None)?,
-                path,
-            });
-            self.save()?;
+            self.coding_bind_workspace_manifest()?;
         }
         if let Some(manifest) = &self
             .journal
@@ -1022,10 +1028,15 @@ impl Host {
             .bridge_workspace_manifest
         {
             let bytes = manifest.verify()?;
-            if serde_json::from_slice::<Value>(&bytes)?
-                != serde_json::to_value(inventory(
-                    &self.journal.job.state_dir.join("coding-workspace"),
-                )?)?
+            // The choreography freezes the workspace before its single reset,
+            // so a changed inventory is a conflict. A battery builder run is
+            // SUPPOSED to change the workspace between requests; its manifest
+            // is re-bound at every tool-result observation instead.
+            if !battery
+                && serde_json::from_slice::<Value>(&bytes)?
+                    != serde_json::to_value(inventory(
+                        &self.journal.job.state_dir.join("coding-workspace"),
+                    )?)?
             {
                 return refuse("coding checkpoint workspace changed");
             }
@@ -1047,6 +1058,59 @@ impl Host {
                 Ok(serde_json::to_vec(&v)?)
             })
             .collect()
+    }
+    /// Bind the staged workspace's current inventory as the frame evidence
+    /// artifact (the writers-absent check must already hold).
+    pub(super) fn coding_bind_workspace_manifest(&mut self) -> Result<()> {
+        if !self.journal.coding.as_ref().unwrap().tool_removed {
+            return refuse("coding checkpoint writers not excluded");
+        }
+        let path = self
+            .journal
+            .job
+            .state_dir
+            .join("coding-bridge-workspace.json");
+        atomic(
+            &path,
+            &inventory(&self.journal.job.state_dir.join("coding-workspace"))?,
+        )?;
+        self.journal
+            .coding
+            .as_mut()
+            .unwrap()
+            .bridge_workspace_manifest = Some(Artifact {
+            sha256: file_digest(&path, None)?,
+            path,
+        });
+        self.save()?;
+        Ok(())
+    }
+    /// Battery: expand the digest-verified context spool file into the frame's
+    /// inline `messages`/`agentMessages` (the settlement grammar sees the same
+    /// shapes as the choreography; the bridge frame stayed small).
+    pub(super) fn coding_expand_context(&mut self, mut frame: Value) -> Result<Value> {
+        let spool = &frame["contextSpool"];
+        let path = spool["path"]
+            .as_str()
+            .filter(|p| !p.contains('/') && !p.contains("..") && !p.is_empty() && p.len() <= 128)
+            .ok_or_else(|| Error::Refused("context spool path invalid".into()))?;
+        let bytes = fs::read(self.journal.job.state_dir.join("coding-spool").join(path))?;
+        if bytes.len() as u64 != spool["bytes"].as_u64().unwrap_or(u64::MAX)
+            || digest(&bytes) != spool["sha256"].as_str().unwrap_or("")
+        {
+            return refuse("context spool digest/size conflict");
+        }
+        let doc: Value = serde_json::from_slice(&bytes)?;
+        if doc["messages"].as_array().is_none()
+            || doc["agentMessages"].as_array().is_none()
+            || doc["messages"].as_array().unwrap().len() > 4096
+            || doc["agentMessages"].as_array().unwrap().len() > 4096
+        {
+            return refuse("context spool messages absent/bound");
+        }
+        frame["messages"] = doc["messages"].clone();
+        frame["agentMessages"] = doc["agentMessages"].clone();
+        Ok(frame)
     }
     pub(super) fn coding_bridge_dispatch(
         &mut self,
@@ -1158,6 +1222,13 @@ impl Host {
         let j = &self.journal;
         let workspace = j.job.state_dir.join("coding-workspace");
         fs::create_dir(&workspace)?;
+        // Battery: the receiver's spool directory (large request contexts and
+        // bodies travel by reference; the Host digest-verifies on read).
+        if is_battery(&j.job.coding.as_ref().unwrap().schema) {
+            let spool = j.job.state_dir.join("coding-spool");
+            fs::create_dir(&spool)?;
+            fs::set_permissions(&spool, fs::Permissions::from_mode(0o700))?;
+        }
         for (path, entry) in inventory(&j.job.workspace.root)? {
             if !matches!(entry, Entry::File { .. }) {
                 return refuse("coding input symlink refused");
@@ -1184,6 +1255,13 @@ impl Host {
         {
             strict_source_file(&workspace)?;
         }
+        self.coding_create_tool()
+    }
+    /// Create and start the tool container (also the battery's rebuild after
+    /// a collect: the same pinned mounts and the same writable workspace
+    /// directory, so builder edits survive the rebuild).
+    pub(super) fn coding_create_tool(&mut self) -> Result<()> {
+        let j = &self.journal;
         let mut args = base(j, &tool_name(j));
         for (src, dst, rw) in expected_mounts(j, true, false) {
             mount(&mut args, &src, dst, rw);
@@ -1192,6 +1270,7 @@ impl Host {
         args.push(TOOL_IMAGE.into());
         args.extend(command(true));
         self.journal.coding.as_mut().unwrap().tool_create_intent = true;
+        self.journal.coding.as_mut().unwrap().tool_removed = false;
         self.save()?;
         let (ok, _) = self.command("coding-tool-create", args, false)?;
         if !ok {
@@ -1527,6 +1606,19 @@ impl Host {
                     if self.expired() || self.cancelled() {
                         return refuse("coding tool admission expired/cancelled");
                     }
+                    // Battery: a collected container (post-command freeze) is
+                    // rebuilt for the next command; the same pinned mounts and
+                    // the same writable workspace directory.
+                    if self
+                        .journal
+                        .job
+                        .coding
+                        .as_ref()
+                        .is_some_and(|p| is_battery(&p.schema))
+                        && self.journal.coding.as_ref().unwrap().tool_removed
+                    {
+                        self.coding_create_tool()?;
+                    }
                     let id = frame["id"]
                         .as_str()
                         .filter(|s| !s.is_empty() && s.len() < 128)
@@ -1643,6 +1735,21 @@ impl Host {
                                 Error::Refused("tool container identity absent".into())
                             })?,
                         )?;
+                    }
+                    // Battery: freeze and bind the post-command workspace
+                    // after every observed result, so the next provider
+                    // request carries the current manifest and the reset
+                    // evidence stays current (the choreography binds once, at
+                    // its single post-tool request).
+                    if self
+                        .journal
+                        .job
+                        .coding
+                        .as_ref()
+                        .is_some_and(|p| is_battery(&p.schema))
+                    {
+                        self.coding_collect_tool()?;
+                        self.coding_bind_workspace_manifest()?;
                     }
                     replies.push(serde_json::to_vec(&result)?);
                 }
@@ -2229,6 +2336,28 @@ mod tests {
         fs::remove_dir(workspace.join("src")).unwrap();
         std::os::unix::fs::symlink(dir.path(), workspace.join("src")).unwrap();
         assert!(strict_source_file(&workspace).is_err());
+    }
+    #[test]
+    fn battery_expands_the_digest_verified_context_spool_into_the_frame() {
+        let (dir, mut h) = fixture();
+        h.journal.job.coding.as_mut().unwrap().schema = HOSTED_BATTERY_PROFILE.into();
+        let spool = dir.path().join("coding-spool");
+        fs::create_dir(&spool).unwrap();
+        let context = json!({"messages":[{"role":"user","content":"work"}],"agentMessages":[{"role":"user","content":"work"}]});
+        let bytes = serde_json::to_vec(&context).unwrap();
+        fs::write(spool.join("ctx-1.json"), &bytes).unwrap();
+        let good = json!({"type":"coding_provider_request","id":1,"contextSpool":{"path":"ctx-1.json","sha256":digest(&bytes),"bytes":bytes.len()}});
+        let expanded = h.coding_expand_context(good).unwrap();
+        assert_eq!(expanded["messages"], context["messages"]);
+        assert_eq!(expanded["agentMessages"], context["agentMessages"]);
+        // A digest or size mismatch refuses (fail closed, never substitutes).
+        for mutated in [
+            json!({"type":"coding_provider_request","id":1,"contextSpool":{"path":"ctx-1.json","sha256":digest(b"other"),"bytes":bytes.len()}}),
+            json!({"type":"coding_provider_request","id":1,"contextSpool":{"path":"ctx-1.json","sha256":digest(&bytes),"bytes":99}}),
+            json!({"type":"coding_provider_request","id":1,"contextSpool":{"path":"../escape.json","sha256":digest(&bytes),"bytes":bytes.len()}}),
+        ] {
+            assert!(h.coding_expand_context(mutated).is_err());
+        }
     }
     #[test]
     fn strict_validator_has_no_writable_workspace_or_source_mount() {

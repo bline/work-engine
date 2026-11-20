@@ -210,7 +210,7 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
             };
             let successor = format!("context:new{c}");
             g.push((
-                turn(&format!("grant:replace{c}")),
+                format!("grant:replace{c}"),
                 predecessor,
                 GrantScope::RequestReplacement,
             ));

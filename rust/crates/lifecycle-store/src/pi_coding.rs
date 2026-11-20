@@ -325,8 +325,7 @@ impl SqliteLifecycleStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(|_| StoreError::Unavailable)?;
-        let b = parent_binding(&tx, parent, &self.trusted_issuer, clock)?;
-        let children:i64=tx.query_row("SELECT (SELECT COUNT(*) FROM native_operations WHERE parent_invocation_id=?1)+(SELECT COUNT(*) FROM native_task_operations WHERE parent_invocation_id=?1)",[parent.invocation_id()],|r|r.get(0)).map_err(|_|StoreError::Unavailable)?;
+        let b = parent_binding(&tx, parent, &self.trusted_issuer, clock)?;        let children:i64=tx.query_row("SELECT (SELECT COUNT(*) FROM native_operations WHERE parent_invocation_id=?1)+(SELECT COUNT(*) FROM native_task_operations WHERE parent_invocation_id=?1)",[parent.invocation_id()],|r|r.get(0)).map_err(|_|StoreError::Unavailable)?;
         if children != 0 {
             return Err(StoreError::ClaimConflict);
         }

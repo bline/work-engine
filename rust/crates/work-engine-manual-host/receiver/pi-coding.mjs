@@ -41,6 +41,16 @@ const SNAPSHOT_NAMES=['snapshot_list','snapshot_read'];
 const FRAME_BYTES=analysis?config.frameBytes:65536;
 const MAX_BODY=analysis?config.maxBodyBytes:45000;
 const MAX_REQUESTS=analysis||battery?config.maxRequests:4;
+// Battery spool bound: one forwarded request body (the whole conversation,
+// headers and framing included) never exceeds this; the Host refuses beyond
+// it. The context bound itself is the plan's maxContextBytes.
+const SPOOL_BODY_BYTES=16*1024*1024;
+// Battery: write one spool file durably (fsync) before its reference frame
+// is emitted; the Host reads it back and digest-verifies before use.
+const spoolWrite=(name,bytes)=>{
+ const fd=openSync('/spool/'+name,'w');
+ try{writeFileSync(fd,bytes);fsyncSync(fd);}finally{closeSync(fd);}
+};
 // claude-sdk: Pi's provider is the pinned pi-claude-subscription extension,
 // whose Claude Code child process sends its Messages requests to a loopback
 // forwarder here. Each request becomes one provider_fetch under the current
@@ -369,10 +379,20 @@ try {
      const id=++bridgeCalls;
      const contextBytes=Buffer.byteLength(JSON.stringify(context));
      if(!bridgeActive||id>config.maxRequests||id>MAX_REQUESTS||contextBytes>config.maxContextBytes||Date.now()>=config.deadline*1000||requestModel.id!==model.id||requestModel.provider!==model.provider)return failure('outside host admission unavailable');
+     // Battery: the context travels by reference. The spool file carries the
+     // exact bytes the Host expands into the settled request frame; the frame
+     // itself stays small (the inline double context would exceed the bridge
+     // frame bound long before a real builder arm's context does).
+     let contextDoc=null,contextSpool=null;
+     if(battery){
+      contextDoc=Buffer.from(JSON.stringify({messages:context.messages,agentMessages:session.messages}));
+      spoolWrite(`ctx-${id}.json`,contextDoc);
+      contextSpool={path:`ctx-${id}.json`,sha256:createHash('sha256').update(contextDoc).digest('hex'),bytes:contextDoc.length};
+     }
      const grant=await new Promise((resolve,reject)=>{
       grants.set(id,resolve);
       options?.signal?.addEventListener('abort',()=>{grants.delete(id);reject(Error('provider grant cancelled'));},{once:true});
-      emit({type:'coding_provider_request',id,producer:'pi-1.5.0',invocationId:operation.invocationId,turnCorrelation:operation.turnCorrelation,prompt_sha256:createHash('sha256').update(operation.prompt).digest('hex'),messages:context.messages,agentMessages:session.messages,requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},usage:session.getContextUsage()??null,contextBytes,...(reportRefused?{forwarderRefused}:{})});
+      emit({type:'coding_provider_request',id,producer:'pi-1.5.0',invocationId:operation.invocationId,turnCorrelation:operation.turnCorrelation,prompt_sha256:createHash('sha256').update(operation.prompt).digest('hex'),...(battery?{}:{messages:context.messages,agentMessages:session.messages}),requestModel:{id:requestModel.id,provider:requestModel.provider,contextWindow:requestModel.contextWindow},usage:session.getContextUsage()??null,contextBytes,...(contextSpool?{contextSpool}:{}),...(reportRefused?{forwarderRefused}:{})});
      });
      if(grant.mode!=='live')throw Error('bridge grant mode');
      const until=consumptionDeadline(grant,config.deadline*1000);
@@ -397,9 +417,17 @@ try {
        // bounded decompression happens here, never on the Host.
        if(headers['content-encoding']==='zstd'){body=zstdDecompressSync(body,{maxOutputLength:MAX_BODY+1});delete headers['content-encoding'];}
        else if(headers['content-encoding']!==undefined)throw Error('hosted request encoding');
-       if(body.length>MAX_BODY)throw Error('hosted request bound');
+       if(battery?body.length>SPOOL_BODY_BYTES:body.length>MAX_BODY)throw Error('hosted request bound');
        hostedFrames.open=true;
-       emit({type:'provider_fetch',id,binding:sid.binding,sequence:sid.sequence,stream:sid.stream,url:String(url),method:init.method,headers,body:body.toString('base64')});
+       // Battery: the request body travels by reference (a large builder
+       // context exceeds the inline frame bound); the Host reads and digest-
+       // verifies the spooled bytes and forwards them.
+       let bodySpool=null;
+       if(battery){
+        spoolWrite(`body-${id}.bin`,body);
+        bodySpool={path:`body-${id}.bin`,sha256:createHash('sha256').update(body).digest('hex'),bytes:body.length};
+       }
+       emit({type:'provider_fetch',id,binding:sid.binding,sequence:sid.sequence,stream:sid.stream,url:String(url),method:init.method,headers,...(battery?{bodySpool}:{body:body.toString('base64')})});
        const handle=openResponse({id:sid,sendRaw:async v=>emit(v),read:()=>hostedFrames.read(),signal:init.signal,onSettled:()=>{hostedFrames.open=false;hostedFrames.queue=[];}});
        return handle.response;
       }});
