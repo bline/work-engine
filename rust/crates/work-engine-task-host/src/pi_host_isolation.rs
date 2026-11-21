@@ -313,7 +313,9 @@ pub(crate) fn check_native_root(
     }
     if !fs::symlink_metadata(parent).is_ok_and(|meta| meta.is_dir())
         || !fs::symlink_metadata(root).is_ok_and(|meta| meta.is_dir())
-        || fs::canonicalize(root).ok().as_deref() != Some(root)
+        // Path equality ignores interior `.` and repeated slashes; compare
+        // the original spelling, as it is used to construct the launch root.
+        || !fs::canonicalize(root).is_ok_and(|path| path.as_os_str() == root.as_os_str())
     {
         return refused;
     }
@@ -1344,6 +1346,13 @@ mod tests {
             assert_eq!(check_native_root(&dir(name), None), refused, "{name}");
         }
         assert_eq!(check_native_root(Path::new("native"), None), refused);
+        for suffix in ["./native", "native/.", "native//"] {
+            assert_eq!(
+                check_native_root(&base.join(suffix), None),
+                refused,
+                "{suffix}"
+            );
+        }
         assert_eq!(check_native_root(Path::new("/"), None), refused);
         assert_eq!(check_native_root(&base.join("absent"), None), refused);
         let file = base.join("file");
