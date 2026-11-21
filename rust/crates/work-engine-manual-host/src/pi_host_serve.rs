@@ -864,8 +864,47 @@ fn sse_events(bytes: &[u8]) -> Vec<Value> {
         .collect()
 }
 
+/// Completions streams identify the response on each chunk and a tool call
+/// by its index across deltas. Pi consumes the first choice in each chunk.
+fn completions_response_calls(events: &[Value]) -> Option<(Option<String>, BTreeSet<String>)> {
+    let mut response = None;
+    let mut slots = BTreeMap::new();
+    for event in events {
+        if let Some(id) = event["id"].as_str().filter(|id| !id.is_empty()) {
+            if response.is_some_and(|previous| previous != id) {
+                return None;
+            }
+            response = Some(id);
+        }
+        if let Some(deltas) = event["choices"][0]["delta"]["tool_calls"].as_array() {
+            for delta in deltas {
+                let Some(id) = delta["id"].as_str().filter(|id| !id.is_empty()) else {
+                    continue;
+                };
+                let index = delta["index"].as_u64()?;
+                if slots
+                    .insert(index, id)
+                    .is_some_and(|previous| previous != id)
+                {
+                    return None;
+                }
+            }
+        }
+    }
+    let mut unique = BTreeSet::new();
+    for id in slots.into_values() {
+        if !unique.insert(id.to_owned()) {
+            return None;
+        }
+    }
+    Some((response.map(str::to_owned), unique))
+}
+
 /// The response id and model tool call ids of one retained response stream.
-fn response_calls(wire: &str, events: &[Value]) -> (Option<String>, BTreeSet<String>) {
+fn response_calls(wire: &str, events: &[Value]) -> Option<(Option<String>, BTreeSet<String>)> {
+    if wire == "completions" {
+        return completions_response_calls(events);
+    }
     let mut response = None;
     let mut calls = BTreeSet::new();
     for e in events {
@@ -893,7 +932,7 @@ fn response_calls(wire: &str, events: &[Value]) -> (Option<String>, BTreeSet<Str
             }
         }
     }
-    (response, calls)
+    Some((response, calls))
 }
 
 /// The wire call id of a Pi tool call id (`call|item` on Responses).
@@ -1027,7 +1066,10 @@ fn build_capture(
                     "path":stream_path,"sha256":digest(&stream)}),
                 );
                 if disposition == "completed" {
-                    let (response, calls) = response_calls(wire, &sse_events(&stream));
+                    let Some((response, calls)) = response_calls(wire, &sse_events(&stream)) else {
+                        reasons.push(format!("request {n} attempt {k} has ambiguous Completions response or tool call ids"));
+                        continue;
+                    };
                     for c in calls {
                         produced
                             .entry(c)
@@ -1333,20 +1375,26 @@ mod tests {
     fn sse(events: &[Value]) -> Vec<u8> {
         events
             .iter()
-            .map(|e| format!("event: {}\ndata: {e}\n\n", e["type"].as_str().unwrap()))
+            .map(|e| match e["type"].as_str() {
+                Some(kind) => format!("event: {kind}\ndata: {e}\n\n"),
+                None => format!("data: {e}\n\n"),
+            })
             .collect::<String>()
             .into_bytes()
     }
 
-    /// The Host's durable artifacts for `n` completed single-attempt requests.
     fn journal(dir: &Path, responses: &[Vec<Value>]) {
+        let body = json!({"model":"claude-haiku-5-5","messages":[{"role":"user","content":"q"}],
+            "metadata":{"user_id":"{\"account_uuid\":\"\"}"}});
+        journal_with_body(dir, responses, &body);
+    }
+
+    /// The Host's durable artifacts for `n` completed single-attempt requests.
+    fn journal_with_body(dir: &Path, responses: &[Vec<Value>], body: &Value) {
         let mut requests = serde_json::Map::new();
+        let body = body.to_string();
         for (i, events) in responses.iter().enumerate() {
             let n = i + 1;
-            let body =
-                json!({"model":"claude-haiku-5-5","messages":[{"role":"user","content":"q"}],
-                "metadata":{"user_id":"{\"account_uuid\":\"\"}"}})
-                .to_string();
             fs::write(dir.join(format!("coding-hosted-{n}.body.json")), &body).unwrap();
             fs::write(
                 dir.join(format!("coding-hosted-{n}-1.stream.sse")),
@@ -1918,13 +1966,105 @@ mod tests {
         assert_eq!(flag(&id), true, "the original body is checked too");
     }
 
+    fn completions_chunk(response: &str, calls: Value) -> Value {
+        json!({"id":response,"object":"chat.completion.chunk",
+            "choices":[{"index":0,"delta":{"tool_calls":calls},"finish_reason":null}]})
+    }
+
+    #[test]
+    fn completions_capture_joins_relayed_call_and_result_to_the_producing_attempt() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut id = identity(dir.path());
+        id.provider = "openrouter".into();
+        let mut a = active();
+        let call = "call_read-1";
+        let arguments = json!({"path":"snapshot"});
+        a.order.push(call.into());
+        a.items.insert(
+            call.into(),
+            json!({"namespace":"snapshot","tool":"read","arguments":arguments}),
+        );
+        a.answers
+            .insert(call.into(), (true, "snapshot text".into()));
+        let body = json!({"model":"m:floor","messages":[],"stream":true});
+        let producing = vec![
+            completions_chunk(
+                "gen-1",
+                json!([{"index":0,"id":call,"type":"function",
+                "function":{"name":"read","arguments":"{\"path\":"}}]),
+            ),
+            completions_chunk(
+                "gen-1",
+                json!([{"index":0,"function":{"arguments":"\"snapshot\"}"}}]),
+            ),
+            json!({"id":"gen-1","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}),
+            json!({"id":"gen-1","choices":[],"usage":{"total_tokens":10}}),
+        ];
+        let terminal = json!({"id":"gen-2","choices":[{"index":0,"delta":{"content":"answer"},
+            "finish_reason":"stop"}]});
+        let history = create_only(&dir.path().join("history.json"), b"[]").unwrap();
+        journal_with_body(dir.path(), &[producing.clone(), vec![terminal]], &body);
+        let capture = build_capture(&id, &a, 2, 0, Some(&history), &[]).unwrap();
+        assert_eq!(capture["eligibility"]["reasons"], json!([]), "{capture}");
+        assert_eq!(
+            capture["calls"],
+            json!([{"call_id":call,"inference_call_id":"request-1",
+            "physical_send":1,"response_id":"gen-1","namespace":"snapshot","tool":"read",
+            "arguments":arguments}])
+        );
+        assert_eq!(
+            capture["results"],
+            json!([{"call_id":call,"success":true,
+            "text_sha256":digest(b"snapshot text")}])
+        );
+        // The same wire id in another completed request is not a unique join.
+        journal_with_body(dir.path(), &[producing.clone(), producing], &body);
+        let capture = build_capture(&id, &a, 2, 0, Some(&history), &[]).unwrap();
+        assert_eq!(capture["calls"], json!([]));
+        assert_eq!(
+            capture["eligibility"]["reasons"],
+            json!([format!(
+                "call {call} is not joined to exactly one model tool call"
+            )])
+        );
+    }
+
+    #[test]
+    fn completions_calls_keep_stable_slots_in_the_choice_pi_consumes() {
+        let start = completions_chunk("gen-1", json!([{"index":0,"id":"call_a"}]));
+        let mut next = completions_chunk(
+            "gen-1",
+            json!([{"index":0,"id":"call_a"},{"index":1,"id":"call_b"}]),
+        );
+        next["choices"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"index":1,
+            "delta":{"tool_calls":[{"index":0,"id":"unconsumed"}]}}));
+        assert_eq!(
+            response_calls("completions", &[start.clone(), next]),
+            Some((
+                Some("gen-1".into()),
+                BTreeSet::from(["call_a".into(), "call_b".into()])
+            ))
+        );
+        for invalid in [
+            completions_chunk("gen-2", json!([])),
+            completions_chunk("gen-1", json!([{"index":0,"id":"other"}])),
+            completions_chunk("gen-1", json!([{"index":1,"id":"call_a"}])),
+            completions_chunk("gen-1", json!([{"id":"no_index"}])),
+        ] {
+            assert!(response_calls("completions", &[start.clone(), invalid]).is_none());
+        }
+    }
+
     #[test]
     fn responses_calls_join_on_the_call_id_part() {
         let events = vec![
             json!({"type":"response.created","response":{"id":"resp_1"}}),
             json!({"type":"response.output_item.done","item":{"type":"function_call","call_id":"call_1","id":"fc_1"}}),
         ];
-        let (response, calls) = response_calls("responses", &events);
+        let (response, calls) = response_calls("responses", &events).unwrap();
         assert_eq!(response.as_deref(), Some("resp_1"));
         assert!(calls.contains(wire_call_id("responses", "call_1|fc_1")));
     }
