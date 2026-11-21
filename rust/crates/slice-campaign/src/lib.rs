@@ -8,6 +8,8 @@ mod application;
 pub mod codec;
 mod completion;
 pub mod contract;
+#[cfg(test)]
+mod controlled_staging_fixture;
 mod installed_authority;
 pub mod job_admission;
 pub mod publication;
@@ -40,8 +42,9 @@ pub use application::{
     RemediationSubjectRead, TrustedConfig,
 };
 pub use completion::{
-    CampaignProgress, DispatchCommand, DispatchEffect, DispatchPermit, DispatchRecord,
-    DispatchedRequest, RecoveredRequest, StageIntent, StageKind, StageProgress,
+    AppliedInitialDispatchProjection, CampaignProgress, DispatchCommand, DispatchEffect,
+    DispatchPermit, DispatchRecord, DispatchedRequest, RecoveredRequest, StageIntent, StageKind,
+    StageProgress,
 };
 pub use contract::{
     AcceptedBoundary, AdvancePhase, Baseline, CampaignRef, CampaignRevision, CandidateRef,

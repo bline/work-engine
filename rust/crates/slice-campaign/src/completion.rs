@@ -55,6 +55,12 @@ pub struct DispatchRecord {
     pub may_have_entered: bool,
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub(crate) enum DispatchOrigin {
+    FreshInitial,
+    RecoveredInitial,
+}
+
 /// Returned once, after the dispatch write commits. Replay and recovery return
 /// data only; possession of a serialized DispatchRecord is never a permit.
 ///
@@ -66,12 +72,6 @@ pub struct DispatchRecord {
 /// use slice_campaign::DispatchPermit;
 /// fn duplicate(permit: &DispatchPermit) -> DispatchPermit { permit.clone() }
 /// ```
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub(crate) enum DispatchOrigin {
-    FreshInitial,
-    RecoveredInitial,
-}
-
 #[derive(Debug)]
 pub struct DispatchPermit {
     pub(crate) origin: DispatchOrigin,
@@ -90,6 +90,25 @@ impl DispatchPermit {
     pub fn dispatch_operation_id(&self) -> &str {
         &self.dispatch_operation_id
     }
+}
+
+/// Data describing the campaign side of a fresh, applied initial dispatch. This
+/// is not an entry permit, a transport assignment, or proof of builder/Host
+/// custody. A consumer still needs its own selected route and authority.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppliedInitialDispatchProjection {
+    pub root_id: String,
+    pub identity: CampaignIdentity,
+    pub obligation_id: String,
+    pub episode_id: String,
+    pub reviewer_profile: String,
+    pub subject_digest: String,
+    pub candidate: crate::CandidateRef,
+    pub selection: crate::SelectionRef,
+    pub request_digest: String,
+    pub preparation: OperationReceipt,
+    pub dispatch: OperationReceipt,
 }
 
 #[derive(Debug)]

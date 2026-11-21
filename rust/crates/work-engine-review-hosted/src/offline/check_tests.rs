@@ -165,6 +165,197 @@ fn host_suffix_constants_match_the_host_source() {
     assert_eq!(sha256_hex(suffix.as_bytes()), HOST_SUFFIX_SHA256);
 }
 
+#[test]
+fn unselected_messages_materializes_and_compares_exact_bytes() {
+    use crate::messages_artifacts::{MessagesMaterialization, REVISION};
+
+    let repo = git_fixture();
+    let subject = pinned_subject();
+    let make = |baseline, scope| {
+        MessagesMaterialization::prepare(
+            repo.path(),
+            baseline,
+            &subject,
+            scope,
+            "test-only contract",
+            revision::CLAUDE_MODEL,
+            LIMITS,
+        )
+    };
+    assert!(matches!(
+        make(TWIN, EXACT_SCOPE),
+        Err(Refusal::BaselineMismatch { .. })
+    ));
+    assert!(matches!(
+        make(PARENT, PATCH_IDENTITY),
+        Err(Refusal::ScopeDigestMismatch { .. })
+    ));
+    let expected = make(PARENT, EXACT_SCOPE).unwrap();
+    let manifest = expected.manifest_bytes();
+    assert_eq!(manifest, manifest_bytes(&expected.snapshot().manifest()));
+    let good = answer_from(ACCEPTABLE, |_| {});
+    let reqs = claude_requests(expected.task());
+    let report = expected.compare(manifest, &reqs, &good).unwrap();
+    assert_eq!(report.revision, REVISION);
+    assert_eq!(report.subject_digest, EXACT_SCOPE);
+    assert_eq!(report.answer_sha256, good.answer_sha256);
+    assert_eq!(report.request_insertions.len(), reqs.len());
+
+    let mut different_manifest = manifest.to_owned();
+    different_manifest.push(b' '); // Equal parsed inventory does not suffice.
+    assert!(expected.compare(&different_manifest, &reqs, &good).is_err());
+    let twin = answer_from(ACCEPTABLE, |v| v["subject"]["commit"] = json!(TWIN));
+    assert!(expected.compare(manifest, &reqs, &twin).is_err());
+    let duplicated = result(good.answer.replacen('{', "{\"subject\":{},", 1));
+    assert!(expected.compare(manifest, &reqs, &duplicated).is_err());
+    let wrapped = result(format!("```json\n{}\n```", good.answer));
+    assert!(expected.compare(manifest, &reqs, &wrapped).is_err());
+
+    let wrong_task = claude_requests(&format!("different {}", expected.task()));
+    assert!(expected.compare(manifest, &wrong_task, &good).is_err());
+    let mut replay = reqs.clone();
+    let original_digest = replay[0].attempt_digests[0].clone();
+    replay[0].attempt_digests.push(original_digest);
+    assert!(expected.compare(manifest, &replay, &good).is_err());
+    let mut ambiguous = reqs.clone();
+    let body = reqs[0].body.as_deref().unwrap();
+    let body = std::str::from_utf8(body)
+        .unwrap()
+        .replacen('{', "{\"model\":\"other\",", 1);
+    ambiguous[0] = retained(body.into_bytes(), 1);
+    assert!(expected.compare(manifest, &ambiguous, &good).is_err());
+}
+
+#[test]
+fn unselected_messages_refuses_each_request_and_answer_binding_mismatch() {
+    use crate::messages_artifacts::MessagesMaterialization;
+
+    let repo = git_fixture();
+    let expected = MessagesMaterialization::prepare(
+        repo.path(),
+        PARENT,
+        &pinned_subject(),
+        EXACT_SCOPE,
+        "test-only contract",
+        revision::CLAUDE_MODEL,
+        Limits {
+            max_requests: 2,
+            ..LIMITS
+        },
+    )
+    .unwrap();
+    let manifest = expected.manifest_bytes();
+    let good = answer_from(ACCEPTABLE, |_| {});
+    let reqs = claude_requests(expected.task());
+    assert_eq!(reqs.len(), 2);
+    assert!(expected.compare(manifest, &reqs, &good).is_ok());
+
+    let mut over = reqs.clone();
+    over.push(retained(
+        messages_body_with(&host_text(expected.task()), 3, |_| {}),
+        3,
+    ));
+    for wrong_count in [&[][..], &over[..]] {
+        assert_eq!(
+            expected.compare(manifest, wrong_count, &good).unwrap_err(),
+            Refusal::Artifact("request count out of bounds".into()),
+        );
+    }
+
+    let original = &reqs[0];
+    for bad in [
+        RetainedRequest {
+            attempt_digests: vec![Some("0".repeat(64))],
+            ..original.clone()
+        },
+        RetainedRequest {
+            attempt_digests: vec![None],
+            ..original.clone()
+        },
+        RetainedRequest {
+            request: 2,
+            ..original.clone()
+        },
+    ] {
+        assert_eq!(
+            expected
+                .compare(manifest, &[bad, reqs[1].clone()], &good)
+                .unwrap_err(),
+            Refusal::Artifact("request 1: numbering or single attempt body digest differs".into()),
+        );
+    }
+    let missing = RetainedRequest {
+        body: None,
+        ..original.clone()
+    };
+    assert_eq!(
+        expected
+            .compare(manifest, &[missing, reqs[1].clone()], &good)
+            .unwrap_err(),
+        Refusal::Artifact("request 1: body missing".into()),
+    );
+    let false_digest = AnalysisResult {
+        answer_sha256: "0".repeat(64),
+        ..good
+    };
+    assert_eq!(
+        expected
+            .compare(manifest, &reqs, &false_digest)
+            .unwrap_err(),
+        Refusal::Artifact("answer digest differs".into()),
+    );
+}
+
+#[test]
+fn unselected_messages_rechecks_raw_request_and_answer_byte_bounds() {
+    use crate::messages_artifacts::{
+        MAX_ANSWER_BYTES, MAX_REQUEST_BODY_BYTES, MessagesMaterialization,
+    };
+
+    let repo = git_fixture();
+    let expected = MessagesMaterialization::prepare(
+        repo.path(),
+        PARENT,
+        &pinned_subject(),
+        EXACT_SCOPE,
+        "test-only contract",
+        revision::CLAUDE_MODEL,
+        LIMITS,
+    )
+    .unwrap();
+    let manifest = expected.manifest_bytes();
+    let good = answer_from(ACCEPTABLE, |_| {});
+    let mut reqs = claude_requests(expected.task());
+    // Padding changes only the retained bytes, not JSON or artifact meaning.
+    // Keep reported digests exact; bytes at the ceiling are allowed.
+    let mut body = reqs[0].body.clone().unwrap();
+    body.resize(MAX_REQUEST_BODY_BYTES, b' ');
+    reqs[0] = retained(body.clone(), 1);
+    assert!(expected.compare(manifest, &reqs, &good).is_ok());
+    body.push(b' ');
+    reqs[0] = retained(body, 1);
+    assert_eq!(
+        expected.compare(manifest, &reqs, &good).unwrap_err(),
+        Refusal::Artifact("request 1: body exceeds analysis byte bound".into()),
+    );
+
+    let reqs = claude_requests(expected.task());
+    let mut answer = good.answer;
+    answer.push_str(&" ".repeat(MAX_ANSWER_BYTES - answer.len()));
+    assert!(
+        expected
+            .compare(manifest, &reqs, &result(answer.clone()))
+            .is_ok()
+    );
+    answer.push(' ');
+    assert_eq!(
+        expected
+            .compare(manifest, &reqs, &result(answer))
+            .unwrap_err(),
+        Refusal::Artifact("answer exceeds analysis byte bound".into()),
+    );
+}
+
 /// Same length as the Host suffix, different bytes.
 fn same_length_other_suffix() -> String {
     let mut other = host_suffix().into_bytes();
