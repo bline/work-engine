@@ -209,10 +209,8 @@ impl RemediationDispatchCommand {
                 "remediation session or attempt differs".into(),
             ));
         }
-        let expected_episode = crate::contract::episode_digest(&json!({
-            "identity":request.identity,"obligationId":request.obligation_id,
-        }))?;
-        if self.episode_id != expected_episode[..32] {
+        let expected_episode = crate::episode_id(&request.identity, &request.obligation_id)?;
+        if self.episode_id != expected_episode {
             return Err(CampaignError::Contract(
                 "remediation episode differs".into(),
             ));

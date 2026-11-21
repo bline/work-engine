@@ -12,13 +12,16 @@ path = "src/lib.rs"
 
 [features]
 default = []
-# Fixture-only boundary: the consumer composition that can reach a successful episode
-# transition exists only with this non-default feature. Its inputs are synthetic test
+# Fixture-only boundary: the synthetic consumer and its non-transitioning checks exist only
+# with this non-default feature. Its inputs are synthetic test
 # assumptions, never establishment evidence. The consumer requires an S-A (organization-authority)
 # admission for the consumption boundary and an observation of it that the caller asserts is the
 # host's fresh one (S-A's point check finds it current; its freshness is not checked here); this
 # feature does not enable S-A's own `fixture` feature, so without it no admission can exist.
-fixture = ["dep:work-engine-organization-authority"]
+#
+# The consumer also applies slice-campaign's published identity rules (`slice-campaign-identity`:
+# the episode-within-scope predicate and the consumption-evidence mapping) to the host's episode.
+fixture = ["dep:work-engine-organization-authority", "dep:slice-campaign-identity"]
 
 [dependencies]
 serde.workspace = true
@@ -29,6 +32,8 @@ review-episode-core = { path = "../review-episode-core" }
 # Fixture-only: the consumption-boundary admission the consumer checks (S-A depends only on
 # work-engine-organization, so this adds one edge and no cycle).
 work-engine-organization-authority = { path = "../work-engine-organization-authority", optional = true }
+# Fixture-only: slice-campaign's identity rules (episode codec, JSON and error types; no store).
+slice-campaign-identity = { path = "../slice-campaign-identity", optional = true }
 
 [dev-dependencies]
 sha2.workspace = true

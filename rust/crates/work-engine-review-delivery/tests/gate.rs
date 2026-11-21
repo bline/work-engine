@@ -1,5 +1,5 @@
 //! Delivery gate, pure part (feature `fixture`, no native child): the closed blocker kinds, the
-//! host's total discharge function (admitted kinds keyed on S-A check ids, labelled assumed
+//! host's total discharge function (admitted kinds keyed on S-A check ids, host-checked campaign
 //! mapping kinds, never-dischargeable realization checks), the screening refusals, and the
 //! host-held admission's regate (fresh observation, finality, Unknown). The native boundaries
 //! (spawn, consumption) are exercised in native_vertical.rs.
@@ -19,15 +19,15 @@ use work_engine_organization_authority::{
     ReasonCode, StaleReason, UnknownReason, observe_for, reserve,
 };
 use work_engine_review_delivery::gate::{
-    ASSUMED_DISCHARGE_LABEL, Discharge, GateRefusal, HeldAdmission, discharge, screen,
+    ASSUMED_DISCHARGE_LABEL, Discharge, GateRefusal, HeldAdmission, HostCheck, discharge, screen,
 };
 use work_engine_review_preparation::{
     Blocker, BlockerClass, BlockerKind, MutationClaim, RealizationClaim, prepare,
 };
 
 /// Invariant 1: discharge is total over the closed kinds; the admitted kinds name exactly the S-B
-/// check ids; `scope-digest-to-subject` is admitted by S1 and the other two mapping kinds stay
-/// labelled assumptions; realization checks are never dischargeable.
+/// check ids; `scope-digest-to-subject` is admitted by S1 and the other two mapping kinds are
+/// host-checked by slice-campaign's rules; realization checks are never dischargeable.
 #[test]
 fn discharge_is_total_admitted_kinds_name_their_check_ids() {
     let table: Vec<(BlockerKind, Discharge)> = BlockerKind::ALL
@@ -44,11 +44,11 @@ fn discharge_is_total_admitted_kinds_name_their_check_ids() {
             ),
             (
                 BlockerKind::ProblemScopeToEpisodeIdentity,
-                Discharge::AssumedDischarge
+                Discharge::HostChecked(HostCheck::EpisodeWithinScope)
             ),
             (
                 BlockerKind::ConsumptionEvidenceMapping,
-                Discharge::AssumedDischarge
+                Discharge::HostChecked(HostCheck::ConsumptionEvidenceMapping)
             ),
             (BlockerKind::Separation, Discharge::Admitted(&[OA, O8, R3])),
             (
@@ -77,10 +77,10 @@ fn discharge_is_total_admitted_kinds_name_their_check_ids() {
 }
 
 /// The assumption world under the host's description: no realization check blocker remains;
-/// every blocker is either admitted by named checks or a labelled mapping assumption (the two
-/// unowned mapping kinds), and both families occur; `scope-digest-to-subject` is admitted by S1.
+/// every blocker is either admitted by named checks or host-checked (the two campaign mapping
+/// kinds), both families occur and nothing is assumed; `scope-digest-to-subject` is admitted by S1.
 #[test]
-fn the_assumption_world_screens_into_admitted_and_assumed_mapping_kinds() {
+fn the_assumption_world_screens_into_admitted_and_host_checked_mapping_kinds() {
     let prep = prepare(&assumption_candidate(), &host_request()).unwrap();
     // Restored S3 assertion: the host-derived evaluation has no `realization:`-prefixed check row.
     let evaluation = prep.realization_evaluation.as_ref().expect("host-derived");
@@ -105,8 +105,9 @@ fn the_assumption_world_screens_into_admitted_and_assumed_mapping_kinds() {
     }));
     for (id, kind, d) in &classified {
         match d {
-            Discharge::AssumedDischarge => assert!(mapping.contains(kind), "{id}"),
+            Discharge::HostChecked(_) => assert!(mapping.contains(kind), "{id}"),
             Discharge::Admitted(_) => assert!(!mapping.contains(kind), "{id}"),
+            Discharge::AssumedDischarge => panic!("{id} assumed"),
             Discharge::Undischarged => panic!("{id} undischarged"),
         }
     }
@@ -118,7 +119,7 @@ fn the_assumption_world_screens_into_admitted_and_assumed_mapping_kinds() {
     assert!(
         classified
             .iter()
-            .any(|(_, _, d)| *d == Discharge::AssumedDischarge)
+            .any(|(_, _, d)| matches!(d, Discharge::HostChecked(_)))
     );
 }
 

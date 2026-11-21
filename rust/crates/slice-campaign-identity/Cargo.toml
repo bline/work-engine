@@ -1,0 +1,17 @@
+[package]
+name = "slice-campaign-identity"
+description = "slice-campaign-owned identity rules: the campaign identity, the review episode id it mints, the episode-within-scope predicate and the consumption-evidence mapping. Pure; no I/O, no store."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "slice_campaign_identity"
+path = "src/lib.rs"
+
+[dependencies]
+review-episode-core = { path = "../review-episode-core" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

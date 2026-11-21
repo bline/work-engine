@@ -1,29 +1,9 @@
-//! Hosted review adapter for the Pi analysis profile (`work-engine.pi-analysis-hosted.v1`).
-//!
-//! **Route qualification only.** Nothing here establishes a review condition, admits a result,
-//! grants a capability or makes anything consumable. What a run may and may not claim is listed in
-//! `CLAIMS.md` beside this crate's manifest.
-//!
-//! The adapter composes owners it does not own:
-//!
-//! * [`revision`]: the versioned requirements revision `hosted-route-qualification-r1` (operator
-//!   decision D2/OQ-1 (D), 2026-11-17), compiled by the unchanged organization compiler, and the
-//!   one realization claim that matches what the Host enforces. [`revision::prepare_world`] calls
-//!   the public `prepare` and `FrozenDelivery::freeze` and refuses on any known realization
-//!   incompatibility; the frozen requirements stay the reported negative world.
-//! * [`task`]: the versioned, digest-pinned instruction template followed by the contract bytes
-//!   verbatim, refused above the Host prompt bound.
-//! * [`subject`]: the exact frozen subject's changed files and diff, read from git objects, with
-//!   verified commit/tree/patch identity, the requirements-to-subject binding, size bounds and the
-//!   closed [`secrets`] rule set (operator decision D3/OQ-2, 2026-11-17).
-//! * [`inputs`]: the composition that writes the job inputs a separate job writer
-//!   (`records/dev-vertical-h2-route-20261117/analyze.py`) consumes.
-//! * [`check`]: the result check, which keeps the answer only as a string inside a non-consumable
-//!   `owner_pending` envelope.
-//!
-//! The crate starts no provider, container or Host, and writes only the output paths its binaries
-//! are given. The only process it starts is `git`, for read-only object queries
-//! ([`subject::materialize`]).
+//! Hosted implementation-review/v1 artifact mechanics. R1/R2 are historical-only;
+//! this build has no selectable writer or checker route. The private offline tests
+//! exercise exact scope through preparation, Git materialization, writing and
+//! independent artifact comparison. Nothing here establishes an acceptance
+//! condition, observes a Host or provider, grants authority or admits a result.
+//! See `CLAIMS.md` for pins and limits.
 
 pub mod check;
 pub mod inputs;
@@ -31,6 +11,9 @@ pub mod revision;
 pub mod secrets;
 pub mod subject;
 pub mod task;
+
+#[cfg(test)]
+mod offline;
 
 use sha2::{Digest, Sha256};
 
@@ -41,13 +24,14 @@ pub fn sha256_hex(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 
-/// Why the adapter refused to produce job inputs. [`inputs::write`] stages its files in a sibling
-/// directory and renames it into place only after every write succeeded, so neither a refusal nor
-/// an I/O failure leaves the output directory behind (a crash mid-write can leave the staging
-/// directory).
+/// Why an artifact operation or historical entrypoint was refused.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum Refusal {
+    #[error(
+        "{0} is historical-only; use the exact archived source/checker pin and retained inputs (records/org-hosted-review-20261117 and the revision DERIVATION.md)"
+    )]
+    HistoricalOnly(String),
     #[error("requirements: {0}")]
     Requirements(String),
     #[error("preparation refused: {0}")]
@@ -74,8 +58,8 @@ pub enum Refusal {
     TreeMismatch { expected: String, actual: String },
     #[error("patchIdentity mismatch: expected {expected}, recomputed {actual}")]
     PatchIdentityMismatch { expected: String, actual: String },
-    #[error("requirements scope.digest {scope} is not the subject patchIdentity {patch}")]
-    ScopeDigestMismatch { scope: String, patch: String },
+    #[error("exact subject scope mismatch: prepared scope.digest {expected}, recomputed {actual}")]
+    ScopeDigestMismatch { expected: String, actual: String },
     #[error("snapshot member {path}: {why}")]
     Member { path: String, why: String },
     #[error("snapshot bound: {0}")]

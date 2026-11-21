@@ -14,7 +14,8 @@
 //! backed by construction and refusal, not by confinement). S-B: its admitted kinds pass only by
 //! the host's fixture-domain S-A admission over the synthetic fixture authority world
 //! (`common::authority`), regated before consumption (`scope-digest-to-subject` by S1); its two
-//! unowned mapping kinds pass only as labelled fixture `AssumedDischarge`s. The frozen world is the negative: refused before spawn by a known
+//! campaign mapping kinds pass only by the host's own checks of slice-campaign's rules
+//! (`HostChecked`), and nothing is assumed. The frozen world is the negative: refused before spawn by a known
 //! realization incompatibility (spawn attempts 0, consumer invocations 0).
 //!
 //! Every verdict is asserted in-process. When an assertion fails after a native run, the raw
@@ -47,7 +48,7 @@ use work_engine_organization_authority::{
 use work_engine_review_delivery::binding::{EpisodeInputs, ExperimentBinding};
 use work_engine_review_delivery::gate::{
     ASSUMED_DISCHARGE_LABEL, Boundary, CALLER_ASSERTED_LABEL, Discharge, FIXTURE_ADMISSION_LABEL,
-    GateRefusal, TimeSource, discharge,
+    GateRefusal, HostCheck, HostFact, TimeSource, discharge,
 };
 use work_engine_review_delivery::native::test_support::{
     run_generic_attempt as run_attempt, run_generic_attempt_observed as run_attempt_observed,
@@ -60,7 +61,7 @@ use work_engine_review_delivery::native::{
     check_attempt_evidence, deliver_and_consume, deliver_and_consume_observed,
 };
 use work_engine_review_delivery::{DeliveryRefusal, Transport};
-use work_engine_review_preparation::fixture::{ConsumeRefusal, FixtureDeclaration};
+use work_engine_review_preparation::fixture::{ConsumeRefusal, FixtureDeclaration, ScopeTerm};
 use work_engine_review_preparation::{Blocker, BlockerClass, BlockerKind, prepare};
 
 const TRANSITION_ID: &str = "result-1";
@@ -265,8 +266,8 @@ fn positive_assertions(
     );
     // S-B invariant 4: the success output carries, at both boundaries, the admission summary
     // (Domain::Fixture, every outcome by check id passed, revision) with the blockers it
-    // discharged by check id, and the remaining labelled assumed discharges for the mapping kinds
-    // only; together they cover exactly the blockers of the delivered preparation.
+    // discharged by check id, and the mapping kinds discharged by host check (slice B: none is
+    // assumed); together they cover exactly the blockers of the delivered preparation.
     let blockers = &binding.preparation().blockers;
     assert!(
         !blockers.is_empty(),
@@ -279,13 +280,26 @@ fn positive_assertions(
             _ => None,
         })
         .collect();
-    let assumed_ids: Vec<(String, BlockerKind)> = blockers
+    let host_checked_ids: Vec<(String, BlockerKind, HostCheck)> = blockers
         .iter()
-        .filter(|b| discharge(b.kind) == Discharge::AssumedDischarge)
-        .map(|b| (b.id.clone(), b.kind))
+        .filter_map(|b| match discharge(b.kind) {
+            Discharge::HostChecked(check) => Some((b.id.clone(), b.kind, check)),
+            _ => None,
+        })
         .collect();
-    assert_eq!(admitted_ids.len() + assumed_ids.len(), blockers.len());
-    assert!(!admitted_ids.is_empty() && !assumed_ids.is_empty());
+    let assumed_ids: Vec<(String, BlockerKind)> = Vec::new();
+    assert_eq!(admitted_ids.len() + host_checked_ids.len(), blockers.len());
+    assert!(!admitted_ids.is_empty() && !host_checked_ids.is_empty());
+    // Slice B: both campaign mapping kinds occur and are host-checked.
+    for kind in [
+        BlockerKind::ProblemScopeToEpisodeIdentity,
+        BlockerKind::ConsumptionEvidenceMapping,
+    ] {
+        assert!(
+            host_checked_ids.iter().any(|(_, k, _)| *k == kind),
+            "{kind:?}"
+        );
+    }
     // A1: the scope-digest blocker is admitted by S1, never assumed.
     assert!(admitted_ids.iter().any(|(_, kind, checks)| {
         *kind == BlockerKind::ScopeDigestToSubject && checks.as_slice() == [CheckId::S1]
@@ -312,6 +326,22 @@ fn positive_assertions(
         assert_eq!(admitted.boundary(), boundary);
         assert_eq!(admitted.bound_to(), frozen.contract_sha256());
         assert_eq!(admitted.admitted(), admitted_ids.as_slice());
+        let expected: Vec<_> = host_checked_ids
+            .iter()
+            .map(|(id, kind, check)| {
+                let fact = match (check, boundary) {
+                    (HostCheck::EpisodeWithinScope, _) => HostFact::EpisodeWithinScope,
+                    (HostCheck::ConsumptionEvidenceMapping, Boundary::BeforeSpawn) => {
+                        HostFact::DeclaredMappingDerivable
+                    }
+                    (HostCheck::ConsumptionEvidenceMapping, Boundary::BeforeConsumption) => {
+                        HostFact::FixtureAdmissionMatched
+                    }
+                };
+                (id.clone(), *kind, fact)
+            })
+            .collect();
+        assert_eq!(admitted.host_checked(), expected.as_slice());
         let summary = admitted.admission();
         assert_eq!(summary.label(), FIXTURE_ADMISSION_LABEL);
         assert_eq!(summary.domain(), Domain::Fixture);
@@ -1368,36 +1398,6 @@ fn consumer_and_episode_owners_keep_their_checks_after_a_correct_native_delivery
         matches!(&e, ConsumeRefusal::Episode(x) if x.kind == ErrorKind::ResultContract),
         "{e:?}"
     );
-    let (e, _capture) = check(
-        "missing-evidence",
-        Case {
-            admissions: serde_json::to_string(&w.admissions[..1]).unwrap(),
-            ..base(&w, &state, &writer)
-        },
-        &good,
-    );
-    assert!(
-        matches!(&e, ConsumeRefusal::AdmissionMissing { .. }),
-        "{e:?}"
-    );
-    let mut weak = w.admissions.clone();
-    weak[0]["status"] = json!("unestablished");
-    let (e, _capture) = check(
-        "not-established",
-        Case {
-            admissions: serde_json::to_string(&weak).unwrap(),
-            ..base(&w, &state, &writer)
-        },
-        &good,
-    );
-    assert!(
-        matches!(
-            &e,
-            ConsumeRefusal::EvidenceNotEstablished { .. } | ConsumeRefusal::Input { .. }
-        ),
-        "{e:?}"
-    );
-
     assert_eq!(
         canonical(&state),
         before,
@@ -2756,5 +2756,323 @@ fn recursive_wire_duplicates_refuse_before_consumption() {
                 assert_reaped(&run.facts.process);
             }
         }
+    }
+}
+
+// ---- Slice B: host-checked campaign mapping kinds ------------------------------------------
+
+/// The frozen episode authority with `edit` applied, and its begun state.
+fn episode_with(edit: impl FnOnce(&mut Value)) -> (Authority, ReviewEpisodeState) {
+    let mut value: Value = serde_json::from_str(AUTHORITY).unwrap();
+    edit(&mut value);
+    let authority = Authority::parse(parse_json(&value.to_string()).unwrap()).unwrap();
+    let command =
+        review_episode_core::command::BeginCommand::new(authority.clone(), "begin-1", vec![])
+            .unwrap();
+    let state = review_episode_core::reducer::begin(None, &command)
+        .unwrap()
+        .into_state();
+    (authority, state)
+}
+
+/// Delivers `case` on the passing assumption world and returns the pre-spawn refusal, asserting
+/// that no child was spawned and the consumer was not called.
+fn refused_before_spawn(name: &str, case: &Case<'_>) -> GateRefusal {
+    let before = canonical(case.state);
+    let (cfg, scratch) = config(name, Control::Positive);
+    let binding = binding_for(case, &result_json(|_| {}));
+    let authority = authority_world();
+    let outcome = deliver_and_consume(&cfg, &binding, &fixture_authority(&authority.src));
+    let DeliverError::Refused {
+        boundary,
+        refusal,
+        run,
+    } = refused(outcome)
+    else {
+        panic!("{name}: expected a gate refusal")
+    };
+    assert_eq!(boundary, Boundary::BeforeSpawn, "{name}");
+    assert!(run.is_none(), "{name}: no native run exists");
+    assert_eq!(binding.spawn_attempts(), 0, "{name}: no child was spawned");
+    assert_eq!(
+        binding.consumer_invocations(),
+        0,
+        "{name}: consumer not called"
+    );
+    assert!(
+        std::fs::read_dir(&scratch.path).unwrap().next().is_none(),
+        "{name}: the fixture root was never set up"
+    );
+    assert_eq!(canonical(case.state), before, "{name}");
+    refusal
+}
+
+/// Item 2 at the gate: the binding's episode has a plan version other than the candidate's plan
+/// lineage (D3 (i)), so the host check of `problem-scope-to-episode-identity` refuses before the
+/// spawn. The S-A admission alone (which has no episode input) would have discharged nothing
+/// here: the kind is decided only by the host check.
+#[test]
+fn b_an_episode_outside_the_problem_scope_is_refused_before_spawn_by_the_host_check() {
+    let w = world();
+    let (writer, state) =
+        episode_with(|v| v["identity"]["planVersion"] = json!("another-plan-version"));
+    // Leave the declaration's episode valid for the bound scope, unlike the actual state.
+    assert_ne!(
+        w.declaration.episode.plan_version,
+        state.identity().plan_version.to_string_checked().unwrap()
+    );
+    let refusal = refused_before_spawn("b-outside-scope", &base(&w, &state, &writer));
+    match refusal {
+        GateRefusal::HostCheck {
+            id,
+            check: HostCheck::EpisodeWithinScope,
+            refusal,
+        } if matches!(*refusal, ConsumeRefusal::EpisodeOutsideScope(_)) => {
+            let ConsumeRefusal::EpisodeOutsideScope(outside) = *refusal else {
+                unreachable!()
+            };
+            assert_eq!(id, "problem-scope-to-episode-identity");
+            assert_eq!(outside.term, ScopeTerm::PlanLineage);
+        }
+        other => panic!("expected the episode-within-scope host check, got {other:?}"),
+    }
+}
+
+/// Item 3 at the gate: the second condition alone declares and carries a campaign consumer for another
+/// identity key; the host check of `consumption-evidence-mapping` refuses before the spawn.
+#[test]
+fn b_a_consumer_other_than_the_derived_one_is_refused_before_spawn_by_the_host_check() {
+    let w = world();
+    let state = begun();
+    let writer = authority();
+    let consumer =
+        "slice-campaign:production-qualification-20261107:1:review-006:timestamp-projection-v1";
+    let mut value = serde_json::to_value(&w.declaration).unwrap();
+    value["bindings"][1]["admission_consumer"] = json!(consumer);
+    let declaration: FixtureDeclaration = serde_json::from_value(value).unwrap();
+    let mut admissions = w.admissions.clone();
+    admissions[1]["consumer"] = json!(consumer);
+    let case = Case {
+        declaration: &declaration,
+        admissions: serde_json::to_string(&admissions).unwrap(),
+        ..base(&w, &state, &writer)
+    };
+    match refused_before_spawn("b-wrong-consumer", &case) {
+        GateRefusal::HostCheck {
+            id,
+            check: HostCheck::ConsumptionEvidenceMapping,
+            refusal,
+        } if matches!(*refusal, ConsumeRefusal::AdmissionConsumerNotDerived { .. }) => {
+            let ConsumeRefusal::AdmissionConsumerNotDerived {
+                declared,
+                condition,
+                ..
+            } = *refusal
+            else {
+                unreachable!()
+            };
+            assert_eq!(condition, COND_CAMPAIGN);
+            assert_eq!(id, format!("consumption-evidence-mapping:{COND_CAMPAIGN}"));
+            assert_eq!(declared, consumer);
+        }
+        other => panic!("expected the consumption-evidence host check, got {other:?}"),
+    }
+}
+
+/// A gate refusal after verified delivery, not a consumer refusal or an incomplete child run.
+fn b_refused_before_consumption(
+    name: &str,
+    case: &Case<'_>,
+    observed: Vec<Blocker>,
+) -> GateRefusal {
+    let before = canonical(case.state);
+    let (cfg, _scratch) = config(name, Control::Positive);
+    let binding = binding_for(case, &result_json(|_| {}));
+    let authority = authority_world();
+    let outcome = deliver_and_consume_observed(
+        &cfg,
+        &binding,
+        &fixture_authority(&authority.src),
+        &mut Observe(observed),
+    );
+    let DeliverError::Refused {
+        boundary,
+        refusal,
+        run,
+    } = refused(outcome)
+    else {
+        panic!("{name}: expected a gate refusal before consuming the verified result");
+    };
+    assert_eq!(boundary, Boundary::BeforeConsumption, "{name}");
+    let run = run.expect("retained native run");
+    assert!(run.incompleteness().is_empty(), "{name}: complete attempt");
+    run.bound
+        .as_ref()
+        .unwrap()
+        .verify(
+            run.observation.as_ref().unwrap(),
+            binding.synthetic_result(),
+        )
+        .expect("native output corresponds to frozen contract and synthetic result");
+    assert_reaped(&run.facts.process);
+    assert_eq!(binding.spawn_attempts(), 1, "{name}");
+    assert_eq!(binding.consumer_invocations(), 0, "{name}");
+    assert_eq!(canonical(binding.episode_state()), before, "{name}");
+    assert_eq!(canonical(case.state), before, "{name}");
+    assert_eq!(
+        binding.episode_state().phase(),
+        Phase::InitialReview,
+        "{name}"
+    );
+    refusal
+}
+
+#[test]
+fn b_bad_fixture_admissions_refuse_before_consumption_with_exact_condition_when_bound() {
+    let w = world();
+    let state = begun();
+    let writer = authority();
+    for name in [
+        "wrong-attempt",
+        "missing",
+        "duplicate",
+        "false",
+        "unestablished",
+        "reference",
+        "observation",
+    ] {
+        let mut admissions = w.admissions.clone();
+        // Fault the second condition only except for observation, which the builder requires.
+        let mut attempted_consumer = String::new();
+        match name {
+            "wrong-attempt" => {
+                attempted_consumer = admissions[1]["consumer"]
+                    .as_str()
+                    .unwrap()
+                    .replace("review-005", "review-006");
+                admissions[1]["consumer"] = json!(attempted_consumer);
+            }
+            "missing" => {
+                admissions.pop().unwrap();
+            }
+            "duplicate" => admissions.push(admissions[1].clone()),
+            "false" | "unestablished" => admissions[1]["status"] = json!(name),
+            "reference" => admissions[1]["claimRevisionRef"]["sha256"] = json!("f".repeat(64)),
+            "observation" => admissions[0]["observationRef"] = Value::Null,
+            _ => unreachable!(),
+        }
+        let case = Case {
+            admissions: serde_json::to_string(&admissions).unwrap(),
+            ..base(&w, &state, &writer)
+        };
+        let refusal = b_refused_before_consumption(name, &case, vec![]);
+        if name == "wrong-attempt" {
+            assert!(
+                matches!(refusal, GateRefusal::HostCoverage(e) if matches!(*e, ConsumeRefusal::AdmissionUnbound { index: 1, ref boundary, ref consumer } if boundary == "campaign_terminalization" && *consumer == attempted_consumer)),
+                "{name}"
+            );
+            continue;
+        }
+        let GateRefusal::HostCheck {
+            id,
+            check: HostCheck::ConsumptionEvidenceMapping,
+            refusal,
+        } = refusal
+        else {
+            panic!("{name}: wanted a condition-specific refusal, got {refusal:?}");
+        };
+        let expected = if name == "observation" {
+            COND_BUILDER
+        } else {
+            COND_CAMPAIGN
+        };
+        assert_eq!(
+            id,
+            format!("consumption-evidence-mapping:{expected}"),
+            "{name}"
+        );
+        match (name, *refusal) {
+            ("missing", ConsumeRefusal::AdmissionMissing { condition })
+            | ("duplicate", ConsumeRefusal::AdmissionDuplicate { condition })
+            | (
+                "reference",
+                ConsumeRefusal::AdmissionReferenceMismatch {
+                    condition,
+                    reference: "claimRevisionRef",
+                },
+            )
+            | ("observation", ConsumeRefusal::ObservationMissing { condition }) => {
+                assert_eq!(condition, expected)
+            }
+            (
+                "false" | "unestablished",
+                ConsumeRefusal::EvidenceNotEstablished { condition, status },
+            ) => {
+                assert_eq!(condition, expected);
+                assert_eq!(status, name);
+            }
+            (_, other) => panic!("{name}: unexpected refusal {other:?}"),
+        }
+    }
+}
+
+#[test]
+fn b_only_exact_canonical_host_rows_can_be_checked_after_the_verified_run() {
+    let w = world();
+    let state = begun();
+    let writer = authority();
+    let case = base(&w, &state, &writer);
+    let prepared = prepare(&w.candidate, &host_request()).unwrap();
+    let row = |kind| {
+        prepared
+            .blockers
+            .iter()
+            .find(|b| b.kind == kind)
+            .unwrap()
+            .clone()
+    };
+    let mapping = prepared
+        .blockers
+        .iter()
+        .find(|b| b.kind == BlockerKind::ConsumptionEvidenceMapping && b.scope == COND_BUILDER)
+        .unwrap()
+        .clone();
+    let scope = row(BlockerKind::ProblemScopeToEpisodeIdentity);
+    let extra = Blocker {
+        id: "consumption-evidence-mapping:cond-unselected".into(),
+        scope: "cond-unselected".into(),
+        ..mapping.clone()
+    };
+    // Neither another condition's id nor the obligation-scoped id alone can bind a row.
+    let wrong_condition = Blocker {
+        id: format!("consumption-evidence-mapping:{COND_CAMPAIGN}"),
+        ..mapping.clone()
+    };
+    let wrong_scope = Blocker {
+        scope: "another-obligation".into(),
+        ..scope
+    };
+    for (name, bogus, duplicate) in [
+        ("unselected-condition", extra, false),
+        ("wrong-condition-for-id", wrong_condition, false),
+        ("wrong-obligation-for-id", wrong_scope, false),
+        ("duplicate-canonical-row", mapping, true),
+    ] {
+        let id = bogus.id.clone();
+        assert_eq!(
+            BlockerKind::of_id(&id),
+            Some(bogus.kind),
+            "recognized family"
+        );
+        let refusal = b_refused_before_consumption(name, &case, vec![bogus]);
+        assert_eq!(
+            refusal,
+            if duplicate {
+                GateRefusal::DuplicateHostRow { id }
+            } else {
+                GateRefusal::UnboundHostRow { id }
+            },
+            "{name}"
+        );
     }
 }

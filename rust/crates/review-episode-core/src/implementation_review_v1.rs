@@ -128,6 +128,28 @@ impl ReviewResult {
     }
 }
 
+/// The three fields of an implementation-review/v1 subject. Projection and digest
+/// do not validate the subject or establish that any artifact matches it.
+pub struct SubjectParts<'a> {
+    pub commit: &'a str,
+    pub tree: &'a str,
+    pub patch_identity: &'a str,
+}
+
+impl SubjectParts<'_> {
+    pub fn value(&self) -> JsValue {
+        JsValue::object([
+            ("commit", JsValue::text(self.commit)),
+            ("tree", JsValue::text(self.tree)),
+            ("patchIdentity", JsValue::text(self.patch_identity)),
+        ])
+    }
+
+    pub fn digest(&self) -> String {
+        digest(&self.value())
+    }
+}
+
 pub fn validate_subject(value: &JsValue) -> EpisodeResult<()> {
     exact_fields(
         value,
@@ -276,4 +298,25 @@ fn preserve_finding_lineage_inner(previous: &[JsValue], next: &[JsValue]) -> Epi
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn exact_subject_digest_matches_the_independent_a1_vector() {
+        // Historical tuple as a codec vector only. No Git objects or patch bytes implied.
+        let subject = SubjectParts {
+            commit: "96808de3d565a6c4b0211e8dc263cb7343514d74",
+            tree: "9c5d94ba059ea5b4ff497a0540f6b8a7476e4474",
+            patch_identity: "5212141d54e001b1fa85f7660fbf9605a957cf11a7636636dc03d11dded58c51",
+        };
+        assert_eq!(
+            subject.digest(),
+            "18108e56e12f8428ce69da714ba7fc10e93990226717e987bf228c269951d9c1"
+        );
+        assert_ne!(subject.digest(), subject.patch_identity);
+        validate_subject(&subject.value()).unwrap();
+    }
 }

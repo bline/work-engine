@@ -5,6 +5,7 @@
 //! `git` is invoked for read-only object queries only (`rev-parse`, `rev-list`, `diff-tree`,
 //! `cat-file`); the repository and its working tree are never written.
 
+use review_episode_core::implementation_review_v1::SubjectParts;
 use serde::Serialize;
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -142,7 +143,8 @@ struct SubjectMember {
 
 /// Verifies the subject's identity and binding, then reads the snapshot. Refuses on: a commit
 /// that is not a full id, a merge or root commit, a tree mismatch, a recomputed `patchIdentity`
-/// mismatch, a `scope_digest` that is not the `patchIdentity`, a non-regular, binary or non-UTF-8
+/// mismatch, a `scope_digest` that is not the digest of the verified three-field subject,
+/// a non-regular, binary or non-UTF-8
 /// member, a member under `.review/`, an exceeded Host bound, or any secret-rule hit.
 pub fn materialize(
     repo: &Path,
@@ -186,10 +188,16 @@ pub fn materialize(
             actual: patch_identity,
         });
     }
-    if scope_digest != patch_identity {
+    let exact_scope = SubjectParts {
+        commit,
+        tree: &tree,
+        patch_identity: &patch_identity,
+    }
+    .digest();
+    if scope_digest != exact_scope {
         return Err(Refusal::ScopeDigestMismatch {
-            scope: scope_digest.to_owned(),
-            patch: patch_identity,
+            expected: scope_digest.to_owned(),
+            actual: exact_scope,
         });
     }
 

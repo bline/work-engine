@@ -638,7 +638,10 @@ impl TrustedStartup {
                 pin.validate_job_child(path, child)?;
             }
         }
-        document.identity.validate()?;
+        document
+            .identity
+            .validate()
+            .map_err(slice_campaign::CampaignError::from)?;
         for id in [
             &document.obligation_id,
             &document.operation_id,
@@ -779,10 +782,10 @@ impl TrustedStartup {
             std::str::from_utf8(&raw_authority)
                 .map_err(|_| refuse("startup", "authority is not UTF-8"))?,
         )?)?;
-        let expected_episode = slice_campaign::contract::episode_digest(
-            &json!({"identity":document.identity,"obligationId":document.obligation_id}),
-        )?;
-        let expected_identity = json!({"runId":document.identity.run_id,"sliceNumber":document.identity.slice_number,"attemptId":document.identity.attempt_id,"planVersion":document.identity.plan_version,"reviewObligationId":document.obligation_id,"reviewEpisodeId":&expected_episode[..32]});
+        let expected_episode =
+            slice_campaign::episode_id(&document.identity, &document.obligation_id)
+                .map_err(slice_campaign::CampaignError::from)?;
+        let expected_identity = json!({"runId":document.identity.run_id,"sliceNumber":document.identity.slice_number,"attemptId":document.identity.attempt_id,"planVersion":document.identity.plan_version,"reviewObligationId":document.obligation_id,"reviewEpisodeId":expected_episode});
         let expected_subject = parse_json(&json!({"commit":subject.reference.commit,"tree":subject.reference.tree,"patchIdentity":subject.reference.patch_identity}).to_string())?;
         let av = authority.value();
         if authority.identity().value() != parse_json(&expected_identity.to_string())?

@@ -20,7 +20,8 @@ use work_engine_organization_authority::{AdmissionState, BoundaryKind, UnknownRe
 use work_engine_review_preparation::fixture::{
     Acceptance, ConsumeRefusal, EvidenceStanding, FIXTURE_LABEL, FixtureConsumption,
     FixtureDeclaration, GATE_OBSERVATION_FRESHNESS_ASSERTED_LABEL, GATE_TIME_ASSERTED_LABEL,
-    ProductionConsequence, consume_fixture_result, fixture_coverage,
+    ProductionConsequence, ScopeTerm, check_consumption_evidence_mapping,
+    check_episode_within_scope, consume_fixture_result, fixture_coverage,
 };
 use work_engine_review_preparation::{PreparationRefusal, Subject, prepare};
 
@@ -955,5 +956,290 @@ fn s1_a_gate_proof_that_is_not_current_or_has_no_observation_is_refused() {
         ConsumeRefusal::GateProofNotCurrent(AdmissionState::Unknown(UnknownReason::NoObservation(
             "write in progress".into()
         )))
+    );
+}
+
+// ---- Slice B: slice-campaign's episode-within-scope predicate and consumption mapping -------
+
+/// The frozen episode authority with `edit` applied to its JSON, and its begun state.
+fn episode_with(edit: impl FnOnce(&mut Value)) -> (Authority, ReviewEpisodeState) {
+    let mut value: Value = serde_json::from_str(AUTHORITY).unwrap();
+    edit(&mut value);
+    let authority = Authority::parse(parse_json(&value.to_string()).unwrap()).unwrap();
+    let command =
+        review_episode_core::command::BeginCommand::new(authority.clone(), "begin-1", vec![])
+            .unwrap();
+    let state = review_episode_core::reducer::begin(None, &command)
+        .unwrap()
+        .into_state();
+    (authority, state)
+}
+
+/// `w`'s declaration restating the episode identity `state` holds, so the declaration checks
+/// pass and only slice-campaign's rules over host values can refuse.
+fn restating(w: &World, state: &ReviewEpisodeState) -> FixtureDeclaration {
+    let mut value = serde_json::to_value(&w.declaration).unwrap();
+    let identity = json_value(&state.identity().value());
+    value["episode"] = json!({
+        "run_id": identity["runId"],
+        "slice_number": identity["sliceNumber"],
+        "attempt_id": identity["attemptId"],
+        "plan_version": identity["planVersion"],
+        "review_obligation_id": identity["reviewObligationId"],
+        "review_episode_id": identity["reviewEpisodeId"],
+    });
+    serde_json::from_value(value).unwrap()
+}
+
+/// The refusal for consuming `w`'s admissions from an episode begun with `edit`, the declaration
+/// restating that episode; the input state is unchanged.
+fn refused_episode(w: &World, edit: impl FnOnce(&mut Value)) -> ConsumeRefusal {
+    let (authority, state) = episode_with(edit);
+    let declaration = restating(w, &state);
+    let before = canonical(&state);
+    let error = try_consume(
+        w,
+        &declaration,
+        &state,
+        &authority,
+        state.revision().clone(),
+        &result_json(|_| {}),
+        &w.admissions,
+    )
+    .expect_err("must be refused");
+    assert_eq!(
+        canonical(&state),
+        before,
+        "a refusal leaves the state unchanged"
+    );
+    error
+}
+
+fn outside_term(error: &ConsumeRefusal) -> Option<ScopeTerm> {
+    match error {
+        ConsumeRefusal::EpisodeOutsideScope(outside) => Some(outside.term),
+        _ => None,
+    }
+}
+
+/// Item 2, positive: the frozen episode lies within the candidate's problem scope (run, slice,
+/// `planVersion == planLineage`, obligation, minted episode id), and the host checks pass alone.
+#[test]
+fn b_the_frozen_episode_is_within_the_candidates_problem_scope() {
+    let w = world();
+    let state = begun();
+    let identity =
+        check_episode_within_scope(&w.candidate, &w.declaration, &state).expect("within scope");
+    assert_eq!(
+        identity.key(),
+        "production-qualification-20261107:1:review-005:timestamp-projection-v1"
+    );
+    check_consumption_evidence_mapping(&w.candidate, &w.declaration, &state)
+        .expect("the declared consumers are the derived ones");
+}
+
+/// Item 2, negatives: an episode that differs from the scope in one term is refused before the
+/// transition, naming that term, even when the declaration restates the episode consistently
+/// (the predicate reads the state, not the declaration). The plan-lineage case is the D3 (i)
+/// control; the attempt case keeps the episode id, so only the minted-id term refuses.
+#[test]
+fn b_an_episode_outside_the_problem_scope_cannot_advance_the_episode() {
+    let w = world();
+    for (case, edit, term) in [
+        (
+            "run id",
+            Box::new(|v: &mut Value| v["identity"]["runId"] = json!("another-run"))
+                as Box<dyn FnOnce(&mut Value)>,
+            ScopeTerm::RunId,
+        ),
+        (
+            "slice number",
+            Box::new(|v: &mut Value| v["identity"]["sliceNumber"] = json!(2)),
+            ScopeTerm::SliceNumber,
+        ),
+        (
+            "plan version is not the plan lineage",
+            Box::new(|v: &mut Value| v["identity"]["planVersion"] = json!("another-plan")),
+            ScopeTerm::PlanLineage,
+        ),
+        (
+            "review obligation",
+            Box::new(|v: &mut Value| {
+                v["identity"]["reviewObligationId"] = json!("another-obligation")
+            }),
+            ScopeTerm::ObligationId,
+        ),
+        (
+            "attempt id with a separator",
+            Box::new(|v: &mut Value| v["identity"]["attemptId"] = json!("review:005")),
+            ScopeTerm::CampaignIdentity,
+        ),
+        (
+            "episode id not minted for the identity",
+            Box::new(|v: &mut Value| v["identity"]["attemptId"] = json!("review-006")),
+            ScopeTerm::EpisodeId,
+        ),
+    ] {
+        let error = refused_episode(&w, edit);
+        assert_eq!(outside_term(&error), Some(term), "case `{case}`: {error:?}");
+    }
+}
+
+/// Item 3, other-episode evidence: a different, correctly minted episode (attempt `review-006`
+/// with its own episode id) is within scope, but the evidence and declaration name the consumer
+/// for `review-005`, so the mapping refuses before any admission is matched.
+#[test]
+fn b_evidence_for_another_episode_cannot_advance_this_episode() {
+    let w = world();
+    let other = slice_campaign_identity_key("review-006");
+    let error = refused_episode(&w, |v| {
+        v["identity"]["attemptId"] = json!("review-006");
+        v["identity"]["reviewEpisodeId"] = json!(other.1);
+    });
+    match error {
+        ConsumeRefusal::AdmissionConsumerNotDerived {
+            condition,
+            declared,
+            derived,
+        } => {
+            assert_eq!(condition, COND_BUILDER);
+            assert_eq!(
+                declared,
+                "slice-builder:production-qualification-20261107:1:review-005:timestamp-projection-v1"
+            );
+            assert_eq!(derived, format!("slice-builder:{}", other.0));
+        }
+        other => panic!("expected the derived-consumer refusal, got {other:?}"),
+    }
+}
+
+/// The campaign key and minted episode id for the frozen identity with another attempt id,
+/// computed independently of the crate under test (sha256 of the codec's canonical JSON).
+fn slice_campaign_identity_key(attempt: &str) -> (String, String) {
+    minted(attempt, "timestamp-projection-v1")
+}
+
+/// The campaign key and minted episode id for the frozen run and slice with `attempt` and
+/// `plan`, computed independently of the crate under test.
+fn minted(attempt: &str, plan: &str) -> (String, String) {
+    let body = format!(
+        r#"{{"identity":{{"attemptId":"{attempt}","planVersion":"{plan}","runId":"production-qualification-20261107","sliceNumber":1}},"obligationId":"{OBLIGATION}"}}"#
+    );
+    (
+        format!("production-qualification-20261107:1:{attempt}:{plan}"),
+        sha256_hex(body.as_bytes())[..32].to_owned(),
+    )
+}
+
+/// D3 (i) control: an episode correctly minted for another plan version, with a declaration and
+/// admissions whose consumers are the ones derived for that episode, is consistent in every
+/// respect except that its plan version is not the candidate's plan lineage. Only that term
+/// refuses it.
+#[test]
+fn b_a_consistent_episode_and_evidence_for_another_plan_version_is_refused_by_plan_lineage() {
+    let w = world();
+    let (key, id) = minted("review-005", "another-plan-version");
+    let (authority, state) = episode_with(|v| {
+        v["identity"]["planVersion"] = json!("another-plan-version");
+        v["identity"]["reviewEpisodeId"] = json!(id);
+    });
+    let mut value = serde_json::to_value(restating(&w, &state)).unwrap();
+    let mut admissions = w.admissions.clone();
+    for (index, prefix) in [(0, "slice-builder"), (1, "slice-campaign")] {
+        let consumer = format!("{prefix}:{key}");
+        value["bindings"][index]["admission_consumer"] = json!(consumer);
+        admissions[index]["consumer"] = json!(consumer);
+    }
+    let declaration: FixtureDeclaration = serde_json::from_value(value).unwrap();
+    let before = canonical(&state);
+    let error = try_consume(
+        &w,
+        &declaration,
+        &state,
+        &authority,
+        state.revision().clone(),
+        &result_json(|_| {}),
+        &admissions,
+    )
+    .expect_err("must be refused");
+    assert_eq!(canonical(&state), before);
+    assert_eq!(
+        outside_term(&error),
+        Some(ScopeTerm::PlanLineage),
+        "{error:?}"
+    );
+}
+
+/// Item 3, wrong consumer: a declaration and admissions that agree with each other on a consumer
+/// other than the derived one (here the campaign's consumer for the builder condition, and a
+/// consumer for another identity key) are refused; agreement between restatements maps nothing.
+#[test]
+fn b_a_consumer_other_than_the_derived_one_is_refused_even_when_declared_and_carried() {
+    let w = world();
+    for (case, consumer) in [
+        (
+            "the other boundary's consumer",
+            "slice-campaign:production-qualification-20261107:1:review-005:timestamp-projection-v1",
+        ),
+        (
+            "another identity key",
+            "slice-builder:production-qualification-20261107:1:review-006:timestamp-projection-v1",
+        ),
+    ] {
+        let mut value = serde_json::to_value(&w.declaration).unwrap();
+        value["bindings"][0]["admission_consumer"] = json!(consumer);
+        let declaration: FixtureDeclaration = serde_json::from_value(value).unwrap();
+        let mut admissions = w.admissions.clone();
+        admissions[0]["consumer"] = json!(consumer);
+        let state = begun();
+        let before = canonical(&state);
+        let error = try_consume(
+            &w,
+            &declaration,
+            &state,
+            &authority(),
+            state.revision().clone(),
+            &result_json(|_| {}),
+            &admissions,
+        )
+        .expect_err("must be refused");
+        assert_eq!(canonical(&state), before);
+        assert!(
+            matches!(
+                &error,
+                ConsumeRefusal::AdmissionConsumerNotDerived { condition, declared, .. }
+                    if condition == COND_BUILDER && declared == consumer
+            ),
+            "case `{case}`: {error:?}"
+        );
+    }
+}
+
+/// Item 3, class crossing: a builder-boundary condition whose consumer class is `campaign` has no
+/// mapping (the campaign class consumes only at `campaign_terminalization`).
+#[test]
+fn b_a_consumer_class_that_does_not_consume_at_the_boundary_has_no_mapping() {
+    let crossed = candidate_from(&scoped_edited(|v| {
+        for_each_condition(v, |c| {
+            if c["id"] == COND_BUILDER {
+                c["consumerClass"] = json!("campaign");
+            }
+        })
+    }));
+    let w = world();
+    let mut value = serde_json::to_value(&w.declaration).unwrap();
+    value["candidate_content_digest"] = json!(crossed.content_digest().to_hex());
+    value["bindings"][0]["consumer_participant"] = json!("component:campaign");
+    let declaration: FixtureDeclaration = serde_json::from_value(value).unwrap();
+    let state = begun();
+    let error = check_consumption_evidence_mapping(&crossed, &declaration, &state)
+        .expect_err("must be refused");
+    assert!(
+        matches!(
+            &error,
+            ConsumeRefusal::ConsumptionUnmapped { condition, detail }
+                if condition == COND_BUILDER && detail.contains("does not consume")
+        ),
+        "{error:?}"
     );
 }

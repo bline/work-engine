@@ -7,49 +7,14 @@ use crate::codec::campaign_digest;
 use crate::completion::CampaignProgress;
 use crate::{CampaignError, Result, require_sha, require_text};
 
+/// The campaign identity and its rules live in the slice-campaign-owned `slice-campaign-identity`
+/// crate, so consumers outside the campaign apply these rules rather than restating them.
+pub use slice_campaign_identity::CampaignIdentity;
+
 pub const PROFILE: &str = "campaign-native-initial-v3";
 pub const REMEDIATION_PROFILE: &str = "campaign-native-remediation-v4";
 pub const QUALIFIED_INITIAL_PROFILE: &str = "campaign-qualified-initial-v4";
 pub const OFFLINE_INITIAL_PROFILE: &str = "campaign-offline-initial-v4";
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct CampaignIdentity {
-    pub run_id: String,
-    pub slice_number: u64,
-    pub attempt_id: String,
-    pub plan_version: String,
-}
-
-impl CampaignIdentity {
-    pub fn validate(&self) -> Result<()> {
-        for (name, value) in [
-            ("runId", &self.run_id),
-            ("attemptId", &self.attempt_id),
-            ("planVersion", &self.plan_version),
-        ] {
-            require_text(value, name)?;
-            if value.contains(':') {
-                return Err(CampaignError::Contract(format!(
-                    "{name} contains identity separator"
-                )));
-            }
-        }
-        if self.slice_number == 0 || self.slice_number > 9_007_199_254_740_991 {
-            return Err(CampaignError::Contract(
-                "sliceNumber must be a positive JavaScript safe integer".into(),
-            ));
-        }
-        Ok(())
-    }
-
-    pub fn key(&self) -> String {
-        format!(
-            "{}:{}:{}:{}",
-            self.run_id, self.slice_number, self.attempt_id, self.plan_version
-        )
-    }
-}
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -213,10 +178,7 @@ pub(crate) fn claim_digest(value: &Value) -> Result<String> {
     claim_evidence::codec::digest(&claim).map_err(|e| CampaignError::Contract(e.to_string()))
 }
 pub fn episode_digest(value: &Value) -> Result<String> {
-    let raw = serde_json::to_string(value).map_err(|e| CampaignError::Contract(e.to_string()))?;
-    let episode = review_episode_core::codec::parse_json(&raw)
-        .map_err(|e| CampaignError::Contract(e.to_string()))?;
-    Ok(review_episode_core::codec::digest(&episode))
+    Ok(slice_campaign_identity::episode_digest(value)?)
 }
 
 /// Campaign-owned selection validation; the historical claim-evidence codec
@@ -365,18 +327,15 @@ fn validate_selected_claim(
     if campaign_digest(&claim["subject"]["candidate"])? != campaign_digest(expected_candidate)? {
         return Err(CampaignError::Contract("claim candidate differs".into()));
     }
-    let episode_id = episode_digest(&json!({"identity":identity,"obligationId":obligation_id}))?;
-    if claim["subject"]["reviewEpisodeId"] != episode_id[..32] {
+    let episode_id = crate::episode_id(identity, obligation_id)?;
+    if claim["subject"]["reviewEpisodeId"] != episode_id {
         return Err(CampaignError::Contract(
             "claim episode identity differs".into(),
         ));
     }
     let boundary = text(claim, "consumptionBoundary")?;
-    let expected_consumer = match boundary {
-        "builder_projection" => format!("slice-builder:{}", identity.key()),
-        "campaign_terminalization" => format!("slice-campaign:{}", identity.key()),
-        _ => return Err(CampaignError::Contract("claim boundary unsupported".into())),
-    };
+    let expected_consumer = crate::expected_consumer(boundary, identity)
+        .map_err(|_| CampaignError::Contract("claim boundary unsupported".into()))?;
     if claim["consumer"] != expected_consumer {
         return Err(CampaignError::Contract("claim consumer differs".into()));
     }

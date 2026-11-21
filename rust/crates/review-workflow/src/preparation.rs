@@ -449,12 +449,11 @@ pub fn prepare(input_path: &Path, output: &Path) -> Result<Value> {
     // This is the proposed installed form, never an issued authority record.
     // Preserve explicit source/writer selections and derive only exact subject identity.
     let mut episode: Value = serde_json::from_slice(&d.episode_authority.read(1024 * 1024)?)?;
-    let episode_id = slice_campaign::contract::episode_digest(
-        &json!({"identity":d.identity,"obligationId":d.obligation_id}),
-    )?;
+    let episode_id = slice_campaign::episode_id(&d.identity, &d.obligation_id)
+        .map_err(slice_campaign::CampaignError::from)?;
     episode["identity"] = json!({"runId":d.identity.run_id,"sliceNumber":d.identity.slice_number,
         "attemptId":d.identity.attempt_id,"planVersion":d.identity.plan_version,
-        "reviewObligationId":d.obligation_id,"reviewEpisodeId":&episode_id[..32]});
+        "reviewObligationId":d.obligation_id,"reviewEpisodeId":episode_id});
     let subject_value = json!({"commit":request.candidate.commit,"tree":request.candidate.tree,"patchIdentity":request.candidate.patch_identity});
     episode["initialSubject"]["revision"] = json!(request.candidate.commit);
     episode["initialSubject"]["sha256"] = json!(review_episode_core::codec::digest(

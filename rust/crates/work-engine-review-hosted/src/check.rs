@@ -1,26 +1,33 @@
-//! Result check and the non-consumable envelope (design review P2-2, P1-2(c), P3-1, P3-3; H1
-//! review P2-2, P2-3, P3-1, P3-2, P3-7).
-//!
-//! The answer is kept only as a string inside an [`Envelope`] whose standing fields are fixed:
-//! `owner_pending`, no organizational admission, not consumable, route qualification only. No
-//! check here establishes a condition; a passing envelope is still not a review result anyone may
-//! consume.
+//! Artifact shapes and independent offline comparison. An envelope is synthetic and
+//! non-consumable even when all checks pass. No condition is established.
 
-use review_episode_core::codec::{JsValue, digest, parse_json};
+use review_episode_core::codec::JsValue;
+#[cfg(test)]
+use review_episode_core::codec::{digest, parse_json};
 use review_episode_core::implementation_review_v1::ReviewResult;
+#[cfg(test)]
+use review_episode_core::implementation_review_v1::SubjectParts;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use crate::inputs::JobInputs;
-use crate::revision::{self, Profile, Wire};
+use crate::Refusal;
+use crate::inputs::BlockerRef;
+#[cfg(test)]
+use crate::inputs::{self, JobInputs};
+#[cfg(test)]
+use crate::offline::ExpectedWorld;
+use crate::revision::Profile;
+#[cfg(test)]
+use crate::revision::{self, Wire};
+#[cfg(test)]
 use crate::subject::REVIEW_PATCH;
-use crate::{Refusal, sha256_hex, task};
+#[cfg(test)]
+use crate::{sha256_hex, task};
 
-/// v3: the envelope names its provider `profile`; on the Messages wire `host_reported` carries the
-/// request insertions' digests; the frozen world may be `prepared_conditions_unmet`.
-pub const ENVELOPE_SCHEMA: &str = "work-engine.review-hosted-envelope.v3";
+#[cfg(test)]
+pub(crate) const ENVELOPE_SCHEMA: &str = "work-engine.review-hosted-offline-exact-envelope.v1";
 
 /// One retained provider request: the body the Host retained create-only
 /// (`coding-hosted-{request}.body.json`, `work-engine-manual-host/src/pi_coding_hosted.rs:521-539`)
@@ -140,11 +147,10 @@ pub struct FrozenWorldOutcome {
     pub unestablished_confinement: Option<usize>,
 }
 
-/// What the Host's `analysis-result.json` reported, carried verbatim (P3-1). Not checked here;
-/// the serving route of each attempt (and, on `claude-sdk`, the subscription billing guard's
-/// outcome) is the Host's.
+/// Synthetic fields carried from the fixture's result plus wire insertions.
+/// None of these is Host/provider evidence.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct HostReported {
+pub struct SyntheticRun {
     pub settlement: Option<Value>,
     pub provider_requests: Option<Value>,
     pub snapshot_deliveries: Option<Value>,
@@ -164,23 +170,23 @@ pub struct Envelope {
     pub org_admission: String,
     pub consumable: bool,
     pub proposition: String,
-    /// The provider profile the record names; every recomputation below is the profile's.
+    /// The expected fixture profile, not a choice made from the record.
     pub profile: Profile,
     pub world: World,
     pub requested_model: String,
-    /// The provider id the Host requires in request frames, not the serving endpoint (see
-    /// `host_reported.hosted_attempts`).
+    /// The provider id in the wire profile, not an observed endpoint.
     pub requested_provider: String,
     pub frozen_world: FrozenWorldOutcome,
     /// `None` when the recomputation failed (not established).
     pub undischarged_blockers: Option<usize>,
+    pub blockers: Option<Vec<BlockerRef>>,
     pub job_id: String,
     pub subject: Value,
     pub contract_sha256: String,
     pub task_sha256: String,
     pub answer: String,
     pub answer_sha256: String,
-    pub host_reported: HostReported,
+    pub synthetic_run: SyntheticRun,
     pub checks: Vec<CheckOutcome>,
     pub grounding: Option<Grounding>,
     /// `checks_passed` only when every non-informational check passed.
@@ -189,23 +195,22 @@ pub struct Envelope {
 }
 
 /// What no envelope claims, whatever its checks say (see `CLAIMS.md`).
-pub const NOT_CLAIMED: [&str; 12] = [
-    "mutation: none is unestablished; only the Host-recorded boundaries are claimed",
-    "execution confinement is unestablished",
+#[cfg(test)]
+const NOT_CLAIMED: &[&str] = &[
+    "all requests, attempts, task delivery and answer artifacts are synthetic; no Host or provider was observed",
+    "mutation: none and execution confinement are unestablished",
     "no acceptance condition of either world is established",
-    "not consumable",
-    "not organizationally admitted",
-    "grants are self-issued by the operator's own process",
-    "the job and its runtime admission are prepared by analyze.py, not by this crate",
-    "receipt by the live provider is not independently observed",
-    "the serving route, payer and any subscription billing guard are Host-reported (host_reported.hosted_attempts), not checked",
-    "Claude Code's system blocks and environment message are recorded by digest only, not interpreted",
-    "the review's quality and correctness are unassessed",
-    "the frozen candidate's conditions remain unmet and it yields no job inputs (refused on openai-codex; execution confinement unestablished on claude-sdk)",
+    "not consumable, not admitted, no grants issued",
+    "serving route, payer and any subscription billing guard are unobserved; fixture fields are synthetic",
+    "system blocks and environment message are recorded by digest only, not interpreted",
+    "review quality and correctness are unassessed",
+    "the frozen world's conditions remain unmet and it yields no job inputs",
 ];
 
+#[cfg(test)]
 struct Checks(Vec<CheckOutcome>);
 
+#[cfg(test)]
 impl Checks {
     fn push(&mut self, id: &str, outcome: Outcome, detail: impl Into<String>) {
         self.0.push(CheckOutcome {
@@ -224,6 +229,7 @@ impl Checks {
     }
 }
 
+#[cfg(test)]
 fn user_texts(body: &Value) -> Vec<String> {
     let mut out = Vec::new();
     for item in body["input"].as_array().into_iter().flatten() {
@@ -246,6 +252,7 @@ fn user_texts(body: &Value) -> Vec<String> {
 
 /// Every tool name a body declares: top-level `tools` and `additional_tools` input items (the
 /// Host's own reading, `pi_coding_hosted.rs:31-45`), sorted.
+#[cfg(test)]
 fn tool_names(body: &Value) -> Vec<String> {
     let mut names: Vec<String> = body["tools"]
         .as_array()
@@ -265,6 +272,7 @@ fn tool_names(body: &Value) -> Vec<String> {
     names
 }
 
+#[cfg(test)]
 fn count_or_not_established(count: Option<usize>) -> String {
     count.map_or_else(|| "not established".to_owned(), |n| n.to_string())
 }
@@ -272,6 +280,7 @@ fn count_or_not_established(count: Option<usize>) -> String {
 /// The task text plus exactly the Host suffix: starts with the task bytes, is exactly
 /// [`task::HOST_SUFFIX_BYTES`] longer, and the bytes after the task hash to
 /// [`task::HOST_SUFFIX_SHA256`] (the suffix text is not copied).
+#[cfg(test)]
 fn task_with_suffix(n: u64, text: &str, task: &str, what: &str) -> Result<(), String> {
     if !text.starts_with(task) {
         return Err(format!(
@@ -293,12 +302,14 @@ fn task_with_suffix(n: u64, text: &str, task: &str, what: &str) -> Result<(), St
 }
 
 /// SHA-256 of a value's `serde_json` serialization.
+#[cfg(test)]
 fn value_sha256(value: &Value) -> String {
     sha256_hex(&serde_json::to_vec(value).unwrap_or_default())
 }
 
 /// P3-3 / H1 P2-3 / P3-7, per retained body: its digest equals every attempt's recorded digest,
 /// then the profile's wire check ([`responses_body`] or [`messages_body`]).
+#[cfg(test)]
 fn delivery(
     profile: Profile,
     requests: &[RetainedRequest],
@@ -346,7 +357,7 @@ fn delivery(
         ),
         Wire::Messages => (
             format!(
-                "{} retained Messages request bodies: model {model}, tools {tools:?}, messages[0] one text block = task + Host suffix, later user turns tool results only; insertions recorded by digest in host_reported",
+                "{} retained Messages request bodies: model {model}, tools {tools:?}, messages[0] one text block = task + Host suffix, later user turns tool results only; insertions recorded by digest in synthetic_run",
                 requests.len()
             ),
             Some(insertions),
@@ -356,6 +367,7 @@ fn delivery(
 
 /// Responses wire (unchanged): `model` is the requested model, the declared tools are exactly the
 /// profile's, and the body holds exactly one user text item = task + Host suffix.
+#[cfg(test)]
 fn responses_body(
     n: u64,
     parsed: &Value,
@@ -416,6 +428,7 @@ pub struct InsertedSystemMessage {
 /// blocks; assistant messages (text, `tool_use`, `thinking`) are not read, so thinking is never
 /// answer or evidence here. Tolerated and recorded by digest, never interpreted: `system[]` and the
 /// environment message.
+#[cfg(test)]
 fn messages_body(
     n: u64,
     parsed: &Value,
@@ -525,6 +538,7 @@ fn messages_body(
 }
 
 /// A `user` message whose content is a non-empty list of only `tool_result` blocks.
+#[cfg(test)]
 fn is_tool_results_only_user(m: &Value) -> bool {
     m["role"] == "user"
         && m["content"].as_array().is_some_and(|blocks| {
@@ -582,10 +596,12 @@ pub fn grounding(result: &ReviewResult, manifest: &BTreeMap<String, String>) -> 
 
 /// H1 P2-2: the run's job artifacts against the record. Returns the served manifest when it
 /// parses (grounding is counted against it).
+#[cfg(test)]
 fn run_binding(
     checks: &mut Checks,
     record: &JobInputs,
     run: &RunArtifacts,
+    profile: Profile,
     scope_digest: Option<&str>,
 ) -> Option<BTreeMap<String, String>> {
     let served = run.served_manifest();
@@ -599,13 +615,34 @@ fn run_binding(
             served.as_ref() == Some(&record.snapshot_manifest)
         ),
     );
+    let subject = &record.subject;
+    let exact_scope = SubjectParts {
+        commit: &subject.commit,
+        tree: &subject.tree,
+        patch_identity: &subject.patch_identity,
+    }
+    .digest();
+    match scope_digest {
+        Some(expected) => {
+            checks.pass(
+                "subject_exact_scope",
+                exact_scope == expected,
+                format!("prepared scope.digest {expected}; record subject digest {exact_scope}"),
+            );
+        }
+        None => checks.push(
+            "subject_exact_scope",
+            Outcome::NotRun,
+            "no recomputed scope.digest",
+        ),
+    }
     let patch = served.as_ref().and_then(|m| m.get(REVIEW_PATCH));
-    let subject = &record.subject.patch_identity;
     checks.pass(
-        "subject_bound_to_scope",
-        scope_digest == Some(subject.as_str()) && patch == Some(subject),
+        "served_patch_identity",
+        patch == Some(&subject.patch_identity),
         format!(
-            "patchIdentity {subject}; scope.digest {scope_digest:?}; served {REVIEW_PATCH} {patch:?}"
+            "record patchIdentity {}; served {REVIEW_PATCH} {patch:?}",
+            subject.patch_identity
         ),
     );
     let job_id = run.job["job_id"].as_str();
@@ -615,7 +652,6 @@ fn run_binding(
             && run.authority["job_id"].as_str() == Some(record.job_id.as_str()),
         format!("record {}; job.json {job_id:?}", record.job_id),
     );
-    let profile = record.profile;
     let job_provider = run.job["coding"]["provider"]["provider"].as_str();
     let job_model = run.job["coding"]["provider"]["model"].as_str();
     checks.pass(
@@ -645,9 +681,10 @@ fn run_binding(
     served
 }
 
-/// Runs every check and returns the envelope. Never fails: a refusal is an envelope whose
-/// `outcome` is `checks_failed`.
-pub fn check(
+/// Recomputes from the closed expected world, never a revision selected by the record.
+#[cfg(test)]
+pub(crate) fn check(
+    expected: &ExpectedWorld,
     record: &JobInputs,
     run: &RunArtifacts,
     result: &AnalysisResult,
@@ -655,20 +692,31 @@ pub fn check(
 ) -> Envelope {
     let mut checks = Checks(Vec::new());
     let subject = &record.subject;
-    let profile = record.profile;
-    let rev = profile.revision();
+    let profile = expected.profile;
     let (template_id, _, template_sha256) = task::template(profile);
-
-    // Recompute candidate -> prepare -> freeze -> render from the retained inputs (P1-2(c)), all
-    // on the record's profile.
+    let pin = expected.verify_bytes();
     checks.pass(
         "requirements_revision",
-        record.revision == rev.id && record.requirements_sha256 == sha256_hex(rev.requirements),
+        pin.is_ok()
+            && record.revision == expected.id
+            && record.requirements_sha256 == expected.requirements_sha256,
         format!(
-            "profile {}: revision {} sha256 {}",
+            "expected {} sha256 {}; record {} sha256 {}",
+            expected.id, expected.requirements_sha256, record.revision, record.requirements_sha256
+        ),
+    );
+    checks.pass(
+        "offline_record_kind",
+        record.schema == inputs::RECORD_SCHEMA && record.standing == inputs::RECORD_STANDING,
+        "requires the offline synthetic input kind and standing",
+    );
+    checks.pass(
+        "record_profile_bound",
+        record.profile == profile,
+        format!(
+            "expected {}; record {}",
             profile.provider(),
-            record.revision,
-            record.requirements_sha256
+            record.profile.provider()
         ),
     );
     checks.pass(
@@ -681,20 +729,38 @@ pub fn check(
             profile.provider()
         ),
     );
-    let recomputed =
-        revision::prepare_world_for(profile, rev.requirements, subject, &record.job_id);
+    let recomputed = pin.and_then(|()| {
+        revision::prepare_world_for(profile, expected.requirements(), subject, &record.job_id)
+    });
     let (blockers, run_id, scope_digest, task_bytes) = match &recomputed {
         Ok(frozen) => {
+            let prep = frozen.preparation();
+            let run_id = &prep.model_context.identity.run_id;
+            checks.pass(
+                "requirements_run",
+                run_id == expected.run_id && run_id == &record.run_id,
+                format!(
+                    "expected {}; recomputed {run_id}; record {}",
+                    expected.run_id, record.run_id
+                ),
+            );
+            let blockers = inputs::blocker_refs(prep);
+            checks.pass(
+                "blockers_carried",
+                blockers == record.blockers,
+                "recomputed blocker ids and classes",
+            );
             checks.pass(
                 "contract_recomputed",
                 frozen.contract_sha256() == record.contract_sha256
+                    && frozen.contract().len() == record.contract_bytes
                     && *frozen.transport() == record.transport,
                 format!("recomputed contract_sha256 {}", frozen.contract_sha256()),
             );
             let task = task::render_for(profile, frozen.contract(), subject, record.limits);
-            let task_ok = task
-                .as_ref()
-                .is_ok_and(|t| sha256_hex(t.as_bytes()) == record.task_sha256);
+            let task_ok = task.as_ref().is_ok_and(|t| {
+                t.len() == record.task_bytes && sha256_hex(t.as_bytes()) == record.task_sha256
+            });
             checks.pass(
                 "task_recomputed",
                 task_ok
@@ -705,43 +771,66 @@ pub fn check(
                     Err(e) => e.to_string(),
                 },
             );
-            let prep = frozen.preparation();
             (
-                Some(prep.blockers.len()),
-                Some(prep.model_context.identity.run_id.clone()),
+                Some(blockers),
+                Some(run_id.clone()),
                 Some(prep.model_context.obligation.scope_digest.clone()),
                 task.ok().filter(|_| task_ok),
             )
         }
         Err(e) => {
+            checks.push(
+                "requirements_run",
+                Outcome::NotRun,
+                "no recomputed requirements run id",
+            );
+            checks.push(
+                "blockers_carried",
+                Outcome::NotRun,
+                "no recomputed blockers",
+            );
             checks.pass("contract_recomputed", false, e.to_string());
             checks.push("task_recomputed", Outcome::NotRun, "no recomputed contract");
             (None, None, None, None)
         }
     };
     let frozen_world = match revision::frozen_world_for(profile, subject) {
-        Ok(w) => FrozenWorldOutcome {
-            known_incompatibilities: Some(w.known_incompatibilities.len()),
-            unestablished_confinement: (w.outcome == "prepared_conditions_unmet")
-                .then_some(w.unestablished_confinement.len()),
-            outcome: w.outcome,
-        },
-        Err(e) => FrozenWorldOutcome {
-            outcome: format!("not_established: {e}"),
-            known_incompatibilities: None,
-            unestablished_confinement: None,
-        },
+        Ok(w) => {
+            checks.pass(
+                "frozen_world_record",
+                w == record.frozen_world,
+                "recomputed frozen counterfactual",
+            );
+            FrozenWorldOutcome {
+                known_incompatibilities: Some(w.known_incompatibilities.len()),
+                unestablished_confinement: (w.outcome == "prepared_conditions_unmet")
+                    .then_some(w.unestablished_confinement.len()),
+                outcome: w.outcome,
+            }
+        }
+        Err(e) => {
+            checks.push(
+                "frozen_world_record",
+                Outcome::NotRun,
+                "no recomputed frozen counterfactual",
+            );
+            FrozenWorldOutcome {
+                outcome: format!("not_established: {e}"),
+                known_incompatibilities: None,
+                unestablished_confinement: None,
+            }
+        }
     };
     // The frozen world stays unmet on either profile: refused by a known provider-family
     // incompatibility (openai-codex), or prepared with confinement unestablished (claude-sdk).
     let frozen_ok = match profile {
         Profile::OpenaiCodex => {
-            frozen_world.outcome == "refused" && frozen_world.known_incompatibilities > Some(0)
+            frozen_world.outcome == "refused" && frozen_world.known_incompatibilities == Some(2)
         }
         Profile::ClaudeSdk => {
             frozen_world.outcome == "prepared_conditions_unmet"
                 && frozen_world.known_incompatibilities == Some(0)
-                && frozen_world.unestablished_confinement > Some(0)
+                && frozen_world.unestablished_confinement == Some(2)
         }
     };
     checks.pass(
@@ -754,7 +843,7 @@ pub fn check(
             count_or_not_established(frozen_world.unestablished_confinement)
         ),
     );
-    let served = run_binding(&mut checks, record, run, scope_digest.as_deref());
+    let served = run_binding(&mut checks, record, run, profile, scope_digest.as_deref());
     let mut request_insertions = None;
     match &task_bytes {
         Some(task) => match delivery(profile, requests, task) {
@@ -856,24 +945,25 @@ pub fn check(
         standing: "owner_pending".to_owned(),
         org_admission: "none_requested".to_owned(),
         consumable: false,
-        proposition: "route_qualification_only".to_owned(),
+        proposition: "offline_synthetic_exact_scope_only".to_owned(),
         profile,
         world: World {
-            label: rev.id.to_owned(),
+            label: expected.id.to_owned(),
             run_id,
-            requirements_sha256: sha256_hex(rev.requirements),
+            requirements_sha256: expected.requirements_sha256.clone(),
         },
         requested_model: profile.model().to_owned(),
         requested_provider: profile.provider().to_owned(),
         frozen_world,
-        undischarged_blockers: blockers,
+        undischarged_blockers: blockers.as_ref().map(Vec::len),
+        blockers,
         job_id: record.job_id.clone(),
         subject: subject_value,
         contract_sha256: record.contract_sha256.clone(),
         task_sha256: record.task_sha256.clone(),
         answer: result.answer.clone(),
         answer_sha256: result.answer_sha256.clone(),
-        host_reported: HostReported {
+        synthetic_run: SyntheticRun {
             settlement: result.settlement.clone(),
             provider_requests: result.provider_requests.clone(),
             snapshot_deliveries: result.snapshot_deliveries.clone(),

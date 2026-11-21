@@ -1,34 +1,27 @@
-//! Outcome 5: result check and envelope (with remediation 1: run binding, body model/tools, exact
-//! user-text length, Host-reported fields, unknowns as null).
+//! Run the two real wire check paths over synthetic job artifacts.
 
-mod common;
-
-use serde_json::{Value, json};
+use super::*;
+use crate::check::{
+    self, AnalysisResult, Envelope, Outcome, RetainedRequest, RunArtifacts, load_run, load_state,
+};
+use crate::inputs::JobInputs;
+use crate::revision;
+use crate::subject::REVIEW_PATCH;
+use crate::task::{HOST_SUFFIX_BYTES, HOST_SUFFIX_SHA256};
 use std::collections::BTreeMap;
-use work_engine_review_hosted::check::{
-    AnalysisResult, Envelope, Outcome, RetainedRequest, RunArtifacts, check, load_run, load_state,
-};
-use work_engine_review_hosted::inputs::{self, JobInputs};
-use work_engine_review_hosted::revision::{
-    Profile, REVISION_R2_ID, REVISION_R2_REQUIREMENTS, REVISION_REQUIREMENTS, frozen_world,
-    frozen_world_for, prepare_world, prepare_world_for,
-};
-use work_engine_review_hosted::sha256_hex;
-use work_engine_review_hosted::subject::{REVIEW_PATCH, Snapshot};
-use work_engine_review_hosted::task::{
-    HOST_SUFFIX_BYTES, HOST_SUFFIX_SHA256, Limits, render, render_for,
-};
+use std::fs;
+use std::io;
+use std::path::{Component, Path};
 
 const ACCEPTABLE: &str = include_str!(
-    "../../../../app-server/tests/fixtures/implementation-review/acceptable-as-is.json"
+    "../../../../../app-server/tests/fixtures/implementation-review/acceptable-as-is.json"
 );
 const REMEDIATION: &str = include_str!(
-    "../../../../app-server/tests/fixtures/implementation-review/remediation-required.json"
+    "../../../../../app-server/tests/fixtures/implementation-review/remediation-required.json"
 );
-const JOB: &str = "dev-vertical-hosted-analysis-review-1";
-const SRC: &str = "pub fn task() {}\n";
 
 struct World {
+    expected: ExpectedWorld,
     record: JobInputs,
     run: RunArtifacts,
     task: String,
@@ -43,6 +36,58 @@ fn manifest_bytes(manifest: &BTreeMap<String, String>) -> Vec<u8> {
     serde_json::to_vec(&inv).unwrap()
 }
 
+/// Inventory the actual test-owned snapshot, not a list of expected paths. Reject
+/// links and other non-regular entries; this fixture has no concurrent writers.
+fn snapshot_inventory(root: &Path) -> io::Result<BTreeMap<String, String>> {
+    fn collect(root: &Path, dir: &Path, manifest: &mut BTreeMap<String, String>) -> io::Result<()> {
+        for entry in fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            let kind = entry.file_type()?;
+            if kind.is_dir() {
+                collect(root, &path, manifest)?;
+            } else if kind.is_file() {
+                let name = path
+                    .strip_prefix(root)
+                    .unwrap()
+                    .components()
+                    .map(|component| match component {
+                        Component::Normal(name) => {
+                            name.to_str().ok_or_else(|| invalid_entry(&path))
+                        }
+                        _ => Err(invalid_entry(&path)),
+                    })
+                    .collect::<io::Result<Vec<_>>>()?
+                    .join("/");
+                manifest.insert(name, sha256_hex(&fs::read(&path)?));
+            } else {
+                return Err(invalid_entry(&path));
+            }
+        }
+        Ok(())
+    }
+
+    if !fs::symlink_metadata(root)?.is_dir() {
+        return Err(invalid_entry(root));
+    }
+    let mut manifest = BTreeMap::new();
+    collect(root, root, &mut manifest)?;
+    Ok(manifest)
+}
+
+fn invalid_entry(path: &Path) -> io::Error {
+    io::Error::new(
+        io::ErrorKind::InvalidData,
+        format!("unexpected snapshot entry: {}", path.display()),
+    )
+}
+
+fn pin_served_snapshot(run: &mut RunArtifacts, snapshot: &Path) {
+    run.manifest_bytes = manifest_bytes(&snapshot_inventory(snapshot).unwrap());
+    run.job["workspace"]["manifest"]["sha256"] = json!(sha256_hex(&run.manifest_bytes));
+}
+
+// For artifact-only counterfactuals; the positive writer path inventories disk below.
 fn run_for(record: &JobInputs) -> RunArtifacts {
     let manifest = manifest_bytes(&record.snapshot_manifest);
     RunArtifacts {
@@ -60,36 +105,42 @@ fn run_for(record: &JobInputs) -> RunArtifacts {
 }
 
 fn world() -> World {
-    let subject = common::frozen_subject();
-    let frozen = prepare_world(REVISION_REQUIREMENTS, &subject, JOB).unwrap();
-    let limits = Limits {
-        max_requests: 8,
-        max_reads: 16,
-    };
-    let task = render(frozen.contract(), &subject, limits).unwrap();
-    let snapshot = Snapshot {
-        parent: "1".repeat(40),
-        members: [("src/task.mjs".to_owned(), SRC.as_bytes().to_vec())].into(),
-    };
-    let mut record = inputs::record(
-        Profile::OpenaiCodex,
-        REVISION_REQUIREMENTS,
-        &frozen,
-        &task,
-        limits,
-        &snapshot,
-        frozen_world(&subject, JOB).unwrap(),
-    );
-    // The frozen patch's bytes are not available here; its manifest digest is the patchIdentity.
-    record
-        .snapshot_manifest
-        .insert(REVIEW_PATCH.to_owned(), subject.patch_identity.clone());
-    let run = run_for(&record);
-    World { record, run, task }
+    world_for(Profile::OpenaiCodex)
+}
+
+fn world_for(profile: Profile) -> World {
+    let repo = git_fixture();
+    write_world(profile, repo.path(), &repo.path().join("output"))
+}
+
+fn write_world(profile: Profile, repo: &Path, out: &Path) -> World {
+    let expected = ExpectedWorld::pinned(profile);
+    let subject = pinned_subject();
+    let written = inputs::write(&expected, repo, &subject, JOB, LIMITS, out).unwrap();
+    let read = |path: &str| fs::read(out.join(path)).unwrap();
+    let record: JobInputs = serde_json::from_slice(&read("job-inputs.json")).unwrap();
+    assert_eq!(record, written);
+    let task = String::from_utf8(read("task.txt")).unwrap();
+    let mut run = run_for(&record);
+    pin_served_snapshot(&mut run, &out.join("snapshot"));
+    assert_eq!(read("snapshot/.review/patch.diff"), PATCH);
+    assert_eq!(run.served_manifest().unwrap()[REVIEW_PATCH], PATCH_IDENTITY);
+    assert_eq!(read("requirements.json"), expected.requirements());
+    assert_eq!(sha256_hex(&read("contract.json")), record.contract_sha256);
+    assert!(task.ends_with(std::str::from_utf8(&read("contract.json")).unwrap()));
+    assert_eq!(record.parent, PARENT);
+    assert_eq!(record.subject, subject);
+    World {
+        expected,
+        record,
+        run,
+        task,
+    }
 }
 
 /// The Host's analysis source, whose format string supplies the suffix bytes.
-const HOST_ANALYSIS_SOURCE: &str = include_str!("../../pi-pressure-context-host/src/analysis.rs");
+const HOST_ANALYSIS_SOURCE: &str =
+    include_str!("../../../pi-pressure-context-host/src/analysis.rs");
 
 /// The bytes the Host appends to the task: what follows the `{}` in its prompt format string
 /// (`analysis.rs:42-47`), read from the source so the suffix text is not copied into the crate.
@@ -180,7 +231,7 @@ fn requests(task: &str) -> Vec<RetainedRequest> {
 }
 
 fn answer_from(sample: &str, edit: impl FnOnce(&mut Value)) -> AnalysisResult {
-    let subject = common::frozen_subject();
+    let subject = pinned_subject();
     let mut v: Value = serde_json::from_str(sample).unwrap();
     v["subject"] =
         json!({"commit":subject.commit,"tree":subject.tree,"patchIdentity":subject.patch_identity});
@@ -194,7 +245,7 @@ fn result(answer: String) -> AnalysisResult {
 }
 
 fn run_check(w: &World, answer: &AnalysisResult, reqs: &[RetainedRequest]) -> Envelope {
-    check(&w.record, &w.run, answer, reqs)
+    check::check(&w.expected, &w.record, &w.run, answer, reqs)
 }
 
 fn outcome(e: &Envelope, id: &str) -> Outcome {
@@ -211,9 +262,12 @@ fn assert_fixed_standing(e: &Envelope) {
     assert_eq!(v["standing"], "owner_pending");
     assert_eq!(v["org_admission"], "none_requested");
     assert_eq!(v["consumable"], false);
-    assert_eq!(v["proposition"], "route_qualification_only");
-    assert_eq!(v["world"]["label"], "hosted-route-qualification-r1");
-    assert_eq!(v["world"]["run_id"], "hosted-route-qualification-20261117");
+    assert_eq!(v["proposition"], "offline_synthetic_exact_scope_only");
+    assert_eq!(v["world"]["label"], "hosted-offline-exact-v1-responses");
+    assert_eq!(
+        v["world"]["run_id"],
+        "hosted-offline-exact-v1-responses-fixture"
+    );
     assert_eq!(v["requested_model"], "gpt-6-luna");
     assert_eq!(v["requested_provider"], "openai-codex");
     assert_eq!(v["frozen_world"]["outcome"], "refused");
@@ -228,6 +282,9 @@ fn assert_fixed_standing(e: &Envelope) {
 
 fn failed_only(e: &Envelope, id: &str) {
     assert_eq!(e.outcome, "checks_failed");
+    assert_eq!(e.standing, "owner_pending");
+    assert_eq!(e.org_admission, "none_requested");
+    assert!(!e.consumable);
     let failed: Vec<&str> = e
         .checks
         .iter()
@@ -402,38 +459,98 @@ fn delivery_refuses_attempt_digest_mismatch_extra_user_text_and_missing_body() {
 }
 
 #[test]
-fn served_snapshot_must_be_the_vetted_one_and_pinned_by_the_job() {
-    let w = world();
+fn served_snapshot_refuses_extra_nested_file_in_reinventoried_snapshot() {
+    let repo = git_fixture();
+    let out = repo.path().join("output");
+    let mut w = write_world(Profile::OpenaiCodex, repo.path(), &out);
     let answer = answer_from(ACCEPTABLE, |_| {});
-    // Another member was served.
-    let mut other = w.record.snapshot_manifest.clone();
-    other.insert("notes.txt".into(), "0".repeat(64));
-    let mut run = run_for(&w.record);
-    run.manifest_bytes = manifest_bytes(&other);
-    run.job["workspace"]["manifest"]["sha256"] = json!(sha256_hex(&run.manifest_bytes));
-    let e = check(&w.record, &run, &answer, &requests(&w.task));
+    let reqs = requests(&w.task);
+    assert_eq!(run_check(&w, &answer, &reqs).outcome, "checks_passed");
+
+    let snapshot = out.join("snapshot");
+    let extra = "notes/nested/a.txt";
+    let contents = b"ordinary extra fixture file\n";
+    let path = snapshot.join(extra);
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(path, contents).unwrap();
+    // Keep the vetted writer record (and task/body/answer) fixed. Re-pin the actual
+    // new manifest so it is the map comparison, not the raw pin, that must fail.
+    pin_served_snapshot(&mut w.run, &snapshot);
+    let e = run_check(&w, &answer, &reqs);
     failed_only(&e, "snapshot_served");
-    // The job pins a different manifest file.
-    let mut run = run_for(&w.record);
-    run.job["workspace"]["manifest"]["sha256"] = json!("0".repeat(64));
-    failed_only(
-        &check(&w.record, &run, &answer, &requests(&w.task)),
-        "snapshot_served",
-    );
+    assert_eq!(outcome(&e, "subject_exact_scope"), Outcome::Passed);
+    assert_eq!(outcome(&e, "served_patch_identity"), Outcome::Passed);
+    assert!(!w.record.snapshot_manifest.contains_key(extra));
+    let served = w.run.served_manifest().unwrap();
+    assert_eq!(served.get(extra), Some(&sha256_hex(contents)));
+    assert_eq!(served.len(), w.record.snapshot_manifest.len() + 1);
 }
 
 #[test]
-fn subject_must_be_bound_to_scope_and_served_patch() {
+fn served_snapshot_refuses_stale_raw_job_pin_with_unchanged_manifest_entries() {
     let mut w = world();
     let answer = answer_from(ACCEPTABLE, |_| {});
-    w.record
-        .snapshot_manifest
-        .insert(REVIEW_PATCH.to_owned(), "0".repeat(64));
-    w.run = run_for(&w.record);
-    failed_only(
-        &run_check(&w, &answer, &requests(&w.task)),
-        "subject_bound_to_scope",
+    let reqs = requests(&w.task);
+    // Change just the raw bytes under the original job pin, not the inventory.
+    w.run.manifest_bytes.push(b'\n');
+    assert_eq!(
+        w.run.served_manifest().as_ref(),
+        Some(&w.record.snapshot_manifest)
     );
+    let e = run_check(&w, &answer, &reqs);
+    failed_only(&e, "snapshot_served");
+    assert_eq!(outcome(&e, "subject_exact_scope"), Outcome::Passed);
+    assert_eq!(outcome(&e, "served_patch_identity"), Outcome::Passed);
+}
+
+#[cfg(unix)]
+#[test]
+fn snapshot_inventory_refuses_symlink_roots_and_entries() {
+    let dir = tempfile::tempdir().unwrap();
+    let snapshot = dir.path().join("snapshot");
+    fs::create_dir(&snapshot).unwrap();
+    let outside = dir.path().join("outside");
+    fs::write(&outside, b"outside the snapshot\n").unwrap();
+    let root_link = dir.path().join("root-link");
+    std::os::unix::fs::symlink(&snapshot, &root_link).unwrap();
+    assert_eq!(
+        snapshot_inventory(&root_link).unwrap_err().kind(),
+        io::ErrorKind::InvalidData
+    );
+    let entry = snapshot.join("link");
+    let outside_dir = dir.path().join("outside-dir");
+    fs::create_dir(&outside_dir).unwrap();
+    for target in [&outside, &outside_dir] {
+        std::os::unix::fs::symlink(target, &entry).unwrap();
+        assert_eq!(
+            snapshot_inventory(&snapshot).unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+        fs::remove_file(&entry).unwrap();
+    }
+}
+
+#[test]
+fn served_patch_identity_is_independent_of_manifest_pin_and_exact_scope() {
+    for replacement in [None, Some("0".repeat(64)), Some(EXACT_SCOPE.to_owned())] {
+        let mut w = world();
+        let answer = answer_from(ACCEPTABLE, |_| {});
+        match replacement {
+            Some(sha) => {
+                w.record
+                    .snapshot_manifest
+                    .insert(REVIEW_PATCH.to_owned(), sha);
+            }
+            None => {
+                w.record.snapshot_manifest.remove(REVIEW_PATCH);
+            }
+        }
+        w.run = run_for(&w.record);
+        let e = run_check(&w, &answer, &requests(&w.task));
+        failed_only(&e, "served_patch_identity");
+        assert_eq!(outcome(&e, "subject_exact_scope"), Outcome::Passed);
+        assert_eq!(outcome(&e, "snapshot_served"), Outcome::Passed);
+    }
 }
 
 #[test]
@@ -443,19 +560,25 @@ fn job_id_and_limits_must_be_the_runs() {
     let mut run = run_for(&w.record);
     run.job["job_id"] = json!("dev-vertical-hosted-analysis-other");
     failed_only(
-        &check(&w.record, &run, &answer, &requests(&w.task)),
+        &check::check(&w.expected, &w.record, &run, &answer, &requests(&w.task)),
+        "job_id_bound",
+    );
+    let mut run = run_for(&w.record);
+    run.authority["job_id"] = json!("other-authority-job");
+    failed_only(
+        &check::check(&w.expected, &w.record, &run, &answer, &requests(&w.task)),
         "job_id_bound",
     );
     let mut run = run_for(&w.record);
     run.packet["max_snapshot_reads"] = json!(17);
     failed_only(
-        &check(&w.record, &run, &answer, &requests(&w.task)),
+        &check::check(&w.expected, &w.record, &run, &answer, &requests(&w.task)),
         "limits_bound",
     );
     let mut run = run_for(&w.record);
     run.authority["task_sha256"] = json!("0".repeat(64));
     failed_only(
-        &check(&w.record, &run, &answer, &requests(&w.task)),
+        &check::check(&w.expected, &w.record, &run, &answer, &requests(&w.task)),
         "limits_bound",
     );
 }
@@ -469,12 +592,15 @@ fn job_provider_and_model_must_be_the_profiles() {
         } else {
             requests(&w.task)
         };
-        let e = check(&w.record, &w.run, &answer, &reqs);
+        let e = check::check(&w.expected, &w.record, &w.run, &answer, &reqs);
         assert_eq!(outcome(&e, "job_profile_bound"), Outcome::Passed);
         for field in ["provider", "model"] {
             let mut run = w.run.clone();
             run.job["coding"]["provider"][field] = json!("other");
-            failed_only(&check(&w.record, &run, &answer, &reqs), "job_profile_bound");
+            failed_only(
+                &check::check(&w.expected, &w.record, &run, &answer, &reqs),
+                "job_profile_bound",
+            );
         }
     }
 }
@@ -497,21 +623,21 @@ fn frozen_world_detail_prints_numbers_not_rust_options() {
 }
 
 #[test]
-fn host_reported_fields_are_carried_and_unknowns_are_null() {
+fn synthetic_run_fields_are_carried_and_unknowns_are_null() {
     let w = world();
     let mut answer = answer_from(ACCEPTABLE, |_| {});
     answer.settlement = Some(json!("CompletedSettled"));
     answer.hosted_attempts = Some(json!([{"route": "secondary", "payer": "openai-api"}]));
     let e = run_check(&w, &answer, &requests(&w.task));
-    assert_eq!(e.host_reported.settlement, Some(json!("CompletedSettled")));
+    assert_eq!(e.synthetic_run.settlement, Some(json!("CompletedSettled")));
     assert_eq!(
-        e.host_reported.hosted_attempts.as_ref().unwrap()[0]["route"],
+        e.synthetic_run.hosted_attempts.as_ref().unwrap()[0]["route"],
         "secondary"
     );
     // A subject the preparation refuses: recomputation fails, unknowns stay null.
     let mut bad = w.record.clone();
     bad.subject.commit = String::new();
-    let e = check(&bad, &w.run, &answer, &requests(&w.task));
+    let e = check::check(&w.expected, &bad, &w.run, &answer, &requests(&w.task));
     let v = serde_json::to_value(&e).unwrap();
     assert_eq!(e.outcome, "checks_failed");
     assert!(v["undischarged_blockers"].is_null());
@@ -578,80 +704,14 @@ fn run_directory_loads_result_ledger_bodies_and_job_artifacts() {
     let run = load_run(&dir.path().join("inputs"), &dir.path().join("job.json")).unwrap();
     assert_eq!(run, w.run);
     assert_eq!(
-        check(&w.record, &run, &loaded, &reqs).outcome,
+        check::check(&w.expected, &w.record, &run, &loaded, &reqs).outcome,
         "checks_passed"
     );
 }
 
-#[test]
-fn result_check_binary_writes_the_envelope_and_exits_by_outcome() {
-    let w = world();
-    let dir = tempfile::tempdir().unwrap();
-    write_run(&w, dir.path(), &answer_from(REMEDIATION, |_| {}));
-    let p = |name: &str| dir.path().join(name).to_str().unwrap().to_owned();
-    let run = || {
-        std::process::Command::new(env!("CARGO_BIN_EXE_review-result-check"))
-            .args([
-                "--inputs",
-                &p("job-inputs.json"),
-                "--run-inputs",
-                &p("inputs"),
-                "--job",
-                &p("job.json"),
-                "--state-dir",
-                &p("state"),
-                "--out",
-                &p("envelope.json"),
-            ])
-            .output()
-            .unwrap()
-    };
-    let first = run();
-    assert!(
-        first.status.success(),
-        "{}",
-        String::from_utf8_lossy(&first.stdout)
-    );
-    let e: Envelope =
-        serde_json::from_slice(&std::fs::read(dir.path().join("envelope.json")).unwrap()).unwrap();
-    assert_fixed_standing(&e);
-    // A second run refuses to overwrite the envelope.
-    assert_eq!(run().status.code(), Some(2));
-}
-
-// ---------------------------------------------------------------------------------------------
-// Remediation 4: the Anthropic Messages wire (`claude-sdk` profile, requirements revision r2).
-// Bodies are synthetic, shaped after the Host's own fixtures (`pi_coding_hosted.rs:2919-2926`)
-// and tool surface (`pi_coding_analysis.rs:114-143`) at `5af34cbf`.
-// ---------------------------------------------------------------------------------------------
-
+// Anthropic Messages shape retained as a regression from the archived r2 proof.
 fn claude_world() -> World {
-    let subject = common::frozen_subject();
-    let profile = Profile::ClaudeSdk;
-    let frozen = prepare_world_for(profile, REVISION_R2_REQUIREMENTS, &subject, JOB).unwrap();
-    let limits = Limits {
-        max_requests: 8,
-        max_reads: 16,
-    };
-    let task = render_for(profile, frozen.contract(), &subject, limits).unwrap();
-    let snapshot = Snapshot {
-        parent: "1".repeat(40),
-        members: [("src/task.mjs".to_owned(), SRC.as_bytes().to_vec())].into(),
-    };
-    let mut record = inputs::record(
-        profile,
-        REVISION_R2_REQUIREMENTS,
-        &frozen,
-        &task,
-        limits,
-        &snapshot,
-        frozen_world_for(profile, &subject).unwrap(),
-    );
-    record
-        .snapshot_manifest
-        .insert(REVIEW_PATCH.to_owned(), subject.patch_identity.clone());
-    let run = run_for(&record);
-    World { record, run, task }
+    world_for(Profile::ClaudeSdk)
 }
 
 fn claude_tools() -> Value {
@@ -733,7 +793,7 @@ fn claude_sdk_messages_body_passes_and_records_insertions_by_digest() {
     assert_eq!(v["profile"], "claude-sdk");
     assert_eq!(v["requested_provider"], "claude-sdk");
     assert_eq!(v["requested_model"], "claude-haiku-5-5");
-    assert_eq!(v["world"]["label"], REVISION_R2_ID);
+    assert_eq!(v["world"]["label"], "hosted-offline-exact-v1-messages");
     assert_eq!(v["consumable"], false);
     assert_eq!(v["standing"], "owner_pending");
     // The frozen candidate stays unmet on this profile: prepared, confinement unestablished.
@@ -746,7 +806,7 @@ fn claude_sdk_messages_body_passes_and_records_insertions_by_digest() {
             > 0
     );
     // Insertions: digests only, per retained request, never the text.
-    let insertions = e.host_reported.request_insertions.as_ref().unwrap();
+    let insertions = e.synthetic_run.request_insertions.as_ref().unwrap();
     assert_eq!(insertions.len(), 2);
     for (i, ins) in insertions.iter().enumerate() {
         assert_eq!(ins.request, i as u64 + 1);
@@ -760,7 +820,7 @@ fn claude_sdk_messages_body_passes_and_records_insertions_by_digest() {
         assert_eq!(ins.environment_message_sha256, Some(sha_of(&environment())));
     }
     assert!(
-        !serde_json::to_string(&v["host_reported"])
+        !serde_json::to_string(&v["synthetic_run"])
             .unwrap()
             .contains("environment block")
     );
@@ -771,12 +831,14 @@ fn responses_profile_records_no_request_insertions() {
     let w = world();
     let e = run_check(&w, &answer_from(ACCEPTABLE, |_| {}), &requests(&w.task));
     assert_eq!(e.outcome, "checks_passed");
-    assert!(e.host_reported.request_insertions.is_none());
+    assert!(e.synthetic_run.request_insertions.is_none());
 }
+
+type ClaudeDeliveryRefusalCase<'a> = (&'a str, fn(&mut Value), &'a str);
 
 /// Request 1 of a claude-sdk run edited by `edit` must fail only the delivery check, with a
 /// reason containing `expected` (so a case cannot pass for the wrong reason).
-fn assert_claude_delivery_refused(cases: Vec<(&str, fn(&mut Value), &str)>) {
+fn assert_claude_delivery_refused(cases: Vec<ClaudeDeliveryRefusalCase<'_>>) {
     let w = claude_world();
     let answer = answer_from(ACCEPTABLE, |_| {});
     for (name, edit, expected) in cases {
@@ -813,7 +875,7 @@ fn claude_sdk_refuses_a_request_for_another_model() {
 
 #[test]
 fn claude_sdk_refuses_a_wrong_tool_set() {
-    let cases: Vec<(&str, fn(&mut Value), &str)> = vec![
+    let cases: Vec<ClaudeDeliveryRefusalCase<'_>> = vec![
         (
             "extra tool",
             |v| {
@@ -941,7 +1003,7 @@ fn claude_sdk_refuses_extra_user_text_and_stray_roles() {
     let w = claude_world();
     let answer = answer_from(ACCEPTABLE, |_| {});
     let text = host_text(&w.task);
-    let cases: Vec<(&str, fn(&mut Value), &str)> = vec![
+    let cases: Vec<ClaudeDeliveryRefusalCase<'_>> = vec![
         (
             "extra text block in messages[0]",
             |v| {
@@ -1077,7 +1139,7 @@ fn claude_sdk_tolerates_total_tokens_system_messages_and_records_digests() {
     let e = run_check(&w, &answer_from(ACCEPTABLE, |_| {}), &reqs);
     assert_eq!(e.outcome, "checks_passed", "{:#?}", e.checks);
     assert_eq!(outcome(&e, "delivery"), Outcome::Passed);
-    let ins = e.host_reported.request_insertions.as_ref().unwrap();
+    let ins = e.synthetic_run.request_insertions.as_ref().unwrap();
     assert_eq!(ins.len(), 3);
     assert!(ins[0].inserted_system_messages.is_empty());
     assert_eq!(
@@ -1118,7 +1180,7 @@ fn claude_sdk_tolerates_total_tokens_system_messages_and_records_digests() {
     );
     // Digests only: the inserted text is never carried into the envelope.
     assert!(
-        !serde_json::to_string(&serde_json::to_value(&e).unwrap()["host_reported"])
+        !serde_json::to_string(&serde_json::to_value(&e).unwrap()["synthetic_run"])
             .unwrap()
             .contains("tokens left")
     );
@@ -1262,14 +1324,14 @@ fn claude_sdk_thinking_is_neither_answer_nor_evidence() {
         assert_eq!(e.outcome, "checks_passed", "{:#?}", e.checks);
         assert_eq!(
             e.answer, answer.answer,
-            "the answer is the Host's answer only"
+            "the answer is only the separately supplied result string"
         );
         assert_ne!(e.answer, other);
     }
     // The recorded insertions do not depend on assistant content.
     assert_eq!(
-        a.host_reported.request_insertions,
-        b.host_reported.request_insertions
+        a.synthetic_run.request_insertions,
+        b.synthetic_run.request_insertions
     );
     // A thinking-only final message leaves the Host no answer: the empty answer fails strictly.
     let none = run_check(&w, &result(String::new()), &claude_requests(&w.task));
@@ -1287,17 +1349,343 @@ fn claude_sdk_envelope_never_claims_confinement_or_route() {
     answer.hosted_attempts = Some(json!([{"route": "claude-code", "payer": "subscription"}]));
     let e = run_check(&w, &answer, &claude_requests(&w.task));
     assert_eq!(
-        e.host_reported.hosted_attempts.as_ref().unwrap()[0]["route"],
+        e.synthetic_run.hosted_attempts.as_ref().unwrap()[0]["route"],
         "claude-code",
         "carried as reported"
     );
     let not_claimed = e.not_claimed.join("\n");
-    assert!(not_claimed.contains("execution confinement is unestablished"));
+    assert!(not_claimed.contains("execution confinement are unestablished"));
     assert!(
         not_claimed
-            .contains("serving route, payer and any subscription billing guard are Host-reported")
+            .contains("serving route, payer and any subscription billing guard are unobserved")
     );
     assert!(
         not_claimed.contains("system blocks and environment message are recorded by digest only")
     );
+}
+
+/// Same obligation for both worlds. These pins are independent of the current preparation output.
+const BLOCKER_IDS: &[&str] = &[
+    "scope-digest-to-subject:rp3-initial-implementation-review",
+    "problem-scope-to-episode-identity",
+    "separation:cond-builder-projection",
+    "separation:cond-campaign-terminalization",
+    "consumption-evidence-mapping:cond-builder-projection",
+    "observer-identity:cond-builder-projection",
+    "realization-admission:cond-builder-projection",
+    "consumption-evidence-mapping:cond-campaign-terminalization",
+    "observer-identity:cond-campaign-terminalization",
+    "realization-admission:cond-campaign-terminalization",
+    "component-binding:component:campaign",
+    "component-binding:component:episode_host",
+    "authority-requirement:auth-accept-builder-projection",
+    "authority-requirement:auth-accept-campaign-terminalization",
+    "realization:cond-builder-projection:mutation",
+    "realization:cond-builder-projection:capabilities",
+    "realization:cond-campaign-terminalization:mutation",
+    "realization:cond-campaign-terminalization:capabilities",
+];
+
+fn requests_for(profile: Profile, task: &str) -> Vec<RetainedRequest> {
+    match profile {
+        Profile::OpenaiCodex => requests(task),
+        Profile::ClaudeSdk => claude_requests(task),
+    }
+}
+
+#[test]
+fn exact_scope_crosses_git_writer_and_independent_checker_on_both_wires() {
+    assert_eq!(scope(&pinned_subject()), EXACT_SCOPE);
+    assert_ne!(EXACT_SCOPE, PATCH_IDENTITY);
+    for profile in Profile::ALL {
+        let w = world_for(profile);
+        let prep =
+            revision::preparation(profile, w.expected.requirements(), &pinned_subject()).unwrap();
+        assert_eq!(prep.model_context.obligation.scope_digest, EXACT_SCOPE);
+        assert_eq!(w.record.revision, w.expected.id);
+        assert_eq!(w.record.run_id, w.expected.run_id);
+        assert_eq!(w.record.requirements_sha256, w.expected.requirements_sha256);
+        assert_eq!(
+            w.record.schema,
+            "work-engine.review-hosted-offline-exact-inputs.v1"
+        );
+        assert_eq!(w.record.standing, "synthetic_inputs_only_not_an_admission");
+        assert_eq!(
+            w.record
+                .blockers
+                .iter()
+                .map(|b| b.id.as_str())
+                .collect::<Vec<_>>(),
+            BLOCKER_IDS
+        );
+        assert!(w.record.blockers.iter().all(|b| b.class == "unestablished"));
+        let answer = answer_from(ACCEPTABLE, |_| {});
+        let reqs = requests_for(profile, &w.task);
+        let e = run_check(&w, &answer, &reqs);
+        assert_eq!(e.outcome, "checks_passed", "{:#?}", e.checks);
+        for id in [
+            "subject_exact_scope",
+            "served_patch_identity",
+            "snapshot_served",
+            "blockers_carried",
+            "frozen_world_record",
+            "delivery",
+            "subject_equal",
+        ] {
+            assert_eq!(outcome(&e, id), Outcome::Passed);
+        }
+        let serialized = serde_json::to_value(&e).unwrap();
+        assert_eq!(
+            serialized["schema"],
+            "work-engine.review-hosted-offline-exact-envelope.v1"
+        );
+        assert_eq!(
+            serialized["proposition"],
+            "offline_synthetic_exact_scope_only"
+        );
+        assert_eq!(serialized["standing"], "owner_pending");
+        assert_eq!(serialized["org_admission"], "none_requested");
+        assert_eq!(serialized["consumable"], false);
+        assert_eq!(serialized["answer"], answer.answer);
+        assert!(serialized.get("host_reported").is_none());
+        assert_eq!(e.world.label, w.expected.id);
+        assert_eq!(e.world.run_id.as_deref(), Some(w.expected.run_id));
+        assert_eq!(e.world.requirements_sha256, w.expected.requirements_sha256);
+        assert_eq!(e.blockers.as_ref(), Some(&w.record.blockers));
+        assert_eq!(e.undischarged_blockers, Some(BLOCKER_IDS.len()));
+        let frozen = &w.record.frozen_world;
+        assert_eq!(
+            frozen.requirements_sha256,
+            "7085318950aceb6f7071d29dec83e13da610b20d110f435e3399c9de57d3b292"
+        );
+        match profile {
+            Profile::OpenaiCodex => {
+                assert_eq!(
+                    frozen.known_incompatibilities,
+                    [
+                        "realization:cond-builder-projection:realization:provider_family",
+                        "realization:cond-campaign-terminalization:realization:provider_family",
+                    ]
+                );
+                assert!(frozen.unestablished_confinement.is_empty());
+                assert_eq!(e.frozen_world.outcome, "refused");
+                assert_eq!(e.frozen_world.known_incompatibilities, Some(2));
+                assert_eq!(e.frozen_world.unestablished_confinement, None);
+            }
+            Profile::ClaudeSdk => {
+                assert!(frozen.known_incompatibilities.is_empty());
+                assert_eq!(
+                    frozen.unestablished_confinement,
+                    [
+                        "realization:cond-builder-projection:realization:execution_confinement",
+                        "realization:cond-campaign-terminalization:realization:execution_confinement",
+                    ]
+                );
+                assert_eq!(e.frozen_world.outcome, "prepared_conditions_unmet");
+                assert_eq!(e.frozen_world.known_incompatibilities, Some(0));
+                assert_eq!(e.frozen_world.unestablished_confinement, Some(2));
+            }
+        }
+    }
+}
+
+/// Regenerate the consistency checks for a negative without calling the writer's rejecting
+/// materializer. This is not a positive snapshot: the manifest comes from the known baseline
+/// and is changed only where needed to isolate the checker row under test.
+fn coherent_negative(expected: ExpectedWorld, subject: &Subject, base: &World) -> World {
+    let profile = expected.profile;
+    let frozen =
+        revision::prepare_world_for(profile, expected.requirements(), subject, JOB).unwrap();
+    let task = crate::task::render_for(profile, frozen.contract(), subject, LIMITS).unwrap();
+    let mut record = base.record.clone();
+    record.subject = subject.clone();
+    record.revision = expected.id.to_owned();
+    record.requirements_sha256 = sha256_hex(expected.requirements());
+    record.contract_sha256 = frozen.contract_sha256().to_owned();
+    record.contract_bytes = frozen.contract().len();
+    record.task_sha256 = sha256_hex(task.as_bytes());
+    record.task_bytes = task.len();
+    record
+        .snapshot_manifest
+        .insert(REVIEW_PATCH.to_owned(), subject.patch_identity.clone());
+    let run = run_for(&record);
+    World {
+        expected,
+        record,
+        run,
+        task,
+    }
+}
+
+#[test]
+fn coherent_patch_as_scope_and_unrelated_scope_fail_only_the_exact_scope_row() {
+    let base = world();
+    let answer = answer_from(ACCEPTABLE, |_| {});
+    for kind in [WrongScope::Patch, WrongScope::Other] {
+        let w = coherent_negative(
+            ExpectedWorld::wrong_scope(Profile::OpenaiCodex, kind),
+            &pinned_subject(),
+            &base,
+        );
+        let e = run_check(&w, &answer, &requests(&w.task));
+        failed_only(&e, "subject_exact_scope");
+        assert_eq!(outcome(&e, "served_patch_identity"), Outcome::Passed);
+        assert_eq!(outcome(&e, "snapshot_served"), Outcome::Passed);
+    }
+}
+
+#[test]
+fn changing_each_tuple_member_fails_exact_scope_despite_regenerated_task_and_answer() {
+    let base = world();
+    for (field, value) in [
+        ("commit", TWIN.to_owned()),
+        ("tree", "a".repeat(40)),
+        ("patchIdentity", "b".repeat(64)),
+    ] {
+        let mut s = serde_json::to_value(pinned_subject()).unwrap();
+        s[field] = json!(value);
+        let subject = serde_json::from_value(s.clone()).unwrap();
+        assert_ne!(scope(&subject), EXACT_SCOPE, "{field}");
+        let w = coherent_negative(ExpectedWorld::pinned(Profile::OpenaiCodex), &subject, &base);
+        let e = run_check(
+            &w,
+            &answer_from(ACCEPTABLE, |a| a["subject"] = s),
+            &requests(&w.task),
+        );
+        failed_only(&e, "subject_exact_scope");
+        assert_eq!(outcome(&e, "served_patch_identity"), Outcome::Passed);
+        assert_eq!(outcome(&e, "delivery"), Outcome::Passed);
+        assert_eq!(outcome(&e, "subject_equal"), Outcome::Passed);
+    }
+    // Conversely, keep the whole job on the correct tuple and give a schema-valid answer for
+    // the metadata twin with its own correct answer SHA-256.
+    let answer = answer_from(ACCEPTABLE, |a| a["subject"]["commit"] = json!(TWIN));
+    let e = run_check(&base, &answer, &requests(&base.task));
+    failed_only(&e, "subject_equal");
+    assert_eq!(outcome(&e, "result_contract"), Outcome::Passed);
+    assert_eq!(outcome(&e, "answer_sha256"), Outcome::Passed);
+}
+
+#[test]
+fn checker_uses_closed_expected_profile_revision_and_run_not_record_labels() {
+    let w = world();
+    let answer = answer_from(ACCEPTABLE, |_| {});
+    let reqs = requests(&w.task);
+    let trial = |record: &JobInputs| check::check(&w.expected, record, &w.run, &answer, &reqs);
+    let mut altered = w.record.clone();
+    altered.run_id = "unrelated-run".to_owned();
+    failed_only(&trial(&altered), "requirements_run");
+    for id in [
+        Profile::OpenaiCodex.revision().id,
+        "hosted-offline-exact-v1-messages",
+    ] {
+        let mut altered = w.record.clone();
+        altered.revision = id.to_owned();
+        let e = trial(&altered);
+        failed_only(&e, "requirements_revision");
+        assert_eq!(e.world.label, w.expected.id);
+    }
+    let mut altered = w.record.clone();
+    altered.requirements_sha256 = sha256_hex(Profile::OpenaiCodex.revision().requirements);
+    failed_only(&trial(&altered), "requirements_revision");
+    let mut altered = w.record.clone();
+    altered.profile = Profile::ClaudeSdk;
+    failed_only(&trial(&altered), "record_profile_bound");
+    let mut altered = w.record.clone();
+    altered.standing = "admitted".to_owned();
+    failed_only(&trial(&altered), "offline_record_kind");
+    let mut altered = w.record.clone();
+    altered.schema = "work-engine.review-hosted-job-inputs.v2".to_owned();
+    failed_only(&trial(&altered), "offline_record_kind");
+    let swapped = claude_world();
+    let e = trial(&swapped.record);
+    assert_eq!(e.outcome, "checks_failed");
+    assert_eq!(e.profile, Profile::OpenaiCodex);
+    for id in [
+        "requirements_revision",
+        "requirements_run",
+        "record_profile_bound",
+    ] {
+        assert_eq!(outcome(&e, id), Outcome::Failed);
+    }
+}
+
+#[test]
+fn checker_refuses_parse_equivalent_requirements_bytes_under_stale_pin() {
+    for profile in Profile::ALL {
+        let w = world_for(profile);
+        let answer = answer_from(ACCEPTABLE, |_| {});
+        let reqs = requests_for(profile, &w.task);
+        assert_eq!(run_check(&w, &answer, &reqs).outcome, "checks_passed");
+
+        // Substitute checker input bytes only after authoring the valid baseline.
+        // Keep the same profile, revision, run and pinned hash, not a new revision.
+        let original = w.expected.requirements();
+        let mut bytes = original.to_vec();
+        bytes.push(b'\n');
+        assert_ne!(sha256_hex(&bytes), w.expected.requirements_sha256);
+        assert_eq!(
+            serde_json::from_slice::<Value>(&bytes).unwrap(),
+            serde_json::from_slice::<Value>(original).unwrap(),
+        );
+        let expected = ExpectedWorld {
+            requirements: Cow::Owned(bytes),
+            ..w.expected
+        };
+        let e = check::check(&expected, &w.record, &w.run, &answer, &reqs);
+        assert_eq!(outcome(&e, "requirements_revision"), Outcome::Failed);
+        assert_eq!(outcome(&e, "contract_recomputed"), Outcome::Failed);
+        for id in [
+            "requirements_run",
+            "blockers_carried",
+            "task_recomputed",
+            "subject_exact_scope",
+            "delivery",
+        ] {
+            assert_eq!(outcome(&e, id), Outcome::NotRun, "{id}");
+        }
+        for id in [
+            "snapshot_served",
+            "served_patch_identity",
+            "answer_sha256",
+            "strict_json",
+            "subject_equal",
+        ] {
+            assert_eq!(outcome(&e, id), Outcome::Passed, "{id}");
+        }
+        assert_eq!(e.outcome, "checks_failed");
+        assert_eq!(e.standing, "owner_pending");
+        assert_eq!(e.org_admission, "none_requested");
+        assert!(!e.consumable);
+    }
+}
+
+#[test]
+fn checker_keeps_transport_task_and_blocker_counterfactual_recomputations_distinct() {
+    let w = claude_world();
+    let answer = answer_from(ACCEPTABLE, |_| {});
+    let reqs = claude_requests(&w.task);
+    let trial = |record: &JobInputs| check::check(&w.expected, record, &w.run, &answer, &reqs);
+    let mut altered = w.record.clone();
+    altered.transport.generation += 1;
+    failed_only(&trial(&altered), "contract_recomputed");
+    let mut altered = w.record.clone();
+    altered.task_bytes += 1;
+    let e = trial(&altered);
+    failed_only(&e, "task_recomputed");
+    assert_eq!(outcome(&e, "delivery"), Outcome::NotRun);
+    let mut altered = w.record.clone();
+    altered.blockers.remove(0);
+    let e = trial(&altered);
+    failed_only(&e, "blockers_carried");
+    assert_eq!(e.blockers.as_ref(), Some(&w.record.blockers));
+    let mut altered = w.record.clone();
+    altered
+        .frozen_world
+        .unestablished_confinement
+        .pop()
+        .unwrap();
+    let e = trial(&altered);
+    failed_only(&e, "frozen_world_record");
+    assert_eq!(e.frozen_world.unestablished_confinement, Some(2));
 }

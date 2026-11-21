@@ -3,21 +3,20 @@
 mod common;
 
 use common::{git, repo, repo_with};
+use review_episode_core::codec::digest;
 use std::collections::BTreeMap;
-use work_engine_review_hosted::revision::REVISION_REQUIREMENTS;
 use work_engine_review_hosted::secrets::{self, RULE_IDS};
 use work_engine_review_hosted::subject::{
     REVIEW_PATCH, REVIEW_SUBJECT, Snapshot, check_context_fit, check_members, check_read_budget,
     materialize,
 };
-use work_engine_review_hosted::task::Limits;
-use work_engine_review_hosted::{Refusal, inputs, sha256_hex};
+use work_engine_review_hosted::{Refusal, sha256_hex};
 use work_engine_review_preparation::Subject;
 
 #[test]
 fn identity_ok_snapshot_is_changed_files_patch_and_subject() {
     let r = repo();
-    let snapshot = materialize(&r.path(), &r.subject, &r.subject.patch_identity).unwrap();
+    let snapshot = materialize(&r.path(), &r.subject, &digest(&r.subject.to_js_value())).unwrap();
     let paths: Vec<&str> = snapshot.members.keys().map(String::as_str).collect();
     assert_eq!(paths, [REVIEW_PATCH, REVIEW_SUBJECT, "a.txt", "src/b.rs"]);
     assert_eq!(snapshot.members["a.txt"], b"alpha two\n");
@@ -57,7 +56,7 @@ fn tree_mismatch_is_refused() {
         ..r.subject.clone()
     };
     assert!(matches!(
-        materialize(&r.path(), &subject, &subject.patch_identity),
+        materialize(&r.path(), &subject, &digest(&subject.to_js_value())),
         Err(Refusal::TreeMismatch { .. })
     ));
 }
@@ -82,46 +81,9 @@ fn patch_identity_mismatch_is_refused() {
         ..r.subject.clone()
     };
     assert!(matches!(
-        materialize(&r.path(), &subject, &subject.patch_identity),
+        materialize(&r.path(), &subject, &digest(&subject.to_js_value())),
         Err(Refusal::PatchIdentityMismatch { .. })
     ));
-}
-
-#[test]
-fn scope_digest_not_the_patch_identity_is_refused() {
-    let r = repo();
-    assert!(matches!(
-        materialize(&r.path(), &r.subject, &"5".repeat(64)),
-        Err(Refusal::ScopeDigestMismatch { .. })
-    ));
-}
-
-#[test]
-fn job_inputs_bind_the_revision_scope_digest_to_the_subject() {
-    // The revision's scope.digest is the frozen subject's patchIdentity; a synthetic subject is
-    // therefore refused by the binding, and nothing is written.
-    let r = repo();
-    let out = r.path().join("out");
-    let refused = inputs::write(
-        work_engine_review_hosted::revision::Profile::OpenaiCodex,
-        REVISION_REQUIREMENTS,
-        &r.path(),
-        &r.subject,
-        "job-1",
-        Limits {
-            max_requests: 8,
-            max_reads: 16,
-        },
-        &out,
-    );
-    match refused {
-        Err(Refusal::ScopeDigestMismatch { scope, patch }) => {
-            assert_eq!(scope, common::frozen_subject().patch_identity);
-            assert_eq!(patch, r.subject.patch_identity);
-        }
-        other => panic!("expected the scope binding refusal, got {other:?}"),
-    }
-    assert!(!out.exists());
 }
 
 #[test]
@@ -135,7 +97,7 @@ fn merge_and_root_commits_are_refused() {
         patch_identity: "0".repeat(64),
     };
     assert!(matches!(
-        materialize(&p, &root, &root.patch_identity),
+        materialize(&p, &root, &digest(&root.to_js_value())),
         Err(Refusal::ParentShape(_))
     ));
     // Merge commit.
@@ -150,7 +112,7 @@ fn merge_and_root_commits_are_refused() {
         patch_identity: "0".repeat(64),
     };
     assert!(matches!(
-        materialize(&p, &merge, &merge.patch_identity),
+        materialize(&p, &merge, &digest(&merge.to_js_value())),
         Err(Refusal::ParentShape(_))
     ));
 }
@@ -159,7 +121,7 @@ fn merge_and_root_commits_are_refused() {
 fn binary_and_non_utf8_members_are_refused() {
     for bytes in [&b"a\0b\n"[..], &[0xff, 0xfe, b'\n'][..]] {
         let r = repo_with(&[("bin.dat", bytes)]);
-        let refused = materialize(&r.path(), &r.subject, &r.subject.patch_identity);
+        let refused = materialize(&r.path(), &r.subject, &digest(&r.subject.to_js_value()));
         assert!(
             matches!(&refused, Err(Refusal::Member { path, .. }) if path == "bin.dat"),
             "{refused:?}"
@@ -172,7 +134,7 @@ fn oversize_snapshot_is_refused() {
     let big = "line of text\n".repeat(90_000); // ~1.17 MB, over 1 MiB with the patch
     let r = repo_with(&[("big.txt", big.as_bytes())]);
     assert!(matches!(
-        materialize(&r.path(), &r.subject, &r.subject.patch_identity),
+        materialize(&r.path(), &r.subject, &digest(&r.subject.to_js_value())),
         Err(Refusal::SnapshotBound(_))
     ));
     // Member count bound.
@@ -251,7 +213,7 @@ fn each_secret_rule_refuses_with_rule_and_path_and_no_content() {
     );
     for (rule, content) in samples {
         let r = repo_with(&[("notes/leak.txt", content.as_bytes())]);
-        let refused = materialize(&r.path(), &r.subject, &r.subject.patch_identity);
+        let refused = materialize(&r.path(), &r.subject, &digest(&r.subject.to_js_value()));
         let Err(Refusal::Secret(hits)) = &refused else {
             panic!("{rule}: expected a secret refusal, got {refused:?}");
         };
@@ -272,39 +234,6 @@ fn each_secret_rule_refuses_with_rule_and_path_and_no_content() {
             "{rule}: refusal echoes content"
         );
     }
-}
-
-#[test]
-fn job_inputs_binary_refuses_and_writes_nothing() {
-    let r = repo();
-    let out = r.path().join("out");
-    let p = r.path();
-    let run = std::process::Command::new(env!("CARGO_BIN_EXE_review-job-inputs"))
-        .args([
-            "--provider",
-            "openai-codex",
-            "--repo",
-            p.to_str().unwrap(),
-            "--commit",
-            &r.subject.commit,
-            "--tree",
-            &r.subject.tree,
-            "--patch-identity",
-            &r.subject.patch_identity,
-            "--job-id",
-            "job-1",
-            "--max-requests",
-            "8",
-            "--max-reads",
-            "16",
-            "--out",
-            out.to_str().unwrap(),
-        ])
-        .output()
-        .unwrap();
-    assert!(!run.status.success());
-    assert!(String::from_utf8_lossy(&run.stderr).contains("scope.digest"));
-    assert!(!out.exists());
 }
 
 /// Remediation 1 (rule set v2): one positive per added alternative, via `scan`. Literals are
@@ -429,7 +358,8 @@ fn v2_alternatives_each_hit() {
 #[test]
 fn sensitive_member_and_deleted_binary_are_refused_by_materialize() {
     let r = repo_with(&[("config/.env", b"MODE=dev\n")]);
-    let Err(Refusal::Secret(hits)) = materialize(&r.path(), &r.subject, &r.subject.patch_identity)
+    let Err(Refusal::Secret(hits)) =
+        materialize(&r.path(), &r.subject, &digest(&r.subject.to_js_value()))
     else {
         panic!("expected a member-path refusal");
     };
@@ -438,7 +368,8 @@ fn sensitive_member_and_deleted_binary_are_refused_by_materialize() {
             .any(|h| h.rule == secrets::SENSITIVE_MEMBER_PATH && h.path == "config/.env")
     );
     let r = common::repo_deleting(&[("old.bin", b"\x00\x01binary\x00")], &[]);
-    let Err(Refusal::Secret(hits)) = materialize(&r.path(), &r.subject, &r.subject.patch_identity)
+    let Err(Refusal::Secret(hits)) =
+        materialize(&r.path(), &r.subject, &digest(&r.subject.to_js_value()))
     else {
         panic!("expected a binary-patch refusal");
     };
@@ -485,70 +416,6 @@ fn read_budget_counts_snapshot_list_and_patch_pages() {
             max_reads: 4
         })
     ));
-}
-
-#[test]
-fn bundle_writes_atomically_and_leaves_nothing_on_failure() {
-    use work_engine_review_hosted::revision::{FROZEN_REQUIREMENTS, frozen_world, prepare_world};
-    let subject = common::frozen_subject();
-    let frozen = prepare_world(REVISION_REQUIREMENTS, &subject, "job-1").unwrap();
-    let limits = Limits {
-        max_requests: 8,
-        max_reads: 16,
-    };
-    let task =
-        work_engine_review_hosted::task::render(frozen.contract(), &subject, limits).unwrap();
-    let bundle = |members: BTreeMap<String, Vec<u8>>| {
-        let snapshot = Snapshot {
-            parent: "1".repeat(40),
-            members,
-        };
-        inputs::Bundle {
-            record: inputs::record(
-                work_engine_review_hosted::revision::Profile::OpenaiCodex,
-                REVISION_REQUIREMENTS,
-                &frozen,
-                &task,
-                limits,
-                &snapshot,
-                frozen_world(&subject, "job-1").unwrap(),
-            ),
-            requirements: FROZEN_REQUIREMENTS.to_vec(),
-            contract: frozen.contract().to_owned(),
-            task: task.clone(),
-            snapshot,
-        }
-    };
-    let dir = tempfile::tempdir().unwrap();
-    let out = dir.path().join("ok");
-    inputs::write_bundle(&bundle([("a.txt".into(), b"a\n".to_vec())].into()), &out).unwrap();
-    for f in [
-        "snapshot/a.txt",
-        "task.txt",
-        "contract.json",
-        "requirements.json",
-        "frozen-world.json",
-        "job-inputs.json",
-    ] {
-        assert!(out.join(f).is_file(), "{f}");
-    }
-    // A write that fails midway (member `a` is a file, so `a/b` cannot be created).
-    let bad = dir.path().join("bad");
-    let members = [
-        ("a".into(), b"a\n".to_vec()),
-        ("a/b".into(), b"b\n".to_vec()),
-    ]
-    .into();
-    assert!(matches!(
-        inputs::write_bundle(&bundle(members), &bad),
-        Err(Refusal::Io(_))
-    ));
-    assert!(!bad.exists());
-    let left: Vec<_> = std::fs::read_dir(dir.path())
-        .unwrap()
-        .map(|e| e.unwrap().file_name())
-        .collect();
-    assert_eq!(left, ["ok"], "no staging directory remains");
 }
 
 #[test]

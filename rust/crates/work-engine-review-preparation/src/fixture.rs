@@ -8,6 +8,12 @@
 //! lawful, that referenced evidence is authentic, or that any principal is separated from a
 //! vantage.
 //!
+//! Two relations are not assumptions: the state's episode must lie within the candidate's problem
+//! scope, and each condition's admission consumer must be the one slice-campaign's
+//! consumption-evidence mapping derives for that episode. Both are slice-campaign's rules
+//! (`slice-campaign-identity`), applied here to host values; see [`check_episode_within_scope`]
+//! and [`check_consumption_evidence_mapping`].
+//!
 //! After that mechanical gate, the existing episode transition (`RecordResult`) is called
 //! unchanged, so revision, writer authority, phase, exact subject and lineage remain the episode
 //! owner's checks. A successful result is a fixture observation only.
@@ -63,7 +69,11 @@ use review_episode_core::implementation_review_v1::validate_subject;
 use review_episode_core::reducer::{TransitionOutcome, transition};
 use review_episode_core::state::{ReviewEpisodeState, validate_admission};
 use serde::{Deserialize, Serialize};
-use work_engine_organization::{EnforceStatus, EvidenceClass, OrganizationCandidate};
+pub use slice_campaign_identity::{CampaignIdentity, OutsideScope, ScopeTerm};
+use slice_campaign_identity::{ProblemScopeTerms, episode_within_scope, expected_admission};
+use work_engine_organization::{
+    EnforceStatus, EvidenceClass, OrganizationCandidate, consumer_class_of,
+};
 use work_engine_organization_authority::{
     AdmissionState, Boundary, BoundaryKind, EffectAdmission, ObservationRevision,
     SealedObservation, Unobserved,
@@ -114,7 +124,9 @@ pub struct ConditionBinding {
     pub boundary: String,
     /// Restates the candidate's consumer participant; checked for consistency, not a mapping.
     pub consumer_participant: String,
-    /// The consumer string the fixture assumes the admission carries.
+    /// Restates the consumer string the admission carries; the consumer refuses it unless it is
+    /// the one slice-campaign's consumption-evidence mapping derives
+    /// ([`check_consumption_evidence_mapping`]).
     pub admission_consumer: String,
     pub expected: ExpectedRefs,
 }
@@ -187,6 +199,25 @@ pub enum ConsumeRefusal {
     EvidenceNotEstablished { condition: String, status: String },
     #[error("admission for `{condition}` carries no observation reference where one is required")]
     ObservationMissing { condition: String },
+    /// The host's episode (the state's identity) is not within the candidate's problem scope for
+    /// the declared obligation, by slice-campaign's episode-within-scope predicate.
+    #[error("{0}")]
+    EpisodeOutsideScope(OutsideScope),
+    /// slice-campaign's consumption-evidence mapping derives no admission for a covered condition
+    /// (unknown consumer participant, unsupported boundary, or a class that does not consume at
+    /// the boundary).
+    #[error("condition `{condition}` has no consumption-evidence mapping: {detail}")]
+    ConsumptionUnmapped { condition: String, detail: String },
+    /// The declared admission consumer for a condition is not the one slice-campaign's mapping
+    /// derives from the host's episode identity.
+    #[error(
+        "declared admission consumer `{declared}` for `{condition}` is not the derived `{derived}`"
+    )]
+    AdmissionConsumerNotDerived {
+        condition: String,
+        declared: String,
+        derived: String,
+    },
     /// The consumption proof's admission was issued for another boundary kind, candidate,
     /// subject or vantage than this consumption's; `field` is the first differing one.
     #[error("the consumption proof's {field} differs from this consumption's")]
@@ -465,6 +496,90 @@ pub fn fixture_coverage(
     })
 }
 
+/// The episode-within-scope check (slice-campaign's [`episode_within_scope`]) over host values:
+/// the episode identity the state holds, the candidate's digest-bound problem scope and the
+/// declared obligation, which [`Selection`] validates against the candidate. It reads no
+/// declared episode or declared scope. Returns the campaign identity the episode was minted for.
+///
+/// Enforced definition (owner: slice-campaign, recorded in `slice-campaign-identity`): the episode
+/// lies within the scope when run id, slice number, `planVersion == planLineage` (D3 (i)) and the
+/// review obligation agree, its identity is a valid campaign identity, and its review episode id
+/// is the one the campaign mints for that identity and obligation.
+pub fn check_episode_within_scope(
+    candidate: &OrganizationCandidate,
+    declaration: &FixtureDeclaration,
+    state: &ReviewEpisodeState,
+) -> Result<CampaignIdentity, ConsumeRefusal> {
+    Selection::new(candidate, &declaration.obligation_id)?;
+    let scope = candidate.problem_scope();
+    episode_within_scope(
+        state.identity(),
+        &declaration.obligation_id,
+        &ProblemScopeTerms {
+            run_id: scope.run_id.as_str(),
+            plan_lineage: scope.plan_lineage.as_str(),
+            slice_number: scope.slice_number,
+        },
+    )
+    .map_err(ConsumeRefusal::EpisodeOutsideScope)
+}
+
+/// Derives every covered condition's admission key from its selected boundary and consumer
+/// class (the inverse of organization derivation), using the actual episode identity after its
+/// scope check. The declared key must agree. This checks no admissions; the returned coverage
+/// names the conditions whose declared mapping is derivable, not an admission or proof.
+///
+/// Owner definition (slice-campaign): `builder_projection` is consumed by class `builder` as
+/// `slice-builder:<identity key>`, and `campaign_terminalization` by class `campaign` as
+/// `slice-campaign:<identity key>`; no other (boundary, class) pair maps.
+pub fn check_consumption_evidence_mapping(
+    candidate: &OrganizationCandidate,
+    declaration: &FixtureDeclaration,
+    state: &ReviewEpisodeState,
+) -> Result<FixtureCoverage, ConsumeRefusal> {
+    let coverage = fixture_coverage(candidate, declaration)?;
+    consumption_evidence_mapped(candidate, declaration, coverage, state)
+}
+
+fn consumption_evidence_mapped(
+    candidate: &OrganizationCandidate,
+    declaration: &FixtureDeclaration,
+    mut coverage: FixtureCoverage,
+    state: &ReviewEpisodeState,
+) -> Result<FixtureCoverage, ConsumeRefusal> {
+    let identity = check_episode_within_scope(candidate, declaration, state)?;
+    let selection = Selection::new(candidate, &declaration.obligation_id)?;
+    for covered in &mut coverage.conditions {
+        let condition = selection
+            .conditions
+            .iter()
+            .find(|c| c.id.as_str() == covered.condition)
+            .expect("coverage comes from the selection");
+        let unmapped = |detail: String| ConsumeRefusal::ConsumptionUnmapped {
+            condition: covered.condition.clone(),
+            detail,
+        };
+        let class = consumer_class_of(&condition.consumer).ok_or_else(|| {
+            unmapped(format!(
+                "consumer participant `{}` has no consumer class",
+                condition.consumer
+            ))
+        })?;
+        let expected = expected_admission(condition.boundary.as_str(), class, &identity)
+            .map_err(|e| unmapped(e.to_string()))?;
+        if covered.boundary != expected.boundary || covered.admission_consumer != expected.consumer
+        {
+            return Err(ConsumeRefusal::AdmissionConsumerNotDerived {
+                condition: covered.condition.clone(),
+                declared: covered.admission_consumer.clone(),
+                derived: expected.consumer,
+            });
+        }
+        covered.admission_consumer = expected.consumer;
+    }
+    Ok(coverage)
+}
+
 /// The standing of a fixture consumption: one fixture observation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FixtureLabel {
@@ -543,8 +658,137 @@ fn declared_digest(
     Ok(digest(&parse_json(&text).map_err(|e| input(what, e))?))
 }
 
+/// Checks the immutable fixture admissions against the mapping derived from the selected
+/// candidate and actual episode. Checks each key, all declared references, any required
+/// observation, and `established` status, with exactly one admission per covered condition.
+/// Does not check the result, the consumption proof, or transition the episode. Neither the
+/// returned coverage nor the matched fixture inputs constitute authenticated evidence.
+pub fn check_fixture_admissions(
+    candidate: &OrganizationCandidate,
+    declaration: &FixtureDeclaration,
+    state: &ReviewEpisodeState,
+    admissions_json: &str,
+) -> Result<FixtureCoverage, ConsumeRefusal> {
+    let coverage = check_consumption_evidence_mapping(candidate, declaration, state)?;
+    match_admissions(declaration, &coverage, admissions_json)?;
+    Ok(coverage)
+}
+
+fn match_admissions(
+    declaration: &FixtureDeclaration,
+    coverage: &FixtureCoverage,
+    admissions_json: &str,
+) -> Result<Vec<JsValue>, ConsumeRefusal> {
+    let admissions = match parse_json(admissions_json).map_err(|e| input("admissions", e))? {
+        JsValue::Array(items) => items,
+        _ => {
+            return Err(input(
+                "admissions",
+                EpisodeError::new("evidence admissions must be an array"),
+            ));
+        }
+    };
+
+    // Match each admission to exactly one derived key, and each required condition to
+    // exactly one admission. Coverage here carries the keys derived for the host's
+    // episode, checked against the fixture declaration.
+    let mut matched: Vec<Option<usize>> = vec![None; coverage.conditions.len()];
+    for (index, admission) in admissions.iter().enumerate() {
+        validate_admission(admission).map_err(|e| input("admission", e))?;
+        let boundary = text_of(
+            field(admission, "boundary").map_err(|e| input("admission", e))?,
+            "admission boundary",
+        )?;
+        let consumer = text_of(
+            field(admission, "consumer").map_err(|e| input("admission", e))?,
+            "admission consumer",
+        )?;
+        let slot = coverage
+            .conditions
+            .iter()
+            .position(|c| c.boundary == boundary && c.admission_consumer == consumer)
+            .ok_or(ConsumeRefusal::AdmissionUnbound {
+                index,
+                boundary,
+                consumer,
+            })?;
+        if matched[slot].is_some() {
+            return Err(ConsumeRefusal::AdmissionDuplicate {
+                condition: coverage.conditions[slot].condition.clone(),
+            });
+        }
+        matched[slot] = Some(index);
+    }
+    for (slot, covered) in coverage.conditions.iter().enumerate() {
+        let Some(index) = matched[slot] else {
+            return Err(ConsumeRefusal::AdmissionMissing {
+                condition: covered.condition.clone(),
+            });
+        };
+        let admission = &admissions[index];
+        let binding = declaration
+            .bindings
+            .iter()
+            .find(|b| b.condition_id == covered.condition)
+            .expect("coverage comes from the declaration");
+        let mismatch = |reference: &'static str| ConsumeRefusal::AdmissionReferenceMismatch {
+            condition: covered.condition.clone(),
+            reference,
+        };
+        let carried = |key: &str| field(admission, key).map_err(|e| input("admission", e));
+        if digest(carried("claimRevisionRef")?)
+            != declared_digest(&binding.expected.claim_revision, "declared claim revision")?
+        {
+            return Err(mismatch("claimRevisionRef"));
+        }
+        if digest(carried("establishmentRef")?)
+            != declared_digest(&binding.expected.establishment, "declared establishment")?
+        {
+            return Err(mismatch("establishmentRef"));
+        }
+        if digest(carried("consumptionRef")?)
+            != declared_digest(&binding.expected.consumption, "declared consumption")?
+        {
+            return Err(mismatch("consumptionRef"));
+        }
+        let observation = carried("observationRef")?;
+        match (&binding.expected.observation, observation) {
+            (None, JsValue::Null) => {}
+            (Some(expected), carried_value) if carried_value != &JsValue::Null => {
+                if digest(carried_value) != declared_digest(expected, "declared observation")? {
+                    return Err(mismatch("observationRef"));
+                }
+            }
+            (Some(_), _) => {
+                return Err(ConsumeRefusal::ObservationMissing {
+                    condition: covered.condition.clone(),
+                });
+            }
+            (None, _) => return Err(mismatch("observationRef")),
+        }
+        if covered.requires_observation && observation == &JsValue::Null {
+            return Err(ConsumeRefusal::ObservationMissing {
+                condition: covered.condition.clone(),
+            });
+        }
+        let status = text_of(carried("status")?, "admission status")?;
+        if status != "established" {
+            return Err(ConsumeRefusal::EvidenceNotEstablished {
+                condition: covered.condition.clone(),
+                status,
+            });
+        }
+    }
+
+    Ok(admissions)
+}
+
 /// Gates a result and its admissions against the fixture declaration and, only if every
 /// mechanical check passes, calls the episode core's `RecordResult` transition.
+///
+/// Before the admissions are matched, the state's episode must lie within the candidate's problem
+/// scope ([`check_episode_within_scope`]) and every covered condition's admission consumer must be
+/// the one slice-campaign derives ([`check_consumption_evidence_mapping`]).
 ///
 /// `state` is borrowed and never modified; a refusal returns no state. Gate refusals come before
 /// the transition, so an incomplete or inconsistent evidence set cannot advance the episode
@@ -643,108 +887,12 @@ pub fn consume_fixture_result(
             actual: state_subject,
         });
     }
+    // slice-campaign's rules over host values: the state's episode lies within the candidate's
+    // problem scope, and every covered condition's admission consumer is the derived one.
+    let coverage = consumption_evidence_mapped(candidate, declaration, coverage, state)?;
 
     let result = parse_json(result_json).map_err(|e| input("result", e))?;
-    let admissions = match parse_json(admissions_json).map_err(|e| input("admissions", e))? {
-        JsValue::Array(items) => items,
-        _ => {
-            return Err(input(
-                "admissions",
-                EpisodeError::new("evidence admissions must be an array"),
-            ));
-        }
-    };
-
-    // Match each admission to exactly one declared binding, and each required condition to
-    // exactly one admission. The (boundary, consumer) key selects a binding only because the
-    // declaration states it; the key alone establishes nothing.
-    let mut matched: Vec<Option<usize>> = vec![None; coverage.conditions.len()];
-    for (index, admission) in admissions.iter().enumerate() {
-        validate_admission(admission).map_err(|e| input("admission", e))?;
-        let boundary = text_of(
-            field(admission, "boundary").map_err(|e| input("admission", e))?,
-            "admission boundary",
-        )?;
-        let consumer = text_of(
-            field(admission, "consumer").map_err(|e| input("admission", e))?,
-            "admission consumer",
-        )?;
-        let slot = coverage
-            .conditions
-            .iter()
-            .position(|c| c.boundary == boundary && c.admission_consumer == consumer)
-            .ok_or(ConsumeRefusal::AdmissionUnbound {
-                index,
-                boundary,
-                consumer,
-            })?;
-        if matched[slot].is_some() {
-            return Err(ConsumeRefusal::AdmissionDuplicate {
-                condition: coverage.conditions[slot].condition.clone(),
-            });
-        }
-        matched[slot] = Some(index);
-    }
-    for (slot, covered) in coverage.conditions.iter().enumerate() {
-        let Some(index) = matched[slot] else {
-            return Err(ConsumeRefusal::AdmissionMissing {
-                condition: covered.condition.clone(),
-            });
-        };
-        let admission = &admissions[index];
-        let binding = declaration
-            .bindings
-            .iter()
-            .find(|b| b.condition_id == covered.condition)
-            .expect("coverage comes from the declaration");
-        let mismatch = |reference: &'static str| ConsumeRefusal::AdmissionReferenceMismatch {
-            condition: covered.condition.clone(),
-            reference,
-        };
-        let carried = |key: &str| field(admission, key).map_err(|e| input("admission", e));
-        if digest(carried("claimRevisionRef")?)
-            != declared_digest(&binding.expected.claim_revision, "declared claim revision")?
-        {
-            return Err(mismatch("claimRevisionRef"));
-        }
-        if digest(carried("establishmentRef")?)
-            != declared_digest(&binding.expected.establishment, "declared establishment")?
-        {
-            return Err(mismatch("establishmentRef"));
-        }
-        if digest(carried("consumptionRef")?)
-            != declared_digest(&binding.expected.consumption, "declared consumption")?
-        {
-            return Err(mismatch("consumptionRef"));
-        }
-        let observation = carried("observationRef")?;
-        match (&binding.expected.observation, observation) {
-            (None, JsValue::Null) => {}
-            (Some(expected), carried_value) if carried_value != &JsValue::Null => {
-                if digest(carried_value) != declared_digest(expected, "declared observation")? {
-                    return Err(mismatch("observationRef"));
-                }
-            }
-            (Some(_), _) => {
-                return Err(ConsumeRefusal::ObservationMissing {
-                    condition: covered.condition.clone(),
-                });
-            }
-            (None, _) => return Err(mismatch("observationRef")),
-        }
-        if covered.requires_observation && observation == &JsValue::Null {
-            return Err(ConsumeRefusal::ObservationMissing {
-                condition: covered.condition.clone(),
-            });
-        }
-        let status = text_of(carried("status")?, "admission status")?;
-        if status != "established" {
-            return Err(ConsumeRefusal::EvidenceNotEstablished {
-                condition: covered.condition.clone(),
-                status,
-            });
-        }
-    }
+    let admissions = match_admissions(declaration, &coverage, admissions_json)?;
 
     let mut payload = vec![
         ("result", result),

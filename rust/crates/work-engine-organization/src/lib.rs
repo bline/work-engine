@@ -20,7 +20,7 @@ pub use derive::{
     AuthorityRequirement, CandidateCondition, ComponentBindingRequirement, DerivationResult,
     OrganizationCandidate, Participant, ParticipantKind, Receipt, Relationship, RelationshipKind,
     SeparationRequirement, TraceRef, TraceRow, Unresolved, UnresolvedKind, UnresolvedReason,
-    VantageRequirement, derive,
+    VantageRequirement, consumer_class_of, derive,
 };
 pub use digest::{CODEC_DOMAIN, CODEC_VERSION, Digest, DigestKind};
 pub use enforce::{

@@ -1,6 +1,6 @@
 [package]
 name = "work-engine-review-hosted"
-description = "Hosted review adapter for the Pi analysis profile: prepares the job inputs of one read-only implementation-review/v1 job (versioned requirements revision, prepared and frozen contract, digest-pinned task, git-verified subject snapshot) and checks a returned answer into a non-consumable owner_pending envelope. Route qualification only: mints no authority, establishes no condition, admits nothing."
+description = "Hosted implementation-review/v1 artifact mechanics. R1/R2 are historical-only; exact-subject scope is exercised by private offline conformance tests, with no admission or consumption."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

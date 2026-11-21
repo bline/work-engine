@@ -1678,6 +1678,15 @@ fn run_schema_four_remediation_flow_case(
     let candidate_raw = raw("candidate");
     let profile_raw = raw("profile");
     let capture_raw = raw("capture");
+    let assert_gate_git_binding = |raw: &[u8]| {
+        let capture: Value = serde_json::from_slice(raw).unwrap();
+        let actual_git_sha = sha256_bytes(&fs::read("/usr/bin/git").unwrap());
+        assert_eq!(
+            capture["git_runtime_before_after"]["executable_sha256"], actual_git_sha,
+            "the dynamic capture must identify the Git executable called by the gate"
+        );
+    };
+    assert_gate_git_binding(&capture_raw);
     let manifest_raw = raw("manifest");
     let receipt_raw = raw("receipt");
     let candidate: Value = serde_json::from_slice(&candidate_raw).unwrap();
@@ -2901,6 +2910,7 @@ fn run_schema_four_remediation_flow_case(
                 second.candidate_raw = next_candidate_raw;
                 second.profile_raw = read_raw("profile");
                 second.gate_capture = read_raw("capture");
+                assert_gate_git_binding(&second.gate_capture);
                 second.gate_manifest = read_raw("manifest");
                 second.gate_receipt = read_raw("receipt");
                 second.selection["selectionId"] = json!("selection-remediation-2");

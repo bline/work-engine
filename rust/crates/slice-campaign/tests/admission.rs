@@ -680,6 +680,55 @@ fn private_root_refuses_other_writer_and_symlinks() {
 }
 
 #[test]
+fn public_campaign_facade_publishes_the_frozen_episode_and_admission_rules() {
+    use slice_campaign::{
+        CampaignIdentity, ConsumptionMappingError, ExpectedAdmission, IdentityError, OutsideScope,
+        ProblemScopeTerms, ReviewEpisodeIdentity, episode_id, episode_within_scope,
+        expected_admission,
+    };
+    let frozen =
+        include_str!("../../work-engine-organization/tests/fixtures/frozen/episode-authority.json");
+    let frozen: serde_json::Value = serde_json::from_str(frozen).unwrap();
+    let episode = ReviewEpisodeIdentity::parse(
+        &review_episode_core::codec::parse_json(&frozen["identity"].to_string()).unwrap(),
+    )
+    .unwrap();
+    let scope = ProblemScopeTerms {
+        run_id: "production-qualification-20261107",
+        slice_number: 1,
+        plan_lineage: "timestamp-projection-v1",
+    };
+    let obligation = "rp3-initial-implementation-review";
+    let within: Result<CampaignIdentity, OutsideScope> =
+        episode_within_scope(&episode, obligation, &scope);
+    let identity = within.unwrap();
+    let minted: Result<String, IdentityError> = episode_id(&identity, obligation);
+    assert_eq!(minted.unwrap(), "ad20341a4937167c8442fbaa9e81288d");
+    for (boundary, class, consumer) in [
+        (
+            "builder_projection",
+            "builder",
+            "slice-builder:production-qualification-20261107:1:review-005:timestamp-projection-v1",
+        ),
+        (
+            "campaign_terminalization",
+            "campaign",
+            "slice-campaign:production-qualification-20261107:1:review-005:timestamp-projection-v1",
+        ),
+    ] {
+        let key: Result<ExpectedAdmission, ConsumptionMappingError> =
+            expected_admission(boundary, class, &identity);
+        assert_eq!(
+            key.unwrap(),
+            ExpectedAdmission {
+                boundary,
+                consumer: consumer.into()
+            }
+        );
+    }
+}
+
+#[test]
 fn selected_claim_pair_keeps_distinct_boundaries_and_codec_identity() {
     use slice_campaign::contract::{CandidateRef, validate_selection};
     let identity = CampaignIdentity {
@@ -707,6 +756,25 @@ fn selected_claim_pair_keeps_distinct_boundaries_and_codec_identity() {
         reference.episode_authority_digest,
         episode_digest(&selection).unwrap()
     );
+    for (field, replacement, message) in [
+        (
+            "consumer",
+            "slice-campaign:wrong-attempt",
+            "claim consumer differs",
+        ),
+        (
+            "consumptionBoundary",
+            "unsupported",
+            "claim boundary unsupported",
+        ),
+    ] {
+        let mut changed = selection.clone();
+        changed["specialists"][0]["requiredClaims"][1][field] = json!(replacement);
+        assert!(
+            matches!(validate_selection(&changed, &identity, &candidate),
+            Err(slice_campaign::CampaignError::Contract(detail)) if detail == message)
+        );
+    }
     selection["specialists"][0]["requiredClaims"][1]["claimId"] =
         json!("production-path-claim-v1@".to_owned() + &"0".repeat(64));
     assert!(validate_selection(&selection, &identity, &candidate).is_err());

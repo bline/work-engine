@@ -3576,10 +3576,21 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "slice-campaign-identity",
  "tempfile",
  "thiserror",
  "tokio",
  "workspace-publication",
+]
+
+[[package]]
+name = "slice-campaign-identity"
+version = "0.1.0"
+dependencies = [
+ "review-episode-core",
+ "serde",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]
@@ -4520,6 +4531,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "slice-campaign-identity",
  "thiserror",
  "work-engine-organization",
  "work-engine-organization-authority",

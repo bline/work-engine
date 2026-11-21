@@ -1,5 +1,4 @@
-//! The requirements revisions, the closed set of provider profiles with their realization claims,
-//! and preparation with refusal.
+//! Historical requirements pins, the closed set of wire profiles, and inert preparation.
 
 use serde::{Deserialize, Serialize};
 use work_engine_organization::{
@@ -14,13 +13,13 @@ use work_engine_review_preparation::{
 use crate::{Refusal, sha256_hex};
 
 /// Revision r1 (operator decision D2/OQ-1 (D), 2026-11-17): both realization-class constraints
-/// removed. Used by the `openai-codex` profile (see its `DERIVATION.md`).
+/// removed. Historical pin for the `openai-codex` profile (see its `DERIVATION.md`).
 pub const REVISION_ID: &str = "hosted-route-qualification-r1";
 /// Revision r1's requirements bytes.
 pub const REVISION_REQUIREMENTS: &[u8] =
     include_bytes!("../fixtures/hosted-route-qualification-r1/requirements.json");
 /// Revision r2 (operator decision D, 2026-11-18): keeps `provider_family: anthropic`, removes only
-/// `execution_confinement`. Used by the `claude-sdk` profile (see its `DERIVATION.md`).
+/// `execution_confinement`. Historical pin for the `claude-sdk` profile (see its `DERIVATION.md`).
 pub const REVISION_R2_ID: &str = "hosted-route-qualification-r2";
 /// Revision r2's requirements bytes.
 pub const REVISION_R2_REQUIREMENTS: &[u8] =
@@ -65,8 +64,7 @@ pub enum Wire {
     Messages,
 }
 
-/// The closed set of provider profiles. No other provider or model is accepted; the profile is
-/// chosen explicitly and recorded in the job-inputs record.
+/// The closed set of provider/wire shapes. Neither historical revision is a current route.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Profile {
@@ -105,7 +103,7 @@ impl Profile {
             Profile::ClaudeSdk => Wire::Messages,
         }
     }
-    /// The revision the profile runs on: r1 for `openai-codex` (unchanged), r2 for `claude-sdk`.
+    /// The archival revision of this profile (not a current execution or recheck target).
     pub fn revision(self) -> Revision {
         match self {
             Profile::OpenaiCodex => Revision {
@@ -161,7 +159,19 @@ impl Profile {
     }
 }
 
-/// The `openai-codex` profile's realization claim (the r1 route).
+/// Refuses current use of an archival pin or an unsupported profile/revision pair.
+pub fn archive_refusal(profile: Profile, revision: &str) -> Refusal {
+    if revision == profile.revision().id {
+        Refusal::HistoricalOnly(revision.to_owned())
+    } else {
+        Refusal::Requirements(format!(
+            "unsupported requirements revision {revision} for {}; no current hosted revision is selectable",
+            profile.provider()
+        ))
+    }
+}
+
+/// The `openai-codex` profile's realization claim (the archival r1 route).
 pub fn hosted_claim() -> RealizationClaim {
     Profile::OpenaiCodex.claim()
 }

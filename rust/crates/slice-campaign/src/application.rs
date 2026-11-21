@@ -1880,10 +1880,8 @@ impl CampaignInner {
                 "dispatch identities overlap".into(),
             ));
         }
-        let expected_episode = crate::contract::episode_digest(
-            &json!({"identity":handle.identity,"obligationId":handle.obligation_id}),
-        )?;
-        if command.episode_id != expected_episode[..32] {
+        let expected_episode = crate::episode_id(&handle.identity, &handle.obligation_id)?;
+        if command.episode_id != expected_episode {
             return Ok(DispatchEffect::NoEffect("episode identity differs".into()));
         }
         let digest = campaign_digest(&json!({

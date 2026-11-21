@@ -22,10 +22,13 @@
 //! without a discharge, or a refused, mismatched or non-current fixture-domain organizational
 //! admission (S-A) that the host obtains itself. The host derives the realization description from
 //! what it runs. Admitted kinds are discharged by named S-A check ids (`scope-digest-to-subject` by
-//! S1); the two unowned mapping kinds remain labelled fixture **assumptions** (`AssumedDischarge`),
-//! never admissions. The consumer itself
-//! refuses unless S-A finds *a* consumption admission current for its own candidate, subject and
-//! vantage over the observation it is handed; with S-A's `fixture` feature on, any caller can mint
+//! S1); the two campaign mapping kinds are host-checked (`HostChecked`): the host runs
+//! slice-campaign's rules for the exact canonical obligation and condition rows. Before spawn it
+//! checks scope and derivable declaration keys; before consumption it also matches the immutable
+//! fixture admissions. These facts are not authenticated evidence or S-A admissions. The consumer
+//! matches the inputs itself and refuses unless S-A finds *a* consumption admission current for
+//! its own candidate, subject and vantage over the observation it is handed; with S-A's `fixture`
+//! feature on, any caller can mint
 //! such an admission and consume outside this crate's gate, and the consumer cannot tell whose
 //! admission it is or how fresh the observation is (the host's regate is where freshness is
 //! obtained; the consumer's success output labels it a caller assertion).

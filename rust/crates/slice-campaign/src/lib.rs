@@ -44,8 +44,8 @@ pub use completion::{
     DispatchedRequest, RecoveredRequest, StageIntent, StageKind, StageProgress,
 };
 pub use contract::{
-    AcceptedBoundary, AdvancePhase, Baseline, CampaignIdentity, CampaignRef, CampaignRevision,
-    CandidateRef, Consequence, NativeReviewRequestRef, SelectionRef, Snapshot,
+    AcceptedBoundary, AdvancePhase, Baseline, CampaignRef, CampaignRevision, CandidateRef,
+    Consequence, NativeReviewRequestRef, SelectionRef, Snapshot,
 };
 pub use installed_authority::{
     AcceptedExecutionSelection, FreshInitialEntry, HostDeploymentPin, InitialEntryBinding,
@@ -54,6 +54,12 @@ pub use installed_authority::{
 #[cfg(feature = "test-support")]
 pub use installed_authority::{OfflineAcceptancePin, OfflineInitialEntry, OfflineProfileAuthority};
 pub use recovery::{Effect, OperationReceipt, Reconcile, RecoveryLocator};
+pub use review_episode_core::identity::Identity as ReviewEpisodeIdentity;
+pub use slice_campaign_identity::{
+    CampaignIdentity, ConsumptionMappingError, ExpectedAdmission, IdentityError, OutsideScope,
+    ProblemScopeTerms, ScopeTerm, episode_id, episode_within_scope, expected_admission,
+    expected_consumer,
+};
 pub use subject_binding::{
     VerifiedCandidate, VerifiedGate, verify_candidate_snapshot, verify_existing_subject,
     verify_existing_subject_dynamic,
@@ -80,6 +86,13 @@ pub enum CampaignError {
 }
 
 pub type Result<T> = std::result::Result<T, CampaignError>;
+
+/// A campaign identity rule's refusal is a campaign contract refusal with the same text.
+impl From<slice_campaign_identity::IdentityError> for CampaignError {
+    fn from(error: slice_campaign_identity::IdentityError) -> Self {
+        Self::Contract(error.0)
+    }
+}
 
 #[cfg(feature = "test-faults")]
 pub(crate) fn fault_cut(name: &str) {

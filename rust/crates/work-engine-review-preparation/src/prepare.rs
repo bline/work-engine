@@ -8,7 +8,7 @@
 //! from the candidate alone, so no request field, claim or fixture declaration can remove them.
 
 use review_episode_core::codec::JsValue;
-use review_episode_core::implementation_review_v1::validate_subject;
+use review_episode_core::implementation_review_v1::{SubjectParts, validate_subject};
 use serde::{Deserialize, Serialize};
 use work_engine_organization::{
     EnforceStatus, EvidenceClass, Normative, OrganizationCandidate, RealizationConstraint,
@@ -29,11 +29,12 @@ pub struct Subject {
 
 impl Subject {
     pub fn to_js_value(&self) -> JsValue {
-        JsValue::object([
-            ("commit", JsValue::text(&self.commit)),
-            ("tree", JsValue::text(&self.tree)),
-            ("patchIdentity", JsValue::text(&self.patch_identity)),
-        ])
+        SubjectParts {
+            commit: &self.commit,
+            tree: &self.tree,
+            patch_identity: &self.patch_identity,
+        }
+        .value()
     }
 }
 

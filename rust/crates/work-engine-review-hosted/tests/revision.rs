@@ -9,8 +9,7 @@ use work_engine_review_hosted::revision::{
     REVISION_R2_REQUIREMENTS, REVISION_REQUIREMENTS, frozen_world, frozen_world_for, hosted_claim,
     prepare_world, prepare_world_for,
 };
-use work_engine_review_hosted::task::Limits;
-use work_engine_review_hosted::{Refusal, inputs, sha256_hex};
+use work_engine_review_hosted::{Refusal, sha256_hex};
 use work_engine_review_preparation::{BlockerClass, Disposition, MutationClaim};
 
 /// The frozen fixture stays byte-identical (it is consumed, never modified).
@@ -154,29 +153,6 @@ fn frozen_candidate_with_the_hosted_claim_is_refused() {
     assert_eq!(world.outcome, "refused");
     assert_eq!(world.known_incompatibilities, ids);
     assert_eq!(world.requirements_sha256, FROZEN_SHA256);
-}
-
-#[test]
-fn frozen_candidate_writes_no_job_inputs() {
-    let repo = common::repo();
-    let out = repo.path().join("out");
-    let refused = inputs::write(
-        Profile::OpenaiCodex,
-        FROZEN_REQUIREMENTS,
-        &repo.path(),
-        &common::frozen_subject(),
-        "job-1",
-        Limits {
-            max_requests: 8,
-            max_reads: 16,
-        },
-        &out,
-    );
-    assert!(
-        matches!(refused, Err(Refusal::KnownIncompatibility(_))),
-        "{refused:?}"
-    );
-    assert!(!out.exists(), "a refusal leaves no output");
 }
 
 #[test]
@@ -412,7 +388,7 @@ fn claude_sdk_claim_states_what_the_host_enforces() {
 }
 
 #[test]
-fn frozen_candidate_on_the_claude_sdk_profile_stays_unmet_and_writes_no_job_inputs() {
+fn frozen_candidate_on_the_claude_sdk_profile_stays_unmet() {
     let subject = common::frozen_subject();
     let world = frozen_world_for(Profile::ClaudeSdk, &subject).unwrap();
     assert_eq!(world.outcome, "prepared_conditions_unmet");
@@ -425,24 +401,4 @@ fn frozen_candidate_on_the_claude_sdk_profile_stays_unmet_and_writes_no_job_inpu
             .all(|id| id.ends_with(":realization:execution_confinement"))
     );
     assert_eq!(world.requirements_sha256, FROZEN_SHA256);
-    // Passing the frozen requirements to the composition is refused, writing nothing.
-    let repo = common::repo();
-    let out = repo.path().join("out");
-    let refused = inputs::write(
-        Profile::ClaudeSdk,
-        FROZEN_REQUIREMENTS,
-        &repo.path(),
-        &subject,
-        "job-1",
-        Limits {
-            max_requests: 8,
-            max_reads: 16,
-        },
-        &out,
-    );
-    assert!(
-        matches!(refused, Err(Refusal::Requirements(_))),
-        "{refused:?}"
-    );
-    assert!(!out.exists());
 }

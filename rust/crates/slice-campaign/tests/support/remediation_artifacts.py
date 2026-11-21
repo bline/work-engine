@@ -7,14 +7,33 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import sys
 
 
 HERE = Path(__file__).resolve()
 PROJECT = HERE.parents[5]
-VECTORS = HERE.parent.parent / "fixtures" / "vectors"
+FIXTURES = HERE.parent.parent / "fixtures"
+VECTORS = FIXTURES / "vectors"
+
+# Historical SC0 pair independently pinned by src/subject_binding.rs.
+ANALYZER = PROJECT / "skills" / "code-change-profile" / "scripts" / "code_change_profile.py"
+ANALYZER_SHA256 = "47e486ce1539bbfe1ab466d77650d9bb3e0338222478ae445fe6a07ba95e2003"
+# Exact bytes of skills/slice-checkpoint/scripts/checkpoint.py at
+# 0a71dfada0852b3d8445961ffeef9b15c27e0b43 (blob 4d18174e4521e0d3bec4f627c3c7f5b870cee7f9).
+CHECKPOINT_FIXTURE = FIXTURES / "sc0-checkpoint-validator-v2.py.fixture"
+CHECKPOINT_SHA256 = "1b814da3ef9e1f20804b934b91f6621ed65159dd9dfab5bfbfdd2df95f82d20b"
+GIT = "/usr/bin/git"
+PYTHON = "/usr/bin/python3.14"
+GATE_RUNNER = "skills/slice-builder/scripts/run_gate.py"
+# Same reviewed pins as subject_binding.rs. Measure the executable in use;
+# either reviewed Git image may run the gate without borrowing the seed's pin.
+GIT_SHA256 = {
+    "5516c9f362c29376ab9a499a33082f9f611941d8c75930c880e30ad109e39c9a",
+    "ed8b2df973b28c0fb773b9c0dc0816d3ee2b3835bb932d9153c21417bb51b362",
+}
+PYTHON_SHA256 = "52e0a13e60a981d8c4b6478be2ba5176f69da07948a056bf49cf6f077e30cb41"
+GATE_RUNNER_SHA256 = "c8fee4d50fc5689c253fb1ef76a4b86159a3c8a916b76db9a764fbe5c0ed0dba"
 
 
 def sha(data):
@@ -27,9 +46,34 @@ def canon(value):
 
 def git(repo, *args, input=None, env=None, raw=False):
     result = subprocess.check_output(
-        ["/usr/bin/git", "-C", str(repo), *args], input=input, env=env
+        [GIT, "-C", str(repo), *args], input=input, env=env
     )
     return result if raw else result.strip()
+
+
+def gate_runtime(runner):
+    git_sha, python_sha, runner_sha = (sha(Path(p).read_bytes()) for p in (GIT, PYTHON, runner))
+    if (git_sha not in GIT_SHA256 or python_sha != PYTHON_SHA256
+            or runner_sha != GATE_RUNNER_SHA256):
+        raise SystemExit("SC0 fixture gate runtime or runner differs from the reviewed pins")
+    version = subprocess.check_output([GIT, "--version"], text=True).strip()
+    python = json.loads(subprocess.check_output([
+        PYTHON, "-I", "-c", "import json, platform; print(json.dumps({"
+        "'implementation': platform.python_implementation(), 'version': platform.python_version()}))",
+    ]))
+    return {"executable_sha256": git_sha, "version": version}, {
+        **python, "executable_sha256": python_sha,
+    }, runner_sha
+
+
+def gate_checkout_state(checkout, paths):
+    return {
+        "head": git(checkout, "rev-parse", "HEAD").decode(),
+        "head_tree": git(checkout, "rev-parse", "HEAD^{tree}").decode(),
+        "path_sha256": {p: sha((checkout / p).read_bytes()) for p in paths},
+        "all_status": git(checkout, "status", "--porcelain", "--untracked-files=all").decode(),
+        "tracked_paths": git(checkout, "ls-files", "-z", raw=True).decode().rstrip("\0").split("\0"),
+    }
 
 
 def fixture(digest):
@@ -37,6 +81,12 @@ def fixture(digest):
 
 
 def main(repo, output, predecessor_path=None):
+    if sha(ANALYZER.read_bytes()) != ANALYZER_SHA256:
+        raise SystemExit("SC0 fixture analyzer does not match the historical SHA-256")
+    checkpoint_bytes = CHECKPOINT_FIXTURE.read_bytes()
+    if sha(checkpoint_bytes) != CHECKPOINT_SHA256:
+        raise SystemExit("SC0 fixture checkpoint validator does not match the historical SHA-256")
+
     output.mkdir(parents=True, exist_ok=True)
     candidate = fixture("4a2c4f1872f6dfe8de275181f08b1e4d8c33a437c2519cd8b9ce8b3c9b56a5cd")
     predecessor = json.loads(predecessor_path.read_text()) if predecessor_path else candidate
@@ -67,24 +117,37 @@ def main(repo, output, predecessor_path=None):
     check = ("import hashlib, pathlib, subprocess, sys\n"
              f"expected = {hashes!r}\n"
              "if sys.flags.isolated != 1 or sys.flags.optimize != 0: raise SystemExit(17)\n"
-             f"if subprocess.check_output(['/usr/bin/git', 'rev-parse', 'HEAD'], text=True).strip() != {gate_commit!r}: raise SystemExit(20)\n"
-             f"if subprocess.check_output(['/usr/bin/git', 'rev-parse', 'HEAD^{{tree}}'], text=True).strip() != {tree!r}: raise SystemExit(21)\n"
+             f"if subprocess.check_output([{GIT!r}, 'rev-parse', 'HEAD'], text=True).strip() != {gate_commit!r}: raise SystemExit(20)\n"
+             f"if subprocess.check_output([{GIT!r}, 'rev-parse', 'HEAD^{{tree}}'], text=True).strip() != {tree!r}: raise SystemExit(21)\n"
              "actual = {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in expected}\n"
              "if actual != expected: raise SystemExit(19)\n"
-             "if subprocess.check_output(['/usr/bin/git', 'status', '--porcelain', '--untracked-files=all'], text=True).strip(): raise SystemExit(22)\n")
-    manifest = {"checks": [{"command": ["/usr/bin/python3.14", "-I", "-c", check],
+             f"if subprocess.check_output([{GIT!r}, 'status', '--porcelain', '--untracked-files=all'], text=True).strip(): raise SystemExit(22)\n")
+    manifest = {"checks": [{"command": [PYTHON, "-I", "-c", check],
                             "identity": "sc3-changed-tree-exact-path-bytes",
                             "requirement": "controlled_subject_validation", "timeout_seconds": 10}]}
     manifest_raw = canon(manifest)
-    runner = PROJECT / "skills" / "slice-builder" / "scripts" / "run_gate.py"
-    receipt_raw = subprocess.check_output(
-        ["/usr/bin/python3.14", "-I", str(runner), "--manifest-json",
-         manifest_raw.decode(), "--cwd", str(gate_checkout)]).strip()
+    runner = PROJECT / GATE_RUNNER
+    argv = [PYTHON, "-I", str(runner), "--manifest-json",
+            manifest_raw.decode(), "--cwd", str(gate_checkout)]
+    before = gate_checkout_state(gate_checkout, paths)
+    runtime = gate_runtime(runner)
+    process = subprocess.run(argv, check=True, capture_output=True)
+    if gate_runtime(runner) != runtime:
+        raise SystemExit("SC0 fixture gate runtime changed across execution")
+    after = gate_checkout_state(gate_checkout, paths)
+    if (before != after or before["all_status"] or before["head"] != gate_commit
+            or before["head_tree"] != tree or before["path_sha256"] != hashes):
+        raise SystemExit("SC0 fixture gate checkout differs from the selected tree and paths")
+    receipt_raw = process.stdout.strip()
     receipt = json.loads(receipt_raw)
-    assert receipt["status"] == "passed"
+    if receipt["status"] != "passed" or process.stderr:
+        raise SystemExit(f"SC0 fixture gate did not pass cleanly: {process.stderr!r}; {receipt!r}")
     capture = fixture("f52792e22d2a1b73e007bc7078607d6657989248a35de1371a1180d23101d206")
-    capture["argv"] = ["/usr/bin/python3.14", "-I", str(runner),
-                       "--manifest-json", manifest_raw.decode(), "--cwd", str(gate_checkout)]
+    git_info, python_info, runner_sha = runtime
+    capture.update(argv=argv, git_runtime_before_after=git_info,
+                   python_runtime_before_after=python_info, producer=GATE_RUNNER,
+                   producer_sha256_before_after=runner_sha, child_interpreter=PYTHON,
+                   child_interpreter_sha256=python_info["executable_sha256"])
     capture["argv_manifest_sha256"] = sha(manifest_raw)
     capture["candidate_tree_oid"] = tree
     capture["frozen_gate_tree_oid"] = tree
@@ -94,13 +157,10 @@ def main(repo, output, predecessor_path=None):
     capture["candidate_tree_path_sha256"] = hashes
     capture["tested_path_sha256"] = hashes
     capture["cwd"] = str(gate_checkout)
-    for side in ("before", "after"):
-        capture[side]["head"] = gate_commit
-        capture[side]["head_tree"] = tree
-        capture[side]["path_sha256"] = hashes
-        capture[side]["all_status"] = ""
-    capture["exit_status"] = 0
-    capture["stderr"] = ""
+    capture["before"] = before
+    capture["after"] = after
+    capture["exit_status"] = process.returncode
+    capture["stderr"] = process.stderr.decode()
     capture["failing_probe"] = None
     receipt_digest = sha(receipt_raw)
     candidate.update({
@@ -139,10 +199,9 @@ def main(repo, output, predecessor_path=None):
         "evidence_cutoff": candidate["created_at"], "checkpoint": candidate}))
     validator = repo / "skills" / "slice-checkpoint" / "scripts" / "checkpoint.py"
     validator.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(PROJECT / "skills" / "slice-checkpoint" / "scripts" / "checkpoint.py", validator)
-    analyzer = PROJECT / "skills" / "code-change-profile" / "scripts" / "code_change_profile.py"
+    validator.write_bytes(checkpoint_bytes)
     profile_raw = subprocess.check_output([
-        "/usr/bin/python3", str(analyzer), "profile", "--receipt", str(subject_path),
+        "/usr/bin/python3", str(ANALYZER), "profile", "--receipt", str(subject_path),
         "--repository", str(repo)]).strip()
     artifacts = {"candidate": candidate_path, "profile": output / "profile.json",
                  "capture": output / "capture.json", "manifest": output / "manifest.json",

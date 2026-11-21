@@ -2606,3 +2606,31 @@ fn the_candidate_has_exactly_the_members_the_matrix_lists() {
     assert_eq!(CANDIDATE_MEMBERS.len(), listed.len(), "no duplicate row");
     assert_eq!(found, listed);
 }
+
+/// Slice B (Q3.2): `consumer_class_of` is the inverse of derivation's class → participant map.
+/// Every candidate condition's consumer participant recovers the condition's authored class, and
+/// no other participant has a class.
+#[test]
+fn consumer_class_of_inverts_the_derived_consumer_participant() {
+    use work_engine_organization::consumer_class_of;
+    let candidate = candidate(&base());
+    let conditions = &view(&candidate).unwrap().conditions;
+    assert!(!conditions.is_empty());
+    let authored = base();
+    for condition in conditions {
+        let class = authored["acceptanceConditions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|c| c["id"] == condition.id.as_str())
+            .unwrap()["consumerClass"]
+            .as_str()
+            .unwrap();
+        assert_eq!(consumer_class_of(&condition.consumer), Some(class));
+    }
+    assert_eq!(consumer_class_of("vantage-builder"), Some("builder"));
+    assert_eq!(consumer_class_of("component:campaign"), Some("campaign"));
+    for other in ["component:episode_host", "builder", "campaign", ""] {
+        assert_eq!(consumer_class_of(other), None, "{other}");
+    }
+}

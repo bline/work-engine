@@ -19,8 +19,13 @@
 //! S-A [`CheckId`]s and are decided by those ids alone (never by reason subjects, which are
 //! diagnostics). `scope-digest-to-subject` is admitted by S-A check [`CheckId::S1`] (the served
 //! obligations' `scope.digest` is the exact-subject digest of the admitted subject). The other two
-//! mapping kinds stay labelled fixture assumptions ([`ASSUMED_DISCHARGE_LABEL`]): their mapping
-//! rules have no owner (O7), so nothing admits them.
+//! mapping kinds are host-checked ([`Discharge::HostChecked`]): S-A has no episode input, so the
+//! host binds them to their exact canonical preparation rows and runs preparation's fixture
+//! checks once over its own binding: episode scope and derivable keys before spawn, then scope
+//! and matching established fixture admissions before consumption. These facts do not authenticate
+//! evidence. They are not decided by S-A ids; this amends the S-B "ids alone" rule (owner
+//! choice recorded for review). No mapping kind remains assumed; [`AssumedDischarges`] stays for
+//! any kind the host function assumes.
 //! Realization check blockers (`realization:<condition>:<property>`) are never dischargeable.
 //!
 //! Every input of the admission the evaluation reads is host-derived, digest-bound or a named
@@ -51,12 +56,17 @@
 //! feature, admits only under the S-A fixture policy, and grants nothing outside this crate's
 //! fixture runner.
 
+use std::collections::BTreeMap;
+
 use work_engine_organization::Digest;
 use work_engine_organization_authority::{
     AdmissionRefusal, AdmissionState, AdmittedOrganization, AuthorityObservation,
     Boundary as AuthorityBoundary, CheckId, DeclaredRealization, Domain, EffectAdmission, Fixture,
     ObservationRevision, OperationRequest, Outcomes, Reservation, SealedObservation, SubjectRef,
     Unobserved, admit, observe_for, reserve,
+};
+use work_engine_review_preparation::fixture::{
+    ConsumeRefusal, check_consumption_evidence_mapping, check_fixture_admissions,
 };
 use work_engine_review_preparation::{Blocker, BlockerClass, BlockerKind};
 
@@ -87,6 +97,9 @@ pub enum Discharge {
     /// Discharged only when every named check passed in the [`EffectAdmission`] the host obtained
     /// itself for the boundary.
     Admitted(&'static [CheckId]),
+    /// Discharged only when the check for the canonical row passes at this boundary over the
+    /// binding's own inputs.
+    HostChecked(HostCheck),
     /// A labelled fixture assumption (standing of `FixtureDeclaration`): the kind is assumed
     /// discharged for the synthetic vertical only. Nothing is established or admitted.
     AssumedDischarge,
@@ -109,11 +122,35 @@ pub fn discharge(kind: BlockerKind) -> Discharge {
             Discharge::Admitted(&[CheckId::OA, CheckId::R2, CheckId::R3])
         }
         BlockerKind::ScopeDigestToSubject => Discharge::Admitted(&[CheckId::S1]),
-        BlockerKind::ProblemScopeToEpisodeIdentity | BlockerKind::ConsumptionEvidenceMapping => {
-            Discharge::AssumedDischarge
+        BlockerKind::ProblemScopeToEpisodeIdentity => {
+            Discharge::HostChecked(HostCheck::EpisodeWithinScope)
+        }
+        BlockerKind::ConsumptionEvidenceMapping => {
+            Discharge::HostChecked(HostCheck::ConsumptionEvidenceMapping)
         }
         BlockerKind::RealizationCheck => Discharge::Undischarged,
     }
+}
+
+/// A host-run check of a slice-campaign owner rule (`slice-campaign-identity`) over the binding.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HostCheck {
+    /// The binding's actual episode lies within the candidate's scope for the selected obligation.
+    EpisodeWithinScope,
+    /// The selected condition's declared key is derivable, and at consumption its admission must
+    /// also match the fixture snapshot. See [`HostFact`] for the specific fact reported.
+    ConsumptionEvidenceMapping,
+}
+
+/// What a canonical blocker check found at this boundary; fixture standing only.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HostFact {
+    /// The actual bound episode is within scope for the selected obligation.
+    EpisodeWithinScope,
+    /// The declared key agrees with the derived key; no admission content was checked.
+    DeclaredMappingDerivable,
+    /// The exact fixture set matched, including this condition's key, references and status.
+    FixtureAdmissionMatched,
 }
 
 /// The effect boundary an evaluation guards.
@@ -162,6 +199,21 @@ pub enum GateRefusal {
     /// The regate before consumption did not find the admission current (Unknown fails closed).
     #[error("the admission is not current at the regate: {0:?}")]
     NotCurrent(AdmissionState),
+    /// A host check refused for an identified canonical obligation or condition row.
+    #[error("host check {check:?} refused for blocker `{id}`: {refusal}")]
+    HostCheck {
+        id: String,
+        check: HostCheck,
+        refusal: Box<ConsumeRefusal>,
+    },
+    /// A host-checked row does not equal a canonical row of the selected preparation/coverage.
+    #[error("host-checked blocker `{id}` is not bound to the selected obligation or condition")]
+    UnboundHostRow { id: String },
+    #[error("more than one host-checked blocker `{id}`")]
+    DuplicateHostRow { id: String },
+    /// An error of the fixture set as a whole, not evidence against any particular row.
+    #[error("host coverage check refused: {0}")]
+    HostCoverage(Box<ConsumeRefusal>),
 }
 
 /// Pure classification of a blocker list: refusals 1-3 of the module docs, then each blocker's
@@ -283,6 +335,7 @@ pub struct AdmittedDischarges {
     bound_to: String,
     admission: AdmissionSummary,
     admitted: Vec<(String, BlockerKind, Vec<CheckId>)>,
+    host_checked: Vec<(String, BlockerKind, HostFact)>,
 }
 
 impl AdmittedDischarges {
@@ -300,11 +353,17 @@ impl AdmittedDischarges {
     pub fn admitted(&self) -> &[(String, BlockerKind, Vec<CheckId>)] {
         &self.admitted
     }
+    /// Every blocker id discharged by a host check that passed at this boundary, with its kind
+    /// and phase-appropriate fixture fact, in preparation order.
+    pub fn host_checked(&self) -> &[(String, BlockerKind, HostFact)] {
+        &self.host_checked
+    }
 }
 
-/// The blockers that passed only by labelled assumed discharge (the unowned mapping kinds), at one
-/// boundary, bound to the binding they were derived from. Constructible only by the crate-private
-/// evaluation. It is not an admission and authorizes nothing outside this crate's fixture runner.
+/// The blockers that passed only by labelled assumed discharge at one boundary (none of the
+/// current kinds), bound to the binding they were derived from. Constructible only by the
+/// crate-private evaluation. It is not an admission and authorizes nothing outside this crate's
+/// fixture runner.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AssumedDischarges {
     boundary: Boundary,
@@ -327,6 +386,105 @@ impl AssumedDischarges {
     pub fn assumed(&self) -> &[(String, BlockerKind)] {
         &self.assumed
     }
+}
+
+/// Bind effective rows to the canonical preparation (recomputed and checked by native delivery
+/// before `assess`). In particular, the additive fixture seam is not a source of checked rows.
+/// Evaluate the whole set once, using canonical scope to join per-condition outcomes to row ids.
+fn check_host_rows(
+    boundary: Boundary,
+    binding: &ExperimentBinding,
+    blockers: &[Blocker],
+) -> Result<Vec<(String, BlockerKind, HostFact)>, GateRefusal> {
+    let is_host = |row: &&Blocker| matches!(discharge(row.kind), Discharge::HostChecked(_));
+    let canonical: BTreeMap<_, _> = binding
+        .preparation()
+        .blockers
+        .iter()
+        .filter(is_host)
+        .map(|row| (row.id.as_str(), row))
+        .collect();
+    let mut remaining = canonical.clone();
+    for row in blockers.iter().filter(is_host) {
+        let id = || row.id.clone();
+        if canonical.get(row.id.as_str()).copied() != Some(row) {
+            return Err(GateRefusal::UnboundHostRow { id: id() });
+        }
+        if remaining.remove(row.id.as_str()).is_none() {
+            return Err(GateRefusal::DuplicateHostRow { id: id() });
+        }
+    }
+    if let Some((id, _)) = remaining.first_key_value() {
+        return Err(GateRefusal::UnboundHostRow { id: (*id).into() });
+    }
+    if canonical.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let candidate = binding.candidate();
+    let declaration = binding.declaration();
+    let state = binding.episode_state();
+    let coverage = match boundary {
+        Boundary::BeforeSpawn => check_consumption_evidence_mapping(candidate, declaration, state),
+        Boundary::BeforeConsumption => {
+            check_fixture_admissions(candidate, declaration, state, binding.admissions_json())
+        }
+    }
+    .map_err(|refusal| {
+        let row = match &refusal {
+            ConsumeRefusal::EpisodeOutsideScope(_) => canonical
+                .values()
+                .find(|row| row.kind == BlockerKind::ProblemScopeToEpisodeIdentity),
+            ConsumeRefusal::ConsumptionUnmapped { condition, .. }
+            | ConsumeRefusal::AdmissionConsumerNotDerived { condition, .. }
+            | ConsumeRefusal::AdmissionMissing { condition }
+            | ConsumeRefusal::AdmissionDuplicate { condition }
+            | ConsumeRefusal::AdmissionReferenceMismatch { condition, .. }
+            | ConsumeRefusal::ObservationMissing { condition }
+            | ConsumeRefusal::EvidenceNotEstablished { condition, .. } => {
+                canonical.values().find(|row| {
+                    row.kind == BlockerKind::ConsumptionEvidenceMapping && row.scope == *condition
+                })
+            }
+            _ => None,
+        };
+        if let Some(row) = row
+            && let Discharge::HostChecked(check) = discharge(row.kind)
+        {
+            GateRefusal::HostCheck {
+                id: row.id.clone(),
+                check,
+                refusal: Box::new(refusal),
+            }
+        } else {
+            GateRefusal::HostCoverage(Box::new(refusal))
+        }
+    })?;
+
+    blockers
+        .iter()
+        .filter(is_host)
+        .map(|row| {
+            let fact = match row.kind {
+                BlockerKind::ProblemScopeToEpisodeIdentity => HostFact::EpisodeWithinScope,
+                BlockerKind::ConsumptionEvidenceMapping => {
+                    if !coverage
+                        .conditions
+                        .iter()
+                        .any(|checked| checked.condition == row.scope)
+                    {
+                        return Err(GateRefusal::UnboundHostRow { id: row.id.clone() });
+                    }
+                    match boundary {
+                        Boundary::BeforeSpawn => HostFact::DeclaredMappingDerivable,
+                        Boundary::BeforeConsumption => HostFact::FixtureAdmissionMatched,
+                    }
+                }
+                _ => unreachable!("is_host selects only campaign mapping kinds"),
+            };
+            Ok((row.id.clone(), row.kind, fact))
+        })
+        .collect()
 }
 
 /// The evaluation at one boundary over the binding's blockers and the host's own admission.
@@ -352,6 +510,7 @@ pub(crate) fn assess(
     if !not_admitted.is_empty() {
         return Err(GateRefusal::NotAdmitted { ids: not_admitted });
     }
+    let host_checked = check_host_rows(boundary, binding, blockers)?;
     let bound_to = binding.frozen().contract_sha256().to_owned();
     let request = admission.request();
     let mut admitted = Vec::new();
@@ -359,6 +518,7 @@ pub(crate) fn assess(
     for (id, kind, d) in classified {
         match d {
             Discharge::Admitted(checks) => admitted.push((id, kind, checks.to_vec())),
+            Discharge::HostChecked(_) => {}
             Discharge::AssumedDischarge => assumed.push((id, kind)),
             Discharge::Undischarged => unreachable!("screen refuses undischarged kinds"),
         }
@@ -384,6 +544,7 @@ pub(crate) fn assess(
                 regate_revision: None,
             },
             admitted,
+            host_checked,
         },
         AssumedDischarges {
             boundary,

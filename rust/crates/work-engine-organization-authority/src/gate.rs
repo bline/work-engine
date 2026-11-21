@@ -12,8 +12,6 @@ use work_engine_organization::{
     RealizationConstraint, UnresolvedKind, derive, enforceability, view,
 };
 
-use review_episode_core::codec::JsValue;
-
 use crate::ids::{
     BodyDigest, Boundary, ExecutableDigest, IssuanceId, ObservationRevision, RealizationDigest,
 };
@@ -260,11 +258,12 @@ impl SubjectRef {
     /// so one obligation names exactly one subject; a new subject (for example a remediation
     /// round) needs a new requirements revision, hence a new candidate and admission (D1 = (A)).
     pub fn scope_digest(&self) -> String {
-        review_episode_core::codec::digest(&JsValue::object([
-            ("commit", JsValue::text(&self.commit)),
-            ("tree", JsValue::text(&self.tree)),
-            ("patchIdentity", JsValue::text(&self.patch_identity)),
-        ]))
+        review_episode_core::implementation_review_v1::SubjectParts {
+            commit: &self.commit,
+            tree: &self.tree,
+            patch_identity: &self.patch_identity,
+        }
+        .digest()
     }
 }
 

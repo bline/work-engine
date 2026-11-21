@@ -1,0 +1,85 @@
+{
+  "problemScope": {
+    "runId": "hosted-offline-exact-v1-responses-fixture",
+    "planLineage": "timestamp-projection-v1",
+    "sliceNumber": 1
+  },
+  "obligations": [
+    {
+      "id": "rp3-initial-implementation-review",
+      "kind": "candidate_review",
+      "subject": "campaign_candidate",
+      "resultContract": {
+        "id": "implementation-review",
+        "version": 1
+      },
+      "scope": {
+        "digest": "abc39243b9a9f09c20307a53c837d4769ad88471193965a4ac6a64bd29c7106f"
+      }
+    }
+  ],
+  "acceptanceConditions": [
+    {
+      "id": "cond-builder-projection",
+      "obligation": "rp3-initial-implementation-review",
+      "consumptionBoundary": "builder_projection",
+      "consumerClass": "builder",
+      "proposition": "Offline exact-scope fixture (hosted-offline-exact-v1-responses): compare synthetic review artifacts using the openai-codex / Responses wire shape at the builder projection boundary. No live route or provider is observed; this does not establish the condition or make the result consumable.",
+      "coveredState": "review-result",
+      "normative": {
+        "continuity": "fresh_initial",
+        "mutation": "none",
+        "capabilities": [],
+        "integrity": "verified_artifacts",
+        "evidenceCustody": "execution_evidence_custody",
+        "observerClass": "independent_execution_evidence"
+      },
+      "acceptor": "operator-production-qualification-20261107",
+      "unestablishedRoute": "hold-consumption-for-owner-disposition"
+    },
+    {
+      "id": "cond-campaign-terminalization",
+      "obligation": "rp3-initial-implementation-review",
+      "consumptionBoundary": "campaign_terminalization",
+      "consumerClass": "campaign",
+      "proposition": "Offline exact-scope fixture (hosted-offline-exact-v1-responses): compare synthetic review artifacts using the openai-codex / Responses wire shape at the campaign terminalization boundary. No live route or provider is observed; this does not establish the condition or make the result consumable.",
+      "coveredState": "review-result",
+      "normative": {
+        "continuity": "fresh_initial",
+        "mutation": "none",
+        "capabilities": [],
+        "integrity": "verified_artifacts",
+        "evidenceCustody": "execution_evidence_custody",
+        "observerClass": "independent_execution_evidence"
+      },
+      "acceptor": "operator-production-qualification-20261107",
+      "unestablishedRoute": "hold-consumption-for-owner-disposition"
+    }
+  ],
+  "requiredAuthorities": [
+    {
+      "id": "auth-accept-builder-projection",
+      "principal": "operator-production-qualification-20261107",
+      "permission": "accept_claim",
+      "scope": {
+        "boundaries": [
+          "builder_projection"
+        ]
+      }
+    },
+    {
+      "id": "auth-accept-campaign-terminalization",
+      "principal": "operator-production-qualification-20261107",
+      "permission": "accept_claim",
+      "scope": {
+        "boundaries": [
+          "campaign_terminalization"
+        ]
+      }
+    }
+  ],
+  "organizationPolicy": {
+    "mode": "fixed",
+    "profile": "fixed-slice-review-v1"
+  }
+}

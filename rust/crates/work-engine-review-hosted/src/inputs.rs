@@ -1,22 +1,32 @@
-//! The job inputs of one hosted review job and their record. The job itself (job, authority and
-//! packet JSON, budget, routes) is written by the dev vertical's existing path
-//! (`records/dev-vertical-h2-route-20261117/analyze.py`, which takes a snapshot directory and a
-//! task file); this crate writes no runtime admission.
+//! Job artifact shape (including historical syntax), and the private offline writer.
 
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+#[cfg(test)]
 use std::path::Path;
-use work_engine_review_delivery::{FrozenDelivery, Transport};
+#[cfg(test)]
+use work_engine_review_delivery::FrozenDelivery;
+use work_engine_review_delivery::Transport;
 use work_engine_review_preparation::{RealizationClaim, Subject};
 
-use crate::revision::{self, FrozenWorld, Profile};
+use crate::Refusal;
+#[cfg(test)]
+use crate::offline::ExpectedWorld;
+#[cfg(test)]
+use crate::revision;
+use crate::revision::{FrozenWorld, Profile};
+#[cfg(test)]
 use crate::subject::{self, Snapshot};
-use crate::task::{self, Limits};
-use crate::{Refusal, secrets, sha256_hex};
+#[cfg(test)]
+use crate::task;
+use crate::task::Limits;
+#[cfg(test)]
+use crate::{secrets, sha256_hex};
 
-/// v2: the explicitly selected provider `profile` is recorded.
-pub const RECORD_SCHEMA: &str = "work-engine.review-hosted-job-inputs.v2";
-pub const RECORD_STANDING: &str = "job_inputs_only_not_an_admission";
+#[cfg(test)]
+pub(crate) const RECORD_SCHEMA: &str = "work-engine.review-hosted-offline-exact-inputs.v1";
+#[cfg(test)]
+pub(crate) const RECORD_STANDING: &str = "synthetic_inputs_only_not_an_admission";
 
 /// One blocker of the chosen world's preparation, as recorded (none is discharged).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -27,14 +37,13 @@ pub struct BlockerRef {
 }
 
 /// The record that binds the requirements revision, preparation, contract, task, snapshot and
-/// frozen-world refusal of one job. Every value is recomputed by [`crate::check`].
+/// frozen-world counterfactual of one job. This is data, not evidence or permission.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct JobInputs {
     pub schema: String,
     pub standing: String,
-    /// The provider profile, chosen explicitly; it determines revision, claim, model, tools and
-    /// template.
+    /// The provider/wire profile, independent of the requirements revision.
     pub profile: Profile,
     pub revision: String,
     pub requirements_sha256: String,
@@ -62,9 +71,10 @@ pub struct JobInputs {
     pub frozen_world: FrozenWorld,
 }
 
-/// Everything one job needs from this crate.
+/// Artifacts produced by the private offline writer.
+#[cfg(test)]
 #[derive(Debug, Clone)]
-pub struct Bundle {
+pub(crate) struct Bundle {
     pub record: JobInputs,
     pub requirements: Vec<u8>,
     pub contract: String,
@@ -72,29 +82,25 @@ pub struct Bundle {
     pub snapshot: Snapshot,
 }
 
-/// Composes the job inputs of `profile` over `requirements`, which must be the profile's revision
-/// (a test passes the frozen requirements to see the refusal). Order: frozen-world outcome,
-/// chosen-world preparation (refused on known incompatibility), freeze, revision identity, task
-/// render (prompt bound), subject materialization bound to the preparation's `scope.digest`,
-/// request-context fit.
-pub fn build(
-    profile: Profile,
-    requirements: &[u8],
+/// Only an internally pinned world can produce an offline bundle. Preparation can
+/// refuse before identity verification (as for the frozen Responses counterfactual).
+#[cfg(test)]
+pub(crate) fn build(
+    expected: &ExpectedWorld,
     repo: &Path,
     subject: &Subject,
     job_id: &str,
     limits: Limits,
 ) -> Result<Bundle, Refusal> {
+    let profile = expected.profile;
+    let requirements = expected.requirements();
     let frozen_world = revision::frozen_world_for(profile, subject)?;
     let frozen = revision::prepare_world_for(profile, requirements, subject, job_id)?;
-    // Only the profile's own revision yields job inputs. On `claude-sdk` the frozen requirements
-    // have no known incompatibility (they allow `anthropic`) and would otherwise freeze; their
-    // conditions stay unmet and they never produce job inputs.
-    if sha256_hex(requirements) != sha256_hex(profile.revision().requirements) {
+    expected.verify_bytes()?;
+    if frozen.preparation().model_context.identity.run_id != expected.run_id {
         return Err(Refusal::Requirements(format!(
-            "the requirements are not revision {} of profile {}",
-            profile.revision().id,
-            profile.provider()
+            "expected run id {}",
+            expected.run_id
         )));
     }
     let preparation = frozen.preparation();
@@ -106,15 +112,7 @@ pub fn build(
     )?;
     subject::check_context_fit(snapshot.bytes(), task.len())?;
     subject::check_read_budget(&snapshot, limits.max_reads)?;
-    let record = record(
-        profile,
-        requirements,
-        &frozen,
-        &task,
-        limits,
-        &snapshot,
-        frozen_world,
-    );
+    let record = record(expected, &frozen, &task, limits, &snapshot, frozen_world);
     Ok(Bundle {
         record,
         requirements: requirements.to_vec(),
@@ -124,24 +122,25 @@ pub fn build(
     })
 }
 
-/// The record of one job's inputs.
-pub fn record(
-    profile: Profile,
-    requirements: &[u8],
+/// Records input data, not a preparation or materialization verdict.
+#[cfg(test)]
+pub(crate) fn record(
+    expected: &ExpectedWorld,
     frozen: &FrozenDelivery,
     task: &str,
     limits: Limits,
     snapshot: &Snapshot,
     frozen_world: FrozenWorld,
 ) -> JobInputs {
+    let profile = expected.profile;
     let preparation = frozen.preparation();
     let (template, _, template_sha256) = task::template(profile);
     JobInputs {
         schema: RECORD_SCHEMA.to_owned(),
         standing: RECORD_STANDING.to_owned(),
         profile,
-        revision: profile.revision().id.to_owned(),
-        requirements_sha256: sha256_hex(requirements),
+        revision: expected.id.to_owned(),
+        requirements_sha256: sha256_hex(expected.requirements()),
         run_id: preparation.model_context.identity.run_id.clone(),
         subject: preparation.model_context.obligation.subject.clone(),
         parent: snapshot.parent.clone(),
@@ -150,17 +149,7 @@ pub fn record(
         requested_model: profile.model().to_owned(),
         provider: profile.provider().to_owned(),
         realization_claim: profile.claim(),
-        blockers: preparation
-            .blockers
-            .iter()
-            .map(|b| BlockerRef {
-                id: b.id.clone(),
-                class: serde_json::to_value(b.class)
-                    .ok()
-                    .and_then(|v| v.as_str().map(str::to_owned))
-                    .unwrap_or_default(),
-            })
-            .collect(),
+        blockers: blocker_refs(preparation),
         contract_sha256: frozen.contract_sha256().to_owned(),
         contract_bytes: frozen.contract().len(),
         template: template.to_owned(),
@@ -180,6 +169,26 @@ pub fn record(
     }
 }
 
+#[cfg(test)]
+pub(crate) fn blocker_refs(
+    preparation: &work_engine_review_preparation::ReviewPreparation,
+) -> Vec<BlockerRef> {
+    use work_engine_review_preparation::BlockerClass;
+    preparation
+        .blockers
+        .iter()
+        .map(|b| BlockerRef {
+            id: b.id.clone(),
+            class: match b.class {
+                BlockerClass::KnownIncompatibility => "known_incompatibility",
+                BlockerClass::Unestablished => "unestablished",
+            }
+            .to_owned(),
+        })
+        .collect()
+}
+
+#[cfg(test)]
 fn create_new(path: &Path, bytes: &[u8]) -> Result<(), Refusal> {
     use std::io::Write;
     let mut file = std::fs::OpenOptions::new()
@@ -196,9 +205,9 @@ fn create_new(path: &Path, bytes: &[u8]) -> Result<(), Refusal> {
 /// written into a sibling staging directory that is renamed to `out` only when every write
 /// succeeded; on any refusal or I/O failure the staging directory is removed and `out` is not
 /// created.
-pub fn write(
-    profile: Profile,
-    requirements: &[u8],
+#[cfg(test)]
+pub(crate) fn write(
+    expected: &ExpectedWorld,
     repo: &Path,
     subject: &Subject,
     job_id: &str,
@@ -208,13 +217,14 @@ pub fn write(
     if out.exists() {
         return Err(Refusal::Io(format!("{} already exists", out.display())));
     }
-    let bundle = build(profile, requirements, repo, subject, job_id, limits)?;
+    let bundle = build(expected, repo, subject, job_id, limits)?;
     write_bundle(&bundle, out)?;
     Ok(bundle.record)
 }
 
 /// Writes a built bundle through the staging directory (see [`write`]).
-pub fn write_bundle(bundle: &Bundle, out: &Path) -> Result<(), Refusal> {
+#[cfg(test)]
+pub(crate) fn write_bundle(bundle: &Bundle, out: &Path) -> Result<(), Refusal> {
     if out.exists() {
         return Err(Refusal::Io(format!("{} already exists", out.display())));
     }

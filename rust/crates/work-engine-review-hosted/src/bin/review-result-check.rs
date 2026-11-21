@@ -1,29 +1,16 @@
-//! Checks one hosted review job's answer and writes the non-consumable envelope.
-//!
-//! ```text
-//! review-result-check --inputs <job-inputs.json> --run-inputs <base>/inputs --job <base>/job.json
-//!                     --state-dir <base>/state --out <new envelope.json>
-//! ```
-//!
-//! `<base>` is the run directory `analyze.py` wrote; its job id is
-//! `dev-vertical-hosted-analysis-<run name>` (`analyze.py:88`), which `review-job-inputs --job-id`
-//! must have been given.
-//!
-//! Exit 0: every check passed (the envelope is still `owner_pending`, not consumable). Exit 1: the
-//! envelope records a failed check. Exit 2: no envelope (unreadable inputs or usage).
+//! Historical argument shape only. Current builds refuse rather than reinterpret a record.
+//! For rechecks, use the exact archived source/checker pin and retained inputs.
 
-use std::io::Write;
-use std::path::PathBuf;
 use std::process::ExitCode;
-use work_engine_review_hosted::check::{check, load_run, load_state};
-use work_engine_review_hosted::inputs::{JobInputs, pretty};
+use work_engine_review_hosted::inputs::JobInputs;
+use work_engine_review_hosted::revision::archive_refusal;
 
 const USAGE: &str =
     "expected --inputs <file> --run-inputs <dir> --job <file> --state-dir <dir> --out <file>";
 
-fn run() -> Result<bool, String> {
+fn run() -> Result<(), String> {
     let raw: Vec<String> = std::env::args().skip(1).collect();
-    let [k1, inputs, k2, run_inputs, k3, job, k4, state, k5, out] = &raw[..] else {
+    let [k1, inputs, k2, _, k3, _, k4, _, k5, _] = &raw[..] else {
         return Err(USAGE.into());
     };
     if [k1, k2, k3, k4, k5].map(String::as_str)
@@ -34,31 +21,15 @@ fn run() -> Result<bool, String> {
     let record: JobInputs =
         serde_json::from_slice(&std::fs::read(inputs).map_err(|e| e.to_string())?)
             .map_err(|e| format!("job inputs: {e}"))?;
-    let run =
-        load_run(&PathBuf::from(run_inputs), &PathBuf::from(job)).map_err(|e| e.to_string())?;
-    let (result, requests) = load_state(&PathBuf::from(state)).map_err(|e| e.to_string())?;
-    let envelope = check(&record, &run, &result, &requests);
-    let bytes = pretty(&envelope).map_err(|e| e.to_string())?;
-    std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(out)
-        .and_then(|mut f| f.write_all(&bytes))
-        .map_err(|e| format!("{out}: {e}"))?;
-    for c in &envelope.checks {
-        println!("{}: {:?}", c.id, c.outcome);
-    }
-    println!(
-        "outcome: {} (standing {}, consumable {})",
-        envelope.outcome, envelope.standing, envelope.consumable
-    );
-    Ok(envelope.outcome == "checks_passed")
+    Err(format!(
+        "refused: {}",
+        archive_refusal(record.profile, &record.revision)
+    ))
 }
 
 fn main() -> ExitCode {
     match run() {
-        Ok(true) => ExitCode::SUCCESS,
-        Ok(false) => ExitCode::from(1),
+        Ok(()) => ExitCode::SUCCESS,
         Err(text) => {
             eprintln!("{text}");
             ExitCode::from(2)

@@ -29,6 +29,22 @@ const PERMISSION_TERMINALIZE: &str = "terminalize_campaign";
 const CLASS_BUILDER: &str = "builder";
 const CLASS_CAMPAIGN: &str = "campaign";
 
+/// The consumer participant derivation assigns to each known consumer class, one to one. Both
+/// directions read this table: derivation (class → participant) and [`consumer_class_of`].
+const CONSUMER_PARTICIPANTS: [(&str, &str); 2] =
+    [(CLASS_BUILDER, BUILDER_VANTAGE), (CLASS_CAMPAIGN, CAMPAIGN)];
+
+/// The consumer class whose conditions derivation assigns to consumer participant `participant`
+/// (a [`CandidateCondition::consumer`]): `vantage-builder` → `builder`, `component:campaign` →
+/// `campaign`. `None` for any other participant. The inverse of derivation's class → participant
+/// map, so a consumer can recover a candidate condition's class without a candidate field.
+pub fn consumer_class_of(participant: &str) -> Option<&'static str> {
+    CONSUMER_PARTICIPANTS
+        .iter()
+        .find(|(_, consumer)| *consumer == participant)
+        .map(|(class, _)| *class)
+}
+
 /// The kind of a candidate participant.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ParticipantKind {
@@ -451,11 +467,10 @@ pub fn derive(requirements: &OrganizationalRequirements, profile: Profile) -> De
     let is_builder = |condition: &Condition| condition.consumer_class.as_str() == CLASS_BUILDER;
     let has_builder_vantage = conditions.iter().any(is_builder);
     let consumer_of = |condition: &Condition| -> Option<&'static str> {
-        match condition.consumer_class.as_str() {
-            CLASS_BUILDER => Some(BUILDER_VANTAGE),
-            CLASS_CAMPAIGN => Some(CAMPAIGN),
-            _ => None,
-        }
+        CONSUMER_PARTICIPANTS
+            .iter()
+            .find(|(class, _)| *class == condition.consumer_class.as_str())
+            .map(|(_, consumer)| *consumer)
     };
 
     // Rule 2: an unknown consumer class is unresolved (one item per distinct class value).

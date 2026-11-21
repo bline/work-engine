@@ -558,10 +558,27 @@ mod tests {
         fs::create_dir(&job).unwrap();
         fs::set_permissions(&job, fs::Permissions::from_mode(0o700)).unwrap();
         let current = policy.review_selection(&fresh).unwrap();
-        for index in 0..2 {
+        // Fixed codec vector and keys for the minted claims, independent of the mint/check code.
+        let expected = [
+            (
+                "builder_projection",
+                "slice-builder:fixture-run:1:new-attempt:fixture-plan",
+            ),
+            (
+                "campaign_terminalization",
+                "slice-campaign:fixture-run:1:new-attempt:fixture-plan",
+            ),
+        ];
+        for (index, (boundary, consumer)) in expected.into_iter().enumerate() {
             let a = &original["specialists"][0]["requiredClaims"][index];
             let b = &current["specialists"][0]["requiredClaims"][index];
             assert_ne!(a["claimId"], b["claimId"]);
+            assert_eq!(
+                b["subject"]["reviewEpisodeId"],
+                "ed340bc5f28b70979ed657a5f1b1fc1b"
+            );
+            assert_eq!(b["consumptionBoundary"], boundary);
+            assert_eq!(b["consumer"], consumer);
             assert_eq!(a["profile"], b["profile"]);
             assert_eq!(a["acceptance"], b["acceptance"]);
             assert_eq!(a["coveredState"], b["coveredState"]);
@@ -729,26 +746,19 @@ impl JobReviewPolicyDocument {
                 "job policy requires one exact selected obligation".into(),
             ));
         }
-        let episode = crate::contract::episode_digest(
-            &serde_json::json!({"identity":request.identity,"obligationId":template.obligation_id}),
-        )?;
+        let episode = crate::episode_id(&request.identity, &template.obligation_id)?;
         let claims = specialists[0]["requiredClaims"]
             .as_array_mut()
             .ok_or_else(|| CampaignError::Contract("job policy claim contracts absent".into()))?;
         for claim in claims {
-            claim["subject"] =
-                serde_json::json!({"candidate":subject,"reviewEpisodeId":episode[..32]});
-            let consumer = match claim["consumptionBoundary"].as_str() {
-                Some("builder_projection") => format!("slice-builder:{}", request.identity.key()),
-                Some("campaign_terminalization") => {
-                    format!("slice-campaign:{}", request.identity.key())
-                }
-                _ => {
-                    return Err(CampaignError::Contract(
-                        "job policy claim boundary unsupported".into(),
-                    ));
-                }
-            };
+            claim["subject"] = serde_json::json!({"candidate":subject,"reviewEpisodeId":episode});
+            let unsupported =
+                || CampaignError::Contract("job policy claim boundary unsupported".into());
+            let boundary = claim["consumptionBoundary"]
+                .as_str()
+                .ok_or_else(unsupported)?;
+            let consumer =
+                crate::expected_consumer(boundary, &request.identity).map_err(|_| unsupported())?;
             claim["consumer"] = serde_json::json!(consumer);
             let id_body = serde_json::json!({"proposition":claim["proposition"],"subject":claim["subject"],"coveredState":claim["coveredState"],"consumptionBoundary":claim["consumptionBoundary"],"consumer":claim["consumer"]});
             claim["claimId"] = serde_json::json!(format!(
