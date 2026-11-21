@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use work_engine_review_hosted::secrets::{self, RULE_IDS};
 use work_engine_review_hosted::subject::{
     REVIEW_PATCH, REVIEW_SUBJECT, Snapshot, check_context_fit, check_members, check_read_budget,
-    materialize,
+    materialize, patch_bytes,
 };
 use work_engine_review_hosted::{Refusal, sha256_hex};
 use work_engine_review_preparation::Subject;
@@ -135,7 +135,7 @@ fn oversize_snapshot_is_refused() {
     let r = repo_with(&[("big.txt", big.as_bytes())]);
     assert!(matches!(
         materialize(&r.path(), &r.subject, &digest(&r.subject.to_js_value())),
-        Err(Refusal::SnapshotBound(_))
+        Err(Refusal::SnapshotBound(why)) if why.starts_with("git diff-tree output exceeds")
     ));
     // Member count bound.
     let many: BTreeMap<String, Vec<u8>> = (0..257)
@@ -156,6 +156,37 @@ fn oversize_snapshot_is_refused() {
             members: long
         }),
         Err(Refusal::Member { .. })
+    ));
+}
+
+#[test]
+fn materialization_bounds_cumulative_blob_capture_even_with_a_small_patch() {
+    let content = b"plain text\n".repeat(50_000);
+    let r = repo_with(&[("first.txt", &content), ("second.txt", &content)]);
+    let p = r.path();
+    let baseline = r.subject.commit;
+    let materialize_head = || {
+        let tree = git(&p, &["rev-parse", "HEAD^{tree}"]);
+        let patch = patch_bytes(&p, &baseline, &tree).unwrap();
+        assert!(patch.len() < 500, "only executable bits changed");
+        let subject = Subject {
+            commit: git(&p, &["rev-parse", "HEAD"]),
+            tree,
+            patch_identity: sha256_hex(&patch),
+        };
+        materialize(&p, &subject, &digest(&subject.to_js_value()))
+    };
+
+    git(&p, &["update-index", "--chmod=+x", "first.txt"]);
+    git(&p, &["commit", "--quiet", "-m", "first mode"]);
+    assert_eq!(materialize_head().unwrap().members["first.txt"], content);
+
+    git(&p, &["reset", "--soft", &baseline]);
+    git(&p, &["update-index", "--chmod=+x", "second.txt"]);
+    git(&p, &["commit", "--quiet", "-m", "both modes"]);
+    assert!(matches!(
+        materialize_head(),
+        Err(Refusal::SnapshotBound(why)) if why.starts_with("git cat-file output exceeds")
     ));
 }
 
