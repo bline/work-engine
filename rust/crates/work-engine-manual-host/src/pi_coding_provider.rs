@@ -197,6 +197,12 @@ pub struct AttemptRecord {
     /// request's first attempt and persisted here before any upstream byte.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub request_body_sha256: Option<String>,
+    /// Hosted: SHA-256 of the attempt's retained request head
+    /// (`coding-hosted-{request}-{attempt}.request-head.json`: the exact head
+    /// the transport writes, access header values redacted), persisted
+    /// before any upstream byte.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub request_head_sha256: Option<String>,
     /// Raw-usage cost of a completion that exceeded the admitted bound
     /// (saturating at the catalog cost cap). Held as `max(reservation, raw)`;
     /// the attempt stays unsettled.
@@ -541,6 +547,7 @@ pub fn reserve_attempt(
         routes_sha256: None,
         framed_end_observed: None,
         request_body_sha256: None,
+        request_head_sha256: None,
         raw_microusd: None,
         failover: None,
         classification_table_sha256: None,
@@ -1704,6 +1711,7 @@ pub(super) mod ledger_tests {
             routes_sha256: None,
             framed_end_observed: Some(true),
             request_body_sha256: None,
+            request_head_sha256: None,
             raw_microusd: None,
             failover: None,
             classification_table_sha256: None,

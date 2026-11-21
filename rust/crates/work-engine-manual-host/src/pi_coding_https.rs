@@ -376,14 +376,14 @@ impl HostedProviderTransport for HttpsTransport {
             }),
         })
     }
-    fn send(
+    fn request_head(
         &mut self,
-        connection: Connection,
         route: &HostedRoute,
         request: &HostedRequest,
-    ) -> Result<Upstream> {
+        redacted: bool,
+    ) -> Result<String> {
         let (endpoint, credential) = self.credential(route)?;
-        let head = match credential {
+        Ok(match credential {
             Credential::ChatGpt { access, account } => request_head(
                 endpoint,
                 &[
@@ -391,26 +391,38 @@ impl HostedProviderTransport for HttpsTransport {
                     ("chatgpt-account-id", account),
                 ],
                 request,
+                redacted,
             ),
             Credential::ApiKey(key) => request_head(
                 endpoint,
                 &[("Authorization", &format!("Bearer {key}"))],
                 request,
+                redacted,
             ),
             Credential::ClaudeOauth { access, .. } => request_head(
                 endpoint,
                 &[("Authorization", &format!("Bearer {access}"))],
                 request,
+                redacted,
             ),
             Credential::AnthropicApiKey(key) => {
-                request_head(endpoint, &[("x-api-key", key)], request)
+                request_head(endpoint, &[("x-api-key", key)], request, redacted)
             }
             Credential::OpenRouterApiKey(key) => request_head(
                 endpoint,
                 &[("Authorization", &format!("Bearer {key}"))],
                 request,
+                redacted,
             ),
-        };
+        })
+    }
+    fn send(
+        &mut self,
+        connection: Connection,
+        route: &HostedRoute,
+        request: &HostedRequest,
+    ) -> Result<Upstream> {
+        let head = self.request_head(route, request, false)?;
         let Connection { mut stream, abort } = connection;
         stream.write_all(head.as_bytes())?;
         stream.write_all(&request.body)?;
@@ -559,6 +571,7 @@ mod tests {
             Endpoint::OpenRouter,
             &[("Authorization", "Bearer sk-or-v1-0123456789abcdef")],
             &request,
+            false,
         );
         assert!(
             head.starts_with("POST /api/v1/chat/completions HTTP/1.1\r\nHost: openrouter.ai\r\n")
@@ -640,6 +653,7 @@ mod tests {
             Endpoint::AnthropicOauth,
             &[("Authorization", "Bearer t")],
             &request,
+            false,
         );
         assert!(
             oauth
@@ -655,15 +669,88 @@ mod tests {
         }
         assert!(!oauth.contains("originator") && !oauth.contains("x-unknown"));
         request.beta = false;
-        let api = request_head(Endpoint::AnthropicApi, &[("x-api-key", "k")], &request);
+        let api = request_head(
+            Endpoint::AnthropicApi,
+            &[("x-api-key", "k")],
+            &request,
+            false,
+        );
         assert!(api.starts_with("POST /v1/messages HTTP/1.1\r\nHost: api.anthropic.com\r\n"));
         assert!(api.contains("x-api-key: k\r\n"));
         let looped = request_head(
             Endpoint::Loopback(std::net::SocketAddr::from(([127, 0, 0, 1], 9))),
             &[],
             &request,
+            false,
         );
         assert!(looped.starts_with("POST /v1/messages HTTP/1.1\r\nHost: localhost\r\n"));
+    }
+    #[test]
+    fn redacted_head_is_the_sent_head_without_access_values() {
+        use super::super::hosted::REDACTED;
+        let mut t = transport();
+        for (payer, endpoint, wire, secrets) in [
+            (
+                "subscription",
+                "https:chatgpt-codex",
+                crate::pi_stream::Wire::Responses,
+                vec!["chatgpt-access-0123456789", "acct-1"],
+            ),
+            (
+                "api",
+                "https:openai-responses",
+                crate::pi_stream::Wire::Responses,
+                vec!["sk-test-0123456789abcdef"],
+            ),
+            (
+                "claude",
+                "https:anthropic-oauth",
+                crate::pi_stream::Wire::Messages,
+                vec!["sk-ant-oat01-current-0123456789"],
+            ),
+            (
+                "anthropic-api",
+                "https:anthropic-api",
+                crate::pi_stream::Wire::Messages,
+                vec!["sk-ant-api03-0123456789abcdef"],
+            ),
+            (
+                "openrouter",
+                "https:openrouter",
+                crate::pi_stream::Wire::Completions,
+                vec!["sk-or-v1-0123456789abcdef"],
+            ),
+        ] {
+            let route = HostedRoute {
+                id: "r".into(),
+                payer: payer.into(),
+                endpoint: endpoint.into(),
+            };
+            let request = HostedRequest {
+                request: 1,
+                attempt: 1,
+                headers: BTreeMap::new(),
+                body: b"{}".to_vec(),
+                wire,
+                beta: false,
+            };
+            let sent = t.request_head(&route, &request, false).unwrap();
+            let kept = t.request_head(&route, &request, true).unwrap();
+            let mut expected = sent.clone();
+            for secret in &secrets {
+                assert!(sent.contains(secret), "{payer}");
+                assert!(!kept.contains(secret), "{payer}");
+            }
+            // Exactly the access header values differ.
+            for line in sent.split("\r\n") {
+                if let Some((name, value)) = line.split_once(": ")
+                    && secrets.iter().any(|s| value.contains(s))
+                {
+                    expected = expected.replace(line, &format!("{name}: {REDACTED}"));
+                }
+            }
+            assert_eq!(kept, expected, "{payer}");
+        }
     }
     #[test]
     fn every_payers_access_is_screened() {
@@ -694,6 +781,7 @@ mod tests {
             Endpoint::ChatGptCodex,
             &[("Authorization", "Bearer a")],
             &request,
+            false,
         );
         assert!(
             codex
@@ -704,6 +792,7 @@ mod tests {
             Endpoint::OpenAiResponses,
             &[("Authorization", "Bearer k")],
             &request,
+            false,
         );
         assert!(api.starts_with("POST /v1/responses HTTP/1.1\r\nHost: api.openai.com\r\n"));
         assert!(!api.contains("originator") && !api.contains("session-id"));
