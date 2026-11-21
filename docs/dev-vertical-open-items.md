@@ -52,13 +52,24 @@ Pi Host runner. It was qualified live by H2 on `claude-sdk`, with three arms
 accepted on 2026-11-19 (`records/research-lifecycle-h2-live-result-20261119.md`).
 The relay context bound is 500,000.
 
-Open: production composition
-([plan](../planning/pi-host-production-composition-20261120.md)).
+Production composition ([plan](../planning/pi-host-production-composition-20261120.md))
+landed locally through `fe4e42c3`. Pi Host exposes `prepare` and
+`profile describe`; task host validates the pinned installation at startup and
+on install check, and the lifecycle runner composes a digest-bound job and serve
+config per attempt. Capture hardening (`72ac4f34`) binds the redacted request
+head per attempt and the original Completions body when rewritten; the runner
+checks account-identifier absence before retention (`099a4883`).
 
-- Only `lifecycle-service` `tests/pi_host_join.rs` writes the Host job, serve
-  config and `pi-host.json` (`prepare_host_job`, `config`).
-- The task host refuses the route at startup validation and at the install
-  check.
+The selected task-host → Pi Host offline run settled a Messages turn and
+retained eligible capture using controlled-proof loopback (board #6054, merge
+#6056). That run does not qualify HTTPS for the installed runner or release the
+production startup hold.
+
+`bdf8f731` joins streamed Completions tool calls to relayed calls and results
+in `serve` capture. Offline fixtures verify the join and ambiguity refusal;
+this is not live OpenRouter qualification. The 8 MiB per-turn retained-body
+bound remains a separate contract question for Research Lifecycle, and the
+live-crossing frame remains on hold.
 
 ## Monitoring log
 
