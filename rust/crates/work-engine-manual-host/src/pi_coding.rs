@@ -1440,6 +1440,11 @@ impl Host {
                 return refuse("coding frame exceeded bound");
             }
             let frame = self.coding_expand_observation(serde_json::from_slice(line)?)?;
+            // The receiver cannot supply workspace evidence, including inside a
+            // decoded history spool. Only the Host may attach it to a gate frame.
+            if frame.get("host_workspace").is_some() {
+                return refuse("receiver cannot supply Host workspace evidence");
+            }
             if frame["schema"] != self.journal.job.coding.as_ref().unwrap().schema {
                 return refuse("coding schema mismatch");
             }
@@ -2513,6 +2518,99 @@ mod tests {
         let mut raw = serde_json::to_vec(&value).unwrap();
         raw.push(b'\n');
         raw
+    }
+    #[derive(Clone, Default)]
+    struct WorkspaceEvidenceGate(std::rc::Rc<std::cell::RefCell<Vec<Value>>>);
+    impl CodingEffectGate for WorkspaceEvidenceGate {
+        fn execute(
+            &mut self,
+            _: &CodingToolIntent,
+            _: &mut dyn FnMut(i64) -> Result<(bool, Vec<u8>)>,
+        ) -> Result<(bool, Vec<u8>)> {
+            panic!("history ingress must not execute a tool")
+        }
+        fn frame(&mut self, frame: &Value) -> Result<Vec<Value>> {
+            self.0.borrow_mut().push(frame.clone());
+            Ok(vec![])
+        }
+        fn observed(
+            &mut self,
+            _: &CodingToolIntent,
+            _: &Artifact,
+            _: &ProcessRecord,
+            _: &str,
+        ) -> Result<()> {
+            panic!("history ingress must not observe a tool")
+        }
+    }
+    fn battery_history_frame(h: &Host, history: Value, spooled: bool) -> Vec<u8> {
+        if !spooled {
+            return frame(history);
+        }
+        let spool = h.journal.job.state_dir.join("coding-spool");
+        fs::create_dir_all(&spool).unwrap();
+        let encoded = serde_json::to_vec(&history).unwrap();
+        fs::write(spool.join("observation-1.json"), &encoded).unwrap();
+        frame(
+            json!({"type":"coding_history","schema":HOSTED_BATTERY_PROFILE,"sessionId":"native",
+            "observationSequence":1,"observationSpool":{"path":"observation-1.json","sha256":digest(&encoded),"bytes":encoded.len()}}),
+        )
+    }
+    #[test]
+    fn battery_history_reserves_workspace_evidence_for_the_host() {
+        for spooled in [false, true] {
+            for host_pin in [false, true] {
+                let (dir, mut h) = fixture();
+                h.journal.job.coding.as_mut().unwrap().schema = HOSTED_BATTERY_PROFILE.into();
+                h.journal.session_id = Some("native".into());
+                let gate = WorkspaceEvidenceGate::default();
+                h.coding_gate = Some(Box::new(gate.clone()));
+                if host_pin {
+                    let workspace = dir.path().join("coding-workspace");
+                    fs::create_dir(&workspace).unwrap();
+                    fs::write(workspace.join("source"), b"host-owned bytes").unwrap();
+                    h.journal.coding.as_mut().unwrap().tool_removed = true;
+                    h.coding_bind_workspace_manifest().unwrap();
+                }
+                let history = json!({"type":"coding_history","schema":HOSTED_BATTERY_PROFILE,"sessionId":"native"});
+                for field in [Value::Null, json!({})] {
+                    let mut supplied = history.clone();
+                    supplied["host_workspace"] = field;
+                    let raw = battery_history_frame(&h, supplied, spooled);
+                    assert!(matches!(h.coding_advance(&raw), Err(Error::Refused(s))
+                        if s == "receiver cannot supply Host workspace evidence"));
+                    assert!(gate.0.borrow().is_empty());
+                    let state = h.journal.coding.as_ref().unwrap();
+                    assert_eq!(
+                        (state.frames, state.battery_resets, h.coding_out_offset),
+                        (0, 0, 0)
+                    );
+                    assert!(!state.replaced);
+                }
+                let raw = battery_history_frame(&h, history, spooled);
+                assert!(h.coding_advance(&raw).unwrap().is_empty());
+                let recorded = gate.0.borrow();
+                assert_eq!(recorded.len(), 1);
+                if host_pin {
+                    let artifact = h
+                        .journal
+                        .coding
+                        .as_ref()
+                        .unwrap()
+                        .bridge_workspace_manifest
+                        .as_ref()
+                        .unwrap();
+                    assert_eq!(
+                        recorded[0]["host_workspace"],
+                        json!({
+                            "manifest":artifact,"manifest_bytes":String::from_utf8(artifact.verify().unwrap()).unwrap()
+                        })
+                    );
+                } else {
+                    assert!(recorded[0].get("host_workspace").is_none());
+                }
+            }
+        }
     }
     #[test]
     fn tool_requests_require_native_session_and_never_replay_unknown_intent() {
