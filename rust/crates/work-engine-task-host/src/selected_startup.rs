@@ -4360,6 +4360,101 @@ mod tests {
         serde_json::from_value(config).unwrap()
     }
 
+    /// The Pi Host route has no base URL: startup validates its installed
+    /// composition pins (profile and Host binary) instead. Codex routes are
+    /// unchanged and refuse a composition.
+    #[test]
+    fn pi_host_startup_pins_composition_instead_of_base_url() {
+        let fixture = Fixture::new();
+        let directory = fixture.config.parent().unwrap().to_owned();
+        crate::validate_startup(&startup_from(&fixture, |_| {})).unwrap();
+        let host = directory.join("work-engine-pi-host");
+        fs::write(&host, b"pinned pi host").unwrap();
+        let profile = directory.join("composition.json");
+        fs::write(&profile, b"{\"schema\":\"profile\"}").unwrap();
+        // A native root with the launch configuration pre-written for the
+        // runner (until step 2 composes it per launch).
+        let native_root = |name: &str| {
+            let root = directory.join(name);
+            fs::create_dir(&root).unwrap();
+            fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+            write_private_json(
+                &root.join("pi-host.json"),
+                &json!({"host_sha256":sha_file(&host).unwrap(),
+                    "serve_config":root.join("serve-config.json"),"serve_config_sha256":"b".repeat(64),
+                    "job_sha256":"c".repeat(64),"state_dir":root.join("pi-host-state"),
+                    "provider":"claude-sdk","model":"claude-haiku-5-5","turn_deadline_secs":300}),
+            );
+            root
+        };
+        let root = native_root("native-root");
+        let unplain_root = native_root("native+root");
+        let composition = json!({"profile":profile,"profile_sha256":sha_file(&profile).unwrap(),
+            "host_sha256":sha_file(&host).unwrap(),
+            "credentials_file":"/home/operator/.config/work-engine/hosted-credentials.json"});
+        let pi_host = |edit: &dyn Fn(&mut Value)| {
+            startup_from(&fixture, |c| {
+                c["provider_identity"] = json!("pi-host-v1");
+                let native = &mut c["lifecycle"]["native"];
+                native["provider_route"] = json!("pi-host-v1");
+                native["simulator_base_url"] = json!("");
+                native["executable"] = json!(host);
+                native["root"] = json!(root);
+                native["pi_host_composition"] = composition.clone();
+                edit(c);
+            })
+        };
+        // Outside controlled proof only an installed research startup selects
+        // the Pi Host (until step 2 binds its environment); this one has none.
+        assert_eq!(
+            crate::validate_startup(&pi_host(&|_| {})).is_ok(),
+            cfg!(feature = "controlled-proof")
+        );
+        for (name, edit) in [
+            (
+                "missing composition",
+                &(|c: &mut Value| {
+                    c["lifecycle"]["native"]
+                        .as_object_mut()
+                        .unwrap()
+                        .remove("pi_host_composition");
+                }) as &dyn Fn(&mut Value),
+            ),
+            ("profile pin", &|c: &mut Value| {
+                c["lifecycle"]["native"]["pi_host_composition"]["profile_sha256"] =
+                    json!("d".repeat(64))
+            }),
+            ("host binary pin", &|c: &mut Value| {
+                c["lifecycle"]["native"]["pi_host_composition"]["host_sha256"] =
+                    json!("d".repeat(64))
+            }),
+            ("host binary drift", &|c: &mut Value| {
+                c["lifecycle"]["native"]["executable"] = json!(directory.join("unavailable-native"))
+            }),
+            ("relative profile", &|c: &mut Value| {
+                c["lifecycle"]["native"]["pi_host_composition"]["profile"] =
+                    json!("composition.json")
+            }),
+            ("base url", &|c: &mut Value| {
+                c["lifecycle"]["native"]["simulator_base_url"] = json!("http://127.0.0.1:1/v1")
+            }),
+            ("unmountable native root", &|c: &mut Value| {
+                c["lifecycle"]["native"]["root"] = json!(unplain_root)
+            }),
+            ("provider identity", &|c: &mut Value| {
+                c["provider_identity"] = json!("native-sim-proof-v1")
+            }),
+            ("codex route with composition", &|c: &mut Value| {
+                c["provider_identity"] = json!("native-sim-proof-v1");
+                let native = &mut c["lifecycle"]["native"];
+                native["provider_route"] = json!("native-sim-proof-v1");
+                native["simulator_base_url"] = json!("http://127.0.0.1:12345/v1");
+            }),
+        ] {
+            assert!(crate::validate_startup(&pi_host(edit)).is_err(), "{name}");
+        }
+    }
+
     #[test]
     fn control_defaults_to_native_is_not_serialized_and_rejects_unknown_shapes() {
         let fixture = Fixture::new();

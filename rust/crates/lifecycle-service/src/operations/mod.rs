@@ -1437,7 +1437,14 @@ pub fn preview_native_task_launch(
 /// canonicalization, credentials and filesystem observations stay at launch.
 pub(crate) fn validate_native_config(config: &NativeConfig) -> Result<(), StoreError> {
     if config.provider_route == NativeProviderRoute::PiHostV1 {
-        return pi_host::validate(config, &pi_host::load(config)?);
+        pi_host::validate(config, &pi_host::load(config)?)?;
+        if config.pi_host_composition.is_some() {
+            pi_host::verify_pi_host_composition(config).map_err(|_| StoreError::Rejected)?;
+        }
+        return Ok(());
+    }
+    if config.pi_host_composition.is_some() {
+        return Err(StoreError::Rejected);
     }
     workspace_snapshot_read::validate(&config.snapshot)?;
     use lifecycle_core::{AttemptId, NativeSessionId};
@@ -2110,6 +2117,24 @@ mod provider_launch_tests {
             }]}
         }))
         .unwrap()
+    }
+
+    #[test]
+    fn pi_host_composition_is_refused_on_codex_routes() {
+        let temp = tempfile::tempdir().unwrap();
+        let mut selected = config(
+            temp.path(),
+            NativeProviderRoute::NativeSimProofV1,
+            "http://127.0.0.1:1234/v1",
+        );
+        assert!(validate_native_config(&selected).is_ok());
+        selected.pi_host_composition = Some(crate::PiHostComposition {
+            profile: temp.path().join("composition.json"),
+            profile_sha256: "a".repeat(64),
+            host_sha256: "b".repeat(64),
+            credentials_file: temp.path().join("credentials.json"),
+        });
+        assert!(validate_native_config(&selected).is_err());
     }
 
     #[test]

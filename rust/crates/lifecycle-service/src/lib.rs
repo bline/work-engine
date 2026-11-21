@@ -31,6 +31,7 @@ use std::path::PathBuf;
 use lifecycle_core::{ContextGeneration, NativeSessionId, SnapshotId, SubjectId};
 use lifecycle_semantic::DirectInferencePort;
 use lifecycle_store::{NativeRestartEpoch, NativeRestartIntent};
+pub use operations::pi_host::{PiHostCompositionRefusal, verify_pi_host_composition};
 pub use operations::workspace_snapshot_read::SnapshotIdRefusal;
 use operations::workspace_snapshot_read::TrustedSnapshot;
 use serde::{Deserialize, Serialize};
@@ -146,6 +147,9 @@ pub struct NativeConfig {
     /// Trusted, explicit access-only source for the experimental lease route.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub chatgpt_access_source: Option<ChatgptAccessSource>,
+    /// Installed composition for `PiHostV1` only; refused on every other route.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pi_host_composition: Option<PiHostComposition>,
     /// Only used by the simulator and controlled-proof fake routes. Live
     /// OpenAI always uses the compiled upstream and requires this to be empty.
     pub simulator_base_url: String,
@@ -205,6 +209,20 @@ pub struct ChatgptAccessIsolation {
     #[cfg(feature = "native-sim-proof")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub synthetic_http_fixture_sha256: Option<String>,
+}
+
+/// Operator-installed Pi Host composition: the pinned composition profile
+/// (`work-engine.pi-host-composition.v1`, credential-free), the pinned Host
+/// binary (`NativeConfig::executable`) and the installation-specific hosted
+/// credentials file (`work-engine.pi-hosted-credentials.v1`), which names
+/// credential sources and never holds a secret value itself.
+#[derive(Clone, Debug, Deserialize, Serialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct PiHostComposition {
+    pub profile: PathBuf,
+    pub profile_sha256: String,
+    pub host_sha256: String,
+    pub credentials_file: PathBuf,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, Eq, PartialEq)]

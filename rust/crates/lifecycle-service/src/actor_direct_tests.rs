@@ -90,6 +90,7 @@ impl Rig {
             root: native_root,
             provider_route: NativeProviderRoute::NativeSimProofV1,
             chatgpt_access_source: None,
+            pi_host_composition: None,
             simulator_base_url: "http://127.0.0.1:12345/v1".into(),
             session_id: "session:actor-direct".into(),
             invocation_id: "invocation:actor-direct".into(),

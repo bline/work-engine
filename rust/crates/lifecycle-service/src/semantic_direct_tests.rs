@@ -571,6 +571,7 @@ impl Harness {
             root: self._temp.path().join("native-unused"),
             provider_route: NativeProviderRoute::NativeSimProofV1,
             chatgpt_access_source: None,
+            pi_host_composition: None,
             simulator_base_url: "http://127.0.0.1:1/v1".into(),
             session_id: "session:unused".into(),
             invocation_id: "invocation:unused".into(),
