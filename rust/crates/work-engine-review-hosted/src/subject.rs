@@ -8,8 +8,9 @@
 use review_episode_core::implementation_review_v1::SubjectParts;
 use serde::Serialize;
 use std::collections::BTreeMap;
+use std::io::Read;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use work_engine_review_preparation::Subject;
 
 use crate::{Refusal, secrets, sha256_hex};
@@ -71,30 +72,57 @@ pub const GIT_REDIRECTS: [&str; 5] = [
     "GIT_ALTERNATE_OBJECT_DIRECTORIES",
 ];
 
-fn git(repo: &Path, args: &[&str]) -> Result<Vec<u8>, Refusal> {
+// Bound the bytes captured from Git, not Git's own computation or wall time.
+// Every caller supplies a fixed limit or its remaining snapshot budget.
+fn git(repo: &Path, args: &[&str], max_bytes: u64) -> Result<Vec<u8>, Refusal> {
     let mut command = Command::new("git");
     for var in GIT_REDIRECTS {
         command.env_remove(var);
     }
-    let out = command
+    let git_error = |e: std::io::Error| Refusal::Git(format!("git {}: {e}", args.join(" ")));
+    let mut child = command
         .env("GIT_NO_REPLACE_OBJECTS", "1")
         .arg("-C")
         .arg(repo)
         .args(args)
-        .output()
-        .map_err(|e| Refusal::Git(format!("git {}: {e}", args.join(" "))))?;
-    if !out.status.success() {
-        return Err(Refusal::Git(format!(
-            "git {} exited {}",
-            args.join(" "),
-            out.status
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .map_err(git_error)?;
+    let mut bytes = Vec::new();
+    let read = child
+        .stdout
+        .take()
+        .expect("piped Git stdout")
+        .take(max_bytes + 1)
+        .read_to_end(&mut bytes);
+    let oversized = bytes.len() as u64 > max_bytes;
+    if read.is_err() || oversized {
+        // Stop the producer rather than drain an inadmissible result. It may
+        // have already exited; still reap it before returning a refusal.
+        let _ = child.kill();
+    }
+    let status = child.wait().map_err(git_error)?;
+    read.map_err(git_error)?;
+    if oversized {
+        return Err(Refusal::SnapshotBound(format!(
+            "git {} output exceeds {max_bytes} bytes",
+            args[0]
         )));
     }
-    Ok(out.stdout)
+    if !status.success() {
+        return Err(Refusal::Git(format!(
+            "git {} exited {status}",
+            args.join(" ")
+        )));
+    }
+    Ok(bytes)
 }
 
 fn git_line(repo: &Path, args: &[&str]) -> Result<String, Refusal> {
-    let bytes = git(repo, args)?;
+    // rev-parse and rev-list here return at most a commit line for a valid subject.
+    let bytes = git(repo, args, 4_096)?;
     String::from_utf8(bytes)
         .map(|s| s.trim_end().to_owned())
         .map_err(|_| Refusal::Git(format!("git {}: non-UTF-8 output", args.join(" "))))
@@ -108,8 +136,9 @@ fn full_hex(value: &str, len: usize) -> bool {
 }
 
 /// The bytes `patchIdentity` hashes: `git diff-tree --binary --no-renames --no-ext-diff
-/// <parent>^{tree} <tree>` (the only definition found:
+/// <parent>^{tree} <tree>` (see
 /// `app-server/tests/supervisor-native-review-hosting-integration.test.mjs:255-257`).
+/// Refuses if the patch alone would exceed the snapshot byte limit.
 pub fn patch_bytes(repo: &Path, parent: &str, tree: &str) -> Result<Vec<u8>, Refusal> {
     git(
         repo,
@@ -121,6 +150,7 @@ pub fn patch_bytes(repo: &Path, parent: &str, tree: &str) -> Result<Vec<u8>, Ref
             &format!("{parent}^{{tree}}"),
             tree,
         ],
+        SNAPSHOT_BYTES,
     )
 }
 
@@ -174,7 +204,12 @@ pub fn materialize(
             actual: tree,
         });
     }
-    let parents = git_line(repo, &["rev-list", "--parents", "-n", "1", commit])?;
+    let parents = match git_line(repo, &["rev-list", "--parents", "-n", "1", commit]) {
+        // A valid commit/parent pair fits on one short line. The capture limit
+        // refuses oversized merge metadata without mislabeling it a snapshot.
+        Err(Refusal::SnapshotBound(_)) => return Err(Refusal::ParentShape(commit.clone())),
+        other => other?,
+    };
     let ids: Vec<&str> = parents.split_whitespace().collect();
     if ids.len() != 2 || ids[0] != commit {
         return Err(Refusal::ParentShape(commit.clone()));
@@ -202,6 +237,9 @@ pub fn materialize(
     }
 
     // Changed entries, first parent to commit: ":<src mode> <dst mode> <src> <dst> <status>\0<path>\0".
+    // Allow extra metadata bytes for the full object IDs even for tiny patches
+    // (e.g. mode changes). The patch and raw list cover the same changed paths.
+    const RAW_DIFF_BYTES: u64 = SNAPSHOT_BYTES * 4;
     let raw = git(
         repo,
         &[
@@ -213,9 +251,11 @@ pub fn materialize(
             &parent,
             commit,
         ],
+        RAW_DIFF_BYTES,
     )?;
     let mut fields = raw.split(|b| *b == 0).filter(|f| !f.is_empty());
     let mut members = BTreeMap::new();
+    let mut remaining = SNAPSHOT_BYTES - patch.len() as u64;
     while let Some(head) = fields.next() {
         let head = std::str::from_utf8(head).map_err(|_| Refusal::Git("raw diff header".into()))?;
         let path_bytes = fields
@@ -253,7 +293,14 @@ pub fn materialize(
                 why: "collides with the .review/ layout".into(),
             });
         }
-        let bytes = git(repo, &["cat-file", "blob", dst])?;
+        // Reserve member slots for the patch and the generated subject index.
+        if members.len() >= SNAPSHOT_FILES - 2 {
+            return Err(Refusal::SnapshotBound(format!(
+                "more than {SNAPSHOT_FILES} members including review metadata"
+            )));
+        }
+        let bytes = git(repo, &["cat-file", "blob", dst], remaining)?;
+        remaining -= bytes.len() as u64;
         members.insert(path, bytes);
     }
     members.insert(REVIEW_PATCH.to_owned(), patch);

@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use work_engine_review_hosted::secrets::{self, RULE_IDS};
 use work_engine_review_hosted::subject::{
     REVIEW_PATCH, REVIEW_SUBJECT, Snapshot, check_context_fit, check_members, check_read_budget,
-    materialize,
+    materialize, patch_bytes,
 };
 use work_engine_review_hosted::{Refusal, sha256_hex};
 use work_engine_review_preparation::Subject;
@@ -118,6 +118,29 @@ fn merge_and_root_commits_are_refused() {
 }
 
 #[test]
+fn oversized_parent_listing_still_refuses_invalid_parent_shape() {
+    let r = repo();
+    let p = r.path();
+    let mut args = vec!["commit-tree".to_owned(), r.subject.tree.clone()];
+    // 100 distinct parents exceed the bounded rev-list metadata capture.
+    for i in 0..100 {
+        let parent = git(&p, &["commit-tree", &r.subject.tree, "-m", &i.to_string()]);
+        args.extend(["-p".to_owned(), parent]);
+    }
+    args.extend(["-m".to_owned(), "many parents".to_owned()]);
+    let args: Vec<_> = args.iter().map(String::as_str).collect();
+    let subject = Subject {
+        commit: git(&p, &args),
+        tree: r.subject.tree,
+        patch_identity: "0".repeat(64),
+    };
+    assert!(matches!(
+        materialize(&p, &subject, &digest(&subject.to_js_value())),
+        Err(Refusal::ParentShape(commit)) if commit == subject.commit
+    ));
+}
+
+#[test]
 fn binary_and_non_utf8_members_are_refused() {
     for bytes in [&b"a\0b\n"[..], &[0xff, 0xfe, b'\n'][..]] {
         let r = repo_with(&[("bin.dat", bytes)]);
@@ -135,7 +158,7 @@ fn oversize_snapshot_is_refused() {
     let r = repo_with(&[("big.txt", big.as_bytes())]);
     assert!(matches!(
         materialize(&r.path(), &r.subject, &digest(&r.subject.to_js_value())),
-        Err(Refusal::SnapshotBound(_))
+        Err(Refusal::SnapshotBound(why)) if why.starts_with("git diff-tree output exceeds")
     ));
     // Member count bound.
     let many: BTreeMap<String, Vec<u8>> = (0..257)
@@ -156,6 +179,57 @@ fn oversize_snapshot_is_refused() {
             members: long
         }),
         Err(Refusal::Member { .. })
+    ));
+}
+
+#[test]
+fn materialization_reserves_two_slots_at_the_snapshot_member_limit() {
+    // repo_with also modifies a.txt. Its deleted c.txt has no member slot.
+    let files: Vec<_> = (0..254).map(|i| format!("f{i:03}.txt")).collect();
+    let files: Vec<_> = files.iter().map(|p| (p.as_str(), &b"x\n"[..])).collect();
+    let at_limit = repo_with(&files[..253]);
+    let scope = digest(&at_limit.subject.to_js_value());
+    let snapshot = materialize(&at_limit.path(), &at_limit.subject, &scope).unwrap();
+    assert_eq!(snapshot.members.len(), 256);
+    assert!(snapshot.members.contains_key(REVIEW_SUBJECT));
+    assert!(snapshot.members.contains_key(REVIEW_PATCH));
+
+    let over_limit = repo_with(&files);
+    let scope = digest(&over_limit.subject.to_js_value());
+    assert!(matches!(
+        materialize(&over_limit.path(), &over_limit.subject, &scope),
+        Err(Refusal::SnapshotBound(why)) if why.starts_with("more than 256 members")
+    ));
+}
+
+#[test]
+fn materialization_bounds_cumulative_blob_capture_even_with_a_small_patch() {
+    let content = b"plain text\n".repeat(50_000);
+    let r = repo_with(&[("first.txt", &content), ("second.txt", &content)]);
+    let p = r.path();
+    let baseline = r.subject.commit;
+    let materialize_head = || {
+        let tree = git(&p, &["rev-parse", "HEAD^{tree}"]);
+        let patch = patch_bytes(&p, &baseline, &tree).unwrap();
+        assert!(patch.len() < 500, "only executable bits changed");
+        let subject = Subject {
+            commit: git(&p, &["rev-parse", "HEAD"]),
+            tree,
+            patch_identity: sha256_hex(&patch),
+        };
+        materialize(&p, &subject, &digest(&subject.to_js_value()))
+    };
+
+    git(&p, &["update-index", "--chmod=+x", "first.txt"]);
+    git(&p, &["commit", "--quiet", "-m", "first mode"]);
+    assert_eq!(materialize_head().unwrap().members["first.txt"], content);
+
+    git(&p, &["reset", "--soft", &baseline]);
+    git(&p, &["update-index", "--chmod=+x", "second.txt"]);
+    git(&p, &["commit", "--quiet", "-m", "both modes"]);
+    assert!(matches!(
+        materialize_head(),
+        Err(Refusal::SnapshotBound(why)) if why.starts_with("git cat-file output exceeds")
     ));
 }
 
