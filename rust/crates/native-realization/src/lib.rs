@@ -20,7 +20,7 @@ pub mod codex {
 pub mod pi_host {
     /// SHA-256 of `PI_HOST_PROTOCOL.md`; the session protocol digest.
     pub const PROTOCOL_DIGEST: &str =
-        "56c00a88191d20113db419dda7c88d2d80f39679f5f1d138d6c1259936488744";
+        "88eb5ac1b96cdb137d7e7d2f961dce5249ac2c582ab4b3be3f2d9ba76b5da69c";
     pub const PROTOCOL: &str = include_str!("../PI_HOST_PROTOCOL.md");
     pub const REALIZATION: &str = "pi-host-v1";
     pub const EVIDENCE_CLASS: &str = "pi-host-held-requests-tool-relay-host-ledger-history-v1";
@@ -46,32 +46,6 @@ pub mod pi_host {
     /// remain. Anything that cannot be read this way is not verified.
     pub fn messages_account_identifier_absent(body: &serde_json::Value) -> bool {
         use serde_json::Value;
-        fn identifies(v: &Value, depth: u8) -> bool {
-            if depth > 4 {
-                return true;
-            }
-            match v {
-                Value::String(s) => {
-                    s.contains('@')
-                        || match strict::parse(s) {
-                            Some(
-                                inner @ (Value::Object(_) | Value::Array(_) | Value::String(_)),
-                            ) => identifies(&inner, depth + 1),
-                            Some(_) => false,
-                            // JSON that is not strict (duplicate keys) is not verified.
-                            None => serde_json::from_str::<Value>(s).is_ok(),
-                        }
-                }
-                Value::Array(a) => a.iter().any(|x| identifies(x, depth)),
-                Value::Object(o) => o.iter().any(|(k, x)| {
-                    let k = k.to_ascii_lowercase();
-                    k.contains("email")
-                        || (k == "account_uuid" && !x.is_null() && x.as_str() != Some(""))
-                        || identifies(x, depth)
-                }),
-                _ => false,
-            }
-        }
         let Some(metadata) = body.get("metadata") else {
             return true;
         };
@@ -94,6 +68,112 @@ pub mod pi_host {
             _ => false,
         });
         observed && !identifies(metadata, 0)
+    }
+
+    /// Whether `v` may carry an account identifier: at any level a key names
+    /// an email, an `account_uuid` holds anything but `null` or `""`, or a
+    /// string contains `@`; every string that is itself JSON is decoded
+    /// (strictly, at most four levels). Anything unreadable this way counts.
+    fn identifies(v: &serde_json::Value, depth: u8) -> bool {
+        use serde_json::Value;
+        if depth > 4 {
+            return true;
+        }
+        match v {
+            Value::String(s) => {
+                s.contains('@')
+                    || match strict::parse(s) {
+                        Some(inner @ (Value::Object(_) | Value::Array(_) | Value::String(_))) => {
+                            identifies(&inner, depth + 1)
+                        }
+                        Some(_) => false,
+                        // JSON that is not strict (duplicate keys) is not verified.
+                        None => serde_json::from_str::<Value>(s).is_ok(),
+                    }
+            }
+            Value::Array(a) => a.iter().any(|x| identifies(x, depth)),
+            Value::Object(o) => o.iter().any(|(k, x)| {
+                let k = k.to_ascii_lowercase();
+                k.contains("email")
+                    || (k == "account_uuid" && !x.is_null() && x.as_str() != Some(""))
+                    || identifies(x, depth)
+            }),
+            _ => false,
+        }
+    }
+
+    /// Top-level Responses request keys Pi's Codex client can send (protocol
+    /// "Account identifier"). Request-scoped identifier fields (`user`,
+    /// `safety_identifier`, `metadata`) are deliberately absent.
+    pub const RESPONSES_ACCOUNT_KEYS: [&str; 17] = [
+        "model",
+        "store",
+        "stream",
+        "instructions",
+        "input",
+        "text",
+        "include",
+        "prompt_cache_key",
+        "tool_choice",
+        "parallel_tool_calls",
+        "temperature",
+        "top_p",
+        "service_tier",
+        "tools",
+        "reasoning",
+        "background",
+        "max_output_tokens",
+    ];
+    /// Top-level Chat Completions request keys Pi's Completions client can
+    /// send, as for Responses.
+    pub const COMPLETIONS_ACCOUNT_KEYS: [&str; 22] = [
+        "model",
+        "messages",
+        "stream",
+        "stream_options",
+        "prompt_cache_key",
+        "prompt_cache_retention",
+        "store",
+        "max_tokens",
+        "max_completion_tokens",
+        "temperature",
+        "top_p",
+        "stop",
+        "tools",
+        "tool_stream",
+        "tool_choice",
+        "priority",
+        "enable_thinking",
+        "reasoning_effort",
+        "chat_template_kwargs",
+        "thinking",
+        "reasoning",
+        "provider",
+    ];
+
+    /// Verified absence of an account identifier in a request body of `wire`
+    /// (protocol "Account identifier"), shared by the Host's capture and the
+    /// runner's re-check. Messages: `messages_account_identifier_absent`.
+    /// Responses and Completions: an object whose top-level keys are all in
+    /// the wire's closed key list; `prompt_cache_key`, when present, a
+    /// string (Pi's session id); and no value outside the model-visible
+    /// content (`input`, `instructions`, `messages`, `tools`) that
+    /// `identifies`. Any other wire is not verified.
+    pub fn account_identifier_absent(wire: &str, body: &serde_json::Value) -> bool {
+        let (keys, content): (&[&str], &[&str]) = match wire {
+            "messages" => return messages_account_identifier_absent(body),
+            "responses" => (&RESPONSES_ACCOUNT_KEYS, &["input", "instructions", "tools"]),
+            "completions" => (&COMPLETIONS_ACCOUNT_KEYS, &["messages", "tools"]),
+            _ => return false,
+        };
+        let Some(object) = body.as_object() else {
+            return false;
+        };
+        object.iter().all(|(k, v)| {
+            keys.contains(&k.as_str())
+                && (k != "prompt_cache_key" || v.is_string())
+                && (content.contains(&k.as_str()) || !identifies(v, 0))
+        })
     }
 
     /// Strict JSON for the account check: a duplicate key could read as one
@@ -513,6 +593,52 @@ mod tests {
         assert_eq!(dynamic[0]["tools"][0]["name"], "snapshot_read");
         assert_eq!(dynamic[1]["tools"].as_array().unwrap().len(), 2);
         assert_eq!(receiver_tools().as_array().unwrap().len(), 3);
+    }
+
+    #[test]
+    fn responses_and_completions_account_identifier_absence_is_verified() {
+        use pi_host::account_identifier_absent as absent;
+        use serde_json::json;
+        // The observed Codex Responses shape, with Pi's session id.
+        let responses = json!({"model":"gpt-6-luna","store":false,"stream":true,
+            "instructions":"a@b in content is not an identifier field",
+            "input":[{"role":"user","content":"mail me at a@b"}],"text":{"verbosity":"low"},
+            "include":["reasoning.encrypted_content"],"prompt_cache_key":"0d1c-session",
+            "tool_choice":"auto","parallel_tool_calls":true,"reasoning":{"effort":"high"}});
+        assert!(absent("responses", &responses));
+        for (key, value) in [
+            ("user", json!("u-1")),
+            ("safety_identifier", json!("s")),
+            ("metadata", json!({})),
+            ("prompt_cache_key", json!("a@b")),
+            ("prompt_cache_key", json!(7)),
+            ("reasoning", json!({"summary":"{\"email\":\"x\"}"})),
+            ("text", json!({"account_uuid":"5f0c"})),
+        ] {
+            let mut b = responses.clone();
+            b[key] = value;
+            assert!(!absent("responses", &b), "{key}");
+        }
+        // The observed OpenRouter Completions shape.
+        let completions = json!({"model":"~deepseek/deepseek-v4-flash-latest:floor",
+            "messages":[{"role":"user","content":"q"}],"stream":true,
+            "stream_options":{"include_usage":true},"store":false,
+            "reasoning":{"effort":"high"},"tools":[]});
+        assert!(absent("completions", &completions));
+        for (key, value) in [
+            ("user", json!("u-1")),
+            ("metadata", json!({"k":"v"})),
+            ("provider", json!({"order":["x@y"]})),
+        ] {
+            let mut b = completions.clone();
+            b[key] = value;
+            assert!(!absent("completions", &b), "{key}");
+        }
+        assert!(!absent("completions", &json!([])));
+        assert!(!absent("other", &completions));
+        // Messages keeps its closed metadata shape.
+        assert!(absent("messages", &json!({"model":"m"})));
+        assert!(!absent("messages", &json!({"metadata":"x"})));
     }
 
     #[test]

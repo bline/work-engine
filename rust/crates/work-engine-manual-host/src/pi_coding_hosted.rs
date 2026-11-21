@@ -25,6 +25,8 @@ pub const HEAD_TIMEOUT_MS: u64 = 60_000;
 /// Upstream idle read bound set by this profile, never above the attempt
 /// deadline.
 pub const READ_IDLE_MS: u64 = 30_000;
+/// Schema of an attempt's retained request head (`*.request-head.json`).
+pub const REQUEST_HEAD_SCHEMA: &str = "work-engine.pi-host-request-head.v1";
 /// The head window a held head must be relayed or refused within ends this
 /// long before Pi's head timeout, counted from the Host's receipt of the
 /// fetch: the container's timer starts earlier, before the fetch frame
@@ -351,8 +353,19 @@ pub trait HostedProviderTransport {
     /// it is never provider entry; it runs outside the lifecycle store's
     /// transaction.
     fn connect(&mut self, route: &HostedRoute, deadline_ms: i64) -> Result<Connection>;
+    /// The exact HTTP/1.1 request head `send` writes for `request` on
+    /// `route`. With `redacted`, every access header value is replaced by
+    /// `REDACTED` (names kept), so the result is retainable evidence of the
+    /// head as transmitted. Writes nothing.
+    fn request_head(
+        &mut self,
+        route: &HostedRoute,
+        request: &HostedRequest,
+        redacted: bool,
+    ) -> Result<String>;
     /// Write one attempt's request on `connection` and return its response.
     /// Called only inside a gate-admitted dispatch, before `deadline_ms`.
+    /// The head is `request_head(route, request, false)`.
     fn send(
         &mut self,
         connection: Connection,
@@ -372,12 +385,16 @@ pub fn left_ms(deadline_ms: i64, cap: u64) -> Result<Duration> {
         .map(|v| Duration::from_millis(v.min(cap)))
         .ok_or_else(|| Error::Refused("provider attempt deadline passed".into()))
 }
+/// The value retained in place of each access header value.
+pub const REDACTED: &str = "[redacted]";
 /// The HTTP/1.1 request head for `request` to `endpoint`: fixed host and
-/// path, the given access headers, the allowlisted container headers.
+/// path, the given access headers (values replaced by `REDACTED` when
+/// `redacted`), the allowlisted container headers.
 pub fn request_head(
     endpoint: Endpoint,
     access: &[(&str, &str)],
     request: &HostedRequest,
+    redacted: bool,
 ) -> String {
     let (host, path) = endpoint.target(request);
     let mut head = format!(
@@ -387,6 +404,7 @@ pub fn request_head(
         request.body.len()
     );
     for (k, v) in access {
+        let v = if redacted { REDACTED } else { v };
         head.push_str(&format!("{k}: {v}\r\n"));
     }
     for (k, v) in &request.headers {
@@ -471,16 +489,29 @@ impl HostedProviderTransport for LoopbackTransport {
             }),
         })
     }
+    fn request_head(
+        &mut self,
+        route: &HostedRoute,
+        request: &HostedRequest,
+        redacted: bool,
+    ) -> Result<String> {
+        let endpoint = Endpoint::parse(&route.endpoint)
+            .ok_or_else(|| Error::Refused("route endpoint".into()))?;
+        let bearer = format!("Bearer {}", self.token(&route.payer)?);
+        Ok(request_head(
+            endpoint,
+            &[("Authorization", &bearer)],
+            request,
+            redacted,
+        ))
+    }
     fn send(
         &mut self,
         connection: Connection,
         route: &HostedRoute,
         request: &HostedRequest,
     ) -> Result<Upstream> {
-        let endpoint = Endpoint::parse(&route.endpoint)
-            .ok_or_else(|| Error::Refused("route endpoint".into()))?;
-        let bearer = format!("Bearer {}", self.token(&route.payer)?);
-        let head = request_head(endpoint, &[("Authorization", &bearer)], request);
+        let head = self.request_head(route, request, false)?;
         let Connection { mut stream, abort } = connection;
         stream.write_all(head.as_bytes())?;
         stream.write_all(&request.body)?;
@@ -542,6 +573,9 @@ struct Fetch {
     messages: Option<Value>,
     /// When the Host received the fetch: the head window's start.
     received: Instant,
+    /// Completions: the container's original body, when the forwarded body
+    /// differs from it (the Host rewrites the model to the transmitted slug).
+    original: Option<Vec<u8>>,
 }
 /// The canonical continuity rule, shared with the task host
 /// (`native-realization` `pi_host::canonical`).
@@ -825,6 +859,14 @@ impl Host {
                 sha256: digest(&fetch.body),
             });
             self.save()?;
+            // Completions: the container-authored body before the Host's
+            // model rewrite, retained beside the forwarded one.
+            if let Some(original) = &fetch.original {
+                self.hosted_retain_named(
+                    &format!("coding-hosted-{request}.original.body.json"),
+                    original,
+                )?;
+            }
             if let Some(messages) = &fetch.messages {
                 self.hosted.last_messages = Some(messages.clone());
             }
@@ -873,7 +915,9 @@ impl Host {
                     && url
                         .strip_prefix("http://127.0.0.1:")
                         .or_else(|| url.strip_prefix("http://localhost:"))
-                        .is_some_and(|rest| rest.contains('/') && rest.ends_with("/chat/completions")) =>
+                        .is_some_and(|rest| {
+                            rest.contains('/') && rest.ends_with("/chat/completions")
+                        }) =>
             {
                 false
             }
@@ -956,6 +1000,7 @@ impl Host {
                 beta,
                 messages: Some(parsed["messages"].clone()),
                 received,
+                original: None,
             });
         }
         if wire == Wire::Completions {
@@ -963,6 +1008,7 @@ impl Host {
             // Host owns the Layer B append: forward the body with the
             // transmitted (`:floor`) model slug, never the offline Layer A id.
             let transmitted_body = completions_forward_body(&body, &transmitted);
+            let original = (transmitted_body != body).then_some(body);
             return Ok(Fetch {
                 headers,
                 body: transmitted_body,
@@ -970,6 +1016,7 @@ impl Host {
                 beta,
                 messages: None,
                 received,
+                original,
             });
         }
         // R-a: body fields the Host pins on real routes. Nothing stored at the
@@ -1004,6 +1051,7 @@ impl Host {
             beta,
             messages: None,
             received,
+            original: None,
         })
     }
     /// Messages body policy: only the known top-level keys (so no
@@ -1081,15 +1129,16 @@ impl Host {
         let object = body
             .as_object()
             .ok_or_else(|| Error::Refused("provider fetch body is not an object".into()))?;
-        if let Some(key) = object.keys().find(|k| !COMPLETIONS_KEYS.contains(&k.as_str())) {
+        if let Some(key) = object
+            .keys()
+            .find(|k| !COMPLETIONS_KEYS.contains(&k.as_str()))
+        {
             return refuse(format!(
                 "provider fetch body policy: field {key} is not allowed"
             ));
         }
         if body["stream_options"]["include_usage"] != true {
-            return refuse(
-                "provider fetch body policy: stream_options.include_usage must be true",
-            );
+            return refuse("provider fetch body policy: stream_options.include_usage must be true");
         }
         // Pi 1.5.0's openai-completions client sets `store:false` (supportsStore)
         // for openrouter; `store` must be exactly false. The max-token bound, if
@@ -1100,8 +1149,7 @@ impl Host {
             return refuse("provider fetch body policy: store must be false");
         }
         if let Some(max) = body["max_completion_tokens"].as_u64()
-            && (max == 0
-                || max > plan.selected()?["maxTokens"].as_u64().unwrap_or(0))
+            && (max == 0 || max > plan.selected()?["maxTokens"].as_u64().unwrap_or(0))
         {
             return refuse(
                 "provider fetch body policy: max_completion_tokens exceeds catalog bound",
@@ -1114,7 +1162,10 @@ impl Host {
         };
         // Chat Completions tools are OpenAI `function` tools; any other type is
         // a provider-hosted tool and refused.
-        if tools.iter().any(|t| !t.is_object() || t["type"] != "function") {
+        if tools
+            .iter()
+            .any(|t| !t.is_object() || t["type"] != "function")
+        {
             return refuse("provider fetch body policy: provider-hosted tool");
         }
         if _analysis {
@@ -1423,6 +1474,40 @@ impl Host {
             self.hosted_uncertain(s.request, attempt, routed, "hosted transport absent")?;
             return refuse("hosted transport absent");
         };
+        // The exact head the transport will write, access values redacted,
+        // retained with its digest on the attempt before any upstream byte.
+        let head = transport
+            .request_head(&route, &request, true)
+            .and_then(|head| {
+                serde_json::to_vec(&json!({"schema":REQUEST_HEAD_SCHEMA,
+                    "request":s.request,"attempt":attempt,"route":route.id,
+                    "redacted":REDACTED,"head":head}))
+                .map_err(Error::from)
+            });
+        let retained = head.and_then(|document| {
+            self.hosted_retain(s.request, attempt, "request-head.json", &document)
+        });
+        let head_sha256 = match retained {
+            Ok(sha) => sha,
+            Err(e) => {
+                self.hosted_transport = Some(transport);
+                self.hosted_uncertain(s.request, attempt, routed, "request head not retained")?;
+                return refuse(format!("request head not retained: {e}"));
+            }
+        };
+        if let Some(a) = self
+            .journal
+            .coding
+            .as_mut()
+            .unwrap()
+            .provider_requests
+            .get_mut(&s.request)
+            .and_then(|r| r.attempts.last_mut())
+            .filter(|a| a.attempt == attempt)
+        {
+            a.request_head_sha256 = Some(head_sha256);
+        }
+        self.save()?;
         let Some(mut gate) = self.coding_gate.take() else {
             self.hosted_transport = Some(transport);
             self.hosted_uncertain(s.request, attempt, routed, "coding lifecycle gate missing")?;
@@ -1851,10 +1936,7 @@ impl Host {
             // slug (plan.model, Layer B): OpenRouter resolves `latest:floor` to
             // a concrete checkpoint. It must belong to the pinned model's
             // floor family (checked by `provider_observation`), not equal it.
-            if wire != Wire::Completions
-                && model
-                    .as_ref()
-                    .is_some_and(|model| model != &plan.model)
+            if wire != Wire::Completions && model.as_ref().is_some_and(|model| model != &plan.model)
             {
                 self.journal.coding.as_mut().unwrap().provider_failed = true;
                 self.save()?;
@@ -2380,6 +2462,21 @@ mod tests {
                 abort: Box::new(|| {}),
             })
         }
+        fn request_head(
+            &mut self,
+            route: &HostedRoute,
+            r: &HostedRequest,
+            redacted: bool,
+        ) -> Result<String> {
+            let endpoint = Endpoint::parse(&route.endpoint)
+                .unwrap_or(Endpoint::Loopback(([127, 0, 0, 1], 9).into()));
+            Ok(request_head(
+                endpoint,
+                &[("Authorization", "Bearer fake-access")],
+                r,
+                redacted,
+            ))
+        }
         fn send(
             &mut self,
             _: Connection,
@@ -2744,8 +2841,10 @@ mod tests {
             [
                 "1-1.head.json",
                 "1-1.refusal.body",
+                "1-1.request-head.json",
                 "1-2.head.json",
                 "1-2.relay.json",
+                "1-2.request-head.json",
                 "1-2.stream.sse",
                 "1.body.json"
             ]
@@ -2850,6 +2949,38 @@ mod tests {
         assert_eq!(head["headHeaders"], json!([["retry-after", "60"]]));
     }
     #[test]
+    fn each_attempt_retains_its_redacted_request_head_before_dispatch() {
+        let (dir, mut h, mut w) = host(vec![refusal(429), completed()], None);
+        let g = grant(&mut h, &mut w);
+        push(&mut h, &mut w, fetch(&g)).unwrap();
+        relay_to_end(&mut h, &mut w, &g);
+        let r = request(&h);
+        assert_eq!(r.attempts.len(), 2);
+        for a in &r.attempts {
+            let path = dir
+                .path()
+                .join(format!("coding-hosted-1-{}.request-head.json", a.attempt));
+            let bytes = fs::read(&path).unwrap();
+            assert_eq!(
+                a.request_head_sha256.as_deref(),
+                Some(digest(&bytes).as_str())
+            );
+            assert!(h.journal.artifacts.iter().any(|x| x.path == path));
+            let doc: Value = serde_json::from_slice(&bytes).unwrap();
+            assert_eq!(doc["schema"], REQUEST_HEAD_SCHEMA);
+            assert_eq!(
+                (doc["request"].as_u64(), doc["attempt"].as_u64()),
+                (Some(1), Some(a.attempt))
+            );
+            assert_eq!(doc["route"], a.route.as_str());
+            let head = doc["head"].as_str().unwrap();
+            assert!(head.starts_with("POST "), "{head}");
+            assert!(head.contains(&format!("X-Request-Id: 1-{}\r\n", a.attempt)));
+            assert!(head.contains(&format!("Authorization: {REDACTED}\r\n")));
+            assert!(!head.contains("fake-access"));
+        }
+    }
+    #[test]
     fn head_evidence_replaces_a_stale_partial_by_rename() {
         // A junk `.partial` left by an earlier failed write, longer than any
         // head evidence: the writer must truncate it (not open it
@@ -2877,6 +3008,7 @@ mod tests {
             [
                 "1-1.head.json",
                 "1-1.relay.json",
+                "1-1.request-head.json",
                 "1-1.stream.sse",
                 "1.body.json"
             ]
@@ -2897,7 +3029,12 @@ mod tests {
         assert!(head["headMs"].is_u64());
         assert_eq!(
             hosted_artifacts(&dir, &h),
-            ["1-1.head.json", "1-1.stream.sse", "1.body.json"]
+            [
+                "1-1.head.json",
+                "1-1.request-head.json",
+                "1-1.stream.sse",
+                "1.body.json"
+            ]
         );
     }
     #[test]
@@ -3760,17 +3897,33 @@ mod tests {
         relay_to_end(&mut h, &mut w, &g);
         // The marker is never applied upstream as the real key; the Host swaps it.
         for (_, headers) in w.opened.lock().unwrap().iter() {
-            assert!(!headers.contains_key("authorization") || headers["authorization"] != "Bearer nonsecret-marker");
+            assert!(
+                !headers.contains_key("authorization")
+                    || headers["authorization"] != "Bearer nonsecret-marker"
+            );
         }
         let r = request(&h);
         assert_eq!(r.attempts[0].disposition, AttemptDisposition::Completed);
         assert_eq!(r.backend_model.as_deref(), Some(OR_RESOLVED));
-        assert_eq!(r.raw_terminal.as_ref().unwrap()["eventType"], "chat_completion");
+        assert_eq!(
+            r.raw_terminal.as_ref().unwrap()["eventType"],
+            "chat_completion"
+        );
         // Layer B (the forwarded slug) is what left the Host, never Layer A.
         let body_path = dir.path().join("coding-hosted-1.body.json");
         let forwarded: Value = serde_json::from_slice(&fs::read(&body_path).unwrap()).unwrap();
         assert_eq!(forwarded["model"], OR_TRANSMITTED);
         assert_eq!(forwarded["reasoning"]["effort"], "high");
+        // The container's original body (Layer A) is retained beside it,
+        // byte for byte, and registered.
+        let original_path = dir.path().join("coding-hosted-1.original.body.json");
+        assert_eq!(fs::read(&original_path).unwrap(), body);
+        assert!(
+            h.journal
+                .artifacts
+                .iter()
+                .any(|a| a.path == original_path && a.sha256 == digest(&body))
+        );
         // The container completion settles the Host-held reservation.
         push(
             &mut h,
@@ -3799,10 +3952,9 @@ mod tests {
         }))
         .unwrap();
         match push(&mut h, &mut w, openrouter_fetch(&g, &body)) {
-            Err(Error::Refused(m)) => assert!(
-                m.contains("reasoning.effort"),
-                "reason names effort: {m}"
-            ),
+            Err(Error::Refused(m)) => {
+                assert!(m.contains("reasoning.effort"), "reason names effort: {m}")
+            }
             other => panic!("expected refusal, got {other:?}"),
         }
         assert!(w.opened.lock().unwrap().is_empty());
@@ -3889,7 +4041,10 @@ mod tests {
         assert!(!accept(&doubled));
         // Freeze the exact strings so a future catalog or path change is caught.
         assert_eq!(good, "https://openrouter.ai/api/v1/chat/completions");
-        assert_eq!(doubled, "https://openrouter.ai/api/v1/api/v1/chat/completions");
+        assert_eq!(
+            doubled,
+            "https://openrouter.ai/api/v1/api/v1/chat/completions"
+        );
     }
 
     /// A loopback Completions route (offline mock) must have a real target path

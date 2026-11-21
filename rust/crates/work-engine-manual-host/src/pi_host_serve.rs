@@ -141,10 +141,10 @@ pub struct Identity {
 
 impl Identity {
     pub fn wire(&self) -> &'static str {
-        if self.provider == "claude-sdk" {
-            "messages"
-        } else {
-            "responses"
+        match self.provider.as_str() {
+            "claude-sdk" => "messages",
+            "openrouter" => "completions",
+            _ => "responses",
         }
     }
     fn thread_id(&self) -> String {
@@ -925,8 +925,8 @@ fn build_capture(
     let mut attempt_records = vec![];
     let mut total = 0u64;
     // `contains_account_identifier` is false only when the shared absence
-    // check verified every request body of the turn (Messages wire only).
-    let mut account = wire != "messages";
+    // check verified every request body of the turn, on every wire.
+    let mut account = false;
     // (wire call id) -> [(request, attempt, response id)]
     let mut produced: BTreeMap<String, Vec<(u64, u64, Option<String>)>> = BTreeMap::new();
     if last_request < a.first_request {
@@ -950,13 +950,24 @@ fn build_capture(
         let body_path = id.state_dir.join(format!("coding-hosted-{n}.body.json"));
         let body = fs::read(&body_path).ok();
         let body_sha = body.as_deref().map(digest);
-        if wire == "messages" {
-            let verified = body
-                .as_deref()
+        // Completions: the container's body before the Host's model rewrite,
+        // retained beside the forwarded body when they differ.
+        let original_path = id
+            .state_dir
+            .join(format!("coding-hosted-{n}.original.body.json"));
+        let original = fs::read(&original_path).ok();
+        // The forwarded body always; the original when retained.
+        let checked = std::iter::once(body.as_deref()).chain(original.as_deref().map(Some));
+        for retained in checked {
+            let verified = retained
                 .and_then(|b| serde_json::from_slice::<Value>(b).ok())
-                .is_some_and(|v| pi_host::messages_account_identifier_absent(&v));
+                .is_some_and(|v| pi_host::account_identifier_absent(wire, &v));
             account |= !verified;
         }
+        let original = original.map(|o| {
+            json!({"path":original_path,"sha256":digest(&o),
+                "rewrite":"completions-transmitted-model"})
+        });
         let attempts = r["attempts"].as_array().cloned().unwrap_or_default();
         if attempts.is_empty() {
             // A request the Host refused before reserving any attempt
@@ -986,10 +997,23 @@ fn build_capture(
                     "request {n} attempt {k} body is not the retained body"
                 ));
             }
+            // The exact head this attempt wrote, access values redacted.
+            let head_path = id
+                .state_dir
+                .join(format!("coding-hosted-{n}-{k}.request-head.json"));
+            let head_sha = fs::read(&head_path).ok().map(|h| digest(&h));
+            if head_sha.is_none() || at["request_head_sha256"].as_str() != head_sha.as_deref() {
+                reasons.push(format!(
+                    "request {n} attempt {k} request head is not the retained head"
+                ));
+            }
             total += body.as_ref().map_or(0, |b| b.len() as u64);
-            payloads.push(json!({"inference_call_id":format!("request-{n}"),"physical_send":k,
+            payloads.push(
+                json!({"inference_call_id":format!("request-{n}"),"physical_send":k,
                 "representation":"wire","original_codec":"identity","path":body_path,
-                "sha256":body_sha,"route":at["route"],"payer":at["payer"],"disposition":disposition}));
+                "sha256":body_sha,"route":at["route"],"payer":at["payer"],"disposition":disposition,
+                "request_head":{"path":head_path,"sha256":head_sha},"original":original}),
+            );
             let stream_path = id
                 .state_dir
                 .join(format!("coding-hosted-{n}-{k}.stream.sse"));
@@ -1329,11 +1353,18 @@ mod tests {
                 sse(events),
             )
             .unwrap();
+            let head = format!("{{\"head\":\"POST /v1/messages HTTP/1.1 {n}\"}}");
+            fs::write(
+                dir.join(format!("coding-hosted-{n}-1.request-head.json")),
+                &head,
+            )
+            .unwrap();
             requests.insert(
                 n.to_string(),
                 json!({"settled_microusd":10,"attempts":[{"attempt":1,
                 "route":"primary","payer":"synthetic","disposition":"completed",
-                "request_body_sha256":digest(body.as_bytes())}]}),
+                "request_body_sha256":digest(body.as_bytes()),
+                "request_head_sha256":digest(head.as_bytes())}]}),
             );
         }
         fs::write(
@@ -1603,11 +1634,13 @@ mod tests {
             json!({"attempt":1,"route":"primary","payer":"synthetic","disposition":"not_dispatched"}),
         );
         fs::write(&path, state.to_string()).unwrap();
-        fs::rename(
-            dir.path().join("coding-hosted-1-1.stream.sse"),
-            dir.path().join("coding-hosted-1-2.stream.sse"),
-        )
-        .unwrap();
+        for kind in ["stream.sse", "request-head.json"] {
+            fs::rename(
+                dir.path().join(format!("coding-hosted-1-1.{kind}")),
+                dir.path().join(format!("coding-hosted-1-2.{kind}")),
+            )
+            .unwrap();
+        }
         let capture = build_capture(&id, &active(), 1, 3, None, &[]).unwrap();
         assert_eq!(
             capture["attempts"],
@@ -1807,6 +1840,82 @@ mod tests {
         fs::remove_file(&body).unwrap();
         assert_eq!(flag(2), true, "an unread body is not verified");
         assert_eq!(flag(1), false);
+    }
+
+    /// Each dispatched attempt binds its retained request head; a missing or
+    /// changed head makes the turn ineligible.
+    #[test]
+    fn capture_binds_each_attempts_request_head() {
+        let dir = tempfile::tempdir().unwrap();
+        let id = identity(dir.path());
+        let a = active();
+        journal(dir.path(), &[vec![]]);
+        let capture = build_capture(&id, &a, 1, 0, None, &[]).unwrap();
+        let head = dir.path().join("coding-hosted-1-1.request-head.json");
+        assert_eq!(capture["payloads"][0]["request_head"]["path"], json!(head));
+        assert_eq!(
+            capture["payloads"][0]["request_head"]["sha256"],
+            digest(&fs::read(&head).unwrap())
+        );
+        let reasons = |c: &Value| c["eligibility"]["reasons"].to_string();
+        assert!(!reasons(&capture).contains("request head"));
+        fs::write(&head, "changed").unwrap();
+        let changed = build_capture(&id, &a, 1, 0, None, &[]).unwrap();
+        assert!(reasons(&changed).contains("request head is not the retained head"));
+        fs::remove_file(&head).unwrap();
+        let absent = build_capture(&id, &a, 1, 0, None, &[]).unwrap();
+        assert!(reasons(&absent).contains("request head is not the retained head"));
+    }
+
+    /// Responses and Completions bodies get the wire's own absence check;
+    /// on Completions the retained original body is bound and checked too.
+    #[test]
+    fn capture_account_flag_and_original_per_wire() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut id = identity(dir.path());
+        let a = active();
+        journal(dir.path(), &[vec![]]);
+        let body = dir.path().join("coding-hosted-1.body.json");
+        let flag = |id: &Identity| {
+            build_capture(id, &a, 1, 0, None, &[]).unwrap()["contains_account_identifier"].clone()
+        };
+        id.provider = "openai-codex".into();
+        assert_eq!(id.wire(), "responses");
+        let responses = json!({"model":"gpt-6-luna","store":false,"stream":true,
+            "instructions":"i","input":[],"prompt_cache_key":"s0"});
+        fs::write(&body, responses.to_string()).unwrap();
+        assert_eq!(flag(&id), false);
+        let mut with_user = responses.clone();
+        with_user["user"] = json!("u-1");
+        fs::write(&body, with_user.to_string()).unwrap();
+        assert_eq!(flag(&id), true);
+        id.provider = "openrouter".into();
+        assert_eq!(id.wire(), "completions");
+        let forwarded = json!({"model":"m:floor","messages":[],"stream":true,
+            "stream_options":{"include_usage":true},"store":false});
+        fs::write(&body, forwarded.to_string()).unwrap();
+        assert_eq!(flag(&id), false);
+        let capture = build_capture(&id, &a, 1, 0, None, &[]).unwrap();
+        assert_eq!(capture["wire"], "completions");
+        assert_eq!(capture["payloads"][0]["original"], Value::Null);
+        let original = dir.path().join("coding-hosted-1.original.body.json");
+        let mut container = forwarded.clone();
+        container["model"] = json!("m");
+        fs::write(&original, container.to_string()).unwrap();
+        let capture = build_capture(&id, &a, 1, 0, None, &[]).unwrap();
+        assert_eq!(capture["payloads"][0]["original"]["path"], json!(original));
+        assert_eq!(
+            capture["payloads"][0]["original"]["sha256"],
+            digest(container.to_string().as_bytes())
+        );
+        assert_eq!(
+            capture["payloads"][0]["original"]["rewrite"],
+            "completions-transmitted-model"
+        );
+        assert_eq!(capture["contains_account_identifier"], false);
+        container["metadata"] = json!({"k":"v"});
+        fs::write(&original, container.to_string()).unwrap();
+        assert_eq!(flag(&id), true, "the original body is checked too");
     }
 
     #[test]

@@ -107,7 +107,13 @@ Schema `work-engine.pi-host-capture.v1`, one per turn: for every physical
 send of the turn (each Host attempt of each Pi provider request) the retained
 request body's path and digest as a payload (`inference_call_id`
 `request-<n>`, `physical_send` the attempt number, `representation` `wire`,
-`original_codec` `identity`); every attempt of each of the turn's provider
+`original_codec` `identity`), and with it the attempt's retained request
+head (`request_head` path and digest: the exact HTTP head the Host wrote,
+access header values replaced by `[redacted]`, its digest recorded on the
+attempt before any upstream byte) and, on Completions, the container's
+original body before the Host's model rewrite (`original` path and digest,
+`rewrite` `completions-transmitted-model`; absent when the forwarded body
+equals it); every attempt of each of the turn's provider
 requests, including one never dispatched, as `attempts` (`request`,
 `attempt`, `disposition`, `route`, `payer`); the retained response stream of each attempt by
 path and digest; a calls bundle (`call_id`, `inference_call_id`,
@@ -123,7 +129,8 @@ the turn ended; and an eligibility verdict with reasons.
 Eligible means: the turn ended with a final answer; every relayed call was
 answered with `success: true` and joined; every physical send's body is retained with a matching
 digest and passed the Host's request policy (model, pinned tools, body
-bounds, no account identifier); every attempt relayed to Pi has its response stream retained; every
+bounds, no account identifier); every dispatched attempt's request head is
+retained with the digest it recorded; every attempt relayed to Pi has its response stream retained; every
 attempt is settled and none is uncertain; on `claude-sdk`, the receiver's
 forwarder answered no Claude Code request locally, by the count the receiver
 reports with each provider request and at the turn's end; the observation
@@ -143,6 +150,21 @@ or nested deeper, refuses. The body also refuses if, at any level, a key
 names an email, an `account_uuid` holds anything other than `null` or an
 empty string, or a string contains `@`. Device and session ids in
 `metadata.user_id` remain and are retained with the body.
+
+On the Responses and Completions wires the capture's
+`contains_account_identifier` is false only when every retained body (on
+Completions, the forwarded body and any retained original) is an object
+whose top-level keys are all among the keys Pi's client for that wire sends
+(`native-realization` `RESPONSES_ACCOUNT_KEYS`, `COMPLETIONS_ACCOUNT_KEYS`;
+request-scoped identifier fields such as `user`, `safety_identifier` and
+`metadata` are not among them); `prompt_cache_key`, when present, is a
+string (Pi's session id); and no value outside the model-visible content
+(`input`, `instructions`, `messages`, `tools`) names an email, holds an
+`account_uuid` other than `null` or an empty string, or contains `@`, with
+JSON strings decoded as above. The Host does not refuse such a request
+before dispatch on these wires; the flag records the check, and a consumer
+that retains bodies refuses a capture whose flag is not false. Model-visible
+content is not inspected on any wire.
 
 ## Bounds
 
