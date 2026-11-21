@@ -24,7 +24,9 @@ use std::{
 const MAX_METADATA: usize = 128 * 1024;
 const MAX_RETAINED: usize = 8 * 1024 * 1024;
 // Linux host only; O_NOFOLLOW and O_DIRECTORY apply to the actual opened object.
-const O_NOFOLLOW: i32 = 0x20000;
+pub(crate) const O_NOFOLLOW: i32 = 0x20000;
+/// Opening a FIFO does not wait for a writer.
+pub(crate) const O_NONBLOCK: i32 = 0o4000;
 const O_DIRECTORY: i32 = 0x10000;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

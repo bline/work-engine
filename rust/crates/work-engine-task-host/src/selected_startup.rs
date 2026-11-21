@@ -4368,22 +4368,27 @@ mod tests {
         let fixture = Fixture::new();
         let directory = fixture.config.parent().unwrap().to_owned();
         crate::validate_startup(&startup_from(&fixture, |_| {})).unwrap();
-        let root = directory.join("native-root");
-        fs::create_dir(&root).unwrap();
-        fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
         let host = directory.join("work-engine-pi-host");
         fs::write(&host, b"pinned pi host").unwrap();
         let profile = directory.join("composition.json");
         fs::write(&profile, b"{\"schema\":\"profile\"}").unwrap();
-        // The launch configuration pre-written for the runner (until step 2
-        // composes it per launch).
-        write_private_json(
-            &root.join("pi-host.json"),
-            &json!({"host_sha256":sha_file(&host).unwrap(),
-                "serve_config":root.join("serve-config.json"),"serve_config_sha256":"b".repeat(64),
-                "job_sha256":"c".repeat(64),"state_dir":root.join("pi-host-state"),
-                "provider":"claude-sdk","model":"claude-haiku-5-5","turn_deadline_secs":300}),
-        );
+        // A native root with the launch configuration pre-written for the
+        // runner (until step 2 composes it per launch).
+        let native_root = |name: &str| {
+            let root = directory.join(name);
+            fs::create_dir(&root).unwrap();
+            fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+            write_private_json(
+                &root.join("pi-host.json"),
+                &json!({"host_sha256":sha_file(&host).unwrap(),
+                    "serve_config":root.join("serve-config.json"),"serve_config_sha256":"b".repeat(64),
+                    "job_sha256":"c".repeat(64),"state_dir":root.join("pi-host-state"),
+                    "provider":"claude-sdk","model":"claude-haiku-5-5","turn_deadline_secs":300}),
+            );
+            root
+        };
+        let root = native_root("native-root");
+        let unplain_root = native_root("native+root");
         let composition = json!({"profile":profile,"profile_sha256":sha_file(&profile).unwrap(),
             "host_sha256":sha_file(&host).unwrap(),
             "credentials_file":"/home/operator/.config/work-engine/hosted-credentials.json"});
@@ -4394,11 +4399,17 @@ mod tests {
                 native["provider_route"] = json!("pi-host-v1");
                 native["simulator_base_url"] = json!("");
                 native["executable"] = json!(host);
+                native["root"] = json!(root);
                 native["pi_host_composition"] = composition.clone();
                 edit(c);
             })
         };
-        crate::validate_startup(&pi_host(&|_| {})).unwrap();
+        // Outside controlled proof only an installed research startup selects
+        // the Pi Host (until step 2 binds its environment); this one has none.
+        assert_eq!(
+            crate::validate_startup(&pi_host(&|_| {})).is_ok(),
+            cfg!(feature = "controlled-proof")
+        );
         for (name, edit) in [
             (
                 "missing composition",
@@ -4426,6 +4437,9 @@ mod tests {
             }),
             ("base url", &|c: &mut Value| {
                 c["lifecycle"]["native"]["simulator_base_url"] = json!("http://127.0.0.1:1/v1")
+            }),
+            ("unmountable native root", &|c: &mut Value| {
+                c["lifecycle"]["native"]["root"] = json!(unplain_root)
             }),
             ("provider identity", &|c: &mut Value| {
                 c["provider_identity"] = json!("native-sim-proof-v1")

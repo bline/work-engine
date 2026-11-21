@@ -101,8 +101,9 @@ fn file_sha(path: &Path) -> Result<String, StoreError> {
         .map_err(|_| StoreError::Rejected)
 }
 
-/// The composition profile is a small JSON document.
-const MAX_PROFILE_BYTES: u64 = 1024 * 1024;
+/// The composition profile is a small JSON document: the Host's own bound
+/// (`pi_host_prepare::load_profile`).
+const MAX_PROFILE_BYTES: u64 = 64 * 1024;
 
 /// Why an installed Pi Host composition is refused. Each class names one
 /// installed fact and carries no path or digest value.
@@ -1080,6 +1081,13 @@ mod tests {
         assert_eq!(
             composition(&|c| c.profile = dir.path().join("absent.json")),
             Err(R::ProfileUnavailable)
+        );
+        let oversized = dir.path().join("oversized.json");
+        std::fs::write(&oversized, vec![b' '; 64 * 1024 + 1]).unwrap();
+        assert_eq!(
+            composition(&|c| c.profile = oversized.clone()),
+            Err(R::ProfileUnavailable),
+            "the Host's 64 KiB profile bound"
         );
         let link = dir.path().join("linked.json");
         std::os::unix::fs::symlink(dir.path().join("composition.json"), &link).unwrap();

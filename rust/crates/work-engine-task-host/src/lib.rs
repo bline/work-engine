@@ -1754,6 +1754,16 @@ fn validate_file(path: &Path) -> Result<(), HostError> {
     }
     Ok(())
 }
+/// The runner spawns the Pi Host with the inherited environment until step 2
+/// binds it to the installed credentials file. Until then only installed
+/// research startups, whose install check isolates those credentials, may
+/// select the Pi Host outside controlled proof.
+fn pi_host_startup_admitted(s: &HostStartup) -> bool {
+    cfg!(feature = "controlled-proof")
+        || s.research
+            .as_ref()
+            .is_some_and(|research| research.installation.is_some())
+}
 fn validate_startup(s: &HostStartup) -> Result<(), HostError> {
     // The Pi Host has no provider endpoint: its installed composition pins the
     // profile and the Host binary instead. Checked first so a refusal is named.
@@ -1764,6 +1774,17 @@ fn validate_startup(s: &HostStartup) -> Result<(), HostError> {
         .filter(|native| native.provider_route == NativeProviderRoute::PiHostV1);
     if let Some(native) = pi_host {
         lifecycle_service::verify_pi_host_composition(native)
+            .map_err(|refusal| startup_invalid(refusal.reason()))?;
+        if !pi_host_startup_admitted(s) {
+            return Err(startup_invalid(
+                "pi host route requires an installed research startup outside controlled proof",
+            ));
+        }
+        let runtime_root = native
+            .pi_host_composition
+            .as_ref()
+            .and_then(|composition| pi_host_isolation::profile_runtime_root(&composition.profile));
+        pi_host_isolation::check_native_root(&native.root, runtime_root.as_deref())
             .map_err(|refusal| startup_invalid(refusal.reason()))?;
     }
     lifecycle_service::validate_config(&s.lifecycle, true, true, false)
