@@ -563,6 +563,222 @@ pub(super) fn validate_with_thinking(
     })
 }
 
+/// Battery grammar: any number of complete SDK tool exchanges can occur in
+/// a domain invocation, including one with a previously settled history.
+/// Each call must join its own Host intent and exact observed result in the
+/// original SDK sequence; no evidence from another call can settle it.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn validate_battery(
+    values: &[Value],
+    inv: &str,
+    correlation: &str,
+    thread: &str,
+    prompt: &[u8],
+    prompt_hash: &str,
+    anchor: Option<&Value>,
+    rehydrate: bool,
+    successor_context: &str,
+) -> Result<Validated, StoreError> {
+    let mut p = Parser {
+        v: values.iter().collect(),
+        i: 0,
+    };
+    let mut full = match anchor {
+        Some(a) => a["messages"]
+            .as_array()
+            .cloned()
+            .ok_or(StoreError::ClaimConflict)?,
+        None => Vec::new(),
+    };
+    let prefix = full.len();
+    p.take("agent_start")?;
+    p.take("turn_start")?;
+    if p.v
+        .get(p.i)
+        .is_some_and(|v| v["type"] == "message_start" && v["message"]["role"] == "system")
+    {
+        let system = p.pair("system")?;
+        if anchor.is_some() {
+            // The real Pi SDK appends a native system message when a battery
+            // domain turn restores workspace_exec after tool-free rehydration.
+            // This is an append to the exact history, not a replacement of its
+            // system context. Both request() and history() check the full bytes.
+            let tools = system["toolsAdded"]
+                .as_array()
+                .ok_or(StoreError::ClaimConflict)?;
+            if rehydrate
+                || tools.len() != 1
+                || tools[0]["name"] != "workspace_exec"
+                || system.get("toolsRemoved").is_some()
+                || system["sections"]
+                    .as_object()
+                    .is_none_or(|s| s.len() != 1 || !s.contains_key("tools"))
+            {
+                return bad();
+            }
+        }
+        full.push(system);
+    }
+    let user = p.pair("user")?;
+    if text(&user)?.as_bytes() != prompt {
+        return bad();
+    }
+    full.push(user);
+    let mut call_ids = std::collections::BTreeSet::new();
+    let mut result_sha256s = Vec::new();
+    let final_text = loop {
+        request(
+            p.take("pi.provider_request")?,
+            inv,
+            correlation,
+            thread,
+            prompt_hash,
+            &full,
+        )?;
+        let assistant = p.assistant()?;
+        let blocks = assistant["content"]
+            .as_array()
+            .ok_or(StoreError::ClaimConflict)?;
+        let mut calls = Vec::new();
+        let mut text_blocks = Vec::new();
+        for block in blocks {
+            match block["type"].as_str() {
+                Some("toolCall") => calls.push(block),
+                Some("text") => text_blocks.push(block.clone()),
+                _ if crate::pi_analysis_proof::thinking(block) => {}
+                _ => return bad(),
+            }
+        }
+        if calls.is_empty() {
+            if assistant["stopReason"] != "stop" {
+                return bad();
+            }
+            let answer = text(&json!({"content":text_blocks}))?;
+            let turn = p.take("turn_end")?;
+            if turn["message"] != assistant
+                || turn["toolResults"] != json!([])
+                || (answer.is_empty() && !rehydrate)
+                || answer.len() > 65_536
+            {
+                return bad();
+            }
+            full.push(assistant);
+            break answer;
+        }
+        if rehydrate || assistant["stopReason"] != "toolUse" {
+            return bad();
+        }
+        let mut results = Vec::new();
+        for call in calls {
+            let id = call["id"]
+                .as_str()
+                .filter(|id| !id.is_empty() && id.len() < 128)
+                .ok_or(StoreError::ClaimConflict)?;
+            let command = call["arguments"]["command"]
+                .as_str()
+                .ok_or(StoreError::ClaimConflict)?;
+            if !call_ids.insert(id.to_owned())
+                || call["name"] != "workspace_exec"
+                || call["arguments"].as_object().is_none_or(|a| a.len() != 1)
+            {
+                return bad();
+            }
+            let start = p.take("tool_execution_start")?;
+            let entry = p.take("pi.coding_tool_intent")?;
+            let result = p.take("pi.coding_tool_result")?;
+            let end = p.take("tool_execution_end")?;
+            let tool = p.pair("toolResult")?;
+            let intent = &entry["intent"];
+            if entry["invocationId"] != inv
+                || result["invocationId"] != inv
+                || intent.as_object().is_none_or(|o| o.len() != 5)
+                || intent["job_id"].as_str().is_none_or(str::is_empty)
+                || intent["input_digest"]
+                    .as_str()
+                    .is_none_or(|d| d.len() != 64 || !d.bytes().all(|b| b.is_ascii_hexdigit()))
+                || intent["session_id"] != thread
+                || intent["call_id"] != id
+                || intent["command_sha256"] != hash(command.as_bytes())
+                || start["toolCallId"] != id
+                || start["toolName"] != "workspace_exec"
+                || start["args"] != call["arguments"]
+                || end["toolCallId"] != id
+                || end["toolName"] != "workspace_exec"
+                || end["isError"] != false
+                || end["result"] != json!({"content":tool["content"],"details":tool["details"]})
+            {
+                return bad();
+            }
+            host_result(intent, result, &tool)?;
+            result_sha256s.push(result["artifact"]["sha256"].clone());
+            results.push(tool);
+        }
+        let turn = p.take("turn_end")?;
+        if turn["message"] != assistant || turn["toolResults"] != json!(results) {
+            return bad();
+        }
+        full.push(assistant);
+        full.extend(results);
+        p.take("turn_start")?;
+    };
+    let end = p.take("agent_end")?;
+    if end["willRetry"] != false
+        || end["messages"] != json!(full[prefix..])
+        || p.take("agent_settled")?["aborted"] != false
+    {
+        return bad();
+    }
+    let workspace = if !rehydrate
+        && p.v
+            .get(p.i)
+            .is_some_and(|v| v["type"] == "pi.coding_workspace")
+    {
+        let w = p.take("pi.coding_workspace")?;
+        let raw = w["manifest_bytes"]
+            .as_str()
+            .ok_or(StoreError::ClaimConflict)?;
+        if w["invocationId"] != inv
+            || w["manifest"]["sha256"] != hash(raw.as_bytes())
+            || serde_json::from_str::<Value>(raw)
+                .map_err(|_| StoreError::ClaimConflict)?
+                .as_object()
+                .is_none()
+        {
+            return bad();
+        }
+        Some(w)
+    } else if !result_sha256s.is_empty() {
+        return bad();
+    } else {
+        None
+    };
+    history(p.take("pi.session_history")?, thread, &full, anchor)?;
+    if p.i != p.v.len() {
+        return bad();
+    }
+    let checkpoint = workspace.map(|w| {
+        json!({
+            "version": 1,
+            "profile": "work-engine.pi-coding-battery-checkpoint.v1",
+            "successor_context": successor_context,
+            "workspace_manifest_sha256": w["manifest"]["sha256"],
+            "tool_result_sha256s": result_sha256s,
+            "settled_turn": {"invocation_id": inv, "assistant_final_text_sha256": hash(final_text.as_bytes()), "history_messages": full.len(), "history_messages_sha256": hash(&serde_json::to_vec(&full).expect("Value JSON"))},
+            "unanswered_human": {"authority":"human", "resolved":false}
+        }).to_string()
+    });
+    if checkpoint
+        .as_ref()
+        .is_some_and(|c| c.len() > MAX_CHECKPOINT_BYTES)
+    {
+        return bad();
+    }
+    Ok(Validated {
+        final_text,
+        checkpoint,
+    })
+}
+
 // Closed native SDK reasoning shape; retain the original block in history.
 fn valid_thinking(v: &Value) -> bool {
     v["type"] == "thinking"

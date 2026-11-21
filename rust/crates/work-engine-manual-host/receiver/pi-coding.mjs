@@ -45,10 +45,11 @@ const MAX_REQUESTS=analysis||battery?config.maxRequests:4;
 // headers and framing included) never exceeds this; the Host refuses beyond
 // it. The context bound itself is the plan's maxContextBytes.
 const SPOOL_BODY_BYTES=16*1024*1024;
+const OBSERVATION_BYTES=1024*1024;
 // Battery: write one spool file durably (fsync) before its reference frame
 // is emitted; the Host reads it back and digest-verifies before use.
 const spoolWrite=(name,bytes)=>{
- const fd=openSync('/spool/'+name,'w');
+ const fd=openSync('/spool/'+name,'wx',0o600);
  try{writeFileSync(fd,bytes);fsyncSync(fd);}finally{closeSync(fd);}
 };
 // claude-sdk: Pi's provider is the pinned pi-claude-subscription extension,
@@ -112,9 +113,16 @@ const checkConsumption=until=>{
 };
 let initializeResolve;
 const initialization=new Promise(resolve=>{initializeResolve=resolve;});
+let observationSequence=0;
 const emit=value=>{
- const bytes=JSON.stringify({schema,sessionId:session?.sessionId??manager?.getSessionId(),...(fixtureSigned?{classification:'fixture provider/signing/identity; actual SDK runtime'}:{}),...value})+'\n';
- if(Buffer.byteLength(bytes)>FRAME_BYTES)throw Error('output frame bound');
+ const frame={schema,sessionId:session?.sessionId??manager?.getSessionId(),...(fixtureSigned?{classification:'fixture provider/signing/identity; actual SDK runtime'}:{}),...value};
+ let bytes=Buffer.from(JSON.stringify(frame)+'\n');
+ if(bytes.length>FRAME_BYTES){
+  if(!battery||!['coding_history','native_event'].includes(frame.type)||bytes.length>OBSERVATION_BYTES)throw Error('output frame bound');
+  const sequence=++observationSequence,path=`observation-${sequence}.json`;
+  spoolWrite(path,bytes);
+  bytes=Buffer.from(JSON.stringify({schema,sessionId:frame.sessionId,type:frame.type,observationSequence:sequence,observationSpool:{path,sha256:createHash('sha256').update(bytes).digest('hex'),bytes:bytes.length}})+'\n');
+ }
  process.stdout.write(bytes);
 };
 // Signed fixture only: /export is a size-limited tmpfs the Host cannot read, so its regular files are
@@ -386,6 +394,7 @@ try {
      let contextDoc=null,contextSpool=null;
      if(battery){
       contextDoc=Buffer.from(JSON.stringify({messages:context.messages,agentMessages:session.messages}));
+      if(contextDoc.length>OBSERVATION_BYTES)throw Error('battery request observation bound');
       spoolWrite(`ctx-${id}.json`,contextDoc);
       contextSpool={path:`ctx-${id}.json`,sha256:createHash('sha256').update(contextDoc).digest('hex'),bytes:contextDoc.length};
      }
@@ -536,9 +545,14 @@ try {
    const op=await bridgeNext();checkConsumption(consumptionDeadline(op,Number.MAX_SAFE_INTEGER));
    if(op.type==='bridge_close')break;
    if(op.type==='bridge_replace'){
-    if(bridgeResets++!==0||pending.size||grants.size||session.isStreaming)throw Error('bridge reset budget/uncertainty');
+    if(bridgeResets>=(battery?config.maxResets:1)||pending.size||grants.size||session.isStreaming)throw Error('bridge reset budget/uncertainty');
+    bridgeResets++;
     const old=session.sessionId;const result=await runtime.newSession();
     emit({type:'coding_replaced',oldSessionId:old,result,messages:session.messages,branch:session.sessionManager.getBranch(),header:session.sessionManager.getHeader(),leafId:session.sessionManager.getLeafId(),autoCompactionEnabled:session.autoCompactionEnabled,tools:session.getActiveToolNames(),snapshot:snapshot()});continue;
+   }
+   if(battery){
+    if(typeof op.workspaceTools!=='boolean')throw Error('battery turn tool policy absent');
+    session.setActiveToolsByName(op.workspaceTools?activeNames:[]);
    }
    operation=op;bridgeActive=true;
    await session.prompt(op.prompt,{expandPromptTemplates:false});bridgeActive=false;

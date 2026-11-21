@@ -14,7 +14,8 @@ mod pi_coding;
 mod pi_coding_proof;
 mod pi_settlement;
 pub use pi_coding::{
-    pi_analysis_profile_digest, pi_analysis_protocol_digest, pi_coding_live_profile_digest,
+    pi_analysis_profile_digest, pi_analysis_protocol_digest, pi_coding_battery_profile_digest,
+    pi_coding_battery_protocol_digest, pi_coding_live_profile_digest,
     pi_coding_live_protocol_digest, pi_coding_profile_digest, pi_coding_protocol_digest,
     pi_coding_sol_high_profile_digest, pi_coding_sol_high_protocol_digest,
 };

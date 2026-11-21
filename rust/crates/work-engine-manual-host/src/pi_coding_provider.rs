@@ -35,9 +35,11 @@ const OPENROUTER_CATALOG: &str =
 /// Host-enforced limit (the operator monitors external spend separately).
 const OPENROUTER_ANALYSIS_BUDGET: u64 = 20_000_000;
 /// Coding-profile budget ceiling for the OpenRouter Completions family (at most
-/// 6 requests). 6 x 545 259 = 3 271 554; this admits a realistic multi-turn
-/// coding plan without an unbounded ceiling. `reservation_microusd()` still
-/// refuses a plan whose own max_requests x reservation exceeds its budget.
+/// 6 requests). This admits a realistic multi-turn coding plan without an
+/// unbounded ceiling. `reservation_microusd()` still refuses a non-battery
+/// plan whose own max_requests x reservation exceeds its budget; the battery
+/// profile is instead bounded by budget, not count (one full reservation must
+/// fit; see `battery_reservation_check`).
 const OPENROUTER_CODING_BUDGET: u64 = 4_000_000;
 fn default_provider() -> String {
     DEFAULT_PROVIDER.into()
@@ -701,6 +703,15 @@ impl ProviderPlan {
                 .iter()
                 .all(|k| native[*k] == selected[*k]))
     }
+    /// Only one attempt can be in flight. The battery need not fund every
+    /// possible request in advance, but the ledger must still fund each full
+    /// reservation against the remaining budget before dispatch.
+    fn battery_reservation_check(&self) -> Result<()> {
+        if self.request_reservation()? > self.budget_microusd {
+            return refuse("full catalog reservation exceeds the battery budget");
+        }
+        Ok(())
+    }
     /// Pure preparation check over the pinned public catalog; grants no entry
     /// and neither inspects nor opens native credential references.
     pub fn reservation_microusd(&self) -> Result<u64> {
@@ -828,7 +839,11 @@ impl ProviderPlan {
         if self.task.verify()?.len() > 32768 {
             return refuse("provider task input exceeded bound");
         }
-        self.reservation_microusd()?;
+        if battery {
+            self.battery_reservation_check()?;
+        } else {
+            self.reservation_microusd()?;
+        }
         let admission: Admission = serde_json::from_slice(&job.authority.verify()?)
             .map_err(|_| Error::Refused("exact provider runtime admission required".into()))?;
         if admission.schema != "work-engine.pi-coding-runtime-admission.v1"
@@ -1181,6 +1196,13 @@ impl Host {
             // Battery: same receiver lane, battery bounds and schema so the
             // receiver selects its battery behavior.
             job["schema"] = json!(super::HOSTED_BATTERY_PROFILE);
+            let packet: Value = serde_json::from_slice(&self.journal.job.packet.verify()?)?;
+            job["maxResets"] = json!(
+                packet["budget"]["max_resets"]
+                    .as_u64()
+                    .filter(|n| *n <= u64::from(super::BATTERY_MAX_RESETS))
+                    .ok_or_else(|| Error::Refused("battery reset limit absent".into()))?
+            );
         }
         if super::is_analysis(&profile.schema) {
             // The receiver's own bounds for this profile; the Host checks
@@ -1905,6 +1927,41 @@ mod admission_tests {
         );
         // 32 analysis requests also fit the analysis ceiling.
         assert!(per.checked_mul(32).unwrap() <= OPENROUTER_ANALYSIS_BUDGET);
+    }
+
+    #[test]
+    fn battery_plan_is_bounded_by_budget_not_request_count() {
+        let (dir, host) = super::ledger_tests::fixture();
+        let mut plan = host.journal.job.coding.unwrap().provider.unwrap();
+        plan.provider = "openrouter".into();
+        plan.model = "~deepseek/deepseek-v4-flash-latest".into();
+        plan.max_requests = 400;
+        plan.budget_microusd = OPENROUTER_CODING_BUDGET;
+        let catalog = serde_json::to_vec(&json!({"openai-completions": {
+            (format!("chat:{}", plan.model)): {
+                "id":plan.model,"api":"openai-completions","provider":"openrouter",
+                "baseUrl":"https://openrouter.ai/api/v1","contextWindow":1048576,
+                "maxTokens":943718,
+                "cost":{"input":0.059,"output":0.3,"cacheRead":0.035,"cacheWrite":0.0}
+            }
+        }}))
+        .unwrap();
+        let path = dir.path().join("battery-catalog.json");
+        fs::write(&path, &catalog).unwrap();
+        plan.catalog = Artifact {
+            path,
+            sha256: digest(&catalog),
+        };
+        plan.battery_reservation_check().unwrap();
+        assert!(
+            matches!(plan.reservation_microusd(), Err(Error::Refused(e)) if e.contains("exceed runtime proxy budget"))
+        );
+        plan.budget_microusd = plan.request_reservation().unwrap();
+        plan.battery_reservation_check().unwrap();
+        plan.budget_microusd -= 1;
+        assert!(
+            matches!(plan.battery_reservation_check(), Err(Error::Refused(e)) if e.contains("exceeds the battery budget"))
+        );
     }
     /// The resolved (Layer C) checkpoint the provider settles must belong to
     /// the admitted model family, not match the request slug exactly (floor

@@ -9,7 +9,7 @@ use work_engine_manual_host::{
     pi_docker::{
         Host, Job, Journal,
         coding::{
-            BATTERY_MAX_TOOL_CALLS, BRIDGE_PROFILE, HOSTED_BATTERY_PROFILE, WorkspaceWriteBoundary,
+            BATTERY_MAX_RESETS, BATTERY_MAX_TOOL_CALLS, BRIDGE_PROFILE, WorkspaceWriteBoundary,
             hosted::LoopbackTransport, is_battery, is_hosted, is_live_bridge,
         },
         request_cancel,
@@ -59,10 +59,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("explicit --execute <pinned-job.json> required; no runtime entered".into());
     }
     let result = execute(&args[2])?;
-    println!(
-        "{}",
-        json!({"status":if result["receipt"]["provider"] == "disabled" {"bounded_fixture_passed"} else {"bounded_live_continuity_completed"},"result":PathBuf::from(result["receipt"]["job"]["state_dir"].as_str().ok_or("state absent")?).join("coding-continuity-result.json"),"receipt_id":result["receipt_id"],"acceptance":"owner_pending","domain_effect_settlement":"not_claimed"})
-    );
+    let receipt = &result["receipt"];
+    let status = if receipt["profile"].as_str().is_some_and(is_battery) {
+        if receipt["hosted_transport"]["transport"] == "loopback" {
+            "bounded_battery_loopback_completed"
+        } else {
+            "bounded_live_battery_completed"
+        }
+    } else if receipt["provider"] == "disabled" {
+        "bounded_fixture_passed"
+    } else {
+        "bounded_live_continuity_completed"
+    };
+    println!("{}", json!({"status":status,"result":PathBuf::from(receipt["job"]["state_dir"].as_str().ok_or("state absent")?).join("coding-continuity-result.json"),"receipt_id":result["receipt_id"],"acceptance":"owner_pending","domain_effect_settlement":"not_claimed"}));
     Ok(())
 }
 fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
@@ -131,6 +140,19 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
         || (live && !battery && packet["bounds"] != bounds)
     {
         return Err("coding packet schema/bounds".into());
+    }
+    if battery {
+        let plan = profile.provider.as_ref().ok_or("battery plan absent")?;
+        let budget = &packet["budget"];
+        if budget["max_provider_requests"] != plan.max_requests
+            || budget["max_tool_calls"] != profile.max_tool_calls
+            || budget["max_context_bytes"] != plan.max_context_bytes
+            || budget["max_resets"]
+                .as_u64()
+                .is_none_or(|n| n > u64::from(BATTERY_MAX_RESETS))
+        {
+            return Err("battery packet bounds differ from Host plan".into());
+        }
     }
     let config = CodingConfig {
         task: if live {
@@ -272,13 +294,17 @@ fn execute(path: &str) -> Result<Value, Box<dyn std::error::Error>> {
         subject,
         ContextGeneration::parse("context:old")?,
         RuntimeIncarnation::parse("incarnation:pi:coding")?,
-        &if live {
+        &if battery {
+            pi_coding_battery_profile_digest()
+        } else if live {
             pi_coding_live_profile_digest()
         } else {
             pi_coding_profile_digest()
         },
         PI_SDK_INDEX_SHA256,
-        &if live {
+        &if battery {
+            pi_coding_battery_protocol_digest()
+        } else if live {
             pi_coding_live_protocol_digest()
         } else {
             pi_coding_protocol_digest()

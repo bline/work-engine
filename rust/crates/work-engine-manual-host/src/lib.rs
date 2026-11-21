@@ -143,7 +143,31 @@ pub struct Artifact {
 }
 impl Artifact {
     pub fn verify(&self) -> Result<Vec<u8>> {
-        let b = bytes(&self.path)?;
+        self.verify_within(MAX_BYTES)
+    }
+    fn verify_within(&self, bound: u64) -> Result<Vec<u8>> {
+        let file = OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_NONBLOCK)
+            .open(&self.path)?;
+        let metadata = file.metadata()?;
+        if !metadata.is_file() {
+            return refuse(format!(
+                "artifact must be a regular file: {}",
+                self.path.display()
+            ));
+        }
+        if metadata.len() > bound {
+            return refuse(format!("oversize input {}", self.path.display()));
+        }
+        let mut b = Vec::new();
+        file.take(metadata.len() + 1).read_to_end(&mut b)?;
+        if b.len() as u64 != metadata.len() {
+            return refuse(format!(
+                "artifact changed while reading: {}",
+                self.path.display()
+            ));
+        }
         if !self.path.is_absolute() || digest(&b) != self.sha256 {
             return refuse(format!("artifact conflict: {}", self.path.display()));
         }

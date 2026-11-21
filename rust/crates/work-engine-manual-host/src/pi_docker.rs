@@ -47,10 +47,21 @@ pub enum Entry {
     Symlink { target: PathBuf },
 }
 
+const DEFAULT_INVENTORY_ENTRIES: usize = 30_000;
+
 /// Full inventory, including symlinks (whose resolved target must stay inside
 /// the root). A selected-file list cannot attest the realized runtime surface.
 pub fn inventory(root: &Path) -> Result<BTreeMap<String, Entry>> {
-    fn visit(root: &Path, dir: &Path, out: &mut BTreeMap<String, Entry>) -> Result<()> {
+    inventory_bounded(root, DEFAULT_INVENTORY_ENTRIES)
+}
+
+fn inventory_bounded(root: &Path, max_entries: usize) -> Result<BTreeMap<String, Entry>> {
+    fn visit(
+        root: &Path,
+        dir: &Path,
+        out: &mut BTreeMap<String, Entry>,
+        max_entries: usize,
+    ) -> Result<()> {
         for item in fs::read_dir(dir)? {
             let path = item?.path();
             let relative = path
@@ -72,7 +83,7 @@ pub fn inventory(root: &Path) -> Result<BTreeMap<String, Entry>> {
                     },
                 );
             } else if meta.is_dir() {
-                visit(root, &path, out)?;
+                visit(root, &path, out, max_entries)?;
             } else if meta.is_file() {
                 out.insert(
                     key,
@@ -83,7 +94,7 @@ pub fn inventory(root: &Path) -> Result<BTreeMap<String, Entry>> {
             } else {
                 return refuse("special file in pinned tree");
             }
-            if out.len() > 30_000 {
+            if out.len() > max_entries {
                 return refuse("inventory too large");
             }
         }
@@ -93,7 +104,7 @@ pub fn inventory(root: &Path) -> Result<BTreeMap<String, Entry>> {
         return refuse("tree root must be canonical directory");
     }
     let mut out = BTreeMap::new();
-    visit(root, root, &mut out)?;
+    visit(root, root, &mut out, max_entries)?;
     Ok(out)
 }
 
@@ -105,8 +116,13 @@ pub struct Tree {
 }
 impl Tree {
     fn verify(&self) -> Result<()> {
-        let expected: BTreeMap<String, Entry> = serde_json::from_slice(&self.manifest.verify()?)?;
-        if inventory(&self.root)? != expected {
+        self.verify_bounded(super::MAX_BYTES, DEFAULT_INVENTORY_ENTRIES)
+    }
+
+    fn verify_bounded(&self, manifest_bytes: u64, max_entries: usize) -> Result<()> {
+        let expected: BTreeMap<String, Entry> =
+            serde_json::from_slice(&self.manifest.verify_within(manifest_bytes)?)?;
+        if expected.len() > max_entries || inventory_bounded(&self.root, max_entries)? != expected {
             return refuse("pinned tree inventory changed");
         }
         Ok(())
@@ -540,13 +556,12 @@ impl Host {
     fn failure(&mut self, error: impl ToString) {
         self.journal.failures.push(error.to_string());
     }
-    /// Wall bound of one Host process: the inference (`rpc`) process of a
-    /// relay thread lives up to the relay thread bound (H4; its job deadline
-    /// still ends it earlier), every other `rpc` process 300 s, other
-    /// commands their configured timeout.
+    /// Wall guard of one Host process; the absolute job deadline also
+    /// applies to the running inference process.
     fn process_wall_seconds(&self, rpc: bool) -> u64 {
         match (rpc, self.journal.job.coding.as_ref()) {
             (true, Some(p)) if coding::is_relay(&p.schema) => coding::RELAY_DEADLINE_SECONDS,
+            (true, Some(p)) if coding::is_battery(&p.schema) => coding::BATTERY_DEADLINE_SECONDS,
             (true, _) => 300,
             (false, _) => self.journal.job.command_timeout_seconds,
         }
@@ -1108,7 +1123,9 @@ impl Host {
             if !ok {
                 return refuse("Pi attach/start failed or uncertain");
             }
-            if self.journal.job.coding.is_some() && !self.analysis_profile() {
+            if self.coding_battery_without_validator() {
+                self.coding_seal_battery_workspace()?;
+            } else if self.journal.job.coding.is_some() && !self.analysis_profile() {
                 self.coding_validate_task()?;
             }
             self.journal.phase = Phase::Running;
@@ -1353,7 +1370,12 @@ impl Host {
                 && c.completed
                 && (!self.is_signed_fixture()
                     || (self.export_finalized() && self.export_collection_consistent()))
-                && (analysis || self.coding_final_proof_valid())
+                && (analysis
+                    || if self.coding_battery_without_validator() {
+                        self.coding_battery_workspace_valid()
+                    } else {
+                        self.coding_final_proof_valid()
+                    })
                 && (self.journal.job.coding.as_ref().unwrap().provider.is_none()
                     || c.access_removed)
         }) && self.journal.rpc_verified
@@ -1395,6 +1417,9 @@ impl Host {
         if let Some(coding) = &self.journal.coding {
             value["coding"] = serde_json::to_value(coding)?;
             value["profile"] = json!(self.journal.job.coding.as_ref().unwrap().schema);
+            if self.coding_battery_without_validator() {
+                value["workspace_acceptance"] = json!("not_run");
+            }
             if self.signed_pi() {
                 value["provider"] = json!("fake_fixture");
                 value["model"] = json!("fake-pi-model");
@@ -1712,6 +1737,29 @@ mod tests {
         std::os::unix::fs::symlink(other.path(), root.path().join("escape")).unwrap();
         assert!(inventory(root.path()).is_err());
     }
+    #[test]
+    fn bounded_tree_verification_checks_both_limits_and_identity() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("tree");
+        fs::create_dir(&root).unwrap();
+        fs::write(root.join("one"), b"a").unwrap();
+        fs::create_dir(root.join("nested")).unwrap();
+        fs::write(root.join("nested/two"), b"b").unwrap();
+        let observed = inventory(&root).unwrap();
+        let bytes = serde_json::to_vec(&observed).unwrap();
+        let tree = Tree {
+            root,
+            manifest: artifact(&dir.path().join("manifest.json"), &bytes),
+        };
+        let byte_limit = bytes.len() as u64;
+        tree.verify_bounded(byte_limit, 2).unwrap();
+        assert!(tree.verify_bounded(byte_limit - 1, 2).is_err());
+        assert!(tree.verify_bounded(byte_limit, 1).is_err());
+        assert!(inventory_bounded(&tree.root, 1).is_err());
+        fs::write(tree.root.join("one"), b"changed").unwrap();
+        assert!(tree.verify_bounded(byte_limit, 2).is_err());
+    }
+
     fn artifact(path: &Path, bytes: &[u8]) -> Artifact {
         fs::write(path, bytes).unwrap();
         Artifact {
