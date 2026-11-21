@@ -10,9 +10,9 @@ use serde_json::{Value, json};
 use crate::admission::{AdmissionHandle, Preparation, PreparedInitial};
 use crate::codec::{campaign_digest, raw_sha256};
 use crate::completion::{
-    AttemptOutcome, AttemptRecord, CheckedPreEntryFailure, DispatchCommand, DispatchEffect,
-    DispatchOrigin, DispatchPermit, DispatchRecord, DispatchedRequest, FailureCustodyRef,
-    RecoveredRequest, RecoveryHandle,
+    AppliedInitialDispatchProjection, AttemptOutcome, AttemptRecord, CheckedPreEntryFailure,
+    DispatchCommand, DispatchEffect, DispatchOrigin, DispatchPermit, DispatchRecord,
+    DispatchedRequest, FailureCustodyRef, RecoveredRequest, RecoveryHandle,
 };
 use crate::contract::{
     AcceptedBoundary, AdvancePhase, Baseline, CampaignIdentity, CampaignRevision, Consequence,
@@ -80,6 +80,12 @@ mod core_tests {
     }
 
     fn ready_with(second_selected: bool) -> Ready {
+        let (ready, permit) = dispatched_with(second_selected);
+        ready.app.consume_dispatch_permit(permit).unwrap();
+        ready
+    }
+
+    fn dispatched_with(second_selected: bool) -> (Ready, DispatchPermit) {
         let (temp, repo, workspace, identity, baseline, boundary) = support::setup();
         let root = temp.path().join("campaign");
         let mut app = Campaign::initialize(support::config(
@@ -242,15 +248,63 @@ mod core_tests {
         else {
             panic!("dispatch")
         };
-        app.consume_dispatch_permit(permit).unwrap();
-        Ready {
-            _temp: temp,
-            app,
-            identity,
-            locator,
-            _request: request,
-            _command: command,
-        }
+        (
+            Ready {
+                _temp: temp,
+                app,
+                identity,
+                locator,
+                _request: request,
+                _command: command,
+            },
+            permit,
+        )
+    }
+
+    #[test]
+    fn applied_initial_projection_binds_root_receipts_and_exact_subject() {
+        let (a, permit_a) = dispatched_with(false);
+        let (b, permit_b) = dispatched_with(false);
+        let expected_a = a.app.project_applied_initial_dispatch(&permit_a).unwrap();
+        let expected_b = b.app.project_applied_initial_dispatch(&permit_b).unwrap();
+        assert_eq!(expected_a.identity, expected_b.identity);
+        assert_eq!(expected_a.episode_id, expected_b.episode_id);
+        assert_eq!(expected_a.subject_digest, expected_b.subject_digest);
+        assert_ne!(expected_a.root_id, expected_b.root_id);
+        assert_ne!(expected_a.request_digest, expected_b.request_digest);
+        assert_eq!(expected_a.selection, a._request.selection);
+        assert_eq!(expected_a.candidate, a._request.candidate);
+        assert_ne!(
+            expected_a.subject_digest,
+            expected_a.candidate.patch_identity
+        );
+        assert_eq!(
+            expected_a.preparation.result_revision,
+            a._request.prepared_revision
+        );
+        assert_eq!(
+            expected_a.dispatch.prior_revision,
+            Some(expected_a.preparation.result_revision)
+        );
+        assert_eq!(
+            expected_a.dispatch.result_revision,
+            a.app.read(&a.identity).unwrap().unwrap().revision
+        );
+        assert!(a.app.project_applied_initial_dispatch(&permit_b).is_err());
+        assert!(b.app.project_applied_initial_dispatch(&permit_a).is_err());
+        a.app.consume_dispatch_permit(permit_a).unwrap();
+        b.app.consume_dispatch_permit(permit_b).unwrap();
+    }
+
+    #[test]
+    fn applied_initial_projection_rejects_wrong_attempt_and_recovered_origin() {
+        let (ready, mut permit) = dispatched_with(false);
+        let original_identity = permit.identity.clone();
+        permit.identity.attempt_id = "other-attempt".into();
+        assert!(ready.app.project_applied_initial_dispatch(&permit).is_err());
+        permit.identity = original_identity;
+        permit.origin = DispatchOrigin::RecoveredInitial;
+        assert!(ready.app.project_applied_initial_dispatch(&permit).is_err());
     }
 
     #[test]
@@ -1176,6 +1230,14 @@ impl Campaign {
     }
     pub fn consume_dispatch_permit(&self, permit: DispatchPermit) -> Result<DispatchedRequest> {
         self.owner()?.consume_dispatch_permit(permit)
+    }
+    /// Read the campaign binding while the newly applied dispatch is still current.
+    /// This does not use the permit, reserve a transport, or authorize exposure.
+    pub fn project_applied_initial_dispatch(
+        &self,
+        permit: &DispatchPermit,
+    ) -> Result<AppliedInitialDispatchProjection> {
+        self.owner()?.project_applied_initial_dispatch(permit)
     }
     pub fn install_qualified_initial_authority(
         &mut self,
@@ -2274,7 +2336,72 @@ impl CampaignInner {
         Ok(self.offline_authority.take().unwrap().issue(binding))
     }
 
+    fn project_applied_initial_dispatch(
+        &self,
+        permit: &DispatchPermit,
+    ) -> Result<AppliedInitialDispatchProjection> {
+        use review_episode_core::implementation_review_v1::SubjectParts;
+
+        if permit.origin != DispatchOrigin::FreshInitial {
+            return Err(CampaignError::Unsupported(
+                "dispatch projection requires a fresh initial dispatch".into(),
+            ));
+        }
+        let (request, dispatch) = self.checked_dispatched_request(permit)?;
+        let preparation = self
+            .store
+            .receipt(&request.operation_id)?
+            .ok_or_else(|| CampaignError::Integrity("preparation receipt absent".into()))?;
+        if request.kind != "initial"
+            || request.root_id != permit.root_id
+            || request.identity != permit.identity
+            || request.obligation_id != permit.obligation_id
+            || preparation.kind != "prepare_initial"
+            || preparation.root_id != request.root_id
+            || preparation.identity != request.identity
+            || preparation.operation_id != request.operation_id
+            || preparation.result_revision != request.prepared_revision
+            || preparation.profile_digest != self.config.digest
+            || dispatch.profile_digest != preparation.profile_digest
+            || dispatch.prior_revision.as_ref() != Some(&preparation.result_revision)
+        {
+            return Err(CampaignError::Conflict(
+                "initial dispatch does not follow its exact preparation".into(),
+            ));
+        }
+        let candidate = request.candidate;
+        let subject_digest = SubjectParts {
+            commit: &candidate.commit,
+            tree: &candidate.tree,
+            patch_identity: &candidate.patch_identity,
+        }
+        .digest();
+        Ok(AppliedInitialDispatchProjection {
+            root_id: request.root_id,
+            identity: request.identity,
+            obligation_id: request.obligation_id,
+            episode_id: permit.command.episode_id.clone(),
+            subject_digest,
+            candidate,
+            selection: request.selection,
+            request_digest: request.request_digest,
+            preparation,
+            dispatch,
+        })
+    }
+
     fn consume_dispatch_permit(&self, permit: DispatchPermit) -> Result<DispatchedRequest> {
+        let (request, _) = self.checked_dispatched_request(&permit)?;
+        Ok(DispatchedRequest {
+            request,
+            command: permit.command,
+        })
+    }
+
+    fn checked_dispatched_request(
+        &self,
+        permit: &DispatchPermit,
+    ) -> Result<(NativeReviewRequestRef, OperationReceipt)> {
         if permit.owner_epoch != self.store.epoch
             || permit.root_id != self.store.root_id
             || permit.identity != self.config.identity
@@ -2311,16 +2438,13 @@ impl CampaignInner {
             || self
                 .store
                 .dispatch_slot(&permit.identity, &permit.obligation_id)?
-                != Some((Some(permit.dispatch_operation_id), true))
+                != Some((Some(permit.dispatch_operation_id.clone()), true))
         {
             return Err(CampaignError::Conflict(
                 "dispatch permit differs from durable slot".into(),
             ));
         }
-        Ok(DispatchedRequest {
-            request,
-            command: permit.command,
-        })
+        Ok((request, receipt))
     }
 
     fn replay_dispatch(

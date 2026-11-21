@@ -40,8 +40,9 @@ pub use application::{
     RemediationSubjectRead, TrustedConfig,
 };
 pub use completion::{
-    CampaignProgress, DispatchCommand, DispatchEffect, DispatchPermit, DispatchRecord,
-    DispatchedRequest, RecoveredRequest, StageIntent, StageKind, StageProgress,
+    AppliedInitialDispatchProjection, CampaignProgress, DispatchCommand, DispatchEffect,
+    DispatchPermit, DispatchRecord, DispatchedRequest, RecoveredRequest, StageIntent, StageKind,
+    StageProgress,
 };
 pub use contract::{
     AcceptedBoundary, AdvancePhase, Baseline, CampaignRef, CampaignRevision, CandidateRef,
