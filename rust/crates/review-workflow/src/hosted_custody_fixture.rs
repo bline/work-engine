@@ -185,7 +185,7 @@ enum Disposition {
     FixtureCorrespondence,
     ConfirmedNoSend,
     HeldPossibleSend,
-    FailedTerminal,
+    FailedTerminal { settled: bool },
     HeldUnresolvedSettlement,
 }
 
@@ -213,6 +213,7 @@ fn is_digest(reported: &str, bytes: &str) -> bool {
 
 // The test harness supplies the byte pin out of band. It can explicitly re-pin a
 // negative to reach semantic checks. Nothing in the document can supply this pin.
+// Ok means a well-bound fixture disposition, NOT positive correspondence.
 fn read(
     expected: &Expected<'_>,
     raw: &[u8],
@@ -261,7 +262,7 @@ fn read(
             outcome: Observed::Observed,
             public_probe_sha256,
             executable_sha256,
-            locked_fixture: true,
+            locked_fixture,
             ..
         },
         Cut::TaskRelease {
@@ -276,7 +277,8 @@ fn read(
         return Err(Refusal::Order);
     };
     let bytes = expected.bytes;
-    if !is_digest(public_probe_sha256, bytes.bootstrap)
+    if !locked_fixture
+        || !is_digest(public_probe_sha256, bytes.bootstrap)
         || !is_digest(executable_sha256, bytes.executable)
     {
         return Err(Refusal::Bootstrap);
@@ -333,7 +335,11 @@ fn read(
         .is_some_and(|sha| is_digest(sha, bytes.settlement));
     match outcome {
         Terminal::Completed if settled => Ok(Disposition::FixtureCorrespondence),
-        Terminal::Failed if settled => Ok(Disposition::FailedTerminal),
+        // Failure can be recorded while settlement is still unresolved. A wrong
+        // supplied settlement digest is a contradiction, not an absent readback.
+        Terminal::Failed if settled || settlement_sha256.is_none() => {
+            Ok(Disposition::FailedTerminal { settled })
+        }
         Terminal::UnresolvedSettlement if settlement_sha256.is_none() => {
             Ok(Disposition::HeldUnresolvedSettlement)
         }
@@ -341,18 +347,20 @@ fn read(
     }
 }
 
-const HOST_EXPECTED: &[u8] = include_bytes!("../tests/fixtures/hosted-custody/expected.json");
-const HOST_OBSERVATION: &[u8] = include_bytes!("../tests/fixtures/hosted-custody/observation.json");
-const HOST_OLD_OBSERVATION: &[u8] =
+const ADAPTED_EXPECTED: &[u8] = include_bytes!("../tests/fixtures/hosted-custody/expected.json");
+const ADAPTED_OBSERVATION: &[u8] =
+    include_bytes!("../tests/fixtures/hosted-custody/observation.json");
+const ORIGINAL_HOST_OBSERVATION: &[u8] =
     include_bytes!("../tests/fixtures/hosted-custody/prior-observation.json");
-const HOST_EXPECTED_PIN: &str = "b74d56c8872ede85c11aad91e35086cd7fde5939ce3f9f4af2e05657e329245d";
-const HOST_OBSERVATION_PIN: &str =
+const ADAPTED_EXPECTED_PIN: &str =
+    "b74d56c8872ede85c11aad91e35086cd7fde5939ce3f9f4af2e05657e329245d";
+const ADAPTED_OBSERVATION_PIN: &str =
     "88959ac2b9b043b05378b95134c4db801bbf31c5fa028b6f716cdbe1e634fbf5";
 const OLD_PIN: &str = "251aacdb152dd526329d6ca7a3f4aea835a60de56d11973b12a8a4df563f1454";
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct HostExpected<'a> {
+struct AdaptedExpected<'a> {
     fixture_schema: &'a str,
     transport_input: Value,
     binding_sha256: &'a str,
@@ -370,8 +378,8 @@ struct HostExpected<'a> {
 }
 
 fn with_expected<T>(check: impl FnOnce(Expected<'_>) -> T) -> T {
-    assert_eq!(raw_sha256(HOST_EXPECTED), HOST_EXPECTED_PIN);
-    let input: HostExpected<'_> = serde_json::from_slice(HOST_EXPECTED).unwrap();
+    assert_eq!(raw_sha256(ADAPTED_EXPECTED), ADAPTED_EXPECTED_PIN);
+    let input: AdaptedExpected<'_> = serde_json::from_slice(ADAPTED_EXPECTED).unwrap();
     assert_eq!(input.fixture_schema, "d7-offline-expected-v1");
     // Fixture owner supplies these separately from the returned observation.
     // Use the real projection codec, not its reported job name or input hash.
@@ -412,14 +420,32 @@ fn from_repinned_control(expected: &Expected<'_>, record: &Value) -> Result<Disp
 }
 
 #[test]
-fn independently_pinned_host_pair_matches_only_this_applied_transport() {
+fn observation_adaptation_changes_only_the_transport_envelope() {
+    assert_eq!(raw_sha256(ORIGINAL_HOST_OBSERVATION), OLD_PIN);
+    assert_eq!(raw_sha256(ADAPTED_OBSERVATION), ADAPTED_OBSERVATION_PIN);
+    let mut original: Value = serde_json::from_slice(ORIGINAL_HOST_OBSERVATION).unwrap();
+    let mut adapted: Value = serde_json::from_slice(ADAPTED_OBSERVATION).unwrap();
+    for field in ["bindingSha256", "jobId"] {
+        let old = original.as_object_mut().unwrap().remove(field).unwrap();
+        let new = adapted.as_object_mut().unwrap().remove(field).unwrap();
+        assert_ne!(old, new);
+    }
+    assert_eq!(original, adapted);
+}
+
+#[test]
+fn org_adapted_pair_matches_only_this_applied_transport() {
     with_expected(|expected| {
         assert_eq!(
-            read(&expected, HOST_OBSERVATION, Some(HOST_OBSERVATION_PIN)),
+            read(
+                &expected,
+                ADAPTED_OBSERVATION,
+                Some(ADAPTED_OBSERVATION_PIN)
+            ),
             Ok(Disposition::FixtureCorrespondence)
         );
         assert_eq!(
-            read(&expected, HOST_OLD_OBSERVATION, Some(OLD_PIN)),
+            read(&expected, ORIGINAL_HOST_OBSERVATION, Some(OLD_PIN)),
             Err(Refusal::Transport)
         );
         let second =
@@ -431,14 +457,14 @@ fn independently_pinned_host_pair_matches_only_this_applied_transport() {
         assert_eq!(
             read(
                 &other_expected,
-                HOST_OBSERVATION,
-                Some(HOST_OBSERVATION_PIN)
+                ADAPTED_OBSERVATION,
+                Some(ADAPTED_OBSERVATION_PIN)
             ),
             Err(Refusal::Transport)
         );
         // Separately bound synthetic job, keeping every fixture artifact byte
         // equal. Its observation is minted by this control, not the Host.
-        let mut other: Value = serde_json::from_slice(HOST_OBSERVATION).unwrap();
+        let mut other: Value = serde_json::from_slice(ADAPTED_OBSERVATION).unwrap();
         other["jobId"] = json!(second.job_id());
         other["bindingSha256"] = json!(second.job_id().strip_prefix("review-").unwrap());
         assert_eq!(
@@ -456,13 +482,13 @@ fn independently_pinned_host_pair_matches_only_this_applied_transport() {
 fn unpinned_oversized_duplicate_or_unknown_record_does_not_enter_comparison() {
     with_expected(|expected| {
         assert_eq!(
-            read(&expected, HOST_OBSERVATION, None),
+            read(&expected, ADAPTED_OBSERVATION, None),
             Err(Refusal::UnestablishedCustody)
         );
-        let mut boundary = HOST_OBSERVATION.to_vec();
+        let mut boundary = ADAPTED_OBSERVATION.to_vec();
         boundary.resize(MAX_OBSERVATION_BYTES, b' ');
         assert_eq!(
-            read(&expected, &boundary, Some(HOST_OBSERVATION_PIN)),
+            read(&expected, &boundary, Some(ADAPTED_OBSERVATION_PIN)),
             Err(Refusal::UnestablishedCustody)
         );
         assert_eq!(
@@ -474,7 +500,7 @@ fn unpinned_oversized_duplicate_or_unknown_record_does_not_enter_comparison() {
             read(&expected, &boundary, Some(&raw_sha256(&boundary))),
             Err(Refusal::Bound)
         );
-        let text = std::str::from_utf8(HOST_OBSERVATION).unwrap();
+        let text = std::str::from_utf8(ADAPTED_OBSERVATION).unwrap();
         for (needle, inserted) in [
             ("\"generation\":", "\"generation\":1,\"generation\":"),
             ("\"seq\":", "\"seq\":1,\"seq\":"),
@@ -495,8 +521,14 @@ fn unpinned_oversized_duplicate_or_unknown_record_does_not_enter_comparison() {
 #[test]
 fn individual_cut_bindings_cannot_be_replaced_by_assertions_or_crossed_values() {
     with_expected(|expected| {
-        let original: Value = serde_json::from_slice(HOST_OBSERVATION).unwrap();
+        let original: Value = serde_json::from_slice(ADAPTED_OBSERVATION).unwrap();
         for (pointer, different, refused) in [
+            ("/bindingSha256", json!("wrong-binding"), Refusal::Transport),
+            (
+                "/fixtureSchema",
+                json!("unsupported-schema"),
+                Refusal::Shape,
+            ),
             ("/jobId", json!("review-other"), Refusal::Transport),
             ("/generation", json!(2), Refusal::Transport),
             ("/routeRevision", json!("other-route"), Refusal::Transport),
@@ -516,7 +548,15 @@ fn individual_cut_bindings_cannot_be_replaced_by_assertions_or_crossed_values() 
                 json!("other-channel"),
                 Refusal::ActorOrChannel,
             ),
-            ("/events/0/lockedFixture", json!(false), Refusal::Order),
+            ("/events/0/lockedFixture", json!(false), Refusal::Bootstrap),
+            (
+                "/events/0/publicProbeSha256",
+                json!("other"),
+                Refusal::Bootstrap,
+            ),
+            ("/events/1/bootstrapSeq", json!(2), Refusal::Order),
+            ("/events/3/responseSeq", json!(2), Refusal::Order),
+            ("/events/4/answerSeq", json!(3), Refusal::Order),
             (
                 "/events/0/executableSha256",
                 json!("other"),
@@ -559,13 +599,23 @@ fn individual_cut_bindings_cannot_be_replaced_by_assertions_or_crossed_values() 
                 "{pointer}"
             );
         }
+        let mut unsupported = original;
+        unsupported["method"] = json!("unknown-even-if-agreed");
+        let expectation = Expected {
+            method: "unknown-even-if-agreed",
+            ..expected
+        };
+        assert_eq!(
+            from_repinned_control(&expectation, &unsupported),
+            Err(Refusal::Method)
+        );
     });
 }
 
 #[test]
 fn exactly_one_in_order_chain_and_nonaccepted_dispositions_are_distinct() {
     with_expected(|expected| {
-        let original: Value = serde_json::from_slice(HOST_OBSERVATION).unwrap();
+        let original: Value = serde_json::from_slice(ADAPTED_OBSERVATION).unwrap();
         let variants: [fn(&mut Vec<Value>); 3] = [
             |events| {
                 events.pop();
@@ -604,7 +654,16 @@ fn exactly_one_in_order_chain_and_nonaccepted_dispositions_are_distinct() {
         failed["events"][4]["outcome"] = json!("failed");
         assert_eq!(
             from_repinned_control(&expected, &failed),
-            Ok(Disposition::FailedTerminal)
+            Ok(Disposition::FailedTerminal { settled: true })
+        );
+        let mut failed_unsettled = failed.clone();
+        failed_unsettled["events"][4]
+            .as_object_mut()
+            .unwrap()
+            .remove("settlementSha256");
+        assert_eq!(
+            from_repinned_control(&expected, &failed_unsettled),
+            Ok(Disposition::FailedTerminal { settled: false })
         );
         failed["events"][4]["outcome"] = json!("unresolved_settlement");
         assert_eq!(
