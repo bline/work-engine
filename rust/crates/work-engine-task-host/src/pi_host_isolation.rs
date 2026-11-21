@@ -75,9 +75,10 @@ pub(crate) enum PiHostIsolationRefusal {
     DescribeUnavailable,
     /// `profile describe` refused the profile (exit 1, class `profile`).
     DescribeRefused,
-    /// `profile describe` failed in its scratch environment or the composed
-    /// job's admission (exit 1, class `root`, `io` or `admission`).
+    /// `profile describe` failed in its scratch environment (class `root` or `io`).
     DescribeEnvironmentFailure,
+    /// The composed job failed the Host's fresh admission (class `admission`).
+    DescribeAdmissionRefused,
     /// The described profile is not the pinned profile.
     DescribeProfileMismatch,
     /// A route payer the description omits, or an https route whose payer is
@@ -90,9 +91,10 @@ pub(crate) enum PiHostIsolationRefusal {
     /// A loopback route: offline qualification only.
     LoopbackRoute,
     /// The native root is not a canonical directory of plain components
-    /// (`[A-Za-z0-9._-]`) under a real parent directory, disjoint from the
-    /// runtime root: a Host `prepare` under it could not mount its root.
+    /// (`[A-Za-z0-9._-]`) under a real parent directory, disjoint from the runtime.
     NativeRootUnmountable,
+    /// The native root is not owned by this user with mode 0700.
+    NativeRootPermissions,
 }
 
 impl PiHostIsolationRefusal {
@@ -116,6 +118,7 @@ impl PiHostIsolationRefusal {
             Self::DescribeUnavailable => "pi host profile describe unavailable",
             Self::DescribeRefused => "pi host profile describe refused the profile",
             Self::DescribeEnvironmentFailure => "pi host profile describe environment failure",
+            Self::DescribeAdmissionRefused => "pi host composed job failed fresh admission",
             Self::DescribeProfileMismatch => "pi host described profile is not the pinned profile",
             Self::DescribeInconsistent => "pi host profile description inconsistent",
             Self::ProviderNotRunnable => "pi host provider not runnable by the lifecycle runner",
@@ -123,6 +126,9 @@ impl PiHostIsolationRefusal {
             Self::LoopbackRoute => "pi host loopback route refused outside controlled proof",
             Self::NativeRootUnmountable => {
                 "pi host native root not canonical, plain and disjoint from the runtime"
+            }
+            Self::NativeRootPermissions => {
+                "pi host native root must be caller-owned with mode 0700"
             }
         }
     }
@@ -290,6 +296,8 @@ pub(crate) fn profile_runtime_root(profile: &Path) -> Option<PathBuf> {
 /// canonical path is its configured path, whose immediate parent is a real
 /// directory, whose every component is `[A-Za-z0-9._-]` (not `.` or `..`),
 /// and which is disjoint from the runtime root when the profile names one.
+/// The caller must own it with mode 0700: Host `prepare` checks the attempt
+/// directory's owner and mode, not those of its parent (this directory).
 pub(crate) fn check_native_root(
     root: &Path,
     runtime_root: Option<&Path>,
@@ -311,8 +319,10 @@ pub(crate) fn check_native_root(
     if !root.is_absolute() || !plain {
         return refused;
     }
+    let meta =
+        fs::symlink_metadata(root).map_err(|_| PiHostIsolationRefusal::NativeRootUnmountable)?;
     if !fs::symlink_metadata(parent).is_ok_and(|meta| meta.is_dir())
-        || !fs::symlink_metadata(root).is_ok_and(|meta| meta.is_dir())
+        || !meta.is_dir()
         // Path equality ignores interior `.` and repeated slashes; compare
         // the original spelling, as it is used to construct the launch root.
         || !fs::canonicalize(root).is_ok_and(|path| path.as_os_str() == root.as_os_str())
@@ -324,6 +334,10 @@ pub(crate) fn check_native_root(
         if root.starts_with(&runtime) || runtime.starts_with(root) {
             return refused;
         }
+    }
+    let uid = current_uid().map_err(|_| PiHostIsolationRefusal::NativeRootPermissions)?;
+    if meta.uid() != uid || meta.mode() & 0o7777 != 0o700 {
+        return Err(PiHostIsolationRefusal::NativeRootPermissions);
     }
     Ok(())
 }
@@ -447,8 +461,8 @@ fn read_bounded<R: Read + Send + 'static>(
 /// environment (the subcommand reads none but `TMPDIR`, which then defaults
 /// to `/tmp`), null stdin, a deadline after which the Host is killed, and
 /// bounded stdout and stderr. Exit 1 is a refusal whose class (stderr
-/// `{status,class,error}`) separates a refused profile from an environment
-/// failure; describe never reads credentials, and only the class is used.
+/// `{status,class,error}`) distinguishes profile, scratch and fresh-admission
+/// failures; describe never reads credentials, and only the class is used.
 fn describe_profile(
     executable: &Path,
     profile: &Path,
@@ -500,7 +514,8 @@ fn describe_profile(
                 .map_err(|_| R::DescribeUnavailable)?;
         return Err(match refusal.class.as_str() {
             "profile" => R::DescribeRefused,
-            "root" | "io" | "admission" => R::DescribeEnvironmentFailure,
+            "root" | "io" => R::DescribeEnvironmentFailure,
+            "admission" => R::DescribeAdmissionRefused,
             _ => R::DescribeUnavailable,
         });
     }
@@ -857,6 +872,7 @@ mod tests {
             0o600,
         );
         let native = startup.lifecycle.native.as_mut().unwrap();
+        fs::set_permissions(&native.root, fs::Permissions::from_mode(0o700)).unwrap();
         native.provider_route = NativeProviderRoute::PiHostV1;
         native.simulator_base_url.clear();
         native.executable = host.clone();
@@ -1186,7 +1202,7 @@ mod tests {
     }
 
     #[test]
-    fn describe_refusal_class_separates_profile_from_environment() {
+    fn describe_refusal_class_distinguishes_profile_scratch_and_admission() {
         use PiHostIsolationRefusal as R;
         let dir = tempfile::tempdir().unwrap();
         let (profile, _) = described_profile(dir.path());
@@ -1197,7 +1213,7 @@ mod tests {
             (refusal("io").to_string(), R::DescribeEnvironmentFailure),
             (
                 refusal("admission").to_string(),
-                R::DescribeEnvironmentFailure,
+                R::DescribeAdmissionRefused,
             ),
             (refusal("snapshot-id").to_string(), R::DescribeUnavailable),
             (
@@ -1335,12 +1351,21 @@ mod tests {
         let dir = |name: &str| {
             let path = base.join(name);
             fs::create_dir_all(&path).unwrap();
+            fs::set_permissions(&path, fs::Permissions::from_mode(0o700)).unwrap();
             path
         };
         let native = dir("native");
         let runtime = dir("runtime");
         assert_eq!(check_native_root(&native, None), Ok(()));
         assert_eq!(check_native_root(&native, Some(&runtime)), Ok(()));
+        for mode in [0o755, 0o770, 0o500] {
+            fs::set_permissions(&native, fs::Permissions::from_mode(mode)).unwrap();
+            assert_eq!(
+                check_native_root(&native, None),
+                Err(R::NativeRootPermissions)
+            );
+        }
+        fs::set_permissions(&native, fs::Permissions::from_mode(0o700)).unwrap();
         let refused = Err(R::NativeRootUnmountable);
         for name in ["na+tive", "na tive", "na@tive", "na:tive"] {
             assert_eq!(check_native_root(&dir(name), None), refused, "{name}");
@@ -1400,6 +1425,13 @@ mod tests {
             profile_runtime_root(profile),
             Some(profile.parent().unwrap().join("runtime"))
         );
+        let native = startup.lifecycle.native.as_ref().unwrap();
+        fs::set_permissions(&native.root, fs::Permissions::from_mode(0o755)).unwrap();
+        assert_eq!(
+            admit_installation(&startup),
+            Err(PiHostIsolationRefusal::NativeRootPermissions)
+        );
+
         let native = startup.lifecycle.native.as_mut().unwrap();
         native.root = native.root.with_file_name("na+tive");
         fs::create_dir(&native.root).unwrap();
