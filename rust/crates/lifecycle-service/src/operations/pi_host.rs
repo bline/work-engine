@@ -23,6 +23,8 @@ use std::sync::{Arc, atomic::Ordering};
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::{Duration, Instant};
 
+mod request_heads;
+
 /// The store refuses a raw native ingress frame above 1 MiB; the Host keeps
 /// every frame, including its `thread/read` view, within that bound.
 const MAX_FRAME: usize = 1_048_576;
@@ -628,6 +630,11 @@ fn read_inside(path: &Path, root: &Path) -> Result<Vec<u8>, StoreError> {
     std::fs::read(&canonical).map_err(|_| StoreError::Rejected)
 }
 
+fn request_number(call: &str) -> Option<u64> {
+    let request: u64 = call.strip_prefix("request-")?.parse().ok()?;
+    (request > 0 && call == format!("request-{request}")).then_some(request)
+}
+
 /// Re-read and re-digest every payload; derive eligibility from the capture
 /// and the observed terminal.
 pub(crate) fn check_capture(
@@ -658,19 +665,26 @@ pub(crate) fn check_capture(
     {
         return Err(StoreError::Rejected);
     }
+    // Only Messages is retained, even for a capture with no physical sends.
+    let entries = capture["payloads"].as_array().ok_or(StoreError::Rejected)?;
+    if expected.wire != "messages" || entries.len() as u64 > pi_host::MAX_TURN_SENDS {
+        return Err(StoreError::Rejected);
+    }
+    let journal = entries
+        .iter()
+        .any(|p| p.get("request_head").is_some())
+        .then(|| request_heads::read_journal(&expected.state_dir))
+        .transpose()?;
+    let mut heads = Vec::new();
     let mut payloads = Vec::new();
     let mut total = 0usize;
     let mut sends = std::collections::BTreeSet::new();
-    for p in capture["payloads"].as_array().ok_or(StoreError::Rejected)? {
+    for p in entries {
         // `request-<n>` names the Host's retained body `coding-hosted-<n>.body.json`.
         let call = p["inference_call_id"]
             .as_str()
             .ok_or(StoreError::Rejected)?;
-        let n = call
-            .strip_prefix("request-")
-            .and_then(|n| n.parse::<u64>().ok())
-            .filter(|n| *n >= 1)
-            .ok_or(StoreError::Rejected)?;
+        let n = request_number(call).ok_or(StoreError::Rejected)?;
         let path = PathBuf::from(p["path"].as_str().ok_or(StoreError::Rejected)?);
         if path.file_name()
             != Some(std::ffi::OsStr::new(&format!(
@@ -688,7 +702,7 @@ pub(crate) fn check_capture(
         if Some(sha(&body).as_str()) != p["sha256"].as_str()
             || p["representation"] != "wire"
             || p["original_codec"] != "identity"
-            || !sends.insert((call.to_owned(), send))
+            || !sends.insert((n, send))
             || total as u64 > pi_host::MAX_TURN_BODY_BYTES
         {
             return Err(StoreError::Rejected);
@@ -703,6 +717,17 @@ pub(crate) fn check_capture(
         if sha(&tools) != pi_host::tools::MESSAGES_TOOLS_SHA256 {
             return Err(StoreError::Rejected);
         }
+        if p.get("request_head").is_some() {
+            heads.push(request_heads::verify(
+                p,
+                &capture,
+                journal.as_ref().ok_or(StoreError::Rejected)?,
+                expected,
+                n,
+                send,
+                body.len(),
+            )?);
+        }
         payloads.push(NativeInputPayload {
             inference_call_id: call.into(),
             physical_send: send,
@@ -712,17 +737,14 @@ pub(crate) fn check_capture(
             bytes: body,
         });
     }
-    // Only Messages is retained, even for a capture with no physical sends.
-    if expected.wire != "messages" || payloads.len() as u64 > pi_host::MAX_TURN_SENDS {
-        return Err(StoreError::Rejected);
-    }
     // Every relayed call names a retained physical send.
     let calls_named = capture["calls"].as_array().is_some_and(|calls| {
         calls.iter().all(|c| {
             c["inference_call_id"]
                 .as_str()
+                .and_then(request_number)
                 .zip(c["physical_send"].as_u64())
-                .is_some_and(|(call, send)| sends.contains(&(call.to_owned(), send)))
+                .is_some_and(|coordinate| sends.contains(&coordinate))
         })
     });
     let eligible = capture["eligibility"]["eligible"] == true
@@ -737,10 +759,13 @@ pub(crate) fn check_capture(
     } else {
         "capture_ineligible".to_owned()
     };
+    let head_verification = json!({"schema":"work-engine.pi-host-request-head-verification.v1",
+        "unestablished_send_count": payloads.len()-heads.len(), "verified_sends": heads});
     let metadata = json!({"realization":capture["realization"],"evidence_class":capture["evidence_class"],
         "protocol_digest":capture["protocol_digest"],"wire":capture["wire"],
         "contains_account_identifier":capture["contains_account_identifier"],
         "capture_sha256":sha(bytes),"identities":capture["identities"],"turn":capture["turn"],
+        "request_head_verification":head_verification,
         "attempts":capture["attempts"],"responses":capture["responses"],"results":capture["results"],"history":capture["history"],
         "observation":capture["observation"],"eligibility":capture["eligibility"]});
     let metadata = serde_json::to_vec(&metadata).map_err(|_| StoreError::Rejected)?;
@@ -1519,6 +1544,14 @@ mod tests {
         let metadata: Value = serde_json::from_slice(&ok.metadata).unwrap();
         assert_eq!(metadata["attempts"][0]["disposition"], "completed");
         assert_eq!(metadata["attempts"][0]["payer"], "claude-subscription");
+        assert_eq!(
+            metadata["request_head_verification"]["unestablished_send_count"],
+            1
+        );
+        assert_eq!(
+            metadata["request_head_verification"]["verified_sends"],
+            json!([])
+        );
         assert!(ok.causal_bundle.is_some());
         for change in [
             |e: &mut Expected| e.model = "other".into(),
@@ -1608,6 +1641,265 @@ mod tests {
         // A tampered payload refuses.
         std::fs::write(&body_path, b"{}").unwrap();
         assert!(check(&expected, "u", "prompt", "completed").is_err());
+    }
+
+    #[test]
+    fn messages_request_coordinate_is_canonical() {
+        assert_eq!(request_number("request-1"), Some(1));
+        assert_eq!(
+            request_number("request-18446744073709551615"),
+            Some(u64::MAX)
+        );
+        for call in [
+            "request-0",
+            "request-01",
+            "request-+1",
+            "request--1",
+            "request-18446744073709551616",
+        ] {
+            assert_eq!(request_number(call), None);
+        }
+    }
+
+    #[test]
+    fn messages_request_heads_verify_per_physical_send() {
+        let dir = tempfile::tempdir().unwrap();
+        let (bytes, mut expected, terminal) = capture_fixture(dir.path(), true);
+        let mut capture: Value = serde_json::from_slice(&bytes).unwrap();
+        expected
+            .routes
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"id":"secondary",
+            "payer":"offline-secondary","endpoint":"loopback:8081"}));
+        capture["identities"]["routes"] = expected.routes.clone();
+        capture["turn"]["requests"] = json!([1, 1]);
+        let original = capture["payloads"][0].clone();
+        let body_len = std::fs::metadata(expected.state_dir.join("coding-hosted-1.body.json"))
+            .unwrap()
+            .len();
+        let mut documents = Vec::new();
+        for (attempt, route, payer, status, host) in [
+            (
+                1,
+                "primary",
+                "claude-subscription",
+                "refused",
+                "api.anthropic.com",
+            ),
+            (
+                2,
+                "secondary",
+                "offline-secondary",
+                "completed",
+                "localhost",
+            ),
+        ] {
+            let path = expected
+                .state_dir
+                .join(format!("coding-hosted-1-{attempt}.request-head.json"));
+            let head = format!(
+                "POST /v1/messages?beta=true HTTP/1.1\r\nHost: {host}\r\nX-Request-Id: 1-{attempt}\r\nContent-Length: {body_len}\r\nConnection: close\r\nAuthorization: [redacted]\r\ncontent-type: application/json\r\nuser-agent: offline\u{85}\r\nx-stainless-retry-count: 0\r\n\r\n"
+            );
+            let doc = json!({"schema":"work-engine.pi-host-request-head.v1","request":1,"attempt":attempt,
+                "route":route,"redacted":"[redacted]","head":head});
+            let mut payload = original.clone();
+            payload["physical_send"] = json!(attempt);
+            payload["route"] = json!(route);
+            payload["payer"] = json!(payer);
+            payload["disposition"] = json!(status);
+            payload["request_head"] = json!({"path":path});
+            let claim = json!({"request":1,"attempt":attempt,"route":route,"payer":payer,"disposition":status});
+            documents.push((path, doc, payload, claim));
+        }
+        let run = |capture: &Value| {
+            check_capture(
+                &serde_json::to_vec(capture).unwrap(),
+                terminal.clone(),
+                "completed".into(),
+                &expected,
+                "u",
+                "prompt",
+            )
+        };
+        let journal_path = expected.state_dir.join("pi-state.json");
+        let install = |mut capture: Value, docs: &[(PathBuf, Value, Value, Value)]| {
+            let mut attempts = Vec::new();
+            let mut payloads = Vec::new();
+            let mut journal = Vec::new();
+            for (path, doc, payload, claim) in docs {
+                let bytes = serde_json::to_vec(doc).unwrap();
+                std::fs::write(path, &bytes).unwrap();
+                let hash = sha(&bytes);
+                let mut payload = payload.clone();
+                payload["request_head"]["sha256"] = json!(hash);
+                let mut row = claim.clone();
+                row["request_head_sha256"] = json!(hash);
+                row["request_body_sha256"] = payload["sha256"].clone();
+                attempts.push(claim.clone());
+                payloads.push(payload);
+                journal.push(row);
+            }
+            capture["attempts"] = json!(attempts);
+            capture["payloads"] = json!(payloads);
+            let journal = json!({"coding":{"provider_requests":{"1":{"attempts":journal}}}});
+            std::fs::write(&journal_path, serde_json::to_vec(&journal).unwrap()).unwrap();
+            (capture, journal)
+        };
+        let (base, journal) = install(capture.clone(), &documents);
+        let ok = run(&base).unwrap();
+        assert!(ok.eligible);
+        let metadata: Value = serde_json::from_slice(&ok.metadata).unwrap();
+        let heads = &metadata["request_head_verification"];
+        assert_eq!(heads["unestablished_send_count"], 0);
+        let sends = heads["verified_sends"].as_array().unwrap();
+        assert_eq!(sends.len(), 2);
+        assert_eq!(sends[0]["body_sha256"], sends[1]["body_sha256"]);
+        assert_ne!(sends[0]["head_sha256"], sends[1]["head_sha256"]);
+        assert_eq!(sends[1]["payer"], "offline-secondary");
+        assert_eq!(sends[1]["physical_send"], 2);
+        assert!(
+            !String::from_utf8(ok.metadata)
+                .unwrap()
+                .contains("Authorization:")
+        );
+
+        let failed = check_capture(
+            &serde_json::to_vec(&base).unwrap(),
+            terminal.clone(),
+            "failed".into(),
+            &expected,
+            "u",
+            "prompt",
+        )
+        .unwrap();
+        assert!(!failed.eligible && failed.causal_bundle.is_none());
+        let failed_meta: Value = serde_json::from_slice(&failed.metadata).unwrap();
+        assert_eq!(failed_meta["request_head_verification"], *heads);
+
+        for interval in [Value::Null, json!([2, 2]), json!([1, 0]), json!([1, 1, 2])] {
+            let mut incomplete = base.clone();
+            incomplete["turn"]["requests"] = interval;
+            assert!(
+                run(&incomplete).is_err(),
+                "a claimed head requires turn membership"
+            );
+        }
+        let mut large = base.clone();
+        let pad = 128 * 1024 - run(&large).unwrap().metadata.len() - 2;
+        large["history"] = json!("a".repeat(pad)); // replaces null (4 B) with a string (2 + pad B)
+        assert_eq!(run(&large).unwrap().metadata.len(), 128 * 1024 - 4);
+        large["history"] = json!("a".repeat(pad + 4));
+        assert_eq!(run(&large).unwrap().metadata.len(), 128 * 1024);
+        large["history"] = json!("a".repeat(pad + 5));
+        assert!(
+            run(&large).is_err(),
+            "verification rows are subject to metadata cap"
+        );
+
+        let mut missing_claim = base.clone();
+        missing_claim["payloads"][1]
+            .as_object_mut()
+            .unwrap()
+            .remove("request_head");
+        let partial: Value =
+            serde_json::from_slice(&run(&missing_claim).unwrap().metadata).unwrap();
+        assert_eq!(
+            partial["request_head_verification"]["unestablished_send_count"],
+            1
+        );
+        assert_eq!(
+            partial["request_head_verification"]["verified_sends"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
+        for (key, value) in [
+            ("payer", json!("wrong")),
+            ("route", json!("primary")),
+            ("disposition", json!("refused")),
+            ("request_head", base["payloads"][0]["request_head"].clone()),
+        ] {
+            let mut bad = base.clone();
+            bad["payloads"][1][key] = value;
+            assert!(run(&bad).is_err(), "bad {key}");
+        }
+        let mut bad = base.clone();
+        bad["attempts"]
+            .as_array_mut()
+            .unwrap()
+            .push(base["attempts"][1].clone());
+        assert!(run(&bad).is_err(), "ambiguous capture attempt");
+        let mut bad_journal = journal.clone();
+        bad_journal["coding"]["provider_requests"]["1"]["attempts"][1]["request_head_sha256"] =
+            json!("0".repeat(64));
+        std::fs::write(&journal_path, serde_json::to_vec(&bad_journal).unwrap()).unwrap();
+        assert!(run(&base).is_err(), "capture digest alone is not enough");
+        std::fs::remove_file(&journal_path).unwrap();
+        assert!(run(&base).is_err(), "claimed head requires a journal");
+        std::fs::File::create(&journal_path)
+            .unwrap()
+            .set_len(16 * 1024 * 1024 + 1)
+            .unwrap();
+        assert!(run(&base).is_err(), "journal intake is bounded");
+        std::fs::write(&journal_path, serde_json::to_vec(&journal).unwrap()).unwrap();
+        std::fs::write(&documents[1].0, b"{}").unwrap();
+        assert!(run(&base).is_err(), "head tampered");
+        std::fs::remove_file(&documents[1].0).unwrap();
+        assert!(run(&base).is_err(), "claimed head missing");
+        let alias_target = expected.state_dir.join("identical.json");
+        std::fs::write(&alias_target, serde_json::to_vec(&documents[1].1).unwrap()).unwrap();
+        std::os::unix::fs::symlink(&alias_target, &documents[1].0).unwrap();
+        assert!(
+            run(&base).is_err(),
+            "attempt head cannot alias another file"
+        );
+        std::fs::remove_file(&documents[1].0).unwrap();
+        let valid = documents[1].1["head"].as_str().unwrap();
+        for head in [
+            valid.replace("x-stainless-retry-count: 0\r\n", ""),
+            valid.replace("x-stainless-retry-count: 0", "x-stainless-retry-count: 1"),
+            valid.replace("[redacted]", "not-redacted"),
+            valid.replace("content-type:", "authorization:"),
+            valid.replace("X-Request-Id: 1-2", "X-Request-Id: 1-1"),
+            valid.replace("Host: localhost", "Host: api.anthropic.com"),
+            valid.replace(&format!("Content-Length: {body_len}"), "Content-Length: 0"),
+            valid.repeat(3000),
+        ] {
+            let mut bad_docs = documents.clone();
+            bad_docs[1].1["head"] = json!(head);
+            let (bad, _) = install(capture.clone(), &bad_docs);
+            assert!(
+                run(&bad).is_err(),
+                "invalid head even with both digests matching"
+            );
+        }
+        for disposition in ["uncertain", "pending", "unknown", "not_dispatched"] {
+            let mut with_disposition = documents.clone();
+            with_disposition[1].2["disposition"] = json!(disposition);
+            with_disposition[1].3["disposition"] = json!(disposition);
+            let (capture, _) = install(capture.clone(), &with_disposition);
+            let checked = check_capture(
+                &serde_json::to_vec(&capture).unwrap(),
+                terminal.clone(),
+                "failed".into(),
+                &expected,
+                "u",
+                "prompt",
+            );
+            if matches!(disposition, "uncertain" | "pending") {
+                let checked = checked.unwrap();
+                assert!(!checked.eligible);
+                let metadata: Value = serde_json::from_slice(&checked.metadata).unwrap();
+                assert_eq!(
+                    metadata["request_head_verification"]["verified_sends"][1]["disposition"],
+                    disposition
+                );
+            } else {
+                assert!(checked.is_err());
+            }
+        }
     }
 
     #[test]
