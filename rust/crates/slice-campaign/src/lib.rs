@@ -8,6 +8,8 @@ mod application;
 pub mod codec;
 mod completion;
 pub mod contract;
+#[cfg(test)]
+mod controlled_staging_fixture;
 mod installed_authority;
 pub mod job_admission;
 pub mod publication;
