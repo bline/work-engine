@@ -33,6 +33,7 @@ struct FixtureAnchor {
     plan_version: String,
     obligation: String,
     builder: BuilderInput,
+    evaluator_sha256: String,
 }
 
 struct FixtureBuilderBinding {
@@ -45,6 +46,39 @@ struct FixtureExport {
     builder_dispatch: String,
     parent: String,
     candidate: CandidateRef,
+    host_gate_receipt_sha256: String,
+}
+
+impl FixtureExport {
+    fn scope(&self) -> String {
+        SubjectParts {
+            commit: &self.candidate.commit,
+            tree: &self.candidate.tree,
+            patch_identity: &self.candidate.patch_identity,
+        }
+        .digest()
+    }
+}
+
+// These are inputs from distinct test suppliers standing in for checked owner
+// readbacks. They are not reader implementations or future record schemas.
+struct FixtureHostGate {
+    anchor_sha256: String,
+    dispatch: String,
+    command_sha256: String,
+    tested_tree: String,
+    receipt_sha256: String,
+    passed: bool,
+}
+
+struct FixtureEngineeringVerdict {
+    anchor_sha256: String,
+    dispatch: String,
+    scope_digest: String,
+    export_receipt_sha256: String,
+    host_gate_receipt_sha256: String,
+    evaluator_sha256: String,
+    passed: bool,
 }
 
 impl FixtureAnchor {
@@ -66,30 +100,61 @@ impl FixtureAnchor {
         })
     }
 
+    fn host_gate_matches(
+        &self,
+        input: &FixtureBuilderBinding,
+        gate: &FixtureHostGate,
+        export: &FixtureExport,
+    ) -> bool {
+        input.anchor_sha256 == self.sha256()
+            && input.anchor_sha256 == gate.anchor_sha256
+            && input.dispatch == gate.dispatch
+            && input.dispatch == export.builder_dispatch
+            && self.builder.baseline == export.parent
+            && self.builder.gate_sha256 == gate.command_sha256
+            && export.candidate.tree == gate.tested_tree
+            && export.host_gate_receipt_sha256 == gate.receipt_sha256
+            && gate.passed
+    }
+
+    // The engineering receipts join on the export, not on each other's
+    // assertions. This is not final acceptance; no review is read here.
+    fn engineering_receipts_match(
+        &self,
+        input: &FixtureBuilderBinding,
+        gate: &FixtureHostGate,
+        export: &FixtureExport,
+        verdict: Option<&FixtureEngineeringVerdict>,
+    ) -> bool {
+        self.host_gate_matches(input, gate, export)
+            && verdict.is_some_and(|v| {
+                v.anchor_sha256 == input.anchor_sha256
+                    && v.dispatch == input.dispatch
+                    && v.scope_digest == export.scope()
+                    && v.export_receipt_sha256 == export.candidate.receipt_sha256
+                    && v.host_gate_receipt_sha256 == gate.receipt_sha256
+                    && v.evaluator_sha256 == self.evaluator_sha256
+                    && v.passed
+            })
+    }
+
     fn review_bytes(
         &self,
         input: &FixtureBuilderBinding,
+        gate: &FixtureHostGate,
         export: &FixtureExport,
         review_root: &str,
         identity: &CampaignIdentity,
     ) -> Option<Vec<u8>> {
-        if input.anchor_sha256 != self.sha256()
+        if !self.host_gate_matches(input, gate, export)
             || self.run_id != identity.run_id
             || self.slice_number != identity.slice_number
             || self.plan_version != identity.plan_version
-            || input.dispatch != export.builder_dispatch
-            || self.builder.baseline != export.parent
             || review_root.is_empty()
         {
             return None;
         }
         let candidate = &export.candidate;
-        let scope = SubjectParts {
-            commit: &candidate.commit,
-            tree: &candidate.tree,
-            patch_identity: &candidate.patch_identity,
-        }
-        .digest();
         Some(
             canonical_campaign(&json!({
                 "standing": "fixture-only-no-entry",
@@ -98,7 +163,8 @@ impl FixtureAnchor {
                 "candidateReceiptSha256": candidate.receipt_sha256,
                 "physicalProfileSha256": candidate.physical_profile_sha256,
                 "obligation": self.obligation,
-                "scopeDigest": scope,
+                "hostGateReceiptSha256": gate.receipt_sha256,
+                "scopeDigest": export.scope(),
                 "reviewRoot": review_root,
                 "identity": identity,
             }))
@@ -190,6 +256,18 @@ fn anchor() -> FixtureAnchor {
             task_sha256: "c".repeat(64),
             gate_sha256: "d".repeat(64),
         },
+        evaluator_sha256: "5".repeat(64),
+    }
+}
+
+fn host_gate(anchor: &FixtureAnchor, dispatch: &str, receipt_sha256: &str) -> FixtureHostGate {
+    FixtureHostGate {
+        anchor_sha256: anchor.sha256(),
+        dispatch: dispatch.into(),
+        command_sha256: anchor.builder.gate_sha256.clone(),
+        tested_tree: "f".repeat(40),
+        receipt_sha256: receipt_sha256.into(),
+        passed: true,
     }
 }
 
@@ -197,6 +275,7 @@ fn export() -> FixtureExport {
     FixtureExport {
         builder_dispatch: "builder-dispatch".into(),
         parent: "a".repeat(40),
+        host_gate_receipt_sha256: "4".repeat(64),
         candidate: CandidateRef {
             commit: "e".repeat(40),
             tree: "f".repeat(40),
@@ -226,28 +305,29 @@ fn fixture_staging_binds_builder_terms_then_exact_dispatch_export_scope() {
         .bind_input(&anchor.builder, "builder-dispatch")
         .unwrap();
     let mut export = export();
+    let gate = host_gate(&anchor, &binding.dispatch, &export.host_gate_receipt_sha256);
     let valid = anchor
-        .review_bytes(&binding, &export, "root-a", &identity("initial"))
+        .review_bytes(&binding, &gate, &export, "root-a", &identity("initial"))
         .unwrap();
     let value: serde_json::Value = serde_json::from_slice(&valid).unwrap();
     assert_ne!(value["scopeDigest"], export.candidate.patch_identity);
     export.candidate.commit = "8".repeat(40); // Identical patch/tree does not identify this checkpoint.
     let twin = anchor
-        .review_bytes(&binding, &export, "root-a", &identity("initial"))
+        .review_bytes(&binding, &gate, &export, "root-a", &identity("initial"))
         .unwrap();
     let twin: serde_json::Value = serde_json::from_slice(&twin).unwrap();
     assert_ne!(value["scopeDigest"], twin["scopeDigest"]);
     export.parent = "3".repeat(40);
     assert!(
         anchor
-            .review_bytes(&binding, &export, "root-a", &identity("initial"))
+            .review_bytes(&binding, &gate, &export, "root-a", &identity("initial"))
             .is_none()
     );
     export.parent = "a".repeat(40);
     export.builder_dispatch = "different-dispatch".into();
     assert!(
         anchor
-            .review_bytes(&binding, &export, "root-a", &identity("initial"))
+            .review_bytes(&binding, &gate, &export, "root-a", &identity("initial"))
             .is_none()
     );
 }
@@ -260,9 +340,11 @@ fn fixture_staging_has_one_slot_across_roots_attempts_and_reopen() {
         .unwrap();
     let repo = tempfile::tempdir().unwrap();
     let slot = anchor.slot(repo.path());
+    let export = export();
+    let gate = host_gate(&anchor, &binding.dispatch, &export.host_gate_receipt_sha256);
     let bytes = |root, attempt| {
         anchor
-            .review_bytes(&binding, &export(), root, &identity(attempt))
+            .review_bytes(&binding, &gate, &export, root, &identity(attempt))
             .unwrap()
     };
     let original = bytes("root-a", "initial");
@@ -294,11 +376,13 @@ fn fixture_staging_interruption_does_not_mint_a_second_publication() {
         .unwrap();
     let temp = tempfile::tempdir().unwrap();
     let slot = anchor.slot(temp.path());
+    let export = export();
+    let gate = host_gate(&anchor, &binding.dispatch, &export.host_gate_receipt_sha256);
     let original = anchor
-        .review_bytes(&binding, &export(), "root-a", &identity("initial"))
+        .review_bytes(&binding, &gate, &export, "root-a", &identity("initial"))
         .unwrap();
     let alternate = anchor
-        .review_bytes(&binding, &export(), "root-b", &identity("different"))
+        .review_bytes(&binding, &gate, &export, "root-b", &identity("different"))
         .unwrap();
     assert_eq!(
         publish_fixture(&slot, &original, true).unwrap(),
@@ -314,4 +398,64 @@ fn fixture_staging_interruption_does_not_mint_a_second_publication() {
     );
     assert!(compare_final(&slot, &original).unwrap().is_none());
     assert_eq!(fs::read(slot.with_extension("pending")).unwrap(), original);
+}
+
+#[test]
+fn engineering_fixture_joins_gate_a_before_review_and_gate_b_only_on_exact_export() {
+    let anchor = anchor();
+    let mut a = export();
+    let mut b = export();
+    b.builder_dispatch = "other-dispatch".into();
+    b.host_gate_receipt_sha256 = "6".repeat(64);
+    b.candidate.receipt_sha256 = "7".repeat(64);
+    // Independent dispatch/export fixtures intentionally share the same Git
+    // tuple. Neither a tree match nor even matching S authorizes a crossed join.
+    assert_eq!(a.scope(), b.scope());
+    let bind = |e: &FixtureExport| {
+        anchor
+            .bind_input(&anchor.builder, &e.builder_dispatch)
+            .unwrap()
+    };
+    let a_binding = bind(&a);
+    let b_binding = bind(&b);
+    let mut a_gate = host_gate(&anchor, &a_binding.dispatch, &a.host_gate_receipt_sha256);
+    let b_gate = host_gate(&anchor, &b_binding.dispatch, &b.host_gate_receipt_sha256);
+    let verdict = |e: &FixtureExport| FixtureEngineeringVerdict {
+        anchor_sha256: anchor.sha256(),
+        dispatch: e.builder_dispatch.clone(),
+        scope_digest: e.scope(),
+        export_receipt_sha256: e.candidate.receipt_sha256.clone(),
+        host_gate_receipt_sha256: e.host_gate_receipt_sha256.clone(),
+        evaluator_sha256: anchor.evaluator_sha256.clone(),
+        passed: true,
+    };
+    let mut a_verdict = verdict(&a);
+    let b_verdict = verdict(&b);
+    let review = |gate: &FixtureHostGate, e: &FixtureExport| {
+        anchor.review_bytes(&a_binding, gate, e, "root-a", &identity("initial"))
+    };
+    assert!(review(&a_gate, &a).is_some());
+    assert!(review(&b_gate, &a).is_none());
+    assert!(!anchor.engineering_receipts_match(&a_binding, &a_gate, &a, None));
+    assert!(anchor.engineering_receipts_match(&a_binding, &a_gate, &a, Some(&a_verdict)));
+    assert!(anchor.engineering_receipts_match(&b_binding, &b_gate, &b, Some(&b_verdict)));
+    assert!(!anchor.engineering_receipts_match(&a_binding, &a_gate, &a, Some(&b_verdict)));
+
+    a_gate.passed = false;
+    assert!(review(&a_gate, &a).is_none());
+    assert!(!anchor.engineering_receipts_match(&a_binding, &a_gate, &a, Some(&a_verdict)));
+    a_gate.passed = true;
+    a_gate.tested_tree = "3".repeat(40);
+    assert!(review(&a_gate, &a).is_none());
+    a_gate.tested_tree = a.candidate.tree.clone();
+    a_verdict.passed = false;
+    assert!(review(&a_gate, &a).is_some()); // Gate B is not consumed by review.
+    assert!(!anchor.engineering_receipts_match(&a_binding, &a_gate, &a, Some(&a_verdict)));
+    a_verdict.passed = true;
+    a_verdict.evaluator_sha256 = "8".repeat(64);
+    assert!(!anchor.engineering_receipts_match(&a_binding, &a_gate, &a, Some(&a_verdict)));
+    a_verdict.evaluator_sha256 = anchor.evaluator_sha256.clone();
+    a.candidate.commit = "9".repeat(40);
+    assert!(review(&a_gate, &a).is_some()); // Gate A tested a tree, not this commit.
+    assert!(!anchor.engineering_receipts_match(&a_binding, &a_gate, &a, Some(&a_verdict)));
 }
