@@ -204,7 +204,12 @@ pub fn materialize(
             actual: tree,
         });
     }
-    let parents = git_line(repo, &["rev-list", "--parents", "-n", "1", commit])?;
+    let parents = match git_line(repo, &["rev-list", "--parents", "-n", "1", commit]) {
+        // A valid commit/parent pair fits on one short line. The capture limit
+        // refuses oversized merge metadata without mislabeling it a snapshot.
+        Err(Refusal::SnapshotBound(_)) => return Err(Refusal::ParentShape(commit.clone())),
+        other => other?,
+    };
     let ids: Vec<&str> = parents.split_whitespace().collect();
     if ids.len() != 2 || ids[0] != commit {
         return Err(Refusal::ParentShape(commit.clone()));
