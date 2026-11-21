@@ -83,6 +83,12 @@ impl AuthorityState {
         self.entries.get(id).map(|entry| entry.body)
     }
 
+    /// Look up both the historical record and its standing in this same observation.
+    #[cfg(feature = "fixture")]
+    pub(crate) fn observed_entry(&self, id: &IssuanceId) -> Option<&Entry> {
+        self.entries.get(id)
+    }
+
     /// Every issuance with its record and status, in issuance-id order.
     pub(crate) fn entries(&self) -> impl Iterator<Item = (&IssuanceId, &Entry)> {
         self.entries.iter()

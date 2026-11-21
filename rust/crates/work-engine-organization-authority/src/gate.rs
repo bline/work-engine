@@ -38,7 +38,8 @@ pub enum CheckId {
     O3,
     /// Exactly one committed `OrganizationAdmission` admits the request's candidate: its candidate
     /// content digest, requirements digest and problem scope (of the derived candidate) equal the
-    /// request's. That admission is the organization O8 and R3 select vantage bindings by.
+    /// request's. In the fixture domain its observed predecessor chain must also reach a valid
+    /// root before it is pinned. O8 and R3 select vantage bindings by the pinned admission.
     OA,
     /// Authority requirements covered by valid grants in decision scope; component bindings.
     O4,
@@ -89,6 +90,10 @@ pub enum ReasonCode {
     OrganizationUnadmitted,
     /// More than one committed organization admission admits the request's candidate.
     OrganizationHeadsAmbiguous,
+    /// The selected fixture admission does not have a valid observed lineage (see subject).
+    OrganizationLineageInvalid,
+    /// The selected fixture admission's lineage exceeds the gate's traversal limit.
+    OrganizationLineageTooDeep,
     AuthorityMissing,
     AuthorityRevoked,
     AuthoritySuperseded,
@@ -569,7 +574,7 @@ fn evaluate(
         }
         Some(c) => {
             let scope = ProblemScopeRef::of(c.problem_scope());
-            let derived = oa(state, request, &scope, &mut pins);
+            let derived = oa(domain, state, request, &scope, &mut pins);
             out.insert(
                 CheckId::OA,
                 match derived {
@@ -714,9 +719,11 @@ fn principal_named<'s>(
     }
 }
 
-/// OA: the unique committed organization admission whose candidate content digest, requirements
-/// digest and problem scope are the request's. On success pins it.
+/// OA selects on exact terms first; a broken lineage cannot resolve matching-head ambiguity.
+/// At fixture standing verify only the selected admission's lineage, then pin the head alone.
+#[cfg_attr(not(feature = "fixture"), allow(unused_variables))]
 fn oa(
+    domain: Domain,
     state: &AuthorityState,
     request: &OperationRequest,
     scope: &ProblemScopeRef,
@@ -740,6 +747,10 @@ fn oa(
     let subject = request.candidate_digest.to_hex();
     match found.as_slice() {
         [(id, admission)] => {
+            #[cfg(feature = "fixture")]
+            if domain == Domain::Fixture {
+                verify_admission_lineage(state, *id, admission).map_err(|r| vec![r])?;
+            }
             pins.organization_admissions.insert(*id);
             Ok(AdmittedOrganization {
                 admission: *id,
@@ -751,6 +762,74 @@ fn oa(
             ReasonCode::OrganizationHeadsAmbiguous,
             subject,
         )]),
+    }
+}
+
+// A fixture work limit, not an issuer policy. Even a well-formed longer lineage is refused.
+#[cfg(feature = "fixture")]
+const MAX_ADMISSION_PREDECESSOR_EDGES: usize = 64;
+
+#[cfg(feature = "fixture")]
+fn verify_admission_lineage<'s>(
+    state: &'s AuthorityState,
+    mut child_id: IssuanceId,
+    mut child: &'s OrganizationAdmission,
+) -> Result<(), Reason> {
+    let head = child_id;
+    let mut edges = 0;
+    loop {
+        let invalid = |detail| {
+            reason(
+                ReasonCode::OrganizationLineageInvalid,
+                format!("admission {child_id:?}: {detail}"),
+            )
+        };
+        let predecessor_id = match (child.revision, child.predecessor) {
+            (1, None) => return Ok(()),
+            (1, Some(_)) => return Err(invalid("revision 1 has a predecessor".to_owned())),
+            (_, None) => {
+                return Err(invalid(
+                    "only revision 1 may omit its predecessor".to_owned(),
+                ));
+            }
+            (_, Some(id)) => id,
+        };
+        if edges == MAX_ADMISSION_PREDECESSOR_EDGES {
+            return Err(reason(
+                ReasonCode::OrganizationLineageTooDeep,
+                format!(
+                    "admission {head:?}: exceeds {MAX_ADMISSION_PREDECESSOR_EDGES} predecessor edges"
+                ),
+            ));
+        }
+        let invalid_edge =
+            |detail: &str| invalid(format!("predecessor {predecessor_id:?} {detail}"));
+        let entry = state
+            .observed_entry(&predecessor_id)
+            .ok_or_else(|| invalid_edge("was not observed"))?;
+        let Record::OrganizationAdmission(predecessor) = &entry.record else {
+            return Err(invalid_edge("is not an OrganizationAdmission"));
+        };
+        if predecessor.organization_id != child.organization_id {
+            return Err(invalid_edge("belongs to a different organization"));
+        }
+        // Strictly decreasing revisions also rule out cycles without another traversal or set.
+        if predecessor.revision.checked_add(1) != Some(child.revision) {
+            return Err(invalid_edge("does not have the preceding revision"));
+        }
+        match entry.status {
+            IssuanceStatus::Superseded { by } if by == child_id => {}
+            IssuanceStatus::Superseded { by } => {
+                return Err(invalid_edge(&format!(
+                    "was superseded by {by:?}, not this issuance"
+                )));
+            }
+            IssuanceStatus::Committed => return Err(invalid_edge("is still committed")),
+            IssuanceStatus::Revoked => return Err(invalid_edge("is revoked")),
+        }
+        edges += 1;
+        child_id = predecessor_id;
+        child = predecessor;
     }
 }
 
@@ -1419,8 +1498,9 @@ impl AdmissionState {
 impl EffectAdmission {
     /// Point check against a new observation (6.1 F3 step 4). [`admit`] consumes the observation
     /// it decides on, so the observation passed here comes from another [`crate::observe_for`]. It
-    /// must be sealed to this admission's boundary; every pin must still be committed; if the revision moved or time
-    /// passed, Gate O and Gate R re-run with the same request and must pass.
+    /// must be sealed to this admission's boundary. After revision and pin checks, Gate O and
+    /// Gate R re-run with the same request against that observation and must pass. In the fixture
+    /// domain OA therefore also verifies the selected admission's lineage in that observation.
     pub fn admission_state(
         &self,
         observation: &Result<SealedObservation, Unobserved>,

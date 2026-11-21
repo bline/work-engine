@@ -107,16 +107,14 @@ pub struct BoundActor {
 ///   `candidateContentDigest`, derived from the requirements whose digest is `requirementsDigest`,
 ///   for `problemScope`. Like every record it confers nothing by its content; it counts only while
 ///   an observation reports its issuance committed, and it is revocable (6.1 F5).
-/// - Revision 1 has no predecessor (create-only). A successor keeps `organizationId`, has the next
-///   revision, names its predecessor's issuance and is issued by superseding that predecessor, so
-///   one organization has at most one committed head (no branching). This is the issuer's
-///   obligation: at fixture standing the gate does not check the predecessor chain (revision + 1,
-///   same organization, predecessor superseded by this issuance) or per-organization uniqueness.
-///   `OA` refuses only when more than one committed admission matches the same candidate terms,
-///   which may belong to different organizations. An issuer outside fixture standing requires
-///   that check first; whether it may be one head per organization is an open owner question,
-///   because admissions are keyed by problem scope including the slice number, so one head per
-///   organization would block concurrent slices.
+/// - Revision 1 has no predecessor (create-only). At fixture standing `OA` verifies the selected
+///   issuance's bounded lineage to that root in one observation. Each successor names an observed
+///   `OrganizationAdmission` with the same `organizationId` and exactly the preceding revision;
+///   that predecessor must be observed as superseded by this successor's issuance.
+///   This checks the selected lineage, not the issuer's global head uniqueness: `OA` reports
+///   ambiguity only over the exact committed candidate terms (even across different organizations).
+///   The key for issuer-wide exclusivity (organization, problem scope, or candidate terms) remains
+///   an open owner question.
 /// - Vantage-actor bindings name the admission they belong to by its issuance
 ///   ([`VantageActorBinding`] `organization`). Revoking or superseding an admission therefore
 ///   leaves every binding that pins it without an admitted organization.

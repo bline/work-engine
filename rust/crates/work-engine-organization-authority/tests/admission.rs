@@ -150,10 +150,19 @@ impl Terms {
 }
 
 fn admission_record(organization_id: &str, terms: &Terms) -> Record {
+    admission_revision(organization_id, 1, None, terms)
+}
+
+fn admission_revision(
+    organization_id: &str,
+    revision: u64,
+    predecessor: Option<IssuanceId>,
+    terms: &Terms,
+) -> Record {
     Record::fixture_organization_admission(
         organization_id,
-        1,
-        None,
+        revision,
+        predecessor,
         terms.scope.clone(),
         terms.requirements_digest,
         terms.candidate_digest,
@@ -1972,6 +1981,308 @@ fn g2_oa_bindings_of_another_organizations_admission_do_not_bind_this_one() {
     let admission = decide_base(&w).expect("admitted");
     assert_eq!(admission.organization().admission, own);
     assert_eq!(admission.organization().organization_id, "org-own");
+}
+
+mod oa_lineage {
+    use super::*;
+
+    fn request_for_commit(commit: &str) -> OperationRequest {
+        let subject = SubjectRef {
+            commit: commit.to_owned(),
+            ..subject()
+        };
+        let requirements = requirements(&Req {
+            scope_digest: subject.scope_digest(),
+            ..Req::default()
+        });
+        let digest =
+            derive(&requirements, Profile::FixedSliceReviewV1).candidates[0].content_digest();
+        OperationRequest::new(requirements, digest, VANTAGE, subject)
+    }
+
+    struct Lineage {
+        w: World,
+        request: OperationRequest,
+        terms: Terms,
+        past_terms: Terms,
+    }
+
+    impl Lineage {
+        fn new() -> Self {
+            let w = world(Opts::default());
+            let request = request_for_commit("c0ffee2");
+            let terms = Terms::of(&request);
+            let past_terms = Terms::of(&request_for_commit("c0ffee3"));
+            Self {
+                w,
+                request,
+                terms,
+                past_terms,
+            }
+        }
+
+        fn root(&self, org: &str) -> IssuanceId {
+            self.w.src.issue(admission_record(org, &self.past_terms))
+        }
+
+        fn head(&self, revision: u64, predecessor: Option<IssuanceId>) -> Record {
+            admission_revision(ORG, revision, predecessor, &self.terms)
+        }
+
+        fn extend(&self, old: IssuanceId, revisions: std::ops::RangeInclusive<u64>) -> IssuanceId {
+            revisions.fold(old, |id, revision| {
+                self.w.src.supersede(
+                    &id,
+                    admission_revision(ORG, revision, Some(id), &self.past_terms),
+                )
+            })
+        }
+
+        fn bind_head(&self, id: IssuanceId) {
+            self.w.src.issue(Record::fixture_vantage_binding(
+                id,
+                VANTAGE,
+                self.w.reviewer,
+                RealizationDigest::new("real-1"),
+                "uid:svc-reviewer",
+            ));
+            self.w.src.issue(Record::fixture_vantage_binding(
+                id,
+                "vantage-builder",
+                self.w.builder,
+                RealizationDigest::new("real-builder"),
+                "uid:svc-builder",
+            ));
+        }
+
+        fn assert_admitted(&self, id: IssuanceId) {
+            self.bind_head(id);
+            let admission = decide_fixture(&self.w, &self.request, &realization(), NOW).unwrap();
+            assert_eq!(
+                admission.organization(),
+                &AdmittedOrganization {
+                    admission: id,
+                    organization_id: ORG.to_owned(),
+                }
+            );
+            assert_eq!(
+                admission.pins().organization_admissions,
+                [id].into_iter().collect()
+            );
+            assert!(state_now(&self.w, &admission, NOW).permits_effect());
+        }
+
+        fn assert_refused(&self, id: IssuanceId, code: ReasonCode, detail: &str) {
+            // Otherwise sound bindings exist even for the malformed head. Without OA failing,
+            // they would be used. With OA failing, O8 and R3 must not use them.
+            self.bind_head(id);
+            let reservation = reserve(boundary(1));
+            let observation = observe_for(&self.w.src, &reservation).unwrap();
+            let before = observation.revision();
+            let outcomes = refused(admit::<Fixture>(
+                &reservation,
+                observation,
+                &self.request,
+                &realization(),
+                NOW,
+            ));
+            let mut expected = unadmitted(code);
+            expected[0].1 = vec![r(code, detail)];
+            assert_exact(&outcomes, &expected);
+            assert_eq!(
+                observe_for(&self.w.src, &reservation).unwrap().revision(),
+                before
+            );
+            // The other candidate can still qualify in this very source, even with the same
+            // organization id. This is not a claim of global uniqueness.
+            assert_eq!(
+                admitted(&self.w).organization().admission,
+                self.w.organization
+            );
+        }
+
+        fn assert_invalid(&self, id: IssuanceId, broken_at: IssuanceId, detail: &str) {
+            self.assert_refused(
+                id,
+                ReasonCode::OrganizationLineageInvalid,
+                &format!("admission {broken_at:?}: {detail}"),
+            );
+        }
+    }
+
+    #[test]
+    fn root_and_three_observed_edges_admit_and_pin_only_the_selected_issuance() {
+        let f = Lineage::new();
+        assert_eq!(admitted(&f.w).organization().admission, f.w.organization);
+        let prior = f.extend(f.root(ORG), 2..=3);
+        let id = f.w.src.supersede(&prior, f.head(4, Some(prior)));
+        f.assert_admitted(id);
+        assert_eq!(admitted(&f.w).organization().admission, f.w.organization);
+    }
+
+    #[test]
+    fn malformed_root_refuses() {
+        for revision in [0, 2] {
+            let f = Lineage::new();
+            let id = f.w.src.issue(f.head(revision, None));
+            f.assert_invalid(id, id, "only revision 1 may omit its predecessor");
+        }
+        let f = Lineage::new();
+        let prior = f.root(ORG);
+        let id = f.w.src.supersede(&prior, f.head(1, Some(prior)));
+        f.assert_invalid(id, id, "revision 1 has a predecessor");
+    }
+
+    #[test]
+    fn absent_predecessor_refuses() {
+        let f = Lineage::new();
+        let other_source = FixtureSource::new();
+        let absent = other_source.issue(admission_record(ORG, &f.past_terms));
+        let id = f.w.src.issue(f.head(2, Some(absent)));
+        f.assert_invalid(id, id, &format!("predecessor {absent:?} was not observed"));
+    }
+
+    #[test]
+    fn wrong_kind_predecessor_refuses_even_with_observed_supersession() {
+        let f = Lineage::new();
+        let wrong_kind = principal(
+            &f.w.src,
+            "not-an-admission",
+            PrincipalKind::Human,
+            (AnchorKind::OwnerAccount, "nobody"),
+        );
+        let id = f.w.src.supersede(&wrong_kind, f.head(2, Some(wrong_kind)));
+        f.assert_invalid(
+            id,
+            id,
+            &format!("predecessor {wrong_kind:?} is not an OrganizationAdmission"),
+        );
+    }
+
+    #[test]
+    fn foreign_organization_refuses_even_with_observed_supersession() {
+        let f = Lineage::new();
+        let prior = f.root("org-other");
+        let id = f.w.src.supersede(&prior, f.head(2, Some(prior)));
+        f.assert_invalid(
+            id,
+            id,
+            &format!("predecessor {prior:?} belongs to a different organization"),
+        );
+    }
+
+    #[test]
+    fn revisions_must_be_consecutive_without_overflow() {
+        for (prior_revision, revision) in [(1, 3), (u64::MAX, 0)] {
+            let f = Lineage::new();
+            let prior =
+                f.w.src
+                    .issue(admission_revision(ORG, prior_revision, None, &f.past_terms));
+            let id = f.w.src.supersede(&prior, f.head(revision, Some(prior)));
+            f.assert_invalid(
+                id,
+                id,
+                &format!("predecessor {prior:?} does not have the preceding revision"),
+            );
+        }
+    }
+
+    #[test]
+    fn superseding_another_issuance_does_not_validate_the_named_predecessor() {
+        for (revoke, detail) in [(false, "is still committed"), (true, "is revoked")] {
+            let f = Lineage::new();
+            let prior = f.root(ORG);
+            // The actual and named predecessors have identical bodies but different issuances.
+            let actual = f.root(ORG);
+            if revoke {
+                f.w.src.revoke(&prior);
+            }
+            let id = f.w.src.supersede(&actual, f.head(2, Some(prior)));
+            f.assert_invalid(id, id, &format!("predecessor {prior:?} {detail}"));
+        }
+    }
+
+    #[test]
+    fn predecessor_superseded_by_a_different_issuance_refuses_at_any_depth() {
+        for deep in [false, true] {
+            let f = Lineage::new();
+            let root = f.root(ORG);
+            // Same record body, different issuances: a body match cannot stand in for `by`.
+            let revision2 = if deep {
+                admission_revision(ORG, 2, Some(root), &f.past_terms)
+            } else {
+                f.head(2, Some(root))
+            };
+            let other = f.w.src.supersede(&root, revision2.clone());
+            let wrong_child = f.w.src.issue(revision2);
+            let id = if deep {
+                let prior = f.extend(wrong_child, 3..=3);
+                f.w.src.supersede(&prior, f.head(4, Some(prior)))
+            } else {
+                // Leave the rival observed but not committed, so OA has one exact match.
+                f.w.src.revoke(&other);
+                wrong_child
+            };
+            f.assert_invalid(
+                id,
+                wrong_child,
+                &format!("predecessor {root:?} was superseded by {other:?}, not this issuance"),
+            );
+        }
+    }
+
+    #[test]
+    fn selected_head_with_healthy_edges_but_no_valid_root_refuses() {
+        let f = Lineage::new();
+        let orphan =
+            f.w.src
+                .issue(admission_revision(ORG, 2, None, &f.past_terms));
+        let prior = f.extend(orphan, 3..=4);
+        let id = f.w.src.supersede(&prior, f.head(5, Some(prior)));
+        f.assert_invalid(id, orphan, "only revision 1 may omit its predecessor");
+    }
+
+    #[test]
+    fn traversal_limit_allows_64_edges_and_refuses_an_otherwise_valid_65th() {
+        let f = Lineage::new();
+        let prior = f.extend(f.root(ORG), 2..=64);
+        let id = f.w.src.supersede(&prior, f.head(65, Some(prior)));
+        f.assert_admitted(id);
+        let next = f.w.src.supersede(&id, f.head(66, Some(id)));
+        f.assert_refused(
+            next,
+            ReasonCode::OrganizationLineageTooDeep,
+            &format!("admission {next:?}: exceeds 64 predecessor edges"),
+        );
+    }
+
+    #[test]
+    fn invalid_lineage_does_not_break_exact_match_ambiguity() {
+        let f = Lineage::new();
+        let base = Terms::of(&request_for(&Req::default()));
+        let malformed = f.w.src.issue(admission_revision(ORG, 2, None, &base));
+        f.bind_head(malformed);
+        assert_exact(
+            &refused(decide_base(&f.w)),
+            &unadmitted(ReasonCode::OrganizationHeadsAmbiguous),
+        );
+    }
+
+    #[test]
+    fn lineage_verification_is_only_in_the_fixture_domain() {
+        let f = Lineage::new();
+        f.w.src.issue(f.head(2, None));
+        let reservation = reserve(boundary(1));
+        let obs = observe_for(&f.w.src, &reservation).unwrap();
+        let outcomes = refused(admit::<Production>(
+            &reservation,
+            obs,
+            &f.request,
+            &realization(),
+            NOW,
+        ));
+        assert!(outcomes.passed(CheckId::OA));
+    }
 }
 
 #[test]
