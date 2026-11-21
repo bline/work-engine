@@ -334,18 +334,40 @@ fn check_job_inner(
         return Err(StoreError::Rejected);
     }
     let routes = plan["hosted"]["routes"].clone();
-    let list = routes.as_array().ok_or(StoreError::Rejected)?;
-    // A loopback upstream is offline qualification only, gated like the
-    // Codex fake route.
-    let loopback = list.iter().any(|r| {
-        r["endpoint"]
-            .as_str()
-            .is_none_or(|e| !e.starts_with("https:"))
-    });
-    if list.is_empty() || (loopback && !cfg!(feature = "controlled-proof")) {
-        return Err(StoreError::Rejected);
-    }
+    job_transport(&routes)?;
     Ok(routes)
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum JobTransport {
+    Https,
+    Loopback,
+}
+
+/// The Host serves a job with a single transport. Only an entirely loopback
+/// route table in a controlled-proof build may opt out of HTTPS credentials.
+fn job_transport(routes: &Value) -> Result<JobTransport, StoreError> {
+    let list = routes
+        .as_array()
+        .filter(|list| !list.is_empty())
+        .ok_or(StoreError::Rejected)?;
+    let endpoints = || {
+        list.iter()
+            .map(|r| r["endpoint"].as_str().unwrap_or_default())
+    };
+    if endpoints().all(|e| e.starts_with("https:")) {
+        Ok(JobTransport::Https)
+    } else if cfg!(feature = "controlled-proof")
+        && endpoints().all(|e| {
+            e.strip_prefix("loopback:")
+                .and_then(|port| port.parse::<std::num::NonZeroU16>().ok())
+                .is_some()
+        })
+    {
+        Ok(JobTransport::Loopback)
+    } else {
+        Err(StoreError::Rejected)
+    }
 }
 
 pub(crate) fn prepare_launch(
@@ -777,9 +799,14 @@ fn launch_deadline(
 fn serve_environment(
     command: &mut tokio::process::Command,
     composition: Option<&PiHostComposition>,
+    transport: JobTransport,
     inherited: impl Fn(&str) -> Option<std::ffi::OsString>,
 ) {
     command.env_clear();
+    if transport == JobTransport::Loopback {
+        // The absent variable selects the Host's synthetic loopback transport.
+        return;
+    }
     const CREDENTIALS: &str = "WORK_ENGINE_HOSTED_CREDENTIALS";
     if let Some(composition) = composition {
         command.env(CREDENTIALS, &composition.credentials_file);
@@ -839,6 +866,8 @@ pub async fn run_pi_host(
             .map(|(deadline, root)| (root, deadline, None));
         let routes = check_job_inner(&host, installed_job)
             .map_err(|_| ("transport_error_guard_barrier", None))?;
+        let job_transport =
+            job_transport(&routes).map_err(|_| ("transport_error_guard_barrier", None))?;
         let expected = Expected {
             host_sha256: host.host_sha256.clone(),
             job_sha256: host.job_sha256.clone(),
@@ -855,9 +884,12 @@ pub async fn run_pi_host(
             .arg("--config")
             .arg(&host.serve_config)
             .current_dir(&launch.work);
-        serve_environment(&mut command, config.pi_host_composition.as_ref(), |key| {
-            std::env::var_os(key)
-        });
+        serve_environment(
+            &mut command,
+            config.pi_host_composition.as_ref(),
+            job_transport,
+            |key| std::env::var_os(key),
+        );
         if until.is_some_and(|until| until <= Instant::now()) {
             return Err(("transport_error_guard_barrier", None));
         }
@@ -1210,11 +1242,16 @@ mod tests {
         let composition = config.pi_host_composition.as_ref().unwrap();
         let mut command = tokio::process::Command::new("/bin/true");
         command.env("UNRELATED_SECRET", "canary");
-        serve_environment(&mut command, Some(composition), |key| match key {
-            "SSL_CERT_FILE" => Some("/test/ca.pem".into()),
-            "SSL_CERT_DIR" => None,
-            _ => panic!("unexpected ambient lookup: {key}"),
-        });
+        serve_environment(
+            &mut command,
+            Some(composition),
+            JobTransport::Https,
+            |key| match key {
+                "SSL_CERT_FILE" => Some("/test/ca.pem".into()),
+                "SSL_CERT_DIR" => None,
+                _ => panic!("unexpected ambient lookup: {key}"),
+            },
+        );
         let environment: std::collections::BTreeMap<_, _> = command.as_std().get_envs().collect();
         assert_eq!(
             environment,
@@ -1229,6 +1266,48 @@ mod tests {
                 ),
             ])
         );
+    }
+
+    #[test]
+    fn pi_host_loopback_requires_a_homogeneous_controlled_job_and_clears_credentials() {
+        let routes = |endpoints: &[&str]| {
+            json!(
+                endpoints
+                    .iter()
+                    .map(|endpoint| json!({"endpoint":endpoint}))
+                    .collect::<Vec<_>>()
+            )
+        };
+        assert!(matches!(
+            job_transport(&routes(&["https:anthropic-oauth", "https:anthropic-api"])),
+            Ok(JobTransport::Https)
+        ));
+        for endpoints in [
+            &[][..],
+            &["loopback:0"][..],
+            &["loopback:127.0.0.1:1"][..],
+            &["loopback:1", "https:anthropic-oauth"][..],
+        ] {
+            assert!(job_transport(&routes(endpoints)).is_err());
+        }
+        let transport = job_transport(&routes(&["loopback:1", "loopback:65535"]));
+        if cfg!(feature = "controlled-proof") {
+            let dir = tempfile::tempdir().unwrap();
+            let config = installed(dir.path());
+            let mut command = tokio::process::Command::new("/bin/true");
+            command.env("WORK_ENGINE_HOSTED_CREDENTIALS", "/test/ambient.json");
+            serve_environment(
+                &mut command,
+                config.pi_host_composition.as_ref(),
+                transport.unwrap(),
+                |key| {
+                    panic!("unexpected loopback environment lookup: {key}");
+                },
+            );
+            assert_eq!(command.as_std().get_envs().count(), 0);
+        } else {
+            assert!(transport.is_err());
+        }
     }
 
     #[test]
