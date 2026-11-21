@@ -102,6 +102,10 @@ impl HostedInitialTransport {
 }
 
 #[cfg(test)]
+#[path = "hosted_custody_fixture.rs"]
+mod custody_fixture;
+
+#[cfg(test)]
 mod tests {
     use slice_campaign::{
         CampaignIdentity, CampaignRevision, CandidateRef, OperationReceipt, SelectionRef,
@@ -109,9 +113,9 @@ mod tests {
 
     use super::*;
 
-    const ROUTE: &str = "offline-example-messages-v1";
+    pub(super) const ROUTE: &str = "offline-example-messages-v1";
 
-    fn projection(root: &str, attempt: &str) -> AppliedInitialDispatchProjection {
+    pub(super) fn projection(root: &str, attempt: &str) -> AppliedInitialDispatchProjection {
         let identity = CampaignIdentity {
             run_id: "one-run".into(),
             slice_number: 1,

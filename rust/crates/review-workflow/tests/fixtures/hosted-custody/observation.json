@@ -1,0 +1,65 @@
+{
+  "fixtureSchema": "d7-offline-observation-v1",
+  "bindingSha256": "9fc3a8ed79984e2a74593e7cb473da5f70658b00bad9d4699f1e1b6142be4659",
+  "jobId": "review-9fc3a8ed79984e2a74593e7cb473da5f70658b00bad9d4699f1e1b6142be4659",
+  "generation": 1,
+  "routeRevision": "offline-example-messages-v1",
+  "method": "synthetic-observer-v1",
+  "events": [
+    {
+      "source": "observer_fixture",
+      "actor": "fixture-child-1",
+      "channel": "held-channel-1",
+      "seq": 1,
+      "cut": "public_bootstrap",
+      "outcome": "observed",
+      "publicProbeSha256": "1577ffd1dd4e5564b65f84135e2f1f36e3e00fbf1354445878436c97d9d11af4",
+      "executableSha256": "d3e2483b752ac4d7c3f88f4c7be6f46ff2dd2a1f3a42db2378aa6862075f0a87",
+      "lockedFixture": true
+    },
+    {
+      "source": "observer_fixture",
+      "actor": "fixture-child-1",
+      "channel": "held-channel-1",
+      "seq": 2,
+      "cut": "task_release",
+      "outcome": "sent",
+      "bootstrapSeq": 1,
+      "taskSha256": "5e3ccc98ea28db5e9f8d39d9507b7ac3101709c7aeb5691c5d633c0d77266787"
+    },
+    {
+      "source": "observer_fixture",
+      "actor": "fixture-child-1",
+      "channel": "held-channel-1",
+      "seq": 3,
+      "cut": "response",
+      "outcome": "observed",
+      "releaseSeq": 2,
+      "exchange": "fixture-exchange-1",
+      "responseSha256": "ad16416fac4dda834458572bc8e204f726db2c48b4ecd7893386f0f90618c092"
+    },
+    {
+      "source": "observer_fixture",
+      "actor": "fixture-child-1",
+      "channel": "held-channel-1",
+      "seq": 4,
+      "cut": "answer",
+      "outcome": "observed",
+      "responseSeq": 3,
+      "responseSha256": "ad16416fac4dda834458572bc8e204f726db2c48b4ecd7893386f0f90618c092",
+      "answerSha256": "99c9153e796a1eb530ed23cc87ae8b5fdf1030e24ae1b83fddaa0c887bd512d2"
+    },
+    {
+      "source": "observer_fixture",
+      "actor": "fixture-child-1",
+      "channel": "held-channel-1",
+      "seq": 5,
+      "cut": "terminal",
+      "outcome": "completed",
+      "answerSeq": 4,
+      "answerSha256": "99c9153e796a1eb530ed23cc87ae8b5fdf1030e24ae1b83fddaa0c887bd512d2",
+      "terminalSha256": "26f56ac0c8f9a1f2230c86e78007557aadaae657976912a05400e0425b49f40c",
+      "settlementSha256": "dd779b6935dc812adb6186dae7ef8ce989df1a09deed56e267d232e66f57c488"
+    }
+  ]
+}

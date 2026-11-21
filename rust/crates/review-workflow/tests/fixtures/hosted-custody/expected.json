@@ -1,0 +1,44 @@
+{
+  "fixtureSchema": "d7-offline-expected-v1",
+  "transportInput": {
+    "schema": "work-engine.hosted-initial-transport.v1",
+    "rootId": "root-a",
+    "identity": {
+      "runId": "one-run",
+      "sliceNumber": 1,
+      "attemptId": "attempt-a",
+      "planVersion": "plan-v1"
+    },
+    "obligationId": "review",
+    "episodeId": "episode",
+    "subjectDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "selectionDigest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "preparedRequestSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+    "preparationOperationId": "prepare_initial",
+    "preparationRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "dispatchOperationId": "authorize_dispatch",
+    "dispatchRevision": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "dispatchOperationRequestDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "routeRevision": "offline-example-messages-v1",
+    "generation": 1
+  },
+  "bindingSha256": "9fc3a8ed79984e2a74593e7cb473da5f70658b00bad9d4699f1e1b6142be4659",
+  "jobId": "review-9fc3a8ed79984e2a74593e7cb473da5f70658b00bad9d4699f1e1b6142be4659",
+  "generation": 1,
+  "routeRevision": "offline-example-messages-v1",
+  "expectedMethod": "synthetic-observer-v1",
+  "expectedActor": "fixture-child-1",
+  "expectedChannel": "held-channel-1",
+  "expectedExchange": "fixture-exchange-1",
+  "expectedExecutableSha256": "d3e2483b752ac4d7c3f88f4c7be6f46ff2dd2a1f3a42db2378aa6862075f0a87",
+  "expectedTaskSha256": "5e3ccc98ea28db5e9f8d39d9507b7ac3101709c7aeb5691c5d633c0d77266787",
+  "byteFixtures": {
+    "bootstrap": "public-fixture-probe",
+    "executable": "synthetic-native-image",
+    "task": "protected-fixture-only",
+    "response": "fixture-response-one",
+    "answer": "fixture-answer-one",
+    "terminal": "fixture-complete-one",
+    "settlement": "fixture-owner-settled"
+  }
+}
