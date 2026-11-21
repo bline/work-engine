@@ -2381,6 +2381,7 @@ impl CampaignInner {
             identity: request.identity,
             obligation_id: request.obligation_id,
             episode_id: permit.command.episode_id.clone(),
+            reviewer_profile: permit.command.reviewer_profile.clone(),
             subject_digest,
             candidate,
             selection: request.selection,

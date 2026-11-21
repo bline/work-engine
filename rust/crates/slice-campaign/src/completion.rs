@@ -102,6 +102,7 @@ pub struct AppliedInitialDispatchProjection {
     pub identity: CampaignIdentity,
     pub obligation_id: String,
     pub episode_id: String,
+    pub reviewer_profile: String,
     pub subject_digest: String,
     pub candidate: crate::CandidateRef,
     pub selection: crate::SelectionRef,
