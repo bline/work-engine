@@ -540,7 +540,7 @@ pub(crate) fn check_capture(
     turn: &str,
     prompt: &str,
 ) -> Result<HostCapturedInput, StoreError> {
-    let capture: Value = serde_json::from_slice(bytes).map_err(|_| StoreError::Rejected)?;
+    let capture = lifecycle_wire::parse_strict_json(bytes).map_err(|_| StoreError::Rejected)?;
     let ids = &capture["identities"];
     if capture["schema"] != pi_host::CAPTURE_SCHEMA
         || capture["realization"] != pi_host::REALIZATION
@@ -554,9 +554,9 @@ pub(crate) fn check_capture(
         || ids["routes"] != expected.routes
         || capture["turn"]["id"] != turn
         || capture["turn"]["prompt_sha256"] != sha(prompt.as_bytes()).as_str()
-        // L1: on Messages the Host verified that no body carries an account
-        // identifier; anything else is not retained.
-        || (expected.wire == "messages" && capture["contains_account_identifier"] != false)
+        // Require the Host's account check on every wire, including captures
+        // with no payloads. Wire admission is a separate check below.
+        || capture["contains_account_identifier"] != false
     {
         return Err(StoreError::Rejected);
     }
@@ -595,17 +595,14 @@ pub(crate) fn check_capture(
         {
             return Err(StoreError::Rejected);
         }
-        // The pinned request tools, checked here over the retained bytes
-        // rather than taken from the Host's own check.
-        if expected.wire == "messages" {
-            let parsed: Value = serde_json::from_slice(&body).map_err(|_| StoreError::Rejected)?;
-            let tools = serde_json::to_vec(&parsed["tools"]).map_err(|_| StoreError::Rejected)?;
-            if sha(&tools) != pi_host::tools::MESSAGES_TOOLS_SHA256
-                || !pi_host::messages_account_identifier_absent(&parsed)
-            {
-                return Err(StoreError::Rejected);
-            }
-        } else {
+        // Verify the exact retained body rather than relying on the Host's
+        // flag. Strict parsing rejects ambiguous duplicate JSON keys.
+        let parsed = lifecycle_wire::parse_strict_json(&body).map_err(|_| StoreError::Rejected)?;
+        if !pi_host::account_identifier_absent(&expected.wire, &parsed) {
+            return Err(StoreError::Rejected);
+        }
+        let tools = serde_json::to_vec(&parsed["tools"]).map_err(|_| StoreError::Rejected)?;
+        if sha(&tools) != pi_host::tools::MESSAGES_TOOLS_SHA256 {
             return Err(StoreError::Rejected);
         }
         payloads.push(NativeInputPayload {
@@ -617,7 +614,8 @@ pub(crate) fn check_capture(
             bytes: body,
         });
     }
-    if payloads.len() as u64 > pi_host::MAX_TURN_SENDS {
+    // Only Messages is retained, even for a capture with no physical sends.
+    if expected.wire != "messages" || payloads.len() as u64 > pi_host::MAX_TURN_SENDS {
         return Err(StoreError::Rejected);
     }
     // Every relayed call names a retained physical send.
@@ -652,12 +650,7 @@ pub(crate) fn check_capture(
         return Err(StoreError::Rejected);
     }
     // Recomputed from the shared pins, not taken from the Host.
-    let request_tools = if expected.wire == "messages" {
-        Some(pi_host::tools::MESSAGES_TOOLS_SHA256)
-    } else {
-        pi_host::tools::RESPONSES_TOOLS_SHA256
-    };
-    let tool_registry = serde_json::to_vec(&json!({"request_tools_sha256":request_tools,
+    let tool_registry = serde_json::to_vec(&json!({"request_tools_sha256":pi_host::tools::MESSAGES_TOOLS_SHA256,
         "receiver_tools":pi_host::tools::receiver_tools(),
         "dynamic_tools":pi_host::tools::dynamic_tools(),
         "check":"host-exact-request-tools-digest-before-dispatch; runner re-digested every retained body"}))
@@ -1244,8 +1237,7 @@ mod tests {
         let mut v = base.clone();
         v["observation"] = Value::Null;
         assert!(!run(&v).unwrap().eligible, "no verified observation");
-        // L1: the Host's flag must be false on Messages, and the retained
-        // body is re-checked.
+        // The Host's flag must be false and the retained body is re-checked.
         for flag in [json!(true), Value::Null] {
             let mut v = base.clone();
             v["contains_account_identifier"] = flag;
@@ -1265,7 +1257,17 @@ mod tests {
             run(&v).is_err(),
             "retained body carries an account identifier"
         );
-        std::fs::write(&body_path, original).unwrap();
+        // Even a matching digest can't make an ambiguous account field safe.
+        let duplicate_metadata = format!(
+            "{{\"metadata\":{{\"user_id\":\"not-an-admitted-identity\"}},\"metadata\":null,{}",
+            std::str::from_utf8(&original)
+                .unwrap()
+                .strip_prefix('{')
+                .unwrap()
+        );
+        std::fs::write(&body_path, &duplicate_metadata).unwrap();
+        v["payloads"][0]["sha256"] = json!(sha(duplicate_metadata.as_bytes()));
+        assert!(run(&v).is_err(), "duplicate account field");
         // A body whose tools differ from the pin refuses.
         let body_path = expected.state_dir.join("coding-hosted-1.body.json");
         let other = br#"{"messages":[],"tools":[]}"#;
@@ -1276,5 +1278,34 @@ mod tests {
         // A tampered payload refuses.
         std::fs::write(&body_path, b"{}").unwrap();
         assert!(check(&expected, "u", "prompt", "completed").is_err());
+    }
+
+    #[test]
+    fn pi_host_capture_does_not_admit_other_wires_even_without_payloads() {
+        let dir = tempfile::tempdir().unwrap();
+        let (bytes, expected, terminal) = capture_fixture(dir.path(), false);
+        let mut capture: Value = serde_json::from_slice(&bytes).unwrap();
+        capture["payloads"] = json!([]);
+        for wire in ["messages", "responses", "completions", "unknown"] {
+            let mut expected = expected.clone();
+            expected.wire = wire.into();
+            capture["wire"] = json!(wire);
+            for flag in [json!(false), json!(true), Value::Null] {
+                capture["contains_account_identifier"] = flag.clone();
+                assert_eq!(
+                    check_capture(
+                        &serde_json::to_vec(&capture).unwrap(),
+                        terminal.clone(),
+                        "completed".into(),
+                        &expected,
+                        "u",
+                        "prompt"
+                    )
+                    .is_ok(),
+                    wire == "messages" && flag == false,
+                    "wire {wire}, flag {flag}",
+                );
+            }
+        }
     }
 }
