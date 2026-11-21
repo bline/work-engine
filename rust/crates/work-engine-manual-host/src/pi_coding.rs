@@ -19,7 +19,10 @@ pub mod https;
 pub mod provider;
 #[path = "pi_coding_validation.rs"]
 pub mod validation;
-use std::os::unix::fs::PermissionsExt;
+use std::{
+    io::Read,
+    os::unix::fs::{OpenOptionsExt, PermissionsExt},
+};
 pub const SIGNED_PROFILE: &str = "work-engine.pi-coding-signed-fixture.v1";
 pub const PROFILE: &str = "work-engine.pi-coding-fixture.v1";
 /// Opt-in composition: Host owns effects; an installed lifecycle gate owns entry.
@@ -52,6 +55,7 @@ pub const BATTERY_COMMAND_TIMEOUT_SECONDS: u32 = 600;
 /// (upper bounds; each job pins its own exact values inside them).
 pub const BATTERY_MAX_TOOL_CALLS: u32 = 512;
 pub const BATTERY_MAX_REQUESTS: u32 = 512;
+pub const BATTERY_MAX_RESETS: u32 = 16;
 /// Battery: per-request admitted context size in bytes (the receiver-side
 /// `contextBytes` gate). The spool protocol carries the context by reference,
 /// so this is bounded by the spool file cap, not the 64 KiB frame bound.
@@ -59,6 +63,12 @@ pub const BATTERY_MAX_CONTEXT_BYTES: u64 = 2_000_000;
 /// Battery: one forwarded request body (spool file) bound; the shim refuses
 /// beyond it before the frame is emitted. Matches SPOOL_BODY_BYTES in the shim.
 pub const BATTERY_SPOOL_BODY_BYTES: u64 = 16 * 1024 * 1024;
+// Larger than an inline frame, no larger than lifecycle's ingress record.
+const BATTERY_OBSERVATION_BYTES: u64 = 1_048_576;
+// The fully inventoried offline toolchain includes the Cargo registry. Only
+// battery toolchain checks use these bounds; other pinned trees use defaults.
+const BATTERY_TOOLCHAIN_MANIFEST_BYTES: u64 = 24 * 1024 * 1024;
+const BATTERY_TOOLCHAIN_ENTRIES: usize = 100_000;
 /// Hosted analysis: the same Host-held access, dispatch and lifecycle gate,
 /// no shell, tool container or workspace effect; the Host serves read-only
 /// tools over the job's manifest-pinned workspace (`analysis`).
@@ -416,6 +426,8 @@ pub struct State {
     #[serde(default)]
     pub native_tool_ids: BTreeSet<String>,
     pub completed: bool,
+    #[serde(default, skip_serializing_if = "battery_no_resets")]
+    pub battery_resets: u32,
     #[serde(default)]
     pub ready_observed: bool,
     #[serde(default)]
@@ -587,28 +599,18 @@ impl Profile {
         if self.workspace_write_boundary == WorkspaceWriteBoundary::SrcLibRs {
             strict_source_file(&job.workspace.root)?;
         }
-        if is_battery(&self.schema) {
-            let Some(toolchain) = &self.toolchain else {
-                return refuse("battery toolchain absent");
-            };
-            verify_toolchain(toolchain, job)?;
-            if let Some(acceptance) = &self.acceptance {
-                verify_pinned_path(&acceptance.path, job)?;
-            }
-            if self.acceptance.is_none() {
-                // The battery arm's acceptance is the coordinator's F3.1
-                // scoring of the produced commit, not a Host-run validator.
-                return Ok(());
-            }
-        }
-        let (Some(toolchain), Some(acceptance)) = (&self.toolchain, &self.acceptance) else {
-            // Analysis: the workspace is the read-only snapshot the Host serves.
+        if is_analysis(&self.schema) {
             return analysis::validate_snapshot(job);
+        }
+        let Some(toolchain) = &self.toolchain else {
+            return refuse("coding toolchain absent");
         };
-        toolchain.verify()?;
-        acceptance.verify()?;
         verify_pinned_path(&toolchain.root, job)?;
-        verify_pinned_path(&acceptance.path, job)?;
+        verify_toolchain(toolchain, &self.schema)?;
+        if let Some(acceptance) = &self.acceptance {
+            verify_pinned_path(&acceptance.path, job)?;
+            acceptance.verify()?;
+        }
         if !toolchain.root.join("bin/rustc").is_file() {
             return refuse("offline rustc absent");
         }
@@ -628,13 +630,12 @@ fn verify_pinned_path(path: &Path, job: &Job) -> Result<()> {
     }
     Ok(())
 }
-fn verify_toolchain(toolchain: &Tree, job: &Job) -> Result<()> {
-    toolchain.verify()?;
-    verify_pinned_path(&toolchain.root, job)?;
-    if !toolchain.root.join("bin/rustc").is_file() {
-        return refuse("offline rustc absent");
+fn verify_toolchain(toolchain: &Tree, schema: &str) -> Result<()> {
+    if is_battery(schema) {
+        toolchain.verify_bounded(BATTERY_TOOLCHAIN_MANIFEST_BYTES, BATTERY_TOOLCHAIN_ENTRIES)
+    } else {
+        toolchain.verify()
     }
-    Ok(())
 }
 fn strict_source_file(workspace: &Path) -> Result<()> {
     use std::os::unix::fs::MetadataExt;
@@ -714,6 +715,10 @@ fn base(j: &Journal, name: &str) -> Vec<String> {
 fn tool_name(j: &Journal) -> String {
     format!("{}-tool", j.container_name)
 }
+fn battery_no_resets(count: &u32) -> bool {
+    *count == 0
+}
+
 fn expected_mounts(
     j: &Journal,
     tool: bool,
@@ -730,16 +735,6 @@ fn expected_mounts(
                     .root
                     .clone(),
                 "/toolchain",
-                false,
-            ),
-            (
-                profile
-                    .acceptance
-                    .as_ref()
-                    .expect("coding acceptance")
-                    .path
-                    .clone(),
-                "/acceptance.rs",
                 false,
             ),
             (
@@ -760,6 +755,9 @@ fn expected_mounts(
                     && profile.workspace_write_boundary == WorkspaceWriteBoundary::LegacyWorkspace,
             ),
         ];
+        if let Some(acceptance) = &profile.acceptance {
+            mounts.push((acceptance.path.clone(), "/acceptance.rs", false));
+        }
         if !validation && profile.workspace_write_boundary == WorkspaceWriteBoundary::SrcLibRs {
             mounts.push((
                 j.job.state_dir.join("coding-workspace/src/lib.rs"),
@@ -804,9 +802,14 @@ fn expected_mounts(
     }
     mounts
 }
-fn command(tool: bool) -> Vec<String> {
+fn command(job: &Job, tool: bool) -> Vec<String> {
     if tool {
-        strings(&["-c", "exec sleep 300"])
+        let seconds = if job.coding.as_ref().is_some_and(|p| is_battery(&p.schema)) {
+            BATTERY_DEADLINE_SECONDS
+        } else {
+            300
+        };
+        vec!["-c".into(), format!("exec sleep {seconds}")]
     } else {
         strings(&["node", "/receiver/receiver.mjs"])
     }
@@ -837,7 +840,7 @@ fn verify(j: &Journal, v: &Value, tool: bool, validation: bool) -> Result<()> {
             != json!(if validation {
                 validation::command()
             } else {
-                let mut args = command(tool);
+                let mut args = command(&j.job, tool);
                 if !tool && j.job.coding.as_ref().is_some_and(|p| is_bridge(&p.schema)) {
                     args.push("--lifecycle-bridge".into());
                     if j.job
@@ -1020,23 +1023,22 @@ impl Host {
             self.coding_collect_tool()?;
             self.coding_bind_workspace_manifest()?;
         }
-        if let Some(manifest) = &self
-            .journal
-            .coding
-            .as_ref()
-            .unwrap()
-            .bridge_workspace_manifest
+        if (!battery || frame["type"] == "coding_history")
+            && let Some(manifest) = &self
+                .journal
+                .coding
+                .as_ref()
+                .unwrap()
+                .bridge_workspace_manifest
         {
             let bytes = manifest.verify()?;
-            // The choreography freezes the workspace before its single reset,
-            // so a changed inventory is a conflict. A battery builder run is
-            // SUPPOSED to change the workspace between requests; its manifest
-            // is re-bound at every tool-result observation instead.
-            if !battery
-                && serde_json::from_slice::<Value>(&bytes)?
-                    != serde_json::to_value(inventory(
-                        &self.journal.job.state_dir.join("coding-workspace"),
-                    )?)?
+            // Battery attaches the last frozen output only to terminal history,
+            // not to every growing provider request. The tool container is
+            // collected and the manifest renewed before each result delivery.
+            if serde_json::from_slice::<Value>(&bytes)?
+                != serde_json::to_value(inventory(
+                    &self.journal.job.state_dir.join("coding-workspace"),
+                )?)?
             {
                 return refuse("coding checkpoint workspace changed");
             }
@@ -1085,21 +1087,62 @@ impl Host {
         self.save()?;
         Ok(())
     }
+    pub(super) fn coding_battery_without_validator(&self) -> bool {
+        self.journal
+            .job
+            .coding
+            .as_ref()
+            .is_some_and(|p| is_battery(&p.schema) && p.acceptance.is_none())
+    }
+
+    /// The Host can attest that the staged output still matches the manifest
+    /// from its last observed command, not that the builder met the task.
+    pub(super) fn coding_battery_workspace_valid(&self) -> bool {
+        let Some(state) = &self.journal.coding else {
+            return false;
+        };
+        self.coding_battery_without_validator()
+            && state.completed
+            && state.tool_removed
+            && !state.validation_intent
+            && state.bridge_workspace_manifest.as_ref().is_some_and(|pin| {
+                Tree {
+                    root: self.journal.job.state_dir.join("coding-workspace"),
+                    manifest: pin.clone(),
+                }
+                .verify()
+                .is_ok()
+            })
+    }
+
+    pub(super) fn coding_seal_battery_workspace(&mut self) -> Result<()> {
+        if !self.coding_battery_workspace_valid() {
+            return refuse("completed battery workspace not established");
+        }
+        let state = self.journal.coding.as_mut().unwrap();
+        let pin = state.bridge_workspace_manifest.as_mut().unwrap();
+        pin.path = pin.snapshot(&self.journal.job.state_dir.join("snapshots"))?;
+        if !self.journal.artifacts.iter().any(|a| a.path == pin.path) {
+            self.journal.artifacts.push(pin.clone());
+        }
+        self.save()
+    }
+
     /// Battery: expand the digest-verified context spool file into the frame's
     /// inline `messages`/`agentMessages` (the settlement grammar sees the same
     /// shapes as the choreography; the bridge frame stayed small).
     pub(super) fn coding_expand_context(&mut self, mut frame: Value) -> Result<Value> {
-        let spool = &frame["contextSpool"];
-        let path = spool["path"]
-            .as_str()
-            .filter(|p| !p.contains('/') && !p.contains("..") && !p.is_empty() && p.len() <= 128)
-            .ok_or_else(|| Error::Refused("context spool path invalid".into()))?;
-        let bytes = fs::read(self.journal.job.state_dir.join("coding-spool").join(path))?;
-        if bytes.len() as u64 != spool["bytes"].as_u64().unwrap_or(u64::MAX)
-            || digest(&bytes) != spool["sha256"].as_str().unwrap_or("")
-        {
-            return refuse("context spool digest/size conflict");
+        let id = frame["id"]
+            .as_u64()
+            .ok_or_else(|| Error::Refused("context spool request id absent".into()))?;
+        if frame.get("messages").is_some() || frame.get("agentMessages").is_some() {
+            return refuse("ambiguous battery context sources");
         }
+        let bytes = self.coding_read_spool(
+            &frame["contextSpool"],
+            &format!("ctx-{id}.json"),
+            BATTERY_OBSERVATION_BYTES,
+        )?;
         let doc: Value = serde_json::from_slice(&bytes)?;
         if doc["messages"].as_array().is_none()
             || doc["agentMessages"].as_array().is_none()
@@ -1112,6 +1155,75 @@ impl Host {
         frame["agentMessages"] = doc["agentMessages"].clone();
         Ok(frame)
     }
+    /// Read only the receiver file named by this protocol position. Refuse
+    /// symlinks and special files before reading any payload, and validate
+    /// size and digest over the exact bytes passed to the next owner.
+    fn coding_read_spool(&self, reference: &Value, name: &str, bound: u64) -> Result<Vec<u8>> {
+        let Some(length) = reference["bytes"]
+            .as_u64()
+            .filter(|n| *n > 0 && *n <= bound)
+        else {
+            return refuse("battery spool size outside bound");
+        };
+        if reference["path"] != name || reference.as_object().is_none_or(|o| o.len() != 3) {
+            return refuse("battery spool reference conflict");
+        }
+        let path = self.journal.job.state_dir.join("coding-spool").join(name);
+        let file = OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
+            .open(path)?;
+        let metadata = file.metadata()?;
+        if !metadata.is_file() || metadata.len() != length {
+            return refuse("battery spool file type/size conflict");
+        }
+        let mut bytes = Vec::new();
+        file.take(length + 1).read_to_end(&mut bytes)?;
+        if bytes.len() as u64 != length || reference["sha256"] != digest(&bytes) {
+            return refuse("battery spool digest/size conflict");
+        }
+        Ok(bytes)
+    }
+
+    fn coding_expand_observation(&self, wrapper: Value) -> Result<Value> {
+        if wrapper.get("observationSpool").is_none() {
+            return Ok(wrapper);
+        }
+        let spool = &wrapper["observationSpool"];
+        if !self
+            .journal
+            .job
+            .coding
+            .as_ref()
+            .is_some_and(|p| is_battery(&p.schema))
+            || !matches!(
+                wrapper["type"].as_str(),
+                Some("native_event" | "coding_history")
+            )
+            || wrapper.as_object().is_none_or(|o| o.len() != 5)
+        {
+            return refuse("spooled observation outside battery observation frame");
+        }
+        let sequence = wrapper["observationSequence"]
+            .as_u64()
+            .filter(|s| *s > 0)
+            .ok_or_else(|| Error::Refused("battery observation spool sequence absent".into()))?;
+        let bytes = self.coding_read_spool(
+            spool,
+            &format!("observation-{sequence}.json"),
+            BATTERY_OBSERVATION_BYTES,
+        )?;
+        let frame: Value = serde_json::from_slice(&bytes)?;
+        if frame.get("observationSpool").is_some()
+            || ["schema", "sessionId", "type"]
+                .iter()
+                .any(|k| frame[*k] != wrapper[*k])
+        {
+            return refuse("battery observation spool identity conflict");
+        }
+        Ok(frame)
+    }
+
     pub(super) fn coding_bridge_dispatch(
         &mut self,
         raw: &[u8],
@@ -1185,7 +1297,7 @@ impl Host {
             mount(&mut args, &src, dst, rw);
         }
         args.push(j.job.image.clone());
-        args.extend(command(false));
+        args.extend(command(&j.job, false));
         if is_bridge(&j.job.coding.as_ref().unwrap().schema) {
             args.push("--lifecycle-bridge".into());
             if j.job.coding.as_ref().unwrap().schema == CLAIMS_BRIDGE_PROFILE {
@@ -1268,9 +1380,15 @@ impl Host {
         }
         args.extend(strings(&["--entrypoint", "/bin/sh"]));
         args.push(TOOL_IMAGE.into());
-        args.extend(command(true));
-        self.journal.coding.as_mut().unwrap().tool_create_intent = true;
-        self.journal.coding.as_mut().unwrap().tool_removed = false;
+        args.extend(command(&j.job, true));
+        let state = self.journal.coding.as_mut().unwrap();
+        if state.tool_create_intent && !state.tool_removed {
+            return refuse("tool replacement before verified removal");
+        }
+        state.tool_create_intent = true;
+        state.tool_removed = false;
+        state.tool_id = None;
+        state.tool_exit = None;
         self.save()?;
         let (ok, _) = self.command("coding-tool-create", args, false)?;
         if !ok {
@@ -1321,7 +1439,12 @@ impl Host {
             if line.len() > frame_limit {
                 return refuse("coding frame exceeded bound");
             }
-            let frame: Value = serde_json::from_slice(line)?;
+            let frame = self.coding_expand_observation(serde_json::from_slice(line)?)?;
+            // The receiver cannot supply workspace evidence, including inside a
+            // decoded history spool. Only the Host may attach it to a gate frame.
+            if frame.get("host_workspace").is_some() {
+                return refuse("receiver cannot supply Host workspace evidence");
+            }
             if frame["schema"] != self.journal.job.coding.as_ref().unwrap().schema {
                 return refuse("coding schema mismatch");
             }
@@ -1855,7 +1978,14 @@ impl Host {
                     }
                     replies.extend(self.coding_bridge_frame(&frame)?);
                     if kind == "coding_replaced" {
-                        self.journal.coding.as_mut().unwrap().replaced = true;
+                        let state = self.journal.coding.as_mut().unwrap();
+                        state.replaced = true;
+                        if is_battery(&self.journal.job.coding.as_ref().unwrap().schema) {
+                            state.battery_resets += 1;
+                            if state.battery_resets > BATTERY_MAX_RESETS {
+                                return refuse("battery reset bound exceeded");
+                            }
+                        }
                         self.journal.session_id = Some(
                             frame["sessionId"]
                                 .as_str()
@@ -1948,12 +2078,18 @@ impl Host {
                     if self.is_signed_fixture() && !self.export_finalized() {
                         return refuse("coding completion before export finalization");
                     }
-                    if is_bridge(&self.journal.job.coding.as_ref().unwrap().schema)
-                        && frame["counts"] != json!({"providerRequests":4,"resets":1})
-                    {
-                        return refuse("coding bridge counts mismatch");
-                    }
+                    let schema = &self.journal.job.coding.as_ref().unwrap().schema;
                     let state = self.journal.coding.as_mut().unwrap();
+                    if is_bridge(schema) {
+                        let counts = if is_battery(schema) {
+                            json!({"providerRequests":state.provider_requests.len(),"resets":state.battery_resets})
+                        } else {
+                            json!({"providerRequests":4,"resets":1})
+                        };
+                        if frame["counts"] != counts {
+                            return refuse("coding bridge counts mismatch");
+                        }
+                    }
                     if state.completed
                         || state.tool_requests.is_empty()
                         || state.tool_requests.values().any(Option::is_none)
@@ -2090,7 +2226,7 @@ impl Host {
         self.save()?;
         let profile = self.journal.job.coding.as_ref().unwrap();
         if let Some(toolchain) = &profile.toolchain {
-            toolchain.verify()?;
+            verify_toolchain(toolchain, &profile.schema)?;
         }
         if let Some(acceptance) = &profile.acceptance {
             acceptance.verify()?;
@@ -2383,6 +2519,99 @@ mod tests {
         raw.push(b'\n');
         raw
     }
+    #[derive(Clone, Default)]
+    struct WorkspaceEvidenceGate(std::rc::Rc<std::cell::RefCell<Vec<Value>>>);
+    impl CodingEffectGate for WorkspaceEvidenceGate {
+        fn execute(
+            &mut self,
+            _: &CodingToolIntent,
+            _: &mut dyn FnMut(i64) -> Result<(bool, Vec<u8>)>,
+        ) -> Result<(bool, Vec<u8>)> {
+            panic!("history ingress must not execute a tool")
+        }
+        fn frame(&mut self, frame: &Value) -> Result<Vec<Value>> {
+            self.0.borrow_mut().push(frame.clone());
+            Ok(vec![])
+        }
+        fn observed(
+            &mut self,
+            _: &CodingToolIntent,
+            _: &Artifact,
+            _: &ProcessRecord,
+            _: &str,
+        ) -> Result<()> {
+            panic!("history ingress must not observe a tool")
+        }
+    }
+    fn battery_history_frame(h: &Host, history: Value, spooled: bool) -> Vec<u8> {
+        if !spooled {
+            return frame(history);
+        }
+        let spool = h.journal.job.state_dir.join("coding-spool");
+        fs::create_dir_all(&spool).unwrap();
+        let encoded = serde_json::to_vec(&history).unwrap();
+        fs::write(spool.join("observation-1.json"), &encoded).unwrap();
+        frame(
+            json!({"type":"coding_history","schema":HOSTED_BATTERY_PROFILE,"sessionId":"native",
+            "observationSequence":1,"observationSpool":{"path":"observation-1.json","sha256":digest(&encoded),"bytes":encoded.len()}}),
+        )
+    }
+    #[test]
+    fn battery_history_reserves_workspace_evidence_for_the_host() {
+        for spooled in [false, true] {
+            for host_pin in [false, true] {
+                let (dir, mut h) = fixture();
+                h.journal.job.coding.as_mut().unwrap().schema = HOSTED_BATTERY_PROFILE.into();
+                h.journal.session_id = Some("native".into());
+                let gate = WorkspaceEvidenceGate::default();
+                h.coding_gate = Some(Box::new(gate.clone()));
+                if host_pin {
+                    let workspace = dir.path().join("coding-workspace");
+                    fs::create_dir(&workspace).unwrap();
+                    fs::write(workspace.join("source"), b"host-owned bytes").unwrap();
+                    h.journal.coding.as_mut().unwrap().tool_removed = true;
+                    h.coding_bind_workspace_manifest().unwrap();
+                }
+                let history = json!({"type":"coding_history","schema":HOSTED_BATTERY_PROFILE,"sessionId":"native"});
+                for field in [Value::Null, json!({})] {
+                    let mut supplied = history.clone();
+                    supplied["host_workspace"] = field;
+                    let raw = battery_history_frame(&h, supplied, spooled);
+                    assert!(matches!(h.coding_advance(&raw), Err(Error::Refused(s))
+                        if s == "receiver cannot supply Host workspace evidence"));
+                    assert!(gate.0.borrow().is_empty());
+                    let state = h.journal.coding.as_ref().unwrap();
+                    assert_eq!(
+                        (state.frames, state.battery_resets, h.coding_out_offset),
+                        (0, 0, 0)
+                    );
+                    assert!(!state.replaced);
+                }
+                let raw = battery_history_frame(&h, history, spooled);
+                assert!(h.coding_advance(&raw).unwrap().is_empty());
+                let recorded = gate.0.borrow();
+                assert_eq!(recorded.len(), 1);
+                if host_pin {
+                    let artifact = h
+                        .journal
+                        .coding
+                        .as_ref()
+                        .unwrap()
+                        .bridge_workspace_manifest
+                        .as_ref()
+                        .unwrap();
+                    assert_eq!(
+                        recorded[0]["host_workspace"],
+                        json!({
+                            "manifest":artifact,"manifest_bytes":String::from_utf8(artifact.verify().unwrap()).unwrap()
+                        })
+                    );
+                } else {
+                    assert!(recorded[0].get("host_workspace").is_none());
+                }
+            }
+        }
+    }
     #[test]
     fn tool_requests_require_native_session_and_never_replay_unknown_intent() {
         let (_dir, mut h) = fixture();
@@ -2524,9 +2753,8 @@ mod tests {
         assert!(h.journal.processes.is_empty());
     }
 
-    /// H4: only a relay thread's inference process outlives 300 s.
     #[test]
-    fn relay_inference_process_wall_bound_is_the_relay_thread_bound() {
+    fn inference_wall_guards_are_profile_specific() {
         let (_dir, mut h) = fixture();
         assert_eq!(h.process_wall_seconds(true), 300);
         assert_eq!(
@@ -2537,10 +2765,36 @@ mod tests {
         assert_eq!(h.process_wall_seconds(true), 300);
         h.journal.job.coding.as_mut().unwrap().schema = LIFECYCLE_PROFILE.into();
         assert_eq!(h.process_wall_seconds(true), RELAY_DEADLINE_SECONDS);
+        h.journal.job.coding.as_mut().unwrap().schema = HOSTED_BATTERY_PROFILE.into();
+        assert_eq!(h.process_wall_seconds(true), BATTERY_DEADLINE_SECONDS);
         assert_eq!(
             h.process_wall_seconds(false),
             h.journal.job.command_timeout_seconds
         );
+    }
+    #[test]
+    fn completed_battery_without_validator_requires_the_last_observed_workspace() {
+        let (_dir, mut h) = fixture();
+        let profile = h.journal.job.coding.as_mut().unwrap();
+        profile.schema = HOSTED_BATTERY_PROFILE.into();
+        profile.acceptance = None;
+        let path = h.journal.job.state_dir.join("coding-workspace/edited");
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(&path, b"expected").unwrap();
+        fs::create_dir_all(h.journal.job.state_dir.join("snapshots")).unwrap();
+        assert!(
+            !expected_mounts(&h.journal, true, false)
+                .iter()
+                .any(|(_, dst, _)| *dst == "/acceptance.rs")
+        );
+        assert!(!h.coding_battery_workspace_valid());
+        h.journal.coding.as_mut().unwrap().completed = true;
+        h.journal.coding.as_mut().unwrap().tool_removed = true;
+        h.coding_bind_workspace_manifest().unwrap();
+        h.coding_seal_battery_workspace().unwrap();
+        assert!(h.coding_battery_workspace_valid());
+        fs::write(path, b"changed").unwrap();
+        assert!(!h.coding_battery_workspace_valid());
     }
     #[test]
     fn analysis_answer_bound_is_checked_when_the_answer_is_observed() {

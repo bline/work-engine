@@ -2500,7 +2500,9 @@ impl SqliteLifecycleStore {
                     // the coding contract. Exact source equality is checked below.
                     || (request.purpose == NativeInvocationPurpose::SuccessorRehydrate
                         && (session.profile_digest == crate::pi_coding_profile_digest()
-                            || (session.profile_digest == crate::pi_coding_live_profile_digest() || session.profile_digest == crate::pi_coding_sol_high_profile_digest())))
+                            || session.profile_digest == crate::pi_coding_live_profile_digest()
+                            || session.profile_digest == crate::pi_coding_sol_high_profile_digest()
+                            || session.profile_digest == crate::pi_coding_battery_profile_digest()))
                 {
                     65_536
                 } else if request.purpose == NativeInvocationPurpose::DomainWork
@@ -2510,6 +2512,11 @@ impl SqliteLifecycleStore {
                     // The live coding task is exact operator-admitted text plus
                     // the observation block; the fixture's 2 KiB cap does not fit.
                     16_384
+                } else if request.purpose == NativeInvocationPurpose::DomainWork
+                    && session.profile_digest == crate::pi_coding_battery_profile_digest()
+                {
+                    // Up to 32 KiB of pinned assignment plus the gate's bounded instructions.
+                    40_960
                 } else if request.purpose == NativeInvocationPurpose::DomainWork
                     && session.profile_digest == crate::pi_analysis_profile_digest()
                 {
@@ -3057,6 +3064,8 @@ impl SqliteLifecycleStore {
             || profile == crate::pi_coding::pi_coding_profile_digest()
             || protocol == crate::pi_coding::pi_coding_live_protocol_digest()
             || profile == crate::pi_coding::pi_coding_live_profile_digest()
+            || protocol == crate::pi_coding::pi_coding_battery_protocol_digest()
+            || profile == crate::pi_coding::pi_coding_battery_profile_digest()
             || protocol == crate::pi_coding::pi_coding_sol_high_protocol_digest()
             || profile == crate::pi_coding::pi_coding_sol_high_profile_digest()
             || protocol == crate::pi_coding::pi_analysis_protocol_digest()

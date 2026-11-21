@@ -147,8 +147,9 @@ first few turns. Design:
   in stage 1 (how `TOOLCHAIN` is mounted for `workspace_exec` — check exec
   composition; the arm's `cargo-home/registry` symlink may need a pinned mount
   or the toolchain root must embed a vendored registry).
-- Budget: admission ceiling ~$5 (lane plan proposal); floor pricing; operator
-  monitors spend.
+- Budget: composed D1 uses the existing $4 Host proxy ceiling, floor routing,
+  and operator monitoring of provider billing. No ceiling increase is proposed
+  by the admission repair.
 - After the run: F3.1 scorer `battery_score.py score --interface e1a-v1`
   counts-only on the arm's HEAD commit; report counts (pass / confirmed_failure
   / nonblocking_difference / indeterminate).
@@ -159,21 +160,39 @@ first few turns. Design:
 - 2026-11-20 Stage A COMMITTED `3353c34b`: hosted battery profile admitted
   (deadline 4 h, command timeout 600 s, tool calls ≤ 512, legacy_workspace
   write boundary, plan bounds 512 requests / 2 MiB context, acceptance
-  optional; receiver staging + shim battery-aware; suites green). Remaining:
-  (B) producer battery branch + parametrized-cycle gate loop (see the battery
-  gate section above for the exact per-cycle id scheme); (C) stage-2 spool
-  protocol (receiver spools large context/body to `state_dir/coding-spool`
-  mounted rw at /spool in the battery inference container; frames carry
-  `{path, sha256, bytes}` + scalars; Host reads + digest-verifies + forwards;
-  battery mounts + `verify_inference` expected-mount update); (D) offline
-  fixture end-to-end (loopback transport, ≥ 2 domain-work turns, ≥ 3 tool
-  calls, 1 replacement cycle, completion-signal close); (E) live composition
-  (arm e1a-D1: workspace = arm repo, battery toolchain Tree composed from
-  ~/.rustup/toolchains/1.92.0 + registry hardlinks, task = adapted builder
-  prompt, model ~deepseek/deepseek-v4-flash-latest:floor, effort high via
-  shim) + run + F3.1 scoring.
-- Resolved (was open item 1): the tool container mounts `toolchain` at
-  `/toolchain` (read-only), acceptance at `/acceptance.rs`, and the workspace at
+  optional; receiver staging + shim battery-aware; suites green).
+- 2026-11-20 Stage B1 COMMITTED `3982b9a0`: lifecycle-store parametrizes the
+  v4 checkpoint's successor generation (validate_with_thinking /
+  live_checkpoint_of / pi_coding_live_checkpoint_with_successor /
+  settled_basis_text take the label; settlement keeps the literal
+  context:new; checkpoint stays derived, never stored).
+- 2026-11-20 Stage B2 COMMITTED `976c4fd5`: the battery gate
+  (CodingConfig.battery + battery_workspace; the domain-work turn loop with
+  the durable completion close, pressure-driven parametrized replacement
+  cycles, per-cycle grants/commands/sessions/evidence, battery report) and
+  the producer's battery branch (coding-battery-packet, per-cycle grant
+  installation). native.rs fix: reserve_native_session's successor-admission
+  basis label is the reserved context (the transitions column is NULL until
+  the successor is observed).
+- 2026-11-20 Stage D COMMITTED `879043a8`: two offline gate fixtures (the
+  loop closes on the durable completion signal; pressure drives one
+  parametrized replacement cycle and the run continues to completion); the
+  battery provider branch records pi.coding_workspace evidence per tool
+  intent (v4 grammar) and names the rejected replacement outcome.
+- 2026-11-20 Stage C COMMITTED `c539ecff`: digest-verified request context
+  and HTTP body spooling. Turn histories still require an integrated test at
+  battery sizes; the receiver currently sends them inline.
+- 2026-11-21 Stage E: three D1 attempts refused before dispatch (expired
+  deadline, aggregate reservation, oversized toolchain manifest). After
+  repairs, the actual Pi/Host/lifecycle loopback passed with five requests,
+  three shell effects across a physical replacement, large history spooling,
+  and no-validator custody. D1 baseline Cargo also checked offline in its
+  pinned image. See local `records/openrouter-lane-e1a-battery-20261120/HANDOFF.md`
+  for exact proof and the retained producer. No live D1 execution or score;
+  operator credit is unavailable and the next live launch remains held.
+- Toolchain composition prepared (execution not yet established): the tool
+  container mounts `toolchain` at `/toolchain` (read-only), pinned acceptance
+  at `/acceptance.rs` when present (currently assumed by the Host), and the workspace at
   `/workspace` — **`LegacyWorkspace` boundary already gives a writable
   whole-repo tool container** (RW=true on the workspace bind); `PATH` already
   includes `/toolchain/bin`. The pinned offline-rustc toolchain has only
@@ -186,9 +205,7 @@ first few turns. Design:
   the battery `workspace_exec` description). The E1a crate is pure Rust (serde,
   serde_json) — no `cc` needed. Container limits (512 MiB, 1 CPU, 64 pids) are
   tight for cargo; the builder should scope builds to the target crate.
-- Remaining open items: (2) `max_context_bytes` exact stage-2 bound vs receiver
-  frame math; (3) shim `workspace_exec` description is hard-coded to the tiny
-  fixture ("Only edit src/lib.rs") — battery needs repo-oriented text; (4) Fable
-  review of the widening before the live run (claude-sdk quota resets 04:40 MST).
-- The qualified producer binary `d5575836…` stays valid until this work lands;
-  rebuild + re-pin after any source change.
+- Keep request, history and event size bounds explicit. Verify the repository
+  shell and offline Cargo against the composed toolchain during loopback.
+- Rebuild and pin the exact qualification producer after any source change;
+  compose the live job immediately before launch so its deadline is fresh.

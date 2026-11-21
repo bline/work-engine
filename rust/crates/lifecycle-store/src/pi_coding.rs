@@ -28,6 +28,14 @@ pub fn pi_coding_live_protocol_digest() -> String {
         b"pi-1.5.0:raw-agent-events-except-message-update+host-intent-result+session-branch+owner-derived-checkpoint:v4",
     )
 }
+/// Battery profile binds repeated domain turns and sequential Host shell
+/// effects to its own settlement grammar, not the short continuity proof.
+pub fn pi_coding_battery_profile_digest() -> String {
+    digest(b"pi-1.5.0-coding-host-battery-v1:repeated-domain-turns:host-journal")
+}
+pub fn pi_coding_battery_protocol_digest() -> String {
+    digest(b"pi-1.5.0:battery-v1:raw-agent-events-except-message-update+per-call-host-intent-result+session-branch+owner-derived-workspace-checkpoint")
+}
 /// Sol/high v5 preserves native thinking blocks under a distinct grammar.
 pub fn pi_coding_sol_high_profile_digest() -> String {
     digest(b"pi-1.5.0-coding-sol-high-v5:openai-codex:gpt-6.1-sol:high:thinking-history:owner-derived-checkpoint")
@@ -51,6 +59,7 @@ pub(crate) enum PiCodingKind {
     Fixture,
     Live,
     SolHigh,
+    Battery,
     Analysis,
 }
 pub(crate) fn pi_coding_kind(profile: &str, protocol: &str) -> Option<PiCodingKind> {
@@ -60,6 +69,10 @@ pub(crate) fn pi_coding_kind(profile: &str, protocol: &str) -> Option<PiCodingKi
         && protocol == pi_coding_live_protocol_digest()
     {
         Some(PiCodingKind::Live)
+    } else if profile == pi_coding_battery_profile_digest()
+        && protocol == pi_coding_battery_protocol_digest()
+    {
+        Some(PiCodingKind::Battery)
     } else if profile == pi_coding_sol_high_profile_digest()
         && protocol == pi_coding_sol_high_protocol_digest()
     {
@@ -114,7 +127,12 @@ impl SqliteLifecycleStore {
         if thread != parent.thread().as_str()
             || !matches!(
                 pi_coding_kind(&profile, &protocol),
-                Some(PiCodingKind::Fixture | PiCodingKind::Live | PiCodingKind::SolHigh)
+                Some(
+                    PiCodingKind::Fixture
+                        | PiCodingKind::Live
+                        | PiCodingKind::SolHigh
+                        | PiCodingKind::Battery
+                )
             )
             || profile != parent.profile_digest()
             || binary != crate::PI_SDK_INDEX_SHA256
@@ -272,6 +290,11 @@ impl SqliteLifecycleStore {
                 pi_coding_live_profile_digest(),
                 pi_coding_live_protocol_digest(),
             )
+        } else if successor.profile_digest() == pi_coding_battery_profile_digest() {
+            (
+                pi_coding_battery_profile_digest(),
+                pi_coding_battery_protocol_digest(),
+            )
         } else if successor.profile_digest() == pi_coding_sol_high_profile_digest() {
             (
                 pi_coding_sol_high_profile_digest(),
@@ -325,7 +348,8 @@ impl SqliteLifecycleStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(|_| StoreError::Unavailable)?;
-        let b = parent_binding(&tx, parent, &self.trusted_issuer, clock)?;        let children:i64=tx.query_row("SELECT (SELECT COUNT(*) FROM native_operations WHERE parent_invocation_id=?1)+(SELECT COUNT(*) FROM native_task_operations WHERE parent_invocation_id=?1)",[parent.invocation_id()],|r|r.get(0)).map_err(|_|StoreError::Unavailable)?;
+        let b = parent_binding(&tx, parent, &self.trusted_issuer, clock)?;
+        let children:i64=tx.query_row("SELECT (SELECT COUNT(*) FROM native_operations WHERE parent_invocation_id=?1)+(SELECT COUNT(*) FROM native_task_operations WHERE parent_invocation_id=?1)",[parent.invocation_id()],|r|r.get(0)).map_err(|_|StoreError::Unavailable)?;
         if children != 0 {
             return Err(StoreError::ClaimConflict);
         }
@@ -397,19 +421,13 @@ impl SqliteLifecycleStore {
             )?;
             return tx.commit().map_err(|_| StoreError::Unavailable);
         }
-        let profile_digest = if b.kind == PiCodingKind::SolHigh {
-            pi_coding_sol_high_profile_digest()
-        } else if b.kind == PiCodingKind::Live {
-            pi_coding_live_profile_digest()
-        } else {
-            pi_coding_profile_digest()
-        };
+        let profile_digest = parent.profile_digest();
         let anchor = crate::pi_settlement::settled_anchor(
             &tx,
             parent.invocation_id(),
             &b.session,
             &b.thread,
-            &profile_digest,
+            profile_digest,
             &proof.transport,
             proof.first_sequence,
         )?;
@@ -418,7 +436,8 @@ impl SqliteLifecycleStore {
         {
             return Err(StoreError::ClaimConflict);
         }
-        let validated = crate::pi_coding_proof::validate_with_thinking(
+        let validated = validate_turn(
+            b.kind,
             &values,
             parent.invocation_id(),
             parent.turn().unwrap().as_str(),
@@ -426,8 +445,6 @@ impl SqliteLifecycleStore {
             &b.prompt,
             &b.prompt_hash,
             anchor.as_ref(),
-            b.kind != PiCodingKind::Fixture,
-            b.kind == PiCodingKind::SolHigh,
             b.purpose == "successor_rehydrate",
             // Settlement labels the derived checkpoint with the choreography's
             // original successor generation. The battery profile re-derives
@@ -437,7 +454,7 @@ impl SqliteLifecycleStore {
         // This bounded live profile's sole tool-bearing turn is the initial
         // emission prefix. Together with the committed end coordinate, this
         // fixes both slice boundaries without adding another material store.
-        if b.kind != PiCodingKind::Fixture
+        if matches!(b.kind, PiCodingKind::Live | PiCodingKind::SolHigh)
             && validated.checkpoint.is_some()
             && proof.first_sequence != 1
         {
@@ -552,9 +569,12 @@ pub(crate) fn live_checkpoint_of(
     else {
         return Ok(None);
     };
-    let kind = pi_coding_kind(&profile, &protocol);
-    if !matches!(kind, Some(PiCodingKind::Live | PiCodingKind::SolHigh)) || purpose != "domain_work"
-    {
+    let Some(kind @ (PiCodingKind::Live | PiCodingKind::SolHigh | PiCodingKind::Battery)) =
+        pi_coding_kind(&profile, &protocol)
+    else {
+        return Ok(None);
+    };
+    if purpose != "domain_work" {
         return Ok(None);
     }
     let mut stmt = conn
@@ -595,7 +615,8 @@ pub(crate) fn live_checkpoint_of(
     let anchor = crate::pi_settlement::settled_anchor(
         conn, invocation, &session, &thread, &profile, &transport, first,
     )?;
-    let validated = crate::pi_coding_proof::validate_with_thinking(
+    let validated = validate_turn(
+        kind,
         &values,
         invocation,
         &turn,
@@ -603,18 +624,59 @@ pub(crate) fn live_checkpoint_of(
         &prompt,
         &prompt_hash,
         anchor.as_ref(),
-        true,
-        kind == Some(PiCodingKind::SolHigh),
         // Readback serves only domain_work turns (checked above).
         false,
         successor_context,
     )?;
     if validated.final_text.as_bytes() != final_text.as_slice()
-        || (validated.checkpoint.is_some() && first != 1)
+        || (kind != PiCodingKind::Battery && validated.checkpoint.is_some() && first != 1)
     {
         return Err(StoreError::ClaimConflict);
     }
     Ok(validated.checkpoint)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn validate_turn(
+    kind: PiCodingKind,
+    values: &[Value],
+    invocation: &str,
+    turn: &str,
+    thread: &str,
+    prompt: &[u8],
+    prompt_hash: &str,
+    anchor: Option<&Value>,
+    rehydrate: bool,
+    successor_context: &str,
+) -> Result<crate::pi_coding_proof::Validated, StoreError> {
+    use crate::pi_coding_proof::{validate_battery, validate_with_thinking};
+    if kind == PiCodingKind::Battery {
+        validate_battery(
+            values,
+            invocation,
+            turn,
+            thread,
+            prompt,
+            prompt_hash,
+            anchor,
+            rehydrate,
+            successor_context,
+        )
+    } else {
+        validate_with_thinking(
+            values,
+            invocation,
+            turn,
+            thread,
+            prompt,
+            prompt_hash,
+            anchor,
+            kind != PiCodingKind::Fixture,
+            kind == PiCodingKind::SolHigh,
+            rehydrate,
+            successor_context,
+        )
+    }
 }
 
 /// Text a transition, rehydration or reset consumes as the settled basis of a

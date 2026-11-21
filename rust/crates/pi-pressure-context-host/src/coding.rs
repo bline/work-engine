@@ -180,6 +180,7 @@ impl CodingEffectGate for CodingLifecycleGate {
 use lifecycle_core::*;
 use lifecycle_store::{
     NativeSessionEntry, NativeTurnRequest, PI_SDK_INDEX_SHA256, PiSettlementProof,
+    pi_coding_battery_profile_digest, pi_coding_battery_protocol_digest,
     pi_coding_live_profile_digest, pi_coding_live_protocol_digest, pi_coding_profile_digest,
     pi_coding_protocol_digest, pi_coding_sol_high_profile_digest,
 };
@@ -386,10 +387,9 @@ impl CodingContinuity {
                 } else {
                     "provider_disabled_fixture"
                 }
-            || config
-                .task
-                .as_ref()
-                .is_some_and(|t| t.is_empty() || t.len() > 8192)
+            || config.task.as_ref().is_some_and(|t| {
+                t.is_empty() || t.len() > if config.battery { 32_768 } else { 8192 }
+            })
             || config.budget["available"] != true
             || if config.battery {
                 // Battery: admission-pinned finite bounds inside the profile
@@ -422,7 +422,7 @@ impl CodingContinuity {
         {
             return Err(refused("canonical coding budget/control refused"));
         }
-        budget_current(&config, clock())?;
+        budget_current(&config, clock(), true)?;
         let battery = config.battery;
         let battery_max_requests = if config.battery {
             config.budget["max_provider_requests"].as_u64().unwrap_or(0)
@@ -492,7 +492,7 @@ impl CodingContinuity {
             .ok_or_else(|| refused("coding continuity unfinished"))
     }
 }
-fn budget_current(config: &CodingConfig, clock: ClockSample) -> Result<()> {
+fn budget_current(config: &CodingConfig, clock: ClockSample, admitting: bool) -> Result<()> {
     let b = &config.budget;
     let now = clock.wall.get();
     let observed = b["observed_ms"]
@@ -508,7 +508,10 @@ fn budget_current(config: &CodingConfig, clock: ClockSample) -> Result<()> {
         || b["source"].as_str().is_none_or(str::is_empty)
         || b["generation"].as_str().is_none_or(str::is_empty)
         || observed > now
-        || now - observed > age
+        // A battery job checks this immutable start observation at
+        // admission. Thereafter the Host ledger meters every dispatch and
+        // the owner's grants and this packet expire at the admitted deadline.
+        || ((admitting || !config.battery) && now.saturating_sub(observed) > age)
         || b["available"] != true
         || now >= config.expires_ms
     {
@@ -541,7 +544,7 @@ impl ContinuityState {
         Ok(())
     }
     fn check(&self) -> Result<()> {
-        budget_current(&self.config, (self.clock)())?;
+        budget_current(&self.config, (self.clock)(), false)?;
         if (self.clock)().wall.get() >= self.config.expires_ms
             || self.config.budget["available"] != true
         {
@@ -620,7 +623,10 @@ impl ContinuityState {
         if purpose == NativeInvocationPurpose::DomainWork {
             self.last_continued = Some(id.to_string());
         }
-        let command = json!({"type":"bridge_prompt","sessionId":o.parent.thread().as_str(),"invocationId":id,"turnCorrelation":format!("turn:{id}"),"prompt":prompt});
+        let mut command = json!({"type":"bridge_prompt","sessionId":o.parent.thread().as_str(),"invocationId":id,"turnCorrelation":format!("turn:{id}"),"prompt":prompt});
+        if self.battery {
+            command["workspaceTools"] = json!(purpose == NativeInvocationPurpose::DomainWork);
+        }
         drop(o);
         self.queue(command)
     }
@@ -679,7 +685,11 @@ impl ContinuityState {
         );
         self.session = Some(session);
         self.gate = Some(gate);
-        self.queue(json!({"type":"bridge_prompt","sessionId":frame["sessionId"],"invocationId":"coding","turnCorrelation":"turn:coding","prompt":prompt}))
+        let mut command = json!({"type":"bridge_prompt","sessionId":frame["sessionId"],"invocationId":"coding","turnCorrelation":"turn:coding","prompt":prompt});
+        if self.battery {
+            command["workspaceTools"] = json!(true);
+        }
+        self.queue(command)
     }
     fn provider(&mut self, frame: &Value) -> Result<Vec<Value>> {
         self.check()?;
@@ -702,28 +712,12 @@ impl ContinuityState {
             {
                 return Err(refused("coding provider owner correlation conflict"));
             }
-            // Workspace evidence rides on the first request after a tool call
-            // (the Host binds the manifest when the tool container is drained):
-            // the v4 grammar requires one pi.coding_workspace record per tool
-            // intent, exactly as the choreography records it.
-            if frame["host_workspace"].is_object() && o.result.is_some() {
-                let workspace = frame["host_workspace"].clone();
-                let raw = workspace["manifest_bytes"]
-                    .as_str()
-                    .ok_or_else(|| refused("Host stable workspace absent"))?;
-                if digest(raw.as_bytes()) != workspace["manifest"]["sha256"] {
-                    return Err(refused("Host workspace manifest binding"));
-                }
-                self.original_result = Some(o.result.clone().unwrap());
-                self.workspace = Some(workspace.clone());
-                let e = json!({"type":"pi.coding_workspace","invocationId":o.parent.invocation_id(),"manifest":workspace["manifest"],"manifest_bytes":raw});
-                o.record("pi.coding_workspace", &e)?;
-            }
             let mut request = frame.clone();
             request["type"] = json!("pi.provider_request");
             if let Some(m) = request.as_object_mut() {
                 m.remove("host_workspace");
                 m.remove("schema");
+                m.remove("contextSpool");
             }
             o.record("pi.provider_request", &request)?;
             drop(o);
@@ -834,6 +828,18 @@ impl ContinuityState {
         }
         self.snapshot(frame)?;
         self.observations.push(frame["snapshot"].clone());
+        if self.battery && matches!(self.phase, 0 | 3) && frame["host_workspace"].is_object() {
+            let workspace = &frame["host_workspace"];
+            let raw = workspace["manifest_bytes"]
+                .as_str()
+                .ok_or_else(|| refused("Host stable workspace absent"))?;
+            if digest(raw.as_bytes()) != workspace["manifest"]["sha256"] {
+                return Err(refused("Host workspace manifest binding"));
+            }
+            let e = json!({"type":"pi.coding_workspace","invocationId":o.parent.invocation_id(),"manifest":workspace["manifest"],"manifest_bytes":raw});
+            o.record("pi.coding_workspace", &e)?;
+            self.workspace = Some(json!({"manifest":workspace["manifest"]}));
+        }
         let mut history = frame.clone();
         history["type"] = json!("pi.session_history");
         if let Some(m) = history.as_object_mut() {
@@ -1170,12 +1176,18 @@ impl ContinuityState {
         } else {
             self.turn_grant(&format!("grant:new{}", self.resets_done))
         };
-        self.prompt(
-            &id,
-            "Continue the assigned builder work exactly where it stopped; obey the task's original instructions and its completion artifact obligation.",
-            NativeInvocationPurpose::DomainWork,
-            &grant,
-        )
+        let prompt = if self.phase == 3 && self.resets_done > 0 && self.transition.is_some() {
+            // The successor starts with an owner checkpoint, not with the
+            // predecessor transcript. Restore the original assignment once.
+            self.transition = None;
+            format!(
+                "{}\n\nContinue from the staged workspace and the recovered checkpoint. Inspect the repo and existing progress before changing it.",
+                self.config.task.as_deref().unwrap()
+            )
+        } else {
+            "Continue the assigned builder work exactly where it stopped; obey the task's original instructions and its completion artifact obligation.".into()
+        };
+        self.prompt(&id, &prompt, NativeInvocationPurpose::DomainWork, &grant)
     }
     fn battery_prepare_reset(&mut self, frame: &Value, cycle: u64) -> Result<Vec<Value>> {
         self.check()?;
@@ -1186,7 +1198,7 @@ impl ContinuityState {
         let gate = self.gate.as_ref().unwrap().clone();
         let mut o = gate.0.borrow_mut();
         let successor_context = Self::battery_successor_context(cycle)?;
-        // Owner-derived v4 checkpoint of the just-settled domain turn, labeled
+        // Owner-derived battery checkpoint of the just-settled domain turn, labeled
         // with this cycle's successor generation (never stored; re-derived).
         let CodingLifecycle { store, parent, .. } = &mut *o;
         let checkpoint = store
@@ -1251,9 +1263,9 @@ impl ContinuityState {
                 subject,
                 ContextGeneration::parse(&successor_context).map_err(refused)?,
                 RuntimeIncarnation::parse("incarnation:pi:coding").map_err(refused)?,
-                &pi_coding_live_profile_digest(),
+                &pi_coding_battery_profile_digest(),
                 PI_SDK_INDEX_SHA256,
-                &pi_coding_live_protocol_digest(),
+                &pi_coding_battery_protocol_digest(),
                 SnapshotId::parse("snapshot:coding").map_err(refused)?,
                 &hash,
                 false,
@@ -1333,7 +1345,7 @@ impl ContinuityState {
         let checkpoint = self.checkpoint.clone().unwrap();
         let grant = self.turn_grant(&format!("grant:new{}", self.resets_done));
         self.prompt(
-            "rehydrate",
+            &format!("rehydrate-{}", self.resets_done),
             &checkpoint,
             NativeInvocationPurpose::SuccessorRehydrate,
             &grant,
@@ -1400,7 +1412,7 @@ impl ContinuityState {
             .clone()
             .ok_or_else(|| refused("battery continuation turn absent"))?;
         self.report = Some(
-            json!({"schema":"work-engine.pi-coding-continuity-result.v1","standing":"live-provider battery builder run; real inference; acceptance is the coordinator's F3.1 scoring of the produced commit, not a production/domain claim","mode":"battery","context":subject.context_id,"owner":subject.owner_kind,"checkpoint":self.checkpoint,"original_host_result":self.original_result,"workspace":self.workspace,"observations":self.observations,"fresh_successor":self.fresh_successor,"predecessor_history_external_only":true,"provider_requests":self.provider_calls,"tool_executions":self.tool_executions,"physical_resets":self.resets_done,"completion_signal":true,"recovery_receipt":self.recovery_receipt,"continued_parent":o.store.native_recovery(&continued).map_err(refused)?.map(|r| r.class).ok_or_else(|| refused("battery continuation unsettled"))?}),
+            json!({"schema":"work-engine.pi-coding-continuity-result.v1","standing":"bounded battery builder route; provider provenance in the Host receipt; no task acceptance or score claimed","mode":"battery","context":subject.context_id,"owner":subject.owner_kind,"checkpoint":self.checkpoint,"original_host_result":self.original_result,"workspace":self.workspace,"observations":self.observations,"fresh_successor":self.fresh_successor,"predecessor_history_external_only":true,"provider_requests":self.provider_calls,"tool_executions":self.tool_executions,"physical_resets":self.resets_done,"completion_signal":true,"recovery_receipt":self.recovery_receipt,"continued_parent":o.store.native_recovery(&continued).map_err(refused)?.map(|r| r.class).ok_or_else(|| refused("battery continuation unsettled"))?}),
         );
         if self.config.hosted.is_some() {
             self.report.as_mut().unwrap()["hosted_attempts"] = json!(self.hosted_log);
@@ -1558,7 +1570,8 @@ impl CodingEffectGate for CodingContinuity {
         // before entering the current parent/grant transaction. A failed write
         // stays uncertain and must never be replayed.
         if command["type"] == "tool_result" {
-            if s.tool_result_sent || !(s.phase == 0 || (s.battery && s.phase == 3)) {
+            if (!s.battery && s.tool_result_sent) || !(s.phase == 0 || (s.battery && s.phase == 3))
+            {
                 return Err(refused("coding tool result already consumed/forbidden"));
             }
             let gate = s
@@ -1576,7 +1589,16 @@ impl CodingEffectGate for CodingContinuity {
             if command != &evidence["result"] || command != &recorded {
                 return Err(refused("coding tool result differs from Host custody"));
             }
-            s.tool_result_sent = true;
+            if s.battery {
+                // Only this exact Host result can be sent. Consume the local
+                // slot before dispatch; failure is terminal, never a replay.
+                s.original_result =
+                    Some(json!({"artifact":evidence["artifact"],"id":evidence["result"]["id"]}));
+                o.result = None;
+                o.intent = None;
+            } else {
+                s.tool_result_sent = true;
+            }
             let clock = (s.clock)();
             let CodingLifecycle { store, parent, .. } = &mut *o;
             return store
@@ -1662,7 +1684,7 @@ mod control_tests {
                 _ => {}
             }
             assert_eq!(
-                budget_current(&config, sample).is_ok(),
+                budget_current(&config, sample, true).is_ok(),
                 case == 0,
                 "case {case}"
             );

@@ -953,9 +953,28 @@ impl Host {
                 headers.insert(k, v.to_string());
             }
         }
-        let body = B64
-            .decode(frame["body"].as_str().unwrap_or(""))
-            .map_err(|_| Error::Refused("provider fetch body encoding".into()))?;
+        let battery = self
+            .journal
+            .job
+            .coding
+            .as_ref()
+            .is_some_and(|p| is_battery(&p.schema));
+        let body = if battery {
+            if frame.get("body").is_some() {
+                return refuse("ambiguous or inline battery provider body");
+            }
+            self.coding_read_spool(
+                &frame["bodySpool"],
+                &format!("body-{}.bin", s.request),
+                BATTERY_SPOOL_BODY_BYTES,
+            )?
+        } else {
+            if frame.get("bodySpool").is_some() {
+                return refuse("provider body spool outside battery profile");
+            }
+            B64.decode(frame["body"].as_str().unwrap_or(""))
+                .map_err(|_| Error::Refused("provider fetch body encoding".into()))?
+        };
         // Messages bodies are parsed strictly: a duplicate key could mean one
         // thing here and another upstream.
         let parsed: Value = match wire {
@@ -976,7 +995,9 @@ impl Host {
             parsed["model"] == transmitted && parsed["stream"] == true
         };
         if body.len()
-            > if analysis {
+            > if battery {
+                BATTERY_SPOOL_BODY_BYTES as usize
+            } else if analysis {
                 super::analysis::MAX_REQUEST_BODY
             } else {
                 MAX_REQUEST_BODY

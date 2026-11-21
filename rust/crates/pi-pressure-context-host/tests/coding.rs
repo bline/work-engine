@@ -433,6 +433,7 @@ struct SyntheticSdk {
     /// The SDK-observed context size the receiver reports per request
     /// (`contextBytes`); the battery gate's replacement policy reads it.
     context_bytes: u64,
+    workspace_tools: Option<bool>,
 }
 impl SyntheticSdk {
     fn new(session: &str, requests: u64) -> Self {
@@ -450,6 +451,7 @@ impl SyntheticSdk {
             hosted: false,
             silent_recovery: false,
             context_bytes: 0,
+            workspace_tools: None,
         }
     }
     fn assistant(&self, mut m: serde_json::Value) -> serde_json::Value {
@@ -540,17 +542,29 @@ impl SyntheticSdk {
         self.native(c, json!({"type":"turn_start"}));
         let user = json!({"role":"user","content":[{"type":"text","text":command["prompt"]}]});
         let mut generated = vec![];
+        let workspace_tools = command["workspaceTools"].as_bool();
         if self.messages.is_empty() {
             let system = json!({"role":"system","content":"","sections":{"preamble":"Fresh Pi coding assistant boilerplate","tools":"No inherited tools","cwd":"/workspace"},"timestamp":100});
             self.message(c, system.clone());
             generated.push(system);
+        } else if self.workspace_tools == Some(false) && workspace_tools == Some(true) {
+            let system = json!({"role":"system","content":"","sections":{"tools":"Workspace tool restored"},"toolsAdded":[{"name":"workspace_exec"}],"timestamp":100});
+            self.message(c, system.clone());
+            generated.push(system);
         }
+        self.workspace_tools = workspace_tools;
         generated.push(user.clone());
         self.message(c, user);
         let first = self.request(c, command, None);
+        let battery = command.get("workspaceTools").is_some();
         let response = if let Some(root) = tool_root {
             assert_eq!(first["mode"], if self.live { "live" } else { "tool" });
-            let call = json!({"type":"toolCall","id":"one","name":"workspace_exec","arguments":{"command":"bounded fixture edit"}});
+            let call_id = if battery {
+                format!("call-{}", self.requests)
+            } else {
+                "one".into()
+            };
+            let call = json!({"type":"toolCall","id":call_id,"name":"workspace_exec","arguments":{"command":"bounded fixture edit"}});
             let content = if self.preamble {
                 json!([{"type":"text","text":"I will make the edit now."}, call])
             } else {
@@ -560,18 +574,18 @@ impl SyntheticSdk {
                 .assistant(json!({"role":"assistant","content":content,"stopReason":"toolUse"}));
             self.message(c, assistant.clone());
             generated.push(assistant.clone());
-            self.native(c,json!({"type":"tool_execution_start","toolCallId":"one","toolName":"workspace_exec","args":call["arguments"]}));
+            self.native(c,json!({"type":"tool_execution_start","toolCallId":call_id,"toolName":"workspace_exec","args":call["arguments"]}));
             let intent = CodingToolIntent {
                 job_id: "job".into(),
                 input_digest: "1".repeat(64),
                 session_id: self.session.clone(),
-                call_id: "one".into(),
+                call_id: call_id.clone(),
                 command_sha256: digest(b"bounded fixture edit"),
             };
             c.execute(&intent, &mut |_expires| Ok((true, b"edited\n".to_vec())))
                 .unwrap();
             let (artifact, process) =
-                evidence_with_stdout(root, "one", &vec![b'x'; self.tool_output_bytes]);
+                evidence_with_stdout(root, &call_id, &vec![b'x'; self.tool_output_bytes]);
             c.observed(&intent, &artifact, &process, &"f".repeat(64))
                 .unwrap();
             let result: serde_json::Value =
@@ -587,8 +601,8 @@ impl SyntheticSdk {
                 c.dispatch(&result, &mut |_| panic!("duplicate result must not send"))
                     .is_err()
             );
-            let tool = json!({"role":"toolResult","toolCallId":"one","toolName":"workspace_exec","content":[{"type":"text","text":result["output"]}],"details":{"hostReportedSuccess":true},"isError":false});
-            self.native(c,json!({"type":"tool_execution_end","toolCallId":"one","toolName":"workspace_exec","isError":false,"result":{"content":tool["content"],"details":tool["details"]}}));
+            let tool = json!({"role":"toolResult","toolCallId":call_id,"toolName":"workspace_exec","content":[{"type":"text","text":result["output"]}],"details":{"hostReportedSuccess":true},"isError":false});
+            self.native(c,json!({"type":"tool_execution_end","toolCallId":call_id,"toolName":"workspace_exec","isError":false,"result":{"content":tool["content"],"details":tool["details"]}}));
             self.message(c, tool.clone());
             generated.push(tool.clone());
             self.native(
@@ -597,7 +611,7 @@ impl SyntheticSdk {
             );
             self.native(c, json!({"type":"turn_start"}));
             let workspace = json!({"manifest":{"path":"/synthetic/workspace.json","sha256":digest(b"{}")},"manifest_bytes":"{}"});
-            self.request(c, command, Some(&workspace))
+            self.request(c, command, (!battery).then_some(&workspace))
         } else {
             first
         };
@@ -626,7 +640,10 @@ impl SyntheticSdk {
             json!({"type":"agent_end","messages":generated,"willRetry":false}),
         );
         self.native(c, json!({"type":"agent_settled","aborted":false}));
-        let history = json!({"type":"coding_history","producer":"pi-1.5.0","sessionId":self.session,"invocationId":command["invocationId"],"messages":self.messages,"branch":self.branch,"header":{"id":self.session,"type":"session"},"leafId":self.branch.last().unwrap()["id"],"snapshot":snapshot(&self.session)});
+        let mut history = json!({"type":"coding_history","producer":"pi-1.5.0","sessionId":self.session,"invocationId":command["invocationId"],"messages":self.messages,"branch":self.branch,"header":{"id":self.session,"type":"session"},"leafId":self.branch.last().unwrap()["id"],"snapshot":snapshot(&self.session)});
+        if battery && tool_root.is_some() {
+            history["host_workspace"] = json!({"manifest":{"path":"/synthetic/workspace.json","sha256":digest(b"{}")},"manifest_bytes":"{}"});
+        }
         let commands = c.frame(&history)?;
         assert_eq!(commands.len(), 1);
         Ok(commands[0].clone())
@@ -1000,7 +1017,11 @@ fn continuity_build_battery(
         .unwrap();
     let policy = hosted_policy();
     let turn = |base: &str| policy.grant_id(base);
-    let mut grants = vec![(turn("grant:old"), "context:old".to_string(), GrantScope::NativeTurn)];
+    let mut grants = vec![(
+        turn("grant:old"),
+        "context:old".to_string(),
+        GrantScope::NativeTurn,
+    )];
     for c in 1..=max_resets {
         let predecessor = if c == 1 {
             "context:old".to_string()
@@ -1049,9 +1070,9 @@ fn continuity_build_battery(
             subject,
             ContextGeneration::parse("context:old").unwrap(),
             RuntimeIncarnation::parse("incarnation:pi:coding").unwrap(),
-            &pi_coding_live_profile_digest(),
+            &lifecycle_store::pi_coding_battery_profile_digest(),
             PI_SDK_INDEX_SHA256,
-            &pi_coding_live_protocol_digest(),
+            &lifecycle_store::pi_coding_battery_protocol_digest(),
             SnapshotId::parse("snapshot:coding").unwrap(),
             &published.digest_hex,
             false,
@@ -1067,20 +1088,24 @@ fn continuity_build_battery(
         battery: true,
         battery_workspace: Some(root.join("workspace")),
     };
-    (
-        root,
-        CodingContinuity::new(store, initial, config, clock),
-    )
+    (root, CodingContinuity::new(store, initial, config, clock))
 }
 #[test]
 fn battery_loop_runs_domain_turns_until_the_durable_completion_signal() {
     let (root, c) = continuity_build_battery(2, 16, 8, 1_000_000, 7000);
     let mut c = c.unwrap();
     let original = c
-        .frame(&json!({"type":"ready","sessionId":"physical:old","snapshot":snapshot("physical:old")}))
+        .frame(
+            &json!({"type":"ready","sessionId":"physical:old","snapshot":snapshot("physical:old")}),
+        )
         .unwrap()[0]
         .clone();
-    assert!(original["prompt"].as_str().unwrap().contains("battery builder job"));
+    assert!(
+        original["prompt"]
+            .as_str()
+            .unwrap()
+            .contains("battery builder job")
+    );
     control(&mut c, &original);
     let mut sdk = SyntheticSdk::new("physical:old", 0);
     sdk.live = true;
@@ -1098,13 +1123,13 @@ fn battery_loop_runs_domain_turns_until_the_durable_completion_signal() {
     )
     .unwrap();
     // Turn 2 settles -> the gate closes on the durable signal, not the text.
-    let t2 = sdk.turn(&mut c, &t1, None).unwrap();
+    let t2 = sdk.turn(&mut c, &t1, Some(&root)).unwrap();
     assert_eq!(t2["type"], "bridge_close");
     control(&mut c, &t2);
     let report = c.report().unwrap();
     assert_eq!(report["mode"], "battery");
-    assert_eq!(report["provider_requests"], 3);
-    assert_eq!(report["tool_executions"], 1);
+    assert_eq!(report["provider_requests"], 4);
+    assert_eq!(report["tool_executions"], 2);
     assert_eq!(report["physical_resets"], 0);
     assert_eq!(report["continued_parent"], "CompletedSettled");
     drop(c);
@@ -1115,7 +1140,9 @@ fn battery_pressure_replaces_once_and_the_run_continues_to_completion() {
     let (root, c) = continuity_build_battery(1, 16, 8, 1_000, 5_000);
     let mut c = c.unwrap();
     let original = c
-        .frame(&json!({"type":"ready","sessionId":"physical:old","snapshot":snapshot("physical:old")}))
+        .frame(
+            &json!({"type":"ready","sessionId":"physical:old","snapshot":snapshot("physical:old")}),
+        )
         .unwrap()[0]
         .clone();
     control(&mut c, &original);
@@ -1129,7 +1156,12 @@ fn battery_pressure_replaces_once_and_the_run_continues_to_completion() {
     control(&mut c, &reset);
     let commands = c.frame(&json!({"type":"coding_replaced","sessionId":"physical:new1","oldSessionId":"physical:old","result":{"cancelled":false},"messages":[],"branch":[],"header":{"type":"session","id":"physical:new1"},"leafId":null,"autoCompactionEnabled":false,"tools":[],"snapshot":snapshot("physical:new1")})).unwrap();
     let recovery = commands[0].clone();
-    assert!(recovery["prompt"].as_str().unwrap().contains("context:new1"));
+    assert!(
+        recovery["prompt"]
+            .as_str()
+            .unwrap()
+            .contains("context:new1")
+    );
     control(&mut c, &recovery);
     let mut fresh = SyntheticSdk::new("physical:new1", 2);
     fresh.live = true;
@@ -1145,11 +1177,14 @@ fn battery_pressure_replaces_once_and_the_run_continues_to_completion() {
         json!({"status":"handoff_ready","commit":"b".repeat(64)}).to_string(),
     )
     .unwrap();
-    let close = fresh.turn(&mut c, &continued, None).unwrap();
+    assert_eq!(recovery["workspaceTools"], false);
+    assert_eq!(continued["workspaceTools"], true);
+    let close = fresh.turn(&mut c, &continued, Some(&root)).unwrap();
     assert_eq!(close["type"], "bridge_close");
     control(&mut c, &close);
     let report = c.report().unwrap();
     assert_eq!(report["mode"], "battery");
+    assert_eq!(report["tool_executions"], 2);
     assert_eq!(report["physical_resets"], 1);
     assert_eq!(report["context"], "context:new1");
     assert_eq!(report["continued_parent"], "CompletedSettled");
