@@ -424,9 +424,10 @@ try {
        // The SDK zstd-compresses Codex SSE bodies. The Host validates and
        // forwards plain JSON (the SDK's own uncompressed fallback), so the
        // bounded decompression happens here, never on the Host.
-       if(headers['content-encoding']==='zstd'){body=zstdDecompressSync(body,{maxOutputLength:MAX_BODY+1});delete headers['content-encoding'];}
+       const bodyLimit=battery?SPOOL_BODY_BYTES:MAX_BODY;
+       if(headers['content-encoding']==='zstd'){body=zstdDecompressSync(body,{maxOutputLength:bodyLimit+1});delete headers['content-encoding'];}
        else if(headers['content-encoding']!==undefined)throw Error('hosted request encoding');
-       if(battery?body.length>SPOOL_BODY_BYTES:body.length>MAX_BODY)throw Error('hosted request bound');
+       if(body.length>bodyLimit)throw Error('hosted request bound');
        hostedFrames.open=true;
        // Battery: the request body travels by reference (a large builder
        // context exceeds the inline frame bound); the Host reads and digest-
