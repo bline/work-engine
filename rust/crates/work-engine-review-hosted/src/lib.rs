@@ -7,6 +7,7 @@
 
 pub mod check;
 pub mod inputs;
+pub mod messages_artifacts;
 pub mod revision;
 pub mod secrets;
 pub mod subject;
@@ -44,6 +45,8 @@ pub enum Refusal {
     Freeze(String),
     #[error("task: {0}")]
     Task(String),
+    #[error("artifact comparison: {0}")]
+    Artifact(String),
     #[error("prompt bound: task {task} bytes + Host suffix {suffix} bytes exceeds {bound}")]
     PromptBound {
         task: usize,
@@ -56,6 +59,8 @@ pub enum Refusal {
     ParentShape(String),
     #[error("subject tree mismatch: expected {expected}, commit has {actual}")]
     TreeMismatch { expected: String, actual: String },
+    #[error("subject parent mismatch: expected {expected}, commit has {actual}")]
+    BaselineMismatch { expected: String, actual: String },
     #[error("patchIdentity mismatch: expected {expected}, recomputed {actual}")]
     PatchIdentityMismatch { expected: String, actual: String },
     #[error("exact subject scope mismatch: prepared scope.digest {expected}, recomputed {actual}")]

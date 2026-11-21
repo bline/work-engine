@@ -2,7 +2,7 @@
 
 use serde_json::Value;
 use std::process::Command;
-use work_engine_review_hosted::{revision::Profile, sha256_hex};
+use work_engine_review_hosted::{messages_artifacts, revision::Profile, sha256_hex};
 
 const R2_INPUTS: &[u8] = include_bytes!(
     "../../../../records/org-hosted-review-20261117/e2e/org-step3-live-1-inputs/job-inputs.json"
@@ -57,6 +57,7 @@ fn writer_refuses_both_archival_profiles_and_does_not_select_offline_cases() {
     for id in [
         "hosted-offline-exact-v1-responses",
         "hosted-offline-exact-v1-messages",
+        messages_artifacts::REVISION,
     ] {
         let refused = invoke(id);
         assert_eq!(refused.status.code(), Some(1));
@@ -112,18 +113,23 @@ fn checker_refuses_the_archival_record_before_loading_run_or_writing_an_envelope
     std::fs::write(&record, serde_json::to_vec(&value).unwrap()).unwrap();
     assert_archival("hosted-route-qualification-r1");
     // A caller cannot select a test-only world by replacing revision/schema/standing.
-    value["revision"] = "hosted-offline-exact-v1-responses".into();
     value["schema"] = "work-engine.review-hosted-offline-exact-inputs.v1".into();
     value["standing"] = "synthetic_inputs_only_not_an_admission".into();
-    std::fs::write(&record, serde_json::to_vec(&value).unwrap()).unwrap();
-    let refused = invoke();
-    assert_eq!(refused.status.code(), Some(2));
-    assert!(
-        String::from_utf8(refused.stderr)
-            .unwrap()
-            .contains("no current hosted revision is selectable")
-    );
-    assert!(!out.exists());
+    for revision in [
+        "hosted-offline-exact-v1-responses",
+        messages_artifacts::REVISION,
+    ] {
+        value["revision"] = revision.into();
+        std::fs::write(&record, serde_json::to_vec(&value).unwrap()).unwrap();
+        let refused = invoke();
+        assert_eq!(refused.status.code(), Some(2));
+        assert!(
+            String::from_utf8(refused.stderr)
+                .unwrap()
+                .contains("no current hosted revision is selectable")
+        );
+        assert!(!out.exists());
+    }
     // It also cannot overwrite an existing output by trying a historical recheck.
     std::fs::write(&out, b"untouched").unwrap();
     std::fs::write(&record, R2_INPUTS).unwrap();

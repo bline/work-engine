@@ -23,7 +23,6 @@ use crate::revision::Profile;
 use crate::revision::{self, Wire};
 #[cfg(test)]
 use crate::subject::REVIEW_PATCH;
-#[cfg(test)]
 use crate::{sha256_hex, task};
 
 #[cfg(test)]
@@ -280,7 +279,6 @@ fn count_or_not_established(count: Option<usize>) -> String {
 /// The task text plus exactly the Host suffix: starts with the task bytes, is exactly
 /// [`task::HOST_SUFFIX_BYTES`] longer, and the bytes after the task hash to
 /// [`task::HOST_SUFFIX_SHA256`] (the suffix text is not copied).
-#[cfg(test)]
 fn task_with_suffix(n: u64, text: &str, task: &str, what: &str) -> Result<(), String> {
     if !text.starts_with(task) {
         return Err(format!(
@@ -302,7 +300,6 @@ fn task_with_suffix(n: u64, text: &str, task: &str, what: &str) -> Result<(), St
 }
 
 /// SHA-256 of a value's `serde_json` serialization.
-#[cfg(test)]
 fn value_sha256(value: &Value) -> String {
     sha256_hex(&serde_json::to_vec(value).unwrap_or_default())
 }
@@ -343,7 +340,9 @@ fn delivery(
             serde_json::from_slice(body).map_err(|_| format!("request {n}: body is not JSON"))?;
         match profile.wire() {
             Wire::Responses => responses_body(n, &parsed, profile, &tools, task)?,
-            Wire::Messages => insertions.push(messages_body(n, &parsed, profile, &tools, task)?),
+            Wire::Messages => {
+                insertions.push(messages_body(n, &parsed, profile.model(), &tools, task)?)
+            }
         }
     }
     let model = profile.model();
@@ -428,15 +427,13 @@ pub struct InsertedSystemMessage {
 /// blocks; assistant messages (text, `tool_use`, `thinking`) are not read, so thinking is never
 /// answer or evidence here. Tolerated and recorded by digest, never interpreted: `system[]` and the
 /// environment message.
-#[cfg(test)]
-fn messages_body(
+pub(crate) fn messages_body(
     n: u64,
     parsed: &Value,
-    profile: Profile,
+    model: &str,
     tools: &[String],
     task: &str,
 ) -> Result<RequestInsertions, String> {
-    let model = profile.model();
     if parsed["model"] != model {
         return Err(format!("request {n}: model is not {model}"));
     }
@@ -538,7 +535,6 @@ fn messages_body(
 }
 
 /// A `user` message whose content is a non-empty list of only `tool_result` blocks.
-#[cfg(test)]
 fn is_tool_results_only_user(m: &Value) -> bool {
     m["role"] == "user"
         && m["content"].as_array().is_some_and(|blocks| {
