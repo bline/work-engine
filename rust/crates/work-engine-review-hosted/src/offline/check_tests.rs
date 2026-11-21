@@ -226,6 +226,56 @@ fn unselected_messages_materializes_and_compares_exact_bytes() {
     assert!(expected.compare(manifest, &ambiguous, &good).is_err());
 }
 
+#[test]
+fn unselected_messages_rechecks_raw_request_and_answer_byte_bounds() {
+    use crate::messages_artifacts::{
+        MAX_ANSWER_BYTES, MAX_REQUEST_BODY_BYTES, MessagesMaterialization,
+    };
+
+    let repo = git_fixture();
+    let expected = MessagesMaterialization::prepare(
+        repo.path(),
+        PARENT,
+        &pinned_subject(),
+        EXACT_SCOPE,
+        "test-only contract",
+        revision::CLAUDE_MODEL,
+        LIMITS,
+    )
+    .unwrap();
+    let manifest = expected.manifest_bytes();
+    let good = answer_from(ACCEPTABLE, |_| {});
+    let mut reqs = claude_requests(expected.task());
+    // Padding changes only the retained bytes, not JSON or artifact meaning.
+    // Keep reported digests exact; bytes at the ceiling are allowed.
+    let mut body = reqs[0].body.clone().unwrap();
+    body.resize(MAX_REQUEST_BODY_BYTES, b' ');
+    reqs[0] = retained(body.clone(), 1);
+    assert!(expected.compare(manifest, &reqs, &good).is_ok());
+    body.push(b' ');
+    reqs[0] = retained(body, 1);
+    assert_eq!(
+        expected.compare(manifest, &reqs, &good).unwrap_err(),
+        Refusal::Artifact("request 1: body exceeds analysis byte bound".into()),
+    );
+
+    let reqs = claude_requests(expected.task());
+    let mut answer = good.answer;
+    answer.push_str(&" ".repeat(MAX_ANSWER_BYTES - answer.len()));
+    assert!(
+        expected
+            .compare(manifest, &reqs, &result(answer.clone()))
+            .is_ok()
+    );
+    answer.push(' ');
+    assert_eq!(
+        expected
+            .compare(manifest, &reqs, &result(answer))
+            .unwrap_err(),
+        Refusal::Artifact("answer exceeds analysis byte bound".into()),
+    );
+}
+
 /// Same length as the Host suffix, different bytes.
 fn same_length_other_suffix() -> String {
     let mut other = host_suffix().into_bytes();

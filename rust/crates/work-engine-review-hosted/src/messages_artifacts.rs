@@ -20,6 +20,12 @@ use crate::{
 
 pub const REVISION: &str = "milestone-a-messages-artifacts-v1";
 
+// Pinned analysis ceilings, not caller-selected limits. These match the Host's
+// pi_coding_analysis.rs MAX_REQUEST_BODY and MAX_ANSWER_BYTES. A future custody
+// reader must also bound artifact I/O before constructing the buffers.
+pub(crate) const MAX_REQUEST_BODY_BYTES: usize = 600_000;
+pub(crate) const MAX_ANSWER_BYTES: usize = 65_536;
+
 /// Locally prepared bytes. Caller-supplied contract and expectation are not
 /// verified owner inputs; the caller must bind these independently of the return.
 #[derive(Debug)]
@@ -117,6 +123,11 @@ impl MessagesMaterialization {
         if requests.is_empty() || requests.len() > self.limits.max_requests as usize {
             return Err(Refusal::Artifact("request count out of bounds".into()));
         }
+        if result.answer.len() > MAX_ANSWER_BYTES {
+            return Err(Refusal::Artifact(
+                "answer exceeds analysis byte bound".into(),
+            ));
+        }
         let tools: Vec<_> = CLAUDE_TOOLS.into_iter().map(str::to_owned).collect();
         let mut request_insertions = Vec::with_capacity(requests.len());
         for (index, request) in requests.iter().enumerate() {
@@ -125,6 +136,11 @@ impl MessagesMaterialization {
                 .body
                 .as_deref()
                 .ok_or_else(|| Refusal::Artifact(format!("request {n}: body missing")))?;
+            if body.len() > MAX_REQUEST_BODY_BYTES {
+                return Err(Refusal::Artifact(format!(
+                    "request {n}: body exceeds analysis byte bound"
+                )));
+            }
             let body_sha = sha256_hex(body);
             if request.request != n
                 || !matches!(request.attempt_digests.as_slice(), [Some(sha)] if sha == &body_sha)

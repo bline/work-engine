@@ -33,8 +33,10 @@ route recognized by either command above. It reads Git objects to materialize
 an independently supplied baseline, subject and scope, renders the supplied
 contract into a bounded task, and computes exact manifest bytes. Its comparison
 checks those bytes, retained Messages bodies (one recorded attempt per request),
-and the strict answer contract for that exact subject. This compares inputs and
-outputs; it does not establish assignment or Host custody, process identity,
+and the strict answer contract for that exact subject. It enforces the pinned
+Host analysis byte ceilings on the supplied request bodies and answer before
+parsing; this is not a bound on the caller's file reads. The comparison does
+not establish assignment or Host custody, process identity,
 protected exposure, provider entry or settlement, an organizational admission,
 or a result usable by either campaign consumer. The library does not publish
 or start a job. Archival and synthetic conformance behavior below is unchanged.
