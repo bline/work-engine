@@ -1021,7 +1021,10 @@ impl Actor {
                 "native_simulated" | "retained-repository-analysis-v1"
             ) {
             let native = config.native.as_ref().ok_or(ServiceError::Configuration)?;
-            if native.followup_turns.len() > 3 {
+            if native.followup_turns.len() > 3
+                || (selected_restart.is_some()
+                    && native.provider_route == crate::NativeProviderRoute::PiHostV1)
+            {
                 return Err(ServiceError::Configuration);
             }
             let selected = selected_restart.is_some();
@@ -1043,9 +1046,6 @@ impl Actor {
                 clock_sample(),
             )?;
             let session = if let Some(intent) = selected_restart {
-                if launch.pi_host.is_some() {
-                    return Err(ServiceError::Configuration);
-                }
                 if intent.profile_digest != launch.profile_digest
                     || intent.binary_sha256 != NATIVE_BINARY_SHA256
                     || intent.protocol_digest != SCHEMA_THREAD_START_SHA256

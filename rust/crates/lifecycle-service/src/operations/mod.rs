@@ -1,6 +1,7 @@
 //! Private S5 operation registry: exactly one finite immutable snapshot read.
 
 pub mod pi_host;
+mod pi_host_composition;
 pub mod workspace_snapshot_read;
 
 use std::{
@@ -1167,7 +1168,7 @@ pub struct NativeLaunch {
     pub chatgpt_access_source: Option<ChatgptAccessSource>,
     pub code_mode_host: bool,
     /// Set only for the Pi Host realization.
-    pub pi_host: Option<pi_host::PiHostConfig>,
+    pub pi_host: Option<pi_host::PiHostLaunch>,
 }
 
 // Companion executable shipped with the pinned native 0.163 package. The
@@ -1437,11 +1438,7 @@ pub fn preview_native_task_launch(
 /// canonicalization, credentials and filesystem observations stay at launch.
 pub(crate) fn validate_native_config(config: &NativeConfig) -> Result<(), StoreError> {
     if config.provider_route == NativeProviderRoute::PiHostV1 {
-        pi_host::validate(config, &pi_host::load(config)?)?;
-        if config.pi_host_composition.is_some() {
-            pi_host::verify_pi_host_composition(config).map_err(|_| StoreError::Rejected)?;
-        }
-        return Ok(());
+        return pi_host::validate_config(config);
     }
     if config.pi_host_composition.is_some() {
         return Err(StoreError::Rejected);

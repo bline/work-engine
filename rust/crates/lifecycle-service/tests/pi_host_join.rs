@@ -603,8 +603,7 @@ async fn drive(
     )
     .unwrap();
     let native = config.native.as_ref().unwrap();
-    operations::pi_host::validate(native, &operations::pi_host::load(native).expect("load"))
-        .expect("validate");
+    operations::validate_native_config(native).expect("validate");
     operations::prepare_native_task_launch(native, config.principal.uid).expect("launch");
     let mut actor = Actor::new(
         config.clone(),

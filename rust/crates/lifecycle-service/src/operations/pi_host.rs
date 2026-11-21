@@ -7,7 +7,7 @@
 //! composition before launch; this runner checks it by digest and never
 //! holds provider access.
 
-use super::{NativeLaunch, NativeMessage, NativeTaskWork};
+use super::{NativeLaunch, NativeMessage, NativeTaskWork, pi_host_composition as composer};
 use crate::{
     NativeConfig, NativeFollowupTurn, NativeProviderRoute, PiHostComposition, actor::NativeGate,
 };
@@ -55,6 +55,12 @@ pub struct PiHostConfig {
     pub turn_deadline_secs: u64,
 }
 
+/// A verified Host and, for installed launches, its composed job deadline.
+pub struct PiHostLaunch {
+    host: PiHostConfig,
+    deadline_unix_seconds: Option<u64>,
+}
+
 impl PiHostConfig {
     fn wire(&self) -> &'static str {
         if self.provider == "claude-sdk" {
@@ -91,7 +97,7 @@ pub(crate) struct Expected {
     pub state_dir: PathBuf,
 }
 
-fn sha(bytes: &[u8]) -> String {
+pub(super) fn sha(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 
@@ -207,7 +213,7 @@ pub fn verify_pi_host_composition(config: &NativeConfig) -> Result<(), PiHostCom
 }
 
 /// Read `<root>/pi-host.json`, written by trusted composition.
-pub(crate) fn load(config: &NativeConfig) -> Result<PiHostConfig, StoreError> {
+fn load(config: &NativeConfig) -> Result<PiHostConfig, StoreError> {
     let path = config.root.join("pi-host.json");
     let meta = std::fs::symlink_metadata(&path).map_err(|_| StoreError::Rejected)?;
     if !meta.is_file() || meta.len() > 1024 * 1024 {
@@ -217,25 +223,44 @@ pub(crate) fn load(config: &NativeConfig) -> Result<PiHostConfig, StoreError> {
         .map_err(|_| StoreError::Rejected)
 }
 
-pub(crate) fn validate(config: &NativeConfig, host: &PiHostConfig) -> Result<(), StoreError> {
+fn validate_inputs(config: &NativeConfig) -> Result<(), StoreError> {
     crate::operations::workspace_snapshot_read::validate(&config.snapshot)?;
     use lifecycle_core::{AttemptId, NativeSessionId};
     NativeSessionId::parse(config.session_id.clone()).map_err(|_| StoreError::Rejected)?;
     AttemptId::parse(config.attempt_id.clone()).map_err(|_| StoreError::Rejected)?;
-    let digest = |s: &str| s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit());
     // `semantic` configuration (required by the retained profile) is used only
     // by successor transitions, which this realization refuses: fresh start only.
     if config.invocation_id.is_empty()
         || !config.root.is_absolute()
         || !config.executable.is_absolute()
-        || !host.serve_config.is_absolute()
-        || !host.state_dir.is_absolute()
-        || !host.state_dir.starts_with(&config.root)
         || config.followup_turns.len() > 3
         // No Codex provider field may accompany the Pi Host.
         || config.provider_route != crate::NativeProviderRoute::PiHostV1
         || !config.simulator_base_url.is_empty()
         || config.chatgpt_access_source.is_some()
+    {
+        return Err(StoreError::Rejected);
+    }
+    Ok(())
+}
+
+pub(super) fn validate_config(config: &NativeConfig) -> Result<(), StoreError> {
+    if config.pi_host_composition.is_some() {
+        validate_inputs(config)?;
+        return verify_pi_host_composition(config).map_err(|_| StoreError::Rejected);
+    }
+    if !cfg!(any(test, feature = "controlled-proof")) {
+        return Err(StoreError::Rejected);
+    }
+    validate(config, &load(config)?)
+}
+
+fn validate(config: &NativeConfig, host: &PiHostConfig) -> Result<(), StoreError> {
+    validate_inputs(config)?;
+    let digest = |s: &str| s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit());
+    if !host.serve_config.is_absolute()
+        || !host.state_dir.is_absolute()
+        || !host.state_dir.starts_with(&config.root)
         || !digest(&host.host_sha256)
         || !digest(&host.serve_config_sha256)
         || !digest(&host.job_sha256)
@@ -256,18 +281,32 @@ pub(crate) fn validate(config: &NativeConfig, host: &PiHostConfig) -> Result<(),
 }
 
 /// Session binary identity: the Host executable and the admitted Host job.
-pub(crate) fn binary_identity(host: &PiHostConfig) -> String {
+pub(crate) fn binary_identity(launch: &PiHostLaunch) -> String {
+    let host = &launch.host;
     sha(format!("pi-host-binary-v1:{}:{}", host.host_sha256, host.job_sha256).as_bytes())
 }
 
 /// The Host job behind the serve configuration, checked by digest against
 /// the launch configuration. Returns the job's nonsecret route table.
 fn check_job(host: &PiHostConfig) -> Result<Value, StoreError> {
-    let serve: Value = serde_json::from_slice(
-        &std::fs::read(&host.serve_config).map_err(|_| StoreError::Rejected)?,
-    )
-    .map_err(|_| StoreError::Rejected)?;
-    if file_sha(&host.serve_config)? != host.serve_config_sha256
+    check_job_inner(host, None)
+}
+
+pub(super) fn check_composed_job(
+    host: &PiHostConfig,
+    root: &Path,
+    deadline: u64,
+    job_id: &Value,
+) -> Result<Value, StoreError> {
+    check_job_inner(host, Some((root, deadline, Some(job_id))))
+}
+
+fn check_job_inner(
+    host: &PiHostConfig,
+    installed: Option<(&Path, u64, Option<&Value>)>,
+) -> Result<Value, StoreError> {
+    let (serve_digest, serve) = composer::read_json_file(&host.serve_config, 1024 * 1024)?;
+    if serve_digest != host.serve_config_sha256
         || serve["schema"] != SERVE_SCHEMA
         || serve["job"]["sha256"] != host.job_sha256.as_str()
         || serve["turn_deadline_secs"] != host.turn_deadline_secs
@@ -275,10 +314,18 @@ fn check_job(host: &PiHostConfig) -> Result<Value, StoreError> {
         return Err(StoreError::Rejected);
     }
     let job_path = PathBuf::from(serve["job"]["path"].as_str().ok_or(StoreError::Rejected)?);
-    let bytes = std::fs::read(&job_path).map_err(|_| StoreError::Rejected)?;
-    let job: Value = serde_json::from_slice(&bytes).map_err(|_| StoreError::Rejected)?;
+    if installed.is_some_and(|(root, _, _)| job_path != root.join("job.json")) {
+        return Err(StoreError::Rejected);
+    }
+    let (job_digest, job) = composer::read_json_file(&job_path, 1024 * 1024)?;
+    if let Some((_, deadline, id)) = installed
+        && (job["deadline_unix_seconds"].as_u64() != Some(deadline)
+            || id.is_some_and(|id| id.as_str().is_none_or(str::is_empty) || *id != job["job_id"]))
+    {
+        return Err(StoreError::Rejected);
+    }
     let plan = &job["coding"]["provider"];
-    if sha(&bytes) != host.job_sha256
+    if job_digest != host.job_sha256
         || job["coding"]["schema"] != LIFECYCLE_PROFILE
         || plan["provider"] != host.provider.as_str()
         || plan["model"] != host.model.as_str()
@@ -306,6 +353,23 @@ pub(crate) fn prepare_launch(
     uid: u32,
     materialize: bool,
 ) -> Result<NativeLaunch, StoreError> {
+    if let Some(composition) = &config.pi_host_composition {
+        if !materialize {
+            return Err(StoreError::Rejected);
+        }
+        validate_config(config)?;
+        let prepared = composer::prepare(config, composition, uid)?;
+        validate(config, &prepared.host)?;
+        return build_launch(
+            prepared.host,
+            &prepared.root,
+            prepared.routes,
+            Some(prepared.deadline),
+        );
+    }
+    if !cfg!(any(test, feature = "controlled-proof")) {
+        return Err(StoreError::Rejected);
+    }
     use std::os::unix::fs::{MetadataExt, PermissionsExt};
     // The run root holds the exact request bodies: owner-private, as the
     // Codex launch requires of its root.
@@ -326,11 +390,20 @@ pub(crate) fn prepare_launch(
         return Err(StoreError::Rejected);
     }
     let routes = check_job(host)?;
+    build_launch(host.clone(), &config.root, routes, None)
+}
+
+fn build_launch(
+    host: PiHostConfig,
+    root: &Path,
+    routes: Value,
+    deadline_unix_seconds: Option<u64>,
+) -> Result<NativeLaunch, StoreError> {
     let profile = json!({"realization":pi_host::REALIZATION,"protocol":pi_host::PROTOCOL_DIGEST,
         "host":host.host_sha256,"job":host.job_sha256,"serve_config":host.serve_config_sha256,
         "provider":host.provider,"model":host.model,"routes":routes,
         "turn_deadline_secs":host.turn_deadline_secs,"dynamic_tools":pi_host::tools::dynamic_tools()});
-    let work = config.root.join("pi-host");
+    let work = root.join("pi-host");
     Ok(NativeLaunch {
         home: work.clone(),
         codex_home: work.clone(),
@@ -343,7 +416,10 @@ pub(crate) fn prepare_launch(
         auth_mode: NativeAuthMode::None,
         chatgpt_access_source: None,
         code_mode_host: false,
-        pi_host: Some(host.clone()),
+        pi_host: Some(PiHostLaunch {
+            host,
+            deadline_unix_seconds,
+        }),
     })
 }
 
@@ -683,6 +759,54 @@ pub(crate) fn check_capture(
     })
 }
 
+/// Convert the verified wall deadline once to a monotonic bound, retaining
+/// subsecond precision. A stale job cannot reach `serve`.
+fn launch_deadline(
+    deadline: u64,
+    wall: std::time::SystemTime,
+    monotonic: Instant,
+) -> Result<Instant, StoreError> {
+    let left = std::time::UNIX_EPOCH
+        .checked_add(Duration::from_secs(deadline))
+        .and_then(|end| end.duration_since(wall).ok())
+        .filter(|left| !left.is_zero())
+        .ok_or(StoreError::Rejected)?;
+    monotonic.checked_add(left).ok_or(StoreError::Rejected)
+}
+
+fn serve_environment(
+    command: &mut tokio::process::Command,
+    composition: Option<&PiHostComposition>,
+    inherited: impl Fn(&str) -> Option<std::ffi::OsString>,
+) {
+    command.env_clear();
+    const CREDENTIALS: &str = "WORK_ENGINE_HOSTED_CREDENTIALS";
+    if let Some(composition) = composition {
+        command.env(CREDENTIALS, &composition.credentials_file);
+    } else if let Some(path) = inherited(CREDENTIALS) {
+        // Historical qualification fixture, never an installed launch.
+        command.env(CREDENTIALS, path);
+    }
+    for key in ["SSL_CERT_FILE", "SSL_CERT_DIR"] {
+        if let Some(value) = inherited(key) {
+            command.env(key, value);
+        }
+    }
+}
+
+async fn drive_with_deadline<T>(
+    until: Option<Instant>,
+    work: impl std::future::Future<Output = Result<T, StoreError>>,
+) -> Result<T, StoreError> {
+    match until {
+        Some(until) if until <= Instant::now() => Err(StoreError::Unavailable),
+        Some(until) => tokio::time::timeout_at(until, work)
+            .await
+            .unwrap_or(Err(StoreError::Unavailable)),
+        None => work.await,
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub async fn run_pi_host(
     config: NativeConfig,
@@ -694,7 +818,11 @@ pub async fn run_pi_host(
     startup_hold: Option<crate::native_startup::NativeStartupHold>,
 ) {
     let outcome = async {
-        let Some(host) = launch.pi_host.clone() else {
+        let Some(PiHostLaunch {
+            host,
+            deadline_unix_seconds,
+        }) = launch.pi_host
+        else {
             return Err(("transport_error_guard_barrier", None));
         };
         // No installed-research admission exists for this realization yet
@@ -702,7 +830,15 @@ pub async fn run_pi_host(
         if startup_hold.is_some() || gate.load(Ordering::SeqCst) {
             return Err(("transport_error_guard_barrier", None));
         }
-        let routes = check_job(&host).map_err(|_| ("transport_error_guard_barrier", None))?;
+        let until = deadline_unix_seconds
+            .map(|deadline| launch_deadline(deadline, std::time::SystemTime::now(), Instant::now()))
+            .transpose()
+            .map_err(|_| ("transport_error_guard_barrier", None))?;
+        let installed_job = deadline_unix_seconds
+            .zip(launch.work.parent())
+            .map(|(deadline, root)| (root, deadline, None));
+        let routes = check_job_inner(&host, installed_job)
+            .map_err(|_| ("transport_error_guard_barrier", None))?;
         let expected = Expected {
             host_sha256: host.host_sha256.clone(),
             job_sha256: host.job_sha256.clone(),
@@ -719,6 +855,12 @@ pub async fn run_pi_host(
             .arg("--config")
             .arg(&host.serve_config)
             .current_dir(&launch.work);
+        serve_environment(&mut command, config.pi_host_composition.as_ref(), |key| {
+            std::env::var_os(key)
+        });
+        if until.is_some_and(|until| until <= Instant::now()) {
+            return Err(("transport_error_guard_barrier", None));
+        }
         let pipe = NativeStdio::spawn(&mut command, MAX_FRAME, MAX_FRAMES)
             .map_err(|_| ("transport_error_launch", None))?;
         let mut runner = Runner {
@@ -733,7 +875,10 @@ pub async fn run_pi_host(
             deadline: Duration::from_secs(host.turn_deadline_secs + 60),
             expected,
         };
-        let result = drive(&mut runner, &config, &host, task_work).await;
+        // Bound the entire forward path, including an idle task-work receive
+        // or a turn waiting for the actor/Host. Keep cleanup outside the cap.
+        let result =
+            drive_with_deadline(until, drive(&mut runner, &config, &host, task_work)).await;
         // End of input closes the Host's thread: it closes Pi's bridge,
         // collects and removes the container, then exits. A forced kill would
         // leave the container for reconciliation, so it is the last resort.
@@ -1026,6 +1171,112 @@ mod tests {
             credentials_file: PathBuf::from("/etc/work-engine/hosted-credentials.json"),
         });
         config
+    }
+
+    #[test]
+    fn pi_host_launch_deadline_refuses_stale_jobs_and_keeps_fractional_bound() {
+        let mono = Instant::now();
+        let wall = std::time::UNIX_EPOCH + Duration::from_millis(1_250);
+        assert!(launch_deadline(1, wall, mono).is_err());
+        assert!(launch_deadline(2, std::time::UNIX_EPOCH + Duration::from_secs(2), mono).is_err());
+        assert_eq!(
+            launch_deadline(2, wall, mono).unwrap(),
+            mono + Duration::from_millis(750)
+        );
+    }
+
+    #[tokio::test]
+    async fn pi_host_drive_cap_stops_idle_work_even_with_sender_alive() {
+        let (_sender, mut work) = mpsc::channel::<()>(1);
+        let result = drive_with_deadline(Some(Instant::now() + Duration::from_millis(10)), async {
+            Ok(work.recv().await)
+        })
+        .await;
+        assert!(matches!(result, Err(StoreError::Unavailable)));
+        let never_poll = std::future::poll_fn::<Result<(), StoreError>, _>(|_| {
+            panic!("expired job must not start driving")
+        });
+        assert!(
+            drive_with_deadline(Some(Instant::now()), never_poll)
+                .await
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn pi_host_serve_uses_only_composition_credentials_and_tls_allowlist() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = installed(dir.path());
+        let composition = config.pi_host_composition.as_ref().unwrap();
+        let mut command = tokio::process::Command::new("/bin/true");
+        command.env("UNRELATED_SECRET", "canary");
+        serve_environment(&mut command, Some(composition), |key| match key {
+            "SSL_CERT_FILE" => Some("/test/ca.pem".into()),
+            "SSL_CERT_DIR" => None,
+            _ => panic!("unexpected ambient lookup: {key}"),
+        });
+        let environment: std::collections::BTreeMap<_, _> = command.as_std().get_envs().collect();
+        assert_eq!(
+            environment,
+            std::collections::BTreeMap::from([
+                (
+                    std::ffi::OsStr::new("SSL_CERT_FILE"),
+                    Some(std::ffi::OsStr::new("/test/ca.pem"))
+                ),
+                (
+                    std::ffi::OsStr::new("WORK_ENGINE_HOSTED_CREDENTIALS"),
+                    Some(composition.credentials_file.as_os_str())
+                ),
+            ])
+        );
+    }
+
+    #[test]
+    fn installed_config_validation_and_preview_do_not_prepare() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = installed(dir.path());
+        let uid = std::os::unix::fs::MetadataExt::uid(&dir.path().metadata().unwrap());
+        assert!(validate_config(&config).is_ok());
+        assert!(prepare_launch(&config, uid, false).is_err());
+        assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 2);
+    }
+
+    #[test]
+    #[ignore = "requires a pinned release Pi Host and local runtime profile; no serve"]
+    fn real_host_composes_once_without_serving() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::set_permissions(dir.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+        let (mut config, _) = native(dir.path());
+        config.executable = PathBuf::from(std::env::var_os("WORK_ENGINE_PI_HOST_BINARY").unwrap());
+        let profile = PathBuf::from(std::env::var_os("WORK_ENGINE_PI_HOST_PROFILE").unwrap());
+        config.pi_host_composition = Some(PiHostComposition {
+            profile_sha256: file_sha(&profile).unwrap(),
+            profile,
+            host_sha256: file_sha(&config.executable).unwrap(),
+            credentials_file: dir.path().join("not-opened.json"),
+        });
+        let uid = std::os::unix::fs::MetadataExt::uid(&dir.path().metadata().unwrap());
+        assert!(validate_config(&config).is_ok());
+        assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 0);
+        let launch = prepare_launch(&config, uid, true).unwrap();
+        let root = launch.work.parent().unwrap();
+        assert_eq!(root.parent(), Some(dir.path()));
+        assert!(root.join("composition.json").is_file());
+        assert!(!launch.work.exists());
+        assert!(
+            !config
+                .pi_host_composition
+                .as_ref()
+                .unwrap()
+                .credentials_file
+                .exists()
+        );
+        assert!(matches!(
+            prepare_launch(&config, uid, true),
+            Err(StoreError::ClaimConflict)
+        ));
+        assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 1);
     }
 
     #[test]
