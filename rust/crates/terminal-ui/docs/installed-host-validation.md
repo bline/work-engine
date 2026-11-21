@@ -55,7 +55,10 @@ export UI_TEST_HOST=/absolute/installed/work-engine-task-host
 export UI_TEST_STARTUP_TEMPLATE=/absolute/controlled-fixture/host-startup.json
 export UI_TEST_EVIDENCE_DIR=/absolute/short/private/evidence
 export TMPDIR=/absolute/private/tmp
-export CARGO_TARGET_DIR=/absolute/ui-test-target
+CARGO_TARGET_DIR=$(cargo +1.92.0 metadata --offline --locked --no-deps \
+  --format-version 1 --manifest-path rust/crates/terminal-ui/Cargo.toml \
+  | jq -er .target_directory)
+export CARGO_TARGET_DIR
 
 cargo +1.92.0 test --offline --locked \
   --manifest-path rust/crates/terminal-ui/Cargo.toml \
@@ -63,10 +66,12 @@ cargo +1.92.0 test --offline --locked \
 ```
 
 Create the evidence and temporary directories first, owned by the current user.
-Keep the evidence path short enough for Unix socket paths. `TMPDIR` and
-`CARGO_TARGET_DIR` are also required by the native launcher. On a fresh machine,
-fetch locked dependencies before requesting an offline build. The regular test
-suite compiles this test but skips execution; a skipped test is not a pass.
+Keep the evidence path short enough for Unix socket paths. The native launcher
+requires explicit `TMPDIR` and `CARGO_TARGET_DIR` values; the example uses `jq`
+to pass through Cargo's configured target, not to create a private one. On a
+fresh machine, fetch locked dependencies before requesting an offline build.
+The regular test suite compiles this test but skips execution; a skipped test
+is not a pass.
 
 ## Evidence and remaining limits
 

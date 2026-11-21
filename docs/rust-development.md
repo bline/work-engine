@@ -71,6 +71,21 @@ workspace does not grant a client internal capabilities. Cargo dependency checks
 and compile-fail tests make these boundaries observable; runtime authorization
 is still required for commands.
 
+## Local Cargo build output
+
+Use the `build.target-dir` configured in `~/.cargo/config.toml` for ordinary
+local builds and tests in every lane and worktree. On the operator's machine it
+is `~/code/work-engine/rust/target`. A shared target bounds disk use; waiting on
+Cargo's build lock is expected. Do not bypass it with `CARGO_TARGET_DIR` or
+`--target-dir`. When a fixture needs a binary path, read `target_directory`
+from `cargo metadata` for that manifest. Copy out and digest-pin any binary
+that must survive a later build from another worktree.
+
+Pinned-tool provisioning is the intentional exception. For example,
+[`provision_context_status.sh`](../skills/manual-orchestration/scripts/provision_context_status.sh)
+builds privately so context observation does not depend on the shared build
+lock. Its pin and provenance are separate from ordinary build output.
+
 ## Share semantics that are genuinely common
 
 Start with a narrow `work-engine-types` package for common identity/value and

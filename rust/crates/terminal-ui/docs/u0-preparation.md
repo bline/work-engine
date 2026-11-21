@@ -63,12 +63,16 @@ cargo +1.92.0 fmt --manifest-path rust/crates/terminal-ui/Cargo.toml --check
 cargo +1.92.0 test --locked --manifest-path rust/crates/terminal-ui/Cargo.toml
 cargo +1.92.0 clippy --locked --manifest-path rust/crates/terminal-ui/Cargo.toml --all-targets -- -D warnings
 cargo +1.92.0 build --locked --manifest-path rust/crates/terminal-ui/Cargo.toml
+ui_target_dir=$(cargo +1.92.0 metadata --locked --no-deps --format-version 1 \
+  --manifest-path rust/crates/terminal-ui/Cargo.toml | jq -er .target_directory)
 python3 rust/crates/terminal-ui/scripts/pty_smoke.py \
-  rust/crates/terminal-ui/target/debug/work-engine-terminal-ui
+  "$ui_target_dir/debug/work-engine-terminal-ui"
 cargo +1.92.0 build --locked --manifest-path rust/Cargo.toml -p lifecycle-service
+workspace_target_dir=$(cargo +1.92.0 metadata --locked --no-deps --format-version 1 \
+  --manifest-path rust/Cargo.toml | jq -er .target_directory)
 python3 rust/crates/terminal-ui/scripts/connection_smoke.py \
-  rust/crates/terminal-ui/target/debug/work-engine-terminal-ui \
-  rust/target/debug/lifecycle-service
+  "$ui_target_dir/debug/work-engine-terminal-ui" \
+  "$workspace_target_dir/debug/lifecycle-service"
 ```
 
 The UI is intentionally outside the parent Cargo workspace. Its dependency
@@ -142,20 +146,20 @@ transcript limits. Neither a cursor nor a sequence of manual refreshes is
 presented as a complete event history. Usage remains unavailable.
 
 Reproduce from the repository root on Linux, with the S5 pinned native binary,
-Bubblewrap, Python, and explicit built binary paths. Use an external writable
-scratch directory with adequate space for disposable native state:
+Bubblewrap, Python, and `jq`. Use an external writable scratch directory with
+adequate space for disposable native state. Resolve `ui_target_dir` and
+`workspace_target_dir` as above; leave Cargo's target configuration in place:
 
 ```sh
-export CARGO_TARGET_DIR=/absolute/path/to/cargo-target
 export TMPDIR=/absolute/path/to/disposable-scratch
 cargo +1.92.0 build --locked --manifest-path rust/Cargo.toml \
   -p lifecycle-service --features native-sim-proof,controlled-proof \
   -p lifecycle-test-support --bin lifecycle-service --bin controlled_peer
 cargo +1.92.0 build --locked --manifest-path rust/crates/terminal-ui/Cargo.toml
 python3 rust/crates/terminal-ui/scripts/s5_populated_smoke.py \
-  "$CARGO_TARGET_DIR/debug/work-engine-terminal-ui" \
-  "$CARGO_TARGET_DIR/debug/lifecycle-service" \
-  "$CARGO_TARGET_DIR/debug/controlled_peer" \
+  "$ui_target_dir/debug/work-engine-terminal-ui" \
+  "$workspace_target_dir/debug/lifecycle-service" \
+  "$workspace_target_dir/debug/controlled_peer" \
   --evidence /absolute/path/to/new-evidence-directory
 ```
 

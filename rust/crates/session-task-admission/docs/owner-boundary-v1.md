@@ -118,10 +118,10 @@ limits for independent review, not live deployment promises.
 
 ## Executable evidence
 
-Run offline with an isolated target:
+Run offline using the configured Cargo target:
 
-```
-CARGO_TARGET_DIR=/tmp/private-owner-target cargo test --locked --offline -p session-task-admission
+```sh
+cargo test --locked --offline -p session-task-admission
 cargo clippy --locked --offline -p session-task-admission --all-targets -- -D warnings
 python3 -m unittest discover -s skills/durable-state/tests -p test_codex_chatboard_contracts.py
 ```

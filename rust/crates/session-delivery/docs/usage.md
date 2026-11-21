@@ -3,7 +3,7 @@
 From the repository root:
 
 ```sh
-CARGO_TARGET_DIR=/tmp/session-delivery-build cargo test --offline --locked --manifest-path rust/Cargo.toml -p session-delivery
+cargo test --offline --locked --manifest-path rust/Cargo.toml -p session-delivery
 ```
 
 The integration tests create disposable Git repositories, publish through the
@@ -68,7 +68,6 @@ are ignored by default; they never enroll the running agent:
 ```sh
 PRESSURE_TEST_READER=/absolute/pinned/work-engine-context-status \
 PRESSURE_TEST_READER_SHA256=ACTUAL_SHA256 \
-CARGO_TARGET_DIR=/tmp/session-delivery-build \
 cargo test --offline --locked --manifest-path rust/Cargo.toml \
   -p session-delivery --test pressure -- --ignored --nocapture
 ```

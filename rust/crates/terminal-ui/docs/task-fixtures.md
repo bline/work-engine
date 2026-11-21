@@ -14,8 +14,7 @@ no S8 runtime, owner contract, transport, or database code changed.
 Launch from the repository root:
 
 ```sh
-CARGO_TARGET_DIR=/home/bline/.local/state/work-engine/ui-stack-evaluation-20261006/target \
-  cargo +1.92.0 run --manifest-path rust/crates/terminal-ui/Cargo.toml \
+cargo +1.92.0 run --manifest-path rust/crates/terminal-ui/Cargo.toml \
   --offline --locked -- --task-fixture pending
 ```
 
@@ -75,16 +74,19 @@ copy, drafts and recipient preservation; normal/narrow stale-result rendering; v
 regions and responsive identity; Overview hierarchy, absent result, refusal and
 current execution.
 The provider-free PTY check additionally drives direct launch, real SGR mouse
-double-click, scenario changes, resize and terminal restoration.
+double-click, scenario changes, resize and terminal restoration. Resolve the
+binary location from Cargo's configuration using `jq`:
 
 ```sh
-export CARGO_TARGET_DIR=/home/bline/.local/state/work-engine/ui-stack-evaluation-20261006/target
+target_dir=$(cargo +1.92.0 metadata --offline --locked --no-deps \
+  --format-version 1 --manifest-path rust/crates/terminal-ui/Cargo.toml \
+  | jq -er .target_directory)
 cargo +1.92.0 test --manifest-path rust/crates/terminal-ui/Cargo.toml --offline --locked --bin work-engine-terminal-ui
 rustfmt +1.92.0 --edition 2024 --check rust/crates/terminal-ui/src/task.rs rust/crates/terminal-ui/src/ui.rs rust/crates/terminal-ui/src/tests.rs
 cargo +1.92.0 clippy --manifest-path rust/crates/terminal-ui/Cargo.toml --offline --locked --bin work-engine-terminal-ui -- -D warnings
 cargo +1.92.0 build --manifest-path rust/crates/terminal-ui/Cargo.toml --offline --locked --bin work-engine-terminal-ui
-python3 rust/crates/terminal-ui/scripts/pty_smoke.py "$CARGO_TARGET_DIR/debug/work-engine-terminal-ui"
-python3 rust/crates/terminal-ui/scripts/task_pty_smoke.py "$CARGO_TARGET_DIR/debug/work-engine-terminal-ui"
+python3 rust/crates/terminal-ui/scripts/pty_smoke.py "$target_dir/debug/work-engine-terminal-ui"
+python3 rust/crates/terminal-ui/scripts/task_pty_smoke.py "$target_dir/debug/work-engine-terminal-ui"
 ```
 
 Snapshot names: `task-pending`, `task-result`, `task-stale`, `task-refused`,

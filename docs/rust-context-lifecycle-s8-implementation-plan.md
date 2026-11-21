@@ -328,13 +328,12 @@ Negative scenarios receive their own fixed counts/deadlines and fresh disposable
 roots. Live provider, model, quota, deadline and semantic acceptance remain a
 separate human-owned future grant; the old consumed live allowance is unusable.
 
-All future commands below run with
-`TMPDIR=/home/bline/code/.work-engine-tmp/s4-20261007/tmp` and
-`CARGO_TARGET_DIR=/home/bline/code/.work-engine-tmp/s4-20261007/target` (or an
-accepted successor location outside `/tmp`). No build/test command ran in this
-planning task. The proposed new target names become exact only after manifests
-are frozen; list their tests and validate the expected inventory before relying
-on any selector.
+Use an approved writable scratch path for `TMPDIR`, such as
+`/home/bline/code/.work-engine-tmp/s4-20261007/tmp`, and keep Cargo output in the
+[configured shared target](rust-development.md#local-cargo-build-output).
+No build/test command ran in this planning task. The proposed new target names
+become exact only after manifests are frozen; list their tests and validate the
+expected inventory before relying on any selector.
 
 ```sh
 cargo fmt --manifest-path rust/Cargo.toml --all -- --check
