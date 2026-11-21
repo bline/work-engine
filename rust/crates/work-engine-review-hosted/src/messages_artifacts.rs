@@ -12,7 +12,7 @@ use work_engine_review_preparation::Subject;
 use crate::{
     Refusal,
     check::{AnalysisResult, RequestInsertions, RetainedRequest, messages_body},
-    revision::{CLAUDE_TOOLS, Profile},
+    revision::Profile,
     sha256_hex,
     subject::{self, Snapshot},
     task::{self, Limits},
@@ -128,7 +128,7 @@ impl MessagesMaterialization {
                 "answer exceeds analysis byte bound".into(),
             ));
         }
-        let tools: Vec<_> = CLAUDE_TOOLS.into_iter().map(str::to_owned).collect();
+        let tools = Profile::ClaudeSdk.request_tools();
         let mut request_insertions = Vec::with_capacity(requests.len());
         for (index, request) in requests.iter().enumerate() {
             let n = index as u64 + 1;

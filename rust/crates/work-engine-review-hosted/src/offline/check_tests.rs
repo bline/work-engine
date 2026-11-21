@@ -227,6 +227,86 @@ fn unselected_messages_materializes_and_compares_exact_bytes() {
 }
 
 #[test]
+fn unselected_messages_refuses_each_request_and_answer_binding_mismatch() {
+    use crate::messages_artifacts::MessagesMaterialization;
+
+    let repo = git_fixture();
+    let expected = MessagesMaterialization::prepare(
+        repo.path(),
+        PARENT,
+        &pinned_subject(),
+        EXACT_SCOPE,
+        "test-only contract",
+        revision::CLAUDE_MODEL,
+        Limits {
+            max_requests: 2,
+            ..LIMITS
+        },
+    )
+    .unwrap();
+    let manifest = expected.manifest_bytes();
+    let good = answer_from(ACCEPTABLE, |_| {});
+    let reqs = claude_requests(expected.task());
+    assert_eq!(reqs.len(), 2);
+    assert!(expected.compare(manifest, &reqs, &good).is_ok());
+
+    let mut over = reqs.clone();
+    over.push(retained(
+        messages_body_with(&host_text(expected.task()), 3, |_| {}),
+        3,
+    ));
+    for wrong_count in [&[][..], &over[..]] {
+        assert_eq!(
+            expected.compare(manifest, wrong_count, &good).unwrap_err(),
+            Refusal::Artifact("request count out of bounds".into()),
+        );
+    }
+
+    let original = &reqs[0];
+    for bad in [
+        RetainedRequest {
+            attempt_digests: vec![Some("0".repeat(64))],
+            ..original.clone()
+        },
+        RetainedRequest {
+            attempt_digests: vec![None],
+            ..original.clone()
+        },
+        RetainedRequest {
+            request: 2,
+            ..original.clone()
+        },
+    ] {
+        assert_eq!(
+            expected
+                .compare(manifest, &[bad, reqs[1].clone()], &good)
+                .unwrap_err(),
+            Refusal::Artifact("request 1: numbering or single attempt body digest differs".into()),
+        );
+    }
+    let missing = RetainedRequest {
+        body: None,
+        ..original.clone()
+    };
+    assert_eq!(
+        expected
+            .compare(manifest, &[missing, reqs[1].clone()], &good)
+            .unwrap_err(),
+        Refusal::Artifact("request 1: body missing".into()),
+    );
+    let false_digest = AnalysisResult {
+        answer_sha256: "0".repeat(64),
+        ..good
+    };
+    assert_eq!(
+        expected
+            .compare(manifest, &reqs, &false_digest)
+            .unwrap_err(),
+        Refusal::Artifact("answer digest differs".into()),
+    );
+}
+
+#[test]
 fn unselected_messages_rechecks_raw_request_and_answer_byte_bounds() {
     use crate::messages_artifacts::{
         MAX_ANSWER_BYTES, MAX_REQUEST_BODY_BYTES, MessagesMaterialization,

@@ -61,7 +61,8 @@ impl HostedInitialTransport {
             "preparationRevision": owner.preparation.result_revision,
             "dispatchOperationId": owner.dispatch.operation_id,
             "dispatchRevision": owner.dispatch.result_revision,
-            "dispatchCommandSha256": owner.dispatch.request_digest,
+            // The receipt binds the whole dispatch operation, not just its command.
+            "dispatchOperationRequestDigest": owner.dispatch.request_digest,
             "routeRevision": expected_route_revision,
             "generation": FIRST_GENERATION,
         }))?;
@@ -188,11 +189,21 @@ mod tests {
     }
 
     #[test]
-    fn changing_only_the_dispatch_revision_invalidates_the_transport() {
+    fn changing_only_one_dispatch_receipt_field_invalidates_the_transport() {
         let mut owner = projection("root-a", "one");
         let expected = HostedInitialTransport::derive(&owner, ROUTE).unwrap();
+        let original_revision = owner.dispatch.result_revision.clone();
         owner.dispatch.result_revision = CampaignRevision::new("5".repeat(64)).unwrap();
-        let another = HostedInitialTransport::derive(&owner, ROUTE).unwrap();
-        assert!(expected.compare_report(&wire(&another)).is_err());
+        let new_revision = HostedInitialTransport::derive(&owner, ROUTE).unwrap();
+        assert!(expected.compare_report(&wire(&new_revision)).is_err());
+
+        owner.dispatch.result_revision = original_revision;
+        owner.dispatch.request_digest = "2".repeat(64);
+        let new_operation_request = HostedInitialTransport::derive(&owner, ROUTE).unwrap();
+        assert!(
+            expected
+                .compare_report(&wire(&new_operation_request))
+                .is_err()
+        );
     }
 }

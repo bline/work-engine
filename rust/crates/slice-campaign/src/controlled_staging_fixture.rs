@@ -62,6 +62,7 @@ impl FixtureExport {
 
 // These are inputs from distinct test suppliers standing in for checked owner
 // readbacks. They are not reader implementations or future record schemas.
+#[derive(Clone)]
 struct FixtureHostGate {
     anchor_sha256: String,
     dispatch: String,
@@ -71,6 +72,7 @@ struct FixtureHostGate {
     passed: bool,
 }
 
+#[derive(Clone)]
 struct FixtureEngineeringVerdict {
     anchor_sha256: String,
     dispatch: String,
@@ -286,6 +288,21 @@ fn export() -> FixtureExport {
     }
 }
 
+fn engineering_verdict(
+    anchor: &FixtureAnchor,
+    export: &FixtureExport,
+) -> FixtureEngineeringVerdict {
+    FixtureEngineeringVerdict {
+        anchor_sha256: anchor.sha256(),
+        dispatch: export.builder_dispatch.clone(),
+        scope_digest: export.scope(),
+        export_receipt_sha256: export.candidate.receipt_sha256.clone(),
+        host_gate_receipt_sha256: export.host_gate_receipt_sha256.clone(),
+        evaluator_sha256: anchor.evaluator_sha256.clone(),
+        passed: true,
+    }
+}
+
 fn identity(attempt: &str) -> CampaignIdentity {
     CampaignIdentity {
         run_id: "test-run".into(),
@@ -420,17 +437,8 @@ fn engineering_fixture_joins_gate_a_before_review_and_gate_b_only_on_exact_expor
     let b_binding = bind(&b);
     let mut a_gate = host_gate(&anchor, &a_binding.dispatch, &a.host_gate_receipt_sha256);
     let b_gate = host_gate(&anchor, &b_binding.dispatch, &b.host_gate_receipt_sha256);
-    let verdict = |e: &FixtureExport| FixtureEngineeringVerdict {
-        anchor_sha256: anchor.sha256(),
-        dispatch: e.builder_dispatch.clone(),
-        scope_digest: e.scope(),
-        export_receipt_sha256: e.candidate.receipt_sha256.clone(),
-        host_gate_receipt_sha256: e.host_gate_receipt_sha256.clone(),
-        evaluator_sha256: anchor.evaluator_sha256.clone(),
-        passed: true,
-    };
-    let mut a_verdict = verdict(&a);
-    let b_verdict = verdict(&b);
+    let mut a_verdict = engineering_verdict(&anchor, &a);
+    let b_verdict = engineering_verdict(&anchor, &b);
     let review = |gate: &FixtureHostGate, e: &FixtureExport| {
         anchor.review_bytes(&a_binding, gate, e, "root-a", &identity("initial"))
     };
@@ -458,4 +466,112 @@ fn engineering_fixture_joins_gate_a_before_review_and_gate_b_only_on_exact_expor
     a.candidate.commit = "9".repeat(40);
     assert!(review(&a_gate, &a).is_some()); // Gate A tested a tree, not this commit.
     assert!(!anchor.engineering_receipts_match(&a_binding, &a_gate, &a, Some(&a_verdict)));
+}
+
+#[test]
+fn review_and_engineering_joins_require_each_host_gate_binding() {
+    let anchor = anchor();
+    let export = export();
+    let binding = anchor
+        .bind_input(&anchor.builder, &export.builder_dispatch)
+        .unwrap();
+    let gate = host_gate(&anchor, &binding.dispatch, &export.host_gate_receipt_sha256);
+    let verdict = engineering_verdict(&anchor, &export);
+    let review = |gate: &FixtureHostGate| {
+        anchor.review_bytes(&binding, gate, &export, "root-a", &identity("initial"))
+    };
+    assert!(review(&gate).is_some());
+    assert!(anchor.engineering_receipts_match(&binding, &gate, &export, Some(&verdict)));
+
+    // Change exactly one reported fact, leaving the independent pins unchanged.
+    for (field, wrong) in [
+        (
+            "anchor",
+            FixtureHostGate {
+                anchor_sha256: "9".repeat(64),
+                ..gate.clone()
+            },
+        ),
+        (
+            "dispatch",
+            FixtureHostGate {
+                dispatch: "other-dispatch".into(),
+                ..gate.clone()
+            },
+        ),
+        (
+            "command",
+            FixtureHostGate {
+                command_sha256: "9".repeat(64),
+                ..gate.clone()
+            },
+        ),
+        (
+            "receipt",
+            FixtureHostGate {
+                receipt_sha256: "9".repeat(64),
+                ..gate.clone()
+            },
+        ),
+    ] {
+        assert!(
+            review(&wrong).is_none(),
+            "review accepted wrong Gate A {field}"
+        );
+        assert!(
+            !anchor.engineering_receipts_match(&binding, &wrong, &export, Some(&verdict)),
+            "engineering join accepted wrong Gate A {field}",
+        );
+    }
+}
+
+#[test]
+fn engineering_join_requires_each_verdict_binding_on_the_same_export() {
+    let anchor = anchor();
+    let export = export();
+    let binding = anchor
+        .bind_input(&anchor.builder, &export.builder_dispatch)
+        .unwrap();
+    let gate = host_gate(&anchor, &binding.dispatch, &export.host_gate_receipt_sha256);
+    let verdict = engineering_verdict(&anchor, &export);
+    let join = |verdict: &FixtureEngineeringVerdict| {
+        anchor.engineering_receipts_match(&binding, &gate, &export, Some(verdict))
+    };
+    assert!(join(&verdict));
+
+    for (field, wrong) in [
+        (
+            "anchor",
+            FixtureEngineeringVerdict {
+                anchor_sha256: "9".repeat(64),
+                ..verdict.clone()
+            },
+        ),
+        (
+            "dispatch",
+            FixtureEngineeringVerdict {
+                dispatch: "other-dispatch".into(),
+                ..verdict.clone()
+            },
+        ),
+        (
+            "export receipt",
+            FixtureEngineeringVerdict {
+                export_receipt_sha256: "9".repeat(64),
+                ..verdict.clone()
+            },
+        ),
+        (
+            "Host gate receipt",
+            FixtureEngineeringVerdict {
+                host_gate_receipt_sha256: "9".repeat(64),
+                ..verdict.clone()
+            },
+        ),
+    ] {
+        assert!(
+            !join(&wrong),
+            "engineering join accepted wrong Gate B {field}"
+        );
+    }
 }
