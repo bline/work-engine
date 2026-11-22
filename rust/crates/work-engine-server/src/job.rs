@@ -437,6 +437,85 @@ struct Child {
     readers_joined: bool,
 }
 
+/// Run-entry state of the immutable binding in this operation directory; not Host evidence.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RunEntry {
+    Pending,
+    Aborted,
+    Uncertain,
+    Spawned,
+}
+
+impl RunEntry {
+    const FILE: &str = "entry-attempt.json";
+
+    fn read(dir: &Path) -> Result<Self, &'static str> {
+        let path = dir.join(Self::FILE);
+        match std::fs::symlink_metadata(&path) {
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Self::Pending),
+            Ok(m) if m.is_file() => {}
+            _ => return Err("custody_lost"),
+        }
+        let v = read_json(&path)?.ok_or("custody_lost")?;
+        if v["schema"] != SCHEMA || v["action"] != "pi-docker run" {
+            return Err("custody_lost");
+        }
+        match v.get("decision").and_then(Value::as_str) {
+            Some("pending") => Ok(Self::Pending),
+            Some("aborted") => Ok(Self::Aborted),
+            Some("uncertain") => Ok(Self::Uncertain),
+            Some("spawned") => Ok(Self::Spawned),
+            // The old queued-entry marker cannot prove either ordering.
+            None if v.get("decision").is_none() && v["at_unix_seconds"].is_u64() => {
+                Ok(Self::Uncertain)
+            }
+            _ => Err("custody_lost"),
+        }
+    }
+
+    fn write(self, dir: &Path) -> Result<(), &'static str> {
+        // Also make the operation directory's creation durable.
+        File::open(dir.parent().ok_or("owner_unavailable")?)
+            .and_then(|root| root.sync_all())
+            .map_err(|_| "owner_unavailable")?;
+        let decision = match self {
+            Self::Pending => "pending",
+            Self::Aborted => "aborted",
+            Self::Uncertain => "uncertain",
+            Self::Spawned => "spawned",
+        };
+        write_atomic(
+            &dir.join(Self::FILE),
+            &json!({"schema":SCHEMA,"action":"pi-docker run","decision":decision}),
+        )
+    }
+
+    fn entered_possible(self) -> bool {
+        matches!(self, Self::Uncertain | Self::Spawned)
+    }
+}
+
+/// Unlike collector.lock, this guard covers a decision and at most one spawn call, never
+/// a child lifetime or retry backoff. It also serializes independent Servers on the same binding.
+fn lock_run_entry(dir: &Path) -> Result<File, &'static str> {
+    let lock = OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .write(true)
+        .mode(0o600)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+        .open(dir.join("run-entry.lock"))
+        .map_err(|_| "owner_unavailable")?;
+    loop {
+        if unsafe { libc::flock(lock.as_raw_fd(), libc::LOCK_EX) } == 0 {
+            return Ok(lock);
+        }
+        if std::io::Error::last_os_error().kind() != std::io::ErrorKind::Interrupted {
+            return Err("owner_unavailable");
+        }
+    }
+}
+
 struct Collector {
     handle: JoinHandle<()>,
     done: Arc<AtomicBool>,
@@ -454,6 +533,8 @@ pub struct Jobs {
     profile: JobProfile,
     stop: Arc<AtomicBool>,
     collectors: Mutex<Registry>,
+    #[cfg(test)]
+    spawn_hooks: Option<tests::SpawnHooks>,
 }
 
 impl JobProfile {
@@ -552,6 +633,8 @@ impl Jobs {
                 closed: false,
                 map: HashMap::new(),
             }),
+            #[cfg(test)]
+            spawn_hooks: None,
         };
         jobs.host_binary()?;
         if jobs.profile.live() {
@@ -744,16 +827,15 @@ impl Jobs {
             return Err("authorization_consumed");
         }
         self.verify_binding(&auth, &binding)?;
-        self.verify_host_state(&auth)?;
-        let entered = dir.join("entry-attempt.json").exists();
-        if !entered && !self.alive(&operation_id) {
-            self.start(&auth, &dir, &operation_id, "run")?;
-        }
+        let journal = self.verify_host_state(&auth)?;
+        let started = RunEntry::read(&dir)? == RunEntry::Pending
+            && journal.is_none()
+            && self.start(&auth, &dir, &operation_id, "run")?;
         let mut out = self.read_operation(&auth, &dir, &binding)?;
-        out["entry"] = json!(if entered {
-            "existing_operation"
-        } else {
+        out["entry"] = json!(if started {
             "collector_started"
+        } else {
+            "existing_operation"
         });
         Ok(out)
     }
@@ -817,18 +899,16 @@ impl Jobs {
             .is_some_and(|c| !c.done.load(Ordering::SeqCst))
     }
 
-    /// Start the one owned collector. The exclusive flock is taken before the entry marker so a
-    /// second process or thread cannot own the same operation.
+    /// The lifetime lock serializes collectors, not cancellation, which participates at run entry.
     fn start(
         self: &Arc<Self>,
         a: &Authorization,
         dir: &Path,
         id: &str,
         action: &'static str,
-    ) -> Result<(), &'static str> {
+    ) -> Result<bool, &'static str> {
         let mut reg = self.collectors.lock().unwrap();
-        // Fence: checked under the registry lock, strictly before the flock and the entry marker,
-        // so a request that outlives its transport cannot enter the Host after shutdown began.
+        // No new collector may be registered once shutdown begins.
         if reg.closed || self.stop.load(Ordering::SeqCst) {
             return Err("shutting_down");
         }
@@ -837,7 +917,7 @@ impl Jobs {
             .get(id)
             .is_some_and(|c| !c.done.load(Ordering::SeqCst))
         {
-            return Ok(());
+            return Ok(false);
         }
         let lock = OpenOptions::new()
             .create(true)
@@ -848,14 +928,10 @@ impl Jobs {
             .open(dir.join("collector.lock"))
             .map_err(|_| "owner_unavailable")?;
         if unsafe { libc::flock(lock.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0 {
-            return Ok(()); // another owner holds this operation
+            return Ok(false); // another owner holds this operation
         }
-        if action == "run" {
-            // Durable "entry possible" mark strictly before the Host child is spawned.
-            write_new(
-                &dir.join("entry-attempt.json"),
-                &json!({"schema":SCHEMA,"at_unix_seconds":now(),"action":"pi-docker run"}),
-            )?;
+        if action == "run" && RunEntry::read(dir)? != RunEntry::Pending {
+            return Ok(false);
         }
         let done = Arc::new(AtomicBool::new(false));
         let this = self.clone();
@@ -866,7 +942,58 @@ impl Jobs {
             flag.store(true, Ordering::SeqCst);
         });
         reg.map.insert(id.to_string(), Collector { handle, done });
-        Ok(())
+        Ok(true)
+    }
+
+    fn spawn_host(
+        &self,
+        _action: &str,
+        command: &mut Command,
+    ) -> std::io::Result<Option<std::process::Child>> {
+        #[cfg(test)]
+        if let Some(hooks) = &self.spawn_hooks {
+            return (hooks.spawn)(_action).map(|()| None);
+        }
+        command.spawn().map(Some)
+    }
+
+    fn spawn_run(
+        &self,
+        dir: &Path,
+        command: &mut Command,
+        retry_allowed: bool,
+    ) -> Result<std::io::Result<Option<std::process::Child>>, &'static str> {
+        #[cfg(test)]
+        if let Some(hooks) = &self.spawn_hooks {
+            (hooks.before_run_spawn)();
+        }
+        let _entry = lock_run_entry(dir)?;
+        match RunEntry::read(dir)? {
+            RunEntry::Aborted => return Err("entry_aborted"),
+            RunEntry::Uncertain | RunEntry::Spawned => return Err("entry_already_attempted"),
+            RunEntry::Pending => {}
+        }
+        // Also serialize shutdown with run entry, not just registration.
+        let registry = self.collectors.lock().unwrap();
+        if registry.closed {
+            return Err("shutting_down");
+        }
+        RunEntry::Uncertain.write(dir)?;
+        let outcome = self.spawn_host("run", command);
+        match &outcome {
+            Ok(_) => {
+                // Even if confirmation fails, collect the child. The pre-call record excludes
+                // replacement even when success cannot be persisted.
+                let _ = RunEntry::Spawned.write(dir);
+            }
+            Err(e) if retry_allowed && e.raw_os_error() == Some(libc::ETXTBSY) => {
+                // A definitive no-spawn result. Allow abort during backoff, and arbitrate anew
+                // after it. A failed write stops this collector rather than authorizing a retry.
+                RunEntry::Pending.write(dir)?;
+            }
+            Err(_) => {}
+        }
+        Ok(outcome)
     }
 
     fn host(
@@ -874,6 +1001,7 @@ impl Jobs {
         args: &[&str],
         timeout: Duration,
         cancel_on_deadline: Option<&Authorization>,
+        run_dir: Option<&Path>,
     ) -> Result<Child, &'static str> {
         self.host_binary()?;
         let mut command = Command::new(&self.profile.host_binary);
@@ -891,9 +1019,16 @@ impl Jobs {
         let mut child = {
             let mut attempts = 0;
             loop {
-                match command.spawn() {
-                    Ok(c) => break c,
-                    Err(e) if e.raw_os_error() == Some(libc::ETXTBSY) && attempts < 50 => {
+                let retry_allowed = attempts < 50;
+                let outcome = if let Some(dir) = run_dir {
+                    self.spawn_run(dir, &mut command, retry_allowed)?
+                } else {
+                    self.spawn_host(args[0], &mut command)
+                };
+                match outcome {
+                    Ok(Some(c)) => break c,
+                    Ok(None) => return Err("no_child_to_collect"),
+                    Err(e) if retry_allowed && e.raw_os_error() == Some(libc::ETXTBSY) => {
                         attempts += 1;
                         thread::sleep(Duration::from_millis(20));
                     }
@@ -964,7 +1099,12 @@ impl Jobs {
                 if let Some(a) = cancel_on_deadline {
                     // Cancellation is a request to the Host; closure is established only by its receipt.
                     result.cancel_marker_requested = self
-                        .host(&["cancel", "--state", &a.state_dir], QUICK_TIMEOUT, None)
+                        .host(
+                            &["cancel", "--state", &a.state_dir],
+                            QUICK_TIMEOUT,
+                            None,
+                            None,
+                        )
                         .is_ok_and(|c| c.exit_code == Some(0));
                 }
                 grace_until =
@@ -1040,7 +1180,11 @@ impl Jobs {
             &args,
             Duration::from_secs(self.profile.collector_deadline_seconds),
             Some(a),
+            (action == "run").then_some(dir),
         );
+        if matches!(outcome, Err("entry_aborted" | "entry_already_attempted")) {
+            return;
+        }
         // Keep the bounded exact prefix even when a child hangs, is interrupted,
         // or emits malformed/non-JSON output. A digest alone cannot recover it.
         let stdout_artifact = outcome
@@ -1092,7 +1236,12 @@ impl Jobs {
         if !Path::new(&a.state_dir).join("pi-state.json").exists() {
             return Ok(None);
         }
-        let c = self.host(&["inspect", "--state", &a.state_dir], QUICK_TIMEOUT, None)?;
+        let c = self.host(
+            &["inspect", "--state", &a.state_dir],
+            QUICK_TIMEOUT,
+            None,
+            None,
+        )?;
         if c.exit_code != Some(0) || c.stdout_truncated {
             return Err("host_busy");
         }
@@ -1109,11 +1258,14 @@ impl Jobs {
     ) -> Result<Value, &'static str> {
         let id = self.operation_id(a);
         let live = self.alive(&id);
-        let entered = dir.join("entry-attempt.json").exists();
+        let entry = RunEntry::read(dir)?;
+        let entered = entry.entered_possible();
         let journal = if live {
             Err("host_busy")
-        } else {
+        } else if entered {
             self.journal(a)
+        } else {
+            Ok(None)
         };
         let mut limitations = vec!["settlement_not_established_by_adapter"];
         let (host, digest_observed) = match &journal {
@@ -1138,6 +1290,8 @@ impl Jobs {
         let rec_outcome = read_json(&dir.join("collector-reconcile.json"))?;
         let state = if live {
             "collecting"
+        } else if entry == RunEntry::Aborted {
+            "entry_aborted"
         } else if !entered {
             "bound_not_entered"
         } else if journal.is_err() {
@@ -1266,18 +1420,45 @@ impl Jobs {
         dir: &Path,
         binding: &Value,
     ) -> Result<Value, &'static str> {
-        if !dir.join("entry-attempt.json").exists() {
-            return Err("not_entered");
-        }
-        // Identity was verified against the bound digest in `bound`; the Host re-checks its own binding.
-        let c = self.host(&["cancel", "--state", &a.state_dir], QUICK_TIMEOUT, None)?;
-        let marker = c.exit_code == Some(0);
+        let aborted = {
+            let _entry = lock_run_entry(dir)?;
+            let entry = RunEntry::read(dir)?;
+            if !entry.entered_possible() {
+                // Re-sync on repeat: a previous writer may have failed after rename.
+                RunEntry::Aborted.write(dir)?;
+                true
+            } else {
+                false
+            }
+        };
+        let (cancellation, next) = if aborted {
+            (
+                "entry_aborted",
+                "run fenced before spawn; no Host closure claimed",
+            )
+        } else {
+            // Spawn won, or entry is uncertain. Only request Host cleanup, never relaunch.
+            let c = self.host(
+                &["cancel", "--state", &a.state_dir],
+                QUICK_TIMEOUT,
+                None,
+                None,
+            )?;
+            (
+                if c.exit_code == Some(0) {
+                    "requested"
+                } else {
+                    "request_not_recorded"
+                },
+                "read_coding_job_operation until collector and Host receipt report closure",
+            )
+        };
         Ok(json!({
             "schema":SCHEMA,"operation_id":self.operation_id(a),"request_id":binding["request_id"],
-            "cancellation":if marker {"requested"} else {"request_not_recorded"},
+            "cancellation":cancellation,
             "cancellation_established":false,"container_closure_established":false,
             "settlement":"not_claimed",
-            "next":"read_coding_job_operation until collector and Host receipt report closure",
+            "next":next,
         }))
     }
 
@@ -1297,9 +1478,9 @@ impl Jobs {
     /// either joined here or was refused by `start`. Idempotent: a later call drains nothing and
     /// reports the registry fenced and empty.
     pub fn shutdown(&self, wait: Duration) -> bool {
-        self.stop.store(true, Ordering::SeqCst);
         let handles: Vec<Collector> = {
             let mut reg = self.collectors.lock().unwrap();
+            self.stop.store(true, Ordering::SeqCst);
             reg.closed = true;
             reg.map.drain().map(|(_, c)| c).collect()
         };

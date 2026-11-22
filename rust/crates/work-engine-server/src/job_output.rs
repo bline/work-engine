@@ -170,6 +170,7 @@ string_enum!(Cleaned {
 });
 string_enum!(State {
     BoundNotEntered => "bound_not_entered",
+    EntryAborted => "entry_aborted",
     Collecting => "collecting",
     Reconciling => "reconciling",
     Collected => "collected",
@@ -238,7 +239,8 @@ impl Operation {
             || arguments["request_id"] != self.request_id.as_str()
             || arguments["authorization_id"] != self.authorization_id.as_str()
             // State, entry and liveness must not contradict each other.
-            || (matches!(self.state, State::BoundNotEntered) && self.entered_possible)
+            || (matches!(self.state, State::BoundNotEntered | State::EntryAborted)
+                && self.entered_possible)
             || matches!(self.state, State::Collecting) != self.collector_live
             || (matches!(self.state, State::Collected) && self.host_removed != Some(true))
         {
@@ -261,6 +263,7 @@ struct Cancel {
     next: String,
 }
 string_enum!(Cancellation {
+    EntryAborted => "entry_aborted",
     Requested => "requested",
     RequestNotRecorded => "request_not_recorded",
 });

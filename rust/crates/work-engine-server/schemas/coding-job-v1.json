@@ -138,6 +138,7 @@
         "state": {
           "enum": [
             "bound_not_entered",
+            "entry_aborted",
             "collecting",
             "reconciling",
             "collected",
@@ -273,7 +274,8 @@
         "cancellation": {
           "enum": [
             "requested",
-            "request_not_recorded"
+            "request_not_recorded",
+            "entry_aborted"
           ]
         },
         "cancellation_established": {
@@ -470,6 +472,7 @@
         "state": {
           "enum": [
             "bound_not_entered",
+            "entry_aborted",
             "collecting",
             "reconciling",
             "collected",

@@ -1,5 +1,10 @@
 use super::*;
-use std::os::unix::fs::PermissionsExt;
+use std::{os::unix::fs::PermissionsExt, sync::mpsc};
+
+pub(super) struct SpawnHooks {
+    pub(super) before_run_spawn: Box<dyn Fn() + Send + Sync>,
+    pub(super) spawn: Box<dyn Fn(&str) -> std::io::Result<()> + Send + Sync>,
+}
 
 const CRED: &str = "job-credential-0123456789abcdefghijklmnop";
 const SESSION_GRANT: &str = "session-grant-0123456789abcdefghijklmnopq";
@@ -177,6 +182,182 @@ fn wait_state(fx: &Fx, want: &str) -> Value {
         thread::sleep(Duration::from_millis(25));
     }
     panic!("never reached {want}");
+}
+
+fn inert_owner(
+    fx: &Fx,
+    before_run_spawn: impl Fn() + Send + Sync + 'static,
+    spawn: impl Fn(&str) -> std::io::Result<()> + Send + Sync + 'static,
+) -> Arc<Jobs> {
+    let mut jobs = Jobs::new(fx.jobs.profile.clone()).unwrap();
+    jobs.spawn_hooks = Some(SpawnHooks {
+        before_run_spawn: Box::new(before_run_spawn),
+        spawn: Box::new(spawn),
+    });
+    Arc::new(jobs)
+}
+
+#[test]
+fn cancel_fences_delayed_run_on_first_call_and_etxtbsy_retry_across_owners() {
+    use std::sync::atomic::AtomicUsize;
+
+    for prior_calls in [0, 1] {
+        let fx = fixture(30, None);
+        let (arrived, at_boundary) = mpsc::sync_channel(1);
+        let (release, released) = mpsc::sync_channel(0);
+        let released = Mutex::new(released);
+        let entries = AtomicUsize::new(0);
+        let calls = Arc::new(AtomicUsize::new(0));
+        let seen = calls.clone();
+        let owner = inert_owner(
+            &fx,
+            move || {
+                if entries.fetch_add(1, Ordering::SeqCst) == prior_calls {
+                    arrived.send(()).unwrap();
+                    released
+                        .lock()
+                        .unwrap()
+                        .recv_timeout(Duration::from_secs(5))
+                        .unwrap();
+                }
+            },
+            move |action| {
+                assert_eq!(action, "run");
+                assert!(seen.fetch_add(1, Ordering::SeqCst) < prior_calls);
+                Err(std::io::Error::from_raw_os_error(libc::ETXTBSY))
+            },
+        );
+        let submit = submit_args(&fx, REQ);
+        let read = read_args(REQ);
+        let first = owner.call("submit_coding_job", submit.clone()).unwrap();
+        assert_eq!(first["entry"], "collector_started");
+        at_boundary.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert_eq!(calls.load(Ordering::SeqCst), prior_calls);
+
+        // An independently opened Server owner must fence the already queued collector too.
+        let other = inert_owner(&fx, || panic!("replacement entry"), |_| panic!("Host call"));
+        assert_eq!(
+            other.call("cancel_coding_job", read_args(REQ2)),
+            Err("identity_conflict")
+        );
+        let cancel = other.call("cancel_coding_job", read.clone()).unwrap();
+        assert_eq!(cancel["cancellation"], "entry_aborted");
+        assert_eq!(cancel["cancellation_established"], false);
+        assert_eq!(cancel["container_closure_established"], false);
+        assert_eq!(
+            job_output::validate("cancel_coding_job", &read, &cancel),
+            Ok(())
+        );
+        release.send(()).unwrap();
+        let collector = owner
+            .collectors
+            .lock()
+            .unwrap()
+            .map
+            .remove(first["operation_id"].as_str().unwrap())
+            .unwrap();
+        collector.handle.join().unwrap();
+        assert_eq!(calls.load(Ordering::SeqCst), prior_calls);
+        assert!(!fx.state.join("pi-state.json").exists());
+
+        // Drop both volatile registries before replaying the exact request against disk.
+        drop(owner);
+        drop(other);
+        let restarted = inert_owner(&fx, || panic!("replacement entry"), |_| panic!("Host call"));
+        let repeated = restarted.call("submit_coding_job", submit.clone()).unwrap();
+        assert_eq!(repeated["entry"], "existing_operation");
+        assert_eq!(repeated["state"], "entry_aborted");
+        assert_eq!(repeated["entered_possible"], false);
+        assert_eq!(
+            job_output::validate("submit_coding_job", &submit, &repeated),
+            Ok(())
+        );
+        let result = restarted
+            .call("read_coding_job_result", read.clone())
+            .unwrap();
+        assert_eq!(result["result"], "not_available");
+        assert_eq!(
+            job_output::validate("read_coding_job_result", &read, &result),
+            Ok(())
+        );
+        assert!(restarted.collectors.lock().unwrap().map.is_empty());
+        assert_eq!(restarted.call("cancel_coding_job", read).unwrap(), cancel);
+        assert_eq!(runs(&fx), 0);
+    }
+}
+
+#[test]
+fn spawn_wins_or_interruption_holds_entry_without_replacement() {
+    for interrupted in [false, true] {
+        let fx = fixture(30, None);
+        let (release, released) = mpsc::sync_channel(0);
+        let released = Mutex::new(released);
+        let owner = inert_owner(
+            &fx,
+            move || {
+                released
+                    .lock()
+                    .unwrap()
+                    .recv_timeout(Duration::from_secs(5))
+                    .unwrap();
+            },
+            move |action| {
+                assert_eq!(action, "run");
+                assert!(!interrupted, "simulated interruption inside spawn call");
+                Ok(()) // The seam reports success; no operating-system child is created.
+            },
+        );
+        let submit = submit_args(&fx, REQ);
+        let first = owner.call("submit_coding_job", submit.clone()).unwrap();
+        release.send(()).unwrap();
+        let collector = owner
+            .collectors
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .map
+            .remove(first["operation_id"].as_str().unwrap())
+            .unwrap();
+        assert_eq!(collector.handle.join().is_err(), interrupted);
+        let dir = owner.op_dir(&fx.auth);
+        assert!(
+            RunEntry::read(&dir).unwrap()
+                == if interrupted {
+                    RunEntry::Uncertain
+                } else {
+                    RunEntry::Spawned
+                }
+        );
+        if interrupted {
+            assert!(
+                !dir.join("collector-run.json").exists(),
+                "no collector outcome was recorded"
+            );
+        }
+        drop(owner);
+
+        // Cancellation on either path is not a pre-entry abort. It may only request Host cleanup.
+        let (actions, observed) = mpsc::channel();
+        let restarted = inert_owner(
+            &fx,
+            || panic!("replacement entry"),
+            move |action| {
+                actions.send(action.to_string()).unwrap();
+                Err(std::io::Error::from_raw_os_error(libc::EIO))
+            },
+        );
+        let v = restarted.call("submit_coding_job", submit).unwrap();
+        assert_eq!(v["entry"], "existing_operation");
+        assert_eq!(v["state"], "entry_uncertain");
+        assert_eq!(v["entered_possible"], true);
+        assert_eq!(
+            restarted.call("cancel_coding_job", read_args(REQ)),
+            Err("runtime_unavailable")
+        );
+        assert_eq!(observed.try_recv().unwrap(), "cancel");
+        assert!(observed.try_recv().is_err());
+        assert!(restarted.collectors.lock().unwrap().map.is_empty());
+        assert_eq!(runs(&fx), 0);
+    }
 }
 
 #[test]
