@@ -131,6 +131,37 @@ impl Tree {
     }
 }
 
+/// In-process dispatch at the Host's run entry. This is not a request-file
+/// schema or an authority token. The existing CLI always selects LegacyJob.
+#[doc(hidden)]
+pub enum RunEntry {
+    LegacyJob,
+    /// Public initializer only: no task, provider, release or authority data.
+    PublicInferenceSetup,
+}
+
+fn dispatch_run_entry(
+    entry: RunEntry,
+    legacy_request: Option<&Path>,
+    run_legacy: impl FnOnce(&Path) -> Result<Value>,
+) -> Result<Value> {
+    match (entry, legacy_request) {
+        (RunEntry::PublicInferenceSetup, Some(_)) => {
+            refuse("public inference setup does not accept a legacy job request")
+        }
+        (RunEntry::PublicInferenceSetup, None) => {
+            // No installed custodian supplies a qualified selection and
+            // outside observer on this Host. The old observation callback,
+            // caller pins and journal are not substitutes for that boundary.
+            refuse(
+                "public inference setup requires a qualified installed launcher and outside observer",
+            )
+        }
+        (RunEntry::LegacyJob, Some(request)) => run_legacy(request),
+        (RunEntry::LegacyJob, None) => refuse("legacy Pi run requires a job request"),
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Job {
@@ -370,6 +401,16 @@ fn check_job(job: &Job, fresh: bool) -> Result<()> {
 }
 
 impl Host {
+    /// Classify the run before opening any legacy inputs, validating a Job or
+    /// constructing a stateful Host. Refused setup never reaches admit or run.
+    #[doc(hidden)]
+    pub fn run_entry(entry: RunEntry, legacy_request: Option<&Path>) -> Result<Value> {
+        dispatch_run_entry(entry, legacy_request, |request| {
+            let job: Job = serde_json::from_slice(&fs::read(request)?)?;
+            Self::admit(job)?.run()
+        })
+    }
+
     pub fn journal(&self) -> &Journal {
         &self.journal
     }
@@ -1855,6 +1896,71 @@ mod tests {
         };
         (dir, job)
     }
+    #[test]
+    fn run_entry_public_setup_refuses_before_legacy_effects_on_repeat() {
+        let input = tempfile::tempdir().unwrap();
+        let inert_docker = input.path().join("inert");
+        fs::write(&inert_docker, b"not executable").unwrap();
+        let (dir, job) = fixture(&inert_docker, "unused");
+        let missing = dir.path().join("missing-request.json");
+        let task = dir.path().join("must-not-open-task");
+        let request = dir.path().join("provider-bearing.json");
+        let mut body = serde_json::to_value(&job).unwrap();
+        body["coding"] = json!({"provider":{"task":{"path":task,"sha256":"a".repeat(64)}}});
+        fs::write(&request, serde_json::to_vec(&body).unwrap()).unwrap();
+
+        for _ in 0..2 {
+            for path in [None, Some(missing.as_path()), Some(request.as_path())] {
+                let expected = if path.is_some() {
+                    "public inference setup does not accept a legacy job request"
+                } else {
+                    "public inference setup requires a qualified installed launcher and outside observer"
+                };
+                let error = Host::run_entry(RunEntry::PublicInferenceSetup, path).unwrap_err();
+                assert!(matches!(error, Error::Refused(ref actual) if actual == expected));
+                // A trap at the real dispatch edge covers the entire legacy
+                // closure: open/decode, validation, staging, run and daemon.
+                let error = dispatch_run_entry(RunEntry::PublicInferenceSetup, path, |_| {
+                    panic!("setup reached the legacy input/admit/run closure")
+                })
+                .unwrap_err();
+                assert!(matches!(error, Error::Refused(ref actual) if actual == expected));
+            }
+        }
+        assert_eq!(fs::read_dir(&job.state_dir).unwrap().count(), 0);
+        assert!(!dir.path().join("docker.calls").exists());
+    }
+
+    #[test]
+    fn run_entry_legacy_still_loads_and_validates_without_recognizing_setup_assertions() {
+        let input = tempfile::tempdir().unwrap();
+        let inert_docker = input.path().join("inert");
+        fs::write(&inert_docker, b"not executable").unwrap();
+        let (dir, mut job) = fixture(&inert_docker, "unused");
+        let request = dir.path().join("request.json");
+
+        let error = Host::run_entry(RunEntry::LegacyJob, Some(&request)).unwrap_err();
+        assert!(matches!(error, Error::Io(ref io) if io.kind() == std::io::ErrorKind::NotFound));
+        job.job_id.clear(); // Inert: legacy admission rejects before staging/spawn.
+        fs::write(&request, serde_json::to_vec(&job).unwrap()).unwrap();
+        let error = Host::run_entry(RunEntry::LegacyJob, Some(&request)).unwrap_err();
+        assert!(
+            matches!(error, Error::Refused(ref detail) if detail == "invalid Pi job schema/identity/timeout")
+        );
+
+        let mut body = serde_json::to_value(&job).unwrap();
+        body["public_inference_setup"] = json!({
+            "runtime_sha256": "a".repeat(64), "outside_observation_sha256": "b".repeat(64)
+        });
+        fs::write(&request, serde_json::to_vec(&body).unwrap()).unwrap();
+        let error = Host::run_entry(RunEntry::LegacyJob, Some(&request)).unwrap_err();
+        assert!(
+            matches!(error, Error::Json(ref json) if json.to_string().contains("public_inference_setup"))
+        );
+        assert_eq!(fs::read_dir(&job.state_dir).unwrap().count(), 0);
+        assert!(!dir.path().join("docker.calls").exists());
+    }
+
     #[test]
     fn malformed_admission_and_foreign_inputs_have_no_container_effects() {
         let (dir, job) = fixture(&std::env::current_exe().unwrap(), "unused");

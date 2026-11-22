@@ -237,7 +237,7 @@ inspect reads recorded state; it does not refresh observations."
 fn pi_docker(args: Vec<String>) -> Result<()> {
     use work_engine_manual_host::{
         Error,
-        pi_docker::{Host as PiHost, Job},
+        pi_docker::{Host as PiHost, RunEntry},
     };
     let refused = || {
         Error::Refused("pi-docker run --request FILE | reconcile|cancel|inspect --state DIR | ack --state DIR --receipt ID | inventory --root DIR".into())
@@ -256,10 +256,10 @@ fn pi_docker(args: Vec<String>) -> Result<()> {
         "inventory" if options.len() == 1 => serde_json::to_value(
             work_engine_manual_host::pi_docker::inventory(&PathBuf::from(get("--root")?))?,
         )?,
-        "run" if options.len() == 1 => {
-            let job: Job = serde_json::from_slice(&fs::read(get("--request")?)?)?;
-            PiHost::admit(job)?.run()?
-        }
+        "run" if options.len() == 1 => PiHost::run_entry(
+            RunEntry::LegacyJob,
+            Some(std::path::Path::new(get("--request")?)),
+        )?,
         "reconcile" if options.len() == 1 => {
             PiHost::open(&PathBuf::from(get("--state")?))?.reconcile()?
         }
@@ -278,4 +278,29 @@ fn pi_docker(args: Vec<String>) -> Result<()> {
     };
     println!("{}", serde_json::to_string(&output)?);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use work_engine_manual_host::Error;
+
+    #[test]
+    fn run_entry_cli_has_only_the_legacy_request_shape() {
+        let dir = tempfile::tempdir().unwrap();
+        let missing = dir.path().join("missing-request.json");
+        let mut args = vec![
+            "run".into(),
+            "--request".into(),
+            missing.to_str().unwrap().into(),
+        ];
+        let error = pi_docker(args.clone()).unwrap_err();
+        assert!(matches!(error, Error::Io(ref io) if io.kind() == std::io::ErrorKind::NotFound));
+
+        args.extend(["--entry".into(), "public-inference-setup".into()]);
+        let error = pi_docker(args).unwrap_err();
+        assert!(
+            matches!(error, Error::Refused(ref detail) if detail.starts_with("pi-docker run --request"))
+        );
+    }
 }
