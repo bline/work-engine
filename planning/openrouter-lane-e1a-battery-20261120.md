@@ -190,6 +190,11 @@ first few turns. Design:
   pinned image. See local `records/openrouter-lane-e1a-battery-20261120/HANDOFF.md`
   for exact proof and the retained producer. No live D1 execution or score;
   operator credit is unavailable and the next live launch remains held.
+- Stage E cold-review follow-up: the
+  [portable qualification report](../records/pi-coding-battery-stage-e-qualification-20261121.md)
+  summarizes the historical local evidence and separately identifies the exact
+  source and results of the later synthetic Responses controls. The local
+  handoff and raw receipts are not part of the public checkout.
 - Toolchain composition prepared (execution not yet established): the tool
   container mounts `toolchain` at `/toolchain` (read-only), pinned acceptance
   at `/acceptance.rs` when present (currently assumed by the Host), and the workspace at

@@ -181,15 +181,23 @@ for implementation details and established limits.
 
 ## Current standing
 
-Status as of November 14, 2026. Each result applies to its named scope and
-consumer; component completion does not imply a qualified whole system.
+Status as of November 21, 2026. The repository now contains an integrated
+but unselected coding battery checkpoint: the Rust Host and native Pi ran a
+scripted, credential-free Responses battery through repeated tool calls, a
+real context reset, tool-free rehydration, and settlement. A separate control
+refused a failed terminal response without retry. The
+[Stage E qualification report](records/pi-coding-battery-stage-e-qualification-20261121.md)
+records the exact tested revision, commands, binary and receipt digests, and
+what can be independently rerun. This is component qualification, not a live
+provider run or acceptance of a produced workspace.
 
 | Area | What exists | Remaining boundary |
 | --- | --- | --- |
 | Campaign and slice execution | Used to develop this repository: configuration preflight, bounded builders, configured review, gates, private checkpoints, recovery, and terminal receipts. | Standalone installation, release, and operational completion remain roadmap work. |
 | Rust lifecycle and hosts | Implemented state, provider/session, task, review, claims, compiler, and publication components, with focused tests and controlled qualification. | Qualification and deployment are profile-specific; these crates do not imply one generally available production runtime. |
 | Research lifecycle | Revision-bound research/basis records, register reading and current-use projections, preparation/adoption persistence, native input retention, and the merged causal task-host join. | Producer build provenance, effective tool/access evidence, authentic research validation, and exact installation/execution approvals remain prerequisites. The first real context-policy revalidation, bounded execution, and feedback/baseline comparison remain open (H2 and M4/M5). |
-| Pi/Docker integration | Provider-disabled host/custody components and a reviewed direction for host-controlled native Pi execution. The current plan keeps real provider credentials on the host. | The complete permitted coding, testing, review, result export, and recovery path still needs its own joined qualification. |
+| Pi/Docker coding integration | Host-controlled native Pi with bounded offline Completions and Responses battery evidence: tool effects, large history, reset, and continuation. The current design keeps real provider credentials on the host. | Checked build/test evidence tied to one export, live evidence-size limits, and live route qualification remain open. |
+| Hosted review and custody | Unselected exact-subject and dispatch binding, bounded Git snapshot capture, and synthetic reviewer custody controls. | Actual pre-exposure custody and an independently checked evidence reader are not established; no hosted reviewer route has been admitted by this work. |
 | Proposal and planning capabilities | Durable packets, formation, decision recording, strategic reconciliation, and bounded claim/review-state capabilities. | The broader evaluation, portfolio, organizational, and learning architecture is only partly implemented. |
 | Operator surfaces | Local query/server interfaces and terminal UI components. | Commands, provisioning, and live execution require their own qualified profiles; a read interface supplies no execution grant. |
 
