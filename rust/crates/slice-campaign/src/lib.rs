@@ -26,6 +26,7 @@ extern crate self as slice_campaign;
 mod test_support;
 
 pub use admission::{AdmissionHandle, Preparation, PreparedInitial};
+pub use application::prebuild;
 pub use application::{
     AdmitRequest, BuilderEvaluationDecision, BuilderEvaluationLocator, BuilderEvaluationPrepared,
     BuilderEvaluationProgress, BuilderEvaluationState, BuilderEvaluationView,

@@ -48,11 +48,17 @@ pub struct TrustedConfig {
     accepted_boundary: AcceptedBoundary,
     baseline: Baseline,
     writer_identity: String,
-    gate_capture: Vec<u8>,
-    gate_manifest: Vec<u8>,
-    gate_receipt: Vec<u8>,
+    gate: Option<GateInputs>,
     digest: String,
 }
+
+struct GateInputs {
+    capture: Vec<u8>,
+    manifest: Vec<u8>,
+    receipt: Vec<u8>,
+}
+
+pub mod prebuild;
 
 #[cfg(test)]
 mod core_tests {
@@ -848,9 +854,11 @@ impl TrustedConfig {
             accepted_boundary,
             baseline,
             writer_identity,
-            gate_capture,
-            gate_manifest,
-            gate_receipt,
+            gate: Some(GateInputs {
+                capture: gate_capture,
+                manifest: gate_manifest,
+                receipt: gate_receipt,
+            }),
             digest,
         })
     }
@@ -895,14 +903,15 @@ impl TrustedConfig {
         )?;
         config.profile = crate::contract::QUALIFIED_INITIAL_PROFILE.into();
         config.acceptance_digest = Some(pin.digest().into());
+        let gate = config.require_gate()?;
         config.digest = trusted_digest(&json!({
             "schemaVersion":4,"profile":config.profile,"acceptanceDigest":pin.digest(),
             "acceptanceReference":pin.reference(),"repository":config.repository,
             "workspace":config.workspace,"identity":config.identity,"boundary":config.accepted_boundary,
             "baseline":config.baseline,"writerIdentity":config.writer_identity,
-            "gateCaptureSha256":raw_sha256(&config.gate_capture),
-            "gateManifestSha256":raw_sha256(&config.gate_manifest),
-            "gateReceiptSha256":raw_sha256(&config.gate_receipt)
+            "gateCaptureSha256":raw_sha256(&gate.capture),
+            "gateManifestSha256":raw_sha256(&gate.manifest),
+            "gateReceiptSha256":raw_sha256(&gate.receipt)
         }))?;
         Ok(config)
     }
@@ -943,14 +952,15 @@ impl TrustedConfig {
         )?;
         config.profile = crate::contract::OFFLINE_INITIAL_PROFILE.into();
         config.acceptance_digest = Some(pin.digest().into());
+        let gate = config.require_gate()?;
         config.digest = trusted_digest(&json!({
             "schemaVersion":4,"profile":config.profile,"acceptanceDigest":pin.digest(),
             "acceptanceReference":pin.record.reference,"repository":config.repository,
             "workspace":config.workspace,"identity":config.identity,"boundary":config.accepted_boundary,
             "baseline":config.baseline,"writerIdentity":config.writer_identity,
-            "gateCaptureSha256":raw_sha256(&config.gate_capture),
-            "gateManifestSha256":raw_sha256(&config.gate_manifest),
-            "gateReceiptSha256":raw_sha256(&config.gate_receipt)
+            "gateCaptureSha256":raw_sha256(&gate.capture),
+            "gateManifestSha256":raw_sha256(&gate.manifest),
+            "gateReceiptSha256":raw_sha256(&gate.receipt)
         }))?;
         Ok(config)
     }
@@ -1023,10 +1033,18 @@ impl TrustedConfig {
             accepted_boundary,
             baseline,
             writer_identity,
-            gate_capture,
-            gate_manifest,
-            gate_receipt,
+            gate: Some(GateInputs {
+                capture: gate_capture,
+                manifest: gate_manifest,
+                receipt: gate_receipt,
+            }),
             digest,
+        })
+    }
+
+    fn require_gate(&self) -> Result<&GateInputs> {
+        self.gate.as_ref().ok_or_else(|| {
+            CampaignError::Unsupported("pre-build owner has no gate evidence".into())
         })
     }
 }
@@ -1488,18 +1506,15 @@ impl CampaignInner {
             return Ok(Effect::NoEffect("invalid phase transition".into()));
         }
         if matches!(phase, AdvancePhase::GateReady) {
+            let inputs = self.config.require_gate()?;
             let gate = if self.config.schema_version == 4 {
                 crate::subject_binding::verify_gate_dynamic(
-                    &self.config.gate_capture,
-                    &self.config.gate_manifest,
-                    &self.config.gate_receipt,
+                    &inputs.capture,
+                    &inputs.manifest,
+                    &inputs.receipt,
                 )?
             } else {
-                verify_gate(
-                    &self.config.gate_capture,
-                    &self.config.gate_manifest,
-                    &self.config.gate_receipt,
-                )?
+                verify_gate(&inputs.capture, &inputs.manifest, &inputs.receipt)?
             };
             state.gate_capture_digest = Some(gate.capture_digest);
         }
@@ -1554,6 +1569,7 @@ impl CampaignInner {
                 "candidate binding requires unused gate-ready state".into(),
             ));
         }
+        let gate = self.config.require_gate()?;
         let verified = if self.config.schema_version == 4 {
             crate::subject_binding::verify_existing_subject_dynamic(
                 &self.config.repository,
@@ -1561,9 +1577,9 @@ impl CampaignInner {
                 &state.baseline,
                 candidate_raw,
                 profile_raw,
-                &self.config.gate_capture,
-                &self.config.gate_manifest,
-                &self.config.gate_receipt,
+                &gate.capture,
+                &gate.manifest,
+                &gate.receipt,
             )?
         } else {
             verify_existing_subject(
@@ -1572,9 +1588,9 @@ impl CampaignInner {
                 &state.baseline,
                 candidate_raw,
                 profile_raw,
-                &self.config.gate_capture,
-                &self.config.gate_manifest,
-                &self.config.gate_receipt,
+                &gate.capture,
+                &gate.manifest,
+                &gate.receipt,
             )?
         };
         state.candidate = Some(verified.reference);

@@ -268,6 +268,41 @@ fn anchored_repository(repository: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Check the selected single build parent against the local object store without
+/// requiring a candidate, a workspace snapshot, or gate output.
+pub(crate) fn verify_prebuild_baseline(repository: &Path, baseline: &Baseline) -> Result<()> {
+    anchored_repository(repository)?;
+    full_oid(&baseline.accepted_commit)?;
+    full_oid(&baseline.accepted_tree)?;
+    if baseline.inter_slice_commit != baseline.accepted_commit {
+        return Err(CampaignError::Subject(
+            "pre-build parent differs from the accepted commit".into(),
+        ));
+    }
+    let commit = format!("{}^{{commit}}", baseline.accepted_commit);
+    let tree = format!("{}^{{tree}}", baseline.accepted_commit);
+    let object = |revision: &str| {
+        git_text(
+            repository,
+            &[
+                "-c",
+                "protocol.allow=never",
+                "rev-parse",
+                "--verify",
+                "--quiet",
+                revision,
+            ],
+            128,
+        )
+    };
+    if object(&commit)? != baseline.accepted_commit || object(&tree)? != baseline.accepted_tree {
+        return Err(CampaignError::Subject(
+            "pre-build baseline objects differ".into(),
+        ));
+    }
+    Ok(())
+}
+
 /// Bind every file exposed by the candidate mount to the selected immutable
 /// Git tree. Git administrative data alone is outside the exposed source.
 /// This read-only check is repeated on cold open and immediately before E1

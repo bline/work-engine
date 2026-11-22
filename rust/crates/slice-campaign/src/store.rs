@@ -18,6 +18,7 @@ const MARKER_V3: &str = ".campaign-native-initial-v3";
 const MARKER_V4: &str = ".campaign-native-remediation-v4";
 const MARKER_QUALIFIED: &str = ".campaign-qualified-initial-v4";
 const MARKER_OFFLINE: &str = ".campaign-offline-initial-v4";
+const MARKER_PREBUILD: &str = ".campaign-controlled-prebuild-v4";
 const DATABASE: &str = "slice-campaign.sqlite";
 const LOCK: &str = ".writer.lock";
 const SCHEMA_V3: &str = include_str!("../migrations/0003_new_root.sql");
@@ -27,6 +28,7 @@ fn marker_name(profile: &str) -> &'static str {
     match profile {
         crate::contract::QUALIFIED_INITIAL_PROFILE => MARKER_QUALIFIED,
         crate::contract::OFFLINE_INITIAL_PROFILE => MARKER_OFFLINE,
+        crate::prebuild::PROFILE => MARKER_PREBUILD,
         crate::contract::REMEDIATION_PROFILE => MARKER_V4,
         _ => MARKER_V3,
     }
@@ -40,6 +42,7 @@ fn valid_profile(version: u32, selected: &str) -> bool {
             crate::contract::REMEDIATION_PROFILE
                 | crate::contract::QUALIFIED_INITIAL_PROFILE
                 | crate::contract::OFFLINE_INITIAL_PROFILE
+                | crate::prebuild::PROFILE
         ),
         _ => false,
     }
