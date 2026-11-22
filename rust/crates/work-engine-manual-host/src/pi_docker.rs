@@ -25,6 +25,8 @@ pub mod fifo;
 pub mod inference_hold;
 #[path = "pi_native_memory.rs"]
 pub mod native_memory;
+#[path = "pi_public_hold.rs"]
+mod public_hold;
 #[path = "pi_observation.rs"]
 pub mod receiver;
 
@@ -144,19 +146,13 @@ fn dispatch_run_entry(
     entry: RunEntry,
     legacy_request: Option<&Path>,
     run_legacy: impl FnOnce(&Path) -> Result<Value>,
+    run_public: impl FnOnce() -> Result<Value>,
 ) -> Result<Value> {
     match (entry, legacy_request) {
         (RunEntry::PublicInferenceSetup, Some(_)) => {
             refuse("public inference setup does not accept a legacy job request")
         }
-        (RunEntry::PublicInferenceSetup, None) => {
-            // No installed custodian supplies a qualified selection and
-            // outside observer on this Host. The old observation callback,
-            // caller pins and journal are not substitutes for that boundary.
-            refuse(
-                "public inference setup requires a qualified installed launcher and outside observer",
-            )
-        }
+        (RunEntry::PublicInferenceSetup, None) => run_public(),
         (RunEntry::LegacyJob, Some(request)) => run_legacy(request),
         (RunEntry::LegacyJob, None) => refuse("legacy Pi run requires a job request"),
     }
@@ -405,10 +401,25 @@ impl Host {
     /// constructing a stateful Host. Refused setup never reaches admit or run.
     #[doc(hidden)]
     pub fn run_entry(entry: RunEntry, legacy_request: Option<&Path>) -> Result<Value> {
-        dispatch_run_entry(entry, legacy_request, |request| {
-            let job: Job = serde_json::from_slice(&fs::read(request)?)?;
-            Self::admit(job)?.run()
-        })
+        // No installed selector supplies private launch facts in this cut.
+        Self::run_entry_at_boundary(entry, legacy_request, None, public_hold::docker)
+    }
+
+    fn run_entry_at_boundary(
+        entry: RunEntry,
+        legacy_request: Option<&Path>,
+        setup: Option<&public_hold::Launch>,
+        docker: impl FnMut(&Path, &[String]) -> Result<(bool, Vec<u8>)>,
+    ) -> Result<Value> {
+        dispatch_run_entry(
+            entry,
+            legacy_request,
+            |request| {
+                let job: Job = serde_json::from_slice(&fs::read(request)?)?;
+                Self::admit(job)?.run()
+            },
+            || public_hold::run(setup, docker),
+        )
     }
 
     pub fn journal(&self) -> &Journal {
@@ -680,14 +691,8 @@ impl Host {
             .create_new(true)
             .write(true)
             .open(&stderr_path)?;
-        let mut cmd = Command::new(&argv[0]);
-        // Docker context/host overrides and provider credentials cannot leak from ambient env.
-        cmd.args(&argv[1..])
-            .env_clear()
-            .env("PATH", "/usr/bin:/bin")
-            .env("HOME", "/nonexistent")
-            .process_group(0)
-            .stdin(if rpc { Stdio::piped() } else { Stdio::null() })
+        let mut cmd = docker_command(Path::new(&argv[0]), &argv[1..]);
+        cmd.stdin(if rpc { Stdio::piped() } else { Stdio::null() })
             .stdout(stdout)
             .stderr(stderr);
         if rpc && let Some(lease) = &self.allocation_lease {
@@ -1099,11 +1104,7 @@ impl Host {
         if !ok {
             return refuse("Docker inspect unavailable; container state unknown");
         }
-        let array: Vec<Value> = serde_json::from_slice(&bytes)?;
-        if array.len() != 1 {
-            return refuse("Docker inspect identity ambiguous");
-        }
-        let v = array.into_iter().next().unwrap();
+        let v = single_inspect(&bytes)?;
         verify_container(&self.journal, &v)?;
         let id = v["Id"]
             .as_str()
@@ -1312,19 +1313,8 @@ impl Host {
             if !removed {
                 return refuse("container removal uncertain");
             }
-            let (listed, output) = self.command(
-                "confirm-removed",
-                vec![
-                    "ps".into(),
-                    "--all".into(),
-                    "--no-trunc".into(),
-                    "--filter".into(),
-                    format!("name=^/{name}$"),
-                    "--format".into(),
-                    "{{.ID}}".into(),
-                ],
-                false,
-            )?;
+            let (listed, output) =
+                self.command("confirm-removed", exact_name_list(&name), false)?;
             if !listed || !output.iter().all(u8::is_ascii_whitespace) {
                 return refuse("container absence not established");
             }
@@ -1681,6 +1671,37 @@ fn verify_rpc(bytes: &[u8], complete: bool) -> Result<Option<String>> {
     Ok(Some(session.into()))
 }
 
+fn docker_command(program: &Path, args: &[String]) -> Command {
+    let mut cmd = Command::new(program);
+    // Do not inherit Docker context/host overrides or provider credentials.
+    cmd.args(args)
+        .env_clear()
+        .env("PATH", "/usr/bin:/bin")
+        .env("HOME", "/nonexistent")
+        .process_group(0);
+    cmd
+}
+
+fn single_inspect(bytes: &[u8]) -> Result<Value> {
+    let mut array: Vec<Value> = serde_json::from_slice(bytes)?;
+    if array.len() != 1 {
+        return refuse("Docker inspect identity ambiguous");
+    }
+    Ok(array.pop().unwrap())
+}
+
+fn exact_name_list(name: &str) -> Vec<String> {
+    vec![
+        "ps".into(),
+        "--all".into(),
+        "--no-trunc".into(),
+        "--filter".into(),
+        format!("name=^/{name}$"),
+        "--format".into(),
+        "{{.ID}}".into(),
+    ]
+}
+
 fn runtime_command(job: &Job) -> Vec<String> {
     if job.receiver.is_some() {
         return vec!["node".into(), "/receiver/receiver.mjs".into()];
@@ -1914,15 +1935,21 @@ mod tests {
                 let expected = if path.is_some() {
                     "public inference setup does not accept a legacy job request"
                 } else {
-                    "public inference setup requires a qualified installed launcher and outside observer"
+                    "public inference setup has no installed launch selection"
                 };
                 let error = Host::run_entry(RunEntry::PublicInferenceSetup, path).unwrap_err();
                 assert!(matches!(error, Error::Refused(ref actual) if actual == expected));
                 // A trap at the real dispatch edge covers the entire legacy
                 // closure: open/decode, validation, staging, run and daemon.
-                let error = dispatch_run_entry(RunEntry::PublicInferenceSetup, path, |_| {
-                    panic!("setup reached the legacy input/admit/run closure")
-                })
+                let error = dispatch_run_entry(
+                    RunEntry::PublicInferenceSetup,
+                    path,
+                    |_| panic!("setup reached the legacy input/admit/run closure"),
+                    || {
+                        assert!(path.is_none(), "crossed request reached setup");
+                        public_hold::run(None, |_, _| panic!("absence reached Docker"))
+                    },
+                )
                 .unwrap_err();
                 assert!(matches!(error, Error::Refused(ref actual) if actual == expected));
             }
