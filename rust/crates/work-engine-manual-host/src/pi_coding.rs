@@ -698,7 +698,11 @@ fn base(j: &Journal, name: &str) -> Vec<String> {
         "--tmpfs",
         tmpfs,
         "--workdir",
-        "/workspace",
+        if j.inference_entry_hold && name == j.container_name {
+            "/"
+        } else {
+            "/workspace"
+        },
         "--env",
         "HOME=/tmp/home",
         "--env",
@@ -771,6 +775,11 @@ fn expected_mounts(
         (j.job.runtime.root.clone(), "/pi", false),
         (profile.shim.path.clone(), "/receiver/receiver.mjs", false),
     ];
+    if j.inference_entry_hold {
+        // The public initializer needs only the exact package tree and shim.
+        // Do not mount task/config, workspace, access, relay, spool or exports.
+        return mounts;
+    }
     // The signed fixture's /export is a size-limited tmpfs collected in-band (no host bind).
     if profile.schema != SIGNED_PROFILE {
         mounts.push((j.job.state_dir.join("exports"), "/export", true));
@@ -814,6 +823,22 @@ fn command(job: &Job, tool: bool) -> Vec<String> {
         strings(&["node", "/receiver/receiver.mjs"])
     }
 }
+pub(super) fn inference_command(j: &Journal) -> Vec<String> {
+    if j.inference_entry_hold {
+        return super::inference_hold::command();
+    }
+    let mut args = command(&j.job, false);
+    if let Some(profile) = &j.job.coding
+        && is_bridge(&profile.schema)
+    {
+        args.push("--lifecycle-bridge".into());
+        if profile.schema == CLAIMS_BRIDGE_PROFILE {
+            args.push("--claims-tools".into());
+        }
+    }
+    args
+}
+
 fn verify(j: &Journal, v: &Value, tool: bool, validation: bool) -> Result<()> {
     let name = if validation {
         validation::name(j)
@@ -839,19 +864,10 @@ fn verify(j: &Journal, v: &Value, tool: bool, validation: bool) -> Result<()> {
         || v["Config"]["Cmd"]
             != json!(if validation {
                 validation::command()
+            } else if tool {
+                command(&j.job, true)
             } else {
-                let mut args = command(&j.job, tool);
-                if !tool && j.job.coding.as_ref().is_some_and(|p| is_bridge(&p.schema)) {
-                    args.push("--lifecycle-bridge".into());
-                    if j.job
-                        .coding
-                        .as_ref()
-                        .is_some_and(|p| p.schema == CLAIMS_BRIDGE_PROFILE)
-                    {
-                        args.push("--claims-tools".into());
-                    }
-                }
-                args
+                inference_command(j)
             })
         || v["Config"]["Entrypoint"]
             != if tool {
@@ -859,7 +875,12 @@ fn verify(j: &Journal, v: &Value, tool: bool, validation: bool) -> Result<()> {
             } else {
                 json!(["docker-entrypoint.sh"])
             }
-        || v["Config"]["WorkingDir"] != "/workspace"
+        || v["Config"]["WorkingDir"]
+            != if !tool && j.inference_entry_hold {
+                "/"
+            } else {
+                "/workspace"
+            }
         || v["HostConfig"]["PidMode"] != ""
         || v["HostConfig"]["IpcMode"] != "private"
         || v["HostConfig"]["NetworkMode"] != "none"
@@ -921,6 +942,21 @@ fn verify(j: &Journal, v: &Value, tool: bool, validation: bool) -> Result<()> {
         .any(|prefix| s.starts_with(prefix))
     }) {
         return refuse("unexpected coding environment");
+    }
+    if !tool && j.inference_entry_hold {
+        let mut offline = env.iter().filter(|e| {
+            e.as_str()
+                .is_some_and(|value| value.starts_with("PI_OFFLINE="))
+        });
+        if offline.next() != Some(&json!("PI_OFFLINE=1"))
+            || offline.next().is_some()
+            || env.iter().any(|e| {
+                e.as_str()
+                    .is_some_and(|value| value.starts_with("PI_CODING_AGENT_DIR="))
+            })
+        {
+            return refuse("held coding initializer environment mismatch");
+        }
     }
     Ok(())
 }
@@ -1280,30 +1316,29 @@ impl Host {
     pub(super) fn coding_inference_args(&self) -> Vec<String> {
         let j = &self.journal;
         let mut args = base(j, &j.container_name);
-        if j.job.coding.as_ref().unwrap().schema == SIGNED_PROFILE {
-            args.extend(strings(&["--tmpfs", export::TMPFS]));
-        }
-        if j.job.coding.as_ref().unwrap().provider.is_some() {
-            args.extend(strings(&["--env", "PI_CODING_AGENT_DIR=/config"]));
+        if j.inference_entry_hold {
+            args.extend(strings(&["--env", "PI_OFFLINE=1"]));
         } else {
-            args.extend(strings(&[
-                "--env",
-                "PI_OFFLINE=1",
-                "--env",
-                "PI_CODING_AGENT_DIR=/tmp/pi-empty",
-            ]));
+            let profile = j.job.coding.as_ref().unwrap();
+            if profile.schema == SIGNED_PROFILE {
+                args.extend(strings(&["--tmpfs", export::TMPFS]));
+            }
+            if profile.provider.is_some() {
+                args.extend(strings(&["--env", "PI_CODING_AGENT_DIR=/config"]));
+            } else {
+                args.extend(strings(&[
+                    "--env",
+                    "PI_OFFLINE=1",
+                    "--env",
+                    "PI_CODING_AGENT_DIR=/tmp/pi-empty",
+                ]));
+            }
         }
         for (src, dst, rw) in expected_mounts(j, false, false) {
             mount(&mut args, &src, dst, rw);
         }
         args.push(j.job.image.clone());
-        args.extend(command(&j.job, false));
-        if is_bridge(&j.job.coding.as_ref().unwrap().schema) {
-            args.push("--lifecycle-bridge".into());
-            if j.job.coding.as_ref().unwrap().schema == CLAIMS_BRIDGE_PROFILE {
-                args.push("--claims-tools".into());
-            }
-        }
+        args.extend(inference_command(j));
         args
     }
     fn coding_inspect_tool(&mut self) -> Result<Value> {
@@ -1325,6 +1360,12 @@ impl Host {
         Ok(rows[0].clone())
     }
     pub(super) fn coding_prepare_tool(&mut self) -> Result<()> {
+        if self.journal.inference_entry_hold {
+            // Keep the admitted task and subject in Host custody. In particular,
+            // neither the existing job.json staging nor the separate workspace
+            // tool launch may happen before authority for protected submission.
+            return self.check_held_battery_selection();
+        }
         self.coding_prepare_provider()?;
         if self.analysis_profile() {
             // No tool container and no workspace copy: the Host serves the
@@ -2400,6 +2441,7 @@ mod tests {
             receiver: None,
             coding: Some(State::default()),
             rpc_completion: None,
+            inference_entry_hold: false,
             daemon_exit: None,
             removed: false,
             artifacts: vec![],
@@ -2417,10 +2459,188 @@ mod tests {
             allocation_lease: None,
             reply_leases: vec![],
             coding_out_offset: 0,
+            inference_entry_observer: None,
             _lock: File::create(root.join("lock")).unwrap(),
         };
         (dir, host)
     }
+
+    struct NeverObserve;
+    impl super::super::inference_hold::InferenceEntryObserver for NeverObserve {
+        fn observe(
+            &mut self,
+            _: &super::super::inference_hold::HeldInference,
+            _: std::os::fd::BorrowedFd<'_>,
+            _: Instant,
+        ) -> Result<Option<super::super::inference_hold::InferenceEntryObservation>> {
+            panic!("an invalid startup must not reach the outside observer");
+        }
+    }
+
+    #[test]
+    fn held_coding_materialization_leaves_task_and_subject_unstaged() {
+        let (dir, mut host) = provider::ledger_tests::fixture();
+        const TASK: &[u8] = b"fixed offline task bytes";
+        const SUBJECT: &[u8] = b"fixed offline subject bytes";
+        let task_path = dir.path().join("pinned-task.txt");
+        let subject_root = dir.path().join("pinned-subject");
+        fs::write(&task_path, TASK).unwrap();
+        fs::create_dir(&subject_root).unwrap();
+        fs::write(subject_root.join("subject.txt"), SUBJECT).unwrap();
+        host.journal.job.workspace.root = subject_root.clone();
+        let profile = host.journal.job.coding.as_mut().unwrap();
+        profile.provider.as_mut().unwrap().task = Artifact {
+            path: task_path.clone(),
+            sha256: digest(TASK),
+        };
+        profile.schema = HOSTED_BATTERY_PROFILE.into();
+        let image = host.journal.job.image.clone();
+        let original = host.coding_inference_args();
+        let arg_offset = original.iter().position(|arg| arg == &image).unwrap() + 1;
+        assert_eq!(
+            original[arg_offset..],
+            ["node", "/receiver/receiver.mjs", "--lifecycle-bridge"]
+        );
+        assert!(original.iter().any(|arg| arg.contains("dst=/profile,")));
+        assert!(
+            serde_json::to_value(&host.journal)
+                .unwrap()
+                .get("inference_entry_hold")
+                .is_none()
+        );
+
+        let wrong_pin = host
+            .bind_battery_inference_hold(Box::new(NeverObserve))
+            .unwrap_err();
+        assert!(
+            wrong_pin
+                .to_string()
+                .contains("exact public Pi runtime tree")
+        );
+        assert!(!host.journal.inference_entry_hold);
+        // This fixture begins after full job/byte admission. Test the exact
+        // selection and staging conditional, not runtime tree verification.
+        host.journal.job.runtime.manifest.sha256 =
+            super::super::inference_hold::PUBLIC_RUNTIME_MANIFEST.into();
+        host.bind_battery_inference_hold(Box::new(NeverObserve))
+            .unwrap();
+        host.coding_prepare_tool().unwrap();
+        assert!(host.journal.processes.is_empty());
+        assert!(!host.journal.coding.as_ref().unwrap().tool_create_intent);
+        for name in [
+            "coding-public",
+            "coding-public-config",
+            "coding-workspace",
+            "coding-spool",
+            "private-access",
+        ] {
+            assert!(
+                !dir.path().join(name).exists(),
+                "unexpected staging at {name}"
+            );
+        }
+        assert_eq!(fs::read(&task_path).unwrap(), TASK);
+        assert_eq!(fs::read(subject_root.join("subject.txt")).unwrap(), SUBJECT);
+        let args = host.create_args();
+        let offset = args.iter().position(|arg| arg == &image).unwrap() + 1;
+        assert_eq!(
+            args[offset..],
+            ["node", "/receiver/receiver.mjs", "--held-coding-public"]
+        );
+        assert!(args[..offset].windows(2).any(|a| a == ["--workdir", "/"]));
+        assert!(
+            args[..offset]
+                .windows(2)
+                .any(|a| a == ["--env", "PI_OFFLINE=1"])
+        );
+        let binds: Vec<_> = args.windows(2).filter(|a| a[0] == "--mount").collect();
+        let profile = host.journal.job.coding.as_ref().unwrap();
+        assert_eq!(binds.len(), 2);
+        assert_eq!(
+            binds[0][1],
+            format!(
+                "type=bind,src={},dst=/pi,readonly",
+                host.journal.job.runtime.root.display()
+            )
+        );
+        assert_eq!(
+            binds[1][1],
+            format!(
+                "type=bind,src={},dst=/receiver/receiver.mjs,readonly",
+                profile.shim.path.display()
+            )
+        );
+        assert!(!args.iter().any(|arg| arg.contains("PI_CODING_AGENT_DIR")
+            || arg.contains(subject_root.to_str().unwrap())
+            || arg.contains(task_path.to_str().unwrap())));
+    }
+
+    #[test]
+    fn held_coding_candidate_cannot_select_analysis_bootstrap() {
+        let (_dir, mut host) = provider::ledger_tests::fixture();
+        host.journal.job.coding.as_mut().unwrap().schema = ANALYSIS_PROFILE.into();
+        let original = host.coding_inference_args();
+        assert!(original.iter().any(|arg| arg.contains("dst=/profile,")));
+        assert!(original.ends_with(&strings(&[
+            "node",
+            "/receiver/receiver.mjs",
+            "--lifecycle-bridge",
+        ])));
+        assert!(
+            host.bind_battery_inference_hold(Box::new(NeverObserve))
+                .is_err()
+        );
+        assert!(!host.journal.inference_entry_hold);
+        assert_eq!(host.coding_inference_args(), original);
+    }
+
+    #[test]
+    fn inference_entry_actual_attach_loop_refuses_output_and_unobserved_marker() {
+        for early_stdout in [true, false] {
+            let (dir, mut host) = provider::ledger_tests::fixture();
+            host.journal.job.coding.as_mut().unwrap().schema = HOSTED_BATTERY_PROFILE.into();
+            let runner = dir.path().join("fake-cli");
+            let stdout = if early_stdout {
+                "printf 'premature stdout\\n'"
+            } else {
+                ":"
+            };
+            fs::write(&runner, format!(r#"#!/bin/sh
+case "$1" in
+  start) {stdout}; printf 'work-engine: inference-entry held\n' >&2; byte=$(dd bs=1 count=1 2>/dev/null); if [ -n "$byte" ]; then touch "$0.sent"; fi ;;
+  inspect) touch "$0.inspected"; exit 1 ;;
+  *) exit 99 ;;
+esac
+"#)).unwrap();
+            fs::set_permissions(&runner, fs::Permissions::from_mode(0o700)).unwrap();
+            host.journal.job.docker.path = runner.clone();
+            host.journal.job.command_timeout_seconds = 3;
+            host.journal.job.runtime.manifest.sha256 =
+                super::super::inference_hold::PUBLIC_RUNTIME_MANIFEST.into();
+            host.bind_battery_inference_hold(Box::new(NeverObserve))
+                .unwrap();
+            host.journal.phase = Phase::StartUnknown;
+            let err = host
+                .command(
+                    "rpc",
+                    strings(&["start", "--attach", "--interactive", "test"]),
+                    true,
+                )
+                .unwrap_err();
+            let expected = if early_stdout {
+                "output before entry release"
+            } else {
+                "inspect unavailable"
+            };
+            assert!(err.to_string().contains(expected), "{err}");
+            assert_eq!(runner.with_extension("inspected").exists(), !early_stdout);
+            assert!(!runner.with_extension("sent").exists());
+            assert!(!host.journal.rpc_verified);
+            assert!(host.journal.rpc_completion.is_none());
+            assert_eq!(host.coding_out_offset, 0);
+        }
+    }
+
     #[test]
     fn strict_workspace_mounts_allow_only_regular_source_and_keep_legacy_wire() {
         let (dir, mut h) = fixture();

@@ -21,8 +21,12 @@ use std::{
 pub mod coding;
 #[path = "pi_fifo.rs"]
 pub mod fifo;
+#[path = "pi_inference_hold.rs"]
+pub mod inference_hold;
 #[path = "pi_native_memory.rs"]
 pub mod native_memory;
+#[path = "pi_public_hold.rs"]
+mod public_hold;
 #[path = "pi_observation.rs"]
 pub mod receiver;
 
@@ -129,6 +133,31 @@ impl Tree {
     }
 }
 
+/// In-process dispatch at the Host's run entry. This is not a request-file
+/// schema or an authority token. The existing CLI always selects LegacyJob.
+#[doc(hidden)]
+pub enum RunEntry {
+    LegacyJob,
+    /// Public initializer only: no task, provider, release or authority data.
+    PublicInferenceSetup,
+}
+
+fn dispatch_run_entry(
+    entry: RunEntry,
+    legacy_request: Option<&Path>,
+    run_legacy: impl FnOnce(&Path) -> Result<Value>,
+    run_public: impl FnOnce() -> Result<Value>,
+) -> Result<Value> {
+    match (entry, legacy_request) {
+        (RunEntry::PublicInferenceSetup, Some(_)) => {
+            refuse("public inference setup does not accept a legacy job request")
+        }
+        (RunEntry::PublicInferenceSetup, None) => run_public(),
+        (RunEntry::LegacyJob, Some(request)) => run_legacy(request),
+        (RunEntry::LegacyJob, None) => refuse("legacy Pi run requires a job request"),
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Job {
@@ -195,6 +224,8 @@ pub struct Journal {
     /// Older journals have no final proof and cannot become success on recovery.
     #[serde(default)]
     pub rpc_completion: Option<RpcCompletion>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    inference_entry_hold: bool,
     pub daemon_exit: Option<i32>,
     pub removed: bool,
     pub artifacts: Vec<Artifact>,
@@ -216,6 +247,7 @@ pub struct Host {
     /// inference process's stdout (in memory: a restarted Host reconciles
     /// instead of resuming the process).
     coding_out_offset: u64,
+    inference_entry_observer: Option<Box<dyn inference_hold::InferenceEntryObserver>>,
     _lock: File,
 }
 
@@ -365,6 +397,31 @@ fn check_job(job: &Job, fresh: bool) -> Result<()> {
 }
 
 impl Host {
+    /// Classify the run before opening any legacy inputs, validating a Job or
+    /// constructing a stateful Host. Refused setup never reaches admit or run.
+    #[doc(hidden)]
+    pub fn run_entry(entry: RunEntry, legacy_request: Option<&Path>) -> Result<Value> {
+        // No installed selector supplies private launch facts in this cut.
+        Self::run_entry_at_boundary(entry, legacy_request, None, public_hold::docker)
+    }
+
+    fn run_entry_at_boundary(
+        entry: RunEntry,
+        legacy_request: Option<&Path>,
+        setup: Option<&public_hold::Launch>,
+        docker: impl FnMut(&Path, &[String]) -> Result<(bool, Vec<u8>)>,
+    ) -> Result<Value> {
+        dispatch_run_entry(
+            entry,
+            legacy_request,
+            |request| {
+                let job: Job = serde_json::from_slice(&fs::read(request)?)?;
+                Self::admit(job)?.run()
+            },
+            || public_hold::run(setup, docker),
+        )
+    }
+
     pub fn journal(&self) -> &Journal {
         &self.journal
     }
@@ -486,6 +543,7 @@ impl Host {
             receiver,
             coding,
             rpc_completion: None,
+            inference_entry_hold: false,
             daemon_exit: None,
             removed: false,
             artifacts: input_pins,
@@ -504,6 +562,7 @@ impl Host {
             allocation_lease: None,
             reply_leases: vec![],
             coding_out_offset: 0,
+            inference_entry_observer: None,
         };
         host.save()?;
         Ok(host)
@@ -545,6 +604,7 @@ impl Host {
             allocation_lease: None,
             reply_leases: vec![],
             coding_out_offset: 0,
+            inference_entry_observer: None,
         })
     }
     fn save(&self) -> Result<()> {
@@ -631,14 +691,8 @@ impl Host {
             .create_new(true)
             .write(true)
             .open(&stderr_path)?;
-        let mut cmd = Command::new(&argv[0]);
-        // Docker context/host overrides and provider credentials cannot leak from ambient env.
-        cmd.args(&argv[1..])
-            .env_clear()
-            .env("PATH", "/usr/bin:/bin")
-            .env("HOME", "/nonexistent")
-            .process_group(0)
-            .stdin(if rpc { Stdio::piped() } else { Stdio::null() })
+        let mut cmd = docker_command(Path::new(&argv[0]), &argv[1..]);
+        cmd.stdin(if rpc { Stdio::piped() } else { Stdio::null() })
             .stdout(stdout)
             .stderr(stderr);
         if rpc && let Some(lease) = &self.allocation_lease {
@@ -688,7 +742,10 @@ impl Host {
         self.journal.processes[number].start = crate::proc_stat(child.id()).map(|s| s.0);
         self.save()?;
         let mut stdin = child.stdin.take();
-        let mut write_result = if let Some(input) = stdin.as_mut() {
+        let entry_held = rpc && self.journal.inference_entry_hold;
+        let mut write_result = if entry_held {
+            Ok(())
+        } else if let Some(input) = stdin.as_mut() {
             let initial =
                 if self.journal.job.receiver.is_some() || self.journal.job.coding.is_some() {
                     vec![]
@@ -700,6 +757,7 @@ impl Host {
             Ok(())
         };
         let start = Instant::now();
+        let entry_until = start + Duration::from_secs(self.journal.job.command_timeout_seconds);
         let mut verified = false;
         let mut verified_at = None;
         let mut aborted = false;
@@ -720,7 +778,17 @@ impl Host {
                 self.failure("process output exceeded bound");
                 aborted = true;
             }
-            if rpc && !verified && output_size <= output_limit {
+            if entry_held {
+                self.check_inference_hold_deadline(entry_until)?;
+                if aborted || stdin.is_none() || child.try_wait()?.is_some() {
+                    return refuse("inference attach ended or lost its held transport");
+                }
+                if !inference_hold::waiting_for_marker(output_size, &stderr_path)? {
+                    self.refuse_held_inference_entry(entry_until, child.id(), &stdout_path)?;
+                    return refuse("held inference startup cannot submit protected coding input");
+                }
+            }
+            if rpc && !entry_held && !verified && output_size <= output_limit {
                 if self.journal.job.coding.is_some() {
                     let before = self.coding_out_offset;
                     let advanced = self.coding_advance_from(&stdout_path);
@@ -844,7 +912,7 @@ impl Host {
                     }
                 }
             }
-            if rpc && self.journal.job.receiver.is_some() && output_size <= LIMIT {
+            if rpc && !entry_held && self.journal.job.receiver.is_some() && output_size <= LIMIT {
                 let raw = fs::read(&stdout_path)?;
                 if let Err(e) = self.receiver_progress(&raw) {
                     self.failure(e);
@@ -896,7 +964,8 @@ impl Host {
         }
         record.stdout_sha256 = Some(file_digest(&stdout_path, None)?);
         record.stderr_sha256 = Some(file_digest(&stderr_path, None)?);
-        let success = record.status == Some(0)
+        let success = !entry_held
+            && record.status == Some(0)
             && !record.timed_out
             && record.leftovers.is_empty()
             && !aborted
@@ -1035,11 +1104,7 @@ impl Host {
         if !ok {
             return refuse("Docker inspect unavailable; container state unknown");
         }
-        let array: Vec<Value> = serde_json::from_slice(&bytes)?;
-        if array.len() != 1 {
-            return refuse("Docker inspect identity ambiguous");
-        }
-        let v = array.into_iter().next().unwrap();
+        let v = single_inspect(&bytes)?;
         verify_container(&self.journal, &v)?;
         let id = v["Id"]
             .as_str()
@@ -1074,6 +1139,9 @@ impl Host {
         }
         if self.signed_pi() && self.pi_owner.is_none() {
             return refuse("signed fixture cannot resume allocation");
+        }
+        if self.journal.inference_entry_hold && self.inference_entry_observer.is_none() {
+            return refuse("outside inference observer unavailable; not creating container");
         }
         let launch = (|| -> Result<()> {
             check_job(&self.journal.job, true)?;
@@ -1245,19 +1313,8 @@ impl Host {
             if !removed {
                 return refuse("container removal uncertain");
             }
-            let (listed, output) = self.command(
-                "confirm-removed",
-                vec![
-                    "ps".into(),
-                    "--all".into(),
-                    "--no-trunc".into(),
-                    "--filter".into(),
-                    format!("name=^/{name}$"),
-                    "--format".into(),
-                    "{{.ID}}".into(),
-                ],
-                false,
-            )?;
+            let (listed, output) =
+                self.command("confirm-removed", exact_name_list(&name), false)?;
             if !listed || !output.iter().all(u8::is_ascii_whitespace) {
                 return refuse("container absence not established");
             }
@@ -1379,6 +1436,7 @@ impl Host {
                 && (self.journal.job.coding.as_ref().unwrap().provider.is_none()
                     || c.access_removed)
         }) && self.journal.rpc_verified
+            && !self.journal.inference_entry_hold
             && self.journal.rpc_completion.as_ref().is_some_and(|proof| {
                 self.journal.session_id.as_deref() == Some(&proof.session_id)
                     && self
@@ -1409,6 +1467,9 @@ impl Host {
                     && p.leftovers.is_empty()
             });
         let mut value = json!({"schema":SCHEMA,"job":self.journal.job,"job_id":self.journal.job.job_id,"input_digest":self.journal.input_digest,"status":if pass {"component_passed"} else {"not_established"},"acceptance":"owner_pending","domain_effect_settlement":"not_claimed","provider":"disabled","container_id":self.journal.container_id,"session_id":self.journal.session_id,"phase":self.journal.phase,"rpc_verified":self.journal.rpc_verified,"rpc_completion":self.journal.rpc_completion,"daemon_exit":self.journal.daemon_exit,"removed":self.journal.removed,"failures":self.journal.failures,"artifacts":self.journal.artifacts,"exported_files":self.journal.exported_files,"processes":self.journal.processes});
+        if self.journal.inference_entry_hold {
+            value["inference_entry_hold"] = json!({"protected_submission": "not_authorized"});
+        }
         if let Some(observation) = &self.journal.receiver {
             value["receiver"] = serde_json::to_value(observation)?;
             value["profile"] = json!(receiver::PROFILE);
@@ -1608,6 +1669,37 @@ fn verify_rpc(bytes: &[u8], complete: bool) -> Result<Option<String>> {
         return refuse("RPC fixture state/identity conflict");
     }
     Ok(Some(session.into()))
+}
+
+fn docker_command(program: &Path, args: &[String]) -> Command {
+    let mut cmd = Command::new(program);
+    // Do not inherit Docker context/host overrides or provider credentials.
+    cmd.args(args)
+        .env_clear()
+        .env("PATH", "/usr/bin:/bin")
+        .env("HOME", "/nonexistent")
+        .process_group(0);
+    cmd
+}
+
+fn single_inspect(bytes: &[u8]) -> Result<Value> {
+    let mut array: Vec<Value> = serde_json::from_slice(bytes)?;
+    if array.len() != 1 {
+        return refuse("Docker inspect identity ambiguous");
+    }
+    Ok(array.pop().unwrap())
+}
+
+fn exact_name_list(name: &str) -> Vec<String> {
+    vec![
+        "ps".into(),
+        "--all".into(),
+        "--no-trunc".into(),
+        "--filter".into(),
+        format!("name=^/{name}$"),
+        "--format".into(),
+        "{{.ID}}".into(),
+    ]
 }
 
 fn runtime_command(job: &Job) -> Vec<String> {
@@ -1825,6 +1917,77 @@ mod tests {
         };
         (dir, job)
     }
+    #[test]
+    fn run_entry_public_setup_refuses_before_legacy_effects_on_repeat() {
+        let input = tempfile::tempdir().unwrap();
+        let inert_docker = input.path().join("inert");
+        fs::write(&inert_docker, b"not executable").unwrap();
+        let (dir, job) = fixture(&inert_docker, "unused");
+        let missing = dir.path().join("missing-request.json");
+        let task = dir.path().join("must-not-open-task");
+        let request = dir.path().join("provider-bearing.json");
+        let mut body = serde_json::to_value(&job).unwrap();
+        body["coding"] = json!({"provider":{"task":{"path":task,"sha256":"a".repeat(64)}}});
+        fs::write(&request, serde_json::to_vec(&body).unwrap()).unwrap();
+
+        for _ in 0..2 {
+            for path in [None, Some(missing.as_path()), Some(request.as_path())] {
+                let expected = if path.is_some() {
+                    "public inference setup does not accept a legacy job request"
+                } else {
+                    "public inference setup has no installed launch selection"
+                };
+                let error = Host::run_entry(RunEntry::PublicInferenceSetup, path).unwrap_err();
+                assert!(matches!(error, Error::Refused(ref actual) if actual == expected));
+                // A trap at the real dispatch edge covers the entire legacy
+                // closure: open/decode, validation, staging, run and daemon.
+                let error = dispatch_run_entry(
+                    RunEntry::PublicInferenceSetup,
+                    path,
+                    |_| panic!("setup reached the legacy input/admit/run closure"),
+                    || {
+                        assert!(path.is_none(), "crossed request reached setup");
+                        public_hold::run(None, |_, _| panic!("absence reached Docker"))
+                    },
+                )
+                .unwrap_err();
+                assert!(matches!(error, Error::Refused(ref actual) if actual == expected));
+            }
+        }
+        assert_eq!(fs::read_dir(&job.state_dir).unwrap().count(), 0);
+        assert!(!dir.path().join("docker.calls").exists());
+    }
+
+    #[test]
+    fn run_entry_legacy_still_loads_and_validates_without_recognizing_setup_assertions() {
+        let input = tempfile::tempdir().unwrap();
+        let inert_docker = input.path().join("inert");
+        fs::write(&inert_docker, b"not executable").unwrap();
+        let (dir, mut job) = fixture(&inert_docker, "unused");
+        let request = dir.path().join("request.json");
+
+        let error = Host::run_entry(RunEntry::LegacyJob, Some(&request)).unwrap_err();
+        assert!(matches!(error, Error::Io(ref io) if io.kind() == std::io::ErrorKind::NotFound));
+        job.job_id.clear(); // Inert: legacy admission rejects before staging/spawn.
+        fs::write(&request, serde_json::to_vec(&job).unwrap()).unwrap();
+        let error = Host::run_entry(RunEntry::LegacyJob, Some(&request)).unwrap_err();
+        assert!(
+            matches!(error, Error::Refused(ref detail) if detail == "invalid Pi job schema/identity/timeout")
+        );
+
+        let mut body = serde_json::to_value(&job).unwrap();
+        body["public_inference_setup"] = json!({
+            "runtime_sha256": "a".repeat(64), "outside_observation_sha256": "b".repeat(64)
+        });
+        fs::write(&request, serde_json::to_vec(&body).unwrap()).unwrap();
+        let error = Host::run_entry(RunEntry::LegacyJob, Some(&request)).unwrap_err();
+        assert!(
+            matches!(error, Error::Json(ref json) if json.to_string().contains("public_inference_setup"))
+        );
+        assert_eq!(fs::read_dir(&job.state_dir).unwrap().count(), 0);
+        assert!(!dir.path().join("docker.calls").exists());
+    }
+
     #[test]
     fn malformed_admission_and_foreign_inputs_have_no_container_effects() {
         let (dir, job) = fixture(&std::env::current_exe().unwrap(), "unused");
@@ -2313,6 +2476,7 @@ mod tests {
             receiver: None,
             coding: None,
             rpc_completion: None,
+            inference_entry_hold: false,
             daemon_exit: None,
             removed: true,
             artifacts: vec![Artifact {
