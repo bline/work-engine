@@ -771,15 +771,15 @@ fn expected_mounts(
         }
         return mounts;
     }
-    if j.inference_entry_hold {
-        // Deny-only bootstrap has no use for any Host tree, even nominally
-        // public config. Do not offer any pre-observation readable Host path.
-        return vec![];
-    }
     let mut mounts = vec![
         (j.job.runtime.root.clone(), "/pi", false),
         (profile.shim.path.clone(), "/receiver/receiver.mjs", false),
     ];
+    if j.inference_entry_hold {
+        // The public initializer needs only the exact package tree and shim.
+        // Do not mount task/config, workspace, access, relay, spool or exports.
+        return mounts;
+    }
     // The signed fixture's /export is a size-limited tmpfs collected in-band (no host bind).
     if profile.schema != SIGNED_PROFILE {
         mounts.push((j.job.state_dir.join("exports"), "/export", true));
@@ -942,6 +942,21 @@ fn verify(j: &Journal, v: &Value, tool: bool, validation: bool) -> Result<()> {
         .any(|prefix| s.starts_with(prefix))
     }) {
         return refuse("unexpected coding environment");
+    }
+    if !tool && j.inference_entry_hold {
+        let mut offline = env.iter().filter(|e| {
+            e.as_str()
+                .is_some_and(|value| value.starts_with("PI_OFFLINE="))
+        });
+        if offline.next() != Some(&json!("PI_OFFLINE=1"))
+            || offline.next().is_some()
+            || env.iter().any(|e| {
+                e.as_str()
+                    .is_some_and(|value| value.starts_with("PI_CODING_AGENT_DIR="))
+            })
+        {
+            return refuse("held coding initializer environment mismatch");
+        }
     }
     Ok(())
 }
@@ -1302,22 +1317,22 @@ impl Host {
         let j = &self.journal;
         let mut args = base(j, &j.container_name);
         if j.inference_entry_hold {
-            args.push(j.job.image.clone());
-            args.extend(inference_command(j));
-            return args;
-        }
-        if j.job.coding.as_ref().unwrap().schema == SIGNED_PROFILE {
-            args.extend(strings(&["--tmpfs", export::TMPFS]));
-        }
-        if j.job.coding.as_ref().unwrap().provider.is_some() {
-            args.extend(strings(&["--env", "PI_CODING_AGENT_DIR=/config"]));
+            args.extend(strings(&["--env", "PI_OFFLINE=1"]));
         } else {
-            args.extend(strings(&[
-                "--env",
-                "PI_OFFLINE=1",
-                "--env",
-                "PI_CODING_AGENT_DIR=/tmp/pi-empty",
-            ]));
+            let profile = j.job.coding.as_ref().unwrap();
+            if profile.schema == SIGNED_PROFILE {
+                args.extend(strings(&["--tmpfs", export::TMPFS]));
+            }
+            if profile.provider.is_some() {
+                args.extend(strings(&["--env", "PI_CODING_AGENT_DIR=/config"]));
+            } else {
+                args.extend(strings(&[
+                    "--env",
+                    "PI_OFFLINE=1",
+                    "--env",
+                    "PI_CODING_AGENT_DIR=/tmp/pi-empty",
+                ]));
+            }
         }
         for (src, dst, rw) in expected_mounts(j, false, false) {
             mount(&mut args, &src, dst, rw);
@@ -2494,6 +2509,19 @@ mod tests {
                 .is_none()
         );
 
+        let wrong_pin = host
+            .bind_battery_inference_hold(Box::new(NeverObserve))
+            .unwrap_err();
+        assert!(
+            wrong_pin
+                .to_string()
+                .contains("exact public Pi runtime tree")
+        );
+        assert!(!host.journal.inference_entry_hold);
+        // This fixture begins after full job/byte admission. Test the exact
+        // selection and staging conditional, not runtime tree verification.
+        host.journal.job.runtime.manifest.sha256 =
+            super::super::inference_hold::PUBLIC_RUNTIME_MANIFEST.into();
         host.bind_battery_inference_hold(Box::new(NeverObserve))
             .unwrap();
         host.coding_prepare_tool().unwrap();
@@ -2513,19 +2541,38 @@ mod tests {
         }
         assert_eq!(fs::read(&task_path).unwrap(), TASK);
         assert_eq!(fs::read(subject_root.join("subject.txt")).unwrap(), SUBJECT);
-        assert!(expected_mounts(&host.journal, false, false).is_empty());
         let args = host.create_args();
         let offset = args.iter().position(|arg| arg == &image).unwrap() + 1;
-        assert_eq!(args[offset..], inference_command(&host.journal));
-        assert_eq!(args[offset + 1], "--input-type=module");
+        assert_eq!(
+            args[offset..],
+            ["node", "/receiver/receiver.mjs", "--held-coding-public"]
+        );
+        assert!(args[..offset].windows(2).any(|a| a == ["--workdir", "/"]));
         assert!(
             args[..offset]
                 .windows(2)
-                .any(|args| args == ["--workdir", "/"])
+                .any(|a| a == ["--env", "PI_OFFLINE=1"])
         );
-        assert!(!args.iter().any(|arg| arg == "--mount"
-            || arg.contains("PI_CODING_AGENT_DIR")
-            || arg.contains(dir.path().to_str().unwrap())));
+        let binds: Vec<_> = args.windows(2).filter(|a| a[0] == "--mount").collect();
+        let profile = host.journal.job.coding.as_ref().unwrap();
+        assert_eq!(binds.len(), 2);
+        assert_eq!(
+            binds[0][1],
+            format!(
+                "type=bind,src={},dst=/pi,readonly",
+                host.journal.job.runtime.root.display()
+            )
+        );
+        assert_eq!(
+            binds[1][1],
+            format!(
+                "type=bind,src={},dst=/receiver/receiver.mjs,readonly",
+                profile.shim.path.display()
+            )
+        );
+        assert!(!args.iter().any(|arg| arg.contains("PI_CODING_AGENT_DIR")
+            || arg.contains(subject_root.to_str().unwrap())
+            || arg.contains(task_path.to_str().unwrap())));
     }
 
     #[test]
@@ -2568,6 +2615,8 @@ esac
             fs::set_permissions(&runner, fs::Permissions::from_mode(0o700)).unwrap();
             host.journal.job.docker.path = runner.clone();
             host.journal.job.command_timeout_seconds = 3;
+            host.journal.job.runtime.manifest.sha256 =
+                super::super::inference_hold::PUBLIC_RUNTIME_MANIFEST.into();
             host.bind_battery_inference_hold(Box::new(NeverObserve))
                 .unwrap();
             host.journal.phase = Phase::StartUnknown;

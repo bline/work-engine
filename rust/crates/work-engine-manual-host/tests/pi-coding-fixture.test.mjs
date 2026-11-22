@@ -34,8 +34,9 @@ async function fixtureReceiver(){
  const context=vm.createContext({Buffer,process,Headers,URL,Date:class extends Date{static now(){return now;}},queueMicrotask,setTimeout:()=>1,clearTimeout(){},fetch:async()=>{fetches++;return {};}});
  const moduleFor=async values=>{const m=new vm.SyntheticModule(Object.keys(values),function(){for(const [key,value] of Object.entries(values))this.setExport(key,value);},{context});await m.link(()=>{});await m.evaluate();return m;};
  const modules={
+  'node:http':{default:{createServer(){throw Error('fixture opened an HTTP sink');}}},
   'node:readline':{createInterface:()=>input},
-  'node:fs':{existsSync:()=>false,readFileSync:p=>{if(p.startsWith('/auth/'))accessReads++;return '{}';},writeFileSync(){},openSync:()=>1,fsyncSync(){},closeSync(){},readdirSync:()=>[],lstatSync:()=>({})},
+  'node:fs':{existsSync:()=>false,readFileSync:p=>{if(p.startsWith('/auth/'))accessReads++;return '{}';},writeFileSync(){},openSync:()=>1,fsyncSync(){},closeSync(){},readdirSync:()=>[],lstatSync:()=>({}),mkdirSync(){throw Error('fixture created a directory');}},
   'node:crypto':{createHash:()=>({update(){return this;},digest:()=>'0'.repeat(64)})},
   'node:zlib':{zstdDecompressSync:b=>b},
   '/pi/node_modules/typebox/build/index.mjs':{Type:new Proxy({},{get:()=>()=>({})})},

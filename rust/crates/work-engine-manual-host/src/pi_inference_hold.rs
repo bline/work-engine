@@ -1,6 +1,6 @@
-//! Unselected Stage E coding custody candidate. The pinned bootstrap never
-//! loads the receiver or takes task input. Its stderr marker schedules outside
-//! observation; it is not evidence of identity, grants, or custody.
+//! Unselected Stage E coding custody candidate. The pinned receiver's public
+//! initializer has no task input. Its marker schedules outside observation;
+//! it is not evidence of identity, grants, or custody.
 use super::{Host, Phase, pin_is_hash};
 use crate::{Error, Result, refuse};
 use serde::{Deserialize, Serialize};
@@ -15,13 +15,14 @@ use std::{
 };
 
 const MARKER: &[u8] = b"work-engine: inference-entry held\n";
-const BOOTSTRAP: &str = r#"import {readSync,writeSync} from 'node:fs';
-writeSync(2,'work-engine: inference-entry held\n');
-readSync(0,Buffer.alloc(1),0,1,null);
-process.exit(2);"#;
+// Exact public Pi 1.5.0 package-only tree used in the coding battery:
+// records/openrouter-lane-e1a-battery-20261120/loopback-3/inputs/runtime-manifest.json.
+// check_job checks the whole tree against these bytes before create.
+pub(super) const PUBLIC_RUNTIME_MANIFEST: &str =
+    "cf9d096e61d8ffd2c35df238ff74e1f8d7dacfb9bc5813333beef6cc73010985";
 
 pub(super) fn command() -> Vec<String> {
-    ["node", "--input-type=module", "--eval", BOOTSTRAP]
+    ["node", "/receiver/receiver.mjs", "--held-coding-public"]
         .into_iter()
         .map(str::to_owned)
         .collect()
@@ -189,6 +190,9 @@ impl Host {
         });
         if !offline {
             return refuse("inference entry hold requires an offline coding battery");
+        }
+        if self.journal.job.runtime.manifest.sha256 != PUBLIC_RUNTIME_MANIFEST {
+            return refuse("inference entry hold requires the exact public Pi runtime tree");
         }
         Ok(())
     }

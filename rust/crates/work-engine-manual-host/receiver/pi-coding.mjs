@@ -8,6 +8,37 @@ import {createInterface} from 'node:readline';
 import {zstdDecompressSync} from 'node:zlib';
 import {openSync,writeFileSync,fsyncSync,closeSync,existsSync,readFileSync,readdirSync,lstatSync,mkdirSync} from 'node:fs';
 import http from 'node:http';
+
+// Private held-coding startup. This branch has no task/config reader, resume,
+// IPC dispatcher, prompt call, or protected sink. Keep the actual Pi session
+// alive for outside observation; there is no transition into the legacy path.
+const heldCodingFlag='--held-coding-public';
+if(process.argv.includes(heldCodingFlag)){
+ if(process.argv.length!==3||process.argv[2]!==heldCodingFlag||process.env.PI_OFFLINE!=='1')process.exit(2);
+ const cwd='/__work_engine_public_coding__',agentDir=cwd+'/agent';
+ const settingsManager=SettingsManager.inMemory({compaction:{enabled:false},retry:{enabled:false},cacheWarming:'off'});
+ // An explicit empty source disables Pi's prompt-file discovery; the override
+ // supplies literal public text rather than a value the loader can treat as a path.
+ const resourceLoader=new DefaultResourceLoader({cwd,agentDir,settingsManager,noExtensions:true,disabledBuiltinExtensions:['mcp'],noSkills:true,noPromptTemplates:true,noThemes:true,noContextFiles:true,systemPrompt:'',systemPromptOverride:()=> 'Public Pi coding initialization only.',appendSystemPrompt:[]});
+ await resourceLoader.reload();
+ const refuse=async()=>{throw Error('held coding has no provider or credential sink');};
+ const modelRuntime=await ModelRuntime.create({credentials:{read:async()=>undefined,list:async()=>[],modify:refuse,delete:refuse},modelsPath:null,allowModelNetwork:false,refreshOnCreate:false});
+ // Fixed public catalog placeholder, not a selection of the eventual route.
+ const model=modelRuntime.getModel('openai','gpt-4o-mini');
+ if(!model)process.exit(2);
+ const {session}=await createAgentSession({cwd,agentDir,sessionManager:SessionManager.inMemory(cwd),settingsManager,resourceLoader,modelRuntime,model,thinkingLevel:'off',noTools:'all',tools:[],customTools:[]});
+ try{
+  session.agent.streamFunction=refuse;
+  if(session.getActiveToolNames().length!==0||session.messages.length!==0)process.exit(2);
+  // Scheduling signal only. Do not open stdin, even for an early frame or
+  // EOF. The Host still owns attach termination, with a bounded local cap.
+  const {writeSync}=await import('node:fs');
+  writeSync(2,'work-engine: inference-entry held\n');
+  await new Promise(resolve=>setTimeout(resolve,14400000));
+ }finally{await session.dispose();}
+ process.exit(2);
+}
+
 const bridge=process.argv.includes('--lifecycle-bridge');
 const fixtureSigned=existsSync('/auth/signed-fixture.json');
 const live=existsSync('/profile/job.json');
