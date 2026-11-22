@@ -199,8 +199,6 @@ pub struct Journal {
     pub rpc_completion: Option<RpcCompletion>,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     inference_entry_hold: bool,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    inference_entry_observation: Option<inference_hold::InferenceEntryObservation>,
     pub daemon_exit: Option<i32>,
     pub removed: bool,
     pub artifacts: Vec<Artifact>,
@@ -494,7 +492,6 @@ impl Host {
             coding,
             rpc_completion: None,
             inference_entry_hold: false,
-            inference_entry_observation: None,
             daemon_exit: None,
             removed: false,
             artifacts: input_pins,
@@ -699,7 +696,7 @@ impl Host {
         self.journal.processes[number].start = crate::proc_stat(child.id()).map(|s| s.0);
         self.save()?;
         let mut stdin = child.stdin.take();
-        let mut entry_held = rpc && self.journal.inference_entry_hold;
+        let entry_held = rpc && self.journal.inference_entry_hold;
         let mut write_result = if entry_held {
             Ok(())
         } else if let Some(input) = stdin.as_mut() {
@@ -737,20 +734,12 @@ impl Host {
             }
             if entry_held {
                 self.check_inference_hold_deadline(entry_until)?;
-                if aborted || child.try_wait()?.is_some() {
-                    return refuse("inference attach ended before outside entry release");
+                if aborted || stdin.is_none() || child.try_wait()?.is_some() {
+                    return refuse("inference attach ended or lost its held transport");
                 }
                 if !inference_hold::waiting_for_marker(output_size, &stderr_path)? {
-                    self.release_inference_entry(
-                        entry_until,
-                        child.id(),
-                        &stdout_path,
-                        stdin
-                            .as_mut()
-                            .ok_or_else(|| Error::Refused("inference hold stdin absent".into()))?,
-                    )?;
-                    entry_held = false;
-                    continue;
+                    self.refuse_held_inference_entry(entry_until, child.id(), &stdout_path)?;
+                    return refuse("held inference startup cannot submit protected coding input");
                 }
             }
             if rpc && !entry_held && !verified && output_size <= output_limit {
@@ -877,7 +866,7 @@ impl Host {
                     }
                 }
             }
-            if rpc && self.journal.job.receiver.is_some() && output_size <= LIMIT {
+            if rpc && !entry_held && self.journal.job.receiver.is_some() && output_size <= LIMIT {
                 let raw = fs::read(&stdout_path)?;
                 if let Err(e) = self.receiver_progress(&raw) {
                     self.failure(e);
@@ -929,7 +918,8 @@ impl Host {
         }
         record.stdout_sha256 = Some(file_digest(&stdout_path, None)?);
         record.stderr_sha256 = Some(file_digest(&stderr_path, None)?);
-        let success = record.status == Some(0)
+        let success = !entry_held
+            && record.status == Some(0)
             && !record.timed_out
             && record.leftovers.is_empty()
             && !aborted
@@ -1415,8 +1405,7 @@ impl Host {
                 && (self.journal.job.coding.as_ref().unwrap().provider.is_none()
                     || c.access_removed)
         }) && self.journal.rpc_verified
-            && (!self.journal.inference_entry_hold
-                || self.journal.inference_entry_observation.is_some())
+            && !self.journal.inference_entry_hold
             && self.journal.rpc_completion.as_ref().is_some_and(|proof| {
                 self.journal.session_id.as_deref() == Some(&proof.session_id)
                     && self
@@ -1448,8 +1437,7 @@ impl Host {
             });
         let mut value = json!({"schema":SCHEMA,"job":self.journal.job,"job_id":self.journal.job.job_id,"input_digest":self.journal.input_digest,"status":if pass {"component_passed"} else {"not_established"},"acceptance":"owner_pending","domain_effect_settlement":"not_claimed","provider":"disabled","container_id":self.journal.container_id,"session_id":self.journal.session_id,"phase":self.journal.phase,"rpc_verified":self.journal.rpc_verified,"rpc_completion":self.journal.rpc_completion,"daemon_exit":self.journal.daemon_exit,"removed":self.journal.removed,"failures":self.journal.failures,"artifacts":self.journal.artifacts,"exported_files":self.journal.exported_files,"processes":self.journal.processes});
         if self.journal.inference_entry_hold {
-            value["inference_entry_hold"] =
-                json!({"outside_observation": self.journal.inference_entry_observation});
+            value["inference_entry_hold"] = json!({"protected_submission": "not_authorized"});
         }
         if let Some(observation) = &self.journal.receiver {
             value["receiver"] = serde_json::to_value(observation)?;
@@ -2356,7 +2344,6 @@ mod tests {
             coding: None,
             rpc_completion: None,
             inference_entry_hold: false,
-            inference_entry_observation: None,
             daemon_exit: None,
             removed: true,
             artifacts: vec![Artifact {

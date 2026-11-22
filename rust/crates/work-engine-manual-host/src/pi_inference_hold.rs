@@ -1,14 +1,13 @@
-//! Unselected Stage E inference-entry candidate. The pinned bootstrap does not
-//! load the receiver (which reads the staged task at module scope) until the
-//! outer Host writes one byte. Its stderr marker schedules observation; it is
-//! not evidence of the task's identity, grants, or custody.
+//! Unselected Stage E coding custody candidate. The pinned bootstrap never
+//! loads the receiver or takes task input. Its stderr marker schedules outside
+//! observation; it is not evidence of identity, grants, or custody.
 use super::{Host, Phase, pin_is_hash};
 use crate::{Error, Result, refuse};
 use serde::{Deserialize, Serialize};
 use std::{
     ffi::OsStr,
     fs::File,
-    io::{Read, Write},
+    io::Read,
     os::fd::{AsRawFd, BorrowedFd, FromRawFd, OwnedFd},
     os::unix::ffi::OsStrExt,
     path::Path,
@@ -16,25 +15,16 @@ use std::{
 };
 
 const MARKER: &[u8] = b"work-engine: inference-entry held\n";
-const RELEASE: &[u8] = b"G";
 const BOOTSTRAP: &str = r#"import {readSync,writeSync} from 'node:fs';
 writeSync(2,'work-engine: inference-entry held\n');
-const release=Buffer.alloc(1);
-if(readSync(0,release,0,1,null)!==1 || release[0]!==71) process.exit(2);
-await import('file:///receiver/receiver.mjs');"#;
+readSync(0,Buffer.alloc(1),0,1,null);
+process.exit(2);"#;
 
 pub(super) fn command() -> Vec<String> {
-    [
-        "node",
-        "--input-type=module",
-        "--eval",
-        BOOTSTRAP,
-        "--",
-        "/receiver/receiver.mjs",
-    ]
-    .into_iter()
-    .map(str::to_owned)
-    .collect()
+    ["node", "--input-type=module", "--eval", BOOTSTRAP]
+        .into_iter()
+        .map(str::to_owned)
+        .collect()
 }
 
 /// Exact candidate subject. PID is the running container's init task in the
@@ -48,8 +38,8 @@ pub struct HeldInference {
     pub start_ticks: String,
 }
 
-/// An outside observer's exact-match release decision. The digest refers to
-/// its protected evidence, not stdout or a record created by this adapter.
+/// A candidate outside observation of task identity and grants. Even a
+/// matching digest and subject are not a protected-input release decision.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct InferenceEntryObservation {
     pub subject: HeldInference,
@@ -146,12 +136,10 @@ fn waiting_for_marker_bytes(stdout_bytes: u64, stderr: &[u8]) -> Result<bool> {
     Ok(stderr.len() < MARKER.len())
 }
 
-fn release_after_observation(
+fn refuse_protected_submission(
     expected: &HeldInference,
     observe: impl FnOnce() -> Result<Option<InferenceEntryObservation>>,
     mut check_current: impl FnMut() -> Result<()>,
-    retain: impl FnOnce(InferenceEntryObservation) -> Result<()>,
-    stdin: &mut impl Write,
 ) -> Result<()> {
     check_current()?;
     let observation =
@@ -160,11 +148,10 @@ fn release_after_observation(
         return refuse("outside inference observation identity/evidence mismatch");
     }
     check_current()?;
-    retain(observation)?;
-    check_current()?;
-    stdin.write_all(RELEASE)?;
-    stdin.flush()?;
-    Ok(())
+    // A matching task observation does not bind the actual submission
+    // transport or independently establish applicable grants there. This
+    // candidate has no producer for that evidence and no protected sink.
+    refuse("protected coding submission has no checked held transport and grant binding")
 }
 
 impl Host {
@@ -174,6 +161,19 @@ impl Host {
         &mut self,
         observer: Box<dyn InferenceEntryObserver>,
     ) -> Result<()> {
+        self.check_held_battery_selection()?;
+        if self.journal.phase != Phase::Admitted || self.journal.inference_entry_hold {
+            return refuse("inference entry hold requires a fresh offline battery");
+        }
+        // Preserve the exact command shape for reconciliation; a reopened
+        // Host cannot reconstruct or replace the live observer binding.
+        self.journal.inference_entry_hold = true;
+        self.save()?;
+        self.inference_entry_observer = Some(observer);
+        Ok(())
+    }
+
+    pub(super) fn check_held_battery_selection(&self) -> Result<()> {
         let offline = self.journal.job.coding.as_ref().is_some_and(|profile| {
             super::coding::is_battery(&profile.schema)
                 && profile.provider.as_ref().is_some_and(|plan| {
@@ -187,14 +187,9 @@ impl Host {
                         })
                 })
         });
-        if !offline || self.journal.phase != Phase::Admitted || self.journal.inference_entry_hold {
-            return refuse("inference entry hold requires a fresh offline battery");
+        if !offline {
+            return refuse("inference entry hold requires an offline coding battery");
         }
-        // Preserve the exact command shape for reconciliation; a reopened
-        // Host cannot reconstruct or replace the live observer binding.
-        self.journal.inference_entry_hold = true;
-        self.save()?;
-        self.inference_entry_observer = Some(observer);
         Ok(())
     }
 
@@ -205,18 +200,16 @@ impl Host {
         Ok(())
     }
 
-    pub(super) fn release_inference_entry(
+    pub(super) fn refuse_held_inference_entry(
         &mut self,
         until: Instant,
         docker_client_pid: u32,
         stdout_path: &Path,
-        stdin: &mut impl Write,
     ) -> Result<()> {
+        self.check_held_battery_selection()?;
         self.check_inference_hold_deadline(until)?;
-        if self.journal.phase != Phase::StartUnknown
-            || self.journal.inference_entry_observation.is_some()
-        {
-            return refuse("inference entry release is not replayable");
+        if !self.journal.inference_entry_hold || self.journal.phase != Phase::StartUnknown {
+            return refuse("inference entry observation outside the held start");
         }
         // This inspection correlates Docker's container ID and kernel PID;
         // it is not a grant attestation. Only the outside callback supplies it.
@@ -251,7 +244,7 @@ impl Host {
             .ok_or_else(|| Error::Refused("outside inference entry observer not bound".into()))?;
         let deadline = self.journal.job.deadline_unix_seconds;
         let cancel_path = self.journal.job.state_dir.join("cancel.json");
-        release_after_observation(
+        refuse_protected_submission(
             &expected,
             || observer.observe(&expected, std::os::fd::AsFd::as_fd(&task.fd), until),
             || {
@@ -267,11 +260,6 @@ impl Host {
                 }
                 task.check(&command)
             },
-            |observation| {
-                self.journal.inference_entry_observation = Some(observation);
-                self.save()
-            },
-            stdin,
         )
     }
 }
@@ -294,10 +282,8 @@ mod tests {
     #[test]
     fn inference_entry_refuses_absent_crossed_invalid_and_late_observation() {
         let expected = subject();
-        for fault in 0..9 {
+        for fault in 0..8 {
             let checks = Cell::new(0);
-            let mut evidence = None;
-            let mut bytes = Vec::new();
             let mut obs = InferenceEntryObservation {
                 subject: expected.clone(),
                 evidence_sha256: "c".repeat(64),
@@ -311,62 +297,41 @@ mod tests {
                 6 => obs.evidence_sha256.clear(),
                 _ => (),
             }
-            let result = release_after_observation(
+            let result = refuse_protected_submission(
                 &expected,
                 || Ok((fault != 0).then_some(obs)),
                 || {
                     checks.set(checks.get() + 1);
-                    if fault == 7 && checks.get() == 2 || fault == 8 && checks.get() == 3 {
+                    if fault == 7 && checks.get() == 2 {
                         return refuse("inference entry hold deadline elapsed");
                     }
                     Ok(())
                 },
-                |value| {
-                    evidence = Some(value);
-                    Ok(())
-                },
-                &mut bytes,
             );
-            assert!(result.is_err(), "fault {fault}");
-            assert!(bytes.is_empty(), "fault {fault}");
-            assert_eq!(evidence.is_some(), fault == 8);
+            let expected_error = match fault {
+                0 => "observation absent",
+                7 => "deadline elapsed",
+                _ => "identity/evidence mismatch",
+            };
+            assert!(
+                result.unwrap_err().to_string().contains(expected_error),
+                "fault {fault}"
+            );
         }
     }
 
     #[test]
-    fn inference_entry_persists_exact_outside_decision_before_single_release_byte() {
+    fn exact_candidate_observation_is_not_transport_or_grant_authority() {
         let expected = subject();
         let obs = InferenceEntryObservation {
             subject: expected.clone(),
             evidence_sha256: "c".repeat(64),
         };
-        let mut bytes = Vec::new();
-        let mut retained = None;
-        release_after_observation(
-            &expected,
-            || Ok(Some(obs.clone())),
-            || Ok(()),
-            |value| {
-                retained = Some(value);
-                Ok(())
-            },
-            &mut bytes,
-        )
-        .unwrap();
-        assert_eq!(retained, Some(obs.clone()));
-        assert_eq!(bytes, RELEASE);
-        bytes.clear();
+        let err = refuse_protected_submission(&expected, || Ok(Some(obs)), || Ok(())).unwrap_err();
         assert!(
-            release_after_observation(
-                &expected,
-                || Ok(Some(obs)),
-                || Ok(()),
-                |_| refuse("no custody write"),
-                &mut bytes
-            )
-            .is_err()
+            err.to_string()
+                .contains("no checked held transport and grant binding")
         );
-        assert!(bytes.is_empty());
     }
 
     #[test]

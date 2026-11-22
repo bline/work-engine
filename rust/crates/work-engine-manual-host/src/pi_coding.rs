@@ -698,7 +698,11 @@ fn base(j: &Journal, name: &str) -> Vec<String> {
         "--tmpfs",
         tmpfs,
         "--workdir",
-        "/workspace",
+        if j.inference_entry_hold && name == j.container_name {
+            "/"
+        } else {
+            "/workspace"
+        },
         "--env",
         "HOME=/tmp/home",
         "--env",
@@ -767,6 +771,11 @@ fn expected_mounts(
         }
         return mounts;
     }
+    if j.inference_entry_hold {
+        // Deny-only bootstrap has no use for any Host tree, even nominally
+        // public config. Do not offer any pre-observation readable Host path.
+        return vec![];
+    }
     let mut mounts = vec![
         (j.job.runtime.root.clone(), "/pi", false),
         (profile.shim.path.clone(), "/receiver/receiver.mjs", false),
@@ -815,11 +824,10 @@ fn command(job: &Job, tool: bool) -> Vec<String> {
     }
 }
 pub(super) fn inference_command(j: &Journal) -> Vec<String> {
-    let mut args = if j.inference_entry_hold {
-        super::inference_hold::command()
-    } else {
-        command(&j.job, false)
-    };
+    if j.inference_entry_hold {
+        return super::inference_hold::command();
+    }
+    let mut args = command(&j.job, false);
     if let Some(profile) = &j.job.coding
         && is_bridge(&profile.schema)
     {
@@ -867,7 +875,12 @@ fn verify(j: &Journal, v: &Value, tool: bool, validation: bool) -> Result<()> {
             } else {
                 json!(["docker-entrypoint.sh"])
             }
-        || v["Config"]["WorkingDir"] != "/workspace"
+        || v["Config"]["WorkingDir"]
+            != if !tool && j.inference_entry_hold {
+                "/"
+            } else {
+                "/workspace"
+            }
         || v["HostConfig"]["PidMode"] != ""
         || v["HostConfig"]["IpcMode"] != "private"
         || v["HostConfig"]["NetworkMode"] != "none"
@@ -1288,6 +1301,11 @@ impl Host {
     pub(super) fn coding_inference_args(&self) -> Vec<String> {
         let j = &self.journal;
         let mut args = base(j, &j.container_name);
+        if j.inference_entry_hold {
+            args.push(j.job.image.clone());
+            args.extend(inference_command(j));
+            return args;
+        }
         if j.job.coding.as_ref().unwrap().schema == SIGNED_PROFILE {
             args.extend(strings(&["--tmpfs", export::TMPFS]));
         }
@@ -1327,6 +1345,12 @@ impl Host {
         Ok(rows[0].clone())
     }
     pub(super) fn coding_prepare_tool(&mut self) -> Result<()> {
+        if self.journal.inference_entry_hold {
+            // Keep the admitted task and subject in Host custody. In particular,
+            // neither the existing job.json staging nor the separate workspace
+            // tool launch may happen before authority for protected submission.
+            return self.check_held_battery_selection();
+        }
         self.coding_prepare_provider()?;
         if self.analysis_profile() {
             // No tool container and no workspace copy: the Host serves the
@@ -2403,7 +2427,6 @@ mod tests {
             coding: Some(State::default()),
             rpc_completion: None,
             inference_entry_hold: false,
-            inference_entry_observation: None,
             daemon_exit: None,
             removed: false,
             artifacts: vec![],
@@ -2427,19 +2450,43 @@ mod tests {
         (dir, host)
     }
 
+    struct NeverObserve;
+    impl super::super::inference_hold::InferenceEntryObserver for NeverObserve {
+        fn observe(
+            &mut self,
+            _: &super::super::inference_hold::HeldInference,
+            _: std::os::fd::BorrowedFd<'_>,
+            _: Instant,
+        ) -> Result<Option<super::super::inference_hold::InferenceEntryObservation>> {
+            panic!("an invalid startup must not reach the outside observer");
+        }
+    }
+
     #[test]
-    fn inference_entry_candidate_changes_only_opted_in_create_and_checks_same_command() {
-        let (_dir, mut host) = fixture();
+    fn held_coding_materialization_leaves_task_and_subject_unstaged() {
+        let (dir, mut host) = provider::ledger_tests::fixture();
+        const TASK: &[u8] = b"fixed offline task bytes";
+        const SUBJECT: &[u8] = b"fixed offline subject bytes";
+        let task_path = dir.path().join("pinned-task.txt");
+        let subject_root = dir.path().join("pinned-subject");
+        fs::write(&task_path, TASK).unwrap();
+        fs::create_dir(&subject_root).unwrap();
+        fs::write(subject_root.join("subject.txt"), SUBJECT).unwrap();
+        host.journal.job.workspace.root = subject_root.clone();
         let profile = host.journal.job.coding.as_mut().unwrap();
+        profile.provider.as_mut().unwrap().task = Artifact {
+            path: task_path.clone(),
+            sha256: digest(TASK),
+        };
         profile.schema = HOSTED_BATTERY_PROFILE.into();
         let image = host.journal.job.image.clone();
         let original = host.coding_inference_args();
-        let tool = command(&host.journal.job, true);
         let arg_offset = original.iter().position(|arg| arg == &image).unwrap() + 1;
         assert_eq!(
             original[arg_offset..],
             ["node", "/receiver/receiver.mjs", "--lifecycle-bridge"]
         );
+        assert!(original.iter().any(|arg| arg.contains("dst=/profile,")));
         assert!(
             serde_json::to_value(&host.journal)
                 .unwrap()
@@ -2447,36 +2494,64 @@ mod tests {
                 .is_none()
         );
 
-        host.journal.inference_entry_hold = true;
-        let args = host.coding_inference_args();
-        assert_eq!(args[..arg_offset], original[..arg_offset]);
-        assert_eq!(args[arg_offset..], inference_command(&host.journal));
-        assert_eq!(args[arg_offset + 1], "--input-type=module");
-        assert_eq!(
-            args[args.len() - 2..],
-            ["/receiver/receiver.mjs", "--lifecycle-bridge"]
+        host.bind_battery_inference_hold(Box::new(NeverObserve))
+            .unwrap();
+        host.coding_prepare_tool().unwrap();
+        assert!(host.journal.processes.is_empty());
+        assert!(!host.journal.coding.as_ref().unwrap().tool_create_intent);
+        for name in [
+            "coding-public",
+            "coding-public-config",
+            "coding-workspace",
+            "coding-spool",
+            "private-access",
+        ] {
+            assert!(
+                !dir.path().join(name).exists(),
+                "unexpected staging at {name}"
+            );
+        }
+        assert_eq!(fs::read(&task_path).unwrap(), TASK);
+        assert_eq!(fs::read(subject_root.join("subject.txt")).unwrap(), SUBJECT);
+        assert!(expected_mounts(&host.journal, false, false).is_empty());
+        let args = host.create_args();
+        let offset = args.iter().position(|arg| arg == &image).unwrap() + 1;
+        assert_eq!(args[offset..], inference_command(&host.journal));
+        assert_eq!(args[offset + 1], "--input-type=module");
+        assert!(
+            args[..offset]
+                .windows(2)
+                .any(|args| args == ["--workdir", "/"])
         );
-        assert_eq!(command(&host.journal.job, true), tool);
+        assert!(!args.iter().any(|arg| arg == "--mount"
+            || arg.contains("PI_CODING_AGENT_DIR")
+            || arg.contains(dir.path().to_str().unwrap())));
+    }
+
+    #[test]
+    fn held_coding_candidate_cannot_select_analysis_bootstrap() {
+        let (_dir, mut host) = provider::ledger_tests::fixture();
+        host.journal.job.coding.as_mut().unwrap().schema = ANALYSIS_PROFILE.into();
+        let original = host.coding_inference_args();
+        assert!(original.iter().any(|arg| arg.contains("dst=/profile,")));
+        assert!(original.ends_with(&strings(&[
+            "node",
+            "/receiver/receiver.mjs",
+            "--lifecycle-bridge",
+        ])));
+        assert!(
+            host.bind_battery_inference_hold(Box::new(NeverObserve))
+                .is_err()
+        );
+        assert!(!host.journal.inference_entry_hold);
+        assert_eq!(host.coding_inference_args(), original);
     }
 
     #[test]
     fn inference_entry_actual_attach_loop_refuses_output_and_unobserved_marker() {
-        use super::super::inference_hold::{
-            HeldInference, InferenceEntryObservation, InferenceEntryObserver,
-        };
-        struct NeverObserve;
-        impl InferenceEntryObserver for NeverObserve {
-            fn observe(
-                &mut self,
-                _: &HeldInference,
-                _: std::os::fd::BorrowedFd<'_>,
-                _: Instant,
-            ) -> Result<Option<InferenceEntryObservation>> {
-                panic!("an invalid startup must not reach the outside observer");
-            }
-        }
         for early_stdout in [true, false] {
-            let (dir, mut host) = fixture();
+            let (dir, mut host) = provider::ledger_tests::fixture();
+            host.journal.job.coding.as_mut().unwrap().schema = HOSTED_BATTERY_PROFILE.into();
             let runner = dir.path().join("fake-cli");
             let stdout = if early_stdout {
                 "printf 'premature stdout\\n'"
@@ -2493,9 +2568,9 @@ esac
             fs::set_permissions(&runner, fs::Permissions::from_mode(0o700)).unwrap();
             host.journal.job.docker.path = runner.clone();
             host.journal.job.command_timeout_seconds = 3;
+            host.bind_battery_inference_hold(Box::new(NeverObserve))
+                .unwrap();
             host.journal.phase = Phase::StartUnknown;
-            host.journal.inference_entry_hold = true;
-            host.inference_entry_observer = Some(Box::new(NeverObserve));
             let err = host
                 .command(
                     "rpc",
@@ -2511,7 +2586,8 @@ esac
             assert!(err.to_string().contains(expected), "{err}");
             assert_eq!(runner.with_extension("inspected").exists(), !early_stdout);
             assert!(!runner.with_extension("sent").exists());
-            assert!(host.journal.inference_entry_observation.is_none());
+            assert!(!host.journal.rpc_verified);
+            assert!(host.journal.rpc_completion.is_none());
             assert_eq!(host.coding_out_offset, 0);
         }
     }
