@@ -814,6 +814,23 @@ fn command(job: &Job, tool: bool) -> Vec<String> {
         strings(&["node", "/receiver/receiver.mjs"])
     }
 }
+pub(super) fn inference_command(j: &Journal) -> Vec<String> {
+    let mut args = if j.inference_entry_hold {
+        super::inference_hold::command()
+    } else {
+        command(&j.job, false)
+    };
+    if let Some(profile) = &j.job.coding
+        && is_bridge(&profile.schema)
+    {
+        args.push("--lifecycle-bridge".into());
+        if profile.schema == CLAIMS_BRIDGE_PROFILE {
+            args.push("--claims-tools".into());
+        }
+    }
+    args
+}
+
 fn verify(j: &Journal, v: &Value, tool: bool, validation: bool) -> Result<()> {
     let name = if validation {
         validation::name(j)
@@ -839,19 +856,10 @@ fn verify(j: &Journal, v: &Value, tool: bool, validation: bool) -> Result<()> {
         || v["Config"]["Cmd"]
             != json!(if validation {
                 validation::command()
+            } else if tool {
+                command(&j.job, true)
             } else {
-                let mut args = command(&j.job, tool);
-                if !tool && j.job.coding.as_ref().is_some_and(|p| is_bridge(&p.schema)) {
-                    args.push("--lifecycle-bridge".into());
-                    if j.job
-                        .coding
-                        .as_ref()
-                        .is_some_and(|p| p.schema == CLAIMS_BRIDGE_PROFILE)
-                    {
-                        args.push("--claims-tools".into());
-                    }
-                }
-                args
+                inference_command(j)
             })
         || v["Config"]["Entrypoint"]
             != if tool {
@@ -1297,13 +1305,7 @@ impl Host {
             mount(&mut args, &src, dst, rw);
         }
         args.push(j.job.image.clone());
-        args.extend(command(&j.job, false));
-        if is_bridge(&j.job.coding.as_ref().unwrap().schema) {
-            args.push("--lifecycle-bridge".into());
-            if j.job.coding.as_ref().unwrap().schema == CLAIMS_BRIDGE_PROFILE {
-                args.push("--claims-tools".into());
-            }
-        }
+        args.extend(inference_command(j));
         args
     }
     fn coding_inspect_tool(&mut self) -> Result<Value> {
@@ -2400,6 +2402,8 @@ mod tests {
             receiver: None,
             coding: Some(State::default()),
             rpc_completion: None,
+            inference_entry_hold: false,
+            inference_entry_observation: None,
             daemon_exit: None,
             removed: false,
             artifacts: vec![],
@@ -2417,10 +2421,101 @@ mod tests {
             allocation_lease: None,
             reply_leases: vec![],
             coding_out_offset: 0,
+            inference_entry_observer: None,
             _lock: File::create(root.join("lock")).unwrap(),
         };
         (dir, host)
     }
+
+    #[test]
+    fn inference_entry_candidate_changes_only_opted_in_create_and_checks_same_command() {
+        let (_dir, mut host) = fixture();
+        let profile = host.journal.job.coding.as_mut().unwrap();
+        profile.schema = HOSTED_BATTERY_PROFILE.into();
+        let image = host.journal.job.image.clone();
+        let original = host.coding_inference_args();
+        let tool = command(&host.journal.job, true);
+        let arg_offset = original.iter().position(|arg| arg == &image).unwrap() + 1;
+        assert_eq!(
+            original[arg_offset..],
+            ["node", "/receiver/receiver.mjs", "--lifecycle-bridge"]
+        );
+        assert!(
+            serde_json::to_value(&host.journal)
+                .unwrap()
+                .get("inference_entry_hold")
+                .is_none()
+        );
+
+        host.journal.inference_entry_hold = true;
+        let args = host.coding_inference_args();
+        assert_eq!(args[..arg_offset], original[..arg_offset]);
+        assert_eq!(args[arg_offset..], inference_command(&host.journal));
+        assert_eq!(args[arg_offset + 1], "--input-type=module");
+        assert_eq!(
+            args[args.len() - 2..],
+            ["/receiver/receiver.mjs", "--lifecycle-bridge"]
+        );
+        assert_eq!(command(&host.journal.job, true), tool);
+    }
+
+    #[test]
+    fn inference_entry_actual_attach_loop_refuses_output_and_unobserved_marker() {
+        use super::super::inference_hold::{
+            HeldInference, InferenceEntryObservation, InferenceEntryObserver,
+        };
+        struct NeverObserve;
+        impl InferenceEntryObserver for NeverObserve {
+            fn observe(
+                &mut self,
+                _: &HeldInference,
+                _: std::os::fd::BorrowedFd<'_>,
+                _: Instant,
+            ) -> Result<Option<InferenceEntryObservation>> {
+                panic!("an invalid startup must not reach the outside observer");
+            }
+        }
+        for early_stdout in [true, false] {
+            let (dir, mut host) = fixture();
+            let runner = dir.path().join("fake-cli");
+            let stdout = if early_stdout {
+                "printf 'premature stdout\\n'"
+            } else {
+                ":"
+            };
+            fs::write(&runner, format!(r#"#!/bin/sh
+case "$1" in
+  start) {stdout}; printf 'work-engine: inference-entry held\n' >&2; byte=$(dd bs=1 count=1 2>/dev/null); if [ -n "$byte" ]; then touch "$0.sent"; fi ;;
+  inspect) touch "$0.inspected"; exit 1 ;;
+  *) exit 99 ;;
+esac
+"#)).unwrap();
+            fs::set_permissions(&runner, fs::Permissions::from_mode(0o700)).unwrap();
+            host.journal.job.docker.path = runner.clone();
+            host.journal.job.command_timeout_seconds = 3;
+            host.journal.phase = Phase::StartUnknown;
+            host.journal.inference_entry_hold = true;
+            host.inference_entry_observer = Some(Box::new(NeverObserve));
+            let err = host
+                .command(
+                    "rpc",
+                    strings(&["start", "--attach", "--interactive", "test"]),
+                    true,
+                )
+                .unwrap_err();
+            let expected = if early_stdout {
+                "output before entry release"
+            } else {
+                "inspect unavailable"
+            };
+            assert!(err.to_string().contains(expected), "{err}");
+            assert_eq!(runner.with_extension("inspected").exists(), !early_stdout);
+            assert!(!runner.with_extension("sent").exists());
+            assert!(host.journal.inference_entry_observation.is_none());
+            assert_eq!(host.coding_out_offset, 0);
+        }
+    }
+
     #[test]
     fn strict_workspace_mounts_allow_only_regular_source_and_keep_legacy_wire() {
         let (dir, mut h) = fixture();

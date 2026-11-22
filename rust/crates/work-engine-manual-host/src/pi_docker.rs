@@ -21,6 +21,8 @@ use std::{
 pub mod coding;
 #[path = "pi_fifo.rs"]
 pub mod fifo;
+#[path = "pi_inference_hold.rs"]
+pub mod inference_hold;
 #[path = "pi_native_memory.rs"]
 pub mod native_memory;
 #[path = "pi_observation.rs"]
@@ -195,6 +197,10 @@ pub struct Journal {
     /// Older journals have no final proof and cannot become success on recovery.
     #[serde(default)]
     pub rpc_completion: Option<RpcCompletion>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    inference_entry_hold: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    inference_entry_observation: Option<inference_hold::InferenceEntryObservation>,
     pub daemon_exit: Option<i32>,
     pub removed: bool,
     pub artifacts: Vec<Artifact>,
@@ -216,6 +222,7 @@ pub struct Host {
     /// inference process's stdout (in memory: a restarted Host reconciles
     /// instead of resuming the process).
     coding_out_offset: u64,
+    inference_entry_observer: Option<Box<dyn inference_hold::InferenceEntryObserver>>,
     _lock: File,
 }
 
@@ -486,6 +493,8 @@ impl Host {
             receiver,
             coding,
             rpc_completion: None,
+            inference_entry_hold: false,
+            inference_entry_observation: None,
             daemon_exit: None,
             removed: false,
             artifacts: input_pins,
@@ -504,6 +513,7 @@ impl Host {
             allocation_lease: None,
             reply_leases: vec![],
             coding_out_offset: 0,
+            inference_entry_observer: None,
         };
         host.save()?;
         Ok(host)
@@ -545,6 +555,7 @@ impl Host {
             allocation_lease: None,
             reply_leases: vec![],
             coding_out_offset: 0,
+            inference_entry_observer: None,
         })
     }
     fn save(&self) -> Result<()> {
@@ -688,7 +699,10 @@ impl Host {
         self.journal.processes[number].start = crate::proc_stat(child.id()).map(|s| s.0);
         self.save()?;
         let mut stdin = child.stdin.take();
-        let mut write_result = if let Some(input) = stdin.as_mut() {
+        let mut entry_held = rpc && self.journal.inference_entry_hold;
+        let mut write_result = if entry_held {
+            Ok(())
+        } else if let Some(input) = stdin.as_mut() {
             let initial =
                 if self.journal.job.receiver.is_some() || self.journal.job.coding.is_some() {
                     vec![]
@@ -700,6 +714,7 @@ impl Host {
             Ok(())
         };
         let start = Instant::now();
+        let entry_until = start + Duration::from_secs(self.journal.job.command_timeout_seconds);
         let mut verified = false;
         let mut verified_at = None;
         let mut aborted = false;
@@ -720,7 +735,25 @@ impl Host {
                 self.failure("process output exceeded bound");
                 aborted = true;
             }
-            if rpc && !verified && output_size <= output_limit {
+            if entry_held {
+                self.check_inference_hold_deadline(entry_until)?;
+                if aborted || child.try_wait()?.is_some() {
+                    return refuse("inference attach ended before outside entry release");
+                }
+                if !inference_hold::waiting_for_marker(output_size, &stderr_path)? {
+                    self.release_inference_entry(
+                        entry_until,
+                        child.id(),
+                        &stdout_path,
+                        stdin
+                            .as_mut()
+                            .ok_or_else(|| Error::Refused("inference hold stdin absent".into()))?,
+                    )?;
+                    entry_held = false;
+                    continue;
+                }
+            }
+            if rpc && !entry_held && !verified && output_size <= output_limit {
                 if self.journal.job.coding.is_some() {
                     let before = self.coding_out_offset;
                     let advanced = self.coding_advance_from(&stdout_path);
@@ -1075,6 +1108,9 @@ impl Host {
         if self.signed_pi() && self.pi_owner.is_none() {
             return refuse("signed fixture cannot resume allocation");
         }
+        if self.journal.inference_entry_hold && self.inference_entry_observer.is_none() {
+            return refuse("outside inference observer unavailable; not creating container");
+        }
         let launch = (|| -> Result<()> {
             check_job(&self.journal.job, true)?;
             if self.cancelled() {
@@ -1379,6 +1415,8 @@ impl Host {
                 && (self.journal.job.coding.as_ref().unwrap().provider.is_none()
                     || c.access_removed)
         }) && self.journal.rpc_verified
+            && (!self.journal.inference_entry_hold
+                || self.journal.inference_entry_observation.is_some())
             && self.journal.rpc_completion.as_ref().is_some_and(|proof| {
                 self.journal.session_id.as_deref() == Some(&proof.session_id)
                     && self
@@ -1409,6 +1447,10 @@ impl Host {
                     && p.leftovers.is_empty()
             });
         let mut value = json!({"schema":SCHEMA,"job":self.journal.job,"job_id":self.journal.job.job_id,"input_digest":self.journal.input_digest,"status":if pass {"component_passed"} else {"not_established"},"acceptance":"owner_pending","domain_effect_settlement":"not_claimed","provider":"disabled","container_id":self.journal.container_id,"session_id":self.journal.session_id,"phase":self.journal.phase,"rpc_verified":self.journal.rpc_verified,"rpc_completion":self.journal.rpc_completion,"daemon_exit":self.journal.daemon_exit,"removed":self.journal.removed,"failures":self.journal.failures,"artifacts":self.journal.artifacts,"exported_files":self.journal.exported_files,"processes":self.journal.processes});
+        if self.journal.inference_entry_hold {
+            value["inference_entry_hold"] =
+                json!({"outside_observation": self.journal.inference_entry_observation});
+        }
         if let Some(observation) = &self.journal.receiver {
             value["receiver"] = serde_json::to_value(observation)?;
             value["profile"] = json!(receiver::PROFILE);
@@ -2313,6 +2355,8 @@ mod tests {
             receiver: None,
             coding: None,
             rpc_completion: None,
+            inference_entry_hold: false,
+            inference_entry_observation: None,
             daemon_exit: None,
             removed: true,
             artifacts: vec![Artifact {
