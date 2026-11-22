@@ -1,7 +1,5 @@
 //! Public setup staging only. No Job, ingress, release or qualification.
-use super::{
-    IMAGE, LIMIT, OwnedChild, docker_command, exact_name_list, pin_is_hash, single_inspect,
-};
+use super::{LIMIT, OwnedChild, docker_command, exact_name_list, pin_is_hash, single_inspect};
 use crate::{Artifact, Error, Result, STOP, file_digest_within, group_members, kill_group, refuse};
 use serde_json::{Value, json};
 use std::{
@@ -15,53 +13,52 @@ use std::{
 };
 
 const INIT: &str = "/work-engine-hold-init";
+const PLATFORM: &str = "linux/amd64";
 const ATTEMPT: &str = "work-engine.public-hold-attempt";
 const INIT_HASH: &str = "work-engine.public-hold-init-sha256";
 const COMMAND_LIMIT: Duration = Duration::from_secs(3);
 
 /// Closed recipe facts, not a permit or an acquisition interface. Only a
 /// future installed owner can supply these in a protected namespace. In
-/// particular, digest reads below do not prove install custody or eliminate
-/// replacement of daemon-visible paths by an actor with equivalent access.
+/// particular, client and image identity checks do not establish endpoint,
+/// runtime or backing storage custody.
 pub(super) struct Launch {
     pub(super) attempt: String,
     pub(super) fence_root: PathBuf,
     pub(super) docker: Artifact,
-    pub(super) init: Artifact,
-    /// Local image object ID corresponding to the fixed repository digest.
+    /// Complete local image object ID, not a repository reference or tag.
     pub(super) image_id: String,
+    /// Expected init-content identity for correlation, not measured task bytes.
+    pub(super) init_sha256: String,
 }
 
 impl Launch {
     fn check(&self) -> Result<()> {
         if !pin_is_hash(&self.attempt)
+            || !pin_is_hash(&self.init_sha256)
             || !self
                 .image_id
                 .strip_prefix("sha256:")
-                .is_some_and(pin_is_hash)
+                .is_some_and(|id| pin_is_hash(id) && !id.bytes().any(|b| b.is_ascii_uppercase()))
             || !self.fence_root.is_absolute()
             || self.fence_root.canonicalize()? != self.fence_root
             || !self.fence_root.is_dir()
         {
             return refuse("invalid public hold recipe");
         }
-        for pin in [&self.docker, &self.init] {
-            let safe_path = pin.path.to_str().is_some_and(|p| {
-                p.bytes()
-                    .all(|b| b.is_ascii_alphanumeric() || b"/._-".contains(&b))
-            });
-            if !safe_path
-                || !pin.path.is_absolute()
-                || pin.path.canonicalize()? != pin.path
-                || !pin_is_hash(&pin.sha256)
-                || fs::metadata(&pin.path)?.permissions().mode() & 0o111 == 0
-                || file_digest_within(&pin.path, None, 32 * LIMIT)? != pin.sha256
-            {
-                return refuse("public hold executable pin mismatch");
-            }
-        }
-        if self.init.path == self.docker.path {
-            return refuse("public hold init cannot be the Docker executable");
+        let pin = &self.docker;
+        let safe_path = pin.path.to_str().is_some_and(|p| {
+            p.bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"/._-".contains(&b))
+        });
+        if !safe_path
+            || !pin.path.is_absolute()
+            || pin.path.canonicalize()? != pin.path
+            || !pin_is_hash(&pin.sha256)
+            || fs::metadata(&pin.path)?.permissions().mode() & 0o111 == 0
+            || file_digest_within(&pin.path, None, 32 * LIMIT)? != pin.sha256
+        {
+            return refuse("public hold executable pin mismatch");
         }
         Ok(())
     }
@@ -90,22 +87,54 @@ impl Launch {
         Ok(())
     }
 
-    fn source(&self) -> &str {
-        self.init.path.to_str().expect("checked launch path")
+    fn inspect_image(&self, v: &Value) -> Result<()> {
+        if v["Id"] != self.image_id
+            || v["Os"] != "linux"
+            || v["Architecture"] != "amd64"
+            || !unset_or(&v["Variant"], "")
+        {
+            return refuse("public hold local image identity/platform conflict");
+        }
+        let config = &v["Config"];
+        // Do not create if it could allocate an implicit volume, or if Docker
+        // could inherit extra environment or startup configuration. The init
+        // path and argument are supplied explicitly in create regardless.
+        if !config.is_object()
+            || !["Volumes", "ExposedPorts", "Labels"]
+                .iter()
+                .all(|k| no_map(&config[*k]))
+            || !["Env", "Shell", "OnBuild"]
+                .iter()
+                .all(|k| no_list(&config[*k]))
+            || !(no_list(&config["Entrypoint"]) || config["Entrypoint"] == json!([INIT]))
+            || !(no_list(&config["Cmd"]) || config["Cmd"] == json!(["hold-only"]))
+            || !config["Healthcheck"].is_null()
+            || !config["StopTimeout"].is_null()
+            || !unset_or(&config["StopSignal"], "")
+            || !unset_or(&config["ArgsEscaped"], false)
+            || !(unset_or(&config["WorkingDir"], "") || config["WorkingDir"] == "/")
+            || !(unset_or(&config["User"], "") || config["User"] == "1000:1000")
+        {
+            return refuse("public hold local image configuration conflict");
+        }
+        Ok(())
     }
 
     fn create(&self) -> Vec<String> {
         strings(&[
             "create",
             "--pull=never",
+            "--platform",
+            PLATFORM,
             "--name",
             &self.name(),
             "--label",
             &format!("{ATTEMPT}={}", self.attempt),
             "--label",
-            &format!("{INIT_HASH}={}", self.init.sha256),
+            &format!("{INIT_HASH}={}", self.init_sha256),
             "--network=none",
             "--ipc=private",
+            "--cgroupns=private",
             "--read-only",
             "--cap-drop=ALL",
             "--security-opt=no-new-privileges",
@@ -118,14 +147,9 @@ impl Launch {
             "--restart=no",
             "--init=false",
             "--log-driver=none",
-            "--mount",
-            &format!(
-                "type=bind,src={},dst={INIT},readonly,bind-propagation=rprivate",
-                self.source()
-            ),
             "--entrypoint",
             INIT,
-            IMAGE,
+            &self.image_id,
             "hold-only",
         ])
     }
@@ -135,8 +159,9 @@ impl Launch {
         if !pin_is_hash(id)
             || known.is_some_and(|previous| previous != id)
             || v["Name"] != format!("/{}", self.name())
+            || v["Image"] != self.image_id
             || v["Config"]["Labels"][ATTEMPT] != self.attempt
-            || v["Config"]["Labels"][INIT_HASH] != self.init.sha256
+            || v["Config"]["Labels"][INIT_HASH] != self.init_sha256
         {
             return refuse("public hold container/attempt identity conflict");
         }
@@ -146,11 +171,10 @@ impl Launch {
     fn inspect_launch(&self, v: &Value) -> Result<()> {
         let config = &v["Config"];
         let host = &v["HostConfig"];
-        let empty = |v: &Value| v.is_null() || v.as_array().is_some_and(Vec::is_empty);
-        if v["Image"] != self.image_id
-            || v["Path"] != INIT
+        if v["Path"] != INIT
             || v["Args"] != json!(["hold-only"])
-            || config["Image"] != IMAGE
+            || config["Image"] != self.image_id
+            || config["Labels"] != json!({(ATTEMPT): self.attempt, (INIT_HASH): self.init_sha256})
             || config["Entrypoint"] != json!([INIT])
             || config["Cmd"] != json!(["hold-only"])
             || config["Healthcheck"]["Test"] != json!(["NONE"])
@@ -159,30 +183,32 @@ impl Launch {
             || ["OpenStdin", "StdinOnce", "AttachStdin", "Tty"]
                 .iter()
                 .any(|k| config[*k] != false)
-            || !config["Env"].as_array().is_some_and(|env| {
-                env.iter().all(|e| {
-                    // Only the fixed pinned Node image's inert build metadata and
-                    // baseline environment may remain; no loader/provider input.
-                    e.as_str()
-                        .and_then(|s| s.split_once('='))
-                        .is_some_and(|(key, _)| {
-                            matches!(
-                                key,
-                                "PATH" | "NODE_VERSION" | "YARN_VERSION" | "HOME" | "HOSTNAME"
-                            )
-                        })
-                })
-            })
+            // Checks configured env, not implicit engine defaults or the task's
+            // runtime environment, which this inspect does not observe.
+            || !no_list(&config["Env"])
+            || !no_map(&config["Volumes"])
+            || !no_map(&config["ExposedPorts"])
+            || !config["StopTimeout"].is_null()
+            || !unset_or(&config["StopSignal"], "")
+            || !unset_or(&config["ArgsEscaped"], false)
             || host["NetworkMode"] != "none"
             || host["IpcMode"] != "private"
             || host["PidMode"] != ""
+            || !unset_or(&host["UTSMode"], "")
+            || !unset_or(&host["UsernsMode"], "")
+            || host["CgroupnsMode"] != "private"
             || host["ReadonlyRootfs"] != true
             || host["Privileged"] != false
-            || !empty(&host["CapAdd"])
-            || !empty(&host["GroupAdd"])
-            || !empty(&host["Devices"])
-            || !empty(&host["DeviceRequests"])
-            || !empty(&host["DeviceCgroupRules"])
+            || ![
+                "CapAdd", "GroupAdd", "Devices", "DeviceRequests", "DeviceCgroupRules",
+                "Binds", "Mounts", "VolumesFrom", "Links", "ExtraHosts",
+            ]
+            .iter()
+            .all(|k| no_list(&host[*k]))
+            || !["Tmpfs", "PortBindings", "Sysctls", "StorageOpt"]
+                .iter()
+                .all(|k| no_map(&host[*k]))
+            || !unset_or(&host["PublishAllPorts"], false)
             || host["CapDrop"] != json!(["ALL"])
             || host["SecurityOpt"] != json!(["no-new-privileges"])
             || host["PidsLimit"] != 16
@@ -195,19 +221,26 @@ impl Launch {
         {
             return refuse("public hold launch/containment conflict");
         }
-        let Some([mount]) = v["Mounts"].as_array().map(Vec::as_slice) else {
-            return refuse("public hold requires exactly its read-only init bind");
-        };
-        if mount["Source"] != self.source()
-            || mount["Destination"] != INIT
-            || mount["RW"] != false
-            || mount["Propagation"] != "rprivate"
-            || mount["Type"] != "bind"
-        {
-            return refuse("public hold init bind conflict");
+        if !v["Mounts"].as_array().is_some_and(Vec::is_empty) {
+            return refuse("public hold requires empty container mounts");
         }
         Ok(())
     }
+}
+
+fn no_list(v: &Value) -> bool {
+    v.is_null() || v.as_array().is_some_and(Vec::is_empty)
+}
+
+fn no_map(v: &Value) -> bool {
+    v.is_null() || v.as_object().is_some_and(serde_json::Map::is_empty)
+}
+
+fn unset_or<T>(v: &Value, expected: T) -> bool
+where
+    Value: PartialEq<T>,
+{
+    v.is_null() || *v == expected
 }
 
 fn strings(args: &[&str]) -> Vec<String> {
@@ -228,8 +261,17 @@ pub(super) fn run(
 
     let name = setup.name();
     let mut call = |args: Vec<String>| invoke(&setup.docker.path, &args);
+    let preflight = (|| -> Result<()> {
+        let (ok, bytes) = call(strings(&["image", "inspect", &setup.image_id]))?;
+        if !ok {
+            return refuse("public hold local image inspect unavailable");
+        }
+        setup.inspect_image(&single_inspect(&bytes)?)?;
+        not_cancelled()
+    })();
+    let create_attempted = preflight.is_ok();
     let mut known = None;
-    let launch = (|| -> Result<()> {
+    let launch = preflight.and_then(|()| {
         let (ok, bytes) = call(setup.create())?;
         if !ok {
             return refuse("public hold create uncertain");
@@ -258,13 +300,15 @@ pub(super) fn run(
             return refuse("public hold running state not established by Docker inspect");
         }
         Ok(())
-    })();
+    });
 
     // The attempt is permanently fenced. The remaining source path cannot
     // create/start, even after an uncertain start, timeout, or cancellation.
     // Fence daemon work by removing only the exact immutable object ID. A
     // delayed start for the removed ID cannot switch to a reused name.
-    let cleanup = (|| -> Result<()> {
+    // A read-only preflight failure never requested allocation, so there is
+    // no cleanup target and no claim of checked removal or absence.
+    let cleanup = create_attempted.then(|| -> Result<()> {
         let target = known.as_deref().unwrap_or(&name);
         let container = inspected(call(strings(&["container", "inspect", target]))?)?;
         let id = setup.inspect_identity(&container, known.as_deref())?;
@@ -281,15 +325,16 @@ pub(super) fn run(
             return refuse("public hold container absence not established");
         }
         Ok(())
-    })();
+    });
     Ok(json!({
         "attempt": setup.attempt,
         "disposition": "hold_stop_only",
+        "create_attempted": create_attempted,
         "hold_inspected": launch.is_ok(),
         "launch_error": launch.err().map(|e| e.to_string()),
         "fenced": true,
-        "cleanup_confirmed": cleanup.is_ok(),
-        "cleanup_error": cleanup.err().map(|e| e.to_string()),
+        "cleanup_confirmed": cleanup.as_ref().is_some_and(Result::is_ok),
+        "cleanup_error": cleanup.and_then(Result::err).map(|e| e.to_string()),
     }))
 }
 
