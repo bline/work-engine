@@ -437,6 +437,9 @@ struct Child {
     readers_joined: bool,
 }
 
+#[path = "job_output/no_entry_diagnostic.rs"]
+mod no_entry_diagnostic;
+
 /// Run-entry state of the immutable binding in this operation directory; not Host evidence.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum RunEntry {
@@ -495,9 +498,15 @@ impl RunEntry {
     }
 }
 
+enum EntryLock {
+    Collector,
+    Request,
+}
+
 /// Unlike collector.lock, this guard covers a decision and at most one spawn call, never
 /// a child lifetime or retry backoff. It also serializes independent Servers on the same binding.
-fn lock_run_entry(dir: &Path) -> Result<File, &'static str> {
+/// Requests must never queue behind an unresolved spawn or leave a waiter behind.
+fn lock_run_entry(dir: &Path, mode: EntryLock) -> Result<File, &'static str> {
     let lock = OpenOptions::new()
         .create(true)
         .truncate(false)
@@ -506,14 +515,27 @@ fn lock_run_entry(dir: &Path) -> Result<File, &'static str> {
         .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
         .open(dir.join("run-entry.lock"))
         .map_err(|_| "owner_unavailable")?;
+    let flags = match mode {
+        EntryLock::Collector => libc::LOCK_EX,
+        EntryLock::Request => libc::LOCK_EX | libc::LOCK_NB,
+    };
     loop {
-        if unsafe { libc::flock(lock.as_raw_fd(), libc::LOCK_EX) } == 0 {
+        if unsafe { libc::flock(lock.as_raw_fd(), flags) } == 0 {
             return Ok(lock);
         }
-        if std::io::Error::last_os_error().kind() != std::io::ErrorKind::Interrupted {
-            return Err("owner_unavailable");
+        match (std::io::Error::last_os_error().kind(), &mode) {
+            (std::io::ErrorKind::WouldBlock, EntryLock::Request) => return Err("host_busy"),
+            (std::io::ErrorKind::Interrupted, EntryLock::Collector) => continue,
+            _ => return Err("owner_unavailable"),
         }
     }
+}
+
+fn observe_run_entry(dir: &Path) -> Result<RunEntry, &'static str> {
+    // A positive sample after acquiring this guard cannot be the transient Uncertain
+    // within a spawn decision that can still roll back on ETXTBSY.
+    let _guard = lock_run_entry(dir, EntryLock::Request)?;
+    RunEntry::read(dir)
 }
 
 struct Collector {
@@ -828,15 +850,20 @@ impl Jobs {
         }
         self.verify_binding(&auth, &binding)?;
         let journal = self.verify_host_state(&auth)?;
-        let started = RunEntry::read(&dir)? == RunEntry::Pending
-            && journal.is_none()
-            && self.start(&auth, &dir, &operation_id, "run")?;
-        let mut out = self.read_operation(&auth, &dir, &binding)?;
-        out["entry"] = json!(if started {
-            "collector_started"
-        } else {
-            "existing_operation"
-        });
+        let entry = observe_run_entry(&dir)?;
+        if entry == RunEntry::Pending && journal.is_none() {
+            // A new submission acknowledges registration using the pre-start evidence. Do not
+            // wait for (or resample during) the spawn decision of the collector just registered.
+            let mut out = self.project_operation(&auth, &dir, &binding, entry)?;
+            if self.start(&auth, &dir, &operation_id, "run")? {
+                out["state"] = json!("collecting");
+                out["collector_live"] = json!(true);
+                out["entry"] = json!("collector_started");
+                return Ok(out);
+            }
+        }
+        let mut out = self.project_operation(&auth, &dir, &binding, entry)?;
+        out["entry"] = json!("existing_operation");
         Ok(out)
     }
 
@@ -967,7 +994,7 @@ impl Jobs {
         if let Some(hooks) = &self.spawn_hooks {
             (hooks.before_run_spawn)();
         }
-        let _entry = lock_run_entry(dir)?;
+        let _entry = lock_run_entry(dir, EntryLock::Collector)?;
         match RunEntry::read(dir)? {
             RunEntry::Aborted => return Err("entry_aborted"),
             RunEntry::Uncertain | RunEntry::Spawned => return Err("entry_already_attempted"),
@@ -1261,9 +1288,18 @@ impl Jobs {
         dir: &Path,
         binding: &Value,
     ) -> Result<Value, &'static str> {
+        self.project_operation(a, dir, binding, observe_run_entry(dir)?)
+    }
+
+    fn project_operation(
+        self: &Arc<Self>,
+        a: &Authorization,
+        dir: &Path,
+        binding: &Value,
+        entry: RunEntry,
+    ) -> Result<Value, &'static str> {
         let id = self.operation_id(a);
         let live = self.alive(&id);
-        let entry = RunEntry::read(dir)?;
         let entered = entry.entered_possible();
         let journal = if live {
             Err("host_busy")
@@ -1293,6 +1329,15 @@ impl Jobs {
         let removed = host.as_ref().and_then(|j| j["removed"].as_bool());
         let run_outcome = read_json(&dir.join("collector-run.json"))?;
         let rec_outcome = read_json(&dir.join("collector-reconcile.json"))?;
+        if !entered
+            && (rec_outcome.is_some()
+                || run_outcome.as_ref().is_some_and(|v| {
+                    !v.as_object()
+                        .is_some_and(|r| no_entry_diagnostic::valid(r, SCHEMA))
+                }))
+        {
+            return Err("custody_lost");
+        }
         let state = if live {
             "collecting"
         } else if entry == RunEntry::Aborted {
@@ -1347,21 +1392,22 @@ impl Jobs {
         dir: &Path,
         binding: &Value,
     ) -> Result<Value, &'static str> {
-        let operation = self.read_operation(a, dir, binding)?;
+        let entry = observe_run_entry(dir)?;
+        let operation = self.project_operation(a, dir, binding, entry)?;
         // Reconcile output is the Host's receipt wrapper; a run that failed before a receipt writes none.
         let (source, wrapper) = match read_json(&dir.join("host-reconcile.json"))? {
             Some(v) => ("reconcile", Some(v)),
             None => ("run", read_json(&dir.join("host-run.json"))?),
         };
-        if operation["state"] == "entry_aborted" && wrapper.is_some() {
-            return Err("custody_lost"); // No Host receipt belongs to this no-spawn outcome.
+        let Some(wrapper) = wrapper else {
+            return Ok(json!({"schema":SCHEMA,"result":"not_available","operation":operation}));
+        };
+        if !entry.entered_possible() {
+            return Err("custody_lost"); // Later evidence cannot turn this sample into eligibility.
         }
         let source_exit = read_json(&dir.join(format!("collector-{source}.json")))?
             .map(|v| v["exit_code"].clone())
             .unwrap_or(json!("not_established"));
-        let Some(wrapper) = wrapper else {
-            return Ok(json!({"schema":SCHEMA,"result":"not_available","operation":operation}));
-        };
         let (receipt_id, receipt) = self.host_receipt(a, &operation, &wrapper)?;
         let get = |k: &str| receipt.get(k).cloned().unwrap_or(json!("not_established"));
         let coding = |k: &str| {
@@ -1429,7 +1475,7 @@ impl Jobs {
         binding: &Value,
     ) -> Result<Value, &'static str> {
         let aborted = {
-            let _entry = lock_run_entry(dir)?;
+            let _entry = lock_run_entry(dir, EntryLock::Request)?;
             let entry = RunEntry::read(dir)?;
             if !entry.entered_possible() {
                 // Re-sync on repeat: a previous writer may have failed after rename.

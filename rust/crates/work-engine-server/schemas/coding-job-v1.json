@@ -73,7 +73,7 @@
         }
       }
     },
-    "aborted_run_diagnostic": {
+    "no_entry_run_diagnostic": {
       "type": "object",
       "additionalProperties": false,
       "required": ["schema", "action", "spawn_error", "process_cleanup"],
@@ -90,17 +90,13 @@
         "ended_unix_seconds": { "type": "integer", "minimum": 0, "maximum": 18446744073709551615 }
       }
     },
-    "entry_aborted_projection": {
+    "no_entry_projection": {
       "if": {
-        "required": ["state"],
-        "properties": {
-          "state": { "const": "entry_aborted" }
-        }
+        "required": ["entered_possible"],
+        "properties": { "entered_possible": { "const": false } }
       },
       "then": {
         "properties": {
-          "entered_possible": { "const": false },
-          "collector_live": { "const": false },
           "host_input_digest": { "type": "null" },
           "host_phase": { "type": "null" },
           "host_removed": { "type": "null" },
@@ -108,7 +104,7 @@
           "collector_run": {
             "oneOf": [
               { "type": "null" },
-              { "$ref": "#/$defs/aborted_run_diagnostic" }
+              { "$ref": "#/$defs/no_entry_run_diagnostic" }
             ]
           },
           "collector_reconcile": { "type": "null" },
@@ -132,8 +128,26 @@
         }
       }
     },
+    "entry_projection": {
+      "allOf": [
+        { "$ref": "#/$defs/no_entry_projection" },
+        {
+          "if": { "properties": { "state": { "enum": ["bound_not_entered", "entry_aborted"] } } },
+          "then": { "properties": { "entered_possible": { "const": false } } }
+        },
+        {
+          "if": { "properties": { "state": { "enum": ["reconciling", "collected", "entry_uncertain", "host_state_unreadable"] } } },
+          "then": { "properties": { "entered_possible": { "const": true } } }
+        },
+        {
+          "if": { "properties": { "state": { "const": "collecting" } } },
+          "then": { "properties": { "collector_live": { "const": true } } },
+          "else": { "properties": { "collector_live": { "const": false } } }
+        }
+      ]
+    },
     "operation": {
-      "$ref": "#/$defs/entry_aborted_projection",
+      "$ref": "#/$defs/entry_projection",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -467,7 +481,7 @@
       "description": "Any other version is incompatible and must be rejected, not interpreted."
     },
     "submit_output": {
-      "$ref": "#/$defs/entry_aborted_projection",
+      "$ref": "#/$defs/entry_projection",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -685,12 +699,8 @@
         },
         "operation": {
           "$ref": "#/$defs/operation",
-          "not": {
-            "required": ["state"],
-            "properties": {
-              "state": { "const": "entry_aborted" }
-            }
-          }
+          "required": ["entered_possible"],
+          "properties": { "entered_possible": { "const": true } }
         },
         "terminal": {
           "$ref": "#/$defs/terminal_projection"

@@ -983,8 +983,8 @@ async fn run(path: String) {
     drain(app, config.max_queries, mcp_failed).await;
 }
 async fn drain(app: Arc<App>, max_queries: usize, mcp_failed: bool) {
-    // Owned coding-job collectors request Host cancellation, then actual process status is collected.
-    // Unclosed collectors are reported, never assumed closed; the original operation ids stay readable.
+    // Collectors with owned children request Host cancellation and attempt to collect process status.
+    // Unresolved collectors are reported, never assumed closed; the original operation ids stay readable.
     // Shutdown also fences the collector registry, so a request that outlives its transport timeout
     // cannot start a collector afterwards.
     let mut jobs_clean = true;
@@ -1019,7 +1019,9 @@ async fn drain(app: Arc<App>, max_queries: usize, mcp_failed: bool) {
     match permits {
         Ok(Ok(_)) if !mcp_failed => eprintln!("drain complete"),
         Ok(Ok(_)) => {
-            eprintln!("drain complete; MCP task failed");
+            eprintln!(
+                "shutdown failed: MCP task failure or unresolved coding-job collector custody"
+            );
             std::process::exit(2)
         }
         _ => {

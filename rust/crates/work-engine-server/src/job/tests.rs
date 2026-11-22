@@ -172,12 +172,10 @@ fn runs(fx: &Fx) -> usize {
 }
 fn wait_state(fx: &Fx, want: &str) -> Value {
     for _ in 0..400 {
-        let v = fx
-            .jobs
-            .call("read_coding_job_operation", read_args(REQ))
-            .unwrap();
-        if v["state"] == want {
-            return v;
+        match fx.jobs.call("read_coding_job_operation", read_args(REQ)) {
+            Ok(v) if v["state"] == want => return v,
+            Ok(_) | Err("host_busy") => {}
+            Err(e) => panic!("read failed: {e}"),
         }
         thread::sleep(Duration::from_millis(25));
     }
@@ -284,6 +282,254 @@ fn cancel_fences_delayed_run_on_first_call_and_etxtbsy_retry_across_owners() {
         assert_eq!(restarted.call("cancel_coding_job", read).unwrap(), cancel);
         assert_eq!(runs(&fx), 0);
     }
+}
+
+#[tokio::test]
+async fn contended_entry_returns_owner_error_and_releases_permit_before_retry_decision() {
+    let fx = fixture(30, None);
+    let (at_spawn, spawning) = mpsc::channel();
+    let (release, released) = mpsc::channel();
+    let released = Mutex::new(released);
+    let (at_retry, retrying) = mpsc::channel();
+    let (retry_release, retry_released) = mpsc::channel();
+    let retry_released = Mutex::new(retry_released);
+    let attempt = std::sync::atomic::AtomicUsize::new(0);
+    let owner = inert_owner(
+        &fx,
+        move || {
+            if attempt.fetch_add(1, Ordering::SeqCst) != 0 {
+                at_retry.send(()).unwrap();
+                retry_released
+                    .lock()
+                    .unwrap()
+                    .recv_timeout(Duration::from_secs(5))
+                    .unwrap();
+            }
+        },
+        move |action| {
+            assert_eq!(action, "run");
+            at_spawn.send(()).unwrap();
+            released
+                .lock()
+                .unwrap()
+                .recv_timeout(Duration::from_secs(5))
+                .unwrap();
+            Err(std::io::Error::from_raw_os_error(libc::ETXTBSY))
+        },
+    );
+    let args = submit_args(&fx, REQ);
+    let first = owner.call("submit_coding_job", args.clone()).unwrap();
+    assert_eq!(first["entry"], "collector_started");
+    assert_eq!(first["collector_live"], true);
+    assert_eq!(first["entered_possible"], false);
+    assert_eq!(
+        job_output::validate("submit_coding_job", &args, &first),
+        Ok(())
+    );
+    spawning.recv_timeout(Duration::from_secs(5)).unwrap();
+    let dir = owner.op_dir(&fx.auth);
+    let before = std::fs::read(dir.join(RunEntry::FILE)).unwrap();
+    let read = read_args(REQ);
+    let app = Arc::new(crate::App {
+        repository_claims: None,
+        _claims_profile_lock: None,
+        profile: None,
+        credential: Vec::new(),
+        jobs: Some(owner.clone()),
+        _job_profile_lock: None,
+        command_profile: None,
+        _command_profile_lock: None,
+        task_owner: None,
+        _task_profile_lock: None,
+        identity: "inert-fixture".into(),
+        build: "inert-fixture".into(),
+        slots: Arc::new(tokio::sync::Semaphore::new(1)),
+        _lock: None,
+        _profile_lock: None,
+    });
+    // Use the same application owner boundary as direct MCP, without creating a transport.
+    let response = tokio::time::timeout(
+        Duration::from_secs(1),
+        app.call(crate::Request {
+            schema_version: 1,
+            operation: "cancel_coding_job".into(),
+            arguments: read.clone(),
+            request_id: "cancel-envelope".into(),
+        }),
+    )
+    .await
+    .unwrap();
+    assert_eq!(response["owner_error"], json!({"code":"host_busy"}));
+    assert!(response.get("owner_result").is_none());
+    assert!(app.slots.try_acquire().is_ok());
+
+    let other = inert_owner(&fx, || panic!("replacement entry"), |_| panic!("Host call"));
+    // The reversible state inside the seam cannot authorize an operation or result snapshot.
+    for name in [
+        "cancel_coding_job",
+        "read_coding_job_operation",
+        "read_coding_job_result",
+    ] {
+        assert_eq!(other.call(name, read.clone()), Err("host_busy"));
+    }
+    assert_eq!(std::fs::read(dir.join(RunEntry::FILE)).unwrap(), before);
+    assert!(!fx.root.join("cancel-marker").exists());
+    assert!(other.collectors.lock().unwrap().map.is_empty());
+    assert_eq!(owner.collectors.lock().unwrap().map.len(), 1);
+    let distinct = dir.parent().unwrap().join("distinct-inert-binding");
+    std::fs::create_dir(&distinct).unwrap();
+    assert!(observe_run_entry(&distinct).unwrap() == RunEntry::Pending);
+
+    release.send(()).unwrap();
+    retrying.recv_timeout(Duration::from_secs(5)).unwrap();
+    assert!(observe_run_entry(&dir).unwrap() == RunEntry::Pending);
+    assert_no_entry_output(&fx, &owner, &dir, "collecting");
+    assert_no_entry_output(&fx, &other, &dir, "bound_not_entered");
+    let cancel = other.call("cancel_coding_job", read).unwrap();
+    assert_eq!(cancel["cancellation"], "entry_aborted");
+    assert_eq!(cancel["container_closure_established"], false);
+    assert_no_entry_output(&fx, &owner, &dir, "collecting");
+    assert_no_entry_output(&fx, &other, &dir, "entry_aborted");
+    retry_release.send(()).unwrap();
+    let collector = owner
+        .collectors
+        .lock()
+        .unwrap()
+        .map
+        .remove(first["operation_id"].as_str().unwrap())
+        .unwrap();
+    collector.handle.join().unwrap();
+    assert!(observe_run_entry(&dir).unwrap() == RunEntry::Aborted);
+    assert!(!fx.root.join("cancel-marker").exists());
+    assert_eq!(runs(&fx), 0);
+}
+
+// Data-only projections. No such Host or child records are created by the fixture itself.
+fn assert_no_entry_output(fx: &Fx, owner: &Arc<Jobs>, dir: &Path, state: &str) {
+    let read = read_args(REQ);
+    let wrapper = fixture_receipt(fx);
+    let run_record = dir.join("collector-run.json");
+    for diag in [
+        None,
+        Some(
+            json!({"schema":SCHEMA,"action":"run","spawn_error":"shutting_down","process_cleanup":"not_established"}),
+        ),
+        Some(
+            json!({"schema":SCHEMA,"action":"run","spawn_error":"shutting_down","process_cleanup":"not_established","started_unix_seconds":1,"ended_unix_seconds":2}),
+        ),
+    ] {
+        if let Some(diag) = &diag {
+            write_atomic(&run_record, diag).unwrap();
+        }
+        let result = owner.call("read_coding_job_result", read.clone()).unwrap();
+        let operation = &result["operation"];
+        assert_eq!(result["result"], "not_available");
+        assert_eq!(operation["state"], state);
+        assert_eq!(operation["collector_live"], state == "collecting");
+        assert_eq!(operation["entered_possible"], false);
+        assert_eq!(operation["collector_run"], json!(diag));
+        assert_eq!(
+            job_output::validate("read_coding_job_result", &read, &result),
+            Ok(())
+        );
+        let available = json!({
+            "schema":SCHEMA,"result":"available","operation":operation,
+            "terminal":{"status":"component_passed","phase":"collected"},
+            "validation":{"rpc_verified":true,"failures":[],"coding_completed":true},
+            "cleanup":{"removed":true,"daemon_exit":0,"tool_removed":true,"collector":operation["process_cleanup"]},
+            "acceptance":"owner_pending","domain_effect_settlement":"not_claimed",
+            "receipt_id":wrapper["receipt_id"],"input_digest":fx.auth.host_input_digest,
+            "receipt":wrapper["receipt"],"host_output":{"action":"run","exit_code":0,"note":"fixture"}
+        });
+        let mut entered = available.clone();
+        entered["operation"]["entered_possible"] = json!(true);
+        if state != "collecting" {
+            entered["operation"]["state"] = json!("entry_uncertain");
+        }
+        assert_eq!(
+            job_output::validate("read_coding_job_result", &read, &entered),
+            Ok(())
+        );
+        assert_eq!(
+            job_output::validate("read_coding_job_result", &read, &available),
+            Err("invalid_response")
+        );
+        if diag.is_some() {
+            std::fs::remove_file(&run_record).unwrap();
+        }
+    }
+    for action in ["run", "reconcile"] {
+        let path = dir.join(format!("host-{action}.json"));
+        write_atomic(&path, &wrapper).unwrap();
+        assert_eq!(
+            owner.call("read_coding_job_result", read.clone()),
+            Err("custody_lost")
+        );
+        std::fs::remove_file(path).unwrap();
+
+        let path = dir.join(format!("collector-{action}.json"));
+        write_atomic(
+            &path,
+            &json!({"exit_code":0,"process_cleanup":"owned_process_group_collected"}),
+        )
+        .unwrap();
+        assert_eq!(
+            owner.call("read_coding_job_operation", read.clone()),
+            Err("custody_lost")
+        );
+        std::fs::remove_file(path).unwrap();
+    }
+}
+
+fn fixture_receipt(fx: &Fx) -> Value {
+    serde_json::from_slice(&std::fs::read(fx.root.join("receipt.json")).unwrap()).unwrap()
+}
+
+#[test]
+fn stable_entry_and_exact_identity_enable_run_and_reconcile_results() {
+    let fx = fixture(30, None);
+    let closed = inert_owner(&fx, || panic!("replacement entry"), |_| panic!("Host call"));
+    assert!(closed.shutdown(Duration::ZERO));
+    assert_eq!(
+        closed.call("submit_coding_job", submit_args(&fx, REQ)),
+        Err("shutting_down")
+    );
+    let dir = closed.op_dir(&fx.auth);
+    let wrapper = fixture_receipt(&fx);
+    let read = read_args(REQ);
+    for action in ["run", "reconcile"] {
+        let path = dir.join(format!("host-{action}.json"));
+        write_atomic(&path, &wrapper).unwrap();
+        assert_eq!(
+            closed.call("read_coding_job_result", read.clone()),
+            Err("custody_lost")
+        );
+        write_atomic_bytes(&dir.join(RunEntry::FILE), b"invalid entry evidence").unwrap();
+        assert_eq!(
+            closed.call("read_coding_job_result", read.clone()),
+            Err("custody_lost")
+        );
+        // Synthetic persisted decision in a separate fixture; no process was or will be launched.
+        RunEntry::Spawned.write(&dir).unwrap();
+        let result = closed.call("read_coding_job_result", read.clone()).unwrap();
+        assert_eq!(result["result"], "available");
+        assert_eq!(result["operation"]["entered_possible"], true);
+        assert_eq!(result["host_output"]["action"], action);
+        assert_eq!(
+            job_output::validate("read_coding_job_result", &read, &result),
+            Ok(())
+        );
+        let mut crossed = wrapper.clone();
+        crossed["receipt"]["job_id"] = json!("different-job");
+        write_atomic(&path, &crossed).unwrap();
+        assert_eq!(
+            closed.call("read_coding_job_result", read.clone()),
+            Err("identity_conflict")
+        );
+        std::fs::remove_file(path).unwrap();
+        std::fs::remove_file(dir.join(RunEntry::FILE)).unwrap();
+    }
+    assert_eq!(runs(&fx), 0);
 }
 
 #[test]
