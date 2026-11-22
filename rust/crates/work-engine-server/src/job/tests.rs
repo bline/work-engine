@@ -287,6 +287,329 @@ fn cancel_fences_delayed_run_on_first_call_and_etxtbsy_retry_across_owners() {
 }
 
 #[test]
+fn shutdown_drains_to_deadline_while_admitted_spawn_is_still_blocked() {
+    let fx = fixture(30, None);
+    // Let submit return and identify the collector before entering the actual spawn seam.
+    let (begin, begun) = mpsc::channel();
+    let begun = Mutex::new(begun);
+    let (at_spawn, blocked) = mpsc::channel();
+    let (release, released) = mpsc::channel();
+    let released = Mutex::new(released);
+    let owner = inert_owner(
+        &fx,
+        move || {
+            begun
+                .lock()
+                .unwrap()
+                .recv_timeout(Duration::from_secs(10))
+                .unwrap()
+        },
+        move |action| {
+            assert_eq!(action, "run");
+            at_spawn.send(()).unwrap();
+            released
+                .lock()
+                .unwrap()
+                .recv_timeout(Duration::from_secs(10))
+                .unwrap();
+            Ok(()) // An admitted spawn returning success, with no operating-system child.
+        },
+    );
+    let first = owner
+        .call("submit_coding_job", submit_args(&fx, REQ))
+        .unwrap();
+    let id = first["operation_id"].as_str().unwrap();
+    let done = owner.collectors.lock().unwrap().map[id].done.clone();
+    let dir = owner.op_dir(&fx.auth);
+    begin.send(()).unwrap();
+    blocked.recv_timeout(Duration::from_secs(5)).unwrap();
+    assert!(RunEntry::read(&dir).unwrap() == RunEntry::Uncertain);
+
+    let (finished, result) = mpsc::channel();
+    let drain_owner = owner.clone();
+    let shutdown = thread::spawn(move || {
+        finished
+            .send(drain_owner.shutdown(Duration::from_millis(50)))
+            .unwrap();
+    });
+    let before_release = result.recv_timeout(Duration::from_secs(2));
+    let still_in_spawn = !done.load(Ordering::SeqCst);
+    let (closed_and_empty, late_run, late_reconcile) = if before_release.is_ok() {
+        let closed_and_empty = {
+            let reg = owner.collectors.lock().unwrap();
+            reg.closed && reg.map.is_empty()
+        };
+        (
+            closed_and_empty,
+            owner.start(&fx.auth, &dir, id, "run"),
+            owner.start(&fx.auth, &dir, id, "reconcile"),
+        )
+    } else {
+        (false, Ok(false), Ok(false))
+    };
+    // Even the regression (shutdown blocked on the registry) must release the fixture.
+    release.send(()).unwrap();
+    shutdown.join().unwrap();
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while !done.load(Ordering::SeqCst) && Instant::now() < deadline {
+        thread::yield_now();
+    }
+    assert!(
+        done.load(Ordering::SeqCst),
+        "fixture collector did not finish"
+    );
+    assert_eq!(
+        before_release,
+        Ok(false),
+        "drain must return unresolved before release"
+    );
+    assert!(still_in_spawn && closed_and_empty);
+    assert_eq!(late_run, Err("shutting_down"));
+    assert_eq!(late_reconcile, Err("shutting_down"));
+    assert!(RunEntry::read(&dir).unwrap() == RunEntry::Spawned);
+    assert!(!fx.state.join("pi-state.json").exists());
+}
+
+#[test]
+fn shutdown_refuses_first_attempt_and_etxtbsy_retry_before_admission() {
+    use std::sync::atomic::AtomicUsize;
+
+    for prior_calls in [0, 1] {
+        let fx = fixture(30, None);
+        let (arrived, at_boundary) = mpsc::channel();
+        let (release, released) = mpsc::channel();
+        let released = Mutex::new(released);
+        let entries = AtomicUsize::new(0);
+        let calls = Arc::new(AtomicUsize::new(0));
+        let seen = calls.clone();
+        let owner = inert_owner(
+            &fx,
+            move || {
+                if entries.fetch_add(1, Ordering::SeqCst) == prior_calls {
+                    arrived.send(()).unwrap();
+                    released
+                        .lock()
+                        .unwrap()
+                        .recv_timeout(Duration::from_secs(5))
+                        .unwrap();
+                }
+            },
+            move |action| {
+                assert_eq!(action, "run");
+                seen.fetch_add(1, Ordering::SeqCst);
+                Err(std::io::Error::from_raw_os_error(libc::ETXTBSY))
+            },
+        );
+        let first = owner
+            .call("submit_coding_job", submit_args(&fx, REQ))
+            .unwrap();
+        let done = owner.collectors.lock().unwrap().map[first["operation_id"].as_str().unwrap()]
+            .done
+            .clone();
+        at_boundary.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert_eq!(calls.load(Ordering::SeqCst), prior_calls);
+        let clean = owner.shutdown(Duration::ZERO);
+        release.send(()).unwrap();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while !done.load(Ordering::SeqCst) && Instant::now() < deadline {
+            thread::yield_now();
+        }
+        assert!(
+            done.load(Ordering::SeqCst),
+            "fixture collector did not finish"
+        );
+        assert!(!clean, "parked collector had not yet exited");
+        assert_eq!(calls.load(Ordering::SeqCst), prior_calls);
+        let dir = owner.op_dir(&fx.auth);
+        assert!(RunEntry::read(&dir).unwrap() == RunEntry::Pending);
+        let read = read_args(REQ);
+        let state = owner
+            .call("read_coding_job_operation", read.clone())
+            .unwrap();
+        assert_eq!(
+            state["state"], "bound_not_entered",
+            "local close is not exact abort"
+        );
+        assert_eq!(state["collector_run"]["spawn_error"], "shutting_down");
+        let cancel = owner.call("cancel_coding_job", read.clone()).unwrap();
+        assert_eq!(cancel["cancellation"], "entry_aborted");
+        let aborted = owner
+            .call("read_coding_job_operation", read.clone())
+            .unwrap();
+        assert_eq!(aborted["state"], "entry_aborted");
+        assert_eq!(aborted["collector_run"], state["collector_run"]);
+        assert_eq!(aborted["process_cleanup"]["run"], "not_established");
+        assert_eq!(
+            job_output::validate("read_coding_job_operation", &read, &aborted),
+            Ok(())
+        );
+        assert!(!fx.state.join("pi-state.json").exists());
+    }
+}
+
+#[test]
+fn aborted_output_rejects_crossed_host_and_collector_projections() {
+    let fx = fixture(30, None);
+    let owner = inert_owner(&fx, || panic!("replacement entry"), |_| panic!("Host call"));
+    let dir = owner.op_dir(&fx.auth);
+    // Submit binds the request but cannot start after local close. Exact cancel is separate.
+    assert!(owner.shutdown(Duration::ZERO));
+    assert_eq!(
+        owner.call("submit_coding_job", submit_args(&fx, REQ)),
+        Err("shutting_down")
+    );
+    let read = read_args(REQ);
+    let cancel = owner.call("cancel_coding_job", read.clone()).unwrap();
+    assert_eq!(cancel["cancellation"], "entry_aborted");
+    let no_record = owner.call("read_coding_job_result", read.clone()).unwrap();
+    assert!(no_record["operation"]["collector_run"].is_null());
+    assert_eq!(
+        job_output::validate("read_coding_job_result", &read, &no_record),
+        Ok(())
+    );
+    let diagnostic = json!({"schema":SCHEMA,"action":"run","spawn_error":"job_snapshot_mismatch","process_cleanup":"not_established"});
+    write_atomic(&dir.join("collector-run.json"), &diagnostic).unwrap();
+    let result = owner.call("read_coding_job_result", read.clone()).unwrap();
+    assert_eq!(result["result"], "not_available");
+    assert_eq!(result["operation"]["state"], "entry_aborted");
+    assert_eq!(
+        job_output::validate("read_coding_job_result", &read, &result),
+        Ok(())
+    );
+    assert_eq!(result["operation"]["collector_run"], diagnostic);
+    let with_diagnostic = |extra: &[(&str, Value)]| {
+        let mut changed = diagnostic.clone();
+        for (key, value) in extra {
+            changed[*key] = value.clone();
+        }
+        changed
+    };
+
+    for (pointer, value) in [
+        ("/entered_possible", json!(true)),
+        ("/collector_live", json!(true)),
+        ("/host_input_digest", json!(fx.auth.host_input_digest)),
+        ("/host_phase", json!("collected")),
+        ("/host_removed", json!(false)),
+        ("/host_receipt_id", json!("c".repeat(64))),
+        ("/collector_run", json!(null)),
+        ("/collector_run", json!({})),
+        (
+            "/collector_run",
+            with_diagnostic(&[("exit_code", json!(0))]),
+        ),
+        (
+            "/collector_run",
+            with_diagnostic(&[("status_collected", json!(true))]),
+        ),
+        (
+            "/collector_run",
+            with_diagnostic(&[("action", json!("reconcile"))]),
+        ),
+        (
+            "/collector_run",
+            with_diagnostic(&[("started_unix_seconds", json!(1))]),
+        ),
+        ("/collector_reconcile", json!({})),
+        ("/process_cleanup/run", json!(null)),
+        (
+            "/process_cleanup/run",
+            json!("owned_process_group_collected"),
+        ),
+        ("/process_cleanup/reconcile", json!("not_established")),
+    ] {
+        let mut bad = result.clone();
+        *bad["operation"].pointer_mut(pointer).unwrap() = value;
+        assert_eq!(
+            job_output::validate("read_coding_job_result", &read, &bad),
+            Err("invalid_response"),
+            "{pointer}"
+        );
+        assert_eq!(
+            job_output::validate("read_coding_job_operation", &read, &bad["operation"]),
+            Err("invalid_response"),
+            "{pointer}"
+        );
+        bad["operation"]["entry"] = json!("existing_operation");
+        assert_eq!(
+            job_output::validate(
+                "submit_coding_job",
+                &submit_args(&fx, REQ),
+                &bad["operation"]
+            ),
+            Err("invalid_response"),
+            "{pointer}"
+        );
+    }
+    let available = json!({
+        "schema":SCHEMA,"result":"available","operation":result["operation"],
+        "terminal":{"status":"component_passed","phase":"collected"},
+        "validation":{"rpc_verified":true,"failures":[],"coding_completed":true},
+        "cleanup":{"removed":true,"daemon_exit":0,"tool_removed":true,"collector":{"run":null,"reconcile":null}},
+        "acceptance":"owner_pending","domain_effect_settlement":"not_claimed",
+        "receipt_id":"c".repeat(64),"input_digest":fx.auth.host_input_digest,
+        "receipt":{"job_id":fx.auth.job_id,"input_digest":fx.auth.host_input_digest},
+        "host_output":{"action":"run","exit_code":0,"note":"fixture"}
+    });
+    let mut ordinary = available.clone();
+    ordinary["operation"]["state"] = json!("entry_uncertain");
+    ordinary["operation"]["entered_possible"] = json!(true);
+    assert_eq!(
+        job_output::validate("read_coding_job_result", &read, &ordinary),
+        Ok(())
+    );
+    assert_eq!(
+        job_output::validate("read_coding_job_result", &read, &available),
+        Err("invalid_response")
+    );
+    write_atomic(
+        &dir.join("host-run.json"),
+        &json!({"receipt_id":available["receipt_id"],"receipt":available["receipt"]}),
+    )
+    .unwrap();
+    assert_eq!(
+        owner.call("read_coding_job_result", read),
+        Err("custody_lost")
+    );
+}
+
+#[test]
+fn legacy_entry_marker_blocks_run_and_exact_abort_after_restart() {
+    let fx = fixture(30, None);
+    let owner = inert_owner(&fx, || panic!("run"), |_| panic!("Host call"));
+    assert!(owner.shutdown(Duration::ZERO));
+    let submit = submit_args(&fx, REQ);
+    assert_eq!(
+        owner.call("submit_coding_job", submit.clone()),
+        Err("shutting_down")
+    );
+    let dir = owner.op_dir(&fx.auth);
+    write_new(
+        &dir.join(RunEntry::FILE),
+        &json!({"schema":SCHEMA,"action":"pi-docker run","at_unix_seconds":now()}),
+    )
+    .unwrap();
+    drop(owner);
+    let restarted = inert_owner(
+        &fx,
+        || panic!("replacement run"),
+        |action| {
+            assert_eq!(action, "cancel");
+            Err(std::io::Error::from_raw_os_error(libc::EIO))
+        },
+    );
+    let repeat = restarted.call("submit_coding_job", submit).unwrap();
+    assert_eq!(repeat["state"], "entry_uncertain");
+    assert_eq!(repeat["entry"], "existing_operation");
+    assert_eq!(
+        restarted.call("cancel_coding_job", read_args(REQ)),
+        Err("runtime_unavailable")
+    );
+    assert!(RunEntry::read(&dir).unwrap() == RunEntry::Uncertain);
+    assert!(restarted.collectors.lock().unwrap().map.is_empty());
+}
+
+#[test]
 fn spawn_wins_or_interruption_holds_entry_without_replacement() {
     for interrupted in [false, true] {
         let fx = fixture(30, None);

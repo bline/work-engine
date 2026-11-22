@@ -73,7 +73,67 @@
         }
       }
     },
+    "aborted_run_diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "action", "spawn_error", "process_cleanup"],
+      "dependentRequired": {
+        "started_unix_seconds": ["ended_unix_seconds"],
+        "ended_unix_seconds": ["started_unix_seconds"]
+      },
+      "properties": {
+        "schema": { "$ref": "#/$defs/schema_version" },
+        "action": { "const": "run" },
+        "spawn_error": { "type": "string", "minLength": 1 },
+        "process_cleanup": { "const": "not_established" },
+        "started_unix_seconds": { "type": "integer", "minimum": 0, "maximum": 18446744073709551615 },
+        "ended_unix_seconds": { "type": "integer", "minimum": 0, "maximum": 18446744073709551615 }
+      }
+    },
+    "entry_aborted_projection": {
+      "if": {
+        "required": ["state"],
+        "properties": {
+          "state": { "const": "entry_aborted" }
+        }
+      },
+      "then": {
+        "properties": {
+          "entered_possible": { "const": false },
+          "collector_live": { "const": false },
+          "host_input_digest": { "type": "null" },
+          "host_phase": { "type": "null" },
+          "host_removed": { "type": "null" },
+          "host_receipt_id": { "type": "null" },
+          "collector_run": {
+            "oneOf": [
+              { "type": "null" },
+              { "$ref": "#/$defs/aborted_run_diagnostic" }
+            ]
+          },
+          "collector_reconcile": { "type": "null" },
+          "process_cleanup": {
+            "properties": { "reconcile": { "type": "null" } }
+          }
+        },
+        "if": {
+          "required": ["collector_run"],
+          "properties": { "collector_run": { "type": "null" } }
+        },
+        "then": {
+          "properties": {
+            "process_cleanup": { "properties": { "run": { "type": "null" } } }
+          }
+        },
+        "else": {
+          "properties": {
+            "process_cleanup": { "properties": { "run": { "const": "not_established" } } }
+          }
+        }
+      }
+    },
     "operation": {
+      "$ref": "#/$defs/entry_aborted_projection",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -407,6 +467,7 @@
       "description": "Any other version is incompatible and must be rejected, not interpreted."
     },
     "submit_output": {
+      "$ref": "#/$defs/entry_aborted_projection",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -623,7 +684,13 @@
           "const": "available"
         },
         "operation": {
-          "$ref": "#/$defs/operation"
+          "$ref": "#/$defs/operation",
+          "not": {
+            "required": ["state"],
+            "properties": {
+              "state": { "const": "entry_aborted" }
+            }
+          }
         },
         "terminal": {
           "$ref": "#/$defs/terminal_projection"

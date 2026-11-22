@@ -220,7 +220,38 @@ struct Operation {
     entry: Option<Entry>,
 }
 
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AbortedRunDiagnostic {
+    schema: String,
+    action: String,
+    spawn_error: String,
+    process_cleanup: NotEstablished,
+    #[serde(default, deserialize_with = "present")]
+    started_unix_seconds: Option<u64>,
+    #[serde(default, deserialize_with = "present")]
+    ended_unix_seconds: Option<u64>,
+}
+
 impl Operation {
+    fn aborted_run_diagnostic_valid(&self) -> bool {
+        match &self.collector_run {
+            None => self.process_cleanup.run.is_none(),
+            Some(record) => {
+                matches!(self.process_cleanup.run, Some(Cleaned::NotEstablished))
+                    && AbortedRunDiagnostic::deserialize(&Value::Object(record.clone())).is_ok_and(
+                        |d| {
+                            d.schema == SCHEMA
+                                && d.action == "run"
+                                && !d.spawn_error.is_empty()
+                                && d.started_unix_seconds.is_some()
+                                    == d.ended_unix_seconds.is_some()
+                        },
+                    )
+            }
+        }
+    }
+
     fn check(&self, arguments: &Value, submission: bool) -> Result<(), &'static str> {
         if self.schema != SCHEMA
             || !hex64(&self.operation_id)
@@ -241,6 +272,14 @@ impl Operation {
             // State, entry and liveness must not contradict each other.
             || (matches!(self.state, State::BoundNotEntered | State::EntryAborted)
                 && self.entered_possible)
+            || (matches!(self.state, State::EntryAborted)
+                && (self.host_input_digest.is_some()
+                    || self.host_phase.is_some()
+                    || self.host_removed.is_some()
+                    || self.host_receipt_id.is_some()
+                    || self.collector_reconcile.is_some()
+                    || self.process_cleanup.reconcile.is_some()
+                    || !self.aborted_run_diagnostic_valid()))
             || matches!(self.state, State::Collecting) != self.collector_live
             || (matches!(self.state, State::Collected) && self.host_removed != Some(true))
         {
@@ -357,6 +396,7 @@ pub fn validate(
                 r.operation.check(arguments, false)?;
                 if r.schema != SCHEMA
                     || !matches!(r.result, Available::Available)
+                    || matches!(r.operation.state, State::EntryAborted)
                     || !hex64(&r.receipt_id)
                     || r.input_digest != r.operation.expected_host_input_digest
                     // The wrapper ID must be the one the operation's Host journal recorded, if any.

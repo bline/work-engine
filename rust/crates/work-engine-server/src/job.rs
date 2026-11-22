@@ -521,9 +521,9 @@ struct Collector {
     done: Arc<AtomicBool>,
 }
 
-/// Collector registry. `closed` and the map share one lock so a collector start and shutdown are
-/// atomic with respect to each other: after shutdown closes the registry no start can succeed, and
-/// every collector admitted before that is in the map being drained.
+/// The same mutex orders collector registration, admission of each run attempt, and local close.
+/// An admitted attempt belongs to an already registered collector. The run-entry writes and
+/// spawn call are outside this mutex.
 struct Registry {
     closed: bool,
     map: HashMap<String, Collector>,
@@ -973,11 +973,16 @@ impl Jobs {
             RunEntry::Uncertain | RunEntry::Spawned => return Err("entry_already_attempted"),
             RunEntry::Pending => {}
         }
-        // Also serialize shutdown with run entry, not just registration.
-        let registry = self.collectors.lock().unwrap();
-        if registry.closed {
-            return Err("shutting_down");
+        {
+            // Admit just this attempt against local close. `start` holds this mutex until it
+            // registers our collector, so shutdown owns its handle even if spawn blocks.
+            let registry = self.collectors.lock().unwrap();
+            if registry.closed {
+                return Err("shutting_down");
+            }
         }
+        // Only the exact binding's flock spans persistence and spawn. Local shutdown can
+        // now drain to its deadline without waiting for an admitted attempt to return here.
         RunEntry::Uncertain.write(dir)?;
         let outcome = self.spawn_host("run", command);
         match &outcome {
@@ -1348,6 +1353,9 @@ impl Jobs {
             Some(v) => ("reconcile", Some(v)),
             None => ("run", read_json(&dir.join("host-run.json"))?),
         };
+        if operation["state"] == "entry_aborted" && wrapper.is_some() {
+            return Err("custody_lost"); // No Host receipt belongs to this no-spawn outcome.
+        }
         let source_exit = read_json(&dir.join(format!("collector-{source}.json")))?
             .map(|v| v["exit_code"].clone())
             .unwrap_or(json!("not_established"));
@@ -1474,9 +1482,9 @@ impl Jobs {
 
     /// Request cancellation of every owned collector, then collect actual process status.
     ///
-    /// Closing the registry and draining it happen under one lock, so every collector ever admitted is
-    /// either joined here or was refused by `start`. Idempotent: a later call drains nothing and
-    /// reports the registry fenced and empty.
+    /// Close admission and detach the registered handles under one lock, then wait without it.
+    /// An admitted run attempt can outlast the deadline; report unresolved, never closure.
+    /// Subsequent calls find a fenced, empty registry; they cannot upgrade a prior drain result.
     pub fn shutdown(&self, wait: Duration) -> bool {
         let handles: Vec<Collector> = {
             let mut reg = self.collectors.lock().unwrap();
