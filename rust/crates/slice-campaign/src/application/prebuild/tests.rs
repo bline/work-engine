@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::fs::{self, File, TryLockError};
 use std::os::unix::fs::MetadataExt;
+use std::process::Command;
 
 use serde_json::{Value, json};
 
@@ -99,6 +100,34 @@ pub(super) fn record_owner_state(
 
 #[test]
 fn startup_continues_with_the_fresh_commit_and_writer_then_releases_it() {
+    const ISOLATED: &str = "SLICE_CAMPAIGN_PREBUILD_RELEASE_TEST_CHILD";
+    const OBSERVED_RELEASE: &str = "observed isolated prebuild writer release";
+    if std::env::var_os(ISOLATED).as_deref() != Some(std::ffi::OsStr::new("1")) {
+        // A sibling test's Git child can inherit the locked file description
+        // until exec, even with close-on-exec. Run just this fixture in its
+        // own process; keep the rest of the suite parallel and do not retry.
+        let (_, test) = concat!(
+            module_path!(),
+            "::startup_continues_with_the_fresh_commit_and_writer_then_releases_it"
+        )
+        .split_once("::")
+        .unwrap();
+        let output = Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", test, "--nocapture"])
+            .env(ISOLATED, "1")
+            .output()
+            .unwrap();
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert!(
+            output.status.success() && stdout.lines().any(|line| line == OBSERVED_RELEASE),
+            "isolated prebuild release check did not complete: {}\n{}\n{}",
+            output.status,
+            stdout,
+            String::from_utf8_lossy(&output.stderr)
+        );
+        return;
+    }
+
     let scope = Scope::new();
     let (pin, bytes) = scope.pinned();
     OWNER_STATES.with_borrow_mut(|states| *states = Some(Vec::new()));
@@ -124,6 +153,9 @@ fn startup_continues_with_the_fresh_commit_and_writer_then_releases_it() {
     // checkpoint or remove sidecars, so do not compare across that boundary.
     let contender = File::open(scope.root.join(".writer.lock")).unwrap();
     contender.try_lock().unwrap();
+    // `--exact` without a match exits successfully; require evidence the
+    // child actually reached the last assertion.
+    println!("{OBSERVED_RELEASE}");
 }
 
 #[test]
