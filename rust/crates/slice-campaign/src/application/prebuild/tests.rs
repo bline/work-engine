@@ -1,3 +1,7 @@
+use std::cell::RefCell;
+use std::fs::{self, File, TryLockError};
+use std::os::unix::fs::MetadataExt;
+
 use serde_json::{Value, json};
 
 use super::*;
@@ -39,6 +43,87 @@ impl Scope {
         let bytes = serde_json::to_vec(&self.document).unwrap();
         (raw_sha256(&bytes), bytes)
     }
+}
+
+#[derive(Debug, PartialEq)]
+struct HeldOwnerState {
+    epoch: String,
+    root_id: String,
+    snapshot: Value,
+    receipt: Value,
+    files: [(u64, u64, String); 4],
+}
+
+thread_local! {
+    static OWNER_STATES: RefCell<Option<Vec<HeldOwnerState>>> = const { RefCell::new(None) };
+}
+
+pub(super) fn record_owner_state(
+    owner: &CampaignInner,
+    snapshot: &Snapshot,
+    receipt: &OperationReceipt,
+) {
+    OWNER_STATES.with_borrow_mut(|states| {
+        let Some(states) = states else { return };
+        let root = &owner.store.root;
+        // Open the existing lock independently, without an attempted SQLite open.
+        let contender = File::open(root.join(".writer.lock")).unwrap();
+        assert!(matches!(
+            contender.try_lock(),
+            Err(TryLockError::WouldBlock)
+        ));
+        let files = [
+            "slice-campaign.sqlite",
+            "slice-campaign.sqlite-wal",
+            "slice-campaign.sqlite-shm",
+            ".writer.lock",
+        ]
+        .map(|name| {
+            let path = root.join(name);
+            let metadata = fs::metadata(&path).unwrap();
+            (
+                metadata.dev(),
+                metadata.ino(),
+                raw_sha256(&fs::read(path).unwrap()),
+            )
+        });
+        states.push(HeldOwnerState {
+            epoch: owner.store.epoch.clone(),
+            root_id: owner.store.root_id.clone(),
+            snapshot: serde_json::to_value(snapshot).unwrap(),
+            receipt: serde_json::to_value(receipt).unwrap(),
+            files,
+        });
+    });
+}
+
+#[test]
+fn startup_continues_with_the_fresh_commit_and_writer_then_releases_it() {
+    let scope = Scope::new();
+    let (pin, bytes) = scope.pinned();
+    OWNER_STATES.with_borrow_mut(|states| *states = Some(Vec::new()));
+    let fresh = start(Some(&pin), &bytes).unwrap();
+    let [committed, continued]: [HeldOwnerState; 2] = OWNER_STATES
+        .with_borrow_mut(|states| states.take().unwrap())
+        .try_into()
+        .unwrap();
+    // Same live Store and exact commit, with stable file identities and bytes
+    // between these two points. This is not an audit of transient I/O.
+    assert_eq!(committed, continued);
+    assert_eq!(continued.root_id, fresh.reference().root_id);
+    assert_eq!(
+        continued.snapshot,
+        serde_json::to_value(fresh.snapshot()).unwrap()
+    );
+    assert_eq!(
+        continued.receipt,
+        serde_json::to_value(fresh.receipt()).unwrap()
+    );
+
+    // Check release separately from the held interval: closing SQLite may
+    // checkpoint or remove sidecars, so do not compare across that boundary.
+    let contender = File::open(scope.root.join(".writer.lock")).unwrap();
+    contender.try_lock().unwrap();
 }
 
 #[test]

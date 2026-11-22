@@ -2,10 +2,11 @@
 //! supply the out-of-band current selection; request bytes cannot select
 //! themselves. There is no installed selection source or runtime caller.
 use std::path::{Path, PathBuf};
+use std::sync::MutexGuard;
 
 use serde::Deserialize;
 
-use super::{AdmitRequest, Campaign, TrustedConfig};
+use super::{AdmitRequest, Campaign, CampaignInner, TrustedConfig};
 use crate::codec::raw_sha256;
 use crate::contract::{
     AcceptedBoundary, AdvancePhase, Baseline, CampaignIdentity, CampaignRef, Consequence, Snapshot,
@@ -169,11 +170,12 @@ pub fn start(
         baseline: config.baseline.clone(),
         expected_impact: None,
     };
-    let mut campaign = Campaign::initialize(config)?;
-    let (admitted, _) = newly_applied(ADMIT, campaign.admit(ADMIT, admission)?)?;
+    let campaign = Campaign::initialize(config)?;
+    let mut owner = campaign.owner()?;
+    let (admitted, _) = newly_applied(ADMIT, owner.admit(ADMIT, admission)?)?;
     let (snapshot, receipt) = newly_applied(
         IMPLEMENTING,
-        campaign.advance(
+        owner.advance(
             &identity,
             &admitted.revision,
             IMPLEMENTING,
@@ -181,18 +183,34 @@ pub fn start(
             consequence,
         )?,
     )?;
-    // Bind the exact result while the startup owner still holds the store.
-    // Do not replace the fresh result with a later read of the head.
-    Ok(FreshImplementing {
-        anchored_root: campaign.anchored_root().to_owned(),
+    #[cfg(test)]
+    tests::record_owner_state(&owner, &snapshot, &receipt);
+    // Bind the result of this commit, not a subsequent Store observation.
+    let fresh = FreshImplementing {
+        anchored_root: owner.store.root.clone(),
         reference: CampaignRef {
-            root_id: campaign.root_id().into(),
+            root_id: owner.store.root_id.clone(),
             identity: snapshot.identity.clone(),
             revision: snapshot.revision.clone(),
         },
         snapshot,
         receipt,
-    })
+    };
+    let detached = finish_under_owner(owner, fresh);
+    drop(campaign);
+    Ok(detached)
+}
+
+// This private continuation receives the same guard that made the commit.
+// There is no admission decision here; the only output is historical fact.
+fn finish_under_owner(
+    owner: MutexGuard<'_, CampaignInner>,
+    fresh: FreshImplementing,
+) -> FreshImplementing {
+    #[cfg(test)]
+    tests::record_owner_state(&owner, &fresh.snapshot, &fresh.receipt);
+    drop(owner);
+    fresh
 }
 
 /// Open the same campaign owner under the current pin and read back the exact
