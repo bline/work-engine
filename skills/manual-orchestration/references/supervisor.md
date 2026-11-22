@@ -8,13 +8,14 @@ Load this entry at supervisor startup or recovery. Read the applicable decision 
 
 ## Establish context observation
 
-Use an owned chatboard `wait --follow` as the default combined observation
-route for relevant coordination, this root's context pressure and the
-objective's budget pressure. Load [session control](context-control.md) for
-the bindings, budget subscription and collection rules. A single listener can
-carry all three; separate duplicate watchers add cost without improving delivery.
-If this route is unavailable or cannot deliver in time, record the limitation
-and the explicit observation route that will cover the next decision.
+Cover relevant coordination, this root's context pressure, and the objective's
+budget pressure with verified, owned routes. A CLI `wait --follow` can combine
+all three. For an enrolled Pi root, the extension owns directed coordination;
+keep separate coverage for needed topics, context and budget. Load
+[session control](context-control.md) for the bindings and collection rules.
+Avoid duplicate delivery, not separate routes with distinct responsibilities.
+If a route cannot deliver in time, record the gap and the explicit observation
+that will cover the next decision.
 
 The skill's shared context-pressure requirement also applies to every child.
 Verify each launched role's binding and delivery owner after identity is known;

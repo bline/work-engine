@@ -1,8 +1,24 @@
 # Codex coordination board
 
 The board stores ordered messages and advisory claims in private Git refs.
-Posting does not interrupt an agent, cancel a process, grant authority or start
-an ended session. Messages remain available to every reader.
+Posting by itself does not interrupt an agent, cancel a process, grant authority
+or start an ended session. Messages remain available to every reader.
+
+## Directed coordination in Pi
+
+For enrolled Pi sessions on the same board and group, use the Pi Chatboard
+extension rather than an agent-managed message waiter. The extension runs the
+canonical CLI waiter and owns the local inbox, cursor and rearming. See the
+[Pi Chatboard operating reference](../skills/coordination-channels/references/pi-chatboard.md)
+for setup, routing, delivery evidence and cutover.
+
+The extension's coordinator `tell` and lane `report` register local,
+non-steering model wakes; `note`, `forward` and ordinary board intake do not.
+A CLI `post --wake` bypasses self-suppression but does not register a Pi wake.
+The Pi inbox selects its enrolled role and session addresses; it does not
+subscribe to bare `all`, `job:…`, or arbitrary topics or carry the local
+context and budget streams described below. Keep the applicable CLI or
+other owned routes for those needs.
 
 ## Wait for messages
 
@@ -55,10 +71,11 @@ python3 skills/durable-state/scripts/chatboard_job.py --repository . run \
 ```
 
 `run` returns at once and prints JSON with the job's log paths, its topic
-(default `job:<session-id>`) and the board cursor `since`. Add
-`--topic job:<session-id>` and that `--since` to the blocking wait your role
-already uses, with its context-pressure and budget binding. Run that wait as a
-tool call bounded by the printed `--timeout-seconds` (the job's
+(default `job:<session-id>`) and the board cursor `since`. For this CLI collection route, add
+`--topic job:<session-id>` and that `--since` to an owned wait, alongside any
+context-pressure and budget bindings that waiter owns. A Pi Chatboard inbox
+does not replace job-topic collection. Bound the wait by the printed
+`--timeout-seconds` (the job's
 `--max-seconds`, default 3600, plus 120 s). It returns when the job finishes,
 and also on context or budget events and on any other topic you selected. If
 it times out (exit 2), read the job's `job.json`: the notification was lost,
@@ -97,8 +114,8 @@ addressees. Rows without `to` match by `topic` only, exactly as before.
   This holds for any stored row: `to` addresses starting `control:session:` never
   match.
 - Invariant: being addressed to a role does not establish that the recipient holds
-  it; delivery is not authorization. `to` routes a wake and nothing else. It is not
-  a report that a session holds a role and it is not approval.
+  it; delivery is not authorization. `to` routes a board row, not a model
+  request. It is not a report that a session holds a role and it is not approval.
 - `wait --format compact` is deferred: the consumer census
   (`metrics/probes/chatboard-consumer-census-20261025.json`) names no consumer that
   would use it.

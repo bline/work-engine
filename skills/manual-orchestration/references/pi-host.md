@@ -116,12 +116,25 @@ carry the tier is not established.
 - From inside a Pi turn, `role_host.py whoami` reads `PI_SESSION_ID`. Pi's
   session variables are not passed to sessions launched from it.
 
+## Directed coordination
+
+For enrolled, persistent Pi sessions, use
+[Pi Chatboard](../../coordination-channels/references/pi-chatboard.md) for
+directed coordination. Verify the actual session and expected board/group/lane
+with `/chatboard config` and `/chatboard status`. The extension owns the
+message waiter; do not arm a duplicate at startup or after `new_context`.
+Reload and same-session recovery preserve compatible enrollment, not semantic
+recovery or telemetry. Do not assume a detached turn or subagent has the
+extension loaded, an enrollment, or a running recipient after the process
+exits. Use an owned alternative when the route is not established.
+
 ## Context
 
 `child_context.py` has no Pi reader yet. A Pi session file records each
-assistant message's `usage`; the context size of the latest call is
-`input + cacheRead + cacheWrite`. `work-engine-context-status pi` and chatboard
-`wait --context-host pi` read it; see [session control](context-control.md).
+assistant message's `usage`; the input of the latest call is
+`input + cacheRead + cacheWrite`. Use [session control](context-control.md)
+for verified local pressure delivery, a context-bound CLI wait, or the pinned
+`work-engine-context-status pi` check. Pi Chatboard carries no pressure events.
 Near the model's limit Pi compacts automatically, or, with `pi-context-epochs`
 loaded, rolls over without a summary ([native recovery](native-context.md#pi)).
 Make the retained-or-fresh decision from that reading as
@@ -141,8 +154,9 @@ unchanged; these properties of the mechanism differ.
   the packet arrived.
 - **Identity.** A child's session file is
   `<parent session file without .jsonl>/<run id>/run-<n>/session.jsonl`; its
-  header names the parent in `parentSession`. Bind the child's context listener
-  (`--context-host pi`) to that file and its header ID. Async run state and
+  header names the parent in `parentSession`. Bind the child's context
+  observation to that file and its header ID (`--context-host pi` for a CLI
+  listener). Async run state and
   `events.jsonl` sit in the run directory that `subagent` status reports.
 - **Tools are the agent's list.** An agent with an explicit `tools` list gets
   only those tools: MCP tools need `mcp:<server>` or `mcp:<server>/<tool>`

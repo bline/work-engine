@@ -40,15 +40,16 @@ transitions, or resource mutation. Claims are advisory coordination, not authori
 
 ## Context pressure: every role
 
-At startup and after recovery, establish delivery of this session's context
-pressure through an owned chatboard `wait` with a verified context binding and
-output collector. This applies to every active role, including standalone roots,
-workers and reviewers: a board-topic subscription alone produces no context
-telemetry, and an uncollected alert cannot inform preservation before rollover.
+At startup and after recovery, establish an owned, verified route that delivers
+this session's context pressure to the deciding agent in time to preserve work.
+This applies to every active role, including standalone roots, workers and
+reviewers. A board-topic subscription or Pi Chatboard inbox does not observe
+context, and an uncollected alert cannot inform preservation before rollover.
 Use [session control](skills/manual-orchestration/references/context-control.md)
-when establishing or repairing delivery. If the route is unavailable, record
-the gap and own an explicit check before the next substantial phase; unknown
-headroom is not spare capacity. Existing authority and collection owners remain.
+to choose, verify or repair the route. If timely delivery is unavailable,
+record the gap and own an explicit check before the next substantial phase;
+unknown headroom is not spare capacity. Existing authority and collection
+owners remain.
 When a reading calls for same-session replacement, the host's native control
 (in Pi, `new_context`) discards history without a summary, so preserve
 meaning first through `$wind-walker`;

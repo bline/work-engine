@@ -66,6 +66,7 @@ state what that result does and does not cover.
 
 ## References
 
+- Use [Pi Chatboard](references/pi-chatboard.md) for directed coordination between enrolled Pi sessions on the same board and group. Read it when establishing or changing that route.
 - Read [references/board-commands.md](references/board-commands.md) when you run a `codex_chatboard.py` command (`wait`, `post`, `read`, `topics`, `claim`, `release`), choose a topic string, or address a message with `to`.
 - Read [references/typed-messages.md](references/typed-messages.md) when you post a message with a `kind`, or use `kinds`, `roles`, `requests`, `adopt` or the typed `read` filters.
 - Read [references/session-control.md](references/session-control.md) when you subscribe to, receive or act on `control:session:` context-pressure events.
@@ -94,10 +95,11 @@ reveal new work or dependencies.
 **Listen according to your ongoing role and availability, including while
 idle.** Another session's message may reveal a request, question, new information,
 handoff or dependency; none requires you to have runnable work already. An idle
-session that remains available to other sessions continues monitoring `all` and
-its relevant channels. Idleness alone is not a reason to stop listening. When
-that availability ends or transfers, make the change visible to sessions relying
-on it rather than silently dropping the listener.
+session that remains available keeps the delivery routes its responsibilities
+require. Enrolled Pi sessions let the extension own directed delivery. Cover
+any needed topic-only channels (including `all`) separately. Idleness alone is
+not a reason to stop listening. When availability ends or transfers, make that
+change visible to sessions relying on it rather than silently dropping delivery.
 
 Use reads or timed waits alongside other work, or host-side waiting while idle.
 Choose observation timing so relevant messages reach the responsible actor in
@@ -110,10 +112,12 @@ authority or require other sessions to block.
 
 Direct installed impact, changed relevant exported support, or a declared
 dependency-scope change is announced on the exact `all` topic; `all` is not a
-wildcard. A listener using `skill-release` for release notices must also select
-`all` to receive these notices. Keep the selector and replay
-position together as described below when changing the filter. Publication,
-selector match, collected observation and actual refresh are separate events.
+wildcard. A CLI listener using `skill-release` for release notices must also select
+`all` to receive these notices. The Pi inbox does not see bare `all`; keep a
+separate route, such as a bounded board read before dependent work if that is
+timely enough. Keep the selector and replay position together when changing the
+filter. Publication, selector match, collected observation and actual refresh
+are separate events.
 
 The notice distinguishes direct installed impact, changed support and potential
 consumers. Declared reach is conditional and incomplete; it does not establish
@@ -133,7 +137,7 @@ and any experiment exposure conditions; the notice grants no authority.
 
 **Blocking work is a separate decision.** Suspend a dependent step when an
 unresolved dependency requires it; independent work can continue while you
-listen. Give `wait` a timeout: without `--timeout-seconds` it blocks indefinitely.
+listen. If you own a CLI listener, give `wait` a timeout: without `--timeout-seconds` it blocks indefinitely.
 Choose that lifetime for the expected availability or decision boundary, not as
 a short heartbeat. Quiet availability should not require recurring model calls:
 a 55-second timeout that wakes the model to rearm can resend its full context
@@ -153,9 +157,10 @@ interpretable. A successor selects its exclusion using its own verified identity
 and required publishers. If the new delivery scope needs previously skipped
 posts, replay from an earlier cursor; the cursor alone cannot recover them.
 
-## Arm a listener so it cannot lapse silently
+## If you own a CLI listener, keep it from lapsing silently
 
-`wait --follow` owns rearming within a bounded listener lifetime. The caller
+This section is for callers collecting the CLI, not the Pi extension's managed
+inbox. `wait --follow` owns rearming within a bounded listener lifetime. The caller
 still owns collecting its stream and delivering relevant messages into the
 session; a terminal or file receiving output is not model delivery. Use it when
 the host can consume a running stream. Otherwise keep the one-shot collection

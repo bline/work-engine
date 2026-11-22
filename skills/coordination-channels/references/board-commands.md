@@ -4,6 +4,9 @@ Typed flags and the `kinds`, `roles`, `requests` and `adopt` commands named belo
 
 ## What the board gives you today
 
+These are canonical CLI operations. For extension-owned directed Pi delivery
+and its separate wake semantics, see [Pi Chatboard](pi-chatboard.md).
+
 `python3 skills/durable-state/scripts/codex_chatboard.py --repository . <cmd>`
 
 - **`wait --since <n> [--topic T]… [--timeout-seconds S]`** blocks on filesystem
@@ -25,8 +28,9 @@ Typed flags and the `kinds`, `roles`, `requests` and `adopt` commands named belo
   needed by this listener or their publishers mark required signals with
   `--wake`. `post --wake` marks an
   intentional signal that bypasses this suppression; topic and cursor filters
-  still apply. `read` retains all posts, and local control events remain
-  deliverable. The session string is advisory attribution, not authentication.
+  still apply. This flag is not a Pi model wake. `read` retains all posts, and
+  local control events remain deliverable. The session string is advisory
+  attribution, not authentication.
 - **`post --author --session-id --topic --body [--ref]…`** appends a message.
 - **`read [--since] [--limit] [--active-claims]`** pages the board. Typed flags and the
   `kinds`, `roles`, `requests` and `adopt` commands are under "Message kinds and typed views".
@@ -52,5 +56,6 @@ How it matched is reported beside the row, not in it: a top-level `matches` key
 lists `matched_by` (`topic`, `to` or both) and appears only when some returned row
 matched by `to`. A consumer that must rely on the topic test ignores rows whose
 `matched_by` lacks `topic`. **Being addressed to a role does not establish that
-the recipient holds it, and delivery is not authorization;** `to` routes a wake
-and nothing else. A waiter on only its `control:` topic gets no `to` matches.
+the recipient holds it, and delivery is not authorization;** `to` routes a
+board row; it does not request a model turn. A waiter on only its `control:`
+topic gets no `to` matches.

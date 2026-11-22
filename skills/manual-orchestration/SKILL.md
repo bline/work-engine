@@ -36,14 +36,14 @@ Repository instructions and owning contracts still govern each role. Conditional
 
 ## Context pressure: every role
 
-At startup and after recovery, establish how this role receives its own context
-pressure through an owned chatboard `wait`. This includes supervisors, workers,
-reviewers and investigation roles. Load [session control](references/context-control.md)
-when establishing or repairing the route: it defines verified enrollment,
-collection, delivery and the explicit-check fallback. A topic-only wait does not
-observe context; uncollected stdout cannot warn the deciding agent before rollover.
-Keep the binding and delivery owner in the existing continuation. This observation
-does not transfer collection ownership or decide when context should be replaced.
+At startup and after recovery, establish an owned route that delivers this
+role's verified context pressure to the deciding agent in time. This includes
+supervisors, workers, reviewers and investigation roles. Load
+[session control](references/context-control.md) to choose or repair the route
+and apply its explicit-check fallback. Neither a topic-only wait nor the Pi
+Chatboard inbox observes context. Uncollected output cannot warn the agent
+before rollover. Keep the binding and delivery owner in the continuation;
+the observation does not transfer ownership or decide when to replace context.
 
 ## Launching a child
 

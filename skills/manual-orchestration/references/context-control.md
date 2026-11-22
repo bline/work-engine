@@ -1,12 +1,33 @@
 # Session control observations for manual handoffs
 
-Every active role receives its own context telemetry through a session-specific
-control subscription on chatboard `wait`, alongside coordination messages.
-This applies to standalone roots, supervisors, workers, reviewers and
-investigation roles. This moves routine observation into a host
-process; the worker, parent and root retain the decisions in
-[context boundary](context-boundary.md). A pressure observation grants no launch,
-handoff, acceptance or root-transfer authority.
+Every active role needs verified pressure observations for its own session
+delivered to the deciding agent before the next context-dependent decision
+or loss of preservation headroom. This applies to standalone roots,
+supervisors, workers, reviewers and investigation roles. The worker, parent
+and root retain the decisions in [context boundary](context-boundary.md).
+A pressure observation grants no launch, handoff, acceptance or root-transfer
+authority.
+
+## Choose the delivery route
+
+- A context-bound CLI `chatboard wait` can collect local pressure, optionally
+  alongside board messages and objective budget. It remains the route below
+  for Codex/Claude and for Pi roles that need an external collector.
+- The separate Work Engine **context-pressure** extension in `pi-core-plugins`
+  can deliver warnings on the next natural request in the same Pi session.
+  Use it only where that timing suffices. Verify the actual session, active
+  transcript, pinned reader digest and configured input levels, and verify
+  warning delivery on the route before relying on it. `/context-pressure status`
+  checks the selected profile and observation; it does not prove a warning
+  reached a model. The extension cannot wake an idle session, notify a parent
+  or deliver objective budget events. Keep an owned external collector if
+  those consequences are required.
+- The **Pi Chatboard** extension is a directed message inbox, not a pressure
+  or budget route. Do not infer coverage from `/chatboard status`. Keep any
+  separate collector needed for time-sensitive context/budget or topic-only
+  messages. If pressure delivery is unavailable, name who will perform a
+  pinned explicit check before the next substantial phase; unknown is not
+  spare capacity.
 
 ## Enrollment and delivery ownership
 
@@ -21,6 +42,8 @@ binding rather than having parent and child unknowingly duplicate it. These
 roles can coincide. Enrollment is explicit: no automatic host hook is installed.
 An unsupported host or unavailable delivery route remains a visible gap, with
 an owned explicit check before the next substantial phase as fallback.
+
+## Bind a CLI context subscription
 
 **Board topics and context enrollment are separate.** A running `wait` with only
 `--topic` selectors does not produce context stats. Before relying on the route,
@@ -94,9 +117,11 @@ warning. An empty `messages` array does not make a control result empty.
 
 ## Combine budget and coordination observation
 
-For a supervisor, add the objective's `--budget-record`, independently pinned
-`--budget-reader` and `--budget-sha256` to this same wait, alongside the verified
-context binding and relevant board topics. The [budget subscription](../../../docs/codex-chatboard.md#budget-observation-subscription)
+When the CLI waiter owns budget observation, add the objective's
+`--budget-record`, independently pinned `--budget-reader` and `--budget-sha256`.
+Combine with context and board topics only when this waiter still owns those
+streams. Use other owned routes for directed Pi messages and any acceptable
+local context projection. The [budget subscription](../../../docs/codex-chatboard.md#budget-observation-subscription)
 owns its reader contract and event semantics. Observe budget, context and board
 events in every returned batch; `status: messages` can accompany control or
 budget events and must not hide them. A board-only wait does not observe either
@@ -142,11 +167,13 @@ was recovered.
 
 Continue keeping the durable continuation current.
 
-**A current observation replaces the explicit command at a boundary check.** It
-is current when the listener is verified bound to this session, transcript,
-epoch and levels; is still running; its output has been collected up to the
-decision (reading pending output can share the dispatch call); and nothing since
-reported an error, timeout, `unavailable` or epoch change. The reader emits on
+**A current observation replaces the explicit command at a boundary check.**
+For a CLI listener, it is current when the listener is verified bound to this
+session, transcript, epoch and levels; is still running; its output has been
+collected up to the decision; and nothing since reported an error, timeout,
+`unavailable` or epoch change. For Pi request-local projection, silence is not
+a current reading: check the actual bound observation when needed for the
+decision. The CLI reader emits on
 every change of level and stays quiet while pressure is unchanged
 ([board reference](../../../docs/codex-chatboard.md#session-control-subscription)),
 so the last observation bounds the present input: at least its measured input,

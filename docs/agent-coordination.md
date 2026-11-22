@@ -48,10 +48,18 @@ Claims coordinate actors but do not create workflow or human authority. The
 board is CAS-published through private Git refs and does not modify a branch,
 index, or working tree.
 
-To wait for a long command instead of sleeping or polling, run it with
-`skills/durable-state/scripts/chatboard_job.py` and add its job topic to your
-blocking board wait; see
-[Wait for a background job](codex-chatboard.md#wait-for-a-background-job).
+For directed coordination between enrolled Pi sessions on the same board and
+group, prefer [Pi Chatboard](codex-chatboard.md#directed-coordination-in-pi).
+The extension owns subscription, rearming and inbox delivery; do not run a
+second CLI waiter for the same directed delivery. This does not replace the
+board read above, claims, typed workflows, or separate routes for topic-only
+traffic, context pressure, or objective budget.
+
+For long commands, use the host's owned background-operation collection when
+available. If using the CLI board job route, run
+`skills/durable-state/scripts/chatboard_job.py` and add its job topic to the
+owning CLI waiter; see [Wait for a background job](codex-chatboard.md#wait-for-a-background-job).
+The Pi Chatboard inbox does not subscribe to that job topic.
 
 Command lines (generated from `--help`):
 
