@@ -1,9 +1,12 @@
 use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use super::task_free_b::{self, Digest, Kind, PURPOSE};
+use super::task_free_b::{self, Digest, Kind, Mark, PURPOSE, Target, joined_fixture};
 use super::{Store, verify_sidecars};
-use crate::application::offline_qualification::{AttemptBinding, JoinedMarkReadback};
+use crate::application::offline_qualification::{
+    AttemptBinding, FixtureCreateReadback, FixtureHeldReadbacks, FixtureRunning, HoldFailure,
+    JoinedMarkReadback, OfflineLiveSubtree, OfflineStopSubject,
+};
 use crate::{CampaignError, Result};
 
 const SCHEMA: &str = include_str!("../../migrations/offline_qualification_v1.sql");
@@ -327,7 +330,28 @@ impl Store {
         b: &AttemptBinding,
         request: Digest,
         readback: JoinedMarkReadback,
-    ) -> Result<()> {
+    ) -> Result<Mark> {
+        self.mark_joined_send(b, request, readback, None)
+    }
+
+    pub(crate) fn mark_qualification_start(
+        &mut self,
+        b: &AttemptBinding,
+        create: &Mark,
+        observed: &FixtureCreateReadback,
+        request: Digest,
+        readback: JoinedMarkReadback,
+    ) -> Result<Mark> {
+        self.mark_joined_send(b, request, readback, Some((create, observed)))
+    }
+
+    fn mark_joined_send(
+        &mut self,
+        b: &AttemptBinding,
+        request: Digest,
+        readback: JoinedMarkReadback,
+        start_after: Option<(&Mark, &FixtureCreateReadback)>,
+    ) -> Result<Mark> {
         self.verify_qualification_opening(b)?;
         verify_sidecars(&self.root)?;
         let tx = self
@@ -340,13 +364,81 @@ impl Store {
         require_current_spend(&tx, b)?;
         // No callbacks here. B receives the same immediate transaction that
         // ordered currentness/revoke against this mark, not another grant.
-        let mark = Self::write_b_mark(&tx, b.lifecycle(), None, Kind::Create, request, None)?;
+        let (predecessor, kind, target) = match start_after {
+            None => (None, Kind::Create, None),
+            Some((mark, observation)) => {
+                joined_fixture::require_created(&tx, b.lifecycle(), mark, observation)?;
+                (
+                    Some(mark),
+                    Kind::Start,
+                    Some(Target::Start(joined_fixture::object(observation)?)),
+                )
+            }
+        };
+        let mark = Self::write_b_mark(&tx, b.lifecycle(), predecessor, kind, request, target)?;
         tx.commit().map_err(store_error)?;
         if readback == JoinedMarkReadback::LostAfterCommit {
             return Err(refused("possible-issue confirmation lost"));
         }
         self.readback(b, CURRENT_SPEND)?;
-        self.confirm_b_mark(b.lifecycle(), &mark)
+        if let Some((create, observation)) = start_after {
+            self.confirm_joined_start_mark(b.lifecycle(), &mark, create, observation)?;
+        } else {
+            self.confirm_b_mark(b.lifecycle(), &mark)?;
+        }
+        Ok(mark)
+    }
+
+    pub(crate) fn mark_offline_scoped_stop(
+        &mut self,
+        b: &AttemptBinding,
+        live: &OfflineLiveSubtree,
+        readback: JoinedMarkReadback,
+    ) -> Result<OfflineStopSubject> {
+        self.verify_qualification_opening(b)?;
+        verify_sidecars(&self.root)?;
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(store_error)?;
+        if !schema_joined(&tx)? {
+            return Err(refused("joined fixture absent"));
+        }
+        require_current_spend(&tx, b)?;
+        let expected = Self::write_offline_stop_mark(&tx, b, live)?;
+        tx.commit().map_err(store_error)?;
+        if readback == JoinedMarkReadback::LostAfterCommit {
+            return Err(refused("scoped Stop possible-issue confirmation lost"));
+        }
+        self.readback(b, CURRENT_SPEND)?;
+        if self.read_offline_scoped_stop(b, live)? != expected {
+            return Err(refused("scoped Stop mark differs at readback"));
+        }
+        Ok(expected)
+    }
+
+    pub(crate) fn confirm_fixture_held(
+        &mut self,
+        b: &AttemptBinding,
+        mark: &Mark,
+        running: &FixtureRunning,
+        evidence: &FixtureHeldReadbacks,
+        capture_sha256: Option<&str>,
+    ) -> std::result::Result<(), HoldFailure> {
+        let uncertain = |_| HoldFailure::FactNotConfirmed;
+        self.verify_qualification_opening(b).map_err(uncertain)?;
+        verify_sidecars(&self.root).map_err(uncertain)?;
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| HoldFailure::FactNotConfirmed)?;
+        if !schema_joined(&tx).map_err(uncertain)? {
+            return Err(HoldFailure::FactNotConfirmed);
+        }
+        require_current_spend(&tx, b).map_err(|_| HoldFailure::NotCurrent)?;
+        let fact = joined_fixture::write_held(&tx, b, mark, running, evidence, capture_sha256)?;
+        tx.commit().map_err(|_| HoldFailure::FactNotConfirmed)?;
+        joined_fixture::confirm_held(self, b, &fact, running)
     }
 
     pub(crate) fn mark_isolated_fixture<R>(

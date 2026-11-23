@@ -1,11 +1,11 @@
 //! Private, job-free offline collector. Not selected by any Server route.
 
 use slice_campaign::offline_qualification::{
-    AttemptBinding, JoinedMarkReadback, QualificationPort, SpentQualification,
+    AttemptBinding, QualificationPort, SpentQualification,
 };
 use work_engine_manual_host::pi_docker::offline_qualification::{
-    Admission, CollectorFence, EffectObservation, EffectRequest, MarkerFixture, Outcome,
-    run_fixture, run_joined_fixture,
+    Admission, CollectorFence, EffectObservation, EffectRequest, JoinedReadbacks, MarkerFixture,
+    Outcome, run_fixture, run_joined_fixture,
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -46,8 +46,8 @@ impl Collector {
     fn collect_joined(
         &self,
         request: &Admission,
-        readback: JoinedMarkReadback,
-        fake: impl FnOnce(&EffectRequest) -> EffectObservation,
+        readback: impl Into<JoinedReadbacks>,
+        fake: impl FnMut(&EffectRequest) -> EffectObservation,
     ) -> Collected {
         self.collect_once(request, |spent| {
             run_joined_fixture(spent, request, &self.fence, readback, fake)

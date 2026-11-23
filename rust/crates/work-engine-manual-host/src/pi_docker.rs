@@ -23,13 +23,16 @@ pub mod coding;
 pub mod fifo;
 #[path = "pi_inference_hold.rs"]
 pub mod inference_hold;
+#[cfg(feature = "offline-qualification-fixture")]
+#[path = "pi_init_only_ready.rs"]
+pub mod init_only_ready;
 #[path = "pi_native_memory.rs"]
 pub mod native_memory;
-#[path = "pi_public_hold.rs"]
-mod public_hold;
 #[cfg(feature = "offline-qualification-fixture")]
 #[path = "pi_offline_qualification.rs"]
 pub mod offline_qualification;
+#[path = "pi_public_hold.rs"]
+mod public_hold;
 #[path = "pi_observation.rs"]
 pub mod receiver;
 

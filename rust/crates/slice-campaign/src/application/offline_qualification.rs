@@ -11,6 +11,11 @@ use crate::store::offline_qualification::refused;
 use crate::store::task_free_b::{Binding as LifecycleBinding, Digest, PURPOSE};
 use crate::{CampaignError, CampaignIdentity, CampaignRevision, Result, require_sha};
 
+mod start;
+mod terminal;
+pub use start::*;
+pub use terminal::*;
+
 /// Exact values already selected at the trusted owner, never from a task or
 /// client. The serving pin covers the intended serving/endpoint generation.
 #[derive(Clone, Debug)]
@@ -157,9 +162,9 @@ impl CampaignInner {
             root,
             self.config.writer_identity
         ]))?;
-        // Owner-pinned inert ingress identity, not an evidence producer or
-        // credential. No Host response can be promoted to authenticated fact.
-        let evidence_ingress = campaign_digest(&json!([PURPOSE, "fixture-no-producer-v1"]))?;
+        // Pin the fixed offline verification policy and synthetic custody roles,
+        // not an installed evidence producer or credential.
+        let evidence_ingress = start::fixture_ingress_digest()?;
         let attempt = campaign_digest(&json!([PURPOSE, "attempt", root, pins.grant_id]))?;
         let operation = campaign_digest(&json!([PURPOSE, "server-operation", attempt]))?;
         let digest = campaign_digest(&json!([
@@ -300,25 +305,33 @@ impl SpentQualification {
     }
 
     /// Consume the fresh handoff even when the request or commit is uncertain.
-    /// On the joined fixture only Create is supported: its response is an
-    /// object ID, not the authenticated task/lifetime required by Start/Close.
+    /// Only its matching confirmed Create and independent serving-object
+    /// readback may advance the process-local continuation to Start.
     pub fn mark_joined_create(
         self,
         request_digest: &str,
         readback: JoinedMarkReadback,
-    ) -> Result<()> {
+    ) -> Result<MarkedCreate> {
         if self.next != Some(OperationKind::Create)
             || self.binding.create_request_digest()? != request_digest
         {
             return Err(refused("joined Create request differs"));
         }
-        let mut owner = self.port.owner()?;
-        check_owner(&owner, &self.binding)?;
-        owner.store.mark_qualification_fixture(
-            &self.binding,
-            Digest::new(request_digest.to_owned())?,
-            readback,
-        )
+        let mark = {
+            let mut owner = self.port.owner()?;
+            check_owner(&owner, &self.binding)?;
+            owner.store.mark_qualification_fixture(
+                &self.binding,
+                Digest::new(request_digest.to_owned())?,
+                readback,
+            )?
+        };
+        Ok(MarkedCreate {
+            port: self.port,
+            binding: self.binding,
+            mark,
+            request: request_digest.to_owned(),
+        })
     }
 
     /// A-only marker simulation. Joined roots refuse before invoking this

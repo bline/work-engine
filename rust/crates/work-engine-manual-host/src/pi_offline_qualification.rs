@@ -6,7 +6,8 @@ use std::sync::Mutex;
 use serde_json::json;
 use slice_campaign::codec::campaign_digest;
 use slice_campaign::offline_qualification::{
-    AttemptBinding, JoinedMarkReadback, OperationKind, SpentQualification,
+    AttemptBinding, FixtureCreateReadback, FixtureHeldReadbacks, FixtureRunning, HoldFailure,
+    JoinedMarkReadback, JoinedStartRequest, OperationKind, SpentQualification,
 };
 use slice_campaign::{CampaignError, Result};
 
@@ -60,13 +61,20 @@ impl CollectorFence {
         }
     }
 
-    fn if_admitted(&self, mark: impl FnOnce() -> Result<()>) -> Result<()> {
-        let state = self.0.lock().map_err(|_| refused("collector poisoned"))?;
-        if *state != CollectorState::Admitted {
-            return Err(refused("collector not open for send"));
+    fn if_admitted<T, E>(
+        &self,
+        closed: impl FnOnce() -> E,
+        check: impl FnOnce() -> std::result::Result<T, E>,
+    ) -> std::result::Result<T, E> {
+        // Collector -> Campaign; the guard survives the decision.
+        match self.0.lock() {
+            Ok(state) if *state == CollectorState::Admitted => check(),
+            _ => Err(closed()),
         }
-        // Lock order is collector -> Campaign, and no effect code runs here.
-        mark()
+    }
+
+    fn mark<T>(&self, mark: impl FnOnce() -> Result<T>) -> Result<T> {
+        self.if_admitted(|| refused("collector not open for send"), mark)
     }
 }
 
@@ -77,11 +85,25 @@ pub struct EffectRequest {
     pub kind: OperationKind,
     pub binding: AttemptBinding,
     pub predecessor_digest: Option<String>,
+    pub predecessor_mark_digest: Option<String>,
     pub request_digest: String,
     pub target_id: Option<String>,
 }
 
 impl EffectRequest {
+    fn joined_start(binding: &AttemptBinding, start: &JoinedStartRequest) -> Self {
+        Self {
+            version: 1,
+            sequence: 2,
+            kind: OperationKind::Start,
+            binding: binding.clone(),
+            predecessor_digest: Some(start.create_request_digest.clone()),
+            predecessor_mark_digest: Some(start.create_mark_digest.clone()),
+            request_digest: start.request_digest.clone(),
+            target_id: Some(start.target.full_id.clone()),
+        }
+    }
+
     fn new(
         binding: &AttemptBinding,
         kind: OperationKind,
@@ -121,6 +143,7 @@ impl EffectRequest {
             kind,
             binding: binding.clone(),
             predecessor_digest,
+            predecessor_mark_digest: None,
             request_digest,
             target_id: target.map(str::to_owned),
         })
@@ -174,14 +197,23 @@ impl MarkerFixture {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum EffectObservation {
     Created {
         request_digest: String,
         full_id: String,
     },
+    JoinedCreated {
+        request_digest: String,
+        full_id: String,
+        serving_readback: FixtureCreateReadback,
+    },
     Acknowledged {
         request_digest: String,
+    },
+    JoinedRunning {
+        running: FixtureRunning,
+        held: Box<FixtureHeldReadbacks>,
     },
     Refused {
         request_digest: String,
@@ -196,8 +228,12 @@ pub enum Outcome {
     ConfirmedRefusal(OperationKind),
     Unresolved(OperationKind),
     InertSequenceAcknowledged,
-    /// Joined Create got a matching full object ID, not a task or terminal fact.
+    /// Matching full object reply only. No serving readback, no Start.
     InertObjectCreated,
+    /// Inert operation ACK only: no independently bound running task or held evidence.
+    StartAcknowledged,
+    StartedWithoutHeld(HoldFailure),
+    InertInitHeld,
 }
 
 fn refused(reason: &str) -> CampaignError {
@@ -211,40 +247,87 @@ fn full_identity(value: &str) -> bool {
             .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
 }
 
-/// Run the joined inert Create only. No selected task/lifetime evidence exists
-/// here. Consuming the fresh handoff at the mark leaves no Start/Close path.
+#[derive(Clone, Copy)]
+pub struct JoinedReadbacks {
+    pub create_mark: JoinedMarkReadback,
+    pub start_mark: JoinedMarkReadback,
+}
+
+impl From<JoinedMarkReadback> for JoinedReadbacks {
+    fn from(create_mark: JoinedMarkReadback) -> Self {
+        Self {
+            create_mark,
+            start_mark: JoinedMarkReadback::Check,
+        }
+    }
+}
+
+/// Same winning collector and moved handoff for both inert operations. No
+/// independent Start entry, recovery, Close, delivery or release branch.
 pub fn run_joined_fixture(
     spent: SpentQualification,
     selection: &Admission,
     fence: &CollectorFence,
-    readback: JoinedMarkReadback,
-    observe: impl FnOnce(&EffectRequest) -> EffectObservation,
+    readbacks: impl Into<JoinedReadbacks>,
+    mut observe: impl FnMut(&EffectRequest) -> EffectObservation,
 ) -> Outcome {
-    use OperationKind::Create;
+    use EffectObservation as Seen;
+    use OperationKind::{Create, Start};
     if !selection.matches(spent.binding()) {
         return Outcome::ScopeRefused;
     }
+    let readbacks = readbacks.into();
     let Ok(op) = EffectRequest::new(spent.binding(), Create, None, None) else {
         return Outcome::NotSubmitted(Create);
     };
-    if fence
-        .if_admitted(|| spent.mark_joined_create(&op.request_digest, readback))
-        .is_err()
-    {
+    let Ok(marked) =
+        fence.mark(|| spent.mark_joined_create(&op.request_digest, readbacks.create_mark))
+    else {
         return Outcome::NotSubmitted(Create);
-    }
-    // Outside both gates. The observation cannot publish authenticated B facts.
-    match observe(&op) {
-        EffectObservation::Created {
+    };
+    // Both effects run after exact committed readback, outside both gates.
+    let next = match observe(&op) {
+        Seen::JoinedCreated {
+            request_digest,
+            full_id,
+            serving_readback,
+        } => match marked.confirm_created(&request_digest, &full_id, serving_readback) {
+            Ok(next) => next,
+            Err(_) => return Outcome::Unresolved(Create),
+        },
+        Seen::Created {
             request_digest,
             full_id,
         } if request_digest == op.request_digest && full_identity(&full_id) => {
-            Outcome::InertObjectCreated
+            return Outcome::InertObjectCreated;
         }
-        EffectObservation::Refused { request_digest } if request_digest == op.request_digest => {
-            Outcome::ConfirmedRefusal(Create)
+        Seen::Refused { request_digest } if request_digest == op.request_digest => {
+            return Outcome::ConfirmedRefusal(Create);
         }
-        _ => Outcome::Unresolved(Create),
+        _ => return Outcome::Unresolved(Create),
+    };
+    let start = EffectRequest::joined_start(&op.binding, next.request());
+    let Ok(marked) = fence.mark(|| next.mark(readbacks.start_mark)) else {
+        // Only a local non-delegation; a committed mark may still exist.
+        return Outcome::NotSubmitted(Start);
+    };
+    match observe(&start) {
+        Seen::JoinedRunning { running, held } => {
+            let Ok(confirmed) = marked.confirm_running(running) else {
+                return Outcome::Unresolved(Start);
+            };
+            match fence.if_admitted(|| HoldFailure::NotCurrent, || confirmed.verify_held(*held)) {
+                Ok(()) => Outcome::InertInitHeld,
+                Err(reason) => Outcome::StartedWithoutHeld(reason),
+            }
+        }
+        Seen::Acknowledged { request_digest } if request_digest == start.request_digest => {
+            Outcome::StartAcknowledged
+        }
+        Seen::Refused { request_digest } if request_digest == start.request_digest => {
+            Outcome::ConfirmedRefusal(Start)
+        }
+        _ => Outcome::Unresolved(Start),
     }
 }
 
@@ -276,7 +359,7 @@ pub fn run_fixture(
             return Outcome::NotSubmitted(kind);
         };
         if fence
-            .if_admitted(|| spent.mark_inert_send(op.kind, || marker.record_exact(&op)))
+            .mark(|| spent.mark_inert_send(op.kind, || marker.record_exact(&op)))
             .is_err()
         {
             return Outcome::NotSubmitted(kind);

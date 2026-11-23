@@ -7,6 +7,8 @@
 //! mark call, even where there is no detectable persisted marker. No mark readback
 //! can substitute for that fence or for A's moved, process-local handoff.
 
+use std::num::NonZeroU64;
+
 use rusqlite::{Transaction, TransactionBehavior, params};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
@@ -15,6 +17,9 @@ use crate::{CampaignError, Result};
 
 pub(crate) const MIGRATION_SQL: &str = include_str!("task_free_b.sql");
 pub(crate) const PURPOSE: &str = "b-task-free-qualification-v1";
+
+#[cfg(any(test, feature = "offline-qualification-fixture"))]
+pub(super) mod joined_fixture;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(try_from = "String")]
@@ -94,6 +99,21 @@ impl Binding {
 pub(crate) struct TaskIdentity {
     pub(crate) task: String,
     pub(crate) lifetime: Digest,
+    pub(crate) exec_generation: Digest,
+}
+
+/// The Create object has no running task/lifetime until Start is observed.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ObjectTarget {
+    pub(crate) full_id: Digest,
+    pub(crate) serving_generation: Digest,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) enum Target {
+    Start(ObjectTarget),
+    Close(TaskIdentity),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -111,7 +131,15 @@ pub(crate) struct Mark {
     sequence: i64,
     kind: Kind,
     request: Digest,
-    task: Option<TaskIdentity>,
+    predecessor: Option<Digest>,
+    target: Option<Target>,
+}
+
+impl Mark {
+    pub(crate) fn digest(&self) -> Result<String> {
+        let bytes = format!("task-free-b-mark-predecessor-v1\0{}", encode(self)?);
+        Ok(crate::codec::raw_sha256(bytes.as_bytes()))
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -133,7 +161,7 @@ impl Slot {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) enum Observation {
-    Created(TaskIdentity),
+    Created(ObjectTarget),
     Started,
     Closed,
     Held,
@@ -144,9 +172,31 @@ pub(crate) enum Observation {
         workload_and_subtree_exit: Digest,
         accepted_and_recovered_work_fenced: Digest,
     },
+    ScopedTerminal(ScopedTerminalCut),
     Failed,
     Lost,
     Unknown,
+}
+
+/// Owner-only projection of the validated end witness. A legacy Terminal,
+// including at Close, has no such cut and cannot be used as one.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ScopedTerminalCut {
+    final_position: NonZeroU64,
+    workload_and_subtree_exit: Digest,
+    accepted_and_recovered_work_fenced: Digest,
+}
+
+impl ScopedTerminalCut {
+    fn source(&self, ingress: &Digest, close: &Mark, task: &TaskIdentity) -> Result<Digest> {
+        // The checked Close mark commits the exact execution and original
+        // capture stream via its scoped request. Use the typed record codec,
+        // which preserves all u64 ordinals without JS number rounding.
+        let payload = encode(&(ingress, close.digest()?, task, self))?;
+        let bytes = format!("offline-scoped-terminal-cut-v1\0{payload}");
+        Digest::new(crate::codec::raw_sha256(bytes.as_bytes()))
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -218,15 +268,7 @@ impl History {
             Observation::Failed => Evidence::Failed(&fact.source),
             Observation::Lost => Evidence::Lost(&fact.source),
             Observation::Unknown => Evidence::Unknown(&fact.source),
-            Observation::Held
-                if !matches!(
-                    self.evidence(Slot::Operation(Kind::Start)),
-                    Evidence::Observed {
-                        observation: Observation::Started,
-                        ..
-                    }
-                ) =>
-            {
+            Observation::Held if self.confirmed_start_task() != fact.task.as_ref() => {
                 Evidence::UnresolvedHold(&fact.source)
             }
             positive => Evidence::Observed {
@@ -240,25 +282,44 @@ impl History {
         self.facts.iter().any(|slot| slot.len() > 1)
     }
 
-    fn original_task(&self) -> Option<&TaskIdentity> {
-        // Needed to inspect exact historical anchors even after the create slot
-        // is contested. Callers never get a positive projection in that case.
+    fn original_object(&self) -> Option<&ObjectTarget> {
         match &self.facts[Slot::Operation(Kind::Create).index()]
             .first()?
             .observation
         {
-            Observation::Created(task) => Some(task),
+            Observation::Created(object) => Some(object),
             _ => None,
+        }
+    }
+
+    fn start_fact(&self) -> Option<&Fact> {
+        self.facts[Slot::Operation(Kind::Start).index()].first()
+    }
+
+    fn observed_task(&self) -> Option<&TaskIdentity> {
+        self.start_fact()?.task.as_ref()
+    }
+
+    fn confirmed_start_task(&self) -> Option<&TaskIdentity> {
+        let fact = self.start_fact()?;
+        if fact.observation == Observation::Started {
+            fact.task.as_ref()
+        } else {
+            None
         }
     }
 
     fn check_mark(&self, mark: &Mark, predecessor: Option<&Mark>) -> Result<()> {
         if self.tip() != predecessor
+            || mark.predecessor
+                != predecessor
+                    .map(|prior| prior.digest().and_then(Digest::new))
+                    .transpose()?
             || mark.sequence != self.marks.len() as i64 + 1
             || !matches!(
                 (self.tip().map(|mark| mark.kind), mark.kind),
                 (None, Kind::Create)
-                    | (Some(Kind::Create), Kind::Start | Kind::Close)
+                    | (Some(Kind::Create), Kind::Start)
                     | (Some(Kind::Start), Kind::Close)
             )
         {
@@ -266,11 +327,18 @@ impl History {
                 "B operation predecessor/order changed or already marked",
             ));
         }
-        match (mark.kind, &mark.task) {
+        match (mark.kind, &mark.target) {
             (Kind::Create, None) => Ok(()),
-            (Kind::Start | Kind::Close, Some(task)) if self.original_task() == Some(task) => Ok(()),
+            (Kind::Start, Some(Target::Start(object)))
+                if self.original_object() == Some(object) =>
+            {
+                Ok(())
+            }
+            (Kind::Close, Some(Target::Close(task))) if self.observed_task() == Some(task) => {
+                Ok(())
+            }
             _ => Err(conflict(
-                "B operation lacks its exact original task/lifetime",
+                "B operation lacks its exact object or task target",
             )),
         }
     }
@@ -280,22 +348,47 @@ impl History {
             return Err(conflict("B fact ingress or operation anchor differs"));
         }
         match fact.slot {
-            Slot::Operation(kind) if fact.mark.kind == kind && fact.task == fact.mark.task => {}
-            Slot::Hold if fact.mark.kind == Kind::Start && fact.task == fact.mark.task => {}
+            Slot::Operation(Kind::Create)
+                if fact.mark.kind == Kind::Create && fact.task.is_none() => {}
+            Slot::Operation(Kind::Start) if fact.mark.kind == Kind::Start => {}
+            Slot::Operation(Kind::Close)
+                if fact.mark.kind == Kind::Close
+                    && matches!(&fact.mark.target, Some(Target::Close(task)) if Some(task) == fact.task.as_ref()) =>
+                {}
+            Slot::Hold if fact.mark.kind == Kind::Start && fact.task.is_some() => {}
             Slot::Terminal
                 if self.tip() == Some(&fact.mark)
                     && fact.task.is_some()
-                    && fact.task.as_ref() == self.original_task() => {}
+                    && fact.task.as_ref() == self.observed_task() => {}
             _ => {
                 return Err(conflict(
                     "B fact is stale, mis-scoped or has the wrong task/lifetime",
                 ));
             }
         }
+        if let Some(task) = &fact.task {
+            validate_id(&task.task)?;
+        }
         match (&fact.slot, &fact.observation) {
-            (Slot::Operation(Kind::Create), Observation::Created(task)) => validate_id(&task.task),
-            (Slot::Operation(Kind::Start), Observation::Started)
-            | (Slot::Operation(Kind::Close), Observation::Closed)
+            (Slot::Operation(Kind::Create), Observation::Created(object))
+                if object.serving_generation == binding.serving_generation =>
+            {
+                Ok(())
+            }
+            (Slot::Operation(Kind::Start), Observation::Started) if fact.task.is_some() => Ok(()),
+            (Slot::Terminal, Observation::ScopedTerminal(cut)) => {
+                if let (Kind::Close, Some(task)) = (fact.mark.kind, fact.task.as_ref())
+                    && self.confirmed_start_task() == Some(task)
+                    && cut.source(&fact.ingress, &fact.mark, task)? == fact.source
+                {
+                    Ok(())
+                } else {
+                    Err(integrity(
+                        "B scoped Terminal cut is not bound to its source",
+                    ))
+                }
+            }
+            (Slot::Operation(Kind::Close), Observation::Closed)
             | (Slot::Hold, Observation::Held)
             | (Slot::Terminal, Observation::Terminal { .. })
             | (_, Observation::Failed | Observation::Lost | Observation::Unknown) => Ok(()),
@@ -314,10 +407,10 @@ impl Store {
         predecessor: Option<&Mark>,
         kind: Kind,
         request: Digest,
-        task: Option<TaskIdentity>,
+        target: Option<Target>,
     ) -> Result<()> {
         let tx = self.b_transaction(binding, true)?;
-        let mark = Self::write_b_mark(&tx, binding, predecessor, kind, request, task)?;
+        let mark = Self::write_b_mark(&tx, binding, predecessor, kind, request, target)?;
         tx.commit().map_err(sql)?;
         self.confirm_b_mark(binding, &mark)
     }
@@ -331,7 +424,7 @@ impl Store {
         predecessor: Option<&Mark>,
         kind: Kind,
         request: Digest,
-        task: Option<TaskIdentity>,
+        target: Option<Target>,
     ) -> Result<Mark> {
         binding.validate()?;
         check_spend(tx, binding)?;
@@ -344,7 +437,10 @@ impl Store {
             sequence: history.marks.len() as i64 + 1,
             kind,
             request,
-            task,
+            predecessor: predecessor
+                .map(|prior| prior.digest().and_then(Digest::new))
+                .transpose()?,
+            target,
         };
         history.check_mark(&mark, predecessor)?;
         if mark.sequence == 1 {
@@ -380,16 +476,30 @@ impl Store {
         binding: &Binding,
         authenticated: AuthenticatedFact,
     ) -> Result<Recorded> {
+        let tx = self.b_transaction(binding, true)?;
+        let disposition = Self::write_b_fact(&tx, binding, &authenticated)?;
+        tx.commit().map_err(sql)?;
+        if disposition == Recorded::Stored {
+            Self::confirm_b_fact(self, binding, &authenticated)?;
+        }
+        Ok(disposition)
+    }
+
+    fn write_b_fact(
+        tx: &Transaction<'_>,
+        binding: &Binding,
+        authenticated: &AuthenticatedFact,
+    ) -> Result<Recorded> {
         if authenticated.binding != *binding {
             return Err(conflict("B authenticated fact binds another spend/attempt"));
         }
-        let tx = self.b_transaction(binding, true)?;
-        let history = load(&tx, binding)?;
-        let fact = authenticated.fact;
-        history.check_fact(binding, &fact)?;
+        check_spend(tx, binding)?;
+        let history = load(tx, binding)?;
+        let fact = &authenticated.fact;
+        history.check_fact(binding, fact)?;
         let index = fact.slot.index();
         let slot = &history.facts[index];
-        if slot.contains(&fact) {
+        if slot.contains(fact) {
             return Ok(Recorded::Duplicate);
         }
         if slot.len() == 2 {
@@ -401,14 +511,10 @@ impl Store {
                 binding.attempt,
                 index as i64 + 1,
                 slot.len() as i64,
-                encode(&fact)?
+                encode(fact)?
             ],
         )
         .map_err(sql)?;
-        tx.commit().map_err(sql)?;
-        if !self.read_b_history(binding)?.facts[index].contains(&fact) {
-            return Err(integrity("B committed fact differs at readback"));
-        }
         Ok(if slot.is_empty() {
             Recorded::Stored
         } else {
@@ -416,8 +522,22 @@ impl Store {
         })
     }
 
-    /// Checked historical evidence only, including after loss/reopen. No mutation
-    /// is allowed from a new Store epoch in this first offline cut.
+    fn confirm_b_fact(
+        &mut self,
+        binding: &Binding,
+        authenticated: &AuthenticatedFact,
+    ) -> Result<()> {
+        let history = self.read_b_history(binding)?;
+        let fact = &authenticated.fact;
+        if history.contested() || history.facts[fact.slot.index()].as_slice() != [fact.clone()] {
+            return Err(integrity(
+                "B committed fact differs or is contested at readback",
+            ));
+        }
+        Ok(())
+    }
+
+    /// Checked historical evidence only, including after loss/reopen.
     pub(crate) fn read_b_history(&mut self, binding: &Binding) -> Result<History> {
         let tx = self.b_transaction(binding, false)?;
         let history = load(&tx, binding)?;
@@ -426,12 +546,23 @@ impl Store {
     }
 
     fn b_transaction(&mut self, binding: &Binding, write: bool) -> Result<Transaction<'_>> {
+        self.b_scoped_transaction(binding, write, write)
+    }
+
+    // Only the explicitly wired synthetic terminal ingress uses an immediate
+    // transaction without live opening authority. It can record evidence, not marks.
+    fn b_scoped_transaction(
+        &mut self,
+        binding: &Binding,
+        write: bool,
+        require_opening: bool,
+    ) -> Result<Transaction<'_>> {
         binding.validate()?;
         self.verify_binding()?;
         super::verify_sidecars(&self.root)?;
         if binding.root != self.root_id
             || binding.profile != self.marker.profile
-            || (write && binding.opening_epoch != self.epoch)
+            || (require_opening && binding.opening_epoch != self.epoch)
         {
             return Err(conflict(
                 "B Store root, profile or live opening epoch differs",
@@ -520,7 +651,7 @@ fn load(tx: &Transaction<'_>, binding: &Binding) -> Result<History> {
     }
 
     // Decode marks first; then typed facts in slot order to resolve the original
-    // create lifetime. No qualification is inferred from well-shaped rows.
+    // Create object and later Start task. Well-shaped rows confer no authority.
     let mut stmt = tx.prepare(
         "SELECT sequence, kind, mark_json FROM b_lifecycle_mark WHERE attempt_id=?1 ORDER BY sequence",
     ).map_err(sql)?;

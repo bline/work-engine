@@ -83,14 +83,9 @@ impl Fixture {
         }
     }
 
-    fn mark(
-        &mut self,
-        expected: Option<&Mark>,
-        kind: Kind,
-        task: Option<TaskIdentity>,
-    ) -> Result<()> {
+    fn mark(&mut self, expected: Option<&Mark>, kind: Kind, target: Option<Target>) -> Result<()> {
         self.writer
-            .mark_b_possible_issue(&self.binding, expected, kind, digest('5'), task)
+            .mark_b_possible_issue(&self.binding, expected, kind, digest('5'), target)
     }
 
     fn read(&mut self) -> History {
@@ -101,29 +96,45 @@ impl Fixture {
         self.writer.record_b_fact(&self.binding, fact)
     }
 
-    fn create(&mut self) -> (Mark, TaskIdentity) {
+    fn create(&mut self) -> (Mark, ObjectTarget) {
         self.mark(None, Kind::Create, None).unwrap();
         let create = self.read().tip().unwrap().clone();
-        let task = TaskIdentity {
-            task: "opaque-task".into(),
-            lifetime: digest('6'),
+        let object = ObjectTarget {
+            full_id: digest('6'),
+            serving_generation: self.binding.serving_generation.clone(),
         };
         self.record(attest(
             &self.binding,
             Slot::Operation(Kind::Create),
             &create,
             None,
-            Observation::Created(task.clone()),
+            Observation::Created(object.clone()),
         ))
         .unwrap();
-        (create, task)
+        (create, object)
     }
 
     fn start(&mut self) -> (Mark, TaskIdentity) {
-        let (create, task) = self.create();
-        self.mark(Some(&create), Kind::Start, Some(task.clone()))
+        let (create, object) = self.create();
+        self.mark(Some(&create), Kind::Start, Some(Target::Start(object)))
             .unwrap();
+        let task = TaskIdentity {
+            task: "opaque-task".into(),
+            lifetime: digest('a'),
+            exec_generation: digest('b'),
+        };
         (self.read().tip().unwrap().clone(), task)
+    }
+
+    fn confirm_start(&mut self, start: &Mark, task: &TaskIdentity) {
+        self.record(attest(
+            &self.binding,
+            Slot::Operation(Kind::Start),
+            start,
+            Some(task.clone()),
+            Observation::Started,
+        ))
+        .unwrap();
     }
 }
 
@@ -179,7 +190,7 @@ fn one_writer_and_one_create_marker_with_exact_cas_order() {
 #[test]
 fn identical_request_from_another_attempt_is_not_a_predecessor_or_anchor() {
     let mut f = Fixture::new();
-    let (create, task) = f.create();
+    let (create, object) = f.create();
     f.writer
         .conn
         .execute_batch(
@@ -206,8 +217,12 @@ fn identical_request_from_another_attempt_is_not_a_predecessor_or_anchor() {
     assert_eq!(create.request, foreign_mark.request);
     assert_ne!(create, foreign_mark);
     assert!(
-        f.mark(Some(&foreign_mark), Kind::Start, Some(task.clone()))
-            .is_err()
+        f.mark(
+            Some(&foreign_mark),
+            Kind::Start,
+            Some(Target::Start(object.clone()))
+        )
+        .is_err()
     );
     assert!(
         f.record(attest(
@@ -215,11 +230,12 @@ fn identical_request_from_another_attempt_is_not_a_predecessor_or_anchor() {
             Slot::Operation(Kind::Create),
             &foreign_mark,
             None,
-            Observation::Created(task.clone())
+            Observation::Created(object.clone())
         ))
         .is_err()
     );
-    f.mark(Some(&create), Kind::Start, Some(task)).unwrap();
+    f.mark(Some(&create), Kind::Start, Some(Target::Start(object)))
+        .unwrap();
 }
 
 #[test]
@@ -359,14 +375,19 @@ fn missing_wrong_or_duplicate_spend_cannot_mark_an_operation() {
 fn ingress_task_generation_stale_anchor_and_fact_kind_checks() {
     let mut f = Fixture::new();
     let (start, task) = f.start();
+    f.confirm_start(&start, &task);
     let create = f.read().mark(Kind::Create).unwrap().clone();
     let wrong_task = TaskIdentity {
         lifetime: digest('f'),
         ..task.clone()
     };
     assert!(
-        f.mark(Some(&start), Kind::Close, Some(wrong_task.clone()))
-            .is_err()
+        f.mark(
+            Some(&start),
+            Kind::Close,
+            Some(Target::Close(wrong_task.clone()))
+        )
+        .is_err()
     );
     let mut wrong_ingress = attest(
         &f.binding,
@@ -451,7 +472,7 @@ fn terminal_and_hold_separate_with_no_close_or_delete_dependency() {
     ))
     .unwrap();
     assert!(
-        f.mark(Some(&start), Kind::Close, Some(task.clone()))
+        f.mark(Some(&start), Kind::Close, Some(Target::Close(task.clone())))
             .is_err()
     );
     let Fixture {
@@ -507,16 +528,16 @@ fn failure_loss_and_unknown_stay_unresolved_and_close_is_not_terminal() {
             }
         );
         assert!(
-            f.mark(Some(&start), Kind::Start, Some(task.clone()))
+            f.mark(Some(&start), Kind::Start, start.target.clone())
                 .is_err()
         );
         // Distinct, exact close marker; A must still independently allow a
         // scoped cleanup in the live epoch. This test records no effects.
-        f.mark(Some(&start), Kind::Close, Some(task.clone()))
+        f.mark(Some(&start), Kind::Close, Some(Target::Close(task.clone())))
             .unwrap();
         let close = f.read().tip().unwrap().clone();
         assert!(
-            f.mark(Some(&close), Kind::Close, Some(task.clone()))
+            f.mark(Some(&close), Kind::Close, Some(Target::Close(task.clone())))
                 .is_err()
         );
         f.record(attest(
@@ -556,9 +577,77 @@ fn failure_loss_and_unknown_stay_unresolved_and_close_is_not_terminal() {
 }
 
 #[test]
+fn exact_later_frontier_can_close_without_relabeling_a_lost_cleanup() {
+    let mut f = Fixture::new();
+    let (start, task) = f.start();
+    f.confirm_start(&start, &task);
+    // Lower-level fixture history only: no composed cleanup sender.
+    f.mark(Some(&start), Kind::Close, Some(Target::Close(task.clone())))
+        .unwrap();
+    let close = f.read().tip().unwrap().clone();
+    assert!(
+        f.record(attest(
+            &f.binding,
+            Slot::Terminal,
+            &start,
+            Some(task.clone()),
+            terminal()
+        ))
+        .is_err()
+    );
+    let cleanup = Slot::Operation(Kind::Close);
+    f.record(attest(
+        &f.binding,
+        cleanup,
+        &close,
+        Some(task.clone()),
+        Observation::Lost,
+    ))
+    .unwrap();
+    assert_eq!(f.read().evidence(Slot::Terminal), Evidence::Absent);
+    // An independent terminal attestation about the later exact frontier
+    // cannot turn the lost operation response into a successful response.
+    f.record(attest(
+        &f.binding,
+        Slot::Terminal,
+        &close,
+        Some(task),
+        terminal(),
+    ))
+    .unwrap();
+    let literal: String = f
+        .writer
+        .conn
+        .query_row(
+            "SELECT json_extract(fact_json, '$.observation') FROM b_lifecycle_fact WHERE slot=5",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(
+        literal,
+        format!(
+            r#"{{"Terminal":{{"workload_and_subtree_exit":"{}","accepted_and_recovered_work_fenced":"{}"}}}}"#,
+            "8".repeat(64),
+            "9".repeat(64),
+        )
+    );
+    let h = f.read();
+    assert_eq!(h.evidence(cleanup), Evidence::Lost(&digest('7')));
+    assert!(matches!(
+        h.evidence(Slot::Terminal),
+        Evidence::Observed {
+            observation: Observation::Terminal { .. },
+            ..
+        }
+    ));
+}
+
+#[test]
 fn contradictory_fact_invalidates_previous_positive_without_erasure() {
     let mut f = Fixture::new();
     let (start, task) = f.start();
+    f.confirm_start(&start, &task);
     let end = |b: &Binding| attest(b, Slot::Terminal, &start, Some(task.clone()), terminal());
     f.record(end(&f.binding)).unwrap();
     let mut disagreement = end(&f.binding);

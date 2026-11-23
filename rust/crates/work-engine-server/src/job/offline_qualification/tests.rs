@@ -1,5 +1,7 @@
 use super::*;
-use slice_campaign::offline_qualification::{OperationKind, SelectionPins};
+use slice_campaign::offline_qualification::{JoinedMarkReadback, OperationKind, SelectionPins};
+
+mod start;
 use slice_campaign::{
     AcceptedBoundary, AdmitRequest, Baseline, Campaign, CampaignIdentity, Effect, TrustedConfig,
 };
@@ -15,12 +17,9 @@ fn root() -> Root {
     root_with_mode(false)
 }
 
-fn root_with_mode(joined: bool) -> Root {
-    let temp = tempfile::tempdir().unwrap();
-    let repository = temp.path().join("repo");
-    let workspace = temp.path().join("workspace");
-    std::fs::create_dir(&repository).unwrap();
-    std::fs::create_dir(&workspace).unwrap();
+fn offline_config(root: &std::path::Path) -> (TrustedConfig, AdmitRequest) {
+    let repository = root.join("repo");
+    let workspace = root.join("workspace");
     let identity = CampaignIdentity {
         run_id: "sc0-oracle-c2".into(),
         slice_number: 1,
@@ -48,7 +47,7 @@ fn root_with_mode(joined: bool) -> Root {
         };
     }
     let config = TrustedConfig::controlled_sc0(
-        temp.path().join("authority"),
+        root.join("authority"),
         repository.clone(),
         workspace.clone(),
         identity.clone(),
@@ -60,19 +59,28 @@ fn root_with_mode(joined: bool) -> Root {
         fixture!("c927b51b887e37f6fdc02e1fabfadddd211d0ac30712cbc6c5028993ad3889c2"),
     )
     .unwrap();
+    (
+        config,
+        AdmitRequest {
+            identity,
+            repository,
+            workspace,
+            accepted_boundary: boundary,
+            baseline,
+            expected_impact: None,
+        },
+    )
+}
+
+fn root_with_mode(joined: bool) -> Root {
+    let temp = tempfile::tempdir().unwrap();
+    std::fs::create_dir(temp.path().join("repo")).unwrap();
+    std::fs::create_dir(temp.path().join("workspace")).unwrap();
+    let (config, admission) = offline_config(temp.path());
+    let identity = admission.identity.clone();
     let mut app = Campaign::initialize(config).unwrap();
     let Effect::Applied { value, .. } = app
-        .admit(
-            "offline-qualification-campaign",
-            AdmitRequest {
-                identity: identity.clone(),
-                repository,
-                workspace,
-                accepted_boundary: boundary,
-                baseline,
-                expected_impact: None,
-            },
-        )
+        .admit("offline-qualification-campaign", admission)
         .unwrap()
     else {
         panic!("fixture campaign not admitted")
@@ -396,7 +404,7 @@ fn joined_exact_durable_create_precedes_the_only_sender() {
         assert_eq!((op.version, op.sequence), (1, 1));
         assert!(op.predecessor_digest.is_none() && op.target_id.is_none());
         assert_eq!(mark["request"].as_str(), Some(op.request_digest.as_str()));
-        assert!(mark["task"].is_null());
+        assert!(mark["target"].is_null() && mark["predecessor"].is_null());
         assert_eq!(
             collector.collect_joined(&r.request, CHECK, unexpected),
             Collected::ClosedOrAlreadyAdmitted

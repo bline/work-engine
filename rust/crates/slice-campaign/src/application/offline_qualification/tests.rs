@@ -467,3 +467,101 @@ fn joined_store_revoke_winner_or_projection_mismatch_refuses_the_marker() {
         assert_eq!(spend_count(&r.app), 1);
     }
 }
+
+fn confirmed_create(r: &Root, b: &AttemptBinding) -> FreshStart {
+    let request = b.create_request_digest().unwrap();
+    let id = "f".repeat(64);
+    spend(r, b)
+        .mark_joined_create(&request, JoinedMarkReadback::Check)
+        .unwrap()
+        .confirm_created(
+            &request,
+            &id,
+            FixtureCreateReadback {
+                request_digest: request.clone(),
+                object: FixtureObject {
+                    full_id: id.clone(),
+                    serving_generation: b.serving_sha256().into(),
+                },
+            },
+        )
+        .unwrap()
+}
+
+#[test]
+fn joined_start_requires_current_uncontested_exact_create_disposition() {
+    use crate::store::offline_qualification::FIXTURE_NOW_MS;
+    use crate::store::task_free_b::{Evidence, Kind, Observation, Slot};
+    for fault in ["expiry", "stale-create-mark", "contested-create"] {
+        let r = root();
+        let b = joined(&r);
+        let next = confirmed_create(&r, &b);
+        match fault {
+            "expiry" => FIXTURE_NOW_MS.set(Some(b.expires_at())),
+            "stale-create-mark" => {
+                r.app.owner().unwrap().store.conn.execute_batch(
+                    "UPDATE b_lifecycle_mark SET mark_json=json_set(mark_json,'$.request',printf('%064d',0)) WHERE sequence=1;"
+                ).unwrap();
+            }
+            "contested-create" => {
+                r.app.owner().unwrap().store.conn.execute_batch(
+                    "INSERT INTO b_lifecycle_fact SELECT attempt_id,slot,1,json_set(fact_json,'$.observation','Unknown')
+                     FROM b_lifecycle_fact WHERE slot=1 AND ordinal=0;"
+                ).unwrap();
+            }
+            _ => unreachable!(),
+        }
+        let result = next.mark(JoinedMarkReadback::Check);
+        FIXTURE_NOW_MS.set(None);
+        assert!(result.is_err(), "{fault}");
+        let mut owner = r.app.owner().unwrap();
+        let starts: i64 = owner
+            .store
+            .conn
+            .query_row(
+                "SELECT count(*) FROM b_lifecycle_mark WHERE sequence=2",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(starts, 0, "{fault}");
+        if fault == "expiry" {
+            let history = owner.store.read_b_history(b.lifecycle()).unwrap();
+            assert!(history.mark(Kind::Start).is_none());
+            assert!(matches!(
+                history.evidence(Slot::Operation(Kind::Create)),
+                Evidence::Observed {
+                    observation: Observation::Created(_),
+                    ..
+                }
+            ));
+        }
+    }
+}
+
+#[test]
+fn joined_start_spend_and_possible_issue_are_not_resumed_after_reopen() {
+    use crate::store::task_free_b::{Evidence, Kind, Slot};
+    for after_start_mark in [false, true] {
+        let r = root();
+        let b = joined(&r);
+        let next = confirmed_create(&r, &b);
+        if after_start_mark {
+            assert!(next.mark(JoinedMarkReadback::LostAfterCommit).is_err());
+        } else {
+            drop(next);
+        }
+        drop(r.app);
+        let app = Campaign::open((r.config)()).unwrap();
+        assert!(app.offline_qualification_port().enter(&b).is_err());
+        let mut owner = app.owner().unwrap();
+        let history = owner.store.read_b_history(b.lifecycle()).unwrap();
+        assert!(history.mark(Kind::Create).is_some());
+        assert_eq!(history.mark(Kind::Start).is_some(), after_start_mark);
+        assert_eq!(
+            history.evidence(Slot::Operation(Kind::Start)),
+            Evidence::Absent
+        );
+        assert_eq!(history.evidence(Slot::Hold), Evidence::Absent);
+    }
+}

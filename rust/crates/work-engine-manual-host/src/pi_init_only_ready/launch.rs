@@ -1,0 +1,555 @@
+use super::{
+    Refusal, Serving, TaskKey,
+    artifact_contract::{ENTRYPOINT, GROUP, PRIVATE_UMASK, USER, reduced_groups},
+    full_hex,
+};
+use serde::{Deserialize, Serialize};
+use serde_json::{Value, json};
+use slice_campaign::codec::campaign_digest;
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct FilePin {
+    pub path: String,
+    pub sha256: String,
+}
+
+impl FilePin {
+    fn valid(&self) -> bool {
+        self.path.len() <= 255
+            && self.path.starts_with('/')
+            && self.path[1..].split('/').all(|s| {
+                !s.is_empty()
+                    && !matches!(s, "." | "..")
+                    && s.bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b"-._+".contains(&b))
+            })
+            && full_hex(&self.sha256)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub enum ElfClosure {
+    Static,
+    Dynamic {
+        interpreter: FilePin,
+        dependencies: Vec<FilePin>,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub enum Store {
+    DockerImageConfig,
+    ContainerdLocalTarget,
+}
+
+/// Protected approved values, independent of the eventual readback. This
+/// cut supports only an unambiguous linux/amd64 local store target.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct Startup {
+    pub store: Store,
+    pub image_id: String,
+    pub config_sha256: String,
+    pub manifest_sha256: String,
+    pub init: FilePin,
+    pub elf: ElfClosure,
+}
+
+impl Startup {
+    fn valid(&self) -> bool {
+        let Some(id) = self.image_id.strip_prefix("sha256:") else {
+            return false;
+        };
+        full_hex(id)
+            && full_hex(&self.config_sha256)
+            && full_hex(&self.manifest_sha256)
+            && match self.store {
+                Store::DockerImageConfig => id == self.config_sha256,
+                Store::ContainerdLocalTarget => id == self.manifest_sha256,
+            }
+            && self.init.valid()
+            && self.init.path == ENTRYPOINT
+            && match &self.elf {
+                ElfClosure::Static => true,
+                ElfClosure::Dynamic {
+                    interpreter,
+                    dependencies,
+                } => {
+                    interpreter.valid()
+                        && interpreter.path != ENTRYPOINT
+                        && !dependencies.is_empty()
+                        && dependencies.len() <= 32
+                        && dependencies.iter().all(|p| {
+                            p.valid() && p.path != interpreter.path && p.path != ENTRYPOINT
+                        })
+                        && dependencies.windows(2).all(|w| w[0].path < w[1].path)
+                }
+            }
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct Recipe {
+    pub startup: Startup,
+    /// A narrowly selected runtime name; no aliases or fallback.
+    pub runtime: String,
+    /// Approval of the exact effective security policy identities, not of
+    /// what Docker inspect reports. The acquired record below must bind them.
+    pub seccomp_sha256: String,
+    pub apparmor_profile: String,
+    pub apparmor_policy_sha256: String,
+}
+
+const USER_GROUP: &str = "65534:65534";
+const ARCH: &str = "linux/amd64";
+
+impl Recipe {
+    fn valid(&self) -> bool {
+        let label = |v: &str| {
+            !v.is_empty()
+                && v.len() <= 128
+                && v.bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
+        };
+        self.startup.valid()
+            && label(&self.runtime)
+            && label(&self.apparmor_profile)
+            && self.apparmor_profile != "unconfined"
+            && full_hex(&self.seccomp_sha256)
+            && full_hex(&self.apparmor_policy_sha256)
+    }
+
+    /// The actual reviewed wire body must match exactly. Closed empty image
+    /// config and effective immutable materialization are separate checks.
+    fn body(&self) -> Value {
+        json!({
+            "Image": self.startup.image_id,
+            "User": USER_GROUP, "Entrypoint": [ENTRYPOINT], "Cmd": [],
+            "WorkingDir": "/", "Env": [], "Volumes": {}, "Healthcheck": {"Test":["NONE"]},
+            "Tty": false, "OpenStdin": false, "StdinOnce": false,
+            "AttachStdin": false, "AttachStdout": true, "AttachStderr": false,
+            "HostConfig": {
+                "Runtime": self.runtime, "NetworkMode": "none", "CgroupnsMode": "private",
+                "ReadonlyRootfs": true, "Privileged": false, "CapDrop":["ALL"], "Init": false,
+                "RestartPolicy":{"Name":"no", "MaximumRetryCount":0}, "AutoRemove": false,
+                "LogConfig":{"Type":"none", "Config":{}},
+                "SecurityOpt":["no-new-privileges", format!("apparmor={}", self.apparmor_profile)]
+            }
+        })
+    }
+
+    pub fn create_body(&self) -> Result<Vec<u8>, Refusal> {
+        if !self.valid() {
+            return Err(Refusal::Recipe);
+        }
+        serde_json::to_vec(&self.body()).map_err(|_| Refusal::Recipe)
+    }
+
+    pub fn digest(&self) -> Result<String, Refusal> {
+        if !self.valid() {
+            return Err(Refusal::Recipe);
+        }
+        campaign_digest(&json!(["b-init-only-create-v1", ARCH, self.body(), self]))
+            .map_err(|_| Refusal::Recipe)
+    }
+
+    pub(super) fn verify_create(
+        &self,
+        trace: &CreateTrace,
+        serving: &Serving,
+        object: &str,
+        request: &str,
+    ) -> Result<(), Refusal> {
+        if trace.serving != *serving
+            || trace.campaign_request != request
+            || trace.target
+                != format!(
+                    "POST /{}/containers/create?platform=linux%2Famd64",
+                    serving.api
+                )
+            || trace.body != self.create_body()?
+            || trace.status != 201
+            || trace.reply.len() > 4096
+            || trace.inspect.len() > 32_768
+        {
+            return Err(Refusal::Create);
+        }
+        let reply: CreateReply =
+            serde_json::from_slice(&trace.reply).map_err(|_| Refusal::Create)?;
+        let read: Inspect = serde_json::from_slice(&trace.inspect).map_err(|_| Refusal::Create)?;
+        if reply.id != object
+            || reply.warnings.is_some_and(|w| !w.is_empty())
+            || read.id != object
+            || read.image != self.startup.image_id
+            || read.path != ENTRYPOINT
+            || !empty(&read.args)
+            || !read.mounts.is_empty()
+            || read.state.status != "created"
+            || read.state.running
+            || read.state.pid != 0
+            || !read.config.matches(self)
+            || !read.host_config.matches(self)
+        {
+            return Err(Refusal::Create);
+        }
+        Ok(())
+    }
+}
+
+/// Captured exact protected request/reply and independent no-start inspect
+/// readback of the object, not a synthesized echo of the wanted config.
+pub struct CreateTrace {
+    pub serving: Serving,
+    pub campaign_request: String,
+    pub target: String,
+    pub body: Vec<u8>,
+    pub status: u16,
+    pub reply: Vec<u8>,
+    pub inspect: Vec<u8>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "PascalCase", deny_unknown_fields)]
+struct CreateReply {
+    id: String,
+    #[serde(default)]
+    warnings: Option<Vec<String>>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "PascalCase")]
+struct Inspect {
+    id: String,
+    image: String,
+    path: String,
+    args: Option<Vec<String>>,
+    mounts: Vec<Value>,
+    config: Config,
+    host_config: HostConfig,
+    state: State,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "PascalCase")]
+struct State {
+    status: String,
+    running: bool,
+    pid: u32,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "PascalCase")]
+struct Config {
+    user: String,
+    image: String,
+    entrypoint: Vec<String>,
+    cmd: Option<Vec<String>>,
+    #[serde(rename = "WorkingDir")]
+    cwd: String,
+    env: Option<Vec<String>>,
+    volumes: Option<serde_json::Map<String, Value>>,
+    healthcheck: Healthcheck,
+    tty: bool,
+    open_stdin: bool,
+    stdin_once: bool,
+    attach_stdin: bool,
+    attach_stdout: bool,
+    attach_stderr: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "PascalCase")]
+struct Healthcheck {
+    test: Vec<String>,
+}
+
+fn empty<T>(vec: &Option<Vec<T>>) -> bool {
+    vec.as_ref().is_none_or(Vec::is_empty)
+}
+
+impl Config {
+    fn matches(&self, recipe: &Recipe) -> bool {
+        self.user == USER_GROUP
+            && self.image == recipe.startup.image_id
+            && self.entrypoint == [ENTRYPOINT]
+            && empty(&self.cmd)
+            && self.cwd == "/"
+            && empty(&self.env)
+            && self.volumes.as_ref().is_none_or(|v| v.is_empty())
+            && self.healthcheck.test == ["NONE"]
+            && !self.tty
+            && !self.open_stdin
+            && !self.stdin_once
+            && !self.attach_stdin
+            && self.attach_stdout
+            && !self.attach_stderr
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "PascalCase")]
+struct HostConfig {
+    runtime: String,
+    network_mode: String,
+    cgroupns_mode: String,
+    readonly_rootfs: bool,
+    privileged: bool,
+    init: bool,
+    cap_drop: Vec<String>,
+    cap_add: Option<Vec<String>>,
+    binds: Option<Vec<String>>,
+    mounts: Option<Vec<Value>>,
+    volumes_from: Option<Vec<String>>,
+    devices: Option<Vec<Value>>,
+    device_requests: Option<Vec<Value>>,
+    auto_remove: bool,
+    restart_policy: RestartPolicy,
+    log_config: LogConfig,
+    security_opt: Vec<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "PascalCase")]
+struct RestartPolicy {
+    name: String,
+    maximum_retry_count: u32,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "PascalCase")]
+struct LogConfig {
+    #[serde(rename = "Type")]
+    driver: String,
+    config: serde_json::Map<String, Value>,
+}
+
+impl HostConfig {
+    fn matches(&self, recipe: &Recipe) -> bool {
+        self.runtime == recipe.runtime
+            && self.network_mode == "none"
+            && self.cgroupns_mode == "private"
+            && self.readonly_rootfs
+            && !self.privileged
+            && !self.init
+            && !self.auto_remove
+            && self.cap_drop == ["ALL"]
+            && empty(&self.cap_add)
+            && empty(&self.binds)
+            && empty(&self.mounts)
+            && empty(&self.volumes_from)
+            && empty(&self.devices)
+            && empty(&self.device_requests)
+            && self.restart_policy.name == "no"
+            && self.restart_policy.maximum_retry_count == 0
+            && self.log_config.driver == "none"
+            && self.log_config.config.is_empty()
+            && self.security_opt
+                == [
+                    "no-new-privileges".to_owned(),
+                    format!("apparmor={}", recipe.apparmor_profile),
+                ]
+    }
+}
+
+/// Same selected protected runtime task association, resolved image and
+/// actually materialized OCI startup. Snapshot and stdout pipe identities
+/// come from protected runtime/kernel custody, never from request hashing.
+#[derive(Clone, Debug)]
+pub struct ResolvedLaunch {
+    pub task: TaskKey,
+    pub runtime: String,
+    pub platform: String,
+    pub argv: Vec<String>,
+    pub cwd: String,
+    pub env: Vec<String>,
+    pub image: Startup,
+    pub root_mount_id: u64,
+    pub io_pipe_inode: u64,
+    pub startup_backing: StartupBacking,
+    pub stdout_route: StdoutRoute,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StartupBacking {
+    ImmutableImageAndDependencies,
+    OverrideOrUnknown,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StdoutRoute {
+    ExclusiveSelectedTaskLivePipe,
+    AlternateOrUnknown,
+}
+
+impl ResolvedLaunch {
+    pub(super) fn matches(&self, recipe: &Recipe) -> bool {
+        // Exact prospective effective OCI environment; Docker's default
+        // HOSTNAME is the truncated selected container ID. No ambient or
+        // loader-directed variables. Refuse variants until separately bound.
+        let hostname = format!("HOSTNAME={}", &self.task.container[..12]);
+        self.runtime == recipe.runtime
+            && self.platform == ARCH
+            && self.argv == [ENTRYPOINT]
+            && self.cwd == "/"
+            && self.env
+                == [
+                    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                    hostname.as_str(),
+                ]
+            && self.image == recipe.startup
+            && self.root_mount_id != 0
+            && self.io_pipe_inode != 0
+            && self.startup_backing == StartupBacking::ImmutableImageAndDependencies
+            && self.stdout_route == StdoutRoute::ExclusiveSelectedTaskLivePipe
+    }
+}
+
+/// Positive kernel/applied observations for this exact live task. These are
+/// independent of Docker inspect and the marker. Profile pins must come from
+/// bound applied-profile custody (an OCI request or Seccomp:2 alone is not it).
+#[derive(Clone, Debug)]
+pub struct Effective {
+    pub task: TaskKey,
+    pub uid: [u32; 4],
+    pub gid: [u32; 4],
+    pub groups: Vec<u32>,
+    pub caps: [u64; 5],
+    pub nnp: bool,
+    pub umask: u16,
+    pub seccomp_filters: u32,
+    pub applied_seccomp_sha256: String,
+    pub apparmor_enforcing: bool,
+    pub applied_apparmor_profile: String,
+    pub applied_apparmor_sha256: String,
+    pub root_mount_id: u64,
+    pub read_only_root: bool,
+    pub namespaces: Namespaces,
+    /// Complete positive inventory normalized by the protected producer; the
+    /// route declines if any extra or ambiguous exposure was observed.
+    pub inventory: Option<Inventory>,
+    pub fds: Vec<Descriptor>,
+}
+
+#[derive(Clone, Debug)]
+pub struct Namespaces {
+    /// `[pid, mount, ipc, network, cgroup, uts]` kernel inode IDs in fixed order.
+    pub task: [u64; 6],
+    pub host: [u64; 6],
+}
+
+#[derive(Clone, Debug)]
+pub struct Inventory {
+    /// Complete, sorted non-root mount inventory. Classifications must be
+    /// made by the protected source using mount/backing evidence, not by
+    /// trusting a path or an OCI mount request. A partial inventory is None.
+    pub mounts: Vec<MountView>,
+    pub devices: Vec<(u32, u32)>,
+    pub interfaces: Vec<String>,
+    pub non_loopback_route_count: u32,
+    pub externally_reachable_control_handles: u32,
+    pub writable_cgroup_control: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct MountView {
+    pub path: String,
+    pub kind: MountKind,
+    pub read_only: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MountKind {
+    PrivateVirtual,
+    RuntimeMasked,
+    DaemonGenerated,
+    Other,
+}
+
+impl Inventory {
+    fn closed(&self) -> bool {
+        const VIRTUAL: &[&str] = &[
+            "/proc",
+            "/dev",
+            "/dev/pts",
+            "/dev/shm",
+            "/dev/mqueue",
+            "/sys",
+            "/sys/fs/cgroup",
+        ];
+        const MASKED: &[&str] = &[
+            "/proc/acpi",
+            "/proc/asound",
+            "/proc/interrupts",
+            "/proc/kcore",
+            "/proc/keys",
+            "/proc/latency_stats",
+            "/proc/sched_debug",
+            "/proc/scsi",
+            "/proc/timer_list",
+            "/proc/timer_stats",
+            "/proc/irq",
+            "/proc/sys",
+            "/proc/sysrq-trigger",
+            "/proc/bus",
+            "/sys/firmware",
+            "/sys/devices/virtual/powercap",
+        ];
+        self.mounts.len() <= 32
+            && self.mounts.windows(2).all(|w| w[0].path < w[1].path)
+            && ["/proc", "/dev", "/sys", "/sys/fs/cgroup"].iter().all(|required| {
+                self.mounts.iter().any(|m| m.path == *required && m.kind == MountKind::PrivateVirtual)
+            })
+            && self.mounts.iter().all(|m| match m.kind {
+                MountKind::PrivateVirtual => VIRTUAL.contains(&m.path.as_str())
+                    && (!m.path.starts_with("/sys") || m.read_only),
+                MountKind::RuntimeMasked => MASKED.contains(&m.path.as_str()) && m.read_only,
+                MountKind::DaemonGenerated => ["/etc/hosts", "/etc/hostname", "/etc/resolv.conf"].contains(&m.path.as_str()) && m.read_only,
+                MountKind::Other => false,
+            })
+            && self.devices.len() <= 9
+            && self.devices.windows(2).all(|w| w[0] < w[1])
+            && self.devices.contains(&(1, 3)) // /dev/null for the no-input fd
+            && self.devices.iter().all(|node| matches!(node, (1, 3 | 5 | 7 | 8 | 9) | (5, 0 | 1 | 2)))
+            && self.interfaces == ["lo"] && self.non_loopback_route_count == 0
+            && self.externally_reachable_control_handles == 0 && !self.writable_cgroup_control
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Descriptor {
+    NullInput,
+    StdoutPipe(u64),
+    NonInputStderr,
+}
+
+impl Effective {
+    pub(super) fn matches(&self, recipe: &Recipe, launch: &ResolvedLaunch) -> bool {
+        self.task == launch.task
+            && self.uid == [USER; 4]
+            && self.gid == [GROUP; 4]
+            && reduced_groups(&self.groups)
+            && self.caps == [0; 5]
+            && self.nnp
+            && self.umask == PRIVATE_UMASK
+            && self.seccomp_filters > 0
+            && self.applied_seccomp_sha256 == recipe.seccomp_sha256
+            && self.apparmor_enforcing
+            && self.applied_apparmor_profile == recipe.apparmor_profile
+            && self.applied_apparmor_sha256 == recipe.apparmor_policy_sha256
+            && self.read_only_root
+            && self.root_mount_id == launch.root_mount_id
+            && self.namespaces.task[0] == self.task.pid_namespace
+            && self
+                .namespaces
+                .task
+                .into_iter()
+                .zip(self.namespaces.host)
+                .all(|(task, host)| task != 0 && host != 0 && task != host)
+            && self.inventory.as_ref().is_some_and(Inventory::closed)
+            && self.fds
+                == [
+                    Descriptor::NullInput,
+                    Descriptor::StdoutPipe(launch.io_pipe_inode),
+                    Descriptor::NonInputStderr,
+                ]
+    }
+}
