@@ -70,3 +70,24 @@ Preserve old findings and explain how the decision addresses them; a completed
 review alone does not clear findings, accept implementation or grant new scope.
 A reviewed plan can reopen repair, but its history remains evidence and a new
 serious regression or recurring invariant violation escalates again.
+
+Changing an acceptance or qualification condition is a contract change that
+needs its owner's authority (core contracts §1.1). So for each change a
+disposition makes, record: the condition as changed; the parent span it changes,
+quoted with path, lines and digest from the source that governs the condition
+(`none` for a new condition); the owner of the condition's meaning; and that
+owner's decision or `pending`. A change is anything the quoted span would not by
+itself require or allow, including your reading of ambiguous text. A realization
+choice you present as yours to revise is not a change, but do not present it to
+others as a requirement. Take the owner from the governing source, not from the
+disposition's author, a reviewer, or a plan that defers to that source. If the
+source splits ownership or leaves it unclear, name the other party and record
+`pending`: settling that in your own favour is the decision you lack. On
+2026-11-21 a supervisor adopted a reviewer's stronger cleanup requirement under
+a general delegation, and the requirement's owner was never asked. Send each
+`pending` row to its owner when you record it. Until the owner decides, the row
+is neither required repair nor resolved; other rows proceed. A decision is the
+owner's own message, or its board post with session id, that decides the change
+or expressly delegates it. Do not call a requirement you restate or paraphrase
+unchanged unless you quote its parent span beside it: a change described as
+unchanged hides it from the owner who must decide it.
