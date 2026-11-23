@@ -1555,4 +1555,6 @@ impl Jobs {
 }
 
 #[cfg(test)]
+mod offline_qualification;
+#[cfg(test)]
 mod tests;

@@ -18,6 +18,8 @@ time = { version = "=0.3.55", features = ["parsing"] }
 tokio = { workspace = true, features = ["io-std"] }
 
 [dev-dependencies]
+slice-campaign = { path = "../slice-campaign", features = ["offline-qualification-fixture"] }
+work-engine-manual-host = { path = "../work-engine-manual-host", features = ["offline-qualification-fixture"] }
 work-engine-claims-host = { path = "../work-engine-claims-host" }
 tempfile = "=3.27.0"
 base64.workspace = true

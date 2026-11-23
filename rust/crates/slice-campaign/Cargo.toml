@@ -8,6 +8,8 @@ publish.workspace = true
 [features]
 test-faults = []
 test-support = []
+# Inert cross-crate composition tests only. No live selection or effect adapter.
+offline-qualification-fixture = []
 
 [dependencies]
 claim-evidence = { path = "../claim-evidence" }

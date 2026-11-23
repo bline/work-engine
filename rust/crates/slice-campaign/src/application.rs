@@ -59,6 +59,8 @@ struct GateInputs {
 }
 
 pub mod prebuild;
+#[cfg(any(test, feature = "offline-qualification-fixture"))]
+pub mod offline_qualification;
 
 #[cfg(test)]
 mod core_tests {

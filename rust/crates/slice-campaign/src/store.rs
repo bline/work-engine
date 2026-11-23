@@ -14,6 +14,10 @@ use crate::contract::{CampaignIdentity, CampaignRevision, Snapshot};
 use crate::recovery::{OperationReceipt, Reconcile, RecoveryLocator};
 use crate::{CampaignError, Result};
 
+// Offline slice B; private owner integration and a real evidence source are separate.
+#[allow(dead_code)]
+pub(crate) mod task_free_b;
+
 const MARKER_V3: &str = ".campaign-native-initial-v3";
 const MARKER_V4: &str = ".campaign-native-remediation-v4";
 const MARKER_QUALIFIED: &str = ".campaign-qualified-initial-v4";
@@ -23,6 +27,9 @@ const DATABASE: &str = "slice-campaign.sqlite";
 const LOCK: &str = ".writer.lock";
 const SCHEMA_V3: &str = include_str!("../migrations/0003_new_root.sql");
 const SCHEMA_V4: &str = include_str!("../migrations/0004_remediation.sql");
+
+#[cfg(any(test, feature = "offline-qualification-fixture"))]
+pub(crate) mod offline_qualification;
 
 fn marker_name(profile: &str) -> &'static str {
     match profile {

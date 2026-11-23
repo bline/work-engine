@@ -27,6 +27,9 @@ pub mod inference_hold;
 pub mod native_memory;
 #[path = "pi_public_hold.rs"]
 mod public_hold;
+#[cfg(feature = "offline-qualification-fixture")]
+#[path = "pi_offline_qualification.rs"]
+pub mod offline_qualification;
 #[path = "pi_observation.rs"]
 pub mod receiver;
 
