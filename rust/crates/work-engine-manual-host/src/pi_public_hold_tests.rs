@@ -3,7 +3,7 @@ use crate::{
     digest,
     pi_docker::{Host, RunEntry},
 };
-use std::collections::VecDeque;
+use std::{cell::Cell, collections::VecDeque, sync::mpsc::sync_channel};
 
 const ID: &str = "1111111111111111111111111111111111111111111111111111111111111111";
 const OTHER: &str = "2222222222222222222222222222222222222222222222222222222222222222";
@@ -72,24 +72,29 @@ fn ok(s: &str) -> Reply {
 }
 
 fn drive(setup: &Launch, replies: Vec<Reply>) -> (Value, Vec<Vec<String>>) {
+    drive_with(setup, replies, |invoke| {
+        Host::run_entry_at_boundary(RunEntry::PublicInferenceSetup, None, Some(setup), invoke)
+    })
+}
+
+fn drive_with(
+    setup: &Launch,
+    replies: Vec<Reply>,
+    run: impl FnOnce(&mut dyn FnMut(&Path, &[String]) -> Reply) -> Result<Value>,
+) -> (Value, Vec<Vec<String>>) {
     let mut replies = VecDeque::from(replies);
     let mut calls = vec![];
-    let result = Host::run_entry_at_boundary(
-        RunEntry::PublicInferenceSetup,
-        None,
-        Some(setup),
-        |bin, args| {
-            assert_eq!(bin, setup.docker.path);
-            assert!(
-                setup.fence_root.join(setup.name()).is_file(),
-                "no daemon work before fence"
-            );
-            calls.push(args.to_owned());
-            replies
-                .pop_front()
-                .expect("unexpected extra daemon operation")
-        },
-    )
+    let result = run(&mut |bin, args| {
+        assert_eq!(bin, setup.docker.path);
+        assert!(
+            setup.fence_root.join(setup.name()).is_file(),
+            "no daemon work before fence"
+        );
+        calls.push(args.to_owned());
+        replies
+            .pop_front()
+            .expect("unexpected extra Docker operation")
+    })
     .unwrap();
     assert!(
         replies.is_empty(),
@@ -98,6 +103,7 @@ fn drive(setup: &Launch, replies: Vec<Reply>) -> (Value, Vec<Vec<String>>) {
     assert_eq!(result["fenced"], true);
     assert_eq!(result["disposition"], "hold_stop_only");
     assert!(result.get("qualified").is_none());
+    assert!(result.get("cleanup_confirmed").is_none());
     (result, calls)
 }
 
@@ -131,7 +137,9 @@ fn public_hold_exact_image_entry_creates_inspects_starts_and_removes_only_fixed_
     );
     assert_eq!(result["create_attempted"], true);
     assert_eq!(result["hold_inspected"], true);
-    assert_eq!(result["cleanup_confirmed"], true);
+    assert_eq!(result["observation_window"], "unavailable");
+    assert_eq!(result["docker_remove_cli_success"], true);
+    assert_eq!(result["docker_exact_name_list_empty"], true);
     let name = format!("we-public-hold-{}", setup.attempt);
     assert_eq!(
         calls,
@@ -184,6 +192,189 @@ fn public_hold_exact_image_entry_creates_inspects_starts_and_removes_only_fixed_
             ]),
         ]
     );
+}
+
+#[derive(Clone, Copy)]
+enum WindowCase {
+    Complete,
+    Failed,
+    EarlyExit,
+    WrongAttempt,
+    WrongId,
+    Closed,
+    StartSpentBudget,
+    LateSignal,
+    SilenceAtDeadline,
+    CancelBeforeAcceptingSignal,
+    InspectEarlyExit,
+    UncertainStart,
+}
+
+fn check_observation(case: WindowCase, expected: &str, wait_reads: usize) {
+    use WindowCase::*;
+    let (_dir, setup) = fixture();
+    let (sender, receiver) = sync_channel(1);
+    if !matches!(case, Closed | SilenceAtDeadline) {
+        sender
+            .send(ObservationSignal {
+                attempt: if matches!(case, WrongAttempt) {
+                    "c".repeat(64)
+                } else {
+                    setup.attempt.clone()
+                },
+                container_id: if matches!(case, WrongId) { OTHER } else { ID }.into(),
+                outcome: match case {
+                    Failed => ObservationOutcome::Failed,
+                    EarlyExit => ObservationOutcome::EarlyExit,
+                    _ => ObservationOutcome::Complete,
+                },
+            })
+            .unwrap();
+    }
+    let _sender = if matches!(case, Closed) {
+        drop(sender);
+        None
+    } else {
+        Some(sender)
+    };
+    let origin = Instant::now();
+    let invokes = Cell::new(0);
+    let reads = Cell::new(0);
+    let uncertain = matches!(case, UncertainStart);
+    let cleanup = if uncertain { 4 } else { 5 };
+    let mut replies = vec![
+        snapshot(image(&setup)),
+        ok(ID),
+        snapshot(inspect(&setup, false)),
+    ];
+    if uncertain {
+        replies.push(refuse("inert lost start response"));
+    } else {
+        replies.extend([
+            ok(ID),
+            snapshot(inspect(&setup, !matches!(case, InspectEarlyExit))),
+        ]);
+    }
+    replies.extend([snapshot(inspect(&setup, true)), ok(ID), ok("")]);
+    let (result, calls) = drive_with(&setup, replies, |invoke| {
+        run_attempt(
+            Some(&setup),
+            |bin, args| {
+                let i = invokes.get();
+                invokes.set(i + 1);
+                if i == cleanup {
+                    assert_eq!(reads.get(), 1 + wait_reads, "wait must precede cleanup");
+                }
+                invoke(bin, args)
+            },
+            Some(&receiver),
+            || {
+                let r = reads.get();
+                reads.set(r + 1);
+                if r == 0 {
+                    assert_eq!(invokes.get(), 3, "anchor immediately precedes start");
+                    return origin;
+                }
+                assert_eq!(
+                    invokes.get(),
+                    5,
+                    "wait follows checked start and running inspect"
+                );
+                origin
+                    + match (case, r) {
+                        (StartSpentBudget, _) | (LateSignal | SilenceAtDeadline, 2..) => {
+                            OBSERVATION_LIMIT
+                        }
+                        (LateSignal | SilenceAtDeadline, 1) => {
+                            OBSERVATION_LIMIT - Duration::from_nanos(1)
+                        }
+                        _ => Duration::ZERO,
+                    }
+            },
+            || matches!(case, CancelBeforeAcceptingSignal) && reads.get() >= 2,
+        )
+    });
+    assert_eq!(calls.iter().filter(|c| c[0] == "start").count(), 1);
+    assert_eq!(calls[3], ["start", ID]);
+    if !uncertain {
+        assert_eq!(calls[4], ["container", "inspect", ID]);
+    }
+    assert_eq!(
+        calls[cleanup..],
+        [
+            strings(&["container", "inspect", ID]),
+            strings(&["rm", "--force", ID]),
+            exact_name_list(&setup.name()),
+        ]
+    );
+    assert_eq!(result["observation_window"], expected);
+    assert_eq!(
+        result["hold_inspected"],
+        !matches!(case, UncertainStart | InspectEarlyExit)
+    );
+    assert_eq!(result["docker_remove_cli_success"], true);
+    assert_eq!(result["docker_exact_name_list_empty"], true);
+    assert_no_replay(&setup);
+}
+
+#[test]
+fn public_hold_observation_checks_binding_and_never_authorizes_more_work() {
+    use WindowCase::*;
+    for (case, outcome) in [
+        (Complete, "signal_complete"),
+        (Failed, "failed"),
+        (EarlyExit, "early_exit"),
+        (WrongAttempt, "misbound"),
+        (WrongId, "misbound"),
+        (Closed, "unavailable"),
+    ] {
+        check_observation(case, outcome, 2);
+    }
+}
+
+#[test]
+fn public_hold_observation_deadline_includes_start_and_defeats_late_ready() {
+    use WindowCase::*;
+    check_observation(StartSpentBudget, "deadline", 1);
+    check_observation(LateSignal, "deadline", 2);
+    check_observation(SilenceAtDeadline, "deadline", 2);
+}
+
+#[test]
+fn public_hold_observation_cancellation_and_uncertain_start_go_to_cleanup() {
+    use WindowCase::*;
+    check_observation(CancelBeforeAcceptingSignal, "cancelled", 1);
+    check_observation(InspectEarlyExit, "not_opened", 0);
+    check_observation(UncertainStart, "not_opened", 0);
+}
+
+#[test]
+fn public_hold_remove_status_does_not_substitute_for_exact_name_query() {
+    for (list_reply, empty, failed) in [
+        (Ok((false, vec![])), Value::Null, true),
+        (refuse("inert list command timed out"), Value::Null, true),
+        (ok(OTHER), json!(false), false),
+    ] {
+        let (_dir, setup) = fixture();
+        let (result, calls) = drive(
+            &setup,
+            vec![
+                snapshot(image(&setup)),
+                ok(ID),
+                snapshot(inspect(&setup, false)),
+                ok(ID),
+                snapshot(inspect(&setup, true)),
+                snapshot(inspect(&setup, true)),
+                ok(""),
+                list_reply,
+            ],
+        );
+        assert_eq!(calls.last().unwrap(), &exact_name_list(&setup.name()));
+        assert_eq!(result["docker_remove_cli_success"], true);
+        assert_eq!(result["docker_exact_name_list_empty"], empty);
+        assert_eq!(result["docker_exact_name_list_error"].is_string(), failed);
+        assert_no_replay(&setup);
+    }
 }
 
 #[test]
@@ -250,8 +441,9 @@ fn assert_preflight_only(setup: &Launch, reply: Reply, error: &str) {
     assert_eq!(calls, [strings(&["image", "inspect", &setup.image_id])]);
     assert_eq!(result["create_attempted"], false);
     assert_eq!(result["hold_inspected"], false);
-    assert_eq!(result["cleanup_confirmed"], false);
-    assert_eq!(result["cleanup_error"], Value::Null);
+    assert_eq!(result["docker_remove_cli_success"], Value::Null);
+    assert_eq!(result["docker_exact_name_list_empty"], Value::Null);
+    assert_eq!(result["cleanup_target_error"], Value::Null);
     assert!(
         result["launch_error"].as_str().unwrap().contains(error),
         "{result}"
@@ -350,7 +542,8 @@ fn public_hold_config_drift_does_not_start_but_can_remove_exact_container() {
             ],
         );
         assert_eq!(result["hold_inspected"], false);
-        assert_eq!(result["cleanup_confirmed"], true);
+        assert_eq!(result["docker_remove_cli_success"], true);
+        assert_eq!(result["docker_exact_name_list_empty"], true);
         assert_eq!(calls[4], ["rm", "--force", ID]);
         assert!(!calls.iter().any(|a| a[0] == "start"));
     }
@@ -379,9 +572,10 @@ fn public_hold_crossed_inspection_cannot_start_or_remove_foreign_identity() {
             ],
         );
         assert_eq!(result["hold_inspected"], false);
-        assert_eq!(result["cleanup_confirmed"], false);
+        assert_eq!(result["docker_remove_cli_success"], Value::Null);
+        assert_eq!(result["docker_exact_name_list_empty"], Value::Null);
         assert!(
-            result["cleanup_error"]
+            result["cleanup_target_error"]
                 .as_str()
                 .unwrap()
                 .contains("identity conflict")
@@ -410,7 +604,8 @@ fn public_hold_uncertain_start_has_only_cleanup_and_cannot_replay_on_reentry() {
         ],
     );
     assert_eq!(result["hold_inspected"], false);
-    assert_eq!(result["cleanup_confirmed"], false);
+    assert_eq!(result["docker_remove_cli_success"], false);
+    assert_eq!(result["docker_exact_name_list_empty"], Value::Null);
     assert_eq!(calls[3], ["start", ID]);
     assert_eq!(calls[5], ["rm", "--force", ID]);
     // Reenter with changed (still pinned) recipe bytes for the same attempt.
@@ -431,7 +626,8 @@ fn public_hold_uncertain_create_never_starts_or_treats_absence_as_settled() {
     );
     assert_eq!(result["create_attempted"], true);
     assert_eq!(result["hold_inspected"], false);
-    assert_eq!(result["cleanup_confirmed"], false);
+    assert_eq!(result["docker_remove_cli_success"], Value::Null);
+    assert!(result["cleanup_target_error"].is_string());
     assert_eq!(calls[2], strings(&["container", "inspect", &setup.name()]));
     assert_no_replay(&setup);
 
@@ -447,7 +643,8 @@ fn public_hold_uncertain_create_never_starts_or_treats_absence_as_settled() {
         ],
     );
     assert_eq!(result["hold_inspected"], false);
-    assert_eq!(result["cleanup_confirmed"], true);
+    assert_eq!(result["docker_remove_cli_success"], true);
+    assert_eq!(result["docker_exact_name_list_empty"], true);
     assert_eq!(calls[3], ["rm", "--force", ID]);
     assert_no_replay(&setup);
 
@@ -464,7 +661,8 @@ fn public_hold_uncertain_create_never_starts_or_treats_absence_as_settled() {
         ],
     );
     assert_eq!(result["hold_inspected"], false);
-    assert_eq!(result["cleanup_confirmed"], false);
+    assert_eq!(result["docker_remove_cli_success"], Value::Null);
+    assert!(result["cleanup_target_error"].is_string());
     assert_eq!(calls.len(), 3);
     assert_no_replay(&setup);
 }

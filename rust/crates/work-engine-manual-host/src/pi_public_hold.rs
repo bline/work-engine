@@ -8,7 +8,10 @@ use std::{
     os::{fd::AsRawFd, unix::fs::PermissionsExt},
     path::{Path, PathBuf},
     process::Stdio,
-    sync::atomic::Ordering,
+    sync::{
+        atomic::Ordering,
+        mpsc::{Receiver, RecvTimeoutError},
+    },
     time::{Duration, Instant},
 };
 
@@ -17,6 +20,68 @@ const PLATFORM: &str = "linux/amd64";
 const ATTEMPT: &str = "work-engine.public-hold-attempt";
 const INIT_HASH: &str = "work-engine.public-hold-init-sha256";
 const COMMAND_LIMIT: Duration = Duration::from_secs(3);
+// Monotonic budget from immediately before submitting start, not from after
+// inspect or from receipt of a signal. Leave room for a quick outside sample
+// without spending the fixed init's 30-second self-limit on this wait.
+const OBSERVATION_LIMIT: Duration = Duration::from_secs(5);
+const OBSERVATION_CANCEL_SLICE: Duration = Duration::from_millis(25);
+
+struct ObservationSignal {
+    attempt: String,
+    container_id: String,
+    outcome: ObservationOutcome,
+}
+
+// No installed producer. These are scheduling signals, not authenticated evidence.
+#[allow(dead_code)]
+enum ObservationOutcome {
+    Complete,
+    Failed,
+    EarlyExit,
+}
+
+fn wait_for_observation(
+    signals: Option<&Receiver<ObservationSignal>>,
+    attempt: &str,
+    id: &str,
+    deadline: Instant,
+    now: &impl Fn() -> Instant,
+    cancelled: &impl Fn() -> bool,
+) -> &'static str {
+    loop {
+        if cancelled() {
+            return "cancelled";
+        }
+        let remaining = deadline.saturating_duration_since(now());
+        if remaining.is_zero() {
+            return "deadline";
+        }
+        let Some(signals) = signals else {
+            return "unavailable";
+        };
+        // No observer code or spawned helper on the cleanup path. Bound the
+        // blocking operation itself so silence cannot hide cancellation.
+        let signal = match signals.recv_timeout(remaining.min(OBSERVATION_CANCEL_SLICE)) {
+            Err(RecvTimeoutError::Timeout) => continue,
+            result => result,
+        };
+        if cancelled() {
+            return "cancelled";
+        }
+        if now() >= deadline {
+            return "deadline";
+        }
+        return match signal {
+            Err(_) => "unavailable",
+            Ok(signal) if signal.attempt != attempt || signal.container_id != id => "misbound",
+            Ok(signal) => match signal.outcome {
+                ObservationOutcome::Complete => "signal_complete",
+                ObservationOutcome::Failed => "failed",
+                ObservationOutcome::EarlyExit => "early_exit",
+            },
+        };
+    }
+}
 
 /// Closed recipe facts, not a permit or an acquisition interface. Only a
 /// future installed owner can supply these in a protected namespace. In
@@ -249,11 +314,31 @@ fn strings(args: &[&str]) -> Vec<String> {
 
 pub(super) fn run(
     setup: Option<&Launch>,
+    invoke: impl FnMut(&Path, &[String]) -> Result<(bool, Vec<u8>)>,
+) -> Result<Value> {
+    // The installed observer (including how its signals are acquired and
+    // isolated) is not selected here. A missing reader must not delay cleanup.
+    run_attempt(setup, invoke, None, Instant::now, || {
+        STOP.load(Ordering::SeqCst)
+    })
+}
+
+fn run_attempt(
+    setup: Option<&Launch>,
     mut invoke: impl FnMut(&Path, &[String]) -> Result<(bool, Vec<u8>)>,
+    signals: Option<&Receiver<ObservationSignal>>,
+    now: impl Fn() -> Instant,
+    cancelled: impl Fn() -> bool,
 ) -> Result<Value> {
     let setup = setup.ok_or_else(|| {
         Error::Refused("public inference setup has no installed launch selection".into())
     })?;
+    let not_cancelled = || {
+        if cancelled() {
+            return refuse("public hold cancelled before advancing");
+        }
+        Ok(())
+    };
     setup.check()?;
     not_cancelled()?;
     setup.reserve_once()?;
@@ -288,6 +373,7 @@ pub(super) fn run(
             return refuse("public hold container was not freshly created");
         }
         not_cancelled()?;
+        let deadline = now() + OBSERVATION_LIMIT;
         let (ok, bytes) = call(strings(&["start", id]))?;
         if !ok || std::str::from_utf8(&bytes).unwrap_or("").trim() != id {
             return refuse("public hold init-only start uncertain");
@@ -299,16 +385,22 @@ pub(super) fn run(
         if container["State"]["Status"] != "running" || container["State"]["Running"] != true {
             return refuse("public hold running state not established by Docker inspect");
         }
-        Ok(())
+        Ok(wait_for_observation(
+            signals,
+            &setup.attempt,
+            id,
+            deadline,
+            &now,
+            &cancelled,
+        ))
     });
 
-    // The attempt is permanently fenced. The remaining source path cannot
-    // create/start, even after an uncertain start, timeout, or cancellation.
-    // Fence daemon work by removing only the exact immutable object ID. A
-    // delayed start for the removed ID cannot switch to a reused name.
-    // A read-only preflight failure never requested allocation, so there is
-    // no cleanup target and no claim of checked removal or absence.
-    let cleanup = create_attempted.then(|| -> Result<()> {
+    // The attempt is permanently fenced. No remaining source path can
+    // create/start. Clean up by the checked object ID, never by a name
+    // substituted for a known ID. Docker can itself fall back to name lookup
+    // after an ID miss; the CLI argument is not a daemon replacement fence.
+    // None of the following readbacks independently settles daemon work.
+    let target = create_attempted.then(|| -> Result<String> {
         let target = known.as_deref().unwrap_or(&name);
         let container = inspected(call(strings(&["container", "inspect", target]))?)?;
         let id = setup.inspect_identity(&container, known.as_deref())?;
@@ -316,33 +408,34 @@ pub(super) fn run(
             // A name after uncertain allocation alone is not cleanup custody.
             setup.inspect_launch(&container)?;
         }
-        let (ok, _) = call(strings(&["rm", "--force", id]))?;
-        if !ok {
-            return refuse("public hold force removal uncertain");
-        }
+        Ok(id.to_owned())
+    });
+    let remove = if let Some(Ok(id)) = &target {
+        Some(call(strings(&["rm", "--force", id])).map(|(ok, _)| ok))
+    } else {
+        None
+    };
+    let listed = matches!(remove, Some(Ok(true))).then(|| {
         let (ok, bytes) = call(exact_name_list(&name))?;
-        if !ok || !bytes.iter().all(u8::is_ascii_whitespace) {
-            return refuse("public hold container absence not established");
+        if !ok {
+            return refuse("public hold Docker exact-name query exited unsuccessfully");
         }
-        Ok(())
+        Ok(bytes.iter().all(u8::is_ascii_whitespace))
     });
     Ok(json!({
         "attempt": setup.attempt,
         "disposition": "hold_stop_only",
         "create_attempted": create_attempted,
         "hold_inspected": launch.is_ok(),
+        "observation_window": launch.as_ref().copied().unwrap_or("not_opened"),
         "launch_error": launch.err().map(|e| e.to_string()),
         "fenced": true,
-        "cleanup_confirmed": cleanup.as_ref().is_some_and(Result::is_ok),
-        "cleanup_error": cleanup.and_then(Result::err).map(|e| e.to_string()),
+        "cleanup_target_error": target.and_then(Result::err).map(|e| e.to_string()),
+        "docker_remove_cli_success": remove.as_ref().and_then(|r| r.as_ref().ok()),
+        "docker_remove_cli_error": remove.and_then(Result::err).map(|e| e.to_string()),
+        "docker_exact_name_list_empty": listed.as_ref().and_then(|r| r.as_ref().ok()),
+        "docker_exact_name_list_error": listed.and_then(Result::err).map(|e| e.to_string()),
     }))
-}
-
-fn not_cancelled() -> Result<()> {
-    if STOP.load(Ordering::SeqCst) {
-        return refuse("public hold cancelled before advancing");
-    }
-    Ok(())
 }
 
 fn inspected((ok, bytes): (bool, Vec<u8>)) -> Result<Value> {
