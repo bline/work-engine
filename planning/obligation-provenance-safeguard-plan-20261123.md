@@ -3,7 +3,7 @@
 **Status:** Draft plan, revision 3, documentation only. Not approved and not an implementation authorization.
 **Date:** 2026-11-23
 **Decision owner:** operator
-**Revision 3:** narrowed to C0, an instruction-level change on the manual route, by operator decision (option A, 2026-11-23) after the [second independent review](../reviews/obligation-provenance-plan-opus-20261123/review-r2.md) (`revise_and_resubmit` on revision 2). The Rust comparator and typed route (revision 2's C1–C3) are parked; §7 records their unmet preconditions. Earlier revisions and both reviews are kept in [the review record](../reviews/obligation-provenance-plan-opus-20261123/README.md).
+**Revision 3.1:** adopts the corrected wording from the [C0 instruction review](../reviews/obligation-provenance-c0-instruction-review-20261123/review.md) (`accept_with_corrections`, conditional on the owner rule and change test, both adopted here), states C0's actual reach, and reruns the U4-A walk-through against the corrected text. **Revision 3:** narrowed to C0, an instruction-level change on the manual route, by operator decision (option A, 2026-11-23) after the [second independent review](../reviews/obligation-provenance-plan-opus-20261123/review-r2.md) (`revise_and_resubmit` on revision 2). The Rust comparator and typed route (revision 2's C1–C3) are parked; §7 records their unmet preconditions. Earlier revisions and both reviews are kept in [the review record](../reviews/obligation-provenance-plan-opus-20261123/README.md).
 
 **Research relationship:** independent of the [perspective and intent pilot](../design/ideas/pending/pilots/perspective-intent-pilot.md). P7 there may later evaluate C0.
 
@@ -31,9 +31,11 @@ A review finding, escalation disposition or decision request can present a **cha
 
 ## 2. Objective
 
-On the manual route, make every change to an acceptance condition **visible as a change**, with its **owner taken from the governing source** and that owner's decision or `pending`, before work treats the change as binding.
+Make every change to an acceptance or qualification condition **visible as a change**, with its **owner taken from the governing source** and that owner's decision or `pending`, before work treats the change as required or as resolved.
 
-**Protection level:** instruction-level. Nothing mechanical prevents a supervisor from ignoring the rule; the table makes the omission visible and auditable afterwards.
+**Reach.** Text A goes into `architectural-escalation.md`, which is shared by manual orchestration and configured slice supervision, and is read before every repair dispatch (`supervisor-dispatch.md`; `slice-supervisor/SKILL.md`). So A binds both routes and every disposition that file governs, not only post-design-review dispositions. In configured campaigns, `pending` rows are delivered through the configured adapters. Text C applies to decision requests when reporting or stopping. Text B reaches reviewers that load manual orchestration; a reviewer launched under another skill or prompt does not receive it.
+
+**Protection level:** instruction-level. Nothing mechanical prevents a supervisor from denying that a change goes beyond its parent span; the record makes such a denial visible and auditable afterwards.
 
 ## 3. Non-goals
 
@@ -45,49 +47,57 @@ On the manual route, make every change to an acceptance condition **visible as a
 
 ## 4. C0 rules
 
-1. **Change table.** An escalation disposition that changes or reinterprets an acceptance condition lists each change in a table: the condition as changed, the quoted parent span it changes (path, lines, digest), the owner of that condition's meaning, and that owner's decision reference or `pending`.
-2. **Owner from the governing source.** The owner is whoever the governing source names for the condition's meaning. In U4-A that was RL, for clean-cancel receipt semantics (041). The disposition's author is the owner only if the source names it.
-3. **Deliver `pending` rows.** Each `pending` row goes to its owner when recorded.
-4. **Per-row hold.** A `pending` row is not treated as an acceptance condition or required repair until its owner decides. Other rows, unrelated work, diagnosis and design review continue. So do realization choices the supervisor makes within its authority and labels as its own, rather than as owner requirements.
-5. **"Unchanged" only with the span.** A requirement may be described as unchanged only when its row quotes the unchanged parent span.
-6. **Decision requests.** A decision request to the operator or another owner that restates requirements presents every changed or reinterpreted condition as a change row, never as unchanged. An approval adopts only what the request presented as changes; generic assent adopts nothing presented as unchanged.
-7. **Decision references are instruction-level.** A reference may be the owner's own message, or its board post with its session id. These are auditable, not authenticated. Authentication belongs to the parked comparator (§7).
-8. **Reviewers.**
-   - For a requirement called inherited, quote the exact parent span, and label interpretations of ambiguous text as interpretations.
-   - For a requirement that holds only for the current realization, say so, and limit it to the consequence named.
-   - Never advise against asking the owner whether a requirement applies.
+1. **What counts as a change.** A change is anything the quoted governing span would not by itself require or allow, including the author's reading of ambiguous text. Qualification rules are included. A wholly new condition has parent span `none`; the column is never an escape.
+2. **Change record.** For each change a disposition makes, record: the condition as changed; the parent span (path, lines, digest) from the governing source; the owner of the condition's meaning; and that owner's decision or `pending`.
+3. **Owner from the governing source.** Not the disposition's author, a reviewer, or a plan that defers to the governing source. If the source splits ownership or leaves it unclear, name the other party and record `pending`. Settling that in your own favour is the ownership decision core §11 reserves.
+4. **Realization choices.** A realization choice presented as the author's to revise is not a change. It must not be presented to others as a requirement.
+5. **Deliver and hold.** Each `pending` row goes to its owner when recorded. Until the owner decides, the row is neither required repair nor resolved, in either direction. Other rows proceed.
+6. **Decisions.** A decision is the owner's own message, or its board post with session id, that decides the change or expressly delegates it. A general delegation that never addresses the change is not a decision. This leaves the operator free to delegate explicitly.
+7. **"Unchanged".** A requirement restated or paraphrased as unchanged must have its parent span quoted beside it.
+8. **Decision requests.** A decision request that restates requirements shows each changed or reinterpreted condition as a change, with span, owner and decision or `pending`. "Changed" is judged against what the owner last decided, not against the supervisor's or a reviewer's disposition. Assent to a request does not adopt a change the request labelled unchanged.
+9. **Reviewers.**
+   - Quote the governing source's exact span for any requirement presented as required by it.
+   - Label readings of ambiguous text, or anything beyond the span, as proposed changes for the condition's owner.
+   - Limit realization-specific requirements to the consequence they name.
+   - Do not discourage the owner question unless citing that owner's decision on it.
 
 ## 5. Proposed instruction text
 
-Exact wording for the instruction review. Each rule keeps its reason next to it, as instruction design (§3.1) requires.
+Exact wording, as corrected by the instruction review. Each rule keeps its reason next to it (instruction design §3.1).
 
-**A. `skills/manual-orchestration/references/architectural-escalation.md`.** Insert after "Before another repair, record the design judgment, the authorized owner's disposition, the exact retained or revised plan and the bounded next scope.":
+**A. `skills/manual-orchestration/references/architectural-escalation.md`.** A new, self-contained paragraph after the end of "Review and release of the hold" ("…serious regression or recurring invariant violation escalates again."), so it does not disturb the antecedent of "Bind that decision…":
 
-> When that decision changes or reinterprets an acceptance condition, list each change in a table: the condition as changed, the quoted parent span it changes (path, lines and digest), the owner of that condition's meaning, and that owner's decision reference or `pending`. Take the owner from the source that governs the condition, not from who wrote the disposition. On 2026-11-21 a supervisor adopted a reviewer's stronger cleanup requirement under a general delegation, and the requirement's owner was never asked. Deliver each `pending` row to its owner when you record it. Until the owner decides, do not treat a `pending` row as an acceptance condition or as required repair. Other rows, unrelated work, diagnosis, design review and realization choices you make and label as your own continue. Call a requirement unchanged only when its row quotes the unchanged parent span: a change described as unchanged hides it from the owner who must decide it. A decision reference may be the owner's own message, or its board post with session id.
+> Changing an acceptance or qualification condition is a contract change that needs its owner's authority (core contracts §1.1). So for each change a disposition makes, record: the condition as changed; the parent span it changes, quoted with path, lines and digest from the source that governs the condition (`none` for a new condition); the owner of the condition's meaning; and that owner's decision or `pending`. A change is anything the quoted span would not by itself require or allow, including your reading of ambiguous text. A realization choice you present as yours to revise is not a change, but do not present it to others as a requirement. Take the owner from the governing source, not from the disposition's author, a reviewer, or a plan that defers to that source. If the source splits ownership or leaves it unclear, name the other party and record `pending`: settling that in your own favour is the decision you lack. On 2026-11-21 a supervisor adopted a reviewer's stronger cleanup requirement under a general delegation, and the requirement's owner was never asked. Send each `pending` row to its owner when you record it. Until the owner decides, the row is neither required repair nor resolved; other rows proceed. A decision is the owner's own message, or its board post with session id, that decides the change or expressly delegates it. Do not call a requirement you restate or paraphrase unchanged unless you quote its parent span beside it: a change described as unchanged hides it from the owner who must decide it.
 
 **B. `skills/manual-orchestration/references/worker.md`.** Append to the opening paragraph:
 
-> As a reviewer, quote the exact parent span for any requirement you call inherited, and label interpretations of ambiguous text as interpretations. If a requirement holds only for the current realization, say so and limit it to the consequence you name, since other realizations may not need it. Never advise against asking the owner whether a requirement applies: your reading becomes binding only through the owner's decision.
+> As a reviewer, quote the governing source's exact span for any requirement you present as required by it. Label a reading of ambiguous text, or anything beyond what the span states, as a proposed change for that condition's owner, not as inherited. If a requirement holds only for the current realization, say so and limit it to the consequence you name, since other realizations may not need it. Do not discourage asking the owner whether a requirement applies unless you cite that owner's decision on it: a requirement its source does not plainly state binds only through its owner's decision.
 
-**C. `skills/manual-orchestration/references/supervisor-acceptance.md`.** Append to "Acceptance and result":
+**C. `skills/manual-orchestration/references/supervisor-acceptance.md`.** Append to the reporting paragraph of "Acceptance and result":
 
-> When a decision request to the user or another owner restates requirements, present every changed or reinterpreted acceptance condition as a change row, as in architectural escalation, never as unchanged.
+> When a decision request to the user or another owner restates requirements, show each changed or reinterpreted acceptance condition as a change, with its quoted parent span, owner, and decision or `pending`, as in architectural escalation. Judge "changed" against what the owner last decided, not against your own or a reviewer's disposition. An owner shown a change labelled unchanged cannot decide it, and assent to that request does not adopt it.
 
-(In the target file, "architectural escalation" links to `architectural-escalation.md`.) An approval adopts only what the request presented as changes.
+(In the target file, "architectural escalation" links to `architectural-escalation.md`.)
 
 ## 6. Acceptance
 
-1. **Instruction review** of A–C under [instruction design](../docs/contracts/instruction-design.md), using the `agent-instruction-review` skill. It checks structural necessity, causal reason placement, semantic ownership and loading placement. It also checks that the rules do not prescribe a method where only an outcome is required.
-2. **U4-A walk-through,** conditional on rules 2–6. At 08:59Z, the amendment's table would contain:
+1. **Instruction review.** Done: [`accept_with_corrections`](../reviews/obligation-provenance-c0-instruction-review-20261123/review.md). §5 now carries its corrected A–C. If any later edit departs from that wording, the review is re-run on the edit.
+2. **U4-A walk-through against the corrected text.** This is an inference, not a demonstration.
+   - **08:59Z.** `043-u4a-held-contract.md:19` (`4bf5ee60…`) requires "exact container removal observed against the owned identity". It does not by itself require a positive witness distinguishing normal removal from "already absent", so the amendment's rule is a change (rule 1).
+   - **Who owns it.** `PLAN.md:32` gives dev-vertical "the separate acceptance decision", but `PLAN.md` defers to 041 and 043, so it cannot settle ownership (rule 3). The reviewer's statement (`12127e46:69`: "Dev-vertical owns the local Host amendment…") cannot settle it either. 041:15 splits the Host controller (dev-vertical) from receipt semantics (RL), so ownership is split.
+   - **The row:**
 
-   | Condition as changed | Parent span | Owner | Decision |
-   |---|---|---|---|
-   | Clean cancel requires a positively attained normal-removal witness | 043 "Terminal cleanup" | RL (041 ownership split) | `pending` |
+     | Condition as changed | Parent span | Owner | Decision |
+     |---|---|---|---|
+     | Clean cancel requires a positively attained normal-removal witness distinguishing normal removal from already absent | `043-u4a-held-contract.md:19`, `4bf5ee60…`, "exact container removal observed against the owned identity" | RL (041:15 receipt semantics; split with dev-vertical) | `pending` |
 
-   That row's repair is held and delivered to RL. The amendment's other repairs (durable evidence and the fixture caller contract) proceed. A coordinator naming itself as owner violates rule 2, because 041 names RL. At 09:43Z the operator would have seen the change as a change row, not as "unchanged".
-3. **Counter-checks:**
-   - adopting create-time `--rm`, labelled as the supervisor's realization choice, is not held;
-   - an ordinary defect finding produces no table row.
+     That row is held and sent to RL. The amendment's other repairs proceed.
+   - **09:43Z.** "Changed" is judged against 043 and `PLAN.md`, not the amendment, so the operator sees a change row instead of "The H1–H5 requirements are unchanged".
+   - **Residual.** A supervisor could still deny that the witness goes beyond `043:19`. Nothing mechanical prevents that (§2).
+3. **Counter-checks.**
+   - An ordinary defect finding produces no row.
+   - A supervisor-labelled realization choice (for example a supervisor deciding to add an extra inspection step) is not a change. If it is later presented to builders or the owner as a requirement, that presentation violates rule 4.
+   - A self-owned addition still produces a row (owner: self, decision: this disposition). That is an audit trail, not a hold.
 4. **Skill release.** The changed references reach agents only through [skill release](../skills/skill-release/SKILL.md), as a separately approved step.
 
 ## 7. Parked: Rust comparator and typed route
@@ -122,3 +132,22 @@ Revision 2's C1 (pure provenance comparator), C2 (manual receipt with builder re
 | N1–N4, N7, N8, N10 | Parked with the comparator, as preconditions in §7 |
 | N9 (comparator mechanics) | Parked |
 | H2, H3, L1, L2, M1, M6, M7 (closed in revision 2) | Retained where they apply to C0; the rest moves to the parked comparator |
+
+## 10. Response to the C0 instruction review
+
+| Finding | Disposition |
+|---|---|
+| F1 (owner rule lets a sincere coordinator name itself) | Adopted: governing source ranked above deferring plans and reviewers; split or unclear ownership becomes `pending` (rule 3, text A) |
+| F2 (trigger depends on author's classification) | Adopted: objective change test; qualification rules named; `none` parent span (rule 1, text A) |
+| F3 (C's baseline undefined, no reason, linked row format) | Adopted: baseline is the owner's last decision; fields inline; reason added (text C) |
+| F4 (general delegation admitted as decision) | Adopted (rule 6) |
+| F5 ("unchanged" presupposes rows; too broad) | Adopted: targets restated or paraphrased requirements (rule 7) |
+| F6 (hold one-directional) | Adopted: neither required nor resolved (rule 5) |
+| F7 (exemption duplicative and escapable) | Adopted: duplicates removed; realization choice defined (rule 4) |
+| F8 (insertion breaks antecedent) | Adopted: self-contained paragraph at the end of "Review and release of the hold" |
+| F9 (B's trigger narrow; "Never" over-broad) | Adopted (text B) |
+| F10 (reach) | Adopted: §2 states both routes and all dispositions the file governs |
+| F11 (trailing approval sentence) | Adopted: dropped; replaced by text C's last sentence |
+| F12 (weak examples) | Adopted: §6.2 row with lines and digest; new counter-check |
+| F13 (B's reach limited to manual-orchestration reviewers) | Recorded as a known limit (§2) |
+
