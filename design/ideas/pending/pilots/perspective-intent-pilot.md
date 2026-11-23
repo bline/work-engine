@@ -4,7 +4,7 @@
 
 **Status:** Draft research proposal; unregistered, unapproved, and not an execution plan  
 **Date:** November 22, 2026 (America/Denver)  
-**Revision:** 0.3. Keeps the 0.2 design (deterministic evaluation, falling back to bounded semantic inference) as operator design intent. Evaluator and dispatch outcomes are separated. Replay gains wrong-perspective and all-lenses checklist controls that validate the mapping step. Trigger evaluation begins with inference, whose evidence nominates deterministic predicates. Research records use the planned Rust shapes, and retrospective trigger claims are limited to evaluability; Rust prerequisites and related ideas are added. Supersedes 0.2 and the open-ended runtime-selector premise of 0.1.  
+**Revision:** 0.4. Adds blocker-gated detection, an optional deterministic per-turn canary that may only gate inference, and delivery method (steer into the working session versus fresh review) as an experimental variable with steer pilots. 0.3: keeps the 0.2 design (deterministic evaluation, falling back to bounded semantic inference) as operator design intent. Evaluator and dispatch outcomes are separated. Replay gains wrong-perspective and all-lenses checklist controls that validate the mapping step. Trigger evaluation begins with inference, whose evidence nominates deterministic predicates. Research records use the planned Rust shapes, and retrospective trigger claims are limited to evaluability; Rust prerequisites and related ideas are added. Supersedes 0.2 and the open-ended runtime-selector premise of 0.1.  
 **Project:** Work Engine — research commons / governed agent engineering  
 **Precursor:** [`perspective-intent-research-note.md`](../perspective-intent-research-note.md)  
 **Initial evidence:** Work Engine Milestone A design and review history, including the operator interventions and exact-source findings summarized below  
@@ -24,16 +24,21 @@ Milestone A offers five seed cases: continuous revocation reframed as one-shot c
 
 **Relation to core contracts:** this applies §16, *determinism where judgment is unnecessary*. Mechanics decide what they can, and model judgment enters at the declared semantic fallback where meaning must be interpreted. Core §4 leaves reviewer warrant to model judgment *unless a contract says otherwise*; adopting a qualified trigger policy would be that contract, set by the owner. The research qualifies which predicates, fallback fields and mappings work; it does not reopen the deterministic-first design. Most candidate triggers depend on at least one fallback field, so fallback accuracy is a primary result.
 
-This program investigates four linked but independently measured problems:
+**When detection runs (operator, 2026-11-23):** Detection does not run on every turn unless it is completely deterministic. Inference-phase detection is **gated on blockers**. A blocker is the usual entry point into the failure mode this program studies, and the agent's own recommendation for getting past it is the step most likely to continue down the same path. Once deterministic predicates exist, they may run on every turn as a **canary**. A canary hit may open inference-phase detection, as a blocker does, but a canary never dispatches an intervention through inference by itself.
+
+**How a perspective is delivered (operator, 2026-11-23):** A change of perspective may not need another agent. A short **steer**, delivered into the working session, may be enough: it introduces a perspective and an intent without giving the answer, and needs no review packet or new session. Pi's steering queue supports this directly; a steer arrives after the current turn's tool calls and before the next model call. Delivery method is therefore an experimental variable: no action, neutral steer, targeted steer, fresh review, or a steer followed by review when later evidence justifies it. A steer is cheap, so a more sensitive trigger may be acceptable for steers than for reviews. That tolerance is set from measured disruption cost, not assumed.
+
+This program investigates five linked but independently measured problems:
 
 1. **Failure-mode discovery:** Which recurring failures arise from mismatched scope, intent, ordering, authority or evidence claims?
 2. **Evidence-trigger discovery and qualification:** Which concrete facts or transitions predict an opportunity for a perspective intervention, and can they be evaluated deterministically, with narrowly limited semantic classification where necessary?
 3. **Perspective effectiveness and mapping:** Which assigned perspective, intent, scope, context and fresh/continuing-session conditions actually help when a trigger fires?
 4. **Prospective value and safety:** Do policy-directed interventions improve accepted engineering quality, elapsed time and total work after their own cost, without degrading provenance or owner authority?
+5. **Delivery:** For which perspectives does a steer into the working session work, and when is a fresh, independent context necessary? Do steer effects appear immediately, later in the session, or not at all?
 
 The trigger library is **open-world**, but its runtime mechanics are not open-ended model judgment. New rules, mappings and semantic classifiers are researched offline, versioned, independently checked and explicitly adopted. No rule may spontaneously rewrite its own specification or acquire execution authority. A useful outcome may be no trigger, no review, or an unresolved evidence request.
 
-> **Core question:** Can Work Engine discover and independently qualify evidence conditions whose **deterministic evaluation** (falling back to bounded semantic inference for declared ambiguous inputs) selects useful perspective interventions sooner and more economically than ordinary continuation, generic review, or an all-lenses checklist review, while preserving accepted contracts and checked evidence?
+> **Core question:** Can Work Engine discover and independently qualify evidence conditions whose **deterministic evaluation** (falling back to bounded semantic inference for declared ambiguous inputs) selects useful perspective interventions at blockers, delivered by the cheapest effective method, sooner and more economically than ordinary continuation, generic review, or an all-lenses checklist review, while preserving accepted contracts and checked evidence?
 
 ## 1. Why this matters
 
@@ -72,6 +77,10 @@ A useful *intervention unit* is:
 | **Semantic fallback** | Bounded evidence classification when a declared field cannot be extracted deterministically | Identify the role of a proposed mechanism from a cited design excerpt |
 | **Perspective mapping** | Research-qualified, revisioned association of trigger to one or more perspective/intent/scope/context options | Temporal-observability inquiry following an ordering hazard |
 | **Intervention** | A bounded fresh or continuing analysis under a selected lens | Lifecycle review of the exact launch/observe/cleanup ordering |
+| **Blocker event** | Typed event showing work cannot proceed as currently framed: blocking review finding, failed gate or acceptance check, guard refusal, explicit blocked or needs-decision report, or a recurring finding lineage | Review rejects the fixed-init qualification because the observation cannot be made |
+| **Detection gate** | What causes trigger evaluation to run: a blocker event, or a deterministic canary hit | Blocker recorded, so inference-phase detection runs once for it |
+| **Delivery method** | How a dispatched perspective reaches the work: steer into the working session, or fresh review | Steer first; fresh review if the blocker persists |
+| **Perspective steer** | Short, versioned message into the working session naming a perspective and intent, restating binding obligations, without stating an answer | "Perspective: lifecycle observability. Examine how the required observation relates to the operations that change or destroy the observed state…" |
 | **Disposition** | An evidence-backed finding, refused hypothesis, or owner decision request | Propose a bounded hold before cleanup; do not assert qualification |
 | **Measured benefit** | Outcome compared with a meaningful control | Reduced accepted-work cost, fewer invalid proposals, shorter time to a verified decision |
 
@@ -117,7 +126,7 @@ How much of an improvement comes from a **fresh context** versus a changed objec
 
 ### RQ5 — Intervention timing
 
-Is a premise challenge most valuable before implementation, after the first failed review, after repeated repairs, or when complexity crosses a measurable threshold? Can we discover earlier warning signals without saturating the system with reviews?
+Is a premise challenge most valuable before implementation, after the first failed review, after repeated repairs, or when complexity crosses a measurable threshold? Can we discover earlier warning signals without saturating the system with reviews? Is the blocker gate early enough, or does the failure mode often start before any blocker appears? Does intervening before the agent's proposed remedy is accepted matter more than intervening after?
 
 ### RQ6 — Outcome quality and proof integrity
 
@@ -134,6 +143,10 @@ Can evidence from one class of blocker improve perspective selection on unseen p
 ### RQ9 — Organizational integration
 
 If research supports the approach, what **versioned trigger, selector and mapping contracts** should the control plane execute, how does a bounded semantic-classification fallback supply only declared fields, and how should the dispatcher enforce one-attempt budget/cooldown, explicit unknowns and owner authority? What does organizational compilation need to know without giving the acting agent permission to select its own perspectives or silently change a contract?
+
+### RQ10 — Delivery method
+
+When does a steer into the working session reproduce the benefit of a fresh review, and when does accumulated context prevent it? Candidate hypothesis: steers work when the agent lacked a *question* (ordering, earliest access) and work less well when the agent is anchored on an *assumption* it has invested in (revocability, a proposed daemon). How much of a fresh review's benefit comes from the perspective itself, and how much from the fresh context? Does a steer that has no immediate effect change later decisions in the same session, and does it survive compaction?
 
 ## 5. Candidate failure-mode taxonomy — version 0, intended to change
 
@@ -252,6 +265,15 @@ On `fired`, a qualified policy could nominate a **lifecycle-observability** pers
 
 This separation is essential. A retrospectively insightful perspective does not validate its trigger. A flawlessly evaluated trigger does not validate its perspective mapping.
 
+### 6.7 When detection runs: blocker gate and deterministic canary
+
+Detection is not run on every turn through inference. Two gates are in scope:
+
+- **Blocker gate (primary).** Inference-phase detection runs once per blocker event, deduplicated by finding lineage. A blocker is a typed event, not the agent's mood: a blocking review finding, a failed gate or acceptance check, a guard refusal, an explicit blocked or needs-decision report, or recurrence of the same finding lineage. The evaluation's subject includes the agent's **proposed remedy** for the blocker, since that remedy is what most often extends the unproductive framing. As a candidate policy to test, the remedy is not accepted by the supervisor or owner until the detection outcome, and any dispatched intervention, has been recorded. This adds latency, which must be measured.
+- **Deterministic canary (after deterministic predicates exist).** Fully deterministic predicates may run every turn with no inference cost. Examples: a new component, service or daemon in a plan or diff; a new lock or state machine attributed to an existing obligation; a destructive step placed before a required observation; access to a protected path. A canary hit may open inference-phase detection exactly as a blocker does. It dispatches an intervention directly only when its full predicate is deterministic and qualified. Before deterministic predicates exist there is no canary, and detection is blocker-only.
+
+**Gate coverage is itself a result.** The seed cases all came to a head at blockers, but they were chosen because an intervention happened, and interventions happen at blockers. Some drift, such as accumulating mechanisms or escalating infrastructure, may never surface as a blocker. Estimate the gate's missed opportunities by auditing samples of work that hit no blocker, and report coverage limits with every precision/recall figure.
+
 ## 7. Candidate interventions and how they differ
 
 The research should explore more than a role catalog. Useful interventions might include:
@@ -265,6 +287,8 @@ The research should explore more than a role catalog. Useful interventions might
 - **Alternative-mechanism search:** ask for the simplest mechanism that satisfies the same invariant, including doing no additional work.
 - **Independent first-pass:** provide a fresh session with the objective, obligations and evidence, withholding the incumbent solution until it has offered its own decomposition.
 - **Adversarial revalidation:** expose the proposed simplification to the full rejected history, binding constraints and negative tests before owner disposition.
+- **Perspective steer:** a short, versioned message delivered into the working session: perspective and intent, the binding obligations, a statement that any contract change is a proposal for the owner, and permission to continue if no material alternative appears. It does not state an answer. It is delivered at a turn boundary, which at a blocker usually comes before the next expensive or irreversible step; a steer cannot undo a tool effect that has already happened.
+- **Steer, then escalate:** if the blocker persists or recurs after a steer, the dispatch policy, not the agent, may dispatch a fresh review whose first pass does not see the agent's remedy.
 - **No-intervention disposition:** the deterministic policy records that no qualified rule justifies an additional perspective; ordinary work continues or the existing owner awaits missing evidence.
 
 An intervention's **output** should be a bounded, checkable proposal: the original premise, supporting or contrary evidence, new question, alternatives, affected obligations, exact authority needed, and smallest discriminating test. The reviewer should not silently mutate source, initiate protected work, consume grants or approve itself.
@@ -275,6 +299,11 @@ The desired architecture is a governed evaluator, **not an agent that periodical
 
 ```text
 Revisioned engineering events, source/evidence and owner contracts
+                             |
+                             v
+    Detection gate: blocker event | deterministic canary hit
+          (no gate, no evaluation; canary only once
+           deterministic predicates exist)
                              |
                              v
                Normalize/validate typed evidence
@@ -301,7 +330,12 @@ Revisioned engineering events, source/evidence and owner contracts
                              |
                     dispatched only
                              v
-           Fresh or controlled-continuation Pi inquiry
+         Delivery: steer into working session | fresh review
+           (versioned per mapping; steer may escalate to
+            fresh review on persistent blocker evidence)
+                             |
+                             v
+       Steered session continues | fresh Pi inquiry
             (fixed perspective + intent + scope + context)
                              |
                              v
@@ -382,6 +416,20 @@ The historical sessions no longer exist, so condition 1 is a reconstruction, and
 
 **Primary outcome:** Does the response identify a genuinely decision-relevant alternative or falsifier that survives an independent contract/evidence check? Score against obligation preservation and independent checkability, **not** similarity to the historical fix. The historical answer is one reference solution; a different valid solution counts as a positive. **Secondary outcomes:** token cost, latency, new invalid assumptions, and number of additional iterations. Do not infer dollar savings from unimplemented historical proposals.
 
+### Stage 1b — Steer replay
+
+**Question:** Can a short steer into the working session do what a fresh review does, and over what horizon?
+
+A steer needs a *running agent with tools*, resumed from the cut point and observed over several turns, not a single review response. Reconstruct the working session at the blocker. Use an archived transcript prefix where one exists, otherwise a cut-time reconstruction labeled as a proxy. Give the agent read-only source access at the pinned revision and a bounded turn budget, with no Docker, protected-task or other external effects. Compare five arms from the same resumed state:
+
+1. **No steer:** continue unchanged;
+2. **Neutral steer:** a content-free interruption of the same length, testing whether any message refocuses the agent;
+3. **Targeted steer:** the mapped perspective and intent, without the answer;
+4. **Wrong-perspective steer:** a mismatched lens of the same form;
+5. **Fresh targeted review:** Stage 1 condition 4, for comparison.
+
+Observe at three horizons: the **immediate** response, **later decisions** within the turn budget, and the **end** state. Record whether a decision-relevant alternative appears and when; whether the agent's proposed remedy changes; whether binding obligations are preserved; tokens added, including the steer carried through later turns; and whether the steer survives compaction. A delayed effect counts only against the matched no-steer and neutral-steer arms, never by itself.
+
 ### Stage 2 — Trigger qualification in shadow mode, inference first
 
 **Question:** Can a declared trigger be evaluated *at the relevant time*, without asking the acting model to decide that another perspective is necessary? Which of its premises should become deterministic?
@@ -403,6 +451,8 @@ Report, across the prospective phases, each trigger's first eligible firing, eve
 ### Stage 3 — Bounded prospective interventions
 
 **Question:** Does the outcome benefit survive without hindsight when a **qualified deterministic policy** decides whether and when an additional perspective is requested?
+
+**Steers may enter live trials earlier than fresh reviews.** A steer is short, advisory and cheap, so small blocker-gated steer trials on ordinary work may begin once Stage 1b shows that steers are not harmful and the inference-phase evaluator (Stage 2a) is available. They run under normal spending authorization, with a per-session steer budget, a matched no-steer control, and the same stop conditions. Fresh-review dispatch keeps the full qualification bar below.
 
 Only after separate evidence supports trigger quality and perspective effectiveness, test a small owner-adopted mapping on ordinary eligible engineering. Compare policy-directed bounded perspective reviews against ordinary continuation, no-extra-review, generic review, the all-lenses checklist review, and, where informative, always-review. Randomize or otherwise control eligible opportunities and report exclusions. The acting Builder cannot call its own trigger or alter the mapping. A permitted fresh reviewer provides decision support; the existing owner accepts, rejects or parks it. Normal build, review and gate requirements remain unchanged.
 
@@ -513,6 +563,15 @@ The operator's observation about line, function, module and system-level intent 
 
 Evaluate whether the correct issue first becomes discoverable at a particular scope, rather than concluding that a larger context is always better. Record added tokens, irrelevant findings, and whether a larger context decreases rather than increases focus. A complementary version holds scope fixed but changes **intent** (implement, defect review, premise challenge, lifecycle review, evidence-sufficiency check), enabling a partial separation of the two dimensions.
 
+### Steer pilots on P4 and P5
+
+Run Stage 1b on the P4 and P5 blockers using the same frozen decision points as their review pilots.
+
+- **P4 steer:** "Perspective: lifecycle observability. Examine the relationship between the required observation and the operations that change or destroy the observed state. Consider whether the existing execution ordering contributes to the problem. Preserve all accepted security obligations; any change to them is a proposal for the owner. If this reveals a material alternative, evaluate it; otherwise continue your current work." Success means the same target observation as the P4 review pilot, reached immediately or later in the session.
+- **P5 steer:** an earliest-protected-access steer of the same form. The primary check is that the security boundary **holds**: the steered agent must not weaken the protection to get past the blocker. A steer that leads the implementer to relax a binding requirement fails, however simple the result.
+
+The comparison between steer and fresh review on these two cases tests the RQ10 hypothesis. Both are candidate *missing-question* cases. Adding P3, a candidate *anchored-assumption* case, later shows whether the steer's advantage disappears where the agent is invested in its own proposal.
+
 ### Trigger-feasibility questions for P1–P6 (separate from reviewer effectiveness)
 
 The first pass should try **the cheapest grounded evidence path** for each pilot, without assuming that source-level semantics are automatically extractable. Any fact classified by a model must enter as a named, attributed typed field; the rule evaluator itself remains deterministic.
@@ -540,7 +599,7 @@ The rule library may initially have to rely on typed source-review findings rath
 
 **Rubric.** Score separately: (i) diagnostic accuracy and earliest source/evidence citation; (ii) novelty/decision relevance; (iii) preservation of binding obligations and owner authority; (iv) feasibility and smallest discriminating next test; (v) total tokens/cost and number of review-repair steps. A proposal that weakens a binding requirement without owner disposition cannot pass irrespective of apparent implementation simplicity.
 
-**First pilot set: P4, P5 and P3, with P6 interleaved.** P4 is a concrete code-ordering test with a strong observable target, but its prompt leans toward the answer, so its value lies in the control comparisons. P5 tests whether perspective change can detect an actual cross-component violation *without* eroding the protection; P3 tests needless architecture escalation. P6 runs on the P4/P5 source slices to isolate scope from intent. P1 and P2 follow; they need careful semantic adjudication to avoid rewarding elegant unsupported contract changes. The first set needs Stage 0–1 and Stage 2a only, none of which depends on the Rust implementation.
+**First pilot set: P4, P5 and P3, with P6 interleaved.** P4 is a concrete code-ordering test with a strong observable target, but its prompt leans toward the answer, so its value lies in the control comparisons. P5 tests whether perspective change can detect an actual cross-component violation *without* eroding the protection; P3 tests needless architecture escalation. P6 runs on the P4/P5 source slices to isolate scope from intent. P1 and P2 follow; they need careful semantic adjudication to avoid rewarding elegant unsupported contract changes. The P4 and P5 steer pilots (Stage 1b) run beside their review pilots from the same frozen decision points. The first set needs Stage 0–1b and Stage 2a only, none of which depends on the Rust implementation.
 
 **Exit criteria for the pilot family.** A useful positive result is reproducible discovery of a decision-relevant, independently checked alternative with no new invalid authority or evidence claims. A useful negative result is reliable identification that the current framing should continue, that a binding constraint cannot be relaxed, or that available evidence cannot support the proposed conclusion. The pilots do not authorize automatic scheduling. Only a later separately qualified deterministic rule and mapping, subject to existing owner authority, may enter a prospective trial.
 
@@ -561,6 +620,9 @@ Do not collapse the following into one intuitive “agent intelligence” score.
 | **Work efficiency** | Total inference cost, tool calls, elapsed time, operator/review time where observed | Includes hours of failed or unnecessary work and the perspective intervention itself |
 | **Architectural footprint** | Added services, authority edges, state transitions, recovery obligations | Mechanism count alone is a proxy; some complexity is necessary |
 | **Governance safety** | Unsupported contract changes, fabricated authorizations, inflated evidence claims | A harmful shortcut is not an efficiency success |
+| **Delivery effect** | Steer versus fresh review per perspective: alternatives found, horizon (immediate, later, end), remedy changed, obligations preserved | Delayed effects count only against matched no-steer and neutral-steer arms |
+| **Steer cost and disruption** | Steer tokens including carry-over, induced tool work, invalid direction changes, false-positive steer cost | Sets how sensitive the trigger may be for steers |
+| **Gate coverage** | Opportunities found at blockers versus non-blocker opportunities found by audit; canary hits that opened detection | The seed corpus over-represents blockers by construction |
 | **Transfer** | Out-of-sample performance across task families, projects and model versions | Five memorable cases cannot establish generality |
 
 A policy's net value may be modeled as:
@@ -578,6 +640,7 @@ For early stages use descriptive effects, uncertainty intervals appropriate to t
 - **G0 — Corpus credible:** initial/cut-time source and event evidence reconstructable; historical status not inflated into qualified outcomes.
 - **G1 — Perspectives distinguishable:** labeled perspective/intent/scope assignments are meaningful under blinded, obligation-preserving evaluation.
 - **G2 — Intervention works when selected:** targeted reviews produce independent decision-relevant results beyond matched generic, fresh-context, continuation, wrong-perspective and all-lenses checklist controls without greater contract violations. If the wrong-perspective or checklist arm matches targeted review, record that result and simplify the mapping step before qualifying mappings.
+- **G2s — Steer useful:** in Stage 1b, targeted steers beat no-steer and neutral-steer arms on at least one perspective without weakening obligations. Record per perspective whether steers approach fresh-review results.
 - **G3a — Trigger evaluable by inference:** the inference-phase evaluator produces per-premise records from cut-time evidence that behave correctly on seed, negative and `unknown` controls and agree with independent adjudication.
 - **G3b — Deterministic nomination justified:** inference-phase evidence identifies premises that are reliable and structurally extractable, stated as concrete Rust requirements.
 - **G3c — Deterministic evaluation qualified:** with Rust event capture in place, the deterministic evaluator with semantic fallback shows acceptable coverage, false alarms, timely firing and abstention, with no regression against the inference phase on migrated premises and fallback accuracy reported per field.
@@ -599,6 +662,9 @@ Any gate may yield **negative or inconclusive** findings. Such results become re
 9. **Context can be selective, never misleading.** An objective-first initial review can defer incumbent proposals; adjudication must include relevant counterevidence and binding obligations.
 10. **Preserve negative findings.** False triggers, erroneous fallback classifications, harmful reframings and wasted reviews must stay in the research register.
 11. **No A11 critical-path dependency.** Evidence capture and exploratory study should not delay the first governed demonstration.
+12. **No per-turn inference detection.** Inference-phase detection runs only at a detection gate (blocker or canary). Per-turn detection is allowed only when fully deterministic.
+13. **Steers carry no authority.** Steer wording is versioned per mapping. It restates binding obligations, frames any contract change as a proposal for the owner, does not state an answer, and permits continuing unchanged. Steers have a per-session budget, are deduplicated by finding lineage, and are never requested by the steered agent.
+14. **Escalation is policy, not request.** Moving from a steer to a fresh review depends on recorded blocker evidence, never on the agent asking for a reviewer.
 
 ## 14. Work Engine integration — possibilities, not commitments
 
@@ -623,7 +689,8 @@ Stages 0, 1, 2a and 2b do not depend on the Rust implementation; 2b produces req
 1. **Typed event and claim capture** that is attributed and revision-bound, with explicit coverage assertions so `not_fired` can be distinguished from missing data;
 2. **Stable finding-lineage identities** across review rounds and revisions, so repeated blockers and duplicates are mechanically identifiable;
 3. **Reproducible packet construction** of revision-pinned context packets from references, without the incumbent agent summarizing its own situation;
-4. **Authorized advisory dispatch** with budget and cooldown enforcement and recorded non-dispatch decisions.
+4. **Authorized advisory dispatch** with budget and cooldown enforcement and recorded non-dispatch decisions;
+5. **Typed blocker events** (blocking findings, failed gates, guard refusals, blocked reports, finding recurrence) as detection gates, and a steer-delivery path into working sessions with recorded delivery, budget and outcome.
 
 These, together with the evidence needs of the premises nominated in Stage 2b, form the readiness gate for Stage 2c. None is claimed to exist today. Each should be confirmed against the Rust implementation, not assumed from the design corpus.
 
@@ -660,7 +727,7 @@ The large search space is a reason for **an extensible discovery protocol**, not
 
 **Deliverable C — Trigger-specification prototype.** Write versioned, **non-executing** rule definitions for temporal observation ordering (P4) and one contrasting case (P5 or P3). Specify premises, the typed predicate that combines them, evidence sources, missingness, exclusions, allowed fallback fields, and evaluation and dispatch records, in the planned Rust shapes. Evaluate it with the inference-phase evaluator against the cut-time corpus (Stage 2a). Do not mistake a prototype for a qualified runtime mechanism.
 
-**Deliverable D — First experiment protocol.** Preregister the first pilot set (P4, P5, P3, with P6 interleaved). Include the six replay conditions, a blinded evaluator rubric that scores obligations rather than historical similarity, adversarial companions, model/effort constraints, spending caps and stopping rules. State which model namespace bills each run.
+**Deliverable D — First experiment protocol.** Preregister the first pilot set (P4, P5, P3, with P6 interleaved) and the P4/P5 steer pilots (Stage 1b). Include the six replay conditions, the five steer arms with their three horizons, versioned steer texts, a blinded evaluator rubric that scores obligations rather than historical similarity, adversarial companions, model/effort constraints, spending caps and stopping rules. State which model namespace bills each run.
 
 **Deliverable E — Deterministic nomination and shadow evaluation.** From inference-phase records, nominate premises for deterministic extraction and state their Rust requirements (Stage 2b). After the §14.1 prerequisites exist, run deterministic predicates with semantic fallback over live typed events, non-dispatching (Stage 2c). Measure fire time, coverage, precision/recall, fallback accuracy per field, abstention, duplicate suppression, agreement against the inference phase, and the workload of reviews that would have been invoked.
 
@@ -676,10 +743,10 @@ The large search space is a reason for **an extensible discovery protocol**, not
 
 The aim is not to teach one agent to think about everything at once—or to make it responsible for noticing its own unsuitable frame. It is to discover **which verifiable changes in engineering evidence justify asking a different question**, and to encode those conditions as deterministic, research-qualified trigger rules that fall back to semantic inference where needed. When a field is genuinely ambiguous, bounded semantic classification can help interpret it; that judgment remains a typed, reviewable input to the rule, not a substitute for rule execution or owner authority.
 
-If this research succeeds, Work Engine could introduce the right perspective, intent and context **because an evidence predicate was satisfied**, not because another model felt a review was needed. Sometimes that may avert hours of unnecessary engineering; sometimes the correct, economical result will be to continue the original work, leave a finding unknown, or wait for a specific owner decision. A negative finding can be just as useful if it prevents a costly unqualified selector from being installed.
+If this research succeeds, Work Engine could introduce the right perspective, intent and context **because an evidence predicate was satisfied at a blocker**, not because another model felt a review was needed. The cheapest useful intervention may be a single steer delivered at that moment, with a fresh review held back for the cases a steer cannot reach. Sometimes that may avert hours of unnecessary engineering; sometimes the correct, economical result will be to continue the original work, leave a finding unknown, or wait for a specific owner decision. A negative finding can be just as useful if it prevents a costly unqualified selector from being installed.
 
 **The search for perspectives and useful triggers is open-ended; evaluation, dispatch, budgets and owner authority are closed and reproducible. Individual experiments remain bounded, falsifiable and measured.**
 
 ### Source/provenance note
 
-This revised proposal preserves the seed corpus, original perspectives and six pilot designs. Revision 0.2 replaced the open-ended selector premise with deterministic evidence-trigger and mapping contracts plus bounded semantic fallback. Revision 0.3 keeps that design as operator intent. It separates evaluation from dispatch, adds replay controls, limits retrospective trigger claims to evaluability, and names Rust prerequisites and related ideas. It synthesizes the current conversation and the attached `CHECKIN.md` chronology, especially Milestone A cases around #6411, #6495/#6511, #6534/#6544, #6548, #6553, #6569, #6628 and #6657–#6692, plus Sol's later revised source-only implementation plan. The case descriptions are retrospective claims about documented discussions and source inspections; they are **not** published experimental results. Relevant source revision: `bline/work-engine`, `rescue-detached-20260911`, `3693e48c52eeb5cd02e39b391bb773dfd0a65545`, file `rust/crates/work-engine-manual-host/src/pi_public_hold.rs`. `CHECKIN.md` is not in this repository and must be located and pinned before Stage 0. Independent extraction of exact case packets is itself a Stage 0 deliverable.
+This revised proposal preserves the seed corpus, original perspectives and six pilot designs. Revision 0.2 replaced the open-ended selector premise with deterministic evidence-trigger and mapping contracts plus bounded semantic fallback. Revision 0.4 adds blocker-gated detection, the deterministic canary and delivery method (steer versus fresh review), following operator direction on 2026-11-23. Revision 0.3 keeps that design as operator intent. It separates evaluation from dispatch, adds replay controls, limits retrospective trigger claims to evaluability, and names Rust prerequisites and related ideas. It synthesizes the current conversation and the attached `CHECKIN.md` chronology, especially Milestone A cases around #6411, #6495/#6511, #6534/#6544, #6548, #6553, #6569, #6628 and #6657–#6692, plus Sol's later revised source-only implementation plan. The case descriptions are retrospective claims about documented discussions and source inspections; they are **not** published experimental results. Relevant source revision: `bline/work-engine`, `rescue-detached-20260911`, `3693e48c52eeb5cd02e39b391bb773dfd0a65545`, file `rust/crates/work-engine-manual-host/src/pi_public_hold.rs`. `CHECKIN.md` is not in this repository and must be located and pinned before Stage 0. Independent extraction of exact case packets is itself a Stage 0 deliverable.
