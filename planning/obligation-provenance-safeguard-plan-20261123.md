@@ -1,6 +1,6 @@
 # Obligation-provenance safeguard: plan
 
-**Status:** Draft plan, revision 3, documentation only. Not approved and not an implementation authorization.
+**Status:** C0 implemented and released (operator-approved 2026-11-23). Texts A–C applied in commit `e76f3adc`, deployed as skill release `e76f3adcc88cda99f76951ca440acd70e44e4dc2` (verification `identical`), announced on the board as #6817. The parked components (§7) remain unapproved.
 **Date:** 2026-11-23
 **Decision owner:** operator
 **Revision 3.1:** adopts the corrected wording from the [C0 instruction review](../reviews/obligation-provenance-c0-instruction-review-20261123/review.md) (`accept_with_corrections`, conditional on the owner rule and change test, both adopted here), states C0's actual reach, and reruns the U4-A walk-through against the corrected text. **Revision 3:** narrowed to C0, an instruction-level change on the manual route, by operator decision (option A, 2026-11-23) after the [second independent review](../reviews/obligation-provenance-plan-opus-20261123/review-r2.md) (`revise_and_resubmit` on revision 2). The Rust comparator and typed route (revision 2's C1–C3) are parked; §7 records their unmet preconditions. Earlier revisions and both reviews are kept in [the review record](../reviews/obligation-provenance-plan-opus-20261123/README.md).
