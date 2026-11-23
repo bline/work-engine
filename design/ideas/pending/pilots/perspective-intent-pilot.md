@@ -778,6 +778,8 @@ Place contract-formation validation in a small step **upstream** of `Organizatio
 
 P7 can prototype the comparison as a small offline Rust program over frozen documents, without the Work Engine runtime. Production placement follows only from P7 evidence.
 
+**Engineering safeguard, independent of this research.** A narrow safeguard for already-typed requirements and explicit provenance blocks is planned separately as engineering in [the obligation-provenance safeguard plan](../../../../planning/obligation-provenance-safeguard-plan-20261123.md), covering both typed review flows and manual orchestration. It does not wait for P7. P7 may evaluate it, including its coverage of the manual route, and test whether automatic extraction from prose can reduce the manual provenance work.
+
 ### 14.3 Related pending ideas
 
 Position this program against, and reuse rather than duplicate:
