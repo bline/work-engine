@@ -1,296 +1,124 @@
 # Obligation-provenance safeguard: plan
 
-**Status:** Draft plan, revision 2, documentation only. Not approved and not an implementation authorization.
+**Status:** Draft plan, revision 3, documentation only. Not approved and not an implementation authorization.
 **Date:** 2026-11-23
 **Decision owner:** operator
-**Revision 2:** responds to the independent review in [`reviews/obligation-provenance-plan-opus-20261123/`](../reviews/obligation-provenance-plan-opus-20261123/review.md) (verdict `revise_and_resubmit` on revision 1, commit `e882e8cc`). The changes:
+**Revision 3:** narrowed to C0, an instruction-level change on the manual route, by operator decision (option A, 2026-11-23) after the [second independent review](../reviews/obligation-provenance-plan-opus-20261123/review-r2.md) (`revise_and_resubmit` on revision 2). The Rust comparator and typed route (revision 2's C1–C3) are parked; §7 records their unmet preconditions. Earlier revisions and both reviews are kept in [the review record](../reviews/obligation-provenance-plan-opus-20261123/README.md).
 
-- §4 adds who may type a parent, authenticated owner origin, `realization_conditional`, and value-level comparison.
-- §5 corrects the enforcement points.
-- §6 splits F1 into F1a and F1b and adds variants where non-owners do the typing.
-- §7 makes an instruction-level change the first manual slice and the typed route conditional.
-
-The map from findings to changes is in §11.
-
-**Research relationship:** independent of the [perspective and intent pilot](../design/ideas/pending/pilots/perspective-intent-pilot.md). P7 there may later evaluate this safeguard; this plan does not depend on P7.
+**Research relationship:** independent of the [perspective and intent pilot](../design/ideas/pending/pilots/perspective-intent-pilot.md). P7 there may later evaluate C0.
 
 ## 1. Problem
 
-A review finding, qualification amendment or decision request can present a **newly binding obligation** as if an authoritative source already required it. Downstream work then pursues the stronger obligation as mandatory.
+A review finding, escalation disposition or decision request can present a **changed acceptance condition** as if an authoritative source already required it, or as unchanged. The condition's actual owner is then never asked, and downstream work pursues the changed condition as mandatory.
 
 **Motivating incident (Case F, U4-A, 2026-11-21).** The chronology and SHA-256 pins are in [research note Case F](../design/ideas/pending/perspective-intent-research-note.md#case-f--cleanup-attribution-in-u4-a-a-planning-sentence-amplified-by-review) and [proposal §3](../design/ideas/pending/pilots/perspective-intent-pilot.md#3-seed-cases-and-the-actual-level-of-evidence). In short:
 
-1. **The contract.** RL contract `043` says "The Host owns the child, same-session framed handshake, and exact stop". It requires clean cancel to conclude only after "exact container removal observed against the owned identity". For *removal attribution*, this is ambiguous to unspecified.
-2. **The plan.** `PLAN.md` defers to 041 and 043 ("the latter documents own the broader qualification contract"). Its H3 requires the Host to "distinguish confirmed removal, removal failure and unknown cleanup", and its H4 requires independent post-exit absence. The selected realization had the Host run `docker rm` itself.
-3. **The first review (realization-conditional).** The re-escalation review (`architecture-reescalation-review/ASTRA-ARCHITECTURE.md`, `12127e46…`) held that "**for this realization**" Host-attributed normal removal is required. Its reason: another actor's removal could qualify a Host whose own removal failed. It also found a removal setup failure folded into confirmed absence. Both points were legitimate under H3 while the Host performed removal.
-4. **Adoption without the owner.** The coordinator adopted a "positively attained normal-removal witness" in `QUALIFICATION-AMENDMENT.md` and dispatched repair writers at 08:59Z. It acted under the operator's overnight delegation ("try to continue; use escalation rules and architectural reviews to help make decisions"). It did not consult the operator or RL, the owner of the acceptance meaning.
-5. **The realization-independent strengthening.** The resolved-object review (`resolved-object-review/ASTRA-ARCHITECTURE.md`, `e8304cda…`) made Host-positive removal an independent claim citing evidence-and-claims §3.9. It ruled out Engine auto-remove and advised "Do not ask for permission to accept eventual absence instead". The decision request `OPERATOR-DECISION.md` then described this as one of "the H1–H5 requirements [that] are unchanged".
-6. **The correction.** About 6.5 hours of wall-clock time went to proving exclusive cleanup causality before the operator changed the realization: create-time `--rm`, Docker as removal owner, independent verification. That dissolved the first review's point rather than refuting it.
+1. **The contract.** RL contract `043` assigns the Host "exact stop" and requires clean cancel to conclude after "exact container removal observed against the owned identity". For removal *attribution* it is ambiguous to unspecified. 041 records the ownership split: "RL owns task-host and lifecycle admission/receipt semantics; dev-vertical owns the actual Pi Host controller and rendered container boundary."
+2. **The plan.** `PLAN.md` defers to 041 and 043. Its H3 requires the Host to "distinguish confirmed removal, removal failure and unknown cleanup", and its H4 requires independent post-exit absence. The selected realization had the Host run `docker rm`.
+3. **The first review.** The re-escalation review (`12127e46…`) made a point supported by H3: while the Host performs removal, a removal that failed or never started is reported as failure (`held_failed + confirmed_absent`), not as a clean cancel. It also demanded "an affirmative result" that distinguishes the Host's removal from "already missing". On a shared Engine that means excluding concurrent removers, which is causal attribution and goes beyond H3.
+4. **Adoption without the owner.** Within about a minute, the coordinator adopted a "positively attained normal-removal witness" and dispatched repair writers (08:59Z). It acted under a general overnight delegation, without asking RL, the owner of the clean-cancel receipt meaning.
+5. **The realization-independent strengthening.** The resolved-object review (`e8304cda…`) made Host-positive removal an independent §3.9 claim, ruled out Engine auto-remove, and advised "Do not ask for permission to accept eventual absence instead". The decision request, and the coordinator's 09:43Z message to the operator, described the change as "The H1–H5 requirements are unchanged" inside a yes/no design question.
+6. **The cost.** Causality work ran from about 08:58Z to 09:43Z. U4-A was then parked awaiting the operator until 15:07Z, and the operator's realization change (create-time `--rm`, Docker as removal owner) followed at about 15:26Z. An owner question raised at 08:59Z would also have waited for the operator. The realistic saving is about 45 minutes of engineering, a correctly framed question, and an honest record, not the full 6.5-hour window.
 
-**What failed.** Not the doctrine: core contracts §1.1 and evidence-and-claims §3.9 already require an independent authority for structural constraints. Three things went wrong:
+**What failed.** Not the doctrine; core contracts §1.1 and evidence-and-claims §3.9 already require an independent authority. The failure was in the record:
 
-- a realization-conditional requirement was turned into a realization-independent one;
-- authority was claimed through general citations and a general delegation;
-- a non-owner adopted a change to an acceptance meaning, which was then labelled "unchanged".
+- a change to an acceptance condition never appeared as a change;
+- its owner was taken from whoever wrote the disposition, not from the governing source;
+- the owner question was actively discouraged;
+- the operator was shown the change as "unchanged".
 
-Nothing required a property-specific citation from the **owner** of that meaning.
-
-**Route.** The incident ran under manual orchestration as Markdown packets: an architecture review, a supervisor amendment, free-text Pi `subagent` dispatch, and a decision request. It did not pass through `implementation-review/v1`, slice-campaign remediation, `OrganizationalRequirements` or review preparation.
+**Route.** Manual orchestration, as Markdown packets and free-text Pi `subagent` dispatch. There is no mechanical consumer on this route today.
 
 ## 2. Objective
 
-Prevent a review finding, amendment, revised plan or decision request from presenting an obligation as **binding** unless one of these holds:
+On the manual route, make every change to an acceptance condition **visible as a change**, with its **owner taken from the governing source** and that owner's decision or `pending`, before work treats the change as binding.
 
-- it is inherited from an **owner-typed** parent that covers the exact property and value;
-- it is adopted by an **authenticated owner decision** naming the property;
-- it is explicitly conditional on the selected realization and protects a supported requirement.
-
-Each route counts as protected only at the level its actual consumer achieves (§5), and the plan states that level honestly.
+**Protection level:** instruction-level. Nothing mechanical prevents a supervisor from ignoring the rule; the table makes the omission visible and auditable afterwards.
 
 ## 3. Non-goals
 
-- Interpreting natural-language plans. The checker never types prose (§4.1).
-- Suppressing findings. Any concern, including a proposed new obligation, may still be raised.
-- Changing ordinary defect findings. A panic, race or security defect needs no contractual citation.
-- Reducing owner authority. Owners may adopt stronger obligations; the safeguard records and validates them.
-- Demoting accepted obligations. Owner-accepted amendments stay binding until superseded (§4.6).
-- Making the review-result parser an authority gate.
-- A general semantic policy engine. Comparison is limited to closed enumerations (§4.4).
+- Any Rust component (parked, §7).
+- Suppressing findings or concerns, including proposed new obligations.
+- Changing ordinary defect findings.
+- Reducing owner authority, or demoting obligations an owner has accepted.
+- Blocking unrelated work, diagnosis, design review, or realization choices the supervisor makes and labels as its own.
 
-## 4. Semantics
+## 4. C0 rules
 
-### 4.1 Who may type a parent
+1. **Change table.** An escalation disposition that changes or reinterprets an acceptance condition lists each change in a table: the condition as changed, the quoted parent span it changes (path, lines, digest), the owner of that condition's meaning, and that owner's decision reference or `pending`.
+2. **Owner from the governing source.** The owner is whoever the governing source names for the condition's meaning. In U4-A that was RL, for clean-cancel receipt semantics (041). The disposition's author is the owner only if the source names it.
+3. **Deliver `pending` rows.** Each `pending` row goes to its owner when recorded.
+4. **Per-row hold.** A `pending` row is not treated as an acceptance condition or required repair until its owner decides. Other rows, unrelated work, diagnosis and design review continue. So do realization choices the supervisor makes within its authority and labels as its own, rather than as owner requirements.
+5. **"Unchanged" only with the span.** A requirement may be described as unchanged only when its row quotes the unchanged parent span.
+6. **Decision requests.** A decision request to the operator or another owner that restates requirements presents every changed or reinterpreted condition as a change row, never as unchanged. An approval adopts only what the request presented as changes; generic assent adopts nothing presented as unchanged.
+7. **Decision references are instruction-level.** A reference may be the owner's own message, or its board post with its session id. These are auditable, not authenticated. Authentication belongs to the parked comparator (§7).
+8. **Reviewers.**
+   - For a requirement called inherited, quote the exact parent span, and label interpretations of ambiguous text as interpretations.
+   - For a requirement that holds only for the current realization, say so, and limit it to the consequence named.
+   - Never advise against asking the owner whether a requirement applies.
 
-Only the **owner of a parent source** may author or accept its typed fields: property, value and status. The typing is digest-pinned and must exist *before* the derived assertion it is checked against. The asserting party, its reviewer, an extractor or a fixture author may **propose** a typing but cannot create `supported` from it. If no owner-accepted typing exists, an `inherited` assertion of an in-vocabulary property resolves to `requires_owner_decision`.
+## 5. Proposed instruction text
 
-The checker (C1) therefore never decides semantics. It enforces **who** decided them, checks that the decision covers the exact property and value, and checks that the bytes it cites are the bytes that were decided.
+Exact wording for the instruction review. Each rule keeps its reason next to it, as instruction design (§3.1) requires.
 
-### 4.2 Requirements set
+**A. `skills/manual-orchestration/references/architectural-escalation.md`.** Insert after "Before another repair, record the design judgment, the authorized owner's disposition, the exact retained or revised plan and the bounded next scope.":
 
-A digest-pinned requirements set records, per requirement:
+> When that decision changes or reinterprets an acceptance condition, list each change in a table: the condition as changed, the quoted parent span it changes (path, lines and digest), the owner of that condition's meaning, and that owner's decision reference or `pending`. Take the owner from the source that governs the condition, not from who wrote the disposition. On 2026-11-21 a supervisor adopted a reviewer's stronger cleanup requirement under a general delegation, and the requirement's owner was never asked. Deliver each `pending` row to its owner when you record it. Until the owner decides, do not treat a `pending` row as an acceptance condition or as required repair. Other rows, unrelated work, diagnosis, design review and realization choices you make and label as your own continue. Call a requirement unchanged only when its row quotes the unchanged parent span: a change described as unchanged hides it from the owner who must decide it. A decision reference may be the owner's own message, or its board post with session id.
 
-- id, source path, revision and digest, and quoted span;
-- property and value, with status `binding`, `selected_realization`, `unspecified` or `ambiguous`;
-- **owning authority** per requirement and per property;
-- **precedence** between sources. For example, 043 owns the clean-cancel meaning and `PLAN.md` makes it observable; where the two differ, the owning source governs.
+**B. `skills/manual-orchestration/references/worker.md`.** Append to the opening paragraph:
 
-Subject-level and review-level properties live in **separate namespaces** (`subject.*` and `review.*`). `OrganizationalRequirements` v0 types review conduct only (continuity, mutation, independence sources, evidence custody, observer class, realization dimensions of the *review*). `slice-campaign` does not depend on it. It is therefore not a parent for subject acceptance requirements, and its fields must never resolve a `subject.*` assertion.
+> As a reviewer, quote the exact parent span for any requirement you call inherited, and label interpretations of ambiguous text as interpretations. If a requirement holds only for the current realization, say so and limit it to the consequence you name, since other realizations may not need it. Never advise against asking the owner whether a requirement applies: your reading becomes binding only through the owner's decision.
 
-### 4.3 Property vocabulary (v0, closed)
+**C. `skills/manual-orchestration/references/supervisor-acceptance.md`.** Append to "Acceptance and result":
 
-`subject.initiator`, `subject.outcome_owner`, `subject.verifier` (with observer class), `subject.independence`, `subject.evidence_custody`, `subject.path_fact` (by dimension), and `subject.acceptance_evidence`, the required evidence content of an acceptance predicate. The last was added because the U4-A amendment stated its requirement as evidence content: "a positively attained normal-removal witness".
+> When a decision request to the user or another owner restates requirements, present every changed or reinterpreted acceptance condition as a change row, as in architectural escalation, never as unchanged.
 
-Classification is **declared by the author** and may be **challenged** by an independent reviewer, or later by a P7 extractor. An undeclared in-vocabulary assertion found on review is a recorded provenance defect. Statements outside the vocabulary are ordinary findings. Extending the vocabulary is a reviewed change.
+(In the target file, "architectural escalation" links to `architectural-escalation.md`.) An approval adopts only what the request presented as changes.
 
-### 4.4 Assertions and comparison
+## 6. Acceptance
 
-Each assertion has a property, a value from a closed enumeration, and a status:
+1. **Instruction review** of A–C under [instruction design](../docs/contracts/instruction-design.md), using the `agent-instruction-review` skill. It checks structural necessity, causal reason placement, semantic ownership and loading placement. It also checks that the rules do not prescribe a method where only an outcome is required.
+2. **U4-A walk-through,** conditional on rules 2–6. At 08:59Z, the amendment's table would contain:
 
-| Status | Citation | Meaning |
-|---|---|---|
-| `inherited` | `{requirement id, revision, digest, property, value, span}` | Claims the parent already requires it |
-| `realization_conditional` | `{selected realization, supported requirement it protects, named consequence}` | Binding only while that realization is selected |
-| `owner_adopted` | Authenticated owner decision record (§4.5) naming property and value | A new obligation the owner adopted |
-| `proposed` | none required | Offered to the owner; not binding |
+   | Condition as changed | Parent span | Owner | Decision |
+   |---|---|---|---|
+   | Clean cancel requires a positively attained normal-removal witness | 043 "Terminal cleanup" | RL (041 ownership split) | `pending` |
 
-**Coverage** is checked per property **and per value**. Values come from closed enumerations and are compared by equality or explicit containment, as `RealizationConstraint.allowed` already does. A free-text value is never mechanically covered; it returns `requires_owner_decision`, or `not_established` if inputs are missing.
+   That row's repair is held and delivered to RL. The amendment's other repairs (durable evidence and the fixture caller contract) proceed. A coordinator naming itself as owner violates rule 2, because 041 names RL. At 09:43Z the operator would have seen the change as a change row, not as "unchanged".
+3. **Counter-checks:**
+   - adopting create-time `--rm`, labelled as the supervisor's realization choice, is not held;
+   - an ordinary defect finding produces no table row.
+4. **Skill release.** The changed references reach agents only through [skill release](../skills/skill-release/SKILL.md), as a separately approved step.
 
-**The realization-conditional test.** Would a different realization that removes the named consequence satisfy the finding?
+## 7. Parked: Rust comparator and typed route
 
-- **Yes:** the assertion is `realization_conditional` and may block the selected realization.
-- **No:** it requires a property independent of the realization, and is strengthening.
+Revision 2's C1 (pure provenance comparator), C2 (manual receipt with builder re-run) and C3 (typed review route) are parked. The second review found they would return a provenance defect on every real document until owners change how they record decisions. They are revisited when the preconditions below hold, or when P7 or a typed-route incident supplies evidence.
 
-Who answers this test is part of the declared classification (§4.3), open to challenge, not decided by C1. C1 checks that the cited supported requirement exists, that the realization named is the one recorded as selected, and that the assertion is withdrawn when the selection changes.
-
-**The rule:**
-
-> An assertion may be treated as binding only if it is (a) `inherited` from an owner-typed `binding` parent field covering the exact property and value, (b) `realization_conditional` on the currently selected realization and protecting a `supported` requirement, or (c) `owner_adopted` by an authenticated decision of the property's owner. Anything else that a document treats as binding is a provenance defect. Selecting a realization that satisfies the parent is not strengthening and stays model judgment (core contracts §4).
-
-### 4.5 Owner decisions
-
-- An `owner_adopted` record must come from the property's recorded owner, with **authenticated origin**.
-  - For the operator, that means a session-transcript user entry: session id, entry id, text digest.
-  - An explicit delegation that names the property also qualifies.
-- These do **not** qualify:
-  - board messages, whose `author` and `session_id` are caller-supplied strings;
-  - supervisor dispositions;
-  - general delegations such as "try to continue; use escalation rules…".
-- How an agent owner such as RL authenticates its decisions is open (§9).
-- A disposition or amendment that fails provenance does **not** enter the requirements set. This applies transitively: a later finding citing it gets no support from it.
-- An "unchanged" claim is checked against the **named source revision**, not against the accumulated set.
-
-### 4.6 Dispositions and consequences
-
-| Disposition | Meaning | Consequence |
-|---|---|---|
-| `supported` | (a) or (c) above | Binding |
-| `realization_conditional` | (b) above | Binding while the realization is selected; may block it |
-| `proposal` | Marked `proposed` | Routed to the owner; never binding; never forces remediation |
-| `requires_owner_decision` | Treated as binding without (a)–(c) | Provenance defect; routed to the owner; dependent work held (below) |
-| `ambiguous_parent` | Cites a parent field the owner typed `ambiguous` | Cannot claim inheritance; owner resolution needed |
-| `contradictory` | Conflicts with a binding parent, including **narrowing** it | Owner decision required; the parent stays binding |
-
-**Accepted obligations are never demoted.**
-
-- An amendment the owner accepted stays binding until the owner supersedes it. C1 may report a defect against it but does not weaken it.
-- An amendment adopted by a **non-owner** is not treated as optional either. It is routed to the owner, and repair or acceptance that depends on it is **held** until the owner decides. Evidence-and-claims §3.9 forbids silent weakening as firmly as strengthening.
-
-**This safeguard enforces.** Unlike the advisory P7 check in the research pilot, its dispositions are consumed by the enforcement points in §5, at the protection level each achieves.
-
-## 5. Components
-
-### C0: instruction-level change on the manual route (first)
-
-The cheapest intervention on the incident's real route; it needs no Rust.
-
-- **Architectural escalation** (`skills/manual-orchestration/references/architectural-escalation.md`). The disposition recorded before another repair must include a **per-change table**:
-
-  | Changed or reinterpreted acceptance condition | Quoted parent span (path, lines, digest) | Owner of that condition | Owner decision reference, or `pending` |
-  |---|---|---|---|
-
-  Repair or acceptance that depends on a `pending` row stays held. Unrelated authorized work continues. "Unchanged" may be claimed only for conditions whose rows quote the unchanged parent span.
-- **Reviewer reference.** For any requirement claimed as inherited, quote the exact parent span and label interpretations as interpretations. Mark whether a requirement is conditional on the current realization. **Never discourage the owner question**; contrast "Do not ask for permission to accept eventual absence instead".
-- **Protection level:** instruction-level. Applied to U4-A, the table would have shown "owner: RL; decision: `pending`" at 08:59Z, holding the repair dispatch.
-- These are agent-instruction changes. They need review under [instruction design](../docs/contracts/instruction-design.md) and reach agents only through skill release.
-
-### C1: pure provenance comparator (Rust)
-
-A small pure library plus CLI. No model, no network, no I/O beyond explicit input files. **It is a comparator over owner-typed inputs, not an interpreter.**
-
-- **Inputs:**
-  - the digest-pinned requirements set (§4.2);
-  - an assertion set listing **every assertion the document treats as binding**;
-  - owner decision records with authentication data;
-  - the selected-realization record.
-- **What it proves mechanically:**
-  - citations resolve to a requirement id at the stated revision and digest, and the quoted span exists in those bytes;
-  - property and value match by equality or containment in closed enumerations;
-  - the cited parent field is `binding` and owner-typed, with the typing older than the assertion;
-  - decision records name the property and value, come from the recorded owner, and authenticate;
-  - general citations never resolve;
-  - "unchanged" matches the named source revision;
-  - records whose own receipt failed are excluded, transitively;
-  - `realization_conditional` assertions name the recorded selected realization and a `supported` requirement.
-- **What it does not do:** type prose, decide whether a statement is an obligation, or decide realization-conditionality. Those are declared, owner-typed or challenged (§4.1, §4.3, §4.4).
-- **Exit codes,** following `handoff_validator.py`:
-  - `0` only if every binding assertion is `supported` or `realization_conditional`; proposals are listed as not adopted;
-  - `21` on any `requires_owner_decision`, `ambiguous_parent` or `contradictory`;
-  - `32` not established (missing or unreadable input; never a pass).
-- **Placement:** a new small crate. It does not depend on or extend `OrganizationalRequirements` (§4.2).
-
-### C2: manual receipt (after C1)
-
-The disposition, amendment or decision request carries the provenance block and the C1 receipt (exit code and output digest). Repair dispatch packets carry the receipt.
-
-- **What this adds:** a receipt is meaningful only because §4.1 and §4.5 put its decisive inputs with the owner: the owner-typed requirements set and authenticated decisions. A dispatched builder can then **re-run C1** against those owner-originated inputs instead of trusting the supervisor's receipt.
-- **Protection level:** instruction-level enforcement at dispatch. The builder is instructed to re-run C1 and refuse repair against a revised plan that fails.
-- **Mechanical enforcement (M3)** would need a hook in the Pi `subagent` host or an extension. The U4-A route dispatched free-text tasks, and `role_host.py` takes a prompt string with no packet validation. Whether such a hook exists is unverified (§9). Until one exists, the manual route is **not mechanically protected**.
-
-### C3: typed route (conditional, §7)
-
-Only if P7 or a typed-route incident shows the need.
-
-- **Consumers:** today, findings drive remediation through the builder evaluation's per-finding `valid` judgment (`slice-campaign` `initial_outcome.rs` `BuilderEvaluationDecision`). An outcome is reported when every finding is `!valid || verified_resolved`. The episode reducer derives the remediation phase from the verdict alone (`review-episode-core` `reducer.rs`). `RemediationSelection` checks startup inputs and does not consume findings, so it is **not** an enforcement point.
-- **Enforcement:**
-  - a finding whose only binding basis is `proposal` or `requires_owner_decision` cannot make the verdict `remediation_required`;
-  - it cannot be counted as a valid finding requiring repair; instead it routes to the owner, reusing the existing `evidence_unestablished` / `route_unestablished_claim_to_owner` pattern (`reducer.rs`, `state.rs`);
-  - findings that are `supported` or `realization_conditional`, and ordinary defects, are unaffected.
-- **Schema:** the closed `implementation_review_v1` field set means this needs either a v2 schema or a sidecar. A sidecar cannot reach the pure verdict rule unless `record_result`'s inputs change, so it does not leave v1 untouched in effect.
-- **Parent:** the typed route has no typed parent for subject requirements today. It needs the same owner-typed requirements set as C1.
-
-## 6. Fixtures and acceptance
-
-### F1: the U4-A regression (decisive)
-
-**Setup.** Reconstruct the chain from the pinned packet files, copied into fixtures at their pinned digests: 043, `PLAN.md`, the re-escalation review, `QUALIFICATION-AMENDMENT.md`, the resolved-object review and `OPERATOR-DECISION.md`.
-
-**Owner typing.** The fixture's owner-typing of 043 and `PLAN.md` stands in for RL's typing. It is authored **blind to the outcome**: the operator's turn and the auto-remove documents are withheld, as in P7. It is recorded as a fixture stand-in, not RL's actual typing. Attribution is judged against 043 and absence against `PLAN.md`, following §4.2 precedence.
-
-**Expected, per boundary:**
-
-| Document | Assertion as stated | Cited source | Expected |
-|---|---|---|---|
-| Re-escalation review (`12127e46`) | **F1a:** under the selected Host-`rm` realization, a removal setup failure must not be reported as confirmed absence; Host removal must be affirmative | `PLAN.md` H3, selected realization | `realization_conditional`; may block that realization |
-| Re-escalation review | "Narrowing success to eventual absence … would require an owner decision", treating attribution as the baseline | 043:11,17–25 | `ambiguous_parent` (owner typed 043 removal attribution `ambiguous`/`unspecified`) |
-| `QUALIFICATION-AMENDMENT.md` | Adopts a "positively attained normal-removal witness" as the amended rule | the review; "existing operator authority" | `requires_owner_decision` (non-owner adoption, general authority). Does not enter the set; dependent repair held |
-| Resolved-object review (`e8304cda`) | **F1b:** Host-positive removal as an independent claim regardless of realization; auto-remove excluded | 043, `PLAN.md`, the amendment, §3.9 | `requires_owner_decision` (amendment excluded transitively; §3.9 general; fails the realization-conditional test) |
-| `OPERATOR-DECISION.md` | "H1–H5 requirements are unchanged", including attribution | "H1–H5" | `requires_owner_decision` (unsupported "unchanged" against the named `PLAN.md` revision) |
-
-**Variants. Neither may yield `supported`:**
-
-- **F1-v1:** the supervisor types 043 itself as `outcome_owner: binding Host`. This is not owner typing, so the result is `requires_owner_decision`.
-- **F1-v2:** the supervisor cites `QUALIFICATION-AMENDMENT.md` as its owner decision. This is not authenticated owner origin, so the result is `requires_owner_decision`.
-
-**Requirement:** a safeguard that does not produce these results, including F1a staying able to block, does not pass acceptance.
-
-### Further fixtures
-
-| Fixture | Expected |
+| Precondition | Source |
 |---|---|
-| F2: authenticated owner decision requires Host-attributed removal | `supported` (owner_adopted) |
-| F3: declared realizations: Host issues the stop; `--rm`/`AutoRemove` before ready required while auto-remove is selected | `realization_conditional`; not flagged |
-| F4: a citation to a parent field the owner typed `ambiguous` | `ambiguous_parent` |
-| F5: plain correctness finding (panic on empty input) | outside vocabulary; passes untouched |
-| F6: citation to a genuine accepted requirement, wrong property | `requires_owner_decision` |
-| F7: genuine defect violating a `supported` requirement | still blocks |
-| F8: general citation only ("existing operator authority", "§3.9", "H1–H5") | `requires_owner_decision` |
-| F9: strengthening within one property (`outcome_owner: Host` → Host exclusively causal on a shared Engine) | `requires_owner_decision` (value not contained) |
-| F10: an actor narrows a binding requirement | `contradictory`; the parent stays binding |
-| F11: an undeclared in-vocabulary assertion found by a challenging reviewer | recorded provenance defect |
-| F12: an owner-accepted amendment later reported as defective | stays binding; defect reported only |
-
-### Route acceptance
-
-Test **enforcement, not only validation**, at each route's actual consumer:
-
-- **C0:** the instruction change is reviewed under instruction design. A U4-A walk-through shows the `pending` row holding repair.
-- **C2:** a builder re-running C1 against owner-originated inputs refuses the F1 amendment.
-- **C3 (if built):** the verdict rule and builder evaluation refuse a proposal-only blocker and accept F7.
-
-## 7. Slices (each separately approved and reviewed)
-
-1. **S0 (C0):** instruction-level escalation table and reviewer reference rules, with instruction review and skill release. No Rust.
-2. **S1 (C1):** the comparator crate and CLI, vocabulary v0, fixtures F1–F12 at comparator level.
-3. **S2 (C2):** manual receipt with builder re-run at dispatch. Depends on S1 and on an owner-typed requirements set being available for the workstream.
-4. **S3 (C3):** typed route. **Conditional** on evidence from P7 or a typed-route incident, per the pre-release simplicity policy.
-
-S0 is independent and comes first. S1 does not depend on S0.
+| Owner-typed requirement sets exist and are published per workstream | review-r2 N4, §9 Q3 of revision 2 |
+| Agent owners such as RL can authenticate decisions; board fields are caller-supplied | N4, revision 2 §9 Q1 |
+| Operator decisions are recorded as change rows with digests. C0 rule 6 starts producing this record | N4 |
+| `realization_conditional` constrained to the protected requirement's value space, with an independent challenge before it can pass; F1a corrected and F1a′ added | N1 |
+| F1 expectations stated for each stand-in typing of 043, not by claimed blind typing | N2 |
+| Coverage tested by superset for inherited obligations and membership for realizations, with value enumerations defined | N3 |
+| A subordinate source cannot settle what its governing source leaves open; 041 added to F1 | N7 |
+| A boundary between in-vocabulary defects and obligations; `acceptance_evidence` narrowed | N8 |
+| Any first comparator slice is fixture-only, or gated on the above for one real workstream | N10 |
 
 ## 8. Risks
 
-- **Friction.** Mitigation: the closed vocabulary, ordinary defects exempt, and C0 needing only a table.
-- **Ritual compliance.** Mitigation: owner typing (§4.1), authenticated origin (§4.5), value-level matching (F6, F9), and challengeable declarations (F11).
-- **False confidence on the manual route.** Mitigation: protection levels stated per component (§5).
-- **Owner availability.** Holding dependent repair on a `pending` row can stall work when the owner is unavailable. Mitigation: unrelated work continues, and the hold is visible and attributable rather than silent.
-- **Vocabulary gaps.** Mitigation: record gaps; P7 can measure them.
+- **Ritual tables.** Supervisors may fill tables perfunctorily. Mitigation: owners come from the governing source (rule 2), and spans must be quoted (rules 1 and 5), which makes a wrong row visible.
+- **Owner unavailability.** Holding a row can stall the work that depends on it. Mitigation: holds are per row, and everything else continues. The U4-A park shows the stall would have occurred anyway.
+- **Instruction-level only.** Nothing mechanical enforces C0. Mitigation: stated plainly (§2); the parked comparator is the mechanical path.
 
-## 9. Open questions for review
+## 9. Response to the second review
 
-1. How agent owners such as RL authenticate decisions, given that board fields are caller-supplied.
-2. Whether the Pi `subagent` host or an extension offers a hook for mechanical dispatch enforcement (M3).
-3. Where owner-typed requirements sets live and how owners publish them (for example durable state or a digest-pinned file).
-4. Whether `subject.acceptance_evidence` is sufficient to express Case B's terminal-settlement requirement.
-
-## 10. Review request
-
-Re-review revision 2 against the findings of the revision 1 review, with the same adversarial focus: semantic authority, false positives, false negatives, enforcement, authority preservation and scope.
-
-## 11. Response to the revision 1 review
-
-| Finding | Change |
+| Finding | Disposition in revision 3 |
 |---|---|
-| B1 (decisive judgment unowned; F1 passes by construction) | §4.1 owner-only typing; C1 is a comparator; F1 owner-typing blind and marked as stand-in; F1-v1 |
-| B2 (`owner_adopted` without owner identity) | §4.5 authenticated owner origin; supervisor dispositions and general delegations excluded; failed adoptions excluded transitively; F1-v2 |
-| H1 (no realization-conditional category) | §4.4 `realization_conditional` and its test; F1a/F1b split; F3 rewritten |
-| H2 (wrong typed enforcement point) | §5 C3 names builder evaluation and verdict rule; `RemediationSelection` removed; sidecar limitation stated |
-| H3 (`OrganizationalRequirements` not a subject parent) | §4.2 namespaces; C1 does not depend on it |
-| H4 (no mechanical manual consumer) | §5 protection levels; C0 first; C2 builder re-run; M3 unverified |
-| M1 (exit 0 included proposals) | §5 C1 exit codes |
-| M2 (F1/F4 contradiction) | §6 per-boundary table consistent with §4.6 |
-| M3 (parent precedence) | §4.2 precedence; attribution judged against 043 |
-| M4 (property-level only) | §4.4 value-level containment; F9 |
-| M5 (self-declared scope) | §4.3 challengeable declaration; `acceptance_evidence`; F11 |
-| M6 (adopted amendments, narrowing) | §4.6 no demotion, hold instead; F10, F12 |
-| M7 (cheaper intervention missed) | C0 / S0 first |
-| L1 (merged reviews) | §1 items 3 and 5 attribute each review separately |
-| L2 (S2 unjustified) | S3 conditional |
+| N5 (owner column fillable by its author; decision requests uncovered) | Rules 2, 3 and 6; text A and C |
+| N6 (hold scope; RL release; cost claim) | Rules 4 and 7; §1 item 6 corrected |
+| N11 (design-document inaccuracies) | Corrected in the research note and pilot in the same commit |
+| N1–N4, N7, N8, N10 | Parked with the comparator, as preconditions in §7 |
+| N9 (comparator mechanics) | Parked |
+| H2, H3, L1, L2, M1, M6, M7 (closed in revision 2) | Retained where they apply to C0; the rest moves to the parked comparator |
