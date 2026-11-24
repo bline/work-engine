@@ -8,8 +8,9 @@ the mapping to original ids lives only in runs/plan.json.
   python3 -I -B experiments/perspective-intent-research/p7-run1/build_tasks.py           # write tasks/ and runs/plan.json
   python3 -I -B experiments/perspective-intent-research/p7-run1/build_tasks.py --check   # verify on-disk artifacts, write nothing
 
---check re-renders everything in memory and compares it, byte for byte, with
-tasks/*.md and runs/plan.json, which records the digests of every asset
+--check re-renders everything in memory and compares raw bytes: each task file
+against the rendered bytes whose digest dispatch uses, and runs/plan.json against
+its canonical serialization. The plan records the digests of every asset
 (templates, concepts, schema, rubric, comparator, pipeline, agents, leakage
 terms, fixtures). Any difference, missing or extra file fails the check.
 """
@@ -73,8 +74,8 @@ SETS = {
 
 ASSETS = ["prompts/A1-planner.md", "prompts/M1-plan.md", "prompts/M1-review.md", "prompts/M2-extract.md",
           "prompts/M3-fallback.md", "prompts/scorer.md", "prompts/rubric.json", "prompts/concepts.md",
-          "schema/obligation-extract-v2.json", "comparator.py", "pipeline.py", "leakage_terms.txt",
-          "agents/p7-arm.md", "agents/p7-scorer.md", "build_tasks.py"]
+          "schema/obligation-extract-v3.json", "comparator.py", "pipeline.py", "leakage_terms.txt",
+          "agents/p7-arm.md", "agents/p7-scorer.md", "build_tasks.py", "receipt_expectations.json"]
 
 
 def read_text(path):
@@ -126,7 +127,7 @@ def render_docs(ids, id_map, texts, label):
 
 def build(texts):
     t = {n: read(f"prompts/{n}.md").decode() for n in ("A1-planner", "M1-plan", "M1-review", "M2-extract", "concepts")}
-    schema = read("schema/obligation-extract-v2.json").decode()
+    schema = read("schema/obligation-extract-v3.json").decode()
     tasks, task_documents = {}, {}
     for set_id, (kind, parents, derived) in SETS.items():
         order = parents + derived
@@ -201,19 +202,24 @@ def expected_artifacts():
     return tasks, plan
 
 
+def plan_bytes(plan):
+    return (json.dumps(plan, indent=1, ensure_ascii=False) + "\n").encode()
+
+
 def verify(tasks, plan, disk_tasks, disk_plan):
-    """Pure comparison of expected artifacts with what is on disk. Returns a list of problems."""
+    """Pure byte comparison of expected artifacts with what is on disk: task files against the
+    bytes whose digests dispatch uses, and plan.json against its canonical serialization.
+    Returns a list of problems."""
     problems = []
     for tid in sorted(set(tasks) | set(disk_tasks)):
         if tid not in disk_tasks:
             problems.append(f"missing task file {tid}")
         elif tid not in tasks:
             problems.append(f"unexpected task file {tid}")
-        elif tasks[tid] != disk_tasks[tid]:
+        elif tasks[tid].encode() != disk_tasks[tid]:
             problems.append(f"task {tid} differs from its render")
-    if disk_plan != plan:
-        diff = sorted(k for k in set(plan) | set(disk_plan or {}) if (disk_plan or {}).get(k) != plan.get(k))
-        problems.append(f"plan.json differs in {diff}")
+    if disk_plan != plan_bytes(plan):
+        problems.append("plan.json differs from its canonical render")
     return problems
 
 
@@ -223,10 +229,10 @@ def read_disk():
     if os.path.isdir(tdir):
         for name in os.listdir(tdir):
             if name.endswith(".md"):
-                with open(os.path.join(tdir, name)) as f:
+                with open(os.path.join(tdir, name), "rb") as f:
                     disk_tasks[name[:-3]] = f.read()
     ppath = os.path.join(HERE, "runs", "plan.json")
-    disk_plan = json.loads(read_text(ppath)) if os.path.exists(ppath) else None
+    disk_plan = read(os.path.relpath(ppath, HERE)) if os.path.exists(ppath) else None
     return disk_tasks, disk_plan
 
 
@@ -246,12 +252,11 @@ def main(argv):
         if name.endswith(".md") and name[:-3] not in tasks:
             os.remove(os.path.join(tdir, name))
     for tid, body in tasks.items():
-        with open(os.path.join(tdir, f"{tid}.md"), "w") as f:
-            f.write(body)
+        with open(os.path.join(tdir, f"{tid}.md"), "wb") as f:
+            f.write(body.encode())
     os.makedirs(os.path.join(HERE, "runs"), exist_ok=True)
-    with open(os.path.join(HERE, "runs", "plan.json"), "w") as f:
-        json.dump(plan, f, indent=1, ensure_ascii=False)
-        f.write("\n")
+    with open(os.path.join(HERE, "runs", "plan.json"), "wb") as f:
+        f.write(plan_bytes(plan))
     print(json.dumps({"written": True, "runs": len(plan["runs"]), "unique_tasks": len(tasks)}))
     return 0
 

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "pinned": false,
+  "note": "Expected launch receipt facts. The two digests are null until the disclosed calibration batch (RUNBOOK section 4) observes them; the operator pins them here and re-freezes before any counted run. While unpinned, counted records are receipt_unestablished.",
+  "agents": {
+    "p7-arm": {"step_model": "claude-sdk/claude-opus-5-5", "thinking": "high", "provider": "claude-sdk",
+               "assistant_model": "claude-opus-5-5", "system_sections": ["cwd", "preamble"], "system_content_sha256": null},
+    "p7-scorer": {"step_model": "claude-sdk/claude-opus-5-5", "thinking": "high", "provider": "claude-sdk",
+                  "assistant_model": "claude-opus-5-5", "system_sections": ["cwd", "preamble"], "system_content_sha256": null}
+  },
+  "user_wrapper_sha256": null
+}

@@ -1,164 +1,255 @@
 # P7 run 1: execution runbook
 
-The deterministic procedure for executing the frozen protocol ([PROTOCOL.md](PROTOCOL.md)). The **executor** is the coordinating Pi session. It launches agents and feeds their outputs to `pipeline.py`. The **scorer** is a fresh `p7-scorer` agent per output. The **adjudicator** is the operator. Nothing here runs until the operator gives the separate execution go-ahead (PROTOCOL §10).
+The deterministic procedure for executing the frozen protocol ([PROTOCOL.md](PROTOCOL.md)). The **executor** is the coordinating Pi session. It launches agents and feeds their outputs and native run directories to `pipeline.py`. The **scorer** is a fresh `p7-scorer` agent per output. The **adjudicator** is the operator. Nothing here runs until the operator gives the separate execution go-ahead (PROTOCOL §10).
 
 All commands run from the repository root. `P=experiments/perspective-intent-research/p7-run1`.
 
+`pipeline.py` exit codes:
+- `0`: ok.
+- `2`: usage error.
+- `21`: refused or error; nothing was written.
+- `22`: a stop condition holds. Every recording command refuses to write while one holds.
+
 ## 0. Preconditions
 
-1. The protocol is frozen at a recorded commit. `python3 -I -B $P/build_tasks.py --check` passes, and all tests pass:
+1. The protocol is frozen at a recorded commit, and these pass:
 
    ```
+   python3 -I -B $P/build_tasks.py --check
    python3 -I -B -m unittest discover -s $P -p 'test_*.py'
    ```
 2. The board has been read, and no claim conflicts with this run.
-3. The operator has given the execution go-ahead, including the bridge decision in step 2.
+3. The operator has given the execution go-ahead.
 
 ## 1. Install the agent definitions
 
-Copy `$P/agents/p7-arm.md` and `$P/agents/p7-scorer.md` to `~/.pi/agent/agents/`. Confirm their SHA-256 equals `asset_digests` in `runs/plan.json`. Every launch passes `agentScope: "user"`, so a same-named project agent cannot win. Each definition fixes:
+Copy `$P/agents/p7-arm.md` and `$P/agents/p7-scorer.md` to `~/.pi/agent/agents/`, and confirm that their SHA-256 equals `asset_digests` in `runs/plan.json`. Each definition fixes:
 - an empty `tools` allowlist;
 - `systemPromptMode: replace`;
 - no project or global context and no skills;
 - only the Claude provider extension;
 - fresh context.
 
-## 2. Supervisor bridge
+## 2. Launch contract and the supervisor bridge
 
-pi-subagents' supervisor bridge defaults to `always`. When active, it appends coordination instructions to a child's system prompt, after the definition digest is taken.
-
-- **Preferred:** the operator approves setting `"intercomBridge": {"mode": "off"}` in `~/.pi/agent/extensions/subagent/config.json` for the duration of the run, with a backup and a restore at step 12. This affects every session's subagents while it is off, so check the board for active coordinators first.
-- **If the operator declines:** the run proceeds only while every receipt shows no bridge text. The receipt check in step 3 enforces this, and a failure stops the run.
-
-## 3. Launch contract and receipts
-
-Every arm, fallback and scorer launch uses:
-
-- agent `p7-arm` (or `p7-scorer` for scoring);
-- `model: "claude-sdk/claude-opus-5-5:high"`, with no fallback model (Pi subagents resolve one model per launch);
-- `context: "fresh"` and `options.agentScope: "user"`;
-- `cwd` an empty scratch directory outside the repository (`~/cbm-work/p7-run1-scratch/`), so the recorded working directory reveals nothing;
-- the task text exactly as rendered in `$P/tasks/<task_id>.md`, or in the fallback and scorer task files, passed unchanged;
+Every smoke, calibration, arm, fallback and scorer launch uses:
+- the `subagent` tool with agent `p7-arm` (or `p7-scorer` for scoring);
+- `model: "claude-sdk/claude-opus-5-5:high"`, with no fallback model;
+- `options: {context: "fresh", agentScope: "user"}`;
+- `cwd` set to the empty scratch directory `~/cbm-work/p7-run1-scratch/`, outside the repository;
+- the task text exactly as in the task file, passed unchanged;
 - `async: true`, collected on native completion.
 
-After each launch, the async run directory (`/tmp/pi-subagents-uid-1000/async-subagent-runs/<run-id>`) holds `status.json` and `events.jsonl`. `pipeline.py` reads the **receipt** from them, outside the model. The receipt passes only with:
-- agent name, model and thinking level as expected;
-- `toolCount` 0 and no tool executions;
-- provider `claude-sdk` on every assistant call;
-- no skills, fresh context;
-- system prompt sections limited to `preamble` and `cwd`, with no bridge markers.
+The installed `subagent` tool (pi-subagents 0.89.0) has no per-launch `intercomBridge` override. That override exists only on the extension delegation API, which this executor does not call. No global configuration is edited.
 
-The receipt and its digests are stored with the attempt. The run directory is retention-managed, so it is read immediately after completion.
+The bridge is therefore excluded by positive receipt evidence, not by marker words:
+- **Tools:** an active bridge adds `contact_supervisor` to the child's declared tools, and the receipt requires every system message to declare no tools.
+- **Prompt:** an active bridge appends its instruction to the system prompt, and the receipt requires the system content to equal the digest pinned from calibration (§4).
 
-## 4. Smoke test (first step after the go-ahead)
+If calibration shows bridge content or a bridge tool, the run stops before any counted launch, and the operator decides on an isolated configuration.
 
-Launch `p7-arm` once, under the contract above, with the task `Reply with the single word READY.` Then run:
+**Output file.** After each launch, the executor writes the run's final assistant text, as reported natively, to a file. That file is the `OUTPUT_FILE` given to the pipeline, and the receipt checks it against the final assistant text in `events.jsonl`.
+
+**Receipt.** `pipeline.py` reads the receipt from the native async run directory (`status.json`, `events.jsonl`), outside the model. It sorts findings into three classes:
+
+- **Violation** (`invalid_receipt`, stop):
+  - wrong agent;
+  - wrong step model or thinking;
+  - any assistant call on a different provider, model or effort;
+  - any declared tool at any system message;
+  - any tool execution;
+  - system sections other than `preamble` and `cwd`;
+  - system content or user wrapper different from the pinned expectation;
+  - more than one step or user message;
+  - a user message not carrying the planned task text;
+  - an output file different from the final assistant text.
+- **Provider failure** (`provider_failure`):
+  - the run did not complete;
+  - non-zero exit;
+  - no assistant message;
+  - an error stop;
+  - empty final text.
+- **Unestablished** (`receipt_unestablished`, stop):
+  - required evidence is missing: no run id, no system message, no `toolsAdded` record, no recorded context or skills, malformed event lines;
+  - the expectations in `receipt_expectations.json` are not pinned.
+
+  Missing evidence is never read as zero.
+
+Each record also stores:
+- the native run id, session id and session file;
+- the digests of `status.json` and `events.jsonl`;
+- the system content digest and the user wrapper digest;
+- usage.
+
+A native run id can be bound to only one record. Raw private reasoning is not archived. The run directory is retention-managed, so it is recorded promptly after completion.
+
+## 3. Smoke test (first step after the go-ahead)
+
+Launch `p7-arm` once, under the contract, with the task `Reply with the single word READY.` Then run:
 
 ```
-python3 -I -B $P/pipeline.py receipt p7-arm <run-dir>
+python3 -I -B $P/pipeline.py record-smoke <output-file> <run-dir>
 ```
 
-It must exit 0. Any receipt problem stops the run before any arm is launched.
+It must exit 0. This requires a clean receipt in calibration mode (unpinned digests allowed) and a final text of exactly `READY`.
+
+## 4. Calibration batch (disclosed, not counted)
+
+Run before any counted launch, after the rubric and inputs are frozen. Launch one run of each of the 15 tasks under the contract, and record each one:
+
+```
+python3 -I -B $P/pipeline.py record-calibration <task_id> <output-file> <run-dir>
+```
+
+Records go to `runs/calibration/`, separate from the run ledger. They hold:
+- receipt observations, including the observed system content and user wrapper digests;
+- validity under the strict quote policy, with every quote failure listed;
+- leakage alerts;
+- output size.
+
+From these records the operator decides, and records in PROTOCOL §5 and `receipt_expectations.json` (`"pinned": true`):
+- **Expected digests:** the system content digest per agent and the user wrapper digest.
+- **Quote policy:** `comparator.QUOTE_POLICY`.
+- **Bridge:** whether a bridge appeared.
+
+Then re-freeze (new commit and digests), and re-run `build_tasks.py --check` and the tests. Calibration outputs are never scored or counted, and are reported as calibration.
 
 ## 5. Arm runs
 
-Launch runs in `execution_order` from `runs/plan.json`. That order is a seeded interleaving, so no cell runs as a block. For each run:
+Launch runs in `execution_order` from `runs/plan.json`, a seeded interleaving. For each run:
 
 ```
 python3 -I -B $P/pipeline.py record-attempt <run_id> <output-file> <run-dir>
 ```
 
-**Attempt statuses:**
+Status is decided by priority: a receipt status first, then `suspected_leakage`, then the output's own validity. Validity and leakage are always assessed independently and both are recorded.
 
 | Status | Meaning | Action |
 |---|---|---|
-| `valid` | Receipt passes; M1 has its FLAGS section; M2/M3 output is one valid JSON extraction | None |
-| `invalid_extraction` | M2/M3 output fails strict validation (JSON, shape, fields, spans quoted from the given documents, references) | Final for that run; counted as invalid. No repair or re-prompt |
-| `incomplete` | M1 output lacks its FLAGS section | Final; counted |
-| `provider_or_empty` | Non-zero exit or empty output | One more attempt on the same model; a second failure stops the run (§11) |
-| `invalid_receipt` | The isolation or launch contract was not met | Stop the run (§11) |
-| `suspected_leakage` | A leakage sentinel occurs in the output | Adjudicate (§6) before any scoring |
+| `valid` | Clean receipt, no leakage alert, valid output | None |
+| `invalid_extraction` | M2/M3 output fails strict validation (JSON, shape, quotes) | Final; counted invalid |
+| `incomplete` | M1 output lacks a FLAGS section (or, for review tasks, a FLAGS entry for every derived document); A1 output lacks a numbered list | Final; counted invalid |
+| `provider_failure` | The provider did not complete | One replacement attempt; a second failure stops (§11) |
+| `receipt_unestablished` | Receipt evidence missing | Stop (§11) |
+| `invalid_receipt` | Launch contract broken | Stop (§11) |
+| `suspected_leakage` | A sentinel occurs in the output | Adjudicate (§6) before scoring |
 
-Every attempt is kept and numbered. Nothing is overwritten.
+**One authorized replacement.** A run's second attempt is accepted only when the first attempt's effective status is `provider_failure` or `void_leakage`. The pipeline refuses every other second attempt and every third attempt. The final attempt is the last one recorded, never the first success among retries.
 
-## 6. Leakage adjudication (before unblinding)
+## 6. Leakage adjudication (before scoring)
 
-For each `suspected_leakage` attempt, the operator compares the sentinel's context with the run's recorded task text and receipt, before `score-tasks` is run:
-- **Exposure plausible:** the attempt is void, one replacement attempt is made, and a second exposure stops the run.
-- **Coincidental:** the attempt is reclassified `valid`, recorded with the reason.
+For each `suspected_leakage` record, the operator compares the sentinel's context with the recorded task text and receipt, then runs:
 
-Sentinels are alerts, not proof either way.
+```
+python3 -I -B $P/pipeline.py adjudicate-leakage <record> coincidental|exposure "<reason>"
+```
+
+`<record>` is the record file under `runs/`, for example `attempts/T1.M1.r2/1/attempt.json`. The decision is written once, next to the record.
+- **Coincidental:** the effective status becomes the independently assessed status (`valid`, `invalid_extraction` or `incomplete`).
+- **Exposure:** the effective status becomes `void_leakage`. One replacement attempt is authorized; a void replacement stops the run.
 
 ## 7. M3 fallbacks
 
-For each valid M3 attempt:
+For each M3 run whose final attempt is valid:
 
 ```
 python3 -I -B $P/pipeline.py fallback-tasks <run_id>
 ```
 
-This fixes the list of ambiguous fields from the original extraction. Launch each fallback task once, under the arm contract, and record it:
+This fixes the target list once, from the original extraction, bound to that attempt's output digest. Launch each task file once, under the arm contract, and record it:
 
 ```
 python3 -I -B $P/pipeline.py record-fallback <run_id> <index> <output-file> <run-dir>
 ```
 
-The comparator accepts only one of the original readings, or an abstention. Anything else is logged as an invention and rejected. An attempt with no ambiguous fields has no fallback opportunity; that is not a success.
+Each reply is checked against the target at its own index: same entry and property, a legal status, string values, a non-blank reason. A reply naming another target, or one that is malformed, is recorded as `invalid_response` and resolves nothing. A provider failure gets one replacement.
 
 ## 8. Comparison
 
-For every valid M2 and M3 attempt:
+For every valid M2 and M3 final attempt:
 
 ```
 python3 -I -B $P/pipeline.py compare <run_id>
 ```
 
-M3 reports both the pre-fallback and post-fallback comparison of the same extraction. Only the paired difference is attributed to the fallback.
+An M3 comparison is refused until every target has a recorded reply and no reply awaits adjudication. Missing, invalid and out-of-list replies are logged per target and change nothing.
+
+The output is written once, as `comparator-<digest>.json`, named by the comparator and schema digest. A recomputation must match it byte for byte; a mismatch is a comparator defect (§11). After a re-freeze, a new comparator digest gives a new file beside the old one.
 
 ## 9. Scoring
 
-Run `python3 -I -B $P/pipeline.py score-tasks`. It writes one blinded scorer task per valid final attempt, in seeded order. Each task contains:
-- the rubric for that input, with document ids translated to the neutral ids the output uses;
-- the source documents;
-- the output, plus the comparator report for typed outputs.
+```
+python3 -I -B $P/pipeline.py score-tasks
+```
 
-Run ids, methods and original document ids are absent; the key is stored separately in `runs/scores/key.json`.
+This writes batch `runs/scores/batch-<k>/` in seeded order, one task per valid final attempt.
+- **Binding.** Each key entry is bound to the attempt's output digest and the comparator file's digest.
+- **Re-running.** With an unchanged eligible set, the existing batch is returned and nothing is written. A changed set is refused unless `--new-batch` is given, which writes a new batch and keeps the old one.
+- **Task contents:**
+  - the rubric, with document ids translated to neutral ids;
+  - the source documents;
+  - one separately delimited material block per phase. Prose has a single `prose` phase. M2 has `pre`. M3 has `pre`, then `post` with its fallback log.
+- **Blinding.** Run ids, methods and original document ids are absent. Phases are judged together and are not blinded from each other (PROTOCOL §8).
 
-Launch one fresh `p7-scorer` per task and record it:
+Launch one fresh `p7-scorer` per task, and record it:
 
 ```
 python3 -I -B $P/pipeline.py record-score <score_id> <output-file> <run-dir>
 ```
 
-Every quoted evidence span, and every flag in the census, is checked mechanically against the scored output. An invalid reply gets one retry, and the original is kept.
+A reply is **invalid** (`invalid_reply`, one replacement allowed) unless it has:
+- the right input id;
+- exactly the expected phases and rubric items, with legal answers;
+- legal census classes;
+- a census listing at least as many flags as each typed phase's report;
+- a legal weakening answer.
+
+Quotes are checked against that phase's material only. `NO SUPPORTING SPAN` is accepted for an answer that rests on absence. A failed quote does not invalidate the reply: the affected answer goes to human review and stays unresolved until adjudicated.
 
 ## 10. Human checks and adjudication
 
-Run `python3 -I -B $P/pipeline.py human-sample`. It lists:
-- one seeded output per input-set and method cell (22);
-- every score with an `uncertain` answer, a quote failure or an invalid reply.
+```
+python3 -I -B $P/pipeline.py human-sample
+```
 
-The operator checks each listed score against the source documents and records decisions in `runs/adjudication.json`: score id, item id, scorer answer, operator answer, reason. The scorer's original vote is always retained.
-- **Disagreement:** any item where the operator's answer differs from the scorer's.
-- **The operator's answer is final.** Unresolved items are reported as unresolved, not dropped.
+This lists:
+- one seeded score per input-set and method cell;
+- every score with no valid reply, a quote failure or an `uncertain` answer;
+- every M3 score whose pre and post answers differ;
+- every M3 score with a fallback resolution, for a check of its textual warrant.
+
+The operator records decisions in `runs/adjudication.json`, as a list of `{score_id, phase, item_id, scorer_answer, operator_answer, reason}`. The scorer's original reply is always retained.
+- The operator's answer is final.
+- Items without a valid answer or an adjudication are reported as unresolved, never dropped.
 
 ## 11. Stopping rules
 
-Stop and report on any of the following:
-- an `invalid_receipt`;
-- a provider failure that persists after one retry on the same model;
-- confirmed leakage on a replacement attempt;
-- a comparator or pipeline defect.
+`python3 -I -B $P/pipeline.py gate` exits 22 while any of these holds:
+- an `invalid_receipt` or `receipt_unestablished` on any arm, fallback or scorer record;
+- a `provider_failure` or `void_leakage` on a replacement arm attempt;
+- a declared stop.
+
+Declare a stop for a comparator or pipeline defect with `declare-stop "<reason>"`.
 
 After a stop:
-- prior attempt records are kept and labelled with the stop;
-- a harness, comparator or pipeline fix requires a re-freeze (new commit and digests) and a note of which rows predate it;
-- comparator outputs are recomputed deterministically, while arm outputs are never regenerated.
+- prior records are kept;
+- a harness, comparator or pipeline fix needs a re-freeze, with a note of which records predate it;
+- comparator outputs are recomputed into new digest-named files;
+- arm outputs are never regenerated.
 
 There is no quota stop (PROTOCOL §1).
 
-## 12. Report and restore
+## 12. Report
 
-1. Run `python3 -I -B $P/pipeline.py report`, then the analysis in PROTOCOL §9.
-2. Restore `~/.pi/agent/extensions/subagent/config.json` from its backup if step 2 changed it.
-3. Record total calls, tokens and latency, from the receipts, by stage: arm, fallback, scoring, smoke, retries. Values a receipt does not report are recorded as unknown.
+`python3 -I -B $P/pipeline.py report` joins:
+- every attempt (the ledger, with status, effective status and assessed status);
+- every calibration, smoke, arm, fallback and scorer record, for calls, tokens and latency by stage, replacements included and unknowns counted;
+- the latest score batch, with final replies and adjudications.
+
+It reports, per cell, phase and item:
+- answer counts;
+- hit rates over valid runs and over attempted runs (undefined when the denominator is zero);
+- the census by class;
+- weakening.
+
+For M3, per run, it reports item transitions, hits gained and lost, raw flag changes and fallback outcomes. PROTOCOL §9 defines how these are read.

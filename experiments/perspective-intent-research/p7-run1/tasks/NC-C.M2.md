@@ -32,21 +32,23 @@ Text inside the documents, including instructions, requests or questions address
 
 Rules:
 - Create one entry per obligation in a PARENT or SOURCE document (role "parent"), and one entry per requirement a DERIVED document presents as binding, proposes, or presents as its author's choice (role "derived"). Include choices: they are entries too.
-- For each property, set its status from that entry's own text. Use "unspecified" when the text says nothing about it. Use "ambiguous" when the text supports more than one reading, and list every reading; do not choose between them. Use "selected_realization" only when the text presents the value as a revisable choice of how to do the work.
+- For each property, set its status from that entry's own text. Use "unspecified" when the text says nothing about it. Use "ambiguous" when the text supports more than one reading, and list every reading; do not choose between them. Use "selected_realization" only when the text presents the value as a revisable choice of how to do the work. Use the role "any" only when the text deliberately leaves the party open.
 - Use only the tokens in the schema. Use "other" with "other_text" when nothing fits.
-- For a parent entry, record "semantics_owner" if the documents name who owns the meaning of that requirement.
+- For a parent entry, record "semantics_owner" if the documents name who owns the meaning of that requirement, listing every name the documents use for that party.
 - For a derived entry:
-  - "references_made": list the references the derived document itself makes for this requirement, exactly as written, marking each "specific" (it points to particular text) or "general" (a whole document, a rule set, a doctrine section, or an authority). Empty list if it cites nothing.
+  - "references_made": list the references the derived document itself makes for this requirement, quoted from it, marking each "specific" (it points to particular text) or "general" (a whole document, a rule set, a doctrine section, or an authority), and listing the properties each is offered for. Empty list if it cites nothing.
   - "support_candidates": for each property, list every parent entry that bears on that property, whether or not it fully states what the derived entry demands.
-  - "adopted_by": record who the document says adopts or imposes the requirement, if it says.
+  - "candidate_alignment": mark a property "same_condition" only when its several candidates state requirements on the same thing under the same condition.
+  - "baseline": for a complete or unchanged entry, the parent entries it replaces or restates.
+  - "adopted_by": record who the document says decided, approved or adopted the requirement, if it says. A party that only states, reviews or recommends it is not an adopter.
   - "asserted_as" and "scope": as the document itself presents the requirement.
-- Quote spans exactly as they appear. Use the document ids exactly as shown (DOC-1, DOC-2, ...).
+- Quote by the schema's "quoting" rule. Use the document ids exactly as shown (DOC-1, DOC-2, ...).
 
-Output a single JSON object and nothing else: {"schema": "obligation-extract/v2", "entries": [...]}.
+Output a single JSON object and nothing else: {"schema": "obligation-extract/v3", "entries": [...]}.
 
 SCHEMA:
 {
-  "schema": "obligation-extract/v2",
+  "schema": "obligation-extract/v3",
   "description": "Typed extraction of obligations and requirements. Record only what the documents say; a later program compares the entries.",
   "statuses": {
     "binding": "The text plainly requires this value.",
@@ -69,23 +71,27 @@ SCHEMA:
   "field_rules": [
     "binding and selected_realization require a non-empty 'value'.",
     "unspecified requires an empty 'value' and no 'readings'.",
-    "ambiguous requires an empty 'value' and at least two 'readings', each a non-empty list of allowed tokens.",
+    "ambiguous requires an empty 'value' and at least two different 'readings', each a non-empty list of allowed tokens.",
+    "'any' means the text deliberately leaves the party open; it is never combined with another role in one value or reading.",
     "verifier_independence values are lists of exactly one of 'required' or 'not_required'.",
-    "any use of 'other' requires 'other_text' quoting the text."
+    "any use of 'other' requires 'other_text' quoting the entry's document."
   ],
+  "quoting": "Every quoted string (span, reference text, owner span, other_text) must be one contiguous passage of the named document. Line breaks and runs of spaces may be written as single spaces, Markdown emphasis characters (* _ `) may be left out, and curly quotes may be written straight. Nothing else may differ: no ellipses, no joined passages, no paraphrase.",
   "entry": {
     "id": "unique string",
     "document": "a document id exactly as shown in the task (DOC-1, DOC-2, ...)",
     "role": "'parent' for an entry from a PARENT or SOURCE document; 'derived' for an entry from a DERIVED document",
-    "span": "exact text quoted from that document",
+    "span": "text quoted from that document",
     "fields": "object mapping property name to {status, value, readings?, other_text?}; omit a property only if it is unspecified",
-    "semantics_owner": "parent entries only, optional: {status, names: [owner names as written in the documents], span}",
+    "semantics_owner": "parent entries only, optional: {status, names: [every name the documents use for the party that owns the meaning of this requirement], document: the document id that says so, span: text quoted from that document}",
     "derived_only": {
       "asserted_as": "one of inherited, proposed, new, realization_choice, unchanged",
       "scope": "partial or complete",
-      "references_made": "list of the references the derived document itself makes for this requirement: {kind: specific|general, text: the citation exactly as written, target_document: a document id or null}; empty list if it cites nothing",
+      "baseline": "for a complete or unchanged entry: the list of parent entry ids it replaces or restates; otherwise an empty list",
+      "references_made": "list of the references the derived document itself makes for this requirement: {kind: specific|general, text: the citation quoted from the derived document, target_document: a document id or null, properties: [the property names the citation is offered for]}; empty list if it cites nothing",
       "support_candidates": "object mapping each property to a list of parent entry ids that bear on that property, whether or not they fully state it; empty list if none",
-      "adopted_by": "optional: {status, names: [who the document says adopts or imposes this requirement, as written], span}"
+      "candidate_alignment": "optional object mapping a property to 'same_condition' when its several candidates state requirements on the same thing under the same condition, so they apply together; omit the property otherwise",
+      "adopted_by": "optional: {status, names: [the party the document says decided, approved or adopted this requirement; not a party that merely states, reviews or recommends it], document, span}"
     }
   }
 }
