@@ -1,0 +1,130 @@
+{
+  "captured_at_utc": "2026-11-24T03:42:31+00:00",
+  "script": "stage0/capture.py",
+  "case_f_packet": [
+    {
+      "path": "review-r1/043-u4a-held-contract.md",
+      "source": "/home/bline/cbm-work/pi-host-u4a-acceptance-20261121/review-r1/043-u4a-held-contract.md",
+      "sha256": "4bf5ee603ce9854febf29d22e063825cc7e9d795049ca52d965b7939cf7dcd04",
+      "bytes": 5479,
+      "prior_pin": "pilot section 3; plan reviews"
+    },
+    {
+      "path": "review-r1/041-u4-protection-qualification-PLAN.md",
+      "source": "/home/bline/cbm-work/pi-host-u4a-acceptance-20261121/review-r1/041-u4-protection-qualification-PLAN.md",
+      "sha256": "c1c6090c136ce75504f63bb0ec4a2c8ab60fb7cd9b25e7b8ea9edb54734fd23f",
+      "bytes": 8213,
+      "prior_pin": "plan re-review (prefix c1c6090c)"
+    },
+    {
+      "path": "PLAN.md",
+      "source": "/home/bline/cbm-work/pi-host-u4a-acceptance-20261121/PLAN.md",
+      "sha256": "c7511ad79ba57e3de4534576e2fd87ba15abcc9980569aadbc3d0eb852e9b9fd",
+      "bytes": 11564,
+      "prior_pin": "pilot section 3; plan reviews"
+    },
+    {
+      "path": "ARCHITECTURE-REESCALATION.md",
+      "source": "/home/bline/cbm-work/pi-host-u4a-acceptance-20261121/ARCHITECTURE-REESCALATION.md",
+      "sha256": "d8125989e607696c09e584a5c115dd3ec44621c3a6a9fd0bbca271c9e5988c3b",
+      "bytes": 4402,
+      "prior_pin": "first pinned at this capture"
+    },
+    {
+      "path": "architecture-reescalation-review/ASTRA-ARCHITECTURE.md",
+      "source": "/home/bline/cbm-work/pi-host-u4a-acceptance-20261121/architecture-reescalation-review/ASTRA-ARCHITECTURE.md",
+      "sha256": "12127e463a3064b0292eb3515681da0bb7699f15660113c352301c32bb2e19d5",
+      "bytes": 22018,
+      "prior_pin": "pilot section 3; plan reviews"
+    },
+    {
+      "path": "QUALIFICATION-AMENDMENT.md",
+      "source": "/home/bline/cbm-work/pi-host-u4a-acceptance-20261121/QUALIFICATION-AMENDMENT.md",
+      "sha256": "93e004dc8b18c900f5495c0926dd354d5abcd1265143e08bd85add399aa8545e",
+      "bytes": 6453,
+      "prior_pin": "pilot section 3; plan reviews"
+    },
+    {
+      "path": "RESOLVED-OBJECT-ESCALATION.md",
+      "source": "/home/bline/cbm-work/pi-host-u4a-acceptance-20261121/RESOLVED-OBJECT-ESCALATION.md",
+      "sha256": "45994d705b5c2aad795ae9f62c5237c66d0d2e103f415e6c9bee8900f94dec1f",
+      "bytes": 5105,
+      "prior_pin": "cited inside OPERATOR-DECISION.md"
+    },
+    {
+      "path": "resolved-object-review/ASTRA-ARCHITECTURE.md",
+      "source": "/home/bline/cbm-work/pi-host-u4a-acceptance-20261121/resolved-object-review/ASTRA-ARCHITECTURE.md",
+      "sha256": "e8304cda2ec086702b29a59afc7acea13f84098d1852f043d6f56c7d518d0824",
+      "bytes": 22631,
+      "prior_pin": "pilot section 3; plan reviews"
+    },
+    {
+      "path": "resolved-object-review/OPERATOR-DECISION.md",
+      "source": "/home/bline/cbm-work/pi-host-u4a-acceptance-20261121/resolved-object-review/OPERATOR-DECISION.md",
+      "sha256": "d0055826f82250d4e93112d5ba262fab3da588cd870873cc9d705ff350154df9",
+      "bytes": 2873,
+      "prior_pin": "pilot section 3; plan reviews"
+    },
+    {
+      "path": "DOCKER-AUTOREMOVE-PROPOSAL.md",
+      "source": "/home/bline/cbm-work/pi-host-u4a-acceptance-20261121/DOCKER-AUTOREMOVE-PROPOSAL.md",
+      "sha256": "f3598d2ef1f85e088afea32633a507bc2e28cb785c2b28bce1a205c2122ecf28",
+      "bytes": 3599,
+      "prior_pin": "pilot section 3; plan reviews"
+    },
+    {
+      "path": "DOCKER-AUTOREMOVE-SCOPE-DECISION.md",
+      "source": "/home/bline/cbm-work/pi-host-u4a-acceptance-20261121/DOCKER-AUTOREMOVE-SCOPE-DECISION.md",
+      "sha256": "b0b2b8fda72d1cf3c4469102c0b4a3b669a3c4eb5ea263dff2e28af4b954c145",
+      "bytes": 2427,
+      "prior_pin": "pilot section 3; plan reviews"
+    }
+  ],
+  "case_f_board_messages": {
+    "path": "case-f/board-messages.json",
+    "sequences": [
+      6173,
+      6176,
+      6184,
+      6185
+    ],
+    "sha256": "c6f25fb69ba8b53b9133d844b43f96f3f520ab8708e19b8eeb8e14f2f576d014"
+  },
+  "case_f_session_excerpt": {
+    "path": "case-f/session-excerpt.json",
+    "entries": 77,
+    "sha256": "fd0341cd17418b344c5a981b5900dcc03f9ce13caa1a388560869d9535c2b639"
+  },
+  "session_inventory": [
+    {
+      "file": "/home/bline/.pi/agent/sessions/--home-bline-code-work-engine--/2026-11-16T04-37-03-444Z_01a1e2a4-f353-743a-ba23-f42394958125.jsonl",
+      "bytes": 46381744,
+      "lines": 14541,
+      "modified_utc": "2026-11-22T21:00:58+00:00",
+      "sha256": "2f65fbb1cd1a60efa48d1bac76ae55d430953f0872af636702bbb0f7f47bd7ea"
+    },
+    {
+      "file": "/home/bline/.pi/agent/sessions/--home-bline-code-work-engine--/2026-11-21T17-27-16-873Z_01a1ff25-e889-770e-9973-f060fc484249.jsonl",
+      "bytes": 61601434,
+      "lines": 13087,
+      "modified_utc": "2026-11-24T03:42:32+00:00",
+      "live": true,
+      "prefix_lines": 13087,
+      "prefix_sha256": "b419567a92cfb85d250f19d804a461d0dbf73a80b6f1a5d8aab08642147980a6",
+      "note": "Still being written; the prefix digest pins its first prefix_lines lines at capture."
+    }
+  ],
+  "milestone_a_checkin": {
+    "path": "milestone-a/CHECKIN-snapshot.md",
+    "source": "/home/bline/cbm-work/milestone-a-coordinator-20261121/CHECKIN.md",
+    "sha256": "8f912490cf6497922057c8d2d7cc02f74ed21e3ec0458ee4504c27efa6b9ee3c",
+    "bytes": 363190,
+    "note": "Living newest-first log; this is a point-in-time snapshot."
+  },
+  "case_d_source": {
+    "commit": "3693e48c52eeb5cd02e39b391bb773dfd0a65545",
+    "path": "rust/crates/work-engine-manual-host/src/pi_public_hold.rs",
+    "git_blob": "1d8684463db8b9feac0482ec848b175d67edb1d8",
+    "note": "In-repository source; not copied."
+  }
+}
