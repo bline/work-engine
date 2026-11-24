@@ -30,6 +30,25 @@ Captured 2026-11-24T03:42:31Z by [`stage0/capture.py`](stage0/capture.py) (`pyth
 
   **Verification:** each entry carries its 1-based `source_line` and the SHA-256 of the raw source line, newline included. The plan reviews cited these lines one lower (for example 9714 for the 09:43:22Z message, which is line 9715 here).
 
+### Case B, the P7 transfer test (`stage0/case-b/`)
+
+Captured 2026-11-24T04:27:30Z by [`stage0/capture_case_b.py`](stage0/capture_case_b.py), which writes only `case-b/` and [`stage0/MANIFEST-case-b.json`](stage0/MANIFEST-case-b.json). That keeps the earlier point-in-time pins untouched.
+
+- **`packet/`:**
+  - `ORG-ASTRA-DESIGN-REVIEW.md` and `ORG-ASTRA-DESIGN-REVIEW-RESULT.md`: the pre-intervention design review brief and result (2026-11-22 08:56Z and 09:03Z), first pinned here;
+  - `CONTROLLED-BUILDER-ADMISSION-REVISION.md` (15:52:40Z): the decision record, matching the SHA-256 `2343a8f8…` bound by board #6550 and cited at CHECKIN snapshot line 269.
+- **`board-messages.json`:** #6549 and #6550, which relay the operator's direction and bind the decision record.
+- **`session-excerpt.json`:** 15 entries from Milestone A coordinator session `01a1ff25…`, 2026-11-22 15:29–15:51Z:
+  - the assistant's explanation of the two blockers;
+  - the operator's 15:38:45Z one-shot admission question;
+  - the 15:39:08Z reply;
+  - the operator's 15:41:29Z turn: "the killer doesn't need to claim the kill, the verifier claims it is gone";
+  - the operator's recommendations table (15:49:08Z) and the decision to continue.
+
+  Same projection and verification as Case F. All source lines fall inside the 13,087-line prefix pinned in `MANIFEST.json`.
+
+**What the evidence shows.** No session record before 15:41:29Z frames termination as the actor proving its own kill. The separation was made *before* a termination contract was written, one day after the U4-A correction. Case B is therefore a prevention example and a transfer test for a plan-time check, not a second case of an amplified obligation. The research note's Case B was corrected accordingly.
+
 ### Milestone A cases A–E (`stage0/milestone-a/`)
 
 - **`CHECKIN-snapshot.md`:** a point-in-time copy of `~/cbm-work/milestone-a-coordinator-20261121/CHECKIN.md` (SHA-256 `8f912490…`). The original is a living newest-first log that the coordinator is still writing. Every entry the note and pilot cite (#6411, #6495, #6511, #6534, #6544, #6548, #6553, #6569, #6628, #6648, #6657, #6692) was present at capture.
@@ -48,5 +67,4 @@ The transcripts are not copied: they are large and contain private reasoning and
 
 - **Case D:** Sol's plan-only revision proposing the bounded observation hold is not yet located.
 - **Cases A–E:** board messages and design packets are not yet exported. The CHECKIN snapshot gives the chronology; the per-case cut-time packets (pilot Stage 0) remain to be built.
-- **Case B transfer packet for P7:** not yet assembled.
 - **Ordinary negative cases:** none captured yet. They are needed so the corpus is not only memorable successes (pilot §9.3).

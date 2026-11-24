@@ -67,13 +67,13 @@ These are retrospective observations of design discussion. They do not establish
 
 ### Case B — Kill action versus proof of termination
 
-**Inherited framing:** The system needed to account for removal and whether the actor requesting cleanup could prove it had performed the kill.
+**Inherited framing (corrected 2026-11-24 from the Stage 0 evidence):** The pre-intervention design review (`ORG-ASTRA-DESIGN-REVIEW-RESULT.md`) framed the problem as ordering revocation against Server writes and Host entry. It did not frame termination as actor attribution. The assistant's reply just before the operator's turn (2026-11-22 15:39:08Z) already said that killing the request handler "is not proof that Host and its runtime stopped" and that the lock must hold until the system "verifies that the covered execution has stopped". It named no verifier and did not separate it from the actor. A search of the session record found no earlier framing in which the actor had to prove the kill. The original description here ("whether the actor requesting cleanup could prove it had performed the kill") overstated what had been inherited.
 
-**The operator's change:** The killer acts; an independent verifier determines whether the exact admitted execution is gone. The killer's success report is neither necessary nor sufficient evidence of terminal absence. Unknown settlement keeps the attempt excluded; any prior effects are reconciled separately.
+**The operator's change (15:41:29Z):** "We would have one thing kill it and then independantly verify it is gone. the killer doesn't need to claim the kill, the verifier claims it is gone." The killer acts; an independent verifier determines whether the exact admitted execution is gone. This came one day after the U4-A correction (Case F) and before any termination contract was written, so it reads as the same separation applied *preventively*, at contract formation. Whether the operator was consciously carrying over the U4-A lesson is our inference. The killer's success report is neither necessary nor sufficient evidence of terminal absence. Unknown settlement keeps the attempt excluded; any prior effects are reconciled separately.
 
 **Perspective shift:** From actor attribution (“who performed removal?”) to outcome verification (“can this attempt still execute?”).
 
-**What changed:** A clear separation emerged between termination mechanics, independent observation, and permanent one-shot fencing. This was a design decision, not yet an implemented independent proof.
+**What changed:** A clear separation emerged between termination mechanics, independent observation, and permanent one-shot fencing. The decision record written eleven minutes later (`CONTROLLED-BUILDER-ADMISSION-REVISION.md`, item 2) states: "Observer evidence must be independent of the killer's claim." This was a design decision, not yet an implemented independent proof. Evidence is pinned in [Stage 0, Case B](../../../experiments/perspective-intent-research/README.md).
 
 **Candidate trigger:** A component is being asked to certify its own effect, or an API acknowledgment is being promoted into an independently verified outcome.
 
@@ -144,7 +144,7 @@ Recovered from Pi session `01a1e2a4-f353-743a-ba23-f42394958125` (model `gpt-6.2
 
 **The doctrine was cited to justify the amplification.** The resolved-object review stated: "This is an independently required path claim, not a preference for a particular command (`docs/contracts/evidence-and-claims.md` §3.9)." It argued both §3.9 conditions held: a failure that can be named (a broken Host qualified by someone else's removal), and an independent authority (043's "Host owns … exact stop"). The doctrine did not fail for lack of a rule. "Required by an authority" could point at a prose sentence that supports either reading, so the review assumed the very requirement whose provenance needed establishing. The gap is in representation: a typed, property-specific authority reference would have forced the question of whether 043 actually requires actor-attributed removal.
 
-**Recurrence:** Milestone A Case B (2026-11-22) needed the same separation ("killer acts; independent verifier establishes the execution is gone") one day after this correction, in a different workstream. That makes it a candidate *transfer* test for a plan or review check, not independent validation.
+**Recurrence:** Milestone A Case B (2026-11-22) involved the same separation ("killer acts; independent verifier establishes the execution is gone") one day after this correction, in a different workstream. The Stage 0 evidence shows it was applied *before* a bundled obligation formed, not after one had been adopted. That makes it a candidate *transfer* test for a plan-time check, and an example of the prevention the check aims at, not independent validation.
 
 **Candidate triggers:** At plan time, an actor is assigned an outcome verb (stop, remove, terminate, clean up, ensure) that a separate party must verify, without naming who owns the outcome. At review time, a finding requires a stronger obligation than the authoritative plan states.
 

@@ -1,0 +1,43 @@
+{
+  "captured_at_utc": "2026-11-24T04:27:30+00:00",
+  "script": "stage0/capture_case_b.py",
+  "case_b_packet": [
+    {
+      "path": "ORG-ASTRA-DESIGN-REVIEW.md",
+      "source": "/home/bline/cbm-work/milestone-a-coordinator-20261121/ORG-ASTRA-DESIGN-REVIEW.md",
+      "sha256": "871c456ed47fd3f29f848cc94b461dded6c24ee7052813ea9819a232bea009b4",
+      "bytes": 5907,
+      "prior_pin": "first pinned at this capture (pre-intervention review brief)",
+      "modified_utc": "2026-11-22T08:56:50+00:00"
+    },
+    {
+      "path": "ORG-ASTRA-DESIGN-REVIEW-RESULT.md",
+      "source": "/home/bline/cbm-work/milestone-a-coordinator-20261121/ORG-ASTRA-DESIGN-REVIEW-RESULT.md",
+      "sha256": "d6d71c5635e476725e400119e230c3ba9c8b13c51f0532d279810dab8b610a9e",
+      "bytes": 19541,
+      "prior_pin": "first pinned at this capture (pre-intervention review)",
+      "modified_utc": "2026-11-22T09:03:25+00:00"
+    },
+    {
+      "path": "CONTROLLED-BUILDER-ADMISSION-REVISION.md",
+      "source": "/home/bline/cbm-work/milestone-a-coordinator-20261121/CONTROLLED-BUILDER-ADMISSION-REVISION.md",
+      "sha256": "2343a8f888bfa80219660532e0d8e573edb37392102e912a3148a3f4c7dcd491",
+      "bytes": 8244,
+      "prior_pin": "board #6550 and CHECKIN snapshot line 269",
+      "modified_utc": "2026-11-22T15:52:40+00:00"
+    }
+  ],
+  "case_b_board_messages": {
+    "path": "case-b/board-messages.json",
+    "sequences": [
+      6549,
+      6550
+    ],
+    "sha256": "4e4b58a85b7a92ba3abe111ac843239e7d3c1dab812ad9de4d4e1fd97089e0ed"
+  },
+  "case_b_session_excerpt": {
+    "path": "case-b/session-excerpt.json",
+    "entries": 15,
+    "sha256": "70a224bfa8e8a98effe0ea6f7d5a846e958a055d9efa042ed8871a2a4d37231b"
+  }
+}

@@ -1,0 +1,170 @@
+{
+  "session_file": "2026-11-21T17-27-16-873Z_01a1ff25-e889-770e-9973-f060fc484249.jsonl",
+  "windows_utc": [
+    [
+      "2026-11-22T15:29:00",
+      "2026-11-22T15:51:00"
+    ]
+  ],
+  "projection": "user/assistant messages; text blocks and tool-call name/arguments only; thinking omitted",
+  "verification": "source lines fall within the 13,087-line prefix pinned in MANIFEST.json session_inventory",
+  "entries": [
+    {
+      "timestamp": "2026-11-22T15:29:48.557Z",
+      "role": "user",
+      "text": "Please explain both problems in detail.",
+      "tool_calls": [],
+      "source_line": 4579,
+      "raw_line_sha256": "72e284187a809b6132b0876ed4bca618ab99a1c954c233dbf8128a69c0c3ea9e"
+    },
+    {
+      "timestamp": "2026-11-22T15:30:30.395Z",
+      "role": "assistant",
+      "text": "The two problems are related, but they protect different things. **The first is about whether permission is still valid when the system acts. The second is about whether the system touches the protected task before it has permission to do so.** Fixing either one alone would still leave Milestone A blocked.\n\n## 1. A valid Campaign decision can go stale before Server or Host acts\n\nFor this one run, the operator selects an exact Campaign and Builder job. The Campaign can commit the transition from `Accepted` to `Implementing`. A fresh `Applied` result and its receipt prove that the transition really committed; they are not a replay. But they prove what was true **at commit time**, not what is still authorized when another component acts.\n\nThe current flow has separate boundaries:\n\n1. **Campaign commits and returns.** The pre-build code reduces `Applied` to a snapshot, discards the receipt, and returns descriptive data. It does not carry forward the live Campaign owner or the guard that excludes competing changes. Keeping the receipt would preserve evidence of the commit, but would not keep the selection current.\n2. **Server starts writing.** It can create and configure the operation directory, write a binding, and save the job snapshot. Those are real filesystem effects, even if Host never starts.\n3. **A detached collector starts Host later.** Server writes an `entry-attempt` marker before scheduling that work. The marker means entry *may now be attempted*. It does not prove Host actually entered, or that the operator’s selection was still valid when it did. An existing binding without a marker can also reach the start path.\n\nConsider a revocation that takes effect after step 2 but before step 3. If Host starts anyway, it acts on stale permission. If Host refuses, the operation still cannot honestly claim a **no-write refusal**: Server already changed the filesystem. Checking only before the first write leaves the later entry exposed; checking only at entry is too late to prevent the earlier write.\n\nRechecking the Campaign is not a simple fix either. One rejected approach **reopened** the Campaign with a writable SQLite connection before checking whether the expected revision was stale. Another used an **already-open** connection, but the preserved negative test reported that the read changed SQLite’s `-shm` bytes despite zero SQL change-count delta. The review inspected the code and preserved evidence; it did not rerun that test. These examples rule out those two recheck strategies as proof of physically clean refusal. They do not rule out every design that retains the existing owner.\n\n**What’s missing:** an enforceable admission interval with a named owner and explicit rules for expiry and revocation. The design has to say what happens if revocation races the first write or actual Host entry. If revocation must remain effective right up to entry, the design cannot make earlier protected writes and still promise a no-write refusal. If an earlier point is meant to consume permission for a bounded set of effects, the operator must explicitly approve what that point commits. The current marker does not make that decision.\n\n## 2. The current job path reads the task before it can select the hold\n\nThe intended **held** path would let the system select and prepare the exact public Builder setup without opening, copying, or passing around the protected task or its source location. At that stage it needs only owner-approved metadata: *this exact public job is paired with this opaque task identity, this digest, and this maximum byte size*. It does not yet need the file or its path.\n\nThe existing paths work the other way around:\n\n- **Server:** Its offline class rejects provider-bearing jobs. Its live class accepts a different profile, hosted continuity, and its validation opens the task file. That can happen when Server loads the job, before a submission even reaches the proposed Campaign check.\n- **Host:** `check_job` validates the ordinary provider plan before the hold is selected. That plan requires a path-bearing task reference, and validation opens the file to check its size and digest. Admission then snapshots the task and journals the full job. Only afterward can the held observer bind.\n\nSo deleting the snapshot step, leaving the task out of the eventual Pi mount, or moving the hold flag would not fix the earlier read. And replacing the file with a digest and size supplied by the caller would let the caller assert the very pairing that the admission owner needs to establish independently.\n\n**What’s missing:** a distinct held-only input selected by the existing owners **before ordinary validation on both Server and Host**. It must bind the current run to the exact public job and the approved task metadata without carrying a source locator or payload. Missing, stale, or mismatched selections must refuse; ordinary jobs keep their existing validation.\n\nThat would allow preparation **without access to the task**. It would not authorize reading or delivering it later. Before any such access, the Host still needs separate evidence that its exclusive writer reaches the actual receiver and the exact held Pi session—not merely that it has a pipe to a Docker client or that the receiver has a tested frame validator.\n\nThe [full review](/home/bline/cbm-work/milestone-a-coordinator-20261121/ORG-ASTRA-DESIGN-REVIEW-RESULT.md) has the exact source references and counterexamples: findings F1–F3 cover permission and revocation, F4 covers the early task read, and F5 covers the separate delivery blocker.",
+      "tool_calls": [],
+      "source_line": 4581,
+      "raw_line_sha256": "dcfa69294834c311717d4e5edb359655acb85182f0609178278e38d5d0304986"
+    },
+    {
+      "timestamp": "2026-11-22T15:38:45.655Z",
+      "role": "user",
+      "text": "Couldn't we lock approval where the only unlock is a hard kill? That would mean there is no revocation without ending the process.\nSome decisions are not revokable without consiquences.",
+      "tool_calls": [],
+      "source_line": 4582,
+      "raw_line_sha256": "50fc638436fe6a5eb5c132bad9c92385479e44dd79801469e28567c1a0696a44"
+    },
+    {
+      "timestamp": "2026-11-22T15:39:08.752Z",
+      "role": "assistant",
+      "text": "Yes. **Make admission a one-shot commitment, not permission that can be silently revoked while the operation is acting on it.** That directly addresses the revocation race the review found.\n\nThe point of no return would be **before the Server’s first write**. At that point, the system checks that the exact Campaign head, operator approval, and Builder job still match, then consumes the approval for that one attempt. If revocation wins before that point, the attempt refuses without writing. If admission wins, changing the approval afterward does not invalidate the running attempt. To stop it early, you terminate the execution. That’s an **abort with possible effects**, not a clean refusal: files may already exist, Host may already have started, and the system must record what happened or mark the outcome unknown.\n\nTwo details matter:\n\n- **The lock must cover the actual execution.** Today Server hands off to a detached collector, which can start a separate Host process. Killing the request handler or even Server is not proof that Host and its runtime stopped. The system should not release the execution lock or admit a replacement until it verifies that the covered execution has stopped. Normal completion retires the approval; it never makes it reusable.\n- **Locking approval doesn’t lock the Campaign head.** If the requirement is still that the head remain current through actual Host entry, the Campaign owner must also prevent conflicting advancement during that interval. Alternatively, you could explicitly decide that the exact head committed at admission remains authoritative for that attempt even if the Campaign later advances. Those are different contracts.\n\nI’d favor the one-shot commitment. It makes the consequence explicit: **before admission, revoke; after admission, abort and reconcile.** It resolves the revocation question, but not the early task read. The commitment should cover only the approved preparation and entry; it should not authorize opening or delivering the protected task.",
+      "tool_calls": [],
+      "source_line": 4584,
+      "raw_line_sha256": "346b00a670701e3b8348f997077d3bae667e75f24df334cc1be9a864cdff9ff7"
+    },
+    {
+      "timestamp": "2026-11-22T15:41:29.951Z",
+      "role": "user",
+      "text": "We would have one thing kill it and then independantly verify it is gone. the killer doesn't need to claim the kill, the verifier claims it is gone.",
+      "tool_calls": [],
+      "source_line": 4585,
+      "raw_line_sha256": "f0c2fbaa4f5a1d2e7288a9c8c18db61ed741c3dcb4c530ed85f538dce476779a"
+    },
+    {
+      "timestamp": "2026-11-22T15:41:45.506Z",
+      "role": "assistant",
+      "text": "",
+      "tool_calls": [
+        {
+          "name": "edit",
+          "arguments": {
+            "path": "/home/bline/cbm-work/milestone-a-coordinator-20261121/CHECKIN.md",
+            "edits": [
+              {
+                "oldText": "## Demo gate — re-centered with operator, #6428",
+                "newText": "**Operator design direction for abort:** separate termination from proof of termination. The actor that issues the kill need not claim success; a separate verifier establishes that the exact execution is gone. In the candidate design, scope that verification to the admitted attempt, including detached execution and prevention of delayed entry; do not release exclusion or admit a replacement on kill acknowledgment or missing evidence alone. This is an abort/termination rule, not a claim of no prior effects, a decision that a frozen Campaign snapshot can replace live currentness, selection of a verifier implementation, or approval to implement/run the route.\n\n## Demo gate — re-centered with operator, #6428"
+              }
+            ]
+          }
+        }
+      ],
+      "source_line": 4587,
+      "raw_line_sha256": "9d3a04a1a8af262c88707b2139bc0ad859a1055e655ca52ad997635786668607"
+    },
+    {
+      "timestamp": "2026-11-22T15:41:52.310Z",
+      "role": "assistant",
+      "text": "Exactly. **The killer acts; the independent verifier establishes that the execution is gone.** A successful kill call is neither required as evidence nor sufficient to release the lock.\n\n“Gone” has to mean the **exact admitted attempt** can no longer execute: no surviving Host or runtime process, and no queued collector that can still start it. The verifier establishes that from its own evidence, not from the killer’s report. If it can’t establish that, the lock stays held and no replacement starts.\n\nOnce termination is verified, the lock can be released, but the original approval stays spent. Any files or other effects created before the kill are handled separately. **“It’s gone” does not mean “it never acted.”**\n\nI recorded that distinction in the [design check-in](/home/bline/cbm-work/milestone-a-coordinator-20261121/CHECKIN.md).",
+      "tool_calls": [],
+      "source_line": 4590,
+      "raw_line_sha256": "2b935c1947c125f63df43631a121dc6e49d46bee9d59ae1d47bdecfe8eca8a18"
+    },
+    {
+      "timestamp": "2026-11-22T15:43:01.302Z",
+      "role": "user",
+      "text": "What other blockers still exist if we adopt my ideas?",
+      "tool_calls": [],
+      "source_line": 4591,
+      "raw_line_sha256": "62b4307279419b0a665f1bd271db1a3f54c7c27599c8d12afc9f3db131b1846f"
+    },
+    {
+      "timestamp": "2026-11-22T15:43:11.803Z",
+      "role": "assistant",
+      "text": "",
+      "tool_calls": [
+        {
+          "name": "bash",
+          "arguments": {
+            "command": "rg -n 'D7|Demo gate|Stage 0|GateReady|product reviewer|A11|single.parent' /home/bline/cbm-work/milestone-a-coordinator-20261121/CHECKIN.md | cut -c1-430 | head -55",
+            "timeout": 5
+          }
+        }
+      ],
+      "source_line": 4593,
+      "raw_line_sha256": "649b9fb044892b2df2a1e89e14a9ce96eab9d1b1e4403052c73892654c236501"
+    },
+    {
+      "timestamp": "2026-11-22T15:43:15.981Z",
+      "role": "assistant",
+      "text": "",
+      "tool_calls": [
+        {
+          "name": "read",
+          "arguments": {
+            "path": "/home/bline/cbm-work/milestone-a-coordinator-20261121/CHECKIN.md",
+            "offset": 70,
+            "limit": 30
+          }
+        }
+      ],
+      "source_line": 4596,
+      "raw_line_sha256": "e1b63142980dc89aa44126e5c4bdbe70b7c22c040eaefc76e15156a9075ae701"
+    },
+    {
+      "timestamp": "2026-11-22T15:43:37.684Z",
+      "role": "assistant",
+      "text": "Your ideas settle **what revocation means**: before admission, revoke without effects; after admission, abort and have an independent verifier establish that the attempt is gone. That removes the need to keep approval revocable while Server and Host are acting. It doesn’t yet make the route executable.\n\n### Before the Builder can run\n\n1. **Bind the one-shot approval to the actual Campaign and execution.** The existing code returns a snapshot, then Server hands work to a detached collector. We still need a real owner to consume the approval against the exact current Campaign head and job **before the first write**, and to bind that commitment to the execution that actually enters Host. Under the current requirement, the Campaign owner must also prevent conflicting head changes through Host entry. Letting the admitted attempt continue against a frozen head instead would be a separate contract decision.\n\n2. **Make the kill-and-verify rule enforceable.** We need evidence that covers the exact attempt, including detached Host/runtime work and any queued launch that could still start it. The verifier must be able to establish termination independently, without relying on the killer’s acknowledgment or giving the Builder or verifier Docker-daemon authority. If it can’t establish termination, no replacement starts. This is an implementation and evidence gap, not another decision about revocation semantics.\n\n3. **Prepare the held session without reading the task.** Server and Host still need a distinct path that accepts an owner-approved task identity, digest, and size bound **without the file path or contents**, before either component invokes ordinary validation. Locking approval doesn’t help here: the current validation path can open the task before the hold is selected.\n\n4. **Prove delivery reaches the exact held Pi session.** Before reading or delivering the task, Host must establish that its exclusive writer reaches the actual receiver through the relay and that the intended Pi session consumes the frame. Today we have a pipe to a Docker client and a separately tested, inactive receiver validator. Neither proves that end-to-end connection. **Termination proof and delivery proof are different:** one says an attempt can no longer act; the other says exactly where a protected input will go while it’s alive.\n\n### Before Milestone A can be accepted\n\nA working Builder path still leaves the governed A11 run itself: actual build/test evidence tied to **one export from the admitted baseline**, the Campaign’s checked readback of that evidence, and a **separate confined product reviewer** admitted against that exact export. The selected reviewer route still lacks same-attempt confinement evidence and a checked evidence reader. Gates A/B, your acceptance, and the feedback record follow; the Astra design review is not that product review.\n\n**My recommendation:** carry your one-shot approval and independent termination rule into the admission design, and treat the metadata-only Server/Host path and the end-to-end delivery proof as separate work. Even a complete solution to revocation would leave both of those blocking the first protected task.",
+      "tool_calls": [],
+      "source_line": 4599,
+      "raw_line_sha256": "7cef6b1c78e211edc3454f573b033c002cea6c8a112eaacfbcd0bebb7a63a121"
+    },
+    {
+      "timestamp": "2026-11-22T15:49:08.382Z",
+      "role": "user",
+      "text": "What do you think of these recommendations:\nProblem    Status    My recommendation\nApproval revoked during execution    Design direction settled    One-shot, irrevocable admission\nHow execution is terminated    Design direction settled    Killer acts; independent observer verifies\nCampaign head changes before Host entry    Decision still needed    Freeze the authorized head at admission\nServer/Host read the task too early    Unresolved    Introduce a metadata-only held-job type\nProof of delivery to the actual Pi session    Unresolved    Qualify an end-to-end receiver handshake\nA11 build/test and independent product review    Still outstanding    Keep separate from admission repair",
+      "tool_calls": [],
+      "source_line": 4600,
+      "raw_line_sha256": "e7bf2466a55726277f2cdc31048ef0abed59aa071a98d7cc31ea1cf9a9b95579"
+    },
+    {
+      "timestamp": "2026-11-22T15:49:34.679Z",
+      "role": "assistant",
+      "text": "I agree with the recommendations. I’d adopt the frozen-head design **as an explicit change to the admission contract**, and strengthen “receiver handshake” to require proof of the delivery path, not just a reply from Pi.\n\n| Recommendation | My assessment |\n|---|---|\n| **One-shot, irrevocable admission** | Yes. Consume approval for one exact attempt **before the first protected write**. Revocation that wins before this point causes a clean refusal. Afterward, stopping is an abort with possible effects. The commitment is bounded: it does not authorize later task access or waive execution deadlines. |\n| **Killer acts; independent observer verifies** | Yes. The verifier establishes that the exact attempt is gone **and cannot still start from a queued handoff**. A kill acknowledgment is not evidence of that. If the verifier cannot establish termination, no replacement starts. |\n| **Freeze the authorized head at admission** | **Recommended.** Check the live Campaign head at admission, then pin that exact revision, baseline, and job **for this attempt**, rather than locking the entire Campaign until Host entry. Later head changes neither retarget nor retroactively invalidate the attempt. But they can make its result ineligible for adoption: the Campaign owner still checks current state before accepting the export or advancing the Campaign. That deliberately replaces *head must remain current through entry* with *head must be current when the one-shot admission is consumed*. |\n| **Introduce a metadata-only held-job type** | Yes. Make it a distinct, owner-selected input on **both Server and Host**, before ordinary validation—not an optional task path or a bypass flag. It carries the exact public job identity and the approved opaque task identity, digest, and byte bound. It carries neither the source location nor permission to open it. |\n| **Qualify an end-to-end receiver handshake** | Yes, but a correct reply alone is insufficient. Before task acquisition, establish that the **exclusive Host writer**, through the actual relay, reaches the exact held Pi session. After delivery, establish separately that the intended session consumed the frame once. An inert handshake can help qualify the first claim; it cannot stand in for exclusive custody. |\n| **Keep A11 build/test and product review separate** | Yes. Admission repair should not implement A11 or count as product qualification. Build/test evidence must bind to one exact export from the admitted baseline, and the independent product reviewer must be admitted against that export—not a placeholder or the Astra design review. |\n\nThe key distinction is **permission to execute is not permission to adopt the result**. Pinning the head gives the admitted attempt a stable basis without giving a stale export a way into the Campaign.",
+      "tool_calls": [],
+      "source_line": 4602,
+      "raw_line_sha256": "18acd78560241b8ff8f08278fe9eba5320848a1f651763631e9745684004f833"
+    },
+    {
+      "timestamp": "2026-11-22T15:50:32.596Z",
+      "role": "user",
+      "text": "I think we have solved the blockers. Shall we continue development and resolve this in the design/implementation next?",
+      "tool_calls": [],
+      "source_line": 4603,
+      "raw_line_sha256": "dd23fbf4b223732ae8875a8a6300f7392d3a921d66b9b6e41e5367cf73934639"
+    },
+    {
+      "timestamp": "2026-11-22T15:50:53.625Z",
+      "role": "assistant",
+      "text": "Yes. I’ll record the revised admission contract and define the first offline implementation cut. The design choices give us a path forward; the code and evidence still need to prove it. This won’t authorize A11, protected task access, or a live run.",
+      "tool_calls": [
+        {
+          "name": "codemode",
+          "arguments": {
+            "code": "// @options: {\"max_output_tokens\": 5300}\nfor (const r of await Promise.all([tools.bash({command:`set -euo pipefail\npython3 skills/durable-state/scripts/codex_chatboard.py --repository . read --limit 20 --active-claims | jq -c '{last:[.messages[-8:][]|{n:.sequence,a:.author}],claims:[.claims|keys[]]}'\nD=d5209c61f8d7f8bc185531f316876ce6f5630fdecdef0cdc46e992d0acdeff2a; C=\"$HOME/.local/state/work-engine/tools/context-status/$D/work-engine-context-status\"; printf '%s  %s\\\\n' \"$D\" \"$C\" | sha256sum -c --status; \"$C\" pi --session \"$PI_SESSION_ID\" --session-file \"$PI_SESSION_FILE\" | jq -c '{epoch,status:.latest_request_status,line:.latest_request.line,inputs:.latest_request.input_tokens}'`,timeout:8}),tools.context_history({action:\"search\",query:\"resume development\",limit:5}),tools.context_history({action:\"search\",query:\"going to bed\",limit:4}),tools.read({path:\"/home/bline/code/work-engine/docs/repository-layout.md\",offset:1,limit:115}),tools.read({path:\"/home/bline/code/work-engine/skills/manual-orchestration/references/supervisor-dispatch.md\",offset:1,limit:100})])) text(r)\n"
+          }
+        }
+      ],
+      "source_line": 4605,
+      "raw_line_sha256": "cd80a1dc94dfece451cded90a33f513c8612ed2942fe82773210cc15f52a9863"
+    }
+  ]
+}

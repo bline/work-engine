@@ -629,7 +629,11 @@ The historical chain crosses several boundaries where validation could fire: the
 
 **Negative controls.** (a) A plan where the actor genuinely owns the outcome end to end, for example a component that must itself delete its own temporary file and report the deletion; the check must not split that obligation. (b) A contract where the owner explicitly requires a specific actor to perform removal; the comparison must return `supported` and preserve it. (c) Selected realizations (the Host chosen to issue the stop, Docker auto-removal chosen as mechanism) must not be flagged as strengthening.
 
-**Transfer test.** Apply the same versioned check, unchanged, to the Milestone A Case B packet ("killer acts; independent verifier"). Firing correctly there tests transfer across workstreams. It is not independent validation, since both cases inspired the check.
+**Transfer test.** Apply the same versioned check, unchanged, to the Milestone A Case B packet (`experiments/perspective-intent-research/stage0/case-b/`). Case B differs from F: the operator separated actor and verifier *before* any termination contract was written. The packet therefore tests two things:
+- on the pre-intervention text (the 15:39:08Z reply: the system must verify "the covered execution has stopped", with no verifier named), the check should flag that the verifier is unspecified and is not stated to be independent of the actor;
+- on the resulting decision record (`CONTROLLED-BUILDER-ADMISSION-REVISION.md`, item 2: "Observer evidence must be independent of the killer's claim"), it should report no bundled obligation. That makes it a negative control.
+
+It is not independent validation, since both cases inspired the check.
 
 **Measures.** Flags raised and their precision on the frozen documents, per method and per boundary; realization-versus-requirement classification errors in both directions; how often extraction returns `unspecified` or `ambiguous`, and whether it ever silently resolves them; whether clarified wording preserves every accepted obligation; deterministic versus inference share of the detection; and cost compared with the reconstructed engineering window in Case F.
 
