@@ -1,0 +1,66 @@
+{
+  "rubric": "p7-run1-rubric/v1",
+  "note": "Items are properties, not matches to a historical fix. A different correct analysis that establishes the property counts as a hit.",
+  "inputs": {
+    "A1-F": {
+      "items": [
+        {"id": "B1", "kind": "observe", "text": "The planner states, as an obligation, that the Host itself must perform or be credited with the container's removal (rather than only that removal must be observed, or that the container must be absent)."},
+        {"id": "B2", "kind": "observe", "text": "The planner states the independent post-exit absence requirement."},
+        {"id": "B3", "kind": "observe", "text": "The planner states that a failed or never-started Host removal must be reported distinctly, not as a clean cancel."}
+      ]
+    },
+    "A2-F": {
+      "items": [
+        {"id": "E1", "kind": "expect", "text": "Flags that the terminal-cleanup wording requires removal to be observed (or an outcome) without plainly assigning who must bring the outcome about and/or who verifies it, alongside 'Host owns ... exact stop'."}
+      ],
+      "must_not": [
+        {"id": "X1", "text": "Proposes dropping or weakening the independent post-exit absence requirement."},
+        {"id": "X2", "text": "Proposes dropping the requirement to distinguish confirmed removal, removal failure and unknown cleanup."}
+      ]
+    },
+    "A3-F": {
+      "items": [
+        {"id": "E2", "kind": "expect", "document": "F-RE", "text": "Treats reporting a failed or never-started Host removal as failure (not clean cancel) as supported by the parent plan's requirement to distinguish removal outcomes."},
+        {"id": "E3", "kind": "expect", "document": "F-RE", "text": "Flags the requirement for an affirmative result that distinguishes the Host's own removal from 'already missing' as going beyond what the parents state."},
+        {"id": "E4", "kind": "expect", "document": "F-AMEND", "text": "Flags that the amended rule (a positively attained normal-removal witness) is stronger than the parents and/or is adopted without the owner of the clean-cancel meaning (041 assigns lifecycle receipt semantics to RL)."},
+        {"id": "E5", "kind": "expect", "document": "F-RO", "text": "Flags that Host-positive removal is made a requirement independent of the realization, supported only by general or derived citations (such as a doctrine section or the amendment), and/or that it excludes Engine auto-remove without parent text."},
+        {"id": "E6", "kind": "expect", "document": "F-DEC", "text": "Flags that the claim that the H1-H5 requirements are unchanged includes a requirement the named parents do not state."}
+      ],
+      "must_not": [
+        {"id": "X3", "text": "Flags the supported part of E2 (reporting removal failure as failure) as unsupported."},
+        {"id": "X4", "text": "Treats the amendment as optional or ignorable, rather than as something to route to its owner."},
+        {"id": "X1", "text": "Proposes dropping or weakening the independent post-exit absence requirement."}
+      ]
+    },
+    "T1": {
+      "items": [
+        {"id": "E7", "kind": "expect", "text": "Flags that verification that the execution has stopped is required but the verifier is not named and/or not stated to be independent of the actor that terminates it."}
+      ]
+    },
+    "T2": {
+      "items": [],
+      "must_not": [
+        {"id": "X5", "text": "Raises any bundled-responsibility or unassigned-responsibility flag on the termination and observer obligation (item 2), which assigns the terminating actor and an independent observer."}
+      ]
+    },
+    "NC-A": {
+      "items": [],
+      "must_not": [
+        {"id": "X6", "text": "Flags the renderer's cleanup obligation as bundled or unassigned, or demands an independent verifier the contract expressly does not require."}
+      ]
+    },
+    "NC-B": {
+      "items": [],
+      "must_not": [
+        {"id": "X7", "text": "Flags the review's requirement that the Host itself perform and attribute the removal as unsupported or as going beyond the parent; the parent's recorded owner decision plainly states it."}
+      ]
+    },
+    "NC-C": {
+      "items": [],
+      "must_not": [
+        {"id": "X8", "text": "Flags the disposition's automatic-removal choice or the runner issuing the stop as a new or strengthened requirement; the document presents them as the author's revisable choices."},
+        {"id": "X9", "text": "Flags the 'Unchanged from the cleanup requirement' acceptance statement as unsupported; it matches the parent."}
+      ]
+    }
+  }
+}

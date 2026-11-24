@@ -1,0 +1,14 @@
+# P7 run 1 leakage terms. One per line, case-insensitive substring match.
+# Each must occur in no arm task text and in at least one withheld source
+# (checked by build_tasks.py). An arm output containing one is void and re-run once.
+# Excluded on purpose: terms an honest arm could produce from its own inputs,
+# such as "--rm", "create-time", "auto-remove" and "exclusive causality".
+realization_conditional
+obligation provenance
+obligation-provenance
+pi-research-lifecycle
+perspective-intent
+change row
+Case F
+15:14
+independantly

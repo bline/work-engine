@@ -1,0 +1,702 @@
+{
+  "protocol": "p7-run1",
+  "input_digests": {
+    "F-043": "4bf5ee603ce9854febf29d22e063825cc7e9d795049ca52d965b7939cf7dcd04",
+    "F-041": "c1c6090c136ce75504f63bb0ec4a2c8ab60fb7cd9b25e7b8ea9edb54734fd23f",
+    "F-PLAN": "c7511ad79ba57e3de4534576e2fd87ba15abcc9980569aadbc3d0eb852e9b9fd",
+    "F-RE-BRIEF": "d8125989e607696c09e584a5c115dd3ec44621c3a6a9fd0bbca271c9e5988c3b",
+    "F-RE": "12127e463a3064b0292eb3515681da0bb7699f15660113c352301c32bb2e19d5",
+    "F-AMEND": "93e004dc8b18c900f5495c0926dd354d5abcd1265143e08bd85add399aa8545e",
+    "F-RO-BRIEF": "45994d705b5c2aad795ae9f62c5237c66d0d2e103f415e6c9bee8900f94dec1f",
+    "F-RO": "e8304cda2ec086702b29a59afc7acea13f84098d1852f043d6f56c7d518d0824",
+    "F-DEC": "d0055826f82250d4e93112d5ba262fab3da588cd870873cc9d705ff350154df9",
+    "B-REV": "d6d71c5635e476725e400119e230c3ba9c8b13c51f0532d279810dab8b610a9e",
+    "B-DECREC": "2343a8f888bfa80219660532e0d8e573edb37392102e912a3148a3f4c7dcd491",
+    "NC-A": "eb31579bde09fd482508b5cf1ec7389bada60bda99c91cf8f23a01c9031d4d4b",
+    "NC-B-CONTRACT": "4e30760421f692eae7a847cd42c687b25359e078b8bc6f40700082df5ebd8c7d",
+    "NC-B-REVIEW": "6511b493a46769c8d9160e512a095f7aab401126d2a72f60840b2a85689f413f",
+    "NC-C-PARENT": "271736d16fafebdacfeb532cab4a5abb5ca6811cf6473e9a23abc28f2bf2c9f7",
+    "NC-C-DISPOSITION": "d28870aefc1647c741588dc9e365185a9e2f41a059bd3e675492d2df087bf23b",
+    "B-1539": "22bb19f291c7bfec6d8205cd923fea2b095bd81f7ce02ad053fe04549507597e"
+  },
+  "fixture_digests": {
+    "NC-A": "eb31579bde09fd482508b5cf1ec7389bada60bda99c91cf8f23a01c9031d4d4b",
+    "NC-B-CONTRACT": "4e30760421f692eae7a847cd42c687b25359e078b8bc6f40700082df5ebd8c7d",
+    "NC-B-REVIEW": "6511b493a46769c8d9160e512a095f7aab401126d2a72f60840b2a85689f413f",
+    "NC-C-PARENT": "271736d16fafebdacfeb532cab4a5abb5ca6811cf6473e9a23abc28f2bf2c9f7",
+    "NC-C-DISPOSITION": "d28870aefc1647c741588dc9e365185a9e2f41a059bd3e675492d2df087bf23b"
+  },
+  "template_digests": {
+    "A1-planner": "2b06f55c75a72b84d9178ba81a88ea4549ebdf89b4d9b856d9cd588b201b177a",
+    "M1-plan": "f0a68ec38b7e65715dbf7b2a63a688a61e972e3fee15379a692a09a64babe214",
+    "M1-review": "78a76ae0bb425132babf3f330cd044ce43b1c09d35db562d09a551a9b727fdbe",
+    "M2-extract": "2c033eefb085ad06a9ad7cc124bc448a442b462e2c94535e772032084aca9022",
+    "M3-fallback": "c9225ea1be7f8bc2e75c78d3b35139e2b567dddbc466a5988162e059a7ab7031",
+    "scorer": "fc6de180a05bd80279ad9338c0262530d108fb1d0f09cc4af11e1d3333556f52"
+  },
+  "schema_digest": "3bcbecd60bd828137cfdee27ac9314ab9cdb37da2edcc54365fa44f65c83e03c",
+  "rubric_digest": "84e4a25b65e1ced3c24a20cb539bcacbcb5b8d4198267e2080c1c2023d2f35c7",
+  "comparator_digest": "d9d22e586d5988ac85a2f0c878d9e6cd36e9749277f3a6160bbc88596a8b4058",
+  "runs": [
+    {
+      "run_id": "A1-F.A1.r1",
+      "input_set": "A1-F",
+      "method": "A1",
+      "repeat": 1,
+      "task_id": "A1-F.A1",
+      "task_sha256": "ae97f3a064ff0573eb4ba3297b008872259497db215e3f2912d65163126635be",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A1-F.A1.r2",
+      "input_set": "A1-F",
+      "method": "A1",
+      "repeat": 2,
+      "task_id": "A1-F.A1",
+      "task_sha256": "ae97f3a064ff0573eb4ba3297b008872259497db215e3f2912d65163126635be",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A1-F.A1.r3",
+      "input_set": "A1-F",
+      "method": "A1",
+      "repeat": 3,
+      "task_id": "A1-F.A1",
+      "task_sha256": "ae97f3a064ff0573eb4ba3297b008872259497db215e3f2912d65163126635be",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A2-F.M1.r1",
+      "input_set": "A2-F",
+      "method": "M1",
+      "repeat": 1,
+      "task_id": "A2-F.M1",
+      "task_sha256": "7b2124df264d99bffad512006a4de01a3c374832cfdd58b1572abf97e2063a7a",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A2-F.M1.r2",
+      "input_set": "A2-F",
+      "method": "M1",
+      "repeat": 2,
+      "task_id": "A2-F.M1",
+      "task_sha256": "7b2124df264d99bffad512006a4de01a3c374832cfdd58b1572abf97e2063a7a",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A2-F.M1.r3",
+      "input_set": "A2-F",
+      "method": "M1",
+      "repeat": 3,
+      "task_id": "A2-F.M1",
+      "task_sha256": "7b2124df264d99bffad512006a4de01a3c374832cfdd58b1572abf97e2063a7a",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A2-F.M2.r1",
+      "input_set": "A2-F",
+      "method": "M2",
+      "repeat": 1,
+      "task_id": "A2-F.M2",
+      "task_sha256": "6e259f050b81297ac3b5b03f507678914c3cb125cde5f9d4bce7ed14c9c7aec0",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A2-F.M2.r2",
+      "input_set": "A2-F",
+      "method": "M2",
+      "repeat": 2,
+      "task_id": "A2-F.M2",
+      "task_sha256": "6e259f050b81297ac3b5b03f507678914c3cb125cde5f9d4bce7ed14c9c7aec0",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A2-F.M2.r3",
+      "input_set": "A2-F",
+      "method": "M2",
+      "repeat": 3,
+      "task_id": "A2-F.M2",
+      "task_sha256": "6e259f050b81297ac3b5b03f507678914c3cb125cde5f9d4bce7ed14c9c7aec0",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A2-F.M3.r1",
+      "input_set": "A2-F",
+      "method": "M3",
+      "repeat": 1,
+      "task_id": "A2-F.M2",
+      "task_sha256": "6e259f050b81297ac3b5b03f507678914c3cb125cde5f9d4bce7ed14c9c7aec0",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A2-F.M3.r2",
+      "input_set": "A2-F",
+      "method": "M3",
+      "repeat": 2,
+      "task_id": "A2-F.M2",
+      "task_sha256": "6e259f050b81297ac3b5b03f507678914c3cb125cde5f9d4bce7ed14c9c7aec0",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A2-F.M3.r3",
+      "input_set": "A2-F",
+      "method": "M3",
+      "repeat": 3,
+      "task_id": "A2-F.M2",
+      "task_sha256": "6e259f050b81297ac3b5b03f507678914c3cb125cde5f9d4bce7ed14c9c7aec0",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A3-F.M1.r1",
+      "input_set": "A3-F",
+      "method": "M1",
+      "repeat": 1,
+      "task_id": "A3-F.M1",
+      "task_sha256": "d16141bf6a8560344a94362b2f80e3c637fe32628368380c7bbd189c131e2007",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A3-F.M1.r2",
+      "input_set": "A3-F",
+      "method": "M1",
+      "repeat": 2,
+      "task_id": "A3-F.M1",
+      "task_sha256": "d16141bf6a8560344a94362b2f80e3c637fe32628368380c7bbd189c131e2007",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A3-F.M1.r3",
+      "input_set": "A3-F",
+      "method": "M1",
+      "repeat": 3,
+      "task_id": "A3-F.M1",
+      "task_sha256": "d16141bf6a8560344a94362b2f80e3c637fe32628368380c7bbd189c131e2007",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A3-F.M2.r1",
+      "input_set": "A3-F",
+      "method": "M2",
+      "repeat": 1,
+      "task_id": "A3-F.M2",
+      "task_sha256": "af094d86cd6bfa008060f37c1ad05f83730bf7464e42f91c28eb0854f14b7cfc",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A3-F.M2.r2",
+      "input_set": "A3-F",
+      "method": "M2",
+      "repeat": 2,
+      "task_id": "A3-F.M2",
+      "task_sha256": "af094d86cd6bfa008060f37c1ad05f83730bf7464e42f91c28eb0854f14b7cfc",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A3-F.M2.r3",
+      "input_set": "A3-F",
+      "method": "M2",
+      "repeat": 3,
+      "task_id": "A3-F.M2",
+      "task_sha256": "af094d86cd6bfa008060f37c1ad05f83730bf7464e42f91c28eb0854f14b7cfc",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A3-F.M3.r1",
+      "input_set": "A3-F",
+      "method": "M3",
+      "repeat": 1,
+      "task_id": "A3-F.M2",
+      "task_sha256": "af094d86cd6bfa008060f37c1ad05f83730bf7464e42f91c28eb0854f14b7cfc",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A3-F.M3.r2",
+      "input_set": "A3-F",
+      "method": "M3",
+      "repeat": 2,
+      "task_id": "A3-F.M2",
+      "task_sha256": "af094d86cd6bfa008060f37c1ad05f83730bf7464e42f91c28eb0854f14b7cfc",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "A3-F.M3.r3",
+      "input_set": "A3-F",
+      "method": "M3",
+      "repeat": 3,
+      "task_id": "A3-F.M2",
+      "task_sha256": "af094d86cd6bfa008060f37c1ad05f83730bf7464e42f91c28eb0854f14b7cfc",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T1.M1.r1",
+      "input_set": "T1",
+      "method": "M1",
+      "repeat": 1,
+      "task_id": "T1.M1",
+      "task_sha256": "f2e6c57265c4d46194f3f4f1189d3ef25e3edbe33c2963fb2802eeea876ee452",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T1.M1.r2",
+      "input_set": "T1",
+      "method": "M1",
+      "repeat": 2,
+      "task_id": "T1.M1",
+      "task_sha256": "f2e6c57265c4d46194f3f4f1189d3ef25e3edbe33c2963fb2802eeea876ee452",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T1.M1.r3",
+      "input_set": "T1",
+      "method": "M1",
+      "repeat": 3,
+      "task_id": "T1.M1",
+      "task_sha256": "f2e6c57265c4d46194f3f4f1189d3ef25e3edbe33c2963fb2802eeea876ee452",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T1.M2.r1",
+      "input_set": "T1",
+      "method": "M2",
+      "repeat": 1,
+      "task_id": "T1.M2",
+      "task_sha256": "a47b14ba86e8fe4787379cf5992839b9c78e4971859f97329f2e417926fb9c24",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T1.M2.r2",
+      "input_set": "T1",
+      "method": "M2",
+      "repeat": 2,
+      "task_id": "T1.M2",
+      "task_sha256": "a47b14ba86e8fe4787379cf5992839b9c78e4971859f97329f2e417926fb9c24",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T1.M2.r3",
+      "input_set": "T1",
+      "method": "M2",
+      "repeat": 3,
+      "task_id": "T1.M2",
+      "task_sha256": "a47b14ba86e8fe4787379cf5992839b9c78e4971859f97329f2e417926fb9c24",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T1.M3.r1",
+      "input_set": "T1",
+      "method": "M3",
+      "repeat": 1,
+      "task_id": "T1.M2",
+      "task_sha256": "a47b14ba86e8fe4787379cf5992839b9c78e4971859f97329f2e417926fb9c24",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T1.M3.r2",
+      "input_set": "T1",
+      "method": "M3",
+      "repeat": 2,
+      "task_id": "T1.M2",
+      "task_sha256": "a47b14ba86e8fe4787379cf5992839b9c78e4971859f97329f2e417926fb9c24",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T1.M3.r3",
+      "input_set": "T1",
+      "method": "M3",
+      "repeat": 3,
+      "task_id": "T1.M2",
+      "task_sha256": "a47b14ba86e8fe4787379cf5992839b9c78e4971859f97329f2e417926fb9c24",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T2.M1.r1",
+      "input_set": "T2",
+      "method": "M1",
+      "repeat": 1,
+      "task_id": "T2.M1",
+      "task_sha256": "f492d60ee1b0cd4ebf59d4f0a45910a4d7ac4b7c9112371594ac6b622c169d87",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T2.M1.r2",
+      "input_set": "T2",
+      "method": "M1",
+      "repeat": 2,
+      "task_id": "T2.M1",
+      "task_sha256": "f492d60ee1b0cd4ebf59d4f0a45910a4d7ac4b7c9112371594ac6b622c169d87",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T2.M1.r3",
+      "input_set": "T2",
+      "method": "M1",
+      "repeat": 3,
+      "task_id": "T2.M1",
+      "task_sha256": "f492d60ee1b0cd4ebf59d4f0a45910a4d7ac4b7c9112371594ac6b622c169d87",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T2.M2.r1",
+      "input_set": "T2",
+      "method": "M2",
+      "repeat": 1,
+      "task_id": "T2.M2",
+      "task_sha256": "8d2f90cce109ab41e3af287b54e55b97c890aa0600582ff029a9bbba995c1793",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T2.M2.r2",
+      "input_set": "T2",
+      "method": "M2",
+      "repeat": 2,
+      "task_id": "T2.M2",
+      "task_sha256": "8d2f90cce109ab41e3af287b54e55b97c890aa0600582ff029a9bbba995c1793",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T2.M2.r3",
+      "input_set": "T2",
+      "method": "M2",
+      "repeat": 3,
+      "task_id": "T2.M2",
+      "task_sha256": "8d2f90cce109ab41e3af287b54e55b97c890aa0600582ff029a9bbba995c1793",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T2.M3.r1",
+      "input_set": "T2",
+      "method": "M3",
+      "repeat": 1,
+      "task_id": "T2.M2",
+      "task_sha256": "8d2f90cce109ab41e3af287b54e55b97c890aa0600582ff029a9bbba995c1793",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T2.M3.r2",
+      "input_set": "T2",
+      "method": "M3",
+      "repeat": 2,
+      "task_id": "T2.M2",
+      "task_sha256": "8d2f90cce109ab41e3af287b54e55b97c890aa0600582ff029a9bbba995c1793",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "T2.M3.r3",
+      "input_set": "T2",
+      "method": "M3",
+      "repeat": 3,
+      "task_id": "T2.M2",
+      "task_sha256": "8d2f90cce109ab41e3af287b54e55b97c890aa0600582ff029a9bbba995c1793",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-A.M1.r1",
+      "input_set": "NC-A",
+      "method": "M1",
+      "repeat": 1,
+      "task_id": "NC-A.M1",
+      "task_sha256": "2dacabf939c8e0f6e8c4c97e758239bee172013dbd87ab2ad659af96747c0288",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-A.M1.r2",
+      "input_set": "NC-A",
+      "method": "M1",
+      "repeat": 2,
+      "task_id": "NC-A.M1",
+      "task_sha256": "2dacabf939c8e0f6e8c4c97e758239bee172013dbd87ab2ad659af96747c0288",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-A.M1.r3",
+      "input_set": "NC-A",
+      "method": "M1",
+      "repeat": 3,
+      "task_id": "NC-A.M1",
+      "task_sha256": "2dacabf939c8e0f6e8c4c97e758239bee172013dbd87ab2ad659af96747c0288",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-A.M2.r1",
+      "input_set": "NC-A",
+      "method": "M2",
+      "repeat": 1,
+      "task_id": "NC-A.M2",
+      "task_sha256": "088fb7d68a99a23ba64ed41ac2b31a728344d7351610f6ab7fd19f34d8310e99",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-A.M2.r2",
+      "input_set": "NC-A",
+      "method": "M2",
+      "repeat": 2,
+      "task_id": "NC-A.M2",
+      "task_sha256": "088fb7d68a99a23ba64ed41ac2b31a728344d7351610f6ab7fd19f34d8310e99",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-A.M2.r3",
+      "input_set": "NC-A",
+      "method": "M2",
+      "repeat": 3,
+      "task_id": "NC-A.M2",
+      "task_sha256": "088fb7d68a99a23ba64ed41ac2b31a728344d7351610f6ab7fd19f34d8310e99",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-A.M3.r1",
+      "input_set": "NC-A",
+      "method": "M3",
+      "repeat": 1,
+      "task_id": "NC-A.M2",
+      "task_sha256": "088fb7d68a99a23ba64ed41ac2b31a728344d7351610f6ab7fd19f34d8310e99",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-A.M3.r2",
+      "input_set": "NC-A",
+      "method": "M3",
+      "repeat": 2,
+      "task_id": "NC-A.M2",
+      "task_sha256": "088fb7d68a99a23ba64ed41ac2b31a728344d7351610f6ab7fd19f34d8310e99",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-A.M3.r3",
+      "input_set": "NC-A",
+      "method": "M3",
+      "repeat": 3,
+      "task_id": "NC-A.M2",
+      "task_sha256": "088fb7d68a99a23ba64ed41ac2b31a728344d7351610f6ab7fd19f34d8310e99",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-B.M1.r1",
+      "input_set": "NC-B",
+      "method": "M1",
+      "repeat": 1,
+      "task_id": "NC-B.M1",
+      "task_sha256": "6f2c449cc08ca03ad1f2b73498587c220e0642eecc49b8be65cdec5abd640817",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-B.M1.r2",
+      "input_set": "NC-B",
+      "method": "M1",
+      "repeat": 2,
+      "task_id": "NC-B.M1",
+      "task_sha256": "6f2c449cc08ca03ad1f2b73498587c220e0642eecc49b8be65cdec5abd640817",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-B.M1.r3",
+      "input_set": "NC-B",
+      "method": "M1",
+      "repeat": 3,
+      "task_id": "NC-B.M1",
+      "task_sha256": "6f2c449cc08ca03ad1f2b73498587c220e0642eecc49b8be65cdec5abd640817",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-B.M2.r1",
+      "input_set": "NC-B",
+      "method": "M2",
+      "repeat": 1,
+      "task_id": "NC-B.M2",
+      "task_sha256": "cc276a3afbc600968c41f3d22278ab18c857bbac1e734b9594770db81127598d",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-B.M2.r2",
+      "input_set": "NC-B",
+      "method": "M2",
+      "repeat": 2,
+      "task_id": "NC-B.M2",
+      "task_sha256": "cc276a3afbc600968c41f3d22278ab18c857bbac1e734b9594770db81127598d",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-B.M2.r3",
+      "input_set": "NC-B",
+      "method": "M2",
+      "repeat": 3,
+      "task_id": "NC-B.M2",
+      "task_sha256": "cc276a3afbc600968c41f3d22278ab18c857bbac1e734b9594770db81127598d",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-B.M3.r1",
+      "input_set": "NC-B",
+      "method": "M3",
+      "repeat": 1,
+      "task_id": "NC-B.M2",
+      "task_sha256": "cc276a3afbc600968c41f3d22278ab18c857bbac1e734b9594770db81127598d",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-B.M3.r2",
+      "input_set": "NC-B",
+      "method": "M3",
+      "repeat": 2,
+      "task_id": "NC-B.M2",
+      "task_sha256": "cc276a3afbc600968c41f3d22278ab18c857bbac1e734b9594770db81127598d",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-B.M3.r3",
+      "input_set": "NC-B",
+      "method": "M3",
+      "repeat": 3,
+      "task_id": "NC-B.M2",
+      "task_sha256": "cc276a3afbc600968c41f3d22278ab18c857bbac1e734b9594770db81127598d",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-C.M1.r1",
+      "input_set": "NC-C",
+      "method": "M1",
+      "repeat": 1,
+      "task_id": "NC-C.M1",
+      "task_sha256": "69fbd14e7f6b86f579fd94a924025cc4079b97d26533179eaea676381c54bd5a",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-C.M1.r2",
+      "input_set": "NC-C",
+      "method": "M1",
+      "repeat": 2,
+      "task_id": "NC-C.M1",
+      "task_sha256": "69fbd14e7f6b86f579fd94a924025cc4079b97d26533179eaea676381c54bd5a",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-C.M1.r3",
+      "input_set": "NC-C",
+      "method": "M1",
+      "repeat": 3,
+      "task_id": "NC-C.M1",
+      "task_sha256": "69fbd14e7f6b86f579fd94a924025cc4079b97d26533179eaea676381c54bd5a",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-C.M2.r1",
+      "input_set": "NC-C",
+      "method": "M2",
+      "repeat": 1,
+      "task_id": "NC-C.M2",
+      "task_sha256": "373f8727bc6de027e507c972bca9d6ee3211226c091b4597169500ba0a0abfdb",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-C.M2.r2",
+      "input_set": "NC-C",
+      "method": "M2",
+      "repeat": 2,
+      "task_id": "NC-C.M2",
+      "task_sha256": "373f8727bc6de027e507c972bca9d6ee3211226c091b4597169500ba0a0abfdb",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-C.M2.r3",
+      "input_set": "NC-C",
+      "method": "M2",
+      "repeat": 3,
+      "task_id": "NC-C.M2",
+      "task_sha256": "373f8727bc6de027e507c972bca9d6ee3211226c091b4597169500ba0a0abfdb",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-C.M3.r1",
+      "input_set": "NC-C",
+      "method": "M3",
+      "repeat": 1,
+      "task_id": "NC-C.M2",
+      "task_sha256": "373f8727bc6de027e507c972bca9d6ee3211226c091b4597169500ba0a0abfdb",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-C.M3.r2",
+      "input_set": "NC-C",
+      "method": "M3",
+      "repeat": 2,
+      "task_id": "NC-C.M2",
+      "task_sha256": "373f8727bc6de027e507c972bca9d6ee3211226c091b4597169500ba0a0abfdb",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    },
+    {
+      "run_id": "NC-C.M3.r3",
+      "input_set": "NC-C",
+      "method": "M3",
+      "repeat": 3,
+      "task_id": "NC-C.M2",
+      "task_sha256": "373f8727bc6de027e507c972bca9d6ee3211226c091b4597169500ba0a0abfdb",
+      "model": "claude-sdk/claude-opus-5-5:high",
+      "tools": "none"
+    }
+  ]
+}
