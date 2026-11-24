@@ -197,6 +197,7 @@ impl Recipe {
 
 /// Captured exact protected request/reply and independent no-start inspect
 /// readback of the object, not a synthesized echo of the wanted config.
+#[derive(Serialize)]
 pub struct CreateTrace {
     pub serving: Serving,
     pub campaign_request: String,
@@ -205,6 +206,16 @@ pub struct CreateTrace {
     pub status: u16,
     pub reply: Vec<u8>,
     pub inspect: Vec<u8>,
+}
+
+#[cfg(all(target_os = "linux", feature = "private-init-only-acquisition"))]
+pub(super) fn create_reply_id(body: &[u8]) -> Result<String, Refusal> {
+    let reply: CreateReply = serde_json::from_slice(body).map_err(|_| Refusal::Create)?;
+    if full_hex(&reply.id) {
+        Ok(reply.id)
+    } else {
+        Err(Refusal::Create)
+    }
 }
 
 #[derive(Deserialize)]
@@ -353,7 +364,7 @@ impl HostConfig {
 /// Same selected protected runtime task association, resolved image and
 /// actually materialized OCI startup. Snapshot and stdout pipe identities
 /// come from protected runtime/kernel custody, never from request hashing.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct ResolvedLaunch {
     pub task: TaskKey,
     pub runtime: String,
@@ -368,13 +379,13 @@ pub struct ResolvedLaunch {
     pub stdout_route: StdoutRoute,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum StartupBacking {
     ImmutableImageAndDependencies,
     OverrideOrUnknown,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum StdoutRoute {
     ExclusiveSelectedTaskLivePipe,
     AlternateOrUnknown,
@@ -406,7 +417,7 @@ impl ResolvedLaunch {
 /// Positive kernel/applied observations for this exact live task. These are
 /// independent of Docker inspect and the marker. Profile pins must come from
 /// bound applied-profile custody (an OCI request or Seccomp:2 alone is not it).
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Effective {
     pub task: TaskKey,
     pub uid: [u32; 4],
@@ -429,14 +440,14 @@ pub struct Effective {
     pub fds: Vec<Descriptor>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Namespaces {
     /// `[pid, mount, ipc, network, cgroup, uts]` kernel inode IDs in fixed order.
     pub task: [u64; 6],
     pub host: [u64; 6],
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Inventory {
     /// Complete, sorted non-root mount inventory. Classifications must be
     /// made by the protected source using mount/backing evidence, not by
@@ -449,14 +460,14 @@ pub struct Inventory {
     pub writable_cgroup_control: bool,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct MountView {
     pub path: String,
     pub kind: MountKind,
     pub read_only: bool,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum MountKind {
     PrivateVirtual,
     RuntimeMasked,
@@ -514,7 +525,7 @@ impl Inventory {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub enum Descriptor {
     NullInput,
     StdoutPipe(u64),

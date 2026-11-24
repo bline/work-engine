@@ -12,6 +12,7 @@ CREATE TABLE offline_qualification_selection (
     head TEXT NOT NULL CHECK (length(head) = 64),
     attempt_id TEXT NOT NULL UNIQUE CHECK (length(attempt_id) = 64),
     binding_digest TEXT NOT NULL CHECK (length(binding_digest) = 64),
+    intent_digest TEXT NOT NULL CHECK (length(intent_digest) = 64),
     expires_at INTEGER NOT NULL CHECK (expires_at > 0),
     store_profile TEXT NOT NULL,
     opening_epoch TEXT NOT NULL,

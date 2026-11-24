@@ -24,7 +24,7 @@ pub struct FixtureCreateReadback {
     pub object: FixtureObject,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct JoinedStartRequest {
     pub create_request_digest: String,
     pub create_mark_digest: String,
@@ -228,6 +228,11 @@ pub struct MarkedCreate {
 }
 
 impl MarkedCreate {
+    /// Identity of the exact checked possible-issue mark, not evidence of send.
+    pub fn mark_digest(&self) -> Result<String> {
+        self.mark.digest()
+    }
+
     pub fn confirm_created(
         self,
         replied_request: &str,
@@ -319,6 +324,11 @@ pub struct MarkedStart {
 }
 
 impl MarkedStart {
+    /// Identity of the exact checked possible-issue mark, not evidence of send.
+    pub fn mark_digest(&self) -> Result<String> {
+        self.mark.digest()
+    }
+
     pub fn confirm_running(self, running: FixtureRunning) -> Result<ConfirmedRunning> {
         if self.request.request_digest != running.start_request_digest
             || self.request.target != running.object

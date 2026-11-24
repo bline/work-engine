@@ -5,9 +5,10 @@ use super::task_free_b::{self, Digest, Kind, Mark, PURPOSE, Target, joined_fixtu
 use super::{Store, verify_sidecars};
 use crate::application::offline_qualification::{
     AttemptBinding, FixtureCreateReadback, FixtureHeldReadbacks, FixtureRunning, HoldFailure,
-    JoinedMarkReadback, OfflineLiveSubtree, OfflineStopSubject,
+    JoinedMarkReadback, OfflineLiveSubtree, OfflineStopSubject, QualificationHistoryKey,
 };
-use crate::{CampaignError, Result};
+use crate::{CampaignError, Result, codec::campaign_digest};
+use serde_json::json;
 
 const SCHEMA: &str = include_str!("../../migrations/offline_qualification_v1.sql");
 const COMMITTED_SPEND: &str = "
@@ -48,10 +49,10 @@ fn schema_joined(conn: &Connection) -> Result<bool> {
 
 fn state(conn: &Connection, b: &AttemptBinding) -> Result<State> {
     schema_joined(conn)?;
-    let (root, identity, head, attempt, digest, expiry, entered, revoked, spend) = conn
+    let (root, identity, head, attempt, digest, intent, expiry, entered, revoked, spend) = conn
         .query_row(
-            "SELECT q.root_id,q.identity_key,q.head,q.attempt_id,q.binding_digest,q.expires_at,
-                    q.entered,q.revoked,s.attempt_id,s.binding_digest,s.spend_receipt
+            "SELECT q.root_id,q.identity_key,q.head,q.attempt_id,q.binding_digest,q.intent_digest,
+                    q.expires_at,q.entered,q.revoked,s.attempt_id,s.binding_digest,s.spend_receipt
              FROM offline_qualification_selection q
              LEFT JOIN offline_qualification_spend s ON s.grant_id=q.grant_id
              WHERE q.grant_id=?1",
@@ -63,13 +64,14 @@ fn state(conn: &Connection, b: &AttemptBinding) -> Result<State> {
                     row.get::<_, String>(2)?,
                     row.get::<_, String>(3)?,
                     row.get::<_, String>(4)?,
-                    row.get::<_, i64>(5)?,
-                    row.get::<_, bool>(6)?,
+                    row.get::<_, String>(5)?,
+                    row.get::<_, i64>(6)?,
                     row.get::<_, bool>(7)?,
+                    row.get::<_, bool>(8)?,
                     (
-                        row.get::<_, Option<String>>(8)?,
                         row.get::<_, Option<String>>(9)?,
                         row.get::<_, Option<String>>(10)?,
+                        row.get::<_, Option<String>>(11)?,
                     ),
                 ))
             },
@@ -82,6 +84,7 @@ fn state(conn: &Connection, b: &AttemptBinding) -> Result<State> {
         || head != b.head().as_str()
         || attempt != b.attempt_id()
         || digest != b.binding_digest()
+        || intent != b.intent_sha256()
         || expiry != b.expires_at()
     {
         return Err(refused("selection binding differs"));
@@ -206,8 +209,8 @@ impl Store {
             "INSERT INTO offline_qualification_selection
              (grant_id,root_id,identity_key,head,attempt_id,binding_digest,expires_at,
               store_profile,opening_epoch,issuer_id,purpose,recipe_digest,server_operation,
-              serving_generation,evidence_ingress)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)",
+              serving_generation,evidence_ingress,intent_digest)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16)",
             params![
                 b.grant_id(),
                 b.root_id(),
@@ -224,6 +227,7 @@ impl Store {
                 lifecycle.server_operation,
                 lifecycle.serving_generation.as_str(),
                 lifecycle.evidence_ingress.as_str(),
+                b.intent_sha256(),
             ],
         )
         .map_err(store_error)?;
@@ -266,6 +270,67 @@ impl Store {
                 spent: false,
             },
         )
+    }
+
+    pub(crate) fn read_qualification_spend(
+        &self,
+        k: &QualificationHistoryKey,
+        identity: &str,
+    ) -> Result<bool> {
+        self.verify_binding()?;
+        verify_sidecars(&self.root)?;
+        if k.root != self.root_id || k.profile != self.marker.profile {
+            return Err(refused("historical selection is outside this owner"));
+        }
+        schema_joined(&self.conn)?;
+        // Compare the stored original opening, never the current opening or head.
+        let (entered, spent) = self
+            .conn
+            .query_row(
+                "SELECT q.entered,s.attempt_id,s.binding_digest,s.spend_receipt
+               FROM offline_qualification_selection q
+               LEFT JOIN offline_qualification_spend s ON s.grant_id=q.grant_id
+              WHERE q.grant_id=?1 AND q.root_id=?2 AND q.identity_key=?3 AND q.attempt_id=?4
+                AND q.binding_digest=?5 AND q.store_profile=?6 AND q.opening_epoch=?7
+                AND q.intent_digest=?8 AND q.purpose=?9",
+                params![
+                    k.grant,
+                    k.root,
+                    identity,
+                    k.attempt,
+                    k.selection,
+                    k.profile,
+                    k.original_opening,
+                    k.intent,
+                    PURPOSE
+                ],
+                |row| {
+                    Ok((
+                        row.get::<_, bool>(0)?,
+                        (
+                            row.get::<_, Option<String>>(1)?,
+                            row.get::<_, Option<String>>(2)?,
+                            row.get::<_, Option<String>>(3)?,
+                        ),
+                    ))
+                },
+            )
+            .optional()
+            .map_err(store_error)?
+            .ok_or_else(|| refused("exact historical selection absent"))?;
+        match spent {
+            (None, None, None) => Ok(false),
+            (Some(attempt), Some(selection), Some(receipt))
+                if entered
+                    && attempt == k.attempt
+                    && selection == k.selection
+                    && receipt
+                        == campaign_digest(&json!([PURPOSE, "spend-receipt-v1", k.selection]))? =>
+            {
+                Ok(true)
+            }
+            _ => Err(refused("historical spend binding differs")),
+        }
     }
 
     pub(crate) fn spend_qualification(&mut self, b: &AttemptBinding, confirm: bool) -> Result<()> {

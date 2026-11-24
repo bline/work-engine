@@ -1,9 +1,17 @@
-//! Private offline checking of one captured Contract B init-only attempt.
+//! Checking one captured Contract B init-only attempt.
 //!
-//! Inputs here model protected capture records. None can be acquired from an
-//! installed endpoint by this module; passing the fixture is not an installed
-//! observation, a controller selection, or a capability to do anything next.
+//! The checker accepts protected capture records, not caller authority. The
+//! private acquisition feature composes this checker with a wire/reader path;
+//! neither that composition nor a passing fixture selects an installation or
+//! confers a capability to do anything next.
 
+#[cfg(all(target_os = "linux", feature = "private-init-only-acquisition"))]
+#[cfg_attr(
+    not(test),
+    allow(dead_code, reason = "no installed selector; private offline cut")
+)]
+#[path = "pi_init_only_ready/acquisition.rs"]
+pub(crate) mod acquisition;
 #[path = "pi_init_only_ready/artifact_contract.rs"]
 mod artifact_contract;
 #[path = "pi_init_only_ready/launch.rs"]
@@ -155,7 +163,7 @@ impl TaskKey {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct Attach {
     pub serving: Serving,
     /// One capture-local stream ID allocated on open (not an fd number).
@@ -165,7 +173,7 @@ pub struct Attach {
     pub registration: Registration,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum Registration {
     /// Protected source associated the authenticated peer, serving code, full
     /// object and this connection with the reviewed registration semantics.
@@ -173,7 +181,7 @@ pub enum Registration {
     UnboundOrDifferent,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct StartRpc {
     pub serving: Serving,
     pub full_id: String,
@@ -183,6 +191,7 @@ pub struct StartRpc {
     pub request_target: String,
 }
 
+#[derive(Serialize)]
 pub struct Sample {
     /// One protected monotonic clock. Vector order is the capture order,
     /// including events with the same tick.
@@ -190,6 +199,7 @@ pub struct Sample {
     pub event: Event,
 }
 
+#[derive(Serialize)]
 pub enum Event {
     Open(Attach),
     Bytes {
@@ -211,6 +221,7 @@ pub enum Event {
     Cut(Box<CurrentCut>),
 }
 
+#[derive(Serialize)]
 pub struct CurrentCut {
     pub launch: ResolvedLaunch,
     pub effective: Effective,
@@ -218,7 +229,7 @@ pub struct CurrentCut {
     pub drain: Drain,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum Anchors {
     /// Protected runtime/kernel cut retains the original live task + exec,
     /// mount and subtree during the applied sample and through the cut.
@@ -226,7 +237,7 @@ pub enum Anchors {
     GoneChangedOrUnestablished,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum Drain {
     /// Same continuously drained protected stream, no feed gap, queue loss,
     /// backpressure, replay or reset through the cut. No collector cancellation

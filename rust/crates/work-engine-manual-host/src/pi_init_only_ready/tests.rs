@@ -11,7 +11,7 @@ use slice_campaign::{
     AcceptedBoundary, AdmitRequest, Baseline, Campaign, CampaignIdentity, Effect, TrustedConfig,
 };
 
-const UPGRADE: &[u8] = b"HTTP/1.1 101 UPGRADED\r\nContent-Type: application/vnd.docker.multiplexed-stream\r\nConnection: Upgrade\r\nUpgrade: tcp\r\n\r\n";
+pub(super) const UPGRADE: &[u8] = b"HTTP/1.1 101 UPGRADED\r\nContent-Type: application/vnd.docker.multiplexed-stream\r\nConnection: Upgrade\r\nUpgrade: tcp\r\n\r\n";
 fn hash(c: char) -> String {
     c.to_string().repeat(64)
 }
@@ -22,7 +22,7 @@ fn pin(path: &str, c: char) -> FilePin {
     }
 }
 
-fn serving() -> Serving {
+pub(super) fn serving() -> Serving {
     Serving {
         boot: [1; 16],
         docker_socket_inode: 2,
@@ -34,7 +34,7 @@ fn serving() -> Serving {
     }
 }
 
-fn recipe() -> Recipe {
+pub(super) fn recipe() -> Recipe {
     Recipe {
         startup: Startup {
             store: Store::ContainerdLocalTarget,
@@ -54,7 +54,7 @@ fn recipe() -> Recipe {
     }
 }
 
-fn task(serving: &Serving, object: &str) -> TaskKey {
+pub(super) fn task(serving: &Serving, object: &str) -> TaskKey {
     TaskKey {
         serving: serving.clone(),
         container: object.into(),
@@ -76,7 +76,7 @@ fn bytes(connection: u64, value: &[u8]) -> Event {
         chunk: value.into(),
     }
 }
-fn mux(channel: u8, payload: &[u8]) -> Vec<u8> {
+pub(super) fn mux(channel: u8, payload: &[u8]) -> Vec<u8> {
     [
         vec![channel, 0, 0, 0],
         (payload.len() as u32).to_be_bytes().to_vec(),
@@ -85,12 +85,12 @@ fn mux(channel: u8, payload: &[u8]) -> Vec<u8> {
     .concat()
 }
 
-struct Synthetic {
+pub(super) struct Synthetic {
     serving: Serving,
     recipe: Recipe,
     start: JoinedStartRequest,
     owner: FixtureTerminalSubject,
-    create: CreateTrace,
+    pub(super) create: CreateTrace,
     samples: Vec<Sample>,
     through: u64,
 }
@@ -239,7 +239,7 @@ impl Synthetic {
         }
     }
 
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         let serving = serving();
         let start = JoinedStartRequest {
             create_request_digest: hash('a'),
@@ -283,7 +283,7 @@ impl Synthetic {
             &self.owner,
         )
     }
-    fn cut(&mut self) -> &mut CurrentCut {
+    pub(super) fn cut(&mut self) -> &mut CurrentCut {
         let Event::Cut(cut) = &mut self.samples.last_mut().unwrap().event else {
             panic!("cut")
         };
@@ -497,6 +497,19 @@ fn campaign(
     Campaign,
     AttemptBinding,
 ) {
+    campaign_with_intent(recipe, serving, hash('b'))
+}
+
+pub(super) fn campaign_with_intent(
+    recipe: &Recipe,
+    serving: &Serving,
+    intent_sha256: String,
+) -> (
+    tempfile::TempDir,
+    impl Fn() -> TrustedConfig + use<>,
+    Campaign,
+    AttemptBinding,
+) {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path();
     let repository = root.join("repo");
@@ -576,7 +589,7 @@ fn campaign(
             &value.revision,
             SelectionPins {
                 grant_id: hash('a'),
-                intent_sha256: hash('b'),
+                intent_sha256,
                 recipe_sha256: recipe.digest().unwrap(),
                 serving_sha256: serving.digest().unwrap(),
                 expires_at_unix_ms: 4_102_444_800_000,

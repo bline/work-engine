@@ -3,6 +3,7 @@
 
 use std::sync::{Arc, Mutex, MutexGuard};
 
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use super::{Campaign, CampaignInner};
@@ -38,13 +39,39 @@ pub struct AttemptBinding {
     attempt: String,
     operation: String,
     digest: String,
+    intent: String,
     recipe: String,
     serving: String,
     expiry: i64,
     lifecycle: LifecycleBinding,
 }
 
+/// Durable address of an original selection, not a binding or a permit.
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct QualificationHistoryKey {
+    pub root: String,
+    pub profile: String,
+    pub original_opening: String,
+    pub grant: String,
+    pub attempt: String,
+    pub selection: String,
+    pub intent: String,
+}
+
 impl AttemptBinding {
+    pub fn history_key(&self) -> QualificationHistoryKey {
+        QualificationHistoryKey {
+            root: self.root.clone(),
+            profile: self.lifecycle.profile.clone(),
+            original_opening: self.lifecycle.opening_epoch.clone(),
+            grant: self.grant.clone(),
+            attempt: self.attempt.clone(),
+            selection: self.digest.clone(),
+            intent: self.intent.clone(),
+        }
+    }
+
     pub fn root_id(&self) -> &str {
         &self.root
     }
@@ -65,6 +92,9 @@ impl AttemptBinding {
     }
     pub fn binding_digest(&self) -> &str {
         &self.digest
+    }
+    pub fn intent_sha256(&self) -> &str {
+        &self.intent
     }
     pub fn recipe_sha256(&self) -> &str {
         &self.recipe
@@ -211,6 +241,7 @@ impl CampaignInner {
             attempt,
             operation,
             digest,
+            intent: pins.intent_sha256,
             recipe: pins.recipe_sha256,
             serving: pins.serving_sha256,
             expiry: pins.expires_at_unix_ms,
@@ -235,6 +266,15 @@ impl QualificationPort {
         self.inner
             .lock()
             .map_err(|_| CampaignError::Integrity("campaign owner gate poisoned".into()))
+    }
+
+    /// Historical read only. Neither a positive nor negative result can be
+    /// converted into a new entry, spend, or effect ticket on recovery.
+    pub fn read_qualification_spend(&self, key: &QualificationHistoryKey) -> Result<bool> {
+        let owner = self.owner()?;
+        owner
+            .store
+            .read_qualification_spend(key, &owner.config.identity.key())
     }
 
     /// Seal the single possible entry before offering it for spend. No
