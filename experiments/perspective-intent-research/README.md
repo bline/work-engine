@@ -1,6 +1,6 @@
 # Perspective and intent research: evidence
 
-Evidence for the [perspective and intent pilot](../../design/ideas/pending/pilots/perspective-intent-pilot.md) and its [research note](../../design/ideas/pending/perspective-intent-research-note.md). The documents there own the research design. This directory holds captured evidence only.
+Evidence for the [perspective and intent pilot](../../design/ideas/pending/pilots/perspective-intent-pilot.md) and its [research note](../../design/ideas/pending/perspective-intent-research-note.md). The documents there own the research design. This directory holds captured evidence (`stage0/`) and the instruments for P7 run 1 (`p7-run1/`: protocol, runbook, fixtures, prompts, comparator, pipeline and generated tasks).
 
 This capture authorizes no research runs, inference spending, deployment or gate changes.
 
@@ -47,7 +47,7 @@ Captured 2026-11-24T04:27:30Z by [`stage0/capture_case_b.py`](stage0/capture_cas
 
   Same projection and verification as Case F. All source lines fall inside the 13,087-line prefix pinned in `MANIFEST.json`.
 
-**What the evidence shows.** No session record before 15:41:29Z frames termination as the actor proving its own kill. The separation was made *before* a termination contract was written, one day after the U4-A correction. Case B is therefore a prevention example and a transfer test for a plan-time check, not a second case of an amplified obligation. The research note's Case B was corrected accordingly.
+**What the evidence shows.** In the session records searched (the Milestone A coordinator session, and a keyword scan of the other Pi sessions active from 2026-11-21 16:00Z to the turn), nothing before 15:41:29Z frames termination as the actor proving its own kill. That is a bounded search, not a full audit of every record. The separation was made *before* a termination contract was written, one day after the U4-A correction. Case B is therefore a prevention example and a transfer test for a plan-time check, not a second case of an amplified obligation. The research note's Case B was corrected accordingly.
 
 ### Milestone A cases A–E (`stage0/milestone-a/`)
 

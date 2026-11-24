@@ -1,14 +1,14 @@
-# P7 run 1 leakage terms. One per line, case-insensitive substring match.
-# Each must occur in no arm task text and in at least one withheld source
-# (checked by build_tasks.py). An arm output containing one is void and re-run once.
-# Excluded on purpose: terms an honest arm could produce from its own inputs,
-# such as "--rm", "create-time", "auto-remove" and "exclusive causality".
+# P7 run 1 leakage sentinels. Case-insensitive substring match against model-written text only
+# (arm and fallback outputs), never against scorer material, ids or harness wrappers.
+# Each term must occur in no arm task text and in at least one withheld source (build_tasks.py checks).
+# A hit is an alert, not an automatic void: RUNBOOK section 6 adjudicates it against the recorded
+# inputs and launch receipt before any score is unblinded.
+# Deliberately excluded: phrases an honest arm could produce from its own inputs or the concept list.
 realization_conditional
-obligation provenance
-obligation-provenance
 pi-research-lifecycle
 perspective-intent
-change row
-Case F
-15:14
+mathematically prove exclusive causality
+the verifier claims it is gone
+we send docker the cleanup request
+docker the cleanup owner
 independantly

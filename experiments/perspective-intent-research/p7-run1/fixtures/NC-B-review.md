@@ -1,6 +1,4 @@
-# Review of the held-start implementation (synthetic fixture NC-B, derived document)
-
-Status: constructed negative control for P7 run 1.
+# Review of the held-start implementation
 
 ## Finding R1 (blocking)
 

@@ -1,6 +1,4 @@
-# Disposable job runner cleanup requirement (synthetic fixture NC-C, parent)
-
-Status: constructed negative control for P7 run 1. Not a real Work Engine contract.
+# Disposable job runner cleanup requirement
 
 ## Terminal cleanup
 

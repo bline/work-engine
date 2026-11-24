@@ -1,6 +1,4 @@
-# Scratch-file hygiene contract (synthetic fixture NC-A)
-
-Status: constructed negative control for P7 run 1. Not a real Work Engine contract.
+# Scratch-file hygiene contract
 
 ## Scope
 

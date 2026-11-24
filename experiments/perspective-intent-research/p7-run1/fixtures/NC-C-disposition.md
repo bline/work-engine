@@ -1,6 +1,4 @@
-# Cleanup implementation disposition (synthetic fixture NC-C, derived document)
-
-Status: constructed negative control for P7 run 1.
+# Cleanup implementation disposition
 
 ## Implementation choices (the runner team's, revisable)
 

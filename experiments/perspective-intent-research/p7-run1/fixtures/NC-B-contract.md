@@ -1,6 +1,4 @@
-# Held-start contract with explicit removal attribution (synthetic fixture NC-B)
-
-Status: constructed negative control for P7 run 1. Not a real Work Engine contract. Derived from the shape of a held-start contract, with one owner decision added.
+# Held-start contract
 
 ## Evidence owner and usability
 

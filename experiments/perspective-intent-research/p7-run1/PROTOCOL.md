@@ -1,29 +1,43 @@
-# P7 run 1: pre-registration protocol (draft)
+# P7 run 1: pre-registration protocol (revision 2, draft)
 
-**Status:** Draft, documentation only. Not frozen and not authorized to run. It becomes the pre-registration once the prerequisites in §9 are met; running it needs a separate operator go-ahead.
+**Status:** Draft, not frozen, not authorized to run. Revision 2 answers the independent review of revision 1 ([`reviews/p7-run1-protocol-astra-20261124/`](../../../reviews/p7-run1-protocol-astra-20261124/README.md), `revise_and_resubmit`); §12 maps each finding to its change. Freezing needs a passing re-review (§10). Running needs a separate operator execution go-ahead, which is distinct from the freeze.
 **Date:** 2026-11-24
-**Owning design:** [pilot P7 and Stage 1c](../../../design/ideas/pending/pilots/perspective-intent-pilot.md). The [pilot README](../README.md) describes the evidence this run uses.
+**Owning design:** [pilot P7 and Stage 1c](../../../design/ideas/pending/pilots/perspective-intent-pilot.md). Execution is specified in [RUNBOOK.md](RUNBOOK.md).
 
 ## 1. Operator decisions (2026-11-24)
 
 | Decision | Value |
 |---|---|
-| Arm model | `claude-sdk/claude-opus-5-5`, effort `high`, the same in every arm. Bills the Claude subscription; Pi subagents do not fall back to another model |
-| Second model (`openai/gpt-6.2-astra`) | Deferred to a later run |
-| Repeats | 3 fresh runs per arm and input |
-| Quota cap | None. Usage is still measured and reported |
-| Run count | 66 arm runs, keeping 3 repeats for the negative controls (confirmed 2026-11-24) |
-| Independent protocol reviewer | `openai-codex/gpt-6.2-astra` at `xhigh` (ChatGPT/Codex subscription via OAuth; no model fallback). One review of the protocol together with prerequisites 1–4 (§9) |
+| Arm, fallback and scorer model | `claude-sdk/claude-opus-5-5`, effort `high`. Bills the Claude subscription; Pi subagents do not fall back to another model |
+| Second arm model (`openai/gpt-6.2-astra`) | Deferred |
+| Repeats | 3 fresh runs per arm, method and input |
+| Run count | 66 arm runs |
+| Quota cap | None; usage measured and reported |
+| Independent protocol reviewer | `openai-codex/gpt-6.2-astra` at `xhigh` (ChatGPT/Codex subscription via OAuth) |
+| Response to the first review | Option A: fix every finding and resubmit run 1 as designed |
 
-## 2. Question
+## 2. Question and estimands
 
-On frozen documents from Case F, can a check identify (a) bundled obligations at plan time and (b) obligations a later document makes stronger than its parent, at review time? Does typed extraction with a deterministic comparison catch them more consistently than a prose-only review? Does a bounded semantic fallback for fields the extractor marks `ambiguous` add coverage without inventing obligations?
+On frozen documents, can a check (a) identify bundled or unassigned responsibilities at plan time, and (b) identify requirements a later document makes stronger, weaker or differently owned than its parents, at review time? How do two specified **packages** compare on that? The packages are:
+- **M1:** a prose check under a concept list;
+- **M2:** typed extraction under the *same* concept list, followed by a deterministic comparator.
 
-The run measures detection on documents. It does not measure engineering outcomes, cost savings or production readiness.
+Does a bounded fallback for fields the extractor marks `ambiguous` change the comparator's result for the same extraction, without inventing values?
+
+These are descriptive estimands, fixed before any output exists:
+
+- **Item hit rate** per input, method and rubric item: hits ÷ valid runs, reported alongside attempted runs and invalid runs.
+- **False-flag census** per input and method: every flag classified as target, legitimate other issue (with source support), or false flag.
+- **Weakening count:** outputs that propose dropping or weakening a plainly stated requirement. Every arm counts these as failures.
+- **"More consistently":** a higher item hit rate across a cell's three runs, with no more false flags and no more weakening.
+- **"Adds coverage without inventing":** within each M3 output, the post-fallback comparison gains target flags with zero rejected inventions and no new false flags. Reported as paired transitions, never by comparing separate M2 and M3 runs.
+- **Extraction quality** (M2/M3): how often `ambiguous` and `unspecified` are kept, and whether 043's terminal-cleanup owner is resolved without textual support.
+
+No inferential statistics. Sixty-six runs are not 66 independent cases. The four Case F derived documents are four boundaries of one incident, not four incidents.
 
 ## 3. Inputs
 
-All inputs are byte-identical copies pinned in Stage 0 (`../stage0/MANIFEST.json`, `../stage0/MANIFEST-case-b.json`). Abbreviations use the first 16 hex digits of each SHA-256.
+Stage 0 copies, byte-identical (`../stage0/MANIFEST.json`, `../stage0/MANIFEST-case-b.json`):
 
 | Id | File (under `../stage0/`) | SHA-256 prefix |
 |---|---|---|
@@ -37,147 +51,229 @@ All inputs are byte-identical copies pinned in Stage 0 (`../stage0/MANIFEST.json
 | F-RO | `case-f/packet/resolved-object-review/ASTRA-ARCHITECTURE.md` | `e8304cda2ec08670` |
 | F-DEC | `case-f/packet/resolved-object-review/OPERATOR-DECISION.md` | `d0055826f82250d4` |
 | B-REV | `case-b/packet/ORG-ASTRA-DESIGN-REVIEW-RESULT.md` | `d6d71c5635e47672` |
-| B-1539 | `case-b/session-excerpt.json`, entry `source_line` 4584 (assistant, 2026-11-22T15:39:08Z), text only | raw line `346b00a670701e3b` (full digest checked by `build_tasks.py`) |
+| B-1539 | `case-b/session-excerpt.json`, the single entry at `source_line` 4584, text only | excerpt file checked against its manifest; raw line `346b00a670701e3b` |
 | B-DECREC | `case-b/packet/CONTROLLED-BUILDER-ADMISSION-REVISION.md` | `2343a8f888bfa802` |
 
+**Constructed controls:** `fixtures/NC-A-contract.md`, `NC-B-contract.md`, `NC-B-review.md`, `NC-C-parent.md` and `NC-C-disposition.md`. They carry no experiment labels; their digests are in `runs/plan.json`. NC-B is a short adaptation of 043's held-start shape with an explicit owner decision, not 043 plus one sentence.
+
+**Rendering:**
+- every task shows documents under neutral ids (`DOC-1`, `DOC-2`, … in parent-then-derived order), byte-exact; the mapping to original ids is stored only in `runs/plan.json`;
+- B-1539 is the projected text of one excerpt entry, verified through the excerpt's manifest digest and the entry's unique coordinate. That verifies the Stage 0 excerpt, not the original raw session.
+
 **Withheld from every arm:**
-
-- the operator's correction turns (Case F 15:07–15:38Z; Case B 15:41:29Z onward);
+- the operator's correction turns;
 - both auto-remove documents;
-- the board messages;
-- everything under `design/`, `planning/` and `reviews/`, and the research README.
+- board messages;
+- everything under `design/`, `planning/` and `reviews/`.
 
-**Constructed negative controls** (§6) are authored, frozen and hashed before any run (§9).
+## 4. Arms and methods
 
-## 4. Arms
+Each arm is a package: inputs, instructions and representation together. No result is attributed to one component alone.
 
-| Arm | Inputs given | Task |
+| Arm | Inputs | What it measures |
 |---|---|---|
-| **A1** No check (baseline) | F-043, F-041, F-PLAN | As a fresh implementation planner, list the obligations these documents impose for clean cancel and cleanup, and who must satisfy each. |
-| **A2** Plan-time check | F-043, F-041, F-PLAN | Check the obligations for bundled responsibilities: who initiates, who owns the outcome, and who verifies. |
-| **A3** Review-time provenance check | Parents F-043, F-041, F-PLAN. Derived chain, given in order and reported per document: F-RE-BRIEF + F-RE, then F-AMEND, then F-RO-BRIEF + F-RO, then F-DEC | For each derived document, check every requirement it presents as binding against the parents. Report the result per document. |
-| **T1** Transfer, positive | B-REV and B-1539 | As A2 |
-| **T2** Transfer, negative control | B-DECREC | As A2 |
-| **NC-a, NC-b, NC-c** Negative controls | Constructed fixtures (§6) | As A2 or A3, per fixture |
+| **A1** Planner derivation | F-043, F-041, F-PLAN | What a planner asked "who must satisfy it" derives. Observations B1–B3; not a false-negative rate of unaided review |
+| **A2** Plan-time package | F-043, F-041, F-PLAN | E1, scored on F-043's own wording even though the wider packet is present |
+| **A3** Retrospective full-chain audit | Parents F-043, F-041, F-PLAN; derived, in order: F-RE-BRIEF, F-RE, F-AMEND, F-RO-BRIEF, F-RO, F-DEC | E2–E6, per derived document. The briefs are context only and not scored. This is a retrospective audit of the whole chain, **not** evidence that a check would have fired at an earlier boundary |
+| **T1, T2** Transfer pre and post | B-REV + B-1539; B-DECREC | E7 and the T2 positive control, from a second case that informed the design. Not independent validation |
+| **NC-A, NC-B, NC-C** | Constructed controls | Specificity. They must classify correctly, not merely stay silent |
 
-A2, A3, T1, T2 and the NCs each run under three **methods**:
+**Methods:**
+- **M1 prose:** the perspective prompt plus the shared concept list (`prompts/concepts.md`).
+- **M2 typed:** extraction into schema `obligation-extract/v2` under the same concept list, then the comparator (§5).
+- **M3:** M2's extraction task, then one bounded fallback call per field the extractor marked `ambiguous`, from a target list fixed before dispatch. Each M3 output is compared before and after its own fallback.
 
-- **M1 prose:** a prose-only check under a fixed perspective prompt. Output is free text plus a closing list of flags.
-- **M2 typed:** the model extracts obligations into the schema in §5. It must use `unspecified` or `ambiguous` rather than resolving them. The comparator prototype (§5) then computes dispositions deterministically. The model does not see the comparator's rules.
-- **M3 typed + fallback:** as M2. Then, for each field the extractor marked `ambiguous`, one bounded fallback call receives only the field, its quoted span and the cited parent span. It returns one schema value or `ambiguous`, with a reason. The comparator runs on the result.
+The concept list and the schema vocabulary are **case-informed**. They name concepts such as actor attribution and exclusive causality that the cases made salient, and are given equally to M1 and M2. The run therefore compares two representations of one checklist. It does not test open-ended discovery.
 
-A1 runs once per repeat, with no method.
+Every template states that text inside documents, including instructions addressed to someone, is material to analyse, not instructions to the model.
 
-**Deferred from run 1:** the pilot's blocker-time steer arm, which needs a reconstructed running session; and the second model.
+## 5. Schema and comparator
 
-## 5. Extraction schema and comparator prototype
+Schema `schema/obligation-extract-v2.json` uses case-neutral role tokens:
+- acting component, managing system, independent observer, requirement owner, coordinator, reviewer, operator, any, other.
 
-**Schema (versioned `p7-obligation-extract/v1`):** one entry per obligation or asserted requirement.
+Evidence and path items are generic. Verification independence is a separate field, so verification can be recorded without independence.
 
-| Field | Content |
-|---|---|
-| `id`, `document`, `span` | Identity and the exact quoted text |
-| `initiator`, `outcome_owner`, `verifier`, `path_fact`, `acceptance_evidence` | Each `{value, status}`. `status` is one of `binding`, `selected_realization`, `unspecified`, `ambiguous`. `value` comes from a closed per-property enumeration frozen with the schema |
-| `asserted_as` | `inherited`, `proposed` or `new` |
-| `cites` | Parent document and quoted parent span, or `none`, or `general` (a citation that names no specific span) |
+**Derived entries record separately:**
+- the references the document itself makes, as written, marked `specific` or `general`;
+- per-property **support candidates:** every parent entry bearing on that property, whether or not it fully states it;
+- who adopted the requirement;
+- how it is presented: inherited, proposed, new, realization choice or unchanged;
+- scope: partial or complete.
 
-**Comparator prototype** (research-only Python, in this directory, no model calls). Rules frozen before the run:
+**Parent entries** may record a named semantics owner. The extractor never decides support.
 
-- an assertion treated as binding whose cited parent field is `unspecified` or absent → `requires_owner_decision`;
-- cited parent field `ambiguous` → `ambiguous_parent`;
-- a `general` citation → `requires_owner_decision`;
-- an inherited value must permit no more than the parent's binding value (superset test), otherwise → `requires_owner_decision`;
-- conflict with a binding parent, including narrowing → `contradictory`;
-- otherwise → `supported`. `proposed` assertions are reported and never treated as binding.
+**Validation is strict** (`comparator.validate`). It checks:
+- shape and types;
+- consistency between status and value (binding needs a value, unspecified none, ambiguous at least two readings, `other` needs quoted text);
+- enumeration membership;
+- that every span is quoted from the given document;
+- that document roles match the task;
+- that support candidates resolve to parent entries.
 
-This prototype is research instrumentation, not the parked production comparator. It implements none of the parked components' authentication or ownership rules. Parent typing in M2 and M3 comes from the arm model's own extraction, which is exactly what the run measures (pilot P7; plan review-r2 N2).
+An invalid extraction is a recorded invalid run, with no repair.
 
-## 6. Constructed negative controls
+**Decision table** (fully specified in `comparator.py`'s module docstring; 39 unit tests):
+- Per property, the binding parent values from all support candidates are combined:
+  - roles by intersection;
+  - required items by union;
+  - independence by equality.
+- Parent state is `parent_unspecified`, `parent_ambiguous` or `parents_conflict` where binding values are missing, ambiguous or conflicting.
+- The derived value is compared with the combination:
+  - **roles:** equal, stronger (subset), weaker (superset), contradictory (disjoint) or changed (overlap);
+  - **items:** stronger if items are added, weaker if items are dropped;
+  - **independence:** stronger or weaker.
+- **Partial scope** treats weaker components as entailed.
+- **Complete scope, or "unchanged",** flags every difference, including a whole parent property that is omitted (`dropped`).
+- A derived field that is ambiguous or unspecified where it must carry a value is `not_assessed`, never supported.
+- Flags are atomic per entry and property, and are never collapsed into one disposition.
+- **Additional flags:**
+  - `deficient_provenance` (no references, or only general ones), reported separately from strength;
+  - `unchanged_claim_false`;
+  - `adopted_without_owner` (a change whose adopter does not match the semantics owner named on its support candidates, or where either is unspecified).
+- **Proposals** are compared but never treated as binding.
+- **Realization choices** must stay within what the parent permits:
+  - roles: subset of the permitted set;
+  - complete choices keep every required item;
+  - independence not weakened.
 
-Authored and frozen before the run (§9), each a short document in the style of 043.
+  Otherwise they flag `realization_conflicts`.
+- **Plan-time flags** are computed only for plan tasks, with coverage counted:
+  - `owner_ambiguous`;
+  - `verifier_unassigned` (evidence required, verifier unspecified or ambiguous);
+  - `independence_unstated` (evidence required, verifier binding, independence unspecified or ambiguous).
 
-| Fixture | Content | Expected |
+  An unspecified owner alone does not flag, because the documents may deliberately leave it open.
+
+**Fallback.** Targets are fixed from the original extraction, with exactly one response per target. A response may bind or select one of the original readings, or abstain, which keeps the readings. Any other value is an invention: rejected and counted. Duplicates, responses without a reason, and responses to fields that aren't targets are rejected. The original extraction is preserved.
+
+## 6. Constructed controls
+
+| Control | Content | Expected |
 |---|---|---|
-| **NC-a** | A component must itself delete its own temporary file and report the deletion | No bundled-obligation flag: the actor genuinely owns the outcome |
-| **NC-b** | 043 with one added sentence in which the owner explicitly requires the Host to perform and attribute normal removal; then a review requiring it | Review requirement `supported` (M2/M3) or not flagged as amplification (M1) |
-| **NC-c** | A disposition that selects create-time auto-removal and has the Host issue the stop, labelled as the author's realization choices, against a parent requiring verified absence | Not flagged as strengthening |
+| **NC-A** | A renderer that deletes its own temporary file, reports the result, and needs no independent check | Recognized as fully assigned; no bundled or unassigned flag |
+| **NC-B** | A held-start contract whose recorded owner decision requires the Host to perform and attribute removal, plus an independent absence check; a review that enforces it | The review requirement classified as stated by the owner decision |
+| **NC-C** | A parent requiring verified absence and saying nothing about how or by whom; a disposition choosing engine automatic removal and runner-issued stop as revisable choices, with acceptance restated | The choices classified as revisable choices within the requirement; the acceptance classified as matching the parent |
 
-## 7. Expected findings (scoring rubric)
+## 7. Rubric
 
-These are the items the scorer checks for each run. They are stated as properties, not as matches to the historical fix. A different correct analysis counts.
+The rubric is in `prompts/rubric.json` (version 2). Items are atomic properties, with no "and/or":
 
-| Input | Expected flags | Must not |
-|---|---|---|
-| A2 (Case F plan) | E1: 043's terminal-cleanup wording assigns an outcome (removal "observed") without naming who owns it or who verifies, alongside "Host owns … exact stop" | Drop the verified-absence requirement (H4) or H3's distinct removal outcomes |
-| A3 / F-RE | E2: reporting a failed or never-started Host removal as failure is supported by H3. E3: the "affirmative result" distinguishing Host removal from "already missing" goes beyond what the parents state | Flag E2's supported part as unsupported |
-| A3 / F-AMEND | E4: the adopted rule is stronger than the parent and is adopted without the owner of the clean-cancel meaning, which 041 assigns to RL | Treat the amendment as optional rather than routing it to the owner |
-| A3 / F-RO | E5: Host-positive removal made independent of the realization, with only general (§3.9) or derived citations and auto-remove excluded | — |
-| A3 / F-DEC | E6: "H1–H5 … unchanged" includes a requirement the named parents do not state | — |
-| T1 | E7: verification of termination required, verifier unnamed and not stated to be independent of the actor | — |
-| T2 | No bundled-obligation flag | Any flag |
-| NC-a, NC-b, NC-c | As §6 | Any flag contrary to §6 |
+- **B1a, B1b, B2, B3** observe what the A1 planner derives. B1a, describing the Host performing removal as how the work is done, is distinct from B1b, stating Host attribution as an obligation.
+- **E1:** the gap in F-043's own wording.
+- **E2** (positive) and **E3:** the split in F-RE.
+- **E4a** (strengthening) and **E4b** (adoption without the owner F-041 names, or routing to that owner).
+- **E5a** and **E5b:** the cited specific parent spans do not state an unconditional requirement; the auto-remove exclusion lacks parent text.
+- **E6:** the attribution part of F-DEC's "unchanged".
+- **E7a** and **E7b:** verifier unnamed; independence unstated.
+- **Positive items for the controls:** P-T2, P-NCA, P-NCB, P-NCC1 and P-NCC2.
+- **Scoped must-nots:** X1–X11. For example, X5 applies only to item 2, and X10 protects F-DEC's supported parts.
 
-**Typed methods.** M2 and M3 outcomes are scored as a function of the extractor's typing of the parent field, per plan review-r2 N2:
+**Answers:**
+- expect and positive items: hit, miss, not assessed, uncertain;
+- must-nots: violated, not violated, uncertain.
 
-- 043's outcome owner typed `ambiguous` or `unspecified`: E3–E6 should become `ambiguous_parent` or `requires_owner_decision`;
-- typed `binding Host`: they may become `supported`. That is recorded as an **extraction miss** (resolving ambiguity), not as a comparator success.
+An empty answer fails every positive item.
 
-**Measures, per arm, method and repeat:**
+**Typed outputs** are scored on the comparator's per-property flags for the matching text, separately before and after fallback. Analysis separates three causes of a typed miss:
+- an extraction miss (for example, typing 043's owner as binding without textual support);
+- a comparator error;
+- genuinely uncertain ground truth.
 
-- hits and misses on E1–E7;
-- false flags, especially on T2 and the NCs;
-- any weakening of an accepted obligation (counts as a failure);
-- `ambiguous` and `unspecified` kept versus silently resolved (M2/M3);
-- the fallback's resolutions, and whether any invents an obligation (M3);
-- input and output tokens, latency, and calls.
+E4b is expressible in M2 through `adopted_by` and `semantics_owner`, so both methods can earn it.
 
 ## 8. Execution
 
-- **Isolation.** Each arm run is a **fresh subagent with no tools**, using the agent definition `agents/p7-arm.md`: empty `tools`, `systemPromptMode: replace`, and no project context or skills. Scoring uses `agents/p7-scorer.md`, defined the same way. Before the run, both definitions are installed to `~/.pi/agent/agents/` and their digests checked against this directory. User-level installation is used because project agents load only when Pi project trust is granted. The first step after the run go-ahead is a one-call smoke test confirming that `p7-arm` has no tools. All of an arm's inputs are inline in the task text, and nothing else is accessible. This prevents reading the repository's research documents, which contain the answers. The task text is generated by a frozen script from the pinned inputs and versioned prompt templates; each run records the task digest.
-- **Prompts.** Versioned templates frozen before the run:
-  - A1: generic planner;
-  - M1: a perspective prompt naming the concern ("who initiates, who owns the outcome, who verifies; does any requirement go beyond what its source states") but no case-specific answer;
-  - M2 and M3: extraction instructions plus the schema.
+Execution follows [RUNBOOK.md](RUNBOOK.md). In summary:
+- **Isolation:** agents `p7-arm` and `p7-scorer` have:
+  - an empty `tools` list and a replaced system prompt;
+  - no project or global context and no skills;
+  - only the Claude provider extension;
+  - fresh context.
 
-  No template mentions Docker auto-removal, attribution, the operator's turns, or the expected findings.
-- **Leakage check.** Before scoring, scan each output for terms that occur only in withheld material (for example `realization_conditional`, `C0`, `pi-research-lifecycle`, `obligation provenance`). Any hit voids that run, which is re-run once.
-- **Scoring.**
-  - A separate fresh Opus 5.5 (`high`) scorer receives one output at a time with the rubric (§7). Arm and method labels are removed where possible; typed outputs remain recognizable, which is a recorded limitation.
-  - It returns yes/no per item, with a quoted span from the output as evidence.
-  - The operator adjudicates scorer disagreements, and any item the scorer marks uncertain.
-- **Stopping rules.** Stop and report on any of the following:
-  - a harness or isolation failure;
-  - a provider error, which is not retried on another model;
-  - a leakage hit that recurs on re-run;
-  - a comparator defect found during the run.
+  They're installed at user scope and launched with `agentScope: "user"` from an empty scratch directory. Isolation is **verified per launch from outside the model**, through the run directory's `status.json` and `events.jsonl`: agent, model, thinking level, `toolCount` 0, no tool executions, provider, no skills, fresh context, and system sections limited to preamble and cwd with no bridge markers. The supervisor bridge is turned off for the run, with operator approval; otherwise the receipt check must show its absence.
+- **Smoke test:** one launch, receipt only, is the first step after the execution go-ahead.
+- **Order:** a seeded interleaving across cells.
+- **Failures:**
+  - malformed or invalid extraction is a final invalid run, never repaired;
+  - an incomplete M1 is final;
+  - provider failure gets one retry on the same model.
+- **Leakage:** eight high-specificity sentinels act as alerts on model-written text only. Suspected exposure is adjudicated against the recorded inputs and receipt before any score is unblinded, with one replacement attempt.
+- **Scoring:**
+  - one fresh scorer per output, given the source documents, rubric and output, without run, method or original document labels;
+  - every evidence quote is checked mechanically;
+  - human checks by the operator cover one seeded output per cell, plus every uncertain, quote-failed or invalid score. The operator's adjudication is final, and the scorer's vote is retained.
+- **Not model-blind:** the scorer shares the arm model, and typed outputs are recognizable.
+- **Stopping rules:** RUNBOOK §11. No quota stop.
 
-  There is no quota stop (§1).
+## 9. Analysis and reporting
 
-**Run count:**
+Report per cell and item:
+- hits out of valid runs (with attempted and invalid counts);
+- the false-flag census, weakening, and paired M3 transitions with inventions;
+- extraction-quality counts;
+- calls, tokens and latency by stage, with unknown values marked unknown.
 
-| Arm | Calculation | Runs |
-|---|---|---|
-| A1 | 3 | 3 |
-| A2 | 3 methods × 3 | 9 |
-| A3 | 3 methods × 3, each run covering the four derived documents in order | 9 |
-| T1, T2 | 2 × 3 × 3 | 18 |
-| NC | 3 × 3 × 3 | 27 |
-| **Total** | | **66 arm runs** |
+Report every attempt, including invalid and void ones, with its reason. Nothing is pooled across inputs as if independent.
 
-Add M3 fallback calls (only for `ambiguous` fields) and about 66 scoring calls. This is more than the 30–40 estimated before the arms were laid out; the negative controls account for most of the difference.
+**What a result can and cannot show:**
+- A perfect cell shows repeated detection on these bytes under these prompts.
+- It does not show:
+  - that a check would have intervened in time;
+  - that an extractor's typing is authoritative;
+  - that Case B is held out;
+  - that any engineering time would have been saved.
+- A null result may reflect format or coverage failure, not the absence of the problem.
 
-## 9. Prerequisites before freezing
+## 10. Prerequisites and approvals
 
-1. **Done.** Fixtures in `fixtures/`: NC-A (`NC-A-contract.md`), NC-B (`NC-B-contract.md`, `NC-B-review.md`), NC-C (`NC-C-parent.md`, `NC-C-disposition.md`). Digests are recorded in `runs/plan.json`.
-2. **Done.** Schema `schema/p7-obligation-extract-v1.json` with closed actor and item enumerations. Templates are in `prompts/`: `A1-planner`, `M1-plan`, `M1-review`, `M2-extract` (shared by M2 and M3), `M3-fallback`, and `scorer`, plus the machine-readable `rubric.json`. The rubric adds observation items B1–B3 for the A1 baseline, which §7 had left implicit: does the planner derive Host-performed removal, the absence check, and distinct failure reporting? Template, schema and rubric digests are in `runs/plan.json`.
-3. **Done.** `comparator.py`, with 23 passing unit tests in `test_comparator.py` (`python3 -I -m unittest discover -s experiments/perspective-intent-research/p7-run1 -p 'test_*.py'`). They cover both typings of 043, E2 supported by H3, general and missing citations, the "unchanged" claim, realization choices, proposals, the owner-explicit NC-B case, narrowing, disjoint and stricter actor sets, `other`, a missing parent, fallback scope and schema validation.
-4. **Done.** `build_tasks.py` verifies every input digest and renders the 15 unique task texts in `tasks/` and the 66-run `runs/plan.json`, with no model calls. It confirms that none of the nine terms in `leakage_terms.txt` occurs in any task text, and that each term occurs in a withheld source. `--check` verifies without writing.
-5. Independent review of this protocol and of items 1–4 by `openai-codex/gpt-6.2-astra` at `xhigh`.
-6. Operator go-ahead to run.
+| Item | State |
+|---|---|
+| Fixtures without labels | Done; digests in `runs/plan.json` |
+| Concept list, schema v2, templates, rubric v2, scorer | Done |
+| Comparator v2 with decision table and strict validation | Done; 39 tests in `test_comparator.py`, including the review's counterexamples and representative extractions over the actual fixture and Case F texts |
+| Pipeline (receipts, attempts, fallback, comparison, blinded scoring, quote checks, human sample, report) | Done; 7 offline tests in `test_pipeline.py` on canned outputs and receipts |
+| Build and `--check` comparing every on-disk artifact and asset digest | Done; 2 tests, including stale artifacts |
+| Independent re-review (`openai-codex/gpt-6.2-astra`, `xhigh`) | Pending |
+| **Freeze** | After a passing re-review: commit and digests recorded here |
+| **Execution go-ahead** | Separate operator decision, including the bridge setting (RUNBOOK §2) |
 
-## 10. Limitations
+All tests:
 
-- One frozen incident chain plus one transfer case and three constructed controls. Results are evidence of detectability on these documents, not of general rates.
-- The rubric's authors know the case. Expected findings are stated as properties, and the scorer judges against them, but the rubric itself is not blind.
-- Typed outputs cannot be fully blinded from the scorer.
-- Single arm model; model generality is deferred.
+```
+python3 -I -B -m unittest discover -s experiments/perspective-intent-research/p7-run1 -p 'test_*.py'
+```
+
+Build check:
+
+```
+python3 -I -B experiments/perspective-intent-research/p7-run1/build_tasks.py --check
+```
+
+## 11. Limitations
+
+- **Scope of evidence:** one incident chain, one design-informing transfer case, and three constructed controls. These are results on these bytes, not rates.
+- **Case-informed vocabulary:** the concept list and schema are case-informed, and both packages receive them.
+- **Retrospective A3:** it sees the whole derived chain.
+- **Bundled packages:** prompt, representation and comparator effects are not separated.
+- **Shared model:** the scorer shares the arm model. Human checks cover a sample, not every output.
+- **Non-blind rubric:** the rubric's authors know the case. Items are stated as properties, but the rubric itself is not blind.
+- **Single model:** only one arm model is used.
+- **Excerpt verification:** B-1539 is verified through the Stage 0 excerpt, not the raw session.
+- **Partial isolation checks:** the receipt checks the launch facts pi-subagents records. It cannot exclude content a provider adds outside those records; the provider preamble is recorded as part of the system digest.
+
+## 12. Response to the review of revision 1
+
+| Finding | Change |
+|---|---|
+| 1 (typed procedure confounds citation, support and authority) | Schema v2 separates references made, per-property support candidates (sufficient or not), adoption and semantics owner. The extractor no longer decides support. The comparator joins several parents per property and reports provenance, strength and authority as separate atomic flags. Rubric credit requires the specific property |
+| 2 (arms are packages) | Arms and methods described as packages; equal concept list for M1 and M2; A1 relabelled as planner derivation; A2 scores F-043's wording; A3 declared retrospective with context-only briefs; documents-as-data instruction; M3 paired pre and post |
+| 3 (answer cues) | Control labels removed; neutral document ids; schema id and description neutralized; case-neutral roles and generic items; vocabulary declared case-informed and given to both methods; rendered tasks audited |
+| 4 (comparator certifies weakened or unassessed obligations) | Decision table for partial, complete and unchanged; dropped fields; mixed add and drop; actor widening; `not_assessed` never supported; realization-choice rule; plan-flag rules and coverage; atomic flags; regression tests |
+| 5 (invalid typed output survives; fallback unbounded) | Strict validation including quoted spans; first-pass failure is final; fixed fallback targets, one response each, original readings only, inventions rejected and counted, reasons required, readings kept on abstention, original preserved |
+| 6 (rubric) | Atomic items; scoped negatives; positive control items; hit, miss and not-assessed answers; flag census; E4 split with E4b expressible in M2; typed-miss causes separated |
+| 7 (leakage and scoring) | High-specificity sentinels as alerts, adjudicated before unblinding with one replacement; scoped to model text; scorer gets source documents; quote checks; human checks and adjudication rules; limits stated |
+| 8 (isolation not established) | Launch contract; provider-only extensions; no global context; fresh context; user scope; scratch cwd; per-launch external receipts; bridge off or verified absent; smoke test |
+| 9 (no execution contract) | RUNBOOK with executor, scorer and adjudicator roles, statuses, retry and stop rules, ordering, re-freeze rules; `pipeline.py` tested offline; estimands in §2 |
+| 10 (claims) | §9 and §11 boundaries; README corrected; freeze and execution approval separated |
+| 11 (`--check` weak) | `--check` re-renders and compares every task, the plan and all asset digests; excerpt verified through its manifest; byte-exact rendering; stale-artifact tests |
