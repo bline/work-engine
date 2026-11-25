@@ -9,7 +9,9 @@ use serde_json::json;
 use super::{Campaign, CampaignInner};
 use crate::codec::campaign_digest;
 use crate::store::offline_qualification::refused;
-use crate::store::task_free_b::{Binding as LifecycleBinding, Digest, PURPOSE};
+pub use crate::store::task_free_b::QualificationPurpose;
+use crate::store::task_free_b::is_one_stop;
+use crate::store::task_free_b::{Binding as LifecycleBinding, Digest};
 use crate::{CampaignError, CampaignIdentity, CampaignRevision, Result, require_sha};
 
 mod start;
@@ -43,6 +45,7 @@ pub struct AttemptBinding {
     recipe: String,
     serving: String,
     expiry: i64,
+    purpose: QualificationPurpose,
     lifecycle: LifecycleBinding,
 }
 
@@ -57,6 +60,8 @@ pub struct QualificationHistoryKey {
     pub attempt: String,
     pub selection: String,
     pub intent: String,
+    #[serde(default, skip_serializing_if = "is_one_stop")]
+    pub purpose: QualificationPurpose,
 }
 
 impl AttemptBinding {
@@ -69,6 +74,7 @@ impl AttemptBinding {
             attempt: self.attempt.clone(),
             selection: self.digest.clone(),
             intent: self.intent.clone(),
+            purpose: self.purpose,
         }
     }
 
@@ -101,6 +107,9 @@ impl AttemptBinding {
     }
     pub fn serving_sha256(&self) -> &str {
         &self.serving
+    }
+    pub fn purpose(&self) -> QualificationPurpose {
+        self.purpose
     }
     pub fn expires_at(&self) -> i64 {
         self.expiry
@@ -150,8 +159,29 @@ impl Campaign {
         head: &CampaignRevision,
         pins: SelectionPins,
     ) -> Result<AttemptBinding> {
+        self.select_qualification(identity, head, pins, QualificationPurpose::OneStop)
+    }
+
+    /// Unselected private natural-exit configuration. Requires the joined
+    /// fixture owner; this creates no effect capability.
+    pub fn select_offline_natural_exit(
+        &self,
+        identity: &CampaignIdentity,
+        head: &CampaignRevision,
+        pins: SelectionPins,
+    ) -> Result<AttemptBinding> {
+        self.select_qualification(identity, head, pins, QualificationPurpose::NaturalExit)
+    }
+
+    fn select_qualification(
+        &self,
+        identity: &CampaignIdentity,
+        head: &CampaignRevision,
+        pins: SelectionPins,
+        purpose: QualificationPurpose,
+    ) -> Result<AttemptBinding> {
         let mut owner = self.owner()?;
-        let binding = owner.qualification_binding(identity, head, pins)?;
+        let binding = owner.qualification_binding(identity, head, pins, purpose)?;
         owner.store.register_qualification(&binding)?;
         Ok(binding)
     }
@@ -176,7 +206,9 @@ impl CampaignInner {
         identity: &CampaignIdentity,
         head: &CampaignRevision,
         pins: SelectionPins,
+        purpose: QualificationPurpose,
     ) -> Result<AttemptBinding> {
+        let purpose_id = purpose.id();
         self.check_identity(identity)?;
         self.current(identity, head)?;
         require_sha(&pins.grant_id, "qualification grant ID")?;
@@ -187,7 +219,7 @@ impl CampaignInner {
         let identity_key = identity.key();
         let (profile, opening_epoch) = self.store.qualification_scope();
         let issuer = campaign_digest(&json!([
-            PURPOSE,
+            purpose_id,
             "sole-issuer",
             root,
             self.config.writer_identity
@@ -195,10 +227,10 @@ impl CampaignInner {
         // Pin the fixed offline verification policy and synthetic custody roles,
         // not an installed evidence producer or credential.
         let evidence_ingress = start::fixture_ingress_digest()?;
-        let attempt = campaign_digest(&json!([PURPOSE, "attempt", root, pins.grant_id]))?;
-        let operation = campaign_digest(&json!([PURPOSE, "server-operation", attempt]))?;
+        let attempt = campaign_digest(&json!([purpose_id, "attempt", root, pins.grant_id]))?;
+        let operation = campaign_digest(&json!([purpose_id, "server-operation", attempt]))?;
         let digest = campaign_digest(&json!([
-            PURPOSE,
+            purpose_id,
             "selection",
             root,
             self.config.writer_identity,
@@ -217,8 +249,9 @@ impl CampaignInner {
             pins.serving_sha256,
             pins.expires_at_unix_ms.to_string()
         ]))?;
-        let spend_receipt = campaign_digest(&json!([PURPOSE, "spend-receipt-v1", digest]))?;
+        let spend_receipt = campaign_digest(&json!([purpose_id, "spend-receipt-v1", digest]))?;
         let lifecycle = LifecycleBinding {
+            purpose,
             root: root.clone(),
             profile,
             opening_epoch,
@@ -245,6 +278,7 @@ impl CampaignInner {
             recipe: pins.recipe_sha256,
             serving: pins.serving_sha256,
             expiry: pins.expires_at_unix_ms,
+            purpose,
             lifecycle,
         })
     }
@@ -381,8 +415,8 @@ impl SpentQualification {
         kind: OperationKind,
         inert_mark: impl FnOnce() -> Result<T>,
     ) -> Result<T> {
-        if self.next.take() != Some(kind) {
-            return Err(refused("operation out of order"));
+        if self.next.take() != Some(kind) || !self.binding.purpose.one_stop() {
+            return Err(refused("operation or purpose out of order"));
         }
         let mut owner = self.port.owner()?;
         check_owner(&owner, &self.binding)?;

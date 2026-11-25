@@ -53,7 +53,22 @@ pub(super) enum Kind {
     HeldCapture,
     HeldCoverage,
     LiveSubtree,
+    NaturalAuthority,
+    NaturalStartRoute,
+    NaturalTasksGet,
+    NaturalLaunchState,
+    NaturalOciRuntime,
+    NaturalImage,
+    NaturalPolicy,
+    NaturalHeldRecheck,
+    NaturalWaitArm,
+    NaturalWaitReply,
+    NaturalClosure,
+    NaturalAbortArmed,
+    NaturalAbortDisposition,
     StopResolution,
+    SubtreeRetirementArm,
+    SubtreeRetirementCapture,
     Settlement,
     ScopeChecked,
     Verdict,
@@ -113,8 +128,20 @@ impl Custody {
         })
     }
 
+    #[cfg(target_arch = "x86_64")]
+    pub(super) fn attempt_path(&self) -> &Path {
+        &self.path
+    }
+
     pub(super) fn next(&self) -> u64 {
         self.position + 1
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    pub(super) fn tail_sha256(&self) -> Result<String> {
+        self.previous
+            .clone()
+            .ok_or_else(|| super::invalid("empty capture"))
     }
 
     pub(super) fn record(&mut self, kind: Kind, data: Value) -> Result<u64> {

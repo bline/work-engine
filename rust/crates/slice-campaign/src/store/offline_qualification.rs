@@ -1,7 +1,7 @@
 use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use super::task_free_b::{self, Digest, Kind, Mark, PURPOSE, Target, joined_fixture};
+use super::task_free_b::{self, Digest, Kind, Mark, Target, joined_fixture};
 use super::{Store, verify_sidecars};
 use crate::application::offline_qualification::{
     AttemptBinding, FixtureCreateReadback, FixtureHeldReadbacks, FixtureRunning, HoldFailure,
@@ -49,10 +49,10 @@ fn schema_joined(conn: &Connection) -> Result<bool> {
 
 fn state(conn: &Connection, b: &AttemptBinding) -> Result<State> {
     schema_joined(conn)?;
-    let (root, identity, head, attempt, digest, intent, expiry, entered, revoked, spend) = conn
+    let (root, identity, head, attempt, digest, intent, expiry, entered, revoked, spend, purpose) = conn
         .query_row(
             "SELECT q.root_id,q.identity_key,q.head,q.attempt_id,q.binding_digest,q.intent_digest,
-                    q.expires_at,q.entered,q.revoked,s.attempt_id,s.binding_digest,s.spend_receipt
+                    q.expires_at,q.entered,q.revoked,s.attempt_id,s.binding_digest,s.spend_receipt,q.purpose
              FROM offline_qualification_selection q
              LEFT JOIN offline_qualification_spend s ON s.grant_id=q.grant_id
              WHERE q.grant_id=?1",
@@ -73,6 +73,7 @@ fn state(conn: &Connection, b: &AttemptBinding) -> Result<State> {
                         row.get::<_, Option<String>>(10)?,
                         row.get::<_, Option<String>>(11)?,
                     ),
+                    row.get::<_, String>(12)?,
                 ))
             },
         )
@@ -86,6 +87,7 @@ fn state(conn: &Connection, b: &AttemptBinding) -> Result<State> {
         || digest != b.binding_digest()
         || intent != b.intent_sha256()
         || expiry != b.expires_at()
+        || purpose != b.purpose().id()
     {
         return Err(refused("selection binding differs"));
     }
@@ -201,7 +203,9 @@ impl Store {
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(store_error)?;
-        schema_joined(&tx)?;
+        if !schema_joined(&tx)? && !b.purpose().one_stop() {
+            return Err(refused("natural exit requires the joined owner"));
+        }
         require_current(&tx, b)?;
         let lifecycle = b.lifecycle();
         // No upsert: neither the same key nor its alternate binding can be reselected.
@@ -222,7 +226,7 @@ impl Store {
                 lifecycle.profile,
                 lifecycle.opening_epoch,
                 lifecycle.issuer,
-                PURPOSE,
+                b.purpose().id(),
                 lifecycle.recipe.as_str(),
                 lifecycle.server_operation,
                 lifecycle.serving_generation.as_str(),
@@ -302,7 +306,7 @@ impl Store {
                     k.profile,
                     k.original_opening,
                     k.intent,
-                    PURPOSE
+                    k.purpose.id()
                 ],
                 |row| {
                     Ok((
@@ -325,7 +329,11 @@ impl Store {
                     && attempt == k.attempt
                     && selection == k.selection
                     && receipt
-                        == campaign_digest(&json!([PURPOSE, "spend-receipt-v1", k.selection]))? =>
+                        == campaign_digest(&json!([
+                            k.purpose.id(),
+                            "spend-receipt-v1",
+                            k.selection
+                        ]))? =>
             {
                 Ok(true)
             }

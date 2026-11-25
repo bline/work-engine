@@ -7,7 +7,7 @@ publish.workspace = true
 
 [features]
 offline-qualification-fixture = ["dep:slice-campaign", "slice-campaign/offline-qualification-fixture"]
-private-init-only-acquisition = ["offline-qualification-fixture", "dep:httparse"]
+private-init-only-acquisition = ["offline-qualification-fixture", "dep:httparse", "dep:rustix"]
 
 [dependencies]
 slice-campaign = { path = "../slice-campaign", optional = true }
@@ -19,6 +19,7 @@ thiserror.workspace = true
 schemars.workspace = true
 libc = "=0.2.190"
 httparse = { version = "=1.10.1", optional = true }
+rustix = { version = "=1.1.5", features = ["net", "process"], optional = true }
 zstd = "=0.13.3"
 rustls = "=0.23.46"
 rustls-platform-verifier = "=0.7.1"

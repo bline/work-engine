@@ -7,7 +7,9 @@ use serde::Serialize;
 use super::{AttemptBinding, FixtureHeldReadbacks, FixtureRunning, QualificationPort, check_owner};
 use crate::Result;
 
+mod natural;
 mod scoped;
+pub use natural::*;
 pub use scoped::*;
 
 /// Read-only data fixed before joining end, fencing, and recovery witnesses.

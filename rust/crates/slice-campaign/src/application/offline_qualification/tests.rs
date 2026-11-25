@@ -100,7 +100,12 @@ fn default_off_missing_crossed_or_conflicting_selection_never_consumes() {
         .app
         .owner()
         .unwrap()
-        .qualification_binding(&r.identity, &r.head, alternate.clone())
+        .qualification_binding(
+            &r.identity,
+            &r.head,
+            alternate.clone(),
+            QualificationPurpose::OneStop,
+        )
         .unwrap();
     assert_eq!(different.attempt_id(), b.attempt_id());
     assert_eq!(different.operation_id(), b.operation_id());
@@ -129,7 +134,7 @@ fn default_off_missing_crossed_or_conflicting_selection_never_consumes() {
         .app
         .owner()
         .unwrap()
-        .qualification_binding(&r.identity, &r.head, missing)
+        .qualification_binding(&r.identity, &r.head, missing, QualificationPurpose::OneStop)
         .unwrap();
     assert!(port.enter(&missing).is_err());
     assert_eq!(spend_count(&r.app), 0);

@@ -4433,6 +4433,7 @@ dependencies = [
  "review-episode-core",
  "review-execution-evidence",
  "rusqlite",
+ "rustix",
  "rustls",
  "rustls-platform-verifier",
  "schemars",

@@ -17,7 +17,7 @@ const STOPPED_SEMANTICS_AUDIT: &str =
 // Read the complete cgroup-v2 keyed-value file, not a substring or an absent
 // key. Parse all lines to avoid accepting contradictory/torn snapshots; allow
 // other well-formed numeric kernel keys without assigning them meaning.
-fn populated(raw: &[u8]) -> Option<bool> {
+pub(super) fn populated(raw: &[u8]) -> Option<bool> {
     if raw.len() > 4096 {
         return None;
     }
@@ -55,7 +55,7 @@ fn populated(raw: &[u8]) -> Option<bool> {
     value
 }
 
-fn stop_execution<'a>(
+pub(super) fn captured_execution<'a>(
     history: &'a History,
     attempt: &AttemptBinding,
     live: &OfflineLiveSubtree,
@@ -93,7 +93,11 @@ fn scoped_digest(value: &serde_json::Value) -> Result<Digest> {
     Digest::new(crate::codec::raw_sha256(&canonical))
 }
 
-fn scoped_proof(binding: &Binding, role: &str, evidence: impl Serialize) -> Verdict<Digest> {
+pub(super) fn scoped_proof(
+    binding: &Binding,
+    role: &str,
+    evidence: impl Serialize,
+) -> Verdict<Digest> {
     scoped_digest(&json!([binding.evidence_ingress, role, evidence])).map_err(|_| FactNotConfirmed)
 }
 
@@ -121,7 +125,10 @@ fn historical_stop<'a>(
     attempt: &AttemptBinding,
     live: &OfflineLiveSubtree,
 ) -> Result<(OfflineStopSubject, &'a Mark)> {
-    let (execution, _) = stop_execution(history, attempt, live)?;
+    if !attempt.purpose().one_stop() {
+        return Err(conflict("Stop does not belong to this purpose"));
+    }
+    let (execution, _) = captured_execution(history, attempt, live)?;
     // History checks Close predecessor, order and the exact target task.
     let mark = history
         .tip()
@@ -347,7 +354,7 @@ impl Store {
     ) -> Result<OfflineStopSubject> {
         let binding = attempt.lifecycle();
         let history = load(tx, binding)?;
-        let (execution, start) = stop_execution(&history, attempt, live)?;
+        let (execution, start) = captured_execution(&history, attempt, live)?;
         let mark = Self::write_b_mark(
             tx,
             binding,

@@ -12,6 +12,12 @@
 )]
 #[path = "pi_init_only_ready/acquisition.rs"]
 pub(crate) mod acquisition;
+#[cfg(all(
+    target_os = "linux",
+    target_arch = "x86_64",
+    feature = "private-init-only-acquisition"
+))]
+pub use acquisition::{NaturalExitSelection, Verdict as NaturalExitVerdict};
 #[path = "pi_init_only_ready/artifact_contract.rs"]
 mod artifact_contract;
 #[path = "pi_init_only_ready/launch.rs"]
@@ -31,8 +37,8 @@ use slice_campaign::offline_qualification::{
     AttemptBinding, ConfirmedRunning, FixtureCheckpoint, FixtureConfinement,
     FixtureEffectiveReadback, FixtureExecReadback, FixtureHeldReadbacks, FixtureReadyPeer,
     FixtureRunning, FixtureTerminalSubject, HoldFailure, JoinedStartRequest, OfflineStopSubject,
-    OfflineStopTerminalReadbacks, QualificationPort, TerminalFailure, fixture_init_policy,
-    fixture_listener_id,
+    OfflineStopTerminalReadbacks, QualificationPort, QualificationPurpose, TerminalFailure,
+    fixture_init_policy, fixture_listener_id,
 };
 
 const NS_PER_SECOND: u64 = 1_000_000_000;
@@ -318,29 +324,35 @@ pub fn qualify_fixture(
     stop: &OfflineStopSubject,
     terminal: &OfflineStopTerminalReadbacks,
 ) -> Result<(), JoinRefusal> {
-    let links = &held.links;
-    let key = &held.execution;
-    let execution = &stop.execution;
-    let live = &execution.live;
-    if links.selection != binding.binding_digest()
-        || links.selection != execution.selection
-        || links.create_request != execution.create_request
-        || links.create_mark != execution.create_mark
-        || links.start_mark != execution.start_mark
-        || links.start_request != live.running.start_request_digest
-        || held.running != live.running
-        || boot_key(&key.serving.boot) != live.boot
-        || key.runtime_namespace != live.runtime_namespace
-        || key.subtree_capture != live.cgroup.capture
-        || key.subtree_mount_id != live.cgroup.mount_id
-        || key.subtree_inode != live.cgroup.inode
-    {
+    if !same_held_execution(binding, held, &stop.execution) {
         return Err(JoinRefusal::CrossedExecution);
     }
     let projection = fixture_held_projection(binding, held).map_err(JoinRefusal::HeldProjection)?;
     let capture_sha256 = held.capture_sha256().map_err(JoinRefusal::HeldProjection)?;
     port.confirm_offline_init_only_join(binding, stop, terminal, &projection, &capture_sha256)
         .map_err(JoinRefusal::Owner)
+}
+
+fn same_held_execution(
+    binding: &AttemptBinding,
+    held: &HeldHistory,
+    execution: &slice_campaign::offline_qualification::OfflineTerminalExecution,
+) -> bool {
+    let links = held.links();
+    let key = held.execution();
+    let live = &execution.live;
+    links.selection == binding.binding_digest()
+        && links.selection == execution.selection
+        && links.create_request == execution.create_request
+        && links.create_mark == execution.create_mark
+        && links.start_mark == execution.start_mark
+        && links.start_request == live.running.start_request_digest
+        && held.running == live.running
+        && boot_key(&key.serving.boot) == live.boot
+        && key.runtime_namespace == live.runtime_namespace
+        && key.subtree_capture == live.cgroup.capture
+        && key.subtree_mount_id == live.cgroup.mount_id
+        && key.subtree_inode == live.cgroup.inode
 }
 
 fn attach_request(s: &Serving, id: &str) -> Vec<u8> {
@@ -352,6 +364,7 @@ fn capture(
     selection: &str,
     recipe_digest: &str,
     owner: &FixtureTerminalSubject,
+    natural: bool,
 ) -> Result<HeldHistory, Refusal> {
     let FixtureInput {
         recipe,
@@ -488,7 +501,7 @@ fn capture(
                 if selected != Some(&cut.launch.task) || !cut.launch.matches(recipe) {
                     return Err(Refusal::Task);
                 }
-                if !cut.effective.matches(recipe, &cut.launch) {
+                if !cut.effective.matches(recipe, &cut.launch, natural) {
                     return Err(Refusal::Effective);
                 }
                 return Ok(HeldHistory {
@@ -531,6 +544,7 @@ pub fn verify_fixture(
         binding.binding_digest(),
         binding.recipe_sha256(),
         &owner,
+        binding.purpose() == QualificationPurpose::NaturalExit,
     )?;
     let projection = fixture_held_projection(binding, &checked)?;
     confirmation
