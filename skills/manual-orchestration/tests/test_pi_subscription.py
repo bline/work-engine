@@ -138,10 +138,19 @@ finally:
         self.proxy()
         self.assertIn(b' 400 ', self.raw(b'POST /codex/responses HTTP/1.1\r\ncontent-encoding: zstd\r\ncontent-length: 3\r\n\r\nbad'))
         for fields in ({'model': 'other'}, {'store': True}, {'service_tier': 'priority'},
-                       {'max_output_tokens': 64}, {'previous_response_id': 'other'},
+                       {'max_output_tokens': 0}, {'max_output_tokens': '64'}, {'max_output_tokens': True},
+                       {'max_output_tokens': 1.5}, {'max_output_tokens': None}, {'previous_response_id': 'other'},
                        {'tools': [{'type': 'web_search'}]}, {'stream': False}):
             self.assertEqual(self.post({**self.body(), **fields})[0], 403)
         self.assertEqual(Upstream.seen, [])
+
+    def test_pi_160_catalog_output_cap_is_removed_not_forwarded(self):
+        """Pi 1.6.0 sends its computed output limit as max_output_tokens on every Codex request."""
+        self.proxy()
+        self.assertEqual(self.post({**self.body(), 'max_output_tokens': 128000})[0], 200)
+        self.assertNotIn('max_output_tokens', Upstream.seen[-1]['body'])
+        row = self.log()[-1]
+        self.assertEqual((row['event'], row['stripped_max_output_tokens']), ('request', 128000))
 
     def test_single_frame_boundary_including_skippable_frames(self):
         import zstandard as z

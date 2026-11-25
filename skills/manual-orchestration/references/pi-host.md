@@ -329,7 +329,15 @@ and its ancestors, including aliases, while permitting nonoverlapping skill
 folders. No host credential or account identity enters the
 container, models file, fingerprint, spec, or proxy log.
 
-This native transport has no hard output-token-cap field. `--max-usd X`
+This native transport has no hard output-token-cap field. Pi 1.6.0 sends its
+computed output limit (the model's maximum clamped to the remaining context, at
+least 16) as `max_output_tokens`; Pi 1.5.2 computed the same value but did not
+send it. The proxy removes a positive integer value before forwarding, so, as
+with Pi 1.5.2, the upstream request carries no output cap, and records the value
+as `stripped_max_output_tokens` on the request, upstream-error or stream-error
+row. Any other value is refused. Pi 1.6.0's other request changes (system prompt
+as a leading developer input item instead of `instructions`) are validated
+against the local mock only. `--max-usd X`
 opts into an **API-equivalent cost-proxy stopping threshold**, using the existing
 OpenAI rates pinned at launch and default API valuation without a subscription
 service tier. It is not a hard pre-request cap: one admitted response can

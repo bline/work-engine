@@ -1920,6 +1920,15 @@ class EgressProxy:
                 if reason:
                     release()
                     return self.refuse(403, reason)
+                stripped_output_cap = None
+                if proxy.provider == "openai-codex" and "max_output_tokens" in body:
+                    # Pi 1.6.0 sends its computed output limit (model maximum clamped to the remaining
+                    # context, at least 16) as max_output_tokens; 1.5.2 computed the same value but did
+                    # not send it. This lane has no output cap, so, as with 1.5.2, the upstream request
+                    # carries none. Only a positive integer is removed; anything else is refused.
+                    cap = body["max_output_tokens"]
+                    if type(cap) is int and cap > 0:
+                        stripped_output_cap = body.pop("max_output_tokens")
                 if proxy.provider == "openai-codex" and (body.get("stream") is not True or body.get("store") is not False
                                                           or "service_tier" in body or "max_output_tokens" in body):
                     release()
@@ -2024,6 +2033,7 @@ class EgressProxy:
                 except (OSError, http.client.HTTPException) as e:
                     # The request may have reached the provider, so a reservation stays charged.
                     finish({"event": "upstream_error", "n": n, "detail": str(e)[:300],
+                               **({"stripped_max_output_tokens": stripped_output_cap} if stripped_output_cap is not None else {}),
                                **({"provider": "openai-codex", "auth_lane": "subscription", "model": proxy.model_id}
                                   if proxy.provider == "openai-codex" else {}), **settle(None, {})})
                     return self.refuse(502, "upstream unreachable")
@@ -2037,7 +2047,9 @@ class EgressProxy:
                     self.end_headers()
                 except OSError:
                     conn.close()
-                    finish({"event": "stream_error", "n": n}, stream_error=True)
+                    finish({"event": "stream_error", "n": n,
+                            **({"stripped_max_output_tokens": stripped_output_cap} if stripped_output_cap is not None else {})},
+                           stream_error=True)
                     return
                 terminal, buf, head = None, b"", b""
                 try:
@@ -2085,6 +2097,7 @@ class EgressProxy:
                     "event": "request", "n": n, "http_status": resp.status, "model": body.get("model"),
                     **({"provider": "openai-codex", "auth_lane": "subscription", "billing": "unknown", "quota": "unknown"}
                        if proxy.provider == "openai-codex" else {}),
+                    **({"stripped_max_output_tokens": stripped_output_cap} if stripped_output_cap is not None else {}),
                     "requested_tier": body.get("service_tier"), "observed_tier": response.get("service_tier"),
                     "terminal": (terminal or {}).get("type"), "response_id": response.get("id"),
                     "response_model": response.get("model"),
