@@ -179,6 +179,33 @@ fn verify_sidecars(root: &Path) -> Result<()> {
     Ok(())
 }
 
+/// The protected foreground is stricter than an ordinary Campaign opening:
+/// no other uid or alternate link may expose the files that own the spend.
+#[cfg(all(
+    target_os = "linux",
+    target_arch = "x86_64",
+    feature = "private-natural-exit-foreground"
+))]
+pub(crate) fn verify_foreground_files(root: &Path, uid: u32) -> Result<()> {
+    use std::os::unix::fs::MetadataExt;
+
+    for (name, required) in [
+        (MARKER_V3, true),
+        (DATABASE, true),
+        (LOCK, false),
+        ("slice-campaign.sqlite-wal", false),
+        ("slice-campaign.sqlite-shm", false),
+        ("slice-campaign.sqlite-journal", false),
+    ] {
+        match fs::symlink_metadata(root.join(name)) {
+            Ok(m) if m.is_file() && m.uid() == uid && m.nlink() == 1 && m.mode() & 0o7177 == 0 => {}
+            Err(e) if !required && e.kind() == std::io::ErrorKind::NotFound => {}
+            _ => return Err(CampaignError::Root(format!("unprotected foreground file {name}"))),
+        }
+    }
+    Ok(())
+}
+
 impl Store {
     pub(crate) fn initialize(
         root: &Path,

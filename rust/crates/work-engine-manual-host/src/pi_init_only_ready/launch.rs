@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use slice_campaign::codec::campaign_digest;
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct FilePin {
     pub path: String,
     pub sha256: String,
@@ -27,7 +28,8 @@ impl FilePin {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub enum ElfClosure {
     Static,
     Dynamic {
@@ -36,7 +38,7 @@ pub enum ElfClosure {
     },
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Store {
     DockerImageConfig,
     ContainerdLocalTarget,
@@ -44,7 +46,8 @@ pub enum Store {
 
 /// Protected approved values, independent of the eventual readback. This
 /// cut supports only an unambiguous linux/amd64 local store target.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Startup {
     pub store: Store,
     pub image_id: String,
@@ -87,7 +90,8 @@ impl Startup {
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Recipe {
     pub startup: Startup,
     /// A narrowly selected runtime name; no aliases or fallback.

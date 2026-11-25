@@ -7,12 +7,16 @@ use super::super::{
 };
 use super::{
     AbortApproval, AbortSubject, Attach, Attempt, AttemptBinding, Endpoint, EndpointIdentity,
-    ExecutableNode, Identity, OfflineContainment, Path, ProtectedSource, QualificationPort,
-    Recipe, Result, SelectedTask, Serving, StartRpc, TaskKey, Verdict,
-    boot_key, campaign_digest, fs, full_hex, invalid, json, lifetime, refuse, run_natural, within,
+    ExecutableNode, Identity, OfflineContainment, Path, ProtectedSource, Result, SelectedTask,
+    Serving, StartRpc, TaskKey, boot_key, campaign_digest, fs, full_hex, invalid, json, lifetime,
+    refuse, within,
 };
+#[cfg(feature = "private-natural-exit-foreground")]
+use super::{Recipe, Verdict, run_natural};
 use serde::Deserialize;
-use slice_campaign::offline_qualification::{OfflineStopSubject, QualificationPurpose};
+use slice_campaign::offline_qualification::OfflineStopSubject;
+#[cfg(feature = "private-natural-exit-foreground")]
+use slice_campaign::offline_qualification::foreground::{ForegroundSelection, ProtectedApproval};
 use std::{
     fs::{File, OpenOptions},
     io::{self, Read},
@@ -35,7 +39,7 @@ const MAX_ABORT: u64 = 16 * 1024;
 /// boundary, and select these digests in Campaign for one NaturalExit binding.
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct NaturalExitSelection {
+struct NaturalExitSelection {
     controller_sha256: String,
     docker: EndpointIdentity,
     docker_boot: [u8; 16],
@@ -96,16 +100,12 @@ impl NaturalExitSelection {
     }
 
     /// Owner readback for grant selection, not an RPC or an installation test.
-    pub fn serving_sha256(&self) -> Result<String> {
+    fn serving_sha256(&self) -> Result<String> {
         self.serving()?.digest().map_err(invalid)
     }
 
     /// Bind the running controller/reader, exact sockets, runtime pins and
     /// authority report, capture-directory filesystem identity, and budgets.
-    pub fn intent_sha256(&self) -> Result<String> {
-        self.intent_at(Path::new(CAPTURES))
-    }
-
     fn intent_at(&self, root: &Path) -> Result<String> {
         let (docker, tasks) = self.endpoints()?;
         let n = &self.natural;
@@ -124,20 +124,15 @@ impl NaturalExitSelection {
             .intent(root, &self.docker, &self.controller_sha256)
     }
 
-    /// Only the protected operator executable may invoke this private entry.
-    /// The type carries no caller-provided reader or kernel/effect adapter. The
-    /// protected Campaign binding and normal spend/mark checks remain required.
-    pub fn run(
+    /// No caller-provided reader, port, binding, or effect adapter.
+    #[cfg(feature = "private-natural-exit-foreground")]
+    fn run(
         self,
-        port: &QualificationPort,
-        binding: &AttemptBinding,
+        selection: ForegroundSelection,
         recipe: &Recipe,
         manifest: Vec<u8>,
         image_config: Vec<u8>,
     ) -> Result<Verdict> {
-        if binding.purpose() != QualificationPurpose::NaturalExit {
-            return refuse("private natural exit requires a NaturalExit Campaign binding");
-        }
         let (docker, tasks) = self.endpoints()?;
         let serving = self.serving()?;
         let n = &self.natural;
@@ -149,8 +144,7 @@ impl NaturalExitSelection {
             root: Path::new(CAPTURES),
         };
         run_natural(
-            port,
-            binding,
+            super::super::Admission::Foreground(&selection),
             Path::new(CAPTURES),
             &docker,
             n.docker_pid,
@@ -166,6 +160,49 @@ impl NaturalExitSelection {
             &mut source,
         )
     }
+}
+
+#[cfg(feature = "private-natural-exit-foreground")]
+pub fn run_natural_exit_foreground(
+    args: impl IntoIterator<Item = std::ffi::OsString>,
+) -> Result<Verdict> {
+    foreground_command(args, run_protected)
+}
+
+#[cfg(any(test, feature = "private-natural-exit-foreground"))]
+fn foreground_command<T>(
+    args: impl IntoIterator<Item = std::ffi::OsString>,
+    run: impl FnOnce() -> Result<T>,
+) -> Result<T> {
+    let mut args = args.into_iter();
+    if args.next().as_deref() != Some(std::ffi::OsStr::new("--run-natural-exit"))
+        || args.next().is_some()
+    {
+        return refuse("private natural exit is disabled without its exact foreground command");
+    }
+    run()
+}
+
+#[cfg(feature = "private-natural-exit-foreground")]
+fn run_protected() -> Result<Verdict> {
+    let approval = ProtectedApproval::load().map_err(invalid)?;
+    let inputs = approval.host_inputs().map_err(invalid)?;
+    let host: NaturalExitSelection = serde_json::from_slice(&inputs.selector)?;
+    let recipe: Recipe = serde_json::from_slice(&inputs.recipe)?;
+    // Refuse to register even a supplied approval from an uncommissioned
+    // executable. Host preflight checks the same loaded executable again.
+    controller(
+        &host.controller_sha256,
+        Instant::now() + super::super::PREPARE,
+    )?;
+    let selection = approval
+        .open(
+            &host.intent_at(Path::new(CAPTURES))?,
+            &recipe.digest().map_err(invalid)?,
+            &host.serving_sha256()?,
+        )
+        .map_err(invalid)?;
+    host.run(selection, &recipe, inputs.manifest, inputs.image_config)
 }
 
 struct StockSource<'a> {
@@ -383,6 +420,28 @@ mod tests {
                 trusted_gid0: true,
             },
         }
+    }
+
+    #[test]
+    fn foreground_default_and_alternate_commands_never_open_inputs() {
+        use std::ffi::OsString;
+        for args in [
+            vec![],
+            vec!["--help"],
+            vec!["--run-natural-exit", "other"],
+            vec!["--stop"],
+        ] {
+            assert!(
+                foreground_command(args.into_iter().map(OsString::from), || -> Result<()> {
+                    panic!("refusal accessed protected inputs")
+                })
+                .is_err()
+            );
+        }
+        assert_eq!(
+            foreground_command([OsString::from("--run-natural-exit")], || Ok(42)).unwrap(),
+            42
+        );
     }
 
     #[test]

@@ -15,9 +15,9 @@ pub(crate) mod acquisition;
 #[cfg(all(
     target_os = "linux",
     target_arch = "x86_64",
-    feature = "private-init-only-acquisition"
+    feature = "private-natural-exit-foreground"
 ))]
-pub use acquisition::{NaturalExitSelection, Verdict as NaturalExitVerdict};
+pub use acquisition::run_natural_exit_foreground;
 #[path = "pi_init_only_ready/artifact_contract.rs"]
 mod artifact_contract;
 #[path = "pi_init_only_ready/launch.rs"]

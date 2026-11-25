@@ -8,6 +8,7 @@ publish.workspace = true
 [features]
 offline-qualification-fixture = ["dep:slice-campaign", "slice-campaign/offline-qualification-fixture"]
 private-init-only-acquisition = ["offline-qualification-fixture", "dep:httparse", "dep:rustix"]
+private-natural-exit-foreground = ["private-init-only-acquisition", "slice-campaign/private-natural-exit-foreground"]
 
 [dependencies]
 slice-campaign = { path = "../slice-campaign", optional = true }
@@ -37,6 +38,10 @@ tempfile = "=3.27.0"
 
 [dependencies.session-task-admission]
 path = "../session-task-admission"
+
+[[bin]]
+name = "work-engine-b-init-qualify-v4"
+required-features = ["private-natural-exit-foreground"]
 
 [[example]]
 name = "work-engine-b-init-only"

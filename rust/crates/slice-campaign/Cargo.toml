@@ -10,6 +10,8 @@ test-faults = []
 test-support = []
 # Inert cross-crate composition tests only. No live selection or effect adapter.
 offline-qualification-fixture = []
+# Only the protected, same-opening natural-exit foreground composition.
+private-natural-exit-foreground = ["offline-qualification-fixture"]
 
 [dependencies]
 claim-evidence = { path = "../claim-evidence" }

@@ -51,7 +51,8 @@ mod oci;
 use oci::OciPin;
 #[path = "natural/selector.rs"]
 mod selector;
-pub use selector::NaturalExitSelection;
+#[cfg(feature = "private-natural-exit-foreground")]
+pub use selector::run_natural_exit_foreground;
 #[path = "natural/start.rs"]
 mod start;
 
@@ -1411,9 +1412,9 @@ fn natural_settlement_rejects_early_crossed_or_missing_original_end() {
 
 /// The selector owns fixed sources. No public effect API accepts a source
 /// provider or substitutes the task/retirement handle.
+#[cfg(feature = "private-natural-exit-foreground")]
 fn run_natural(
-    port: &QualificationPort,
-    binding: &AttemptBinding,
+    admission: super::Admission<'_>,
     root: &Path,
     docker: &Endpoint,
     docker_pid: i32,
@@ -1444,8 +1445,7 @@ fn run_natural(
         image_config,
     )?);
     run_mode(
-        port,
-        binding,
+        admission,
         root,
         docker,
         recipe,

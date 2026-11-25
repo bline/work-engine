@@ -1,6 +1,6 @@
-//! Unselected init-only controller. No CLI, Server entry, Builder, release,
-//! recovery sender, or default selector. The Docker and Linux acquisition
-//! adapters never supply the facts that require an applied/runtime witness.
+//! Private init-only controller. No Server entry, Builder, release, recovery
+//! sender, or default selection. Only the opt-in foreground selector supplies
+//! the installed natural-exit source.
 
 #[cfg(target_arch = "x86_64")]
 #[path = "acquisition/containerd.rs"]
@@ -20,8 +20,8 @@ mod launch_state;
 #[cfg(target_arch = "x86_64")]
 #[path = "acquisition/natural.rs"]
 mod natural;
-#[cfg(target_arch = "x86_64")]
-pub use natural::NaturalExitSelection;
+#[cfg(all(target_arch = "x86_64", feature = "private-natural-exit-foreground"))]
+pub use natural::run_natural_exit_foreground;
 #[cfg(target_arch = "x86_64")]
 #[path = "acquisition/policy.rs"]
 mod policy;
@@ -45,6 +45,8 @@ pub(crate) use docker::Endpoint;
 use kernel::{Anchor, KernelTask};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+#[cfg(all(target_arch = "x86_64", feature = "private-natural-exit-foreground"))]
+use slice_campaign::offline_qualification::foreground::ForegroundSelection;
 use slice_campaign::{
     codec::campaign_digest,
     offline_qualification::{
@@ -52,7 +54,7 @@ use slice_campaign::{
         OfflineCgroupHandle, OfflineClosedFrontier, OfflineContainment, OfflineLiveSubtree,
         OfflineNewIngress, OfflineOldTask, OfflineRecoveryAuthority, OfflineStopReadback,
         OfflineStopResponse, OfflineStopSubject, OfflineStopTerminalReadbacks, OfflineSubtreeEnd,
-        QualificationHistoryKey, QualificationPort, QualificationPurpose,
+        QualificationHistoryKey, QualificationPort, QualificationPurpose, SpentQualification,
     },
 };
 use std::{
@@ -526,8 +528,7 @@ fn run_at<A: Anchor>(
     pin: impl FnOnce(&TaskKey) -> io::Result<A>,
 ) -> Result<Verdict> {
     run_mode(
-        port,
-        binding,
+        Admission::Fixture(port, binding),
         root,
         endpoint,
         recipe,
@@ -538,9 +539,49 @@ fn run_at<A: Anchor>(
     )
 }
 
+enum Admission<'a> {
+    Fixture(&'a QualificationPort, &'a AttemptBinding),
+    #[cfg(all(target_arch = "x86_64", feature = "private-natural-exit-foreground"))]
+    Foreground(&'a ForegroundSelection),
+}
+
+impl Admission<'_> {
+    fn owner(&self) -> (&QualificationPort, &AttemptBinding) {
+        match self {
+            Self::Fixture(port, binding) => (port, binding),
+            #[cfg(all(target_arch = "x86_64", feature = "private-natural-exit-foreground"))]
+            Self::Foreground(selection) => (selection.port(), selection.binding()),
+        }
+    }
+
+    fn approval_raw(&self) -> Option<&str> {
+        match self {
+            Self::Fixture(..) => None,
+            #[cfg(all(target_arch = "x86_64", feature = "private-natural-exit-foreground"))]
+            Self::Foreground(selection) => Some(selection.approval_raw()),
+        }
+    }
+
+    fn spend(&self, journal: &mut Custody) -> Result<SpentQualification> {
+        let (_, binding) = self.owner();
+        let mut accept = |spent| {
+            journal.record(Kind::Spent, json!(binding.grant_id()))?;
+            Ok(spent)
+        };
+        match self {
+            Self::Fixture(port, binding) => accept(
+                port.enter(binding)
+                    .and_then(|entry| entry.consume())
+                    .map_err(invalid)?,
+            ),
+            #[cfg(all(target_arch = "x86_64", feature = "private-natural-exit-foreground"))]
+            Self::Foreground(selection) => selection.handoff(accept).map_err(invalid)?,
+        }
+    }
+}
+
 fn run_mode<A: Anchor>(
-    port: &QualificationPort,
-    binding: &AttemptBinding,
+    admission: Admission<'_>,
     root: &Path,
     endpoint: &Endpoint,
     recipe: &Recipe,
@@ -548,6 +589,7 @@ fn run_mode<A: Anchor>(
     #[cfg(target_arch = "x86_64")] mut natural: Option<natural::Attempt<'_>>,
     pin: impl FnOnce(&TaskKey) -> io::Result<A>,
 ) -> Result<Verdict> {
+    let (port, binding) = admission.owner();
     let clock = Instant::now();
     let prep = clock + PREPARE;
     let source_identity = source.identity().to_owned();
@@ -592,14 +634,15 @@ fn run_mode<A: Anchor>(
     }
     within(prep)?;
     let mut journal = Custody::begin(root, binding.attempt_id())?;
-    journal.record(
-        Kind::Selection,
-        json!({
-            "schema":"b-private-init-only-v4", "history_key":history.key,
-            "recovery_selection":history, "operation":binding.operation_id(), "head":binding.head(),
-            "recipe":recipe, "serving":serving,
-        }),
-    )?;
+    let mut selection = json!({
+        "schema":"b-private-init-only-v4", "history_key":history.key,
+        "recovery_selection":history, "operation":binding.operation_id(), "head":binding.head(),
+        "recipe":recipe, "serving":serving,
+    });
+    if let Some(raw) = admission.approval_raw() {
+        selection["foreground_approval_utf8"] = json!(raw);
+    }
+    journal.record(Kind::Selection, selection)?;
     #[cfg(target_arch = "x86_64")]
     if let Some(attempt) = natural.as_mut() {
         attempt.bind_scope(root, binding, &serving, &mut journal, prep)?;
@@ -614,11 +657,7 @@ fn run_mode<A: Anchor>(
         .transpose()?;
     #[cfg(not(target_arch = "x86_64"))]
     let sender = None;
-    let spent = port
-        .enter(binding)
-        .and_then(|entry| entry.consume())
-        .map_err(invalid)?;
-    journal.record(Kind::Spent, json!(binding.grant_id()))?;
+    let spent = admission.spend(&mut journal)?;
     let create_digest = binding.create_request_digest().map_err(invalid)?;
     let target = format!(
         "POST /{}/containers/create?platform=linux%2Famd64",

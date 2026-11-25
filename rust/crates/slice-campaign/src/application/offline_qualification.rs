@@ -1,5 +1,5 @@
-//! Task-free B Campaign owner. Compiled only for offline qualification
-//! fixtures; no transport, real grant ingestion, or installed activation.
+//! Task-free B Campaign owner. No default activation or transport. Foreground
+//! authorization uses the same selection, entry, spend and mark authority.
 
 use std::sync::{Arc, Mutex, MutexGuard};
 
@@ -14,6 +14,12 @@ use crate::store::task_free_b::is_one_stop;
 use crate::store::task_free_b::{Binding as LifecycleBinding, Digest};
 use crate::{CampaignError, CampaignIdentity, CampaignRevision, Result, require_sha};
 
+#[cfg(all(
+    target_os = "linux",
+    target_arch = "x86_64",
+    feature = "private-natural-exit-foreground"
+))]
+pub mod foreground;
 mod start;
 mod terminal;
 pub use start::*;
@@ -47,6 +53,9 @@ pub struct AttemptBinding {
     expiry: i64,
     purpose: QualificationPurpose,
     lifecycle: LifecycleBinding,
+    // Foreground bindings must use the approval-checking entry, even within
+    // a build that also includes the offline fixture port.
+    foreground: bool,
 }
 
 /// Durable address of an original selection, not a binding or a permit.
@@ -208,6 +217,17 @@ impl CampaignInner {
         pins: SelectionPins,
         purpose: QualificationPurpose,
     ) -> Result<AttemptBinding> {
+        self.bind_qualification(identity, head, pins, purpose, None)
+    }
+
+    fn bind_qualification(
+        &self,
+        identity: &CampaignIdentity,
+        head: &CampaignRevision,
+        pins: SelectionPins,
+        purpose: QualificationPurpose,
+        approval_digest: Option<&str>,
+    ) -> Result<AttemptBinding> {
         let purpose_id = purpose.id();
         self.check_identity(identity)?;
         self.current(identity, head)?;
@@ -224,9 +244,14 @@ impl CampaignInner {
             root,
             self.config.writer_identity
         ]))?;
-        // Pin the fixed offline verification policy and synthetic custody roles,
-        // not an installed evidence producer or credential.
-        let evidence_ingress = start::fixture_ingress_digest()?;
+        let evidence_ingress = match approval_digest {
+            Some(approval) => campaign_digest(&json!([
+                "b-natural-protected-foreground-ingress-v1",
+                approval,
+                pins.intent_sha256
+            ]))?,
+            None => start::fixture_ingress_digest()?,
+        };
         let attempt = campaign_digest(&json!([purpose_id, "attempt", root, pins.grant_id]))?;
         let operation = campaign_digest(&json!([purpose_id, "server-operation", attempt]))?;
         let digest = campaign_digest(&json!([
@@ -280,6 +305,7 @@ impl CampaignInner {
             expiry: pins.expires_at_unix_ms,
             purpose,
             lifecycle,
+            foreground: approval_digest.is_some(),
         })
     }
 }
@@ -314,8 +340,20 @@ impl QualificationPort {
     /// Seal the single possible entry before offering it for spend. No
     /// entered state observed on restart is converted into this value.
     pub fn enter(&self, binding: &AttemptBinding) -> Result<EnteredQualification> {
+        if binding.foreground {
+            return Err(refused("protected foreground entry required"));
+        }
+        self.enter_checked(binding, || Ok(()))
+    }
+
+    fn enter_checked(
+        &self,
+        binding: &AttemptBinding,
+        check_approval: impl FnOnce() -> Result<()>,
+    ) -> Result<EnteredQualification> {
         let mut owner = self.owner()?;
         check_owner(&owner, binding)?;
+        check_approval()?;
         owner.store.enter_qualification(binding)?;
         Ok(EnteredQualification {
             port: Self {
@@ -337,9 +375,18 @@ impl EnteredQualification {
     }
 
     fn consume_with_confirmation(self, confirm: bool) -> Result<SpentQualification> {
+        self.consume_checked(confirm, || Ok(()))
+    }
+
+    fn consume_checked(
+        self,
+        confirm: bool,
+        check_approval: impl FnOnce() -> Result<()>,
+    ) -> Result<SpentQualification> {
         {
             let mut owner = self.port.owner()?;
             check_owner(&owner, &self.binding)?;
+            check_approval()?;
             owner.store.spend_qualification(&self.binding, confirm)?;
         }
         Ok(SpentQualification {
