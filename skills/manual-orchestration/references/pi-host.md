@@ -414,10 +414,13 @@ Differences from the OpenAI route:
 
 ### Claude subscription container
 
-Qualification: **offline only** (2026-11-25, synthetic credentials and a local
-mock upstream; [S0 wire record](../../../records/pi-container-claude-sdk-s0-20261124/README.md),
-[plan](../../../planning/pi-container-claude-sdk-implementation-plan-20261124.md)). No live request
-has been made through this route; a live smoke needs separate approval.
+Qualification: offline (synthetic credentials and a local mock upstream;
+[S0 wire record](../../../records/pi-container-claude-sdk-s0-20261124/README.md),
+[plan](../../../planning/pi-container-claude-sdk-implementation-plan-20261124.md)) plus one approved
+live smoke of 5 requests on a Claude Max subscription (2026-11-25,
+[S3 record](../../../records/pi-container-claude-sdk-s3-20261125/README.md)): Haiku launch with a tool
+round and delivery, and Opus with appended and replaced system prompts, all with
+billing verdict `allowed` and overage `rejected`. Quota consumption is not measured.
 
 `--container --auth subscription --max-requests N --host-arg=--model
 --host-arg=claude-sdk/<model-id>` runs Pi with the `pi-claude-subscription`
