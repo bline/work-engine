@@ -14,6 +14,7 @@ including tool processes Pi started detached.
 
 usage: pi_container_entry.py SOCKET PROMPT EVENTS STDERR EXIT -- PI_ARGV...
 """
+import json
 import os
 import signal
 import socket
@@ -22,6 +23,24 @@ import sys
 import threading
 
 PORT = 8080
+# Claude subscription lane: a public, non-authenticating credential so Claude Code
+# selects its OAuth (subscription) request form. The host proxy swaps in the real
+# bearer; this value must equal pi_container.CLAUDE_SDK_PLACEHOLDER.
+CLAUDE_SDK_PLACEHOLDER = "sk-ant-oat01-" + "D" * 95
+
+
+def write_claude_credential(home):
+    """Write the synthetic credential into the turn's tmpfs home, never anything real."""
+    path = os.path.join(home, ".claude")
+    os.makedirs(path, mode=0o700, exist_ok=True)
+    far = 4102444800000  # 2100-01-01: Claude Code must never try to refresh it
+    record = {"claudeAiOauth": {"accessToken": CLAUDE_SDK_PLACEHOLDER,
+                                "refreshToken": "sk-ant-ort01-" + "D" * 95,
+                                "expiresAt": far, "scopes": ["user:inference", "user:profile"],
+                                "subscriptionType": "max"}}
+    fd = os.open(os.path.join(path, ".credentials.json"), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "w") as fh:
+        json.dump(record, fh)
 
 
 def pump(src, dst):
@@ -61,6 +80,8 @@ def main(argv):
         return 64
     sock_path, prompt, events, stderr, status = argv[:5]
     pi_argv = argv[6:]
+    if os.environ.get("WORK_ENGINE_CLAUDE_SDK_CREDENTIAL") == "synthetic":
+        write_claude_credential(os.environ["HOME"])
     server = socket.socket()
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(("127.0.0.1", PORT))

@@ -81,6 +81,7 @@ import re
 import shutil
 import signal
 import sqlite3
+import stat
 import subprocess
 import sys
 import tempfile
@@ -778,8 +779,10 @@ class Pi:
     # are role_host's, so they are not accepted here.
     VALUE_FLAGS = {"--model": "--model", "--thinking": "--thinking", "--tools": "--tools", "-t": "--tools",
                    "--exclude-tools": "--exclude-tools", "-xt": "--exclude-tools", "--skill": "--skill",
-                   "--append-system-prompt": "--append-system-prompt", "--extension": "--extension", "-e": "--extension"}
+                   "--append-system-prompt": "--append-system-prompt", "--system-prompt": "--system-prompt",
+                   "--extension": "--extension", "-e": "--extension"}
     BOOL_FLAGS = {"--no-mcp", "--no-skills", "-ns", "--no-extensions", "-ne", "--no-context-files", "-nc",
+                  "--no-tools", "-nt",
                   "--approve", "-a", "--no-approve", "-na"}
     EXTENSION = Path(__file__).resolve().parent / "pi_service_tier.ts"
     START_TIMEOUT = 30
@@ -845,9 +848,91 @@ class Pi:
         return {"argv": argv, "model": model, "provider": provider, "thinking": thinking,
                 "lane": lane, "tier": tier}
 
+    def claude_sdk_intents(self, env, ledger) -> list[dict]:
+        """Every claude-sdk turn intent in the session's host dir, with its request evidence.
+        Found from host-only files, not from launch rows, so a turn whose launcher died is seen."""
+        sid = Path(env["host_dir"]).parent.name
+        recorded = {r.get("turn") for r in ledger.rows()
+                    if r.get("host") == self.name and r.get("session_id") == sid and r.get("turn")} if ledger else set()
+        out = []
+        for path in sorted(Path(env["host_dir"]).glob("turn-*.intent.json"),
+                           key=lambda p: int(re.sub(r"\D", "", p.name) or 0)):
+            try:
+                intent = json.loads(path.read_text())
+                turn = intent["turn"]
+                summary = _pi_container().claude_sdk_turn_summary(intent["proxy_log"])
+            except (OSError, ValueError, KeyError, TypeError):
+                out.append({"turn": path.name, "evidence": "corrupt", "recorded": False, "intent": str(path)})
+                continue
+            ok = intent.get("session_id") == sid
+            out.append({"turn": turn, "evidence": summary["evidence"] if ok else "corrupt",
+                        "recorded": turn in recorded, "intent": str(path), "container": intent.get("container"),
+                        "runner_record": intent.get("runner_record"),
+                        "socket_dir": intent.get("socket_dir"), "summary": summary})
+        return out
+
+    @staticmethod
+    def write_claude_sdk_agent_config(agent_dir: Path):
+        """(Re)write the lane's Pi agent config before each turn.
+
+        The agent directory is writable from the container, so an earlier turn could have
+        planted provider config, a model route or a symlink. Replace files through a
+        directory descriptor without following symlinks; refuse a replaced directory.
+        """
+        try:
+            fd = os.open(agent_dir, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        except OSError as e:
+            raise HostError(NOT_ESTABLISHED, "environment_changed", f"agent dir {agent_dir}: {e.strerror}") from None
+        try:
+            if os.fstat(fd).st_uid != os.getuid():
+                raise HostError(NOT_ESTABLISHED, "environment_changed", f"agent dir {agent_dir} is not owned by this user")
+            # trust.json: a recorded project-trust decision would let a workspace .pi/settings.json
+            # (written by an earlier turn) override these settings, e.g. re-enable Pi retry.
+            for name in ("models.json", "claude-sdk.json", "settings.json", "trust.json"):
+                try:
+                    os.unlink(name, dir_fd=fd)
+                except FileNotFoundError:
+                    pass
+                except IsADirectoryError:
+                    shutil.rmtree(agent_dir / name)
+            out = os.open("settings.json", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=fd)
+            with os.fdopen(out, "w") as fh:
+                fh.write(json.dumps(_pi_container().CLAUDE_SDK_PI_SETTINGS) + "\n")
+        except OSError as e:
+            raise HostError(NOT_ESTABLISHED, "environment_changed", f"agent config in {agent_dir}: {e}") from None
+        finally:
+            os.close(fd)
+
+    @staticmethod
+    def claude_sdk_options(opts, container):
+        """Validate a Claude subscription container launch (V1 spending semantics)."""
+        model_id = opts["model"].split("/", 1)[1]
+        if model_id not in _pi_container().CLAUDE_SDK_MODELS:
+            raise HostError(USAGE, "usage", f"claude-sdk/{model_id} has no identity evidence for this lane; supported: "
+                            + ", ".join(sorted(_pi_container().CLAUDE_SDK_MODELS)))
+        cap = container.get("max_requests")
+        if type(cap) is not int or cap < 1:
+            raise HostError(USAGE, "usage", "the Claude subscription lane needs a finite positive --max-requests per turn")
+        for key, flag in (("max_usd", "--max-usd"), ("max_output_tokens", "--max-output-tokens"),
+                          ("usd_strict_tier", "--usd-strict-tier"), ("model_file", "--container-model-file")):
+            if container.get(key) not in (None, False):
+                raise HostError(USAGE, "usage", f"{flag} does not apply to the Claude subscription lane")
+        if opts["tier"] is not None:
+            raise HostError(USAGE, "usage", "the Claude subscription lane takes no service tier")
+        if "--extension" in opts["argv"]:
+            raise HostError(USAGE, "usage", "the Claude subscription lane loads only its pinned provider extension")
+        if any(flag in opts["argv"] for flag in ("--approve", "-a")):
+            raise HostError(USAGE, "usage", "the Claude subscription lane does not trust workspace project resources")
+        opts["claude_sdk"] = True
+
     def check_lane(self, opts, *, cwd, env) -> dict:
         """Confirm Pi's credential for the provider is the lane's kind. Never refreshes or prints it."""
         provider, lane = opts["provider"], opts["lane"]
+        if opts.get("claude_sdk"):
+            token = self.claude_credential()
+            del token
+            return {"provider": provider, "auth_type": "oauth", "source": "claude_code_host",
+                    "billing": "unknown", "quota": "unknown"}
         if opts.get("container_subscription"):
             token = self.subscription_token()
             del token
@@ -947,9 +1032,13 @@ class Pi:
         try:
             runtime = _pi_container().runtime_paths(os.environ.get("ROLE_HOST_PI_RUNTIME", _pi_container().DEFAULT_RUNTIME))
             home = os.path.expanduser("~")
+            bundle = (_pi_container().claude_sdk_bundle(os.environ.get("ROLE_HOST_CLAUDE_SDK_BUNDLE")
+                                                        or _pi_container().DEFAULT_CLAUDE_SDK_BUNDLE)
+                      if opts.get("claude_sdk") else None)
             mounts = _pi_container().mount_plan(cwd, container.get("ro") or (), container.get("rw") or (), home=home,
                                              host_executables=[self.docker(), self.exe],
-                                             reserved=[str(state), str(self.socket_root()), str(Path.home() / ".codex" / "auth.json")])
+                                             reserved=[str(state), str(self.socket_root()), str(Path.home() / ".codex" / "auth.json"),
+                                                       *self.claude_reserved(), *([bundle["root"]] if bundle else [])])
             limits = _pi_container().validate_limits(container.get("memory", "4g"), container.get("pids", 512),
                                                   container.get("cpus", "2"))
             usd_limit, max_output = self._usd_limit(container, opts)
@@ -975,11 +1064,20 @@ class Pi:
                "max_requests": container.get("max_requests"),
                "max_output_tokens": max_output, "usd_limit": usd_limit,
                "selection": {"model": opts["model"], "tier": opts["tier"], "thinking": opts["thinking"],
-                             "pi_argv": opts["argv"], **({"lane": "subscription"} if opts.get("container_subscription") else {})},
+                             "pi_argv": opts["argv"], **({"lane": "subscription"} if opts.get("container_subscription")
+                                                          or opts.get("claude_sdk") else {})},
                "user": os.environ.get("USER") or os.environ.get("LOGNAME") or "",
                "lang": os.environ.get("LANG") or "C.UTF-8"}
         for d in (cdir / "agent", cdir / "sessions", hdir):
             d.mkdir(parents=True, exist_ok=True)
+        if bundle:
+            # Durable directory entries: a host crash must not lose the dir holding intents and proxy logs.
+            for d in (hdir, base, base.parent, state):
+                fd = os.open(d, os.O_RDONLY | os.O_DIRECTORY)
+                try:
+                    os.fsync(fd)
+                finally:
+                    os.close(fd)
         os.chmod(cdir, 0o700)
         os.chmod(hdir, 0o700)
         route = {"baseUrl": _pi_container().PROVIDERS[opts["provider"]]["relay_base"]}
@@ -988,8 +1086,12 @@ class Pi:
         if definition:
             env["model_definition"] = definition
             route["models"] = [definition]
-        (cdir / "agent" / "models.json").write_text(json.dumps({"providers": {opts["provider"]: route}}) + "\n")
-        (cdir / "agent" / "settings.json").write_text(json.dumps({"transport": "sse"} if opts.get("container_subscription") else {}) + "\n")
+        if bundle:
+            env["claude_sdk"] = bundle
+            self.write_claude_sdk_agent_config(cdir / "agent")
+        else:
+            (cdir / "agent" / "models.json").write_text(json.dumps({"providers": {opts["provider"]: route}}) + "\n")
+            (cdir / "agent" / "settings.json").write_text(json.dumps({"transport": "sse"} if opts.get("container_subscription") else {}) + "\n")
         if binary:
             env["codebase_memory"] = self._prepare_codebase_memory(binary, cwd=str(Path(cwd).resolve()), env=env)
         env["fingerprint"] = _pi_container().fingerprint(env)
@@ -1088,7 +1190,14 @@ class Pi:
                                       host_executables=[self.docker(), self.exe, *env.get("host_executables", ())],
                                       reserved=[str(ledger.path.parent), str(self.socket_root()),
                                                 str(Path.home() / ".codex" / "auth.json"),
-                                                str(Path(env["home"]) / ".codex" / "auth.json")])
+                                                str(Path(env["home"]) / ".codex" / "auth.json"),
+                                                *self.claude_reserved(),
+                                                *([env["claude_sdk"]["root"]] if env.get("claude_sdk") else [])])
+            if env.get("claude_sdk"):
+                # The pinned bundle must still resolve to the same closure; content is in the fingerprint.
+                again = pc.claude_sdk_bundle(env["claude_sdk"]["root"])
+                if again["packages"] != env["claude_sdk"]["packages"] or again["claude"] != env["claude_sdk"]["claude"]:
+                    raise pc.ContainerError("environment_changed", "the Claude SDK bundle closure changed since launch")
         except pc.ContainerError as e:
             raise HostError(NOT_ESTABLISHED, "environment_changed", e.detail)
         if replanned != env["mounts"]:
@@ -1116,8 +1225,54 @@ class Pi:
             raise HostError(NOT_ESTABLISHED, "credential_not_ready",
                             "existing host Codex ChatGPT credential is missing, expired or invalid; no refresh attempted") from None
 
+    @staticmethod
+    def claude_credential_path() -> Path:
+        return Path(os.environ.get("ROLE_HOST_CLAUDE_CREDENTIALS") or Path.home() / ".claude" / ".credentials.json")
+
+    @classmethod
+    def claude_reserved(cls) -> list[str]:
+        """Host Claude config and credential paths no user mount may overlap."""
+        path = cls.claude_credential_path()
+        return [str(path), str(path.parent), str(Path.home() / ".claude"), str(Path.home() / ".claude.json")]
+
+    @classmethod
+    def claude_credential(cls) -> str:
+        """The owner's existing Claude Code OAuth access token, read on the host only.
+
+        Custody: a regular file (not a symlink) owned by this user and private to it.
+        Never logs in, refreshes, writes, or falls back to an API key.
+        """
+        path = cls.claude_credential_path()
+        refuse = HostError(NOT_ESTABLISHED, "credential_not_ready",
+                           f"existing host Claude Code credential at {path} is missing, unsafe, expired or invalid; "
+                           "no login or refresh attempted")
+        try:
+            fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+        except OSError:
+            raise refuse from None
+        try:
+            st = os.fstat(fd)
+            if not stat.S_ISREG(st.st_mode) or st.st_uid != os.getuid() or st.st_mode & 0o077 or st.st_size > 65536:
+                raise refuse
+            with os.fdopen(os.dup(fd), "rb") as fh:
+                record = json.loads(fh.read())
+        except (OSError, ValueError):
+            raise refuse from None
+        finally:
+            os.close(fd)
+        try:
+            oauth = record["claudeAiOauth"]
+            expires = oauth["expiresAt"]
+            if type(expires) not in (int, float) or not expires / 1000 > time.time() + 120:
+                raise ValueError()
+            return _pi_container().claude_oauth_token(oauth["accessToken"])
+        except (KeyError, TypeError, ValueError):
+            raise refuse from None
+
     def provider_key(self, opts, *, cwd) -> str:
         """Host credential for the selected egress lane. Held in memory only."""
+        if opts.get("claude_sdk"):
+            return self.claude_credential()
         if opts.get("container_subscription"):
             return self.subscription_token()
         r = _run([self.exe, "auth", "print-api-key", "--provider", opts["provider"]], cwd=cwd, timeout=60)
@@ -1168,7 +1323,8 @@ class Pi:
     # ---- turns ----
     def _spawn(self, sid, opts, *, cwd, prompt, ledger, event, name=None, parent=None, env=None):
         args = dict(cwd=cwd, prompt=prompt, ledger=ledger, event=event, name=name, parent=parent, env=env)
-        if not env or (env.get("usd_limit") or {}).get("measurement") != "api_equivalent_cost_proxy":
+        claude_sdk = bool(env and env.get("claude_sdk"))
+        if not env or ((env.get("usd_limit") or {}).get("measurement") != "api_equivalent_cost_proxy" and not claude_sdk):
             return self._spawn_unlocked(sid, opts, **args)
         # Session exclusion must span fresh busy/accounting checks, ordinal selection,
         # runner startup and ledger publication, not just one proxy's request threads.
@@ -1188,6 +1344,14 @@ class Pi:
                     if turns and turns[-1].get("pid_start") is None:
                         raise HostError(NOT_ESTABLISHED, "usd_spend_not_established",
                                         "previous runner identity is unknown; no turn started")
+                if claude_sdk:
+                    unresolved = [t for t in self.claude_sdk_intents(env, ledger)
+                                  if t["evidence"] in ("unresolved", "corrupt") or not t["recorded"]]
+                    if unresolved:
+                        raise HostError(NOT_ESTABLISHED, "turn_not_resolved",
+                                        f"turn {unresolved[0]['turn']} has {unresolved[0]['evidence']} request evidence or no "
+                                        "launch record; no turn started (a request may have been dispatched; "
+                                        "retire the session and launch a new one)")
                 return self._spawn_unlocked(sid, opts, **args)
             finally:
                 fcntl.flock(lock, fcntl.LOCK_UN)
@@ -1254,8 +1418,12 @@ class Pi:
             ("proxy_log", "proxy.jsonl"), ("runner_record", "runner.jsonl"),
             ("runner_log", "runner.log"), ("spec", "spec.json"))})
         prior = self._prior_usd(sid, ledger, env) if env.get("usd_limit") else None
-        opts = {**opts, **({"container_subscription": True} if env["selection"].get("lane") == "subscription" else {})}
+        claude_sdk = bool(env.get("claude_sdk"))
+        if env["selection"].get("lane") == "subscription":
+            opts = {**opts, ("claude_sdk" if claude_sdk else "container_subscription"): True}
         key = self.provider_key(opts, cwd=cwd)
+        if claude_sdk:
+            self.write_claude_sdk_agent_config(Path(env["agent_dir"]))
         if (env.get("usd_limit") or {}).get("measurement") == "api_equivalent_cost_proxy":
             # Reserve the ordinal in host-only storage before any runner effect.
             # Agent-writable prompt deletion must not hide an unrecorded orphan turn.
@@ -1267,6 +1435,10 @@ class Pi:
         container_name = f"we-pi-{sid}-{turn}"
         pi_argv = ["--mode", "json", "--session-id", sid, "--session-dir", env["session_dir"],
                    "-e", str(self.EXTENSION), *opts["argv"]]
+        if claude_sdk:
+            # No discovered extensions (the agent dir is container-writable); only the pinned ones.
+            # --no-approve: workspace .pi resources (settings, extensions) never apply.
+            pi_argv[6:6] = ["--no-extensions", "--no-approve", "-e", env["claude_sdk"]["extension"]]
         if name:
             pi_argv += ["--name", name]
         container_env = _pi_container().container_env(env, str(files["tier_record"]))
@@ -1281,6 +1453,16 @@ class Pi:
                 "max_requests": env.get("max_requests"), "max_output_tokens": env.get("max_output_tokens"),
                 "usd_limit": {**env["usd_limit"], **prior} if prior is not None else None}
         files["spec"].write_text(json.dumps(spec, indent=1) + "\n")
+        if claude_sdk:
+            # Durable, host-only turn intent before any provider-capable process exists.
+            # Discovered by status, delivery, retire and the usage ledger even if no launch row follows.
+            intent = {"kind": "claude_sdk_turn_intent", "session_id": sid, "turn": turn, "event": event,
+                      "model": opts["model"], "auth_lane": "subscription", "provider": "claude-sdk",
+                      "container": container_name, "socket_dir": str(socket_dir),
+                      "proxy_log": str(files["proxy_log"]), "runner_record": str(files["runner_record"]),
+                      "spec": str(files["spec"]), "max_requests": env.get("max_requests"),
+                      "fingerprint_sha256": env["fingerprint"]["sha256"], "at_epoch": time.time()}
+            self._write_prompt(hdir / f"turn-{turn}.intent.json", json.dumps(intent) + "\n", durable=True)
         runner = Path(__file__).resolve().parent / "pi_container.py"
         if self.before_runner_start is not None:
             # Budget-admitted launch: the durable runner_starting marker is written and verified before any
@@ -1447,8 +1629,16 @@ class Pi:
                 "http_errors": [r.get("http_status") for r in requests if r.get("http_status") != 200],
                 "usage": {k: sum(v for r in requests if type(v := (r["usage"] if isinstance(r.get("usage"), dict) else {}).get(k)) is int and v >= 0)
                           for k in (("input_tokens", "output_tokens", "cached_tokens", "reasoning_tokens")
-                                    if not any(r.get("provider") == "anthropic" for r in requests)
+                                    if not any(r.get("provider") in ("anthropic", "claude-sdk") for r in requests)
                                     else _pi_container().ANTHROPIC_USAGE_KEYS)}}
+            if str(row.get("model", "")).startswith("claude-sdk/"):
+                pc = _pi_container()
+                sdk = pc.claude_sdk_turn_summary(str(files["proxy_log"]))
+                out["egress"]["claude_sdk"] = {**sdk, "auth_lane": "subscription", "billing": "unknown",
+                                               "quota": "unknown", "observed_by": "egress proxy (host)"}
+                out["egress"]["requests"] = sdk["admitted"]
+                out["model_served_by_proxy"] = sdk["response_models"]
+                limitations.append(pc.CLAUDE_SDK_LIMITATION)
             if (row.get("usd_limit") or {}).get("measurement") == _pi_container().SUBSCRIPTION_PROXY_BASIS:
                 pc, lim = _pi_container(), row["usd_limit"]
                 t = pc.subscription_proxy_totals(proxy_rows, malformed=proxy_partial)
@@ -1487,6 +1677,16 @@ class Pi:
         rows = self._turns(sid, ledger) if ledger else []
         turns = [r for r in rows if r.get("turn")]
         session_dir = self._session_dir_for(sid, ledger)
+        orphans = self._unrecorded_intents(sid, ledger)
+        if orphans:
+            # A claude-sdk turn intent with no launch/deliver row: the launcher died after
+            # the intent, possibly after the runner started. Its evidence is reported, not assumed.
+            running = [t for t in orphans if self._orphan_live(t)]
+            if not turns or running:
+                return {"state": "running" if running else "unrecorded_turn", "kind": "pi_container_turn_unrecorded",
+                        "turn": (running or orphans)[0]["turn"],
+                        "unrecorded_turns": [self._intent_view(t) for t in orphans],
+                        **({"containers": [t["container"] for t in running]} if running else {})}
         if not turns:
             if self.session_file(sid) is None:
                 return {"state": "absent", "kind": None}
@@ -1505,6 +1705,8 @@ class Pi:
         if state == "idle" and self.session_file(sid, session_dir) is None:
             state = "absent"
         out = {"state": state, "kind": kind, "last_turn": self.observe_turn(last)}
+        if orphans:
+            out["unrecorded_turns"] = [self._intent_view(t) for t in orphans]
         leftovers = self._leftovers(last)
         if leftovers:
             out["leftovers"] = leftovers  # the runner died before cleanup; retire collects them
@@ -1513,9 +1715,13 @@ class Pi:
     def launch(self, *, cwd, name, prompt, host_args, ledger, parent=None, lane=None, tier=None, container=None) -> dict:
         opts = self.options(host_args, lane, tier)
         if container is not None:
-            if lane == "subscription":
+            if lane == "subscription" and opts["provider"] == "claude-sdk":
+                self.claude_sdk_options(opts, container)
+            elif opts["provider"] == "claude-sdk":
+                raise HostError(USAGE, "usage", "claude-sdk is a subscription transport; use --auth subscription")
+            elif lane == "subscription":
                 if opts["provider"] != "openai-codex":
-                    raise HostError(USAGE, "usage", "container subscription uses the openai-codex provider and existing host Codex ChatGPT auth")
+                    raise HostError(USAGE, "usage", "container subscription uses the openai-codex or claude-sdk provider")
                 try:
                     __import__("zstandard")
                 except ImportError:
@@ -1559,12 +1765,76 @@ class Pi:
         if env is not None:
             env = self._check_environment(env, cwd=launch["cwd"], ledger=ledger)
         if env is not None and env["selection"].get("lane") == "subscription":
-            opts["container_subscription"] = True
+            opts["claude_sdk" if opts["provider"] == "claude-sdk" else "container_subscription"] = True
         auth = self.check_lane(opts, cwd=cwd, env=child_env())
         row = self._spawn(sid, opts, cwd=cwd, prompt=message, ledger=ledger, event="deliver", env=env)
         return {"session_id": sid, "delivered": True, "turn": row["turn"], "credential": auth}
 
+    def _unrecorded_intents(self, sid, ledger) -> list[dict]:
+        if ledger is None:
+            return []
+        host_dir = ledger.path.parent / "pi" / sid / "host"
+        if not host_dir.is_dir():
+            return []
+        return [t for t in self.claude_sdk_intents({"host_dir": str(host_dir)}, ledger) if not t["recorded"]]
+
+    def _orphan_runner(self, t):
+        """(pid, live) of an unrecorded turn's runner from its host-only runner record."""
+        records, _ = self._records(Path(t["runner_record"])) if t.get("runner_record") else ([], False)
+        if any(r.get("event") == "container_removed" for r in records):
+            return None, False
+        started = next((r for r in records if r.get("event") == "runner_started"), None)
+        if started is None or type(started.get("pid")) is not int:
+            return None, False
+        return started["pid"], self._alive({"pid": started["pid"], "pid_start": started.get("pid_start")})
+
+    def _orphan_live(self, t) -> bool:
+        if t.get("container") and self._container_state(t["container"]):
+            return True
+        return self._orphan_runner(t)[1]
+
+    @staticmethod
+    def _intent_view(t) -> dict:
+        s = t.get("summary") or {}
+        return {"turn": t["turn"], "evidence": t["evidence"], "container": t.get("container"),
+                "admitted": s.get("admitted"), "unresolved": s.get("unresolved"), "intent": t["intent"]}
+
+    def _collect_unrecorded(self, sid, ledger) -> list[dict]:
+        """Remove containers and socket dirs of claude-sdk turns that never got a ledger row.
+        Records the collection; the turn's request evidence stays as it is."""
+        collected = []
+        for t in self._unrecorded_intents(sid, ledger):
+            if not isinstance(t["turn"], int):
+                continue
+            found = self._collect_leftovers({"container": {"name": t["container"]}, "session_id": sid, "turn": t["turn"]})
+            ledger.append({"host": self.name, "event": "collect_unrecorded_turn", "session_id": sid,
+                           "intent_turn": t["turn"], "evidence": t["evidence"], "collected": found})
+            collected.append({"turn": t["turn"], "evidence": t["evidence"], **found})
+        return collected
+
     def retire(self, sid, *, ledger, force=False) -> dict:
+        orphans = self._unrecorded_intents(sid, ledger)
+        live = [t for t in orphans if self._orphan_live(t)]
+        if live and not force:
+            raise HostError(BUSY, "refused_busy", f"{sid} has an unrecorded turn still running (retire --force stops it)")
+        for t in live:
+            pid, alive = self._orphan_runner(t)
+            if alive:
+                # The runner leads its own process group; SIGTERM makes it stop and remove its container.
+                try:
+                    os.killpg(pid, signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+                deadline = time.time() + self.STOP_WAIT + 20
+                while self._group_alive(pid):
+                    if time.time() > deadline:
+                        raise HostError(NOT_ESTABLISHED, "retire_not_established",
+                                        f"unrecorded turn {t['turn']} runner {pid} still alive after SIGTERM")
+                    time.sleep(0.2)
+        unrecorded = self._collect_unrecorded(sid, ledger) if orphans else []
+        if unrecorded and not [r for r in self._turns(sid, ledger) if r.get("turn")]:
+            ledger.append({"host": self.name, "event": "retire", "session_id": sid})
+            return {"session_id": sid, "retired": "unrecorded_turns_collected", "unrecorded_turns": unrecorded}
         st = self.status(sid, ledger)
         turns = [r for r in self._turns(sid, ledger) if r.get("turn")]
         if st["state"] in ("absent", "stopped"):

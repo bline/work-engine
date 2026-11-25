@@ -111,6 +111,53 @@ ANTHROPIC_OUTPUT_CONFIG_KEYS = frozenset({"effort", "format"})
 ANTHROPIC_USAGE_KEYS = ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens",
                         "ephemeral_5m_input_tokens", "ephemeral_1h_input_tokens", "output_tokens")
 ANTHROPIC_RATES_PATH = HERE / "anthropic_api_rates.json"
+# Claude subscription through the Claude Agent SDK (Pi extension pi-claude-subscription).
+# Claude Code runs inside the container and reaches the proxy through the relay;
+# it holds only this synthetic, non-authenticating OAuth credential.
+CLAUDE_SDK_PLACEHOLDER = "sk-ant-oat01-" + "D" * 95
+CLAUDE_SDK_EXTENSION = "pi-claude-subscription"
+DEFAULT_CLAUDE_SDK_BUNDLE = os.path.expanduser("~/.pi/agent/npm/node_modules")
+# Claude Code switches for this lane. S0 observed Claude Code resending a request
+# after a 500 with x-stainless-retry-count still 0, so retries are disabled here
+# and the proxy also refuses every request after an exchange that did not complete.
+CLAUDE_SDK_CONTAINER_ENV = {
+    "CLAUDE_CODE_MAX_RETRIES": "0", "CLAUDE_CODE_NONSTREAMING_TIMEOUT_RETRIES": "0",
+    "CLAUDE_CODE_NO_MODEL_FALLBACK": "1", "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK": "1",
+    "CLAUDE_CODE_DISABLE_MODEL_ACCESS_FALLBACK": "1", "CLAUDE_CODE_DISABLE_REFUSAL_RETRY": "1",
+    "CLAUDE_CODE_DISABLE_REFUSAL_FALLBACK": "1", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "DISABLE_AUTOUPDATER": "1", "DISABLE_TELEMETRY": "1", "DISABLE_ERROR_REPORTING": "1",
+}
+# Pi's own agent-level retry resends after a provider error (also observed in S0).
+CLAUDE_SDK_PI_SETTINGS = {"retry": {"enabled": False, "maxRetries": 0, "provider": {"maxRetries": 0}}}
+# Models with exact response-identity evidence for this lane (S0 mock wire; live
+# identity is qualified separately). Others need their own evidence first.
+CLAUDE_SDK_MODELS = frozenset({"claude-haiku-5-5", "claude-opus-5-5"})
+# Wire frozen by the S0 probe (records/pi-container-claude-sdk-s0-20261124).
+CLAUDE_SDK_FIELDS = frozenset({"context_management", "max_tokens", "messages", "metadata", "model",
+                               "output_config", "stream", "system", "thinking", "tools", "tool_choice"})
+CLAUDE_SDK_BETAS = frozenset({
+    "oauth-2025-04-20", "interleaved-thinking-2025-05-14", "context-management-2025-06-27",
+    "claude-code-20250219", "per-turn-control-2026-07-01", "mid-conversation-tool-changes-2026-07-01",
+    "thinking-token-count-2026-05-13", "effort-2025-11-24", "thinking-display-updates-2026-08-18",
+    "extended-cache-ttl-2025-04-11"})
+CLAUDE_SDK_HEADERS = frozenset({
+    "accept", "accept-encoding", "anthropic-beta", "anthropic-dangerous-direct-browser-access",
+    "anthropic-version", "authorization", "connection", "content-length", "content-type", "host",
+    "user-agent", "x-app", "x-claude-code-session-id", "x-client-app", "x-stainless-arch",
+    "x-stainless-lang", "x-stainless-os", "x-stainless-package-version", "x-stainless-retry-count",
+    "x-stainless-runtime", "x-stainless-runtime-version", "x-stainless-timeout"})
+# Client metadata forwarded upstream after validation; everything else is rebuilt.
+CLAUDE_SDK_FORWARD_HEADERS = ("accept", "anthropic-dangerous-direct-browser-access", "user-agent", "x-app",
+                              "x-claude-code-session-id", "x-client-app", "x-stainless-arch",
+                              "x-stainless-lang", "x-stainless-os", "x-stainless-package-version",
+                              "x-stainless-retry-count", "x-stainless-runtime",
+                              "x-stainless-runtime-version", "x-stainless-timeout")
+CLAUDE_SDK_CONTEXT_EDITS = frozenset({"clear_thinking_20251015"})
+CLAUDE_SDK_BILLING_HEADER = "x-anthropic-billing-header:"
+CLAUDE_SDK_IDENTITY = "You are a Claude agent, built on Anthropic's Claude Agent SDK."
+# Subscription verdict headers. Only these unified statuses release output; an
+# overage (extra usage) status is recorded, never used as a fallback.
+CLAUDE_SDK_ALLOWED_STATUS = frozenset({"allowed", "allowed_warning"})
 # What differs per provider. The openai entry holds the values used before
 # Anthropic support, so OpenAI requests, logs and fingerprints are unchanged.
 # Public synthetic JWT lets native Pi select its Codex transport without any host identity.
@@ -129,7 +176,63 @@ PROVIDERS = {
                   "upstream_env": "ROLE_HOST_PI_UPSTREAM_ANTHROPIC", "relay_base": f"http://127.0.0.1:{RELAY_PORT}",
                   "key_env": "ANTHROPIC_API_KEY", "placeholder": ANTHROPIC_PLACEHOLDER_KEY,
                   "rates": ANTHROPIC_RATES_PATH, "rule_keys": ("tier_multiplier",)},
+    # Claude Code reads ANTHROPIC_BASE_URL and the synthetic credential file, not a key variable.
+    "claude-sdk": {"api": "claude-agent-sdk", "route": "/v1/messages", "upstream": "https://api.anthropic.com",
+                   "upstream_env": "ROLE_HOST_PI_UPSTREAM_CLAUDE_SDK", "relay_base": f"http://127.0.0.1:{RELAY_PORT}",
+                   "key_env": None, "placeholder": CLAUDE_SDK_PLACEHOLDER},
 }
+
+
+def claude_sdk_bundle(root: str = DEFAULT_CLAUDE_SDK_BUNDLE) -> dict:
+    """The provider extension and its declared dependency closure under one node_modules root.
+
+    Only these package directories are mounted, so an undeclared import fails
+    in the container rather than resolving to some other installed package.
+    """
+    root = os.path.realpath(root)
+    packages, versions = [], {}
+
+    def visit(name: str, optional: bool = False):
+        if name in versions:
+            return
+        path = os.path.join(root, name)
+        try:
+            with open(os.path.join(path, "package.json")) as fh:
+                meta = json.load(fh)
+        except FileNotFoundError:
+            if optional:
+                return
+            raise ContainerError("runtime_not_found", f"Claude SDK bundle lacks dependency {name} under {root}")
+        except (OSError, ValueError) as e:
+            raise ContainerError("runtime_not_found", f"Claude SDK bundle package {name}: {e}")
+        if os.path.realpath(path) != path:
+            raise ContainerError("runtime_not_found", f"Claude SDK bundle package {name} is a symlink")
+        versions[name] = meta.get("version")
+        packages.append(path)
+        for dep in sorted(meta.get("dependencies") or {}):
+            visit(dep)
+        for dep in sorted(meta.get("optionalDependencies") or {}):
+            visit(dep, True)
+        for dep in sorted(meta.get("peerDependencies") or {}):
+            # Pi supplies its own packages to extensions. An uninstalled peer stays
+            # absent in the container too: nothing outside the closure is mounted.
+            if not dep.startswith("@earendil-works/"):
+                visit(dep, True)
+
+    visit(CLAUDE_SDK_EXTENSION)
+    claude = os.path.join(root, "@anthropic-ai/claude-agent-sdk-linux-x64/claude")
+    if not os.access(claude, os.X_OK):
+        raise ContainerError("runtime_not_found", f"Claude Code executable missing: {claude}")
+    return {"root": root, "extension": os.path.join(root, CLAUDE_SDK_EXTENSION), "claude": claude,
+            "packages": sorted(packages), "versions": versions}
+
+
+def claude_sdk_bundle_identity(bundle: dict) -> dict:
+    """Content digest of every mounted bundle package, by path."""
+    h = hashlib.sha256()
+    for path in bundle["packages"]:
+        h.update(f"{path} {tree_digest(path)}\n".encode())
+    return {"sha256": h.hexdigest(), "packages": len(bundle["packages"]), "versions": bundle["versions"]}
 
 
 def codex_account(token: str) -> str:
@@ -147,6 +250,14 @@ def codex_account(token: str) -> str:
         return account
     except (ValueError, KeyError, TypeError, AttributeError):
         raise ValueError("invalid or expired host Codex subscription credential") from None
+
+
+def claude_oauth_token(token: str) -> str:
+    """Shape check of the host's Claude Code OAuth access token; upstream authenticates it."""
+    if (not isinstance(token, str) or not re.fullmatch(r"sk-ant-oat01-[A-Za-z0-9_\-]{20,400}", token)
+            or token == CLAUDE_SDK_PLACEHOLDER):
+        raise ValueError("invalid host Claude subscription credential")
+    return token
 
 
 def provider_of(model: str) -> str:
@@ -371,12 +482,20 @@ def container_env(env: dict, record_path: str) -> dict:
     """The container's entire environment. Nothing else from the host reaches it."""
     sel = env["selection"]
     p = PROVIDERS[provider_of(sel["model"])]
-    return {"HOME": env["home"], "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-            "LANG": env["lang"], "USER": env["user"], "LOGNAME": env["user"],
-            "PI_CODING_AGENT_DIR": env["agent_dir"], "PI_OFFLINE": "1", "PI_TELEMETRY": "0",
-            p["key_env"]: p["placeholder"],
-            "WORK_ENGINE_PI_SERVICE_TIER": sel["tier"] or "", "WORK_ENGINE_PI_SERVICE_TIER_MODEL": sel["model"],
-            "WORK_ENGINE_PI_SERVICE_TIER_RECORD": record_path}
+    out = {"HOME": env["home"], "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+           "LANG": env["lang"], "USER": env["user"], "LOGNAME": env["user"],
+           "PI_CODING_AGENT_DIR": env["agent_dir"], "PI_OFFLINE": "1", "PI_TELEMETRY": "0",
+           "WORK_ENGINE_PI_SERVICE_TIER": sel["tier"] or "", "WORK_ENGINE_PI_SERVICE_TIER_MODEL": sel["model"],
+           "WORK_ENGINE_PI_SERVICE_TIER_RECORD": record_path}
+    if p["key_env"]:
+        out[p["key_env"]] = p["placeholder"]
+    if provider_of(sel["model"]) == "claude-sdk":
+        out.update({"ANTHROPIC_BASE_URL": p["relay_base"], "NO_PROXY": "127.0.0.1,localhost",
+                    "PI_CLAUDE_SDK_CLAUDE_PATH": env["claude_sdk"]["claude"],
+                    # Forces the extension's Claude prompt over an agent-writable claude-sdk.json.
+                    "PI_CLAUDE_SDK_PROMPT": "claude",
+                    "WORK_ENGINE_CLAUDE_SDK_CREDENTIAL": "synthetic", **CLAUDE_SDK_CONTAINER_ENV})
+    return out
 
 
 def fingerprint(env: dict) -> dict:
@@ -407,6 +526,11 @@ def fingerprint(env: dict) -> dict:
     }
     if env.get("model_definition"):
         body["model_definition"] = env["model_definition"]
+    if env.get("claude_sdk"):
+        sdk = env["claude_sdk"]
+        body["claude_sdk"] = {"root": sdk["root"], "extension": sdk["extension"], "claude": sdk["claude"],
+                              "packages": sdk["packages"], "identity": claude_sdk_bundle_identity(sdk),
+                              "pi_settings": CLAUDE_SDK_PI_SETTINGS}
     if env.get("codebase_memory"):
         cbm = env["codebase_memory"]
         body["codebase_memory"] = {"binary_sha256": file_sha256(cbm["binary"]), "version": cbm["version"],
@@ -432,6 +556,8 @@ def run_profile(env: dict, *, cwd: str, container_dir: str, socket_dir: str | No
                (container_dir, container_dir, False)]
     if socket_dir:
         mounts.append((socket_dir, socket_dir, False))
+    if env.get("claude_sdk"):
+        mounts += [(p, p, True) for p in env["claude_sdk"]["packages"]]
     if env.get("codebase_memory"):
         binary = env["codebase_memory"]["binary"]
         mounts.append((binary, binary, True))
@@ -598,6 +724,140 @@ def check_anthropic_request(body, *, model_id: str, betas=()) -> str | None:
     if hosted:
         return "hosted_tool_refused:" + ",".join(sorted(hosted))
     return None
+
+
+def claude_sdk_header_refusal(headers: dict, query: str) -> str | None:
+    """A refusal reason for the request line and headers Claude Code sent, or None.
+    headers: lower-cased names to values (a repeated name is refused by the caller)."""
+    if query != "beta=true":
+        return "query_refused"
+    unexpected = sorted(set(headers) - CLAUDE_SDK_HEADERS)
+    if unexpected:
+        return "unexpected_header:" + ",".join(unexpected)
+    if headers.get("authorization") != "Bearer " + CLAUDE_SDK_PLACEHOLDER:
+        return "container_credential_not_placeholder"
+    if headers.get("anthropic-version") != ANTHROPIC_VERSION:
+        return "anthropic_version_refused"
+    if headers.get("content-type", "").split(";")[0].strip() != "application/json":
+        return "content_type_refused"
+    # Misconfiguration checks of the approved client, not proof of caller identity.
+    if not headers.get("user-agent", "").startswith("claude-cli/") or headers.get("x-app") != "cli":
+        return "client_not_claude_code"
+    if not headers.get("x-client-app", "").startswith(CLAUDE_SDK_EXTENSION + "/"):
+        return "client_not_provider_extension"
+    # Claude Code also retries above this counter (S0); the proxy halts the turn after
+    # any incomplete exchange, so this only refuses a visible client-level retry.
+    if headers.get("x-stainless-retry-count") != "0":
+        return "retry_refused"
+    betas = [b.strip() for b in headers.get("anthropic-beta", "").split(",") if b.strip()]
+    refused = sorted(set(betas) - CLAUDE_SDK_BETAS)
+    if refused:
+        return "beta_refused:" + ",".join(refused)
+    if "oauth-2025-04-20" not in betas:
+        return "oauth_beta_missing"
+    return None
+
+
+def check_claude_sdk_request(body, *, model_id: str) -> str | None:
+    """A refusal reason for a Claude Agent SDK Messages body, or None when it may go upstream."""
+    if not isinstance(body, dict):
+        return "body_not_object"
+    unexpected = sorted(set(body) - CLAUDE_SDK_FIELDS)
+    if unexpected:
+        return "unexpected_field:" + ",".join(unexpected)
+    if body.get("model") != model_id:
+        return "model_not_pinned"
+    if body.get("stream") is not True:
+        return "stream_required"
+    tokens = body.get("max_tokens")
+    if type(tokens) is not int or tokens < 1:
+        return "max_tokens_refused"
+    system = body.get("system")
+    if not (isinstance(system, list) and len(system) >= 2
+            and all(isinstance(b, dict) and b.get("type") == "text" and isinstance(b.get("text"), str) for b in system)):
+        return "system_shape_refused"
+    head = system[0]["text"]
+    if not head.startswith(CLAUDE_SDK_BILLING_HEADER) or "cc_entrypoint=sdk-ts" not in head:
+        return "sdk_billing_header_refused"
+    if not system[1]["text"].startswith(CLAUDE_SDK_IDENTITY):
+        return "sdk_identity_refused"
+    messages = body.get("messages")
+    if not isinstance(messages, list) or not messages or not all(
+            isinstance(m, dict) and m.get("role") in ("user", "assistant", "system") for m in messages):
+        return "messages_refused"
+    metadata = body.get("metadata")
+    if metadata is not None and not (isinstance(metadata, dict) and set(metadata) <= {"user_id"}):
+        return "metadata_refused"
+    if not isinstance(body.get("tools", []), list):
+        return "tools_not_list"
+    choice = body.get("tool_choice")
+    if choice is not None and not (isinstance(choice, dict) and choice.get("type") in ANTHROPIC_TOOL_CHOICE_TYPES):
+        return "tool_choice_refused"
+    thinking = body.get("thinking")
+    if thinking is not None and not (isinstance(thinking, dict) and thinking.get("type") in ANTHROPIC_THINKING_TYPES):
+        return "thinking_refused"
+    config = body.get("output_config")
+    if config is not None and not (isinstance(config, dict) and set(config) <= ANTHROPIC_OUTPUT_CONFIG_KEYS):
+        return "output_config_refused"
+    # Provider-fetched sources (URL, file id) would give the networkless container a fetch path.
+    source = anthropic_unpriceable(body.get("system")) or anthropic_unpriceable(messages)
+    if source:
+        return "source_refused:" + source.rsplit(":", 1)[1]
+    context = body.get("context_management")
+    if context is not None and not (
+            isinstance(context, dict) and set(context) <= {"edits"} and isinstance(context.get("edits", []), list)
+            and all(isinstance(e, dict) and e.get("type") in CLAUDE_SDK_CONTEXT_EDITS for e in context.get("edits", []))):
+        return "context_management_refused"
+    # Only Pi's tools (bridged as mcp__pi__*) and Claude Code's deferred-tool
+    # placeholder, all client-run; anything typed is run by the provider.
+    for d in anthropic_tool_definitions(body):
+        if not isinstance(d, dict) or d.get("type", "custom") != "custom":
+            return "hosted_tool_refused:" + (str(d.get("type")) if isinstance(d, dict) else type(d).__name__)
+        name = d.get("name")
+        if not isinstance(name, str) or not (name.startswith("mcp__pi__") or name == "DeferredToolPlaceholder"):
+            return "tool_refused"
+    return None
+
+
+def strict_json(raw: bytes):
+    """Parse JSON refusing duplicate object keys at any depth and non-JSON constants."""
+    def pairs(items):
+        out = {}
+        for k, v in items:
+            if k in out:
+                raise ValueError("duplicate key")
+            out[k] = v
+        return out
+
+    def constant(name):
+        raise ValueError(f"non-JSON constant {name}")
+    return json.loads(raw, object_pairs_hook=pairs, parse_constant=constant)
+
+
+def claude_sdk_request_digests(body: dict) -> dict:
+    """Receipt digests of what the model was given, without the content itself.
+    The billing-header block varies per request and is digested separately."""
+    system = body.get("system") or []
+    tools = body.get("tools") or []
+    return {"system_sha256": hashlib.sha256(_canonical(system[1:])).hexdigest(),
+            "billing_block_sha256": hashlib.sha256(_canonical(system[:1])).hexdigest(),
+            "tools_sha256": hashlib.sha256(_canonical(tools)).hexdigest(),
+            "tool_names": [t.get("name") for t in tools if isinstance(t, dict)],
+            "messages": len(body.get("messages") or [])}
+
+
+def claude_sdk_billing_verdict(headers) -> dict:
+    """Subscription verdict from the response headers: allowed, refused or not_established."""
+    h = {k.lower(): v for k, v in headers}
+    status = h.get("anthropic-ratelimit-unified-status")
+    overage = h.get("anthropic-ratelimit-unified-overage-status")
+    if status is None:
+        verdict = "not_established"
+    elif status in CLAUDE_SDK_ALLOWED_STATUS:
+        verdict = "allowed"
+    else:
+        verdict = "refused"
+    return {"verdict": verdict, "unified_status": loggable_model(status), "overage_status": loggable_model(overage)}
 
 
 def anthropic_unpriceable(value) -> str | None:
@@ -865,6 +1125,65 @@ def prior_subscription_proxy_state(paths) -> dict:
             "accounting_unknown": any(t["accounting_unknown"] for t in totals)}
 
 
+CLAUDE_SDK_LIMITATION = ("Claude subscription: usage is what the provider reported per request; quota consumption "
+                         "and any overage charge are not measured. A dispatched request without a terminal "
+                         "record may have been billed.")
+
+
+def claude_sdk_turn_summary(path) -> dict:
+    """One claude-sdk turn's host proxy log: each admission matched to its disposition.
+
+    evidence: complete (every admission settled), unresolved (an admission without a
+    disposition: possibly dispatched, outcome unknown), corrupt (unreadable or
+    inconsistent rows) or missing (no log). Neither unresolved nor corrupt means zero.
+    """
+    rows, malformed = subscription_proxy_records(path)
+    if not os.path.exists(path):
+        return {"evidence": "missing", "outcome_known": True, "admitted": 0, "completed": 0, "not_completed": 0,
+                "unresolved": [], "refused": [], "usage": {}, "billing_verdicts": [], "response_models": [],
+                "requests": []}
+    admitted, settled, refused, corrupt = {}, {}, [], malformed
+    for row in rows:
+        if not isinstance(row, dict):
+            corrupt = True
+            continue
+        event, n = row.get("event"), row.get("n")
+        if event == "claude_sdk_admitted":
+            if type(n) is not int or n in admitted:
+                corrupt = True
+            else:
+                admitted[n] = row
+        elif event == "request" and row.get("provider") == "claude-sdk":
+            if type(n) is not int or n not in admitted or n in settled:
+                corrupt = True
+            else:
+                settled[n] = row
+        elif event == "refused":
+            refused.append(row.get("reason"))
+    unresolved = sorted(n for n in admitted if n not in settled)
+    done = [r for r in settled.values() if r.get("disposition") == "completed"]
+    usage = {k: sum(v for r in settled.values() if type(v := (r.get("usage") or {}).get(k)) is int and v >= 0)
+             for k in ANTHROPIC_USAGE_KEYS}
+    requests = [{"n": n, "disposition": settled[n].get("disposition") if n in settled else "dispatch_unknown",
+                 "effort": a.get("effort"), "system_sha256": a.get("system_sha256"),
+                 "tools_sha256": a.get("tools_sha256"), "tool_names": a.get("tool_names"),
+                 "response_model": (settled.get(n) or {}).get("response_model"),
+                 "billing_verdict": ((settled.get(n) or {}).get("billing_verdict") or {}).get("verdict"),
+                 "usage_status": (settled.get(n) or {}).get("usage_status")} for n, a in sorted(admitted.items())]
+    evidence = "corrupt" if corrupt else "unresolved" if unresolved else "complete"
+    return {"evidence": evidence,
+            # complete only says every admission has a disposition; a dispatched exchange that
+            # did not complete (no response, truncated, unverified, no usage) is still unknown.
+            "outcome_known": evidence == "complete" and len(done) == len(settled),
+            "admitted": len(admitted), "completed": len(done), "not_completed": len(settled) - len(done),
+            "unresolved": unresolved, "refused": refused, "usage": usage,
+            "usage_complete": not corrupt and not unresolved and all(
+                r.get("usage_status") == "reported" for r in settled.values()),
+            "billing_verdicts": sorted({str(((r.get("billing_verdict") or {}).get("verdict"))) for r in settled.values()}),
+            "response_models": sorted({str(r.get("response_model")) for r in settled.values() if r.get("response_model")}),
+            "requests": requests}
+
+
 class SubscriptionProxyBudget:
     """Serialized stopping threshold, with no reservation or hard output cap.
 
@@ -1096,6 +1415,19 @@ class EgressProxy:
             self.account = codex_account(key)
         if provider == "anthropic" and tier:
             raise ValueError("the anthropic route sets no service tier")
+        if provider == "claude-sdk":
+            if tier or max_output_tokens is not None or budget is not None:
+                raise ValueError("Claude subscription takes no service tier, dollar budget or output cap")
+            if type(max_requests) is not int or max_requests < 1:
+                raise ValueError("Claude subscription needs a finite positive request cap")
+            if model_id not in CLAUDE_SDK_MODELS:
+                raise ValueError(f"no Claude subscription identity evidence for {model_id!r}")
+            claude_oauth_token(key)
+        # Claude subscription: set after any exchange that did not complete; every
+        # later request in the turn is refused (no replay of an uncertain request).
+        self.halted = None
+        self.on_halt = on_usd_exhausted
+        self.inflight = None
         self.provider, self.route = provider, PROVIDERS[provider]["route"]
         self.socket_path, self.key, self.model_id, self.tier = socket_path, key, model_id, tier
         self.upstream = urllib.parse.urlsplit(upstream)
@@ -1126,7 +1458,7 @@ class EgressProxy:
         # Exists from the start, so a turn with no requests still leaves a
         # readable (empty) log for the next turn's spend total.
         open(self.log_path, "a").close()
-        if isinstance(self.budget, SubscriptionProxyBudget):
+        if isinstance(self.budget, SubscriptionProxyBudget) or self.provider == "claude-sdk":
             # Make the log's directory entry durable before an admitted request can leave.
             fd = os.open(str(Path(self.log_path).parent), os.O_RDONLY | os.O_DIRECTORY)
             try:
@@ -1143,6 +1475,9 @@ class EgressProxy:
 
             def refuse(self, code: int, reason: str):
                 proxy.log({"event": "refused", "method": self.command, "path": self.path, "http_status": code, "reason": reason})
+                if proxy.provider == "claude-sdk":
+                    # Before the reply: a client reacting to it must already find the turn halted.
+                    self.halt(reason)
                 payload = json.dumps({"error": {"message": f"role_host egress proxy: {reason}", "type": "egress_refused"}}).encode()
                 self.send_response(code)
                 self.send_header("content-type", "application/json")
@@ -1327,14 +1662,200 @@ class EgressProxy:
                     except OSError:
                         pass
 
+            def halt(self, reason):
+                with proxy.lock:
+                    first = proxy.halted is None
+                    if first:
+                        proxy.halted = reason
+                if first and proxy.on_halt:
+                    proxy.on_halt(f"claude_sdk_turn_halted: {reason}")
+
+            def refuse_claude_sdk(self, code, reason):
+                """Refuse and halt (refuse() halts every claude-sdk refusal)."""
+                self.refuse(code, reason)
+
+            def forward_claude_sdk(self, raw, body, n, release):
+                """Claude subscription: validate, admit durably, forward the same bytes with the
+                host bearer, hold output until model and billing verdict are established."""
+                names = [k.lower() for k in self.headers.keys()]
+                headers = {k.lower(): v for k, v in self.headers.items()}
+                query = urllib.parse.urlsplit(self.path).query
+                reason = ("duplicate_header" if len(names) != len(set(names)) else
+                          claude_sdk_header_refusal(headers, query)
+                          or check_claude_sdk_request(body, model_id=proxy.model_id))
+                if reason:
+                    release()
+                    return self.refuse_claude_sdk(403, reason)
+                digests = claude_sdk_request_digests(body)
+                admitted = {"event": "claude_sdk_admitted", "provider": "claude-sdk", "auth_lane": "subscription",
+                            "n": n, "model": proxy.model_id, "body_sha256": hashlib.sha256(raw).hexdigest(),
+                            "effort": (body.get("output_config") or {}).get("effort"),
+                            "thinking": (body.get("thinking") or {}).get("type"),
+                            "betas": sorted(b.strip() for b in headers.get("anthropic-beta", "").split(",") if b.strip()),
+                            **digests}
+                with proxy.lock:
+                    # Claude Code sends its next request as soon as it reads message_stop,
+                    # while this proxy may still be writing the previous disposition.
+                    proxy.settled.wait_for(lambda: proxy.inflight is None or proxy.halted is not None,
+                                           timeout=proxy.admission_wait)
+                    refusal = (f"turn_halted: {proxy.halted}" if proxy.halted is not None else
+                               "request_in_flight" if proxy.inflight is not None else None)
+                    if refusal is None:
+                        try:
+                            proxy._log_locked(admitted, durable=True)
+                            proxy.inflight = n
+                        except OSError:
+                            refusal = "admission_persistence_failed"
+                if refusal:
+                    release()
+                    return self.refuse_claude_sdk(429, refusal)
+
+                def finish(row, *, completed):
+                    reason, newly = row.get("disposition") or "exchange_not_completed", False
+                    with proxy.lock:
+                        try:
+                            proxy._log_locked(row, durable=True)
+                        except OSError:
+                            completed, reason = False, "disposition_persistence_failed"
+                        finally:
+                            # Halt before waking waiters: a queued request must find the turn halted.
+                            if not completed and proxy.halted is None:
+                                proxy.halted, newly = reason, True
+                            proxy.inflight = None
+                            proxy.settled.notify_all()
+                    if newly and proxy.on_halt:
+                        proxy.on_halt(f"claude_sdk_turn_halted: {reason}")
+
+                up = proxy.upstream
+                out = {"content-type": "application/json", "anthropic-version": ANTHROPIC_VERSION,
+                       "anthropic-beta": headers["anthropic-beta"], "authorization": f"Bearer {proxy.key}",
+                       "accept-encoding": "identity", "content-length": str(len(raw))}
+                out.update({k: headers[k] for k in CLAUDE_SDK_FORWARD_HEADERS if k in headers})
+                conn_cls = http.client.HTTPSConnection if up.scheme == "https" else http.client.HTTPConnection
+                started = time.time()
+                base = {"event": "request", "provider": "claude-sdk", "auth_lane": "subscription", "n": n,
+                        "model": proxy.model_id, "billing": "unknown", "quota": "unknown"}
+                try:
+                    conn = conn_cls(up.hostname, up.port, timeout=900)
+                    conn.request("POST", up.path.rstrip("/") + proxy.route + "?beta=true", raw, out)
+                    resp = conn.getresponse()
+                except (OSError, http.client.HTTPException) as e:
+                    # The request may have reached the provider: dispatched, outcome unknown.
+                    finish({**base, "disposition": "dispatched_no_response", "detail": type(e).__name__},
+                           completed=False)
+                    return self.refuse(502, "upstream unreachable")
+                verdict = claude_sdk_billing_verdict(resp.getheaders())
+                if resp.status != 200:
+                    head = resp.read(4096)
+                    conn.close()
+                    try:
+                        error_type = (json.loads(head).get("error") or {}).get("type")
+                    except (ValueError, AttributeError):
+                        error_type = None
+                    # Upstream error bodies are neither relayed nor logged: they can carry account detail.
+                    finish({**base, "disposition": "upstream_error", "http_status": resp.status,
+                            "error_type": loggable_model(error_type), "billing_verdict": verdict,
+                            "seconds": round(time.time() - started, 3)}, completed=False)
+                    return self.refuse(502, f"upstream_status_{resp.status}")
+                usage, buf, held, held_bytes = {}, b"", [], 0
+                message, terminal, stop_reason, error_type, stream_error = {}, None, None, None, None
+                refusal = None if verdict["verdict"] == "allowed" else f"billing_{verdict['verdict']}"
+                verified, replied = False, False
+                try:
+                    while refusal is None:
+                        chunk = resp.read1(65536)
+                        if not chunk:
+                            break
+                        buf += chunk
+                        *lines, buf = buf.split(b"\n")
+                        for line in lines:
+                            event, kind = None, None
+                            if line.startswith(b"data:"):
+                                try:
+                                    event = json.loads(line[5:].strip())
+                                except ValueError:
+                                    event = None
+                                kind = event.get("type") if isinstance(event, dict) else None
+                                if not verified and kind != "ping":
+                                    refusal = anthropic_identity_refusal(event, proxy.model_id)
+                                    verified = refusal is None
+                                elif kind == "message_start":
+                                    refusal = "response_model_restated"
+                                if kind == "message_start" and isinstance(event.get("message"), dict):
+                                    message = event["message"]
+                                    merge_anthropic_usage(usage, message.get("usage"))
+                                elif kind == "message_delta":
+                                    merge_anthropic_usage(usage, event.get("usage"))
+                                    stop_reason = (event.get("delta") or {}).get("stop_reason") or stop_reason
+                                elif kind == "message_stop":
+                                    terminal = kind
+                                elif kind == "error":
+                                    error_type = (event.get("error") or {}).get("type") or "error"
+                            if refusal:
+                                break
+                            held.append(line + b"\n")
+                            held_bytes += len(line) + 1
+                        if refusal is None and verified and held:
+                            if not replied:
+                                replied = True
+                                self.send_response(200)
+                                self.send_header("content-type", "text/event-stream")
+                                self.send_header("connection", "close")
+                                self.end_headers()
+                            self.wfile.write(b"".join(held))
+                            self.wfile.flush()
+                            held, held_bytes = [], 0
+                        elif not verified and held_bytes + len(buf) > ANTHROPIC_IDENTITY_HOLD_BYTES:
+                            refusal = "response_model_not_established"
+                    if refusal is None and verified and buf:
+                        self.wfile.write(buf)
+                        self.wfile.flush()
+                except (OSError, http.client.HTTPException) as e:
+                    stream_error = type(e).__name__
+                finally:
+                    conn.close()
+                if refusal is None and not verified:
+                    refusal = "response_model_not_established"
+                counts = [usage.get(k) for k in ("input_tokens", "output_tokens")]
+                usage_ok = all(type(v) is int and v >= 0 for v in counts) and all(
+                    usage.get(k) is None or (type(usage.get(k)) is int and usage[k] >= 0)
+                    for k in ANTHROPIC_USAGE_KEYS)
+                completed = (refusal is None and terminal == "message_stop" and stream_error is None
+                             and error_type is None and usage_ok)
+                disposition = ("completed" if completed else refusal or ("stream_error" if stream_error else
+                               "stream_error_event" if error_type else "terminal_missing" if terminal is None
+                               else "usage_not_established"))
+                finish({**base, "disposition": disposition, "http_status": resp.status,
+                        "billing_verdict": verdict, "response_id": loggable_model(message.get("id")),
+                        "response_model": loggable_model(message.get("model")),
+                        "response_model_check": "verified" if verified and refusal != "response_model_restated"
+                        else refusal, "terminal": terminal, "stop_reason": loggable_model(stop_reason),
+                        "usage": {k: usage.get(k) for k in ANTHROPIC_USAGE_KEYS}, "usage_status":
+                        "reported" if usage_ok else "not_established", "output_released": replied,
+                        **({"stream_error": stream_error} if stream_error else {}),
+                        **({"stream_error_type": loggable_model(error_type)} if error_type else {}),
+                        "seconds": round(time.time() - started, 3)}, completed=completed)
+                self.close_connection = True
+                if refusal and not replied:
+                    try:
+                        self.refuse(502, refusal)
+                    except OSError:
+                        pass
+
             def do_GET(self):
+                if proxy.provider == "claude-sdk":
+                    return self.refuse_claude_sdk(403, f"only POST {proxy.route} is allowed")
                 self.refuse(403, f"only POST {proxy.route} is allowed")
 
             do_PUT = do_DELETE = do_PATCH = do_GET
 
             def do_POST(self):
                 if self.path.split("?", 1)[0] != proxy.route:
+                    if proxy.provider == "claude-sdk":
+                        return self.refuse_claude_sdk(403, f"only POST {proxy.route} is allowed")
                     return self.refuse(403, f"only POST {proxy.route} is allowed")
+                if proxy.provider == "claude-sdk" and proxy.halted is not None:
+                    return self.refuse(429, f"turn_halted: {proxy.halted}")
                 if self.headers.get("transfer-encoding"):
                     return self.refuse(411, "chunked or encoded request bodies are not accepted")
                 length = self.headers.get("content-length", "")
@@ -1363,6 +1884,8 @@ class EgressProxy:
                     raw = self.rfile.read(int(length))
                 except OSError:
                     release()
+                    if proxy.provider == "claude-sdk":
+                        self.halt("body not received in time")
                     return proxy.log({"event": "refused", "reason": "body not received in time"})
                 if len(raw) != int(length):
                     release()
@@ -1382,13 +1905,17 @@ class EgressProxy:
                             raw, max_output_size=proxy.max_body, allow_extra_data=False)
                     elif encoding != "identity":
                         raise ValueError()
-                    body = json.loads(raw)
+                    # claude-sdk forwards the accepted bytes, so the parse it validates must be the
+                    # only reading: no duplicate keys (any depth), no NaN/Infinity.
+                    body = strict_json(raw) if proxy.provider == "claude-sdk" else json.loads(raw)
                 except Exception:
                     # Do not retain compressed body/decoder errors: they may contain private data.
                     release()
                     return self.refuse(400, "body is not JSON")
                 if proxy.provider == "anthropic":
                     return self.forward_anthropic(body, n, release)
+                if proxy.provider == "claude-sdk":
+                    return self.forward_claude_sdk(raw, body, n, release)
                 reason = check_request(body, model_id=proxy.model_id)
                 if reason:
                     release()
@@ -1617,6 +2144,9 @@ def run_turn(spec_path: str) -> int:
         with open(record, "a") as fh:
             fh.write(json.dumps({"at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "event": event, **fields}) + "\n")
 
+    # First record: this runner's identity, so a turn without a launch row can still be
+    # recognised as live (status, retire) until it records container_removed.
+    note("runner_started", pid=os.getpid(), pid_start=process_start_time(os.getpid()))
     if not key:
         note("refused", detail="no provider key on stdin")
         return 64
@@ -1646,14 +2176,36 @@ def run_turn(spec_path: str) -> int:
                            max_output_tokens=spec["max_output_tokens"], spent_before_usd=lim["spent_before_usd"],
                            prefix=lim.get("prefix"), multiplier_floor=lim.get("multiplier_floor") or 0.0,
                            strict_tier=bool(lim.get("strict_tier")))
-    proxy = EgressProxy(spec["socket_path"], upstream=spec["upstream"], key=key, model_id=spec["model_id"],
-                        tier=spec.get("service_tier"), log_path=spec["files"]["proxy_log"],
-                        max_requests=spec.get("max_requests"), max_output_tokens=spec.get("max_output_tokens"),
-                        budget=budget, on_usd_exhausted=lambda detail: stop(reason="usd_limit", detail=detail),
-                        provider=provider).start()
+    try:
+        proxy = make_proxy(spec, key, budget, provider, stop)
+    except ValueError as e:
+        note("refused", detail=str(e)[:200])
+        return 64
     del key
     note("proxy_listening", socket=spec["socket_path"], upstream=spec["upstream"])
+    return run_container(spec, proxy, note, stop, stopping, stop_container)
 
+
+def process_start_time(pid):
+    """Kernel start time (clock ticks since boot) of a live, non-zombie process, else None."""
+    try:
+        fields = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
+    except (OSError, IndexError):
+        return None
+    return None if fields[0] == "Z" else int(fields[19])
+
+
+def make_proxy(spec, key, budget, provider, stop):
+    return EgressProxy(spec["socket_path"], upstream=spec["upstream"], key=key, model_id=spec["model_id"],
+                        tier=spec.get("service_tier"), log_path=spec["files"]["proxy_log"],
+                        max_requests=spec.get("max_requests"), max_output_tokens=spec.get("max_output_tokens"),
+                        budget=budget, on_usd_exhausted=lambda detail: stop(
+                            reason="claude_sdk_halt" if provider == "claude-sdk" else "usd_limit", detail=detail),
+                        provider=provider).start()
+
+
+def run_container(spec, proxy, note, stop, stopping, stop_container):
+    docker, name = spec["docker"], spec["container_name"]
     signal.signal(signal.SIGTERM, stop_container)
     signal.signal(signal.SIGINT, stop_container)
     rc = 0

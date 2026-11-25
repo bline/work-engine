@@ -791,6 +791,91 @@ def pi_retained_reservation(log, n, ts, rid, reserved, sid, launch):
     annotate_call_measurements(row)
     return row
 
+CLAUDE_SDK_USAGE_KEYS = ('input_tokens', 'cache_read_input_tokens', 'cache_creation_input_tokens', 'output_tokens')
+
+
+def pi_claude_sdk_turn(log, sid, turn, launch, since, until, seen, recorded=True):
+    """Calls of one claude-sdk container turn, from the host proxy log (the authority for this route).
+
+    One row per durable admission. A refused request never had an admission: no row (no
+    dispatch). An admission without a disposition was possibly dispatched: a row with
+    disposition dispatch_unknown and no usage, never zero. Subscription quota and any
+    overage charge are not measured, so no row has dollars or an API pool.
+    """
+    rows, admitted, settled, bad = [], {}, {}, False
+    try:
+        lines = list(open_lines(log))
+    except OSError:
+        issue('pi_read_failed', path=log)
+        return rows, 'missing'
+    for n, line in enumerate(lines, 1):
+        if not line.endswith('\n'):
+            issue('partial_pi_proxy_row', path=log, line=n); bad = True; continue
+        try: p = json.loads(line)
+        except ValueError: issue('malformed_pi_proxy_row', path=log, line=n); bad = True; continue
+        if not isinstance(p, dict):
+            bad = True; continue
+        k = p.get('n')
+        if p.get('event') == 'claude_sdk_admitted':
+            if type(k) is not int or k in admitted:
+                issue('malformed_pi_proxy_admission', path=log, line=n); bad = True
+            else:
+                admitted[k] = (p, n)
+        elif p.get('event') == 'request' and p.get('provider') == 'claude-sdk':
+            if type(k) is not int or k not in admitted or k in settled:
+                issue('malformed_pi_proxy_row', path=log, line=n); bad = True
+            else:
+                settled[k] = (p, n)
+    for k, (a, an) in sorted(admitted.items()):
+        p, n = settled.get(k, (None, an))
+        disposition = p.get('disposition') if p else 'dispatch_unknown'
+        ts = (p or a).get('at')
+        call_id = f'claude-sdk:{log}:{k}'
+        if call_id in seen or not in_window(ts, since, until):
+            continue
+        seen.add(call_id)
+        pu = (p or {}).get('usage') or {}
+        u = {key: pu.get(key) for key in CLAUDE_SDK_USAGE_KEYS}
+        reported = bool(p) and p.get('usage_status') == 'reported' and valid_usage(u, CLAUDE_SDK_USAGE_KEYS, ('input_tokens', 'output_tokens'))
+        if not reported:
+            u = {}
+            issue('pi_claude_sdk_usage_unknown', path=log, line=n, disposition=disposition)
+        else:
+            u = {key: v or 0 for key, v in u.items()}
+            u['total_tokens'] = u['input_tokens'] + u['output_tokens']
+        rows.append(dict(provider='pi', ts=ts, call_id=call_id, dedupe_basis='proxy_admission', thread=sid,
+                         parent_thread=launch.get('parent_session_id'), agent_path=None, originator='role_host',
+                         model=(p or {}).get('response_model') or a.get('model'), effort=a.get('effort'),
+                         role_index=None, role_heuristic=None, usage=u, usage_shape='anthropic', weighted=None, usd=None,
+                         source=f'{log}:{n}', pools=['claude_all_models'], service_tier=None, requested_tier=None,
+                         quota_multiplier=None, lane='subscription', auth_lane='subscription', billing='unknown',
+                         quota='unknown', response_id=(p or {}).get('response_id'),
+                         claude_sdk=dict(disposition=disposition, turn=turn, recorded=recorded,
+                                         billing_verdict=((p or {}).get('billing_verdict') or {}).get('verdict'),
+                                         usage_status='reported' if reported else 'not_established'),
+                         latency_s=(p or {}).get('seconds'), latency_basis='egress_proxy_request'))
+        annotate_call_measurements(rows[-1])
+    evidence = 'corrupt' if bad else 'unresolved' if set(admitted) - set(settled) else 'complete'
+    if evidence != 'complete':
+        issue('pi_claude_sdk_turn_' + evidence, path=log, session_id=sid, turn=turn)
+    return rows, evidence
+
+
+def pi_claude_sdk_intents(state, recorded):
+    """claude-sdk turn intents with no ledger row: found from host-only intent files."""
+    out = []
+    for path in sorted(glob.glob(os.path.join(state, 'pi', '*', 'host', 'turn-*.intent.json'))):
+        try:
+            with open(path) as fh:
+                intent = json.load(fh)
+            key = (intent['session_id'], intent['turn'])
+        except (OSError, ValueError, KeyError, TypeError):
+            issue('malformed_pi_turn_intent', path=path); continue
+        if key not in recorded:
+            out.append(intent)
+    return out
+
+
 def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
     """Pi container turns run by role_host: one call per response_id in the host egress-proxy log.
 
@@ -800,20 +885,40 @@ def build_pi(since, until, state=PI_STATE, ledger=None, sessions=None):
     sessions = {} if sessions is None else sessions
     rows, seen = [], set()
     cov = dict(pi_container_turns=0, pi_host_turns_not_read=0, pi_proxy_logs_missing=0)
-    if not os.path.exists(ledger):
-        return rows, cov
     records = []
-    for n, line in enumerate(open_lines(ledger), 1):
+    # No ledger yet: a claude-sdk turn intent can still exist (the launcher died before its row).
+    for n, line in enumerate(open_lines(ledger) if os.path.exists(ledger) else (), 1):
         try: records.append(json.loads(line))
         except ValueError: issue('malformed_role_host_row', path=ledger, line=n)
     launches = {r['session_id']: r for r in records
                 if isinstance(r, dict) and r.get('host') == 'pi' and r.get('event') == 'launch' and r.get('session_id')}
+    recorded = {(r.get('session_id'), r.get('turn')) for r in records
+                if isinstance(r, dict) and r.get('host') == 'pi' and r.get('turn')}
+    for intent in pi_claude_sdk_intents(state, recorded):
+        # The launcher died after the intent: its turn may still have dispatched requests.
+        sid = intent['session_id']
+        sessions.setdefault(sid, dict(read=0, not_read=0, missing=0))
+        issue('pi_unrecorded_turn', session_id=sid, turn=intent.get('turn'))
+        cov['pi_unrecorded_turns'] = cov.get('pi_unrecorded_turns', 0) + 1
+        if os.path.exists(intent.get('proxy_log') or ''):
+            got, _ = pi_claude_sdk_turn(intent['proxy_log'], sid, intent.get('turn'), launches.get(sid, {}),
+                                        since, until, seen, recorded=False)
+            rows += got
     for r in records:
         if not isinstance(r, dict) or r.get('host') != 'pi' or not r.get('turn'):
             continue
         sid = r.get('session_id')
         turns = sessions.setdefault(sid, dict(read=0, not_read=0, missing=0))
         log = (r.get('files') or {}).get('proxy_log')
+        if str(r.get('model') or '').startswith('claude-sdk/'):
+            if not log or not os.path.exists(log):
+                # No proxy log: the proxy, sole holder of the credential, never started.
+                cov['pi_proxy_logs_missing'] += 1; turns['missing'] += 1; issue('pi_proxy_log_missing', path=log)
+                continue
+            cov['pi_container_turns'] += 1; turns['read'] += 1
+            got, _ = pi_claude_sdk_turn(log, sid, r.get('turn'), launches.get(sid, {}), since, until, seen)
+            rows += got
+            continue
         if not log:
             cov['pi_host_turns_not_read'] += 1; turns['not_read'] += 1
             continue

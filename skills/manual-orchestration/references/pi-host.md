@@ -19,7 +19,7 @@ Every Pi launch names how it is paid for:
 | `--auth` | Pi credential for the provider | paid by | service tier |
 | --- | --- | --- | --- |
 | `api` | API key (environment or Pi's `auth.json`) | the provider account, per token | allowed for provider `openai` |
-| `subscription` | Pi OAuth, or existing host Codex ChatGPT auth in Codex container mode | the subscription's session quota | refused |
+| `subscription` | Pi OAuth, or existing host Codex ChatGPT auth in Codex container mode, or the existing host Claude Code login in claude-sdk container mode | the subscription's session quota | refused |
 
 For host launches and API containers, before each turn the launcher runs `pi auth check --provider <p> --json
 --no-refresh` and refuses unless Pi's credential type matches the lane
@@ -187,7 +187,9 @@ unchanged; these properties of the mechanism differ.
 
 `--container` runs each turn in a Docker container with no network. It is
 available on the api lane for providers `openai` and `anthropic`, and on the
-subscription lane for `openai-codex` using existing host Codex ChatGPT auth. Host facts: [Pi Docker probe](../../../metrics/probes/pi-docker-host-20261109.json)
+subscription lane for `openai-codex` using existing host Codex ChatGPT auth and for
+`claude-sdk` using the existing host Claude Code login
+([Claude subscription container](#claude-subscription-container)). Host facts: [Pi Docker probe](../../../metrics/probes/pi-docker-host-20261109.json)
 (Docker 29.7.2, local fake endpoint, n = 1 per cell).
 
 ```bash
@@ -401,6 +403,95 @@ Differences from the OpenAI route:
   `--container-model-file <json>`: one Pi `models.json` model entry with that
   id, written under the provider with the relay `baseUrl`; it may not set
   `baseUrl`, `headers`, `apiKey` or fallback models.
+
+### Claude subscription container
+
+Qualification: **offline only** (2026-11-25, synthetic credentials and a local
+mock upstream; [S0 wire record](../../../records/pi-container-claude-sdk-s0-20261124/README.md),
+[plan](../../../planning/pi-container-claude-sdk-implementation-plan-20261124.md)). No live request
+has been made through this route; a live smoke needs separate approval.
+
+`--container --auth subscription --max-requests N --host-arg=--model
+--host-arg=claude-sdk/<model-id>` runs Pi with the `pi-claude-subscription`
+extension. The extension starts Claude Code (Claude Agent SDK) inside the turn
+container; Claude Code reaches the host proxy through the loopback relay.
+
+- **Selection.** Supported models: `claude-haiku-5-5`, `claude-opus-5-5`
+  (exact response-identity checks; other models are refused until they have
+  their own evidence). `--max-requests` is required, finite and positive; it is
+  a per-turn request cap, not a session quota or spend cap. `--max-usd`,
+  `--max-output-tokens`, `--usd-strict-tier`, `--container-model-file`,
+  service tiers, `--extension` and `--objective-record` are refused. There is no
+  API-key, extra-usage or model fallback.
+- **Credential.** The host reads the existing Claude Code OAuth token from
+  `~/.claude/.credentials.json` (or `ROLE_HOST_CLAUDE_CREDENTIALS`) before
+  launch and each delivery: a regular, non-symlink file owned by the user with
+  no group/other access, an `sk-ant-oat01-` access token and an expiry more
+  than two minutes away. It never logs in, refreshes or writes it. The token
+  goes to the runner on stdin only. Mount planning refuses that file, its
+  directory, `~/.claude`, `~/.claude.json`, and the bundle root, including
+  ancestors and aliases. The container entry writes a public placeholder
+  credential into the turn's tmpfs home; nothing real enters the container,
+  spec, fingerprint, ledger or logs.
+- **Pinned bundle.** The extension and its declared dependency closure under
+  `~/.pi/agent/npm/node_modules` (or `ROLE_HOST_CLAUDE_SDK_BUNDLE`) are mounted
+  read-only, package by package, so an undeclared import fails. Their content
+  digest is part of the environment fingerprint and is rechecked on delivery.
+  Pi runs with `--no-extensions` and `--no-approve` (workspace `.pi` resources
+  never apply; `--approve` is refused), plus only the pinned extensions. Before
+  every turn the host rewrites the agent directory's `settings.json` (Pi retry
+  off) and removes `models.json`, `claude-sdk.json` and `trust.json` without
+  following symlinks. The
+  container environment turns off Claude Code retries, model, non-streaming
+  and refusal fallbacks, and nonessential traffic, and forces the extension's
+  Claude prompt.
+- **Proxy.** Only `POST /v1/messages?beta=true`. The headers, betas and body
+  fields observed in S0 are allowed. The container must present the placeholder
+  bearer and `x-stainless-retry-count: 0`, and the system blocks must carry the
+  SDK billing header and identity. These checks catch misconfiguration; they do
+  not prove who the caller is. The body must be strict JSON: duplicate keys at
+  any depth and `NaN`/`Infinity` are refused, so the forwarded bytes have
+  exactly the reading that was checked. Only Pi's bridged `mcp__pi__*` tools and
+  Claude Code's deferred-tool placeholder are accepted; any typed (hosted) tool
+  and any image or document source the provider would fetch (URL, file id) is
+  refused. The proxy durably logs an admission before sending, then forwards
+  the same accepted bytes. The headers are rebuilt with the host bearer. Output
+  is held until the response's subscription verdict
+  (`anthropic-ratelimit-unified-status` `allowed` or `allowed_warning`) and its
+  first `message_start` model are both established. Upstream error bodies are
+  neither relayed nor logged.
+- **No replay.** Claude Code can resend a failed request above its visible
+  retry counter (S0). Any refusal, upstream error, billing or model refusal,
+  truncated stream or missing usage therefore halts the turn: every later
+  request in it is refused and the container is stopped. The halt is recorded
+  before any queued request is woken.
+- **Evidence.** The host writes `turn-N.intent.json` durably before starting
+  the runner. Each admission is matched by `n` to a durable disposition
+  (`completed`, `upstream_error`, `billing_refused`, `terminal_missing`, ...).
+  The admission row carries the effort and thinking settings, betas, a body
+  digest, digests of the system prompt (without the per-request billing block)
+  and tool list, and the tool names. `status` reads these host-only records.
+  Its `egress.claude_sdk` evidence is `complete` (every admission has a
+  disposition), `unresolved` (an admission without a disposition: possibly
+  dispatched and billed), `corrupt` or `missing` (the proxy never started, so
+  nothing was sent). `complete` does not mean every outcome is known:
+  `outcome_known` is true only when every disposition is `completed` (or the
+  log is missing); `dispatched_no_response`, truncated or unverified exchanges
+  stay unknown per request. `egress.refused` lists refusals both before and
+  after dispatch; the per-request dispositions say which were dispatched.
+  A delivery is refused while any earlier turn is unresolved, corrupt or
+  lacks a ledger row. `status` and `retire` find turn intents that never got a
+  ledger row (launcher death). The runner's first host-only record is its own
+  pid and start time, so such a turn reads as `running` while its runner or
+  container lives; `retire --force` stops the runner and removes its container.
+- **Usage ledger.** `usage_ledger.py` reads the same logs and intents: one row
+  per admission in pool `claude_all_models` with `usd: null`, `billing` and
+  `quota` `unknown`, and a disposition. Unresolved admissions are rows with
+  unknown usage, not zero. A refused request is no row. Nothing enters
+  `pi_api`. Native Pi session files of these sessions are skipped, and the
+  container's Claude Code transcripts live in its tmpfs home, so no call is
+  counted twice. Provider-reported token usage is kept; subscription quota
+  consumption and any overage charge are not measured.
 
 ## Not supported here
 

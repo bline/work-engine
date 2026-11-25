@@ -481,7 +481,7 @@ class AnthropicHostTests(unittest.TestCase):
         tmp = pathlib.Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, tmp)
         (tmp / "p").write_text("x")
-        for model, extra, expect in (("google/gemini-3", [], "routes providers anthropic, openai"),
+        for model, extra, expect in (("google/gemini-3", [], "routes providers anthropic, claude-sdk, openai"),
                                      (f"anthropic/{MODEL_ID}", ["--service-tier", "priority"], "service tier")):
             r = subprocess.run([sys.executable, str(HOST), "--state", str(tmp / "state"), "launch", "pi", "--cwd",
                                 str(tmp), "--name", "x", "--prompt-file", str(tmp / "p"), "--auth", "api",
