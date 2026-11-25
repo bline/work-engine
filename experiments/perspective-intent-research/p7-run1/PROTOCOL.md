@@ -1,6 +1,6 @@
 # P7 run 1: pre-registration protocol (revision 3, draft)
 
-**Status:** Draft, not frozen, not authorized to run. Revision 2 answered the review of revision 1 (§12). Revision 3 answers the re-review of revision 2 (§13), and moves launches to the Claude subscription container lane after the first smoke (§14); both reviews are in [`reviews/p7-run1-protocol-astra-20261124/`](../../../reviews/p7-run1-protocol-astra-20261124/README.md). Two parts depend on data, and wait for a disclosed, uncounted calibration batch: the pinned receipt digests and the quote policy. Freezing needs that calibration and a passing review (§10). Running needs a separate operator execution go-ahead, which is distinct from the freeze.
+**Status:** Draft, not frozen, not authorized to run. Revision 2 answered the review of revision 1 (§12). Revision 3 answers the re-review of revision 2 (§13), and moves launches to the Claude subscription container lane after the first smoke (§14); both reviews are in [`reviews/p7-run1-protocol-astra-20261124/`](../../../reviews/p7-run1-protocol-astra-20261124/README.md). The disclosed, uncounted calibration batch has run (§15): the receipt values are pinned and the quote policy is confirmed, and it found a schema presentation defect that is not yet fixed. Freezing needs that calibration and a passing review (§10). Running needs a separate operator execution go-ahead, which is distinct from the freeze.
 **Date:** 2026-11-24
 **Owning design:** [pilot P7 and Stage 1c](../../../design/ideas/pending/pilots/perspective-intent-pilot.md). Execution is specified in [RUNBOOK.md](RUNBOOK.md).
 
@@ -115,7 +115,7 @@ Schema `schema/obligation-extract-v3.json` uses case-neutral role tokens:
   - reference targets and properties;
   - candidates and baselines that resolve to parent entries.
 - **Quote failures** are collected for every relied-on quote: entry spans, reference texts, owner spans, owner names and `other_text`. They use the named normalization `quote-norm/v1`: straight quotes, Markdown emphasis characters removed, whitespace collapsed, contiguous passage only.
-- `QUOTE_POLICY` decides whether any quote failure invalidates the extraction. It is `strict` in this draft, and is confirmed or changed from calibration (RUNBOOK §4) before freezing. Quote failures are recorded and reported either way.
+- `QUOTE_POLICY` decides whether any quote failure invalidates the extraction. It is `strict`, confirmed from calibration (§15). Quote failures are recorded and reported either way.
 
 An invalid extraction is a recorded invalid run, with no repair.
 
@@ -294,8 +294,9 @@ Nothing is pooled across inputs as if independent.
 | Pipeline rev 3: receipts and custody, attempt rules, adjudication, stop gate, fallback pairing, versioned scoring, reply validation, report joins | Done; offline tests in `test_pipeline.py`, including a mixed-status batch carried through to item outcomes |
 | Receipts on the container lane (§14) | Done; offline tests on synthetic host records, one per violation, provider-failure and missing-evidence class |
 | Build and `--check` comparing raw task bytes, canonical plan bytes and asset digests | Done; 2 tests, including CRLF and reserialized plans |
-| Smoke and disclosed calibration batch | Pending the operator's go-ahead (first paid inference) |
-| Pinned receipt expectations and quote policy | After calibration, then re-freeze |
+| Smoke and disclosed calibration batch | Done 2026-11-25 (§15) |
+| Pinned receipt expectations and quote policy | Done (§15) |
+| Schema presentation fix (§15) | Pending the operator's decision |
 | Independent re-review (`openai-codex/gpt-6.2-astra`, `xhigh`) | Third review after calibration |
 | **Freeze** | After a passing review: commit and digests recorded here |
 | **Execution go-ahead** | A separate operator decision |
@@ -383,3 +384,40 @@ Changes:
 - **Smoke:** launches both agents.
 
 The experimental design, inputs, rubric, comparator and scoring are unchanged.
+
+## 15. Calibration results (2026-11-25)
+
+Operator-approved, run on the lane of §14:
+- a smoke of each agent (`runs/smoke/2.json`, `3.json`);
+- one uncounted arm run of each of the 15 tasks (`runs/calibration/`).
+
+Driver and step log: `runs/calibration/driver/`. These are 17 requests on the Claude subscription, none counted or scored.
+
+**Receipts.** All 17 were clean in calibration mode:
+- one request each, billing verdict `allowed`;
+- the served model verified as `claude-opus-5-5`, effort `high`;
+- an empty tool list.
+
+Each observed value took one value across every launch, and is pinned in `receipt_expectations.json`:
+
+| Value | Pinned |
+|---|---|
+| `p7-arm` request system digest | `d0d24752b108bb79…` (16 launches) |
+| `p7-scorer` request system digest | `c1c3df083ce19969…` (1 launch) |
+| Request message count | 2 |
+| User wrapper digest | `9ab8802b2f26e424…`: the user message is the task text itself |
+
+The environment fingerprint differs on every launch and is recorded, not pinned. The real credential occurred in no file under the host state root or `runs/`.
+
+**Outputs.**
+- All 8 prose tasks (A1, M1) were valid.
+- Of the 7 typed (M2) tasks, the 4 plan-kind tasks were valid with 0 quote failures.
+- The 3 review-kind tasks (`A3-F`, `NC-B`, `NC-C`) were `invalid_extraction: bad asserted_as`.
+- There were no leakage alerts.
+- Output sizes ranged from 1,192 to 47,994 output tokens; A3-F.M2 was the largest.
+
+**Schema presentation defect.** The schema lists the derived-entry keys under a `"derived_only"` heading, and all three review-kind extractions nested them in a `derived_only` object. The comparator requires them on the entry itself. Flattened in a diagnostic outside the records, all three validate with 0 quote failures.
+
+This is an instrument defect, not a model failure, and it would invalidate every review-kind typed run. The records are unchanged: they stay `invalid_extraction` as recorded.
+
+**Quote policy.** No quote failure occurred in any of the 7 typed extractions, including the 3 flattened in the diagnostic. `strict` is confirmed.

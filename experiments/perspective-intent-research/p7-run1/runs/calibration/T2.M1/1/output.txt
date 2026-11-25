@@ -1,0 +1,175 @@
+# Review of DOC-1: responsibility analysis for "Milestone A — one-shot Controlled Builder admission"
+
+## Authority and presentation
+
+- **Who authored and directed it.** DOC-1 is a record by a coordinator session. It says "The operator directed continuation after discussing one-shot admission, independent proof of termination, and pinning the Campaign head per attempt."
+- **What it changes.** It calls itself "an intentional change to the prior live-head-through-entry hypothesis". So the core decision is presented as a revision, not as inherited.
+- **What it does not do.** It "does not select a running realization, authorize protected data access, change the general Campaign contract, or accept implementation."
+- **Owners of meaning.** Two owners are named for inputs:
+  - "The current Campaign owner supplies live head/currentness"
+  - "the human run-anchor owner supplies the exact current selection independently of requests."
+- **Who may change a requirement.** DOC-1 never says. The nearest anchor is the operator's direction. Any change to the Campaign contract is outside this record ("does not … change the general Campaign contract"). On these documents, such a change appears to be for the operator and the Campaign owner, not the coordinator or the implementers. I do not propose weakening anything.
+
+## Obligation-by-obligation analysis
+
+### 1. One-shot commitment and consumption (Decision; Boundary 1)
+
+- **Initiator.** Partly assigned. The inputs come from the Campaign owner and the run-anchor owner. But the decision is "owner-consumed" and run by "A single owner-controlled ordering decides between changing/revoking or expiring the unspent approval and consuming it for an exact attempt." Two owners have just been named, so "owner" can be read as:
+  - the Campaign owner,
+  - the run-anchor owner, or
+  - a third component.
+- **Who brings about the outcome.** Unassigned. "Consumption is the first authorized admission write (or part of the same atomic owner operation)" does not name the writer. The Org cut is explicitly "**not** consumption", so the consuming component is not identified anywhere.
+- **Who establishes it.** Unassigned. "Check the actual live Campaign and the operator's current selection at the same decision that commits the attempt" does not say who checks. The ordering fact "it precedes Server directory/lock/binding, snapshot, queue, and Host entry" has no party responsible for showing the order held.
+- **Flag:** yes.
+
+### 2. Non-retargeting after commitment
+
+- **Text:** "Later head changes cannot retarget or retroactively unadmit this execution and cannot authorize a competing execution over the same protected resources."
+- **Gap:** No party is named that enforces this, or that establishes that no competing execution was authorized. This matters because a competing execution bears on exclusive causality.
+- **Flag:** yes, for enforcement and for establishing the outcome.
+
+### 3. Export adoption
+
+- **Text:** "export adoption is a separate current-owner decision against the exact pinned subject and expected current revision, with stale/crossed or conflicting results refused."
+- **Initiator:** "current-owner", most naturally the current Campaign owner.
+- **Gap:** The refusal is passive ("results refused"). It is not stated who refuses or who establishes that a refusal occurred and was reported distinctly.
+- **Flag:** yes, minor. The deciding party is reasonably clear; who refuses and who verifies is not.
+
+### 4. Evidence preservation and reconciliation (Boundary 1)
+
+- **Texts:**
+  - "Preserve actual storage identity, currentness, and refusal evidence"
+  - "If durable commitment is uncertain, reconcile the same attempt; do not create a new one."
+- **Gap:** No party is named that:
+  - preserves the evidence,
+  - determines that commitment is "uncertain", or
+  - performs the reconciliation.
+- **Flag:** yes.
+
+### 5. Single Host entry (Boundary 2)
+
+- **Text:** "Only the exact consumed attempt can enter Host once"
+- **Gap:** It is not said who enforces single entry or who establishes that entry happened exactly once for the exact attempt. The text states only what does not count as evidence: "detached scheduling, a stored binding and `entry-attempt` are neither fresh admission nor entry evidence".
+- **Flag:** yes.
+
+### 6. Abort: fence, terminate, observe (Boundary 2)
+
+- **Text:** "To abort, fence pending entry, use the designated termination actor, and retain execution exclusion until the independent observer establishes that this exact attempt has no live or still-startable execution."
+- **Initiator:** Not stated. Neither the party who may initiate an abort nor the party who fences pending entry is named.
+- **Who brings it about:** "the designated termination actor". Who designates it is not stated.
+- **Who establishes it:** Plainly an independent observer: "Observer evidence must be independent of the killer's claim". The concrete observer is deliberately left to the Dev Vertical investigation ("Report one supported composition … or the exact missing ownership boundary"). I do not flag that open choice.
+- **Docker daemon ambiguity.** "without delegating the Docker daemon to Builder or verifier (#6389)" can reasonably be read two ways:
+  - as forbidding Builder or verifier from controlling the daemon (the managing system that actually brings about termination); or
+  - as forbidding them from relying on the daemon.
+
+  It is also unclear whether daemon-reported state counts as independent of the killer's claim when the termination actor acts through that same daemon.
+- **Conflict with deadlines.** "Missing or ambiguous evidence holds exclusion; backstop deadlines still apply." The text does not say:
+  - who enforces the deadline, or
+  - whether reaching it releases exclusion without observer evidence.
+
+  If it does, the outcome would no longer be established by the observer.
+- **Flag:** yes, on four points: abort initiator and fencing actor, who designates the termination actor, the Docker daemon wording, and the backstop deadline.
+
+### 7. Retirement and effect reconciliation (Boundary 2)
+
+- **Text:** "Normal terminal settlement or independently established abort retires the attempt, never reuses the approval."
+- **Asymmetry:** Abort must be independently established. "Normal terminal settlement" has no stated establishing party and no independence requirement, so a Host self-report could be read as sufficient.
+- **Text:** "Reconcile effects separately; termination is not proof of no previous writes."
+- **Gap:** No reconciling or establishing party is named.
+- **Flag:** yes.
+
+### 8. Protected data kept out of preparation (Boundary 3)
+
+- **Who brings it about:** Assigned to Server and Host ("on **both** Server and Host before legacy loading/validation").
+- **Inputs:** "The existing owners must independently supply exact public job/route/binary/typed input identity and opaque task identity, digest and approved byte bound." Which "existing owners" is not stated. The document itself says "there is currently no approved source of this metadata on the actual route" and "Do not invent a local authority". The supplying party is therefore unassigned in fact, and the gap is acknowledged rather than deliberately left open.
+- **Who establishes it:** For "No task source locator or contents in request, job, config, argv, environment, mount, journal, or relay during preparation; no caller self-selection", no party is named that establishes the absence.
+- **Flag:** yes.
+
+### 9. Task release custody (Boundary 4)
+
+- **Text:** "Before acquisition or sending task data, establish the exclusive Host writer's live binding through the actual relay to the real held receiver endpoint and Pi session."
+- **Gap:** No establishing party is named, and no independence is required, unlike Boundary 2. A reader could assign this to the Host writer itself, which would be self-attestation. That reading is only partly blocked by "a reply, client `ChildStdin`, marker or correlated actor pidfd alone cannot attest exclusive custody".
+- **Text:** "Separate proof of actual one-use consumption follows delivery; crossed, missing, replayed, disconnected or ambiguous cases fail closed."
+- **Gap:** No party is named that proves consumption, or that detects these cases and fails closed.
+- **Flag:** yes.
+
+### 10. Offline cuts
+
+- **Org Campaign seam:** Plainly assigned to "(Org; implementation if expressible)". Org implements, proves on an inert fixture, and must "Return the exact checkpoint, evidence and what remains missing". The recipient is unstated, but acceptance is expressly deferred: the record does not "accept implementation", and "fresh independent product review" stays separate. Not flagged.
+- **Dev Vertical runtime cut:** Plainly assigned, read-only, with its prohibitions listed. Not flagged.
+
+### 11. Reversal
+
+- **Text:** "Reversal: park private successors and preserve the exact reviewed subjects."
+- **Gap:** No one is named who may initiate the reversal or who carries it out.
+- **Flag:** yes, minor.
+
+## FLAGS
+
+1. **DOC-1**, "Use an owner-consumed one-shot commitment" / "A single owner-controlled ordering decides between changing/revoking or expiring the unspent approval and consuming it for an exact attempt."
+   - **Responsibility:** initiator and who brings about the outcome.
+   - **Concern:** Two owners are named just before. "owner" could mean either of them or another component, and the Org seam is expressly "**not** consumption", so no consuming component is identified.
+
+2. **DOC-1**, "Consumption is the first authorized admission write (or part of the same atomic owner operation); it precedes Server directory/lock/binding, snapshot, queue, and Host entry."
+   - **Responsibility:** who brings about the outcome, and who establishes it.
+   - **Concern:** The writer is unnamed, and no party is responsible for establishing the required ordering.
+
+3. **DOC-1**, "Check the actual live Campaign and the operator's current selection at the same decision that commits the attempt."
+   - **Responsibility:** who establishes it.
+   - **Concern:** The checking party is not named, and it is not said whether it must be independent of the consuming component.
+
+4. **DOC-1**, "Later head changes cannot retarget or retroactively unadmit this execution and cannot authorize a competing execution over the same protected resources."
+   - **Responsibility:** who brings it about (enforcement) and who establishes it.
+   - **Concern:** No enforcer is named, and no one is responsible for establishing that no competing execution was authorized.
+
+5. **DOC-1**, "with stale/crossed or conflicting results refused."
+   - **Responsibility:** who brings it about and who establishes it.
+   - **Concern:** The refusal is passive. Neither the refusing party nor any check that the refusal was reported distinctly is assigned.
+
+6. **DOC-1**, "If durable commitment is uncertain, reconcile the same attempt; do not create a new one." and "Preserve actual storage identity, currentness, and refusal evidence"
+   - **Responsibility:** all three.
+   - **Concern:** No party is named that decides commitment is uncertain, reconciles, or preserves the evidence.
+
+7. **DOC-1**, "Only the exact consumed attempt can enter Host once"
+   - **Responsibility:** who brings it about and who establishes it.
+   - **Concern:** The enforcer and the party establishing single entry are unassigned. Only non-evidence is listed.
+
+8. **DOC-1**, "To abort, fence pending entry, use the designated termination actor"
+   - **Responsibility:** initiator.
+   - **Concern:** Neither the party who may initiate an abort, nor the fencing actor, nor the party who designates the termination actor is named. The concrete observer is deliberately left open; this flag is not about that.
+
+9. **DOC-1**, "without delegating the Docker daemon to Builder or verifier (#6389)"
+   - **Responsibility:** who brings it about (managing system) versus who establishes it.
+   - **Concern:** The wording admits different readings. It is also unclear whether daemon state counts as independent of the killer's claim when termination goes through the same daemon.
+
+10. **DOC-1**, "Missing or ambiguous evidence holds exclusion; backstop deadlines still apply."
+    - **Responsibility:** who establishes it, plus the unassigned deadline enforcer.
+    - **Concern:** It is unclear whether a deadline releases exclusion without observer evidence, which would conflict with independent establishment. Who enforces the deadline is also unstated.
+
+11. **DOC-1**, "Normal terminal settlement or independently established abort retires the attempt"
+    - **Responsibility:** who establishes it.
+    - **Concern:** Abort requires independence, but normal settlement names no establishing party, so a Host self-report could be read as sufficient.
+
+12. **DOC-1**, "Reconcile effects separately; termination is not proof of no previous writes."
+    - **Responsibility:** who brings it about and who establishes it.
+    - **Concern:** No reconciling or verifying party is named.
+
+13. **DOC-1**, "The existing owners must independently supply exact public job/route/binary/typed input identity and opaque task identity, digest and approved byte bound."
+    - **Responsibility:** initiator (supplier).
+    - **Concern:** The "existing owners" are unidentified, and the document states "there is currently no approved source of this metadata on the actual route". The supplier is acknowledged as missing, not deliberately left open. Filling it is not for implementers ("Do not invent a local authority").
+
+14. **DOC-1**, "No task source locator or contents in request, job, config, argv, environment, mount, journal, or relay during preparation; no caller self-selection."
+    - **Responsibility:** who establishes it.
+    - **Concern:** No party is assigned to establish the absence.
+
+15. **DOC-1**, "establish the exclusive Host writer's live binding through the actual relay to the real held receiver endpoint and Pi session."
+    - **Responsibility:** who establishes it (independence).
+    - **Concern:** The establishing party and any independence requirement are unstated, unlike Boundary 2. A reader could assign this to the Host writer itself, which would be self-attestation.
+
+16. **DOC-1**, "Separate proof of actual one-use consumption follows delivery; crossed, missing, replayed, disconnected or ambiguous cases fail closed."
+    - **Responsibility:** all three.
+    - **Concern:** No party is named that proves consumption, or that detects these cases and fails closed.
+
+17. **DOC-1**, "Reversal: park private successors and preserve the exact reviewed subjects."
+    - **Responsibility:** initiator and who brings it about.
+    - **Concern:** No one is named who may order the reversal or who carries it out.

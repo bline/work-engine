@@ -1,0 +1,64 @@
+{
+  "assessed_status": "invalid_extraction",
+  "error": "D1: bad asserted_as",
+  "leakage_hits": [],
+  "output_chars": 4501,
+  "output_sha256": "d74d648c2a75bd489e546bb22a6bbe39770fb9951a0765685e24939a474cecb8",
+  "quote_failures": [],
+  "receipt": {
+    "agent": "p7-arm",
+    "cwd": "/home/bline/cbm-work/p7-run1-scratch",
+    "events_sha256": "924dca6698e9f19294425c0bdcae97fef5f59e0d87b00f64c5678524b9b5332d",
+    "exit_code": 0,
+    "final_text_sha256": "d74d648c2a75bd489e546bb22a6bbe39770fb9951a0765685e24939a474cecb8",
+    "fingerprint_sha256": "967d9dcd29a668005c649a1e0898a0d184df8966e75407461290ac12bc959590",
+    "host_state": "/home/bline/cbm-work/p7-run1-host",
+    "observations": {
+      "system_sha256_unpinned": true
+    },
+    "outcome": "completed",
+    "provider_failure": [],
+    "proxy_log_sha256": "0d8cdb1bcde00f5a79517042c207f176e89dd12539b749225cd7af380afd45ea",
+    "request_messages": 2,
+    "requests": [
+      {
+        "billing_verdict": "allowed",
+        "disposition": "completed",
+        "effort": "high",
+        "n": 1,
+        "response_model": "claude-opus-5-5",
+        "system_sha256": "d0d24752b108bb79cb0f2b8019e2701553f6e3814d3a94217cc28c4a6e17cbda",
+        "tool_names": [],
+        "tools_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "usage_status": "reported"
+      }
+    ],
+    "run_id": "c57cc692-7381-4623-8e8f-3903f185e540",
+    "session_id": "c57cc692-7381-4623-8e8f-3903f185e540",
+    "spec_sha256": "4ef6f0d21257d356fb1096b6e3dd0003fc9983e2c3063d63b2dad0dfe8f3e508",
+    "state": "stopped",
+    "status_sha256": "76a9591e60d567dd167fb30195ad26f0a90d2810887a73c520d69e09d279cd55",
+    "stop_reason": "stop",
+    "system_sha256": "d0d24752b108bb79cb0f2b8019e2701553f6e3814d3a94217cc28c4a6e17cbda",
+    "unestablished": [],
+    "usage": [
+      {
+        "durationMs": 34230,
+        "usage": {
+          "cache_creation_input_tokens": 3778,
+          "cache_read_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 3778,
+          "ephemeral_5m_input_tokens": 0,
+          "input_tokens": 2,
+          "output_tokens": 4196
+        }
+      }
+    ],
+    "user_wrapper_sha256": "9ab8802b2f26e424322215f7811bc73dc05d694671269355a99d307d614c6c6f",
+    "violations": []
+  },
+  "receipt_status": null,
+  "stage": "calibration",
+  "status": "calibration",
+  "task_id": "NC-C.M2"
+}

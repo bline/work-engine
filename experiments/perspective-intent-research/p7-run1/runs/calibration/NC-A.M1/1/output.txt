@@ -1,0 +1,48 @@
+# Review of DOC-1: Scratch-file hygiene contract
+
+## Obligations identified
+
+DOC-1 imposes one central obligation, terminal cleanup, plus a reporting rule attached to it. The Scope section sets the conditions those obligations rely on.
+
+### Scope conditions
+
+> "The report renderer writes one temporary file per render, under its own private scratch directory, and nothing else writes there."
+
+This is the premise the later obligations rest on. It fixes:
+- **Exact identity of the object:** "one temporary file per render".
+- **Exclusive use of the location:** "nothing else writes there".
+
+### Obligation 1: Delete the temporary file before returning
+
+> "Before it returns, the renderer must delete the temporary file it created"
+
+- **Who initiates.** The renderer. "the renderer must delete" names it as the party that issues the deletion.
+- **Who brings about the outcome.** The renderer. The text says "The renderer owns its temporary file for its whole lifetime". It also rules out other parties: "No other component removes or inspects the file". The filesystem is not named as a managing system, and no other party is given any role. Together with "nothing else writes there", the document covers exclusive causality by stating it as a premise.
+- **Who establishes the outcome.** The renderer, by self-report: "record in its own result whether the deletion succeeded." The document deliberately says an independent observer is not needed: "no independent check is required: the file is private to the renderer and has no consumer." This is a stated design choice with a stated reason, not an omission.
+- **Facts about how the result is produced:**
+  - Ordering: "Before it returns".
+  - Object identity: "the temporary file it created".
+
+All three responsibilities are assigned to the same party, the renderer, and the assignment is explicit. Under the review rules, this is not a flag.
+
+### Obligation 2: Report a failed deletion as a failure
+
+> "A render whose deletion failed reports `cleanup_failed`; it is not reported as a clean render."
+
+- **Who initiates and who reports.** The renderer, through "its own result".
+- **Kind of evidence.** The document explicitly requires that a failure be reported distinctly. It names the failure value (`cleanup_failed`) and forbids reporting a failure as success ("it is not reported as a clean render").
+- **Who establishes the outcome.** The renderer, by self-report. This is consistent with Obligation 1 and with the explicit statement that no independent check is required.
+
+This is plainly assigned, so it is not a flag.
+
+## Points noted but not flagged
+
+1. **Self-report is the only evidence.** The renderer's statement of "whether the deletion succeeded" is the only evidence that the file was removed. No independent check exists and no observation of the outcome is required. However, DOC-1 says this on purpose: "no independent check is required". The review rules say not to flag a choice the document makes deliberately. I do not propose changing it.
+
+2. **Authority and ownership are not stated.** DOC-1 does not name a requirement owner. It also does not say who may adopt or change this contract, including the decision to need no independent check. This is not one of the three per-obligation responsibilities, so I do not flag it. It does mean that if anyone wanted an independent check, the documents give no answer on whose decision that would be.
+
+3. **Presentation.** DOC-1 is the only source document and cites no earlier document. Its requirements are therefore new, complete, and imposed directly. None are marked as proposed or as revisable choices of the author.
+
+## FLAGS
+
+FLAGS: none

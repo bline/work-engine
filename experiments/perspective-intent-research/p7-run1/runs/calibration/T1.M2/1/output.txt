@@ -1,0 +1,357 @@
+```json
+{
+  "schema": "obligation-extract/v3",
+  "entries": [
+    {
+      "id": "D1-E01-host-fail-closed",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "This refusal must remain until the separate transport binding exists.",
+      "fields": {
+        "outcome_owner": {"status": "binding", "value": ["acting_component"]}
+      }
+    },
+    {
+      "id": "D1-E02-f1-retain-ownership",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "It must not drop and reacquire ownership or substitute replay, a copied receipt, or a later SQL read.",
+      "fields": {
+        "outcome_owner": {"status": "binding", "value": ["acting_component"]},
+        "path_fact": {"status": "binding", "value": ["same_system_instance", "no_fallback_action"]}
+      }
+    },
+    {
+      "id": "D1-E03-f1-replacement-proof",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "A replacement proof must establish the applicable facts from the fresh committed construction and uninterrupted custody.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["same_system_instance"]},
+        "acceptance_evidence": {
+          "status": "ambiguous",
+          "value": [],
+          "readings": [["other"], ["other", "exclusive_causality"]],
+          "other_text": "A replacement proof must establish the applicable facts from the fresh committed construction and uninterrupted custody."
+        }
+      }
+    },
+    {
+      "id": "D1-E04-f1-connection-not-closed",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Returning an error must also not close the retained connection as part of \"clean refusal\"; connection lifetime and cleanup need separate ownership.",
+      "fields": {
+        "outcome_owner": {"status": "binding", "value": ["acting_component"]},
+        "path_fact": {"status": "binding", "value": ["same_system_instance"]}
+      }
+    },
+    {
+      "id": "D1-E05-f2-exclude-sqlite",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Exclude SQLite activity—including opening or closing its connection—from the admission-refusal interval, while retaining the same owner and proving equivalent applicable integrity facts.",
+      "fields": {
+        "outcome_owner": {"status": "binding", "value": ["acting_component"]},
+        "path_fact": {"status": "binding", "value": ["same_system_instance"]},
+        "acceptance_evidence": {"status": "binding", "value": ["other"], "other_text": "proving equivalent applicable integrity facts"}
+      }
+    },
+    {
+      "id": "D1-E06-f2-no-substitutes",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Do not prewarm, exempt SHM, use a replacement store, or rename a SQL-backed observation \"read-only.\"",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["no_fallback_action"]}
+      }
+    },
+    {
+      "id": "D1-E07-f2-byte-quiet",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Neither total_changes() nor unchanged file inventory establishes byte-quiet refusal.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["outcome_observed", "other"], "other_text": "byte-quiet refusal"}
+      }
+    },
+    {
+      "id": "D1-E08-entry-marker-not-proof",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "The collector lock and durable entry marker provide conservative once-entry bookkeeping, not proof of actual execution.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["outcome_observed"]}
+      }
+    },
+    {
+      "id": "D1-E09-f3-ordering-approval",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "The human run-anchor owner must approve how selection changes/revocation are ordered with one admission interval; Campaign and Server/Host must enforce that same ordering.",
+      "fields": {
+        "initiator": {"status": "binding", "value": ["requirement_owner", "operator"]},
+        "outcome_owner": {"status": "binding", "value": ["acting_component"]},
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect"]}
+      },
+      "semantics_owner": {
+        "status": "binding",
+        "names": ["human run-anchor owner", "operator"],
+        "document": "DOC-1",
+        "span": "The earliest missing authority is the operator-owned current pairing and its revocation/consumption semantics."
+      }
+    },
+    {
+      "id": "D1-E10-f3-cover-both-edges",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "It must cover both first materialization and actual covered entry. Overlapping revocation must either win before materialization or be ordered after the covered consumption—not silently take effect between them while the implementation claims clean refusal.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect"]},
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D1-E11-f3-irrevocable-point",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "An earlier irrevocable consumption point is possible only as an explicit owning-authority decision specifying the exact effects committed by it.",
+      "fields": {
+        "initiator": {"status": "binding", "value": ["requirement_owner"]},
+        "path_fact": {"status": "binding", "value": ["other"], "other_text": "specifying the exact effects committed by it"}
+      }
+    },
+    {
+      "id": "D1-E12-f3-no-write-after-refusal",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Any new protected write/entry after effective refusal falsifies the design.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect"]}
+      }
+    },
+    {
+      "id": "D1-E13-f4-held-only-contract",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "The existing owners would need an explicit, closed held-only input contract selected before legacy provider-task validation, on Server as well as Host.",
+      "fields": {
+        "initiator": {"status": "binding", "value": ["other"], "other_text": "The existing owners"},
+        "outcome_owner": {"status": "binding", "value": ["acting_component"]},
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect"]}
+      }
+    },
+    {
+      "id": "D1-E14-f4-bind-operation-pair",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "the exact current Campaign/operator/Server operation pair;",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["exact_identity"]}
+      }
+    },
+    {
+      "id": "D1-E15-f4-bind-task-metadata",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "protected task opaque identity, digest and owner-approved byte bound, without a task source locator or payload.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["exact_identity"]}
+      }
+    },
+    {
+      "id": "D1-E16-f4-task-source-owner",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "The task source owner must remain the source of those metadata and later bytes; the request cannot assert them into authority.",
+      "fields": {
+        "outcome_owner": {"status": "binding", "value": ["other"], "other_text": "The task source owner"}
+      }
+    },
+    {
+      "id": "D1-E17-f4-no-locator-on-public-surfaces",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Public job/packet/config surfaces must not indirectly carry the protected locator.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["other"], "other_text": "must not indirectly carry the protected locator"}
+      }
+    },
+    {
+      "id": "D1-E18-f4-ordinary-classes-and-stop",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Ordinary classes must keep their current semantics. The held-only route must stop before acquisition/delivery while transport custody remains unavailable.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect"]}
+      }
+    },
+    {
+      "id": "D1-E19-f5-custody-relationship",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "The existing Host/runtime custody owner must establish the supported, exclusive live endpoint/relay/session relationship and applicable grant before protected task acquisition and first-byte dispatch.",
+      "fields": {
+        "outcome_owner": {"status": "binding", "value": ["other"], "other_text": "The existing Host/runtime custody owner"},
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect"]},
+        "acceptance_evidence": {"status": "binding", "value": ["exclusive_causality"]}
+      }
+    },
+    {
+      "id": "D1-E20-f5-falsifiers",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "An uncontrolled alternate writer, reattach, relay retention/substitution, lost identity, or merely receiver-reported session defeats it.",
+      "fields": {
+        "verifier_independence": {"status": "ambiguous", "value": [], "readings": [["required"], ["not_required"]]},
+        "path_fact": {"status": "binding", "value": ["same_system_instance", "exact_identity"]},
+        "acceptance_evidence": {"status": "binding", "value": ["exclusive_causality", "actor_attribution"]}
+      }
+    },
+    {
+      "id": "D1-E21-disposition-contents",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "The disposition must name the actual lifetime holder, both consequence edges, expiry/revocation ordering, persistence/path custody, refusal and post-admission-failure classifications, and the exact Host endpoint of the interval.",
+      "fields": {
+        "initiator": {"status": "binding", "value": ["requirement_owner"]},
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect", "exact_identity"]},
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D1-E22-guard-insufficient",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "A statement to \"hold a guard through the collector\" is insufficient: the current worker is detached, and the current subprocess interface carries a file, not the owner borrow.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["same_system_instance"]}
+      }
+    },
+    {
+      "id": "D1-E23-candidate-placement",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "The candidate placement is after fresh Campaign CAS completion but before releasing its gate, before Server's first possible write, and before Host's legacy task validation.",
+      "fields": {
+        "path_fact": {"status": "selected_realization", "value": ["ordered_before_effect"]}
+      }
+    },
+    {
+      "id": "D1-E24-park-and-return",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "If that holder and ordering cannot be specified without changing the owning contract, keep the route parked and return the contract decision to its owner.",
+      "fields": {
+        "initiator": {"status": "binding", "value": ["requirement_owner"]}
+      }
+    },
+    {
+      "id": "D1-E25-separate-obligations",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Even a successful admission correction would leave separate obligations for physical no-write negatives, actual protected-entry evidence, runtime/relay custody, effective grants and confinement, same-session checked consumption, exact single-parent Builder export, downstream applied/unused readback, and the separately compiled independent product reviewer.",
+      "fields": {
+        "verifier": {"status": "binding", "value": ["independent_observer", "reviewer"]},
+        "verifier_independence": {"status": "binding", "value": ["required"]},
+        "path_fact": {"status": "binding", "value": ["same_system_instance", "exact_identity"]},
+        "acceptance_evidence": {"status": "binding", "value": ["outcome_observed", "independent_check"]}
+      }
+    },
+    {
+      "id": "D1-E26-no-narrower-claim",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "an unestablished required claim cannot be replaced by a narrower claim merely because the narrower one is implementable.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["no_fallback_action"]}
+      }
+    },
+    {
+      "id": "D2-E01-one-shot-commitment",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "Make admission a one-shot commitment, not permission that can be silently revoked while the operation is acting on it.",
+      "fields": {
+        "path_fact": {"status": "selected_realization", "value": ["ordered_before_effect"]}
+      }
+    },
+    {
+      "id": "D2-E02-check-and-consume",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "At that point, the system checks that the exact Campaign head, operator approval, and Builder job still match, then consumes the approval for that one attempt.",
+      "fields": {
+        "verifier": {"status": "selected_realization", "value": ["acting_component"]},
+        "path_fact": {"status": "selected_realization", "value": ["exact_identity", "ordered_before_effect"]}
+      }
+    },
+    {
+      "id": "D2-E03-revocation-ordering",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "If revocation wins before that point, the attempt refuses without writing. If admission wins, changing the approval afterward does not invalidate the running attempt.",
+      "fields": {
+        "path_fact": {"status": "selected_realization", "value": ["ordered_before_effect"]}
+      }
+    },
+    {
+      "id": "D2-E04-abort-recorded",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "That's an abort with possible effects, not a clean refusal: files may already exist, Host may already have started, and the system must record what happened or mark the outcome unknown.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D2-E05-lock-covers-execution",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "The lock must cover the actual execution.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["other"], "other_text": "The lock must cover the actual execution."}
+      }
+    },
+    {
+      "id": "D2-E06-verify-stopped-before-release",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "The system should not release the execution lock or admit a replacement until it verifies that the covered execution has stopped.",
+      "fields": {
+        "verifier": {"status": "binding", "value": ["acting_component"]},
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect", "same_system_instance"]},
+        "acceptance_evidence": {"status": "binding", "value": ["outcome_observed"]}
+      }
+    },
+    {
+      "id": "D2-E07-approval-not-reusable",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "Normal completion retires the approval; it never makes it reusable.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["other"], "other_text": "it never makes it reusable"}
+      }
+    },
+    {
+      "id": "D2-E08-campaign-head-contract",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "If the requirement is still that the head remain current through actual Host entry, the Campaign owner must also prevent conflicting advancement during that interval. Alternatively, you could explicitly decide that the exact head committed at admission remains authoritative for that attempt even if the Campaign later advances.",
+      "fields": {
+        "outcome_owner": {"status": "binding", "value": ["other"], "other_text": "the Campaign owner must also prevent conflicting advancement during that interval"},
+        "path_fact": {"status": "ambiguous", "value": [], "readings": [["same_system_instance", "ordered_before_effect"], ["exact_identity"]]}
+      }
+    },
+    {
+      "id": "D2-E09-commitment-scope",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "The commitment should cover only the approved preparation and entry; it should not authorize opening or delivering the protected task.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["other"], "other_text": "it should not authorize opening or delivering the protected task"}
+      }
+    }
+  ]
+}
+```

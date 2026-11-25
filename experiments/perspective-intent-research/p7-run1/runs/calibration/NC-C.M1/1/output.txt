@@ -1,0 +1,95 @@
+# Provenance analysis: DOC-2 against DOC-1
+
+## DOC-2: Cleanup implementation disposition
+
+### 1. Requirements presented, and how each is presented
+
+**R1: automatic-removal option**
+- Text: "We will create each job's container with the container engine's automatic-removal option, so the engine removes the container after the job's process exits."
+- Presentation: a revisable choice of its author. The section says "These are our own choices for meeting the cleanup requirement. They are not new requirements, and we may change them if a better route appears."
+
+**R2: runner issues the stop request**
+- Text: "On cancel, the runner issues the stop request to the job's process."
+- Presentation: a revisable choice of its author, in the same section.
+
+**R3: keep the absence check**
+- Text: "We will keep the independent post-exit absence check exactly as the requirement states."
+- Presentation: listed under the revisable-choices heading. Its content says the check is inherited and unchanged ("exactly as the requirement states").
+
+**R4: acceptance condition**
+- Text: "Unchanged from the cleanup requirement: a cancelled job is reported as cleanly cancelled only when the independent post-exit check confirms the container's full ID is absent from the launching engine."
+- Presentation: inherited, unchanged, and complete (it restates the whole acceptance condition).
+
+### 2. Property-by-property comparison with the parent
+
+**R1: who brings about the outcome**
+- DOC-2 makes the managing system (the engine) remove the container: "the engine removes the container."
+- The parent leaves this open, in plain text: "The requirement does not say how the container is removed or by whom."
+- This is within what the parent permits. It is a choice, so no flag.
+
+**R1: how the result is produced**
+- DOC-2 uses the automatic-removal option, with removal after the process exits.
+- The parent states no method ("does not say how").
+- Permitted. No flag.
+
+**R2: who initiates**
+- DOC-2 has the runner issue the stop request.
+- The parent does not name an initiator. It says only "After a job is cancelled…"
+- This is an author's choice within what the parent permits. No flag.
+
+**R3 and R4: who verifies, and with what independence**
+- DOC-2 says "independent post-exit absence check" and "the independent post-exit check."
+- The parent plainly states "an independent check."
+- Preserved.
+- With R1, the acting component for removal becomes the engine, while the check is a separate party that queries the engine. The parent itself requires the check to establish absence "from the container engine that launched it." Querying the engine is therefore what the parent demands, and the check stays independent of the remover.
+
+**R3 and R4: ordering**
+- DOC-2 says "post-exit."
+- The parent plainly states "run after the job's process has exited."
+- Preserved.
+
+**R4: exact identity of the object acted on**
+- DOC-2 says "the container's full ID is absent."
+- The parent plainly states "the job's container, identified by its full container ID, is absent."
+- Preserved.
+
+**R4: same system instance**
+- DOC-2 says "absent from the launching engine."
+- The parent plainly states "absent from the container engine that launched it."
+- Preserved.
+
+**R4: evidence required (outcome observed through an independent check)**
+- DOC-2 says "confirms … is absent."
+- The parent plainly states "must confirm that … is absent."
+- Preserved.
+
+**R4: failure reported distinctly**
+- The parent says: "If the container is still present, or its state cannot be established, the job is not reported as cleanly cancelled."
+- DOC-2 says: "reported as cleanly cancelled only when the independent post-exit check confirms…"
+- The "only when … confirms" condition excludes clean reporting in both of the parent's failure cases: container still present, and state that cannot be established. Neither case yields a confirmation.
+- The complete restatement does not drop or weaken this.
+
+**Actor attribution and exclusive causality**
+- The parent demands neither. DOC-2 adds neither.
+- No issue.
+
+### 3. Observations that are not flagged
+
+**R3 is placed under a revisable heading.**
+- DOC-2 places "We will keep the independent post-exit absence check exactly as the requirement states" under a heading that says "we may change them."
+- The check is a parent requirement, so it is not the runner team's to revise.
+- I do not flag this, for two reasons:
+  - The bullet itself commits to the check "exactly as the requirement states."
+  - The Acceptance section separately restates the check as "Unchanged from the cleanup requirement."
+- DOC-2 adopts no change to it. The parent names no requirement owner, and no change is adopted by anyone.
+
+**Possible timing race.**
+- R1 relies on removal after process exit, so a check run immediately after exit could find the container still present.
+- Under both the parent and R4, that outcome is correctly reported as not cleanly cancelled. This is not a provenance issue.
+
+---
+
+## FLAGS
+
+**DOC-2**
+none

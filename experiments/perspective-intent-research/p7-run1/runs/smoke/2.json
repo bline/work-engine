@@ -1,0 +1,57 @@
+{
+  "output_sha256": "c2e3ac47f4a325469c1a2d5f117e463ec943c721986d5d9f09ac4540b7d80526",
+  "receipt": {
+    "agent": "p7-arm",
+    "cwd": "/home/bline/cbm-work/p7-run1-scratch",
+    "events_sha256": "f7f98fb9751bedb9df01392abec5382521aa12f20ae8b0660fd370264f62d5f2",
+    "exit_code": 0,
+    "final_text_sha256": "c2e3ac47f4a325469c1a2d5f117e463ec943c721986d5d9f09ac4540b7d80526",
+    "fingerprint_sha256": "71181912fa24a316c25b068c6a12aff3804b5ac4a96071d863619e4da0322bdc",
+    "host_state": "/home/bline/cbm-work/p7-run1-host",
+    "observations": {
+      "system_sha256_unpinned": true
+    },
+    "outcome": "completed",
+    "provider_failure": [],
+    "proxy_log_sha256": "0dc82420a973a3f505b782e54d1de170c565b90a3150d480edfd06de4c3d3084",
+    "request_messages": 2,
+    "requests": [
+      {
+        "billing_verdict": "allowed",
+        "disposition": "completed",
+        "effort": "high",
+        "n": 1,
+        "response_model": "claude-opus-5-5",
+        "system_sha256": "d0d24752b108bb79cb0f2b8019e2701553f6e3814d3a94217cc28c4a6e17cbda",
+        "tool_names": [],
+        "tools_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "usage_status": "reported"
+      }
+    ],
+    "run_id": "81fbd334-f2d3-4832-a779-c52f25ddfd8a",
+    "session_id": "81fbd334-f2d3-4832-a779-c52f25ddfd8a",
+    "spec_sha256": "e76ec627e6904f02b1a069c0539c8a27305c3836e17c1718eef4cf39c04cebfc",
+    "state": "stopped",
+    "status_sha256": "e26b0df8983dd49ce38d44b701c883cc21fdab6a5448819af683488e54c0ceba",
+    "stop_reason": "stop",
+    "system_sha256": "d0d24752b108bb79cb0f2b8019e2701553f6e3814d3a94217cc28c4a6e17cbda",
+    "unestablished": [],
+    "usage": [
+      {
+        "durationMs": 1304,
+        "usage": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0,
+          "input_tokens": 431,
+          "output_tokens": 4
+        }
+      }
+    ],
+    "user_wrapper_sha256": "9ab8802b2f26e424322215f7811bc73dc05d694671269355a99d307d614c6c6f",
+    "violations": []
+  },
+  "stage": "smoke",
+  "status": "ok"
+}

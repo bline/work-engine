@@ -1,0 +1,242 @@
+# Responsibility review of DOC-1 and DOC-2
+
+## Method
+
+For each obligation I separate three responsibilities:
+
+- **(I) Initiator:** who issues or initiates the action.
+- **(O) Outcome:** who or what brings about the outcome.
+- **(E) Establisher:** who establishes that the outcome holds, and whether that party must be independent of the acting component.
+
+---
+
+## DOC-1
+
+### 1. Held Host stays fail-closed
+
+**Text:** "This refusal must remain until the separate transport binding exists."
+
+- **(O)** is assigned. The Host keeps refusing: "refuses protected submission even after a correlated observation."
+- **(I)** for release is partly assigned by F5: "The existing Host/runtime custody owner must establish the supported, exclusive live endpoint/relay/session relationship and applicable grant before protected task acquisition and first-byte dispatch."
+- **(E)** is the concern. "Establish" bundles bringing about the relationship with establishing that it holds, and gives both to the same custody owner.
+- The text rules out one kind of evidence: "merely receiver-reported session defeats it", and "nor … claim that receiver validation releases the hold."
+- It does not say whether the custody owner's own showing suffices, or whether an independent observer must check.
+- The required evidence includes exclusive causality ("exclusive", "An uncontrolled alternate writer … defeats it"). Who produces that evidence is not stated.
+- **(I)** for "applicable grant" is unassigned. No party is named as issuing the grant.
+
+### 2. F1: Campaign-owned commit-to-consumer lifetime
+
+**Initiator.** "A new, explicitly selected owner composition would have to begin" does not say who selects the composition.
+
+- Later text points to an owner without naming it: "design-only owner disposition of that admission interval" and "return the contract decision to its owner."
+- The only named authorities elsewhere are "The human run-anchor owner" (F3) and the "operator-owned current pairing and its revocation/consumption semantics". A reader could assign the selection to either, or to the Campaign owner.
+
+**Outcome.** The Campaign-owned operation brings about the outcome. This is plainly placed: "begin **inside the Campaign-owned operation**, retain the actual writer and mutation gate".
+
+**Establisher.** "A replacement proof must establish the applicable facts from the fresh committed construction and uninterrupted custody."
+
+- No party is named to produce or check this proof.
+- No one is named to decide which facts are "applicable".
+- It is not stated whether Campaign, the acting component, may self-report the proof, or whether an independent check is required.
+- The text does say that Store's lock and inode identities are "not by itself proof against replacement … by an actor outside that gate." That is an exclusive-causality evidence demand with no assigned establisher.
+
+**Connection lifetime.** "connection lifetime and cleanup need separate ownership." The text identifies the outcome responsibility but leaves it unassigned. It is not among the items the disposition "must name" ("the actual lifetime holder, both consequence edges, expiry/revocation ordering, persistence/path custody, refusal and post-admission-failure classifications, and the exact Host endpoint").
+
+### 3. F2: SQLite-free, byte-quiet refusal
+
+**Text:** "Exclude SQLite activity … while retaining the same owner and proving equivalent applicable integrity facts."
+
+- **(O)** is the same owner, Campaign.
+- **(E)** is unassigned. The text says what does not count: "Neither `total_changes()` nor unchanged file inventory establishes byte-quiet refusal." It does not say who observes the physical no-write outcome, or whether that observer must be independent.
+- The review's own evidence status is plainly stated and is not a flag: "I did not independently rerun or inspect the underlying runtime output."
+- The later "physical no-write negatives" item is listed as a separate obligation, again with no establisher.
+
+### 4. F3: Ordering revocation against both consequence edges
+
+**Text:** "The human run-anchor owner must approve how selection changes/revocation are ordered with one admission interval; Campaign and Server/Host must enforce that same ordering."
+
+**Initiator.** The decision to approve is plainly assigned to the human run-anchor owner. That part is not flagged.
+
+**Outcome.** "Campaign and Server/Host" bundles three components across two consequence edges, first materialization and actual covered entry. It does not say which component enforces which edge.
+
+- This matters because the Server worker hands off to a detached collector and a separate Host process.
+
+**Establisher.** Unassigned. The falsifier "Any new protected write/entry after effective refusal falsifies the design" needs someone to observe that outcome. Nobody is named.
+
+- The same applies to "actual protected-entry evidence". The current marker is expressly not that evidence: "conservative once-entry bookkeeping, not proof of actual execution."
+
+**Authority.** "An earlier irrevocable consumption point is possible **only as an explicit owning-authority decision** specifying the exact effects committed by it."
+
+- "owning-authority" is not named.
+- It may be the human run-anchor owner (who approves ordering) or the operator (who owns the pairing and "its revocation/consumption semantics").
+- This becomes directly relevant to DOC-2, which proposes exactly such an earlier point.
+
+### 5. F4: Closed held-only input contract
+
+**Initiator.** "The existing owners would need an explicit, closed held-only input contract selected" uses a plural, unnamed set of owners and does not say who selects the contract.
+
+**Authority for the byte bound.** "owner-approved byte bound" does not name the approving owner.
+
+- It is plainly stated that "The task source owner must remain the source of those metadata and later bytes".
+- It is not stated whether the same owner approves the bound, or whether the Server, Host or run-anchor owner does.
+
+**Establisher.** The falsifier ("Any path through Server load, validation, serialization, Host admission, repeated `check_job`, snapshots or journals that opens or carries the protected source before the held-only decision defeats the correction") names no party to establish that no such path exists.
+
+### 6. Forward decision
+
+**Text:** "Decide whether to authorize a narrowly selected existing-owner composition …"
+
+- **(I)** is unassigned. The text says "design-only owner disposition" without naming the owner.
+- The fallback "return the contract decision to its owner" names no owner either.
+- The disposition "must name the actual lifetime holder" is a deliberately open choice. I do not flag that.
+- What is flagged is who issues the disposition.
+
+### 7. Items not flagged
+
+- "This review does not release the architectural hold, authorize implementation, or establish A11/D7 standing" is plainly scoped.
+- "the separately compiled independent product reviewer" plainly requires an independent observer.
+- The "separate obligations" list in "What favorable code would still not establish" is presented as inherited from "the evidence contract", which is not before me. I note that their establishers are not assigned here, but I do not flag them beyond item 3 above.
+
+---
+
+## DOC-2
+
+### Status and authority
+
+DOC-2 opens with "Yes. **Make admission a one-shot commitment …**", which is imperative. It ends with "I’d favor the one-shot commitment.", which is a proposal.
+
+- A reader could treat it as adopted or as merely proposed.
+- Per DOC-1, moving consumption earlier than actual entry is "possible **only as an explicit owning-authority decision** specifying the exact effects committed by it."
+- DOC-2 does not name that authority.
+- Adopting it is therefore not DOC-2's author's decision. According to DOC-1, it belongs to the (unnamed) owning authority. On ordering, it belongs to "The human run-anchor owner".
+
+### a. Admission check and consumption
+
+**Text:** "At that point, the system checks that the exact Campaign head, operator approval, and Builder job still match, then consumes the approval for that one attempt."
+
+- "the system" bundles initiator, actor and establisher.
+- It does not say whether Campaign, Server or the operator's mechanism performs the check and the consumption.
+- "Normal completion retires the approval; it never makes it reusable." names an event, not a party, as the actor that retires the approval.
+
+### b. Abort and failure reporting
+
+**Initiator.** "To stop it early, you terminate the execution." does not say who "you" is: operator, run-anchor owner, or Server.
+
+**Outcome and establisher for reporting.** "the system must record what happened or mark the outcome unknown." This demands that failure be reported distinctly, but the recorder is "the system".
+
+- It is not said whether the acting Server/Host may self-report effects such as "Host may already have started", or whether an independent check is needed.
+
+### c. Lock until execution stops
+
+**Text:** "The system should not release the execution lock or admit a replacement until it verifies that the covered execution has stopped."
+
+- The verifier ("it") is unassigned.
+- DOC-2 itself says "Killing the request handler or even Server is not proof that Host and its runtime stopped." Verification by Server, the acting component, is therefore doubtful.
+- A managing system (the Docker runtime) or an independent observer could reasonably be read in instead.
+- "should" also leaves the strength of the requirement unclear.
+
+### d. Campaign head currency
+
+- "the Campaign owner must also prevent conflicting advancement during that interval." The outcome is assigned; no establisher is named.
+- "Alternatively, you could explicitly decide that the exact head committed at admission remains authoritative for that attempt even if the Campaign later advances."
+- The choice itself is deliberately left open, so I do not flag it.
+- The decider "you" is unassigned. DOC-1 treats preserving "the current Campaign head" "through first materialization and actual protected entry" as an existing requirement.
+- Departing from it is not DOC-2's author's choice. Per DOC-1 it is a matter to "return the contract decision to its owner" (unnamed), with ordering approved by "The human run-anchor owner".
+
+### e. Scope of the commitment
+
+**Text:** "The commitment should cover only the approved preparation and entry; it should not authorize opening or delivering the protected task."
+
+- "approved" does not say approved by whom.
+
+---
+
+## FLAGS
+
+1. **DOC-1**, "The existing Host/runtime custody owner must establish the supported, exclusive live endpoint/relay/session relationship and applicable grant"
+   - **Responsibility:** establisher, and initiator of the grant.
+   - **Concern:** Bringing about and establishing are bundled in one owner. It is not stated whether an independent check is required for the exclusive-causality evidence. The grant issuer is unnamed.
+
+2. **DOC-1**, "This refusal must remain until the separate transport binding exists."
+   - **Responsibility:** establisher.
+   - **Concern:** No party is named to establish that the binding "exists" and so release the refusal. Only receiver self-report is excluded.
+
+3. **DOC-1**, "A new, explicitly selected owner composition would have to begin"
+   - **Responsibility:** initiator/authority.
+   - **Concern:** The selector is unnamed. It could be read as the run-anchor owner, the operator, or the Campaign owner.
+
+4. **DOC-1**, "A replacement proof must establish the applicable facts from the fresh committed construction and uninterrupted custody."
+   - **Responsibility:** establisher.
+   - **Concern:** No party is named to produce or check the proof, or to decide which facts are "applicable". Self-report by Campaign versus independent check is unresolved, including the exclusive-causality demand against outside replacement.
+
+5. **DOC-1**, "connection lifetime and cleanup need separate ownership."
+   - **Responsibility:** outcome.
+   - **Concern:** The obligation is stated but left unassigned, and it is not among the items the disposition "must name".
+
+6. **DOC-1**, "while retaining the same owner and proving equivalent applicable integrity facts." / "Neither `total_changes()` nor unchanged file inventory establishes byte-quiet refusal."
+   - **Responsibility:** establisher.
+   - **Concern:** No party is named to observe physical byte-quiet refusal, and independence is unstated.
+
+7. **DOC-1**, "Campaign and Server/Host must enforce that same ordering."
+   - **Responsibility:** outcome.
+   - **Concern:** Three components are bundled across two consequence edges, with no allocation of which enforces materialization versus actual entry.
+
+8. **DOC-1**, "Any new protected write/entry after effective refusal falsifies the design."
+   - **Responsibility:** establisher.
+   - **Concern:** No observer is named for the no-write/no-entry outcome or for "actual protected-entry evidence".
+
+9. **DOC-1**, "only as an explicit owning-authority decision"
+   - **Responsibility:** initiator/authority.
+   - **Concern:** "owning-authority" is unnamed. It could be read as the human run-anchor owner or as the operator who owns "revocation/consumption semantics".
+
+10. **DOC-1**, "The existing owners would need an explicit, closed held-only input contract selected"
+    - **Responsibility:** initiator.
+    - **Concern:** This is a plural, unnamed set of owners, and no selector is named.
+
+11. **DOC-1**, "owner-approved byte bound"
+    - **Responsibility:** initiator/authority.
+    - **Concern:** The approving owner is unnamed. The task source owner, Server, Host or run-anchor owner are all plausible readings.
+
+12. **DOC-1**, "Any path through Server load, validation, serialization, Host admission, repeated `check_job`, snapshots or journals that opens or carries the protected source before the held-only decision defeats the correction."
+    - **Responsibility:** establisher.
+    - **Concern:** No party is named to establish the absence of such paths.
+
+13. **DOC-1**, "design-only owner disposition of that admission interval" / "return the contract decision to its owner."
+    - **Responsibility:** initiator/authority.
+    - **Concern:** The owner who issues the disposition, or receives the contract decision, is unnamed.
+
+14. **DOC-2**, "Make admission a one-shot commitment, not permission that can be silently revoked while the operation is acting on it." / "I’d favor the one-shot commitment."
+    - **Responsibility:** initiator/authority.
+    - **Concern:** The wording reads both as imposed and as proposed. It moves consumption earlier than actual entry, which DOC-1 reserves to "an explicit owning-authority decision". The deciding party is not DOC-2's author and is not named.
+
+15. **DOC-2**, "the system checks that the exact Campaign head, operator approval, and Builder job still match, then consumes the approval for that one attempt."
+    - **Responsibility:** initiator, outcome and establisher, all bundled.
+    - **Concern:** "the system" does not identify which component checks and consumes the approval, or who verifies that this happened.
+
+16. **DOC-2**, "Normal completion retires the approval; it never makes it reusable."
+    - **Responsibility:** outcome.
+    - **Concern:** An event is named instead of a party responsible for retiring the approval.
+
+17. **DOC-2**, "To stop it early, you terminate the execution."
+    - **Responsibility:** initiator.
+    - **Concern:** "you" is unassigned. It could be the operator, the run-anchor owner, or Server.
+
+18. **DOC-2**, "the system must record what happened or mark the outcome unknown."
+    - **Responsibility:** outcome and establisher.
+    - **Concern:** The recorder is unassigned. It is not stated whether self-report by the acting Server/Host is acceptable for effects such as Host having started.
+
+19. **DOC-2**, "The system should not release the execution lock or admit a replacement until it verifies that the covered execution has stopped."
+    - **Responsibility:** establisher.
+    - **Concern:** The verifier "it" is unnamed. DOC-2 itself says Server-side termination is not proof. The text does not say whether a managing system (the runtime) or an independent observer must verify. "should" leaves the strength unclear.
+
+20. **DOC-2**, "Alternatively, you could explicitly decide that the exact head committed at admission remains authoritative for that attempt even if the Campaign later advances."
+    - **Responsibility:** initiator/authority.
+    - **Concern:** The choice is deliberately open, but "you" is unnamed. This would change DOC-1's existing current-head requirement, which per DOC-1 must be returned to the contract's owner (unnamed), with ordering approved by "The human run-anchor owner".
+
+21. **DOC-2**, "the Campaign owner must also prevent conflicting advancement during that interval."
+    - **Responsibility:** establisher.
+    - **Concern:** The outcome is assigned to the Campaign owner, but no party is named to establish that no conflicting advancement occurred through actual Host entry.
+
+22. **DOC-2**, "The commitment should cover only the approved preparation and entry"
+    - **Responsibility:** initiator/authority.
+    - **Concern:** The approving party for "approved preparation" is unnamed.

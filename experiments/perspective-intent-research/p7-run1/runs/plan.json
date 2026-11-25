@@ -36,7 +36,7 @@
   "agents/p7-arm.md": "fba75dffdf75981925f99a0d22f3bbd733a84ccf763bb37a23bbe80daa2a722f",
   "agents/p7-scorer.md": "f91e99c4333dcca04a0d409639533a94d1dffcde75a5e5100bbaa017f95d7149",
   "build_tasks.py": "3f8ffd9f015c865f5c65f5504014608bcae7231e5b185072b21616b10f360d27",
-  "receipt_expectations.json": "8ca8ae750f840b8f7329cf168c4617e7712f9cde509a04d2dc1bb90fd0b42ab2"
+  "receipt_expectations.json": "30d4932a7cc0dcfa9a8c886ddcbc3f60d3c6baec92ff3bb357c5dea972b4529d"
  },
  "fixture_digests": {
   "NC-A": "441facc26bfab4acdad418164096c31e19aad3277c65c378a50657acb5c2404d",

@@ -1,0 +1,144 @@
+# Review of U4-A requirement documents (DOC-1, DOC-2, DOC-3)
+
+I checked each obligation for three responsibilities: who initiates the action, who or what brings about the outcome, and who establishes that the outcome holds. Some obligations need no flag, either because the documents assign all three plainly or because they leave the choice open on purpose. Those are listed first so the flags below stand out.
+
+## Obligations assigned plainly (not flagged)
+
+**1. Selecting the qualification arm**
+- DOC-1 requires "Select a separate Host-owned, controlled qualification arm".
+- DOC-3 H1 assigns who initiates and who brings it about. It requires "an explicit, separate qualification entrypoint or launch variant, available only in `controlled-proof`". It also says "Controller input cannot select or change mode".
+- Who checks is the "Host owner; source boundary plus targeted executable tripwires".
+- The selector's spelling is left open on purpose: "Exact CLI spelling and safe field encoding are implementation choices within those constraints". Not flagged.
+
+**2. Same registration and profile**
+- DOC-1 says: "Host owner: implement the isolated admission arm and qualification-only terminal observation; verify registration is the same selected profile before claiming scope."
+- Action and self-check are plainly given to the same party. Not flagged.
+
+**3. Tool-name evidence**
+- DOC-1: "The receiver `ready` frame supplies `session.getActiveToolNames()`".
+- Evidence type is a self-report by the receiver, checked by the Host: "Host code validates the actual reported names against the pinned profile".
+- The scope is stated: "It attests names at ready, not tool handler semantics". Not flagged. (The second half of the same sentence is flagged below, F1.)
+
+**4. Receiver-side counters**
+- DOC-3 says "Label negative observations by observer and interval; Host-side zero is not receiver-side zero".
+- It also says "The pinned receiver's correlated completion may establish consumption".
+- The documents deliberately accept a receiver self-report, attributed by observer. Not flagged.
+
+**5. Activation and currentness**
+- DOC-2 requires "Check currentness before any activation".
+- DOC-3 deliberately removes activation from this slice: "The held arm has no activation operation."
+- DOC-1 defers it to "a separate design". This is deferred on purpose. Not flagged.
+
+**6. Who issues the cancel**
+- DOC-1 refers to "The explicitly accepted cancel for the owned, still-held session uses session-correlated `bridge_close`" without naming who issues it.
+- DOC-3 H3 resolves this well enough. Cancel comes from the controller ("without a later controller cancel or EOF"). The Host accepts it, and its evidence is "the accepted cancel coordinate". Not flagged.
+
+**7. Cleanup verification in general**
+- DOC-2 requires "Verify no leftover child/container, or retain a named cleanup-unknown outcome."
+- DOC-3 H4 assigns this to the Host owner. The exception is the independence wording, flagged below (F2).
+
+## Obligations that are ambiguous, bundled or unassigned
+
+**F1. Who checks same-session idle.**
+- DOC-1 says: "then the controller checks same-session idle (`pi_host_serve.rs`)".
+- Elsewhere in all three documents, "controller" means the external peer:
+  - DOC-1: "servicing the controller"
+  - DOC-3: "Controller input cannot select or change mode"
+- DOC-3 H4 uses passive voice: "validated same-session idle `ready`".
+- A reader could assign this check to either:
+  - the external controller, which is not the Host; or
+  - Host code in `pi_host_serve.rs`.
+- The two readings give different parties the job of establishing the outcome.
+
+**F2. "Independent" in the post-exit absence check.**
+- DOC-1 requires "exact container removal observed against the owned identity". It also states: "Host-attributed Docker and receiver observations are not independent attestation of the daemon/kernel or of continuing liveness."
+- DOC-3 H4, which adds to DOC-1, requires a "successful independent post-exit query confirming the original full container ID absent on the trusted launch daemon".
+- The owner of H4 is "Host owner". "Independent" could mean either:
+  - an observer separate from the Host; or
+  - simply a separate, fresh query made by the Host.
+- The independence of whoever establishes this outcome is therefore unclear, and it gates `held_cancelled`.
+
+**F3. "Independent" tests and acceptance by a party tied to the acting component.**
+- DOC-3's wording points toward independence:
+  - It is headed "Independent checks and actual dependencies".
+  - It lists "Host owner; independent injected-frame/state tests" (H2) and "Host owner; independently injected failure tests" (H3).
+- But "One coherent Host builder packet (H1–H5) owns the admission split, controller, and cleanup". And "Dev-vertical owns coordination, result collection and the separate acceptance decision".
+- DOC-2, however, says "dev-vertical owns the actual Pi Host controller and rendered container boundary".
+- So it is unclear whether:
+  - "Host owner" in the table means dev-vertical or the builder packet; and
+  - the "separate acceptance decision" is independent of the acting component.
+- The only party clearly named as independent is RL: "RL: verify bindings and refusal semantics as independent consumer" (DOC-1).
+
+**F4. Pinning the subject and agreeing consumer fields: initiator not assigned.**
+- DOC-3 says: "Before H4, agree which ready and terminal fields the consumer needs and pin the candidate, rendered job and selected tool surface."
+- It names neither who agrees nor who pins.
+- RL's check depends on this step: "only after the Host subject is pinned" (DOC-1).
+
+**F5. Who owns the meaning of the ready record versus the receipt.**
+- DOC-2 says "RL owns task-host and lifecycle admission/receipt semantics" and "Publish only a held-readiness receipt at this stage".
+- DOC-3 has the Host publish "the qualified ready record". It also treats "safe field encoding" as an implementation choice.
+- It is unclear whether the ready record is the held-readiness receipt, and so whether RL owns its meaning.
+
+**F6. "No usable capability was created": who establishes this exclusion.**
+- DOC-1 says: "A readiness record can report the point-in-time observation and no usable capability was created."
+- This reads as a runtime self-report by the Host.
+- DOC-3 H1 establishes the same fact through build- and test-time tripwires: "Test with failing tripwires at actual construction/load boundaries; do not infer absence from no successful calls or unset env alone."
+- It is not stated whether the record's statement must be backed by the H1 evidence or may rest on the Host's self-report.
+
+**F7. Naming facts that need an observer independent of the Host, and the "protection owner".**
+- DOC-2 requires: "Separately name every allowed mount, the allowed IPC observations/operations, and any fact requiring an observer independent of the Host."
+- No party is assigned to do the naming, and neither DOC-1 nor DOC-3 carries this list forward. DOC-3 R1 only says "Scope any remaining protection/currentness owner questions as unestablished."
+- DOC-2 also says "Resolve who observes what and the currentness interval with the protection owner before asserting production readiness". This is deferred to production. However, the "protection owner" is never identified.
+
+**F8. Implementation and review authority: unassigned.**
+- DOC-3 says: "Before dispatch, confirm implementation authority" and "An implementation review, if authorized, should start separately from the builder".
+- No party is named as the one who grants either authority.
+- DOC-2 shows the operator settling direction only: "not the detailed witness/issuer contract or a production permit".
+
+**F9. Retention measurement: initiator unassigned.**
+- DOC-2 says: "Keep the 8 MiB retention cap unchanged while measuring per-send materialization, unique storage and replay/transfer separately."
+- The cap decision belongs to the operator. The measurement obligation has no named owner.
+- DOC-1 records one measurement but does not take on the obligation: "This does not demonstrate actual actor/causal acquire at the cap."
+
+## FLAGS
+
+1. **DOC-1**, "then the controller checks same-session idle (`pi_host_serve.rs`)"
+   - Responsibility: who establishes the outcome.
+   - Concern: "controller" means the external peer elsewhere ("Controller input cannot select or change mode", DOC-3), so the check could be assigned to the external controller or to Host code. DOC-3 H4's passive "validated same-session idle `ready`" does not resolve it.
+
+2. **DOC-3**, "successful independent post-exit query confirming the original full container ID absent on the trusted launch daemon"
+   - Responsibility: who establishes the outcome, and whether that party must be independent.
+   - Concern: the owner is "Host owner", and DOC-1 says "Host-attributed Docker and receiver observations are not independent attestation". "Independent" could mean a separate observer or just a fresh Host query, and the answer gates `held_cancelled`.
+
+3. **DOC-3**, "Host owner; independent injected-frame/state tests" / "Dev-vertical owns coordination, result collection and the separate acceptance decision"
+   - Responsibility: who establishes the outcome, and its independence.
+   - Concern: DOC-2 says "dev-vertical owns the actual Pi Host controller". It is unclear whether "Host owner" means dev-vertical or the builder packet, and so whether the "independent" tests and "separate" acceptance are independent of the acting component. Only RL is plainly named "independent consumer" (DOC-1).
+
+4. **DOC-3**, "Before H4, agree which ready and terminal fields the consumer needs and pin the candidate, rendered job and selected tool surface."
+   - Responsibility: who initiates.
+   - Concern: no party is assigned to agree or to pin, yet RL's check waits on it ("only after the Host subject is pinned", DOC-1).
+
+5. **DOC-2 / DOC-3**, "Publish only a held-readiness receipt at this stage" / "publication of the qualified ready record"
+   - Responsibility: requirement owner (authority over meaning).
+   - Concern: "RL owns task-host and lifecycle admission/receipt semantics" (DOC-2), while DOC-3 treats "safe field encoding" as an implementation choice. It is unclear whether the ready record is that receipt and who owns its meaning.
+
+6. **DOC-1**, "A readiness record can report the point-in-time observation and no usable capability was created."
+   - Responsibility: who establishes the outcome (an exclusion claim).
+   - Concern: it reads as a Host self-report at runtime, whereas DOC-3 H1 requires "failing tripwires at actual construction/load boundaries". Which evidence backs the record's statement is not stated.
+
+7. **DOC-2**, "Separately name every allowed mount, the allowed IPC observations/operations, and any fact requiring an observer independent of the Host." / "with the protection owner"
+   - Responsibility: who initiates, and the requirement owner.
+   - Concern: no one is assigned to produce this list and DOC-1/DOC-3 do not carry it forward. The "protection owner" is never identified. The production-readiness part is deliberately deferred, but the naming obligation sits in this first slice.
+
+8. **DOC-3**, "Before dispatch, confirm implementation authority" / "An implementation review, if authorized"
+   - Responsibility: who initiates (authority).
+   - Concern: no party is named as granting implementation or review authority. DOC-2's operator decision covers design direction only.
+
+9. **DOC-2**, "Keep the 8 MiB retention cap unchanged while measuring per-send materialization, unique storage and replay/transfer separately."
+   - Responsibility: who initiates and brings about the measurement.
+   - Concern: the cap decision is the operator's, but the measurement obligation has no named owner.
+
+None of these flags calls for weakening a requirement. Where a change is needed:
+- Changes to receipt or lifecycle meaning belong to RL ("RL owns task-host and lifecycle admission/receipt semantics").
+- Changes to the shared Host protocol need "cross-owner coordination" (DOC-2).
+- Changes to the route decisions were made by the operator (DOC-2).

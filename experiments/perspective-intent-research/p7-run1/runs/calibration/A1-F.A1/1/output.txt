@@ -1,0 +1,199 @@
+# Obligations for the Pi Host U4-A held-readiness slice
+
+The work is a held, no-activation qualification arm for the Pi Host. A pinned, three-tool Pi analysis profile must reach a verified receiver-ready state inside real Docker. It must then be cleanly cancelled without loading credentials, attaching provider transport, or attaching a task relay or lease.
+
+**Who owns what**
+- **Host owner (dev-vertical's Pi Host side):** most construction, cancellation and cleanup obligations.
+- **Research Lifecycle (RL):** an independent, read-only consumer check, run only after the Host subject is pinned.
+- **Dev-vertical:** coordination, result collection and the acceptance decision.
+
+**Where the cancellation and cleanup obligations are strictest**
+- Only an explicitly accepted, session-correlated cancel may be reported as `held_cancelled`. That cancel must be delivered and consumed through `bridge_close`, followed by clean bounded exits and confirmed container absence on the same daemon.
+- EOF, timeouts, receiver failure, malformed input, repeated or wrong cancels, and unobservable cleanup must each stay a distinct failure or "cleanup unknown". None of them may become `held_cancelled`.
+
+**Status**
+None of the three documents authorises implementation. DOC-3 says it "has not been re-reviewed and is not a qualification result or implementation authorization". DOC-1 is an "offline candidate, not installed admission or a release decision".
+
+**Tensions between the documents**
+- DOC-2 frames the goal around the "exact installed Pi realization" and asks to "Publish only a held-readiness receipt". The later DOC-1 and DOC-3 narrow this. DOC-3 says the result is "not installed startup admission" and allows "No task-host installed receipt adapter". I treat the narrower, later wording as governing.
+- DOC-2 lists "attempted reuse/stale activation" as a negative case, but DOC-3 says "The held arm has no activation operation". I read this as: any activation attempt must be refused, and no U4-A record may serve as a permit.
+
+**Out of scope**
+DOC-2's U3-A, D1, E1 and U5 items are separate work. I list them only where they constrain this work.
+
+## Obligations
+
+### A. Scope, authority and preconditions
+
+1. **Confirm authority and resources before any builder is dispatched.** Owner: dev-vertical / whoever dispatches.
+   - Source (DOC-3): "Before dispatch, confirm implementation authority, check root capacity and shared resources, and bind the exact base, scope, result collection and validation to the assignment."
+   - Supporting (DOC-3): "This revision has not been re-reviewed and is not a qualification result or implementation authorization."
+
+2. **No live or production effects; keep existing holds and limits.** Owner: Host owner and all participants.
+   - Source (DOC-3): "Preserve ordinary `serve`/EOF behavior, the startup hold, and the 8 MiB cap. No live calls, credentials, paid inference, provider/task relay bindings, or promotion of prior evidence."
+   - Source (DOC-2): "No startup release, live inference, paid run, or reclassification of existing records is authorized."
+   - Source (DOC-2): "Production remains held throughout this first slice."
+   - Source (DOC-1): "No change to either limit."
+
+3. **Leave installed Pi startup and the Codex path untouched.** Owner: Host owner.
+   - Source (DOC-1): "`native_startup.rs::publish` is Codex-specific and does not own this qualification. Existing installed Pi startup continues to refuse while held; this slice does not touch it."
+   - Source (DOC-2): "do not manufacture Codex evidence for Pi or generalize a boundary merely to share code."
+
+4. **Report a blocker rather than substitute a different surface.** If reusing the same receiver registration without constructing effect capabilities is impossible, report the exact blocker. Do not qualify a provider-less surface and do not lift the hold. Owner: Host owner.
+   - Source (DOC-3): "report the exact blocker rather than qualifying a different provider-less tool surface or lifting the hold."
+   - Source (DOC-1): "A provider-less qualification profile with a different receiver/tool surface cannot substitute."
+
+5. **Pin and agree before running the positive witness (H4).** Agree which ready and terminal fields the consumer needs, and pin the candidate, the rendered job and the tool surface. Owner: Host owner with RL.
+   - Source (DOC-3): "Before H4, agree which ready and terminal fields the consumer needs and pin the candidate, rendered job and selected tool surface."
+
+### B. Placement and capability construction (H1)
+
+6. **Select the held arm early, on the shared launch path.**
+   - The held arm must be selected before credentials are read, transport is bound, a relay is wired, or the controller is serviced.
+   - It must share the exact launch, registration and checked-ready path used by ordinary `serve`.
+   - Owner: Host owner.
+   - Source (DOC-1): "Select a separate Host-owned, controlled qualification arm **before** reading provider credentials, binding provider transport, wiring a task-effect relay, or servicing the controller. It shares the exact selected Pi receiver/container launch, registration, and checked-ready path with ordinary `serve`."
+   - Source (DOC-1): "do not create any usable provider transport or task lease."
+
+7. **A real hold, not a withheld command.** Simply withholding `turn/start` from an enabled Host does not count as a hold. Owner: Host owner.
+   - Source (DOC-1): "withholding `turn/start` from an otherwise enabled Host is not a hold."
+
+8. **Restrict the selector to controlled-proof builds and test it with tripwires.** Owner: Host owner.
+   - Source (DOC-3): "Use an explicit, separate qualification entrypoint or launch variant, available only in `controlled-proof`; ordinary `serve`, installed selection and non-proof builds refuse the selector. Controller input cannot select or change mode."
+   - Source (DOC-3): "Test with failing tripwires at actual construction/load boundaries; do not infer absence from no successful calls or unset env alone."
+
+### C. Fail-closed handling (H2)
+
+9. **No effect may enter before ready or while held.** Owner: Host owner.
+   - Source (DOC-3): "Before ready **and** while held: matching `turn/start`, provider intent, and task/tool intent cannot enter effects; no generic start or activation command escapes. Exercise applicable early intents at their actual handlers, not only controller RPC."
+
+10. **Any forbidden intent invalidates qualification, even if blocked.**
+    - Keep observed, refused and entered counts separate.
+    - A receiver-local refused provider attempt must still prevent a clean pass.
+    - Owner: Host owner.
+    - Source (DOC-3): "An unexpected effect intent invalidates qualification even when blocked; retain observed/refused/entered counts separately. Inject a provider attempt refused locally by the receiver that emits no Host request: receiver evidence must prevent a clean pass despite zero Host requests."
+    - Source (DOC-1): "An attempted forbidden intent is a qualification refusal even when nothing entered. Unavailable counts are not zero."
+
+11. **Reject bad ready states without producing false success.** Owner: Host owner.
+    - Source (DOC-3): "Reject wrong pin/profile/session, active or duplicate ready, and wrong/additional/missing tool name. Show that no false ready or terminal success is produced."
+
+### D. Cancellation and cleanup (H3, plus the H4 terminal path)
+
+12. **Define the only route to `held_cancelled`.** It is a session-correlated `bridge_close` for the owned, still-held session. It concludes only after:
+    - bounded receiver/attach exit collection, and
+    - exact container removal observed against the owned identity.
+    - Owner: Host owner.
+    - Source (DOC-1): "The explicitly accepted cancel for the owned, still-held session uses session-correlated `bridge_close` and concludes only after bounded receiver/attach exit collection and exact container removal observed against the owned identity. Report `held_cancelled` only after those checks."
+
+13. **Retain a cleanup-unknown result when state is unobservable.** If process or container state is unavailable, keep a cleanup-unknown result and any known diagnostics. Owner: Host owner.
+    - Source (DOC-1): "if process/container state is unavailable, retain a cleanup-unknown result and any known diagnostics."
+    - Source (DOC-2): "Verify no leftover child/container, or retain a named cleanup-unknown outcome."
+
+14. **Bad cancels grant no new teardown authority.** Wrong-session, premature or repeated cancels create no new authority. Cleanup under the Host's existing ownership is still allowed on failure. Owner: Host owner.
+    - Source (DOC-1): "Repeated or mismatched cancel is not a new teardown authority."
+    - Source (DOC-3): "Wrong-session, premature or repeated cancel creates no new teardown authority; failure termination may still clean up under the Host's existing ownership."
+
+15. **Two edge cases are explicitly not `held_cancelled`.** Owner: Host owner (must test both).
+    - A cancel after `ready` but before verified inspection and publication.
+    - An accepted cancel whose close delivery fails, even if physical cleanup succeeds.
+    - Source (DOC-3): "Include cancel after receiver `ready` but before verified inspection/publication, and accepted cancel followed by failed close delivery even when physical cleanup succeeds. Neither qualifies as `held_cancelled`."
+
+16. **Keep the other termination paths distinct and diagnosed.** Owner: Host owner.
+    - Source (DOC-1): "Controller EOF, malformed input, receiver failure, deadline, and failed containment stay distinct refusal/failure paths and retain diagnostics; none becomes `held_cancelled`."
+    - Source (DOC-3): "EOF/malformed input, receiver failure, timeouts and failed/missing cleanup observation remain refusal/failure, never `held_cancelled`."
+
+17. **Silent-controller cases must self-terminate.** Each of these, run through the real held event loop, must end as a bounded failure with a cleanup disposition, without waiting for a controller cancel or EOF. Owner: Host owner.
+    - Unsolicited receiver intent.
+    - Receiver loss.
+    - Deadline expiry with both peers silent.
+    - Source (DOC-3): "Through the actual held event loop with an open, silent controller after ready, separately exercise unsolicited receiver intent, receiver loss, and deadline expiry with both peers silent. Each must terminate as a bounded failure with a cleanup disposition without a later controller cancel or EOF; scripted peers suffice."
+
+18. **Classify cleanup outcomes three ways.** Confirmed removal, removal failure and unknown cleanup must be distinguished. Owner: Host owner.
+    - Source (DOC-3): "Distinguish confirmed removal, removal failure and unknown cleanup."
+
+19. **Bind every cleanup action to the trusted daemon and full container ID.**
+    - Observation, destructive cleanup and absence checks must use the same trusted daemon as launch and the original full container ID.
+    - Record how the daemon was bound across commands.
+    - Never act by name on a replacement container.
+    - An uncertain create, or an empty or failed lookup, cannot confirm absence.
+    - Owner: Host owner.
+    - Source (DOC-3): "Bind observation, destructive cleanup (including failure paths), and every confirmed absence result to the same trusted Docker daemon as launch and the original owned full container ID. A pinned Docker executable alone does not establish daemon identity; retain how effective daemon selection was bound across commands. Never act by name on a replacement. If create is uncertain and trusted identity cannot be recovered, report cleanup unknown; an empty name lookup or arbitrary inspect failure cannot confirm absence."
+
+20. **Test stale names and unknown daemons.** Owner: Host owner.
+    - Source (DOC-3): "Test stale/reassigned container name with a scripted Docker responder: no observation or destructive action on the replacement can stand in for the original. Test daemon mismatch or unknown identity as unqualified, not confirmed absence."
+
+21. **Required terminal record contents.** Owner: Host owner.
+    - Source (DOC-3): "require the exact ready digest for every `held_cancelled` and for failures after ready; omit it only on failures without a ready record. Retain the accepted cancel coordinate and its binding to the published ready record, successful close delivery and matching receiver completion, receiver/attach exits, and cleanup disposition."
+    - Source (DOC-3): "Preserve failure evidence and cleanup disposition even without readiness."
+
+22. **Reconcile receiver and Host counters through exit.** Same-session receiver counters must be reconciled with Host received/refused/entered counts. Missing, inconsistent or nonzero forbidden-attempt evidence fails. Owner: Host owner.
+    - Source (DOC-3): "Capture same-session receiver terminal counters applicable to the pinned provider (including local attempts/refusals such as `bridgeCalls` and `forwarderRefused`), and reconcile them with separately identified Host received/refused/entered counts through exit. Missing, inconsistent or nonzero forbidden-attempt evidence fails H4."
+    - Source (DOC-1): "A terminal report can add the counts of early intent, refused intent, and entered dispatch/tool/snapshot effects through cancel/exit."
+
+23. **Leave ordinary serve and EOF behaviour unchanged, and test that.** Owner: Host owner.
+    - Source (DOC-1): "Keep ordinary serve completion rules unchanged."
+    - Source (DOC-3): "Preserve ordinary EOF/error diagnostics."
+    - Source (DOC-3): "In the `controlled-proof` build, test ordinary launch **without** the selector: missing required lifecycle gate or hosted transport still refuses before create; ordinary zero-turn completion and EOF retain their existing failure diagnostics and cannot produce held success. Keep non-proof selector refusal separate."
+
+### E. Positive witness (H4) and the evidence it must carry
+
+24. **Run the joined real positive witness end to end.** Owner: Host owner; requires real Docker and the real receiver.
+    - **Sequence:** initialize → `thread/start` → validated idle `ready` → fresh inspection and published ready record → cancel bound to that record → consumed `bridge_close` → matching receiver completion and bounded exits with no fallback stop/kill → independent post-exit absence query on the launch daemon.
+    - Source (DOC-3): "Initialize → thread/start → validated same-session idle `ready` → fresh containment inspection and publication of the qualified ready record → explicit cancel bound to that record → delivery and consumption of that cancel's same-session `bridge_close` → matching receiver completion and successful bounded receiver/attach exits without fallback stop/kill → successful independent post-exit query confirming the original full container ID absent on the trusted launch daemon."
+    - Source (DOC-3): "EOF/failure closure cannot substitute for the accepted cancel… A missing observation is not a pass."
+    - Source (DOC-1): "only real selected receiver + Docker qualifies the positive fixture."
+
+25. **Prior runs are not the H4 pass.** Owner: Host owner and dev-vertical.
+    - Source (DOC-3): "Do not label H4 passed based on existing Step 4 or #6069."
+    - Source (DOC-2): the 042 probe "establishes candidate readiness and physical cleanup, **not** clean held cancellation."
+
+26. **Keep the actual validated tool list.** Retain the list the receiver reported at ready, not one recomputed from policy or copied from config. Owner: Host owner.
+    - Source (DOC-1): "Retain that actual validated list, not one recomputed from policy."
+    - Source (DOC-3): "Keep evidence for the actual validated receiver tool list (snapshot read, question open, result publish; no shell), not the requested list copied from config."
+
+27. **Fresh, bound container inspection after ready, while still held.**
+    - Bind the inspected container fields to the profile, digests, session and timestamp.
+    - Project only safe fields; never serialise secrets.
+    - Owner: Host owner.
+    - Source (DOC-1): "require a fresh pinned-client inspection after same-session ready while the no-effects hold still applies. Bind the observed exact container ID and checked image, labels, network mode, read-only root, user, limits/capabilities, mount destinations/modes, and no credential/task/repository mount to expected profile, Host/job/runtime/receiver/composition digests, session, and observation timestamp. Project safe observed fields and inspect digest; do not serialize raw environment, mount source secrets, or credentials."
+
+28. **Keep evidence types distinct.**
+    - Projected observations must be kept apart from verifier assertions.
+    - Expected policy, source pins, verified runtime facts and unobserved facts must not collapse into one flag.
+    - Negative observations must be labelled by observer and interval.
+    - Owner: Host owner.
+    - Source (DOC-1): "facts not in its emitted projection must remain under a named Host verification claim or be projected explicitly."
+    - Source (DOC-3): "Expected policy, source pins, verified runtime facts and unobserved facts must not collapse into one `verified` flag."
+    - Source (DOC-3): "Label negative observations by observer and interval; Host-side zero is not receiver-side zero."
+
+29. **Containment and identity negatives (H5) never yield a valid held-ready record.** Owner: Host owner.
+    - Source (DOC-3): "Mismatched container identity, job/pin, prohibited mount or network, and missing/failed fresh inspection never yield a valid held-ready record… a mock-verified positive is not H4."
+
+30. **Records are not grants.** Any future activation needs separate design and authority, plus a fresh observation at the transition. Owner: Host owner and RL.
+    - Source (DOC-1): "Neither record is a grant… This no-activation fixture is not evidence for that transition."
+    - Source (DOC-3): "Any future activation path requires separate authority and a fresh same-process observation at the transition; no U4-A receipt is reusable as that permit."
+
+31. **Deliverables.** Owner: Host owner.
+    - Source (DOC-3): "Deliver replayable fixture commands, candidate/binary and result digests, sanitized log/receipt paths and matched and missing checks."
+    - Source (DOC-3): "Name anything not actually tested through installed admission as such."
+
+### F. Ownership and coordination
+
+32. **One builder, one isolated worktree.** A single Host builder packet owns H1–H5. Dev-vertical owns coordination and acceptance. Owner: dev-vertical / Host owner.
+    - Source (DOC-3): "One coherent Host builder packet (H1–H5) owns the admission split, controller, and cleanup in one isolated worktree; do not split writers across the same state machine. Dev-vertical owns coordination, result collection and the separate acceptance decision."
+
+33. **RL's consumer review is independent and narrow.** It runs read-only, after the Host subject and witness are pinned. It must not add a receipt adapter, an activation consumer, or Codex schema reuse. Owner: RL.
+    - Source (DOC-3): "Cross-check binding, negative claims, and cleanup result against retained evidence. No task-host installed receipt adapter, activation permit consumer, or schema reuse with Codex in this slice."
+    - Source (DOC-1): "RL: verify bindings and refusal semantics as independent consumer only after the Host subject is pinned."
+
+34. **Coordinate shared changes and resources.**
+    - Coordinate any shared protocol or pin change across owners.
+    - Do not edit the U3-A lifecycle-service path.
+    - Serialise builds through the shared target.
+    - Owner: Host owner and the U3-A owner.
+    - Source (DOC-2): "Any change to the shared Host protocol needs cross-owner coordination and new pin/evidence treatment."
+    - Source (DOC-3): "do not edit its lifecycle-service path as part of this packet."
+    - Source (DOC-2): "Coordinate shared runner edits with U4 before implementing, and serialize builds through the shared target."
+
+35. **Keep implementation review separate from RL's check.** Owner: dev-vertical.
+    - Source (DOC-3): "An implementation review, if authorized, should start separately from the builder and not substitute RL's consumer check for code review."

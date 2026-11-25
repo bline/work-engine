@@ -210,12 +210,15 @@ class Receipts(Base):
             self.assertEqual(pipeline.receipt_status(self.rc(**kw)), "receipt_unestablished", name)
 
     def test_unpinned_expectations_block_counted_but_not_calibration(self):
-        self.patch.stop()
-        try:
+        def unpinned():
+            exp = pinned_expectations()
+            for a in exp["agents"].values():
+                a["system_sha256"] = None
+            exp.update(request_messages=None, user_wrapper_sha256=None, pinned=False)
+            return exp
+        with mock.patch.object(pipeline, "expectations", unpinned):
             self.assertEqual(pipeline.receipt_status(self.rc()), "receipt_unestablished")
             self.assertIsNone(pipeline.receipt_status(self.rc(calibration=True)))
-        finally:
-            self.patch.start()
 
     def test_provider_failure_is_separate(self):
         for kw in (dict(outcome="failed", stop="error"), dict(disposition="upstream_error", outcome="failed", assistant=False),

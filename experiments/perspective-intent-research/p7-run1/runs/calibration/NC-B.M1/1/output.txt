@@ -1,0 +1,75 @@
+# Provenance check: DOC-2 against DOC-1
+
+## DOC-2: Review of the held-start implementation
+
+### 1. Requirements DOC-2 presents
+
+DOC-2 presents one binding requirement:
+
+> "Required: report clean cancel only when the Host's own normal removal succeeded with an attributable result, and the independent post-exit absence check also passed."
+
+**How it is presented**
+- **Inherited.** DOC-2 cites its source explicitly: "The contract's terminal cleanup section, in its recorded owner decision, requires that…". It does not present the requirement as new, proposed, or a revisable choice of its author.
+- **Partial restatement.** It restates part of the DOC-1 terminal-cleanup requirement. It is framed as necessary conditions ("only when"), not sufficient ones. It therefore does not replace the other DOC-1 conditions for clean cancel, which are:
+  - "explicitly accepted cancel"
+  - "owned, still-held session"
+  - "bounded receiver exit collection"
+  - "exact container removal observed against the owned identity"
+- **Supporting claims.** DOC-2 also makes non-requirement statements:
+  - A factual claim about the implementation: "The implementation reports clean cancel whenever the post-exit check finds the container absent, even when the Host's own removal command was never started."
+  - A judgement: "That violates the owner decision."
+  - A severity label: "(blocking)". This is a reviewer's classification, not a requirement property.
+
+**Quotation accuracy.** DOC-2's quote, "the Host itself performs the normal removal of the original container and records an affirmative, attributable result for that removal", matches DOC-1 word for word.
+
+### 2. Property-by-property check
+
+**Who initiates the removal: the Host**
+- DOC-2: "the Host's own normal removal". It also criticises the case where "the Host's own removal command was never started".
+- DOC-1 states this plainly: "the Host itself performs the normal removal of the original container".
+- Supported.
+
+**Who brings about the outcome: the Host, not any other actor**
+- DOC-2: "Host's own normal removal succeeded". It also rejects absence alone as sufficient.
+- DOC-1 states this plainly: "Removal by any other actor does not satisfy clean cancel, even if the container is afterwards absent."
+- Supported. DOC-2's judgement that the implementation "violates the owner decision" follows directly from this sentence.
+
+**Evidence: an affirmative result attributed to the Host (actor attribution)**
+- DOC-2: "succeeded with an attributable result".
+- DOC-1 states this plainly: "records an affirmative, attributable result for that removal".
+- DOC-2's "succeeded" corresponds to DOC-1's "affirmative".
+- DOC-2 does not repeat the word "records". However, "with an attributable result" carries the same evidential demand, and as a partial restatement under "only when" it does not weaken DOC-1.
+- Supported.
+
+**Who verifies, and with what independence: an independent check after exit**
+- DOC-2: "the independent post-exit absence check also passed".
+- DOC-1 states this plainly: "An independent post-exit check that the original container is absent is also required."
+- DOC-1 is ambiguous on one point: it does not say whom the check must be independent of. A reading is that it must be independent of the Host as the acting component. DOC-2 does not narrow or expand this; it uses the same word, "independent".
+- Supported.
+
+**How the result is produced: ordering and object identity**
+- **Ordering.** DOC-2's "post-exit" matches DOC-1's "post-exit check" and "concludes only after bounded receiver exit collection".
+- **Object identity.** DOC-2's "the container" and "absence check" refer back to the quoted "original container".
+- DOC-1 additionally requires "exact container removal observed against the owned identity". DOC-2 does not restate this, but it does not drop it either, because DOC-2 is partial and sets only necessary conditions.
+- DOC-2 adds no fallback, same-instance, or other production facts.
+
+**Evidence kinds DOC-2 does not demand**
+- **Exclusive causality.** DOC-2 does not demand it. DOC-1 demands actor attribution ("attributable"), not proof that no other party could have removed the container. DOC-2 does not overreach here.
+- **Failure reported distinctly.** DOC-2 implies this only through "only when", meaning clean cancel is not reported otherwise. This is consistent with DOC-1's "concludes only after" and "does not satisfy clean cancel". Nothing is added beyond the parent.
+
+**Authority**
+- DOC-1 names the meaning owner: "Owner decision (receipt-semantics owner, recorded in this contract)".
+- DOC-2 is a reviewer's finding. It enforces the owner's recorded decision and does not adopt or change the requirement's meaning.
+- No authority problem.
+
+### 3. Flags considered and not raised
+
+- **No property beyond the parents.** Every property in DOC-2's requirement is plainly stated in DOC-1's owner decision.
+- **Nothing dropped or weakened.** DOC-2 is not a complete or unchanged restatement. Its "only when" framing leaves the other DOC-1 conditions in force.
+- **Cited support is accurate.** The quoted text appears verbatim in DOC-1, in the section DOC-2 names.
+- **No change by a non-owner.** DOC-2 does not alter the requirement.
+
+## FLAGS
+
+**DOC-2**
+- none

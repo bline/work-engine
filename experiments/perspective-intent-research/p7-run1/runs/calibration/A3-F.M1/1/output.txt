@@ -1,0 +1,682 @@
+# Requirement provenance analysis: DOC-4 to DOC-9
+
+**Parent identification (my reading).**
+- DOC-3 names its bases as "RL `041-u4-protection-qualification-PLAN.md` and `043-u4a-held-contract.md`". DOC-2's text ("Contract and open implementation checkpoint: `043-u4a-held-contract.md`") reads as 041. DOC-1's text matches what DOC-5 attributes to "RL `043`".
+- The derived documents cite "`review-r2/PLAN.md`". Its content matches DOC-3's H1–H5. However, DOC-3 says it "has not been re-reviewed", while the cited plan "had cleared **as a static plan**". I therefore treat DOC-3 as the closest parent text, but I cannot confirm it is the identical artefact.
+- Several cited sources are not among the parents, so I cannot use them as support. These include `QUALIFICATION-AMENDMENT.md`, `docs/contracts/...`, the board items and the Astra reports.
+
+**Parent authority statements used throughout:**
+- DOC-2: "RL owns task-host and lifecycle admission/receipt semantics; dev-vertical owns the actual Pi Host controller and rendered container boundary."
+- DOC-3: "The latter documents [RL 041/043] own the broader qualification contract."
+- DOC-3: "Dev-vertical owns coordination, result collection and the separate acceptance decision."
+- DOC-3: "coordinate any actual shared protocol or pin change with RL."
+
+---
+
+## DOC-4 (escalation request)
+
+### Requirements and how they are presented
+
+1. **Scope limit.** "It is not authority for broader design, real Docker/preflight/H4, live/installed changes, RL R1, commit or integration." / "Host and witness remain frozen, read-only."
+   - Presented as: a restriction under a new operator grant ("overnight continuation") that is not in the parents.
+   - Parent: it only narrows what is permitted. It is consistent with DOC-2 ("No startup release, live inference, paid run … is authorized") and DOC-3 ("No live calls, credentials …").
+   - Not flagged.
+
+2. **Preservation.** "Preserve all named prior findings and passed controls."
+   - Presented as: inherited from documents outside the parents.
+   - Not a weakening. Not flagged.
+
+3. **Open question about causal removal.** The counterexample is "successful exact-ID absence can then yield `held_cancelled` without affirmative Host removal". The doc then asks: "Test whether intended success genuinely requires causal Host removal under H1–H5/RL, rather than infer that from absence".
+   - Presented as: proposed. The question of actor attribution is explicitly left for the reviewer.
+   - Parent support is only a reading:
+     - DOC-1: "The Host owns the child, same-session framed handshake, and exact stop."
+     - DOC-1: "concludes only after … exact container removal observed against the owned identity."
+   - Not flagged, because the doc does not impose the requirement.
+
+4. **Five findings to account for.** "early all-available initialize-pin check, canonical/actual ready bytes vs repeated digest, actual subprocess EOF/timeout custody, connection framing and finality on the same identity stream, and digest-bound private helper evidence".
+   - Presented as: review findings put to the reviewer, not imposed.
+   - Partial parent support:
+     - DOC-3 H2: "Reject wrong pin/profile/session".
+     - DOC-3: "require the exact ready digest for every `held_cancelled`".
+     - DOC-3: "an empty name lookup or arbitrary inspect failure cannot confirm absence".
+   - Not flagged.
+
+5. **Constraints on the review.** "keep a single Host verdict and fixture read-only, with no new consumer projection unless RL requires it"; "do not invent active-run or mutation authority"; "do not waive compiled validation or later H4 approval"; "without promising durability after all storage fails or exposing raw inspect data".
+   - Parent: consistent with DOC-3 ("RL's consumer check (R1) … read-only") and DOC-1 ("do not serialize raw environment").
+   - Not flagged.
+
+---
+
+## DOC-5 (architectural review)
+
+The doc presents its design as "a recommendation for dev-vertical's disposition". It also asserts binding readings of the existing contract.
+
+### D5-1. Host-attributed normal removal
+
+**Text:** "The Host must establish that it completed the required cleanup action, not merely that every process in its log was clean." / "For this realization, **yes, an affirmative Host-attributed normal removal is required.**"
+
+**Presented as:** inherited, by reading the contract.
+
+**Properties demanded:**
+- The Host brings about the outcome.
+- Actor attribution evidence is required.
+- A normal (not forced) action is required.
+
+**What the parents plainly state:**
+- DOC-1: "The Host owns the child, same-session framed handshake, and exact stop."
+- DOC-1: "concludes only after bounded receiver/attach exit collection and exact container removal observed against the owned identity."
+- DOC-3 H4: "successful bounded receiver/attach exits without fallback stop/kill → successful independent post-exit query confirming the original full container ID absent".
+
+**Reading:** "owns … exact stop" can be read to mean the Host performs the removal. However, "removal observed" states observation, not attribution. "without fallback stop/kill" qualifies the receiver/attach exits, not container removal.
+
+**Cited support check:** "RL `041:13–17` already distinguishes physical cleanup from clean held cancellation in the earlier EOF probe".
+- DOC-2 says the probe "establishes candidate readiness and physical cleanup, **not** clean held cancellation". The reason is that "Controller EOF collected and removed the exact container", i.e. there was no accepted cancel.
+- The cited text does not say who must perform removal.
+
+**Result:** flag. Actor attribution goes beyond the plain text, and the cited support does not state it.
+
+### D5-2. Affirmative result under actual semantics
+
+**Text:** "require an attributable normal operation against the original full ID and launch Engine, with an affirmative result under that operation's actual semantics… If a purported acknowledgement could equally mean "already missing," it cannot by itself establish this distinction." Also, for a clean verdict: "no fallback intervention". The test plan adds "forced recovery that removes the right ID but cannot qualify".
+
+**Parent:** DOC-3 plainly requires "Distinguish confirmed removal, removal failure and unknown cleanup". There is no parent text requiring that a normal removal be distinguished from "already absent", or that a forced removal of the right ID disqualifies.
+
+**Result:** flag (evidence property beyond the parents).
+
+**Not flagged:** "Narrowing success to eventual absence regardless of how it happened would require an owner decision". This preserves rather than weakens.
+
+### D5-3. Total private action result (P0 table, "Recommended")
+
+**Presented as:** the author's design choice.
+
+**Parent:** within DOC-3's "Distinguish confirmed removal, removal failure and unknown cleanup" and "If create is uncertain and trusted identity cannot be recovered, report cleanup unknown".
+
+**Plainly supported:** "A create that may have reached the Engine without attributable identity is **not** proof of non-creation."
+
+**Result:** not flagged.
+
+### D5-4. Safe recovery coordinate
+
+**Text:** "preserve a **safe recovery coordinate**—run/job, bound Engine, original ID and its attribution—until a replacement is known persisted… If the owner write fails … do not qualify."
+
+**Presented as:** "minimum correction", i.e. required.
+
+**Parent:**
+- DOC-1: "if process/container state is unavailable, retain a cleanup-unknown result and any known diagnostics".
+- DOC-3: "Preserve failure evidence and cleanup disposition even without readiness."
+
+The persistence-ordering property ("until a replacement is known persisted") is not stated.
+
+**Plainly supported:** "Do not retain or expose raw inspect output" (DOC-1: "do not serialize raw environment"; DOC-3: "Do not retain raw Docker environment").
+
+**Result:** flag (beyond the parents).
+
+### D5-5. Joined acceptance publication boundary
+
+**Text:** "require the actually received matching reply, matching persisted terminal and bound private evidence, observed successful exit of that exact child, then the independent exact-ID result and retained run manifest."
+
+**Parent:**
+- DOC-3 H4 orders the "post-exit query" after "receiver/attach exits".
+- DOC-3 requires "result digests, sanitized log/receipt paths".
+- No parent requires the fixture to observe the Host child's exit, or the received reply, before the query.
+
+**Result:** flag (ordering and evidence beyond the parents).
+
+### D5-6. Initialize pins before start
+
+**Text:** "Before sending start, compare **all independently available expected pins** in initialize".
+
+**Parent:**
+- DOC-3 H2: "Reject wrong pin/profile/session".
+- DOC-3 H5: "Mismatched … job/pin … never yield a valid held-ready record".
+- DOC-2 trace: "`pi-host/initialize` reports identity before container startup".
+- No parent orders the pin comparison before start.
+
+**Result:** flag (ordering).
+
+### D5-7. Ready digest before cancel
+
+**Text:** "Verify the digest of the **actual ready value under the exact Host encoding**, before cancel and in the retained join."
+
+**Parent:**
+- DOC-3 H4: "explicit cancel bound to that record".
+- DOC-3: "require the exact ready digest for every `held_cancelled`".
+
+**Reading:** a reasonable reading of "bound to that record". "a new shared serialization protocol is not required" is consistent with DOC-1 ("No change to ordinary serve or shared activation protocol").
+
+**Result:** not flagged.
+
+### D5-8. Child custody
+
+**Text:** "request EOF first on failure… If EOF fails, either a **pre-agreed, capable process custodian** collects the exact child, or an explicitly authorized policy permits it to terminate and reap that child… With no such route, do not start a real fixture."
+
+**Parent:**
+- Plainly supported: "EOF is not accepted cancel" (DOC-3: "EOF/failure closure cannot substitute for the accepted cancel").
+- DOC-2: "Verify no leftover child/container, or retain a named cleanup-unknown outcome."
+- No parent gives an EOF-first ordering or a custody precondition on starting a real fixture.
+
+**Result:** flag (ordering and a new gate).
+
+### D5-9. Response finality
+
+**Text:** "Require one complete, unambiguous response to each request on the identified stream… If the actual permitted Engine cannot supply this finality or an equivalent binding, independent absence remains unestablished."
+
+**Parent:**
+- DOC-3: "an empty name lookup or arbitrary inspect failure cannot confirm absence".
+- DOC-3: "retain how effective daemon selection was bound across commands".
+- Same-stream finality is not stated.
+
+**Result:** flag. The connection-close mechanism itself is offered as a "viable design" and is not flagged.
+
+### D5-10. Private sidecar sealing
+
+**Text:** "read/hash the same bounded private bytes… seal their digest…"; "RL decides whether this projection serves its consumer."
+
+**Parent:** DOC-3: "Bind the witness to …", "result digests", and "agree which ready and terminal fields the consumer needs".
+
+**Result:** treated as the author's way of meeting binding. Not flagged.
+
+### D5-11. Authority
+
+**Text:** "Dev-vertical owns the local Host amendment and offline disposition. RL owns any change in clean-close or consumer meaning".
+
+**Analysis:** D5-1 and D5-2 add new conditions for `held_cancelled`, which is the clean-close outcome. DOC-5 nevertheless classes them as a "local amendment to the qualification contract" owned by dev-vertical. By DOC-3 the qualification contract is RL-owned ("The latter documents own the broader qualification contract").
+
+**Result:** flag (authority).
+
+### D5-12. H4 approval gate
+
+**Text:** "The fixture-authorizing owner must separately approve an exact real H4 run, including timeout custody, **before** preflight or launch."
+
+**Parent:** no parent names a "fixture-authorizing owner" or this gate. The closest is DOC-3: "Before dispatch, confirm implementation authority".
+
+**Result:** flag (new gate and owner).
+
+### D5-13. Compiled gate
+
+**Text:** "The compiled gate remains owed: focused controls actually selected, complete proof and ordinary libraries, both selector behaviors, and extracted receiver comparison… linked-table sentinel".
+
+**Parent:** selector behaviour is supported by DOC-3 ("test ordinary launch **without** the selector… Keep non-proof selector refusal separate"). The rest cites sources outside the parents.
+
+**Result:** flag (cited support not in the parents).
+
+### D5-14. Plainly supported items (not flagged)
+
+- "Keep the corrected distinction between a trusted create ID… and unknown ownership" (DOC-3 create-uncertain rule).
+- "A failed verdict can truthfully carry `confirmed_absent`".
+- "Do not … remove a container from the observer" (DOC-3: RL consumer check "read-only").
+
+---
+
+## DOC-6 (disposition adopting the amendment)
+
+### D6-1. Adoption of the amendment
+
+**Text:** "**Adopt** the local amendment".
+
+**Presented as:** binding, adopted by root/dev-vertical.
+
+**Analysis:**
+- The amended rule redefines clean cancellation: "Derive clean cancellation once after all helper evidence, including a **positively attained normal-removal witness**…".
+- DOC-6 reserves to RL only "No public projection or coordinate change without RL".
+- DOC-5 itself states "RL owns any change in clean-close or consumer meaning".
+- The parents give RL the qualification contract.
+
+**Result:** flag (authority).
+
+### D6-2. Normal-removal witness
+
+**Text:** "with actual operation semantics distinguishing normal removal from already absent or fallback; absence, a missing ledger entry, and a successful fallback cannot supply it."
+
+**Parent:** see D5-1 and D5-2. DOC-1 states only "exact container removal observed against the owned identity". DOC-3 states only "without fallback stop/kill" for receiver/attach exits.
+
+**Result:** flag (actor attribution and evidence beyond the parents).
+
+### D6-3. Required actions must not vanish
+
+**Text:** "Required actions must not vanish on pin/capture/spawn error; account privately for operation/role…"
+
+**Analysis:** an implementation means within DOC-3's "Distinguish confirmed removal, removal failure and unknown cleanup".
+
+**Result:** not flagged. "An omitted required result fails too" depends on D6-2 and is covered there.
+
+### D6-4. Recovery coordinate
+
+**Text:** "Keep a bounded safe recovery coordinate until a persisted replacement is known".
+
+**Result:** flag, as for D5-4.
+
+### D6-5. Death/storage-failure window
+
+**Text:** "No guarantee across an Engine-effect/total-storage-failure or Host-death window." with "claim nothing beyond observed custody."
+
+**Parent:**
+- DOC-2: "Verify no leftover child/container, or retain a named cleanup-unknown outcome."
+- DOC-1: "retain a cleanup-unknown result".
+
+**Analysis:** DOC-5 had kept a positive obligation: "The truthful result for the collector is **durable ownership/cleanup unestablished**". DOC-6's restatement omits any requirement to report a named unknown outcome in that window. The text is ambiguous rather than plainly weakened.
+
+**Result:** flag (possible weakening of a failure-reported-distinctly property).
+
+**Not flagged:** "Known physical disposition remains reportable on failure" is supported by DOC-3.
+
+### D6-6. Caller rule
+
+**Text:** "require all available independently pinned initialize facts before start… verification of the actual ready digest… before cancel… observed successful exit of the actual child, then same-stream bound independent final query… require framed completion plus bounded finality with split surplus and interposed response negatives."
+
+**Result:** flag for the pins-before-start ordering, the child exit followed by query ordering, and finality, as for D5-5, D5-6 and D5-9. The ready digest is a reading (D5-7), not flagged.
+
+### D6-7. EOF and real entry
+
+**Text:** "EOF is first stop request on failed caller paths, not a clean cancel." and "Fail closed on real entry unless a separately approved capable process custodian/termination policy can be established; no actual run of any kind against Docker now."
+
+**Analysis:**
+- "not a clean cancel" is plainly supported by DOC-3.
+- The EOF-first ordering and the custody gate are new.
+- "no actual run … now" falls within the operator grant (DOC-4) and is not a weakening.
+
+**Result:** flag (ordering and gate).
+
+### D6-8. H4 approver
+
+**Text:** "separate explicit operator approval for exact real H4 including timeout policy before any Docker preflight."
+
+**Analysis:** this gate is new to the parents. It also names a different approver ("operator") from DOC-5 ("fixture-authorizing owner"). Neither approver is named in the parents.
+
+**Result:** flag.
+
+### D6-9. Two-writer plan (Units A and B)
+
+**Analysis:** the author's revisable plan. It is consistent with DOC-3 ("One coherent Host builder packet … do not split writers across the same state machine") and with "no shared persistence/protocol or ordinary semantics" (DOC-1: "No change to ordinary serve or shared activation protocol").
+
+**Result:** not flagged.
+
+---
+
+## DOC-7 (second escalation)
+
+### D7-1. Governing question
+
+**Text:** "Can the authorized backend establish, *before a destructive effect*, that the operation will target only the original object, across the whole destructive interval, without weakening H5?"
+
+**Presented as:** a question, citing H5 as inherited.
+
+**Parent (plainly stated):**
+- DOC-3: "Never act by name on a replacement."
+- DOC-3 H5: "no observation or destructive action on the replacement can stand in for the original."
+- DOC-3: "Bind observation, destructive cleanup (including failure paths) … to … the original owned full container ID."
+
+**Reading:** the requirement to establish this before the effect, enforceably, across the whole interval, is a reading of "Never act by name on a replacement".
+
+**Result:** not flagged, because the core non-target property is plainly stated.
+
+### D7-2. Exact attribution as an invariant
+
+**Text:** "Do not give up exact attribution, non-target safety, or independent absence."
+
+**Presented as:** an inherited, non-negotiable invariant.
+
+**Parent:**
+- Non-target safety: plainly stated (D7-1).
+- Independent absence: plainly stated (DOC-3 H4 "successful independent post-exit query").
+- "Exact attribution" comes from the DOC-6 amendment, which is not RL-agreed and not in the parent text (D5-1).
+
+**Result:** flag.
+
+### D7-3. Amended items carried forward
+
+**Text:** "Keep amended join, finality, actual-child custody and fail-closed real entry."
+
+**Analysis:** these are inherited from DOC-6, not from the parents.
+
+**Result:** flag, as for D6-6 and D6-7.
+
+### D7-4. The four other findings
+
+**Text:** "actual Prepare coordinates versus synthetic copies, independent client pin before start, preservation of bounded validated create ID on partial write failure, and executable uncertain-create control with fresh state".
+
+**Parent:**
+- Prepare coordinates: partly supported (DOC-3: "Bind the witness to … installed-equivalent selection/config … pin the candidate, rendered job").
+- Uncertain-create control: supported (DOC-3: "If create is uncertain … report cleanup unknown").
+- "independent client pin before start" is an ordering beyond the parents.
+- The create-ID preservation matches D5-4.
+
+**Result:** flag the "before start" ordering. These items are proposed only "after an authorized disposition".
+
+### D7-5. Process constraints
+
+**Text:** "Any new environmental/control premise or owner change must name its authority and the approval/qualification required before use."; "Read-only…".
+
+**Result:** restrictive. Not flagged.
+
+---
+
+## DOC-8 (architectural review: route closed)
+
+### D8-1. The three facts
+
+**Text:** "There are **three** facts: (1) no operation may affect a replacement, including on failure; (2) the Host positively completed normal removal of the owned original following the accepted clean cancel; (3) the original was independently observed absent on the launch Engine after actual Host exit."
+
+**Presented as:** inherited, citing "RL `043` lines 11, 13, 17–25, cleared `review-r2/PLAN.md` H3–H5 and lines 24–27, and `QUALIFICATION-AMENDMENT.md`".
+
+**Fact (1):** plainly supported by DOC-3 ("Never act by name on a replacement", "destructive cleanup (including failure paths)"). Extending "act by name" to any "affect" through server-side resolution is a reading. Not flagged.
+
+**Fact (2):** RL 043 (DOC-1) says "Host owns … exact stop" and "removal observed against the owned identity". It does not say "Host positively completed normal removal". The only support is the non-parent amendment.
+- **Result:** flag (cited support does not state it).
+
+**Fact (3):** DOC-3 H4 places the query after "receiver/attach exits". It does not say "after actual Host exit".
+- **Result:** flag (ordering).
+
+### D8-2. Exclusive causality
+
+**Text:**
+- "(2) distinguishes successful cancellation from cleanup by someone else."
+- "Nor does a successful normal removal response invariably distinguish this request's removal from another remover's work."
+- "The minimum is exclusion of any non-original resolution **and** of unobserved competing completion of the required operation".
+
+**Presented as:** inherited necessity and conditional design.
+
+**Analysis:**
+- No parent requires exclusive causality.
+- DOC-5 explicitly said "This does **not** make … independent forensic proof of the sole physical remover an RL contract".
+- DOC-6's rule required only semantics distinguishing "normal removal from already absent or fallback".
+
+**Result:** flag (exclusive causality beyond the parents and beyond the adopted rule).
+
+### D8-3. Cited contract outside the parents
+
+**Text:** "This is an independently required path claim … (`docs/contracts/evidence-and-claims.md` §3.9)".
+
+**Result:** flag (support outside the parents).
+
+### D8-4. Fallback and recovery
+
+**Text:** "Fallback and recovery are not exempt" and "Rejecting `held_cancelled` because fallback occurred does not protect its target."
+
+**Parent:** DOC-3 plainly states "destructive cleanup (including failure paths)" and "Never act by name on a replacement".
+
+**Result:** not flagged.
+
+### D8-5. Operator decision and closed default
+
+**Text:** "*May dev-vertical design, offline only, a qualification-only Engine boundary …, or shall U4-A stay closed?*" with "closed as the default", and "Do not ask for permission to accept eventual absence instead."
+
+**Presented as:** proposed. It does not weaken the parents.
+
+**Result:** not flagged.
+
+### D8-6. Authority restatement
+
+**Text:** "**Dev-vertical** owns the Host action, process/receiver and one terminal decision; **the fixture** independently measures, does not clean; **RL** owns whether the resulting exact-subject projection serves its consumer."
+
+**Analysis:**
+- This narrows RL to the projection.
+- The parents give RL "task-host and lifecycle admission/receipt semantics" (DOC-2) and the "broader qualification contract" (DOC-3).
+- DOC-5 had recorded "RL owns any change in clean-close … meaning".
+
+**Result:** flag (drops RL ownership of meaning).
+
+### D8-7. Fixture unit (conditional)
+
+**Text:** "Independently measure the selected client artifact against the authorized client pin **before start**; job and initialize reply agreeing on a wrong digest must yield zero starts".
+
+**Result:** flag (ordering beyond the parents; proposed).
+
+### D8-8. Host unit (conditional)
+
+**Text:** "retain a *bounded, validated ID-only* coordinate … until an ID-bearing replacement is known persisted".
+
+**Result:** flag, as for D5-4.
+
+**Not flagged:** the fresh-state uncertain-create test ("cleanup unknown, no destructive command") is supported by DOC-3.
+
+### D8-9. Release gates
+
+**Text:** "**Real H4 still needs** approval for the exact subject/route and proof of the enforcement premise, RL safe-projection agreement, independently capable real child timeout/reaping custody and compatible Engine finality, *before any preflight*."
+
+**Analysis:** these gates are new to the parents. The same paragraph also states: "Real selected receiver/Host/Docker, clean cancel/exit and independent original-ID absence are still required". That part is supported by DOC-3 H4.
+
+**Result:** flag the new gates.
+
+### D8-10. Compiled gate items
+
+**Text:** "Execute the three exact amendment controls … linked-table sentinel and four hashed private pins".
+
+**Result:** flag (support outside the parents).
+
+### D8-11. Scope of an isolated pass
+
+**Text:** "A pass on an isolated Engine could not be advertised for an uncontrolled shared Engine or installed startup."
+
+**Parent:** DOC-3: "Qualification is for the exact tested candidate and observation, not installed startup admission".
+
+**Result:** not flagged.
+
+---
+
+## DOC-9 (parking disposition)
+
+### D9-1. "Unchanged" restatement of H1–H5
+
+**Text:** "The H1–H5 requirements are unchanged: a destructive effect must not reach another object; Host normal removal must be affirmative and attributable; the observer independently confirms physical disposition after actual Host exit."
+
+**Presented as:** unchanged and, as written, complete.
+
+**Properties it adds while calling them "unchanged":**
+- "affirmative and attributable" (not in DOC-3 H1–H5).
+- "after actual Host exit" (H4 says after "receiver/attach exits").
+
+**Properties it drops or weakens:**
+- H4 demands "confirming the original full container ID absent on the trusted launch daemon". This becomes "confirms physical disposition", losing exact identity, the same daemon instance and the absent outcome.
+- The summary omits H1 ("Held selection precedes controller servicing and any credential read").
+- It omits H2 ("receiver evidence must prevent a clean pass despite zero Host requests"; "Show that no false ready or terminal success is produced").
+- It omits H3 (EOF/malformed input "never `held_cancelled`").
+- If the sentence is meant as shorthand rather than a complete restatement, the drops are ambiguous. As written, it reads as complete.
+
+**Result:** flag.
+
+### D9-2. Authority
+
+**Text:** "Host normal removal must be affirmative and attributable" is adopted as an H1–H5 requirement.
+
+**Analysis:** this is adopted in a dev-vertical/root disposition without recorded RL agreement on clean-close meaning (D5-11, D6-1).
+
+**Result:** flag.
+
+### D9-3. Keep proof-only H4 closed
+
+**Text:** "On the current backend keep proof-only H4 closed, including direct invocation".
+
+**Analysis:** restrictive and within dev-vertical's "separate acceptance decision" (DOC-3).
+
+**Result:** not flagged.
+
+### D9-4. Operator question
+
+**Text:** "Operator question… Default: parked… A design must identify the enforcement owner and scope, cover all object-affecting calls…"
+
+**Analysis:** proposed to the operator.
+
+**Result:** not flagged. Its premise of exclusive custody derives from D8-2, which is flagged there.
+
+### D9-5. Remaining items
+
+**Text:** "No ordinary source/fixture repair dispatch while awaiting the decision"; "RL projection #6147/#6151 remains unanswered … and separate from custody authorization."
+
+**Result:** not flagged.
+
+---
+
+## FLAGS
+
+### DOC-4
+none
+
+### DOC-5
+
+1. "**yes, an affirmative Host-attributed normal removal is required.**" / "The Host must establish that it completed the required cleanup action".
+   - Property: who brings about the outcome; actor attribution.
+   - Adds: Host-attributed causal removal as a condition of clean cancel.
+   - Parent lacks it: DOC-1 states only "exact container removal observed against the owned identity" and "The Host owns the child … and exact stop".
+   - Cited support fails: "RL `041:13–17` already distinguishes physical cleanup from clean held cancellation". DOC-2's distinction is EOF versus accepted cancel ("Controller EOF collected and removed the exact container"), not remover identity.
+
+2. "with an affirmative result under that operation's actual semantics… If a purported acknowledgement could equally mean "already missing," it cannot by itself establish this distinction"; "no fallback intervention"; "forced recovery that removes the right ID but cannot qualify".
+   - Property: evidence; no fallback.
+   - Adds: a normal versus already-absent distinction, and container-level fallback as disqualifying.
+   - Parent lacks it: DOC-3 has only "Distinguish confirmed removal, removal failure and unknown cleanup" and "receiver/attach exits without fallback stop/kill".
+
+3. "preserve a **safe recovery coordinate**… until a replacement is known persisted… do not qualify".
+   - Property: how the result is produced; persistence ordering.
+   - Adds: a new durability and ordering obligation.
+   - Parent lacks it: DOC-1 has only "retain a cleanup-unknown result and any known diagnostics".
+
+4. "require the actually received matching reply, matching persisted terminal and bound private evidence, observed successful exit of that exact child, then the independent exact-ID result and retained run manifest".
+   - Property: evidence; one step before another.
+   - Adds: observed Host-child exit and received reply ordered before the query.
+   - Parent lacks it: DOC-3 H4 orders the query only after "receiver/attach exits".
+
+5. "Before sending start, compare **all independently available expected pins** in initialize".
+   - Property: ordering.
+   - Adds: pin check before start.
+   - Parent lacks it: DOC-3 has only "Reject wrong pin/profile/session" and H5 mismatch rejection.
+
+6. "request EOF first on failure… With no such route, do not start a real fixture."
+   - Property: ordering; a new gate.
+   - Adds: EOF-first and a custody precondition.
+   - Parent lacks it: DOC-2 has only "Verify no leftover child/container, or retain a named cleanup-unknown outcome".
+
+7. "Require one complete, unambiguous response to each request on the identified stream… independent absence remains unestablished."
+   - Property: evidence; same system instance.
+   - Adds: same-stream response finality.
+   - Parent lacks it: DOC-3 has only "an empty name lookup or arbitrary inspect failure cannot confirm absence" and "retain how effective daemon selection was bound across commands".
+
+8. "Dev-vertical owns the local Host amendment" applied to a rule that changes `held_cancelled` conditions.
+   - Property: authority.
+   - Claims: a clean-close meaning change is "local", although the same doc says "RL owns any change in clean-close or consumer meaning".
+   - Parent lacks it: DOC-3: "The latter documents own the broader qualification contract"; DOC-2: "RL owns task-host and lifecycle admission/receipt semantics".
+
+9. "The fixture-authorizing owner must separately approve an exact real H4 run, including timeout custody, **before** preflight or launch."
+   - Property: authority; a gate.
+   - Adds: a new owner and gate.
+   - Parent lacks it: no parent names this owner.
+
+10. "complete proof and ordinary libraries… extracted receiver comparison… linked-table sentinel".
+    - Property: cited support.
+    - Claims: owed gates from non-parent sources.
+    - Parent lacks it: DOC-3 has only the selector tests.
+
+### DOC-6
+
+1. "**Adopt** the local amendment" / "Derive clean cancellation once after all helper evidence, including a **positively attained normal-removal witness**".
+   - Property: authority.
+   - Claims: dev-vertical/root adopts a change to clean-cancel meaning. Only "No public projection or coordinate change without RL" is reserved.
+   - Parent lacks it: DOC-3: "The latter documents own the broader qualification contract"; DOC-2: "RL owns … admission/receipt semantics".
+
+2. "actual operation semantics distinguishing normal removal from already absent or fallback; absence, a missing ledger entry, and a successful fallback cannot supply it".
+   - Property: actor attribution; evidence.
+   - Adds: beyond the parents (see DOC-5 flags 1–2).
+   - Parent lacks it: DOC-1 "removal observed against the owned identity".
+
+3. "Keep a bounded safe recovery coordinate until a persisted replacement is known".
+   - Property: persistence ordering.
+   - Adds: a new obligation.
+   - Parent lacks it: DOC-1 has only "retain a cleanup-unknown result and any known diagnostics".
+
+4. "No guarantee across an Engine-effect/total-storage-failure or Host-death window."
+   - Property: failure reported distinctly.
+   - Drops (possibly): DOC-5's obligation to report "durable ownership/cleanup unestablished".
+   - Parent lacks the drop: DOC-2: "retain a named cleanup-unknown outcome".
+
+5. "require all available independently pinned initialize facts before start… observed successful exit of the actual child, then same-stream bound independent final query… require framed completion plus bounded finality".
+   - Property: ordering; evidence.
+   - Adds: pins before start, child exit before query, and finality.
+   - Parent lacks it: DOC-3 H2/H5 pin rejection and H4 "post-exit query" after "receiver/attach exits".
+
+6. "EOF is first stop request on failed caller paths" / "Fail closed on real entry unless a separately approved capable process custodian/termination policy can be established".
+   - Property: ordering; gate.
+   - Adds: new.
+   - Parent lacks it: DOC-2 "Verify no leftover child/container, or retain a named cleanup-unknown outcome".
+
+7. "separate explicit operator approval for exact real H4 including timeout policy before any Docker preflight".
+   - Property: authority; gate.
+   - Adds: a new gate, and an approver different from DOC-5's "fixture-authorizing owner".
+   - Parent lacks it: neither approver is named in the parents.
+
+### DOC-7
+
+1. "Do not give up exact attribution, non-target safety, or independent absence."
+   - Property: actor attribution.
+   - Claims: attribution is an inherited invariant.
+   - Parent lacks it: no parent states it. It derives from the DOC-6 amendment, which was not RL-agreed (DOC-1 "removal observed against the owned identity").
+
+2. "Keep amended join, finality, actual-child custody and fail-closed real entry."
+   - Property: evidence; ordering; gate.
+   - Claims: inherited, but these come from DOC-6, not the parents (see DOC-6 flags 5–6).
+
+3. "independent client pin before start".
+   - Property: ordering.
+   - Adds: pin check before start.
+   - Parent lacks it: DOC-3 has only "Reject wrong pin/profile/session".
+
+### DOC-8
+
+1. "(2) the Host positively completed normal removal of the owned original following the accepted clean cancel", cited to "RL `043` lines 11, 13, 17–25".
+   - Property: actor attribution; cited support.
+   - Claims: 043 states it. DOC-1 says only "Host owns … exact stop" and "exact container removal observed against the owned identity".
+
+2. "(3) the original was independently observed absent on the launch Engine after actual Host exit".
+   - Property: ordering.
+   - Adds: Host exit as the precondition.
+   - Parent lacks it: DOC-3 H4 "post-exit query" after "receiver/attach exits".
+
+3. "(2) distinguishes successful cancellation from cleanup by someone else" / "exclusion of any non-original resolution **and** of unobserved competing completion of the required operation".
+   - Property: exclusive causality.
+   - Adds: evidence that no other party completed removal. This contradicts DOC-5's "This does **not** make … independent forensic proof of the sole physical remover an RL contract".
+   - Parent lacks it: no exclusive-causality text in DOC-1, DOC-2 or DOC-3.
+
+4. "an independently required path claim … (`docs/contracts/evidence-and-claims.md` §3.9)".
+   - Property: cited support.
+   - Claims: support from a non-parent document.
+
+5. "**RL** owns whether the resulting exact-subject projection serves its consumer."
+   - Property: authority.
+   - Drops: RL ownership of qualification and clean-close meaning.
+   - Parent lacks the drop: DOC-3 "The latter documents own the broader qualification contract"; DOC-2 "RL owns task-host and lifecycle admission/receipt semantics".
+
+6. "Independently measure the selected client artifact against the authorized client pin **before start**".
+   - Property: ordering (proposed).
+   - Parent lacks it: DOC-3 has only "Reject wrong pin/profile/session".
+
+7. "retain a *bounded, validated ID-only* coordinate … until an ID-bearing replacement is known persisted".
+   - Property: persistence ordering.
+   - Parent lacks it: DOC-1 "retain a cleanup-unknown result and any known diagnostics".
+
+8. "**Real H4 still needs** approval for the exact subject/route and proof of the enforcement premise, RL safe-projection agreement, independently capable real child timeout/reaping custody and compatible Engine finality, *before any preflight*."
+   - Property: gates.
+   - Adds: new preconditions.
+   - Parent lacks it: no parent states these. The closest is DOC-3 "Before dispatch, confirm implementation authority".
+
+9. "Execute the three exact amendment controls … linked-table sentinel and four hashed private pins".
+   - Property: cited support.
+   - Claims: gates from non-parent sources.
+   - Parent lacks it: DOC-3 has only the selector tests.
+
+### DOC-9
+
+1. "The H1–H5 requirements are unchanged: … Host normal removal must be affirmative and attributable; the observer independently confirms physical disposition after actual Host exit."
+   - Property: actor attribution; ordering.
+   - Claims: these properties are unchanged H1–H5, but DOC-3 H1–H5 contain neither attributable Host removal nor "after actual Host exit".
+   - Parent lacks it: DOC-3 H4 "receiver/attach exits … → successful independent post-exit query".
+
+2. Same sentence, read as a complete restatement.
+   - Property: exact object identity; same system instance; outcome; and the rest of H1–H5.
+   - Drops: "confirming the original full container ID absent on the trusted launch daemon" is weakened to "confirms physical disposition".
+   - Also omits:
+     - H1: "Held selection precedes controller servicing and any credential read".
+     - H2: "receiver evidence must prevent a clean pass despite zero Host requests"; "no false ready or terminal success".
+     - H3: EOF/malformed input "never `held_cancelled`".
+
+3. "Host normal removal must be affirmative and attributable" adopted as a requirement in a root/dev-vertical disposition.
+   - Property: authority.
+   - Claims: a clean-close meaning change without recorded RL agreement.
+   - Parent lacks it: DOC-3 "The latter documents own the broader qualification contract"; DOC-2 "RL owns task-host and lifecycle admission/receipt semantics".
