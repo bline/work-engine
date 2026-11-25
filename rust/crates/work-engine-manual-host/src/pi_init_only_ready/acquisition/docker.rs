@@ -1,6 +1,7 @@
 //! Fixed local Docker HTTP/1.1 transport. No Docker context, DNS, redirects,
 //! negotiation, retries, or connection reuse. A write is not an acceptance.
 
+use rustix::net::sockopt;
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
@@ -19,6 +20,12 @@ use std::{
 
 const REPLY_MAX: usize = 48 * 1024;
 const HEADER_MAX: usize = 4096;
+
+// This establishes the producer on the very connection that can carry the
+// effect. Once an accepted AF_UNIX stream has returned an authenticated
+// reply, socket activation cannot retarget that stream across daemon restart.
+pub(super) const STOCK_PROBE: &[u8] =
+    b"GET /version HTTP/1.1\r\nHost: docker\r\nConnection: keep-alive\r\nContent-Length: 0\r\n\r\n";
 
 #[derive(Clone, Debug)]
 pub(crate) struct Endpoint {
@@ -210,10 +217,109 @@ pub(super) fn write(io: &mut UnixStream, mut data: &[u8], deadline: Instant) -> 
     Ok(())
 }
 
-pub(super) fn read(io: &mut UnixStream, buf: &mut [u8], deadline: Instant) -> io::Result<usize> {
+/// The actual data producer can differ from SO_PEERCRED on an activated
+/// socket. Require kernel credentials on every nonempty fragment we accept.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+pub(super) struct Sender {
+    pub pid: i32,
+    pub uid: u32,
+    pub gid: u32,
+}
+
+pub(super) fn authenticate(io: &UnixStream, sender: Option<Sender>) -> io::Result<()> {
+    if sender.is_some() {
+        // Set before sending the first request; bytes queued before this
+        // may not carry credentials and are rejected, never trusted.
+        sockopt::set_socket_passcred(io, true)?;
+    }
+    Ok(())
+}
+
+pub(super) fn read_now(
+    io: &mut UnixStream,
+    buf: &mut [u8],
+    sender: Option<Sender>,
+) -> io::Result<usize> {
+    let Some(sender) = sender else {
+        return io.read(buf);
+    };
+    // Linux can supply pid=0 (e.g. bytes queued before SO_PASSCRED). Parse
+    // the raw kernel ucred, not a type with a nonzero PID invariant.
+    const CRED: libc::c_uint = std::mem::size_of::<libc::ucred>() as libc::c_uint;
+    const SPACE: usize = unsafe { libc::CMSG_SPACE(CRED) } as usize;
+    const HEADER: usize = unsafe { libc::CMSG_LEN(0) } as usize;
+    #[repr(C)]
+    struct Control([libc::cmsghdr; 0], [u8; SPACE]);
+    let mut control = Control([], [0; SPACE]);
+    let mut iov = libc::iovec {
+        iov_base: buf.as_mut_ptr().cast(),
+        iov_len: buf.len(),
+    };
+    let mut msg: libc::msghdr = unsafe { std::mem::zeroed() };
+    msg.msg_iov = &mut iov;
+    msg.msg_iovlen = 1;
+    msg.msg_control = control.1.as_mut_ptr().cast();
+    msg.msg_controllen = SPACE;
+    // Safety: one writable payload iovec and correctly aligned writable
+    // control bytes, both live throughout the call. No address requested.
+    let n = unsafe { libc::recvmsg(io.as_raw_fd(), &mut msg, libc::MSG_CMSG_CLOEXEC) };
+    if n < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let mut credential = None;
+    if (HEADER..=SPACE).contains(&msg.msg_controllen) {
+        // This buffer can hold at most one nonempty ancillary message.
+        let cmsg = msg.msg_control.cast::<libc::cmsghdr>();
+        // Safety: aligned, initialized and completely within returned bytes.
+        let header = unsafe { &*cmsg };
+        if !(HEADER..=msg.msg_controllen).contains(&header.cmsg_len)
+            || header.cmsg_level != libc::SOL_SOCKET
+        {
+            return Err(invalid("invalid Docker ancillary header"));
+        }
+        // Safety: the payload range was validated against the live buffer.
+        let data = unsafe { libc::CMSG_DATA(cmsg) };
+        match header.cmsg_type {
+            libc::SCM_CREDENTIALS if header.cmsg_len == HEADER + CRED as usize => {
+                let cred = unsafe { data.cast::<libc::ucred>().read_unaligned() };
+                credential = Some(Sender {
+                    pid: cred.pid,
+                    uid: cred.uid,
+                    gid: cred.gid,
+                });
+            }
+            libc::SCM_RIGHTS => {
+                // Even unexpected descriptors are installed by recvmsg.
+                // Dispose of every delivered FD before rejecting the peer.
+                let delivered = (header.cmsg_len - HEADER) / std::mem::size_of::<RawFd>();
+                for i in 0..delivered {
+                    let fd = unsafe { data.cast::<RawFd>().add(i).read_unaligned() };
+                    drop(unsafe { OwnedFd::from_raw_fd(fd) });
+                }
+                return Err(invalid("unexpected Docker descriptors"));
+            }
+            _ => return Err(invalid("unexpected Docker ancillary data")),
+        }
+    } else if msg.msg_controllen != 0 {
+        return Err(invalid("unexpected Docker ancillary extent"));
+    }
+    if msg.msg_flags & (libc::MSG_CTRUNC | libc::MSG_TRUNC) != 0
+        || (n != 0 && (sender.pid <= 0 || credential != Some(sender)))
+    {
+        return Err(invalid("Docker bytes not from the pinned serving process"));
+    }
+    Ok(n as usize)
+}
+
+pub(super) fn read(
+    io: &mut UnixStream,
+    buf: &mut [u8],
+    deadline: Instant,
+    sender: Option<Sender>,
+) -> io::Result<usize> {
     loop {
         wait(io, libc::POLLIN, deadline)?;
-        match io.read(buf) {
+        match read_now(io, buf, sender) {
             Err(e)
                 if matches!(
                     e.kind(),
@@ -230,11 +336,28 @@ pub(super) struct Response {
     pub body: Vec<u8>,
 }
 
+pub(super) fn is_stock_version(response: &Response) -> bool {
+    #[derive(Deserialize)]
+    struct Version {
+        #[serde(rename = "Version")]
+        version: String,
+        #[serde(rename = "GitCommit")]
+        commit: String,
+    }
+    response.status == 200
+        && serde_json::from_slice::<Version>(&response.body).is_ok_and(|v| {
+            v.version == "29.7.2"
+                && (v.commit == super::super::MOBY || v.commit == &super::super::MOBY[..7])
+        })
+}
+
 #[derive(Serialize)]
 pub(super) struct Observation {
     pub response: Option<Response>,
     raw: Vec<u8>,
     failure: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    sender_of_all_bytes: Option<Sender>,
 }
 
 fn chunked(mut bytes: &[u8]) -> io::Result<Option<Vec<u8>>> {
@@ -331,8 +454,12 @@ fn decode(raw: &[u8], eof: bool) -> io::Result<Option<Response>> {
     Ok(body.map(|body| Response { status, body }))
 }
 
-pub(super) fn receive(io: &mut UnixStream, deadline: Instant) -> Observation {
-    receive_while(io, deadline, None, || Ok(()))
+pub(super) fn receive(
+    io: &mut UnixStream,
+    deadline: Instant,
+    sender: Option<Sender>,
+) -> Observation {
+    receive_while(io, deadline, sender, None, || Ok(()))
 }
 
 /// Drive a response decoder while a second nonblocking stream remains live.
@@ -340,6 +467,7 @@ pub(super) fn receive(io: &mut UnixStream, deadline: Instant) -> Observation {
 pub(super) fn receive_while(
     io: &mut UnixStream,
     deadline: Instant,
+    sender: Option<Sender>,
     watch: Option<RawFd>,
     mut drain: impl FnMut() -> io::Result<()>,
 ) -> Observation {
@@ -356,7 +484,7 @@ pub(super) fn receive_while(
         if !reply_ready {
             continue;
         }
-        match io.read(&mut buf) {
+        match read_now(io, &mut buf, sender) {
             Ok(n) if raw.len() + n <= REPLY_MAX => {
                 raw.extend_from_slice(&buf[..n]);
                 match decode(&raw, n == 0) {
@@ -380,11 +508,107 @@ pub(super) fn receive_while(
             raw,
             response: Some(response),
             failure: None,
+            sender_of_all_bytes: sender,
         },
         Err(e) => Observation {
+            sender_of_all_bytes: (!raw.is_empty()).then_some(sender).flatten(),
             raw,
             response: None,
             failure: Some(e.to_string()),
         },
     }
+}
+
+#[cfg(test)]
+#[test]
+fn stock_probe_and_later_request_use_one_authenticated_socket() {
+    let (mut client, mut server) = UnixStream::pair().unwrap();
+    let sender = Sender {
+        pid: std::process::id().try_into().unwrap(),
+        uid: rustix::process::getuid().as_raw(),
+        gid: rustix::process::getgid().as_raw(),
+    };
+    let reply = br#"{"Version":"29.7.2","GitCommit":"6a43e3d"}"#;
+    let request = request("POST /v1.44/containers/fixture/start", &[]);
+    let worker = std::thread::spawn({
+        let request = request.clone();
+        move || {
+            server
+                .set_read_timeout(Some(std::time::Duration::from_secs(2)))
+                .unwrap();
+            let mut buf = vec![0; STOCK_PROBE.len()];
+            server.read_exact(&mut buf).unwrap();
+            assert_eq!(buf, STOCK_PROBE);
+            write!(
+                server,
+                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n",
+                reply.len()
+            )
+            .unwrap();
+            server.write_all(reply).unwrap();
+            let mut buf = vec![0; request.len()];
+            server.read_exact(&mut buf).unwrap();
+            assert_eq!(buf, request);
+            server
+                .write_all(b"HTTP/1.1 204 No Content\r\n\r\n")
+                .unwrap();
+        }
+    });
+    client.set_nonblocking(true).unwrap();
+    authenticate(&client, Some(sender)).unwrap();
+    let deadline = Instant::now() + std::time::Duration::from_secs(2);
+    write(&mut client, STOCK_PROBE, deadline).unwrap();
+    let observed = receive(&mut client, deadline, Some(sender));
+    assert_eq!(observed.sender_of_all_bytes, Some(sender));
+    assert!(observed.response.as_ref().is_some_and(is_stock_version));
+    assert!(!is_stock_version(&Response {
+        status: 200,
+        body: br#"{"Version":"29.7.2","GitCommit":"wrong"}"#.to_vec()
+    }));
+    write(&mut client, &request, deadline).unwrap();
+    assert_eq!(
+        receive(&mut client, deadline, Some(sender))
+            .response
+            .unwrap()
+            .status,
+        204
+    );
+    worker.join().unwrap();
+}
+
+#[cfg(test)]
+#[test]
+fn stock_sender_covers_each_fragment_and_refuses_wrong_credentials() {
+    let (mut reader, mut writer) = UnixStream::pair().unwrap();
+    let current = Sender {
+        pid: std::process::id().try_into().unwrap(),
+        uid: rustix::process::getuid().as_raw(),
+        gid: rustix::process::getgid().as_raw(),
+    };
+    // Linux returns a pid=0 sentinel for these already queued bytes.
+    writer.write_all(b"pre").unwrap();
+    authenticate(&reader, Some(current)).unwrap();
+    assert_eq!(
+        read_now(&mut reader, &mut [0; 3], Some(current))
+            .unwrap_err()
+            .kind(),
+        io::ErrorKind::InvalidData
+    );
+    writer.write_all(b"abcd").unwrap();
+    let mut buf = [0; 2];
+    assert_eq!(read_now(&mut reader, &mut buf, Some(current)).unwrap(), 2);
+    assert_eq!(&buf, b"ab");
+    let wrong = Sender {
+        pid: current.pid + 1,
+        ..current
+    };
+    assert_eq!(
+        read_now(&mut reader, &mut buf, Some(wrong))
+            .unwrap_err()
+            .kind(),
+        io::ErrorKind::InvalidData,
+    );
+    writer.write_all(b"ef").unwrap();
+    assert_eq!(read_now(&mut reader, &mut buf, Some(current)).unwrap(), 2);
+    assert_eq!(&buf, b"ef");
 }

@@ -18,6 +18,31 @@ use crate::{CampaignError, Result};
 pub(crate) const MIGRATION_SQL: &str = include_str!("task_free_b.sql");
 pub(crate) const PURPOSE: &str = "b-task-free-qualification-v1";
 
+/// The attempt's selected experiment. A natural-exit binding cannot mark Close.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+pub enum QualificationPurpose {
+    #[default]
+    OneStop,
+    NaturalExit,
+}
+
+impl QualificationPurpose {
+    pub(crate) fn id(self) -> &'static str {
+        match self {
+            Self::OneStop => PURPOSE,
+            Self::NaturalExit => "b-init-natural-exit-v1",
+        }
+    }
+
+    pub(crate) fn one_stop(self) -> bool {
+        self == Self::OneStop
+    }
+}
+
+pub(crate) fn is_one_stop(purpose: &QualificationPurpose) -> bool {
+    purpose.one_stop()
+}
+
 #[cfg(any(test, feature = "offline-qualification-fixture"))]
 pub(super) mod joined_fixture;
 
@@ -55,6 +80,8 @@ impl Digest {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct Binding {
+    #[serde(default, skip_serializing_if = "is_one_stop")]
+    pub(crate) purpose: QualificationPurpose,
     pub(crate) root: String,
     pub(crate) profile: String,
     pub(crate) opening_epoch: String,
@@ -173,6 +200,7 @@ pub(crate) enum Observation {
         accepted_and_recovered_work_fenced: Digest,
     },
     ScopedTerminal(ScopedTerminalCut),
+    NaturalTerminal(ScopedTerminalCut),
     Failed,
     Lost,
     Unknown,
@@ -189,6 +217,17 @@ pub(crate) struct ScopedTerminalCut {
 }
 
 impl ScopedTerminalCut {
+    fn natural_source(
+        &self,
+        ingress: &Digest,
+        start: &Mark,
+        task: &TaskIdentity,
+    ) -> Result<Digest> {
+        let payload = encode(&(ingress, start.digest()?, task, self))?;
+        let bytes = format!("offline-natural-terminal-cut-v1\0{payload}");
+        Digest::new(crate::codec::raw_sha256(bytes.as_bytes()))
+    }
+
     fn source(&self, ingress: &Digest, close: &Mark, task: &TaskIdentity) -> Result<Digest> {
         // The checked Close mark commits the exact execution and original
         // capture stream via its scoped request. Use the typed record codec,
@@ -376,7 +415,20 @@ impl History {
                 Ok(())
             }
             (Slot::Operation(Kind::Start), Observation::Started) if fact.task.is_some() => Ok(()),
-            (Slot::Terminal, Observation::ScopedTerminal(cut)) => {
+            (Slot::Terminal, Observation::NaturalTerminal(cut)) => {
+                if binding.purpose == QualificationPurpose::NaturalExit
+                    && let (Kind::Start, Some(task)) = (fact.mark.kind, fact.task.as_ref())
+                    && self.confirmed_start_task() == Some(task)
+                    && cut.natural_source(&fact.ingress, &fact.mark, task)? == fact.source
+                {
+                    Ok(())
+                } else {
+                    Err(integrity(
+                        "B natural Terminal cut is not bound to its source",
+                    ))
+                }
+            }
+            (Slot::Terminal, Observation::ScopedTerminal(cut)) if binding.purpose.one_stop() => {
                 if let (Kind::Close, Some(task)) = (fact.mark.kind, fact.task.as_ref())
                     && self.confirmed_start_task() == Some(task)
                     && cut.source(&fact.ingress, &fact.mark, task)? == fact.source
@@ -390,8 +442,8 @@ impl History {
             }
             (Slot::Operation(Kind::Close), Observation::Closed)
             | (Slot::Hold, Observation::Held)
-            | (Slot::Terminal, Observation::Terminal { .. })
             | (_, Observation::Failed | Observation::Lost | Observation::Unknown) => Ok(()),
+            (Slot::Terminal, Observation::Terminal { .. }) if binding.purpose.one_stop() => Ok(()),
             _ => Err(contract("B observation is not admissible for this slot")),
         }
     }
@@ -428,6 +480,9 @@ impl Store {
     ) -> Result<Mark> {
         binding.validate()?;
         check_spend(tx, binding)?;
+        if kind == Kind::Close && !binding.purpose.one_stop() {
+            return Err(conflict("Close does not belong to this purpose"));
+        }
         let history = load(tx, binding)?;
         if history.contested() || !history.facts[Slot::Terminal.index()].is_empty() {
             return Err(conflict("B attempt has contested or terminal evidence"));
@@ -604,7 +659,7 @@ fn check_spend(tx: &Transaction<'_>, b: &Binding) -> Result<()> {
         &b.opening_epoch,
         &b.attempt,
         &b.spend_receipt,
-        PURPOSE,
+        b.purpose.id(),
         &b.head.0,
         &b.canonical_selection.0,
         &b.recipe.0,
@@ -662,6 +717,7 @@ fn load(tx: &Transaction<'_>, binding: &Binding) -> Result<History> {
         if mark.scope != scope
             || mark.sequence != row.get::<_, i64>(0).map_err(sql)?
             || mark.kind as i64 != row.get::<_, i64>(1).map_err(sql)?
+            || (mark.kind == Kind::Close && !binding.purpose.one_stop())
         {
             return Err(integrity("B mark row identity differs"));
         }

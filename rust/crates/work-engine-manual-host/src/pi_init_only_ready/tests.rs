@@ -12,6 +12,26 @@ use slice_campaign::{
 };
 
 pub(super) const UPGRADE: &[u8] = b"HTTP/1.1 101 UPGRADED\r\nContent-Type: application/vnd.docker.multiplexed-stream\r\nConnection: Upgrade\r\nUpgrade: tcp\r\n\r\n";
+pub(super) fn proc_readonly_mounts() -> impl Iterator<Item = MountView> {
+    std::iter::once("/proc")
+        .chain(PROC_READONLY)
+        .enumerate()
+        .map(|(i, path)| MountView {
+            path: path.into(),
+            read_only: i != 0,
+            kind: MountKind::Procfs(ProcfsMount {
+                id: 20 + i as u64,
+                parent: if i == 0 { 17 } else { 20 },
+                namespace: 12,
+                device: (0, 31),
+                subroot: if i == 0 { "/" } else { &path[5..] }.into(),
+                nosuid: true,
+                nodev: true,
+                noexec: true,
+            }),
+        })
+}
+
 fn hash(c: char) -> String {
     c.to_string().repeat(64)
 }
@@ -148,6 +168,8 @@ impl Synthetic {
             io_pipe_inode: 587,
             startup_backing: StartupBacking::ImmutableImageAndDependencies,
             stdout_route: StdoutRoute::ExclusiveSelectedTaskLivePipe,
+            proc_readonly_paths: PROC_READONLY.map(String::from).into(),
+            masked_paths: FILE_MASKS.map(String::from).into(),
         };
         let effective = Effective {
             task: task.clone(),
@@ -169,14 +191,18 @@ impl Synthetic {
                 host: [1, 2, 3, 4, 5, 6],
             },
             inventory: Some(Inventory {
-                mounts: ["/dev", "/proc", "/sys", "/sys/fs/cgroup"]
-                    .into_iter()
-                    .map(|p| MountView {
-                        path: p.into(),
-                        kind: MountKind::PrivateVirtual,
-                        read_only: p.starts_with("/sys"),
-                    })
-                    .collect(),
+                mounts: std::iter::once(MountView {
+                    path: "/dev".into(),
+                    kind: MountKind::PrivateVirtual,
+                    read_only: false,
+                })
+                .chain(proc_readonly_mounts())
+                .chain(["/sys", "/sys/fs/cgroup"].map(|path| MountView {
+                    path: path.into(),
+                    kind: MountKind::PrivateVirtual,
+                    read_only: true,
+                }))
+                .collect(),
                 devices: vec![(1, 3), (1, 5)],
                 interfaces: vec!["lo".into()],
                 non_loopback_route_count: 0,
@@ -281,6 +307,7 @@ impl Synthetic {
             &self.owner.selection,
             &self.recipe.digest().unwrap(),
             &self.owner,
+            false,
         )
     }
     pub(super) fn cut(&mut self) -> &mut CurrentCut {
@@ -458,6 +485,110 @@ fn matching_inspect_and_marker_do_not_establish_lifetime_immutable_launch_or_pol
 }
 
 #[test]
+fn proc_readonly_accepts_all_five_proved_stock_self_binds() {
+    assert!(Synthetic::new().check().is_ok());
+}
+
+#[test]
+fn proc_readonly_refuses_missing_wrong_or_contradictory_inventory() {
+    for path in PROC_READONLY {
+        for fault in 0..14 {
+            let mut x = Synthetic::new();
+            let mounts = &mut x.cut().effective.inventory.as_mut().unwrap().mounts;
+            let index = mounts.iter().position(|m| m.path == path).unwrap();
+            let m = &mut mounts[index];
+            let MountKind::Procfs(backing) = &mut m.kind else {
+                unreachable!()
+            };
+            match fault {
+                0 => m.read_only = false,
+                1 => backing.device.1 += 1,
+                2 => backing.parent = 17,
+                3 => backing.subroot = "/not-the-selected-root".into(),
+                4 => backing.nosuid = false,
+                5 => backing.nodev = false,
+                6 => backing.noexec = false,
+                7 => backing.namespace += 1,
+                8 => backing.id = 20,
+                9 => m.kind = MountKind::RuntimeMasked,
+                10 => m.kind = MountKind::Other,
+                11 => {
+                    m.path.push_str("-unexpected");
+                    mounts.sort_by(|a, b| a.path.cmp(&b.path));
+                }
+                12 => {
+                    mounts.remove(index);
+                }
+                _ => mounts.insert(index, mounts[index].clone()),
+            }
+            assert_eq!(x.check(), Err(Refusal::Effective), "{path}: fault {fault}");
+        }
+    }
+    let mut x = Synthetic::new();
+    x.cut().launch.proc_readonly_paths.pop();
+    assert_eq!(x.check(), Err(Refusal::Task));
+}
+
+#[test]
+fn file_mask_held_exception_is_scoped_to_exact_selected_oci_destinations() {
+    for path in FILE_MASKS {
+        let run = |kind, path: &str, ro, intent_fault| {
+            let mut x = Synthetic::new();
+            let cut = x.cut();
+            match intent_fault {
+                1 => cut.launch.masked_paths.retain(|p| p != path),
+                2 => cut.launch.masked_paths.push(path.into()),
+                _ => (),
+            }
+            let mounts = &mut cut.effective.inventory.as_mut().unwrap().mounts;
+            mounts.push(MountView {
+                path: path.into(),
+                kind,
+                read_only: ro,
+            });
+            mounts.sort_by(|a, b| a.path.cmp(&b.path));
+            x.check().map(|_| ())
+        };
+        assert!(run(MountKind::RuntimeMaskedFile, path, false, 0).is_ok());
+        assert_eq!(
+            run(MountKind::RuntimeMaskedFile, path, false, 1),
+            Err(Refusal::Task)
+        );
+        assert_eq!(
+            run(MountKind::RuntimeMaskedFile, path, false, 2),
+            Err(Refusal::Task)
+        );
+        assert_eq!(
+            run(MountKind::RuntimeMasked, path, true, 0),
+            Err(Refusal::Effective)
+        );
+        assert_eq!(
+            run(MountKind::Other, path, false, 0),
+            Err(Refusal::Effective)
+        );
+    }
+    for (path, kind) in [
+        ("/proc/acpi", MountKind::RuntimeMaskedFile),
+        ("/etc/hosts", MountKind::RuntimeMaskedFile),
+        ("/proc/acpi", MountKind::RuntimeMasked),
+        ("/etc/hosts", MountKind::DaemonGenerated),
+        ("/dev/unexpected", MountKind::PrivateVirtual),
+    ] {
+        let mut x = Synthetic::new();
+        let cut = x.cut();
+        cut.launch.masked_paths.push(path.into());
+        let mounts = &mut cut.effective.inventory.as_mut().unwrap().mounts;
+        mounts.push(MountView {
+            path: path.into(),
+            kind,
+            read_only: false,
+        });
+        mounts.sort_by(|a, b| a.path.cmp(&b.path));
+        assert_eq!(x.check(), Err(Refusal::Effective), "{path}");
+    }
+}
+
+#[test]
 fn cut_is_current_live_same_anchor_and_not_cancelled() {
     let mut x = Synthetic::new();
     x.append_before_cut(Event::CancelledOrRevoked);
@@ -504,6 +635,25 @@ pub(super) fn campaign_with_intent(
     recipe: &Recipe,
     serving: &Serving,
     intent_sha256: String,
+) -> (
+    tempfile::TempDir,
+    impl Fn() -> TrustedConfig + use<>,
+    Campaign,
+    AttemptBinding,
+) {
+    campaign_for_purpose(
+        recipe,
+        serving,
+        intent_sha256,
+        QualificationPurpose::OneStop,
+    )
+}
+
+pub(super) fn campaign_for_purpose(
+    recipe: &Recipe,
+    serving: &Serving,
+    intent_sha256: String,
+    purpose: QualificationPurpose,
 ) -> (
     tempfile::TempDir,
     impl Fn() -> TrustedConfig + use<>,
@@ -583,19 +733,22 @@ pub(super) fn campaign_with_intent(
         panic!("admit")
     };
     app.attach_joined_offline_qualification_fixture().unwrap();
-    let binding = app
-        .select_offline_qualification(
-            &identity,
-            &value.revision,
-            SelectionPins {
-                grant_id: hash('a'),
-                intent_sha256,
-                recipe_sha256: recipe.digest().unwrap(),
-                serving_sha256: serving.digest().unwrap(),
-                expires_at_unix_ms: 4_102_444_800_000,
-            },
-        )
-        .unwrap();
+    let pins = SelectionPins {
+        grant_id: hash('a'),
+        intent_sha256,
+        recipe_sha256: recipe.digest().unwrap(),
+        serving_sha256: serving.digest().unwrap(),
+        expires_at_unix_ms: 4_102_444_800_000,
+    };
+    let binding = match purpose {
+        QualificationPurpose::OneStop => {
+            app.select_offline_qualification(&identity, &value.revision, pins)
+        }
+        QualificationPurpose::NaturalExit => {
+            app.select_offline_natural_exit(&identity, &value.revision, pins)
+        }
+    }
+    .unwrap();
     (temp, config, app, binding)
 }
 
@@ -635,6 +788,50 @@ fn running_capture(
         .unwrap();
     let owner = port.fixture_terminal_subject(binding, &running).unwrap();
     (Synthetic::with(recipe, serving, start, owner), confirmation)
+}
+
+pub(super) fn held_capture(port: &QualificationPort, binding: &AttemptBinding) -> HeldHistory {
+    let (mut fixture, continuation) = running_capture(port, binding);
+    if binding.purpose() == QualificationPurpose::NaturalExit {
+        let cut = fixture.cut();
+        cut.launch
+            .masked_paths
+            .extend(STOCK_STATIC_DIRS.map(String::from));
+        let cpu_mask = "/sys/devices/system/cpu/cpu0/thermal_throttle";
+        cut.launch.masked_paths.push(cpu_mask.into());
+        let mounts = &mut cut.effective.inventory.as_mut().unwrap().mounts;
+        mounts.extend(
+            ["/dev/pts", "/dev/shm", "/dev/mqueue"].map(|path| MountView {
+                path: path.into(),
+                kind: MountKind::PrivateVirtual,
+                read_only: false,
+            }),
+        );
+        mounts.extend(GENERATED_FILES.map(|path| MountView {
+            path: path.into(),
+            kind: MountKind::DaemonGenerated,
+            read_only: true,
+        }));
+        mounts.extend(
+            STOCK_STATIC_DIRS
+                .into_iter()
+                .chain([cpu_mask])
+                .map(|path| MountView {
+                    path: path.into(),
+                    kind: MountKind::StockMaskedDirectory,
+                    read_only: true,
+                }),
+        );
+        mounts.sort_by(|a, b| a.path.cmp(&b.path));
+    }
+    verify_fixture(
+        port,
+        binding,
+        &fixture.owner.running,
+        continuation,
+        fixture.input(),
+    )
+    .unwrap()
 }
 
 #[test]

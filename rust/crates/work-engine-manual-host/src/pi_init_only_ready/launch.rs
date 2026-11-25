@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use slice_campaign::codec::campaign_digest;
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct FilePin {
     pub path: String,
     pub sha256: String,
@@ -27,7 +28,8 @@ impl FilePin {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub enum ElfClosure {
     Static,
     Dynamic {
@@ -36,7 +38,7 @@ pub enum ElfClosure {
     },
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Store {
     DockerImageConfig,
     ContainerdLocalTarget,
@@ -44,7 +46,8 @@ pub enum Store {
 
 /// Protected approved values, independent of the eventual readback. This
 /// cut supports only an unambiguous linux/amd64 local store target.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Startup {
     pub store: Store,
     pub image_id: String,
@@ -87,7 +90,8 @@ impl Startup {
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Recipe {
     pub startup: Startup,
     /// A narrowly selected runtime name; no aliases or fallback.
@@ -377,6 +381,10 @@ pub struct ResolvedLaunch {
     pub io_pipe_inode: u64,
     pub startup_backing: StartupBacking,
     pub stdout_route: StdoutRoute,
+    /// Resolved OCI ReadonlyPaths for this launch, not the Docker request.
+    pub proc_readonly_paths: Vec<String>,
+    /// Exact MaskedPaths from the selected OCI launch, not Docker inspect.
+    pub masked_paths: Vec<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -411,6 +419,26 @@ impl ResolvedLaunch {
             && self.io_pipe_inode != 0
             && self.startup_backing == StartupBacking::ImmutableImageAndDependencies
             && self.stdout_route == StdoutRoute::ExclusiveSelectedTaskLivePipe
+            && if self.runtime == "runc" {
+                self.proc_readonly_paths == PROC_READONLY && self.stock_file_mask_intent()
+            } else {
+                self.proc_readonly_paths.is_empty() && self.masked_paths.is_empty()
+            }
+    }
+
+    fn stock_file_mask_intent(&self) -> bool {
+        let unique: std::collections::BTreeSet<_> =
+            self.masked_paths.iter().map(String::as_str).collect();
+        unique.len() == self.masked_paths.len() && FILE_MASKS.iter().all(|p| unique.contains(p))
+    }
+
+    /// Complete directory portion of the pinned stock OCI mask family. The
+    /// kernel reader must separately bind thermal entries to possible CPUs.
+    pub(super) fn stock_directory_masks(&self) -> Option<Vec<(&str, Option<u32>)>> {
+        if self.runtime != "runc" || !self.stock_file_mask_intent() {
+            return None;
+        }
+        stock_directory_masks(&self.masked_paths)
     }
 }
 
@@ -460,32 +488,89 @@ pub struct Inventory {
     pub writable_cgroup_control: bool,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct MountView {
     pub path: String,
     pub kind: MountKind,
     pub read_only: bool,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub enum MountKind {
     PrivateVirtual,
+    Procfs(ProcfsMount),
     RuntimeMasked,
+    /// The kernel cut must corroborate the bind to the original task-local null inode.
+    RuntimeMaskedFile,
+    /// Natural-exit only: selected directory with a verified stock runc mask.
+    StockMaskedDirectory,
     DaemonGenerated,
     Other,
 }
 
+/// Observed mountinfo coordinates in the selected task's mount namespace.
+/// A `Procfs` record requires a kernel `proc` filesystem, not just a pathname.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct ProcfsMount {
+    pub namespace: u64,
+    pub id: u64,
+    pub parent: u64,
+    pub device: (u32, u32),
+    pub subroot: String,
+    pub nosuid: bool,
+    pub nodev: bool,
+    pub noexec: bool,
+}
+
+// Moby's pinned DefaultLinuxSpec sets exactly these ReadonlyPaths. runc
+// self-binds them on procfs; they are not MaskedPaths.
+pub(super) const PROC_READONLY: [&str; 5] = [
+    "/proc/bus",
+    "/proc/fs",
+    "/proc/irq",
+    "/proc/sys",
+    "/proc/sysrq-trigger",
+];
+
+// File targets in the selected Moby/runc MaskedPaths, including optional
+// kernel entries. A missing row must be corroborated by ENOENT in the task.
+// Directory masks, including any conditional CPU masks, are not in this family.
+pub(super) const FILE_MASKS: [&str; 7] = [
+    "/proc/interrupts",
+    "/proc/kcore",
+    "/proc/keys",
+    "/proc/latency_stats",
+    "/proc/sched_debug",
+    "/proc/timer_list",
+    "/proc/timer_stats",
+];
+
+pub(super) const STOCK_VIRTUAL: [&str; 7] = [
+    "/proc", "/dev", "/dev/pts", "/dev/shm", "/dev/mqueue", "/sys", "/sys/fs/cgroup",
+];
+pub(super) const GENERATED_FILES: [&str; 3] = ["/etc/hosts", "/etc/hostname", "/etc/resolv.conf"];
+pub(super) const STOCK_STATIC_DIRS: [&str; 5] = [
+    "/proc/acpi", "/proc/asound", "/proc/scsi", "/sys/devices/virtual/powercap", "/sys/firmware",
+];
+
+fn thermal_cpu(path: &str) -> Option<u32> {
+    let n = path.strip_prefix("/sys/devices/system/cpu/cpu")?.strip_suffix("/thermal_throttle")?;
+    let cpu: u32 = n.parse().ok()?;
+    (n == cpu.to_string()).then_some(cpu)
+}
+
+pub(super) fn stock_directory_masks(masked: &[String]) -> Option<Vec<(&str, Option<u32>)>> {
+    let unique: std::collections::BTreeSet<_> = masked.iter().map(String::as_str).collect();
+    if unique.len() != masked.len() || !FILE_MASKS.iter().chain(&STOCK_STATIC_DIRS).all(|p| unique.contains(p)) {
+        return None;
+    }
+    unique.into_iter().filter(|p| !FILE_MASKS.contains(p)).map(|p| {
+        if STOCK_STATIC_DIRS.contains(&p) { Some((p, None)) } else { Some((p, Some(thermal_cpu(p)?))) }
+    }).collect()
+}
+
 impl Inventory {
-    fn closed(&self) -> bool {
-        const VIRTUAL: &[&str] = &[
-            "/proc",
-            "/dev",
-            "/dev/pts",
-            "/dev/shm",
-            "/dev/mqueue",
-            "/sys",
-            "/sys/fs/cgroup",
-        ];
+    pub(super) fn closed(&self, launch: &ResolvedLaunch, mount_namespace: u64, natural: bool) -> bool {
         const MASKED: &[&str] = &[
             "/proc/acpi",
             "/proc/asound",
@@ -497,23 +582,59 @@ impl Inventory {
             "/proc/scsi",
             "/proc/timer_list",
             "/proc/timer_stats",
-            "/proc/irq",
-            "/proc/sys",
-            "/proc/sysrq-trigger",
-            "/proc/bus",
             "/sys/firmware",
             "/sys/devices/virtual/powercap",
         ];
-        self.mounts.len() <= 32
+        let proc = self.mounts.iter().find_map(|m| match &m.kind {
+            MountKind::Procfs(p) if m.path == "/proc" => Some(p),
+            _ => None,
+        });
+        let stock = launch.runtime == "runc";
+        let dirs = if natural {
+            let Some(dirs) = launch.stock_directory_masks() else { return false };
+            dirs
+        } else { Vec::new() };
+        let limit = if natural {
+            STOCK_VIRTUAL.len() + PROC_READONLY.len() + GENERATED_FILES.len() + FILE_MASKS.len() + dirs.len()
+        } else { 32 };
+        self.mounts.len() <= limit
             && self.mounts.windows(2).all(|w| w[0].path < w[1].path)
+            && (!natural || (STOCK_VIRTUAL.iter().chain(&GENERATED_FILES).all(|p| {
+                self.mounts.iter().any(|m| m.path == *p)
+            }) && dirs.iter().filter(|(_, cpu)| cpu.is_some()).all(|(p, _)| {
+                self.mounts.iter().any(|m| m.path == *p)
+            })))
             && ["/proc", "/dev", "/sys", "/sys/fs/cgroup"].iter().all(|required| {
-                self.mounts.iter().any(|m| m.path == *required && m.kind == MountKind::PrivateVirtual)
+                self.mounts.iter().any(|m| m.path == *required && match &m.kind {
+                    MountKind::Procfs(_) => stock && *required == "/proc",
+                    MountKind::PrivateVirtual => !stock || *required != "/proc",
+                    _ => false,
+                })
             })
-            && self.mounts.iter().all(|m| match m.kind {
-                MountKind::PrivateVirtual => VIRTUAL.contains(&m.path.as_str())
+            && (!stock || (launch.proc_readonly_paths == PROC_READONLY
+                && PROC_READONLY.iter().all(|p| self.mounts.iter().any(|m| m.path == *p))))
+            && self.mounts.iter().all(|m| match &m.kind {
+                MountKind::PrivateVirtual => STOCK_VIRTUAL.contains(&m.path.as_str())
                     && (!m.path.starts_with("/sys") || m.read_only),
-                MountKind::RuntimeMasked => MASKED.contains(&m.path.as_str()) && m.read_only,
-                MountKind::DaemonGenerated => ["/etc/hosts", "/etc/hostname", "/etc/resolv.conf"].contains(&m.path.as_str()) && m.read_only,
+                MountKind::Procfs(p) => stock && p.namespace == mount_namespace
+                    && p.id != 0 && p.id != launch.root_mount_id && p.device != (0, 0)
+                    && p.nosuid && p.nodev && p.noexec
+                    && !self.mounts.iter().any(|other| other.path != m.path
+                        && matches!(&other.kind, MountKind::Procfs(o) if o.id == p.id))
+                    && if m.path == "/proc" {
+                        p.parent == launch.root_mount_id && p.subroot == "/"
+                    } else {
+                        m.read_only && PROC_READONLY.contains(&m.path.as_str())
+                            && proc.is_some_and(|base| p.parent == base.id && p.device == base.device)
+                            && m.path.strip_prefix("/proc") == Some(p.subroot.as_str())
+                    },
+                MountKind::RuntimeMasked => !natural && MASKED.contains(&m.path.as_str()) && m.read_only
+                    && (!stock || !FILE_MASKS.contains(&m.path.as_str())),
+                MountKind::StockMaskedDirectory => natural && m.read_only && dirs.iter().any(|(p, _)| *p == m.path),
+                MountKind::RuntimeMaskedFile => stock && launch.stock_file_mask_intent()
+                    && FILE_MASKS.contains(&m.path.as_str())
+                    && launch.masked_paths.contains(&m.path),
+                MountKind::DaemonGenerated => GENERATED_FILES.contains(&m.path.as_str()) && m.read_only,
                 MountKind::Other => false,
             })
             && self.devices.len() <= 9
@@ -533,7 +654,7 @@ pub enum Descriptor {
 }
 
 impl Effective {
-    pub(super) fn matches(&self, recipe: &Recipe, launch: &ResolvedLaunch) -> bool {
+    pub(super) fn matches(&self, recipe: &Recipe, launch: &ResolvedLaunch, natural: bool) -> bool {
         self.task == launch.task
             && self.uid == [USER; 4]
             && self.gid == [GROUP; 4]
@@ -555,7 +676,10 @@ impl Effective {
                 .into_iter()
                 .zip(self.namespaces.host)
                 .all(|(task, host)| task != 0 && host != 0 && task != host)
-            && self.inventory.as_ref().is_some_and(Inventory::closed)
+            && self
+                .inventory
+                .as_ref()
+                .is_some_and(|inventory| inventory.closed(launch, self.namespaces.task[1], natural))
             && self.fds
                 == [
                     Descriptor::NullInput,

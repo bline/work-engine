@@ -9,7 +9,7 @@ use slice_campaign::{
 };
 use std::{
     fs,
-    io::Write,
+    io::{Read, Write},
     net::Shutdown,
     os::{
         fd::AsRawFd,
@@ -393,6 +393,7 @@ impl Anchor for FakeAnchor {
             cgroup_events: self.live_events()?,
             status: vec![],
             apparmor: vec![],
+            procfs: None,
         };
         *self.observations.kernel_current_at.lock().unwrap() = Some(Instant::now());
         Ok(sample)
@@ -1135,6 +1136,13 @@ fn check_cut_records(path: &Path, fault: Fault, operations: &[Operation]) {
             .find(|r| !r["data"]["event"]["Cut"].is_null())
             .unwrap();
         let applied_position = capture["data"]["applied"]["position"].as_u64().unwrap();
+        let kernel_position = capture["data"]["kernel_position"].as_u64().unwrap();
+        assert!(applied_position < kernel_position);
+        assert!(kernel_position < capture["position"].as_u64().unwrap());
+        let kernel = &records[(kernel_position - 1) as usize];
+        assert_eq!(kernel["kind"], "Applied");
+        assert_eq!(kernel["data"].as_object().unwrap().len(), 1);
+        assert!(kernel["data"]["kernel_current"].is_object());
         let payload = &records[(applied_position - 1) as usize]["data"];
         assert_eq!(
             capture["data"]["applied"]["sha256"],

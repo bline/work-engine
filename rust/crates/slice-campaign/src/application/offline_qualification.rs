@@ -1,5 +1,5 @@
-//! Task-free B Campaign owner. Compiled only for offline qualification
-//! fixtures; no transport, real grant ingestion, or installed activation.
+//! Task-free B Campaign owner. No default activation or transport. Foreground
+//! authorization uses the same selection, entry, spend and mark authority.
 
 use std::sync::{Arc, Mutex, MutexGuard};
 
@@ -9,9 +9,17 @@ use serde_json::json;
 use super::{Campaign, CampaignInner};
 use crate::codec::campaign_digest;
 use crate::store::offline_qualification::refused;
-use crate::store::task_free_b::{Binding as LifecycleBinding, Digest, PURPOSE};
+pub use crate::store::task_free_b::QualificationPurpose;
+use crate::store::task_free_b::is_one_stop;
+use crate::store::task_free_b::{Binding as LifecycleBinding, Digest};
 use crate::{CampaignError, CampaignIdentity, CampaignRevision, Result, require_sha};
 
+#[cfg(all(
+    target_os = "linux",
+    target_arch = "x86_64",
+    feature = "private-natural-exit-foreground"
+))]
+pub mod foreground;
 mod start;
 mod terminal;
 pub use start::*;
@@ -43,7 +51,11 @@ pub struct AttemptBinding {
     recipe: String,
     serving: String,
     expiry: i64,
+    purpose: QualificationPurpose,
     lifecycle: LifecycleBinding,
+    // Foreground bindings must use the approval-checking entry, even within
+    // a build that also includes the offline fixture port.
+    foreground: bool,
 }
 
 /// Durable address of an original selection, not a binding or a permit.
@@ -57,6 +69,8 @@ pub struct QualificationHistoryKey {
     pub attempt: String,
     pub selection: String,
     pub intent: String,
+    #[serde(default, skip_serializing_if = "is_one_stop")]
+    pub purpose: QualificationPurpose,
 }
 
 impl AttemptBinding {
@@ -69,6 +83,7 @@ impl AttemptBinding {
             attempt: self.attempt.clone(),
             selection: self.digest.clone(),
             intent: self.intent.clone(),
+            purpose: self.purpose,
         }
     }
 
@@ -101,6 +116,9 @@ impl AttemptBinding {
     }
     pub fn serving_sha256(&self) -> &str {
         &self.serving
+    }
+    pub fn purpose(&self) -> QualificationPurpose {
+        self.purpose
     }
     pub fn expires_at(&self) -> i64 {
         self.expiry
@@ -150,8 +168,29 @@ impl Campaign {
         head: &CampaignRevision,
         pins: SelectionPins,
     ) -> Result<AttemptBinding> {
+        self.select_qualification(identity, head, pins, QualificationPurpose::OneStop)
+    }
+
+    /// Unselected private natural-exit configuration. Requires the joined
+    /// fixture owner; this creates no effect capability.
+    pub fn select_offline_natural_exit(
+        &self,
+        identity: &CampaignIdentity,
+        head: &CampaignRevision,
+        pins: SelectionPins,
+    ) -> Result<AttemptBinding> {
+        self.select_qualification(identity, head, pins, QualificationPurpose::NaturalExit)
+    }
+
+    fn select_qualification(
+        &self,
+        identity: &CampaignIdentity,
+        head: &CampaignRevision,
+        pins: SelectionPins,
+        purpose: QualificationPurpose,
+    ) -> Result<AttemptBinding> {
         let mut owner = self.owner()?;
-        let binding = owner.qualification_binding(identity, head, pins)?;
+        let binding = owner.qualification_binding(identity, head, pins, purpose)?;
         owner.store.register_qualification(&binding)?;
         Ok(binding)
     }
@@ -176,7 +215,20 @@ impl CampaignInner {
         identity: &CampaignIdentity,
         head: &CampaignRevision,
         pins: SelectionPins,
+        purpose: QualificationPurpose,
     ) -> Result<AttemptBinding> {
+        self.bind_qualification(identity, head, pins, purpose, None)
+    }
+
+    fn bind_qualification(
+        &self,
+        identity: &CampaignIdentity,
+        head: &CampaignRevision,
+        pins: SelectionPins,
+        purpose: QualificationPurpose,
+        approval_digest: Option<&str>,
+    ) -> Result<AttemptBinding> {
+        let purpose_id = purpose.id();
         self.check_identity(identity)?;
         self.current(identity, head)?;
         require_sha(&pins.grant_id, "qualification grant ID")?;
@@ -187,18 +239,23 @@ impl CampaignInner {
         let identity_key = identity.key();
         let (profile, opening_epoch) = self.store.qualification_scope();
         let issuer = campaign_digest(&json!([
-            PURPOSE,
+            purpose_id,
             "sole-issuer",
             root,
             self.config.writer_identity
         ]))?;
-        // Pin the fixed offline verification policy and synthetic custody roles,
-        // not an installed evidence producer or credential.
-        let evidence_ingress = start::fixture_ingress_digest()?;
-        let attempt = campaign_digest(&json!([PURPOSE, "attempt", root, pins.grant_id]))?;
-        let operation = campaign_digest(&json!([PURPOSE, "server-operation", attempt]))?;
+        let evidence_ingress = match approval_digest {
+            Some(approval) => campaign_digest(&json!([
+                "b-natural-protected-foreground-ingress-v1",
+                approval,
+                pins.intent_sha256
+            ]))?,
+            None => start::fixture_ingress_digest()?,
+        };
+        let attempt = campaign_digest(&json!([purpose_id, "attempt", root, pins.grant_id]))?;
+        let operation = campaign_digest(&json!([purpose_id, "server-operation", attempt]))?;
         let digest = campaign_digest(&json!([
-            PURPOSE,
+            purpose_id,
             "selection",
             root,
             self.config.writer_identity,
@@ -217,8 +274,9 @@ impl CampaignInner {
             pins.serving_sha256,
             pins.expires_at_unix_ms.to_string()
         ]))?;
-        let spend_receipt = campaign_digest(&json!([PURPOSE, "spend-receipt-v1", digest]))?;
+        let spend_receipt = campaign_digest(&json!([purpose_id, "spend-receipt-v1", digest]))?;
         let lifecycle = LifecycleBinding {
+            purpose,
             root: root.clone(),
             profile,
             opening_epoch,
@@ -245,7 +303,9 @@ impl CampaignInner {
             recipe: pins.recipe_sha256,
             serving: pins.serving_sha256,
             expiry: pins.expires_at_unix_ms,
+            purpose,
             lifecycle,
+            foreground: approval_digest.is_some(),
         })
     }
 }
@@ -280,8 +340,20 @@ impl QualificationPort {
     /// Seal the single possible entry before offering it for spend. No
     /// entered state observed on restart is converted into this value.
     pub fn enter(&self, binding: &AttemptBinding) -> Result<EnteredQualification> {
+        if binding.foreground {
+            return Err(refused("protected foreground entry required"));
+        }
+        self.enter_checked(binding, || Ok(()))
+    }
+
+    fn enter_checked(
+        &self,
+        binding: &AttemptBinding,
+        check_approval: impl FnOnce() -> Result<()>,
+    ) -> Result<EnteredQualification> {
         let mut owner = self.owner()?;
         check_owner(&owner, binding)?;
+        check_approval()?;
         owner.store.enter_qualification(binding)?;
         Ok(EnteredQualification {
             port: Self {
@@ -303,9 +375,18 @@ impl EnteredQualification {
     }
 
     fn consume_with_confirmation(self, confirm: bool) -> Result<SpentQualification> {
+        self.consume_checked(confirm, || Ok(()))
+    }
+
+    fn consume_checked(
+        self,
+        confirm: bool,
+        check_approval: impl FnOnce() -> Result<()>,
+    ) -> Result<SpentQualification> {
         {
             let mut owner = self.port.owner()?;
             check_owner(&owner, &self.binding)?;
+            check_approval()?;
             owner.store.spend_qualification(&self.binding, confirm)?;
         }
         Ok(SpentQualification {
@@ -381,8 +462,8 @@ impl SpentQualification {
         kind: OperationKind,
         inert_mark: impl FnOnce() -> Result<T>,
     ) -> Result<T> {
-        if self.next.take() != Some(kind) {
-            return Err(refused("operation out of order"));
+        if self.next.take() != Some(kind) || !self.binding.purpose.one_stop() {
+            return Err(refused("operation or purpose out of order"));
         }
         let mut owner = self.port.owner()?;
         check_owner(&owner, &self.binding)?;

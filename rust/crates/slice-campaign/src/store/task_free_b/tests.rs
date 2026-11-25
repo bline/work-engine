@@ -23,6 +23,7 @@ impl Fixture {
         let root = _dir.path().canonicalize().unwrap().join("campaign");
         let mut writer = Store::initialize(&root, CONFIG, WRITER, 4, PROFILE).unwrap();
         let binding = Binding {
+            purpose: QualificationPurpose::OneStop,
             root: writer.root_id.clone(),
             profile: PROFILE.into(),
             opening_epoch: writer.epoch.clone(),

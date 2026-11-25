@@ -10,6 +10,7 @@ use crate::application::offline_qualification::{
 use TerminalFailure::*;
 type Verdict<T = ()> = std::result::Result<T, TerminalFailure>;
 
+mod natural;
 mod scoped;
 
 fn exact_execution<'a>(

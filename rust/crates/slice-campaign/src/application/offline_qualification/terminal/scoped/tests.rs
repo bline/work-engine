@@ -1,6 +1,6 @@
 use super::*;
 use crate::application::offline_qualification::{
-    FixtureCreateReadback, MarkedStart, SelectionPins,
+    FixtureCreateReadback, MarkedStart, QualificationPurpose, SelectionPins,
 };
 use crate::store::{
     offline_qualification::FIXTURE_NOW_MS,
@@ -9,6 +9,17 @@ use crate::store::{
 use crate::{AdmitRequest, Campaign, TrustedConfig, test_support as support};
 
 fn own_attempt() -> (
+    tempfile::TempDir,
+    impl Fn() -> TrustedConfig,
+    Campaign,
+    AttemptBinding,
+) {
+    own_attempt_for(QualificationPurpose::OneStop)
+}
+
+fn own_attempt_for(
+    purpose: QualificationPurpose,
+) -> (
     tempfile::TempDir,
     impl Fn() -> TrustedConfig,
     Campaign,
@@ -51,7 +62,7 @@ fn own_attempt() -> (
     .revision;
     app.attach_joined_offline_qualification_fixture().unwrap();
     let binding = app
-        .select_offline_qualification(
+        .select_qualification(
             &identity,
             &head,
             SelectionPins {
@@ -61,6 +72,7 @@ fn own_attempt() -> (
                 serving_sha256: "d".repeat(64),
                 expires_at_unix_ms: 4_102_444_800_000,
             },
+            purpose,
         )
         .unwrap();
     (temp, config, app, binding)
@@ -173,6 +185,36 @@ fn closed(subject: &OfflineStopSubject) -> OfflineStopTerminalReadbacks {
             },
         )),
     }
+}
+
+#[test]
+fn natural_exit_selection_spends_and_marks_create_start_but_never_close_or_replays() {
+    let (_temp, config, app, binding) = own_attempt_for(QualificationPurpose::NaturalExit);
+    let live = running(&app, &binding);
+    let port = app.offline_qualification_port();
+    assert!(
+        port.mark_offline_scoped_stop(&binding, &live, JoinedMarkReadback::Check)
+            .is_err()
+    );
+    let history = app
+        .owner()
+        .unwrap()
+        .store
+        .read_b_history(binding.lifecycle())
+        .unwrap();
+    assert!(history.mark(Kind::Create).is_some());
+    assert!(history.mark(Kind::Start).is_some());
+    assert!(history.mark(Kind::Close).is_none());
+    let key = binding.history_key();
+    drop(port);
+    drop(app);
+    let reopen = Campaign::open(config()).unwrap();
+    let port = reopen.offline_qualification_port();
+    assert!(port.read_qualification_spend(&key).unwrap());
+    assert!(port.enter(&binding).is_err());
+    let mut crossed = key;
+    crossed.purpose = QualificationPurpose::OneStop;
+    assert!(port.read_qualification_spend(&crossed).is_err());
 }
 
 #[test]
